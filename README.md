@@ -10,17 +10,17 @@ PythonSCAD is a fork of OpenSCAD (http://www.openscad.org)
 
 Unfortunately OpenSCAD comes with a lot of intentional limitations.
 
-No mutation of variables (immutability, "single assignment of any variable")
-Limited number of iterations
-No file I/O
+* No mutation of variables (immutability, "single assignment of any variable")
+* Limited number of iterations
+* No file I/O
+
 These exist for the reason that they don't want the language to be able to do bad things to people's computers, which allows the "script sharing culture" to be safe.
 
 Additionally the choice to use their own language brings with it a whole new mental model that must be learned and mastered. This is a problem for wide adoption.
 
 This fork lets you use Python inside of OpenSCAD as its native language.
 
-PythonSCAD is a functional language for creating solid 3D CAD objects. It is free software and
-available for Linux/UNIX, MS Windows and macOS.</p>
+PythonSCAD is an application environment which allows using Python to make and view 3D models while retaining all OpenSCAD functionality and affording the ability to access Python from OpenSCAD.  It is free software and available for Linux/UNIX, MS Windows and macOS.</p>
 
 # Contents
 
@@ -70,11 +70,10 @@ tree. We need to move the sphere up the z-axis.
     tree.show()
 
 And that's it! You made your first 3D model! There are other primitive
-shapes that you can combine with other set operations (union,
-intersection, difference) and transformations (rotate, scale,
+shapes that you can combine with other set operations ( | for union,
+& for intersection,  and - for  difference) and transformations (rotate, scale,
 translate) to make complex models! Check out all the other language
-features in the [OpenSCAD
-Manual](https://en.wikibooks.org/wiki/OpenSCAD_User_Manual).
+features in the [PythonSCAD Manual](https://pythonscad.org/tutorial).
 
 # Documentation
 
