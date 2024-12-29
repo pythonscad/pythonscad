@@ -4,31 +4,23 @@
 
 [![Visit our IRC channel](https://kiwiirc.com/buttons/irc.libera.chat/openscad.png)](https://kiwiirc.com/client/irc.libera.chat/#openscad)
 
-# What is OpenSCAD?
-<p><a href="https://opencollective.com/openscad/donate"><img align="right" src="https://opencollective.com/openscad/donate/button@2x.png?color=white" width="200"/></a>
+# What is PythonSCAD?
 
-OpenSCAD is a software for creating solid 3D CAD objects. It is free software and
+PythonSCAD is a fork of OpenSCAD (http://www.openscad.org)
+
+Unfortunately OpenSCAD comes with a lot of intentional limitations.
+
+No mutation of variables (immutability, "single assignment of any variable")
+Limited number of iterations
+No file I/O
+These exist for the reason that they don't want the language to be able to do bad things to people's computers, which allows the "script sharing culture" to be safe.
+
+Additionally the choice to use their own language brings with it a whole new mental model that must be learned and mastered. This is a problem for wide adoption.
+
+This fork lets you use Python inside of OpenSCAD as its native language.
+
+PythonSCAD is a functional language for creating solid 3D CAD objects. It is free software and
 available for Linux/UNIX, MS Windows and macOS.</p>
-
-Unlike most free software for creating 3D models (such as the famous
-application Blender), OpenSCAD focuses on the CAD aspects rather than the 
-artistic aspects of 3D modeling. Thus this might be the application you are
-looking for when you are planning to create 3D models of machine parts but
-probably not the tool for creating computer-animated movies.
-
-OpenSCAD is not an interactive modeler. Instead it is more like a
-3D-compiler that reads a script file that describes the object and renders
-the 3D model from this script file (see examples below). This gives you, the
-designer, complete control over the modeling process and enables you to easily
-change any step in the modeling process or make designs that are defined by
-configurable parameters.
-
-OpenSCAD provides two main modeling techniques: First there is constructive
-solid geometry (aka CSG) and second there is extrusion of 2D outlines. As the data
-exchange format for these 2D outlines Autocad DXF files are used. In
-addition to 2D paths for extrusion it is also possible to read design parameters
-from DXF files. Besides DXF files OpenSCAD can read and create 3D models in the
-STL and OFF file formats.
 
 # Contents
 
@@ -45,35 +37,37 @@ STL and OFF file formats.
 
 # Getting started
 
-You can download the latest binaries of OpenSCAD at
-<https://www.openscad.org/downloads.html>. Install binaries as you would any other
+You can download the latest binaries of PythonSCAD at
+<https://www.pythonscad.org/download.html>. Install binaries as you would any other
 software.
 
-When you open OpenSCAD, you'll see three frames within the window. The
+When you open PythonSCAD, you'll see three frames within the window. The
 left frame is where you'll write code to model 3D objects. The right
 frame is where you'll see the 3D rendering of your model.
 
 Let's make a tree! Type the following code into the left frame:
 
-    cylinder(h = 30, r = 8);
+    from openscad import *
+    tree = cylinder(h = 30, r = 8);
+    tree.show()
 
 Then render the 3D model by hitting F5. Now you can see a cylinder for
 the trunk in our tree. Now let's add the bushy/leafy part of the tree
 represented by a sphere. To do so, we will union a cylinder and a
 sphere.
 
-    union() {
-      cylinder(h = 30, r = 8);
-      sphere(20);
-    }
+    from openscad import *
+    tree = cylinder(h = 30, r = 8);
+    tree = tree | sphere(20);
+    tree.show()
 
 But, it's not quite right! The bushy/leafy are around the base of the
 tree. We need to move the sphere up the z-axis.
 
-    union() {
-      cylinder(h = 30, r = 8);
-      translate([0, 0, 40]) sphere(20);
-    }
+    from openscad import *
+    tree = cylinder(h = 30, r = 8);
+    tree = tree | sphere(20).up(40);
+    tree.show()
 
 And that's it! You made your first 3D model! There are other primitive
 shapes that you can combine with other set operations (union,
@@ -84,16 +78,16 @@ Manual](https://en.wikibooks.org/wiki/OpenSCAD_User_Manual).
 
 # Documentation
 
-Have a look at the OpenSCAD Homepage (https://www.openscad.org/documentation.html) for documentation.
+Have a look at the PythonSCAD Homepage (https://www.python.org/tutorial) for a brief work-through.
 
-## Building OpenSCAD
+## Building PythonSCAD
 
-To build OpenSCAD from source, follow the instructions for the
+To build PythonSCAD from source, follow the instructions for the
 platform applicable to you below.
 
 ### Prerequisites
 
-To build OpenSCAD, you need some libraries and tools. The version
+To build PythonSCAD, you need some libraries and tools. The version
 numbers in brackets specify the versions which have been used for
 development. Other versions may or may not work as well.
 
@@ -130,13 +124,11 @@ For the test suite, additional requirements are:
 
 Install git (https://git-scm.com/) onto your system. Then run a clone:
 
-    git clone https://github.com/openscad/openscad.git
+    git clone https://github.com/pythonscad/pythonscad.git
 
-This will download the latest sources into a directory named `openscad`.
+This will download the latest sources into a directory named `pythonscad`.
 
-To pull the various submodules (incl. the [MCAD library](https://github.com/openscad/MCAD)), do the following:
-
-    cd openscad
+    cd pythonscad
     git submodule update --init --recursive
 
 ### Building for macOS
@@ -206,7 +198,7 @@ After that, follow the Compilation instructions below.
 
 ### Building for Windows
 
-OpenSCAD for Windows is usually cross-compiled from Linux. If you wish to
+PythonSCAD for Windows is usually cross-compiled from Linux. If you wish to
 attempt an MSVC build on Windows, please see this site:
 https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Building_on_Windows
 
@@ -226,43 +218,12 @@ Then run the script to download & compile all the prerequisite libraries above:
 
 Note that this process can take several hours, and tens of gigabytes of 
 disk space, as it uses the [https://mxe.cc](https://mxe.cc) system to cross-build many
-libraries. After it is complete, build OpenSCAD and package it to an 
+libraries. After it is complete, build PythonSCAD and package it to an 
 installer:
 
     ./scripts/release-common.sh mingw64
 
 For a 32-bit Windows cross-build, replace 64 with 32 in the above instructions. 
-
-### Building for WebAssembly
-
-We support building OpenSCAD headless for WebAssembly w/ Emscripten, using a premade Docker image built in [openscad/openscad-wasm](https://github.com/openscad/openscad-wasm) (which also has usage examples)
-
-#### Browser
-
-The following command creates `build-web/openscad.wasm` & `build-web/openscad.js`:
-
-```bash
-./scripts/wasm-base-docker-run.sh emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Debug -DEXPERIMENTAL=1
-./scripts/wasm-base-docker-run.sh cmake --build build-web -j2
-```
-
-[openscad/openscad-playground](https://github.com/openscad/openscad-playground) uses this WASM build to provide a [Web UI](https://ochafik.com/openscad2/) with a subset of features of OpenSCAD.
-
-> [!NOTE]
-> With a debug build (`-DCMAKE_BUILD_TYPE=Debug`), you can set C++ breakpoints in Firefox and in Chrome (the latter [needs an extension](https://developer.chrome.com/docs/devtools/wasm)).
-
-#### Standalone node.js build
-
-The following command creates `build-node/openscad.js`, which is executable (requires `node`):
-
-```bash
-./scripts/wasm-base-docker-run.sh emcmake cmake -B build-node -DWASM_BUILD_TYPE=node -DCMAKE_BUILD_TYPE=Debug -DEXPERIMENTAL=1
-./scripts/wasm-base-docker-run.sh cmake --build build-node -j2
-build-node/openscad.js --help
-```
-
-> [!NOTE]
-> With a debug build (`-DCMAKE_BUILD_TYPE=Debug`), you can set C++ breakpoints in VSCode + Node ([needs an extension](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_debugging-webassembly)).
 
 ### Compilation
 
@@ -271,7 +232,7 @@ First, run `cmake -B build -DEXPERIMENTAL=1` to generate a Makefile in the `buil
 Then run `cmake --build build`. Finally, on Linux you might run `cmake --install build` as root.
 
 If you had problems compiling from source, raise a new issue in the
-[issue tracker on the github page](https://github.com/openscad/openscad/issues).
+[issue tracker on the github page](https://github.com/pythonscad/pythonscad/issues).
 
 This site and it's subpages can also be helpful:
 https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Building_OpenSCAD_from_Sources
