@@ -17,6 +17,10 @@ void finishPython();
 void python_lock(void);
 void python_unlock(void);
 void ipython(void);
+#ifdef ENABLE_JUPYTER
+void python_startjupyter(void);
+extern std::string python_jupyterconfig;
+#endif
 
 std::string evaluatePython(const std::string &code, bool dry_run=0);
 
