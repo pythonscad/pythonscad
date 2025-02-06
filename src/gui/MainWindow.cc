@@ -416,6 +416,7 @@ MainWindow::MainWindow(const QStringList& filenames)
   consoleUpdater = new QTimer(this);
   consoleUpdater->setSingleShot(true);
   connect(consoleUpdater, SIGNAL(timeout()), this->console, SLOT(update()));
+  connect(this->input,SIGNAL(returnPressed()), this, SLOT(inputFinished()));
 
   editorDockTitleWidget = new QWidget();
   consoleDockTitleWidget = new QWidget();
@@ -2555,6 +2556,15 @@ void MainWindow::rightClick(QPoint mouse)
   }
 }
 
+void MainWindow::inputFinished()
+{
+	std::string line = this->input->displayText().toStdString();
+	this->input->clear();
+#ifdef ENABLE_PYTHON
+	line_input += line;
+#endif	
+}
+
 void MainWindow::measureFinished()
 {
   this->qglview->selected_obj.clear();
@@ -2759,8 +2769,8 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
 }
 
 void MainWindow::exceptionCleanup(){
-  LOG("Execution aborted");
-  LOG(" ");
+//  LOG("Execution aborted"); TODO fix
+//  LOG(" ");
   GuiLocker::unlock();
   if (designActionAutoReload->isChecked()) autoReloadTimer->start();
 }

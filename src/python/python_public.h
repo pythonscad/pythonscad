@@ -35,3 +35,5 @@ extern bool pythonRuntimeInitialized;
 extern bool pythonDryRun;
 extern std::shared_ptr<AbstractNode> python_result_node;
 extern std::vector<SelectedObject> python_result_handle;
+extern std::string line_input;
+

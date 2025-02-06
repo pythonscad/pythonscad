@@ -143,6 +143,7 @@ private slots:
   void setSelection(int index);
   void onHoveredObjectInSelectionMenu();
   void measureFinished();
+  void inputFinished();
   void errorLogOutput(const Message& log_msg);
   void addMenuItemCB(QString function);
 

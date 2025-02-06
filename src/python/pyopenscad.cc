@@ -59,6 +59,7 @@ std::vector<std::string> mapping_name;
 std::vector<std::string> mapping_code;
 std::vector<int> mapping_level;
 std::shared_ptr<const FileContext> osinclude_context = nullptr;
+std::string line_input;
 
 
 void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
@@ -833,21 +834,33 @@ std::string evaluatePython(const std::string & code, bool dry_run)
 import sys\n\
 class InputCatcher:\n\
    def __init__(self):\n\
-      self.data = \"modules\"\n\
+      pass\n\
    def read(self):\n\
-      return self.data\n\
+      return stdin()\n\
    def readline(self):\n\
-      return self.data\n\
+      return stdin()\n\
 class OutputCatcher:\n\
    def __init__(self):\n\
+      self.buffer = ''\n\
+   def write(self, data):\n\
+      for c in data:\n\
+         if c == '\\n':\n\
+            stdout(self.buffer)\n\
+            self.buffer = ''\n\
+         else:\n\
+            self.buffer = self.buffer + c \n\
+   def flush(self):\n\
+      pass\n\
+class ErrorCatcher:\n\
+   def __init__(self):\n\
       self.data = ''\n\
-   def write(self, stuff):\n\
-      self.data = self.data + stuff\n\
+   def write(self, data):\n\
+      stderr(data)\n\
    def flush(self):\n\
       pass\n\
 catcher_in = InputCatcher()\n\
 catcher_out = OutputCatcher()\n\
-catcher_err = OutputCatcher()\n\
+catcher_err = ErrorCatcher()\n\
 stdin_bak=sys.stdin\n\
 stdout_bak=sys.stdout\n\
 stderr_bak=sys.stderr\n\
@@ -877,7 +890,8 @@ sys.stderr = stderr_bak\n\
       error = ""; 
       python_catch_error(error);
     } 
-    for(int i=0;i<2;i++)
+    /* TODO muss auch ohne import openscad funktionieren, dann gehts auf die console
+    for(int i=1;i<2;i++)
     {
       PyObjectUniquePtr catcher(nullptr, PyObjectDeleter);
       catcher.reset( PyObject_GetAttrString(pythonMainModule.get(), i==1?"catcher_err":"catcher_out"));
@@ -890,10 +904,11 @@ sys.stderr = stderr_bak\n\
       const char *command_output_bytes =  PyBytes_AS_STRING(command_output_value.get());
       if(command_output_bytes != nullptr && *command_output_bytes != '\0')
       {
-        if(i ==1) error += command_output_bytes; /* output to console */
-        else LOG(command_output_bytes); /* error to LOG */
+        if(i ==1) error += command_output_bytes;
+        else LOG(command_output_bytes); 
       }
     }
+    */
     PyRun_SimpleString(python_exit_code);
     return error;
 }

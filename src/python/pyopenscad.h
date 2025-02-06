@@ -60,6 +60,7 @@ extern std::vector<std::string> mapping_name;
 extern std::vector<std::string> mapping_code;
 extern std::vector<int> mapping_level;
 extern SourceFile *osinclude_source;
+extern std::string line_input;
 
 PyObject *python_str(PyObject *self);
 

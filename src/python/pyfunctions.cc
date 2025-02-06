@@ -2055,7 +2055,7 @@ PyObject *python_oo_color(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 typedef std::vector<int> intList;
 
-PyObject *python_mesh_core(PyObject *obj, bool tessellate)
+PyObject *python_mesh_core(PyObject *obj)
 {
   PyObject *dummydict;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
@@ -2070,9 +2070,6 @@ PyObject *python_mesh_core(PyObject *obj, bool tessellate)
 
 
   if(ps != nullptr){
-    if(tessellate == true) {
-      ps = PolySetUtils::tessellate_faces(*ps);
-    }
   // Now create Python Point array
     PyObject *ptarr = PyList_New(ps->vertices.size());  
     for(unsigned int i=0;i<ps->vertices.size();i++) {
@@ -2122,25 +2119,23 @@ PyObject *python_mesh_core(PyObject *obj, bool tessellate)
 
 PyObject *python_mesh(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = {"obj", "triangulate", NULL};
+  char *kwlist[] = {"obj", NULL};
   PyObject *obj = NULL;
-  PyObject *tess = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O", kwlist, &obj, &tess)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &obj)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
-  return python_mesh_core(obj, tess == Py_True);
+  return python_mesh_core(obj);
 }
 
 PyObject *python_oo_mesh(PyObject *obj, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = { "triangulate", NULL};
-  PyObject *tess = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O", kwlist, &tess)) {
+  char *kwlist[] = { NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "", kwlist)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
-  return python_mesh_core(obj, tess == Py_True);
+  return python_mesh_core(obj);
 }
 
 PyObject *python_oversample_core(PyObject *obj, int n, PyObject *round)
@@ -4099,6 +4094,46 @@ PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs, int mod
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, python_result_node);
 }
 
+PyObject *python_stdin(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  auto ret = PyUnicode_FromString(line_input.c_str());
+  line_input="";
+  return ret;
+}
+
+PyObject *python_stdout(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"message", NULL};
+  char *name = NULL;
+  const char *message = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist,
+                                   &message)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing stdout");
+    return NULL;
+  }
+  if(message != nullptr) {
+	  printf("(%s)%d\n",message, strlen(message));
+    LOG(message);	  
+  }
+  return Py_None;
+}
+
+PyObject *python_stderr(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"message", NULL};
+  char *name = NULL;
+  const char *message = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist,
+                                   &message)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing stderr");
+    return NULL;
+  }
+  if(message != nullptr) {
+    LOG(message_group::Error, message);	  
+  }
+  return Py_None;
+}
+
 PyMethodDef PyOpenSCADFunctions[] = {
   {"square", (PyCFunction) python_square, METH_VARARGS | METH_KEYWORDS, "Create Square."},
   {"circle", (PyCFunction) python_circle, METH_VARARGS | METH_KEYWORDS, "Create Circle."},
@@ -4179,6 +4214,9 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"align", (PyCFunction) python_align, METH_VARARGS | METH_KEYWORDS, "Align Object to another."},
   {"add_menuitem", (PyCFunction) python_add_menuitem, METH_VARARGS | METH_KEYWORDS, "Add Menuitem to the the openscad window."},
   {"model", (PyCFunction) python_model, METH_VARARGS | METH_KEYWORDS, "Yield Model"},
+  {"stdin", (PyCFunction) python_stdin, METH_VARARGS | METH_KEYWORDS, "Get Openscad input field"}, // internal function
+  {"stdout", (PyCFunction) python_stdout, METH_VARARGS | METH_KEYWORDS, "Output to OpenSCAD console"}, // internal function
+  {"stderr", (PyCFunction) python_stderr, METH_VARARGS | METH_KEYWORDS, "Output to OpenSCAD error"}, // internal function
   {NULL, NULL, 0, NULL}
 };
 
