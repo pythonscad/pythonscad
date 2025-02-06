@@ -2588,7 +2588,8 @@ PyObject *python_bbox(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   char *kwlist[] = {"obj", NULL};
   PyObject *obj = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &obj)) {
+  PyObject *tess = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O", kwlist, &obj, &tess)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }

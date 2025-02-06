@@ -18,6 +18,10 @@ void finishPython();
 void python_lock(void);
 void python_unlock(void);
 void ipython(void);
+#ifdef ENABLE_JUPYTER
+void python_startjupyter(void);
+extern std::string python_jupyterconfig;
+#endif
 
 std::shared_ptr<AbstractNode> python_modulefunc(const ModuleInstantiation *module,
                                                 const std::shared_ptr<const Context>& context,

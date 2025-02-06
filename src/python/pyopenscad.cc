@@ -43,6 +43,18 @@
 #include "primitives.h"
 namespace fs = std::filesystem;
 
+
+#include "xeus/xeus_context.hpp"
+#include "xeus/xkernel.hpp"
+#include "xeus/xkernel_configuration.hpp"
+#include "xeus/xserver.hpp"
+
+#include "xeus-zmq/xserver_zmq_split.hpp"
+#include "xeus-zmq/xzmq_context.hpp"
+
+#include "openscad_jupyter.h"
+
+
 // #define HAVE_PYTHON_YIELD
 extern "C" PyObject *PyInit_openscad(void);
 PyMODINIT_FUNC PyInit_PyOpenSCAD(void);
@@ -66,6 +78,7 @@ bool pythonDryRun = false;
 PyObject *python_result_obj = nullptr;
 std::vector<SelectedObject> python_result_handle;
 bool python_runipython = false;
+std::string python_jupyterconfig = "";
 bool pythonMainModuleInitialized = false;
 bool pythonRuntimeInitialized = false;
 
