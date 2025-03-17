@@ -12,10 +12,13 @@
 
 #include <boost/logic/tribool.hpp>
 
+#include "geometry/Geometry.h"
+#include "geometry/linalg.h"
 #include "geometry/GeometryUtils.h"
 #include "glview/RenderSettings.h"
 #include "core/LinearExtrudeNode.h"
 #include "geometry/PolySet.h"
+#include "geometry/Barcode1d.h"
 #include "geometry/PolySetBuilder.h"
 #include "geometry/PolySetUtils.h"
 #include "utils/calc.h"
@@ -507,7 +510,7 @@ size_t calc_num_slices(const LinearExtrudeNode& node, const Polygon2d& poly) {
 std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Polygon2d& poly)
 {
   assert(poly.isSanitized());
-  if (node.height[2] <= 0) return PolySet::createEmpty();
+//  if (node.height[2] <= 0) return PolySet::createEmpty();
 
   bool non_linear = node.twist != 0 || node.scale_x != node.scale_y;
   boost::tribool isConvex{poly.is_convex()};
@@ -571,12 +574,19 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
 
   const Polygon2d& polyref = is_segmented ? seg_poly : poly;
 
+  Vector3d height(0,0,1);
+  if(node.has_heightvector) height = node.height;
+  else {
+    auto mat = polyref.getTransform3d();
+    height = Vector3d(mat(0,2), mat(1,2), mat(2,2)).normalized()*node.height[2];		  
+   }
+
   Vector3d h1 = Vector3d::Zero();
-  Vector3d h2 = node.height;
+  Vector3d h2 = height;
 
   if (node.center) {
-    h1 -= node.height / 2.0;
-    h2 -= node.height / 2.0;
+    h1 -= height / 2.0;
+    h2 -= height / 2.0;
   }
 
 
@@ -616,10 +626,12 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
     } else 
 #endif
 {
-     for (const auto& o : polyref.outlines()) {
+     Transform3d tr = 	polyref.getTransform3d();
+     for (const auto& o : polyref.untransformedOutlines()) {
       for (const auto& v : o.vertices) {
         auto tmp = trans * v;
-        vertices.emplace_back(Vector3d(tmp[0], tmp[1], 0.0) + h1 + full_height * slice_idx / num_slices);
+	Vector3d tmp1 = tr*Vector3d(tmp[0], tmp[1], 0.0);
+        vertices.emplace_back(tmp1 + h1 + full_height * slice_idx / num_slices);
       }
       }
     }
@@ -652,3 +664,22 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
   return assemblePolySetForManifold(polyref, vertices, indices,
                                       node.convexity, isConvex, slice_stride * num_slices);
 }
+
+std::unique_ptr<Geometry> extrudeBarcode(const LinearExtrudeNode& node, const Barcode1d & barcode)
+{
+	Polygon2d p;
+	for(auto e : barcode.untransformedEdges()) {
+		Vector2d v1(e.begin,0);
+		Vector2d v2(e.begin,node.height[2]);
+		Vector2d v3(e.end,node.height[2]);
+		Vector2d v4(e.end,0);
+
+		Outline2d o;
+		o.vertices= {v1,v2,v3,v4};
+		p.addOutline(o);
+	}
+	p.transform3d(barcode.getTransform3d());
+	p.setSanitized(true);
+	return std::make_unique<Polygon2d>(p);
+}
+

@@ -1,4 +1,6 @@
 #include "core/CSGTreeEvaluator.h"
+#include "geometry/Geometry.h"
+#include "geometry/linalg.h"
 #include "core/State.h"
 #include "core/CsgOpNode.h"
 #include "core/ModuleInstantiation.h"
@@ -81,6 +83,19 @@ void CSGTreeEvaluator::applyToChildren(State& state, const AbstractNode& node, O
         t = t2;
         this->backgroundNodes.push_back(t1);
       } else {
+        auto t1l = std::dynamic_pointer_cast<CSGLeaf>(t1);
+	if(t1l != nullptr && t1l->is_2d) {
+	  Transform3d &m1 = t1l->matrix;
+	  for(int i=0;i<4;i++) {
+		  for(int j=0;j<4;j++) {
+			  printf("%g ",m1(i,j));
+		  }
+	  printf("\n");
+	  }
+	  printf("\n");
+
+	  t2->applyMatrix(m1);
+	}
         t = CSGOperation::createCSGNode(op, t1, t2);
       }
       // Handle highlight
@@ -121,6 +136,7 @@ void CSGTreeEvaluator::applyToChildren(State& state, const AbstractNode& node, O
       case OpenSCADOperator::HULL:
       case OpenSCADOperator::FILL:
       case OpenSCADOperator::RESIZE:
+      case OpenSCADOperator::OFFSET:
         break;
       }
       t1 = t;
@@ -173,7 +189,7 @@ Response CSGTreeEvaluator::visit(State& state, const class ListNode& node)
 
 // Creates a 1-unit-thick PolySet with dim==2 from a Polygon2d.
 std::shared_ptr<const PolySet> polygon2dToPolySet(const Polygon2d &p2d) {
-  const auto ps = p2d.tessellate();
+  const auto ps = p2d.tessellate(true);
   constexpr int dim = 2;
   // Estimating num vertices and polygons: top + bottom + sides
   PolySetBuilder builder(ps->vertices.size() * 2, 
@@ -199,15 +215,16 @@ std::shared_ptr<const PolySet> polygon2dToPolySet(const Polygon2d &p2d) {
   }
 
   // Create sides
-  for (const auto& o : p2d.outlines()) {
+  Transform3d tr= p2d.getTransform3d();
+  for (const auto& o : p2d.untransformedOutlines()) {
     for (size_t i = 0; i < o.vertices.size(); ++i) {
       const Vector2d &prev = o.vertices[i];
       const Vector2d &curr = o.vertices[(i+1)%o.vertices.size()];
       builder.appendPolygon({
-        Vector3d(prev[0], prev[1], -0.5),
-        Vector3d(curr[0], curr[1], -0.5),
-        Vector3d(curr[0], curr[1], 0.5),
-        Vector3d(prev[0], prev[1], 0.5),
+        tr*Vector3d(prev[0], prev[1], -0.5),
+        tr*Vector3d(curr[0], curr[1], -0.5),
+        tr*Vector3d(curr[0], curr[1], 0.5),
+        tr*Vector3d(prev[0], prev[1], 0.5),
       });
     }
   }
@@ -221,11 +238,13 @@ std::shared_ptr<CSGNode> CSGTreeEvaluator::evaluateCSGNodeFromGeometry(
   const ModuleInstantiation *modinst, const AbstractNode& node)
 {
   assert(geom);
+  bool is_2d=false;
   // We cannot render Polygon2d directly, so we convert it to a PolySet here
   std::shared_ptr<const PolySet> ps;
   if (!geom->isEmpty()) {
     if (auto p2d = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
       ps = polygon2dToPolySet(*p2d);
+      is_2d = true;
     }
     // 3D PolySets are tessellated before inserting into Geometry cache, inside GeometryEvaluator::evaluateGeometry
     else {
@@ -233,7 +252,8 @@ std::shared_ptr<CSGNode> CSGTreeEvaluator::evaluateCSGNodeFromGeometry(
     }
   }
 
-  std::shared_ptr<CSGNode> t(new CSGLeaf(ps, state.matrix(), state.color(), state.textureind(), STR(node.name(), node.index()), node.index()));
+  std::shared_ptr<CSGLeaf> t(new CSGLeaf(ps, state.matrix(), state.color(), state.textureind(), STR(node.name(), node.index()), node.index()));
+  t->is_2d = is_2d;
   if (modinst->isHighlight() || state.isHighlight()) t->setHighlight(true);
   if (modinst->isBackground() || state.isBackground()) t->setBackground(true);
   return t;

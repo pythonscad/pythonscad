@@ -32,9 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 #include <algorithm>
 #include <sstream>
 #include <math.h>
-#include "GeometryUtils.h"
-#include <Curve.h>
-#include <Surface.h>
+#include "src/geometry/GeometryUtils.h"
+#include <src/geometry/Curve.h>
+#include <src/geometry/Surface.h>
 
 class StepKernel
 {
@@ -334,7 +334,7 @@ public:
 		{
 			// #17 = ADVANCED_FACE('', (#18), #32, .T.);
 			stream_in << "#" << id << " = EDGE_LOOP('" << label << "', (";
-			for (int i = 0; i < faces.size(); i++)
+			for (size_t i = 0; i < faces.size(); i++)
 			{
 				stream_in << "#" << faces[i]->id;
 				if (i != faces.size() - 1)
@@ -417,7 +417,7 @@ public:
 		virtual void serialize(std::ostream& stream_in)
 		{
 			stream_in << "#" << id << " = ADVANCED_FACE('" << label << "', (";
-			for (int i = 0; i < faceBounds.size(); i++)
+			for (size_t i = 0; i < faceBounds.size(); i++)
 			{
 				stream_in << "#" << faceBounds[i]->id;
 				if (i != faceBounds.size() - 1)
@@ -476,7 +476,7 @@ public:
 			else
 				stream_in << "#" << id << " = CLOSED_SHELL('" << label << "',(";
 
-			for (int i = 0; i < faces.size(); i++)
+			for (size_t i = 0; i < faces.size(); i++)
 			{
 				stream_in << "#" << faces[i]->id;
 				if (i != faces.size() - 1)
@@ -518,7 +518,7 @@ public:
 		virtual void serialize(std::ostream& stream_in)
 		{
 			stream_in << "#" << id << " = SHELL_BASED_SURFACE_MODEL('" << label << "', (";
-			for (int i = 0; i < shells.size(); i++)
+			for (size_t i = 0; i < shells.size(); i++)
 			{
 				stream_in << "#" << shells[i]->id;
 				if(i != shells.size()-1)

@@ -467,24 +467,11 @@ message(STATUS "LibXml2: ${LIBXML2_VERSION_STRING}")
 target_include_directories(OpenSCAD SYSTEM PRIVATE ${LIBXML2_INCLUDE_DIR})
 target_link_libraries(OpenSCAD PRIVATE ${LIBXML2_LIBRARIES})
 
-find_package(Python COMPONENTS Interpreter Development)
-find_package(Nettle)
-if(NOT Nettle_FOUND)
-  if(ENABLE_PYTHON)
-    message(WARNING "Nettle not found, disabling python support.")
-    set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
-  endif()
-endif()
-if(NOT Python_FOUND  AND NOT WIN32)
-  if(ENABLE_PYTHON)
-    message(WARNING "Python not found, disabling python support.")
-    set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
-  endif()
-endif()
 if(ENABLE_PYTHON)
   SET(PYTHON_SOURCES
     src/python/pyopenscad.cc
     src/python/pydata.cc 
+    src/python/pymod.cc 
     src/python/pyfunctions.cc)
   if(ENABLE_LIBFIVE)
     list(APPEND PYTHON_SOURCES
@@ -515,6 +502,7 @@ if(ENABLE_PYTHON)
   message(STATUS "Python enabled, using Nettle ${Python_Eff_LIBRARIES}")
   target_compile_definitions(OpenSCAD PRIVATE ENABLE_PYTHON)
   target_compile_definitions(OpenSCADPy PRIVATE ENABLE_PYTHON)
+  find_package(Nettle 3.4)
   if(WIN32) 
     #MINGW environment	  
     SET(PYTHON_MINGW_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_mingw")
@@ -540,6 +528,17 @@ if(ENABLE_PYTHON)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
   else() #MXE
+    find_package(Python REQUIRED COMPONENTS Interpreter Development)
+    if(NOT Nettle_FOUND)
+      message(WARNING "Nettle not found, disabling python support.")
+      set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
+    endif()
+    if(NOT Python_FOUND  AND NOT WIN32)
+      if(ENABLE_PYTHON)
+        message(WARNING "Python not found, disabling python support.")
+        set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
+      endif()
+    endif()
     if("${PYTHON_VERSION}" STREQUAL "")
 	    SET(Python_Eff_LIBRARIES ${Python_LIBRARIES} )
 	    SET(Python_Eff_INCLUDE_DIRS ${Python_INCLUDE_DIRS} )
@@ -559,6 +558,9 @@ if(ENABLE_PYTHON)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
     target_link_libraries(OpenSCADPy PRIVATE ${Python_LIBRARIES})
   endif() # endif MXE
+  target_include_directories(OpenSCADPy PRIVATE ${Nettle_INCLUDE_DIRS})
+  target_link_libraries(OpenSCADPy PRIVATE ${Nettle_LIBRARIES})
+  add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink openscad${SUFFIX_WITH_DASH} "openscad-python")
   target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
   if(MSVC)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS}/harfbuzz)
@@ -569,9 +571,6 @@ if(ENABLE_PYTHON)
     target_include_directories(OpenSCADPy PRIVATE "/usr/local/include")
     target_link_directories(OpenSCADPy PRIVATE "/usr/local/lib")
     target_link_libraries(OpenSCADPy PRIVATE "libnettle.a")
-  else()
-    target_include_directories(OpenSCADPy PRIVATE ${Nettle_INCLUDE_DIRS})
-    target_link_libraries(OpenSCADPy PRIVATE ${Nettle_LIBRARIES})
   endif()   
   target_link_libraries(OpenSCADPy PRIVATE Eigen3::Eigen)
   target_link_libraries(OpenSCADPy PRIVATE ${GETTEXT_LIBRARY})
@@ -725,24 +724,6 @@ target_include_directories(OpenSCAD PRIVATE
   "src/ext"
   "src/ext/lexertl/include"
   "src/ext/libtess2/Include"
-
-  # All the following should go away, not needed anymore after
-  # PR #5312. Left here for now in case there are on-going PRs that
-  # rely on these. Should be removed soon.
-  "src/core"
-  "src/core/customizer"
-  "src/ext/json"
-  "src/ext"
-  "src/geometry"
-  "src/geometry/cgal"
-  "src/geometry/manifold"
-  "src/glview"
-  "src/glview/preview"
-  "src/glview/cgal"
-  "src/gui"
-  "src/io"
-  "src/platform"
-  "src/utils"
 )
 
 FLEX_TARGET(openscad_lexer src/core/lexer.l ${OPENSCAD_LIB_OUTPUT_DIR}/lexer.cxx DEFINES_FILE ${OPENSCAD_LIB_OUTPUT_DIR}/lexer.hxx COMPILE_FLAGS ${WINCOMPAT})
@@ -966,6 +947,8 @@ set(CORE_SOURCES
   src/core/DrawingCallback.cc
   src/core/EvaluationSession.cc
   src/core/Expression.cc
+  src/core/SkinNode.cc
+  src/core/ConcatNode.cc
   src/core/FreetypeRenderer.cc
   src/core/FunctionType.cc
   src/core/GroupModule.cc
@@ -1028,11 +1011,13 @@ set(CORE_SOURCES
   src/geometry/Curve.cc
   src/geometry/Surface.cc
   src/geometry/PolySetUtils.cc
-  src/geometry/rotextrude.cc
   src/geometry/Polygon2d.cc
+  src/geometry/Barcode1d.cc
   src/geometry/boolean_utils.cc
+  src/geometry/skin.cc
   src/geometry/linalg.cc
   src/geometry/linear_extrude.cc
+  src/geometry/rotate_extrude.cc
   src/glview/Camera.cc
   src/glview/ColorMap.cc
   src/glview/OffscreenContextFactory.cc
@@ -1228,6 +1213,7 @@ else()
     src/glview/OffscreenView.cc
     src/glview/cgal/CGALRenderer.cc
     src/glview/cgal/CGALRenderUtils.cc
+    src/glview/PolySetRenderer.cc
     src/glview/preview/OpenCSGRenderer.cc
     src/glview/preview/ThrownTogetherRenderer.cc
     src/io/export_png.cc
@@ -1281,6 +1267,7 @@ set(GUI_SOURCES
   src/gui/PrintService.cc
   src/gui/ExternalToolInterface.cc
   src/gui/ProgressWidget.cc
+  src/gui/RubberBandManager.cc
   src/gui/QGLView.cc
   src/gui/QGLView2.cc
   src/gui/QSettingsCached.cc
@@ -1350,6 +1337,7 @@ set(GUI_HEADERS
     src/gui/PrintInitDialog.h
     src/gui/PrintService.h
     src/gui/ProgressWidget.h
+    src/gui/RubberBandManager.h
     src/gui/QGLView.h
     src/gui/QSettingsCached.h
     src/gui/QWordSearchField.h
@@ -1563,6 +1551,9 @@ endif()
 if(NOT APPLE OR APPLE_UNIX)
   set_target_properties(OpenSCAD PROPERTIES OUTPUT_NAME openscad${SUFFIX_WITH_DASH})
   install(TARGETS OpenSCAD RUNTIME DESTINATION "${OPENSCAD_BINDIR}")
+  if(ENABLE_PYTHON)
+    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/openscad-python DESTINATION "${OPENSCAD_BINDIR}")
+  endif()
   if(WIN32)
     if(ENABLE_PYTHON)
       install(FILES ${CMAKE_SOURCE_DIR}/python311.dll DESTINATION "." )

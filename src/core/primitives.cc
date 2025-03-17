@@ -25,12 +25,15 @@
  */
 
 #include "core/primitives.h"
+#include "geometry/Geometry.h"
+#include "geometry/linalg.h"
 #include "core/Builtins.h"
 #include "core/Children.h"
 #include "core/ModuleInstantiation.h"
 #include "core/Parameters.h"
 #include "geometry/PolySet.h"
 #include "geometry/Polygon2d.h"
+#include "geometry/Barcode1d.h"
 #include "utils/calc.h"
 #include "core/node.h"
 #include "utils/degree_trig.h"
@@ -214,7 +217,7 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
   polyset->vertices.reserve(num_rings * num_fragments);
 
   // double offset = 0.5 * ((fragments / 2) % 2);
-  for (int i = 0; i < num_rings; ++i) {
+  for (size_t i = 0; i < num_rings; ++i) {
     //                double phi = (180.0 * (i + offset)) / (fragments/2);
     const double phi = (180.0 * (i + 0.5)) / num_rings;
     const double radius = r * sin_degrees(phi);
@@ -226,7 +229,7 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
     polyset->indices.back().push_back(i);
   }
 
-  for (int i = 0; i < num_rings - 1; ++i) {
+  for (size_t i = 0; i < num_rings - 1; ++i) {
     for (int r=0;r<num_fragments;++r) {
       polyset->indices.push_back({
         i*num_fragments+(r+1)%num_fragments,
@@ -505,6 +508,19 @@ static std::shared_ptr<AbstractNode> builtin_polyhedron(const ModuleInstantiatio
   return node;
 }
 
+std::unique_ptr<const Geometry> EdgeNode::createGeometry() const
+{
+  if (this->size <= 0 ) return std::make_unique<Polygon2d>();
+
+  double beg=0;
+  double end=size;
+  if(center) { beg = -size/2; end = size/2; }
+  else { beg=0; end=size; }
+
+  Edge1d e(beg,end);
+  Barcode1d b(e);
+  return std::make_unique<Barcode1d>(b);
+}
 
 std::unique_ptr<const Geometry> SquareNode::createGeometry() const
 {

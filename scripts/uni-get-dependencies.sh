@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # auto-install dependency packages using the systems package manager.
 # after running this, run ./script/check-dependencies.sh. see README.md
 #
@@ -108,8 +110,9 @@ get_debian_deps()
   libeigen3-dev libcgal-dev libopencsg-dev libgmp-dev \
   imagemagick libfreetype6-dev libdouble-conversion-dev libxml2-dev \
   gtk-doc-tools libglib2.0-dev gettext xvfb pkg-config ragel libtbb-dev \
-  libgl1-mesa-dev libxi-dev libxmu-dev libfontconfig-dev libzip-dev
- get_qt5_deps_debian
+  libgl1-mesa-dev libxi-dev libxmu-dev libfontconfig-dev libzip-dev libjpeg-dev libjpeg-dev \
+  python3-dev nettle-dev
+ get_qt5_deps_debian 
 }
 
 get_qt5_deps_debian()
@@ -182,6 +185,12 @@ if [ -e /etc/issue ]; then
  elif [ "`command -v rpm`" ]; then
   if [ "`rpm -qa | grep altlinux`" ]; then
    get_altlinux_deps
+  fi
+ elif [ -e /etc/os-release -o -e /usr/lib/os-release ]; then
+  test -e /etc/os-release && os_release="/etc/os-release" || os_release="/usr/lib/os-release"
+  . "${os_release}"
+  if [ "${ID:-linux}" = "debian" ] || [ "${ID_LIKE#*debian*}" != "${ID_LIKE}" ]; then
+   get_debian_deps
   fi
  else
   unknown

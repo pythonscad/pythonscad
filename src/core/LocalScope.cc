@@ -78,7 +78,7 @@ void LocalScope::print_python(std::ostream& stream, std::ostream& stream_def, co
     this->moduleInstantiations[0]->print_python(stream, stream_def, indent, inlined, context_mode);
   } else {
     if(context_mode != 2) stream << "[\n";	  
-    for (int i=0; i<this->moduleInstantiations.size();i++) {
+    for (size_t i=0; i<this->moduleInstantiations.size();i++) {
       if(i > 0) stream << ",\n";	    
       this->moduleInstantiations[i]->print_python(stream, stream_def, indent+"  ", inlined, context_mode);
     }
@@ -93,7 +93,16 @@ std::shared_ptr<AbstractNode> LocalScope::instantiateModules(const std::shared_p
   for (const auto& modinst : this->moduleInstantiations) {
     auto node = modinst->evaluate(context);
     if (node) {
-      target->children.push_back(node);
+      // GroupNode can pass its children through to parent without an implied union.
+      // This might later be handled by GeometryEvaluator, but for now just completely
+      // remove the GroupNode from the tree.
+      std::shared_ptr<GroupNode> gr= std::dynamic_pointer_cast<GroupNode>(node);
+      if (gr && !gr->getImpliedUnion()) {
+        target->children.insert(target->children.end(), node->children.begin(), node->children.end());
+        node->children.clear();
+      }
+      else
+        target->children.push_back(node);
     }
   }
   return target;
@@ -105,7 +114,16 @@ std::shared_ptr<AbstractNode> LocalScope::instantiateModules(const std::shared_p
     assert(index < this->moduleInstantiations.size());
     auto node = moduleInstantiations[index]->evaluate(context);
     if (node) {
-      target->children.push_back(node);
+      // GroupNode can pass its children through to parent without an implied union.
+      // This might later be handled by GeometryEvaluator, but for now just completely
+      // remove the GroupNode from the tree.
+      std::shared_ptr<GroupNode> gr= std::dynamic_pointer_cast<GroupNode>(node);
+      if (gr && !gr->getImpliedUnion()) {
+        target->children.insert(target->children.end(), node->children.begin(), node->children.end());
+        node->children.clear();
+      }
+      else
+        target->children.push_back(node);
     }
   }
   return target;

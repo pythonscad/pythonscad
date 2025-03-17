@@ -1,12 +1,17 @@
 #include "geometry/GeometryEvaluator.h"
+#include "geometry/Geometry.h"
+#include "geometry/linalg.h"
 #include "core/Tree.h"
 #include "geometry/GeometryCache.h"
 #include "geometry/Polygon2d.h"
+#include "geometry/Barcode1d.h"
 #include "core/ModuleInstantiation.h"
 #include "core/State.h"
 #include "core/ColorNode.h"
 #include "core/OffsetNode.h"
 #include "core/TransformNode.h"
+#include "core/SkinNode.h"
+#include "core/ConcatNode.h"
 #include "core/LinearExtrudeNode.h"
 #include "core/PathExtrudeNode.h"
 #include "core/RoofNode.h"
@@ -16,7 +21,6 @@
 #include "core/PullNode.h"
 #include "core/DebugNode.h"
 #include "core/WrapNode.h"
-#include "geometry/rotextrude.h"
 #include "core/CgalAdvNode.h"
 #include "core/ProjectionNode.h"
 #include "core/CsgOpNode.h"
@@ -30,22 +34,19 @@
 #include "utils/calc.h"
 #include "utils/printutils.h"
 #include "utils/calc.h"
-#include "io/DxfData.h"
 #include "glview/RenderSettings.h"
 #include "utils/degree_trig.h"
-#include <cmath>
 #include <iterator>
 #include <cassert>
 #include <list>
 #include <utility>
 #include <memory>
-#include <algorithm>
-#include "utils/boost-utils.h"
 #include "geometry/boolean_utils.h"
-#include <hash.h>
-#include <Selection.h>
-#ifdef ENABLE_CGAL
+#include <src/utils/hash.h>
+#include <src/core/Selection.h>
 #include "geometry/cgal/CGALCache.h"
+#include <unordered_set>
+#ifdef ENABLE_CGAL
 #include "geometry/cgal/cgalutils.h"
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/Point_2.h>
@@ -54,6 +55,8 @@
 #include "geometry/manifold/manifoldutils.h"
 #endif
 #include "geometry/linear_extrude.h"
+#include "geometry/rotate_extrude.h"
+#include "geometry/skin.h"
 
 
 #ifdef ENABLE_PYTHON
@@ -763,9 +766,12 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren(const Abstrac
   for (const auto& item : this->visitedchildren[node.index()]) {
     if (!isValidDim(item, dim)) break;
   }
-  if (dim == 2) return ResultObject::mutableResult(std::shared_ptr<Geometry>(applyToChildren2D(node, op)));
-  else if (dim == 3) return applyToChildren3D(node, op);
-  return {};
+  switch(dim) {
+    case 1: return ResultObject::mutableResult(std::shared_ptr<Geometry>(applyToChildren1D(node, op)));
+    case 2: return ResultObject::mutableResult(std::shared_ptr<Geometry>(applyToChildren2D(node, op)));
+    case 3:  return applyToChildren3D(node, op);
+    default: return {};
+  }	     
 }
 
 int cut_face_face_face(Vector3d p1, Vector3d n1, Vector3d p2,Vector3d n2, Vector3d p3, Vector3d n3, Vector3d &res,double *detptr)
@@ -889,21 +895,21 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet> &p
 
   intList empty;
   std::vector<std::vector<int>> corner_rounds ;
-  for(int i=0;i<ps->vertices.size();i++) corner_rounds.push_back(empty);
+  for(size_t i=0;i<ps->vertices.size();i++) corner_rounds.push_back(empty);
   std::vector<Vector3f> verticesFloat;
   for(const auto &v: ps->vertices)
     verticesFloat.push_back(v.cast<float>());
  
   std::vector<Vector4d>  faceNormals;
   // process all faces and bulid a prisma on top of it
-  for(int a=0;a<indicesNew.size();a++) {
+  for(size_t a=0;a<indicesNew.size();a++) {
     Vector4d  faceNormal=calcTriangleNormal(ps->vertices, indicesNew[a]);
     faceNormals.push_back(faceNormal);
     if(faceParents[a] != -1) continue;	  // its a hole
 
     std::vector<IndexedFace> face_set;
     face_set.push_back(indicesNew[a]);
-    for(int b=0;b<faceParents.size();b++)
+    for(size_t b=0;b<faceParents.size();b++)
       if(faceParents[b] == a)
         face_set.push_back(indicesNew[b]);
 
@@ -1031,12 +1037,12 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet> &p
     }
     // end wall
     builder.beginPolygon(n+1);
-    for(int i=0;i<end_inds.size();i++)
+    for(size_t i=0;i<end_inds.size();i++)
       builder.addVertex(end_inds[i]);
     builder.addVertex(endpt);
 
     // top rounding
-    for(int i=0;i<n-1;i++) {
+    for(size_t i=0;i<n-1;i++) {
       builder.appendPolygon({start_inds[i],start_inds[i+1],  end_inds[i+1], end_inds[i]});
     }
    
@@ -1089,10 +1095,10 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet> &p
     bool done=true;
     while(stubs.size() > 0 && done) {
       done=false;
-      for(int i=0;i<stubs.size();i++)
+      for(size_t i=0;i<stubs.size();i++)
       {
         if(stubs[i][0] == conn) {
-          for(int j=1;j<stubs[i].size();j++) {
+          for(size_t j=1;j<stubs[i].size();j++) {
             combined.push_back(stubs[i][j]);                
           }                
           stubs.erase(stubs.begin()+i);
@@ -1129,7 +1135,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet> &p
 
     cxt.invmat = mat.inverse();
 
-    for(int i=0;i<combined.size();i++) {
+    for(size_t i=0;i<combined.size();i++) {
       Vector3d pt=vertices[combined[i]];    
       Vector2d pt2=(cxt.invmat*Vector4d(pt[0], pt[1], pt[2],1)).head<2>();
       if(i == 0 || pt2[0] < cxt.minx) cxt.minx=pt2[0];
@@ -1202,7 +1208,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet> &p
     // assume biggest one is main
     assert(triangles_merged.size() > 0);
     int bigind=0;
-    for(int i=1;i<triangles_merged.size();i++)
+    for(size_t i=1;i<triangles_merged.size();i++)
       if(triangles_merged[i].size() > triangles_merged[bigind].size())
         bigind=i;	      
     auto inner = triangles_merged[bigind];
@@ -1217,7 +1223,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet> &p
     int inner_n = inner.size();
 
     double dist_min;
-    for(int i=0;i<inner.size();i++) {
+    for(size_t i=0;i<inner.size();i++) {
       double dist = (vertices[inner[i]] - vertices[combined[combined_ind]]).norm();
       if(inner_ind == -1  || dist < dist_min) {
         inner_ind=i;	      
@@ -1225,7 +1231,6 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet> &p
       }
     }
     int inner_ind_start = inner_ind;
-    int combined_ind_start = combined_ind;
     do {
       double dist1 = (vertices[inner[(inner_ind+inner_n-1)%inner_n]] - vertices[combined[combined_ind]]).norm(); // prog inner
       double dist2 = (vertices[inner[inner_ind]] - vertices[combined[(combined_ind+1)%combined_n]]).norm(); // prog combined
@@ -1271,19 +1276,19 @@ std::unique_ptr<const Geometry> addFillets(std::shared_ptr<const Geometry> resul
   std::unordered_set<Vector3d> points;
   Vector3d pt;
   std::shared_ptr<const PolySet> psr = PolySetUtils::getGeometryAsPolySet(result);
-  for(const Vector3d pt : psr->vertices){
+  for(const Vector3d &pt : psr->vertices){
     points.insert(createFilletRound(pt));
   }
 
-  for(const auto child: children) {
+  for(const auto &child: children) {
     std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(child.second);
-    for(const Vector3d pt : ps->vertices) {
+    for(const Vector3d &pt : ps->vertices) {
       points.erase(createFilletRound(pt));
     }
   }
 
   std::vector<bool> corner_selected;
-  for(int i=0;i<psr->vertices.size();i++) corner_selected.push_back(points.count(createFilletRound(psr->vertices[i]))>0?true:false);
+  for(size_t i=0;i<psr->vertices.size();i++) corner_selected.push_back(points.count(createFilletRound(psr->vertices[i]))>0?true:false);
 
   return  createFilletInt(psr,corner_selected, r, fn,30.0);
 
@@ -1373,7 +1378,9 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
         geom ={actualchildren.front().second};
         break;
       default:
+#ifdef ENABLE_CGAL	
         geom = {CGALUtils::applyUnion3D(*node1, actualchildren.begin(), actualchildren.end())};
+#endif	
 	break;
     }
  
@@ -1490,6 +1497,44 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyMinkowski2D(const AbstractNod
     return ClipperUtils::applyMinkowski(children);
   }
   return nullptr;
+}
+
+/*!
+   Returns a list of Polygon2d children of the given node.
+   May return empty Polygon2d object, but not nullptr objects
+ */
+std::vector<std::shared_ptr<const Barcode1d>> GeometryEvaluator::collectChildren1D(const AbstractNode& node)
+{
+  std::vector<std::shared_ptr<const Barcode1d>> children;
+  for (const auto& item : this->visitedchildren[node.index()]) {
+    auto& chnode = item.first;
+    auto& chgeom = item.second;
+    if (chnode->modinst->isBackground()) continue;
+
+    // NB! We insert into the cache here to ensure that all children of
+    // a node is a valid object. If we inserted as we created them, the
+    // cache could have been modified before we reach this point due to a large
+    // sibling object.
+    smartCacheInsert(*chnode, chgeom);
+
+    if (chgeom) {
+      if (chgeom->getDimension() != 1) {
+        LOG(message_group::Warning, item.first->modinst->location(), this->tree.getDocumentPath(), "Ignoring other child object for 1D operation");
+        children.push_back(nullptr); // replace 3D geometry with empty geometry
+      } else {
+        if (chgeom->isEmpty()) {
+          children.push_back(nullptr);
+        } else {
+          const auto barcode1d = std::dynamic_pointer_cast<const Barcode1d>(chgeom);
+          assert(barcode1d);
+          children.push_back(barcode1d);
+        }
+      }
+    } else {
+      children.push_back(nullptr);
+    }
+  }
+  return children;
 }
 
 /*!
@@ -1657,9 +1702,23 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyToChildren2D(const AbstractNo
         // circular arc is ... Pi / acos(1 - arc_tolerance / abs(delta))
         double n = Calc::get_fragments_from_r(std::abs(offNode->delta), 360.0, offNode->fn, offNode->fs, offNode->fa);
         double arc_tolerance = std::abs(offNode->delta) * (1 - cos_degrees(180 / n));
-        return   ClipperUtils::applyOffset(*pol, offNode->delta, offNode->join_type, offNode->miter_limit, arc_tolerance);
+        auto r1 = ClipperUtils::applyOffset(*pol, offNode->delta, offNode->join_type, offNode->miter_limit, arc_tolerance);
+	return r1;
   }
   return pol;
+}
+
+std::unique_ptr<Barcode1d> GeometryEvaluator::applyToChildren1D(const AbstractNode& node, OpenSCADOperator op)
+{
+  node.progress_report();
+  std::vector<std::shared_ptr<const Barcode1d> > children = collectChildren1D(node);
+
+  if (children.empty()) {
+    return nullptr;
+  }
+
+  auto result = std::make_unique<Barcode1d>(*children[0]);
+  return result;
 }
 
 /*!
@@ -1950,28 +2009,30 @@ Response GeometryEvaluator::visit(State& state, const TransformNode& node)
         // First union all children
         ResultObject res = applyToChildren(node, OpenSCADOperator::UNION);
         if ((geom = res.constptr())) {
-          if (geom->getDimension() == 2) {
-            auto polygons =  std::dynamic_pointer_cast<Polygon2d>(res.asMutableGeometry());
-            assert(polygons);
+          switch(geom->getDimension()) {
+            case 1:{
+              auto barcode =  std::dynamic_pointer_cast<Barcode1d>(res.asMutableGeometry());
+              assert(barcode);
 
-            Transform2d mat2;
-            mat2.matrix() <<
-              node.matrix(0, 0), node.matrix(0, 1), node.matrix(0, 3),
-              node.matrix(1, 0), node.matrix(1, 1), node.matrix(1, 3),
-              node.matrix(3, 0), node.matrix(3, 1), node.matrix(3, 3);
-            polygons->transform(mat2);
-            // FIXME: We lose the transform if we copied a const geometry above. Probably similar issue in multiple places
-            // A 2D transformation may flip the winding order of a polygon.
-            // If that happens with a sanitized polygon, we need to reverse
-            // the winding order for it to be correct.
-            if (polygons->isSanitized() && mat2.matrix().determinant() <= 0) {
-              geom = ClipperUtils::sanitize(*polygons);
-            }
-          } else if (geom->getDimension() == 3) {
+              geom = barcode;
+              barcode->transform3d(node.matrix);
+            } 
+            break;
+           case 2:{
+              auto polygons =  std::dynamic_pointer_cast<Polygon2d>(res.asMutableGeometry());
+              assert(polygons);
+
+              geom = polygons;
+              polygons->transform3d(node.matrix);
+            } 
+            break;
+          case 3:{
             auto mutableGeom = res.asMutableGeometry();
             if (mutableGeom) mutableGeom->transform(node.matrix);
             geom = mutableGeom;
           }
+          break;
+	  } // switch
         }
       }
     } else {
@@ -2273,6 +2334,67 @@ static std::unique_ptr<Geometry> extrudePolygon(const PathExtrudeNode& node, con
 }
 
 /*!
+  input: List of 2D objects arranged in 3D, each with identical outline count and vertex count
+  output: 3D PolySet
+ */
+Response GeometryEvaluator::visit(State &state, const SkinNode &node)
+{
+  if (state.isPrefix() && isSmartCached(node)) return Response::PruneTraversal;
+  if (state.isPostfix()) {
+    std::shared_ptr<const Geometry> geom = isSmartCached(node)? smartCacheGet(node, false)
+      : skinPolygonSequence(node, collectChildren2D(node), node.modinst->location(), this->tree.getDocumentPath());
+    addToParent(state, node, geom);
+    node.progress_report();
+  }
+  return Response::ContinueTraversal;
+}
+/*!
+  input: List of 2D objects arranged in 3D, each with identical outline count and vertex count
+  output: 3D PolySet
+ */
+
+double concat_round(double x)
+{
+  if(x > 0) return  ((int)(x*1000+0.5))/1000.0;
+  if(x < 0) return -((int)(-x*1000+0.5))/1000.0;
+  return 0;
+}
+Response GeometryEvaluator::visit(State& state, const ConcatNode& node)
+{
+  if (state.isPrefix() && isSmartCached(node)) return Response::PruneTraversal;
+  if (state.isPostfix()) {
+    std::shared_ptr<const Geometry> geom;
+    if (!isSmartCached(node)) {
+  	Geometry::Geometries children = collectChildren3D(node);
+        PolySetBuilder builder(0,0,3,true);
+	for(const auto &child : children) {
+          const auto ps = std::dynamic_pointer_cast<const PolySet>(child.second);
+	  if(ps == nullptr) {
+            LOG(message_group::Error, "Concat only works for PolySet Data");
+            continue;			    
+	  }
+	  for(const auto &face:ps->indices) {
+            builder.beginPolygon(face.size());		  
+            for(int ind: face) {
+              Vector3d pt=ps->vertices[ind];		    
+	      pt[0]=concat_round(pt[0]);
+	      pt[1]=concat_round(pt[1]);
+	      pt[2]=concat_round(pt[2]);
+	      builder.addVertex(pt);
+	    }		    
+	  }
+	}
+	geom = builder.build();
+    } else {
+      geom = smartCacheGet(node, false);
+    }
+    addToParent(state, node, geom);
+    node.progress_report();
+  }
+  return Response::ContinueTraversal;
+}
+
+/*!
    input: List of 2D objects
    output: 3D PolySet
    operation:
@@ -2281,14 +2403,20 @@ static std::unique_ptr<Geometry> extrudePolygon(const PathExtrudeNode& node, con
  */
 Response GeometryEvaluator::visit(State& state, const LinearExtrudeNode& node)
 {
+  // TODO linear_extrude here
   if (state.isPrefix() && isSmartCached(node)) return Response::PruneTraversal;
   if (state.isPostfix()) {
     std::shared_ptr<const Geometry> geom;
     if (!isSmartCached(node)) {
-      const std::shared_ptr<const Geometry> geometry = applyToChildren2D(node, OpenSCADOperator::UNION);
+      ResultObject res = applyToChildren(node, OpenSCADOperator::UNION);
+      const std::shared_ptr<const Geometry> geometry = res.constptr();
       if (geometry) {
         const auto polygons = std::dynamic_pointer_cast<const Polygon2d>(geometry);
-        geom = extrudePolygon(node, *polygons);
+        const auto barcode1d = std::dynamic_pointer_cast<const Barcode1d>(geometry);
+
+	if(polygons != nullptr) geom = extrudePolygon(node, *polygons);
+	if(barcode1d != nullptr) geom = extrudeBarcode(node, *barcode1d);
+
         assert(geom);
       }
     } else {
@@ -2462,7 +2590,7 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
     // find leftmost point		 
     int n=p.size();
     int minind=0;
-    for(int j=1;j<p.size();j++) {
+    for(size_t j=1;j<p.size();j++) {
       if(ps->vertices[p[j]][0] < ps->vertices[p[minind]][0])
       minind=j;		
     }
@@ -2506,13 +2634,13 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
 									      
       double ang, rad;
 
-      for(int j=0;j<curslice.size();j++) {
+      for(size_t j=0;j<curslice.size();j++) {
         auto &pt = curslice[j];
         ang=pt[0]/node.r;
         rad = node.r-pt[1];
         pt=Vector3d(rad*cos(ang),rad*sin(ang),pt[2]);
       }
-      for(int j=0;j<curslice.size()-2;j++) {
+      for(size_t j=0;j<curslice.size()-2;j++) {
         builder.beginPolygon(curslice.size());	  
         builder.addVertex(curslice[0]);	    
         builder.addVertex(curslice[j+1]);	    
@@ -2563,7 +2691,7 @@ static std::unique_ptr<PolySet> debugObject(const DebugNode& node, const PolySet
   Color4f debug_color = Color4f(255,0,0,255);
   int colorind = psx->colors.size();
   psx->colors.push_back(debug_color);    
-  for(int i=0;i<node.faces.size();i++) {
+  for(size_t i=0;i<node.faces.size();i++) {
    int ind=node.faces[i];
    psx->color_indices[ind] = colorind;
   }

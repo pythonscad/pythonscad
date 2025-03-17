@@ -43,7 +43,6 @@
 using namespace boost::assign; // bring 'operator+=()' into scope
 
 #include <filesystem>
-namespace fs = std::filesystem;
 
 namespace {
 std::shared_ptr<AbstractNode> builtin_linear_extrude(const ModuleInstantiation *inst, Arguments arguments, const Children& children)
@@ -70,6 +69,7 @@ std::shared_ptr<AbstractNode> builtin_linear_extrude(const ModuleInstantiation *
       LOG(message_group::Error, "v when specified should be a 3d vector.");
     }
     height = 1.0;
+    node->has_heightvector=true;
   }
   const Value& heightValue = parameters[{"height", "h"}];
   if (heightValue.isDefined()) {

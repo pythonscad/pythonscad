@@ -25,17 +25,17 @@
 
 #include "export.h"
 
-#include "PolySet.h"
-#include "cgalutils.h"
-#include "PolySetUtils.h"
+#include "src/geometry/PolySet.h"
+#include "src/geometry/cgal/cgalutils.h"
+#include "src/geometry/PolySetUtils.h"
 #include <unordered_map>
-#include "boost-utils.h"
-#include <hash.h>
+#include "src/utils/boost-utils.h"
+#include <src/utils/hash.h>
 #include <cairo.h>
 #include <cairo-pdf.h>
 
 #include "export_foldable.h"
-#include "GeometryEvaluator.h"
+#include "src/geometry/GeometryEvaluator.h"
 
 
 Vector2d pointrecht(Vector2d x)
@@ -380,7 +380,7 @@ std::vector<sheetS> fold_3d(std::shared_ptr<const PolySet> ps, const plotSetting
   std::vector<int> faceParents;
   std::vector<IndexedFace> faces = mergeTriangles(ps->indices, normals,newNormals, faceParents, ps->vertices);
   unsigned int i,j,k;
-  int  glue,num,cont,success,drawn,other;
+  int  glue,num=0,cont,success,drawn,other;
   int facesdone=0,facestodo;
 //  for(int i=0;i<faces.size();i++)
 //  {
@@ -420,7 +420,7 @@ std::vector<sheetS> fold_3d(std::shared_ptr<const PolySet> ps, const plotSetting
 
       // TODO stupid workaround
       int oppface=-1;
-      int opppos;
+      int opppos=0;
       for(unsigned int k=0;oppface == -1 && k<faces.size();k++)
       {
         IndexedFace &face1=faces[k];
@@ -629,7 +629,7 @@ std::vector<sheetS> fold_3d(std::shared_ptr<const PolySet> ps, const plotSetting
               p1=p1+px*lasche_eff*(0.5-0.27);
               p1=p1+py*lasche_eff*-0.35;
               lnew.pt=p1;
-              sprintf(lnew.text,"%d",num);
+              snprintf(lnew.text,sizeof(lnew.text), "%d",num);
               lnew.rot=atan2(py[1],py[0])*180.0/3.1415;
 	      lnew.size = lasche_eff;
               sheet.label.push_back(lnew);

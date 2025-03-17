@@ -554,6 +554,14 @@ file(GLOB SCAD_SVG_FILES      ${TEST_SCAD_DIR}/svg/svg-spec/*.scad
 )
 
 file(GLOB FEATURES_3D_FILES   ${TEST_SCAD_DIR}/3D/features/*.scad)
+list(REMOVE_ITEM FEATURES_3D_FILES
+  ${TEST_SCAD_DIR}/3D/features/skin_core-tests.scad # -> EXPERIMENTAL_SKIN_FILES
+  ${TEST_SCAD_DIR}/3D/features/skin_edge_case-tests.scad
+  ${TEST_SCAD_DIR}/3D/features/skin_linear_extrude-tests.scad
+  ${TEST_SCAD_DIR}/3D/features/skin_rotate_extrude-tests.scad
+  ${TEST_SCAD_DIR}/3D/features/skin_segments-tests.scad
+  ${TEST_SCAD_DIR}/3D/features/skin_offset-tests.scad
+)
 file(GLOB DEPRECATED_3D_FILES ${TEST_SCAD_DIR}/3D/deprecated/*.scad)
 file(GLOB ISSUES_3D_FILES     ${TEST_SCAD_DIR}/3D/issues/*.scad)
 file(GLOB SCAD_AMF_FILES           ${TEST_SCAD_DIR}/amf/*.scad)
@@ -717,7 +725,14 @@ list(APPEND STL_IMPORT_FILES
   ${TEST_SCAD_DIR}/stl/stl-import-invalidvertex.scad
   ${TEST_SCAD_DIR}/stl/stl-import-toomanyvertices.scad
   ${TEST_SCAD_DIR}/stl/stl-import-unparseable.scad
+  # result will not be empty
+  ${TEST_SCAD_DIR}/stl/stl-import-centered.scad
+  ${TEST_SCAD_DIR}/stl/stl-import-not-centered.scad
 )
+
+list(APPEND OBJ_IMPORT_FILES ${TEST_SCAD_DIR}/obj/obj-import-centered.scad)
+list(APPEND 3MF_IMPORT_FILES ${TEST_SCAD_DIR}/3mf/3mf-import-centered.scad)
+list(APPEND OFF_IMPORT_FILES ${TEST_SCAD_DIR}/off/off-import-centered.scad)
 
 list(GET RENDERTEST_2D_FILES 0 1 2 RENDERSTDIOTEST_FILES)
 list(APPEND RENDERTEST_FILES ${RENDERTEST_2D_FILES} ${RENDERTEST_3D_FILES} ${BUGS_FILES} ${BUGS_2D_FILES})
@@ -741,7 +756,7 @@ list(REMOVE_ITEM RENDERTEST_FILES
 list(APPEND RENDERFORCETEST_FILES ${TEST_SCAD_DIR}/3D/issues/issue5548.scad)
 
 set(PRUNE_TEST ${TEST_SCAD_DIR}/misc/intersection-prune-test.scad)
-list(APPEND PREVIEWTEST_FILES ${STL_IMPORT_FILES} ${RENDERTEST_FILES} ${PRUNE_TEST} ${PREVIEW_ONLY_FILES})
+list(APPEND PREVIEWTEST_FILES ${3MF_IMPORT_FILES} ${OBJ_IMPORT_FILES} ${OFF_IMPORT_FILES} ${STL_IMPORT_FILES} ${RENDERTEST_FILES} ${PRUNE_TEST} ${PREVIEW_ONLY_FILES})
 list(APPEND THROWNTOGETHERTEST_FILES ${RENDERTEST_FILES} ${PRUNE_TEST} ${PREVIEW_ONLY_FILES})
 
 list(APPEND COLOR_3D_TEST_FILES
@@ -842,6 +857,7 @@ list(APPEND SCADFILES_WITH_COLOR
   ${TEST_SCAD_DIR}/3D/features/color-tests.scad
   ${TEST_SCAD_DIR}/3D/features/color-tests2.scad
   ${TEST_SCAD_DIR}/3D/features/color-tests3.scad
+  ${TEST_SCAD_DIR}/3D/features/render-preserve-colors.scad
   ${TEST_SCAD_DIR}/3D/features/highlight-modifier.scad
   ${TEST_SCAD_DIR}/3D/features/linear_extrude-parameter-tests.scad
   ${TEST_SCAD_DIR}/3D/features/rotate-parameters.scad
@@ -900,6 +916,7 @@ list(APPEND SCADFILES_DIFFERENT_MANIFOLD_PREVIEW_EXPECTATIONS
   # render() in manifold mode preserves colors
   ${TEST_SCAD_DIR}/3D/features/render-tests.scad
   ${TEST_SCAD_DIR}/misc/internal-cavity.scad
+  ${TEST_SCAD_DIR}/3D/features/render-preserve-colors.scad
 
   # resize() in manifold mode preserves colors
   ${TEST_SCAD_DIR}/3D/features/resize-convexity-tests.scad
@@ -1013,6 +1030,7 @@ add_cmdline_test(astdumptest OPENSCAD SUFFIX ast FILES
   ${TEST_SCAD_DIR}/functions/assert-expression-fail2-test.scad
   ${TEST_SCAD_DIR}/functions/assert-expression-fail3-test.scad
   ${TEST_SCAD_DIR}/functions/assert-expression-tests.scad
+  ${TEST_SCAD_DIR}/functions/bitwise-operators.scad
   ${TEST_SCAD_DIR}/functions/echo-expression-tests.scad
   ${TEST_SCAD_DIR}/functions/expression-precedence-tests.scad
   ${TEST_SCAD_DIR}/functions/let-test-single.scad
@@ -1350,9 +1368,16 @@ add_cmdline_test(openscad-camvp-override      OPENSCAD FILES ${CAMERA_TEST_VP} S
 set(VIEW_OPTIONS_TEST "${TEST_SCAD_DIR}/3D/misc/view-options-tests.scad")
 add_cmdline_test(openscad-viewoptions-axes              OPENSCAD FILES ${VIEW_OPTIONS_TEST} SUFFIX png ARGS ${IMGSIZE} --camera=80,14,19,0,0,0 --viewall --view axes)
 add_cmdline_test(openscad-viewoptions-axes-scales       OPENSCAD FILES ${VIEW_OPTIONS_TEST} SUFFIX png ARGS ${IMGSIZE} --camera=80,14,19,0,0,0 --viewall --view axes,scales)
-add_cmdline_test(openscad-viewoptions-edges             OPENSCAD FILES ${VIEW_OPTIONS_TEST} SUFFIX png ARGS ${IMGSIZE} --camera=80,14,19,0,0,0 --viewall --view edges)
 add_cmdline_test(openscad-viewoptions-axes-scales-edges OPENSCAD FILES ${VIEW_OPTIONS_TEST} SUFFIX png ARGS ${IMGSIZE} --camera=80,14,19,0,0,0 --viewall --view axes,scales,edges)
 add_cmdline_test(openscad-viewoptions-crosshairs        OPENSCAD FILES ${VIEW_OPTIONS_TEST} SUFFIX png ARGS ${IMGSIZE} --camera=80,14,19,0,0,0 --viewall --render --view crosshairs)
+set(VIEW_OPTIONS_EDGES_TEST
+  ${VIEW_OPTIONS_TEST}
+  ${TEST_SCAD_DIR}/misc/cube10.scad
+  ${TEST_SCAD_DIR}/3D/features/render-preserve-colors.scad
+)
+add_cmdline_test(openscad-viewoptions-edges                 OPENSCAD FILES ${VIEW_OPTIONS_EDGES_TEST} SUFFIX png ARGS ${IMGSIZE} --camera=80,14,19,0,0,0 --viewall --view edges)
+add_cmdline_test(openscad-manifold-viewoptions-edges        OPENSCAD FILES ${VIEW_OPTIONS_EDGES_TEST} SUFFIX png ARGS ${IMGSIZE} --camera=80,14,19,0,0,0 --viewall --view edges --backend=manifold)
+add_cmdline_test(openscad-render-manifold-viewoptions-edges OPENSCAD FILES ${VIEW_OPTIONS_EDGES_TEST} SUFFIX png ARGS ${IMGSIZE} --camera=80,14,19,0,0,0 --viewall --view edges --render --backend=manifold)
 
 #
 # Colorscheme tests
@@ -1422,6 +1447,25 @@ add_cmdline_test(csgrendertest      EXPERIMENTAL SCRIPT ${EXPORT_IMPORT_PNGTEST_
 add_cmdline_test(rendertest         EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_TEXTMETRICS_FILES} ARGS --render --enable=textmetrics)
 add_cmdline_test(dxfrendertest      EXPERIMENTAL SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png ARGS ${OPENSCAD_EXE_ARG} --format=DXF --render=force --enable=textmetrics EXPECTEDDIR rendertest FILES ${EXPERIMENTAL_TEXTMETRICS_FILES})
 add_cmdline_test(svgrendertest      EXPERIMENTAL SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png ARGS ${OPENSCAD_EXE_ARG} --format=SVG --render=force --enable=textmetrics EXPECTEDDIR rendertest FILES ${EXPERIMENTAL_TEXTMETRICS_FILES})
+
+#
+# --enable=skin tests
+#
+list(APPEND EXPERIMENTAL_SKIN_FILES
+${TEST_SCAD_DIR}/3D/features/skin_core-tests.scad
+${TEST_SCAD_DIR}/3D/features/skin_edge_case-tests.scad
+${TEST_SCAD_DIR}/3D/features/skin_linear_extrude-tests.scad
+${TEST_SCAD_DIR}/3D/features/skin_rotate_extrude-tests.scad
+${TEST_SCAD_DIR}/3D/features/skin_segments-tests.scad
+${TEST_SCAD_DIR}/3D/features/skin_offset-tests.scad
+)
+add_cmdline_test(dumptest            EXPERIMENTAL OPENSCAD SUFFIX csg FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --enable=skin)
+add_cmdline_test(rendertest          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --render --enable=skin)
+add_cmdline_test(csgrendertest       EXPERIMENTAL SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} EXPECTEDDIR rendertest ARGS ${OPENSCAD_EXE_ARG} --format=csg --render --enable=skin)
+add_cmdline_test(rendermanifoldtest  EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} EXPECTEDDIR rendertest ARGS --render --enable=skin --backend=manifold)
+add_cmdline_test(previewtest         EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --enable=skin)
+add_cmdline_test(previewmanifoldtest EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --enable=skin --backend=manifold)
+add_cmdline_test(throwntogethertest  EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --preview=throwntogether --enable=skin)
 
 
 ############################
@@ -1506,9 +1550,14 @@ set_tests_properties(
   rendertest_empty-shape-tests
   csgrendertest_issue1258
 
-  # OpenCSG z fighting https://github.com/openscad/openscad/issues/4595
+  # The Apple SW renderer has a bug in the GLSL dFdy() function, used
+  # by GLSL fwidth(), which causes horizonal line artifacts when using
+  # wireframe rendering in preview model.
   openscad-viewoptions-edges_view-options-tests
   openscad-viewoptions-axes-scales-edges_view-options-tests
+  openscad-manifold-viewoptions-edges_view-options-tests
+
+  # OpenCSG z fighting
   previewtest_surface_image
   throwntogethertest_surface_image
 
@@ -1594,7 +1643,7 @@ set_tests_properties(
   rendermanifoldtest_issue2841b
   previewmanifoldtest_issue2841b
 
-  # OpenCSG z fighting https://github.com/openscad/openscad/issues/4595
+  # OpenCSG z fighting
   previewmanifoldtest_surface_image
 
   # https://github.com/openscad/openscad/issues/5158

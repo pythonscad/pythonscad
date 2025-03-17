@@ -24,14 +24,17 @@
  *
  */
 #include <Python.h>
+#include <filesystem>
+
 #include "pyopenscad.h"
-#include "CsgOpNode.h"
+#include "core/CsgOpNode.h"
 #include "Value.h"
 #include "Expression.h"
 #include "PlatformUtils.h"
 #include <Context.h>
 #include <Selection.h>
-#include "PlatformUtils.h"
+#include "platform/PlatformUtils.h"
+namespace fs = std::filesystem;
 
 
 #include "xeus/xeus_context.hpp"
@@ -46,8 +49,10 @@
 
 
 // #define HAVE_PYTHON_YIELD
-static PyObject *PyInit_openscad(void);
+extern "C" PyObject *PyInit_openscad(void);
 
+bool python_active;
+bool python_trusted;
 // https://docs.python.org/3.10/extending/newtypes.html
 
 void PyObjectDeleter (PyObject *pObject) { Py_XDECREF(pObject); };
@@ -61,8 +66,6 @@ bool pythonDryRun=false;
 std::shared_ptr<AbstractNode> python_result_node = nullptr; /* global result veriable containing the python created result */
 PyObject *python_result_obj = nullptr;
 std::vector<SelectedObject> python_result_handle;
-bool python_active;  /* if python is actually used during evaluation */
-bool python_trusted; /* global Python trust flag */
 bool python_runipython = false;
 std::string python_jupyterconfig = "";
 bool pythonMainModuleInitialized = false;
@@ -115,6 +118,7 @@ PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<Abs
   PyOpenSCADObject *self;
   self = (PyOpenSCADObject *)  type->tp_alloc(type, 0);
   if (self != nullptr) {
+    Py_XINCREF(self);
     self->node = node;
     return (PyObject *)self;
   }
@@ -135,6 +139,9 @@ void python_unlock(void) {
   if(pythonInitDict != nullptr)	tstate = PyEval_SaveThread();
 //#endif  
 }
+/*
+ *  extracts Absrtract Node from PyOpenSCAD Object
+ */
 
 /*
  *  parses either a PyOpenSCAD Object or an List of PyOpenScad Object and adds it to the list of supplied children, returns 1 on success
@@ -174,6 +181,12 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNode(PyObject *obj, PyObject **d
   return result;
 }
 
+std::string python_version(void)
+{
+  std::ostringstream stream;
+  stream << "Python " <<  PY_MAJOR_VERSION  <<  "."  <<  PY_MINOR_VERSION  << "." << PY_MICRO_VERSION ;
+  return stream.str();
+}
 
 /*
  * same as  python_more_obj but always returns only one AbstractNode by creating an UNION operation
@@ -338,7 +351,6 @@ int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y
 std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim) 
 {
   std::vector<Vector3d> results;	
-  Vector3d result;	
   if (PyList_Check(vec)) {
     // check if its a valid vec<Vector3d>
     int valid=1;
@@ -348,6 +360,7 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim)
     }	    
     if(valid) {
       for(int j=0;valid && j<PyList_Size(vec);j++) {
+        Vector3d result(0,0,0);	
         PyObject *item = PyList_GetItem(vec,j);
         if(PyList_Size(item) >= mindim && PyList_Size(item) <= maxdim) {	  
           for(int i=0;i<PyList_Size(item);i++) {
@@ -360,6 +373,7 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim)
       }	
       return results;
     }
+    Vector3d result(0,0,0);	
     if(PyList_Size(vec) >= mindim && PyList_Size(vec) <= maxdim) {	  
       for(int i=0;i<PyList_Size(vec);i++) {
         if (PyList_Size(vec) > i) {
@@ -369,6 +383,7 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim)
     }  
     results.push_back(result);
   }
+  Vector3d result(0,0,0);	
   if (!python_numberval(vec, &result[0])) {
     result[1] = result[0];
     result[2] = result[1];
@@ -384,28 +399,40 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim)
 void get_fnas(double& fn, double& fa, double& fs) {
   PyObject *mainModule = PyImport_AddModule("__main__");
   if (mainModule == nullptr) return;
-  PyObjectUniquePtr varFn(PyObject_GetAttrString(mainModule, "fn"),PyObjectDeleter);
-  PyObjectUniquePtr varFa(PyObject_GetAttrString(mainModule, "fa"),PyObjectDeleter);
+  fn=0;
+  fa=12;
+  fs=2;
+
+  if(PyObject_HasAttrString(mainModule,"fn")) {
+    PyObjectUniquePtr varFn(PyObject_GetAttrString(mainModule, "fn"),PyObjectDeleter);
+    if (varFn.get() != nullptr){
+      fn = PyFloat_AsDouble(varFn.get());
+    }
+  }  
+
+  if(PyObject_HasAttrString(mainModule,"fa")) {
+    PyObjectUniquePtr varFa(PyObject_GetAttrString(mainModule, "fa"),PyObjectDeleter);
+    if (varFa.get() != nullptr){
+      fa = PyFloat_AsDouble(varFa.get());
+    }
+  }
+
   PyObjectUniquePtr varFs(PyObject_GetAttrString(mainModule, "fs"),PyObjectDeleter);
-  if (varFn.get() != nullptr){
-    fn = PyFloat_AsDouble(varFn.get());
-  }
-  if (varFa.get() != nullptr){
-    fa = PyFloat_AsDouble(varFa.get());
-  }
-  if (varFs.get() != nullptr){
-    fs = PyFloat_AsDouble(varFs.get());
-  }
+  if(PyObject_HasAttrString(mainModule,"fs")) {
+    if (varFs.get() != nullptr){
+      fs = PyFloat_AsDouble(varFs.get());
+    }
+  }  
 }
 
 /*
  * Type specific init function. nothing special here
  */
 
-static int PyOpenSCADInit(PyOpenSCADObject *self, PyObject *arfs, PyObject *kwds)
+static int PyOpenSCADInit(PyOpenSCADObject *self, PyObject *args, PyObject *kwds)
 {
   (void)self;
-  (void)arfs;
+  (void)args;
   (void)kwds;
   return 0;
 }
@@ -413,7 +440,7 @@ Outline2d python_getprofile(void *v_cbfunc, int fn, double arg)
 {
 	PyObject *cbfunc = (PyObject *) v_cbfunc;
 	Outline2d result;
-	if(pythonInitDict == NULL)  initPython(0.0);
+	if(pythonInitDict == NULL)  initPython(PlatformUtils::applicationPath(),0.0);
 	PyObject* args = PyTuple_Pack(1,PyFloat_FromDouble(arg));
 	PyObject* polygon = PyObject_CallObject(cbfunc, args);
         Py_XDECREF(args);
@@ -483,7 +510,7 @@ PyObject *python_fromopenscad(const Value &val)
 	{
 	  const VectorType& vec = val.toVector();
   	  PyObject *result=PyList_New(vec.size());
-	  for(int j=0;j<vec.size();j++)
+	  for(size_t j=0;j<vec.size();j++)
 		PyList_SetItem(result,j,python_fromopenscad(vec[j]));
 	  return result;
 	}
@@ -686,8 +713,10 @@ void openscad_object_callback(PyObject *obj) {
 	}
 }
 #endif
-void initPython(double time)
+void initPython(const std::string& binDir, double time)
 {
+  const auto name = "openscad-python";
+  const auto exe = binDir + "/" + name;
   if(pythonInitDict) { /* If already initialized, undo to reinitialize after */
     PyObject *key, *value;
     Py_ssize_t pos = 0;
@@ -762,18 +791,37 @@ void initPython(double time)
     PyImport_AppendInittab("libfive", &PyInit_data);
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
-    std::string libdir;
+
+    std::string sep = "";
     std::ostringstream stream;
 #ifdef _WIN32
-    char sepchar = ';';
+    char sepchar = ':';
+    sep = sepchar;
     stream << PlatformUtils::applicationPath() << "\\..\\libraries\\python";
 #else
     char sepchar = ':';
-    stream << PlatformUtils::applicationPath() << "/../libraries/python";
-    stream << sepchar + PlatformUtils::applicationPath() << "/../lib/python"  <<  PY_MAJOR_VERSION  <<  "."  <<  PY_MINOR_VERSION ; // find it where linuxdeply put it
-#endif   
-    stream << sepchar << PlatformUtils::userLibraryPath() << sepchar << ".";
-    PyConfig_SetBytesString(&config, &config.pythonpath_env, stream.str().c_str());
+    const auto pythonXY = "python" + std::to_string(PY_MAJOR_VERSION) + "." + std::to_string(PY_MINOR_VERSION);
+    const std::array<std::string, 5> paths = {
+        "../libraries/python",
+        "../lib/" + pythonXY,
+        "../python/lib/" + pythonXY,
+        "../Frameworks/" + pythonXY,
+        "../Frameworks/" + pythonXY + "/site-packages",
+    };
+    for (const auto& path : paths) {
+        const auto p = fs::path(PlatformUtils::applicationPath() + fs::path::preferred_separator + path);
+        if (fs::is_directory(p)) {
+            stream << sep << fs::absolute(p).generic_string();
+            sep = sepchar;
+        }
+    }
+#endif
+    stream << sep << PlatformUtils::userLibraryPath();
+    stream << sepchar << ".";
+    
+    PyConfig_SetBytesString(&config, &config.program_name, name);
+    PyConfig_SetBytesString(&config, &config.executable, exe.c_str());
+
     PyStatus status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
       LOG( message_group::Error, "Python not found. Is it installed ?");
@@ -799,7 +847,7 @@ void initPython(double time)
 
   }
   std::ostringstream stream;
-  stream << "fa=12.0\nfn=0.0\nfs=2.0\nt=" << time << "\nphi=" << 2*G_PI*time;
+  stream << "t=" << time << "\nphi=" << 2*G_PI*time;
   PyRun_String(stream.str().c_str(), Py_file_input, pythonInitDict.get(), pythonInitDict.get());
   customizer_parameters_finished = customizer_parameters;
   customizer_parameters.clear();
@@ -831,7 +879,6 @@ std::string evaluatePython(const std::string & code, bool dry_run)
   std::string error;
   python_result_node = nullptr;
   python_result_handle.clear();
-  PyObject *pyExcType = nullptr;
   PyObjectUniquePtr pyExcValue (nullptr, PyObjectDeleter);
   PyObjectUniquePtr pyExcTraceback (nullptr, PyObjectDeleter);
   /* special python code to catch errors from stdout and stderr and make them available in OpenSCAD console */
@@ -851,6 +898,8 @@ class InputCatcher:\n\
       return self.data\n\
    def readline(self):\n\
       return self.data\n\
+   def isatty(self):\n\
+      return False\n\
 class OutputCatcher:\n\
    def __init__(self):\n\
       self.data = ''\n\
@@ -874,7 +923,9 @@ sys.stdout = stdout_bak\n\
 sys.stderr = stderr_bak\n\
 ";
 
+#ifndef ENABLE_PIP  
     PyRun_SimpleString(python_init_code);
+#endif    
 #ifdef HAVE_PYTHON_YIELD
     for(auto obj : python_orphan_objs) {
         Py_DECREF(obj);
@@ -885,6 +936,7 @@ sys.stderr = stderr_bak\n\
     result.reset(PyRun_String(code.c_str(), Py_file_input, pythonInitDict.get(), pythonInitDict.get())); /* actual code is run here */
 
 
+#ifndef ENABLE_PIP
     if(result  == nullptr) {
       PyErr_Print();
       error = ""; 
@@ -908,6 +960,7 @@ sys.stderr = stderr_bak\n\
       }
     }
     PyRun_SimpleString(python_exit_code);
+#endif    
     return error;
 }
 /*
@@ -983,7 +1036,7 @@ static PyModuleDef OpenSCADModule = {
   NULL, NULL, NULL, NULL
 };
 
-static PyObject *PyInit_openscad(void)
+extern "C" PyObject *PyInit_openscad(void)
 {
   return PyModule_Create(&OpenSCADModule);
 }
@@ -993,7 +1046,8 @@ PyMODINIT_FUNC PyInit_PyOpenSCAD(void)
   PyObject *m;
 
   if (PyType_Ready(&PyOpenSCADType) < 0) return NULL;
-  m = PyModule_Create(&OpenSCADModule);
+  
+  m =PyInit_openscad();
   if (m == NULL) return NULL;
 
   Py_INCREF(&PyOpenSCADType);
@@ -1040,7 +1094,6 @@ pymain_init(void)
 //    }
 //    status = 0; // PyStatus_Ok;
 
-done:
     PyConfig_Clear(&config);
     return status;
 }
@@ -1094,7 +1147,7 @@ pymain_repl(int *exitcode)
     }
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
 
-    int res = PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
+    PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
 }
 
 
@@ -1102,12 +1155,11 @@ static void
 pymain_run_python(int *exitcode)
 {
     PyObject *main_importer_path = NULL;
-    PyInterpreterState *interp = PyInterpreterState_Get();
+//    PyInterpreterState *interp = PyInterpreterState_Get();
 
     pymain_repl(exitcode);
     goto done;
 
-error:
 //    *exitcode = pymain_exit_err_print();
 
 done:
@@ -1137,7 +1189,7 @@ Py_RunMain(void)
 
 
 void ipython(void) {
-    initPython(0.0);
+    initPython(PlatformUtils::applicationPath(),0.0);
     Py_RunMain();
     return ;
 }

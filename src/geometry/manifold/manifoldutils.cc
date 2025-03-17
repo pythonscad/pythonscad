@@ -1,5 +1,7 @@
 // Portions of this file are Copyright 2023 Google LLC, and licensed under GPL2+. See COPYING.
 #include "geometry/manifold/manifoldutils.h"
+#include "geometry/Geometry.h"
+#include "geometry/linalg.h"
 #include "geometry/manifold/ManifoldGeometry.h"
 #include "geometry/PolySetBuilder.h"
 #include "Feature.h"
@@ -256,13 +258,13 @@ Polygon2d polygonsToPolygon2d(const manifold::Polygons& polygons) {
   return poly2d;
 }
 
-std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d& polygon2d)
+std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d& polygon2d, bool in3d)
 {
   auto polyset = std::make_unique<PolySet>(2);
   polyset->setTriangular(true);
 
   manifold::Polygons polygons;
-  for (const auto& outline : polygon2d.outlines()) {
+  for (const auto& outline : in3d? polygon2d.untransformedOutlines() : polygon2d.outlines()) {
     manifold::SimplePolygon simplePolygon;
     for (const auto& vertex : outline.vertices) {
       polyset->vertices.emplace_back(vertex[0], vertex[1], 0.0);

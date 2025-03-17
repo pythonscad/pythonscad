@@ -24,29 +24,31 @@
  *
  */
 
-#include "linalg.h"
-#include "GeometryUtils.h"
-#include "primitives.h"
-#include "TransformNode.h"
-#include "RotateExtrudeNode.h"
-#include "LinearExtrudeNode.h"
-#include "PathExtrudeNode.h"
-#include "PullNode.h"
-#include "DebugNode.h"
-#include "WrapNode.h"
-#include "OversampleNode.h"
-#include "FilletNode.h"
-#include "CgalAdvNode.h"
-#include "CsgOpNode.h"
-#include "ColorNode.h"
-#include "RoofNode.h"
-#include "RenderNode.h"
-#include "SurfaceNode.h"
-#include "TextNode.h"
-#include "OffsetNode.h"
-#include "TextureNode.h"
-#include "ProjectionNode.h"
-#include "ImportNode.h"
+#include "geometry/linalg.h"
+#include "geometry/GeometryUtils.h"
+#include "core/primitives.h"
+#include "core/TransformNode.h"
+#include "core/RotateExtrudeNode.h"
+#include "core/LinearExtrudeNode.h"
+#include "core/PathExtrudeNode.h"
+#include "core/PullNode.h"
+#include "core/DebugNode.h"
+#include "core/WrapNode.h"
+#include "core/OversampleNode.h"
+#include "core/FilletNode.h"
+#include "core/CgalAdvNode.h"
+#include "core/CsgOpNode.h"
+#include "core/ColorNode.h"
+#include "core/RoofNode.h"
+#include "core/RenderNode.h"
+#include "core/SkinNode.h"
+#include "core/ConcatNode.h"
+#include "core/SurfaceNode.h"
+#include "core/TextNode.h"
+#include "core/OffsetNode.h"
+#include "core/TextureNode.h"
+#include "core/ProjectionNode.h"
+#include "core/ImportNode.h"
 
 std::vector<ModuleInstantiation *> modinsts_list;
 
@@ -64,6 +66,7 @@ NodeCloneFunc(CubeNode)
 NodeCloneFunc(SphereNode)
 NodeCloneFunc(CylinderNode)
 NodeCloneFunc(PolyhedronNode)
+NodeCloneFunc(EdgeNode)
 NodeCloneFunc(SquareNode)
 NodeCloneFunc(CircleNode)
 NodeCloneFunc(PolygonNode)
@@ -80,14 +83,18 @@ NodeCloneFunc(LinearExtrudeNode)
 NodeCloneFunc(PathExtrudeNode)
 NodeCloneFunc(CsgOpNode)
 NodeCloneFunc(CgalAdvNode)
-NodeCloneFunc(RoofNode)
 NodeCloneFunc(RenderNode)
+NodeCloneFunc(SkinNode)
+NodeCloneFunc(ConcatNode)
 NodeCloneFunc(SurfaceNode)
 NodeCloneFunc(TextNode)
 NodeCloneFunc(OffsetNode)
 NodeCloneFunc(ProjectionNode)
 NodeCloneFunc(GroupNode)
 NodeCloneFunc(ImportNode)
+#if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
+NodeCloneFunc(RoofNode)
+#endif
 
 std::shared_ptr<AbstractNode> AbstractNode::clone(void)
 {
@@ -96,6 +103,7 @@ std::shared_ptr<AbstractNode> AbstractNode::clone(void)
 	NodeCloneUse(SphereNode)
 	NodeCloneUse(CylinderNode)
 	NodeCloneUse(PolyhedronNode)
+	NodeCloneUse(EdgeNode)
 	NodeCloneUse(SquareNode)
 	NodeCloneUse(CircleNode)
 	NodeCloneUse(PolygonNode)
@@ -112,14 +120,18 @@ std::shared_ptr<AbstractNode> AbstractNode::clone(void)
 	NodeCloneUse(PathExtrudeNode)
 	NodeCloneUse(CsgOpNode)
 	NodeCloneUse(CgalAdvNode)
-	NodeCloneUse(RoofNode)
 	NodeCloneUse(RenderNode)
+	NodeCloneUse(SkinNode)
+	NodeCloneUse(ConcatNode)
 	NodeCloneUse(SurfaceNode)
 	NodeCloneUse(TextNode)
 	NodeCloneUse(OffsetNode)
 	NodeCloneUse(ProjectionNode)
 	NodeCloneUse(GroupNode)
 	NodeCloneUse(ImportNode)
+#if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
+	NodeCloneUse(RoofNode)
+#endif
 	if(clone != nullptr) {
 		clone->idx = idx_counter++;
 		clone->children.clear();
@@ -134,7 +146,6 @@ std::shared_ptr<AbstractNode> AbstractNode::clone(void)
 
 void  AbstractNode::dump_counts(int indent,int use_cnt){
   int i=0;
-  auto modinst = this->modinst;
   for(i=0;i<indent;i++) printf(" ");
 
   printf("%s use =%d mi=%p ",this->name().c_str(), use_cnt, this->modinst);

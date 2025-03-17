@@ -27,25 +27,31 @@
 #include "RenderStatistic.h"
 
 #include <algorithm>
-#include <chrono>
-#include <cassert>
 #include <array>
+#include <cassert>
+#include <chrono>
+#include <fstream>
 #include <iostream>
 #include <memory>
-#include <fstream>
-#include "json/json.hpp"
 #include <string>
 #include <vector>
 
-#include "utils/printutils.h"
+#include <boost/range/algorithm/find.hpp>
+
+#include "json/json.hpp"
+
+#include "geometry/Geometry.h"
 #include "geometry/GeometryCache.h"
-#include "geometry/PolySet.h"
+#include "geometry/linalg.h"
 #include "geometry/Polygon2d.h"
+#include "geometry/Barcode1d.h"
+#include "geometry/PolySet.h"
+#include "glview/Camera.h"
+#include "utils/printutils.h"
 #ifdef ENABLE_CGAL
 #include "geometry/cgal/CGAL_Nef_polyhedron.h"
 #include "geometry/cgal/CGALCache.h"
 #endif // ENABLE_CGAL
-
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/ManifoldGeometry.h"
 #include "geometry/manifold/manifoldutils.h"
@@ -80,6 +86,7 @@ struct LogVisitor : public StatisticVisitor
   void visit(const GeometryList& node) override;
   void visit(const PolySet& node) override;
   void visit(const Polygon2d& node) override;
+  void visit(const Barcode1d& node) override;
 #ifdef ENABLE_CGAL
   void visit(const CGAL_Nef_polyhedron& node) override;
 #endif // ENABLE_CGAL
@@ -104,6 +111,7 @@ struct StreamVisitor : public StatisticVisitor
   void visit(const GeometryList& node) override;
   void visit(const PolySet& node) override;
   void visit(const Polygon2d& node) override;
+  void visit(const Barcode1d& node) override;
 #ifdef ENABLE_CGAL
   void visit(const CGAL_Nef_polyhedron& node) override;
 #endif // ENABLE_CGAL
@@ -120,8 +128,7 @@ private:
   std::ostream& stream;
 };
 
-template <typename G>
-static nlohmann::json getBoundingBox2(G geometry)
+static nlohmann::json getBoundingBox2d(const Geometry& geometry)
 {
   const auto& bb = geometry.getBoundingBox();
   const std::array<double, 2> min = { bb.min().x(), bb.min().y() };
@@ -134,8 +141,7 @@ static nlohmann::json getBoundingBox2(G geometry)
   return bbJson;
 }
 
-template <typename G>
-static nlohmann::json getBoundingBox3(G geometry)
+static nlohmann::json getBoundingBox3d(const Geometry& geometry)
 {
   const auto& bb = geometry.getBoundingBox();
   const std::array<double, 3> min = { bb.min().x(), bb.min().y(), bb.min().z() };
@@ -260,6 +266,11 @@ void LogVisitor::visit(const Polygon2d& poly)
   }
 }
 
+void LogVisitor::visit(const Barcode1d& poly)
+{
+  LOG("Top level object is a 1D object:");
+}
+
 void LogVisitor::printBoundingBox3(const BoundingBox& bb)
 {
   if (is_enabled(RenderStatistic::BOUNDING_BOX)) {
@@ -290,7 +301,7 @@ void LogVisitor::visit(const PolySet& ps)
 void LogVisitor::visit(const CGAL_Nef_polyhedron& nef)
 {
   if (nef.getDimension() == 3) {
-    bool simple = nef.p3->is_simple();
+    const bool simple = nef.p3->is_simple();
     LOG("Top level object is a 3D object (Nef polyhedron):");
     LOG("   Simple:     %1$s", (simple ? "yes" : "no"));
     LOG("   Vertices:   %1$6d", nef.p3->number_of_vertices());
@@ -371,8 +382,17 @@ void StreamVisitor::visit(const Polygon2d& poly)
     geometryJson["convex"] = poly.is_convex();
     geometryJson["contours"] = poly.outlines().size();
     if (is_enabled(RenderStatistic::BOUNDING_BOX)) {
-      geometryJson["bounding_box"] = getBoundingBox2(poly);
+      geometryJson["bounding_box"] = getBoundingBox2d(poly);
     }
+    json["geometry"] = geometryJson;
+  }
+}
+
+void StreamVisitor::visit(const Barcode1d& poly)
+{
+  if (is_enabled(RenderStatistic::GEOMETRY)) {
+    nlohmann::json geometryJson;
+    geometryJson["dimensions"] = 1;
     json["geometry"] = geometryJson;
   }
 }
@@ -387,7 +407,7 @@ void StreamVisitor::visit(const PolySet& ps)
     geometryJson["triangular"] = ps.isTriangular();
     geometryJson["facets"] = ps.numFacets();
     if (is_enabled(RenderStatistic::BOUNDING_BOX)) {
-      geometryJson["bounding_box"] = getBoundingBox3(ps);
+      geometryJson["bounding_box"] = getBoundingBox3d(ps);
     }
     json["geometry"] = geometryJson;
   }
@@ -405,7 +425,7 @@ void StreamVisitor::visit(const CGAL_Nef_polyhedron& nef)
     geometryJson["facets"] = nef.p3->number_of_facets();
     geometryJson["volumes"] = nef.p3->number_of_volumes();
     if (is_enabled(RenderStatistic::BOUNDING_BOX)) {
-      geometryJson["bounding_box"] = getBoundingBox3(nef);
+      geometryJson["bounding_box"] = getBoundingBox3d(nef);
     }
     json["geometry"] = geometryJson;
   }
@@ -422,7 +442,7 @@ void StreamVisitor::visit(const ManifoldGeometry& mani)
     geometryJson["vertices"] = mani.numVertices();
     geometryJson["facets"] = mani.numFacets();
     if (is_enabled(RenderStatistic::BOUNDING_BOX)) {
-      geometryJson["bounding_box"] = getBoundingBox3(mani);
+      geometryJson["bounding_box"] = getBoundingBox3d(mani);
     }
     json["geometry"] = geometryJson;
   }

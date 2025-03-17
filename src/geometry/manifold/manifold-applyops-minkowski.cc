@@ -11,6 +11,7 @@
 #include <CGAL/convex_hull_3.h>
 
 #include "geometry/cgal/cgal.h"
+#include "geometry/Geometry.h"
 #include "geometry/cgal/cgalutils.h"
 #include "geometry/PolySet.h"
 #include "utils/printutils.h"
@@ -25,6 +26,7 @@ namespace ManifoldUtils {
  */
 std::shared_ptr<const Geometry> applyMinkowskiManifold(const Geometry::Geometries& children)
 {
+#ifdef ENABLE_CGAL	
   using Hull_kernel = CGAL::Epick;
   using Hull_Mesh = CGAL::Surface_mesh<CGAL::Point_3<Hull_kernel>>;
   using Hull_Points = std::vector<Hull_kernel::Point_3>;
@@ -48,6 +50,7 @@ std::shared_ptr<const Geometry> applyMinkowskiManifold(const Geometry::Geometrie
     }
     throw 0;
   };
+#endif
 
   assert(children.size() >= 2);
   auto it = children.begin();

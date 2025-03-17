@@ -1,8 +1,8 @@
 #pragma once
-#include "node.h"
-#include "src/core/function.h"
-#include "src/geometry/Polygon2d.h"
-#include <Selection.h>
+#include "core/node.h"
+#include "core/function.h"
+#include "geometry/Polygon2d.h"
+#include <core/Selection.h>
 
 extern bool python_active;
 extern bool python_trusted;
@@ -10,9 +10,10 @@ extern bool python_runipython;
 extern AssignmentList customizer_parameters;
 extern AssignmentList customizer_parameters_finished;
 void python_export_obj_att(std::ostream& output);
+std::string python_version(void);
 
-void initPython(double time);
-
+void initPython(const std::string& binDir, double time);
+std::string evaluatePython(const std::string &code, bool dry_run=false);
 void finishPython();
 void python_lock(void);
 void python_unlock(void);
@@ -22,7 +23,6 @@ void python_startjupyter(void);
 extern std::string python_jupyterconfig;
 #endif
 
-std::string evaluatePython(const std::string &code, bool dry_run=0);
 
 std::shared_ptr<AbstractNode>
 python_modulefunc(const ModuleInstantiation *module,
@@ -39,3 +39,8 @@ extern bool pythonRuntimeInitialized;
 extern bool pythonDryRun;
 extern std::shared_ptr<AbstractNode> python_result_node;
 extern std::vector<SelectedObject> python_result_handle;
+
+int pythonRunArgs(int argc, char **argv);
+int pythonCreateVenv(const std::string& path);
+int pythonRunModule(const std::string& appPath, const std::string& module, const std::vector<std::string>& args);
+std::string venvBinDirFromSettings();

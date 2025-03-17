@@ -25,22 +25,22 @@
 
 #include "export.h"
 #include "StepKernel.h"
-#include "PolySet.h"
-#include "cgalutils.h"
-#include "PolySetUtils.h"
+#include "src/geometry/PolySet.h"
+#include "src/geometry/cgal/cgalutils.h"
+#include "src/geometry/PolySetUtils.h"
 #include <unordered_map>
-#include "boost-utils.h"
-#include <hash.h>
-#include <PolySetUtils.h>
-#include <GeometryEvaluator.h>
+#include "src/utils/boost-utils.h"
+#include <src/utils/hash.h>
+#include <src/geometry/PolySetUtils.h>
+#include <src/geometry/GeometryEvaluator.h>
 
 void export_step(const std::shared_ptr<const Geometry>& geom, std::ostream& output, const ExportInfo& exportInfo)
 {
 	auto ps = PolySetUtils::getGeometryAsPolySet(geom);
 	if(ps == nullptr) return;
 
-	printf("export curves: %d\n",ps->curves.size());
-	printf("export surfaces: %d\n",ps->surfaces.size());
+	printf("export curves: %zu\n",ps->curves.size());
+	printf("export surfaces: %zu\n",ps->surfaces.size());
 	for(auto curve : ps->curves) {
 		curve->display(ps->vertices);
 	}

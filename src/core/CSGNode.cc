@@ -132,6 +132,12 @@ CSGOperation::CSGOperation(OpenSCADOperator type, const std::shared_ptr<CSGNode>
   CSGOperation::initBoundingBox();
 }
 
+void CSGOperation::applyMatrix(const Transform3d &mat) {
+//  left()->applyMatrix(mat);	
+//  right()->applyMatrix(mat);	
+//  this->initBoundingBox();
+}
+
 void CSGLeaf::initBoundingBox()
 {
   if (!this->polyset) return;
@@ -166,6 +172,13 @@ bool CSGLeaf::isEmptySet() const
 std::string CSGLeaf::dump() const
 {
   return this->label;
+}
+
+void CSGLeaf::applyMatrix(const Transform3d &mat) {
+  if(this->is_2d) {
+    this->matrix = mat * this->matrix;
+    this->initBoundingBox();
+  }
 }
 
 // Recursive traversal can cause stack overflow with very large loops of child nodes,

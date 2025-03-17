@@ -127,7 +127,7 @@ bool fileEnded=false;
 %token TOK_FALSE
 %token TOK_UNDEF
 
-%token LE GE EQ NEQ AND OR
+%token LE GE EQ NEQ AND OR LSH RSH
 
 %nonassoc NO_ELSE
 %nonassoc TOK_ELSE
@@ -138,6 +138,9 @@ bool fileEnded=false;
 %type <expr> logic_and
 %type <expr> equality
 %type <expr> comparison
+%type <expr> binaryor
+%type <expr> binaryand
+%type <expr> shift
 %type <expr> addition
 %type <expr> multiplication
 %type <expr> exponent
@@ -314,7 +317,7 @@ module_id
         : TOK_ID  { $$ = $1; }
         | TOK_ID '.' TOK_ID  {
 		char tmp[100];
-                sprintf(tmp,"(%s.%s)",$1,$3);
+                snprintf(tmp,sizeof(tmp), "(%s.%s)",$1,$3);
                 $$ = strdup(tmp); }
         | TOK_FOR { $$ = strdup("for"); }
         | TOK_LET { $$ = strdup("let"); }
@@ -389,24 +392,52 @@ equality
 		;
 
 comparison
-        : addition
-        | comparison '>' addition
+        : binaryor
+        | comparison '>' binaryor
             {
               $$ = new BinaryOp($1, BinaryOp::Op::Greater, $3, LOCD("greater", @$));
             }
-        | comparison GE addition
+        | comparison GE binaryor
             {
               $$ = new BinaryOp($1, BinaryOp::Op::GreaterEqual, $3, LOCD("greaterequal", @$));
             }
-        | comparison '<' addition
+        | comparison '<' binaryor
             {
               $$ = new BinaryOp($1, BinaryOp::Op::Less, $3, LOCD("less", @$));
             }
-        | comparison LE addition
+        | comparison LE binaryor
             {
               $$ = new BinaryOp($1, BinaryOp::Op::LessEqual, $3, LOCD("lessequal", @$));
             }
 		;
+
+binaryor
+        : binaryand
+        | binaryor '|' binaryand
+            {
+              $$ = new BinaryOp($1, BinaryOp::Op::BinaryOr, $3, LOCD("binary-or", @$));
+            }
+        ;
+
+binaryand
+        : shift
+        | binaryand '&' shift
+            {
+              $$ = new BinaryOp($1, BinaryOp::Op::BinaryAnd, $3, LOCD("binary-and", @$));
+            }
+        ;
+
+shift
+        : addition
+        | shift LSH addition
+            {
+              $$ = new BinaryOp($1, BinaryOp::Op::ShiftLeft, $3, LOCD("shift-left", @$));
+            }
+        | shift RSH addition
+            {
+              $$ = new BinaryOp($1, BinaryOp::Op::ShiftRight, $3, LOCD("shift-right", @$));
+            }
+        ;
 
 addition
         : multiplication
@@ -457,6 +488,10 @@ unary
         | '!' unary
             {
               $$ = new UnaryOp(UnaryOp::Op::Not, $2, LOCD("not", @$));
+            }
+        | '~' unary
+            {
+              $$ = new UnaryOp(UnaryOp::Op::BinaryNot, $2, LOCD("binary-not", @$));
             }
 		;
 
@@ -766,6 +801,9 @@ bool parse(SourceFile *&file, const std::string& text, const std::string &filena
   try {
     filepath = filename.empty() ? fs::current_path() : fs::absolute(fs::path{filename});
     mainFilePath = mainFile.empty() ? fs::current_path() : fs::absolute(fs::path{mainFile});
+  } catch (const std::filesystem::filesystem_error& fs_err) {
+    LOG(message_group::Error, "Parser error: file system error: %1$s", fs_err.what());
+    return false;
   } catch (...) {
     // yyerror tries to print the file path, which throws again, and we can't do that
     LOG(message_group::Error, "Parser error: file access denied");

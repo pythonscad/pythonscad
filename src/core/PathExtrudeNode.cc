@@ -30,7 +30,7 @@
 #include "ModuleInstantiation.h"
 #include "Children.h"
 #include "Parameters.h"
-#include "printutils.h"
+#include "src/utils/printutils.h"
 #include "io/fileutils.h"
 #include "Builtins.h"
 #include "handle_dep.h"
@@ -168,7 +168,7 @@ std::string PathExtrudeNode::toString() const
   }
   if(this->path.size() > 0) {
     stream << ", path = ";
-    for(int i=0;i<this->path.size();i++) {
+    for(size_t i=0;i<this->path.size();i++) {
 	    stream <<  this->path[i][0] << " " << this->path[i][1] << " " << this->path[i][2] <<  " " << this->path[i][3] << ", "  ;
     }
   }

@@ -1,22 +1,24 @@
 #pragma once
 
+#include <filesystem>
+#include <iostream>
 #include <iterator>
 #include <map>
-#include <iostream>
-#include <array>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <boost/range/algorithm.hpp>
 #include <boost/range/adaptor/map.hpp>
 
-#include "Settings.h"
+#include "core/Settings.h"
 #include "core/Tree.h"
+#include "core/SourceFile.h"
+#include "geometry/Geometry.h"
+#include "geometry/linalg.h"
 #include "glview/Camera.h"
 #include "glview/ColorMap.h"
-#include "linalg.h"
-
 #include "io/export_enums.h"
 
 using SPDF = Settings::SettingsExportPdf;
