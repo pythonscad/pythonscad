@@ -39,6 +39,7 @@ GLView::GLView()
   this->opencsg_id = sId++;
 #endif
   this->handle_mode=false;
+  viewdir=Vector3d(1,0,0);
 }
 
 GLView::~GLView()
@@ -232,8 +233,8 @@ void GLView::paintGL()
       glEnable(GL_BLEND);
       glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR); 
     }  
-    this->renderer->prepare(edge_shader.get());
-    this->renderer->draw(showedges, edge_shader.get());
+    this->renderer->prepare(viewdir, edge_shader.get());
+    this->renderer->draw(showedges, viewdir, edge_shader.get());
     if(this->handle_mode) glDisable(GL_BLEND);
   }
   glColor3f(1,0,0);

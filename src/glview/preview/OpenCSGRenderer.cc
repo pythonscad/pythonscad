@@ -98,7 +98,7 @@ OpenCSGRenderer::OpenCSGRenderer(
   opencsg_vertex_shader_code_ = ShaderUtils::loadShaderSource("OpenCSG.vert");
 }
 
-void OpenCSGRenderer::prepare(const ShaderUtils::ShaderInfo *shaderinfo) {
+void OpenCSGRenderer::prepare(const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo) {
   if (vertex_state_containers_.empty()) {
     if (root_products_) {
       createCSGVBOProducts(*root_products_, false, false, shaderinfo);
@@ -112,7 +112,7 @@ void OpenCSGRenderer::prepare(const ShaderUtils::ShaderInfo *shaderinfo) {
   }
 }
 
-void OpenCSGRenderer::draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo) const {
+void OpenCSGRenderer::draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo) const {
 #ifdef ENABLE_OPENCSG
   // Only use shader if select rendering or showedges
   bool enable_shader = shaderinfo && (
@@ -234,7 +234,7 @@ void OpenCSGRenderer::createCSGVBOProducts(
         if (color[3] == 1.0f) {
           // object is opaque, draw normally
           vbo_builder.create_surface(*csgobj.leaf->polyset, 
-                         csgobj.leaf->matrix, last_color, enable_barycentric, override_color);
+                         csgobj.leaf->matrix, Vector3d(0,0,0), last_color, enable_barycentric, override_color);
           if (const auto csg_vs = std::dynamic_pointer_cast<OpenCSGVertexState>(
             vertex_states.back())) {
             csg_vs->setCsgObjectIndex(csgobj.leaf->index);
@@ -252,7 +252,7 @@ void OpenCSGRenderer::createCSGVBOProducts(
           vertex_states.emplace_back(std::move(cull));
 
           vbo_builder.create_surface(*csgobj.leaf->polyset, 
-                         csgobj.leaf->matrix, last_color, enable_barycentric, override_color);
+                         csgobj.leaf->matrix, Vector3d(0, 0, 0), last_color, enable_barycentric, override_color);
           if (const auto csg_vs = std::dynamic_pointer_cast<OpenCSGVertexState>(
                   vertex_states.back())) {
             csg_vs->setCsgObjectIndex(csgobj.leaf->index);
@@ -326,7 +326,7 @@ void OpenCSGRenderer::createCSGVBOProducts(
           // Scale 2D negative objects 10% in the Z direction to avoid z fighting
           tmp *= Eigen::Scaling(1.0, 1.0, 1.1);
         }
-        vbo_builder.create_surface(*csgobj.leaf->polyset, tmp,
+        vbo_builder.create_surface(*csgobj.leaf->polyset, tmp, Vector3d(0, 0, 0),
                        last_color, enable_barycentric, override_color);
         if (const auto csg_vs = std::dynamic_pointer_cast<OpenCSGVertexState>(
           vertex_states.back())) {

@@ -20,8 +20,8 @@ class CGALRenderer : public VBORenderer
 public:
   CGALRenderer(const std::shared_ptr<const class Geometry>& geom);
   ~CGALRenderer() override;
-  void prepare(const ShaderUtils::ShaderInfo *shaderinfo = nullptr) override;
-  void draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo = nullptr) const override;
+  void prepare(const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo = nullptr) override;
+  void draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo = nullptr) const override;
   void setColorScheme(const ColorScheme& cs) override;
   BoundingBox getBoundingBox() const override;
 
@@ -34,7 +34,7 @@ private:
 
   // FIXME: PolySet and Polygon2d features are only needed for the lazy-union feature,
   // when a GeometryList may contain a mixture of CGAL and Polygon2d/PolySet geometries.
-  void createPolySetStates();
+  void createPolySetStates(const Vector3d &viewdir);
   void createPolygonStates();
   void createPolygonSurfaceStates();
   void createPolygonEdgeStates();

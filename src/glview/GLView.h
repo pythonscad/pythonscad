@@ -74,6 +74,7 @@ public:
   double aspectratio;
   bool showaxes;
   bool showedges;
+  Vector3d viewdir;
   bool showcrosshairs;
   bool showscale;
   GLdouble modelview[16];

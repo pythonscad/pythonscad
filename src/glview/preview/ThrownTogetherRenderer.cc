@@ -83,7 +83,7 @@ ThrownTogetherRenderer::ThrownTogetherRenderer(std::shared_ptr<CSGProducts> root
 {
 }
 
-void ThrownTogetherRenderer::prepare(const ShaderUtils::ShaderInfo *shaderinfo)
+void ThrownTogetherRenderer::prepare(const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo)
 {
   PRINTD("Thrown prepare");
   if (vertex_state_containers_.empty()) {   
@@ -109,7 +109,7 @@ void ThrownTogetherRenderer::prepare(const ShaderUtils::ShaderInfo *shaderinfo)
 }
 
 
-void ThrownTogetherRenderer::draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo) const
+void ThrownTogetherRenderer::draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo) const
 {
   // Only use shader if select rendering or showedges
   const bool enable_shader = shaderinfo && (
@@ -174,7 +174,7 @@ void ThrownTogetherRenderer::createChainObject(VertexStateContainer& container, 
 
     add_shader_pointers(vbo_builder, shaderinfo);
 
-    vbo_builder.create_surface(*csgobj.leaf->polyset, csgobj.leaf->matrix, color, enable_barycentric);
+    vbo_builder.create_surface(*csgobj.leaf->polyset, csgobj.leaf->matrix, Vector3d(0, 0, 0), color, enable_barycentric);
     if (const auto ttr_vs = std::dynamic_pointer_cast<TTRVertexState>(vbo_builder.states().back())) {
       ttr_vs->setCsgObjectIndex(csgobj.leaf->index);
     }
@@ -198,7 +198,7 @@ void ThrownTogetherRenderer::createChainObject(VertexStateContainer& container, 
       // Scale 2D negative objects 10% in the Z direction to avoid z fighting
       mat *= Eigen::Scaling(1.0, 1.0, 1.1);
     }
-    vbo_builder.create_surface(*csgobj.leaf->polyset, mat, color, enable_barycentric);
+    vbo_builder.create_surface(*csgobj.leaf->polyset, mat, Vector3d(0, 0, 0), color, enable_barycentric);
     if (auto ttr_vs = std::dynamic_pointer_cast<TTRVertexState>(vbo_builder.states().back())) {
       ttr_vs->setCsgObjectIndex(csgobj.leaf->index);
     }
@@ -217,7 +217,7 @@ void ThrownTogetherRenderer::createChainObject(VertexStateContainer& container, 
     });
     container.states().emplace_back(std::move(cull));
 
-    vbo_builder.create_surface(*csgobj.leaf->polyset, csgobj.leaf->matrix, color, enable_barycentric);
+    vbo_builder.create_surface(*csgobj.leaf->polyset, csgobj.leaf->matrix, Vector3d(0, 0, 0), color, enable_barycentric);
     if (auto ttr_vs = std::dynamic_pointer_cast<TTRVertexState>(vbo_builder.states().back())) {
       ttr_vs->setCsgObjectIndex(csgobj.leaf->index);
     }

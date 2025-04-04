@@ -140,7 +140,7 @@ void CGALRenderer::setColorScheme(const ColorScheme &cs) {
   PRINTD("setColorScheme done");
 }
 
-void CGALRenderer::createPolySetStates() {
+void CGALRenderer::createPolySetStates(const Vector3d &viewdir) {
   PRINTD("createPolySetStates() polyset");
 
   VertexStateContainer &vertex_state_container = vertex_state_containers_.emplace_back();
@@ -159,7 +159,7 @@ void CGALRenderer::createPolySetStates() {
     Color4f color;
     getColorSchemeColor(ColorMode::MATERIAL, color);
     vbo_builder.writeSurface();
-    vbo_builder.create_surface(*polyset, Transform3d::Identity(), color, false);
+    vbo_builder.create_surface(*polyset, Transform3d::Identity(), viewdir, color, false);
   }
 
   vbo_builder.createInterleavedVBOs();
@@ -239,13 +239,13 @@ void CGALRenderer::createPolygonEdgeStates() {
   vbo_builder.createInterleavedVBOs();
 }
 
-void CGALRenderer::prepare(const ShaderUtils::ShaderInfo * /*shaderinfo*/) {
+void CGALRenderer::prepare(const Vector3d &viewdir, const ShaderUtils::ShaderInfo * /*shaderinfo*/) {
   PRINTD("prepare()");
   if (!vertex_state_containers_.size()) {
     if (!this->polysets_.empty() && !this->polygons_.empty()) {
       LOG(message_group::Error, "CGALRenderer::prepare() called with both polysets and polygons");
     } else if (!this->polysets_.empty()) {
-      createPolySetStates();
+      createPolySetStates(viewdir);
     } else if (!this->polygons_.empty()) {
       createPolygonStates();
     }
@@ -259,7 +259,7 @@ void CGALRenderer::prepare(const ShaderUtils::ShaderInfo * /*shaderinfo*/) {
   PRINTD("prepare() end");
 }
 
-void CGALRenderer::draw(bool showedges, const ShaderUtils::ShaderInfo * /*shaderinfo*/) const {
+void CGALRenderer::draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo * /*shaderinfo*/) const {
   PRINTD("draw()");
 // grab current state to restore after
   GLfloat current_point_size, current_line_width;
@@ -292,7 +292,7 @@ void CGALRenderer::draw(bool showedges, const ShaderUtils::ShaderInfo * /*shader
 
 #ifdef ENABLE_CGAL
   for (const auto &p : this->getPolyhedrons()) {
-    p->draw(showedges);
+    p->draw(showedges, viewdir);
   }
 #endif
 

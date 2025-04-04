@@ -132,7 +132,7 @@ void PolySetRenderer::createPolySetStates(const ShaderUtils::ShaderInfo *shaderi
     add_shader_pointers(vbo_builder, shaderinfo);
 
     vbo_builder.writeSurface();
-    vbo_builder.create_surface(*polyset, Transform3d::Identity(), color, enable_barycentric, false);
+    vbo_builder.create_surface(*polyset, Transform3d::Identity(), Vector3d(0,0,0), color,  enable_barycentric, false);
   }
 
   vbo_builder.createInterleavedVBOs();
@@ -211,7 +211,7 @@ void PolySetRenderer::createPolygonEdgeStates() {
 }
 
 
-void PolySetRenderer::prepare(const ShaderUtils::ShaderInfo *shaderinfo)
+void PolySetRenderer::prepare(const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo)
 {
   if (polyset_vertex_state_containers_.empty() && polygon_vertex_state_containers_.empty()) {
     if (!this->polysets_.empty() && !this->polygons_.empty()) {
@@ -224,7 +224,7 @@ void PolySetRenderer::prepare(const ShaderUtils::ShaderInfo *shaderinfo)
   }
 }
 
-void PolySetRenderer::draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo) const
+void PolySetRenderer::draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo) const
 {
 
   drawPolySets(showedges, shaderinfo);

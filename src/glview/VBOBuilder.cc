@@ -414,9 +414,10 @@ void VBOBuilder::create_triangle(const Color4f& color, const Vector3d& p0,
 // Creates a VBO "surface" from the PolySet.
 // This will usually create a new VertexState and append it to our
 // vertex states
-void VBOBuilder::create_surface(const PolySet& ps, const Transform3d& m,
+void VBOBuilder::create_surface(const PolySet& ps, const Transform3d& m,const Vector3d &viewdir, 
                                  const Color4f& default_color, bool enable_barycentric, bool force_default_color)
 {
+  bool sorting_enabled=viewdir.norm()>0.5?true:false;
   const std::shared_ptr<VertexData> vertex_data = data();
 
   if (!vertex_data) {
@@ -437,7 +438,33 @@ void VBOBuilder::create_surface(const PolySet& ps, const Transform3d& m,
 
   auto has_colors = !ps.color_indices.empty();
 
-  for (int i = 0, n = ps.indices.size(); i < n; i++) {
+  struct FaceScore {
+    int ind;
+    double s;
+  };
+  std::vector<FaceScore> face_score;
+  if(sorting_enabled)
+  {
+
+    // create a score for each face
+    FaceScore fs;
+    for (int i = 0, n = ps.indices.size(); i < n; i++) {
+      Vector3d mean(0,0,0);	  
+      int num=ps.indices[i].size();
+      for(int ind: ps.indices[i]){
+        Vector3d pt = ps.vertices[ind];
+        mean += pt;
+      }	    
+      mean /= num;
+      fs.ind=i;
+      fs.s = mean.dot(viewdir);
+      face_score.push_back(fs);
+    }
+    std::stable_sort(face_score.begin(), face_score.end(),  [](const FaceScore &a, const FaceScore &b) { return a.s< b.s;});
+  }
+
+  for (int j = 0, n = ps.indices.size(); j < n; j++) {
+    int i=sorting_enabled?face_score[j].ind:j;	  
     const auto& poly = ps.indices[i];
     const auto color_index = has_colors && i < ps.color_indices.size() ? ps.color_indices[i] : -1;
     const auto& color = !force_default_color && color_index >= 0 && color_index < ps.colors.size() &&

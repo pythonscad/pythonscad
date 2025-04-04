@@ -329,7 +329,7 @@ namespace OGL {
 	return c;
     }
 
-    virtual void draw(bool) const = 0;
+    virtual void draw(bool, const Vector3d &viewdir) const = 0;
 
     // Overridden in CGAL_renderer
     virtual CGAL::Color getEdgeColor(Edge_iterator e) const
