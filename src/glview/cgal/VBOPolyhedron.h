@@ -335,7 +335,7 @@ public:
     PRINTD("VBO draw() end");
   }
 
-  void draw(bool showedges, const Vector3d &viewdir) const override {
+  void draw(bool showedges) const override {
     PRINTDB("VBO draw(showedges = %d)", showedges);
     // grab current state to restore after
     GLfloat current_point_size, current_line_width;

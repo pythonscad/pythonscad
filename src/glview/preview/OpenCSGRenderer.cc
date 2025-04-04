@@ -112,7 +112,7 @@ void OpenCSGRenderer::prepare(const Vector3d &viewdir, const ShaderUtils::Shader
   }
 }
 
-void OpenCSGRenderer::draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo) const {
+void OpenCSGRenderer::draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo) const {
 #ifdef ENABLE_OPENCSG
   // Only use shader if select rendering or showedges
   bool enable_shader = shaderinfo && (

@@ -20,14 +20,15 @@ public:
   PolySetRenderer(const std::shared_ptr<const class Geometry>& geom);
   ~PolySetRenderer() override = default;
   void prepare(const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo) override;
-  void draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo) const override;
+  void draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo) const override;
   void setColorScheme(const ColorScheme& cs) override;
   BoundingBox getBoundingBox() const override;
   std::shared_ptr<SelectedObject> findModelObject(const Vector3d& near_pt, const Vector3d& far_pt, int mouse_x, int mouse_y, double tolerance) override;
 
 private:
+  Vector3d viewdir_cached;
   void addGeometry(const std::shared_ptr<const class Geometry>& geom);
-  void createPolySetStates(const ShaderUtils::ShaderInfo *shaderinfo);
+  void createPolySetStates(const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo);
   void createPolygonStates();
   void createPolygonSurfaceStates();
   void createPolygonEdgeStates();

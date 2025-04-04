@@ -21,7 +21,7 @@ public:
   CGALRenderer(const std::shared_ptr<const class Geometry>& geom);
   ~CGALRenderer() override;
   void prepare(const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo = nullptr) override;
-  void draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo = nullptr) const override;
+  void draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo = nullptr) const override;
   void setColorScheme(const ColorScheme& cs) override;
   BoundingBox getBoundingBox() const override;
 

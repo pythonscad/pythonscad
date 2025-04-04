@@ -259,7 +259,7 @@ void CGALRenderer::prepare(const Vector3d &viewdir, const ShaderUtils::ShaderInf
   PRINTD("prepare() end");
 }
 
-void CGALRenderer::draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo * /*shaderinfo*/) const {
+void CGALRenderer::draw(bool showedges, const ShaderUtils::ShaderInfo * /*shaderinfo*/) const {
   PRINTD("draw()");
 // grab current state to restore after
   GLfloat current_point_size, current_line_width;
@@ -292,7 +292,7 @@ void CGALRenderer::draw(bool showedges, const Vector3d &viewdir, const ShaderUti
 
 #ifdef ENABLE_CGAL
   for (const auto &p : this->getPolyhedrons()) {
-    p->draw(showedges, viewdir);
+    p->draw(showedges);
   }
 #endif
 

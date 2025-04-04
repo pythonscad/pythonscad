@@ -109,7 +109,7 @@ void ThrownTogetherRenderer::prepare(const Vector3d &viewdir, const ShaderUtils:
 }
 
 
-void ThrownTogetherRenderer::draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo) const
+void ThrownTogetherRenderer::draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo) const
 {
   // Only use shader if select rendering or showedges
   const bool enable_shader = shaderinfo && (

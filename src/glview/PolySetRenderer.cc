@@ -63,6 +63,7 @@
 PolySetRenderer::PolySetRenderer(const std::shared_ptr<const class Geometry>& geom)
 {
   this->addGeometry(geom);
+  this->viewdir_cached= Vector3d(0,0,0);
 }
 
 void PolySetRenderer::addGeometry(const std::shared_ptr<const Geometry>& geom)
@@ -111,7 +112,7 @@ void PolySetRenderer::setColorScheme(const ColorScheme& cs)
 }
 
 
-void PolySetRenderer::createPolySetStates(const ShaderUtils::ShaderInfo *shaderinfo) {
+void PolySetRenderer::createPolySetStates(const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo) {
   VertexStateContainer &vertex_state_container = polyset_vertex_state_containers_.emplace_back();
   VBOBuilder vbo_builder(std::make_unique<VertexStateFactory>(), vertex_state_container);
 
@@ -132,7 +133,7 @@ void PolySetRenderer::createPolySetStates(const ShaderUtils::ShaderInfo *shaderi
     add_shader_pointers(vbo_builder, shaderinfo);
 
     vbo_builder.writeSurface();
-    vbo_builder.create_surface(*polyset, Transform3d::Identity(), Vector3d(0,0,0), color,  enable_barycentric, false);
+    vbo_builder.create_surface(*polyset, Transform3d::Identity(), viewdir, color,  enable_barycentric, false);
   }
 
   vbo_builder.createInterleavedVBOs();
@@ -213,18 +214,26 @@ void PolySetRenderer::createPolygonEdgeStates() {
 
 void PolySetRenderer::prepare(const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo)
 {
+  double f=viewdir.dot(viewdir_cached);	
+  if(viewdir.dot(viewdir_cached) < 0.5) { // 30 deg
+    // viewing angle changed too much, need to redo
+//    this->polysets_.clear();
+    polyset_vertex_state_containers_.clear();
+
+    viewdir_cached = viewdir;
+  }
   if (polyset_vertex_state_containers_.empty() && polygon_vertex_state_containers_.empty()) {
     if (!this->polysets_.empty() && !this->polygons_.empty()) {
       LOG(message_group::Error, "PolySetRenderer::prepare() called with both polysets and polygons");
     } else if (!this->polysets_.empty()) {
-      createPolySetStates(shaderinfo);
+      createPolySetStates(viewdir, shaderinfo);
     } else if (!this->polygons_.empty()) {
       createPolygonStates();
     }
   }
 }
 
-void PolySetRenderer::draw(bool showedges, const Vector3d &viewdir, const ShaderUtils::ShaderInfo *shaderinfo) const
+void PolySetRenderer::draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo) const
 {
 
   drawPolySets(showedges, shaderinfo);

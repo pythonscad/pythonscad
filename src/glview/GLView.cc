@@ -39,7 +39,7 @@ GLView::GLView()
   this->opencsg_id = sId++;
 #endif
   this->handle_mode=false;
-  viewdir=Vector3d(1,0,0);
+  viewdir=Vector3d(0,0,0);
 }
 
 GLView::~GLView()
@@ -157,6 +157,9 @@ void GLView::setupCamera()
   glRotated(cam.object_rot.z(), 0.0, 0.0, 1.0);
   glTranslated(cam.object_trans[0],cam.object_trans[1],cam.object_trans[2]); // translation be part of modelview matrix!
   glGetDoublev(GL_MODELVIEW_MATRIX,this->modelview);
+  viewdir[0]=this->modelview[2];
+  viewdir[1]=this->modelview[6];
+  viewdir[2]=this->modelview[10];
   glTranslated(-cam.object_trans[0],-cam.object_trans[1],-cam.object_trans[2]);
   glGetDoublev(GL_PROJECTION_MATRIX,this->projection);
 }
@@ -234,7 +237,7 @@ void GLView::paintGL()
       glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR); 
     }  
     this->renderer->prepare(viewdir, edge_shader.get());
-    this->renderer->draw(showedges, viewdir, edge_shader.get());
+    this->renderer->draw(showedges, edge_shader.get());
     if(this->handle_mode) glDisable(GL_BLEND);
   }
   glColor3f(1,0,0);
