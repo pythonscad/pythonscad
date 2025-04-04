@@ -217,9 +217,7 @@ void PolySetRenderer::prepare(const Vector3d &viewdir, const ShaderUtils::Shader
   double f=viewdir.dot(viewdir_cached);	
   if(viewdir.dot(viewdir_cached) < 0.5) { // 30 deg
     // viewing angle changed too much, need to redo
-//    this->polysets_.clear();
     polyset_vertex_state_containers_.clear();
-
     viewdir_cached = viewdir;
   }
   if (polyset_vertex_state_containers_.empty() && polygon_vertex_state_containers_.empty()) {

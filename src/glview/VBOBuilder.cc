@@ -438,16 +438,16 @@ void VBOBuilder::create_surface(const PolySet& ps, const Transform3d& m,const Ve
 
   auto has_colors = !ps.color_indices.empty();
 
-  struct FaceScore {
+  struct FaceHeight {
     int ind;
-    double s;
+    double h;
   };
-  std::vector<FaceScore> face_score;
+  std::vector<FaceHeight> face_height;
   if(sorting_enabled)
   {
 
-    // create a score for each face
-    FaceScore fs;
+    // create a height for each face
+    FaceHeight fh;
     for (int i = 0, n = ps.indices.size(); i < n; i++) {
       Vector3d mean(0,0,0);	  
       int num=ps.indices[i].size();
@@ -456,15 +456,15 @@ void VBOBuilder::create_surface(const PolySet& ps, const Transform3d& m,const Ve
         mean += pt;
       }	    
       mean /= num;
-      fs.ind=i;
-      fs.s = mean.dot(viewdir);
-      face_score.push_back(fs);
+      fh.ind=i;
+      fh.h = mean.dot(viewdir);
+      face_height.push_back(fh);
     }
-    std::stable_sort(face_score.begin(), face_score.end(),  [](const FaceScore &a, const FaceScore &b) { return a.s< b.s;});
+    std::stable_sort(face_height.begin(), face_height.end(),  [](const FaceHeight &a, const FaceHeight &b) { return a.h< b.h;});
   }
 
   for (int j = 0, n = ps.indices.size(); j < n; j++) {
-    int i=sorting_enabled?face_score[j].ind:j;	  
+    int i=sorting_enabled?face_height[j].ind:j;	  
     const auto& poly = ps.indices[i];
     const auto color_index = has_colors && i < ps.color_indices.size() ? ps.color_indices[i] : -1;
     const auto& color = !force_default_color && color_index >= 0 && color_index < ps.colors.size() &&
