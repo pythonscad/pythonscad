@@ -86,14 +86,6 @@ void CSGTreeEvaluator::applyToChildren(State& state, const AbstractNode& node, O
         auto t1l = std::dynamic_pointer_cast<CSGLeaf>(t1);
 	if(t1l != nullptr && t1l->is_2d) {
 	  Transform3d &m1 = t1l->matrix;
-	  for(int i=0;i<4;i++) {
-		  for(int j=0;j<4;j++) {
-			  printf("%g ",m1(i,j));
-		  }
-	  printf("\n");
-	  }
-	  printf("\n");
-
 	  t2->applyMatrix(m1);
 	}
         t = CSGOperation::createCSGNode(op, t1, t2);
@@ -202,7 +194,7 @@ std::shared_ptr<const PolySet> polygon2dToPolySet(const Polygon2d &p2d) {
     builder.beginPolygon(poly.size());
     // Flip vertex ordering for bottom polygon
     for (const auto& ind: boost::adaptors::reverse(poly)) {
-      builder.addVertex(ps->vertices[ind] - Vector3d(0, 0, 0.5));
+      builder.addVertex(ps->vertices[ind] - Vector3d(0, 0, 0.1));
     }
   }
 
@@ -210,7 +202,7 @@ std::shared_ptr<const PolySet> polygon2dToPolySet(const Polygon2d &p2d) {
   for (const auto& poly : ps->indices) {
     builder.beginPolygon(poly.size());
     for (const auto& ind: poly) {
-      builder.addVertex(ps->vertices[ind] + Vector3d(0, 0, 0.5));
+      builder.addVertex(ps->vertices[ind] + Vector3d(0, 0, 0.1));
     }
   }
 
@@ -221,10 +213,10 @@ std::shared_ptr<const PolySet> polygon2dToPolySet(const Polygon2d &p2d) {
       const Vector2d &prev = o.vertices[i];
       const Vector2d &curr = o.vertices[(i+1)%o.vertices.size()];
       builder.appendPolygon({
-        tr*Vector3d(prev[0], prev[1], -0.5),
-        tr*Vector3d(curr[0], curr[1], -0.5),
-        tr*Vector3d(curr[0], curr[1], 0.5),
-        tr*Vector3d(prev[0], prev[1], 0.5),
+        tr*Vector3d(prev[0], prev[1], -0.1),
+        tr*Vector3d(curr[0], curr[1], -0.1),
+        tr*Vector3d(curr[0], curr[1], 0.1),
+        tr*Vector3d(prev[0], prev[1], 0.1),
       });
     }
   }

@@ -25,12 +25,14 @@
  */
 
 #include "gui/QGLView.h"
+#include <QtCore/qpoint.h>
 
 #include "geometry/linalg.h"
 #include "gui/qtgettext.h"
 #include "gui/Preferences.h"
 #include "glview/Renderer.h"
 #include "utils/degree_trig.h"
+#include "utils/scope_guard.hpp"
 #if defined(USE_GLEW) || defined(OPENCSG_GLEW)
 #include "glview/glew-utils.h"
 #endif
@@ -78,7 +80,6 @@ QGLView::QGLView(QWidget *parent) : QOpenGLWidget(parent)
 
 QGLView::~QGLView()
 {
-  std::cout << "QGLView::~QGLView()" << std::endl;
   // Just to make sure we can call GL functions in the supertype destructor
   makeCurrent();
 }
@@ -91,6 +92,7 @@ void QGLView::init()
   this->statusLabel = nullptr;
 
   setMouseTracking(true);
+  mouseDraggedSel = nullptr;
 }
 
 void QGLView::resetView()
@@ -152,7 +154,7 @@ std::string QGLView::getRendererInfo() const
 #ifdef ENABLE_OPENCSG
 void QGLView::display_opencsg_warning()
 {
-  if (Preferences::inst()->getValue("advanced/opencsg_show_warning").toBool()) {
+  if (GlobalPreferences::inst()->getValue("advanced/opencsg_show_warning").toBool()) {
     QTimer::singleShot(0, this, &QGLView::display_opencsg_warning_dialog);
   }
 }
@@ -194,25 +196,34 @@ void QGLView::paintGL()
 {
   GLView::paintGL();
 
+  Vector3d p1, p2, p3, norm;
   if (statusLabel) {
     QString status;	  
     if(this->shown_obj != nullptr) {
       switch(this->shown_obj->type) {
         case SelectionType::SELECTION_POINT:
           if(shown_obj->pt.size() < 1) break;		
-          status = QString("Point (%1/%2/%3)").arg(shown_obj->pt[0][0]).arg(shown_obj->pt[0][1]).arg(shown_obj->pt[0][2]);
+	  p1=shown_obj->pt[0];
+          status = QString("Point (%1/%2/%3)").arg(p1[0]).arg(p1[1]).arg(p1[2]);
           statusLabel->setText(status);
 	  break;
         case SelectionType::SELECTION_SEGMENT:
           if(shown_obj->pt.size() < 2) break;		
-          status = QString("Segment (%1/%2/%3) - (%4/%5/%6)")
-		  .arg(shown_obj->pt[0][0]).arg(shown_obj->pt[0][1]).arg(shown_obj->pt[0][2])
-		  .arg(shown_obj->pt[1][0]).arg(shown_obj->pt[1][1]).arg(shown_obj->pt[1][2]);
+	  p1=shown_obj->pt[0];
+	  p2=shown_obj->pt[1];
+          status = QString("Segment (%1/%2/%3) - (%4/%5/%6) delta (%7/%8/%9)")
+		  .arg(p1[0]).arg(p1[1]).arg(p1[2])
+		  .arg(p2[0]).arg(p2[1]).arg(p2[2])
+		  .arg(p2[0]-p1[0]).arg(p2[1]-p1[1]).arg(p2[2]-p1[2]);
           statusLabel->setText(status);
 	  break;
         case SelectionType::SELECTION_FACE:
           if(shown_obj->pt.size() < 3) break;		
-	  status=QString("Face selected\n");
+	  p1=shown_obj->pt[0];
+	  p2=shown_obj->pt[1];
+	  p3=shown_obj->pt[2];
+	  norm=(p2-p1).cross(p3-p2).normalized();
+	  status=QString("Face norm=(%1/%2/%3)").arg(norm[0]).arg(norm[1]).arg(norm[2]);
           statusLabel->setText(status);
 	  break;
         case SelectionType::SELECTION_HANDLE:
@@ -239,6 +250,7 @@ void QGLView::mousePressEvent(QMouseEvent *event)
 
   mouse_drag_active = true;
   last_mouse = event->globalPos();
+  mouseDraggedPoint = event->pos();
 }
 
 /*
@@ -336,8 +348,8 @@ void QGLView::normalizeAngle(GLdouble& angle)
 void QGLView::mouseMoveEvent(QMouseEvent *event)
 {
   auto this_mouse = event->globalPos();
+  QPoint pt = event->pos();
   if(measure_state != MEASURE_IDLE) {
-    QPoint pt = event->pos();
     this->shown_obj = findObject(pt.x(), pt.y());
     update();
   }
@@ -353,8 +365,30 @@ void QGLView::mouseMoveEvent(QMouseEvent *event)
         ) {
       // Left button rotates in xz, Shift-left rotates in xy
       // On Mac, Ctrl-Left is handled as right button on other platforms
-      if ((QApplication::keyboardModifiers() & Qt::ShiftModifier) != 0) {
-        rotate(dy, dx, 0.0, true);
+      if ((QApplication::keyboardModifiers() & Qt::ControlModifier) != 0) {
+	int drag_x=event->x() - mouseDraggedPoint.x();	      
+	int drag_y=mouseDraggedPoint.y() - event->y();	      
+
+
+        if(mouseDraggedSel == nullptr){
+          mouseDraggedSel = findObject(pt.x(), pt.y()); 
+          if(mouseDraggedSel != nullptr && mouseDraggedSel->type !=  SelectionType::SELECTION_POINT )
+            mouseDraggedSel = nullptr;				
+
+	}
+	if(mouseDraggedSel != nullptr){
+          int viewport[4]={0,0,0,0};
+          viewport[2]=size().rwidth();
+          viewport[3]=size().rheight();
+	  GLdouble viewcoord[3];
+          gluProject(mouseDraggedSel->pt[0][0],mouseDraggedSel->pt[0][1],mouseDraggedSel->pt[0][2], this->modelview, this->projection, viewport,&viewcoord[0], &viewcoord[1], &viewcoord[2]);
+
+	  Vector3d newpos;
+          gluUnProject(viewcoord[0]+drag_x, viewcoord[1]+drag_y, viewcoord[2], this->modelview, this->projection, viewport,&newpos[0], &newpos[1], &newpos[2]);
+	  emit dragPoint(mouseDraggedSel->pt[0], newpos);
+	}
+      }else
+      if ((QApplication::keyboardModifiers() & Qt::ShiftModifier) != 0) { rotate(dy, dx, 0.0, true);
       } else {
         rotate(dy, 0.0, dx, true);
       }
@@ -391,6 +425,11 @@ void QGLView::mouseReleaseEvent(QMouseEvent *event)
 {
   mouse_drag_active = false;
   releaseMouse();
+  if(mouseDraggedSel != nullptr) {
+    shown_obj = nullptr;
+    emit dragPointEnd(mouseDraggedSel->pt[0]);
+  }
+  mouseDraggedSel = nullptr;
 
   auto button_right = this->mouseSwapButtons?Qt::LeftButton : Qt::RightButton;
   auto button_left =  this->mouseSwapButtons?Qt::RightButton : Qt::LeftButton;
@@ -637,11 +676,14 @@ int QGLView::pickObject(QPoint position)
 {
   if (!isValid()) return -1;
 
-// FIXME: If renderer isn't prepared, we cannot call this 
-//  renderer->prepare(&this->selector->shaderinfo);
+  if (this->getRenderer()) {
+    this->makeCurrent();
+    auto guard = sg::make_scope_guard([this]() { this->doneCurrent(); });
 
-  // Update the selector with the right image size
-  this->selector->reset(this);
+    // Update the selector with the right image size
+    this->selector->reset(this);
 
-  return this->selector->select(this->getRenderer(), position.x(), position.y());
+    return this->selector->select(this->getRenderer(), position.x(), position.y());
+  }
+  return -1;
 }

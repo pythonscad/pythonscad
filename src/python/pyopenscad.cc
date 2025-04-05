@@ -27,6 +27,7 @@
 #include <filesystem>
 
 #include "pyopenscad.h"
+#include "pydata.h"
 #include "core/CsgOpNode.h"
 #include "Value.h"
 #include "Expression.h"
@@ -53,6 +54,7 @@ extern "C" PyObject *PyInit_openscad(void);
 
 bool python_active;
 bool python_trusted;
+std::string python_scriptpath;
 // https://docs.python.org/3.10/extending/newtypes.html
 
 void PyObjectDeleter (PyObject *pObject) { Py_XDECREF(pObject); };
@@ -76,6 +78,10 @@ std::vector<std::string> mapping_code;
 std::vector<int> mapping_level;
 std::shared_ptr<const FileContext> osinclude_context = nullptr;
 
+void python_setscriptpath(const std::string &scriptpath)
+{
+	python_scriptpath = scriptpath;	
+}
 
 void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
 {
@@ -93,7 +99,6 @@ PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
 	for(int j=0;j<4;j++)
 		PyList_SetItem(row,j,PyFloat_FromDouble(i==j?1.0:0.0));
 	PyList_SetItem(origin,i,row);
-//  	Py_XDECREF(row);
   }
   PyDict_SetItemString(((PyOpenSCADObject *)self)->dict,"origin",origin);
   Py_XDECREF(origin);
@@ -281,7 +286,7 @@ void python_retrieve_pyname(const std::shared_ptr<AbstractNode> &node)
  * converts a python obejct into an integer by all means
  */
 
-int python_numberval(PyObject *number, double *result)
+int python_numberval(PyObject *number, double *result, int *flags, int flagor)
 {
   if(number == nullptr) return 1;
   if(number == Py_False) return 1;
@@ -293,6 +298,18 @@ int python_numberval(PyObject *number, double *result)
   }
   if (PyLong_Check(number)) {
     *result = PyLong_AsLong(number);
+    return 0;
+  }
+  if( number->ob_type == &PyDataType  && flags != nullptr) {
+    *flags |= flagor;
+     *result = PyDataObjectToValue(number);    
+     return 0;
+  }
+  if (PyUnicode_Check(number) && flags != nullptr) {
+    PyObjectUniquePtr str( PyUnicode_AsEncodedString(number, "utf-8", "~"), PyObjectDeleter);
+    char *str1 = PyBytes_AS_STRING(str.get());
+    sscanf(str1,"%lf",result);
+    if(flags != nullptr) *flags |= flagor;
     return 0;
   }
   return 1;
@@ -319,23 +336,23 @@ std::vector<int>  python_intlistval(PyObject *list)
  * Tries to extract an 3D vector out of a python list
  */
 
-int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y, double *z, double *w)
+int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y, double *z, double *w, int *flags)
 {
-  if(w != NULL ) *w = 0;
+  if(flags != nullptr) *flags = 0;
   if (PyList_Check(vec)) {
     if(PyList_Size(vec) < minval || PyList_Size(vec) > maxval) return 1;
     	  
     if (PyList_Size(vec) >= 1) {
-      if (python_numberval(PyList_GetItem(vec, 0), x)) return 1;
+      if (python_numberval(PyList_GetItem(vec, 0), x, flags, 1)) return 1;
     }
     if (PyList_Size(vec) >= 2) {
-      if (python_numberval(PyList_GetItem(vec, 1), y)) return 1;
+      if (python_numberval(PyList_GetItem(vec, 1), y, flags, 2)) return 1;
     }
     if (PyList_Size(vec) >= 3) {
-      if (python_numberval(PyList_GetItem(vec, 2), z)) return 1;
+      if (python_numberval(PyList_GetItem(vec, 2), z, flags, 4)) return 1;
     }
     if (PyList_Size(vec) >= 4 && w != NULL) {
-      if (python_numberval(PyList_GetItem(vec, 3), w)) return 1;
+      if (python_numberval(PyList_GetItem(vec, 3), w, flags, 8)) return 1;
     }
     return 0;
   }
@@ -348,7 +365,7 @@ int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y
   return 1;
 }
 
-std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim) 
+std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int *dragflags) 
 {
   std::vector<Vector3d> results;	
   if (PyList_Check(vec)) {
@@ -377,7 +394,7 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim)
     if(PyList_Size(vec) >= mindim && PyList_Size(vec) <= maxdim) {	  
       for(int i=0;i<PyList_Size(vec);i++) {
         if (PyList_Size(vec) > i) {
-          if (python_numberval(PyList_GetItem(vec, i), &result[i])) return results; // Error
+          if (python_numberval(PyList_GetItem(vec, i), &result[i],dragflags, 1<<i)) return results; // Error
         }
       }	
     }  
@@ -417,8 +434,8 @@ void get_fnas(double& fn, double& fa, double& fs) {
     }
   }
 
-  PyObjectUniquePtr varFs(PyObject_GetAttrString(mainModule, "fs"),PyObjectDeleter);
   if(PyObject_HasAttrString(mainModule,"fs")) {
+    PyObjectUniquePtr varFs(PyObject_GetAttrString(mainModule, "fs"),PyObjectDeleter);
     if (varFs.get() != nullptr){
       fs = PyFloat_AsDouble(varFs.get());
     }
@@ -818,6 +835,7 @@ void initPython(const std::string& binDir, double time)
 #endif
     stream << sep << PlatformUtils::userLibraryPath();
     stream << sepchar << ".";
+    PyConfig_SetBytesString(&config, &config.pythonpath_env, stream.str().c_str());
     
     PyConfig_SetBytesString(&config, &config.program_name, name);
     PyConfig_SetBytesString(&config, &config.executable, exe.c_str());

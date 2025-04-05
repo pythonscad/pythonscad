@@ -26,6 +26,9 @@
 
 #include "core/TransformNode.h"
 #include "geometry/linalg.h"
+#include "geometry/Geometry.h"
+#include "geometry/PolySet.h"
+#include "geometry/PolySetUtils.h"
 #include "core/ModuleInstantiation.h"
 #include "core/Children.h"
 #include "core/Builtins.h"
@@ -252,6 +255,114 @@ TransformNode::TransformNode(const ModuleInstantiation *mi, std::string verbose_
   matrix(Transform3d::Identity()),
   _name(std::move(verbose_name))
 {
+}
+
+std::shared_ptr<const Geometry> TransformNode::dragPoint(const Vector3d &pt, const Vector3d &newpt, DragResult &result)
+{
+  if(!(dragflags&0x80)) {matrix_ = matrix; dragflags |= 0x80; }
+  Transform3d invmat = matrix_.inverse();		
+  Vector3d pt_tran = invmat * pt;
+  Vector3d newpt_tran = invmat * newpt;
+  std::shared_ptr<PolySet> result_geom = nullptr;
+
+  result_geom = std::make_shared<PolySet>(3);
+  for(int i=0;i<children.size();i++) {
+    auto &child = children[i];	    
+    int fresh = std::isnan(result.anchor[0]);
+    std::shared_ptr<const Geometry> child_geom = child->dragPoint(pt_tran, newpt_tran, result);
+    if(fresh && !std::isnan(result.anchor[0])){
+	result.anchor= matrix * result.anchor;	    
+    }
+    std::shared_ptr<const PolySet> ps = nullptr;
+    ps = std::dynamic_pointer_cast<const PolySet>(child_geom);
+    if(ps == nullptr) continue;
+    bool found=false;
+    if(dragflags) 
+    {
+      for(const auto &v:ps->vertices){
+        if((v-pt_tran).norm() < 1e-3) {
+          found=true;
+	  break;
+        }
+      }
+    }
+    if(_name == "rotate") {
+      if(dragflags && found) 
+      {
+        result.modname="rotate";
+        result.mods.clear();	
+        double sx=0, sy=0, sz=0;
+        double cx=1, cy=1, cz=1;
+
+        if(dragflags & 1) {
+          double newang= atan2(newpt_tran[2], newpt_tran[1]);		  
+          cx=cos(newang);
+          sx=sin(newang);
+	}
+        if(dragflags & 2) {
+          double newang= atan2(newpt_tran[2], newpt_tran[0]);		  
+          cy=cos(newang);
+          sy=sin(newang);
+	}
+        if(dragflags & 4) {
+          double newang= atan2(newpt_tran[1], newpt_tran[0]);		  
+          cz=cos(newang);
+          sz=sin(newang);
+	}
+	        
+        Matrix3d M;
+        M << cy * cz,  cz *sx *sy - cx * sz,   cx *cz *sy + sx * sz,
+        cy *sz,  cx *cz + sx * sy * sz,  -cz * sx + cx * sy * sz,
+        -sy,       cy *sx,                  cx *cy;
+        matrix=matrix_;
+        matrix.rotate(M);
+	result.anchor =matrix *pt_tran;
+        if(dragflags & 1) {
+	  DragMod mod;
+	  mod.index=0;
+	  mod.name="angle";
+	  mod.arrinfo.push_back(0);
+          double newang= atan2(matrix(2,0),matrix(1,0));		  
+	  mod.value=newang*180/M_PI;
+	  result.mods.push_back(mod);
+        }  
+        if(dragflags & 2) {
+	  DragMod mod;
+	  mod.index=0;
+	  mod.name="angle";
+	  mod.arrinfo.push_back(1);
+          double newang= atan2(matrix(2,0),matrix(0,0));		  
+	  mod.value=newang*180/M_PI;
+	  result.mods.push_back(mod);
+        }  
+        if(dragflags & 4) {
+	  DragMod mod;
+	  mod.index=0;
+	  mod.name="angle";
+	  mod.arrinfo.push_back(2);
+          double newang= atan2(matrix(1,0),matrix(0,0));		  
+	  mod.value=newang*180/M_PI;
+	  result.mods.push_back(mod);
+        }  
+      }
+    }	    
+    if(_name == "translate") {
+      if(dragflags && found) 
+      {
+        Vector3d tranvect(0,0,0);
+        for(i=0;i<3;i++)
+	  if(dragflags& ( 1<<i)) 
+             tranvect[i]=newpt_tran[i] - pt_tran[i];		  
+		  
+        matrix=matrix_;
+        matrix.translate(tranvect); 
+	result.anchor =matrix *pt_tran;
+      }
+    }	    
+    result_geom->vertices = ps->vertices; // TODO concatenate vertices
+    result_geom->transform(matrix_);
+  }	  
+  return result_geom;
 }
 
 std::string TransformNode::name() const
