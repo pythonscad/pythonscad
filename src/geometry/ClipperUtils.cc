@@ -12,6 +12,8 @@
 #include <memory>
 #include <cstddef>
 #include <vector>
+#include "src/core/ColorUtil.h"
+
 
 namespace ClipperUtils {
 
@@ -173,7 +175,11 @@ std::unique_ptr<Polygon2d> sanitize(const Polygon2d& poly)
   auto scale_bits = scaleBitsFromPrecision();
 
   auto paths = ClipperUtils::fromPolygon2d(poly, scale_bits);
-  return toPolygon2d(*sanitize(paths), scale_bits);
+  auto result = toPolygon2d(*sanitize(paths), scale_bits);
+ 
+  result->stamp_color(poly);
+  //return result;
+  return std::make_unique<Polygon2d>(poly);
 }
 
 /*!
@@ -258,14 +264,11 @@ std::unique_ptr<Polygon2d> apply(const std::vector<Clipper2Lib::Paths64>& pathsv
   return ClipperUtils::toPolygon2d(sumresult, scale_bits);
 }
 
-/*!
-   Apply the clipper operator to the given polygons.
-
-   May return an empty Polygon2d, but will not return nullptr.
- */
-std::unique_ptr<Polygon2d> apply(const std::vector<std::shared_ptr<const Polygon2d>>& polygons,
-				 Clipper2Lib::ClipType clipType)
+Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygons)
 {
+  int n = polygons.size();
+  int inputs_old=0;
+
   const int scale_bits = scaleBitsFromPrecision();
 
   std::vector<Clipper2Lib::Paths64> pathsvector;
@@ -430,7 +433,9 @@ std::unique_ptr<Polygon2d> applyMinkowski(const std::vector<std::shared_ptr<cons
 
   Clipper2Lib::PolyTree64 polytree;
   clipper.Execute(Clipper2Lib::ClipType::Union, Clipper2Lib::FillRule::NonZero, polytree);
-  return toPolygon2d(polytree, scale_bits);
+  auto result = toPolygon2d(polytree, scale_bits);
+  result->setColor(*OpenSCAD::parse_color("#f9d72c"));
+  return result;
 }
 
 std::unique_ptr<Polygon2d> applyOffset(const Polygon2d& poly, double offset, Clipper2Lib::JoinType joinType,
@@ -449,6 +454,7 @@ std::unique_ptr<Polygon2d> applyOffset(const Polygon2d& poly, double offset, Cli
   co.Execute(std::ldexp(offset, scale_bits), result);
   auto r = toPolygon2d(result, scale_bits);
   r->transform3d(poly.getTransform3d());	  
+  r->setColor(*OpenSCAD::parse_color("#f9d72c"));
   return r;
 }
 
