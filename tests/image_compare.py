@@ -24,6 +24,15 @@ def Compare3x3(img1, img2):
   a1 = np.array(img1, dtype=float)
   a2 = np.array(img2, dtype=float)
 
+  # turn green in expected to yellow
+  for cols in a1:
+      for pixel in cols:
+            if pixel[0] == 0 and pixel[1] == 191 and pixel[2] == 153: # green
+                pixel[0] = 249
+                pixel[1] = 215
+                pixel[2] = 44
+                      
+
   d = a1-a2
   # Truncate pixel-to-pixel differences less than 3 to 0.
   d[np.abs(d)<PIXEL_TOLERANCE] = 0

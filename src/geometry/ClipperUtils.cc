@@ -380,7 +380,7 @@ std::unique_ptr<Polygon2d> apply(const std::vector<std::shared_ptr<const Polygon
       }
       std::unique_ptr<Polygon2d> result = apply(pathsvector, clipType, scale_bits);
       assert(result);
-      if(polygons.size() > 0) result->stamp_color(*polygons[0]);
+      if(polygons.size() > 0 && polygons[0] != nullptr ) result->stamp_color(*polygons[0]);
         return result;
     }
     break;
