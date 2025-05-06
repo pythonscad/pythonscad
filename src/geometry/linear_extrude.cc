@@ -492,7 +492,7 @@ size_t calc_num_slices(const LinearExtrudeNode& node, const Polygon2d& poly) {
 std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Polygon2d& poly)
 {
   assert(poly.isSanitized());
-//  if (node.height[2] <= 0) return PolySet::createEmpty();
+  if (fabs(node.height[2]) < 1e-6) return PolySet::createEmpty();
 
   bool non_linear = node.twist != 0 || node.scale_x != node.scale_y;
   boost::tribool isConvex{poly.is_convex()};
@@ -554,7 +554,7 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
   }
 #endif
 
-  const Polygon2d& polyref = is_segmented ? seg_poly : poly;
+  Polygon2d polyref = is_segmented ? seg_poly : poly;
 
   Vector3d height(0,0,1);
   if(node.has_heightvector) height = node.height;
@@ -562,6 +562,10 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
     auto mat = polyref.getTransform3d();
     height = Vector3d(mat(0,2), mat(1,2), mat(2,2)).normalized()*node.height[2];		  
    }
+  if(node.height[2]<0) {
+    // reverse points, to not get a left system	  
+    polyref.reverse();
+  }
 
   Vector3d h1 = Vector3d::Zero();
   Vector3d h2 = height;

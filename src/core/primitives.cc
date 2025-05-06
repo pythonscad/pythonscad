@@ -673,7 +673,10 @@ std::string PolygonNode::toString() const
     } else {
       stream << ", ";
     }
-    stream << "[" << point[0] << ", " << point[1] << "]";
+    stream << "[" << point[0] << ", " << point[1];
+    if(point[2] != 0)
+      stream << ", " << point[2];
+    stream  << "]";
   }
   stream << "], paths = ";
   if (this->paths.empty()) {
@@ -705,25 +708,67 @@ std::string PolygonNode::toString() const
   return stream.str();
 }
 
+void get_fnas(double& fn, double& fa, double& fs);
+
+VectorOfVector2d  PolygonNode::createGeometry_sub(const std::vector<Vector3d> &points, const std::vector<size_t> &path, double fn, double fa, double fs) const
+{
+  std::vector<Vector2d> result;
+  int n = path.size();
+  for(int i=0;i<n;i++){
+    const auto & ptprev = points[path[(i+n-1)%n]];	    
+    const auto & ptcur = points[path[i]];	    
+    const auto & ptnext = points[path[(i+1)%n]];	    
+    if(ptcur[2] == 0) result.push_back(ptcur.head<2>()); // normal point without radius
+    else {
+      double r =ptcur[2]; // do the corner calculations
+      Vector3d dir1=ptcur-ptprev; dir1[2]=0;
+      Vector3d dir2=ptnext-ptcur; dir2[2]=0;
+      Vector3d cr = dir1.cross(dir2);
+      Vector3d n1=Vector3d(-dir1[1],dir1[0], 0).normalized();
+      Vector3d n2=Vector3d(-dir2[1],dir2[0], 0).normalized();
+      if(cr[2] < 0) { n1=-n1; n2=-n2; } // concave corner
+      Vector3d res;
+      linsystem(dir1, cr, dir2, ptnext+n2*r-ptprev-n1*r, res, nullptr);
+      Vector3d st=ptprev+dir1*res[0]; st[2]=0;
+      Vector3d cent=st+r*n1;
+      Vector3d en=cent-r*n2;
+      double ang_st=atan2(-n1[1], -n1[0]);
+      double ang_en=atan2(-n2[1], -n2[0]);
+      result.push_back(st.head<2>());
+      if(ang_en-ang_st > M_PI) ang_en -= 2*M_PI;
+      if(ang_st-ang_en > M_PI) ang_st -= 2*M_PI;
+
+      int segs=(fabs(ang_en-ang_st)*180/M_PI)/(double) fa;
+      if(fn != 0) segs=fn;
+      for(int j=0;j<segs;j++) {
+        double ang = ang_st + (ang_en-ang_st)*(j+1)/(segs+1);
+        result.push_back(Vector2d(cent[0]+r*cos(ang), cent[1]+r*sin(ang)));
+      }
+      result.push_back(en.head<2>());
+    }	      
+  }  // for
+  return result;
+}
+extern bool pythonMainModuleInitialized;
 std::unique_ptr<const Geometry> PolygonNode::createGeometry() const
 {
   auto p = std::make_unique<Polygon2d>();
+  double fn=2, fa=12, fs=2;
+#ifdef ENABLE_PYTHON  
+  if(pythonMainModuleInitialized) get_fnas(fn, fa, fs);
+#endif  
   if (this->paths.empty() && this->points.size() > 2) {
     Outline2d outline;
-    for (const auto& point : this->points) {
-      outline.vertices.push_back(point);
-    }
+    std::vector<size_t> path;
+    for(int i=0;i<this->points.size();i++) path.push_back(i);
+    outline.vertices = createGeometry_sub(this->points,path,  fn, fa, fs);
     p->addOutline(outline);
   } else {
     bool positive = true; // First outline is positive
     for (const auto& path : this->paths) {
       Outline2d outline;
-      for (const auto& index : path) {
-        assert(index < this->points.size());
-        const auto& point = points[index];
-        outline.vertices.push_back(point);
-      }
       outline.positive = positive;
+      outline.vertices = createGeometry_sub(this->points,path,  fn, fa, fs);
       p->addOutline(outline);
       positive = false; // Subsequent outlines are holes
     }
@@ -752,7 +797,6 @@ std::string SplineNode::toString() const
   return stream.str();
 }
 
-int linsystem( Vector3d v1,Vector3d v2,Vector3d v3,Vector3d pt,Vector3d &res,double *detptr=NULL);
 
 std::vector<Vector2d> SplineNode::draw_arc(int fn, const Vector2d &tang1, double l1, const Vector2d &tang2, double l2, const Vector2d &cornerpt) const {
   std::vector<Vector2d> result;	
@@ -795,7 +839,7 @@ std::unique_ptr<const Geometry> SplineNode::createGeometry() const
 
     bool convex=true;
     Vector2d diff=this->points[(i+1)%n]-this->points[i];
-    if(linsystem( tangent[i], tangent[(i+1)%n],dirz,Vector3d(diff[0], diff[1], 0),res)) convex=false;
+    if(linsystem( tangent[i], tangent[(i+1)%n],dirz,Vector3d(diff[0], diff[1], 0),res, nullptr)) convex=false;
     if(res[0] < -1e-6 || res[1] < -1e-6) convex=false;
     if(convex) {
       Vector2d cornerpt=this->points[i] + res[0]*tangent[i].head<2>();
@@ -817,13 +861,13 @@ std::unique_ptr<const Geometry> SplineNode::createGeometry() const
       Vector2d diff=midpt - this->points[i];
 
       // 1st arc
-      if(linsystem( tangent[i], Vector3d(midtang[0], midtang[1], 0),dirz,Vector3d(diff[0], diff[1], 0),res)) printf("prog errr\n");
+      if(linsystem( tangent[i], Vector3d(midtang[0], midtang[1], 0),dirz,Vector3d(diff[0], diff[1], 0),res, nullptr)) printf("prog errr\n");
       Vector2d cornerpt1=this->points[i] + res[0]*tangent[i].head<2>();
       auto pts =draw_arc(fn, tangent[i].head<2>(), res[0], midtang, res[1],cornerpt1);	    
       for(const Vector2d &pt: pts) result.vertices.push_back(pt);	      
       
       // 2nd arc
-      if(linsystem( Vector3d(midtang[0], midtang[1], 0),tangent[(i+1)%n],dirz,Vector3d(diff[0], diff[1], 0),res)) printf("prog errr\n");
+      if(linsystem( Vector3d(midtang[0], midtang[1], 0),tangent[(i+1)%n],dirz,Vector3d(diff[0], diff[1], 0),res, nullptr)) printf("prog errr\n");
       Vector2d cornerpt2=this->points[(i+1)%n] - res[1]*tangent[(i+1)%n].head<2>();
       auto pts2 =draw_arc(fn, midtang, res[0], tangent[(i+1)%n].head<2>(), res[1], cornerpt2);	    
       for(const Vector2d &pt: pts2) result.vertices.push_back(pt);	      
@@ -846,12 +890,12 @@ static std::shared_ptr<AbstractNode> builtin_polygon(const ModuleInstantiation *
     return node;
   }
   for (const Value& pointValue : parameters["points"].toVector()) {
-    Vector2d point;
+    Vector3d point(0,0,0);
     if (!pointValue.getVec2(point[0], point[1]) ||
         !std::isfinite(point[0]) || !std::isfinite(point[1])
         ) {
       LOG(message_group::Error, inst->location(), parameters.documentRoot(), "Unable to convert points[%1$d] = %2$s to a vec2 of numbers", node->points.size(), pointValue.toEchoStringNoThrow());
-      node->points.push_back({0, 0});
+      node->points.push_back({0, 0, 0});
     } else {
       node->points.push_back(point);
     }

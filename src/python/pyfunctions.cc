@@ -840,7 +840,7 @@ PyObject *python_polygon(PyObject *self, PyObject *args, PyObject *kwargs)
   int convexity = 2;
 
   PyObject *element;
-  Vector2d point;
+  Vector3d point;
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|O!i", kwlist,
                                    &PyList_Type, &points,
@@ -858,15 +858,12 @@ PyObject *python_polygon(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     for (i = 0; i < PyList_Size(points); i++) {
       element = PyList_GetItem(points, i);
-      if (PyList_Check(element) && PyList_Size(element) == 2) {
-        point[0] = PyFloat_AsDouble(PyList_GetItem(element, 0));
-        point[1] = PyFloat_AsDouble(PyList_GetItem(element, 1));
-        node->points.push_back(point);
-      } else {
-        PyErr_SetString(PyExc_TypeError, "Coordinate must exactly contain 2 numbers");
+      point[2]=0; // default no radius
+      if (python_vectorval(element, 2, 3, &point[0], &point[1], &point[2])) {
+        PyErr_SetString(PyExc_TypeError, "Coordinate must contain 2 or 3 numbers");
         return NULL;
       }
-
+      node->points.push_back(point);
     }
   } else {
     PyErr_SetString(PyExc_TypeError, "Polygon points must be a list of coordinates");
@@ -2065,19 +2062,13 @@ PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha, int te
   else if(PyUnicode_Check(color)) {
     PyObject* value = PyUnicode_AsEncodedString(color, "utf-8", "~");
     char *colorname =  PyBytes_AS_STRING(value);
-    boost::algorithm::to_lower(colorname);
-    if (webcolors.find(colorname) != webcolors.end()) {
-      node->color = webcolors.at(colorname);
+    const auto color = OpenSCAD::parse_color(colorname);
+    if (color) {
+      node->color = *color;
       node->color[3]=alpha;
     } else {
-    // Try parsing it as a hex color such as "#rrggbb".
-      const auto hexColor = OpenSCAD::parse_hex_color(colorname);
-      if (hexColor) {
-        node->color = *hexColor;
-      } else {
-        PyErr_SetString(PyExc_TypeError, "Cannot parse color");
-        return NULL;
-      }
+      PyErr_SetString(PyExc_TypeError, "Cannot parse color");
+      return NULL;
     }
   } else {
     PyErr_SetString(PyExc_TypeError, "Unknown color representation");
@@ -2434,14 +2425,27 @@ PyObject *python_faces_core(PyObject *obj, bool tessellate)
 
 
   if(ps != nullptr){
-    if(tessellate == true) {
+    PolygonIndices inds;	 
+    std::vector<int> face_parents;
+    if(tessellate == true){
       ps = PolySetUtils::tessellate_faces(*ps);
+      inds = ps->indices;
+      for(int i=0;i<inds.size();i++) face_parents.push_back(-1);
     }
+    else {
+      std::vector<Vector4d> normals, new_normals;      
+      normals = calcTriangleNormals(ps->vertices, ps->indices);
+      inds  = mergeTriangles(ps->indices, normals, new_normals, face_parents, ps->vertices);
+    }
+    int resultlen=0, resultiter=0;
+    for(int i=0;i<face_parents.size();i++)
+      if(face_parents[i] == -1) resultlen++;	    
 
-    PyObject *pyth_faces = PyList_New(ps->indices.size());
+    PyObject *pyth_faces = PyList_New(resultlen);
 
-    for (size_t j=0;j<ps->indices.size();j++) {
-      auto &face = ps->indices[j];	    
+    for (size_t j=0;j<inds.size();j++) {
+      if(face_parents[j] != -1) continue;	    
+      auto &face = inds[j];	    
       if(face.size() < 3) continue;	    
       Vector3d zdir=calcTriangleNormal(ps->vertices,face).head<3>().normalized();
       // calc center of face
@@ -2467,11 +2471,36 @@ PyObject *python_faces_core(PyObject *obj, bool tessellate)
       
       DECLARE_INSTANCE
       auto poly = std::make_shared<PolygonNode>(instance);
+      std::vector<size_t> path;
       for(size_t i=0;i<face.size();i++) {
         Vector3d pt = ps->vertices[face[i]];
         Vector4d pt4(pt[0], pt[1], pt[2], 1);
         pt4 = invmat * pt4 ;
-        poly->points.push_back(pt4.head<2>());
+	path.push_back(poly->points.size());
+	Vector3d pt3 = pt4.head<3>();
+	pt3[2]=0; // no radius
+        poly->points.push_back(pt3);
+      }
+      poly->paths.push_back(path);
+
+        // check if there are holes
+      for (size_t k=0;k<inds.size();k++) {
+        if(face_parents[k] == j){
+          auto &hole = inds[k];		
+
+          std::vector<size_t> path;
+          for(size_t i=0;i<hole.size();i++) {
+            Vector3d pt = ps->vertices[hole[i]];
+            Vector4d pt4(pt[0], pt[1], pt[2], 1);
+            pt4 = invmat * pt4 ;
+	    path.push_back(poly->points.size());
+	    Vector3d pt3 = pt4.head<3>();
+	    pt3[2]=0; // no radius
+            poly->points.push_back(pt3);
+          }
+          poly->paths.push_back(path);
+
+        }
       }
       {
         DECLARE_INSTANCE
@@ -2480,12 +2509,11 @@ PyObject *python_faces_core(PyObject *obj, bool tessellate)
 	mult->children.push_back(poly);
 
         PyObject *pyth_face = PyOpenSCADObjectFromNode(&PyOpenSCADType, mult);
-        PyList_SetItem(pyth_faces, j, pyth_face);
+        PyList_SetItem(pyth_faces, resultiter++, pyth_face);
       }
 
     }
     return  pyth_faces;
-// do the magic here
   }  
   return Py_None;
 }
@@ -3206,6 +3234,7 @@ PyObject *python_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, OpenS
   for(int i=child_dict.size()-1;i>=0; i--) // merge from back  to give 1st child most priority
   {
     auto &dict = child_dict[i];	  
+    if(dict == nullptr) continue;
     PyObject *key, *value;
     Py_ssize_t pos = 0;
      while(PyDict_Next(dict, &pos, &key, &value)) {
@@ -4320,8 +4349,9 @@ PyObject *python_import(PyObject *self, PyObject *args, PyObject *kwargs) {
 }
 
 
-extern int curl_download(std::string url, std::string path);
 
+#ifndef OPENSCAD_NOGUI
+extern int curl_download(std::string url, std::string path);
 PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   static bool called_already=false;	
@@ -4350,7 +4380,6 @@ PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
     do_download=true;	  
   }
 
-  // TODO download
   if(do_download) {
     curl_download(url, path);	  
 	  
@@ -4359,6 +4388,7 @@ PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
   PyRun_SimpleString(importcode.c_str());
   return Py_None;
 }
+#endif
 
 PyObject *python_str(PyObject *self) {
   std::ostringstream stream;
@@ -4592,7 +4622,7 @@ PyObject *python_nb_invert(PyObject *arg) { return python_debug_modifier(arg,0);
 PyObject *python_nb_neg(PyObject *arg) { return python_debug_modifier(arg,1); }
 PyObject *python_nb_pos(PyObject *arg) { return python_debug_modifier(arg,2); }
 
-#ifndef ENABLE_PIP
+#ifndef OPENSCAD_NOGUI
 extern void  add_menuitem_trampoline(const char *menuname, const char *itemname, const char *callback);
 PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
 {
@@ -4711,7 +4741,6 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"group", (PyCFunction) python_group, METH_VARARGS | METH_KEYWORDS, "Group Object."},
   {"render", (PyCFunction) python_render, METH_VARARGS | METH_KEYWORDS, "Render Object."},
   {"osimport", (PyCFunction) python_import, METH_VARARGS | METH_KEYWORDS, "Import Object."},
-  {"nimport", (PyCFunction) python_nimport, METH_VARARGS | METH_KEYWORDS, "Import Networked Object."},
   {"osuse", (PyCFunction) python_osuse, METH_VARARGS | METH_KEYWORDS, "Use OpenSCAD Library."},
   {"osinclude", (PyCFunction) python_osinclude, METH_VARARGS | METH_KEYWORDS, "Include OpenSCAD Library."},
   {"version", (PyCFunction) python_osversion, METH_VARARGS | METH_KEYWORDS, "Output openscad Version."},
@@ -4719,8 +4748,9 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"add_parameter", (PyCFunction) python_add_parameter, METH_VARARGS | METH_KEYWORDS, "Add Parameter for Customizer."},
   {"scad", (PyCFunction) python_scad, METH_VARARGS | METH_KEYWORDS, "Source OpenSCAD code."},
   {"align", (PyCFunction) python_align, METH_VARARGS | METH_KEYWORDS, "Align Object to another."},
-#ifndef ENABLE_PIP  
+#ifndef OPENSCAD_NOGUI  
   {"add_menuitem", (PyCFunction) python_add_menuitem, METH_VARARGS | METH_KEYWORDS, "Add Menuitem to the the openscad window."},
+  {"nimport", (PyCFunction) python_nimport, METH_VARARGS | METH_KEYWORDS, "Import Networked Object."},
 #endif  
   {"model", (PyCFunction) python_model, METH_VARARGS | METH_KEYWORDS, "Yield Model"},
   {"modelpath", (PyCFunction) python_modelpath, METH_VARARGS | METH_KEYWORDS, "Returns absolute Path to script"},
