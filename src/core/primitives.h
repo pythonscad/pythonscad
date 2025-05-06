@@ -119,9 +119,9 @@ public:
            << ", $fs = " << fs
            << ", h = " << h
            << ", r1 = " << r1
-           << ", r2 = " << r2
-           << ", angle = " << angle
-           << ", center = " << (center ? "true" : "false")
+           << ", r2 = " << r2;
+    if(angle != 360) stream << ", angle = " << angle;
+    stream << ", center = " << (center ? "true" : "false")
            << ")";
     return stream.str();
   }
@@ -202,9 +202,9 @@ public:
            << "($fn = " << fn
            << ", $fa = " << fa
            << ", $fs = " << fs
-           << ", r = " << r
-           << ", angle = " << angle
-           << ")";
+           << ", r = " << r;
+    if(angle != 360) stream << ", angle = " << angle;
+    stream << ")";
     return stream.str();
   }
   std::string name() const override { return "circle"; }
@@ -224,9 +224,10 @@ public:
   std::string name() const override { return "polygon"; }
   std::unique_ptr<const Geometry> createGeometry() const override;
 
-  std::vector<Vector2d> points;
+  std::vector<Vector3d> points;
   std::vector<std::vector<size_t>> paths;
   int convexity = 1;
+  VectorOfVector2d  createGeometry_sub(const std::vector<Vector3d> &points, const std::vector<size_t> &path, double fn, double fa, double fs) const;
 };
 
 class SplineNode : public LeafNode

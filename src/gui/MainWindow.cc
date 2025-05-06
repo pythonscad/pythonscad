@@ -124,6 +124,7 @@
 #include "gui/ExportPdfDialog.h"
 #include "gui/ExternalToolInterface.h"
 #include "gui/FontListDialog.h"
+#include "gui/ImportUtils.h"
 #include "gui/input/InputDriverEvent.h"
 #include "gui/input/InputDriverManager.h"
 #include "gui/LibraryInfoDialog.h"
@@ -150,7 +151,7 @@
 #ifdef ENABLE_CGAL
 #include "geometry/cgal/cgal.h"
 #include "geometry/cgal/CGALCache.h"
-#include "geometry/cgal/CGAL_Nef_polyhedron.h"
+#include "geometry/cgal/CGALNefGeometry.h"
 #endif // ENABLE_CGAL
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/manifoldutils.h"
@@ -204,6 +205,7 @@ int curl_download(std::string url, std::string path)
 {
     CURLcode status;
     FILE *fh=fopen((path+"_").c_str(),"wb");
+    LOG(message_group::Warning, "Downloading to %1$s",path.c_str());
     if(fh != nullptr) {
       CURL *curl = curl_easy_init();
       if(curl) {
@@ -342,7 +344,7 @@ void MainWindow::addMenuItemCB(QString callback)
   if(content.size() == 0) return;
   const auto& venv = venvBinDirFromSettings();
   const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
-  initPython(binDir, 0.0);
+  initPython(binDir, "", 0.0);
   evaluatePython(content);
   evaluatePython(cbstr);
   finishPython();
@@ -418,7 +420,7 @@ void MainWindow::customSetup(void)
   connect (this->addmenu_mapper, SIGNAL(mapped(QString)), this, SLOT(addMenuItemCB(QString))) ;
   const auto& venv = venvBinDirFromSettings();
   const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
-  initPython(binDir, 0.0);
+  initPython(binDir, "", 0.0);
   evaluatePython(content);
   addmenuitem_this = this;
   evaluatePython("setup()");
@@ -470,26 +472,6 @@ MainWindow::MainWindow(const QStringList& filenames) :
 
   renderCompleteSoundEffect = new QSoundEffect();
   renderCompleteSoundEffect->setSource(QUrl("qrc:/sounds/complete.wav"));
-
-  const QString importStatement = "import(\"%1\");\n";
-  const QString surfaceStatement = "surface(\"%1\");\n";
-  const QString importFunction = "data = import(\"%1\");\n";
-  knownFileExtensions["stl"] = importStatement;
-  knownFileExtensions["step"] = importStatement;
-  knownFileExtensions["obj"] = importStatement;
-  knownFileExtensions["3mf"] = importStatement;
-  knownFileExtensions["off"] = importStatement;
-  knownFileExtensions["dxf"] = importStatement;
-  knownFileExtensions["svg"] = importStatement;
-  knownFileExtensions["amf"] = importStatement;
-  knownFileExtensions["dat"] = surfaceStatement;
-  knownFileExtensions["png"] = surfaceStatement;
-  knownFileExtensions["json"] = importFunction;
-  knownFileExtensions["scad"] = "";
-#ifdef ENABLE_PYTHON
-  knownFileExtensions["py"] = "";
-#endif
-  knownFileExtensions["csg"] = "";
 
   rootFile = nullptr;
   parsedFile = nullptr;
@@ -620,6 +602,7 @@ MainWindow::MainWindow(const QStringList& filenames) :
   connect(this->fileActionClose, &QAction::triggered, tabManager, &TabManager::closeCurrentTab);
   connect(this->fileActionQuit, &QAction::triggered, scadApp, &OpenSCADApp::quit, Qt::QueuedConnection);
   connect(this->fileShowLibraryFolder, &QAction::triggered, this, &MainWindow::actionShowLibraryFolder);
+  connect(this->fileShowBackupFiles, &QAction::triggered, this, &MainWindow::actionShowBackupFiles);
 
 #ifdef ENABLE_PYTHON
   connect(this->fileActionPythonRevoke, &QAction::triggered, this, &MainWindow::actionPythonRevokeTrustedFiles);
@@ -658,7 +641,7 @@ MainWindow::MainWindow(const QStringList& filenames) :
   connect(this->editActionFind, &QAction::triggered, this, &MainWindow::actionShowFind);
   connect(this->editActionFindAndReplace, &QAction::triggered, this, &MainWindow::actionShowFindAndReplace);
 #ifdef Q_OS_WIN
-  this->editActionFindAndReplace->setShortcut(QKeySequence(Qt::CTRL, Qt::SHIFT, Qt::Key_F));
+  this->editActionFindAndReplace->setShortcut(QKeySequence("Ctrl+Shift+F"));
 #endif
   connect(this->editActionFindNext, &QAction::triggered, this, &MainWindow::findNext);
   connect(this->editActionFindPrevious, &QAction::triggered, this, &MainWindow::findPrev);
@@ -2094,6 +2077,17 @@ void MainWindow::actionShowLibraryFolder()
   QDesktopServices::openUrl(QUrl::fromLocalFile(url));
 }
 
+void MainWindow::actionShowBackupFiles()
+{
+  QString filename = UIUtils::getBackupFileName(this);
+  if(filename.size() == 0) return; // dont proceed when cancelled
+  tabManager->actionNew();
+  QString errorString;
+  QString result = UIUtils::readFileContents(filename, errorString);
+  if(result == nullptr) return;
+  activeEditor->setText("assert(0);\n"+result);
+}
+
 void MainWindow::actionReload()
 {
   if (checkEditorModified()) {
@@ -2314,6 +2308,13 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
     return false;
   }
 
+  auto keyEvent = static_cast<QKeyEvent *>(event);
+  if (keyEvent != nullptr && keyEvent->key() == Qt::Key_Escape) {
+    if(this->qglview->measure_state != MEASURE_IDLE) {
+      this->qglview->handle_mode=false;
+      meas.stopMeasure();
+    }
+  }
   return QMainWindow::eventFilter(obj, event);
 }
 
@@ -2451,8 +2452,7 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
 
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
-    initPython(binDir, this->animateWidget->getAnimTval());
-    python_setscriptpath(fnameba.constData());
+    initPython(binDir, fnameba.constData(), this->animateWidget->getAnimTval());
     this->activeEditor->resetHighlighting();
     this->activeEditor->parameterWidget->setEnabled(false);
     do {
@@ -3093,7 +3093,7 @@ void MainWindow::showTextInWindow(const QString& type, const QString& content)
     e->setTabStopDistance(tabStopWidth);
     e->setWindowTitle(type+" Dump");
     if(content.isEmpty())
-        e->setPlainText("No "+type+"to dump. Please try compiling first...");
+        e->setPlainText("No "+type+" to dump. Please try compiling first...");
     else
         e->setPlainText(content);
 
@@ -3355,7 +3355,7 @@ void MainWindow::actionCheckValidity()
 
   bool valid = true;
 #ifdef ENABLE_CGAL
-  if (auto N = std::dynamic_pointer_cast<const CGAL_Nef_polyhedron>(rootGeom)) {
+  if (auto N = std::dynamic_pointer_cast<const CGALNefGeometry>(rootGeom)) {
     valid = N->p3 ? const_cast<CGAL_Nef_polyhedron3&>(*N->p3).is_valid() : false;
   } else
 #endif
@@ -3413,7 +3413,7 @@ bool MainWindow::canExport(unsigned int dim)
   }
 
 #ifdef ENABLE_CGAL
-  auto N = dynamic_cast<const CGAL_Nef_polyhedron *>(rootGeom.get());
+  auto N = dynamic_cast<const CGALNefGeometry *>(rootGeom.get());
   if (N && !N->p3->is_simple()) {
     LOG(message_group::UI_Warning, "Object may not be a valid 2-manifold and may need repair! See https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/STL_Import_and_Export");
   }
@@ -4092,7 +4092,7 @@ void MainWindow::handleFileDrop(const QUrl& url)
   const auto fileName = url.toLocalFile();
   const auto fileInfo = QFileInfo{fileName};
   const auto suffix = fileInfo.suffix().toLower();
-  const auto cmd = knownFileExtensions[suffix];
+  const auto cmd = Importer::knownFileExtensions[suffix];
   if (cmd.isEmpty()) {
     tabManager->open(fileName);
   } else {

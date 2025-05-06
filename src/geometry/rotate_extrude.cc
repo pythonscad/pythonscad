@@ -107,7 +107,6 @@ std::unique_ptr<Geometry> rotatePolygonSub(const RotateExtrudeNode& node, const 
     }
   }
   num_vertices = slice_stride * num_rings;
-
   std::vector<Vector3d> vertices;
   vertices.reserve(num_vertices);
   PolygonIndices indices;
@@ -128,9 +127,9 @@ std::unique_ptr<Geometry> rotatePolygonSub(const RotateExtrudeNode& node, const 
         Outline2d curFace;
         Outline2d outl = python_getprofile(node.profile_func, node.fn, j/(double) fragments);
 	vertices2d = outl.vertices;
-      }
+      } else
 #endif
-      else vertices2d = outline.vertices;
+      vertices2d = outline.vertices;
 #ifdef ENABLE_PYTHON	      
       if(node.twist_func != NULL) cur_twist = python_doublefunc(node.twist_func, 0); 
       else
@@ -230,8 +229,10 @@ std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Pol
       min_x, max_x);
     return nullptr;
   }
-  fragments = (unsigned int)std::ceil(fmax(Calc::get_fragments_from_r(max_x - min_x, node.angle, node.fn, node.fs, node.fa) * std::abs(node.angle) / 360, 1));
-  bool flip_faces = (min_x >= 0 && node.angle > 0 && node.angle != 360) || (min_x < 0 && (node.angle < 0 || node.angle == 360));
+  const auto num_sections = (unsigned int)std::ceil(fmax(
+    Calc::get_fragments_from_r(max_x - min_x, 360.0, node.fn, node.fs, node.fa) * std::abs(node.angle) / 360,
+    1));
+  bool flip_faces = (min_x >= 0 && node.angle > 0) || (min_x < 0 && node.angle < 0);
 
   // check if its save to extrude
   bool safe=true;
@@ -243,7 +244,7 @@ std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Pol
     safe=false;
 
   } while(false);
-  if(safe) return rotatePolygonSub(node, poly, fragments, 0, fragments, flip_faces);	
+  if(safe) return rotatePolygonSub(node, poly, num_sections, 0, num_sections, flip_faces);	
 
   // now create a fragment splitting plan
   size_t splits=ceil(node.angle/300.0);

@@ -148,7 +148,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   set(ENABLE_CAIRO OFF CACHE BOOL "" FORCE)
   set(MANIFOLD_PAR OFF CACHE BOOL "" FORCE)
   set(NULLGL ON CACHE BOOL "" FORCE)
-  set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
   set(USE_MIMALLOC OFF CACHE BOOL "" FORCE)
   set(ENV{PKG_CONFIG_PATH} "/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig")
   target_compile_definitions(OpenSCAD PRIVATE CGAL_DISABLE_ROUNDING_MATH_CHECK)
@@ -515,7 +514,7 @@ if(ENABLE_PYTHON)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
   else() #MXE
-    find_package(Python REQUIRED COMPONENTS Interpreter Development)
+    find_package(Python REQUIRED COMPONENTS Development)
     if(NOT Nettle_FOUND)
       message(WARNING "Nettle not found, disabling python support.")
       set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
@@ -600,18 +599,20 @@ if(ENABLE_PYTHON)
   )
   target_link_libraries(OpenSCAD PRIVATE OpenSCADPy)
 endif()
-if(MXECROSS)
-  find_package(CURL REQUIRED)
+if(NOT HEADLESS)
+  if(MXECROSS)
+    find_package(CURL REQUIRED)
 #  message(STATUS ${CURL_FOUND})
 #  message(STATUS ${CURL_INCLUDE_DIR})
 #  message(STATUS ${CURL_INCLUDE_LIBRARIES})
 #  message(STATUS ${CURL_VERSION_STRING})
-  target_compile_definitions(OpenSCAD PRIVATE CURL_STATICLIB)
-  target_include_directories(OpenSCAD SYSTEM PRIVATE ${CURL_INCLUDE_DIR})
-  target_link_libraries(OpenSCAD PRIVATE "libcurl.a;libidn2.a;libssh2.a;libunistring.a")
-else()	
-  target_link_directories(OpenSCAD PRIVATE "/usr/lib64")
-  target_link_libraries(OpenSCAD PRIVATE "libcurl.so")
+    target_compile_definitions(OpenSCAD PRIVATE CURL_STATICLIB)
+    target_include_directories(OpenSCAD SYSTEM PRIVATE ${CURL_INCLUDE_DIR})
+    target_link_libraries(OpenSCAD PRIVATE "libcurl.a;libidn2.a;libssh2.a;libunistring.a")
+  else()	
+    target_link_directories(OpenSCAD PRIVATE "/usr/lib64")
+    target_link_libraries(OpenSCAD PRIVATE "libcurl.so")
+  endif()    
 endif()
 
 if(ENABLE_HIDAPI)
@@ -1085,14 +1086,12 @@ set(CGAL_SOURCES
   src/geometry/cgal/cgalutils-convex.cc
   src/geometry/cgal/cgalutils-kernel.cc
   src/geometry/cgal/cgalutils-mesh.cc
-  src/geometry/cgal/cgalutils-minkowski.cc
-  src/geometry/cgal/cgalutils-nef.cc
   src/geometry/cgal/cgalutils-orient.cc
   src/geometry/cgal/cgalutils-polyhedron.cc
   src/geometry/cgal/cgalutils-project.cc
   src/geometry/cgal/cgalutils-tess.cc
   src/geometry/cgal/cgalutils-triangulate.cc
-  src/geometry/cgal/CGAL_Nef_polyhedron.cc
+  src/geometry/cgal/CGALNefGeometry.cc
   src/geometry/cgal/CGALCache.cc
   src/io/export_nef.cc
   src/io/import_nef.cc
@@ -1240,6 +1239,7 @@ set(GUI_SOURCES
   src/gui/FontListDialog.cc
   src/gui/FontListTableView.cc
   src/gui/InitConfigurator.cc
+  src/gui/ImportUtils.cc
   src/gui/LaunchingScreen.cc
   src/gui/LibraryInfoDialog.cc
   src/gui/MainWindow.cc
@@ -1312,6 +1312,7 @@ set(GUI_HEADERS
     src/gui/FontListDialog.h
     src/gui/FontListTableView.h
     src/gui/IgnoreWheelWhenNotFocused.h
+    src/gui/ImportUtils.h
     src/gui/InitConfigurator.h
     src/gui/LaunchingScreen.h
     src/gui/LibraryInfoDialog.h
@@ -1434,6 +1435,7 @@ set_source_files_properties(
 set(RESOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/resources)
 if(HEADLESS)
   target_compile_definitions(OpenSCAD PRIVATE OPENSCAD_NOGUI)
+  target_compile_definitions(OpenSCADPy PRIVATE OPENSCAD_NOGUI)
 else()
   list(APPEND RESOURCE_FILES
     ${RESOURCE_DIR}/common.qrc

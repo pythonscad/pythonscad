@@ -1,5 +1,6 @@
 #include "geometry/GeometryEvaluator.h"
 #include "geometry/Geometry.h"
+#include "geometry/cgal/cgal.h"
 #include "geometry/linalg.h"
 #include "core/Tree.h"
 #include "geometry/GeometryCache.h"
@@ -174,7 +175,7 @@ bool pointInPolygon(const std::vector<Vector3d> &vert, const IndexedFace &bnd, i
 		const Vector3d &p1=vert[bnd[i]];
 		const Vector3d &p2=vert[bnd[(i+1)%n]];
 
-                if(linsystem( p2-p1, raydir,fn,pt-p1,res)) continue;
+                if(linsystem( p2-p1, raydir,fn,pt-p1,res, nullptr)) continue;
 
 		if(res[1] > 0) continue; // not behind
 		if(res[0] < 0) continue; // within segment
@@ -1397,13 +1398,17 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
 #ifdef ENABLE_MANIFOLD
     if (RenderSettings::inst()->backend3D == RenderBackend3D::ManifoldBackend) {
       std::shared_ptr<const ManifoldGeometry> csgResult = ManifoldUtils::applyOperator3DManifold(children, op);	    
-      const CsgOpNode *csgOpNode = dynamic_cast<const CsgOpNode *>(&node);
-      if(csgOpNode->r != 0){
+      do
+      {
+      	const CsgOpNode *csgOpNode = dynamic_cast<const CsgOpNode *>(&node);
+	if(csgOpNode == nullptr) break;
+        if(csgOpNode->r == 0) break;
         std::unique_ptr<const Geometry> geom_u = addFillets(csgResult, children, csgOpNode->r,csgOpNode->fn);
 	std::shared_ptr<const Geometry> geom_s(geom_u.release());
 //	csgResult = ManifoldUtils::createManifoldFromGeometry(geom_s);
         return ResultObject::mutableResult(geom_s);
       }
+      while(0);
       return ResultObject::mutableResult(csgResult);
     }
 #endif
@@ -1416,6 +1421,7 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
     break;
   }
   }
+
 }
 
 
@@ -1432,7 +1438,7 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyHull2D(const AbstractNode& no
   auto geometry = std::make_unique<Polygon2d>();
 
 #ifdef ENABLE_CGAL
-  using CGALPoint2 = CGAL::Point_2<CGAL::Cartesian<double>>;
+  using CGALPoint2 = CGAL::Point_2<CGAL_DoubleKernel>;
   // Collect point cloud
   std::list<CGALPoint2> points;
   for (const auto& p : children) {
@@ -2483,7 +2489,7 @@ static int pullObject_calccut(const PullNode &node, Vector3d p1, Vector3d p2,Vec
 	Vector3d z(0,0,1);
 	v1=node.dir.cross(dir);
 	v2=node.dir.cross(v1);
-	if(linsystem(dir,v1,v2,node.anchor-p1,res)) return 1;
+	if(linsystem(dir,v1,v2,node.anchor-p1,res, nullptr)) return 1;
 
 	if(res[0] < 0 || res[0] > 1) return 1;
 	r =p1+dir*res[0];

@@ -53,7 +53,7 @@
 #include "glview/VertexState.h"
 
 #ifdef ENABLE_CGAL
-#include "geometry/cgal/CGAL_Nef_polyhedron.h"
+#include "geometry/cgal/CGALNefGeometry.h"
 #endif
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/ManifoldGeometry.h"
@@ -68,6 +68,7 @@ PolySetRenderer::PolySetRenderer(const std::shared_ptr<const class Geometry>& ge
 
 void PolySetRenderer::addGeometry(const std::shared_ptr<const Geometry>& geom)
 {
+  assert(geom != nullptr);
   if (const auto geomlist = std::dynamic_pointer_cast<const GeometryList>(geom)) {
     for (const auto& item : geomlist->getChildren()) {
       this->addGeometry(item.second);
@@ -85,7 +86,7 @@ void PolySetRenderer::addGeometry(const std::shared_ptr<const Geometry>& geom)
     this->polysets_.push_back(mani->toPolySet());
 #endif
 #ifdef ENABLE_CGAL
-  } else if (const auto N = std::dynamic_pointer_cast<const CGAL_Nef_polyhedron>(geom)) {
+  } else if (const auto N = std::dynamic_pointer_cast<const CGALNefGeometry>(geom)) {
     // Note: It's rare, but possible for Nef polyhedrons to exist among geometries in Manifold mode.
     // One way is through import("file.nef3")
     assert(N->getDimension() == 3);
@@ -306,8 +307,6 @@ BoundingBox PolySetRenderer::getBoundingBox() const
   return bbox;
 }
 
-int linsystem( Vector3d v1,Vector3d v2,Vector3d v3,Vector3d pt,Vector3d &res,double *detptr=NULL);
-
 std::shared_ptr<SelectedObject>
 PolySetRenderer::findModelObject(const Vector3d &near_pt, const Vector3d &far_pt, int /*mouse_x*/,
                               int /*mouse_y*/, double tolerance) {
@@ -387,7 +386,7 @@ PolySetRenderer::findModelObject(const Vector3d &near_pt, const Vector3d &far_pt
 	Vector3d total = far_pt - vertices[ind1];
 
 	Vector3d res;
-	if(linsystem(v1, v2, v3, total, res)) continue;
+	if(linsystem(v1, v2, v3, total, res, nullptr)) continue;
         if(res[0] > 0) continue;
         if(res[1] < 0 || res[2] < 0) continue;
         if(res[1] + res[2] > 1) continue;	

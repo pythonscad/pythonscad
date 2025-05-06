@@ -167,3 +167,4 @@ int Calc::get_diagonal_slices(double delta_sqr, double height, double fn, double
   const int fs_slices = static_cast<int>(ceil(sqrt(delta_sqr + height * height) / fs));
   return std::max(fs_slices, min_slices);
 }
+
