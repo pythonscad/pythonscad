@@ -431,7 +431,7 @@ void MainWindow::customSetup(void)
   finishPython();
 }
 
-#endif
+#endif // ENABLE_PYTHON
 
 MainWindow::MainWindow(const QStringList& filenames) :
   rubberBandManager(this)
@@ -2499,8 +2499,6 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
 #ifdef ENABLE_PYTHON
   recomputePythonActive();
   if (this->python_active) {
-    auto fulltext_py =
-      std::string(this->lastCompiledDoc.toUtf8().constData());
 
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
@@ -2576,6 +2574,7 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
     auto error = evaluateJs(fulltext_py); // add assignments 
     if (error.size() > 0) LOG(message_group::Error, Location::NONE, "", error.c_str());
     finishJs();
+    sourceFile = parse(sourceFile, "", fname, fname, false) ? sourceFile : nullptr;
 
   } else // python not enabled
 #endif // ifdef ENABLE_JS
