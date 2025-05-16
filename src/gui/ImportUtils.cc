@@ -22,6 +22,9 @@ int Importer::init(){
 #ifdef ENABLE_PYTHON
     knownFileExtensions["py"] = "";
 #endif
+#ifdef ENABLE_JS
+    knownFileExtensions["js"] = "";
+#endif
     knownFileExtensions["csg"] = "";
     return 0;
 }

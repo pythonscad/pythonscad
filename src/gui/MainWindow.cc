@@ -234,6 +234,9 @@ int curl_download(std::string url, std::string path)
     return 0;
 }
 #endif // ifdef ENABLE_PYTHON
+#ifdef ENABLE_JS
+#include "js/js_public.h"
+#endif
 
 #include "gui/PrintService.h"
 
@@ -1686,6 +1689,10 @@ void MainWindow::instantiateRoot()
     if (python_result_node != NULL && this->python_active) this->absoluteRootNode = python_result_node;
     else
 #endif
+#ifdef ENABLE_JS
+    if (js_result_node != NULL && this->js_active) this->absoluteRootNode = js_result_node;
+    else
+#endif
     this->absoluteRootNode = this->rootFile->instantiate(*builtin_context, &file_context);
     if (file_context) {
       this->qglview->cam.updateView(file_context, false);
@@ -1979,11 +1986,14 @@ void MainWindow::saveBackup()
   }
 
   if (!this->tempFile) {
+    QString suffix = "scad";
 #ifdef ENABLE_PYTHON
-    const QString suffix = this->python_active ? "py" : "scad";
-#else
-    const QString suffix = "scad";
+    if(this->python_active) suffix = "py" ;
 #endif
+#ifdef ENABLE_JS
+    if(this->js_active) suffix = "js" ;
+#endif
+
     this->tempFile = new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
   }
 
@@ -2450,6 +2460,27 @@ void MainWindow::recomputePythonActive()
 }
 #endif // ifdef ENABLE_PYTHON
 
+#ifdef ENABLE_JS
+void MainWindow::recomputeJsActive()
+{
+  auto fnameba = activeEditor->filepath.toLocal8Bit();
+  const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba;
+
+  bool oldJsActive = this->js_active;
+  this->js_active = false;
+  if (fname != NULL) {
+    if(boost::algorithm::ends_with(fname, ".js")) {
+	    std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
+	this->js_active = true;
+    }
+  }
+
+  if (oldJsActive != this->js_active) {
+    emit this->jsActiveChanged(this->js_active);
+  }
+}
+#endif
+
 SourceFile *MainWindow::parseDocument(EditorInterface *editor)
 {
   resetSuppressedMessages();
@@ -2462,6 +2493,9 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
       std::string(this->lastCompiledDoc.toUtf8().constData());
   const char *fname = editor->filepath.isEmpty() ? "" : fnameba;
   SourceFile *sourceFile;
+#ifdef ENABLE_JS
+  recomputeJsActive();
+#endif
 #ifdef ENABLE_PYTHON
   recomputePythonActive();
   if (this->python_active) {
@@ -2513,6 +2547,38 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
 
   } else // python not enabled
 #endif // ifdef ENABLE_PYTHON
+#ifdef ENABLE_JS
+  if (this->js_active) {
+
+    this->parsedFile = nullptr; // because the parse() call can throw and we don't want a stale pointer!
+    this->rootFile = nullptr;  // ditto
+    fs::path parser_sourcefile = fs::path(fname).generic_string();				
+    this->rootFile =new SourceFile(parser_sourcefile.parent_path().string(), parser_sourcefile.filename().string());
+    this->parsedFile = this->rootFile;
+
+    initJs(this->animateWidget->getAnimTval());
+    this->activeEditor->resetHighlighting();
+    if (this->rootFile != nullptr) {
+      //add parameters as annotation in AST
+      auto error = evaluateJs(fulltext_py);
+      this->rootFile->scope.assignments=customizer_parameters;
+      CommentParser::collectParameters(fulltext_py, this->rootFile, '#');  // add annotations
+      this->activeEditor->parameterWidget->setParameters(this->rootFile, "\n"); // set widgets values
+      this->activeEditor->parameterWidget->applyParameters(this->rootFile); // use widget values
+      this->activeEditor->parameterWidget->setEnabled(true);
+      this->activeEditor->setIndicator(this->rootFile->indicatorData);
+    } else {
+      this->activeEditor->parameterWidget->setEnabled(false);
+    }
+
+    customizer_parameters_finished = this->rootFile->scope.assignments;
+    customizer_parameters.clear();
+    auto error = evaluateJs(fulltext_py); // add assignments 
+    if (error.size() > 0) LOG(message_group::Error, Location::NONE, "", error.c_str());
+    finishJs();
+
+  } else // python not enabled
+#endif // ifdef ENABLE_JS
 {
 
   sourceFile = parse(sourceFile, fulltext, fname, fname, false) ? sourceFile : nullptr;

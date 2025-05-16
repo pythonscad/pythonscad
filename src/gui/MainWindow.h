@@ -98,6 +98,10 @@ public:
   std::string untrusted_edit_document_name;
   bool trust_python_file(const std::string& file, const std::string& content);
 #endif
+#ifdef ENABLE_JS
+  bool js_active;
+#endif
+
   Tree tree;
   EditorInterface *activeEditor;
   TabManager *tabManager;
@@ -416,6 +420,10 @@ public slots:
 #ifdef ENABLE_PYTHON
   void recomputePythonActive();
 #endif
+#ifdef ENABLE_JS
+  void recomputeJsActive();
+#endif
+
 
 private:
   bool network_progress_func(const double permille);
@@ -461,6 +469,10 @@ signals:
   #ifdef ENABLE_PYTHON
   void pythonActiveChanged(bool pythonActive);
   #endif
+#ifdef ENABLE_JS
+  void jsActiveChanged(bool pythonActive);
+#endif
+
 
 #ifdef ENABLE_GUI_TESTS
 public:
