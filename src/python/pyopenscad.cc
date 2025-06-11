@@ -24,6 +24,7 @@
  *
  */
 #include <Python.h>
+#include <dlfcn.h>
 #include <filesystem>
 
 #include "pyopenscad.h"
@@ -66,6 +67,129 @@ std::vector<std::string> mapping_code;
 std::vector<int> mapping_level;
 std::vector<std::shared_ptr<AbstractNode>> nodes_hold; // make sure, that these nodes are not yet freed
 
+void *ph=nullptr;
+
+#define PYTHON_LOAD_FUNC(name, type) \
+	pf.name= (type) dlsym(ph, #name);\
+	printf("Function %s is %p\n", #name, pf.name);
+
+struct PyKernel
+{
+  PyObject *(*PyType_GenericAlloc)(PyTypeObject *, Py_ssize_t);
+  void (*_Py_Dealloc)(PyObject *);	
+  int (*PyType_Ready)(PyTypeObject *);	
+
+  void (*PyEval_RestoreThread)(PyThreadState *);
+  PyThreadState * (*PyEval_SaveThread)(void);
+
+  PyObject *(*PyModule_GetDict)(PyObject *);	
+  const char *(*PyBytes_AS_STRING)(PyObject *);	
+
+  PyObject *(*PyImport_AddModule)(const char *);	
+  PyObject *(*PyImport_ImportModule)(const char *);	
+  PyObject *(*PyModule_Create2)(PyModuleDef*, int apiver);	
+
+  int (*PyRun_AnyFileExFlags)( FILE *fp, const char *filename,        int closeit, PyCompilerFlags *flags);
+  int (*PyRun_SimpleStringFlags)(const char *, PyCompilerFlags *);
+
+  PyObject *(*PyList_GetItem)(PyObject *, Py_ssize_t);
+  PyObject *(*PyList_New)(Py_ssize_t size);
+  Py_ssize_t(*PyList_Size)(PyObject *);
+
+  PyObject *(*PyDict_New)(void);	
+  PyObject *(*PyDict_SetItemString)(PyObject *,const char *,PyObject *);	
+  PyObject *(*PyDict_GetItemString)(PyObject *,const char *);	
+  void (*PyDict_DelItem)(PyObject *,PyObject *);	
+  void (*PyDict_DelItemString)(PyObject *,const char *);	
+  PyObject *(*PyDict_Next)(PyObject *, Py_ssize_t *, PyObject **,PyObject **);	
+
+  PyObject * (*PyTuple_GetItem)(PyObject *, Py_ssize_t);
+
+  PyObject * (*PyFloat_FromDouble)(double);
+  long (*PyLong_AsLong)(PyObject *);
+
+  PyObject* (*PyUnicode_AsEncodedString)( PyObject *unicode, const char *encoding, const char *errors   );
+  PyObject* (*PyUnicode_FromString)( const char *u);
+  PyObject* (*PyUnicode_FromStringAndSize)( const char *u,  Py_ssize_t size );
+
+  PyLongObject *_Py_TrueStruct;
+  PyLongObject *_Py_FalseStruct;
+  PyObject *_Py_NoneStruct;
+  PyObject *PyExc_TypeError;
+  PyTypeObject *PyFunction_Type;
+  PyTypeObject *PyList_Type;
+
+};
+/*
+
+PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *, const char *, char **, ...);
+PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
+PyAPI_FUNC(void) PyErr_Fetch(PyObject **, PyObject **, PyObject **);
+PyAPI_FUNC(void) PyPreConfig_InitPythonConfig(PyPreConfig *config);
+PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *)
+*/
+struct PyKernel pf;
+
+
+void initDynamic(void)
+{
+  if(ph) return;	
+  ph = dlopen("/usr/lib/libpython3.13.so", RTLD_LAZY);	
+  printf("handle=%p\n",ph);
+  if(!ph) return;
+
+  PYTHON_LOAD_FUNC(PyType_GenericAlloc, PyObject *(*)(PyTypeObject *, Py_ssize_t) );
+  PYTHON_LOAD_FUNC(_Py_Dealloc, void (*)(PyObject *) );
+  PYTHON_LOAD_FUNC(PyType_Ready, int (*)(PyTypeObject *) );
+
+  PYTHON_LOAD_FUNC(PyEval_RestoreThread, void (*)(PyThreadState*) );
+  PYTHON_LOAD_FUNC(PyEval_SaveThread, PyThreadState *(*)(void) );
+
+  PYTHON_LOAD_FUNC(PyModule_GetDict, PyObject *(*)(PyObject *) );
+  PYTHON_LOAD_FUNC(PyBytes_AS_STRING, const char *(*)(PyObject *) );
+
+  PYTHON_LOAD_FUNC(PyImport_AddModule, PyObject *(*)(const char *) );
+  PYTHON_LOAD_FUNC(PyImport_ImportModule, PyObject *(*)(const char *) );
+  PYTHON_LOAD_FUNC(PyModule_Create2, PyObject *(*)(PyModuleDef *, int apiver) );
+
+  PYTHON_LOAD_FUNC(PyRun_AnyFileExFlags, int (*)(FILE *fp, const char *filename,        int closeit, PyCompilerFlags *flags) );
+  PYTHON_LOAD_FUNC(PyRun_SimpleStringFlags, int (*)(const char *filename, PyCompilerFlags *flags) );
+
+  PYTHON_LOAD_FUNC(PyList_GetItem, PyObject *(*)(PyObject *, Py_ssize_t) );
+  PYTHON_LOAD_FUNC(PyList_New, PyObject *(*)(Py_ssize_t) );
+  PYTHON_LOAD_FUNC(PyList_Size, Py_ssize_t (*)(PyObject *) );
+
+  PYTHON_LOAD_FUNC(PyDict_New, PyObject *(*)(void) );
+  PYTHON_LOAD_FUNC(PyDict_SetItemString, PyObject *(*)(PyObject *, const char *, PyObject *) );
+  PYTHON_LOAD_FUNC(PyDict_GetItemString, PyObject *(*)(PyObject *, const char *) );
+  PYTHON_LOAD_FUNC(PyDict_DelItem, void (*)(PyObject *, PyObject *) );
+  PYTHON_LOAD_FUNC(PyDict_DelItemString, void (*)(PyObject *, const char *) );
+  PYTHON_LOAD_FUNC(PyDict_Next, PyObject *(*)(PyObject *,Py_ssize_t *, PyObject **, PyObject ** ) );
+
+  PYTHON_LOAD_FUNC(PyTuple_GetItem, PyObject *(*)(PyObject *,Py_ssize_t ) );
+
+  PYTHON_LOAD_FUNC(PyFloat_FromDouble, PyObject *(*)(double) );
+  PYTHON_LOAD_FUNC(PyLong_AsLong, long(*)(PyObject *) );
+
+  PYTHON_LOAD_FUNC(PyUnicode_AsEncodedString, PyObject *(*)(PyObject *,const char *enc, const char *errors) );
+  PYTHON_LOAD_FUNC(PyUnicode_FromString, PyObject *(*)(const char *u) );
+  PYTHON_LOAD_FUNC(PyUnicode_FromStringAndSize, PyObject *(*)(const char *u, Py_ssize_t size) );
+
+  PYTHON_LOAD_FUNC(_Py_TrueStruct, PyLongObject *);
+  PYTHON_LOAD_FUNC(_Py_FalseStruct, PyLongObject *);
+  PYTHON_LOAD_FUNC(_Py_NoneStruct, PyObject *);
+  PYTHON_LOAD_FUNC(PyExc_TypeError, PyObject *);
+  PYTHON_LOAD_FUNC(PyFunction_Type, PyTypeObject *);
+  PYTHON_LOAD_FUNC(PyList_Type, PyTypeObject *);
+}
+
+void finishDynamic(void)
+{
+  if(!ph) return;	
+  dlclose(ph);
+  ph = nullptr;
+}
+
 void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
 {
   Py_XDECREF(self->dict);
@@ -75,7 +199,7 @@ void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
 PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
 {
   PyObject *self = PyType_GenericAlloc(cls, nitems);
-  ((PyOpenSCADObject *)self)->dict = PyDict_New();
+  ((PyOpenSCADObject *)self)->dict = pf.PyDict_New();
   PyObject *origin=PyList_New(4);
   for(int i=0;i<4;i++) {
   	PyObject *row=PyList_New(4);
@@ -83,7 +207,7 @@ PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
 		PyList_SetItem(row,j,PyFloat_FromDouble(i==j?1.0:0.0));
 	PyList_SetItem(origin,i,row);
   }
-  PyDict_SetItemString(((PyOpenSCADObject *)self)->dict,"origin",origin);
+  pf.PyDict_SetItemString(((PyOpenSCADObject *)self)->dict,"origin",origin);
   Py_XDECREF(origin);
   return self;
 }
@@ -223,13 +347,13 @@ void  python_hierdump(std::ostringstream &stream, const std::shared_ptr<Abstract
 void python_build_hashmap(const std::shared_ptr<AbstractNode> &node, int level)
 {
 	
-  PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
+  PyObject *maindict = pf.PyModule_GetDict(pythonMainModule.get());
   PyObject *key, *value;
   Py_ssize_t pos = 0;
   std::ostringstream stream;
 //  python_hierdump(stream, node);
   std::string code = stream.str();
-  while (PyDict_Next(maindict, &pos, &key, &value)) {
+  while (pf.PyDict_Next(maindict, &pos, &key, &value)) {
     if(value->ob_type != &PyOpenSCADType) continue;
     std::shared_ptr<AbstractNode> testnode = ((PyOpenSCADObject *) value)->node;
     if(testnode != node) continue;
@@ -564,19 +688,19 @@ PyObject *python_callfunction(const std::shared_ptr<const Context> &cxt , const 
     }
   }
   if(!pFunc) {
-    PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
+    PyObject *maindict = pf.PyModule_GetDict(pythonMainModule.get());
 
     // search the function in all modules
     PyObject *key, *value;
     Py_ssize_t pos = 0;
 
-    while (PyDict_Next(maindict, &pos, &key, &value)) {
+    while (pf.PyDict_Next(maindict, &pos, &key, &value)) {
       PyObject *module = PyObject_GetAttrString(pythonMainModule.get(), PyUnicode_AsUTF8(key));
       if(module != nullptr){
-        PyObject *moduledict = PyModule_GetDict(module);
+        PyObject *moduledict = pf.PyModule_GetDict(module);
         Py_DECREF(module);
         if(moduledict != nullptr) {
-          pFunc = PyDict_GetItemString(moduledict, name.c_str());
+          pFunc = pf.PyDict_GetItemString(moduledict, name.c_str());
          if(pFunc != nullptr) break;
         } 
       }
@@ -713,16 +837,19 @@ void openscad_object_callback(PyObject *obj) {
 	}
 }
 #endif
+
+
 void initPython(const std::string& binDir, const std::string &scriptpath, double time)
 {
   const auto name = "openscad-python";
   const auto exe = binDir + "/" + name;
+  initDynamic();
   if(scriptpath.size() > 0) python_scriptpath = scriptpath;	
   if(pythonInitDict) { /* If already initialized, undo to reinitialize after */
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
-    while (PyDict_Next(maindict, &pos, &key, &value)) {
+    PyObject *maindict = pf.PyModule_GetDict(pythonMainModule.get());
+    while (pf.PyDict_Next(maindict, &pos, &key, &value)) {
       PyObjectUniquePtr key_(PyUnicode_AsEncodedString(key, "utf-8", "~"), PyObjectDeleter);
       if(key_ == nullptr) continue;
       const char *key_str =  PyBytes_AS_STRING(key_.get());
@@ -730,24 +857,24 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
       if (std::find(std::begin(pythonInventory), std::end(pythonInventory), key_str) == std::end(pythonInventory))
       {
         if(strlen(key_str) < 4 || strncmp(key_str,"stat",4) != 0){	      
-          PyDict_DelItemString(maindict, key_str);
+          pf.PyDict_DelItemString(maindict, key_str);
 	}  
       }
       // bug in  PyDict_GetItemString, thus iterating
       if(strcmp(key_str,"sys") == 0) {
-        PyObject *sysdict = PyModule_GetDict(value);
+        PyObject *sysdict = pf.PyModule_GetDict(value);
 	if(sysdict == nullptr) continue;
 	// get builtin_module_names
         PyObject *key1, *value1;
         Py_ssize_t pos1 = 0;
-        while (PyDict_Next(sysdict, &pos1, &key1, &value1)) {
+        while (pf.PyDict_Next(sysdict, &pos1, &key1, &value1)) {
           PyObject *key1_ = PyUnicode_AsEncodedString(key1, "utf-8", "~");
           if(key1_ == nullptr) continue;
           const char *key1_str =  PyBytes_AS_STRING(key1_);
           if(strcmp(key1_str,"modules") == 0) {
             PyObject *key2, *value2;
             Py_ssize_t pos2 = 0;
-            while (PyDict_Next(value1, &pos2, &key2, &value2)) {
+            while (pf.PyDict_Next(value1, &pos2, &key2, &value2)) {
               PyObject *key2_ =PyUnicode_AsEncodedString(key2, "utf-8", "~");
               if(key2_ == nullptr) continue;
               const char *key2_str =  PyBytes_AS_STRING(key2_);
@@ -765,14 +892,14 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
 	      if(strstr(modreprstr,"site-packages") != nullptr) continue;
 	      if(strstr(modreprstr,"usr/lib") != nullptr) continue;
 
-//  PyObject *mod_dict = PyModule_GetDict(value2);
-//  PyObject *loader = PyDict_GetItemString(mod_dict,"__loader__");
+//  PyObject *mod_dict = pf.PyModule_GetDict(value2);
+//  PyObject *loader = pf.PyDict_GetItemString(mod_dict,"__loader__");
 //  PyObject *loaderrepr = PyObject_Repr(loader);
 //  PyObject* loaderreprobj = PyUnicode_AsEncodedString(loaderrepr, "utf-8", "~");
 //  const char *loaderreprstr = PyBytes_AS_STRING(loaderreprobj);
 //  if(strstr(loaderreprstr, "ExtensionFileLoader") != nullptr) continue; // dont delete extension files
 
-              PyDict_DelItem(value1, key2);
+              pf.PyDict_DelItem(value1, key2);
 
 	    }
           }
@@ -835,15 +962,15 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
 
     pythonMainModule.reset(PyImport_AddModule("__main__"));
     pythonMainModuleInitialized = pythonMainModule != nullptr;
-    pythonInitDict.reset(PyModule_GetDict(pythonMainModule.get()));
+    pythonInitDict.reset(pf.PyModule_GetDict(pythonMainModule.get()));
     pythonRuntimeInitialized = pythonInitDict != nullptr;
     PyInit_PyOpenSCAD();
     PyInit_PyData();
     PyRun_String("from builtins import *\n", Py_file_input, pythonInitDict.get(), pythonInitDict.get());
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
-    while (PyDict_Next(maindict, &pos, &key, &value)) {
+    PyObject *maindict = pf.PyModule_GetDict(pythonMainModule.get());
+    while (pf.PyDict_Next(maindict, &pos, &key, &value)) {
       PyObjectUniquePtr key1(PyUnicode_AsEncodedString(key, "utf-8", "~"), PyObjectDeleter);
       const char *key_str =  PyBytes_AsString(key1.get());
       if(key_str != NULL) pythonInventory.push_back(key_str);
@@ -879,6 +1006,7 @@ void finishPython(void)
       }
 #endif
       python_show_final();
+      finishDynamic();
 }
 
 std::string evaluatePython(const std::string & code, bool dry_run)
