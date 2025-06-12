@@ -9,6 +9,86 @@
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
+struct PyKernel
+{
+  void (*PyConfig_InitPythonConfig)(PyConfig *config);
+  void (*PyPreConfig_InitPythonConfig)(PyPreConfig *config);
+
+  PyObject *(*PyType_GenericAlloc)(PyTypeObject *, Py_ssize_t);
+  void (*_Py_Dealloc)(PyObject *);	
+  int (*PyType_Ready)(PyTypeObject *);	
+
+  void (*PyEval_RestoreThread)(PyThreadState *);
+  PyThreadState * (*PyEval_SaveThread)(void);
+
+  PyObject *(*PyModule_GetDict)(PyObject *);	
+  const char *(*PyBytes_AS_STRING)(PyObject *);	
+
+  PyObject *(*PyImport_AddModule)(const char *);	
+  PyObject *(*PyImport_ImportModule)(const char *);	
+  PyObject *(*PyModule_Create2)(PyModuleDef*, int apiver);	
+
+  int (*PyArg_ParseTupleAndKeywords)(PyObject *, PyObject *, const char *, char **, ...);
+  void (*PyErr_SetString)(PyObject *exception, const char *string);
+
+  int (*PyRun_AnyFileExFlags)( FILE *fp, const char *filename,        int closeit, PyCompilerFlags *flags);
+  int (*PyRun_SimpleStringFlags)(const char *, PyCompilerFlags *);
+  PyObject *(*PyObject_CallObject)(PyObject *callable, PyObject *args);
+
+  PyObject *(*PyList_GetItem)(PyObject *, Py_ssize_t);
+  void (*PyList_SetItem)(PyObject *, Py_ssize_t, PyObject *);
+  PyObject *(*PyList_New)(Py_ssize_t size);
+  Py_ssize_t(*PyList_Size)(PyObject *);
+
+  PyObject *(*PyDict_New)(void);	
+  PyObject *(*PyDict_SetItem)(PyObject *,PyObject *,PyObject *);	
+  PyObject *(*PyDict_SetItemString)(PyObject *,const char *,PyObject *);	
+  PyObject *(*PyDict_GetItem)(PyObject *,PyObject *);	
+  PyObject *(*PyDict_GetItemString)(PyObject *,const char *);	
+  void (*PyDict_DelItem)(PyObject *,PyObject *);	
+  void (*PyDict_DelItemString)(PyObject *,const char *);	
+  PyObject *(*PyDict_Next)(PyObject *, Py_ssize_t *, PyObject **,PyObject **);	
+
+  PyObject *(*PyTuple_New)(Py_ssize_t size);
+  PyObject *(*PyTuple_Pack)(Py_ssize_t, ...);
+
+  Py_ssize_t(*PyTuple_Size)(PyObject *);
+  PyObject * (*PyTuple_GetItem)(PyObject *, Py_ssize_t);
+  void (*PyTuple_SetItem)(PyObject *, Py_ssize_t, PyObject *);
+
+  PyObject * (*PyFloat_FromDouble)(double);
+  double (*PyFloat_AsDouble)(PyObject*);
+  long (*PyLong_AsLong)(PyObject *);
+  PyObject *(*PyLong_FromLong)(long );
+
+  PyObject* (*PyUnicode_AsEncodedString)( PyObject *unicode, const char *encoding, const char *errors   );
+  PyObject* (*PyUnicode_FromString)( const char *u);
+  PyObject* (*PyUnicode_FromStringAndSize)( const char *u,  Py_ssize_t size );
+  const char *(*PyUnicode_AsUTF8)(PyObject *unicode);
+
+  void (*PyErr_Fetch)(PyObject **, PyObject **, PyObject **);
+  int  (*PyType_IsSubtype)(PyTypeObject *, PyTypeObject *);
+
+  PyObject *_Py_TrueStruct;
+  PyObject *_Py_FalseStruct;
+  PyObject *_Py_NoneStruct;
+  PyObject *PyExc_TypeError;
+  PyTypeObject *PyFunction_Type;
+  PyTypeObject *PyList_Type;
+  PyTypeObject *PyFloat_Type;
+
+};
+
+extern struct PyKernel pf;
+
+#define Py_NONE pf._Py_NoneStruct
+#define Py_TRUE pf._Py_TrueStruct
+#define Py_FALSE pf._Py_FalseStruct
+
+#define PyList_CHECK(op) (op->ob_type == pf.PyList_Type)
+#define PyFloat_CHECK(op) (op->ob_type == pf.PyFloat_Type)
+
+
 #define DECLARE_INSTANCE	std::string instance_name; \
 	AssignmentList inst_asslist;\
 	ModuleInstantiation *instance = new ModuleInstantiation(instance_name,inst_asslist, Location::NONE); \

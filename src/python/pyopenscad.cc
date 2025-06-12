@@ -67,76 +67,23 @@ std::vector<std::string> mapping_code;
 std::vector<int> mapping_level;
 std::vector<std::shared_ptr<AbstractNode>> nodes_hold; // make sure, that these nodes are not yet freed
 
-void *ph=nullptr;
+void *libpython_handle=nullptr;
 
 #define PYTHON_LOAD_FUNC(name, type) \
-	pf.name= (type) dlsym(ph, #name);\
+	pf.name= (type) dlsym(libpython_handle, #name);\
 	printf("Function %s is %p\n", #name, pf.name);
 
-struct PyKernel
-{
-  PyObject *(*PyType_GenericAlloc)(PyTypeObject *, Py_ssize_t);
-  void (*_Py_Dealloc)(PyObject *);	
-  int (*PyType_Ready)(PyTypeObject *);	
-
-  void (*PyEval_RestoreThread)(PyThreadState *);
-  PyThreadState * (*PyEval_SaveThread)(void);
-
-  PyObject *(*PyModule_GetDict)(PyObject *);	
-  const char *(*PyBytes_AS_STRING)(PyObject *);	
-
-  PyObject *(*PyImport_AddModule)(const char *);	
-  PyObject *(*PyImport_ImportModule)(const char *);	
-  PyObject *(*PyModule_Create2)(PyModuleDef*, int apiver);	
-
-  int (*PyRun_AnyFileExFlags)( FILE *fp, const char *filename,        int closeit, PyCompilerFlags *flags);
-  int (*PyRun_SimpleStringFlags)(const char *, PyCompilerFlags *);
-
-  PyObject *(*PyList_GetItem)(PyObject *, Py_ssize_t);
-  PyObject *(*PyList_New)(Py_ssize_t size);
-  Py_ssize_t(*PyList_Size)(PyObject *);
-
-  PyObject *(*PyDict_New)(void);	
-  PyObject *(*PyDict_SetItemString)(PyObject *,const char *,PyObject *);	
-  PyObject *(*PyDict_GetItemString)(PyObject *,const char *);	
-  void (*PyDict_DelItem)(PyObject *,PyObject *);	
-  void (*PyDict_DelItemString)(PyObject *,const char *);	
-  PyObject *(*PyDict_Next)(PyObject *, Py_ssize_t *, PyObject **,PyObject **);	
-
-  PyObject * (*PyTuple_GetItem)(PyObject *, Py_ssize_t);
-
-  PyObject * (*PyFloat_FromDouble)(double);
-  long (*PyLong_AsLong)(PyObject *);
-
-  PyObject* (*PyUnicode_AsEncodedString)( PyObject *unicode, const char *encoding, const char *errors   );
-  PyObject* (*PyUnicode_FromString)( const char *u);
-  PyObject* (*PyUnicode_FromStringAndSize)( const char *u,  Py_ssize_t size );
-
-  PyLongObject *_Py_TrueStruct;
-  PyLongObject *_Py_FalseStruct;
-  PyObject *_Py_NoneStruct;
-  PyObject *PyExc_TypeError;
-  PyTypeObject *PyFunction_Type;
-  PyTypeObject *PyList_Type;
-
-};
-/*
-
-PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *, const char *, char **, ...);
-PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
-PyAPI_FUNC(void) PyErr_Fetch(PyObject **, PyObject **, PyObject **);
-PyAPI_FUNC(void) PyPreConfig_InitPythonConfig(PyPreConfig *config);
-PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *)
-*/
 struct PyKernel pf;
-
 
 void initDynamic(void)
 {
-  if(ph) return;	
-  ph = dlopen("/usr/lib/libpython3.13.so", RTLD_LAZY);	
-  printf("handle=%p\n",ph);
-  if(!ph) return;
+  if(libpython_handle) return;	
+  libpython_handle = dlopen("/usr/lib/libpython3.13.so", RTLD_LAZY);	
+  printf("handle=%p\n",libpython_handle);
+  if(!libpython_handle) return;
+
+  PYTHON_LOAD_FUNC(PyConfig_InitPythonConfig, void(*)(PyConfig *config) );
+  PYTHON_LOAD_FUNC(PyPreConfig_InitPythonConfig, void(*)(PyPreConfig *config) );
 
   PYTHON_LOAD_FUNC(PyType_GenericAlloc, PyObject *(*)(PyTypeObject *, Py_ssize_t) );
   PYTHON_LOAD_FUNC(_Py_Dealloc, void (*)(PyObject *) );
@@ -152,42 +99,62 @@ void initDynamic(void)
   PYTHON_LOAD_FUNC(PyImport_ImportModule, PyObject *(*)(const char *) );
   PYTHON_LOAD_FUNC(PyModule_Create2, PyObject *(*)(PyModuleDef *, int apiver) );
 
+  PYTHON_LOAD_FUNC(PyArg_ParseTupleAndKeywords, int (*)(PyObject *, PyObject *, const char *, char **, ...) );
+  PYTHON_LOAD_FUNC(PyErr_SetString, void (*)(PyObject *exception, const char *string) );
+
   PYTHON_LOAD_FUNC(PyRun_AnyFileExFlags, int (*)(FILE *fp, const char *filename,        int closeit, PyCompilerFlags *flags) );
   PYTHON_LOAD_FUNC(PyRun_SimpleStringFlags, int (*)(const char *filename, PyCompilerFlags *flags) );
+  PYTHON_LOAD_FUNC(PyObject_CallObject, PyObject *(*)(PyObject *func, PyObject *args) );
 
   PYTHON_LOAD_FUNC(PyList_GetItem, PyObject *(*)(PyObject *, Py_ssize_t) );
+  PYTHON_LOAD_FUNC(PyList_SetItem, void (*)(PyObject *, Py_ssize_t ,PyObject *) );
   PYTHON_LOAD_FUNC(PyList_New, PyObject *(*)(Py_ssize_t) );
   PYTHON_LOAD_FUNC(PyList_Size, Py_ssize_t (*)(PyObject *) );
 
   PYTHON_LOAD_FUNC(PyDict_New, PyObject *(*)(void) );
+  PYTHON_LOAD_FUNC(PyDict_SetItem, PyObject *(*)(PyObject *, PyObject *, PyObject *) );
   PYTHON_LOAD_FUNC(PyDict_SetItemString, PyObject *(*)(PyObject *, const char *, PyObject *) );
+  PYTHON_LOAD_FUNC(PyDict_GetItem, PyObject *(*)(PyObject *, PyObject *) );
   PYTHON_LOAD_FUNC(PyDict_GetItemString, PyObject *(*)(PyObject *, const char *) );
   PYTHON_LOAD_FUNC(PyDict_DelItem, void (*)(PyObject *, PyObject *) );
   PYTHON_LOAD_FUNC(PyDict_DelItemString, void (*)(PyObject *, const char *) );
   PYTHON_LOAD_FUNC(PyDict_Next, PyObject *(*)(PyObject *,Py_ssize_t *, PyObject **, PyObject ** ) );
 
+  PYTHON_LOAD_FUNC(PyTuple_New, PyObject *(*)(Py_ssize_t size) );
+  PYTHON_LOAD_FUNC(PyTuple_Pack, PyObject *(*)(Py_ssize_t, ...) );
+  PYTHON_LOAD_FUNC(PyTuple_Size, Py_ssize_t (*)(PyObject *) );
   PYTHON_LOAD_FUNC(PyTuple_GetItem, PyObject *(*)(PyObject *,Py_ssize_t ) );
+  PYTHON_LOAD_FUNC(PyTuple_SetItem, void (*)(PyObject *, Py_ssize_t ,PyObject *) );
 
   PYTHON_LOAD_FUNC(PyFloat_FromDouble, PyObject *(*)(double) );
+  PYTHON_LOAD_FUNC(PyFloat_AsDouble, double(*)(PyObject *) );
   PYTHON_LOAD_FUNC(PyLong_AsLong, long(*)(PyObject *) );
+  PYTHON_LOAD_FUNC(PyLong_FromLong, PyObject *(*)(long) );
 
   PYTHON_LOAD_FUNC(PyUnicode_AsEncodedString, PyObject *(*)(PyObject *,const char *enc, const char *errors) );
   PYTHON_LOAD_FUNC(PyUnicode_FromString, PyObject *(*)(const char *u) );
   PYTHON_LOAD_FUNC(PyUnicode_FromStringAndSize, PyObject *(*)(const char *u, Py_ssize_t size) );
+  PYTHON_LOAD_FUNC(PyUnicode_AsUTF8, const char *(*)(PyObject *) );
 
-  PYTHON_LOAD_FUNC(_Py_TrueStruct, PyLongObject *);
-  PYTHON_LOAD_FUNC(_Py_FalseStruct, PyLongObject *);
+  PYTHON_LOAD_FUNC(PyErr_Fetch, void (*)(PyObject **, PyObject **, PyObject **) );
+  PYTHON_LOAD_FUNC(PyType_IsSubtype, int (*)(PyTypeObject *, PyTypeObject *) );
+
+  PYTHON_LOAD_FUNC(_Py_TrueStruct, PyObject *);
+  PYTHON_LOAD_FUNC(_Py_FalseStruct, PyObject *);
   PYTHON_LOAD_FUNC(_Py_NoneStruct, PyObject *);
   PYTHON_LOAD_FUNC(PyExc_TypeError, PyObject *);
   PYTHON_LOAD_FUNC(PyFunction_Type, PyTypeObject *);
   PYTHON_LOAD_FUNC(PyList_Type, PyTypeObject *);
+  PYTHON_LOAD_FUNC(PyFloat_Type, PyTypeObject *);
+
+  exit(1);
 }
 
 void finishDynamic(void)
 {
-  if(!ph) return;	
-  dlclose(ph);
-  ph = nullptr;
+  if(!libpython_handle) return;	
+  dlclose(libpython_handle);
+  libpython_handle = nullptr;
 }
 
 void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
@@ -198,7 +165,7 @@ void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
 
 PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
 {
-  PyObject *self = PyType_GenericAlloc(cls, nitems);
+  PyObject *self = pf.PyType_GenericAlloc(cls, nitems);
   ((PyOpenSCADObject *)self)->dict = pf.PyDict_New();
   PyObject *origin=PyList_New(4);
   for(int i=0;i<4;i++) {
@@ -242,13 +209,13 @@ PyThreadState *tstate=nullptr;
 
 void python_lock(void){
 //#ifndef _WIN32	
-  if(tstate != nullptr && pythonInitDict != nullptr) PyEval_RestoreThread(tstate);
+  if(tstate != nullptr && pythonInitDict != nullptr) pf.PyEval_RestoreThread(tstate);
 //#endif  
 }
 
 void python_unlock(void) {
 //#ifndef _WIN32	
-  if(pythonInitDict != nullptr)	tstate = PyEval_SaveThread();
+  if(pythonInitDict != nullptr)	tstate = pf.PyEval_SaveThread();
 //#endif  
 }
 /*
@@ -265,10 +232,10 @@ int python_more_obj(std::vector<std::shared_ptr<AbstractNode>>& children, PyObje
   PyObject *dummy_dict;
   std::shared_ptr<AbstractNode> child;
   if (PyList_Check(more_obj)) {
-    n = PyList_Size(more_obj);
+    n = pf.PyList_Size(more_obj);
     for (i = 0; i < n; i++) {
 
-      obj = PyList_GetItem(more_obj, i);
+      obj = pf.PyList_GetItem(more_obj, i);
       child = PyOpenSCADObjectToNode(obj, &dummy_dict);
       children.push_back(child);
     }
@@ -317,9 +284,9 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs,PyObjec
     DECLARE_INSTANCE
     auto node = std::make_shared<CsgOpNode>(instance, OpenSCADOperator::UNION);
 
-    int n = PyList_Size(objs);
+    int n = pf.PyList_Size(objs);
     for (int i = 0; i < n; i++) {
-      PyObject *obj = PyList_GetItem(objs, i);
+      PyObject *obj = pf.PyList_GetItem(objs, i);
       if(Py_TYPE(obj) ==  &PyOpenSCADType) {
         std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNode(obj,dict);
         node->children.push_back(child);
@@ -357,9 +324,9 @@ void python_build_hashmap(const std::shared_ptr<AbstractNode> &node, int level)
     if(value->ob_type != &PyOpenSCADType) continue;
     std::shared_ptr<AbstractNode> testnode = ((PyOpenSCADObject *) value)->node;
     if(testnode != node) continue;
-    PyObject* key1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
+    PyObject* key1 = pf.PyUnicode_AsEncodedString(key, "utf-8", "~");
     if(key1 == nullptr) continue;
-    const char *key_str =  PyBytes_AS_STRING(key1);
+    const char *key_str =  pf.PyBytes_AS_STRING(key1);
     if(key_str == nullptr) continue;
     mapping_name.push_back(key_str);
     mapping_code.push_back(code);
@@ -396,11 +363,11 @@ void python_retrieve_pyname(const std::shared_ptr<AbstractNode> &node)
 int python_numberval(PyObject *number, double *result, int *flags, int flagor)
 {
   if(number == nullptr) return 1;
-  if(number == Py_False) return 1;
-  if(number == Py_True) return 1;
-  if(number == Py_None) return 1;
+  if(number == Py_FALSE) return 1;
+  if(number == Py_TRUE) return 1;
+  if(number == Py_NONE) return 1;
   if (PyFloat_Check(number)) {
-    *result = PyFloat_AsDouble(number);
+    *result = pf.PyFloat_AsDouble(number);
     return 0;
   }
   if (PyLong_Check(number)) {
