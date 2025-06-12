@@ -53,27 +53,27 @@ int pythonRunArgs(int argc, char **argv)
   PyStatus status;
 
   PyConfig config;
-  PyConfig_InitPythonConfig(&config);
+  pf.PyConfig_InitPythonConfig(&config);
 
-  status = PyConfig_SetBytesArgv(&config, argc, argv);
-  if (PyStatus_Exception(status)) {
+  status = pf.PyConfig_SetBytesArgv(&config, argc, argv);
+  if (pf.PyStatus_Exception(status)) {
     goto fail;
   }
 
-  status = Py_InitializeFromConfig(&config);
-  if (PyStatus_Exception(status)) {
+  status = pf.Py_InitializeFromConfig(&config);
+  if (pf.PyStatus_Exception(status)) {
     goto fail;
   }
-  PyConfig_Clear(&config);
+  pf.PyConfig_Clear(&config);
 
   return Py_RunMain();
 
 fail:
-  PyConfig_Clear(&config);
-  if (PyStatus_IsExit(status)) {
+  pf.PyConfig_Clear(&config);
+  if (pf.PyStatus_IsExit(status)) {
     return status.exitcode;
   }
-  Py_ExitStatusException(status);
+  pf.Py_ExitStatusException(status);
 }
 
 int pythonCreateVenv(const std::string& path)
@@ -120,60 +120,60 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
   const auto exe = PlatformUtils::applicationPath() + "/" + name;
 
   PyPreConfig preconfig;
-  PyPreConfig_InitPythonConfig(&preconfig);
+  pf.PyPreConfig_InitPythonConfig(&preconfig);
 
-  status = Py_PreInitialize(&preconfig);
-  if (PyStatus_Exception(status)) {
-    Py_ExitStatusException(status);
+  status = pf.Py_PreInitialize(&preconfig);
+  if (pf.PyStatus_Exception(status)) {
+    pf.Py_ExitStatusException(status);
   }
 
   PyConfig config;
-  PyConfig_InitPythonConfig(&config);
+  pf.PyConfig_InitPythonConfig(&config);
 
-  status = PyConfig_SetBytesString(&config, &config.program_name, name);
-  if (PyStatus_Exception(status)) {
+  status = pf.PyConfig_SetBytesString(&config, &config.program_name, name);
+  if (pf.PyStatus_Exception(status)) {
     goto done;
   }
 
-  status = PyConfig_SetBytesString(&config, &config.executable, exe.c_str());
-  if (PyStatus_Exception(status)) {
+  status = pf.PyConfig_SetBytesString(&config, &config.executable, exe.c_str());
+  if (pf.PyStatus_Exception(status)) {
     goto done;
   }
 
-  status = PyConfig_SetBytesString(&config, &config.run_module, module.c_str());
-  if (PyStatus_Exception(status)) {
+  status = pf.PyConfig_SetBytesString(&config, &config.run_module, module.c_str());
+  if (pf.PyStatus_Exception(status)) {
     goto done;
   }
 
   /* Read all configuration at once */
-  status = PyConfig_Read(&config);
-  if (PyStatus_Exception(status)) {
+  status = pf.PyConfig_Read(&config);
+  if (pf.PyStatus_Exception(status)) {
     goto done;
   }
 
   for (const auto& arg : args) {
     std::wstring warg(arg.size(), L' ');
     warg.resize(std::mbstowcs(&warg[0], arg.c_str(), arg.size()));
-    status = PyWideStringList_Append(&config.argv, warg.c_str());
-    if (PyStatus_Exception(status)) {
+    status = pf.PyWideStringList_Append(&config.argv, warg.c_str());
+    if (pf.PyStatus_Exception(status)) {
       goto done;
     }
   }
 
   /* Override executable computed by PyConfig_Read() */
-  status = PyConfig_SetBytesString(&config, &config.executable, exe.c_str());
-  if (PyStatus_Exception(status)) {
+  status = pf.PyConfig_SetBytesString(&config, &config.executable, exe.c_str());
+  if (pf.PyStatus_Exception(status)) {
     goto done;
   }
 
-  status = Py_InitializeFromConfig(&config);
-  if (PyStatus_Exception(status)) {
+  status = pf.Py_InitializeFromConfig(&config);
+  if (pf.PyStatus_Exception(status)) {
     goto done;
   }
 
   return Py_RunMain();
 
 done:
-  PyConfig_Clear(&config);
+  pf.PyConfig_Clear(&config);
   return status.exitcode;
 }

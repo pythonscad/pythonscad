@@ -84,6 +84,12 @@ void initDynamic(void)
 
   PYTHON_LOAD_FUNC(PyConfig_InitPythonConfig, void(*)(PyConfig *config) );
   PYTHON_LOAD_FUNC(PyPreConfig_InitPythonConfig, void(*)(PyPreConfig *config) );
+  PYTHON_LOAD_FUNC(PyConfig_Clear, void(*)(PyConfig *config) );
+  PYTHON_LOAD_FUNC(PyConfig_Read, PyStatus(*)(PyConfig *config) );
+  PYTHON_LOAD_FUNC(PyConfig_SetBytesArgv, PyStatus(*)(PyConfig *config, Py_ssize_t argc, char * const *argv) );
+  PYTHON_LOAD_FUNC(PyConfig_SetBytesString, PyStatus(*)( PyConfig *config, wchar_t **config_str, const char *str) );
+  PYTHON_LOAD_FUNC(Py_PreInitialize, PyStatus(*)( const PyPreConfig *src_config) );
+  PYTHON_LOAD_FUNC(Py_InitializeFromConfig, PyStatus(*)( const PyConfig *src_config) );
 
   PYTHON_LOAD_FUNC(PyType_GenericAlloc, PyObject *(*)(PyTypeObject *, Py_ssize_t) );
   PYTHON_LOAD_FUNC(_Py_Dealloc, void (*)(PyObject *) );
@@ -138,6 +144,13 @@ void initDynamic(void)
 
   PYTHON_LOAD_FUNC(PyErr_Fetch, void (*)(PyObject **, PyObject **, PyObject **) );
   PYTHON_LOAD_FUNC(PyType_IsSubtype, int (*)(PyTypeObject *, PyTypeObject *) );
+
+  PYTHON_LOAD_FUNC(Py_ExitStatusException, void (*)(PyStatus err) );
+  PYTHON_LOAD_FUNC(PyStatus_Exception, int (*)(PyStatus err) );
+  PYTHON_LOAD_FUNC(PyStatus_IsExit, int (*)(PyStatus err) );
+  PYTHON_LOAD_FUNC(PyWideStringList_Append, PyStatus (*)(PyWideStringList *list, const wchar_t *item) );
+
+  PYTHON_LOAD_FUNC(PyModule_AddObject, int (*)(PyObject *mod, const char *, PyObject *value) );
 
   PYTHON_LOAD_FUNC(_Py_TrueStruct, PyObject *);
   PYTHON_LOAD_FUNC(_Py_FalseStruct, PyObject *);

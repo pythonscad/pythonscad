@@ -13,6 +13,13 @@ struct PyKernel
 {
   void (*PyConfig_InitPythonConfig)(PyConfig *config);
   void (*PyPreConfig_InitPythonConfig)(PyPreConfig *config);
+  void (*PyConfig_Clear)(PyConfig *);
+
+  PyStatus (*PyConfig_Read)(PyConfig *config);
+  PyStatus (*PyConfig_SetBytesArgv)( PyConfig *config, Py_ssize_t argc, char * const *argv);
+  PyStatus (*PyConfig_SetBytesString)( PyConfig *config, wchar_t **config_str, const char *str);
+  PyStatus (*Py_PreInitialize)( const PyPreConfig *src_config);
+  PyStatus (*Py_InitializeFromConfig)( const PyConfig *config);
 
   PyObject *(*PyType_GenericAlloc)(PyTypeObject *, Py_ssize_t);
   void (*_Py_Dealloc)(PyObject *);	
@@ -68,6 +75,13 @@ struct PyKernel
 
   void (*PyErr_Fetch)(PyObject **, PyObject **, PyObject **);
   int  (*PyType_IsSubtype)(PyTypeObject *, PyTypeObject *);
+
+  void (*Py_ExitStatusException)(PyStatus err);
+  int (*PyStatus_Exception)(PyStatus err);
+  int (*PyStatus_IsExit)(PyStatus err);
+  PyStatus (*PyWideStringList_Append)(PyWideStringList *list, const wchar_t *item);
+
+  int (*PyModule_AddObject)(PyObject *mod, const char *, PyObject *value);
 
   PyObject *_Py_TrueStruct;
   PyObject *_Py_FalseStruct;

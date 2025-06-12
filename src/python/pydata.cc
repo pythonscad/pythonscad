@@ -49,7 +49,7 @@ PyObject *PyDataObjectFromModule(PyTypeObject *type, std::string modulepath, std
     Py_XINCREF(res);
     return (PyObject *)res;
   }
-  return Py_None;
+  return Py_NONE;
 }
 
 void PyDataObjectToModule(PyObject *obj, std::string &modulepath, std::string &modulename)
@@ -82,7 +82,7 @@ PyObject *PyDataObjectFromValue(PyTypeObject *type, double value)
     Py_XINCREF(res);
     return (PyObject *)res;
   }
-  return Py_None;
+  return Py_NONE;
 }
 
 double PyDataObjectToValue(PyObject *obj)
@@ -114,7 +114,7 @@ PyObject *python_data_str(PyObject *self) {
      stream << "Marked Value (" << PyDataObjectToValue(self) << ")";	   
      break;
   }
-  return PyUnicode_FromStringAndSize(stream.str().c_str(),stream.str().size());
+  return pf.PyUnicode_FromStringAndSize(stream.str().c_str(),stream.str().size());
 }
 
 #ifdef ENABLE_LIBFIVE
@@ -122,7 +122,7 @@ PyObject *python_data_str(PyObject *self) {
 PyObject *PyDataObjectFromTree(PyTypeObject *type, const std::vector<libfive::Tree *> &tree)
 {
   if(tree.size() == 0) {
-    return Py_None;	  
+    return Py_NONE;	  
   } else if(tree.size() == 1) {
     PyDataObject *res;
     res = (PyDataObject *)  type->tp_alloc(type, 0);
@@ -133,7 +133,7 @@ PyObject *PyDataObjectFromTree(PyTypeObject *type, const std::vector<libfive::Tr
       return (PyObject *)res;
     }
   } else {
-    PyObject  *res = PyTuple_New(tree.size());
+    PyObject  *res = pf.PyTuple_New(tree.size());
     for(int i=0;i<tree.size();i++) {
       PyDataObject *sub;
       sub = (PyDataObject *)  type->tp_alloc(type, 0);
@@ -141,13 +141,13 @@ PyObject *PyDataObjectFromTree(PyTypeObject *type, const std::vector<libfive::Tr
         sub->data = tree[i];
 	sub->data_type = DATA_TYPE_LIBFIVE;
         Py_XINCREF(sub);
-	PyTuple_SetItem(res,i,(PyObject *) sub);
+	pf.PyTuple_SetItem(res,i,(PyObject *) sub);
       }
     }    
     return res;
   }	  
 
-  return Py_None;
+  return Py_NONE;
 }
 
 
@@ -161,9 +161,9 @@ std::vector<libfive::Tree *> PyDataObjectToTree(PyObject *obj)
   	result.push_back(new libfive::Tree(libfive::Tree(PyLong_AsLong(obj))));
   } else if(PyFloat_Check(obj)) { 
   	result.push_back(new libfive::Tree(libfive::Tree(PyFloat_AsDouble(obj))));
-  } else if(PyTuple_Check(obj)){
-	  for(int i=0;i<PyTuple_Size(obj);i++) {
-		PyObject *x=PyTuple_GetItem(obj,i);
+  } else if(PyTuple_CHECK(obj)){
+	  for(int i=0;i<pf.PyTuple_Size(obj);i++) {
+		PyObject *x=pf.PyTuple_GetItem(obj,i);
 		std::vector<libfive::Tree *> sub = PyDataObjectToTree(x);
 		result.insert(result.end(), sub.begin(), sub.end());
 	  }
@@ -237,19 +237,19 @@ PyObject *python_lv_bin_int(PyObject *self, PyObject *args, PyObject *kwargs,lib
     }
   } else { 
     printf("Cannot handle  bin %d binop %d \n",a1.size(), a2.size());
-    return Py_None;		    
+    return Py_NONE;		    
   }
 #else
   int i;
   PyObject *obj = NULL;
-  if(args == NULL) return Py_None;
-  if(PyTuple_Size(args) == 0) return Py_None;
-  obj= PyTuple_GetItem(args, 0);
+  if(args == NULL) return Py_NONE;
+  if(pf.PyTuple_Size(args) == 0) return Py_NONE;
+  obj= pf.PyTuple_GetItem(args, 0);
 //  Py_INCREF(obj);
   Tree res = PyDataObjectToTree(obj);
-  for(i=1;i<PyTuple_Size(args);i++)
+  for(i=1;i<pf.PyTuple_Size(args);i++)
   {
-  	obj= PyTuple_GetItem(args, i);
+  	obj= pf.PyTuple_GetItem(args, i);
   	//Py_INCREF(obj);
   	Tree tmp = PyDataObjectToTree(obj);
   	Tree res = libfive_tree_binary(op, res,tmp);
@@ -285,7 +285,7 @@ PyObject *python_lv_binop_int(PyObject *arg1, PyObject *arg2, libfive::Opcode::O
     }
   } else { 
     printf("Cannot handle  bin %d binop %d \n",t1.size(), t2.size());
-    return Py_None;		    
+    return Py_NONE;		    
   }
 
   return PyDataObjectFromTree(&PyDataType, res);
@@ -325,7 +325,7 @@ PyObject *python_lv_print(PyObject *self, PyObject *args, PyObject *kwargs)
   for(int i=0;i<tv.size();i++){
 //    printf("tree %d: %s\n",i,libfive_tree_print(tv[i]));
   }
-  return Py_None;
+  return Py_NONE;
 }
 
 #endif
@@ -365,12 +365,12 @@ PyObject *python_lv_remainder(PyObject *arg1, PyObject *arg2) { return python_lv
 PyObject *python_lv_divide(PyObject *arg1, PyObject *arg2) { return python_lv_binop_int(arg1, arg2,  libfive::Opcode::OP_DIV); }
 PyObject *python_lv_negate(PyObject *arg) { return python_lv_unop_int(arg, libfive::Opcode::OP_NEG); }
 #else
-PyObject *python_lv_add(PyObject *arg1, PyObject *arg2) { return Py_None; }
-PyObject *python_lv_substract(PyObject *arg1, PyObject *arg2) { return Py_None; }
-PyObject *python_lv_multiply(PyObject *arg1, PyObject *arg2) { return  Py_None; }
-PyObject *python_lv_remainder(PyObject *arg1, PyObject *arg2) { return Py_None; }
-PyObject *python_lv_divide(PyObject *arg1, PyObject *arg2) { return  Py_None; }
-PyObject *python_lv_negate(PyObject *arg) { return  Py_None; }
+PyObject *python_lv_add(PyObject *arg1, PyObject *arg2) { return Py_NONE; }
+PyObject *python_lv_substract(PyObject *arg1, PyObject *arg2) { return Py_NONE; }
+PyObject *python_lv_multiply(PyObject *arg1, PyObject *arg2) { return  Py_NONE; }
+PyObject *python_lv_remainder(PyObject *arg1, PyObject *arg2) { return Py_NONE; }
+PyObject *python_lv_divide(PyObject *arg1, PyObject *arg2) { return  Py_NONE; }
+PyObject *python_lv_negate(PyObject *arg) { return  Py_NONE; }
 #endif
 
 Value python_convertresult(PyObject *arg, int &error);
@@ -389,8 +389,8 @@ PyObject *PyDataObject_call(PyObject *self, PyObject *args, PyObject *kwargs)
   AssignmentList pargs;
   std::vector<std::shared_ptr<ModuleInstantiation>> modinsts;
   int error;
-  for(int i=0;i<PyTuple_Size(args);i++) {
-    PyObject *arg = 	PyTuple_GetItem(args,i);  
+  for(int i=0;i<pf.PyTuple_Size(args);i++) {
+    PyObject *arg = 	pf.PyTuple_GetItem(args,i);  
     if(Py_TYPE(arg) == &PyOpenSCADType) {
 	std::shared_ptr<AbstractNode> child = ((PyOpenSCADObject *) arg)->node;
 	Tree tree(child, "");
@@ -439,8 +439,8 @@ PyObject *PyDataObject_call(PyObject *self, PyObject *args, PyObject *kwargs)
   if(kwargs != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(kwargs, &pos, &key, &value)) {
-      PyObject* value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
+    while (pf.PyDict_Next(kwargs, &pos, &key, &value)) {
+      PyObject* value1 = pf.PyUnicode_AsEncodedString(key, "utf-8", "~");
       std::string value_str =  PyBytes_AS_STRING(value1);
       if(value_str == "fn") value_str="$fn";
       if(value_str == "fa") value_str="$fa";
@@ -460,8 +460,8 @@ PyObject *PyDataObject_call(PyObject *self, PyObject *args, PyObject *kwargs)
 
   SourceFile *source;
   if(!parse(source, stream.str(), "python", "python", false)) {
-    PyErr_SetString(PyExc_TypeError, "Error in SCAD code");
-    return Py_None;
+    pf.PyErr_SetString(pf.PyExc_TypeError, "Error in SCAD code");
+    return Py_NONE;
   }
   source->handleDependencies(true);
 
@@ -574,17 +574,17 @@ static PyModuleDef DataModule = {
 PyMODINIT_FUNC PyInit_PyData(void)
 {
   PyObject *m;
-  if (PyType_Ready(&PyDataType) < 0) return NULL;
-  m = PyModule_Create(&DataModule);
+  if (pf.PyType_Ready(&PyDataType) < 0) return NULL;
+  m = pf.PyModule_Create(&DataModule);
   if (m == NULL) return NULL;
 
   Py_INCREF(&PyDataType);
-  PyModule_AddObject(m, "openscad", (PyObject *)&PyDataType);
+  pf.PyModule_AddObject(m, "openscad", (PyObject *)&PyDataType);
   return m;
 }
 
 PyObject *PyInit_data(void)
 {
-  return PyModule_Create(&DataModule);
+  return pf.PyModule_Create(&DataModule);
 }
 
