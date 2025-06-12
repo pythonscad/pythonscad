@@ -29,7 +29,7 @@ struct PyKernel
   PyThreadState * (*PyEval_SaveThread)(void);
 
   PyObject *(*PyModule_GetDict)(PyObject *);	
-  const char *(*PyBytes_AS_STRING)(PyObject *);	
+  const char *(*PyBytes_AsString)(PyObject *);	
 
   PyObject *(*PyImport_AddModule)(const char *);	
   PyObject *(*PyImport_ImportModule)(const char *);	
@@ -40,6 +40,7 @@ struct PyKernel
 
   int (*PyRun_AnyFileExFlags)( FILE *fp, const char *filename,        int closeit, PyCompilerFlags *flags);
   int (*PyRun_SimpleStringFlags)(const char *, PyCompilerFlags *);
+  PyObject *(*PyRun_StringFlags)(const char *, int, PyObject *, PyObject *, PyCompilerFlags *);
   PyObject *(*PyObject_CallObject)(PyObject *callable, PyObject *args);
 
   PyObject *(*PyList_GetItem)(PyObject *, Py_ssize_t);
@@ -83,6 +84,21 @@ struct PyKernel
 
   int (*PyModule_AddObject)(PyObject *mod, const char *, PyObject *value);
 
+  int (*PyCallable_Check)(PyObject *); 
+  void (*PyErr_Clear)(void);
+  void (*PyErr_NormalizeException)(PyObject**, PyObject**, PyObject**);
+  void (*PyErr_Print)(void);
+  int (*PyImport_AppendInittab)( const char *name,    PyObject* (*initfunc)(void));
+  PyObject * (*PyObject_CallNoArgs)(PyObject *func);
+  PyObject * (*PyObject_GenericGetAttr)(PyObject *, PyObject *);
+  PyObject * (*PyObject_GetAttr)(PyObject *, PyObject *);
+  PyObject * (*PyObject_GetAttrString)(PyObject *, const char *);
+  int (*PyObject_HasAttr)(PyObject *, PyObject *);
+  int (*PyObject_HasAttrString)(PyObject *, const char *);
+  PyObject * (*PyObject_Repr)(PyObject *);
+  int (*PySys_Audit)( const char *event, const char *format, ...);
+  void (*PySys_WriteStdout)(const char *format, ...);
+
   PyObject *_Py_TrueStruct;
   PyObject *_Py_FalseStruct;
   PyObject *_Py_NoneStruct;
@@ -90,6 +106,10 @@ struct PyKernel
   PyTypeObject *PyFunction_Type;
   PyTypeObject *PyList_Type;
   PyTypeObject *PyFloat_Type;
+  PyTypeObject *PyLong_Type;
+  PyTypeObject *PyUnicode_Type;
+  PyTypeObject *PyModule_Type;
+  PyTypeObject *PyBaseObject_Type;
 
 };
 
@@ -101,6 +121,31 @@ extern struct PyKernel pf;
 
 #define PyList_CHECK(op) (op->ob_type == pf.PyList_Type)
 #define PyFloat_CHECK(op) (op->ob_type == pf.PyFloat_Type)
+#define PyLong_CHECK(op) (op->ob_type == pf.PyLong_Type)
+#define PyUnicode_CHECK(op) (op->ob_type == pf.PyUnicode_Type)
+#define PyModule_CHECK(op) (op->ob_type == pf.PyModule_Type)
+
+static inline void Py_XDECREF_(PyObject *op)
+{
+    if (op != _Py_NULL) {
+   // Non-limited C API and limited C API for Python 3.9 and older access
+    // directly PyObject.ob_refcnt.
+      if (_Py_IsImmortal(op)) return;
+      _Py_DECREF_STAT_INC();
+      if (--op->ob_refcnt == 0) {
+          pf._Py_Dealloc(op);
+      }
+	    
+    }
+}
+
+static inline void Py_XINCREF_(PyObject *op)
+{
+    // Non-limited C API and limited C API for Python 3.9 and older access
+    // directly PyObject.ob_refcnt.
+    op->ob_refcnt++;
+}
+
 
 
 #define DECLARE_INSTANCE	std::string instance_name; \
