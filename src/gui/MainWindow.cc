@@ -69,6 +69,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QInputDialog>
 #include <QMetaObject>
 #include <QMimeData>
 #include <QMutexLocker>
@@ -599,8 +600,7 @@ MainWindow::MainWindow(const QStringList& filenames) :
 
 #ifdef ENABLE_PYTHON
   connect(this->fileActionPythonRevoke, &QAction::triggered, this, &MainWindow::actionPythonRevokeTrustedFiles);
-  connect(this->fileActionPythonCreateVenv, &QAction::triggered, this, &MainWindow::actionPythonCreateVenv);
-  connect(this->fileActionPythonSelectVenv, &QAction::triggered, this, &MainWindow::actionPythonSelectVenv);
+  connect(this->fileActionPythonInstallModule, &QAction::triggered, this, &MainWindow::actionPythonInstallModule);
 #else
   this->menuPython->menuAction()->setVisible(false);
 #endif
@@ -2013,71 +2013,27 @@ void MainWindow::actionPythonRevokeTrustedFiles()
   QMessageBox::information(this, _("Trusted Files"), "All trusted python files revoked", QMessageBox::Ok);
 }
 
-void MainWindow::actionPythonCreateVenv()
-{
-  if(pip_ensure()) {
-    LOG("Installation failed");
-    return;
-  }
-  pip_install_call("numpy");
-		
-#ifdef ENABLE_PYTHON_DISABLED
-  const QString selectedDir = QFileDialog::getExistingDirectory(this, "Create Virtual Environment");
-  if (selectedDir.isEmpty()) {
-    return;
-  }
-
-  const QDir venvDir{selectedDir};
-  if (!venvDir.exists()) {
-    // Should not happen, but just in case double check...
-    QMessageBox::critical(this, _("Create Virtual Environment"),
-                          "Directory does not exist. Can't create virtual environment.",
-                          QMessageBox::Ok);
-    return;
-  }
-
-  if (!venvDir.isEmpty()) {
-    QMessageBox::critical(this, _("Create Virtual Environment"),
-                          "Directory is not empty. Can't create virtual environment.",
-                          QMessageBox::Ok);
-    return;
-  }
-
-  const auto& path = venvDir.absolutePath().toStdString();
-  LOG("Creating Python virtual environment in '%1$s'...", path);
-  int result = pythonCreateVenv(path);
-
-  if (result == 0) {
-    Settings::SettingsPython::pythonVirtualEnv.setValue(path);
-    Settings::Settings::visit(SettingsWriter());
-    LOG("Python virtual environment creation successfull.");
-    QMessageBox::information(this, _("Create Virtual Environment"),
-                             "Virtual environment created, please restart OpenSCAD to activate.",
-                             QMessageBox::Ok);
-  } else {
-    LOG("Python virtual environment creation failed.");
-    QMessageBox::critical(this, _("Create Virtual Environment"),
-                          "Virtual environment creation failed.",
-                          QMessageBox::Ok);
-  }
-#endif // ifdef ENABLE_PYTHON
-}
-
-void MainWindow::actionPythonSelectVenv()
+void MainWindow::actionPythonInstallModule()
 {
 #ifdef ENABLE_PYTHON
-  const QString venvDir = QFileDialog::getExistingDirectory(this, "Select Virtual Environment");
-  if (venvDir.isEmpty()) {
-    return;
+  bool ok;
+  QString modulename = QInputDialog::getText(0, "Install Python Module",
+                                         "Module name:", QLineEdit::Normal,
+                                         "", &ok);
+  if (ok && !modulename.isEmpty()) {
+    if(pip_ensure()) {
+      LOG("PIP Installation failed");
+      return;
+    }
+    if(pip_install_call(modulename.toStdString())) {
+      LOG("Installation failed");
+      return;
+    }
+    // error detection does not yet work nice
+//    QMessageBox::information (0, "Success", QString("Module %1 successfully installed").arg(modulename));
+    
   }
-  const QFileInfo fileInfo{QDir{venvDir}, "pyvenv.cfg"};
-  if (fileInfo.exists()) {
-    Settings::SettingsPython::pythonVirtualEnv.setValue(venvDir.toStdString());
-    Settings::Settings::visit(SettingsWriter());
-    QMessageBox::information(this, _("Select Virtual Environment"),
-                             "Virtual environment selected, please restart OpenSCAD to activate.",
-                             QMessageBox::Ok);
-  }
+
 #endif // ifdef ENABLE_PYTHON
 }
 

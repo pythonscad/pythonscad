@@ -249,8 +249,7 @@ private slots:
   void actionSave();
   void actionSaveAs();
   void actionPythonRevokeTrustedFiles();
-  void actionPythonCreateVenv();
-  void actionPythonSelectVenv();
+  void actionPythonInstallModule();
   void actionSaveACopy();
   void actionReload();
   void actionShowLibraryFolder();

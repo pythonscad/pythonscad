@@ -251,8 +251,7 @@
      </property>
      <addaction name="fileActionPythonRevoke"/>
      <addaction name="separator"/>
-     <addaction name="fileActionPythonSelectVenv"/>
-     <addaction name="fileActionPythonCreateVenv"/>
+     <addaction name="fileActionPythonInstallModule"/>
     </widget>
     <addaction name="fileActionNew"/>
     <addaction name="fileActionOpen"/>
@@ -1673,14 +1672,9 @@
     <string>Ctrl+J</string>
    </property>
   </action>
-  <action name="fileActionPythonCreateVenv">
+  <action name="fileActionPythonInstallModule">
    <property name="text">
-    <string>Create Virtual Environment</string>
-   </property>
-  </action>
-  <action name="fileActionPythonSelectVenv">
-   <property name="text">
-    <string>Select Virtual Environment</string>
+    <string>Install external Python Module</string>
    </property>
   </action>
  </widget>

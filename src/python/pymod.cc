@@ -284,6 +284,7 @@ int pip_install(const std::string &modname){
       exit(1);
   }
   result = PyObject_Call(runmodule, runargs, NULL);
+  printf("result=%d\n",result);
   free(targetpath_wr);
   free(modname_wr);
   Py_DECREF(runpy);
