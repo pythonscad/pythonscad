@@ -897,6 +897,8 @@ int main(int argc, char **argv)
   ("trust-python",  "Trust python")
   ("ipython",  "Run ipython Interpreter")
   ("python-module", po::value<std::string>(), "=module Call pip python module")
+  ("pip-bootstrap",  "Bootstrap pip")
+  ("pip-install",  po::value<std::string>(), "Install a certain module")
 #endif
   ;
 
@@ -947,6 +949,11 @@ int main(int argc, char **argv)
           args = vm["input-file"].as<std::vector<std::string>>();
       }
       return pythonRunModule(applicationPath, vm[pymod].as<std::string>(), args);
+  }
+  if (vm.count("pip-bootstrap")) { pip_bootstrap(); }
+  if (vm.count("pip-install")) { 
+      std::string pkgname = vm["pip-install"].as<std::string>();
+      pip_install(pkgname); 
   }
 #endif
   if (vm.count("quiet")) {

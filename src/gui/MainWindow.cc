@@ -2015,7 +2015,13 @@ void MainWindow::actionPythonRevokeTrustedFiles()
 
 void MainWindow::actionPythonCreateVenv()
 {
-#ifdef ENABLE_PYTHON
+  if(pip_ensure()) {
+    LOG("Installation failed");
+    return;
+  }
+  pip_install_call("numpy");
+		
+#ifdef ENABLE_PYTHON_DISABLED
   const QString selectedDir = QFileDialog::getExistingDirectory(this, "Create Virtual Environment");
   if (selectedDir.isEmpty()) {
     return;

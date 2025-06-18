@@ -19,6 +19,11 @@ void python_lock(void);
 void python_unlock(void);
 void ipython(void);
 
+int pip_bootstrap(void);
+int pip_ensure(void);
+int pip_install(const std::string &package);
+int pip_install_call(const std::string &package);
+
 
 std::shared_ptr<AbstractNode>
 python_modulefunc(const ModuleInstantiation *module,

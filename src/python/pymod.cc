@@ -177,3 +177,132 @@ done:
   PyConfig_Clear(&config);
   return status.exitcode;
 }
+
+int curl_download(std::string url, std::string path);
+
+int pip_bootstrap(void) // will be called from separate program
+{
+  std::string tempfile = std::tmpnam(nullptr); // TODO dangerous
+  char *tempfile_wr = strdup(tempfile.c_str());
+
+  // curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+  if(curl_download("https://bootstrap.pypa.io/get-pip.py", tempfile)) {
+    LOG("Error downloading pip");
+    return 1;
+  }
+
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+  std::string targetpath=PlatformUtils::resourceBasePath()+"/libraries/python/site-packages";
+  char *targetpath_wr = strdup(targetpath.c_str());
+  
+  // python get-pip.py --target /home/gsohler/git/pythonscad/libraries/python/site-packages
+  char * const argv[4]= { "", tempfile_wr, "--target", strdup(targetpath_wr) };
+  PyConfig_SetBytesArgv(&config, 4, argv);
+  config.parse_argv=1;
+
+  PyStatus status;
+  status = Py_InitializeFromConfig(&config);
+  PyConfig_Clear(&config);
+
+  FILE *fp =fopen(tempfile.c_str(),"rb");
+  if(fp == nullptr) {
+    LOG("Cannot open tempfile");
+    return 1;
+  }
+  PyCompilerFlags cf = _PyCompilerFlags_INIT;
+  PyRun_AnyFileFlags(fp, "<stdin>", &cf);
+  fclose(fp);
+
+  unlink(tempfile_wr); // TODO fail
+  Py_Finalize();
+
+  free(targetpath_wr);
+  free(tempfile_wr);
+  exit(0);
+}
+int pip_ensure(void) {
+  std::string pip_path=PlatformUtils::resourceBasePath()+"/libraries/python/site-packages/pip";
+  if(std::filesystem::exists(pip_path)) return 0;
+  int status = system("./pythonscad --pip-bootstrap"); // TODO improve
+  printf("status is %d\n",status);						       
+  if(status) {
+    LOG("Cannot bootstrap pip");
+    return -1;
+  }	  
+  if(!std::filesystem::exists(pip_path)){
+    LOG("Pip did not install as expected");
+    return -1;
+  }
+  return 0;
+}
+int pip_install(const std::string &modname){
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+  std::string targetpath=PlatformUtils::resourceBasePath()+"/libraries/python/site-packages";
+
+  char *targetpath_wr = strdup(targetpath.c_str());
+
+  char *modname_wr = strdup(modname.c_str());
+  
+  //python -m pip install --target ../libraries/python/site-packages numpy
+  char * const argv[7]= { "", "pip", "install", "--upgrade", "--target", targetpath_wr,  strdup(modname_wr) };
+  PyConfig_SetBytesArgv(&config, 7, argv);
+  config.parse_argv=1;
+
+  PyStatus status;
+  status = Py_InitializeFromConfig(&config);
+  PyConfig_Clear(&config);
+
+  PyObject *module, *runpy, *runmodule, *runargs, *result;
+
+  runpy = PyImport_ImportModule("runpy");
+  if (runpy == NULL) {
+      fprintf(stderr, "Could not import runpy module\n");
+      exit(1);
+  }
+  runmodule = PyObject_GetAttrString(runpy, "_run_module_as_main");
+  if (runmodule == NULL) {
+      fprintf(stderr, "Could not access runpy._run_module_as_main\n");
+      Py_DECREF(runpy);
+      exit(1);
+  }
+  module = PyUnicode_FromString("pip");
+  if (module == NULL) {
+      fprintf(stderr, "Could not convert module name to unicode\n");
+      Py_DECREF(runpy);
+      Py_DECREF(runmodule);
+      exit(1);
+  }
+  runargs = PyTuple_Pack(2, module, 1 ? Py_True : Py_False);
+  if (runargs == NULL) {
+      fprintf(stderr,
+          "Could not create arguments for runpy._run_module_as_main\n");
+      Py_DECREF(runpy);
+      Py_DECREF(runmodule);
+      Py_DECREF(module);
+      exit(1);
+  }
+  result = PyObject_Call(runmodule, runargs, NULL);
+  free(targetpath_wr);
+  free(modname_wr);
+  Py_DECREF(runpy);
+  Py_DECREF(runmodule);
+  Py_DECREF(module);
+  Py_DECREF(runargs);
+  if (result == NULL) {
+	  exit(1);
+  }
+  Py_DECREF(result);
+  exit(0);
+  return 0;
+}
+// TODO make sure that only own modules are used
+
+int pip_install_call(const std::string &package){
+  std::string command="./pythonscad --pip-install "+package;
+  int status = system(command.c_str()); // TODO improve
+  return 0;
+}
+
+
