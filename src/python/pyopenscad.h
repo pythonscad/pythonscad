@@ -32,11 +32,14 @@ extern PyTypeObject PyOpenSCADType;
 extern std::shared_ptr<AbstractNode> python_result_node;
 extern PyObject *python_result_obj;
 extern std::vector<SelectedObject> python_result_handle;
+extern void python_catch_error(std::string &errorstr);
 
 extern bool python_active;
-extern std::string python_scriptpath;
+extern fs::path python_scriptpath;
 extern std::string trusted_edit_document_name;
 extern std::string untrusted_edit_document_name;
+extern std::vector<std::shared_ptr<AbstractNode>> nodes_hold;
+extern std::shared_ptr<AbstractNode> void_node, full_node;
 bool trust_python_file(const std::string &file, const std::string &content);
 PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<AbstractNode> &node);
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNode(PyObject *object, PyObject **dict );
@@ -55,6 +58,8 @@ void get_fnas(double& fn, double& fa, double& fs);
 void python_retrieve_pyname(const std::shared_ptr<AbstractNode> &node);
 void python_build_hashmap(const std::shared_ptr<AbstractNode> &node, int level);
 PyObject *python_fromopenscad(const Value &val);
+void python_show_final(void);
+extern std::vector<std::shared_ptr<AbstractNode>> shows;
 
 
 extern std::vector<std::string> mapping_name;

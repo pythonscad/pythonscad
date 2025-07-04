@@ -151,7 +151,7 @@
 #ifdef ENABLE_CGAL
 #include "geometry/cgal/cgal.h"
 #include "geometry/cgal/CGALCache.h"
-#include "geometry/cgal/CGAL_Nef_polyhedron.h"
+#include "geometry/cgal/CGALNefGeometry.h"
 #endif // ENABLE_CGAL
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/manifoldutils.h"
@@ -196,41 +196,34 @@ std::string SHA256HashString(std::string aString){
 #include <iostream>
 static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *stream)
 {
-        
-  size_t written = fwrite(ptr, size, nmemb, (FILE *)stream);
-  return written;
+  QFile *fh = (QFile *) stream ;
+  fh -> write(QByteArray((const char *) ptr, size*nmemb));
+  return size*nmemb;
 }
 	
 int curl_download(std::string url, std::string path)
 {
     CURLcode status;
-    FILE *fh=fopen((path+"_").c_str(),"wb");
+    QFile fh((path).c_str());
+    if (!fh.open(QIODevice::WriteOnly)) {
+        LOG(message_group::Error, "Cannot open file %1$s",path.c_str());
+        return  -1;
+    }
     LOG(message_group::Warning, "Downloading to %1$s",path.c_str());
-    if(fh != nullptr) {
       CURL *curl = curl_easy_init();
       if(curl) {
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fh);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &fh);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_download_write);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
  
         status = curl_easy_perform(curl);
         curl_easy_cleanup(curl);
       }	
-      fclose(fh);
-      if(status == CURLE_OK) {
-	try {
-	  if(std::filesystem::exists(path)) std::filesystem::remove(path);
-          std::filesystem::rename(path+"_", path);	      
-	}catch(const std::exception& ex)
-        {
-	  std::cerr << ex.what() << std::endl;
-          LOG(message_group::Error, "Exception during installing file!");
-        }  
-      } else {
+      fh.close();
+      if(status != CURLE_OK) {
         LOG(message_group::Error, "Could not download!");
       }
-    }
     return 0;
 }
 #endif // ifdef ENABLE_PYTHON
@@ -255,7 +248,7 @@ namespace {
 
 const int autoReloadPollingPeriodMS = 200;
 const char copyrighttext[] =
-  "<p>Copyright (C) 2009-2024 The OpenSCAD Developers</p>"
+  "<p>Copyright (C) 2009-2025 The OpenSCAD Developers</p>"
   "<p>This program is free software; you can redistribute it and/or modify "
   "it under the terms of the GNU General Public License as published by "
   "the Free Software Foundation; either version 2 of the License, or "
@@ -609,7 +602,7 @@ MainWindow::MainWindow(const QStringList& filenames) :
   connect(this->fileActionPythonCreateVenv, &QAction::triggered, this, &MainWindow::actionPythonCreateVenv);
   connect(this->fileActionPythonSelectVenv, &QAction::triggered, this, &MainWindow::actionPythonSelectVenv);
 #else
-  this->menuPython->setVisible(false);
+  this->menuPython->menuAction()->setVisible(false);
 #endif
 
 #ifndef __APPLE__
@@ -653,8 +646,11 @@ MainWindow::MainWindow(const QStringList& filenames) :
   connect(this->designActionPreview, &QAction::triggered, this, &MainWindow::actionRenderPreview);
   connect(this->designActionRender, &QAction::triggered, this, &MainWindow::actionRender);
   connect(this->designActionMeasureDistance, &QAction::triggered, this, &MainWindow::actionMeasureDistance);
+  this->designActionMeasureDistance->setCheckable(true);
   connect(this->designActionMeasureAngle, &QAction::triggered, this, &MainWindow::actionMeasureAngle);
+  this->designActionMeasureAngle->setCheckable(true);
   connect(this->designActionFindHandle, &QAction::triggered, this, &MainWindow::actionFindHandle);
+  this->designActionFindHandle->setCheckable(true);
   connect(this->designAction3DPrint, &QAction::triggered, this, &MainWindow::action3DPrint);
   connect(this->designShareDesign, &QAction::triggered, this, &MainWindow::actionShareDesign);
   connect(this->designLoadShareDesign, &QAction::triggered, this, &MainWindow::actionLoadShareDesign);
@@ -1475,11 +1471,11 @@ void MainWindow::compile(bool reload, bool forcedone)
           this->raise();
         }
       }
-      // If the file hasn't changed, we might still need to compile it
-      // if we haven't yet compiled the current text.
+      // If the file has some content and there is no currently compiled content,
+      // then we force the top level compilation.
       else {
         auto current_doc = activeEditor->toPlainText();
-        if (current_doc.size() != lastCompiledDoc.size()) {
+        if (current_doc.size() && lastCompiledDoc.size() == 0) {
           shouldcompiletoplevel = true;
         }
       }
@@ -1625,7 +1621,24 @@ void MainWindow::compileEnded()
   clearCurrentOutput();
   GuiLocker::unlock();
   if (designActionAutoReload->isChecked()) autoReloadTimer->start();
+#ifdef ENABLE_GUI_TESTS
+  emit compilationDone(this->rootFile);
+#endif
 }
+
+#ifdef ENABLE_GUI_TESTS
+std::shared_ptr<AbstractNode> MainWindow::instantiateRootFromSource(SourceFile* file)
+{
+    EvaluationSession session{file->getFullpath()};
+    ContextHandle<BuiltinContext> builtin_context{Context::create<BuiltinContext>(&session)};
+    setRenderVariables(builtin_context);
+
+    std::shared_ptr<const FileContext> file_context;
+    std::shared_ptr<AbstractNode> node = this->rootFile->instantiate(*builtin_context, &file_context);
+
+    return node;
+}
+#endif
 
 void MainWindow::instantiateRoot()
 {
@@ -1865,6 +1878,10 @@ void MainWindow::actionOpenRecent()
 {
   auto action = qobject_cast<QAction *>(sender());
   tabManager->open(action->data().toString());
+#ifdef ENABLE_PYTHON  
+  this->python_active = -1; // unknown
+  recomputePythonActive();
+#endif  
 }
 
 void MainWindow::clearRecentFiles()
@@ -2308,6 +2325,16 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
     return false;
   }
 
+  auto keyEvent = static_cast<QKeyEvent *>(event);
+  if (keyEvent != nullptr && keyEvent->key() == Qt::Key_Escape) {
+    if(this->qglview->measure_state != MEASURE_IDLE) {
+      this->designActionMeasureDistance->setChecked(false);
+      this->designActionMeasureAngle->setChecked(false);
+      this->designActionFindHandle->setChecked(false);
+      this->qglview->handle_mode=false;
+      meas.stopMeasure();
+    }
+  }
   return QMainWindow::eventFilter(obj, event);
 }
 
@@ -2335,7 +2362,6 @@ bool MainWindow::fileChangedOnDisk()
     if (!valid) return false;
 
     auto newid = str(boost::format("%x.%x") % st.st_mtime % st.st_size);
-
     if (newid != activeEditor->autoReloadId) {
       activeEditor->autoReloadId = newid;
       return true;
@@ -2409,12 +2435,12 @@ void MainWindow::recomputePythonActive()
   auto fnameba = activeEditor->filepath.toLocal8Bit();
   const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba;
 
-  bool oldPythonActive = this->python_active;
-  this->python_active = false;
+  int oldPythonActive = this->python_active;
+  this->python_active = 0;
   if (fname != NULL) {
     if(boost::algorithm::ends_with(fname, ".py")) {
 	    std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
-      if ( trust_python_file(std::string(fname), content)) this->python_active = true;
+      if ( trust_python_file(std::string(fname), content)) this->python_active = 1;
       else LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
     }
   }
@@ -2791,17 +2817,45 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
 
 void MainWindow::actionMeasureDistance()
 {
-  meas.startMeasureDist();
+  if(this->designActionMeasureDistance->isChecked()){
+    this->qglview->handle_mode=false;
+    meas.stopMeasure();
+    this->designActionMeasureAngle->setChecked(false);
+    this->designActionFindHandle->setChecked(false);
+    meas.startMeasureDist();
+  } else {
+      this->qglview->handle_mode=false;
+      meas.stopMeasure();
+  }  
 }
 
 void MainWindow::actionMeasureAngle()
 {
-  meas.startMeasureAngle();
+  if(this->designActionMeasureAngle->isChecked()){
+    this->qglview->handle_mode=false;
+    meas.stopMeasure();
+    this->designActionMeasureDistance->setChecked(false);
+    this->designActionFindHandle->setChecked(false);
+    meas.startMeasureAngle();
+  } else {
+      this->qglview->handle_mode=false;
+      meas.stopMeasure();
+  }  
 }
 void MainWindow::actionFindHandle()
 {
-  meas.startFindHandle();	
-  qglview->handle_mode=true;
+  if(this->designActionFindHandle->isChecked()){
+    this->qglview->handle_mode=false;
+    meas.stopMeasure();
+    this->designActionMeasureDistance->setChecked(false);
+    this->designActionMeasureAngle->setChecked(false);
+    meas.startFindHandle();	
+    qglview->handle_mode=true;
+  } else {
+      this->qglview->handle_mode=false;
+      meas.stopMeasure();
+  }
+
 }
 
 void MainWindow::leftClick(QPoint mouse)
@@ -3126,7 +3180,7 @@ void MainWindow::actionDisplayCSGTree()
 {
   setCurrentOutput();
   QString text = (rootNode)? QString::fromStdString(tree.getString(*rootNode, "  ")) : "";
-  showTextInWindow("CGS", text);
+  showTextInWindow("CSG", text);
   clearCurrentOutput();
 }
 
@@ -3211,7 +3265,7 @@ void MainWindow::actionShareDesignPublish()
   shareDesignDialog->close();
   if(success) 
     QMessageBox::information(this,"Share Design","Design successfully submitted");  
-  else QMessageBox::information(this,"Share Design","Error during submission");  
+//  else QMessageBox::information(this,"Share Design","Error during submission");  
 }
 
 void MainWindow::actionShareDesign()
@@ -3348,7 +3402,7 @@ void MainWindow::actionCheckValidity()
 
   bool valid = true;
 #ifdef ENABLE_CGAL
-  if (auto N = std::dynamic_pointer_cast<const CGAL_Nef_polyhedron>(rootGeom)) {
+  if (auto N = std::dynamic_pointer_cast<const CGALNefGeometry>(rootGeom)) {
     valid = N->p3 ? const_cast<CGAL_Nef_polyhedron3&>(*N->p3).is_valid() : false;
   } else
 #endif
@@ -3406,7 +3460,7 @@ bool MainWindow::canExport(unsigned int dim)
   }
 
 #ifdef ENABLE_CGAL
-  auto N = dynamic_cast<const CGAL_Nef_polyhedron *>(rootGeom.get());
+  auto N = dynamic_cast<const CGALNefGeometry *>(rootGeom.get());
   if (N && !N->p3->is_simple()) {
     LOG(message_group::UI_Warning, "Object may not be a valid 2-manifold and may need repair! See https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/STL_Import_and_Export");
   }
@@ -4055,7 +4109,7 @@ void MainWindow::activateDock(Dock *dock)
   if (dock == nullptr) return;
 
   // We always need to activate the window.
-  if (dock->isTopLevel()) dock->activateWindow();
+  if (dock->isFloating()) dock->activateWindow();
   else QMainWindow::activateWindow();
 
   dock->raise();

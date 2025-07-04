@@ -31,7 +31,7 @@
 
 #ifdef ENABLE_CGAL
 #include "geometry/cgal/cgalutils.h"
-#include "geometry/cgal/CGAL_Nef_polyhedron.h"
+#include "geometry/cgal/CGALNefGeometry.h"
 #endif
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/ManifoldGeometry.h"
@@ -96,7 +96,7 @@ void PolySetBuilder::appendGeometry(const std::shared_ptr<const Geometry>& geom)
   } else if (const auto ps = std::dynamic_pointer_cast<const PolySet>(geom)) {
     appendPolySet(*ps);
 #ifdef ENABLE_CGAL
-  } else if (const auto N = std::dynamic_pointer_cast<const CGAL_Nef_polyhedron>(geom)) {
+  } else if (const auto N = std::dynamic_pointer_cast<const CGALNefGeometry>(geom)) {
     if (const auto ps = CGALUtils::createPolySetFromNefPolyhedron3(*(N->p3))) {
       appendPolySet(*ps);
     }
@@ -215,6 +215,16 @@ void PolySetBuilder::appendPolySet(const PolySet& ps)
 void PolySetBuilder::copyVertices(std::vector<Vector3d> &vertices) {
   vertices.clear();	
   vertices_.copy(std::back_inserter(vertices));
+}
+
+void PolySetBuilder::copyVertices(std::vector<Vector3f> &vertices) {
+  std::vector<Vector3d> verticesD;
+  copyVertices(verticesD);
+
+  vertices.clear();	
+  vertices.reserve(vertices_.size());
+  for(const Vector3d &f : verticesD)
+    vertices.push_back(Vector3f(f[0], f[1], f[2]));	  
 }
 
 void PolySetBuilder::addCurve(std::shared_ptr<Curve> new_curve){

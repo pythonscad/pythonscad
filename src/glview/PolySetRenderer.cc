@@ -53,7 +53,7 @@
 #include "glview/VertexState.h"
 
 #ifdef ENABLE_CGAL
-#include "geometry/cgal/CGAL_Nef_polyhedron.h"
+#include "geometry/cgal/CGALNefGeometry.h"
 #endif
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/ManifoldGeometry.h"
@@ -85,7 +85,7 @@ void PolySetRenderer::addGeometry(const std::shared_ptr<const Geometry>& geom)
     this->polysets_.push_back(mani->toPolySet());
 #endif
 #ifdef ENABLE_CGAL
-  } else if (const auto N = std::dynamic_pointer_cast<const CGAL_Nef_polyhedron>(geom)) {
+  } else if (const auto N = std::dynamic_pointer_cast<const CGALNefGeometry>(geom)) {
     // Note: It's rare, but possible for Nef polyhedrons to exist among geometries in Manifold mode.
     // One way is through import("file.nef3")
     assert(N->getDimension() == 3);
@@ -308,14 +308,17 @@ PolySetRenderer::findModelObject(const Vector3d &near_pt, const Vector3d &far_pt
   Vector3d pt1_nearest;
   Vector3d pt2_nearest;
   Vector3d pt3_nearest;
+  int ind_nearest = -1;
   std::vector<Vector3d> pts_nearest;
   const auto find_nearest_point = [&](const std::vector<Vector3d> &vertices){
-    for (const Vector3d &pt : vertices) {
+    for (int i=0;i<vertices.size();i++) {
+      const Vector3d &pt = vertices[i];	    
       SelectedObject ruler = calculateLinePointDistance(near_pt, far_pt, pt, dist_near);
       double dist_pt = (ruler.pt[0]-ruler.pt[1]).norm();
       if (dist_pt < tolerance && dist_near < dist_nearest) {
         dist_nearest = dist_near;
         pt1_nearest = pt;
+	ind_nearest = i;
       }
     }
   };
@@ -330,6 +333,7 @@ PolySetRenderer::findModelObject(const Vector3d &near_pt, const Vector3d &far_pt
       .type = SelectionType::SELECTION_POINT,
     };
     obj.pt.push_back(pt1_nearest);
+    obj.ind=ind_nearest;
 
     return std::make_shared<SelectedObject>(obj);
   }

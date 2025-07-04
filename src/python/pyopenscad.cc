@@ -35,6 +35,7 @@
 #include <Context.h>
 #include <Selection.h>
 #include "platform/PlatformUtils.h"
+#include "primitives.h"
 namespace fs = std::filesystem;
 
 // #define HAVE_PYTHON_YIELD
@@ -42,7 +43,7 @@ extern "C" PyObject *PyInit_openscad(void);
 
 bool python_active;
 bool python_trusted;
-std::string python_scriptpath;
+fs::path python_scriptpath;
 // https://docs.python.org/3.10/extending/newtypes.html
 
 void PyObjectDeleter (PyObject *pObject) { Py_XDECREF(pObject); };
@@ -56,6 +57,7 @@ bool pythonDryRun=false;
 std::shared_ptr<AbstractNode> python_result_node = nullptr; /* global result veriable containing the python created result */
 PyObject *python_result_obj = nullptr;
 std::vector<SelectedObject> python_result_handle;
+std::vector<std::shared_ptr<AbstractNode> > shows;
 bool python_runipython = false;
 bool pythonMainModuleInitialized = false;
 bool pythonRuntimeInitialized = false;
@@ -63,7 +65,8 @@ bool pythonRuntimeInitialized = false;
 std::vector<std::string> mapping_name;
 std::vector<std::string> mapping_code;
 std::vector<int> mapping_level;
-std::shared_ptr<const FileContext> osinclude_context = nullptr;
+std::vector<std::shared_ptr<AbstractNode>> nodes_hold; // make sure, that these nodes are not yet freed
+std::shared_ptr<AbstractNode> void_node, full_node;				       
 
 void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
 {
@@ -181,7 +184,7 @@ std::string python_version(void)
 
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs,PyObject **dict)
 {
-  std::shared_ptr<AbstractNode> result;
+  std::shared_ptr<AbstractNode> result = nullptr;
   if (Py_TYPE(objs) == &PyOpenSCADType) {
     result = ((PyOpenSCADObject *) objs)->node;
     if(result.use_count() > 2) {
@@ -201,6 +204,12 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs,PyObjec
       } else return nullptr;
     }
     result=node;
+    *dict = nullptr; // TODO improve
+  } else if(objs == Py_None || objs == Py_False){
+    result = void_node;	  
+    *dict = nullptr; // TODO improve
+  } else if(objs == Py_True){
+    result = full_node;	  
     *dict = nullptr; // TODO improve
   } else result=nullptr;
   return result;
@@ -714,6 +723,8 @@ void openscad_object_callback(PyObject *obj) {
 #endif
 void initPython(const std::string& binDir, const std::string &scriptpath, double time)
 {
+  static bool alreadyTried=false;
+  if(alreadyTried) return;  
   const auto name = "openscad-python";
   const auto exe = binDir + "/" + name;
   if(scriptpath.size() > 0) python_scriptpath = scriptpath;	
@@ -740,16 +751,16 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
         PyObject *key1, *value1;
         Py_ssize_t pos1 = 0;
         while (PyDict_Next(sysdict, &pos1, &key1, &value1)) {
-          PyObjectUniquePtr key1_(PyUnicode_AsEncodedString(key1, "utf-8", "~"), PyObjectDeleter);
+          PyObject *key1_ = PyUnicode_AsEncodedString(key1, "utf-8", "~");
           if(key1_ == nullptr) continue;
-          const char *key1_str =  PyBytes_AS_STRING(key1_.get());
+          const char *key1_str =  PyBytes_AS_STRING(key1_);
           if(strcmp(key1_str,"modules") == 0) {
             PyObject *key2, *value2;
             Py_ssize_t pos2 = 0;
             while (PyDict_Next(value1, &pos2, &key2, &value2)) {
-              PyObjectUniquePtr key2_(PyUnicode_AsEncodedString(key2, "utf-8", "~"), PyObjectDeleter);
+              PyObject *key2_ =PyUnicode_AsEncodedString(key2, "utf-8", "~");
               if(key2_ == nullptr) continue;
-              const char *key2_str =  PyBytes_AS_STRING(key2_.get());
+              const char *key2_str =  PyBytes_AS_STRING(key2_);
 	      if(key2_str == nullptr) continue;
 	      if(!PyModule_Check(value2)) continue;
 
@@ -827,7 +838,8 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
 
     PyStatus status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
-      LOG( message_group::Error, "Python not found. Is it installed ?");
+      alreadyTried=true;	    
+      LOG( message_group::Error, "Python %1$lu.%2$lu.%3$lu not found. Is it installed ?",PY_MAJOR_VERSION, PY_MINOR_VERSION, PY_MICRO_VERSION);
       return;
     }
     PyConfig_Clear(&config);
@@ -854,6 +866,11 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
   PyRun_String(stream.str().c_str(), Py_file_input, pythonInitDict.get(), pythonInitDict.get());
   customizer_parameters_finished = customizer_parameters;
   customizer_parameters.clear();
+  python_result_handle.clear();
+  nodes_hold.clear();
+  DECLARE_INSTANCE
+  void_node = std::make_shared<CubeNode>(instance); // just placeholders
+  full_node = std::make_shared<CubeNode>(instance); // just placeholders
 }
 
 void finishPython(void)
@@ -875,6 +892,7 @@ void finishPython(void)
         } 
       }
 #endif
+      python_show_final();
 }
 
 std::string evaluatePython(const std::string & code, bool dry_run)
@@ -924,6 +942,9 @@ sys.stderr = catcher_err\n\
 sys.stdin = stdin_bak\n\
 sys.stdout = stdout_bak\n\
 sys.stderr = stderr_bak\n\
+stdin_bak = None\n\
+stdout_bak = None\n\
+stderr_bak = None\n\
 ";
 
 #ifndef OPENSCAD_NOGUI  

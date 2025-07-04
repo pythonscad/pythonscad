@@ -8,7 +8,9 @@
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include <CGAL/convex_hull_3.h>
+#include <CGAL/Surface_mesh/Surface_mesh.h>
 
 #include "geometry/cgal/cgal.h"
 #include "geometry/Geometry.h"
@@ -24,42 +26,33 @@ namespace ManifoldUtils {
 /*!
    children cannot contain nullptr objects
  */
-std::shared_ptr<const Geometry> applyMinkowskiManifold(const Geometry::Geometries& children)
+std::shared_ptr<const Geometry> applyMinkowski(const Geometry::Geometries& children)
 {
-#ifdef ENABLE_CGAL	
+  assert(children.size() >= 2);
+
   using Hull_kernel = CGAL::Epick;
   using Hull_Mesh = CGAL::Surface_mesh<CGAL::Point_3<Hull_kernel>>;
-  using Hull_Points = std::vector<Hull_kernel::Point_3>;
-  using Nef_kernel = CGAL_Kernel3;
-  using Polyhedron = CGAL_Polyhedron;
+  using Hull_Points = std::vector<CGAL::Point_3<Hull_kernel>>;
 
-  auto polyhedronFromGeometry = [](const std::shared_ptr<const Geometry>& geom, bool *pIsConvexOut) -> std::shared_ptr<Polyhedron>
+  auto surfaceMeshFromGeometry = [](const std::shared_ptr<const Geometry>& geom, bool *pIsConvexOut) -> std::shared_ptr<CGAL_Kernel3Mesh>
   {
     auto ps = std::dynamic_pointer_cast<const PolySet>(geom);
     if (ps) {
-      auto poly = std::make_shared<Polyhedron>();
-      CGALUtils::createPolyhedronFromPolySet(*ps, *poly);
+      auto mesh = CGALUtils::createSurfaceMeshFromPolySet<CGAL_Kernel3Mesh>(*ps);
       if (pIsConvexOut) *pIsConvexOut = ps->isConvex();
-      return poly;
+      return mesh;
     } else {
       if (auto mani = std::dynamic_pointer_cast<const ManifoldGeometry>(geom)) {
-        auto poly = mani->toPolyhedron<Polyhedron>();
-        if (pIsConvexOut) *pIsConvexOut = CGALUtils::is_weakly_convex(*poly);
-        return poly;
+        auto mesh = ManifoldUtils::createSurfaceMeshFromManifold<CGAL_Kernel3Mesh>(mani->getManifold());
+        if (pIsConvexOut) *pIsConvexOut = CGALUtils::is_weakly_convex(*mesh);
+        return mesh;
       } else throw 0;
     }
     throw 0;
   };
-#endif
 
-  assert(children.size() >= 2);
-  auto it = children.begin();
-  CGAL::Timer t_tot;
-  t_tot.start();
-  std::vector<std::shared_ptr<const Geometry>> operands = {it->second, std::shared_ptr<const Geometry>()};
-
-  CGAL::Cartesian_converter<Nef_kernel, Hull_kernel> conv;
-  auto getHullPoints = [&](const Polyhedron &poly) {
+  CGAL::Cartesian_converter<CGAL_Kernel3, Hull_kernel> conv;
+  auto getHullPoints = [&](const CGAL_Polyhedron &poly) {
     std::vector<Hull_kernel::Point_3> out;
     out.reserve(poly.size_of_vertices());
     for (auto pi = poly.vertices_begin(); pi != poly.vertices_end(); ++pi) {
@@ -67,6 +60,20 @@ std::shared_ptr<const Geometry> applyMinkowskiManifold(const Geometry::Geometrie
     }
     return out;
   };
+  auto getHullPointsFromMesh = [&](const CGAL_Kernel3Mesh &mesh) {
+    std::vector<Hull_kernel::Point_3> out;
+    out.reserve(mesh.number_of_vertices());
+    for (auto idx : mesh.vertices()) {
+      out.push_back(conv(mesh.point(idx)));
+    }
+    return out;
+  };
+
+  CGAL::Timer t_tot;
+  t_tot.start();
+
+  auto it = children.begin();
+  std::vector<std::shared_ptr<const Geometry>> operands = {it->second, std::shared_ptr<const Geometry>()};
 
   try {
     // Note: we could parallelize more, e.g. compute all decompositions ahead of time instead of doing them 2 by 2,
@@ -76,22 +83,24 @@ std::shared_ptr<const Geometry> applyMinkowskiManifold(const Geometry::Geometrie
 
       std::vector<std::list<Hull_Points>> part_points(2);
 
-      parallelizable_transform(operands.begin(), operands.begin() + 2, part_points.begin(), [&](const auto &operand) {
+      parallelizable_transform(operands.begin(), operands.begin() + 2, part_points.begin(),
+                               [&](std::shared_ptr<const Geometry> &operand) {
         std::list<Hull_Points> part_points;
 
         bool is_convex;
-        auto poly = polyhedronFromGeometry(operand, &is_convex);
-        if (!poly) throw 0;
-        if (poly->empty()) {
+        auto mesh = surfaceMeshFromGeometry(operand, &is_convex);
+        if (!mesh) throw 0;
+        if (mesh->is_empty()) {
           throw 0;
         }
 
         if (is_convex) {
-          part_points.emplace_back(getHullPoints(*poly));
+          part_points.emplace_back(getHullPointsFromMesh(*mesh));
         } else {
           // The CGAL_Nef_polyhedron3 constructor can crash on bad polyhedron, so don't try
-          if (!poly->is_valid()) throw 0;
-          CGAL_Nef_polyhedron3 decomposed_nef(*poly);
+          if (!mesh->is_valid()) throw 0;
+          CGAL_Nef_polyhedron3 decomposed_nef;
+          CGALUtils::convertSurfaceMeshToNef(*mesh, decomposed_nef);
           CGAL::Timer t;
           t.start();
           CGAL::convex_decomposition_3(decomposed_nef);
@@ -100,7 +109,7 @@ std::shared_ptr<const Geometry> applyMinkowskiManifold(const Geometry::Geometrie
           CGAL_Nef_polyhedron3::Volume_const_iterator ci = ++decomposed_nef.volumes_begin();
           for (; ci != decomposed_nef.volumes_end(); ++ci) {
             if (ci->mark()) {
-              Polyhedron poly;
+              CGAL_Polyhedron poly;
               decomposed_nef.convert_inner_shell_to_polyhedron(ci->shells_begin(), poly);
               part_points.emplace_back(getHullPoints(poly));
             }

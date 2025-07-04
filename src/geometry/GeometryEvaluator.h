@@ -13,7 +13,7 @@
 #include "GeometryUtils.h"
 #include <boost/functional/hash.hpp>
 
-class CGAL_Nef_polyhedron;
+class CGALNefGeometry;
 class Polygon2d;
 class Tree;
 
@@ -41,6 +41,9 @@ struct EdgeVal {
   IndexedFace bez2;
   double angle;
 };
+
+class PolySetBuilder;
+std::vector<std::vector<IndexedTriangle>>  wrapSlice(PolySetBuilder &builder, const std::vector<Vector3d> vertices, const std::vector<IndexedFace> &faces,const std::vector<Vector4d> &normals, std::vector<double> xsteps);
 
 // 3D Map stuff
 //
@@ -165,7 +168,7 @@ private:
   std::unique_ptr<Polygon2d> applyHull2D(const AbstractNode& node);
   std::unique_ptr<Polygon2d> applyFill2D(const AbstractNode& node);
   std::unique_ptr<Geometry> applyHull3D(const AbstractNode& node);
-  void applyResize3D(CGAL_Nef_polyhedron& N, const Vector3d& newsize, const Eigen::Matrix<bool, 3, 1>& autosize);
+  void applyResize3D(CGALNefGeometry& N, const Vector3d& newsize, const Eigen::Matrix<bool, 3, 1>& autosize);
   std::unique_ptr<Barcode1d> applyToChildren1D(const AbstractNode& node, OpenSCADOperator op);
   std::unique_ptr<Polygon2d> applyToChildren2D(const AbstractNode& node, OpenSCADOperator op);
   ResultObject applyToChildren3D(const AbstractNode& node, OpenSCADOperator op);

@@ -73,7 +73,7 @@ static uint32_t lib3mf_seek_callback_my(uint64_t pos, std::ostream *stream)
 
 #ifdef ENABLE_CGAL
 #include "geometry/cgal/cgalutils.h"
-#include "geometry/cgal/CGAL_Nef_polyhedron.h"
+#include "geometry/cgal/CGALNefGeometry.h"
 #endif
 
 #undef BOOL
@@ -115,11 +115,6 @@ void export_3mf_error(std::string msg, PLib3MFModel *& model)
     lib3mf_release(model);
     model = nullptr;
   }
-}
-
-BYTE get_color_channel(const Color4f& col, int idx)
-{
-  return std::clamp(static_cast<int>(255.0 * col[idx]), 0, 255);
 }
 
 int count_mesh_objects(PLib3MFModel *& model) {
@@ -216,11 +211,13 @@ bool append_polyset(const std::shared_ptr<const PolySet>& ps,  const Export3mfPa
       const auto colname = "Color " + std::to_string(idx);
 
       DWORD id = 0;
+      uint8_t r, g, b, a;
+      if (!col.getRgba(r,g,b,a)) {
+        LOG(message_group::Warning, "Invalid color in 3MF export");
+      }
       lib3mf_basematerial_addmaterialutf8(ctx.basematerial,
                                           colname.c_str(),
-                                          get_color_channel(col, 0),
-                                          get_color_channel(col, 1),
-                                          get_color_channel(col, 2),
+                                          r,g,b,
                                           &id);
       return id;
     };
@@ -297,11 +294,11 @@ bool append_polyset(const std::shared_ptr<const PolySet>& ps,  const Export3mfPa
   if (ctx.basematerial) {
     lib3mf_defaultpropertyhandler_setbasematerial(defaultpropertyhandler, ctx.basematerialid, ctx.defaultColorId);
   } else if (ctx.usecolors) {
-    lib3mf_defaultpropertyhandler_setcolorrgba(defaultpropertyhandler,
-                                               get_color_channel(ctx.defaultColor, 0),
-                                               get_color_channel(ctx.defaultColor, 1),
-                                               get_color_channel(ctx.defaultColor, 2),
-                                               get_color_channel(ctx.defaultColor, 3));
+    uint8_t r, g, b, a;
+    if (!ctx.defaultColor.getRgba(r,g,b,a)) {
+      LOG(message_group::Warning, "Invalid color in 3MF export");
+    }
+    lib3mf_defaultpropertyhandler_setcolorrgba(defaultpropertyhandler,r,g,b,a);
   }
 
   lib3mf_release(defaultpropertyhandler);
@@ -323,7 +320,7 @@ bool append_polyset(const std::shared_ptr<const PolySet>& ps,  const Export3mfPa
 }
 
 #ifdef ENABLE_CGAL
-bool append_nef(const CGAL_Nef_polyhedron& root_N, const Export3mfPartInfo &info, ExportContext& ctx)
+bool append_nef(const CGALNefGeometry& root_N, const Export3mfPartInfo &info, ExportContext& ctx)
 {
   if (!root_N.p3) {
     LOG(message_group::Export_Error, "Export failed, empty geometry.");
@@ -351,7 +348,7 @@ bool append_3mf(const std::shared_ptr<const Geometry>& geom, const Export3mfPart
       if (!append_3mf(item.second, info, ctx)) return false;
     }
 #ifdef ENABLE_CGAL
-  } else if (const auto N = std::dynamic_pointer_cast<const CGAL_Nef_polyhedron>(geom)) {
+  } else if (const auto N = std::dynamic_pointer_cast<const CGALNefGeometry>(geom)) {
     return append_nef(*N, info, ctx);
 #endif
 #ifdef ENABLE_MANIFOLD
@@ -449,10 +446,12 @@ void export_3mf(const std::vector<struct Export3mfPartInfo> & infos, std::ostrea
         export_3mf_error("Can't get base material resource id.", model);
         return;
       }
+      uint8_t r, g, b, a;
+      if (!defaultColor.getRgba(r,g,b,a)) {
+        LOG(message_group::Warning, "Invalid color in 3MF export");
+      }
       if (lib3mf_basematerial_addmaterialutf8(basematerial, "Default",
-                                              get_color_channel(defaultColor, 0),
-                                              get_color_channel(defaultColor, 1),
-                                              get_color_channel(defaultColor, 2),
+                                              r, g, b,
                                               &defaultColorId) != LIB3MF_OK) {
         export_3mf_error("Can't add default material color.", model);
         return;
