@@ -27,6 +27,7 @@
 #include "FrepNode.h"
 #ifdef ENABLE_PYTHON
 #include "pydata.h"
+#include "pyopenscad.h"
 #endif
 
 #include "module.h"
@@ -140,7 +141,7 @@ std::unique_ptr<const Geometry> FrepNode::createGeometry() const
 			}
 		}
 #endif		
-	} else if(exp->ob_type == &PyFunction_Type) {
+	} else if(exp->ob_type == pf.PyFunction_Type) {
 		printf("Python Function!\n");
 		mesh = NULL;
 	} else { printf("xxx\n"); }

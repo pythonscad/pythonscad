@@ -65,6 +65,7 @@ option(ALLOW_BUNDLED_HIDAPI "Allow usage of bundled HIDAPI library (Windows only
 option(ENABLE_PYTHON "Enable experimental Python Interpreter" OFF)
 option(PYTHON_VERSION "Specify Exact Python Version" "")
 option(ENABLE_LIBFIVE "Enable libfive Library" OFF)
+option(USE_BUILTIN_LIBFIVE "Use libfive from submodule." ON)
 option(BUILD_SHARED_LIBS "Build shared library" OFF)
 include(CMakeDependentOption)
 cmake_dependent_option(APPLE_UNIX "Build OpenSCAD in Unix mode in MacOS X instead of an Apple Bundle" OFF "APPLE" OFF)
@@ -485,8 +486,14 @@ if(ENABLE_PYTHON)
   if(ENABLE_LIBFIVE)
     target_compile_definitions(OpenSCAD PRIVATE ENABLE_LIBFIVE)
     target_compile_definitions(OpenSCADPy PRIVATE ENABLE_LIBFIVE)
-    add_subdirectory(submodules/libfive EXCLUDE_FROM_ALL)
-    target_link_libraries(OpenSCADPy PRIVATE libfive)
+    if(USE_BUILTIN_LIBFIVE)
+      add_subdirectory(submodules/libfive EXCLUDE_FROM_ALL)
+      target_link_libraries(OpenSCADPy PRIVATE libfive)
+    else()
+      pkg_check_modules(libfive REQUIRED libfive)
+      include_directories(${libfive_INCLUDE_DIRS})
+      target_link_libraries(OpenSCADPy PRIVATE five)
+  endif()
     target_compile_definitions(OpenSCADPy PRIVATE BUILD_STUDIO_APP=OFF)
     target_compile_definitions(OpenSCADPy PRIVATE BUILD_GUILE_BINDINGS=OFF)
     target_compile_definitions(OpenSCADPy PRIVATE BUILD_PYTHON_BINDINGS=OFF)
@@ -499,25 +506,42 @@ if(ENABLE_PYTHON)
   find_package(Nettle 3.4)
   if(WIN32) 
     #MINGW environment	  
-    SET(PYTHON_MINGW_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_mingw")
     SET(CALLSTACK "ucrt")
+    SET(PYTHON_MINGW_VERSION "3.12") # define python version here
     #	SET(CALLSTACK "mingw")
     #	SET(CALLSTACK "clang")
+
+    # Caller side
+    SET(PYTHON_MINGW_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_mingw")
     SET(PYTHON_MINGW_PACKAGEFOLDER "https://mirror.msys2.org/mingw/${CALLSTACK}64")
-    SET(PYTHON_MINGW_PACKAGETAR "mingw-w64-${CALLSTACK}-x86_64-python-3.11.5-2-any.pkg.tar")   
+    SET(PYTHON_MINGW_PACKAGETAR "mingw-w64-${CALLSTACK}-x86_64-python-${PYTHON_MINGW_VERSION}.9-5-any.pkg.tar")   # adapt here
     SET(PYTHON_MINGW_PACKAGEZST "${PYTHON_MINGW_PACKAGETAR}.zst")
-    SET(PYTHON_MINGW_VERSION "python3.11")
-    SET(PYTHON_MINGW_ARCHIVE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/lib/lib${PYTHON_MINGW_VERSION}.dll.a")
+    SET(PYTHON_MINGW_ARCHIVE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/lib/libpython${PYTHON_MINGW_VERSION}.dll.a")
+
+    # these dll are actually used
+    SET(PYTHON_EMBED_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_embed")
+    SET(PYTHON_EMBED_FILENAME "python-${PYTHON_MINGW_VERSION}.2-embed-amd64.zip") #adapt here
+    SET(PYTHON_EMBED_ARCHIVE "${PYTHON_EMBED_DEVPATH}/${PYTHON_EMBED_FILENAME}")
+    SET(PYTHON_EMBED_SHLIB "${PYTHON_EMBED_DEVPATH}/python312.dll")
+    SET(PYTHON_EMBED_URL "https://www.python.org/ftp/python/${PYTHON_MINGW_VERSION}.2/${PYTHON_EMBED_FILENAME}")
+
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       COMMAND rm -rf python_mingw && mkdir python_mingw && cd python_mingw && wget ${PYTHON_MINGW_PACKAGEFOLDER}/${PYTHON_MINGW_PACKAGEZST} && unzstd ${PYTHON_MINGW_PACKAGEZST} && tar -xf ${PYTHON_MINGW_PACKAGETAR} &&  ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh
       OUTPUT ${PYTHON_MINGW_ARCHIVE}
     )
     add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
-
     add_dependencies(OpenSCADPy tgt_python_mingw)
 
-    target_include_directories(OpenSCADPy SYSTEM PRIVATE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/include/${PYTHON_MINGW_VERSION}")
+    add_custom_command(
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      COMMAND rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && unzip ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME}
+      OUTPUT ${PYTHON_EMBED_SHLIB}
+    )
+    add_custom_target(tgt_python_embed DEPENDS ${PYTHON_EMBED_SHLIB})
+    add_dependencies(OpenSCADPy tgt_python_embed)
+
+    target_include_directories(OpenSCADPy SYSTEM PRIVATE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/include/python${PYTHON_MINGW_VERSION}")
     target_link_libraries(OpenSCADPy PRIVATE "${PYTHON_MINGW_ARCHIVE}")
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
@@ -662,10 +686,6 @@ if(APPLE)
     target_include_directories(OpenSCAD PRIVATE "/usr/local/include")
     target_link_directories(OpenSCAD PRIVATE "/usr/local/lib")
     target_link_libraries(OpenSCAD PRIVATE "libjpeg.a")
-else()	
-  find_package(JPEG REQUIRED QUIET)
-  target_include_directories(OpenSCAD SYSTEM PRIVATE ${JPEG_INCLUDE_DIRS})
-  target_link_libraries(OpenSCAD PRIVATE ${JPEG_LIBRARIES})
 endif()
 
 if(NOT MSVC)
@@ -921,7 +941,6 @@ set(CORE_SOURCES
   src/core/ColorNode.cc
   src/core/PullNode.cc
   src/core/WrapNode.cc
-  src/core/TextureNode.cc
   src/core/ColorUtil.cc
   src/core/Context.cc
   src/core/ContextFrame.cc
@@ -1077,6 +1096,7 @@ endif()
 set(CGAL_SOURCES
   src/geometry/cgal/cgalutils.cc
   src/geometry/cgal/cgalutils-applyops.cc
+  src/geometry/cgal/cgalutils-applyops-minkowski.cc
   src/geometry/cgal/cgalutils-closed.cc
   src/geometry/cgal/cgalutils-convex.cc
   src/geometry/cgal/cgalutils-kernel.cc
@@ -1576,7 +1596,7 @@ if(NOT APPLE OR APPLE_UNIX)
   endif()
   if(WIN32)
     if(ENABLE_PYTHON)
-      install(FILES ${CMAKE_SOURCE_DIR}/python311.dll DESTINATION "." )
+	    install(DIRECTORY "${PYTHON_EMBED_DEVPATH}/" DESTINATION "." )
     endif()  
     if(USE_MIMALLOC AND MI_LINK_SHARED)
       if(CMAKE_SIZEOF_VOID_P EQUAL 8)

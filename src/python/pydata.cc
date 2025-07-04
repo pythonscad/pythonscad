@@ -157,24 +157,24 @@ std::vector<libfive::Tree *> PyDataObjectToTree(PyObject *obj)
   if(obj != NULL && obj->ob_type == &PyDataType) {
 	PyDataObject * dataobj = (PyDataObject *) obj;
         if(dataobj->data_type == DATA_TYPE_LIBFIVE) result.push_back((libfive::Tree *) dataobj->data);
-  } else if(PyLong_Check(obj)) { 
-  	result.push_back(new libfive::Tree(libfive::Tree(PyLong_AsLong(obj))));
-  } else if(PyFloat_Check(obj)) { 
-  	result.push_back(new libfive::Tree(libfive::Tree(PyFloat_AsDouble(obj))));
+  } else if(PyLong_CHECK(obj)) { 
+  	result.push_back(new libfive::Tree(libfive::Tree(pf.PyLong_AsLong(obj))));
+  } else if(PyFloat_CHECK(obj)) { 
+  	result.push_back(new libfive::Tree(libfive::Tree(pf.PyFloat_AsDouble(obj))));
   } else if(PyTuple_CHECK(obj)){
 	  for(int i=0;i<pf.PyTuple_Size(obj);i++) {
 		PyObject *x=pf.PyTuple_GetItem(obj,i);
 		std::vector<libfive::Tree *> sub = PyDataObjectToTree(x);
 		result.insert(result.end(), sub.begin(), sub.end());
 	  }
-  } else if(PyList_Check(obj)){
-	  for(int i=0;i<PyList_Size(obj);i++) {
-		PyObject *x=PyList_GetItem(obj,i);
+  } else if(PyList_CHECK(obj)){
+	  for(int i=0;i<pf.PyList_Size(obj);i++) {
+		PyObject *x=pf.PyList_GetItem(obj,i);
 		std::vector<libfive::Tree *> sub = PyDataObjectToTree(x);
 		result.insert(result.end(), sub.begin(), sub.end());
 	  }
   } else {
-	  printf("Unknown type! %p %p\n",obj->ob_type, &PyFloat_Type);
+	  printf("Unknown type! %p %p\n",obj->ob_type, &pf.PyFloat_Type);
   }
 //  Py_XDECREF(obj); TODO cannot activate
   return result;
@@ -200,7 +200,7 @@ PyObject *python_lv_un_int(PyObject *self, PyObject *args, PyObject *kwargs,libf
   char *kwlist[] = {"arg",  NULL};
   PyObject *arg = NULL;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &arg)) return NULL;
+  if (!pf.PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &arg)) return NULL;
 
   std::vector<libfive::Tree *> tv = PyDataObjectToTree(arg);
   std::vector<libfive::Tree *> res;
@@ -218,7 +218,7 @@ PyObject *python_lv_bin_int(PyObject *self, PyObject *args, PyObject *kwargs,lib
   PyObject *arg1 = NULL;
   PyObject *arg2 = NULL;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO", kwlist,
+  if (!pf.PyArg_ParseTupleAndKeywords(args, kwargs, "OO", kwlist,
                                    &arg1,
                                    &arg2
 				   )) return NULL;
@@ -320,7 +320,7 @@ PyObject *python_lv_print(PyObject *self, PyObject *args, PyObject *kwargs)
   char *kwlist[] = {"arg",  NULL};
   PyObject *arg = NULL;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", kwlist, &PyDataType, &arg)) return NULL;
+  if (!pf.PyArg_ParseTupleAndKeywords(args, kwargs, "O!", kwlist, &PyDataType, &arg)) return NULL;
   std::vector<libfive::Tree *> tv = PyDataObjectToTree(arg);
   for(int i=0;i<tv.size();i++){
 //    printf("tree %d: %s\n",i,libfive_tree_print(tv[i]));

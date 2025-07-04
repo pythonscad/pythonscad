@@ -108,6 +108,7 @@ struct PyKernel
   PyTypeObject *PyFloat_Type;
   PyTypeObject *PyLong_Type;
   PyTypeObject *PyUnicode_Type;
+  PyTypeObject *PyTuple_Type;
   PyTypeObject *PyModule_Type;
   PyTypeObject *PyBaseObject_Type;
 
@@ -123,6 +124,7 @@ extern struct PyKernel pf;
 #define PyFloat_CHECK(op) (op->ob_type == pf.PyFloat_Type)
 #define PyLong_CHECK(op) (op->ob_type == pf.PyLong_Type)
 #define PyUnicode_CHECK(op) (op->ob_type == pf.PyUnicode_Type)
+#define PyTuple_CHECK(op) (op->ob_type == pf.PyTuple_Type)
 #define PyModule_CHECK(op) (op->ob_type == pf.PyModule_Type)
 
 static inline void Py_XDECREF_(PyObject *op)
@@ -178,6 +180,7 @@ extern fs::path python_scriptpath;
 extern std::string trusted_edit_document_name;
 extern std::string untrusted_edit_document_name;
 extern std::vector<std::shared_ptr<AbstractNode>> nodes_hold;
+extern std::shared_ptr<AbstractNode> void_node, full_node;
 bool trust_python_file(const std::string &file, const std::string &content);
 PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<AbstractNode> &node);
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNode(PyObject *object, PyObject **dict );

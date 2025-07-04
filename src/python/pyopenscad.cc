@@ -36,6 +36,7 @@
 #include <Context.h>
 #include <Selection.h>
 #include "platform/PlatformUtils.h"
+#include "primitives.h"
 namespace fs = std::filesystem;
 
 // #define HAVE_PYTHON_YIELD
@@ -66,6 +67,7 @@ std::vector<std::string> mapping_name;
 std::vector<std::string> mapping_code;
 std::vector<int> mapping_level;
 std::vector<std::shared_ptr<AbstractNode>> nodes_hold; // make sure, that these nodes are not yet freed
+std::shared_ptr<AbstractNode> void_node, full_node;				       
 
 void *libpython_handle=nullptr;
 
@@ -177,6 +179,7 @@ void initDynamic(void)
   PYTHON_LOAD_FUNC(PyFloat_Type, PyTypeObject *);
   PYTHON_LOAD_FUNC(PyLong_Type, PyTypeObject *);
   PYTHON_LOAD_FUNC(PyUnicode_Type, PyTypeObject *);
+  PYTHON_LOAD_FUNC(PyTuple_Type, PyTypeObject *);
   PYTHON_LOAD_FUNC(PyModule_Type, PyTypeObject *);
   PYTHON_LOAD_FUNC(PyBaseObject_Type, PyTypeObject *);
 }
@@ -324,6 +327,12 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs,PyObjec
       } else return nullptr;
     }
     result=node;
+    *dict = nullptr; // TODO improve
+  } else if(objs == Py_NONE || objs == Py_FALSE){
+    result = void_node;	  
+    *dict = nullptr; // TODO improve
+  } else if(objs == Py_TRUE){
+    result = full_node;	  
     *dict = nullptr; // TODO improve
   } else result=nullptr;
   return result;
@@ -839,6 +848,8 @@ void openscad_object_callback(PyObject *obj) {
 
 void initPython(const std::string& binDir, const std::string &scriptpath, double time)
 {
+  static bool alreadyTried=false;
+  if(alreadyTried) return;  
   const auto name = "openscad-python";
   const auto exe = binDir + "/" + name;
   initDynamic();
@@ -953,7 +964,8 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
 
     PyStatus status = pf.Py_InitializeFromConfig(&config);
     if (pf.PyStatus_Exception(status)) {
-      LOG( message_group::Error, "Python not found. Is it installed ?");
+      alreadyTried=true;	    
+      LOG( message_group::Error, "Python %1$lu.%2$lu.%3$lu not found. Is it installed ?",PY_MAJOR_VERSION, PY_MINOR_VERSION, PY_MICRO_VERSION);
       return;
     }
     pf.PyConfig_Clear(&config);
@@ -982,6 +994,9 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
   customizer_parameters.clear();
   python_result_handle.clear();
   nodes_hold.clear();
+  DECLARE_INSTANCE
+  void_node = std::make_shared<CubeNode>(instance); // just placeholders
+  full_node = std::make_shared<CubeNode>(instance); // just placeholders
 }
 
 void finishPython(void)
