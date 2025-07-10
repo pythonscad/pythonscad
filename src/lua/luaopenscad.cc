@@ -33,31 +33,13 @@
 #include "PlatformUtils.h"
 #include <Context.h>
 #include <Selection.h>
+#include "genlang/genlang.h"
 
 
 std::shared_ptr<AbstractNode> lua_result_node = nullptr; /* global result veriable containing the perl created result */
 
+lua_State  *L = nullptr;
 #if 0
-// #define HAVE_PYTHON_YIELD
-static PyObject *PyInit_openscad(void);
-
-
-PyObject *pythonInitDict = nullptr;
-PyObject *pythonMainModule = nullptr ;
-std::list<std::string> pythonInventory;
-AssignmentList customizer_parameters;
-AssignmentList customizer_parameters_finished;
-std::vector<SelectedObject> python_result_handle;
-bool python_active;  /* if python is actually used during evaluation */
-bool python_trusted; /* global Python trust flag */
-#include "PlatformUtils.h"
-bool pythonMainModuleInitialized = false;
-bool pythonRuntimeInitialized = false;
-
-std::vector<std::string> mapping_name;
-std::vector<std::string> mapping_code;
-std::vector<int> mapping_level;
-
 
 void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
 {
@@ -819,42 +801,54 @@ PyMODINIT_FUNC PyInit_PyOpenSCAD(void)
 #include <stdio.h>
 
 
-void LuaOpenSCADObjectFromNode(const std::shared_ptr<AbstractNode> &node)
+int LuaOpenSCADObjectFromNode(const std::shared_ptr<AbstractNode> &node)
 {
+	printf("as\n");
+  LuaOpenSCADObject *obj = ( LuaOpenSCADObject *) lua_newuserdata(L, sizeof(LuaOpenSCADObject));
+  printf("obj is %p\n", obj);
+  obj->type_id = 0 ; // AbstrtactNode
+		     printf("e\n");
+//  obj->node = node;		      // TODO cause crash
+	printf("b\n");
+  return 1; // 1 argument
 }
 
-std::shared_ptr<AbstractNode> LuaOpenSCADObjectToNode(void *data)
+std::shared_ptr<AbstractNode> LuaOpenSCADObjectToNode(lua_State *lua, int argnum)
 {
-	return nullptr;	
+  LuaOpenSCADObject * obj = (LuaOpenSCADObject *) lua_touserdata(lua,argnum);	
+  if(obj->type_id != 0) return nullptr;
+  return obj->node;
 }
 
 //js_State *js_interp;
 
 void initLua(double time)
 {
-	printf("initLua\n");
-//  js_interp = js_newstate(NULL, NULL, JS_STRICT);
-//  registerLuaFunctions();
+  printf("initLua\n");
+  L = luaL_newstate();
+  luaL_openlibs(L);
+  registerLuaFunctions();
 }  
 std::string evaluateLua(const std::string & code)
 {
-  char outbuf[BUFSIZ]="";
+  std::string outbuf;	
   printf("evaluateLuia %s\n",code.c_str());
-#if 0	
-  char errbuf[BUFSIZ]="";
-  setbuf(stdout, outbuf);
-  setbuf(stderr, errbuf);
-  js_dostring(js_interp, code.c_str());
-  fflush(stdout);
-  fflush(stderr);
-  setbuf(stdout, NULL);
-  setbuf(stderr, NULL);
-  if(*errbuf != '\0') LOG( message_group::Error, std::string(errbuf));
-#endif  
+  shows.clear();
+  int r = luaL_dostring(L,code.c_str());
+  if(r == LUA_OK) {
+//        	lua_getglobal(L,"a");
+//		if(lua_isnumber(L,-1)) {
+//			float a = (float) lua_tonumber(L,-1);			
+//			printf("Result is %g\n", a);
+//		}		
+  }else {
+    outbuf =  lua_tostring(L,-1);
+  }
   return outbuf;
 }
 void finishLua(void)
 {
-	printf("finishLua\n");
-//  js_freestate(js_interp);
+  printf("finishLua\n");
+  show_final();
+  lua_close(L);
 }

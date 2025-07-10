@@ -641,12 +641,12 @@ if(NOT HEADLESS)
 endif()
 
 if(ENABLE_LUA)
-	SET(LUA_SOURCES
-  src/lua/luaopenscad.cc
-  src/lua/luafunctions.cc)
+  find_package(Lua  REQUIRED COMPONENTS Development)
+  SET(LUA_SOURCES
+    src/lua/luaopenscad.cc
+    src/lua/luafunctions.cc)
 
   add_library(OpenSCADLUA ${LUA_SOURCES} )
-  message(STATUS "LUA enabled")
   target_compile_definitions(OpenSCAD PRIVATE ENABLE_LUA)
   target_compile_definitions(OpenSCAD PRIVATE ENABLE_PYTHON)
   target_compile_definitions(OpenSCADLUA PRIVATE ENABLE_LUA)
@@ -1332,6 +1332,7 @@ set(GUI_SOURCES
   src/gui/LaunchingScreen.cc
   src/gui/LibraryInfoDialog.cc
   src/gui/MainWindow.cc
+  src/genlang/genlang.cc
   src/gui/Measurement.cc
   src/gui/Animate.cc
   src/gui/FontList.cc
