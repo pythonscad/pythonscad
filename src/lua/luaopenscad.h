@@ -12,6 +12,7 @@ extern "C" {
 
 typedef struct
 {
+  public:	
   int type_id; // 0 = AbstractNode		
   std::shared_ptr<AbstractNode> node;
 } LuaOpenSCADObject;

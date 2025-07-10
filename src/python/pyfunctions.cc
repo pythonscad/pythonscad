@@ -4641,12 +4641,33 @@ PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 #endif
 
+void python_str_sub(std::ostringstream &stream, const  std::shared_ptr<AbstractNode> &node, int ident)
+{
+    for(int i=0;i<ident;i++) stream << "  ";	
+    stream << node->toString();
+    switch(node->children.size()) {
+      case 0:
+        stream << ";\n";
+        break;	
+      case 1:
+        stream << "\n";
+	python_str_sub(stream, node->children[0],ident+1);
+        break;	
+      default:	
+        stream << "{\n";
+	for(const auto child: node->children) {
+	  python_str_sub(stream, child,ident+1);
+	}
+        for(int i=0;i<ident;i++) stream << "  ";	
+        stream << "}\n";
+    }
+}
 PyObject *python_str(PyObject *self) {
   std::ostringstream stream;
   PyObject *dummydict;	  
   std::shared_ptr<AbstractNode> node=PyOpenSCADObjectToNode(self, &dummydict);
   if(node != nullptr)
-    stream << "OpenSCAD (" << (int) node->index() << ")";
+    python_str_sub(stream, node,0);	  
   else
     stream << "Invalid OpenSCAD Object";
 
@@ -4915,6 +4936,14 @@ PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs, int
   return PyUnicode_FromString(python_scriptpath.u8string().c_str());
 }
 
+PyObject *python_oo_dict(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {NULL};
+  PyObject *dict = ((PyOpenSCADObject *)self)->dict;
+  Py_INCREF(dict);
+  return dict;
+}
+
 PyMethodDef PyOpenSCADFunctions[] = {
   {"edge", (PyCFunction) python_edge, METH_VARARGS | METH_KEYWORDS, "Create Edge."},
   {"square", (PyCFunction) python_square, METH_VARARGS | METH_KEYWORDS, "Create Square."},
@@ -5076,6 +5105,7 @@ PyMethodDef PyOpenSCADMethods[] = {
   OO_METHOD_ENTRY(pull,"Pull Obejct apart")	
   OO_METHOD_ENTRY(wrap,"Wrap Object around Cylinder")	
   OO_METHOD_ENTRY(render,"Render Object")	
+  OO_METHOD_ENTRY(dict,"return all dictionary")	
   {NULL, NULL, 0, NULL}
 };
 
