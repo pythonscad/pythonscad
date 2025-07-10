@@ -540,7 +540,7 @@ if(ENABLE_PYTHON)
 
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && unzip ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME}
+      COMMAND rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && unzip ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME} && rm python*._pth
       OUTPUT ${PYTHON_EMBED_SHLIB}
     )
     add_custom_target(tgt_python_embed DEPENDS ${PYTHON_EMBED_SHLIB})
@@ -624,6 +624,10 @@ if(ENABLE_PYTHON)
     "src/platform"
     "src/utils"
   )
+  if(ENABLE_JUPYTER)
+   target_compile_definitions(OpenSCAD PRIVATE ENABLE_JUPYTER)
+   target_compile_definitions(OpenSCADPy PRIVATE ENABLE_JUPYTER)
+  endif()
   target_link_libraries(OpenSCAD PRIVATE OpenSCADPy)
 endif()
 if(NOT HEADLESS)
@@ -1276,6 +1280,7 @@ set(GUI_SOURCES
   src/gui/LaunchingScreen.cc
   src/gui/LibraryInfoDialog.cc
   src/gui/MainWindow.cc
+  src/genlang/genlang.cc
   src/gui/Measurement.cc
   src/gui/Animate.cc
   src/gui/FontList.cc
