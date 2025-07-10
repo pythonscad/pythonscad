@@ -54,7 +54,6 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 #include "SurfaceNode.h"
 #include "TextNode.h"
 #include "OffsetNode.h"
-#include "TextureNode.h"
 #include <hash.h>
 #include <PolySetUtils.h>
 #include "ProjectionNode.h"
@@ -66,7 +65,7 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 #include "printutils.h"
 #include "io/fileutils.h"
 #include "handle_dep.h"
-#include "jsopenscad.h"
+#include "luaopenscad.h"
 
 //using namespace boost::assign; // bring 'operator+=()' into scope
 
@@ -78,13 +77,7 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 extern std::unordered_map<std::string, Color4f> webcolors;
 extern boost::optional<Color4f> parse_hex_color(const std::string& hex);
 
-static void js_print(js_State *J)
-{
-  const char *name = js_tostring(J, 1);
-  LOG(name);
-  js_pushundefined(J);
-}
-
+#if 0
 static void js_cube(js_State *J)
 {
   DECLARE_INSTANCE
@@ -354,11 +347,13 @@ static void js_intersection(js_State *J)
   return js_csg_sub(J, OpenSCADOperator::INTERSECTION);
 }
 
+#endif
 
 #define JS_ADDFUNCTION(name) \
   js_newcfunction(js_interp, js_##name, #name, 1); js_setglobal(js_interp, #name);
 
-void registerJsFunctions(void) {
+void registerLuaFunctions(void) {
+#if 0	
   JS_ADDFUNCTION(print)	
   JS_ADDFUNCTION(cube)
   JS_ADDFUNCTION(sphere)
@@ -368,5 +363,6 @@ void registerJsFunctions(void) {
   JS_ADDFUNCTION(translate)
   JS_ADDFUNCTION(rotate)
   JS_ADDFUNCTION(output)
+#endif  
 }
 

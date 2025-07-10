@@ -26,7 +26,7 @@
 
 /* MuJS is Copyright © 2013-2020 Artifex Software, Inc */
 
-#include "jsopenscad.h"
+#include "luaopenscad.h"
 #include "CsgOpNode.h"
 #include "Value.h"
 #include "Expression.h"
@@ -35,7 +35,7 @@
 #include <Selection.h>
 
 
-std::shared_ptr<AbstractNode> js_result_node = nullptr; /* global result veriable containing the perl created result */
+std::shared_ptr<AbstractNode> lua_result_node = nullptr; /* global result veriable containing the perl created result */
 
 #if 0
 // #define HAVE_PYTHON_YIELD
@@ -817,40 +817,30 @@ PyMODINIT_FUNC PyInit_PyOpenSCAD(void)
 #endif
 
 #include <stdio.h>
-#include <mujs.h>
 
-#define TAG_NODE "node"
 
-void JsFreeData(js_State *J, void *data) {
-  (void) std::move(data);	
-}
-void JsOpenSCADObjectFromNode(const std::shared_ptr<AbstractNode> &node)
+void LuaOpenSCADObjectFromNode(const std::shared_ptr<AbstractNode> &node)
 {
-  auto dumb_ptr = new std::shared_ptr<AbstractNode>(node);
-  js_currentfunction(js_interp);
-  js_getproperty(js_interp, -1, "prototype");
-  js_pushnull(js_interp);
-  js_newuserdata(js_interp, "node", static_cast<void *>(dumb_ptr), JsFreeData);
 }
 
-std::shared_ptr<AbstractNode> JsOpenSCADObjectToNode(void *data)
+std::shared_ptr<AbstractNode> LuaOpenSCADObjectToNode(void *data)
 {
-  auto dumb_ptr = static_cast<std::shared_ptr<AbstractNode> *>(data);
-  auto node = *dumb_ptr;
-  // delete node
-  return node;
+	return nullptr;	
 }
 
-js_State *js_interp;
+//js_State *js_interp;
 
-void initJs(double time)
+void initLua(double time)
 {
-  js_interp = js_newstate(NULL, NULL, JS_STRICT);
-  registerJsFunctions();
+	printf("initLua\n");
+//  js_interp = js_newstate(NULL, NULL, JS_STRICT);
+//  registerLuaFunctions();
 }  
-std::string evaluateJs(const std::string & code)
+std::string evaluateLua(const std::string & code)
 {
   char outbuf[BUFSIZ]="";
+  printf("evaluateLuia %s\n",code.c_str());
+#if 0	
   char errbuf[BUFSIZ]="";
   setbuf(stdout, outbuf);
   setbuf(stderr, errbuf);
@@ -860,9 +850,11 @@ std::string evaluateJs(const std::string & code)
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
   if(*errbuf != '\0') LOG( message_group::Error, std::string(errbuf));
+#endif  
   return outbuf;
 }
-void finishJs(void)
+void finishLua(void)
 {
-  js_freestate(js_interp);
+	printf("finishLua\n");
+//  js_freestate(js_interp);
 }

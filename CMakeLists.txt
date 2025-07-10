@@ -63,7 +63,7 @@ option(ENABLE_CGAL "Enable CGAL." ON)
 option(ENABLE_MANIFOLD "Enable Manifold." ON)
 option(ALLOW_BUNDLED_HIDAPI "Allow usage of bundled HIDAPI library (Windows only)." OFF)
 option(ENABLE_PYTHON "Enable experimental Python Interpreter" OFF)
-option(ENABLE_JS "Enable experimental Javascript Interpreter" OFF)
+option(ENABLE_LUA "Enable experimental LUA Interpreter" OFF)
 option(PYTHON_VERSION "Specify Exact Python Version" "")
 option(ENABLE_LIBFIVE "Enable libfive Library" OFF)
 option(USE_BUILTIN_LIBFIVE "Use libfive from submodule." ON)
@@ -640,68 +640,42 @@ if(NOT HEADLESS)
   endif()    
 endif()
 
-if(ENABLE_JS)
-  SET(JS_SOURCES
-  submodules/mujs/jsarray.c
-  submodules/mujs/jsboolean.c
-  submodules/mujs/jsbuiltin.c
-  submodules/mujs/jscompile.c
-  submodules/mujs/jsdate.c
-  submodules/mujs/jsdtoa.c
-  submodules/mujs/jserror.c
-  submodules/mujs/jsfunction.c
-  submodules/mujs/jsgc.c
-  submodules/mujs/jsintern.c
-  submodules/mujs/jslex.c
-  submodules/mujs/jsmath.c
-  submodules/mujs/jsnumber.c
-  submodules/mujs/jsobject.c
-  submodules/mujs/json.c
-  submodules/mujs/jsparse.c
-  submodules/mujs/jsproperty.c
-  submodules/mujs/jsregexp.c
-  submodules/mujs/jsrepr.c
-  submodules/mujs/jsrun.c
-  submodules/mujs/jsstate.c
-  submodules/mujs/jsstring.c
-  submodules/mujs/jsvalue.c
-  submodules/mujs/regexp.c
-    submodules/mujs/utf.c
-    src/js/jsopenscad.cc
-    src/js/jsfunctions.cc)
+if(ENABLE_LUA)
+	SET(LUA_SOURCES
+  src/lua/luaopenscad.cc
+  src/lua/luafunctions.cc)
 
-  add_library(OpenSCADJS ${JS_SOURCES} )
-  message(STATUS "JS enabled")
-  target_compile_definitions(OpenSCAD PRIVATE ENABLE_JS)
+  add_library(OpenSCADLUA ${LUA_SOURCES} )
+  message(STATUS "LUA enabled")
+  target_compile_definitions(OpenSCAD PRIVATE ENABLE_LUA)
   target_compile_definitions(OpenSCAD PRIVATE ENABLE_PYTHON)
-  target_compile_definitions(OpenSCADJS PRIVATE ENABLE_JS)
-  target_compile_definitions(OpenSCADJS PRIVATE ENABLE_PYTHON)
-  target_include_directories(OpenSCADJS PRIVATE  "${CMAKE_SOURCE_DIR}/submodules/mujs")
-  target_include_directories(OpenSCADJS PRIVATE ${JS_INCLUDE_PATH})
-  target_link_libraries(OpenSCADJS PRIVATE ${JS_LIBRARIES})
-  message(STATUS "JS enabled ${JS_INCLUDE_PATH} ${JS_LIBRARIES}")
-    target_include_directories(OpenSCADJS SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
-  target_include_directories(OpenSCADJS SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
-    target_include_directories(OpenSCADJS SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
-    target_include_directories(OpenSCADJS PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
-  target_link_libraries(OpenSCADJS PRIVATE Eigen3::Eigen)
-  target_link_libraries(OpenSCADJS PRIVATE ${GETTEXT_LIBRARY})
-  target_link_libraries(OpenSCADJS PRIVATE ${GLIB2_LIBRARIES})
+  target_compile_definitions(OpenSCADLUA PRIVATE ENABLE_LUA)
+  target_compile_definitions(OpenSCADLUA PRIVATE ENABLE_PYTHON)
+  target_include_directories(OpenSCADLUA PRIVATE ${LUA_INCLUDE_PATH})
+  target_link_libraries(OpenSCADLUA PRIVATE ${LUA_LIBRARIES})
+  message(STATUS "LUA enabled ${LUA_INCLUDE_PATH} ${LUA_LIBRARIES}")
+  target_include_directories(OpenSCADLUA SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
+  target_include_directories(OpenSCADLUA SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
+  target_include_directories(OpenSCADLUA SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
+  target_include_directories(OpenSCADLUA PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
+  target_link_libraries(OpenSCADLUA PRIVATE Eigen3::Eigen)
+  target_link_libraries(OpenSCADLUA PRIVATE ${GETTEXT_LIBRARY})
+  target_link_libraries(OpenSCADLUA PRIVATE ${GLIB2_LIBRARIES})
   # copy compile options for the main OpenSCAD target
   # duplication is not very ideal but not sure what better options do we have
-  set_property(TARGET OpenSCADJS PROPERTY CXX_STANDARD 17)
-  set_property(TARGET OpenSCADJS PROPERTY CXX_EXTENSIONS OFF)
-  set_property(TARGET OpenSCADJS PROPERTY CXX_STANDARD_REQUIRED ON)
-  target_compile_definitions(OpenSCADJS PRIVATE "STACKSIZE=${STACKSIZE}")
-  target_compile_options(OpenSCADJS PRIVATE "$<$<CONFIG:DEBUG>:-DDEBUG>")
-  target_compile_definitions(OpenSCADJS PRIVATE
+  set_property(TARGET OpenSCADLUA PROPERTY CXX_STANDARD 17)
+  set_property(TARGET OpenSCADLUA PROPERTY CXX_EXTENSIONS OFF)
+  set_property(TARGET OpenSCADLUA PROPERTY CXX_STANDARD_REQUIRED ON)
+  target_compile_definitions(OpenSCADLUA PRIVATE "STACKSIZE=${STACKSIZE}")
+  target_compile_options(OpenSCADLUA PRIVATE "$<$<CONFIG:DEBUG>:-DDEBUG>")
+  target_compile_definitions(OpenSCADLUA PRIVATE
     OPENSCAD_VERSION=${OPENSCAD_VERSION}
     OPENSCAD_SHORTVERSION=${OPENSCAD_SHORTVERSION}
     OPENSCAD_YEAR=${OPENSCAD_YEAR}
     OPENSCAD_MONTH=${OPENSCAD_MONTH})
-  target_include_directories(OpenSCADJS SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
-  target_include_directories(OpenSCADJS SYSTEM PRIVATE ${GLIB2_INCLUDE_DIRS})
-  target_include_directories(OpenSCADJS PRIVATE
+  target_include_directories(OpenSCADLUA SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
+  target_include_directories(OpenSCADLUA SYSTEM PRIVATE ${GLIB2_INCLUDE_DIRS})
+  target_include_directories(OpenSCADLUA PRIVATE
     "src"
     "src/core"
     "src/core/customizer"
@@ -721,7 +695,7 @@ if(ENABLE_JS)
     "src/platform"
     "src/utils"
   )
-  target_link_libraries(OpenSCAD PRIVATE OpenSCADJS)
+  target_link_libraries(OpenSCAD PRIVATE OpenSCADLUA)
 endif()
 
 if(ENABLE_HIDAPI)

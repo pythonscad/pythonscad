@@ -98,8 +98,8 @@ public:
   std::string untrusted_edit_document_name;
   bool trust_python_file(const std::string& file, const std::string& content);
 #endif
-#ifdef ENABLE_JS
-  bool js_active;
+#ifdef ENABLE_LUA
+  bool lua_active;
 #endif
 
   Tree tree;
@@ -420,8 +420,8 @@ public slots:
 #ifdef ENABLE_PYTHON
   void recomputePythonActive();
 #endif
-#ifdef ENABLE_JS
-  void recomputeJsActive();
+#ifdef ENABLE_LUA
+  void recomputeLuaActive();
 #endif
 
 
@@ -469,8 +469,8 @@ signals:
   #ifdef ENABLE_PYTHON
   void pythonActiveChanged(bool pythonActive);
   #endif
-#ifdef ENABLE_JS
-  void jsActiveChanged(bool pythonActive);
+#ifdef ENABLE_LUA
+  void luaActiveChanged(bool pythonActive);
 #endif
 
 

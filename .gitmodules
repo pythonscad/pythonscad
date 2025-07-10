@@ -21,6 +21,3 @@
 [submodule "Clipper2"]
 	path = submodules/Clipper2
 	url = https://github.com/AngusJohnson/Clipper2.git
-[submodule "submodules/mujs"]
-	path = submodules/mujs
-	url = http://git.ghostscript.com/mujs.git

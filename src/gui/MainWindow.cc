@@ -227,8 +227,8 @@ int curl_download(std::string url, std::string path)
     return 0;
 }
 #endif // ifdef ENABLE_PYTHON
-#ifdef ENABLE_JS
-#include "js/js_public.h"
+#ifdef ENABLE_LUA
+#include "lua/lua_public.h"
 #endif
 
 #include "gui/PrintService.h"
@@ -1685,8 +1685,8 @@ void MainWindow::instantiateRoot()
     if (python_result_node != NULL && this->python_active) this->absoluteRootNode = python_result_node;
     else
 #endif
-#ifdef ENABLE_JS
-    if (js_result_node != NULL && this->js_active) this->absoluteRootNode = js_result_node;
+#ifdef ENABLE_LUA
+    if (lua_result_node != NULL && this->lua_active) this->absoluteRootNode = lua_result_node;
     else
 #endif
     this->absoluteRootNode = this->rootFile->instantiate(*builtin_context, &file_context);
@@ -1988,8 +1988,8 @@ void MainWindow::saveBackup()
 #ifdef ENABLE_PYTHON
     if(this->python_active) suffix = "py" ;
 #endif
-#ifdef ENABLE_JS
-    if(this->js_active) suffix = "js" ;
+#ifdef ENABLE_LUA
+    if(this->lua_active) suffix = "lua" ;
 #endif
 
     this->tempFile = new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
@@ -2461,23 +2461,23 @@ void MainWindow::recomputePythonActive()
 }
 #endif // ifdef ENABLE_PYTHON
 
-#ifdef ENABLE_JS
-void MainWindow::recomputeJsActive()
+#ifdef ENABLE_LUA
+void MainWindow::recomputeLuaActive()
 {
   auto fnameba = activeEditor->filepath.toLocal8Bit();
   const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba;
 
-  bool oldJsActive = this->js_active;
-  this->js_active = false;
+  bool oldLuaActive = this->lua_active;
+  this->lua_active = false;
   if (fname != NULL) {
-    if(boost::algorithm::ends_with(fname, ".js")) {
+    if(boost::algorithm::ends_with(fname, ".lua")) {
 	    std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
-	this->js_active = true;
+	this->lua_active = true;
     }
   }
 
-  if (oldJsActive != this->js_active) {
-    emit this->jsActiveChanged(this->js_active);
+  if (oldLuaActive != this->lua_active) {
+    emit this->luaActiveChanged(this->lua_active);
   }
 }
 #endif
@@ -2494,8 +2494,8 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
       std::string(this->lastCompiledDoc.toUtf8().constData());
   const char *fname = editor->filepath.isEmpty() ? "" : fnameba;
   SourceFile *sourceFile;
-#ifdef ENABLE_JS
-  recomputeJsActive();
+#ifdef ENABLE_LUA
+  recomputeLuaActive();
 #endif
 #ifdef ENABLE_PYTHON
   recomputePythonActive();
@@ -2546,8 +2546,8 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
 
   } else // python not enabled
 #endif // ifdef ENABLE_PYTHON
-#ifdef ENABLE_JS
-  if (this->js_active) {
+#ifdef ENABLE_LUA
+  if (this->lua_active) {
 
     this->parsedFile = nullptr; // because the parse() call can throw and we don't want a stale pointer!
     this->rootFile = nullptr;  // ditto
@@ -2555,11 +2555,11 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
     this->rootFile =new SourceFile(parser_sourcefile.parent_path().string(), parser_sourcefile.filename().string());
     this->parsedFile = this->rootFile;
 
-    initJs(this->animateWidget->getAnimTval());
+    initLua(this->animateWidget->getAnimTval());
     this->activeEditor->resetHighlighting();
     if (this->rootFile != nullptr) {
       //add parameters as annotation in AST
-      auto error = evaluateJs(fulltext_py);
+      auto error = evaluateLua(fulltext_py);
       this->rootFile->scope.assignments=customizer_parameters;
       CommentParser::collectParameters(fulltext_py, this->rootFile, '#');  // add annotations
       this->activeEditor->parameterWidget->setParameters(this->rootFile, "\n"); // set widgets values
@@ -2572,13 +2572,13 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
 
     customizer_parameters_finished = this->rootFile->scope.assignments;
     customizer_parameters.clear();
-    auto error = evaluateJs(fulltext_py); // add assignments 
+    auto error = evaluateLua(fulltext_py); // add assignments 
     if (error.size() > 0) LOG(message_group::Error, Location::NONE, "", error.c_str());
-    finishJs();
+    finishLua();
     sourceFile = parse(sourceFile, "", fname, fname, false) ? sourceFile : nullptr;
 
   } else // python not enabled
-#endif // ifdef ENABLE_JS
+#endif // ifdef ENABLE_LUA
 {
 
   sourceFile = parse(sourceFile, fulltext, fname, fname, false) ? sourceFile : nullptr;
