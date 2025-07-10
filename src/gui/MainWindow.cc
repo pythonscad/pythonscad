@@ -196,41 +196,34 @@ std::string SHA256HashString(std::string aString){
 #include <iostream>
 static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *stream)
 {
-        
-  size_t written = fwrite(ptr, size, nmemb, (FILE *)stream);
-  return written;
+  QFile *fh = (QFile *) stream ;
+  fh -> write(QByteArray((const char *) ptr, size*nmemb));
+  return size*nmemb;
 }
 	
 int curl_download(std::string url, std::string path)
 {
     CURLcode status;
-    FILE *fh=fopen((path+"_").c_str(),"wb");
+    QFile fh((path).c_str());
+    if (!fh.open(QIODevice::WriteOnly)) {
+        LOG(message_group::Error, "Cannot open file %1$s",path.c_str());
+        return  -1;
+    }
     LOG(message_group::Warning, "Downloading to %1$s",path.c_str());
-    if(fh != nullptr) {
       CURL *curl = curl_easy_init();
       if(curl) {
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fh);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &fh);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_download_write);
         curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
  
         status = curl_easy_perform(curl);
         curl_easy_cleanup(curl);
       }	
-      fclose(fh);
-      if(status == CURLE_OK) {
-	try {
-	  if(std::filesystem::exists(path)) std::filesystem::remove(path);
-          std::filesystem::rename(path+"_", path);	      
-	}catch(const std::exception& ex)
-        {
-	  std::cerr << ex.what() << std::endl;
-          LOG(message_group::Error, "Exception during installing file!");
-        }  
-      } else {
+      fh.close();
+      if(status != CURLE_OK) {
         LOG(message_group::Error, "Could not download!");
       }
-    }
     return 0;
 }
 #endif // ifdef ENABLE_PYTHON
@@ -612,7 +605,7 @@ MainWindow::MainWindow(const QStringList& filenames) :
   connect(this->fileActionPythonCreateVenv, &QAction::triggered, this, &MainWindow::actionPythonCreateVenv);
   connect(this->fileActionPythonSelectVenv, &QAction::triggered, this, &MainWindow::actionPythonSelectVenv);
 #else
-  this->menuPython->setVisible(false);
+  this->menuPython->menuAction()->setVisible(false);
 #endif
 
 #ifndef __APPLE__
@@ -656,8 +649,11 @@ MainWindow::MainWindow(const QStringList& filenames) :
   connect(this->designActionPreview, &QAction::triggered, this, &MainWindow::actionRenderPreview);
   connect(this->designActionRender, &QAction::triggered, this, &MainWindow::actionRender);
   connect(this->designActionMeasureDistance, &QAction::triggered, this, &MainWindow::actionMeasureDistance);
+  this->designActionMeasureDistance->setCheckable(true);
   connect(this->designActionMeasureAngle, &QAction::triggered, this, &MainWindow::actionMeasureAngle);
+  this->designActionMeasureAngle->setCheckable(true);
   connect(this->designActionFindHandle, &QAction::triggered, this, &MainWindow::actionFindHandle);
+  this->designActionFindHandle->setCheckable(true);
   connect(this->designAction3DPrint, &QAction::triggered, this, &MainWindow::action3DPrint);
   connect(this->designShareDesign, &QAction::triggered, this, &MainWindow::actionShareDesign);
   connect(this->designLoadShareDesign, &QAction::triggered, this, &MainWindow::actionLoadShareDesign);
@@ -1889,8 +1885,10 @@ void MainWindow::actionOpenRecent()
 {
   auto action = qobject_cast<QAction *>(sender());
   tabManager->open(action->data().toString());
+#ifdef ENABLE_PYTHON  
   this->python_active = -1; // unknown
   recomputePythonActive();
+#endif  
 }
 
 void MainWindow::clearRecentFiles()
@@ -2340,6 +2338,9 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
   auto keyEvent = static_cast<QKeyEvent *>(event);
   if (keyEvent != nullptr && keyEvent->key() == Qt::Key_Escape) {
     if(this->qglview->measure_state != MEASURE_IDLE) {
+      this->designActionMeasureDistance->setChecked(false);
+      this->designActionMeasureAngle->setChecked(false);
+      this->designActionFindHandle->setChecked(false);
       this->qglview->handle_mode=false;
       meas.stopMeasure();
     }
@@ -2881,17 +2882,45 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
 
 void MainWindow::actionMeasureDistance()
 {
-  meas.startMeasureDist();
+  if(this->designActionMeasureDistance->isChecked()){
+    this->qglview->handle_mode=false;
+    meas.stopMeasure();
+    this->designActionMeasureAngle->setChecked(false);
+    this->designActionFindHandle->setChecked(false);
+    meas.startMeasureDist();
+  } else {
+      this->qglview->handle_mode=false;
+      meas.stopMeasure();
+  }  
 }
 
 void MainWindow::actionMeasureAngle()
 {
-  meas.startMeasureAngle();
+  if(this->designActionMeasureAngle->isChecked()){
+    this->qglview->handle_mode=false;
+    meas.stopMeasure();
+    this->designActionMeasureDistance->setChecked(false);
+    this->designActionFindHandle->setChecked(false);
+    meas.startMeasureAngle();
+  } else {
+      this->qglview->handle_mode=false;
+      meas.stopMeasure();
+  }  
 }
 void MainWindow::actionFindHandle()
 {
-  meas.startFindHandle();	
-  qglview->handle_mode=true;
+  if(this->designActionFindHandle->isChecked()){
+    this->qglview->handle_mode=false;
+    meas.stopMeasure();
+    this->designActionMeasureDistance->setChecked(false);
+    this->designActionMeasureAngle->setChecked(false);
+    meas.startFindHandle();	
+    qglview->handle_mode=true;
+  } else {
+      this->qglview->handle_mode=false;
+      meas.stopMeasure();
+  }
+
 }
 
 void MainWindow::leftClick(QPoint mouse)
@@ -3216,7 +3245,7 @@ void MainWindow::actionDisplayCSGTree()
 {
   setCurrentOutput();
   QString text = (rootNode)? QString::fromStdString(tree.getString(*rootNode, "  ")) : "";
-  showTextInWindow("CGS", text);
+  showTextInWindow("CSG", text);
   clearCurrentOutput();
 }
 
@@ -3301,7 +3330,7 @@ void MainWindow::actionShareDesignPublish()
   shareDesignDialog->close();
   if(success) 
     QMessageBox::information(this,"Share Design","Design successfully submitted");  
-  else QMessageBox::information(this,"Share Design","Error during submission");  
+//  else QMessageBox::information(this,"Share Design","Error during submission");  
 }
 
 void MainWindow::actionShareDesign()
