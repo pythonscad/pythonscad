@@ -622,8 +622,6 @@ if(ENABLE_PYTHON)
   )
   target_link_libraries(OpenSCAD PRIVATE OpenSCADPy)
 endif()
-
-
 if(NOT HEADLESS)
   if(MXECROSS)
     find_package(CURL REQUIRED)
