@@ -1683,7 +1683,7 @@ void MainWindow::instantiateRoot()
 
     std::shared_ptr<const FileContext> file_context;
 #ifdef ENABLE_PYTHON
-    if (genlang_result_node != NULL && this->python_active) this->absoluteRootNode = genlang_result_node;
+    if (genlang_result_node != NULL ) this->absoluteRootNode = genlang_result_node;
     else
 #endif
     this->absoluteRootNode = this->rootFile->instantiate(*builtin_context, &file_context);

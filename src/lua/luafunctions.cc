@@ -90,17 +90,6 @@ static int lua_cube(lua_State *J)
   return LuaOpenSCADObjectFromNode( node);
 }
 
-void lua_show_final(void) // TODO move
-{
-  if(shows.size() == 1) lua_result_node = shows[0];
-  else {
-    DECLARE_INSTANCE
-    lua_result_node = std::make_shared<CsgOpNode>(instance, OpenSCADOperator::UNION);
-    lua_result_node -> children = shows;
-  }
-  shows.clear();
-}
-
 
 static int lua_show(lua_State *J)
 {
