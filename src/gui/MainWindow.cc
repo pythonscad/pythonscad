@@ -1882,10 +1882,8 @@ void MainWindow::actionOpenRecent()
 {
   auto action = qobject_cast<QAction *>(sender());
   tabManager->open(action->data().toString());
-#ifdef ENABLE_PYTHON  
-  this->python_active = -1; // unknown
-  recomputePythonActive();
-#endif  
+  language = LANG_NONE; // unknown
+  recomputeLanguageActive();
 }
 
 void MainWindow::clearRecentFiles()
@@ -1983,10 +1981,10 @@ void MainWindow::saveBackup()
   if (!this->tempFile) {
     QString suffix = "scad";
 #ifdef ENABLE_PYTHON
-    if(this->python_active) suffix = "py" ;
+    if(language == LANG_PYTHON) suffix = "py" ;
 #endif
 #ifdef ENABLE_LUA
-    if(this->lua_active) suffix = "lua" ;
+    if(language == LANG_LUA) suffix = "lua" ;
 #endif
 
     this->tempFile = new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
@@ -2437,47 +2435,31 @@ bool MainWindow::trust_python_file(const std::string& file,  const std::string& 
   }
   return false;
 }
-void MainWindow::recomputePythonActive()
+void MainWindow::recomputeLanguageActive()
 {
   auto fnameba = activeEditor->filepath.toLocal8Bit();
   const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba;
 
-  int oldPythonActive = this->python_active;
-  this->python_active = 0;
+  int oldLanguage = language;
+  language = LANG_SCAD;
   if (fname != NULL) {
     if(boost::algorithm::ends_with(fname, ".py")) {
 	    std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
-      if ( trust_python_file(std::string(fname), content)) this->python_active = 1;
+      if ( trust_python_file(std::string(fname), content)) language = LANG_PYTHON;
       else LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
+    }
+    if(boost::algorithm::ends_with(fname, ".lua")) {
+	    std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
+      language = LANG_LUA;
     }
   }
 
-  if (oldPythonActive != this->python_active) {
-    emit this->pythonActiveChanged(this->python_active);
+  if (oldLanguage != language) {
+    emit this->pythonActiveChanged(language == LANG_PYTHON);
   }
 }
 #endif // ifdef ENABLE_PYTHON
 
-#ifdef ENABLE_LUA
-void MainWindow::recomputeLuaActive()
-{
-  auto fnameba = activeEditor->filepath.toLocal8Bit();
-  const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba;
-
-  bool oldLuaActive = this->lua_active;
-  this->lua_active = false;
-  if (fname != NULL) {
-    if(boost::algorithm::ends_with(fname, ".lua")) {
-	    std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
-	this->lua_active = true;
-    }
-  }
-
-  if (oldLuaActive != this->lua_active) {
-    emit this->luaActiveChanged(this->lua_active);
-  }
-}
-#endif
 
 SourceFile *MainWindow::parseDocument(EditorInterface *editor)
 {
@@ -2491,12 +2473,9 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
       std::string(this->lastCompiledDoc.toUtf8().constData());
   const char *fname = editor->filepath.isEmpty() ? "" : fnameba;
   SourceFile *sourceFile;
-#ifdef ENABLE_LUA
-  recomputeLuaActive();
-#endif
+  recomputeLanguageActive();
 #ifdef ENABLE_PYTHON
-  recomputePythonActive();
-  if (this->python_active) {
+  if (language == LANG_PYTHON) {
 
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
@@ -2544,7 +2523,7 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
   } else // python not enabled
 #endif // ifdef ENABLE_PYTHON
 #ifdef ENABLE_LUA
-  if (this->lua_active) {
+  if (language == LANG_LUA) {
 
     this->parsedFile = nullptr; // because the parse() call can throw and we don't want a stale pointer!
     this->rootFile = nullptr;  // ditto
