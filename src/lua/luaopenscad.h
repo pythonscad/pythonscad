@@ -10,6 +10,9 @@ extern "C" {
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
+int LuArg_ParseTupleAndKeywords(lua_State *L, const char *fmt, char **kwlist , ...);
+void lua_get_fnas(double& fn, double& fa, double& fs)  ;
+
 typedef struct
 {
   public:	

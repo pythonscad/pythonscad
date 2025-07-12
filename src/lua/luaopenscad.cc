@@ -58,6 +58,41 @@ const struct luaL_Reg OpenSCADObject_mt[]=
 	{NULL,NULL},
 };
 
+void lua_get_fnas(double& fn, double& fa, double& fs)
+{
+	fn=0;
+	fa=12;
+	fs=2;
+}
+int LuArg_ParseTupleAndKeywords(lua_State *L, const char *fmt, char **kwlist , ...)
+{
+  const char *ptr =fmt;
+  va_list ap;
+  int ind=1;
+  va_start(ap, kwlist);
+  double *dptr;
+  int *iptr;
+  while(*ptr != '\0') {
+    switch(*ptr) {
+      case 'd':
+              dptr = va_arg(ap, double *);
+	      if(lua_isnumber(L,ind)) *dptr = lua_tonumber(L,ind);
+	      ind++;
+	      break;
+      case 'i':
+              iptr = va_arg(ap, int *);
+	      if(lua_isnumber(L,ind)) *iptr = lua_tonumber(L,ind);
+	      ind++;
+	      break;
+      case 'O':break;
+      default: break;
+    }
+    ptr++;		
+  }
+  va_end(ap);
+  return 1;
+}
+
 #if 0
 
 void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)

@@ -67,6 +67,7 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 #include "handle_dep.h"
 #include "luaopenscad.h"
 #include "genlang/genlang.h"
+#include "stdarg.h"
 
 //using namespace boost::assign; // bring 'operator+=()' into scope
 
@@ -78,14 +79,72 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 extern std::unordered_map<std::string, Color4f> webcolors;
 extern boost::optional<Color4f> parse_hex_color(const std::string& hex);
 
-static int lua_cube(lua_State *J)
+static int lua_cube(lua_State *L)
 {
   DECLARE_INSTANCE
+
+  char *kwlist[] = {"x", "y", "z",NULL};
+  void *size = NULL;
+  double x=10,y=10,z=10;
+
+  void *center = NULL;
+
+  if (!LuArg_ParseTupleAndKeywords(L, "ddd", kwlist, &x,&y,&z)){
+    printf("Error during cube\n");	  
+    return 0;
+  }       
+	 
   auto node = std::make_shared<CubeNode>(instance);
+ 
+  node->dim[0]=x;	  
+  node->dim[1]=y;	  
+  node->dim[2]=z;	  
   for(int i=0;i<3;i++) { // TODO fix
-    node->dim[i]=10;	  
     node->center[i]=0;
   }
+
+  return LuaOpenSCADObjectFromNode( node);
+}
+
+static int lua_sphere(lua_State *L)
+{
+  DECLARE_INSTANCE
+  auto node = std::make_shared<SphereNode>(instance);
+
+  char *kwlist[] = {"r",  NULL};
+  double r = NAN;
+  double d = NAN;
+  double fn = NAN, fa = NAN, fs = NAN;
+
+  double vr = 1;
+
+  if (!LuArg_ParseTupleAndKeywords(L, "dd", kwlist, &r)) {
+    printf( "Error during parsing sphere(r|d)");
+    return 1;
+  } 
+    if(r <= 0) {
+      printf("Parameter r must be positive");
+      return 0;
+    }       
+    vr = r;
+    if(!std::isnan(d)) {
+      printf("Cant specify r and d at the same time for sphere");
+      return 1;
+    }
+  if (!std::isnan(d)) {
+    if(d <= 0) {
+      printf( "Parameter d must be positive");
+      return 1;
+    }       
+    vr = d / 2.0;
+  }
+
+  lua_get_fnas(node->fn, node->fa, node->fs);
+  if (!std::isnan(fn)) node->fn = fn;
+  if (!std::isnan(fa)) node->fa = fa;
+  if (!std::isnan(fs)) node->fs = fs;
+
+  node->r = vr;
 
   return LuaOpenSCADObjectFromNode( node);
 }
@@ -107,6 +166,7 @@ static int lua_show(lua_State *J)
 
 void registerLuaFunctions(void) {
   lua_register(L,"cube", lua_cube);
+  lua_register(L,"sphere", lua_sphere);
   lua_register(L,"show", lua_show);
 #if 0	
   JS_ADDFUNCTION(print)	
