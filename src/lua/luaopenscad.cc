@@ -854,7 +854,7 @@ void initLua(double time)
   luaL_newmetatable(L,LUA_OpenSCADObject);	// -1=mt'LUA_OpenSCADObject' create a new metatable
   lua_pushvalue(L,-1);				// -1=mt'LUA_OpenSCADObject' -2=mt'LUA_OpenSCADObject'
   lua_setfield(L,-2,"__index");		// set index to itself
-//  luaL_register(L,NULL,OpenSCADObject_mt);	// register with OpenSCADObject_mt for this metatable TODO activate
+  luaL_setfuncs (L, OpenSCADObject_mt, NULL);	// register with OpenSCADObject_mt for this metatable
 }  
 std::string evaluateLua(const std::string & code)
 {

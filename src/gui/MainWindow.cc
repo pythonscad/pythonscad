@@ -1683,7 +1683,7 @@ void MainWindow::instantiateRoot()
 
     std::shared_ptr<const FileContext> file_context;
 #ifdef ENABLE_PYTHON
-    if (genlang_result_node != NULL ) this->absoluteRootNode = genlang_result_node;
+    if (genlang_result_node != NULL && language != LANG_SCAD) this->absoluteRootNode = genlang_result_node;
     else
 #endif
     this->absoluteRootNode = this->rootFile->instantiate(*builtin_context, &file_context);
@@ -1979,13 +1979,13 @@ void MainWindow::saveBackup()
   }
 
   if (!this->tempFile) {
-    QString suffix = "scad";
-#ifdef ENABLE_PYTHON
-    if(language == LANG_PYTHON) suffix = "py" ;
-#endif
-#ifdef ENABLE_LUA
-    if(language == LANG_LUA) suffix = "lua" ;
-#endif
+    QString suffix;
+    switch(language)
+    {
+	    case LANG_SCAD: suffix="scad"; break;
+	    case LANG_PYTHON: suffix="py"; break;
+	    case LANG_LUA: suffix="lua"; break;
+    }			
 
     this->tempFile = new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
   }
@@ -2476,6 +2476,8 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
   recomputeLanguageActive();
 #ifdef ENABLE_PYTHON
   if (language == LANG_PYTHON) {
+    auto fulltext_py =
+      std::string(this->lastCompiledDoc.toUtf8().constData());
 
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
