@@ -71,8 +71,6 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 
 //using namespace boost::assign; // bring 'operator+=()' into scope
 
-#define TAG_NODE "node"
-
 
 // Colors extracted from https://drafts.csswg.org/css-color/ on 2015-08-02
 // CSS Color Module Level 4 - Editor’s Draft, 29 May 2015
@@ -82,26 +80,50 @@ extern boost::optional<Color4f> parse_hex_color(const std::string& hex);
 static int lua_cube(lua_State *L)
 {
   DECLARE_INSTANCE
+  auto node = std::make_shared<CubeNode>(instance);
 
-  char *kwlist[] = {"x", "y", "z",NULL};
+  char *kwlist[] = {"size", "center", NULL};
   void *size = NULL;
-  double x=10,y=10,z=10;
 
   void *center = NULL;
+  char *centerstr = nullptr;
 
-  if (!LuArg_ParseTupleAndKeywords(L, "ddd", kwlist, &x,&y,&z)){
+  node->dim[0]=1;
+  node->dim[1]=1;
+  node->dim[2]=1;
+  if (!LuArg_ParseTupleAndKeywords(L, "V|s", kwlist, &(node->dim), &centerstr)){
     printf("Error during cube\n");	  
     return 0;
-  }       
-	 
-  auto node = std::make_shared<CubeNode>(instance);
- 
-  node->dim[0]=x;	  
-  node->dim[1]=y;	  
-  node->dim[2]=z;	  
-  for(int i=0;i<3;i++) { // TODO fix
-    node->center[i]=0;
   }
+  for(int i=0;i<3;i++) node->center[i] = 1;
+  if(centerstr != nullptr) {
+   if(strlen(centerstr) != 3) {
+      printf("Center code must be exactly 3 characters");
+      return 0;
+    }
+    for(int i=0;i<3;i++) {
+      switch(centerstr[i]) {
+        case '|': node->center[i] = 0; break;	      
+        case '0': node->center[i] = 0; break;	      
+        case ' ': node->center[i] = 0; break;	      
+        case '_': node->center[i] = 0; break;	      
+
+        case '>': node->center[i] = -1; break;	      
+        case ']': node->center[i] = -1; break;	      
+        case ')': node->center[i] = -1; break;	      
+        case '+': node->center[i] = -1; break;	      
+
+        case '<': node->center[i] = 1; break;	      
+        case '[': node->center[i] = 1; break;	      
+        case '(': node->center[i] = 1; break;	      
+        case '-': node->center[i] = 1; break;	      
+
+        default:		  
+          printf("Center code chars not recognized, must be + - or 0");
+          return 0;
+      }       
+    }
+  }  
 
   return LuaOpenSCADObjectFromNode( node);
 }

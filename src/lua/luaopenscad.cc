@@ -72,6 +72,9 @@ int LuArg_ParseTupleAndKeywords(lua_State *L, const char *fmt, char **kwlist , .
   va_start(ap, kwlist);
   double *dptr;
   int *iptr;
+  Vector3d *vecptr;
+  const char **cptr;
+  int optional=0;
   while(*ptr != '\0') {
     switch(*ptr) {
       case 'd':
@@ -84,7 +87,23 @@ int LuArg_ParseTupleAndKeywords(lua_State *L, const char *fmt, char **kwlist , .
 	      if(lua_isnumber(L,ind)) *iptr = lua_tonumber(L,ind);
 	      ind++;
 	      break;
-      case 'O':break;
+      case 's':
+              cptr = va_arg(ap, const char **);
+	      if(lua_isstring(L,ind)) *cptr = lua_tostring(L,ind);
+	      ind++;
+	      break;
+      case 'V':
+              vecptr = va_arg(ap, Vector3d *);
+	      if(lua_istable(L,ind)) {
+                for(int i=0;i<3;i++) {	  
+                  lua_geti(L, ind,i+1);
+                  (*vecptr)[i] =lua_tonumber(L,-1);
+                  lua_pop(L, 1);
+	        }
+	      }	
+	      ind++;
+	      break;
+      case '|': optional=1; break;	      
       default: break;
     }
     ptr++;		
@@ -889,7 +908,7 @@ void initLua(double time)
   luaL_newmetatable(L,LUA_OpenSCADObject);	// -1=mt'LUA_OpenSCADObject' create a new metatable
   lua_pushvalue(L,-1);				// -1=mt'LUA_OpenSCADObject' -2=mt'LUA_OpenSCADObject'
   lua_setfield(L,-2,"__index");		// set index to itself
-  luaL_setfuncs (L, OpenSCADObject_mt, NULL);	// register with OpenSCADObject_mt for this metatable
+  luaL_setfuncs (L, OpenSCADObject_mt, 0);	// register with OpenSCADObject_mt for this metatable
 }  
 std::string evaluateLua(const std::string & code)
 {
