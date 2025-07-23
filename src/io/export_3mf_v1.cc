@@ -358,7 +358,8 @@ bool append_3mf(const std::shared_ptr<const Geometry>& geom, const Export3mfPart
   } else if (const auto ps = std::dynamic_pointer_cast<const PolySet>(geom)) {
     return append_polyset(PolySetUtils::tessellate_faces(*ps), info, ctx);
   } else if (std::dynamic_pointer_cast<const Polygon2d>(geom)) {
-    assert(false && "Unsupported file format");
+    std::cerr << "Unsupported file format!" << std::endl;
+    return false;
   } else {
     assert(false && "Not implemented");
   }
