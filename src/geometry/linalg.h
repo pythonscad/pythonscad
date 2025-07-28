@@ -12,6 +12,7 @@ using Eigen::Vector4d;
 using Eigen::Vector3f;
 using Eigen::Vector4f;
 using Eigen::Vector3i;
+using Eigen::Vector4i;
 
 #ifdef _MSC_VER
   #include <Eigen/StdVector> // https://eigen.tuxfamily.org/dox/group__TopicStlContainers.html
@@ -127,9 +128,13 @@ public:
 
   [[nodiscard]] size_t hash() const {
     size_t hash = 0;
-    for (const auto c : color_) {
-      hash = std::hash<float>{}(c) ^ (hash << 1);
-    }
+    // Gcc version 10.2.1 (Debian 11) fails to handle the
+    // range-for loop, it can't find the begin() definition
+    // of the Eigen::Matrix (with Eigen 3.3.9).
+    hash = std::hash<float>{}(r()) ^ (hash << 1);
+    hash = std::hash<float>{}(g()) ^ (hash << 1);
+    hash = std::hash<float>{}(b()) ^ (hash << 1);
+    hash = std::hash<float>{}(a()) ^ (hash << 1);
     return hash;
   }
 private:

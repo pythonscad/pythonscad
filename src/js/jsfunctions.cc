@@ -54,7 +54,6 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 #include "SurfaceNode.h"
 #include "TextNode.h"
 #include "OffsetNode.h"
-#include "TextureNode.h"
 #include <hash.h>
 #include <PolySetUtils.h>
 #include "ProjectionNode.h"
@@ -67,6 +66,7 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 #include "io/fileutils.h"
 #include "handle_dep.h"
 #include "jsopenscad.h"
+#include "genlang/genlang.h"
 
 //using namespace boost::assign; // bring 'operator+=()' into scope
 
@@ -310,12 +310,11 @@ void js_translate(js_State *J)
 
 
 
-static void js_output(js_State *J)
+static void js_show(js_State *J)
 {
-//  PyObject *child_dict;
   if(js_isuserdata(J,1,TAG_NODE)){
     void *data = js_touserdata(J, 1, TAG_NODE);
-    js_result_node = JsOpenSCADObjectToNode(data);
+    shows.push_back(JsOpenSCADObjectToNode(data));
   }
 	
 
@@ -367,6 +366,6 @@ void registerJsFunctions(void) {
   JS_ADDFUNCTION(intersection)
   JS_ADDFUNCTION(translate)
   JS_ADDFUNCTION(rotate)
-  JS_ADDFUNCTION(output)
+  JS_ADDFUNCTION(show)
 }
 

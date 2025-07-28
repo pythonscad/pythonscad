@@ -33,6 +33,7 @@
 #include "PlatformUtils.h"
 #include <Context.h>
 #include <Selection.h>
+#include <genlang/genlang.h>
 
 
 std::shared_ptr<AbstractNode> js_result_node = nullptr; /* global result veriable containing the perl created result */
@@ -860,6 +861,7 @@ std::string evaluateJs(const std::string & code)
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
   if(*errbuf != '\0') LOG( message_group::Error, std::string(errbuf));
+  show_final();
   return outbuf;
 }
 void finishJs(void)

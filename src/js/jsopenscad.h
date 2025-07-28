@@ -11,7 +11,6 @@
 	ModuleInstantiation *instance = new ModuleInstantiation(instance_name,inst_asslist, Location::NONE);
 
 extern js_State *js_interp;
-extern std::shared_ptr<AbstractNode> js_result_node;
 void registerJsFunctions(void);
 void JsOpenSCADObjectFromNode(const std::shared_ptr<AbstractNode> &node);
 std::shared_ptr<AbstractNode> JsOpenSCADObjectToNode(void *data);

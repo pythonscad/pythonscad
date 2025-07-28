@@ -147,6 +147,7 @@
 #include "utils/exceptions.h"
 #include "utils/printutils.h"
 #include "version.h"
+#include "genlang/genlang.h"
 
 #ifdef ENABLE_CGAL
 #include "geometry/cgal/cgal.h"
@@ -1682,11 +1683,7 @@ void MainWindow::instantiateRoot()
 
     std::shared_ptr<const FileContext> file_context;
 #ifdef ENABLE_PYTHON
-    if (python_result_node != NULL && this->python_active) this->absoluteRootNode = python_result_node;
-    else
-#endif
-#ifdef ENABLE_JS
-    if (js_result_node != NULL && this->js_active) this->absoluteRootNode = js_result_node;
+    if (genlang_result_node != NULL && language != LANG_SCAD) this->absoluteRootNode = genlang_result_node;
     else
 #endif
     this->absoluteRootNode = this->rootFile->instantiate(*builtin_context, &file_context);
@@ -1885,10 +1882,8 @@ void MainWindow::actionOpenRecent()
 {
   auto action = qobject_cast<QAction *>(sender());
   tabManager->open(action->data().toString());
-#ifdef ENABLE_PYTHON  
-  this->python_active = -1; // unknown
-  recomputePythonActive();
-#endif  
+  language = LANG_NONE; // unknown
+  recomputeLanguageActive();
 }
 
 void MainWindow::clearRecentFiles()
@@ -1986,10 +1981,10 @@ void MainWindow::saveBackup()
   if (!this->tempFile) {
     QString suffix = "scad";
 #ifdef ENABLE_PYTHON
-    if(this->python_active) suffix = "py" ;
+    if(language == LANG_PYTHON) suffix = "py" ;
 #endif
 #ifdef ENABLE_JS
-    if(this->js_active) suffix = "js" ;
+    if(language == LANG_JS) suffix = "js" ;
 #endif
 
     this->tempFile = new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
@@ -2440,47 +2435,30 @@ bool MainWindow::trust_python_file(const std::string& file,  const std::string& 
   }
   return false;
 }
-void MainWindow::recomputePythonActive()
+#endif // ifdef ENABLE_PYTHON
+void MainWindow::recomputeLanguageActive()
 {
   auto fnameba = activeEditor->filepath.toLocal8Bit();
   const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba;
 
-  int oldPythonActive = this->python_active;
-  this->python_active = 0;
+  int oldLanguage = language;
+  language = LANG_SCAD;
   if (fname != NULL) {
     if(boost::algorithm::ends_with(fname, ".py")) {
 	    std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
-      if ( trust_python_file(std::string(fname), content)) this->python_active = 1;
+      if ( trust_python_file(std::string(fname), content)) language = LANG_PYTHON;
       else LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
     }
-  }
-
-  if (oldPythonActive != this->python_active) {
-    emit this->pythonActiveChanged(this->python_active);
-  }
-}
-#endif // ifdef ENABLE_PYTHON
-
-#ifdef ENABLE_JS
-void MainWindow::recomputeJsActive()
-{
-  auto fnameba = activeEditor->filepath.toLocal8Bit();
-  const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba;
-
-  bool oldJsActive = this->js_active;
-  this->js_active = false;
-  if (fname != NULL) {
     if(boost::algorithm::ends_with(fname, ".js")) {
 	    std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
-	this->js_active = true;
+      language = LANG_JS;
     }
   }
 
-  if (oldJsActive != this->js_active) {
-    emit this->jsActiveChanged(this->js_active);
+  if (oldLanguage != language) {
+    emit this->pythonActiveChanged(language == LANG_PYTHON);
   }
 }
-#endif
 
 SourceFile *MainWindow::parseDocument(EditorInterface *editor)
 {
@@ -2492,14 +2470,13 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
 
   auto fulltext_py =
       std::string(this->lastCompiledDoc.toUtf8().constData());
-  const char *fname = editor->filepath.isEmpty() ? "" : fnameba;
+  const char *fname = editor->filepath.isEmpty() ? "" : fnameba.constData();
   SourceFile *sourceFile;
-#ifdef ENABLE_JS
-  recomputeJsActive();
-#endif
+  recomputeLanguageActive();
 #ifdef ENABLE_PYTHON
-  recomputePythonActive();
-  if (this->python_active) {
+  if (language == LANG_PYTHON) {
+    auto fulltext_py =
+      std::string(this->lastCompiledDoc.toUtf8().constData());
 
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
@@ -2547,7 +2524,7 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
   } else // python not enabled
 #endif // ifdef ENABLE_PYTHON
 #ifdef ENABLE_JS
-  if (this->js_active) {
+  if (language == LANG_JS) {
 
     this->parsedFile = nullptr; // because the parse() call can throw and we don't want a stale pointer!
     this->rootFile = nullptr;  // ditto
