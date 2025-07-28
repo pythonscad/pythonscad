@@ -35,7 +35,15 @@
 #include <Selection.h>
 #include "genlang/genlang.h"
 
+
 #define LUA_OpenSCADObject "LUA_OpenSCADObject"
+
+LanguageDesc lang_lua(
+		"lua",
+		 [](const char *fname, const char *content){
+		  return boost::algorithm::ends_with(fname, ".lua")?1:0;
+		  }
+		);
 
 lua_State  *L = nullptr;
 

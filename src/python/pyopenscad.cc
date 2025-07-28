@@ -39,6 +39,17 @@
 #include "primitives.h"
 namespace fs = std::filesystem;
 
+LanguageDesc lang_py(
+		"py",
+		 [](const char *fname,const char *content){
+			if(boost::algorithm::ends_with(fname, ".py")) {
+      				// if ( trust_python_file(std::string(fname), content)) return 1; TODO fix
+      				LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
+				return 0;
+				}
+				return 0;
+			}
+		);
 // #define HAVE_PYTHON_YIELD
 extern "C" PyObject *PyInit_openscad(void);
 PyMODINIT_FUNC PyInit_PyOpenSCAD(void);

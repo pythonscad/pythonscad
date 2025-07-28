@@ -25,7 +25,18 @@ extern std::vector<std::string> mapping_name;
 extern std::vector<std::string> mapping_code;
 extern std::vector<int> mapping_level;
 
+class LanguageDesc {
+	public:
+		LanguageDesc(const char *suffix, int (*check_valid)(const char *, const char *) ){
+			this->suffix = suffix;
+			this->check_validfile = check_valid;
+		}
+		const char *suffix;
+		int (*check_validfile)(const char *filename, const char *content);
+};
+
 extern int language;
+extern LanguageDesc *languageDesc[4];
 void show_final(void); // this is called when the new language terminates
 extern std::vector<std::shared_ptr<AbstractNode>> shows;
 extern std::shared_ptr<AbstractNode> genlang_result_node;

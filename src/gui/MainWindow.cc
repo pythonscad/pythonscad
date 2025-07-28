@@ -1980,13 +1980,7 @@ void MainWindow::saveBackup()
 
   if (!this->tempFile) {
     QString suffix;
-    switch(language)
-    {
-	    case LANG_SCAD: suffix="scad"; break;
-	    case LANG_PYTHON: suffix="py"; break;
-	    case LANG_LUA: suffix="lua"; break;
-    }			
-
+    if(language >= 0 &&  languageDesc[language] != nullptr ) suffix = languageDesc[language]->suffix;
     this->tempFile = new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
   }
 
