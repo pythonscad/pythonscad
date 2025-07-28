@@ -21,6 +21,7 @@
 #include "core/RotateExtrudeNode.h"
 #include "core/PullNode.h"
 #include "core/DebugNode.h"
+#include "core/RepairNode.h"
 #include "core/WrapNode.h"
 #include "core/CgalAdvNode.h"
 #include "core/ProjectionNode.h"
@@ -572,6 +573,106 @@ std::vector<IndexedFace> mergeTriangles(const std::vector<IndexedFace> polygons,
 		int off=indices.size();
 		for(unsigned int j=0;j<indices_sub.size();j++) {
 			indices.push_back(indices_sub[j]);
+			newNormals.push_back(norm_list[i]);
+			Vector4d loc_norm = calcTriangleNormal(vert,indices_sub[j]);
+			if(norm_list[i].head<3>().dot(loc_norm.head<3>()) > 0) 
+				faceParents.push_back(-1); 
+			else {
+				int par=-1;
+				for(unsigned int k=0;k< indices_sub.size();k++)
+				{
+					if(k == j) continue;
+					if(pointInPolygon(vert, indices_sub[k],indices_sub[j][0])) {
+						par=k;
+					}
+				}
+				if(par == -1) printf("par not found here\n");
+				// assert(par != -1); TODO fix
+				faceParents.push_back(par+off);
+			}			
+		}
+	}
+
+
+	return indices;
+}
+std::vector<IndexedColorFace> mergeTriangles(const std::vector<IndexedColorFace> polygons,const std::vector<Vector4d> normals,std::vector<Vector4d> &newNormals, std::vector<int> &faceParents, const std::vector<Vector3d> &vert) 
+{
+	indexedFaceList emptyList;
+	std::vector<Vector4d> norm_list;
+	std::vector<int>      color_list;
+	std::vector<indexedFaceList>  polygons_sorted;
+	// sort polygons into buckets of same orientation and color
+	for(unsigned int i=0;i<polygons.size();i++) {
+		Vector4d norm=normals[i];
+		const IndexedColorFace &triangle = polygons[i]; 
+
+		int bucket_ind=-1;// TODO fix name
+		for(unsigned int j=0;bucket_ind == -1 && j<norm_list.size();j++) {
+			if(polygons[i].color == color_list[j]) {
+				const auto &cur_norm = norm_list[j];
+				if(cur_norm.head<3>().dot(norm.head<3>()) > 0.99999 && fabs(cur_norm[3] - norm[3]) < 0.001) {
+					bucket_ind=j;
+				}
+				if(cur_norm.norm() < 1e-6 && norm.norm() < 1e-6) bucket_ind=j; // zero vector matches zero vector
+			}											     
+		}
+		if(bucket_ind == -1) {
+			bucket_ind=norm_list.size();
+			norm_list.push_back(norm);
+			color_list.push_back(polygons[i].color);
+			polygons_sorted.push_back(emptyList);
+		}
+		polygons_sorted[bucket_ind].push_back(triangle.face);
+	}
+
+	//  now put back hole of polygons into the correct bucket
+	for(unsigned int i=0;i<polygons_sorted.size();i++ ) {
+		// check if bucket has an opposite oriented bucket
+		//Vector4d n = norm_list[i];
+		int i_=-1;
+		Vector3d nref = norm_list[i].head<3>();
+		for(unsigned int j=0;j<polygons_sorted.size();j++) {
+			if(j == i) continue;
+			if(norm_list[j].head<3>().dot(nref) < -0.999 && fabs(norm_list[j][3] + norm_list[i][3]) < 0.005) {
+				i_=j;
+				break;
+			}
+		}
+		if(i_ == -1) continue;
+		// assuming that i_ contains the holes, find, it there is a match
+
+		for(unsigned int k=0;k< polygons_sorted[i].size();k++) {
+			IndexedFace poly = polygons_sorted[i][k];
+			for(unsigned int l=0;l<polygons_sorted[i_].size();l++) {
+				IndexedFace hole = polygons_sorted[i_][l];
+//				// holes dont intersect with the polygon, so its sufficent to check, if one point of the hole is inside the polygon
+				if(mergeTrianglesOpposite(poly, hole)){
+					polygons_sorted[i].erase(polygons_sorted[i].begin()+k);
+					polygons_sorted[i_].erase(polygons_sorted[i_].begin()+l);
+					k--;
+					l--;
+				}
+				else if(pointInPolygon(vert, poly, hole[0])){
+					polygons_sorted[i].push_back(hole);
+					polygons_sorted[i_].erase(polygons_sorted[i_].begin()+l);
+					l--; // could have more holes
+				}
+			}
+		}
+		
+		
+	}
+
+	// now merge the polygons in all buckets independly
+	std::vector<IndexedColorFace> indices;
+	newNormals.clear();
+	faceParents.clear();
+	for(unsigned int i=0;i<polygons_sorted.size();i++ ) {
+		indexedFaceList indices_sub = mergeTrianglesSub(polygons_sorted[i], vert);
+		int off=indices.size();
+		for(unsigned int j=0;j<indices_sub.size();j++) {
+			indices.push_back(IndexedColorFace({.face=indices_sub[j],.color=color_list[i]}));
 			newNormals.push_back(norm_list[i]);
 			Vector4d loc_norm = calcTriangleNormal(vert,indices_sub[j]);
 			if(norm_list[i].head<3>().dot(loc_norm.head<3>()) > 0) 
@@ -2378,7 +2479,8 @@ Response GeometryEvaluator::visit(State& state, const ConcatNode& node)
             LOG(message_group::Error, "Concat only works for PolySet Data");
             continue;			    
 	  }
-	  for(const auto &face:ps->indices) {
+	  for(int i=0;i<ps->indices.size();i++) {
+            const auto &face = ps->indices[i];
             builder.beginPolygon(face.size());		  
             for(int ind: face) {
               Vector3d pt=ps->vertices[ind];		    
@@ -2387,6 +2489,8 @@ Response GeometryEvaluator::visit(State& state, const ConcatNode& node)
 	      pt[2]=concat_round(pt[2]);
 	      builder.addVertex(pt);
 	    }		    
+	    if(ps->color_indices.size() > i) builder.endPolygon(ps->colors[ps->color_indices[i]]);
+             else builder.endPolygon();		  
 	  }
 	}
 	geom = builder.build();
@@ -2594,46 +2698,51 @@ Vector3d cross_pt(Vector3d p1, Vector3d p2, double x)
   return Vector3d(x,y,z);
 }
 
-std::vector<std::vector<IndexedTriangle>>  wrapSlice(PolySetBuilder &builder, const std::vector<Vector3d> vertices, const std::vector<IndexedFace> &polygons,const std::vector<Vector4d> &normals, std::vector<double> xsteps)
+std::vector<std::vector<IndexedColorTriangle>>  wrapSlice(PolySetBuilder &builder, const std::vector<Vector3d> vertices, const std::vector<IndexedColorFace> &polygons,const std::vector<Vector4d> &normals, std::vector<double> xsteps)
 {
   std::vector<Vector3f> builder_vertices;
-  std::vector<std::vector<IndexedTriangle>> results; // nach strips sortiert
+  std::vector<std::vector<IndexedColorTriangle>> results; // nach strips sortiert
   int strips = xsteps.size()+1;
 
   // initialize
   Polygon dmy;
   std::vector<Polygon> dmyx;
-  std::vector<IndexedTriangle> dmyz;
-  for(int i=0;  i<strips;i++) {
+  std::vector<IndexedColorTriangle> dmyz;
+  for(int i=0;  i<strips-2;i++) { // TODO check very carefully
     results.push_back(dmyz);	  
   }
 
 // sort in buckets of equal normal direction
   indexedFaceList emptyList;
   std::vector<Vector4d> norm_list;
+  std::vector<int>      color_list;
   std::vector<indexedFaceList>  polygons_sorted;
 //  std::vector<Vector4d> normals = calcTriangleNormals(vertices, polygons);
   // sort polygons into buckets of same orientation
   for(unsigned int i=0;i<polygons.size();i++) {
     Vector4d norm=normals[i];
-    const IndexedFace &triangle = polygons[i]; 
+    const IndexedColorFace &triangle = polygons[i]; 
     
-    int norm_ind=-1;
-    for(unsigned int j=0;norm_ind == -1 && j<norm_list.size();j++) {
+    int bucket_ind=-1;
+    for(unsigned int j=0;bucket_ind == -1 && j<norm_list.size();j++) {
       const auto &cur = norm_list[j];
-      if(cur.head<3>().dot(norm.head<3>()) > 0.99999 && fabs(cur[3] - norm[3]) < 0.001) {
-        norm_ind=j;
-      }
-      if(cur.norm() < 1e-6 && norm.norm() < 1e-6) norm_ind=j; // zero vector matches zero vector
+      if(triangle.color == color_list[j]) {
+        if(cur.head<3>().dot(norm.head<3>()) > 0.99999 && fabs(cur[3] - norm[3]) < 0.001) {
+          bucket_ind=j;
+        }
+        if(cur.norm() < 1e-6 && norm.norm() < 1e-6) bucket_ind=j; // zero vector matches zero vector
+      }								   
     }
-    if(norm_ind == -1) {
-      norm_ind=norm_list.size();
+    if(bucket_ind == -1) {
+      bucket_ind=norm_list.size();
       norm_list.push_back(norm);
+      color_list.push_back(triangle.color);
       polygons_sorted.push_back(emptyList);
     }
-    polygons_sorted[norm_ind].push_back(triangle);
+    polygons_sorted[bucket_ind].push_back(triangle.face);
   }
 
+  int color_ind=0;
   for(auto &bucket: polygons_sorted) {
     std::vector<std::vector<Polygon>> stripPolygons; // nach strips sortiert
     std::vector<Polygon> stripTops; // obere Randpunkte eines Streifens				       	
@@ -2808,9 +2917,11 @@ std::vector<std::vector<IndexedTriangle>>  wrapSlice(PolySetBuilder &builder, co
       GeometryUtils::tessellatePolygonWithHoles(builder_vertices, polys_ind, triangles);
 
       for(const auto &tri: triangles) {
-        results[i].push_back(tri);
+        IndexedColorTriangle tri_col(tri[0], tri[1], tri[2],color_list[color_ind]);
+        results[i].push_back(tri_col);
       }
     }
+    color_ind++;
   }
   return results;
 }
@@ -2886,45 +2997,27 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
 
   int scalelen = xscale.size();
 
-  auto wrap_convert  =  [node,xscale, polygon, polygonlen](Vector3d pt, double tanfact, int ind) {
-    auto &p1 = polygon[ind%polygonlen];
-    auto &p2 = polygon[(ind+1)%polygonlen];    
-    Vector2d dir = (p2-p1).normalized();
-    Vector2d dirn =Vector2d(-dir[1],  dir[0]);
-    Vector3d res;
-    Vector2d px=p1+dir*(pt[0]-xscale[ind]-pt[1]*tanfact )+dirn*pt[1];
-    res=Vector3d(px[0], px[1],pt[2]);
-
-// TODO dann 2D streifen
-
-    return res;
-  };
-
   std::vector<indexedFaceList>  polygons_sorted;
   std::vector<Vector4d> normals = calcTriangleNormals(ps->vertices, ps->indices);
   std::vector<int> faceParents;
   std::vector<Vector4d> newnormals;
-  std::vector<IndexedFace> tri_merged = mergeTriangles(ps->indices,normals, newnormals, faceParents, ps->vertices);
+  std::vector<IndexedColorFace> tri_color;
+  for(int i=0;i<ps->indices.size();i++) {
+    const auto &tri = ps->indices[i];
+    if( i < ps->color_indices.size())
+	    tri_color.push_back(IndexedColorFace({.face=tri,.color=ps->color_indices[i]}));
+	    else tri_color.push_back(IndexedColorFace({.face=tri,.color=-1}));
 
+  }
+  std::vector<IndexedColorFace> tri_color_merged = mergeTriangles(tri_color,normals, newnormals, faceParents, ps->vertices);
 
   // now build vector from xmin to xmax
-   std::vector<std::vector<IndexedTriangle>> sliceresult = wrapSlice(builder, ps->vertices, tri_merged, newnormals, xscale);
+   std::vector<std::vector<IndexedColorTriangle>> sliceresult = wrapSlice(builder, ps->vertices, tri_color_merged, newnormals, xscale);
+
    std::vector<Vector3d> builder_vertices;
    builder.copyVertices(builder_vertices); // TODO sehr ineffizient
    int ind=0;
-   double botfact=0.0, topfact=0.0;
    for(const auto &slice : sliceresult) {
-     topfact=0;
-     if(ind < xscale.size()-2) {     
-       Vector2d p1=polygon[ind%polygonlen];	   
-       Vector2d p2=polygon[(ind+1)%polygonlen];	   
-       Vector2d p3=polygon[(ind+2)%polygonlen];	   
-       Vector2d d1=(p2-p1).normalized();
-       Vector2d d2=(p3-p2).normalized();
-       double d = d1.dot(d2);
-       topfact = (1-d)/sqrt(1-d*d); // tan(acos(d)/2);
-       if(d1[0]*d2[1]-d1[1]*d2[0] < 0) topfact=-topfact; // handle concave angles
-     }  
      double xbot = xscale[ind];
      double xtop = xscale[ind+1];     
      for(const auto &poly: slice) {
@@ -2932,15 +3025,36 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
        builder.beginPolygon(3);	  
        for(int j=0;j<3;j++) {
          Vector3d pt = builder_vertices[poly[j]];	       
-         double fact=0.0;	       
-         if(fabs(pt[0]-xbot) < 1e-3) fact=-botfact;
-         if(fabs(pt[0]-xtop) < 1e-3) fact=topfact;
-         Vector3d pt_tran = wrap_convert(pt, fact, ind);
+	 
+         auto &p0 = polygon[ind>1?ind-1:0]; 
+         auto &p1 = polygon[ind];
+         auto &p2 = polygon[ind<polygonlen-1?ind+1:polygonlen-1];    
+         auto &p3 = polygon[ind<polygonlen-2?ind+2:polygonlen-1];    
+
+         Vector2d dir0 = (p1-p0).normalized();
+         Vector2d dir0n =Vector2d(-dir0[1],  dir0[0]); 
+
+         Vector2d dir1u = (p2-p1);
+         Vector2d dir1 = dir1u.normalized();
+         Vector2d dir1n =Vector2d(-dir1[1],  dir1[0]);
+
+         Vector2d dir2 = (p3-p2).normalized();
+         Vector2d dir2n =Vector2d(-dir2[1],  dir2[0]);
+
+	 Vector2d dirn = dir0n*(xtop-pt[0])/(xtop-xbot) + dir2n*(pt[0]-xbot)/(xtop-xbot);
+	 dirn = (dirn + dir1n).normalized();
+
+         Vector2d px=p1+dir1u*(pt[0]-xscale[ind])/(xscale[ind+1]-xscale[ind])+dirn*pt[1];
+         Vector3d pt_tran=Vector3d(px[0], px[1],pt[2]);
+	 pt_tran[0] = concat_round(pt_tran[0]);
+	 pt_tran[1] = concat_round(pt_tran[1]);
+	 pt_tran[2] = concat_round(pt_tran[2]);
+
          builder.addVertex(pt_tran);	    
-       }	       
-       builder.endPolygon();
+       }	
+       if(poly[3] != -1) builder.endPolygon(ps->colors[poly[3]]);
+       		else builder.endPolygon();
      }	     
-     botfact=topfact;
      ind++;
    }
   auto ps1 = builder.build();
@@ -2999,6 +3113,94 @@ Response GeometryEvaluator::visit(State& state, const DebugNode& node)
     else ps = std::dynamic_pointer_cast<const PolySet>(geom);
     if(ps != nullptr) {
       std::unique_ptr<Geometry> ps_pulled =  debugObject(node,ps.get());
+      newgeom = std::move(ps_pulled);
+      addToParent(state, node, newgeom);
+      node.progress_report();
+    }
+  }
+  return Response::ContinueTraversal;
+}
+
+
+static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolySet *ps)
+{
+  auto psx  = std::make_unique<PolySet>(ps->getDimension(), ps->convexValue());	  
+  *psx = *ps;
+
+  int color_ind=-1;
+  if (node.color.isValid()) {
+    auto it = std::find(psx->colors.begin(), psx->colors.end(), node.color);
+    if (it == psx->colors.end()) {
+      color_ind = psx->colors.size();		  
+      psx->colors.push_back(node.color);
+    } else {
+      color_ind = it- psx->colors.begin();		  
+    }
+  }
+
+  indexedFaceList defects = mergeTrianglesSub(ps->indices, ps->vertices);
+  for(int i=0;i<defects.size();i++) {
+    auto face = defects[i];
+    auto fence = defects[i];
+    IndexedFace fence_new;
+    int cnt=0;
+    int ind=0;
+    int l = face.size();
+    while(l >= 3) {
+      const Vector3d &p0 = ps->vertices[face[(ind+0)%l]];
+      const Vector3d &p1 = ps->vertices[face[(ind+1)%l]];
+      const Vector3d &p2 = ps->vertices[face[(ind+2)%l]];
+      Vector3d n = (p1-p0).cross(p2-p1);
+      // check that all vertices are below the plane
+      bool valid=true;
+      for(auto ind: fence) {
+	const auto &pt = ps->vertices[ind];	      
+        double dist = (p1-pt).dot(n);
+        if(dist < -1e-3) {
+          valid=false;
+          break;
+        }
+      }
+      if(valid){
+        IndexedFace patch;
+        patch.push_back(face[(ind+0)%l]);
+        patch.push_back(face[(ind+1)%l]);
+        patch.push_back(face[(ind+2)%l]);
+        psx->indices.push_back(patch);
+
+        if(color_ind != -1) {	
+          psx->color_indices.resize(psx->indices.size() - 1, -1);
+          psx->color_indices.push_back(color_ind);
+	}
+
+	fence_new.push_back(face[(ind+1)%l]);
+        face.erase(face.begin()+((ind+1)%l));
+        l--;
+	cnt=0;
+      } else ind=(ind+1)%l;
+      cnt++;
+      if(cnt > l){
+        if(fence_new.size() == 0) break;
+	fence = fence_new;
+	fence_new.clear();
+      }
+    }
+  }
+
+  return psx;
+}
+
+Response GeometryEvaluator::visit(State& state, const RepairNode& node)
+{
+  std::shared_ptr<const Geometry> newgeom;
+  std::shared_ptr<const Geometry> geom = applyToChildren3D(node, OpenSCADOperator::UNION).constptr();
+  if (geom) {
+    std::shared_ptr<const PolySet> ps=nullptr;
+    if(std::shared_ptr<const ManifoldGeometry> mani = std::dynamic_pointer_cast<const ManifoldGeometry>(geom)) 
+      ps=mani->toPolySet();
+    else ps = std::dynamic_pointer_cast<const PolySet>(geom);
+    if(ps != nullptr) {
+      std::unique_ptr<Geometry> ps_pulled =  repairObject(node,ps.get());
       newgeom = std::move(ps_pulled);
       addToParent(state, node, newgeom);
       node.progress_report();
