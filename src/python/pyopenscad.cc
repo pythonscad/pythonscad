@@ -24,6 +24,7 @@
  *
  */
 #include <Python.h>
+#include "genlang/genlang.h"
 #include <filesystem>
 
 #include "pyopenscad.h"
@@ -40,6 +41,7 @@ namespace fs = std::filesystem;
 
 // #define HAVE_PYTHON_YIELD
 extern "C" PyObject *PyInit_openscad(void);
+PyMODINIT_FUNC PyInit_PyOpenSCAD(void);
 
 bool python_active;
 bool python_trusted;
@@ -54,17 +56,12 @@ std::list<std::string> pythonInventory;
 AssignmentList customizer_parameters;
 AssignmentList customizer_parameters_finished;
 bool pythonDryRun=false;
-std::shared_ptr<AbstractNode> python_result_node = nullptr; /* global result veriable containing the python created result */
 PyObject *python_result_obj = nullptr;
 std::vector<SelectedObject> python_result_handle;
-std::vector<std::shared_ptr<AbstractNode> > shows;
 bool python_runipython = false;
 bool pythonMainModuleInitialized = false;
 bool pythonRuntimeInitialized = false;
 
-std::vector<std::string> mapping_name;
-std::vector<std::string> mapping_code;
-std::vector<int> mapping_level;
 std::vector<std::shared_ptr<AbstractNode>> nodes_hold; // make sure, that these nodes are not yet freed
 std::shared_ptr<AbstractNode> void_node, full_node;				       
 
@@ -74,10 +71,15 @@ void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
   Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
+/*
+ *  allocates a new PyOpenSCAD Object including its internal dictionary
+ */
+
+static PyObject *PyOpenSCADObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-  PyObject *self = PyType_GenericAlloc(cls, nitems);
-  ((PyOpenSCADObject *)self)->dict = PyDict_New();
+  PyOpenSCADObject *self;
+  self = (PyOpenSCADObject *) type->tp_alloc(type, 0);
+  self->dict = PyDict_New();
   PyObject *origin=PyList_New(4);
   for(int i=0;i<4;i++) {
   	PyObject *row=PyList_New(4);
@@ -85,18 +87,9 @@ PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
 		PyList_SetItem(row,j,PyFloat_FromDouble(i==j?1.0:0.0));
 	PyList_SetItem(origin,i,row);
   }
-  PyDict_SetItemString(((PyOpenSCADObject *)self)->dict,"origin",origin);
+  PyDict_SetItemString(self->dict, "origin", origin);
   Py_XDECREF(origin);
-  return self;
-}
-
-/*
- *  allocates a new PyOpenSCAD Object including its internal dictionary
- */
-
-static PyObject *PyOpenSCADObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-  return PyOpenSCADObject_alloc(&PyOpenSCADType, 0);
+  return (PyObject*) self;
 }
 
 /*
@@ -106,7 +99,7 @@ static PyObject *PyOpenSCADObject_new(PyTypeObject *type, PyObject *args, PyObje
 PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<AbstractNode> &node)
 {
   PyOpenSCADObject *self;
-  self = (PyOpenSCADObject *)  type->tp_alloc(type, 0);
+  self = (PyOpenSCADObject *)  type->tp_new(type, nullptr, nullptr);
   if (self != nullptr) {
     Py_XINCREF(self);
     self->node = node;
@@ -150,7 +143,7 @@ int python_more_obj(std::vector<std::shared_ptr<AbstractNode>>& children, PyObje
       child = PyOpenSCADObjectToNode(obj, &dummy_dict);
       children.push_back(child);
     }
-  } else if (Py_TYPE(more_obj) == &PyOpenSCADType) {
+  } else if (PyObject_IsInstance(more_obj, reinterpret_cast<PyObject*>(&PyOpenSCADType))) {
     child = PyOpenSCADObjectToNode(more_obj, &dummy_dict);
     children.push_back(child);
   } else return 1;
@@ -179,13 +172,33 @@ std::string python_version(void)
 }
 
 /*
+ * Lookup a PyOpenSCADType compatible type from a source object
+ */
+
+PyTypeObject * PyOpenSCADObjectType(PyObject *objs)
+{
+  if (PyObject_IsInstance(objs, reinterpret_cast<PyObject*>(&PyOpenSCADType))) {
+    return Py_TYPE(objs);
+  } else if (PyList_Check(objs)) {
+    int n = PyList_Size(objs);
+    for (int i = 0; i < n; i++) {
+      PyObject *obj = PyList_GetItem(objs, i);
+      if (PyObject_IsInstance(obj, reinterpret_cast<PyObject*>(&PyOpenSCADType))) {
+        return Py_TYPE(obj);
+      }
+    }
+  }
+  return &PyOpenSCADType;
+}
+
+/*
  * same as  python_more_obj but always returns only one AbstractNode by creating an UNION operation
  */
 
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs,PyObject **dict)
 {
   std::shared_ptr<AbstractNode> result = nullptr;
-  if (Py_TYPE(objs) == &PyOpenSCADType) {
+  if (PyObject_IsInstance(objs, reinterpret_cast<PyObject*>(&PyOpenSCADType))) {
     result = ((PyOpenSCADObject *) objs)->node;
     if(result.use_count() > 2) {
 	    result = result->clone();
@@ -196,15 +209,31 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs,PyObjec
     auto node = std::make_shared<CsgOpNode>(instance, OpenSCADOperator::UNION);
 
     int n = PyList_Size(objs);
+    std::vector<PyObject *>child_dict;
+    PyObject *subdict;
     for (int i = 0; i < n; i++) {
       PyObject *obj = PyList_GetItem(objs, i);
-      if(Py_TYPE(obj) ==  &PyOpenSCADType) {
-        std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNode(obj,dict);
+      if (PyObject_IsInstance(obj, reinterpret_cast<PyObject*>(&PyOpenSCADType))) {
+        std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNode(obj,&subdict);
         node->children.push_back(child);
+	child_dict.push_back(subdict);
       } else return nullptr;
     }
     result=node;
-    *dict = nullptr; // TODO improve
+
+    *dict = PyDict_New();
+    for(int i=child_dict.size()-1;i>=0; i--) // merge from back  to give 1st child most priority
+    {
+      auto &subdict = child_dict[i];	  
+      if(subdict == nullptr) continue;
+      PyObject *key, *value;
+      Py_ssize_t pos = 0;
+       while(PyDict_Next(subdict, &pos, &key, &value)) {
+         PyObject* value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
+         const char *value_str =  PyBytes_AS_STRING(value1);
+         PyDict_SetItem(*dict, key, value);
+      }
+    }
   } else if(objs == Py_None || objs == Py_False){
     result = void_node;	  
     *dict = nullptr; // TODO improve
@@ -238,7 +267,7 @@ void python_build_hashmap(const std::shared_ptr<AbstractNode> &node, int level)
 //  python_hierdump(stream, node);
   std::string code = stream.str();
   while (PyDict_Next(maindict, &pos, &key, &value)) {
-    if(value->ob_type != &PyOpenSCADType) continue;
+    if (!PyObject_IsInstance(value, reinterpret_cast<PyObject*>(&PyOpenSCADType))) continue;
     std::shared_ptr<AbstractNode> testnode = ((PyOpenSCADObject *) value)->node;
     if(testnode != node) continue;
     PyObject* key1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
@@ -258,6 +287,7 @@ void python_build_hashmap(const std::shared_ptr<AbstractNode> &node, int level)
 
 void python_retrieve_pyname(const std::shared_ptr<AbstractNode> &node)
 {
+  /*	
   std::string name;	
   int level=-1;
   std::ostringstream stream;
@@ -272,6 +302,7 @@ void python_retrieve_pyname(const std::shared_ptr<AbstractNode> &node)
     }	    
   }
   node->setPyName(name);
+  */
 }
 /*
  * converts a python obejct into an integer by all means
@@ -295,6 +326,12 @@ int python_numberval(PyObject *number, double *result, int *flags, int flagor)
     *flags |= flagor;
      *result = PyDataObjectToValue(number);    
      return 0;
+  }
+  if (PyNumber_Check(number)) {
+    // Handle other python number protocol objects (e.g. numpy.int64)
+    PyObject * f = PyNumber_Float(number);
+    *result = PyFloat_AsDouble(f);
+    return 0;
   }
   if (PyUnicode_Check(number) && flags != nullptr) {
     PyObjectUniquePtr str( PyUnicode_AsEncodedString(number, "utf-8", "~"), PyObjectDeleter);
@@ -329,6 +366,7 @@ std::vector<int>  python_intlistval(PyObject *list)
 
 int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y, double *z, double *w, int *flags)
 {
+  if(vec == nullptr) return 1;	
   if(flags != nullptr) *flags = 0;
   if (PyList_Check(vec)) {
     if(PyList_Size(vec) < minval || PyList_Size(vec) > maxval) return 1;
@@ -641,7 +679,8 @@ std::shared_ptr<AbstractNode> python_modulefunc(const ModuleInstantiation *op_mo
     }
     if(funcresult == nullptr) {error="function not executed"; return nullptr; }
 
-    if(funcresult->ob_type == &PyOpenSCADType) result=PyOpenSCADObjectToNode(funcresult, &dummydict);
+    if (PyObject_IsInstance(funcresult, reinterpret_cast<PyObject*>(&PyOpenSCADType)))
+      result=PyOpenSCADObjectToNode(funcresult, &dummydict);
     Py_XDECREF(funcresult);
     errorstr="";
   }
@@ -715,7 +754,7 @@ extern "C" {
 	void set_object_callback(void (*object_capture_callback)(PyObject *));
 }
 void openscad_object_callback(PyObject *obj) {
-	if(obj->ob_type == &PyOpenSCADType) {
+    if (PyObject_IsInstance(obj, reinterpret_cast<PyObject*>(&PyOpenSCADType))) {
   		Py_INCREF(obj);
 		python_orphan_objs.push_back(obj);
 	}
@@ -798,7 +837,7 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
 #ifdef HAVE_PYTHON_YIELD
     set_object_callback(openscad_object_callback);
 #endif
-    PyImport_AppendInittab("openscad", &PyInit_openscad);
+    PyImport_AppendInittab("openscad", &PyInit_PyOpenSCAD);
     PyImport_AppendInittab("libfive", &PyInit_data);
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
@@ -848,7 +887,6 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
     pythonMainModuleInitialized = pythonMainModule != nullptr;
     pythonInitDict.reset(PyModule_GetDict(pythonMainModule.get()));
     pythonRuntimeInitialized = pythonInitDict != nullptr;
-    PyInit_PyOpenSCAD();
     PyInit_PyData();
     PyRun_String("from builtins import *\n", Py_file_input, pythonInitDict.get(), pythonInitDict.get());
     PyObject *key, *value;
@@ -892,13 +930,13 @@ void finishPython(void)
         } 
       }
 #endif
-      python_show_final();
+      show_final();
 }
 
 std::string evaluatePython(const std::string & code, bool dry_run)
 {
   std::string error;
-  python_result_node = nullptr;
+  genlang_result_node = nullptr;
   python_result_handle.clear();
   PyObjectUniquePtr pyExcValue (nullptr, PyObjectDeleter);
   PyObjectUniquePtr pyExcTraceback (nullptr, PyObjectDeleter);
@@ -1008,9 +1046,70 @@ int python__setattro__(PyObject *dict, PyObject *key, PyObject *v)
 }
 
 
+typedef struct {
+    PyObject_HEAD
+    PyObject *container;  // Referenz auf das Original-Objekt
+    Py_ssize_t index;     // Aktueller Index
+} PyOpenSCADObjectIter;
+
+extern PyTypeObject PyOpenSCADObjectIterType;
+
+PyObject *PyOpenSCADType_iter(PyObject *self)
+{
+    PyOpenSCADObjectIter *iter = (PyOpenSCADObjectIter *) PyObject_New(PyOpenSCADObjectIter , &PyOpenSCADObjectIterType);
+    if (iter == NULL) {
+        return NULL;
+    }
+    Py_INCREF(iter);
+    
+    Py_INCREF(self);
+    iter->container = self;
+    iter->index = 0;
+    
+    return (PyObject *)iter;
+}
+	
+
+PyObject *PyOpenSCADType_next(PyObject *self)
+{
+    PyOpenSCADObjectIter *iter = (PyOpenSCADObjectIter *)self;
+    PyOpenSCADObject *container = (PyOpenSCADObject  *)iter->container;
+    
+    // Prüfe ob noch Elemente vorhanden
+    Py_ssize_t size = container->node->children.size();
+    if (iter->index >= size) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+    
+    // Nächstes Element holen
+    auto node = container->node->children[iter->index];
+    iter->index++;
+    return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
+}
+	
+// Iterator dealloc
+void PyOpenSCADObjectIter_dealloc(PyOpenSCADObjectIter *self)
+{
+    PyOpenSCADObjectIter *iter = (PyOpenSCADObjectIter *)self;
+    Py_XDECREF(iter->container);
+    PyObject_Del(self);
+}
+
+// Iterator Type Definition
+PyTypeObject PyOpenSCADObjectIterType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "PyOpenSCADType.Iterator",
+    .tp_basicsize = sizeof(PyOpenSCADObjectIter),
+    .tp_dealloc = (destructor) PyOpenSCADObjectIter_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_iter = PyOpenSCADType_iter,
+    .tp_iternext = PyOpenSCADType_next,  // <-- __next__ Implementierung
+};
+
 PyTypeObject PyOpenSCADType = {
     PyVarObject_HEAD_INIT(nullptr, 0)
-    "PyOpenSCAD",             			/* tp_name */
+    "openscad.PyOpenSCAD",  			/* tp_name */
     sizeof(PyOpenSCADObject), 			/* tp_basicsize */
     0,                         			/* tp_itemsize */
     (destructor) PyOpenSCADObject_dealloc,	/* tp_dealloc */
@@ -1034,7 +1133,7 @@ PyTypeObject PyOpenSCADType = {
     0,                         			/* tp_clear */
     0,                         			/* tp_richcompare */
     0,                         			/* tp_weaklistoffset */
-    0,                         			/* tp_iter */
+    PyOpenSCADType_iter,       			/* tp_iter */
     0,                         			/* tp_iternext */
     PyOpenSCADMethods,             		/* tp_methods */
     0,             				/* tp_members */
@@ -1045,7 +1144,7 @@ PyTypeObject PyOpenSCADType = {
     0,                         			/* tp_descr_set */
     0,                         			/* tp_dictoffset */
     (initproc) PyOpenSCADInit,      		/* tp_init */
-    PyOpenSCADObject_alloc,    			/* tp_alloc */
+    0,                         			/* tp_alloc */
     PyOpenSCADObject_new,                	/* tp_new */
 };
 
@@ -1075,7 +1174,7 @@ PyMODINIT_FUNC PyInit_PyOpenSCAD(void)
   if (m == NULL) return NULL;
 
   Py_INCREF(&PyOpenSCADType);
-  PyModule_AddObject(m, "openscad", (PyObject *)&PyOpenSCADType);
+  PyModule_AddObject(m, "Openscad", (PyObject *)&PyOpenSCADType);
   return m;
 }
 

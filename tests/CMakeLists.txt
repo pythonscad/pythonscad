@@ -1103,6 +1103,14 @@ add_cmdline_test(svgimport OPENSCAD ARGS --imgsize 600,600 SUFFIX png FILES
   ${TEST_SCAD_DIR}/svg/extruded/simple-center.scad
 )
 
+# 
+# OBJECT echo tests
+#
+
+file(GLOB OBJECT_TEST ${TEST_SCAD_DIR}/experimental/object/*.scad)
+add_cmdline_test(echo EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${OBJECT_TEST} ARGS --enable object-function)
+
+
 #
 # Export/import tests
 #
@@ -1297,6 +1305,7 @@ add_cmdline_test(3mfcolorpngtest EXPERIMENTAL SCRIPT ${EXPORT_IMPORT_PNGTEST_PY}
 
 # PDF Export
 add_cmdline_test(export-pdf SCRIPT ${EXPORT_PNGTEST_PY} SUFFIX png FILES ${SCAD_PDF_FILES} ARGS ${OPENSCAD_EXE_ARG} --format=PDF -O export-pdf/show-scale=false KERNEL Square:2)
+add_cmdline_test(export-pdf-fill SCRIPT ${EXPORT_PNGTEST_PY} SUFFIX png FILES ${SCAD_PDF_FILES} ARGS ${OPENSCAD_EXE_ARG} --format=PDF -O export-pdf/show-scale=false -O export-pdf/fill=true -O export-pdf/fill-color=cyan -O export-pdf/stroke-color=magenta -O export-pdf/stroke-width=1 KERNEL Square:2)
 
 # Expected failing tests
 add_failing_test(stlfailedtest         SUFFIX stl  FILES ${TEST_SCAD_DIR}/misc/empty-union.scad ARGS --retval=1)
@@ -1487,7 +1496,7 @@ add_cmdline_test(rendermanifoldtest  EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EX
 add_cmdline_test(previewtest         EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --enable=skin)
 add_cmdline_test(previewmanifoldtest EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --enable=skin --backend=manifold)
 add_cmdline_test(throwntogethertest  EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --preview=throwntogether --enable=skin)
-add_cmdline_test(pythonscad          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_FILES} ARGS --trust-python)
+add_cmdline_test(pythonscad          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_FILES} ARGS --render --trust-python)
 
 
 ############################

@@ -302,10 +302,10 @@ macro(find_graphics)
 
     target_compile_definitions(OpenSCAD PRIVATE ENABLE_OPENCSG)
 
-    #    if (${OPENCSG_VERSION_STRING} VERSION_LESS "1.6.0")
+    if (${OPENCSG_VERSION_STRING} VERSION_LESS "1.6.0")
       set(OPENCSG_GLEW ON)
       target_compile_definitions(OpenSCAD PRIVATE OPENCSG_GLEW)
-      #endif()
+    endif()
 
     if (NOT USE_GLAD AND NOT USE_GLEW)
       if (OPENCSG_GLEW)
@@ -535,7 +535,7 @@ if(ENABLE_PYTHON)
 
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && unzip ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME}
+      COMMAND rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && unzip ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME} && rm python*._pth
       OUTPUT ${PYTHON_EMBED_SHLIB}
     )
     add_custom_target(tgt_python_embed DEPENDS ${PYTHON_EMBED_SHLIB})
@@ -546,7 +546,11 @@ if(ENABLE_PYTHON)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
   else() #MXE
-	  find_package(Python  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
+	  if (${PYTHON_VERSION}  STREQUAL "OFF")
+      find_package(Python  REQUIRED COMPONENTS Development)
+    else()
+      find_package(Python  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
+    endif()
     if(NOT Nettle_FOUND)
       message(WARNING "Nettle not found, disabling python support.")
       set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
@@ -568,7 +572,7 @@ if(ENABLE_PYTHON)
   endif() # endif MXE
   target_include_directories(OpenSCADPy PRIVATE ${Nettle_INCLUDE_DIRS})
   target_link_libraries(OpenSCADPy PRIVATE ${Nettle_LIBRARIES})
-  add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink openscad${SUFFIX_WITH_DASH} "openscad-python")
+  add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink pythonscad${SUFFIX_WITH_DASH} "pythonscad-python")
   target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
   if(MSVC)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS}/harfbuzz)
@@ -972,6 +976,7 @@ set(CORE_SOURCES
   src/core/PathExtrudeNode.cc
   src/core/OversampleNode.cc
   src/core/DebugNode.cc
+  src/core/RepairNode.cc
   src/core/FilletNode.cc
   src/core/LocalScope.cc
   src/core/node_clone.cc
@@ -1090,6 +1095,7 @@ set(CORE_SOURCES
   src/utils/printutils.cc
   src/utils/svg.cc
   src/utils/version_check.h
+  src/genlang/genlang.cc
   src/version.cc
   ${LIB3MF_SOURCES}
   ${PLATFORM_SOURCES}
@@ -1605,7 +1611,7 @@ if(NOT APPLE OR APPLE_UNIX)
   set_target_properties(OpenSCAD PROPERTIES OUTPUT_NAME pythonscad${SUFFIX_WITH_DASH})
   install(TARGETS OpenSCAD RUNTIME DESTINATION "${OPENSCAD_BINDIR}")
   if(ENABLE_PYTHON)
-    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/openscad-python DESTINATION "${OPENSCAD_BINDIR}")
+    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/pythonscad-python DESTINATION "${OPENSCAD_BINDIR}")
   endif()
   if(WIN32)
     if(ENABLE_PYTHON)
@@ -1622,7 +1628,7 @@ if(NOT APPLE OR APPLE_UNIX)
   else()
     install(FILES ${CMAKE_CURRENT_LIST_DIR}/doc/openscad.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 RENAME openscad${SUFFIX_WITH_DASH}.1)
     install(FILES ${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/metainfo RENAME org.pythonscad.PythonSCAD.appdata.xml)
-    if(ENABLE_LIBFIVE)
+    if(ENABLE_LIBFIVE AND USE_BUILTIN_LIBFIVE)
       install(FILES ${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.so DESTINATION "lib")
     endif()
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications RENAME pythonscad${SUFFIX_WITH_DASH}.desktop)
