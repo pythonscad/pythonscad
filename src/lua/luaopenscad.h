@@ -24,6 +24,9 @@ extern lua_State  *L;
 void registerLuaFunctions(void);
 int LuaOpenSCADObjectFromNode(const std::shared_ptr<AbstractNode> &node);
 std::shared_ptr<AbstractNode> LuaOpenSCADObjectToNode(lua_State *lua, int argnum);
+int lua_numberval(lua_State *L, int number, double *result);
+int lua_vectorval(lua_State *L, int vec, int minarg, int maxarg, double *x, double *y, double *z, double *w, int *flags);
+
 void initLua(double time);
 std::string evaluateLua(const std::string & code);
 void finishLua(void);

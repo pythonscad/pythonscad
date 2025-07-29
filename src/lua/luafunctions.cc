@@ -76,29 +76,39 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 // CSS Color Module Level 4 - Editor’s Draft, 29 May 2015
 extern std::unordered_map<std::string, Color4f> webcolors;
 extern boost::optional<Color4f> parse_hex_color(const std::string& hex);
-
+//-------------------------
 static int lua_cube(lua_State *L)
 {
   DECLARE_INSTANCE
   auto node = std::make_shared<CubeNode>(instance);
 
   char *kwlist[] = {"size", "center", NULL};
-  void *size = NULL;
+  int size = -1;
 
-  void *center = NULL;
-  char *centerstr = nullptr;
-
-  node->dim[0]=1;
-  node->dim[1]=1;
-  node->dim[2]=1;
-  if (!LuArg_ParseTupleAndKeywords(L, "V|s", kwlist, &(node->dim), &centerstr)){
-    printf("Error during cube\n");	  
+  int center = -1;
+  if (!LuArg_ParseTupleAndKeywords(L, "|OO", kwlist,
+                                   &size,
+                                   &center)){
+    luaL_error(L, "Error during cube\n");
     return 0;
   }
+
+  if (size != -1) {
+    int flags=0;          
+    if (lua_vectorval(L, size, 3, 3, &(node->dim[0]), &(node->dim[1]), &(node->dim[2]), nullptr, &(node->dragflags))) {
+      luaL_error(L, "Invalid Cube dimensions");
+      return 0;
+    }
+  }
+  if(node->dim[0] <= 0 || node->dim[1] <= 0 || node ->dim[2] <= 0) {
+      luaL_error(L, "Cube Dimensions must be positive");
+      return 0;
+  }
   for(int i=0;i<3;i++) node->center[i] = 1;
-  if(centerstr != nullptr) {
+  if(lua_isstring(L, center)) {
+   const char *centerstr =  lua_tostring(L, center);
    if(strlen(centerstr) != 3) {
-      printf("Center code must be exactly 3 characters");
+      luaL_error(L, "Center code must be exactly 3 characters");
       return 0;
     }
     for(int i=0;i<3;i++) {
@@ -119,12 +129,14 @@ static int lua_cube(lua_State *L)
         case '-': node->center[i] = 1; break;	      
 
         default:		  
-          printf("Center code chars not recognized, must be + - or 0");
+          luaL_error(L, "Center code chars not recognized, must be + - or 0");
           return 0;
       }       
     }
-  }  
-
+  } else {
+      luaL_error(L, "Unknown Value for center parameter");
+      return 0;
+  }
   return LuaOpenSCADObjectFromNode( node);
 }
 

@@ -78,39 +78,34 @@ int LuArg_ParseTupleAndKeywords(lua_State *L, const char *fmt, char **kwlist , .
   va_list ap;
   int ind=1;
   va_start(ap, kwlist);
-  double *dptr;
-  int *iptr;
-  Vector3d *vecptr;
-  const char **cptr;
   int optional=0;
   while(*ptr != '\0') {
     switch(*ptr) {
-      case 'd':
-              dptr = va_arg(ap, double *);
-	      if(lua_isnumber(L,ind)) *dptr = lua_tonumber(L,ind);
-	      ind++;
+      case 'd':{
+                double *dptr = va_arg(ap, double *);
+	        if(lua_isnumber(L,ind)) *dptr = lua_tonumber(L,ind);
+	        ind++;
+              }		
 	      break;
-      case 'i':
-              iptr = va_arg(ap, int *);
-	      if(lua_isnumber(L,ind)) *iptr = lua_tonumber(L,ind);
-	      ind++;
+      case 'i':{
+                int * iptr = va_arg(ap, int *);
+	        if(lua_isnumber(L,ind)) *iptr = lua_tonumber(L,ind);
+	        ind++;
+              }		
 	      break;
-      case 's':
-              cptr = va_arg(ap, const char **);
-	      if(lua_isstring(L,ind)) *cptr = lua_tostring(L,ind);
-	      ind++;
-	      break;
-      case 'V':
-              vecptr = va_arg(ap, Vector3d *);
-	      if(lua_istable(L,ind)) {
-                for(int i=0;i<3;i++) {	  
-                  lua_geti(L, ind,i+1);
-                  (*vecptr)[i] =lua_tonumber(L,-1);
-                  lua_pop(L, 1);
-	        }
-	      }	
-	      ind++;
-	      break;
+      case 's':{
+                const char **cptr = va_arg(ap, const char **);
+	        if(lua_isstring(L,ind)) *cptr = lua_tostring(L,ind);
+	        ind++;
+	       }
+	       break;
+      case 'O':
+	       { 
+                int *ptr = va_arg(ap, int *);
+	        *ptr=ind;
+	        ind++;
+	       }	
+	       break;
       case '|': optional=1; break;	      
       default: break;
     }
@@ -285,18 +280,15 @@ void python_retrieve_pyname(const std::shared_ptr<AbstractNode> &node)
 /*
  * converts a python obejct into an integer by all means
  */
+#endif
 
-int python_numberval(PyObject *number, double *result)
+int lua_numberval(lua_State *L, int number, double *result)
 {
-  if(number == Py_False) return 1;
-  if(number == Py_True) return 1;
-  if(number == Py_None) return 1;
-  if (PyFloat_Check(number)) {
-    *result = PyFloat_AsDouble(number);
-    return 0;
-  }
-  if (PyLong_Check(number)) {
-    *result = PyLong_AsLong(number);
+//  if(number == Py_False) return 1;
+//  if(number == Py_True) return 1;
+//  if(number == Py_None) return 1;
+  if (lua_isnumber(L, number)) {
+    *result = lua_tonumber(L, number);
     return 0;
   }
   return 1;
@@ -306,27 +298,36 @@ int python_numberval(PyObject *number, double *result)
  * Tries to extract an 3D vector out of a python list
  */
 
-int python_vectorval(PyObject *vec, double *x, double *y, double *z, double *w)
+int lua_vectorval(lua_State *L, int vec, int minarg, int maxarg, double *x, double *y, double *z, double *w, int *flags )
 {
-  *x = 1.0;
-  *y = 1.0;
-  if(w != NULL ) *w = 0;
-  if (PyList_Check(vec)) {
-    if (PyList_Size(vec) >= 1) {
-      if (python_numberval(PyList_GetItem(vec, 0), x)) return 1;
+  if(vec == -1) return 1;  
+  if(flags != nullptr) *flags = 0;
+  if(lua_istable(L,vec)) {
+    if(lua_rawlen(L,vec) < minarg || lua_rawlen(L,vec) > maxarg) return 1;
+          
+    if (lua_rawlen(L,vec) >= 1) {
+      lua_geti(L, vec,1);
+      lua_numberval(L,-1,x);
+      lua_pop(L, 1);
     }
-    if (PyList_Size(vec) >= 2) {
-      if (python_numberval(PyList_GetItem(vec, 1), y)) return 1;
+    if (lua_rawlen(L,vec) >= 2) {
+      lua_geti(L, vec,2);
+      lua_numberval(L,-1,y);
+      lua_pop(L, 1);
     }
-    if (PyList_Check(vec) && PyList_Size(vec) >= 3) {
-      if (python_numberval(PyList_GetItem(vec, 2), z)) return 1;
+    if (lua_rawlen(L,vec) >= 3) {
+      lua_geti(L, vec,3);
+      lua_numberval(L,-1,z);
+      lua_pop(L, 1);
     }
-    if (PyList_Check(vec) && PyList_Size(vec) >= 4 && w != NULL) {
-      if (python_numberval(PyList_GetItem(vec, 3), w)) return 1;
+    if (lua_rawlen(L,vec) >= 4 && w != NULL) {
+      lua_geti(L, vec,4);
+      lua_numberval(L,-1,w);
+      lua_pop(L, 1);
     }
     return 0;
   }
-  if (!python_numberval(vec, x)) {
+  if (!lua_numberval(L, vec, x)) {
     *y = *x;
     *z = *x;
     if(w != NULL) *w = *x;
@@ -335,10 +336,7 @@ int python_vectorval(PyObject *vec, double *x, double *y, double *z, double *w)
   return 1;
 }
 
-/*
- * Helper function to extract actual values for fn, fa and fs
- */
-
+#if 0
 void get_fnas(double& fn, double& fa, double& fs) {
   PyObject *mainModule = PyImport_AddModule("__main__");
   if (mainModule == nullptr) return;
