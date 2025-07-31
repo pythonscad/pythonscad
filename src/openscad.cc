@@ -89,6 +89,7 @@
 #include "core/RenderVariables.h"
 #include "core/ScopeContext.h"
 #include "core/Settings.h"
+#include "executable.h"
 #include "Feature.h"
 #include "geometry/Geometry.h"
 #include "geometry/GeometryEvaluator.h"
@@ -825,7 +826,7 @@ int main(int argc, char **argv)
   // The original name as called, not resolving links and so on. This will
   // just forward everything to the python main.
   const auto applicationName = fs::path(argv[0]).filename().generic_string();
-  if (applicationName == "openscad-python") {
+  if (applicationName == PYTHON_EXECUTABLE_NAME) {
       return pythonRunArgs(argc, argv);
   }
 #endif
