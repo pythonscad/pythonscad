@@ -162,12 +162,12 @@ else()
   endif()
 endif()
 
-find_package(Lib3MF QUIET)
+find_package(Lib3MF)
 # Disable LIB3MF tests if library was disabled in build
 if(NOT LIB3MF_FOUND)
   # check again via pkgconfig
   if(NOT MSVC)
-    find_package(PkgConfig QUIET)
+    find_package(PkgConfig)
     if (PKG_CONFIG_FOUND)
       pkg_check_modules(LIB3MF lib3MF)
     endif()
@@ -197,10 +197,10 @@ elseif(APPLE)
   set(OPENSCAD_BINPATH "${CBD}/OpenSCAD.app/Contents/MacOS/OpenSCAD")
 elseif (WIN32 OR MXECROSS)
   set(OPENSCAD_BINPATH "${CBD}/pythonscad.com")
-elseif(EXISTS "${CBD}/bin/pythonscad${SUFFIX_WITH_DASH}")
-  set(OPENSCAD_BINPATH "${CBD}/bin/pythonscad${SUFFIX_WITH_DASH}")
+elseif(EXISTS "${CBD}/bin/${EXECUTABLE_NAME}")
+  set(OPENSCAD_BINPATH "${CBD}/bin/${EXECUTABLE_NAME}")
 else()
-  set(OPENSCAD_BINPATH "${CBD}/pythonscad${SUFFIX_WITH_DASH}")
+  set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}")
 endif()
 
 #if(EXISTS "${OPENSCAD_BINPATH}")
@@ -1294,6 +1294,11 @@ endif()
 
 add_cmdline_test(render-dxf  SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_2D_RENDER_FILES} ${SCAD_DXF_FILES} EXPECTEDDIR render ARGS ${OPENSCAD_EXE_ARG} --format=DXF --render=force)
 add_cmdline_test(render-svg  SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_2D_RENDER_FILES} ${SCAD_SVG_FILES} EXPECTEDDIR render ARGS ${OPENSCAD_EXE_ARG} --format=SVG --render=force)
+
+# SVG Export
+add_cmdline_test(export-svg SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX svg FILES ${SCAD_SVG_FILES} ARGS ${OPENSCAD_EXE_ARG} --format=SVG)
+add_cmdline_test(export-svg-fill-stroke SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX svg FILES ${SCAD_SVG_FILES} ARGS ${OPENSCAD_EXE_ARG} --format=SVG -O export-svg/fill=true -O export-svg/fill-color=cyan -O export-svg/stroke-color=magenta -O export-svg/stroke-width=3)
+add_cmdline_test(export-svg-fill-only SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX svg FILES ${SCAD_SVG_FILES} ARGS ${OPENSCAD_EXE_ARG} --format=SVG -O export-svg/fill=true -O export-svg/fill-color=blue -O export-svg/stroke=false)
 
 # FIXME: We don't actually need to compare the output of cgalstlsanitytest
 # with anything. It's self-contained and returns != 0 on error
