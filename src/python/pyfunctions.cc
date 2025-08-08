@@ -31,6 +31,7 @@
 #include "export.h"
 #include "GeometryUtils.h"
 #include <Python.h>
+#include "pyfunctions.h"
 #include "python/pyopenscad.h"
 #include "core/primitives.h"
 #include "core/CsgOpNode.h"
