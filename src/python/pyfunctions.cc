@@ -31,6 +31,7 @@
 #include "export.h"
 #include "GeometryUtils.h"
 #include <Python.h>
+#include "pyfunctions.h"
 #include "python/pyopenscad.h"
 #include "core/primitives.h"
 #include "core/CsgOpNode.h"
@@ -2278,6 +2279,20 @@ PyObject *python__getitem__(PyObject *obj, PyObject *key)
       Matrix4d matrix=Matrix4d::Identity();
       if(trans != nullptr) matrix = trans->matrix.matrix();		
       result = python_frommatrix(matrix);
+    } else if (keystr == "size") {
+      PyObject *bbox;
+      bbox = python_bbox_core(obj);
+      if (bbox == Py_None) {
+        return Py_None;
+      }
+      PyObject *size = PyList_New(3);
+      for (int i = 0; i < 3; i++) {
+        PyList_SetItem(size, i,
+                       PyNumber_Subtract(PyList_GetItem(PyTuple_GetItem(bbox, 1), i),
+                                         PyList_GetItem(PyTuple_GetItem(bbox, 0), i)));
+      }
+
+      return size;
     }
   }
   else Py_INCREF(result);
