@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - cicd-pipeline-tests
   schedule:
     # Sunday 09:00
     - cron: '0 9 * * 0'
