@@ -43,5 +43,11 @@ pkgs.mkShell {
     qt6.qttools
     qt6.wrapQtAppsHook
     qt6Packages.qscintilla
+
+    # used by the automated tests
+    imagemagick
+
+    # used by scripts/beautify.sh to clean up code
+    clang-tools
   ];
 }
