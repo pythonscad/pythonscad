@@ -30,6 +30,7 @@
 #include "export.h"
 #include "GeometryUtils.h"
 #include <Python.h>
+#include "pyfunctions.h"
 #include "python/pyopenscad.h"
 #include "core/primitives.h"
 #include "core/CsgOpNode.h"
@@ -1460,7 +1461,6 @@ PyObject *python_translate_sub(PyObject *obj, Vector3d translatevec, int dragfla
   return pyresult;
 }
 
-PyObject *python_nb_sub_vec3(PyObject *arg1, PyObject *arg2, int mode);
 PyObject *python_translate_core(PyObject *obj, PyObject *v) { return python_nb_sub_vec3(obj, v, 0); }
 
 PyObject *python_translate(PyObject *self, PyObject *args, PyObject *kwargs)
