@@ -2298,6 +2298,21 @@ PyObject *python__getitem__(PyObject *obj, PyObject *key)
       Matrix4d matrix = Matrix4d::Identity();
       if (trans != nullptr) matrix = trans->matrix.matrix();
       result = python_frommatrix(matrix);
+    } else if (keystr == "size") {
+      PyObject *bbox;
+      bbox = python_bbox_core(obj);
+      if (bbox == Py_None) {
+        return Py_None;
+      }
+      PyObject *negative_ones = Py_BuildValue("[f,f,f]", -1.0, -1.0, -1.0);
+      if (!negative_ones) {
+        return Py_None;
+      }
+      PyObject *size = python_nb_sub_vec3(PyTuple_GetItem(bbox, 1),
+                                          python_scale_core(PyTuple_GetItem(bbox, 0), negative_ones), 0);
+      Py_DECREF(negative_ones);
+      Py_INCREF(size);
+      return size;
     }
   } else Py_INCREF(result);
   return result;
