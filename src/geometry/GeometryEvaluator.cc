@@ -463,7 +463,7 @@ static indexedFaceList mergeTrianglesSub(const std::vector<IndexedFace>& triangl
       // Reduce colinear points
       int n = poly.size();
       IndexedFace poly_new;
-      int last = poly[n - 1], cur = poly[0], next;
+      int cur = poly[0], next;
       for (int i = 0; i < n; i++) {
         next = poly[(i + 1) % n];
         if (1) {  // (p2-p1).cross(p1-p0).norm() > 0.00001) {
@@ -3051,8 +3051,6 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
     xscale.push_back(xmin);
   }
 
-  int scalelen = xscale.size();
-
   std::vector<indexedFaceList> polygons_sorted;
   std::vector<Vector4d> normals = calcTriangleNormals(ps->vertices, ps->indices);
   std::vector<int> faceParents;
@@ -3153,7 +3151,7 @@ static std::unique_ptr<PolySet> debugObject(const DebugNode& node, const PolySet
   int colorind = psx->colors.size();
   psx->colors.push_back(debug_color);
   for (size_t i = 0; i < node.faces.size(); i++) {
-    int ind = node.faces[i];
+    size_t ind = node.faces[i];
     if (ind >= 0 && ind < psx->color_indices.size()) psx->color_indices[ind] = colorind;
   }
 
