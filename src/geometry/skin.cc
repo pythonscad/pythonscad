@@ -472,7 +472,7 @@ static std::vector<std::shared_ptr<const Polygon2d>> segmentVertices(
 }
 
 // Debug support
-static void dumpPolygons(std::string where, std::vector<std::shared_ptr<const Polygon2d>> slicesin)
+[[maybe_unused]] static void dumpPolygons(std::string where, std::vector<std::shared_ptr<const Polygon2d>> slicesin)
 {
   int sl_i = 0;
   for (auto const& slice : slicesin) {
@@ -508,7 +508,7 @@ static void dumpPolygons(std::string where, std::vector<std::shared_ptr<const Po
   }
 }
 
-static void dumpAlignmentPoints(std::vector<std::vector<AlignmentPoint>> const& alignmentPoints,
+[[maybe_unused]] static void dumpAlignmentPoints(std::vector<std::vector<AlignmentPoint>> const& alignmentPoints,
                                 int align_angle)
 {
   std::cerr << "Aligned to angle: " << align_angle << std::endl;
