@@ -76,35 +76,6 @@ QString Measurement::statemachine(QPoint mouse)
   double dist = NAN;
   SelectedObject obj1, obj2, obj3;
   SelectedObject ruler = {.type = SelectionType::SELECTION_INVALID};
-  auto display_angle = [this](Vector3d p1, Vector3d p2, Vector3d p3, Vector3d p4) {
-    SelectedObject ruler;
-    Vector3d side1, side2;
-    ruler = {
-      .type = SelectionType::SELECTION_SEGMENT,
-    };
-    ruler.pt.push_back(p1);
-    ruler.pt.push_back(p2);
-    this->qglview->selected_obj.push_back(ruler);
-    ruler = {
-      .type = SelectionType::SELECTION_SEGMENT,
-    };
-    ruler.pt.clear();
-    ruler.pt.push_back(p3);
-    ruler.pt.push_back(p4);
-    this->qglview->selected_obj.push_back(ruler);
-
-    side1 = (p2 - p1).normalized();
-    side2 = (p4 - p3).normalized();
-    double ang = acos(side1.dot(side2)) * 180.0 / G_PI;
-    if (!std::isnan(ang)) {
-      return QString("Angle  is %1 Degrees").arg(ang);
-    }
-    qglview->selected_obj.clear();
-    qglview->shown_obj = nullptr;
-    qglview->update();
-    qglview->measure_state = MEASURE_IDLE;
-    return QString("Error during angle calculation");
-  };
 
   switch (qglview->measure_state) {
   case MEASURE_DIST1:
