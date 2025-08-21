@@ -17,7 +17,15 @@ public:
   void display(const std::vector<Vector3d>& vertices);
   void reverse(void);
   int operator==(const CylinderSurface& other);
-  virtual int pointMember(std::vector<Vector3d>& vertices, Vector3d pt);
+int operator==(const Surface& other) override {
+    // Optionally, dynamic_cast and call the CylinderSurface overload
+    if (auto arc = dynamic_cast<const CylinderSurface*>(&other)) {
+        return (*this == *arc);
+    }
+    return 0;
+}
+
+virtual int pointMember(std::vector<Vector3d>& vertices, Vector3d pt);
 
   double r;
 };

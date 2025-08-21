@@ -17,6 +17,14 @@ public:
   void display(const std::vector<Vector3d>& vertices);
   void reverse(void);
   int operator==(const ArcCurve& other);
+
+  int operator==(const Curve& other) override {
+    // Optionally, dynamic_cast and call the ArcCurve overload
+    if (auto arc = dynamic_cast<const ArcCurve*>(&other)) {
+        return (*this == *arc);
+    }
+    return 0;
+}
   double calcAngle(Vector3d refdir, Vector3d dir, Vector3d normdir);
   virtual int pointMember(std::vector<Vector3d>& vertices, Vector3d pt);
 
