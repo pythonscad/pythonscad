@@ -125,7 +125,7 @@ PyObject *PyDataObjectFromTree(PyTypeObject *type, const std::vector<libfive::Tr
     }
   } else {
     PyObject *res = PyTuple_New(tree.size());
-    for (int i = 0; i < tree.size(); i++) {
+    for (size_t i = 0; i < tree.size(); i++) {
       PyDataObject *sub;
       sub = (PyDataObject *)type->tp_alloc(type, 0);
       if (sub != NULL) {
@@ -190,7 +190,7 @@ PyObject *python_lv_un_int(PyObject *self, PyObject *args, PyObject *kwargs, lib
 
   std::vector<libfive::Tree *> tv = PyDataObjectToTree(arg);
   std::vector<libfive::Tree *> res;
-  for (int i = 0; i < tv.size(); i++) {
+  for (size_t i = 0; i < tv.size(); i++) {
     libfive::Tree *sub = new libfive::Tree(libfive::Tree::unary(op, *(tv[i])));
     res.push_back(sub);
   }
@@ -210,11 +210,11 @@ PyObject *python_lv_bin_int(PyObject *self, PyObject *args, PyObject *kwargs, li
   std::vector<libfive::Tree *> a2 = PyDataObjectToTree(arg2);
   std::vector<libfive::Tree *> res;
   if (a1.size() == a2.size()) {
-    for (int i = 0; i < a1.size(); i++) {
+    for (size_t i = 0; i < a1.size(); i++) {
       res.push_back(new libfive::Tree(libfive::Tree::binary(op, *a1[i], *a2[i])));
     }
   } else if (a2.size() == 1) {
-    for (int i = 0; i < a1.size(); i++) {
+    for (size_t i = 0; i < a1.size(); i++) {
       res.push_back(new libfive::Tree(libfive::Tree::binary(op, *a1[i], *a2[0])));
     }
   } else {
@@ -243,7 +243,7 @@ PyObject *python_lv_unop_int(PyObject *arg, libfive::Opcode::Opcode op)
 {
   std::vector<libfive::Tree *> t = PyDataObjectToTree(arg);
   std::vector<libfive::Tree *> res;
-  for (int i = 0; i < t.size(); i++) {
+  for (size_t i = 0; i < t.size(); i++) {
     res.push_back(new libfive::Tree(libfive::Tree::unary(op, *(t[i]))));
   }
   return PyDataObjectFromTree(&PyDataType, res);
@@ -256,11 +256,11 @@ PyObject *python_lv_binop_int(PyObject *arg1, PyObject *arg2, libfive::Opcode::O
 
   std::vector<libfive::Tree *> res;
   if (t1.size() == t2.size()) {
-    for (int i = 0; i < t1.size(); i++) {
+    for (size_t i = 0; i < t1.size(); i++) {
       res.push_back(new libfive::Tree(libfive::Tree::binary(op, *(t1[i]), *(t2[i]))));
     }
   } else if (t2.size() == 1) {
-    for (int i = 0; i < t1.size(); i++) {
+    for (size_t i = 0; i < t1.size(); i++) {
       res.push_back(new libfive::Tree(libfive::Tree::binary(op, *(t1[i]), *(t2[0]))));
     }
   } else {

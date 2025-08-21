@@ -126,7 +126,7 @@ void vectorDump(const char *msg, const Vector3d& vec)
 void triangleDump(const char *msg, const IndexedFace& face, const std::vector<Vector3d>& vert)
 {
   printf("%s ", msg);
-  for (int i = 0; i < face.size(); i++) {
+  for (size_t i = 0; i < face.size(); i++) {
     const Vector3d& pt = vert[face[i]];
     vectorDump(" ", pt);
   }
@@ -221,7 +221,7 @@ std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> createEdgeDb(
   val.posa = -1;
   val.posb = -1;
   int ind1, ind2;
-  for (int i = 0; i < indices.size(); i++) {
+  for (size_t i = 0; i < indices.size(); i++) {
     int n = indices[i].size();
     for (int j = 0; j < n; j++) {
       ind1 = indices[i][j];
@@ -1153,7 +1153,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     builder.addVertex(endpt);
 
     // top rounding
-    for (size_t i = 0; i < n - 1; i++) {
+    for (int i = 0; i < n - 1; i++) {
       builder.appendPolygon({start_inds[i], start_inds[i + 1], end_inds[i + 1], end_inds[i]});
     }
 
@@ -1173,7 +1173,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     subgeoms.push_back(result_s);  // edges
   }
 
-  for (int i = 0; i < ps->vertices.size(); i++) {
+  for (size_t i = 0; i < ps->vertices.size(); i++) {
     Offset3D_CornerContext cxt;
     cxt.basept = ps->vertices[i];
     cxt.r = off;
@@ -2531,7 +2531,7 @@ Response GeometryEvaluator::visit(State& state, const ConcatNode& node)
           LOG(message_group::Error, "Concat only works for PolySet Data");
           continue;
         }
-        for (int i = 0; i < ps->indices.size(); i++) {
+        for (size_t i = 0; i < ps->indices.size(); i++) {
           const auto& face = ps->indices[i];
           builder.beginPolygon(face.size());
           for (int ind : face) {
@@ -2906,7 +2906,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
             done = true;
           }
         } else {
-          for (int j = 0; j < stripPolygons[i].size(); j++) {
+          for (size_t j = 0; j < stripPolygons[i].size(); j++) {
             if ((stripPolygons[i][j][0] - connpt).norm() < 1e-3) {
               chain.insert(chain.end(), stripPolygons[i][j].begin(), stripPolygons[i][j].end());
               stripPolygons[i].erase(stripPolygons[i].begin() + j);
@@ -2916,7 +2916,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
             }
           }
         }
-        for (int j = 0; j < stripBots[i].size(); j += 2) {
+        for (size_t j = 0; j < stripBots[i].size(); j += 2) {
           if ((stripBots[i][j] - connpt).norm() < 1e-3) {
             connpt = stripBots[i][j + 1];
             stripBots[i].erase(stripBots[i].begin() + j, stripBots[i].begin() + j + 2);
@@ -2930,7 +2930,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
             break;
           }
         }
-        for (int j = 0; j < stripTops[i].size(); j += 2) {
+        for (size_t j = 0; j < stripTops[i].size(); j += 2) {
           if ((stripTops[i][j + 1] - connpt).norm() < 1e-3) {
             connpt = stripTops[i][j];
             stripTops[i].erase(stripTops[i].begin() + j, stripTops[i].begin() + j + 2);
@@ -3063,7 +3063,7 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
   std::vector<int> faceParents;
   std::vector<Vector4d> newnormals;
   std::vector<IndexedColorFace> tri_color;
-  for (int i = 0; i < ps->indices.size(); i++) {
+  for (size_t i = 0; i < ps->indices.size(); i++) {
     const auto& tri = ps->indices[i];
     if (i < ps->color_indices.size())
       tri_color.push_back(IndexedColorFace({.face = tri, .color = ps->color_indices[i]}));
@@ -3202,7 +3202,7 @@ static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolyS
   }
 
   indexedFaceList defects = mergeTrianglesSub(ps->indices, ps->vertices);
-  for (int i = 0; i < defects.size(); i++) {
+  for (size_t i = 0; i < defects.size(); i++) {
     auto face = defects[i];
     auto fence = defects[i];
     IndexedFace fence_new;
