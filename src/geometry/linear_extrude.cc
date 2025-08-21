@@ -155,12 +155,12 @@ Outline2d splitOutlineByFn(const Outline2d& o, const double twist, const double 
   assert(o2.vertices.size() <= fn);
   return o2;
 }
-void append_linear_vertex(PolySetBuilder& builder, const Outline2d *face, int index, Vector3d h)
+[[maybe_unused]] void append_linear_vertex(PolySetBuilder& builder, const Outline2d *face, int index, Vector3d h)
 {
   builder.addVertex(builder.vertexIndex(
     Vector3d(face->vertices[index][0] + h[0], face->vertices[index][1] + h[2], h[2])));
 }
-void calculate_path_dirs(Vector3d prevpt, Vector3d curpt, Vector3d nextpt, Vector3d vec_x_last,
+[[maybe_unused]] void calculate_path_dirs(Vector3d prevpt, Vector3d curpt, Vector3d nextpt, Vector3d vec_x_last,
                          Vector3d vec_y_last, Vector3d *vec_x, Vector3d *vec_y)
 {
   Vector3d diff1, diff2;
@@ -262,7 +262,7 @@ void calculate_path_dirs(Vector3d prevpt, Vector3d curpt, Vector3d nextpt, Vecto
   (*vec_y) /= yfac;
 }
 
-std::vector<Vector3d> calculate_path_profile(Vector3d *vec_x, Vector3d *vec_y, Vector3d curpt,
+[[maybe_unused]] std::vector<Vector3d> calculate_path_profile(Vector3d *vec_x, Vector3d *vec_y, Vector3d curpt,
                                              const std::vector<Vector2d>& profile)
 {
   std::vector<Vector3d> result;
@@ -350,7 +350,7 @@ std::unique_ptr<PolySet> assemblePolySetForManifold(const Polygon2d& polyref,
   return final_polyset;
 }
 
-std::unique_ptr<PolySet> assemblePolySetForCGAL(const Polygon2d& polyref,
+[[maybe_unused]] std::unique_ptr<PolySet> assemblePolySetForCGAL(const Polygon2d& polyref,
                                                 std::vector<Vector3d>& vertices, PolygonIndices& indices,
                                                 int convexity, boost::tribool isConvex, double scale_x,
                                                 double scale_y, const Vector3d& h1, const Vector3d& h2,
@@ -702,7 +702,7 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
           double dist_bot =
             (botvertices[(ibot + 1) % nbot] - topvertices[(itop + top_off) % ntop]).norm();
           double dist_top = (botvertices[ibot] - topvertices[(itop + top_off + 1) % ntop]).norm();
-          if (dist_bot < dist_top && ibot < nbot || (itop == ntop)) {
+          if ((dist_bot < dist_top && ibot < nbot) || (itop == ntop)) {
             builder.beginPolygon(3);
             builder.addVertex(botvertices[ibot % nbot]);
             builder.addVertex(botvertices[(ibot + 1) % nbot]);
