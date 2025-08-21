@@ -233,7 +233,6 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs, PyObje
       Py_ssize_t pos = 0;
       while (PyDict_Next(subdict, &pos, &key, &value)) {
         PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-        const char *value_str = PyBytes_AS_STRING(value1);
         PyDict_SetItem(*dict, key, value);
       }
     }
