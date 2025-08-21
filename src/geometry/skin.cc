@@ -163,7 +163,7 @@ static void outputQuad(PolySetBuilder& builder, Vector3d const& prev0, Vector3d 
 }
 
 struct AlignmentPoint {
-  int vertex_index;
+  ptrdiff_t vertex_index;
   Vector2d intersect_point;
   double distance_from_centre;
   double distance_round_polygon{-1};
@@ -230,8 +230,8 @@ static std::vector<std::vector<AlignmentPoint>> findAlignmentPoints(
       AlignmentPoint point;
       point.distance_from_centre = -1;
       double prev_angle = *angles.rbegin();
-      int v_prev_i = vertices.size() - 1;
-      for (int v_i = 0, v_end = vertices.size(); v_i != v_end; ++v_i) {
+      ptrdiff_t v_prev_i = vertices.size() - 1;
+      for (ptrdiff_t v_i = 0, v_end = vertices.size(); v_i != v_end; ++v_i) {
         auto vc = vertices[v_i] - centre2d;
         auto vp = vertices[v_prev_i] - centre2d;
         auto centre2d_rebased = centre2d - centre2d;
@@ -297,7 +297,7 @@ static std::vector<std::shared_ptr<const Polygon2d>> interpolateVertices(
       double total_distance = 0;
       std::vector<double> dist;
       dist.push_back(0);
-      for (int vl_i = 0, vl_end = vertices.size(); vl_i != vl_end; ++vl_i) {
+      for (ptrdiff_t vl_i = 0, vl_end = vertices.size(); vl_i != vl_end; ++vl_i) {
         bool last = (vl_i + 1) == vertices.size();
         int vl_next_i = last ? 0 : (vl_i + 1);
         auto diff = vertices[vl_next_i] - vertices[vl_i];
