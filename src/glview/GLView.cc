@@ -209,7 +209,7 @@ void GLView::paintGL()
 #ifdef ENABLE_PYTHON
   if (this->handle_mode) {
     glColor3f(0, 0, 1);
-    for (const SelectedObject sel : python_result_handle) {
+    for (const SelectedObject& sel : python_result_handle) {
       showObject(sel, eyedir);
     }
   }
@@ -538,7 +538,7 @@ void GLView::showObject(const SelectedObject& obj, const Vector3d& eyedir)
     Vector3d n = (obj.pt[1] - obj.pt[0]).cross(obj.pt[2] - obj.pt[0]).normalized();
     glBegin(GL_TRIANGLES);
     glNormal3f(n[0], n[1], n[2]);
-    for (const auto pt : obj.pt) {
+    for (const auto& pt : obj.pt) {
       Vector3d px = pt + n * 1e-3;
       glVertex3d(px[0], px[1], px[2]);
     }
