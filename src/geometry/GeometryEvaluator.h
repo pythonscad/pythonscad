@@ -74,7 +74,7 @@ public:
   void add(Vector3d pt, int ind);
   void del(Vector3d pt);
   int find(Vector3d pt, double r, std::vector<Vector3d>& result, std::vector<int>& resultind,
-           int maxresult);
+           size_t maxresult);
   void dump_hier(int ind, int hier, float minx, float miny, float minz, float maxx, float maxy,
                  float maxz);
   void dump();
@@ -83,7 +83,7 @@ private:
   void add_sub(int ind, Vector3d min, Vector3d max, Vector3d pt, int ptind, int disable_local_num);
   void find_sub(int ind, double minx, double miny, double minz, double maxx, double maxy, double maxz,
                 Vector3d pt, double r, std::vector<Vector3d>& result, std::vector<int>& resultind,
-                int maxresult);
+                size_t maxresult);
   Vector3d min, max;
   std::vector<Map3DTree> items;
 };

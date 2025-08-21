@@ -774,7 +774,7 @@ void Map3D::del(Vector3d pt)
 
 void Map3D::find_sub(int ind, double minx, double miny, double minz, double maxx, double maxy,
                      double maxz, Vector3d pt, double r, std::vector<Vector3d>& result,
-                     std::vector<int>& resultind, int maxresult)
+                     std::vector<int>& resultind, size_t maxresult)
 {
   if (ind == -1) return;
   if (this->items[ind].ptlen > 0) {
@@ -831,7 +831,7 @@ void Map3D::find_sub(int ind, double minx, double miny, double minz, double maxx
   }
 }
 int Map3D::find(Vector3d pt, double r, std::vector<Vector3d>& result, std::vector<int>& resultind,
-                int maxresult)
+                size_t maxresult)
 {
   int results = 0;
   if (items.size() == 0) return results;
