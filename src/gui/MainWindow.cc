@@ -1126,7 +1126,6 @@ void MainWindow::dragPointEnd(Vector3d pt)
     const char *funcstart = strstr(ptr, dragResult.modname.c_str());
     if (funcstart != nullptr) {
       ptr = funcstart + dragResult.modname.size();
-      int par = 0;
       int par_present = 0;
       std::vector<const char *> arg_bounds;
       std::vector<char> stack;
@@ -1173,7 +1172,6 @@ void MainWindow::dragPointEnd(Vector3d pt)
       }
 
       // go thorugh all mods now
-      bool valid = true;  // check that all mods are ok
       for (auto& mod : dragResult.mods) {
         // search for named parameter
         const char *parstart, *parend;
