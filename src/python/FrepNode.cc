@@ -149,7 +149,7 @@ std::string FrepNode::toString() const
   std::vector<Tree *> tv = PyDataObjectToTree(this->expression);
   std::ostringstream stream;
   stream << "sdf( ";
-  for (int i = 0; i < tv.size(); i++) stream << *(tv[i]);
+  for (size_t i = 0; i < tv.size(); i++) stream << *(tv[i]);
   stream << ")";
   return stream.str();
 }
@@ -180,7 +180,7 @@ std::vector<CutFace> calculateEdgeFaces(const std::vector<Vector3d>& pointList,
 {
   std::vector<CutFace> edgeFaces;
   std::unordered_set<CutFace, boost::hash<CutFace> > edgeFacePresent;
-  for (int i = 0; i < polygons.size(); i++) {
+  for (size_t i = 0; i < polygons.size(); i++) {
     const IndexedFace& poly = polygons[i];
     int n = poly.size();
     if (n < 3) continue;
@@ -201,11 +201,11 @@ std::vector<CutFace> calculateEdgeFaces(const std::vector<Vector3d>& pointList,
       // find adajacent face
       int ind1 = poly[j];
       int ind2 = poly[(j + 1) % n];
-      int faceindfound = -1;
-      for (int k = 0; k < pointToFaceInds[ind1].size(); k++) {
+      size_t faceindfound = -1;
+      for (size_t k = 0; k < pointToFaceInds[ind1].size(); k++) {
         int faceind = pointToFaceInds[ind1][k];
         if (faceind == i) continue;
-        for (int l = 0; l < polygons[faceind].size(); l++) {
+        for (size_t l = 0; l < polygons[faceind].size(); l++) {
           if (polygons[faceind][l] == ind2) faceindfound = faceind;
         }
       }
@@ -294,7 +294,7 @@ int generateProgram(intList& table, std::vector<CutProgram>& program, std::vecto
   cp.d = edgeFaces[edgebest].d;
 
   // split into positive and negative branch
-  for (int i = 0; i < validFaces.size(); i++) {
+  for (size_t i = 0; i < validFaces.size(); i++) {
     switch (table[edgebest * facesLen + validFaces[i]]) {
     case 1: posFaces.push_back(validFaces[i]); break;
     case 0:
@@ -309,8 +309,8 @@ int generateProgram(intList& table, std::vector<CutProgram>& program, std::vecto
   program.push_back(cp);
 
   if (posFaces.size() == validFaces.size()) {
-    for (i = 0; i < edgeFaces.size(); i++) {
-      for (j = 0; j < validFaces.size(); j++) {
+    for (size_t i = 0; i < edgeFaces.size(); i++) {
+      for (size_t j = 0; j < validFaces.size(); j++) {
         switch (table[i * facesLen + validFaces[j]]) {
         case 1:  printf("+"); break;
         case 0:  printf("/"); break;
@@ -320,9 +320,9 @@ int generateProgram(intList& table, std::vector<CutProgram>& program, std::vecto
       printf("\n");
     }
     printf("faces are \n");
-    for (i = 0; i < validFaces.size(); i++) {
+    for (size_t i = 0; i < validFaces.size(); i++) {
       int faceind = validFaces[i];
-      for (j = 0; j < faces[faceind].size(); j++) {
+      for (size_t j = 0; j < faces[faceind].size(); j++) {
         printf("%d ", faces[faceind][j]);
       }
       printf("\n");
@@ -456,10 +456,10 @@ PyObject *ifrep(const std::shared_ptr<const PolySet>& ps)
   std::vector<intList> pointToFaceInds;  //  mapping pt_ind -> list of polygon inds which use it
 
   intList emptyList;
-  for (int i = 0; i < ps->vertices.size(); i++) pointToFaceInds.push_back(emptyList);
-  for (int i = 0; i < ps->indices.size(); i++) {
+  for (size_t i = 0; i < ps->vertices.size(); i++) pointToFaceInds.push_back(emptyList);
+  for (size_t i = 0; i < ps->indices.size(); i++) {
     IndexedFace pol = ps->indices[i];
-    for (int j = 0; j < pol.size(); j++) {
+    for (size_t j = 0; j < pol.size(); j++) {
       pointToFaceInds[pol[j]].push_back(i);
     }
   }
@@ -474,13 +474,13 @@ PyObject *ifrep(const std::shared_ptr<const PolySet>& ps)
   printf("%lu EdgeFaces generated\n", edgeFaces.size());
 
   std::vector<int> table;                     // x(0) dimenstion faces y(1) dimenions edgefas
-  for (int i = 0; i < edgeFaces.size(); i++)  // create table
+  for (size_t i = 0; i < edgeFaces.size(); i++)  // create table
   {
     CutFace& ef = edgeFaces[i];
-    for (int j = 0; j < ps->indices.size(); j++) {
+    for (size_t j = 0; j < ps->indices.size(); j++) {
       const IndexedFace& poly = ps->indices[j];
       int poscount = 0, negcount = 0;
-      for (int k = 0; k < poly.size(); k++) {
+      for (size_t k = 0; k < poly.size(); k++) {
         Vector3d pt = ps->vertices[poly[k]];
         double e = ef.a * pt[0] + ef.b * pt[1] + ef.c * pt[2] + ef.d;
         if (e > 0.00001) poscount++;
@@ -494,13 +494,13 @@ PyObject *ifrep(const std::shared_ptr<const PolySet>& ps)
   printf("Table generated\n");
 
   ProgramState state;
-  for (int i = 0; i < ps->indices.size(); i++) state.validFaces.push_back(i);
+  for (size_t i = 0; i < ps->indices.size(); i++) state.validFaces.push_back(i);
   state.state = 0;
   state.resultind = 0x80000000;
   programStack.push_back(state);  // initially all the work
   std::vector<CutProgram> program;
-  for (int i = 0; i < program.size(); i++) {
-    printf("%d\t%.3f\t%.3f\t%.3f\t%.3f\tP:%d\tN:%d\n", i, program[i].a, program[i].b, program[i].c,
+  for (size_t i = 0; i < program.size(); i++) {
+    printf("%lu\t%.3f\t%.3f\t%.3f\t%.3f\tP:%d\tN:%d\n", i, program[i].a, program[i].b, program[i].c,
            program[i].d, program[i].posbranch, program[i].negbranch);
   }
   /*

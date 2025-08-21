@@ -358,7 +358,7 @@ PyObject *python_lv_print(PyObject *self, PyObject *args, PyObject *kwargs)
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", kwlist, &PyDataType, &arg)) return NULL;
   std::vector<libfive::Tree *> tv = PyDataObjectToTree(arg);
-  for (int i = 0; i < tv.size(); i++) {
+  for (size_t i = 0; i < tv.size(); i++) {
     //    printf("tree %d: %s\n",i,libfive_tree_print(tv[i]));
   }
   return Py_None;
