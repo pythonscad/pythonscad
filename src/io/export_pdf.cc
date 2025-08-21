@@ -213,14 +213,14 @@ void draw_geom(const std::shared_ptr<const PolySet>& ps, cairo_t *cr, double pdf
     double yofs = (plot_s.paperheight - sheet.max[1] + sheet.min[1]) / 2.0 - sheet.min[1];
 
     cairo_set_source_rgba(cr, 0, 0, 0, 1);
-    for (int i = 0; i < sheet.lines.size(); i++) {
+    for (size_t i = 0; i < sheet.lines.size(); i++) {
       if (sheet.lines[i].dashed) cairo_set_dash(cr, dashes, 2, 0);
       else cairo_set_dash(cr, solid, 2, 0);
       cairo_move_to(cr, (xofs + sheet.lines[i].p1[0]) * factor, (yofs + sheet.lines[i].p1[1]) * factor);
       cairo_line_to(cr, (xofs + sheet.lines[i].p2[0]) * factor, (yofs + sheet.lines[i].p2[1]) * factor);
       cairo_stroke(cr);
     }
-    for (int i = 0; i < sheet.label.size(); i++) {
+    for (size_t i = 0; i < sheet.label.size(); i++) {
       draw_text(sheet.label[i].text, cr, (xofs + sheet.label[i].pt[0]) * factor,
                 (yofs + sheet.label[i].pt[1]) * factor, sheet.label[i].size,
                 sheet.label[i].rot);  // TODO fix  rot

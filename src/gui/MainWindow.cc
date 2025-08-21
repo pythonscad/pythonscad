@@ -1166,7 +1166,7 @@ void MainWindow::dragPointEnd(Vector3d pt)
       } while (stack.size() > 0 || !par_present);
       // extract all arguments
       std::vector<std::string> args;
-      for (int i = 0; i < arg_bounds.size(); i += 2) {
+      for (size_t i = 0; i < arg_bounds.size(); i += 2) {
         std::string arg =
           sourcecode.substr(arg_bounds[i] - sourcecode_c, arg_bounds[i + 1] - arg_bounds[i]);
         args.push_back(arg);
@@ -1178,7 +1178,7 @@ void MainWindow::dragPointEnd(Vector3d pt)
         // search for named parameter
         const char *parstart, *parend;
         int parindex = -1;
-        for (int i = 0; i < args.size(); i++) {
+        for (size_t i = 0; i < args.size(); i++) {
           const char *arg_c = args[i].c_str();
           const char *tmp = strchr(arg_c, '=');
           if (tmp != nullptr && strncmp(arg_c, mod.name.c_str(), tmp - arg_c) == 0) {

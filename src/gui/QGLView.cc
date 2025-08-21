@@ -659,7 +659,7 @@ std::shared_ptr<SelectedObject> QGLView::findObject(int mouse_x, int mouse_y)
     double dist_nearest = NAN;
     std::string dist_name;
     int found_ind = -1;
-    for (int i = 0; i < python_result_handle.size(); i++) {
+    for (size_t i = 0; i < python_result_handle.size(); i++) {
       SelectedObject dist =
         calculateLinePointDistance(near_pt, far_pt, python_result_handle[i].pt[0], dist_near);
       double dist_pt = (dist.pt[0] - dist.pt[1]).norm();
