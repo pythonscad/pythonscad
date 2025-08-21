@@ -124,7 +124,6 @@ std::unique_ptr<const Geometry> FrepNode::createGeometry() const
 #else
     mesh = Mesh::render(*tree[0], reg, settings);
     if (mesh != nullptr) {
-      libfive_tri t;
       for (const auto& t : mesh->branes) {
         builder.beginPolygon(3);
         for (int i = 0; i < 3; i++) {
@@ -500,8 +499,6 @@ PyObject *ifrep(const std::shared_ptr<const PolySet>& ps)
   state.resultind = 0x80000000;
   programStack.push_back(state);  // initially all the work
   std::vector<CutProgram> program;
-  int startind = generateProgramFlat(table, program, edgeFaces, ps->indices,
-                                     programStack);  // create recursive program
   for (int i = 0; i < program.size(); i++) {
     printf("%d\t%.3f\t%.3f\t%.3f\t%.3f\tP:%d\tN:%d\n", i, program[i].a, program[i].b, program[i].c,
            program[i].d, program[i].posbranch, program[i].negbranch);
