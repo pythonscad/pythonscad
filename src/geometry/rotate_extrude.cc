@@ -251,7 +251,7 @@ std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Pol
   // now create a fragment splitting plan
   int splits = ceil(node.angle / 300.0);
   fragments = num_sections;
-  int fragstart = 0, fragend;
+  size_t fragstart = 0, fragend;
   std::unique_ptr<ManifoldGeometry> result = nullptr;
 
   for (int i = 0; i < splits; i++) {
