@@ -26,7 +26,9 @@ enum CSGMode {
   CSGMODE_HIGHLIGHT = 0x03,
   CSGMODE_HIGHLIGHT_DIFFERENCE = CSGMODE_HIGHLIGHT | CSGMODE_DIFFERENCE_FLAG
 };
-
+CSGMode getCsgMode(const bool highlight_mode, const bool background_mode,
+                   const OpenSCADOperator type = OpenSCADOperator::UNION);
+                   
 }  // namespace RendererUtils
 
 class Renderer
