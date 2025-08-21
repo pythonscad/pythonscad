@@ -312,7 +312,7 @@ std::shared_ptr<SelectedObject> PolySetRenderer::findModelObject(const Vector3d&
   int ind_nearest = -1;
   std::vector<Vector3d> pts_nearest;
   const auto find_nearest_point = [&](const std::vector<Vector3d>& vertices) {
-    for (int i = 0; i < vertices.size(); i++) {
+    for (size_t i = 0; i < vertices.size(); i++) {
       const Vector3d& pt = vertices[i];
       SelectedObject ruler = calculateLinePointDistance(near_pt, far_pt, pt, dist_near);
       double dist_pt = (ruler.pt[0] - ruler.pt[1]).norm();
@@ -342,7 +342,7 @@ std::shared_ptr<SelectedObject> PolySetRenderer::findModelObject(const Vector3d&
   const auto find_nearest_line = [&](const std::vector<Vector3d>& vertices,
                                      const PolygonIndices& indices) {
     for (const auto& poly : indices) {
-      for (int i = 0; i < poly.size(); i++) {
+      for (size_t i = 0; i < poly.size(); i++) {
         int ind1 = poly[i];
         int ind2 = poly[(i + 1) % poly.size()];
         double dist_lat;
@@ -377,7 +377,7 @@ std::shared_ptr<SelectedObject> PolySetRenderer::findModelObject(const Vector3d&
     for (const auto& poly : indices) {
       if (poly.size() < 3) continue;
       // assume polygon is convex
-      for (int i = 0; i < poly.size() - 2; i++) {
+      for (size_t i = 0; i < poly.size() - 2; i++) {
         int ind1 = poly[0];
         int ind2 = poly[i + 1];
         int ind3 = poly[i + 2];

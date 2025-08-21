@@ -484,7 +484,7 @@ void export_3mf(const std::vector<struct Export3mfPartInfo>& infos, std::ostream
                     .info = exportInfo,
                     .options = options3mf};
 
-  for (int i = 0; i < infos.size(); i++) {
+  for (size_t i = 0; i < infos.size(); i++) {
     if (!append_3mf(infos[i].geom, infos[i], ctx)) {
       if (model) lib3mf_release(model);
       return;
