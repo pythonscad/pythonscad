@@ -1181,47 +1181,6 @@ PyMODINIT_FUNC PyInit_PyOpenSCAD(void)
   return m;
 }
 
-// ----------------------------------------------
-// IPython Interpreter side
-// ----------------------------------------------
-
-static PyStatus pymain_init_ipython(void)
-{
-  PyStatus status;
-
-  //    if (_PyStatus_EXCEPTION(status)) {
-  //        return status;
-  //    }
-
-  PyPreConfig preconfig;
-  PyPreConfig_InitPythonConfig(&preconfig);
-  //    status = _Py_PreInitializeFromPyArgv(&preconfig, args);
-  //    if (_PyStatus_EXCEPTION(status)) {
-  //        return status;
-  //    }
-
-  PyConfig config;
-  PyConfig_InitPythonConfig(&config);
-
-  //    if (args->use_bytes_argv) {
-  //        status = PyConfig_SetBytesArgv(&config, args->argc, args->bytes_argv);
-  //    }
-  //    else {
-  //        status = PyConfig_SetArgv(&config, args->argc, args->wchar_argv);
-  //    }
-  //    if (_PyStatus_EXCEPTION(status)) {
-  //        goto done;
-  //    }
-
-  status = Py_InitializeFromConfig(&config);
-  //    if (_PyStatus_EXCEPTION(status)) {
-  //        goto done;
-  //    }
-  //    status = 0; // PyStatus_Ok;
-
-  PyConfig_Clear(&config);
-  return status;
-}
 
 /* Write an exitcode into *exitcode and return 1 if we have to exit Python.
    Return 0 otherwise. */
@@ -1265,21 +1224,6 @@ static void pymain_repl_ipython(int *exitcode)
   PyCompilerFlags cf = _PyCompilerFlags_INIT;
 
   PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
-}
-
-static void pymain_run_python_ipython(int *exitcode)
-{
-  PyObject *main_importer_path = NULL;
-  //    PyInterpreterState *interp = PyInterpreterState_Get();
-
-  pymain_repl_ipython(exitcode);
-  goto done;
-
-  //    *exitcode = pymain_exit_err_print();
-
-done:
-  //    _PyInterpreterState_SetNotRunningMain(interp);
-  Py_XDECREF(main_importer_path);
 }
 
 int Py_RunMain_ipython(void)
