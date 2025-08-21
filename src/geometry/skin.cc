@@ -258,8 +258,6 @@ static std::vector<std::vector<AlignmentPoint>> findAlignmentPoints(
             point.distance_from_centre = distance_from_centre;
             point.intersect_point = intersect_point + centre2d;
             point.vertex_index = v_prev_i;
-
-            auto relative_point = point.intersect_point - centre2d;
           }
         }
         v_prev_i = v_i;
