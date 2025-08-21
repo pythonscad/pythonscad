@@ -1217,7 +1217,6 @@ void MainWindow::dragPointEnd(Vector3d pt)
           } while (arrptr < parend);
           if (arrstart == nullptr) {
             printf("Arr index not found!\n");
-            valid = false;
             continue;
           }
           parstart = arrstart;
@@ -1236,7 +1235,7 @@ void MainWindow::dragPointEnd(Vector3d pt)
           activeEditor->setText(QString(sourcecode_mod.c_str()));
           return;
 
-        } else valid = false;
+        }
       }  // all mnods
     } else ptr = nullptr;  // no more function name
   }
