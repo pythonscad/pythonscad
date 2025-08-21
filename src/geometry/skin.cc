@@ -260,7 +260,6 @@ static std::vector<std::vector<AlignmentPoint>> findAlignmentPoints(
             point.vertex_index = v_prev_i;
 
             auto relative_point = point.intersect_point - centre2d;
-            double angle = atan2(relative_point[1], relative_point[0]) / (M_PI * 2 / 360);
           }
         }
         v_prev_i = v_i;
@@ -282,7 +281,6 @@ static std::vector<std::shared_ptr<const Polygon2d>> interpolateVertices(
 {
   std::vector<std::shared_ptr<Polygon2d>> slicesadj;
   for (auto const& slice : slicesin) {
-    Polygon2d const& polyin = *slice;
     auto polyadj = std::make_shared<Polygon2d>();
     slicesadj.push_back(polyadj);
   }
@@ -402,7 +400,6 @@ static std::vector<std::shared_ptr<const Polygon2d>> spinPolygons(
 {
   std::vector<std::shared_ptr<Polygon2d>> slicesadj;
   for (auto const& slice : slicesin) {
-    Polygon2d const& polyin = *slice;
     auto polyadj = std::make_shared<Polygon2d>();
     slicesadj.push_back(polyadj);
   }

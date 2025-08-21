@@ -151,7 +151,6 @@ PyObject *python_cube(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   if (size != NULL) {
-    int flags = 0;
     if (python_vectorval(size, 3, 3, &(node->dim[0]), &(node->dim[1]), &(node->dim[2]), nullptr,
                          &(node->dragflags))) {
       PyErr_SetString(PyExc_TypeError, "Invalid Cube dimensions");
@@ -464,7 +463,6 @@ std::unique_ptr<const Geometry> sphereCreateFuncGeometry(void *funcptr, double f
       auto& tri = ps->indices[i];
       if (tri[0] == tri[1] || tri[0] == tri[2] || tri[1] == tri[2]) continue;
       for (int j = 0; j < 3; j++) {
-        int debug = 0;
         int i1 = tri[j];
         int i2 = tri[(j + 1) % 3];
         double l1 = (ps->vertices[i1] - ps->vertices[i2]).norm();
@@ -1647,8 +1645,6 @@ PyObject *python_math_sub2(PyObject *self, PyObject *args, PyObject *kwargs, int
 {
   int dragflags = 0;
   char *kwlist[] = {"vec1", "vec2", NULL};
-  double arg;
-  double result = 0;
   PyObject *obj1 = nullptr;
   PyObject *obj2 = nullptr;
   Vector3d vec31(0, 0, 0);
@@ -1663,7 +1659,6 @@ PyObject *python_math_sub2(PyObject *self, PyObject *args, PyObject *kwargs, int
   switch (mode) {
   case 0: return PyFloat_FromDouble(vec31.dot(vec32)); break;
   case 1:
-    Vector3d res = vec31.cross(vec32);
     return python_fromvector(vec31.cross(vec32));
     break;
   }
@@ -1714,7 +1709,6 @@ PyObject *python_norm(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   int dragflags = 0;
   char *kwlist[] = {"vec", NULL};
-  double arg;
   double result = 0;
   PyObject *obj = nullptr;
   Vector3d vec3(0, 0, 0);
@@ -3478,7 +3472,6 @@ PyObject *python_concat(PyObject *self, PyObject *args, PyObject *kwargs)
   PyObject *obj;
   PyObject *obj1;
   PyObject *child_dict = nullptr;
-  PyObject *dummy_dict = nullptr;
   std::shared_ptr<AbstractNode> child;
   PyTypeObject *type = &PyOpenSCADType;
   // dont do union in any circumstance
@@ -3797,7 +3790,6 @@ PyObject *python_oo_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, Op
     Py_ssize_t pos = 0;
     while (PyDict_Next(dict, &pos, &key, &value)) {
       PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-      const char *value_str = PyBytes_AS_STRING(value1);
       PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
     }
   }
@@ -4054,8 +4046,6 @@ PyObject *python_minkowski(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE
   std::shared_ptr<AbstractNode> child;
-  int i;
-  int n;
   int convexity = 2;
 
   auto node = std::make_shared<CgalAdvNode>(instance, CgalAdvType::MINKOWSKI);
@@ -4797,7 +4787,6 @@ std::vector<std::string> nimport_downloaded;
 extern int curl_download(std::string url, std::string path);
 PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  static bool called_already = false;
   char *kwlist[] = {"url", NULL};
   const char *c_url = nullptr;
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist, &c_url)) {
@@ -5137,7 +5126,6 @@ PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs, int
 
 PyObject *python_oo_dict(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = {NULL};
   PyObject *dict = ((PyOpenSCADObject *)self)->dict;
   Py_INCREF(dict);
   return dict;

@@ -3320,7 +3320,6 @@ void MainWindow::actionLoadShareDesignSelect()
 {
   CURL *curl;
   CURLcode res;
-  int success = 0;
   int selected = loadShareDesignDialog->list_design->currentRow();
   if (selected < 0 || selected >= loadShareDesignDatabase.size()) return;
   std::string url = "https://pythonscad.org/shared_designs/" + loadShareDesignDatabase[selected][2];
@@ -3335,7 +3334,7 @@ void MainWindow::actionLoadShareDesignSelect()
     /* Check for errors */
     if (res != CURLE_OK) {
       fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-    } else success = 1;
+    }
 
     /* always cleanup */
     curl_easy_cleanup(curl);
@@ -3349,7 +3348,6 @@ void MainWindow::actionLoadShareDesign()
 {
   CURL *curl;
   CURLcode res;
-  int success = 0;
   curl = curl_easy_init();
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, "https://pythonscad.org/list_design.php");
@@ -3361,7 +3359,7 @@ void MainWindow::actionLoadShareDesign()
     /* Check for errors */
     if (res != CURLE_OK) {
       fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-    } else success = 1;
+    }
 
     /* always cleanup */
     curl_easy_cleanup(curl);

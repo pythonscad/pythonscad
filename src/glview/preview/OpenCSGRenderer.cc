@@ -211,7 +211,6 @@ void OpenCSGRenderer::createCSGVBOProducts(const CSGProducts& products, bool hig
     for (const auto& csgobj : product.intersections) {
       if (csgobj.leaf->polyset) {
         const Color4f& c = csgobj.leaf->color;
-        const int& ti = csgobj.leaf->textureind;
         const auto csgmode = RendererUtils::getCsgMode(highlight_mode, background_mode);
 
         ColorMode colormode = ColorMode::NONE;
@@ -287,7 +286,6 @@ void OpenCSGRenderer::createCSGVBOProducts(const CSGProducts& products, bool hig
     for (const auto& csgobj : product.subtractions) {
       if (csgobj.leaf->polyset) {
         const Color4f& c = csgobj.leaf->color;
-        const int& ti = csgobj.leaf->textureind;
         const auto csgmode =
           RendererUtils::getCsgMode(highlight_mode, background_mode, OpenSCADOperator::DIFFERENCE);
 
