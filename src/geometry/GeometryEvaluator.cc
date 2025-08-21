@@ -164,7 +164,6 @@ std::vector<Vector4d> calcTriangleNormals(const std::vector<Vector3d>& vertices,
 bool pointInPolygon(const std::vector<Vector3d>& vert, const IndexedFace& bnd, int ptind)
 {
   int i, n;
-  double dist;
   n = bnd.size();
   int cuts = 0;
   Vector3d p1, p2;
@@ -467,9 +466,6 @@ static indexedFaceList mergeTrianglesSub(const std::vector<IndexedFace>& triangl
       int last = poly[n - 1], cur = poly[0], next;
       for (int i = 0; i < n; i++) {
         next = poly[(i + 1) % n];
-        Vector3d p0 = vert[last];
-        Vector3d p1 = vert[cur];
-        Vector3d p2 = vert[next];
         if (1) {  // (p2-p1).cross(p1-p0).norm() > 0.00001) {
                   // TODO enable again, need partner also to remove
           poly_new.push_back(cur);
@@ -982,7 +978,6 @@ bool offset3D_inside(Offset3D_CornerContext& cxt, const Vector3d& pt, double del
   for (int i = 0; i < n; i++) {
     Vector2d p1 = cxt.flatloop[i];
     Vector2d p2 = cxt.flatloop[(i + 1) % n];
-    double x;
     Vector2d dir = (p2 - p1).normalized();
     Vector2d dir_(-dir[1], dir[0]);
 
