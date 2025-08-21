@@ -278,7 +278,7 @@ static std::vector<std::shared_ptr<const Polygon2d>> interpolateVertices(
   std::vector<std::vector<AlignmentPoint>>& alignmentPoints)
 {
   std::vector<std::shared_ptr<Polygon2d>> slicesadj;
-  for (auto const& slice : slicesin) {
+  for (auto const& _ : slicesin) {
     auto polyadj = std::make_shared<Polygon2d>();
     slicesadj.push_back(polyadj);
   }
@@ -397,7 +397,7 @@ static std::vector<std::shared_ptr<const Polygon2d>> spinPolygons(
   std::vector<std::vector<AlignmentPoint>>& alignmentPoints)
 {
   std::vector<std::shared_ptr<Polygon2d>> slicesadj;
-  for (auto const& slice : slicesin) {
+  for (auto const& _ : slicesin) {
     auto polyadj = std::make_shared<Polygon2d>();
     slicesadj.push_back(polyadj);
   }
