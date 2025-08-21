@@ -459,7 +459,7 @@ std::unique_ptr<const Geometry> sphereCreateFuncGeometry(void *funcptr, double f
   do {
     done = 0;
     auto edge_db = createEdgeDb(ps->indices);
-    for (int i = 0; i < ps->indices.size(); i++) {
+    for (size_t i = 0; i < ps->indices.size(); i++) {
       auto& tri = ps->indices[i];
       if (tri[0] == tri[1] || tri[0] == tri[2] || tri[1] == tri[2]) continue;
       for (int j = 0; j < 3; j++) {
@@ -511,7 +511,7 @@ std::unique_ptr<const Geometry> sphereCreateFuncGeometry(void *funcptr, double f
       }
     }
     printf("\ndone=%d\n", done);
-    for (int i = 0; i < ps->indices.size(); i++) {
+    for (size_t i = 0; i < ps->indices.size(); i++) {
       auto& tri = ps->indices[i];
       if (tri[0] == tri[1] && tri[0] == tri[2]) {
         ps->indices.erase(ps->indices.begin() + i);
@@ -2562,20 +2562,20 @@ PyObject *python_separate_core(PyObject *obj)
     std::vector<intList> pt2tri;
 
     std::vector<int> vert_db;
-    for (int i = 0; i < ps->vertices.size(); i++) {
+    for (size_t i = 0; i < ps->vertices.size(); i++) {
       vert_db.push_back(-1);
       pt2tri.push_back(empty_list);
     }
 
     std::vector<int> tri_db;
-    for (int i = 0; i < ps->indices.size(); i++) {
+    for (size_t i = 0; i < ps->indices.size(); i++) {
       tri_db.push_back(-1);
       for (auto ind : ps->indices[i]) pt2tri[ind].push_back(i);
     }
 
     // now sort for objects
     int obj_num = 0;
-    for (int i = 0; i < vert_db.size(); i++) {
+    for (size_t i = 0; i < vert_db.size(); i++) {
       if (vert_db[i] != -1) continue;
       std::vector<int> vert_todo;
       vert_todo.push_back(i);
@@ -2603,13 +2603,13 @@ PyObject *python_separate_core(PyObject *obj)
       auto node = std::make_shared<PolyhedronNode>(instance);
       node->convexity = 2;
       std::vector<int> vert_map;
-      for (int j = 0; j < ps->vertices.size(); j++) {
+      for (size_t j = 0; j < ps->vertices.size(); j++) {
         if (vert_db[j] == i) {
           vert_map.push_back(node->points.size());
           node->points.push_back(ps->vertices[j]);
         } else vert_map.push_back(-1);
       }
-      for (int j = 0; j < ps->indices.size(); j++) {
+      for (size_t j = 0; j < ps->indices.size(); j++) {
         if (tri_db[j] == i) {
           IndexedFace face_map;
           for (auto ind : ps->indices[j]) {

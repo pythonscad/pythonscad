@@ -3318,7 +3318,7 @@ void MainWindow::actionLoadShareDesignSelect()
 {
   CURL *curl;
   CURLcode res;
-  int selected = loadShareDesignDialog->list_design->currentRow();
+  size_t selected = loadShareDesignDialog->list_design->currentRow();
   if (selected < 0 || selected >= loadShareDesignDatabase.size()) return;
   std::string url = "https://pythonscad.org/shared_designs/" + loadShareDesignDatabase[selected][2];
   curl = curl_easy_init();
@@ -3370,7 +3370,7 @@ void MainWindow::actionLoadShareDesign()
   loadShareDesignDatabase.clear();
   int in_string = 0;
   int level = 0;
-  for (int i = 0; i < actionLoadSharedDesignData.size(); i++) {
+  for (size_t i = 0; i < actionLoadSharedDesignData.size(); i++) {
     switch (actionLoadSharedDesignData[i]) {
     case '[': level++; break;
     case ']':
