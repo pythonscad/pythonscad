@@ -49,7 +49,7 @@ static bool sanityCheckNoNullSlices(const SkinNode& node,
                                     std::vector<std::shared_ptr<const Polygon2d>> const& slices,
                                     const Location& loc, std::string const& docpath)
 {
-  for (int i = 0; i != slices.size(); ++i) {
+  for (size_t i = 0; i != slices.size(); ++i) {
     if (slices[i] == nullptr) {
       LOG(message_group::Error, loc, docpath, "%1$s has a null slice at index %2$d", node.name(), i);
       return false;
@@ -63,7 +63,7 @@ static bool sanityCheckContours(const SkinNode& node,
                                 std::vector<std::shared_ptr<const Polygon2d>> const& slices,
                                 const Location& loc, std::string const& docpath)
 {
-  for (int i = 1; i < slices.size(); i++) {
+  for (size_t i = 1; i < slices.size(); i++) {
     bool match = slices[i]->untransformedOutlines().size() == slices[0]->untransformedOutlines().size();
     if (!match) {
       LOG(message_group::Error, loc, docpath,
@@ -84,9 +84,9 @@ static bool sanityCheckContoursAndVertices(const SkinNode& node,
                                            std::vector<std::shared_ptr<const Polygon2d>> const& slices,
                                            const Location& loc, std::string const& docpath)
 {
-  for (int i = 1; i < slices.size(); i++) {
+  for (size_t i = 1; i < slices.size(); i++) {
     bool match = slices[i]->untransformedOutlines().size() == slices[0]->untransformedOutlines().size();
-    for (int p = 0; match && p < slices[i]->untransformedOutlines().size(); p++)
+    for (size_t p = 0; match && p < slices[i]->untransformedOutlines().size(); p++)
       match = slices[i]->untransformedOutlines()[p].vertices.size() ==
               slices[0]->untransformedOutlines()[p].vertices.size();
     if (!match) {
@@ -349,8 +349,8 @@ static std::vector<std::shared_ptr<const Polygon2d>> interpolateVertices(
 
       Outline2d outlineadj;
 
-      int vl_i = 0;
-      int vl_next_i = 1;
+      size_t vl_i = 0;
+      size_t vl_next_i = 1;
       double distance = 0;
       auto diff = vertices[vl_next_i] - vertices[vl_i];
       double distance_next = sqrt(pow(diff[0], 2) + pow(diff[1], 2));
@@ -457,10 +457,10 @@ static std::vector<std::shared_ptr<const Polygon2d>> segmentVertices(
       std::vector<Outline2d> const& outlinesin = polyin.untransformedOutlines();
       for (auto const& outlinein : outlinesin) {
         Outline2d outlineadj;
-        for (int i = 1; i <= outlinein.vertices.size(); ++i) {
+        for (size_t i = 1; i <= outlinein.vertices.size(); ++i) {
           auto const& v0 = outlinein.vertices[i - 1];
           auto const& v1 = outlinein.vertices[i != outlinein.vertices.size() ? i : 0];
-          for (int i = 0; i != segments_per_side; ++i) {
+          for (size_t i = 0; i != segments_per_side; ++i) {
             auto v0_adj = v0 + (i * (v1 - v0)) / segments_per_side;
             outlineadj.vertices.push_back(v0_adj);
           }

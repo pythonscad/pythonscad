@@ -249,12 +249,12 @@ std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Pol
   if (safe) return rotatePolygonSub(node, poly, num_sections, 0, num_sections, flip_faces);
 
   // now create a fragment splitting plan
-  size_t splits = ceil(node.angle / 300.0);
+  int splits = ceil(node.angle / 300.0);
   fragments = num_sections;
   int fragstart = 0, fragend;
   std::unique_ptr<ManifoldGeometry> result = nullptr;
 
-  for (size_t i = 0; i < splits; i++) {
+  for (int i = 0; i < splits; i++) {
     fragend = fragstart + (fragments / splits) + 1;
     if (fragend > fragments) fragend = fragments;
     std::unique_ptr<Geometry> part_u =
