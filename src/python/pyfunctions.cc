@@ -4832,7 +4832,7 @@ void python_str_sub(std::ostringstream& stream, const std::shared_ptr<AbstractNo
     break;
   default:
     stream << "{\n";
-    for (const auto child : node->children) {
+    for (const auto& child : node->children) {
       python_str_sub(stream, child, ident + 1);
     }
     for (int i = 0; i < ident; i++) stream << "  ";
