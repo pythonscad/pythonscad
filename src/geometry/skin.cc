@@ -297,8 +297,8 @@ static std::vector<std::shared_ptr<const Polygon2d>> interpolateVertices(
       double total_distance = 0;
       std::vector<double> dist;
       dist.push_back(0);
-      for (ptrdiff_t vl_i = 0, vl_end = vertices.size(); vl_i != vl_end; ++vl_i) {
-        bool last = (vl_i + 1) == vertices.size();
+      for (ptrdiff_t vl_i = 0, vl_end = static_cast<ptrdiff_t>(vertices.size()); vl_i != vl_end; ++vl_i) {
+        bool last = (vl_i + 1) == static_cast<ptrdiff_t>(vertices.size());
         int vl_next_i = last ? 0 : (vl_i + 1);
         auto diff = vertices[vl_next_i] - vertices[vl_i];
 
