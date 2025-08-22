@@ -720,7 +720,7 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
         }
       } else {
         builder.beginPolygon(topvertices.size());  // bottom
-        for (size_t i = topvertices.size() - 1; i >= 0; i--) builder.addVertex(topvertices[i]);
+        for (ptrdiff_t i = topvertices.size() - 1; i >= 0; i--) builder.addVertex(topvertices[i]);
         builder.endPolygon();
       }
       botvertices = topvertices;
