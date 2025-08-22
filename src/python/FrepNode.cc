@@ -180,7 +180,7 @@ std::vector<CutFace> calculateEdgeFaces(const std::vector<Vector3d>& pointList,
 {
   std::vector<CutFace> edgeFaces;
   std::unordered_set<CutFace, boost::hash<CutFace> > edgeFacePresent;
-  for (size_t i = 0; i < polygons.size(); i++) {
+  for (int i = 0; i < static_cast<int>(polygons.size()); i++) {
     const IndexedFace& poly = polygons[i];
     int n = poly.size();
     if (n < 3) continue;
@@ -201,7 +201,7 @@ std::vector<CutFace> calculateEdgeFaces(const std::vector<Vector3d>& pointList,
       // find adajacent face
       int ind1 = poly[j];
       int ind2 = poly[(j + 1) % n];
-      size_t faceindfound = -1;
+      int faceindfound = -1;
       for (size_t k = 0; k < pointToFaceInds[ind1].size(); k++) {
         int faceind = pointToFaceInds[ind1][k];
         if (faceind == i) continue;
@@ -372,7 +372,7 @@ int generateProgramFlat(intList& table, std::vector<CutProgram>& program,
 
     int result =
       generateProgram(table, program, edgeFaces, faces, state.validFaces);  // create recursive program
-    if (state.resultind == 0x80000000) continue;
+    if (state.resultind == static_cast<int>(0x80000000)) continue;
     if (state.resultind >= 0) program[state.resultind].posbranch = result;
     else program[~(state.resultind)].negbranch = result;
   }
