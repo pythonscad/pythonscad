@@ -758,7 +758,7 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   if (colors != NULL && PyList_Check(colors)) {
-    if (PyList_Size(colors) != node->faces.size()) {
+    if (static_cast<size_t>(PyList_Size(colors)) != node->faces.size()) {
       PyErr_SetString(PyExc_TypeError, "when specified must match number of faces");
       return NULL;
     }
@@ -2752,14 +2752,14 @@ PyObject *python_faces_core(PyObject *obj, bool tessellate)
     if (tessellate == true) {
       ps = PolySetUtils::tessellate_faces(*ps);
       inds = ps->indices;
-      for (int i = 0; i < inds.size(); i++) face_parents.push_back(-1);
+      for (size_t i = 0; i < inds.size(); i++) face_parents.push_back(-1);
     } else {
       std::vector<Vector4d> normals, new_normals;
       normals = calcTriangleNormals(ps->vertices, ps->indices);
       inds = mergeTriangles(ps->indices, normals, new_normals, face_parents, ps->vertices);
     }
     int resultlen = 0, resultiter = 0;
-    for (int i = 0; i < face_parents.size(); i++)
+    for (size_t i = 0; i < face_parents.size(); i++)
       if (face_parents[i] == -1) resultlen++;
 
     PyObject *pyth_faces = PyList_New(resultlen);
@@ -2821,7 +2821,7 @@ PyObject *python_faces_core(PyObject *obj, bool tessellate)
 
       // check if there are holes
       for (size_t k = 0; k < inds.size(); k++) {
-        if (face_parents[k] == j) {
+        if (face_parents[k] == static_cast<int>(j)) {
           auto& hole = inds[k];
 
           std::vector<size_t> path;
@@ -3481,7 +3481,7 @@ PyObject *python_concat(PyObject *self, PyObject *args, PyObject *kwargs)
       type = PyOpenSCADObjectType(obj);
       node->children.push_back(((PyOpenSCADObject *)obj)->node);
     } else if (PyList_Check(obj)) {
-      for (int j = 0; j < PyList_Size(obj); j++) {
+      for (ptrdiff_t j = 0; j < PyList_Size(obj); j++) {
         obj1 = PyList_GetItem(obj, j);
         if (PyObject_IsInstance(obj1, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
           type = PyOpenSCADObjectType(obj1);
