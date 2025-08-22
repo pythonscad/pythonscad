@@ -232,7 +232,6 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs, PyObje
       PyObject *key, *value;
       Py_ssize_t pos = 0;
       while (PyDict_Next(subdict, &pos, &key, &value)) {
-        PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
         PyDict_SetItem(*dict, key, value);
       }
     }
@@ -1179,51 +1178,6 @@ PyMODINIT_FUNC PyInit_PyOpenSCAD(void)
   Py_INCREF(&PyOpenSCADType);
   PyModule_AddObject(m, "Openscad", (PyObject *)&PyOpenSCADType);
   return m;
-}
-
-
-/* Write an exitcode into *exitcode and return 1 if we have to exit Python.
-   Return 0 otherwise. */
-static int pymain_run_interactive_hook_ipython(int *exitcode)
-{
-  PyObject *sys, *hook, *result;
-  sys = PyImport_ImportModule("sys");
-  if (sys == NULL) {
-    goto error;
-  }
-
-  hook = PyObject_GetAttrString(sys, "__interactivehook__");
-  Py_DECREF(sys);
-  if (hook == NULL) {
-    PyErr_Clear();
-    return 0;
-  }
-
-  if (PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {
-    goto error;
-  }
-  result = PyObject_CallNoArgs(hook);
-  Py_DECREF(hook);
-  if (result == NULL) {
-    goto error;
-  }
-  Py_DECREF(result);
-  return 0;
-
-error:
-  PySys_WriteStderr("Failed calling sys.__interactivehook__\n");
-  //    return pymain_err_print(exitcode);
-  return 0;
-}
-
-static void pymain_repl_ipython(int *exitcode)
-{
-  if (pymain_run_interactive_hook_ipython(exitcode)) {
-    return;
-  }
-  PyCompilerFlags cf = _PyCompilerFlags_INIT;
-
-  PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
 }
 
 int Py_RunMain_ipython(void)
