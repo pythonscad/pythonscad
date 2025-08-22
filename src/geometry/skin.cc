@@ -413,7 +413,7 @@ static std::vector<std::shared_ptr<const Polygon2d>> spinPolygons(
       auto const& vertices = polyin.untransformedOutlines()[o_i].vertices;
       Outline2d outlineadj;
 
-      for (int vl_i = 0, vl_end = vertices.size(); vl_i != vl_end; ++vl_i) {
+      for (size_t vl_i = 0, vl_end = vertices.size(); vl_i != vl_end; ++vl_i) {
         int vl_adj = vl_i + alignmentPoint.vertex_index;
         outlineadj.vertices.push_back(vertices[vl_adj % vertices.size()]);
       }
