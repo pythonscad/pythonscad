@@ -1022,7 +1022,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     std::vector<IndexedFace> face_set;
     face_set.push_back(indicesNew[a]);
     for (size_t b = 0; b < faceParents.size(); b++)
-      if (faceParents[b] == a) face_set.push_back(indicesNew[b]);
+      if (static_cast<size_t>(faceParents[b]) == a) face_set.push_back(indicesNew[b]);
 
     PolySetBuilder builder;
 
@@ -1178,7 +1178,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
       EdgeKey key(i, oth);
       if (!edge_startarc.count(key)) continue;
       std::vector<Vector3d> arc;
-      if (i < oth) arc = edge_startarc[key];
+      if (i < static_cast<size_t>(oth)) arc = edge_startarc[key];
       else {
         arc = edge_endarc[key];
         std::reverse(arc.begin(), arc.end());
@@ -2817,14 +2817,14 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
       Vector3d curpt = vertices[poly[n - 1]];
       chain.push_back(curpt);
       int curlevel = 0;  // 0 ebene0, 1, zwishen, 2, ebene1, 3 zwischen
-      while ((curlevel >> 1) + 1 < xsteps.size() && curpt[0] > xsteps[(curlevel >> 1) + 1])
+      while ((curlevel >> 1) + 1 < static_cast<int>(xsteps.size()) && curpt[0] > xsteps[(curlevel >> 1) + 1])
         curlevel += 2;
       if (curpt[0] == xsteps[(curlevel >> 1) + 1]) curlevel++;
       int curpols = stripPolygons[curlevel >> 1].size();
       for (int i = 0; i < n; i++) {
         Vector3d newpt = vertices[poly[i]];
         int newlevel = 0;
-        while ((newlevel >> 1) + 1 < xsteps.size() && newpt[0] > xsteps[(newlevel >> 1) + 1])
+        while ((newlevel >> 1) + 1 < static_cast<int>(xsteps.size()) && newpt[0] > xsteps[(newlevel >> 1) + 1])
           newlevel += 2;
         if (newpt[0] == xsteps[(newlevel >> 1) + 1]) newlevel++;
 
@@ -2870,7 +2870,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
       if (cutnum == 0) {
         tmpresults[curlevel >> 1].push_back(chain);
       } else {
-        if (chain.size() > 1 && curpols < stripPolygons[curlevel >> 1].size()) {
+        if (chain.size() > 1 && static_cast<size_t>(curpols) < stripPolygons[curlevel >> 1].size()) {
           stripPolygons[curlevel >> 1][curpols].insert(stripPolygons[curlevel >> 1][curpols].begin(),
                                                        chain.begin(), chain.end() - 1);
         }
