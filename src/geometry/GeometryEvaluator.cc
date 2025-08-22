@@ -2811,7 +2811,10 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
     for (const auto& poly : bucket) {
       cnt++;
       int cutnum = 0;
-      int n = poly.size();
+      int n = static_cast<int>(poly.size());
+      if (poly.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+          throw std::overflow_error("poly.size() exceeds the range of int");
+      }
       Polygon chain;
       if (n < 1) continue;
       Vector3d curpt = vertices[poly[n - 1]];
