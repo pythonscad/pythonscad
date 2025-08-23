@@ -14,7 +14,6 @@
 #ifndef NULLGL
 
 namespace RendererUtils {
-  
 std::string loadShaderSource(const std::string& name)
 {
   std::string shaderPath = (PlatformUtils::resourcePath("shaders") / name).string();
