@@ -131,21 +131,8 @@ std::unique_ptr<const Geometry> CubeNode::createGeometry() const
 
   double coord1[3], coord2[3], size;
   for (int i = 0; i < 3; i++) {
-    switch (i) {
-    case 0: size = this->dim[0]; break;
-    case 1: size = this->dim[1]; break;
-    case 2: size = this->dim[2]; break;
-    }
-    if (this->center[i] > 0) {
-      coord1[i] = 0;
-      coord2[i] = size;
-    } else if (this->center[i] < 0) {
-      coord1[i] = -size;
-      coord2[i] = 0;
-    } else {
-      coord1[i] = -size / 2;
-      coord2[i] = size / 2;
-    }
+    coord1[i] = this->position[i];
+    coord2[i] = this->position[i] + this->dim[i];
   }
   auto ps = std::make_unique<PolySet>(3, /*convex*/ true);
   for (int i = 0; i < 8; i++) {
@@ -178,7 +165,7 @@ std::shared_ptr<const Geometry> CubeNode::dragPoint(const Vector3d& pt, const Ve
   }
   for (int i = 0; i < 3; i++) {
     if (dragflags & (1 << i)) {
-      if (center[i] == 1 && fabs(pt[i] - dim_[i]) < 1e-3) {
+      if (position[i] == 0 && fabs(pt[i] - dim_[i]) < 1e-3) {
         this->dim[i] = newpt[i];
         DragMod mod;
         mod.index = 0;
@@ -222,7 +209,7 @@ static std::shared_ptr<AbstractNode> builtin_cube(const ModuleInstantiation *ins
   }
   if (parameters["center"].type() == Value::Type::BOOL) {
     bool cent = parameters["center"].toBool();
-    for (int i = 0; i < 3; i++) node->center[i] = cent ? 0 : 1;
+    for (int i = 0; i < 3; i++) node->position[i] = cent ? -node->dim[i]/2.0:0;
   }
 
   return node;

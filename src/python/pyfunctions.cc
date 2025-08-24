@@ -162,11 +162,11 @@ PyObject *python_cube(PyObject *self, PyObject *args, PyObject *kwargs)
     PyErr_SetString(PyExc_TypeError, "Cube Dimensions must be positive");
     return NULL;
   }
-  for (int i = 0; i < 3; i++) node->center[i] = 1;
+  for (int i = 0; i < 3; i++) node->position[i] = 0;
   if (center == Py_False || center == NULL)
     ;
   else if (center == Py_True) {
-    for (int i = 0; i < 3; i++) node->center[i] = 0;
+    for (int i = 0; i < 3; i++) node->position[i] = -node->dim[i]/2.0;
   } else if (PyUnicode_Check(center)) {
     PyObject *centerval = PyUnicode_AsEncodedString(center, "utf-8", "~");
     const char *centerstr = PyBytes_AS_STRING(centerval);
@@ -180,20 +180,20 @@ PyObject *python_cube(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     for (int i = 0; i < 3; i++) {
       switch (centerstr[i]) {
-      case '|': node->center[i] = 0; break;
-      case '0': node->center[i] = 0; break;
-      case ' ': node->center[i] = 0; break;
-      case '_': node->center[i] = 0; break;
+      case '|': node->position[i] = -node->dim[i]/2.0; break;
+      case '0': node->position[i] = -node->dim[i]/2.0; break;
+      case ' ': node->position[i] = -node->dim[i]/2.0; break;
+      case '_': node->position[i] = -node->dim[i]/2.0; break;
 
-      case '>': node->center[i] = -1; break;
-      case ']': node->center[i] = -1; break;
-      case ')': node->center[i] = -1; break;
-      case '+': node->center[i] = -1; break;
+      case '>': node->position[i] = -node->dim[i]; break;
+      case ']': node->position[i] = -node->dim[i]; break;
+      case ')': node->position[i] = -node->dim[i]; break;
+      case '+': node->position[i] = -node->dim[i]; break;
 
-      case '<': node->center[i] = 1; break;
-      case '[': node->center[i] = 1; break;
-      case '(': node->center[i] = 1; break;
-      case '-': node->center[i] = 1; break;
+      case '<': node->position[i] = 0; break;
+      case '[': node->position[i] = 0; break;
+      case '(': node->position[i] = 0; break;
+      case '-': node->position[i] = 0; break;
 
       default:
         PyErr_SetString(PyExc_TypeError, "Center code chars not recognized, must be + - or 0");
