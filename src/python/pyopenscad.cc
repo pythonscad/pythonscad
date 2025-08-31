@@ -31,6 +31,9 @@
 #include "pydata.h"
 #include "core/CsgOpNode.h"
 #include "Value.h"
+#ifndef OPENSCAD_NOGUI
+#include "executable.h"
+#endif
 #include "Expression.h"
 #include "PlatformUtils.h"
 #include <Context.h>
@@ -83,7 +86,7 @@ void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
  *  allocates a new PyOpenSCAD Object including its internal dictionary
  */
 
-static PyObject *PyOpenSCADObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
 {
   PyOpenSCADObject *self;
   self = (PyOpenSCADObject *)type->tp_alloc(type, 0);

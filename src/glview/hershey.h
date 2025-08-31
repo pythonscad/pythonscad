@@ -8,7 +8,7 @@
 
 namespace hershey {
 
-// Determine the width of the text if drawn with DrawText()
+// Determine the width of the text if drawn with DrawTextHershey()
 float TextWidth(std::string_view str, float size);
 
 // Horizontal alignment

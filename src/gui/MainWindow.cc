@@ -122,6 +122,7 @@
 #include "gui/Measurement.h"
 #include "gui/Export3mfDialog.h"
 #include "gui/ExportPdfDialog.h"
+#include "gui/ExportSvgDialog.h"
 #include "gui/ExternalToolInterface.h"
 #include "gui/FontListDialog.h"
 #include "gui/ImportUtils.h"
@@ -240,6 +241,7 @@ int curl_download(std::string url, std::string path)
 
 #include "gui/LoadShareDesignDialog.h"
 #include "gui/ShareDesignDialog.h"
+#include "input/MouseConfigWidget.h"
 
 // Global application state
 unsigned int GuiLocker::guiLocked = 0;
@@ -514,6 +516,8 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
           &MainWindow::onTabManagerEditorContentReloaded);
 
   connect(GlobalPreferences::inst(), &Preferences::consoleFontChanged, this->console, &Console::setFont);
+  this->console->setFont(GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
+                         GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
 
   const QString version =
     QString("<b>OpenSCAD %1</b>").arg(QString::fromStdString(openscad_versionnumber));
@@ -561,7 +565,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 
   const QSettingsCached settings;
   this->qglview->setMouseCentricZoom(Settings::Settings::mouseCentricZoom.value());
-  this->qglview->setMouseSwapButtons(Settings::Settings::mouseSwapButtons.value());
+  this->setAllMouseViewActions();
   this->meas.setView(qglview);
   this->designActionMeasureDistance->setEnabled(false);
   this->designActionMeasureAngle->setEnabled(false);
@@ -746,23 +750,13 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   connect(this->viewActionHideEditorToolBar, &QAction::triggered, this, &MainWindow::hideEditorToolbar);
   connect(this->viewActionHide3DViewToolBar, &QAction::triggered, this, &MainWindow::hide3DViewToolbar);
 
-  // Create the docks and connect corresponding action
-  for (auto& [dock, title] : docks) {
-    dock->setName(title);
-    dock->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
-
-    // It is neede to have the event filter installed in each dock so that the events are
-    // correctly processed when the dock are floating (is in a different window that the mainwindow)
-    dock->installEventFilter(this);
-
-    menuWindow->addAction(dock->toggleViewAction());
-  }
-
   // Help menu
   connect(this->helpActionAbout, &QAction::triggered, this, &MainWindow::helpAbout);
   connect(this->helpActionHomepage, &QAction::triggered, this, &MainWindow::helpHomepage);
   connect(this->helpActionManual, &QAction::triggered, this, &MainWindow::helpManual);
   connect(this->helpActionCheatSheet, &QAction::triggered, this, &MainWindow::helpCheatSheet);
+  connect(this->helpActionPythonCheatSheet, &QAction::triggered, this,
+          &MainWindow::helpPythonCheatSheet);
   connect(this->helpActionLibraryInfo, &QAction::triggered, this, &MainWindow::helpLibrary);
   connect(this->helpActionFontInfo, &QAction::triggered, this, &MainWindow::helpFontInfo);
 
@@ -847,15 +841,9 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   InputDriverManager::instance()->registerActions(this->animateWidget->actions(), "animation",
                                                   "animate");
   instance->ButtonConfig->init();
+  instance->MouseConfig->init();
 
   // fetch window states to be restored after restoreState() call
-  const bool isConsoldDockVisible = !settings.value("view/hideConsole").toBool();
-  const bool isEditorDockVisible = !settings.value("view/hideEditor").toBool();
-  bool isCustomizerDockVisible = !settings.value("view/hideCustomizer").toBool();
-  const bool isErrorLogVisible = !settings.value("view/hideErrorLog").toBool();
-  const bool isAnimateDockVisible = !settings.value("view/hideAnimate").toBool();
-  const bool isFontListDockVisible = !settings.value("view/hideFontList").toBool();
-  bool isViewportControlVisible = !settings.value("view/hideViewportControl").toBool();
   const bool isEditorToolbarVisible = !settings.value("view/hideEditorToolbar").toBool();
   const bool is3DViewToolbarVisible = !settings.value("view/hide3DViewToolbar").toBool();
 
@@ -891,8 +879,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
     tabifyDockWidget(errorLogDock, fontListDock);
     tabifyDockWidget(fontListDock, animateDock);
     consoleDock->show();
-    isCustomizerDockVisible = true;
-    isViewportControlVisible = true;
   } else {
 #ifdef Q_OS_WIN
     // Try moving the main window into the display range, this
@@ -923,12 +909,26 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 
   // Create the popup menu to navigate between the docks by keyboard.
   navigationMenu = new QMenu();
-  for (auto& [dock, title] : docks) {
-    auto action2 = navigationMenu->addAction(title);
-    action2->setProperty("id", QVariant::fromValue(dock));
-    connect(action2, &QAction::triggered, this, &MainWindow::onNavigationTriggerContextMenuEntry);
-    connect(action2, &QAction::hovered, this, &MainWindow::onNavigationHoveredContextMenuEntry);
+
+  // Create the docks, connect corresponding action and install menu entries
+  for (auto& [dock, title, configKey] : docks) {
+    dock->setName(title);
+    dock->setConfigKey(configKey);
+    dock->setVisible(!GlobalPreferences::inst()->getValue(configKey).toBool());
+    dock->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
+
+    // It is neede to have the event filter installed in each dock so that the events are
+    // correctly processed when the dock are floating (is in a different window that the mainwindow)
+    dock->installEventFilter(this);
+
+    menuWindow->addAction(dock->toggleViewAction());
+
+    auto dockAction = navigationMenu->addAction(title);
+    dockAction->setProperty("id", QVariant::fromValue(dock));
+    connect(dockAction, &QAction::triggered, this, &MainWindow::onNavigationTriggerContextMenuEntry);
+    connect(dockAction, &QAction::hovered, this, &MainWindow::onNavigationHoveredContextMenuEntry);
   }
+
   connect(navigationMenu, &QMenu::aboutToHide, this, &MainWindow::onNavigationCloseContextMenu);
   connect(menuWindow, &QMenu::aboutToHide, this, &MainWindow::onNavigationCloseContextMenu);
   windowActionJumpTo->setMenu(navigationMenu);
@@ -1000,6 +1000,9 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 
   // fills the content of the Recents Files menu.
   updateRecentFileActions();
+
+  // Kick the re-styling again, otherwise it does not catch menu items
+  GlobalPreferences::inst()->fireApplicationFontChanged();
 }
 
 void MainWindow::onNavigationOpenContextMenu() { navigationMenu->exec(QCursor::pos()); }
@@ -1245,14 +1248,6 @@ void MainWindow::updateWindowSettings(bool isConsoleVisible, bool isEditorVisibl
                                       bool isAnimateVisible, bool isFontListVisible,
                                       bool isViewportControlVisible)
 {
-  editorDock->setVisible(isEditorVisible);
-  consoleDock->setVisible(isConsoleVisible);
-  errorLogDock->setVisible(isErrorLogVisible);
-  parameterDock->setVisible(isCustomizerVisible);
-  animateDock->setVisible(isAnimateVisible);
-  fontListDock->setVisible(isFontListVisible);
-  viewportControlDock->setVisible(isViewportControlVisible);
-
   viewActionHideEditorToolBar->setChecked(!isEditorToolbarVisible);
   hideEditorToolbar();
   viewActionHide3DViewToolBar->setChecked(!isViewToolbarVisible);
@@ -1404,7 +1399,7 @@ void MainWindow::updateUndockMode(bool undockMode)
 void MainWindow::updateReorderMode(bool reorderMode)
 {
   MainWindow::reorderMode = reorderMode;
-  for (auto& [dock, name] : docks) {
+  for (auto& [dock, name, configKey] : docks) {
     dock->setTitleBarVisibility(!reorderMode);
   }
 }
@@ -1674,7 +1669,7 @@ std::shared_ptr<AbstractNode> MainWindow::instantiateRootFromSource(SourceFile *
 
   return node;
 }
-#endif
+#endif  // ifdef ENABLE_GUI_TESTS
 
 void MainWindow::instantiateRoot()
 {
@@ -2069,7 +2064,7 @@ void MainWindow::actionPythonCreateVenv()
     Settings::Settings::visit(SettingsWriter());
     LOG("Python virtual environment creation successfull.");
     QMessageBox::information(this, _("Create Virtual Environment"),
-                             "Virtual environment created, please restart OpenSCAD to activate.",
+                             "Virtual environment created, please restart PythonSCAD to activate.",
                              QMessageBox::Ok);
   } else {
     LOG("Python virtual environment creation failed.");
@@ -2434,6 +2429,7 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
   }
   return false;
 }
+#endif  // ifdef ENABLE_PYTHON
 void MainWindow::recomputeLanguageActive()
 {
   auto fnameba = activeEditor->filepath.toLocal8Bit();
@@ -2453,9 +2449,11 @@ void MainWindow::recomputeLanguageActive()
     }
   }
 
+#ifdef ENABLE_PYTHON
   if (oldLanguage != language) {
     emit this->pythonActiveChanged(language == LANG_PYTHON);
   }
+#endif
 }
 #endif  // ifdef ENABLE_PYTHON
 
@@ -3025,7 +3023,7 @@ void MainWindow::setSelectionIndicatorStatus(EditorInterface *editor, int nodeIn
   // first we flags all the nodes in the stack of the provided index
   // ends at size - 1 because we are not doing anything for the root node.
   // starts at 1 because we will process this one after later
-  for (int i = 1; i < stack.size() - 1; i++) {
+  for (size_t i = 1; i < stack.size() - 1; i++) {
     const auto& node = stack[i];
 
     auto& location = node->modinst->location();
@@ -4110,7 +4108,7 @@ Dock *MainWindow::findVisibleDockToActivate(int offset) const
     focusedDockIndice = 0;
   }
 
-  for (int o = 1; o < dockCount; ++o) {
+  for (size_t o = 1; o < dockCount; ++o) {
     // starting from dockCount + focusedDockIndice move left or right (o*offset)
     // to find the first visible one. dockCount is there so there is no situation in which
     // (-1) % dockCount

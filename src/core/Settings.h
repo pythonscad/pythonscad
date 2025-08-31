@@ -27,6 +27,7 @@ constexpr inline auto PROPERTY_SELECTED_VALUE = "_selected_value";
 constexpr inline auto SECTION_PYTHON = "python";
 constexpr inline auto SECTION_EXPORT_PDF = "export-pdf";
 constexpr inline auto SECTION_EXPORT_3MF = "export-3mf";
+constexpr inline auto SECTION_EXPORT_SVG = "export-svg";
 
 class SettingsEntryBase
 {
@@ -82,7 +83,7 @@ public:
   const std::tuple<std::string, std::string> help() const override
   {
     return {"bool", defaultValue() ? "<true>/false" : "true/<false>"};
-  };
+  }
 
 private:
   bool _value;
@@ -237,7 +238,7 @@ public:
     }
     list += "]";
     return {"enum", list};
-  };
+  }
 
 private:
   std::vector<Item> _items;
@@ -382,7 +383,6 @@ class Settings
 public:
   static SettingsEntryBool showWarningsIn3dView;
   static SettingsEntryBool mouseCentricZoom;
-  static SettingsEntryBool mouseSwapButtons;
   static SettingsEntryInt indentationWidth;
   static SettingsEntryInt tabWidth;
   static SettingsEntryEnum<std::string> lineWrap;
@@ -483,6 +483,19 @@ public:
   static SettingsEntryString inputButton21;
   static SettingsEntryString inputButton22;
   static SettingsEntryString inputButton23;
+  static SettingsEntryInt inputMousePreset;
+  static SettingsEntryInt inputMouseLeftClick;
+  static SettingsEntryInt inputMouseMiddleClick;
+  static SettingsEntryInt inputMouseRightClick;
+  static SettingsEntryInt inputMouseShiftLeftClick;
+  static SettingsEntryInt inputMouseShiftMiddleClick;
+  static SettingsEntryInt inputMouseShiftRightClick;
+  static SettingsEntryInt inputMouseCtrlLeftClick;
+  static SettingsEntryInt inputMouseCtrlMiddleClick;
+  static SettingsEntryInt inputMouseCtrlRightClick;
+  static SettingsEntryInt inputMouseCtrlShiftLeftClick;
+  static SettingsEntryInt inputMouseCtrlShiftMiddleClick;
+  static SettingsEntryInt inputMouseCtrlShiftRightClick;
   static SettingsEntryDouble axisTrim0;
   static SettingsEntryDouble axisTrim1;
   static SettingsEntryDouble axisTrim2;
@@ -583,6 +596,21 @@ public:
     &export3mfMetaDataCopyright,
     &export3mfMetaDataLicenseTerms,
     &export3mfMetaDataRating,
+  };
+};
+
+class SettingsExportSvg
+{
+public:
+  static SettingsEntryBool exportSvgAlwaysShowDialog;
+  static SettingsEntryBool exportSvgFill;
+  static SettingsEntryString exportSvgFillColor;
+  static SettingsEntryBool exportSvgStroke;
+  static SettingsEntryString exportSvgStrokeColor;
+  static SettingsEntryDouble exportSvgStrokeWidth;
+
+  static constexpr std::array<const SettingsEntryBase *, 5> cmdline{
+    &exportSvgFill, &exportSvgFillColor, &exportSvgStroke, &exportSvgStrokeColor, &exportSvgStrokeWidth,
   };
 };
 

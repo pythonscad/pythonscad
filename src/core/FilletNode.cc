@@ -515,6 +515,9 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
         }
       }
 
+      e_fa2 *= r_;
+      e_fb2 *= r_;
+
       // Calculate bezier patches
       for (int i = 0; i < bn; i++) {
         double f = (double)i / (double)(bn - 1);  // from 0 to 1

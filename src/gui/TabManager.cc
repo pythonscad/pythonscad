@@ -614,6 +614,7 @@ bool TabManager::save(EditorInterface *edt)
 {
   assert(edt != nullptr);
 
+  if (edt->filepath.endsWith("Untitled.py")) edt->filepath = "";
   if (edt->filepath.isEmpty()) {
     return saveAs(edt);
   } else {
