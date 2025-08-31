@@ -40,56 +40,56 @@ static void append_svg(const Polygon2d& poly, std::ostream& output, const Export
 {
   // sort outlines by color
   std::vector<Outline2d> out_work = poly.outlines();
-  while(out_work.size() > 0) {
+  while (out_work.size() > 0) {
     std::vector<Outline2d> out_remain;
     Color4f col = out_work[0].color;
 
-  const ExportSvgOptions *options;
-  const ExportSvgOptions defaultSvgOptions;
+    const ExportSvgOptions *options;
+    const ExportSvgOptions defaultSvgOptions;
 
-  if (exportInfo.optionsSvg) {
-    options = exportInfo.optionsSvg.get();
-  } else {
-    options = &defaultSvgOptions;
-  }
-
-  const std::string stroke = options->stroke ? options->strokeColor : "none";
-  const std::string fill = options->fill ? options->fillColor : "none";
-  const double strokeWidth = options->strokeWidth;
-  output << "<path d=\"\n";
-  for (const auto& o : out_work) {
-    if (o.vertices.empty()) {
-      continue;
-    }
-    if(o.color != col) {
-      out_remain.push_back(o);
-      continue;
+    if (exportInfo.optionsSvg) {
+      options = exportInfo.optionsSvg.get();
+    } else {
+      options = &defaultSvgOptions;
     }
 
-    const Eigen::Vector2d& p0 = o.vertices[0];
-    output << "M " << p0.x() << "," << -p0.y();
-    for (unsigned int idx = 1; idx < o.vertices.size(); ++idx) {
-      const Eigen::Vector2d& p = o.vertices[idx];
-      output << " L " << p.x() << "," << -p.y();
-      if ((idx % 6) == 5) {
-        output << "\n";
+    const std::string stroke = options->stroke ? options->strokeColor : "none";
+    const std::string fill = options->fill ? options->fillColor : "none";
+    const double strokeWidth = options->strokeWidth;
+    output << "<path d=\"\n";
+    for (const auto& o : out_work) {
+      if (o.vertices.empty()) {
+        continue;
       }
-    }
-    output << " z\n";
-  }
-    std:: stringstream ss;
-    ss << "#" << std::hex 
-  	  << std::setfill('0') << std::setw(2) << (int)(col.r()*255) 
-  	  << std::setfill('0') << std::setw(2) << (int)(col.g()*255) 
-  	  << std::setfill('0') << std::setw(2) << (int)(col.b()*255) ;
-    std::string color_str = ss.str();
-  output << "\" stroke=\"" << stroke << "\" fill=\"" << fill << "\" stroke-width=\"" << strokeWidth << "\"/>\n";
-  out_work = out_remain;
-  }
+      if (o.color != col) {
+        out_remain.push_back(o);
+        continue;
+      }
 
+      const Eigen::Vector2d& p0 = o.vertices[0];
+      output << "M " << p0.x() << "," << -p0.y();
+      for (unsigned int idx = 1; idx < o.vertices.size(); ++idx) {
+        const Eigen::Vector2d& p = o.vertices[idx];
+        output << " L " << p.x() << "," << -p.y();
+        if ((idx % 6) == 5) {
+          output << "\n";
+        }
+      }
+      output << " z\n";
+    }
+    std::stringstream ss;
+    ss << "#" << std::hex << std::setfill('0') << std::setw(2) << (int)(col.r() * 255)
+       << std::setfill('0') << std::setw(2) << (int)(col.g() * 255) << std::setfill('0') << std::setw(2)
+       << (int)(col.b() * 255);
+    std::string color_str = ss.str();
+    output << "\" stroke=\"" << stroke << "\" fill=\"" << fill << "\" stroke-width=\"" << strokeWidth
+           << "\"/>\n";
+    out_work = out_remain;
+  }
 }
 
-static void append_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output, const ExportInfo& exportInfo)
+static void append_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
+                       const ExportInfo& exportInfo)
 {
   if (const auto geomlist = std::dynamic_pointer_cast<const GeometryList>(geom)) {
     for (const auto& item : geomlist->getChildren()) {
@@ -97,16 +97,17 @@ static void append_svg(const std::shared_ptr<const Geometry>& geom, std::ostream
     }
   } else if (const auto poly = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
     append_svg(*poly, output, exportInfo);
-  } else if (std::dynamic_pointer_cast<const PolySet>(geom)) { // NOLINT(bugprone-branch-clone)
+  } else if (std::dynamic_pointer_cast<const PolySet>(geom)) {  // NOLINT(bugprone-branch-clone)
     assert(false && "Unsupported file format");
-  } else { // NOLINT(bugprone-branch-clone)
+  } else {  // NOLINT(bugprone-branch-clone)
     assert(false && "Export as SVG for this geometry type is not supported");
   }
 }
 
-void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output, const ExportInfo& exportInfo)
+void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
+                const ExportInfo& exportInfo)
 {
-  setlocale(LC_NUMERIC, "C"); // Ensure radix is . (not ,) in output
+  setlocale(LC_NUMERIC, "C");  // Ensure radix is . (not ,) in output
   BoundingBox bbox = geom->getBoundingBox();
   const ExportSvgOptions *options;
   const ExportSvgOptions defaultSvgOptions;
@@ -125,14 +126,14 @@ void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
   const int width = maxx - minx;
   const int height = maxy - miny;
 
-  output
-    << "<?xml version=\"1.0\" standalone=\"no\"?>\n"
-    << "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n"
-    << "<svg width=\"" << width << "mm\" height=\"" << height
-    << "mm\" viewBox=\"" << minx << " " << miny << " " << width << " " << height
-    << "\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n"
-    << "<title>OpenSCAD Model</title>\n";
+  output << "<?xml version=\"1.0\" standalone=\"no\"?>\n"
+         << "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" "
+            "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n"
+         << "<svg width=\"" << width << "mm\" height=\"" << height << "mm\" viewBox=\"" << minx << " "
+         << miny << " " << width << " " << height
+         << "\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n"
+         << "<title>OpenSCAD Model</title>\n";
   append_svg(geom, output, exportInfo);
   output << "</svg>\n";
-  setlocale(LC_NUMERIC, ""); // Set default locale
+  setlocale(LC_NUMERIC, "");  // Set default locale
 }
