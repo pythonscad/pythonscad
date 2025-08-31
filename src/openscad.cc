@@ -89,6 +89,7 @@
 #include "core/RenderVariables.h"
 #include "core/ScopeContext.h"
 #include "core/Settings.h"
+#include "executable.h"
 #include "Feature.h"
 #include "geometry/Geometry.h"
 #include "geometry/GeometryEvaluator.h"
@@ -611,7 +612,7 @@ int cmdline(const CommandLine& cmd)
     }
     text = "\n";
   }
-#endif
+#endif  // ifdef ENABLE_PYTHON
   text += "\n\x03\n" + commandline_commands;
 
   SourceFile *root_file = nullptr;
@@ -837,7 +838,7 @@ int main(int argc, char **argv)
   // The original name as called, not resolving links and so on. This will
   // just forward everything to the python main.
   const auto applicationName = fs::path(argv[0]).filename().generic_string();
-  if (applicationName == "openscad-python") {
+  if (applicationName == PYTHON_EXECUTABLE_NAME) {
     return pythonRunArgs(argc, argv);
   }
 #endif
@@ -922,6 +923,7 @@ int main(int argc, char **argv)
             .c_str())("d,d", po::value<std::string>(), "deps_file -generate a dependency file for make")(
           "m,m", po::value<std::string>(), "make_cmd -runs make_cmd file if file is missing")(
           "quiet,q", "quiet mode (don't print anything *except* errors)")(
+          "reset-window-settings", "Reset GUI settings for window placement and fonts.")(
           "hardwarnings", "Stop on the first warning")("trace-depth", po::value<unsigned int>(),
                                                        "=n, maximum number of trace messages")(
           "trace-usermodule-parameters", po::value<std::string>(),
@@ -933,11 +935,11 @@ int main(int argc, char **argv)
           "debug", po::value<std::string>(),
           "special debug info - specify 'all' or a set of source file names")
 #ifdef ENABLE_PYTHON
-          ("trust-python", "Trust python")("ipython", "Run ipython Interpreter")
 #ifdef ENABLE_JUPYTER
             ("jupyter", po::value<std::string>(), "Run inside Jupyter")
 #endif
-              ("python-module", po::value<std::string>(), "=module Call pip python module")
+          ("trust-python", "Trust python")("ipython", "Run ipython Interpreter")(
+            "python-module", po::value<std::string>(), "=module Call pip python module")
 #endif
     ;
 

@@ -24,6 +24,7 @@
 #include <QRegularExpression>
 #include <QShortcut>
 #include <Qsci/qscicommandset.h>
+#include <genlang/genlang.h>
 
 #include "gui/Preferences.h"
 #include "platform/PlatformUtils.h"
@@ -479,7 +480,7 @@ void ScintillaEditor::setColormap(const EditorColorScheme *colorScheme)
 
     newLexer->finalizeLexer();
 #ifdef ENABLE_PYTHON
-    if (!mainWindow.python_active) {
+    if (language == LANG_SCAD) {
       setLexer(newLexer);
     }
 #else
@@ -547,7 +548,7 @@ void ScintillaEditor::setColormap(const EditorColorScheme *colorScheme)
       true);  // does not work on first word, but allows remaining words to be syntax colored
 
 #ifdef ENABLE_PYTHON
-    if (!mainWindow.python_active) {
+    if (language == LANG_SCAD) {
       setLexer(newLexer);
     }
 #else
@@ -996,7 +997,11 @@ void ScintillaEditor::commentSelection()
 {
   auto commentString = "//";
 #ifdef ENABLE_PYTHON
+<<<<<<< HEAD
   if (mainWindow.python_active) {
+=======
+  if (language != LANG_SCAD) {
+>>>>>>> master
     commentString = "#";
   }
 #endif
@@ -1017,7 +1022,11 @@ void ScintillaEditor::uncommentSelection()
 {
   auto commentString = "//";
 #ifdef ENABLE_PYTHON
+<<<<<<< HEAD
   if (mainWindow.python_active) {
+=======
+  if (language != LANG_SCAD) {
+>>>>>>> master
     commentString = "#";
   }
 #endif

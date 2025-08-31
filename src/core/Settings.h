@@ -79,7 +79,7 @@ public:
   bool isDefault() const override { return _value == _defaultValue; }
   std::string encode() const override;
   const bool decode(const std::string& encoded) const override;
-  void set(const std::string& encoded) override { setValue(decode(encoded)); };
+  void set(const std::string& encoded) override { setValue(decode(encoded)); }
   const std::tuple<std::string, std::string> help() const override
   {
     return {"bool", defaultValue() ? "<true>/false" : "true/<false>"};
@@ -111,12 +111,12 @@ public:
   bool isDefault() const override { return _value == _defaultValue; }
   std::string encode() const override;
   const int decode(const std::string& encoded) const override;
-  void set(const std::string& encoded) override { setValue(decode(encoded)); };
+  void set(const std::string& encoded) override { setValue(decode(encoded)); }
   const std::tuple<std::string, std::string> help() const override
   {
     return {"int", std::to_string(_minimum) + " : <" + std::to_string(defaultValue()) +
                      "> : " + std::to_string(maximum())};
-  };
+  }
 
 private:
   int _value;
@@ -148,12 +148,12 @@ public:
   bool isDefault() const override { return _value == _defaultValue; }
   std::string encode() const override;
   const double decode(const std::string& encoded) const override;
-  void set(const std::string& encoded) override { setValue(decode(encoded)); };
+  void set(const std::string& encoded) override { setValue(decode(encoded)); }
   const std::tuple<std::string, std::string> help() const override
   {
     return {"double", std::to_string(_minimum) + " : <" + std::to_string(defaultValue()) +
                         "> : " + std::to_string(maximum())};
-  };
+  }
 
 private:
   double _value;
@@ -178,11 +178,11 @@ public:
   bool isDefault() const override { return _value == _defaultValue; }
   std::string encode() const override { return value(); }
   const std::string decode(const std::string& encoded) const override { return encoded; }
-  void set(const std::string& encoded) override { setValue(decode(encoded)); };
+  void set(const std::string& encoded) override { setValue(decode(encoded)); }
   const std::tuple<std::string, std::string> help() const override
   {
     return {"string", "\"" + encode() + "\""};
-  };
+  }
 
 private:
   std::string _value;
@@ -369,8 +369,8 @@ public:
     }
     return items;
   }
-  void set(const std::string& encoded) override { setValue(decode(encoded)); };
-  const std::tuple<std::string, std::string> help() const override { return {"list", ""}; };
+  void set(const std::string& encoded) override { setValue(decode(encoded)); }
+  const std::tuple<std::string, std::string> help() const override { return {"list", ""}; }
 
 private:
   list_type_t _items;
@@ -551,11 +551,13 @@ public:
   static SettingsEntryString exportPdfStrokeColor;
   static SettingsEntryDouble exportPdfStrokeWidth;
 
-  static constexpr std::array<const SettingsEntryBase *, 12> cmdline{
+  static constexpr std::array<const SettingsEntryBase *, 17> cmdline{
     &exportPdfPaperSize,      &exportPdfOrientation,      &exportPdfShowFilename,
     &exportPdfShowScale,      &exportPdfShowScaleMessage, &exportPdfShowGrid,
     &exportPdfGridSize,       &exportPdfAddMetaData,      &exportPdfMetaDataTitle,
     &exportPdfMetaDataAuthor, &exportPdfMetaDataSubject,  &exportPdfMetaDataKeywords,
+    &exportPdfFill,           &exportPdfFillColor,        &exportPdfStroke,
+    &exportPdfStrokeColor,    &exportPdfStrokeWidth,
   };
 };
 

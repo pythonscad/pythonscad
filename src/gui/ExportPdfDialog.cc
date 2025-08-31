@@ -45,12 +45,33 @@ ExportPdfDialog::ExportPdfDialog()
   initButtonGroup(this->buttonGroupPaperSize, S::exportPdfPaperSize);
   initButtonGroup(this->buttonGroupOrientation, S::exportPdfOrientation);
 
-  // Get current settings or defaults modify the two enums (next two rows) to explicitly use default by
-  // lookup to string (see the later set methods).
+  // Get current settings or defaults
   this->checkBoxShowFilename->setChecked(S::exportPdfShowFilename.value());
   this->groupScale->setChecked(S::exportPdfShowScale.value());
   this->checkBoxShowScaleMessage->setChecked(S::exportPdfShowScaleMessage.value());
   this->groupGrid->setChecked(S::exportPdfShowGrid.value());
+
+  // Initialize grid size from settings
+  const auto gridSize = S::exportPdfGridSize.value();
+  for (auto *button : buttonGroupGridSize->buttons()) {
+    if (button->property("_selected_value").toDouble() == gridSize) {
+      button->setChecked(true);
+      break;
+    }
+  }
+
+  // Fill settings
+  this->checkBoxEnableFill->setChecked(S::exportPdfFill.value());
+  this->fillColor = QColor(QString::fromStdString(S::exportPdfFillColor.value()));
+  updateFillColor(this->fillColor);
+  updateFillControlsEnabled();
+
+  // Stroke settings
+  this->checkBoxEnableStroke->setChecked(S::exportPdfStroke.value());
+  this->strokeColor = QColor(QString::fromStdString(S::exportPdfStrokeColor.value()));
+  this->doubleSpinBoxStrokeWidth->setValue(S::exportPdfStrokeWidth.value());
+  updateStrokeColor(this->strokeColor);
+  updateStrokeControlsEnabled();
 
   groupMetaData->setChecked(S::exportPdfAddMetaData.value());
   initMetaData(nullptr, this->lineEditMetaDataTitle, nullptr, S::exportPdfMetaDataTitle);
@@ -107,14 +128,9 @@ double ExportPdfDialog::getGridSize() const
 
 void ExportPdfDialog::updateFillColor(const QColor& color)
 {
-  for (auto button : buttonGroupGridSize->buttons()) {
-    const auto buttonValue = button->property(Settings::PROPERTY_SELECTED_VALUE).toDouble();
-    if (std::abs(buttonValue - value) < 0.5) {
-      button->setChecked(true);
-      return;
-    }
-  }
-  rbGs_10mm->setChecked(true);  // default
+  this->fillColor = color;
+  QString styleSheet = QString("QLabel { background-color: %1; }").arg(color.name());
+  this->labelFillColor->setStyleSheet(styleSheet);
 }
 
 void ExportPdfDialog::updateStrokeColor(const QColor& color)

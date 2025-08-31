@@ -33,6 +33,7 @@
 #include "core/PathExtrudeNode.h"
 #include "core/PullNode.h"
 #include "core/DebugNode.h"
+#include "core/RepairNode.h"
 #include "core/WrapNode.h"
 #include "core/OversampleNode.h"
 #include "core/FilletNode.h"
@@ -71,32 +72,34 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
   NodeCloneFunc(PolyhedronNode) NodeCloneFunc(EdgeNode) NodeCloneFunc(SquareNode)
     NodeCloneFunc(CircleNode) NodeCloneFunc(PolygonNode) NodeCloneFunc(SplineNode)
       NodeCloneFunc(TransformNode) NodeCloneFunc(PullNode) NodeCloneFunc(DebugNode)
-        NodeCloneFunc(WrapNode) NodeCloneFunc(ColorNode) NodeCloneFunc(OversampleNode)
-          NodeCloneFunc(FilletNode) NodeCloneFunc(RotateExtrudeNode) NodeCloneFunc(LinearExtrudeNode)
-            NodeCloneFunc(PathExtrudeNode) NodeCloneFunc(CsgOpNode) NodeCloneFunc(CgalAdvNode)
-              NodeCloneFunc(RenderNode) NodeCloneFunc(SkinNode) NodeCloneFunc(ConcatNode)
-                NodeCloneFunc(SurfaceNode) NodeCloneFunc(TextNode) NodeCloneFunc(OffsetNode)
-                  NodeCloneFunc(ProjectionNode) NodeCloneFunc(GroupNode) NodeCloneFunc(ImportNode)
+        NodeCloneFunc(RepairNode) NodeCloneFunc(WrapNode) NodeCloneFunc(ColorNode)
+          NodeCloneFunc(OversampleNode) NodeCloneFunc(FilletNode) NodeCloneFunc(RotateExtrudeNode)
+            NodeCloneFunc(LinearExtrudeNode) NodeCloneFunc(PathExtrudeNode) NodeCloneFunc(CsgOpNode)
+              NodeCloneFunc(CgalAdvNode) NodeCloneFunc(RenderNode) NodeCloneFunc(SkinNode)
+                NodeCloneFunc(ConcatNode) NodeCloneFunc(SurfaceNode) NodeCloneFunc(TextNode)
+                  NodeCloneFunc(OffsetNode) NodeCloneFunc(ProjectionNode) NodeCloneFunc(GroupNode)
+                    NodeCloneFunc(ImportNode)
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
-                    NodeCloneFunc(RoofNode)
+                      NodeCloneFunc(RoofNode)
 #endif
 
-                      std::shared_ptr<AbstractNode> AbstractNode::clone(void)
+                        std::shared_ptr<AbstractNode> AbstractNode::clone(void)
 {
   std::shared_ptr<AbstractNode> clone = nullptr;
   NodeCloneUse(CubeNode) NodeCloneUse(SphereNode) NodeCloneUse(CylinderNode) NodeCloneUse(PolyhedronNode)
     NodeCloneUse(EdgeNode) NodeCloneUse(SquareNode) NodeCloneUse(CircleNode) NodeCloneUse(PolygonNode)
       NodeCloneUse(SplineNode) NodeCloneUse(TransformNode) NodeCloneUse(PullNode) NodeCloneUse(DebugNode)
-        NodeCloneUse(WrapNode) NodeCloneUse(ColorNode) NodeCloneUse(OversampleNode)
-          NodeCloneUse(FilletNode) NodeCloneUse(RotateExtrudeNode) NodeCloneUse(LinearExtrudeNode)
-            NodeCloneUse(PathExtrudeNode) NodeCloneUse(CsgOpNode) NodeCloneUse(CgalAdvNode)
-              NodeCloneUse(RenderNode) NodeCloneUse(SkinNode) NodeCloneUse(ConcatNode)
-                NodeCloneUse(SurfaceNode) NodeCloneUse(TextNode) NodeCloneUse(OffsetNode)
-                  NodeCloneUse(ProjectionNode) NodeCloneUse(GroupNode) NodeCloneUse(ImportNode)
+        NodeCloneUse(RepairNode) NodeCloneUse(WrapNode) NodeCloneUse(ColorNode)
+          NodeCloneUse(OversampleNode) NodeCloneUse(FilletNode) NodeCloneUse(RotateExtrudeNode)
+            NodeCloneUse(LinearExtrudeNode) NodeCloneUse(PathExtrudeNode) NodeCloneUse(CsgOpNode)
+              NodeCloneUse(CgalAdvNode) NodeCloneUse(RenderNode) NodeCloneUse(SkinNode)
+                NodeCloneUse(ConcatNode) NodeCloneUse(SurfaceNode) NodeCloneUse(TextNode)
+                  NodeCloneUse(OffsetNode) NodeCloneUse(ProjectionNode) NodeCloneUse(GroupNode)
+                    NodeCloneUse(ImportNode)
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
-                    NodeCloneUse(RoofNode)
+                      NodeCloneUse(RoofNode)
 #endif
-                      if (clone != nullptr)
+                        if (clone != nullptr)
   {
     clone->idx = idx_counter++;
     clone->children.clear();

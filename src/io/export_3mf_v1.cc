@@ -266,7 +266,7 @@ bool append_polyset(const std::shared_ptr<const PolySet>& ps, const Export3mfPar
     }
 
     ctx.materialids.reserve(sorted_ps->colors.size());
-    for (int i = 0; i < sorted_ps->colors.size(); i++) {
+    for (size_t i = 0; i < sorted_ps->colors.size(); i++) {
       ctx.materialids.push_back(materialFunc(materials + i, sorted_ps->colors[i]));
     }
   }
@@ -277,7 +277,7 @@ bool append_polyset(const std::shared_ptr<const PolySet>& ps, const Export3mfPar
     return false;
   }
 
-  for (int i = 0; i < sorted_ps->color_indices.size(); ++i) {
+  for (size_t i = 0; i < sorted_ps->color_indices.size(); ++i) {
     const int32_t idx = sorted_ps->color_indices[i];
     if (!handle_triangle_color(propertyhandler, sorted_ps, i, idx, ctx)) {
       return false;
@@ -363,7 +363,9 @@ bool append_3mf(const std::shared_ptr<const Geometry>& geom, const Export3mfPart
   } else if (const auto ps = std::dynamic_pointer_cast<const PolySet>(geom)) {
     return append_polyset(PolySetUtils::tessellate_faces(*ps), info, ctx);
   } else if (std::dynamic_pointer_cast<const Polygon2d>(geom)) {
-    assert(false && "Unsupported file format");
+    LOG(message_group::Export_Error, "Unsupported file format");
+    return false;
+
   } else {
     assert(false && "Not implemented");
   }

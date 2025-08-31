@@ -205,6 +205,7 @@ void Preferences::init()
   addPrefPage(group, prefsActionInput, pageInput);
   addPrefPage(group, prefsActionInputButton, pageInputButton);
   addPrefPage(group, prefsActionPython, pagePython);
+  addPrefPage(group, prefsActionMouse, pageMouse);
   addPrefPage(group, prefsActionAdvanced, pageAdvanced);
   addPrefPage(group, prefsActionDialogs, pageDialogs);
 
@@ -1359,6 +1360,9 @@ void Preferences::updateGUI()
     ->setChecked(getValue("advanced/consoleAutoClear").toBool());
   BlockSignals<QLineEdit *>(this->consoleMaxLinesEdit)
     ->setText(getValue("advanced/consoleMaxLines").toString());
+
+  updateGUIFontFamily(fontComboBoxApplicationFontFamily, "advanced/applicationFontFamily");
+  updateGUIFontSize(comboBoxApplicationFontSize, "advanced/applicationFontSize");
 
   updateGUIFontFamily(consoleFontChooser, "advanced/consoleFontFamily");
   updateGUIFontSize(consoleFontSize, "advanced/consoleFontSize");

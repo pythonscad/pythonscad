@@ -25,6 +25,7 @@ set(EXAMPLES_DIR        "${CSD}/examples")
 set(TEST_DATA_DIR       "${CCSD}/data")
 set(TEST_SCAD_DIR       "${CCSD}/data/scad")
 set(TEST_PYTHONSCAD_DIR "${CCSD}/data/pythonscad")
+set(TEST_PYTHONSCAD_ECHO_DIR "${CCSD}/data/pythonscad-echo")
 set(TEST_CUSTOMIZER_DIR "${CCSD}/data/scad/customizer")
 set(TEST_PYTHON_DIR     "${CCSD}/data/python")
 # Test runner Python scripts
@@ -162,12 +163,12 @@ else()
   endif()
 endif()
 
-find_package(Lib3MF QUIET)
+find_package(Lib3MF)
 # Disable LIB3MF tests if library was disabled in build
 if(NOT LIB3MF_FOUND)
   # check again via pkgconfig
   if(NOT MSVC)
-    find_package(PkgConfig QUIET)
+    find_package(PkgConfig)
     if (PKG_CONFIG_FOUND)
       pkg_check_modules(LIB3MF lib3MF)
     endif()
@@ -197,10 +198,10 @@ elseif(APPLE)
   set(OPENSCAD_BINPATH "${CBD}/OpenSCAD.app/Contents/MacOS/OpenSCAD")
 elseif (WIN32 OR MXECROSS)
   set(OPENSCAD_BINPATH "${CBD}/pythonscad.com")
-elseif(EXISTS "${CBD}/bin/pythonscad${SUFFIX_WITH_DASH}")
-  set(OPENSCAD_BINPATH "${CBD}/bin/pythonscad${SUFFIX_WITH_DASH}")
+elseif(EXISTS "${CBD}/bin/${EXECUTABLE_NAME}")
+  set(OPENSCAD_BINPATH "${CBD}/bin/${EXECUTABLE_NAME}")
 else()
-  set(OPENSCAD_BINPATH "${CBD}/pythonscad${SUFFIX_WITH_DASH}")
+  set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}")
 endif()
 
 #if(EXISTS "${OPENSCAD_BINPATH}")
@@ -362,12 +363,6 @@ function(add_cmdline_test TESTCMD_BASENAME)
     # add global experimental options here
     set(EXPERIMENTAL_OPTION "")
 
-   if (ENABLE_MANIFOLD)
-     if (NOT TESTCMD_ARGS OR NOT "${TESTCMD_ARGS}" MATCHES "--backend")
-       set(MANIFOLD_OPTION "--backend=manifold")
-     endif()
-   endif()
-
     # 2D tests should be viewed from the top, not an angle.
     set(CAMERA_OPTION "")
     is_2d(${SCADFILE} IS2D)
@@ -527,6 +522,7 @@ file(GLOB_RECURSE BUGS_2D_FILES    ${TEST_SCAD_DIR}/bugs2D/*.scad)
 file(GLOB SCAD_DXF_FILES      ${TEST_SCAD_DIR}/dxf/*.scad)
 file(GLOB SCAD_PDF_FILES      ${TEST_SCAD_DIR}/pdf/*.scad)
 file(GLOB PYTHONSCAD_FILES    ${TEST_PYTHONSCAD_DIR}/*.py)
+file(GLOB PYTHONSCAD_ECHO_FILES    ${TEST_PYTHONSCAD_ECHO_DIR}/*.py)
 file(GLOB SCAD_SVG_FILES      ${TEST_SCAD_DIR}/svg/svg-spec/*.scad
   ${TEST_SCAD_DIR}/svg/box-w-holes-2d.scad
   ${TEST_SCAD_DIR}/svg/display.scad
@@ -1502,6 +1498,7 @@ add_cmdline_test(previewtest         EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EX
 add_cmdline_test(previewmanifoldtest EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --enable=skin --backend=manifold)
 add_cmdline_test(throwntogethertest  EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --preview=throwntogether --enable=skin)
 add_cmdline_test(pythonscad          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_FILES} ARGS --render --trust-python)
+add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_FILES} ARGS --trust-python)
 
 
 ############################

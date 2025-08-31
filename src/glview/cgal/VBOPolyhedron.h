@@ -183,15 +183,15 @@ public:
 
     GLUtesselator *tess_ = gluNewTess();
     gluTessCallback(tess_, GLenum(GLU_TESS_VERTEX_DATA),
-                    (GLvoid(CGAL_GLU_TESS_CALLBACK *)(CGAL_GLU_TESS_DOTS))&vertexCallback);
+                    (GLvoid(CGAL_GLU_TESS_CALLBACK *)(CGAL_GLU_TESS_DOTS)) & vertexCallback);
     gluTessCallback(tess_, GLenum(GLU_TESS_COMBINE),
-                    (GLvoid(CGAL_GLU_TESS_CALLBACK *)(CGAL_GLU_TESS_DOTS))&combineCallback);
+                    (GLvoid(CGAL_GLU_TESS_CALLBACK *)(CGAL_GLU_TESS_DOTS)) & combineCallback);
     gluTessCallback(tess_, GLenum(GLU_TESS_BEGIN_DATA),
-                    (GLvoid(CGAL_GLU_TESS_CALLBACK *)(CGAL_GLU_TESS_DOTS))&beginCallback);
+                    (GLvoid(CGAL_GLU_TESS_CALLBACK *)(CGAL_GLU_TESS_DOTS)) & beginCallback);
     gluTessCallback(tess_, GLenum(GLU_TESS_END_DATA),
-                    (GLvoid(CGAL_GLU_TESS_CALLBACK *)(CGAL_GLU_TESS_DOTS))&endCallback);
+                    (GLvoid(CGAL_GLU_TESS_CALLBACK *)(CGAL_GLU_TESS_DOTS)) & endCallback);
     gluTessCallback(tess_, GLenum(GLU_TESS_ERROR),
-                    (GLvoid(CGAL_GLU_TESS_CALLBACK *)(CGAL_GLU_TESS_DOTS))&errorCallback);
+                    (GLvoid(CGAL_GLU_TESS_CALLBACK *)(CGAL_GLU_TESS_DOTS)) & errorCallback);
     gluTessProperty(tess_, GLenum(GLU_TESS_WINDING_RULE), GLU_TESS_WINDING_POSITIVE);
 
     CGAL::OGL::DFacet::Coord_const_iterator cit;
@@ -226,7 +226,7 @@ public:
     size_t last_size = 0;
     size_t elements_offset = 0;
 
-    const size_t num_vertices = vertices_.size() + edges_.size() * 2, elements_size = 0;
+    const size_t num_vertices = vertices_.size() + edges_.size() * 2;
     points_edges_builder.allocateBuffers(num_vertices);
 
     // Points
