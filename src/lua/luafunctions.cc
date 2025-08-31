@@ -24,7 +24,6 @@
  *
  */
 
-
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include "linalg.h"
@@ -33,7 +32,8 @@
 #include "SourceFile.h"
 #include "BuiltinContext.h"
 #include <PolySetBuilder.h>
-extern bool parse(SourceFile *& file, const std::string& text, const std::string& filename, const std::string& mainFile, int debug);
+extern bool parse(SourceFile *& file, const std::string& text, const std::string& filename,
+                  const std::string& mainFile, int debug);
 
 #include "GeometryUtils.h"
 #include "primitives.h"
@@ -69,8 +69,7 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 #include "genlang/genlang.h"
 #include "stdarg.h"
 
-//using namespace boost::assign; // bring 'operator+=()' into scope
-
+// using namespace boost::assign; // bring 'operator+=()' into scope
 
 // Colors extracted from https://drafts.csswg.org/css-color/ on 2015-08-02
 // CSS Color Module Level 4 - Editor’s Draft, 29 May 2015
@@ -88,44 +87,42 @@ static int lua_cube(lua_State *L)
   void *center = NULL;
   char *centerstr = nullptr;
 
-  node->dim[0]=1;
-  node->dim[1]=1;
-  node->dim[2]=1;
-  if (!LuArg_ParseTupleAndKeywords(L, "V|s", kwlist, &(node->dim), &centerstr)){
-    printf("Error during cube\n");	  
+  node->dim[0] = 1;
+  node->dim[1] = 1;
+  node->dim[2] = 1;
+  if (!LuArg_ParseTupleAndKeywords(L, "V|s", kwlist, &(node->dim), &centerstr)) {
+    printf("Error during cube\n");
     return 0;
   }
-  for(int i=0;i<3;i++) node->center[i] = 1;
-  if(centerstr != nullptr) {
-   if(strlen(centerstr) != 3) {
+  for (int i = 0; i < 3; i++) node->center[i] = 1;
+  if (centerstr != nullptr) {
+    if (strlen(centerstr) != 3) {
       printf("Center code must be exactly 3 characters");
       return 0;
     }
-    for(int i=0;i<3;i++) {
-      switch(centerstr[i]) {
-        case '|': node->center[i] = 0; break;	      
-        case '0': node->center[i] = 0; break;	      
-        case ' ': node->center[i] = 0; break;	      
-        case '_': node->center[i] = 0; break;	      
+    for (int i = 0; i < 3; i++) {
+      switch (centerstr[i]) {
+      case '|': node->center[i] = 0; break;
+      case '0': node->center[i] = 0; break;
+      case ' ': node->center[i] = 0; break;
+      case '_': node->center[i] = 0; break;
 
-        case '>': node->center[i] = -1; break;	      
-        case ']': node->center[i] = -1; break;	      
-        case ')': node->center[i] = -1; break;	      
-        case '+': node->center[i] = -1; break;	      
+      case '>': node->center[i] = -1; break;
+      case ']': node->center[i] = -1; break;
+      case ')': node->center[i] = -1; break;
+      case '+': node->center[i] = -1; break;
 
-        case '<': node->center[i] = 1; break;	      
-        case '[': node->center[i] = 1; break;	      
-        case '(': node->center[i] = 1; break;	      
-        case '-': node->center[i] = 1; break;	      
+      case '<': node->center[i] = 1; break;
+      case '[': node->center[i] = 1; break;
+      case '(': node->center[i] = 1; break;
+      case '-': node->center[i] = 1; break;
 
-        default:		  
-          printf("Center code chars not recognized, must be + - or 0");
-          return 0;
-      }       
+      default:  printf("Center code chars not recognized, must be + - or 0"); return 0;
+      }
     }
-  }  
+  }
 
-  return LuaOpenSCADObjectFromNode( node);
+  return LuaOpenSCADObjectFromNode(node);
 }
 
 static int lua_sphere(lua_State *L)
@@ -133,7 +130,7 @@ static int lua_sphere(lua_State *L)
   DECLARE_INSTANCE
   auto node = std::make_shared<SphereNode>(instance);
 
-  char *kwlist[] = {"r",  NULL};
+  char *kwlist[] = {"r", NULL};
   double r = NAN;
   double d = NAN;
   double fn = NAN, fa = NAN, fs = NAN;
@@ -141,23 +138,23 @@ static int lua_sphere(lua_State *L)
   double vr = 1;
 
   if (!LuArg_ParseTupleAndKeywords(L, "dd", kwlist, &r)) {
-    printf( "Error during parsing sphere(r|d)");
+    printf("Error during parsing sphere(r|d)");
     return 1;
-  } 
-    if(r <= 0) {
-      printf("Parameter r must be positive");
-      return 0;
-    }       
-    vr = r;
-    if(!std::isnan(d)) {
-      printf("Cant specify r and d at the same time for sphere");
+  }
+  if (r <= 0) {
+    printf("Parameter r must be positive");
+    return 0;
+  }
+  vr = r;
+  if (!std::isnan(d)) {
+    printf("Cant specify r and d at the same time for sphere");
+    return 1;
+  }
+  if (!std::isnan(d)) {
+    if (d <= 0) {
+      printf("Parameter d must be positive");
       return 1;
     }
-  if (!std::isnan(d)) {
-    if(d <= 0) {
-      printf( "Parameter d must be positive");
-      return 1;
-    }       
     vr = d / 2.0;
   }
 
@@ -168,28 +165,27 @@ static int lua_sphere(lua_State *L)
 
   node->r = vr;
 
-  return LuaOpenSCADObjectFromNode( node);
+  return LuaOpenSCADObjectFromNode(node);
 }
-
 
 static int lua_show(lua_State *J)
 {
-  // TODO type and argnum checking	
-  auto child = LuaOpenSCADObjectToNode(J, 1);	
-  if(child == nullptr) return 0;
+  // TODO type and argnum checking
+  auto child = LuaOpenSCADObjectToNode(J, 1);
+  if (child == nullptr) return 0;
   shows.push_back(child);
-  return 0;	
+  return 0;
 }
 
+#define JS_ADDFUNCTION(name)                       \
+  js_newcfunction(js_interp, js_##name, #name, 1); \
+  js_setglobal(js_interp, #name);
 
-
-#define JS_ADDFUNCTION(name) \
-  js_newcfunction(js_interp, js_##name, #name, 1); js_setglobal(js_interp, #name);
-
-void registerLuaFunctions(void) {
-  lua_register(L,"cube", lua_cube);
-  lua_register(L,"sphere", lua_sphere);
-  lua_register(L,"show", lua_show);
+void registerLuaFunctions(void)
+{
+  lua_register(L, "cube", lua_cube);
+  lua_register(L, "sphere", lua_sphere);
+  lua_register(L, "show", lua_show);
 #if 0	
   JS_ADDFUNCTION(print)	
   JS_ADDFUNCTION(cube)
@@ -200,6 +196,5 @@ void registerLuaFunctions(void) {
   JS_ADDFUNCTION(translate)
   JS_ADDFUNCTION(rotate)
   JS_ADDFUNCTION(output)
-#endif  
+#endif
 }
-

@@ -35,86 +35,81 @@
 #include <Selection.h>
 #include "genlang/genlang.h"
 
-
 #define LUA_OpenSCADObject "LUA_OpenSCADObject"
 
-LanguageDesc lang_lua(
-		"lua",
-		 [](const char *fname, const char *content){
-		  return boost::algorithm::ends_with(fname, ".lua")?1:0;
-		  }
-		);
+LanguageDesc lang_lua("lua", [](const char *fname, const char *content) {
+  return boost::algorithm::ends_with(fname, ".lua") ? 1 : 0;
+});
 
-lua_State  *L = nullptr;
+lua_State *L = nullptr;
 
-static int lua_OpenSCADObject_gc(lua_State*L)
+static int lua_OpenSCADObject_gc(lua_State *L)
 {
-	// get Lua-pointer to C++-Pointer
-	LuaOpenSCADObject**ppLuaOpenSCADObject=(LuaOpenSCADObject**)luaL_checkudata(L,1,LUA_OpenSCADObject);
-	// if C++-Pointer not null, then delete related class/struct
-	if(*ppLuaOpenSCADObject)
-		delete *ppLuaOpenSCADObject;
-	// let Lua forget the C++ pointer (not required, but cleaner code)
-	*ppLuaOpenSCADObject=nullptr;
-	return 0;
+  // get Lua-pointer to C++-Pointer
+  LuaOpenSCADObject **ppLuaOpenSCADObject =
+    (LuaOpenSCADObject **)luaL_checkudata(L, 1, LUA_OpenSCADObject);
+  // if C++-Pointer not null, then delete related class/struct
+  if (*ppLuaOpenSCADObject) delete *ppLuaOpenSCADObject;
+  // let Lua forget the C++ pointer (not required, but cleaner code)
+  *ppLuaOpenSCADObject = nullptr;
+  return 0;
 }
 
 // declare a metatable for garbage collect handler
-const struct luaL_Reg OpenSCADObject_mt[]=
-{
-	{"__gc",lua_OpenSCADObject_gc},
-	{NULL,NULL},
+const struct luaL_Reg OpenSCADObject_mt[] = {
+  {"__gc", lua_OpenSCADObject_gc},
+  {NULL, NULL},
 };
 
 void lua_get_fnas(double& fn, double& fa, double& fs)
 {
-	fn=0;
-	fa=12;
-	fs=2;
+  fn = 0;
+  fa = 12;
+  fs = 2;
 }
-int LuArg_ParseTupleAndKeywords(lua_State *L, const char *fmt, char **kwlist , ...)
+int LuArg_ParseTupleAndKeywords(lua_State *L, const char *fmt, char **kwlist, ...)
 {
-  const char *ptr =fmt;
+  const char *ptr = fmt;
   va_list ap;
-  int ind=1;
+  int ind = 1;
   va_start(ap, kwlist);
   double *dptr;
   int *iptr;
   Vector3d *vecptr;
   const char **cptr;
-  int optional=0;
-  while(*ptr != '\0') {
-    switch(*ptr) {
-      case 'd':
-              dptr = va_arg(ap, double *);
-	      if(lua_isnumber(L,ind)) *dptr = lua_tonumber(L,ind);
-	      ind++;
-	      break;
-      case 'i':
-              iptr = va_arg(ap, int *);
-	      if(lua_isnumber(L,ind)) *iptr = lua_tonumber(L,ind);
-	      ind++;
-	      break;
-      case 's':
-              cptr = va_arg(ap, const char **);
-	      if(lua_isstring(L,ind)) *cptr = lua_tostring(L,ind);
-	      ind++;
-	      break;
-      case 'V':
-              vecptr = va_arg(ap, Vector3d *);
-	      if(lua_istable(L,ind)) {
-                for(int i=0;i<3;i++) {	  
-                  lua_geti(L, ind,i+1);
-                  (*vecptr)[i] =lua_tonumber(L,-1);
-                  lua_pop(L, 1);
-	        }
-	      }	
-	      ind++;
-	      break;
-      case '|': optional=1; break;	      
-      default: break;
+  int optional = 0;
+  while (*ptr != '\0') {
+    switch (*ptr) {
+    case 'd':
+      dptr = va_arg(ap, double *);
+      if (lua_isnumber(L, ind)) *dptr = lua_tonumber(L, ind);
+      ind++;
+      break;
+    case 'i':
+      iptr = va_arg(ap, int *);
+      if (lua_isnumber(L, ind)) *iptr = lua_tonumber(L, ind);
+      ind++;
+      break;
+    case 's':
+      cptr = va_arg(ap, const char **);
+      if (lua_isstring(L, ind)) *cptr = lua_tostring(L, ind);
+      ind++;
+      break;
+    case 'V':
+      vecptr = va_arg(ap, Vector3d *);
+      if (lua_istable(L, ind)) {
+        for (int i = 0; i < 3; i++) {
+          lua_geti(L, ind, i + 1);
+          (*vecptr)[i] = lua_tonumber(L, -1);
+          lua_pop(L, 1);
+        }
+      }
+      ind++;
+      break;
+    case '|': optional = 1; break;
+    default:  break;
     }
-    ptr++;		
+    ptr++;
   }
   va_end(ap);
   return 1;
@@ -881,31 +876,31 @@ PyMODINIT_FUNC PyInit_PyOpenSCAD(void)
 
 #include <stdio.h>
 
-
-int LuaOpenSCADObjectFromNode(const std::shared_ptr<AbstractNode> &node)
+int LuaOpenSCADObjectFromNode(const std::shared_ptr<AbstractNode>& node)
 {
-  LuaOpenSCADObject *pLuaOpenSCADObject = new LuaOpenSCADObject; 
-  pLuaOpenSCADObject->type_id = 0 ;
+  LuaOpenSCADObject *pLuaOpenSCADObject = new LuaOpenSCADObject;
+  pLuaOpenSCADObject->type_id = 0;
   pLuaOpenSCADObject->node = node;
 
-  // allocate space for a pointer to object    
-  LuaOpenSCADObject **ppLuaOpenSCADObject = ( LuaOpenSCADObject**) lua_newuserdata(L, sizeof(LuaOpenSCADObject*));
-  *ppLuaOpenSCADObject=pLuaOpenSCADObject;
+  // allocate space for a pointer to object
+  LuaOpenSCADObject **ppLuaOpenSCADObject =
+    (LuaOpenSCADObject **)lua_newuserdata(L, sizeof(LuaOpenSCADObject *));
+  *ppLuaOpenSCADObject = pLuaOpenSCADObject;
   // copy pointer to object from C++ to Lua
   // assign metatable to give correct garbagecollector
-  luaL_getmetatable(L,LUA_OpenSCADObject);
-  lua_setmetatable(L,-2);
-  return 1; // returned 1 element on stack	
+  luaL_getmetatable(L, LUA_OpenSCADObject);
+  lua_setmetatable(L, -2);
+  return 1;  // returned 1 element on stack
 }
 
 std::shared_ptr<AbstractNode> LuaOpenSCADObjectToNode(lua_State *lua, int argnum)
 {
-  LuaOpenSCADObject ** obj = (LuaOpenSCADObject **) lua_touserdata(lua,argnum);	
-  if((*obj)->type_id != 0) return nullptr;
+  LuaOpenSCADObject **obj = (LuaOpenSCADObject **)lua_touserdata(lua, argnum);
+  if ((*obj)->type_id != 0) return nullptr;
   return (*obj)->node;
 }
 
-//js_State *js_interp;
+// js_State *js_interp;
 
 void initLua(double time)
 {
@@ -913,21 +908,20 @@ void initLua(double time)
   luaL_openlibs(L);
   registerLuaFunctions();
 
-  luaL_newmetatable(L,LUA_OpenSCADObject);	// -1=mt'LUA_OpenSCADObject' create a new metatable
-  lua_pushvalue(L,-1);				// -1=mt'LUA_OpenSCADObject' -2=mt'LUA_OpenSCADObject'
-  lua_setfield(L,-2,"__index");		// set index to itself
-  luaL_setfuncs (L, OpenSCADObject_mt, 0);	// register with OpenSCADObject_mt for this metatable
-}  
-std::string evaluateLua(const std::string & code)
+  luaL_newmetatable(L, LUA_OpenSCADObject);  // -1=mt'LUA_OpenSCADObject' create a new metatable
+  lua_pushvalue(L, -1);                      // -1=mt'LUA_OpenSCADObject' -2=mt'LUA_OpenSCADObject'
+  lua_setfield(L, -2, "__index");            // set index to itself
+  luaL_setfuncs(L, OpenSCADObject_mt, 0);    // register with OpenSCADObject_mt for this metatable
+}
+std::string evaluateLua(const std::string& code)
 {
-  std::string outbuf;	
+  std::string outbuf;
   shows.clear();
-  int r = luaL_dostring(L,code.c_str());
-  if(r == LUA_OK) {
-  }else {
-    outbuf =  lua_tostring(L,-1);
+  int r = luaL_dostring(L, code.c_str());
+  if (r == LUA_OK) {
+  } else {
+    outbuf = lua_tostring(L, -1);
   }
-
 
   return outbuf;
 }
