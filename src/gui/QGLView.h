@@ -17,6 +17,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include "glview/GLView.h"
+#include "../core/MouseConfig.h"
 
 class QGLView : public QOpenGLWidget, public GLView
 {
@@ -54,12 +55,8 @@ public:
 public slots:
   void ZoomIn();
   void ZoomOut();
-  void setMouseCentricZoom(bool var){
-    this->mouseCentricZoom = var;
-  }
-  void setMouseSwapButtons(bool var){
-    this->mouseSwapButtons = var;
-  }
+  void setMouseCentricZoom(bool var) { this->mouseCentricZoom = var; }
+  void setMouseSwapButtons(bool var) { this->mouseSwapButtons = var; }
 
 public:
   QLabel *statusLabel;
@@ -77,11 +74,11 @@ private:
   bool mouse_drag_active;
   bool mouse_drag_moved = true;
   bool mouseCentricZoom = true;
-  bool mouseSwapButtons = false;
-  std::shared_ptr<SelectedObject> mouseDraggedSel = nullptr;
   QPoint mouseDraggedPoint;
+  std::shared_ptr<SelectedObject> mouseDraggedSel = nullptr;
+  float mouseActions[MouseConfig::MouseAction::NUM_MOUSE_ACTIONS * MouseConfig::ACTION_DIMENSION];
   QPoint last_mouse;
-  QImage frame; // Used by grabFrame() and save()
+  QImage frame;  // Used by grabFrame() and save()
 
   void wheelEvent(QWheelEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
@@ -107,7 +104,7 @@ signals:
   void resized();
   void doRightClick(QPoint screen_coordinate);
   void doLeftClick(QPoint screen_coordinate);
-  void toolTipShow(QPoint,QString msg);
+  void toolTipShow(QPoint, QString msg);
   void dragPoint(Vector3d pt, Vector3d newpt);
   void dragPointEnd(Vector3d pt);
 };
