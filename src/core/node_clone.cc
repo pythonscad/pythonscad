@@ -33,6 +33,7 @@
 #include "core/PathExtrudeNode.h"
 #include "core/PullNode.h"
 #include "core/DebugNode.h"
+#include "core/RepairNode.h"
 #include "core/WrapNode.h"
 #include "core/OversampleNode.h"
 #include "core/FilletNode.h"

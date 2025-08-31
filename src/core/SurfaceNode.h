@@ -77,6 +77,7 @@ public:
   Filename filename;
   bool center{false};
   bool invert{false};
+  bool color{false};
   int convexity{1};
 
   std::unique_ptr<const Geometry> createGeometry() const override;

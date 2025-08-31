@@ -189,6 +189,10 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
 
   if (bn < 2) bn = 2;
   // Create vertex2face db
+  auto vertices_copy = ps->vertices;
+
+  bool improved = false;
+  std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> edge_db;
   std::vector<intList> polinds, polposs;
   intList empty;
   for (size_t i = 0; i < ps->vertices.size(); i++) {
@@ -241,6 +245,7 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   }
 
   SearchReplace s;
+  std::vector<SearchReplace> sp;
 
   // plan fillets of all edges now
   for (auto& e : edge_db) {
@@ -380,6 +385,9 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
           }
         }
       }
+
+      e_fa2 *= r_;
+      e_fb2 *= r_;
 
       // Calculate bezier patches
       for (int i = 0; i < bn; i++) {

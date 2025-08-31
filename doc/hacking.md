@@ -1,6 +1,6 @@
 # Coding Style
 
-The OpenSCAD coding style is encoded in `.uncrustify.cfg`.
+The OpenSCAD coding style is encoded in `.clang-format`.
 
 Coding style highlights:
 

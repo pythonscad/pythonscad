@@ -97,9 +97,7 @@ void TabManager::tabSwitched(int x)
     setTabsCloseButtonVisibility(idx, isVisible);
   }
 
-#ifdef ENABLE_PYTHON
-  par->recomputePythonActive();
-#endif
+  par->recomputeLanguageActive();
   emit currentEditorChanged(editor);
 }
 
@@ -159,6 +157,7 @@ void TabManager::open(const QString& filename)
   if (use_gvim) {
     QString editorcmd = "gvim --remote-tab-silent ";
     editorcmd += filename.toUtf8();
+    //    LOG("2. Opening file '%1$s'",editorcmd.toUtf8().constData());
     system(editorcmd.toUtf8().constData());
   }
   for (auto edt : editorList) {
@@ -610,6 +609,7 @@ bool TabManager::save(EditorInterface *edt)
 {
   assert(edt != nullptr);
 
+  if (edt->filepath.endsWith("Untitled.py")) edt->filepath = "";
   if (edt->filepath.isEmpty()) {
     return saveAs(edt);
   } else {

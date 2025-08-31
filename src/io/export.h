@@ -244,6 +244,7 @@ struct ExportInfo {
 
   std::shared_ptr<const ExportPdfOptions> optionsPdf;
   std::shared_ptr<const Export3mfOptions> options3mf;
+  std::shared_ptr<const ExportSvgOptions> optionsSvg;
 };
 
 class Export3mfPartInfo

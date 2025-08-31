@@ -21,6 +21,7 @@
 #include "core/RotateExtrudeNode.h"
 #include "core/PullNode.h"
 #include "core/DebugNode.h"
+#include "core/RepairNode.h"
 #include "core/WrapNode.h"
 #include "core/CgalAdvNode.h"
 #include "core/ProjectionNode.h"
@@ -2686,9 +2687,10 @@ std::vector<std::vector<IndexedTriangle>> wrapSlice(PolySetBuilder& builder,
     if (norm_ind == -1) {
       norm_ind = norm_list.size();
       norm_list.push_back(norm);
+      color_list.push_back(triangle.color);
       polygons_sorted.push_back(emptyList);
     }
-    polygons_sorted[norm_ind].push_back(triangle);
+    polygons_sorted[bucket_ind].push_back(triangle.face);
   }
 
   for (auto& bucket : polygons_sorted) {
@@ -2876,6 +2878,7 @@ std::vector<std::vector<IndexedTriangle>> wrapSlice(PolySetBuilder& builder,
         results[i].push_back(tri);
       }
     }
+    color_ind++;
   }
   return results;
 }

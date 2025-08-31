@@ -8,6 +8,7 @@
 
 #include <Eigen/Core>
 
+#include "core/ColorUtil.h"
 #include "geometry/Geometry.h"
 #include "geometry/linalg.h"
 #include "geometry/Polygon2d.h"
@@ -143,7 +144,7 @@ void draw_axes(cairo_t *cr, double left, double right, double bottom, double top
       const std::string num = std::to_string(i * 10);
       draw_text(num.c_str(), cr, pts + 1, bottom + offset - 2, 6., 0.);
     }
-  };
+  }
   // compute Yrange in 10mm
   int Ystart = ceil(points_to_mm(top) / 10.);
   int Ystop = floor(points_to_mm(bottom) / 10.);
@@ -281,16 +282,18 @@ void export_pdf(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
   // Extract the options.  This will change when options becomes a variant.
   const ExportPdfOptions *options;
   const ExportPdfOptions defaultPdfOptions;
-  // could use short-circuit short-form, but will need to grow.
+
+  // Could use short-circuit short-form, but will need to grow.
   if (exportInfo.optionsPdf) {
     options = exportInfo.optionsPdf.get();
   } else {
     options = &defaultPdfOptions;
-  };
+  }
 
-  int pdfX, pdfY;  // selected paper size for export.
-  // Fit geometry to page
-  // Get dims in mm.
+  // Selected paper size for export.
+  int pdfX, pdfY;
+
+  // Fit geometry to page, get dims in mm.
   BoundingBox bbox = geom->getBoundingBox();
   const int minx = (int)floor(bbox.min().x());
   const int maxy = (int)floor(bbox.max().y());

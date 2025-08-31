@@ -88,6 +88,10 @@ static std::shared_ptr<AbstractNode> builtin_surface(const ModuleInstantiation *
     node->invert = parameters["invert"].toBool();
   }
 
+  if (parameters["color"].type() == Value::Type::BOOL) {
+    node->invert = parameters["color"].toBool();
+  }
+
   return node;
 }
 
@@ -107,7 +111,6 @@ void SurfaceNode::convert_image(img_data_t& data, std::vector<uint8_t>& img, uns
       min_val = std::min(z, min_val);
     }
   }
-  data.min_val = min_val;
 }
 
 bool SurfaceNode::is_png(std::vector<uint8_t>& png) const
@@ -205,7 +208,6 @@ img_data_t SurfaceNode::read_dat(std::string filename) const
 
   data.width = columns;
   data.height = lines;
-  data.min_val = min_val;
 
   // Now convert the unordered, possibly non-rectangular data into a well ordered vector
   // for faster access and reduced memory usage.

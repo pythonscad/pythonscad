@@ -272,7 +272,7 @@ bool Value::toBool() const
   case Type::STRING:    return !std::get<str_utf8_wrapper>(this->value).empty();
   case Type::VECTOR:    return !std::get<VectorType>(this->value).empty();
   case Type::RANGE:     return true;
-  case Type::OBJECT:    return true;
+  case Type::OBJECT:    return !std::get<ObjectType>(this->value).empty();
   case Type::FUNCTION:  return true;
   default:              assert(false && "unknown Value variant type"); return false;
   }
@@ -1348,13 +1348,13 @@ ObjectType::ObjectType(EvaluationSession *session) : ptr(std::make_shared<Object
   ptr->evaluation_session = session;
 }
 
-const Value& ObjectType::get(const std::string& key) const
-{
-  auto result = ptr->map.find(key);
-  // NEEDSWORK it would be nice to have a "cause" for the undef, but Value::undef(...)
-  // does not appear compatible with Value&.
-  return result == ptr->map.end() ? Value::undefined : result->second;
-}
+const Value& ObjectType::get(const std::string& key) const { return ptr->get(key); }
+bool ObjectType::set(const std::string& key, Value value) { return ptr->set(key, std::move(value)); }
+bool ObjectType::del(const std::string& key) { return ptr->del(key) != NOINDEX; }
+bool ObjectType::contains(const std::string& key) const { return ptr->find(key) != NOINDEX; }
+bool ObjectType::empty() const { return ptr->values.empty(); }
+const std::vector<std::string>& ObjectType::keys() const { return ptr->keys; }
+const std::vector<Value>& ObjectType::values() const { return ptr->values; }
 
 void ObjectType::set(const std::string& key, Value&& value)
 {

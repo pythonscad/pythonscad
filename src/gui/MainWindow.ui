@@ -383,6 +383,7 @@
     <addaction name="helpActionManual"/>
     <addaction name="helpActionOfflineManual"/>
     <addaction name="helpActionCheatSheet"/>
+    <addaction name="helpActionPythonCheatSheet"/>
     <addaction name="helpActionOfflineCheatSheet"/>
     <addaction name="helpActionLibraryInfo"/>
     <addaction name="helpActionFontInfo"/>
@@ -405,12 +406,6 @@
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar">
-   <property name="maximumSize">
-    <size>
-     <width>16777215</width>
-     <height>23</height>
-    </size>
-   </property>
   </widget>
   <widget class="Dock" name="editorDock">
    <attribute name="dockWidgetArea">
@@ -1625,6 +1620,11 @@
     <string>&amp;Cheat Sheet</string>
    </property>
   </action>
+  <action name="helpActionPythonCheatSheet">
+   <property name="text">
+    <string>&amp;Python Cheat Sheet</string>
+   </property>
+  </action>
   <action name="fileActionExportPDF">
    <property name="icon">
     <iconset theme="chokusen-export-pdf">
@@ -1675,12 +1675,12 @@
   </action>
   <action name="fileActionPythonCreateVenv">
    <property name="text">
-    <string>Create Virtual Environment</string>
+    <string>Create Virtual Environment...</string>
    </property>
   </action>
   <action name="fileActionPythonSelectVenv">
    <property name="text">
-    <string>Select Virtual Environment</string>
+    <string>Select Virtual Environment...</string>
    </property>
   </action>
  </widget>

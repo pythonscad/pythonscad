@@ -17,6 +17,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include "glview/GLView.h"
+#include "../core/MouseConfig.h"
 
 class QGLView : public QOpenGLWidget, public GLView
 {
@@ -73,9 +74,9 @@ private:
   bool mouse_drag_active;
   bool mouse_drag_moved = true;
   bool mouseCentricZoom = true;
-  bool mouseSwapButtons = false;
-  std::shared_ptr<SelectedObject> mouseDraggedSel = nullptr;
   QPoint mouseDraggedPoint;
+  std::shared_ptr<SelectedObject> mouseDraggedSel = nullptr;
+  float mouseActions[MouseConfig::MouseAction::NUM_MOUSE_ACTIONS * MouseConfig::ACTION_DIMENSION];
   QPoint last_mouse;
   QImage frame;  // Used by grabFrame() and save()
 

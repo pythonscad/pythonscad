@@ -239,7 +239,7 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
     return sphereCreateFuncGeometry(this->r_func, fs, fn);
   }
 #endif
-  size_t num_rings = (num_fragments + 1) / 2;
+  auto num_rings = (num_fragments + 1) / 2;
   // Uncomment the following three lines to enable experimental sphere
   // tessellation
   //  if (num_rings % 2 == 0) num_rings++; // To ensure that the middle ring is at
@@ -249,7 +249,7 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
   polyset->vertices.reserve(num_rings * num_fragments);
 
   // double offset = 0.5 * ((fragments / 2) % 2);
-  for (size_t i = 0; i < num_rings; ++i) {
+  for (auto i = 0; i < num_rings; ++i) {
     //                double phi = (180.0 * (i + offset)) / (fragments/2);
     const double phi = (180.0 * (i + 0.5)) / num_rings;
     const double radius = r * sin_degrees(phi);
@@ -473,6 +473,32 @@ std::string PolyhedronNode::toString() const
     }
     stream << "]";
   }
+  if (this->colors.size() > 0) {
+    stream << "], colors = [";
+    bool firstColor = true;
+    for (const auto& color : this->colors) {
+      if (firstColor) {
+        firstColor = false;
+      } else {
+        stream << ", ";
+      }
+      stream << "[" << color.r() << ", " << color.g() << ", " << color.b() << "]";
+    }
+  }
+
+  if (this->color_indices.size() > 0) {
+    stream << "], color_indices = [";
+    bool firstColInd = true;
+    for (const auto& colind : this->color_indices) {
+      if (firstColInd) {
+        firstColInd = false;
+      } else {
+        stream << ", ";
+      }
+
+      stream << colind;
+    }
+  }
   stream << "], convexity = " << this->convexity << ")";
   return stream.str();
 }
@@ -491,6 +517,8 @@ std::unique_ptr<const Geometry> PolyhedronNode::createGeometry() const
     }
   }
   p->setTriangular(is_triangular);
+  p->colors = this->colors;
+  p->color_indices = this->color_indices;
   return p;
 }
 

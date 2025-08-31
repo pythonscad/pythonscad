@@ -28,6 +28,7 @@
 
 #include <memory>
 #include <QDialog>
+#include <QColor>
 
 #include "gui/qtgettext.h"  // IWYU pragma: keep
 #include "io/export.h"
@@ -49,5 +50,12 @@ public:
   std::shared_ptr<const ExportPdfOptions> getOptions() const { return ExportPdfOptions::fromSettings(); }
 
 private:
-  ExportPdfOptions options;
+  void updateFillColor(const QColor& color);
+  void updateFillControlsEnabled();
+  void updateStrokeColor(const QColor& color);
+  void updateStrokeControlsEnabled();
+
+  QColor fillColor;
+  QColor strokeColor;
+  double defaultStrokeWidth = 0.35;
 };
