@@ -36,14 +36,17 @@
 
 #include "glview/system-gl.h"
 
-LegacyThrownTogetherRenderer::LegacyThrownTogetherRenderer(std::shared_ptr<CSGProducts> root_products,
-                                               std::shared_ptr<CSGProducts> highlight_products,
-                                               std::shared_ptr<CSGProducts> background_products)
-  : root_products(std::move(root_products)), highlight_products(std::move(highlight_products)), background_products(std::move(background_products))
+LegacyThrownTogetherRenderer::LegacyThrownTogetherRenderer(
+  std::shared_ptr<CSGProducts> root_products, std::shared_ptr<CSGProducts> highlight_products,
+  std::shared_ptr<CSGProducts> background_products)
+  : root_products(std::move(root_products)),
+    highlight_products(std::move(highlight_products)),
+    background_products(std::move(background_products))
 {
 }
 
-void LegacyThrownTogetherRenderer::draw(bool /*showfaces*/, bool showedges, const Renderer::shaderinfo_t *shaderinfo) const
+void LegacyThrownTogetherRenderer::draw(bool /*showfaces*/, bool showedges,
+                                        const Renderer::shaderinfo_t *shaderinfo) const
 {
   PRINTD("draw()");
   if (!shaderinfo && showedges) {
@@ -62,20 +65,23 @@ void LegacyThrownTogetherRenderer::draw(bool /*showfaces*/, bool showedges, cons
     renderCSGProducts(this->root_products, showedges, shaderinfo, false, false, true);
     glDisable(GL_CULL_FACE);
   }
-  if (this->background_products) renderCSGProducts(this->background_products, showedges, shaderinfo, false, true, false);
-  if (this->highlight_products) renderCSGProducts(this->highlight_products, showedges, shaderinfo, true, false, false);
+  if (this->background_products)
+    renderCSGProducts(this->background_products, showedges, shaderinfo, false, true, false);
+  if (this->highlight_products)
+    renderCSGProducts(this->highlight_products, showedges, shaderinfo, true, false, false);
   if (shaderinfo && shaderinfo->progid) {
     glUseProgram(0);
   }
 }
 
 void LegacyThrownTogetherRenderer::renderChainObject(const CSGChainObject& csgobj, bool showedges,
-                                               const Renderer::shaderinfo_t *shaderinfo,
-                                               bool highlight_mode, bool background_mode,
-                                               bool fberror, OpenSCADOperator type) const
+                                                     const Renderer::shaderinfo_t *shaderinfo,
+                                                     bool highlight_mode, bool background_mode,
+                                                     bool fberror, OpenSCADOperator type) const
 {
   if (!csgobj.leaf->polyset) return;
-  if (this->geomVisitMark[std::make_pair(csgobj.leaf->polyset.get(), &csgobj.leaf->matrix)]++ > 0) return;
+  if (this->geomVisitMark[std::make_pair(csgobj.leaf->polyset.get(), &csgobj.leaf->matrix)]++ > 0)
+    return;
 
   const Color4f& c = csgobj.leaf->color;
   csgmode_e csgmode = get_csgmode(highlight_mode, background_mode, type);
@@ -99,17 +105,18 @@ void LegacyThrownTogetherRenderer::renderChainObject(const CSGChainObject& csgob
   if (showedges && (shaderinfo && shaderinfo->progid == 0)) {
     // FIXME? glColor4f((c[0]+1)/2, (c[1]+1)/2, (c[2]+1)/2, 1.0);
     setColor(edge_colormode);
-//    render_edges(*csgobj.leaf->polyset, csgmode);
+    //    render_edges(*csgobj.leaf->polyset, csgmode);
   }
   glMultMatrixd(m.data());
   render_surface(*csgobj.leaf->polyset, m, 0, shaderinfo);
   glPopMatrix();
 }
 
-void LegacyThrownTogetherRenderer::renderCSGProducts(const std::shared_ptr<CSGProducts>& products, bool showedges,
-                                               const Renderer::shaderinfo_t *shaderinfo,
-                                               bool highlight_mode, bool background_mode,
-                                               bool fberror) const
+void LegacyThrownTogetherRenderer::renderCSGProducts(const std::shared_ptr<CSGProducts>& products,
+                                                     bool showedges,
+                                                     const Renderer::shaderinfo_t *shaderinfo,
+                                                     bool highlight_mode, bool background_mode,
+                                                     bool fberror) const
 {
   PRINTD("Thrown renderCSGProducts");
   glDepthFunc(GL_LEQUAL);
@@ -117,16 +124,19 @@ void LegacyThrownTogetherRenderer::renderCSGProducts(const std::shared_ptr<CSGPr
 
   for (const auto& product : products->products) {
     for (const auto& csgobj : product.intersections) {
-      renderChainObject(csgobj, showedges, shaderinfo, highlight_mode, background_mode, fberror, OpenSCADOperator::INTERSECTION);
+      renderChainObject(csgobj, showedges, shaderinfo, highlight_mode, background_mode, fberror,
+                        OpenSCADOperator::INTERSECTION);
     }
     for (const auto& csgobj : product.subtractions) {
-      renderChainObject(csgobj, showedges, shaderinfo, highlight_mode, background_mode, fberror, OpenSCADOperator::DIFFERENCE);
+      renderChainObject(csgobj, showedges, shaderinfo, highlight_mode, background_mode, fberror,
+                        OpenSCADOperator::DIFFERENCE);
     }
   }
 }
 
-Renderer::ColorMode LegacyThrownTogetherRenderer::getColorMode(const CSGNode::Flag& flags, bool highlight_mode,
-                                                         bool background_mode, bool fberror, OpenSCADOperator type) const
+Renderer::ColorMode LegacyThrownTogetherRenderer::getColorMode(const CSGNode::Flag& flags,
+                                                               bool highlight_mode, bool background_mode,
+                                                               bool fberror, OpenSCADOperator type) const
 {
   ColorMode colormode = ColorMode::NONE;
 

@@ -1,4 +1,4 @@
- /*
+/*
  *  OpenSCAD (www.openscad.org)
  *  Copyright (C) 2009-2011 Clifford Wolf <clifford@clifford.at> and
  *                          Marius Kintel <marius@kintel.net>
@@ -43,14 +43,18 @@ class OpenCSGPrim : public OpenCSG::Primitive
 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  OpenCSGPrim(OpenCSG::Operation operation, unsigned int convexity, const LegacyOpenCSGRenderer& renderer) :
-    OpenCSG::Primitive(operation, convexity), renderer(renderer) { }
+  OpenCSGPrim(OpenCSG::Operation operation, unsigned int convexity,
+              const LegacyOpenCSGRenderer& renderer)
+    : OpenCSG::Primitive(operation, convexity), renderer(renderer)
+  {
+  }
   std::shared_ptr<const PolySet> polyset;
   Transform3d m;
   Renderer::csgmode_e csgmode{Renderer::CSGMODE_NONE};
 
   // This is used by OpenCSG to render depth values
-  void render() override {
+  void render() override
+  {
     if (polyset) {
       glPushMatrix();
       glMultMatrixd(m.data());
@@ -58,14 +62,17 @@ public:
       glPopMatrix();
     }
   }
+
 private:
   const LegacyOpenCSGRenderer& renderer;
 };
 
 // Primitive for depth rendering using OpenCSG
-std::unique_ptr<OpenCSGPrim> createCSGPrimitive(const CSGChainObject& csgobj, OpenCSG::Operation operation,
-                                bool highlight_mode, bool background_mode, OpenSCADOperator type,
-                                const LegacyOpenCSGRenderer &renderer) {
+std::unique_ptr<OpenCSGPrim> createCSGPrimitive(const CSGChainObject& csgobj,
+                                                OpenCSG::Operation operation, bool highlight_mode,
+                                                bool background_mode, OpenSCADOperator type,
+                                                const LegacyOpenCSGRenderer& renderer)
+{
   auto prim = std::make_unique<OpenCSGPrim>(operation, csgobj.leaf->polyset->getConvexity(), renderer);
   prim->polyset = csgobj.leaf->polyset;
   prim->m = csgobj.leaf->matrix;
@@ -77,18 +84,19 @@ std::unique_ptr<OpenCSGPrim> createCSGPrimitive(const CSGChainObject& csgobj, Op
   return prim;
 }
 
-#endif // ENABLE_OPENCSG
+#endif  // ENABLE_OPENCSG
 
 LegacyOpenCSGRenderer::LegacyOpenCSGRenderer(std::shared_ptr<CSGProducts> root_products,
-                                 std::shared_ptr<CSGProducts> highlights_products,
-                                 std::shared_ptr<CSGProducts> background_products)
+                                             std::shared_ptr<CSGProducts> highlights_products,
+                                             std::shared_ptr<CSGProducts> background_products)
   : root_products_(std::move(root_products)),
-  highlights_products_(std::move(highlights_products)),
-  background_products_(std::move(background_products))
+    highlights_products_(std::move(highlights_products)),
+    background_products_(std::move(background_products))
 {
 }
 
-void LegacyOpenCSGRenderer::draw(bool /*showfaces*/, bool showedges, const shaderinfo_t *shaderinfo) const
+void LegacyOpenCSGRenderer::draw(bool /*showfaces*/, bool showedges,
+                                 const shaderinfo_t *shaderinfo) const
 {
   if (!shaderinfo && showedges) shaderinfo = &getShader();
 
@@ -103,9 +111,9 @@ void LegacyOpenCSGRenderer::draw(bool /*showfaces*/, bool showedges, const shade
   }
 }
 
-void LegacyOpenCSGRenderer::renderCSGProducts(const std::shared_ptr<CSGProducts>& products, bool showedges,
-                                        const Renderer::shaderinfo_t *shaderinfo,
-                                        bool highlight_mode, bool background_mode) const
+void LegacyOpenCSGRenderer::renderCSGProducts(const std::shared_ptr<CSGProducts>& products,
+                                              bool showedges, const Renderer::shaderinfo_t *shaderinfo,
+                                              bool highlight_mode, bool background_mode) const
 {
 #ifdef ENABLE_OPENCSG
   for (const auto& product : products->products) {
@@ -114,13 +122,17 @@ void LegacyOpenCSGRenderer::renderCSGProducts(const std::shared_ptr<CSGProducts>
     std::vector<OpenCSG::Primitive *> primitives;
     for (const auto& csgobj : product.intersections) {
       if (csgobj.leaf->polyset) {
-        owned_primitives.push_back(createCSGPrimitive(csgobj, OpenCSG::Intersection, highlight_mode, background_mode, OpenSCADOperator::INTERSECTION, *this));
+        owned_primitives.push_back(createCSGPrimitive(csgobj, OpenCSG::Intersection, highlight_mode,
+                                                      background_mode, OpenSCADOperator::INTERSECTION,
+                                                      *this));
         primitives.push_back(owned_primitives.back().get());
       }
     }
     for (const auto& csgobj : product.subtractions) {
       if (csgobj.leaf->polyset) {
-        owned_primitives.push_back(createCSGPrimitive(csgobj, OpenCSG::Subtraction, highlight_mode, background_mode, OpenSCADOperator::DIFFERENCE, *this));
+        owned_primitives.push_back(createCSGPrimitive(csgobj, OpenCSG::Subtraction, highlight_mode,
+                                                      background_mode, OpenSCADOperator::DIFFERENCE,
+                                                      *this));
         primitives.push_back(owned_primitives.back().get());
       }
     }
@@ -132,7 +144,7 @@ void LegacyOpenCSGRenderer::renderCSGProducts(const std::shared_ptr<CSGProducts>
     if (shaderinfo && shaderinfo->progid) {
       if (shaderinfo->type != EDGE_RENDERING || (shaderinfo->type == EDGE_RENDERING && showedges)) {
         glUniform1f(shaderinfo->data.csg_rendering.texturefactor, 0.0);
-	GL_CHECKD(glUseProgram(shaderinfo->progid));
+        GL_CHECKD(glUseProgram(shaderinfo->progid));
       }
     }
 
@@ -144,11 +156,11 @@ void LegacyOpenCSGRenderer::renderCSGProducts(const std::shared_ptr<CSGProducts>
         GL_CHECKD(glUniform3f(shaderinfo->data.select_rendering.identifier,
                               ((identifier >> 0) & 0xff) / 255.0f, ((identifier >> 8) & 0xff) / 255.0f,
                               ((identifier >> 16) & 0xff) / 255.0f));
-         glUniform1f(shaderinfo->data.csg_rendering.texturefactor, 0.0);
+        glUniform1f(shaderinfo->data.csg_rendering.texturefactor, 0.0);
       }
 
       const Color4f& c = csgobj.leaf->color;
-        const int& ti = csgobj.leaf->textureind;
+      const int& ti = csgobj.leaf->textureind;
       csgmode_e csgmode = get_csgmode(highlight_mode, background_mode);
 
       ColorMode colormode = ColorMode::NONE;
@@ -183,7 +195,7 @@ void LegacyOpenCSGRenderer::renderCSGProducts(const std::shared_ptr<CSGProducts>
       if (!csgobj.leaf->polyset) continue;
 
       const Color4f& c = csgobj.leaf->color;
-        const int& ti = csgobj.leaf->textureind;
+      const int& ti = csgobj.leaf->textureind;
       csgmode_e csgmode = get_csgmode(highlight_mode, background_mode, OpenSCADOperator::DIFFERENCE);
 
       ColorMode colormode = ColorMode::NONE;
@@ -195,7 +207,7 @@ void LegacyOpenCSGRenderer::renderCSGProducts(const std::shared_ptr<CSGProducts>
         colormode = ColorMode::CUTOUT;
       }
 
-      (void) setColor(colormode, c.data(), ti, shaderinfo);
+      (void)setColor(colormode, c.data(), ti, shaderinfo);
       glPushMatrix();
       Transform3d mat = csgobj.leaf->matrix;
       if (csgobj.leaf->polyset->getDimension() == 2) {
@@ -215,7 +227,7 @@ void LegacyOpenCSGRenderer::renderCSGProducts(const std::shared_ptr<CSGProducts>
     if (shaderinfo) glUseProgram(0);
     glDepthFunc(GL_LEQUAL);
   }
-#endif // ENABLE_OPENCSG
+#endif  // ENABLE_OPENCSG
 }
 
 BoundingBox LegacyOpenCSGRenderer::getBoundingBox() const

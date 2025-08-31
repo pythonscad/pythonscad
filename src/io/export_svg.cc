@@ -56,7 +56,6 @@ static void append_svg(const Polygon2d& poly, std::ostream& output)
     output << " z\n";
   }
   output << "\" stroke=\"black\" fill=\"lightgray\" stroke-width=\"0.5\"/>\n";
-
 }
 
 static void append_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output)
@@ -67,16 +66,16 @@ static void append_svg(const std::shared_ptr<const Geometry>& geom, std::ostream
     }
   } else if (const auto poly = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
     append_svg(*poly, output);
-  } else if (std::dynamic_pointer_cast<const PolySet>(geom)) { // NOLINT(bugprone-branch-clone)
+  } else if (std::dynamic_pointer_cast<const PolySet>(geom)) {  // NOLINT(bugprone-branch-clone)
     assert(false && "Unsupported file format");
-  } else { // NOLINT(bugprone-branch-clone)
+  } else {  // NOLINT(bugprone-branch-clone)
     assert(false && "Export as SVG for this geometry type is not supported");
   }
 }
 
 void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output)
 {
-  setlocale(LC_NUMERIC, "C"); // Ensure radix is . (not ,) in output
+  setlocale(LC_NUMERIC, "C");  // Ensure radix is . (not ,) in output
 
   BoundingBox bbox = geom->getBoundingBox();
   const int minx = (int)floor(bbox.min().x());
@@ -86,16 +85,16 @@ void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
   const int width = maxx - minx;
   const int height = maxy - miny;
 
-  output
-    << "<?xml version=\"1.0\" standalone=\"no\"?>\n"
-    << "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n"
-    << "<svg width=\"" << width << "mm\" height=\"" << height
-    << "mm\" viewBox=\"" << minx << " " << miny << " " << width << " " << height
-    << "\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n"
-    << "<title>OpenSCAD Model</title>\n";
+  output << "<?xml version=\"1.0\" standalone=\"no\"?>\n"
+         << "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" "
+            "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n"
+         << "<svg width=\"" << width << "mm\" height=\"" << height << "mm\" viewBox=\"" << minx << " "
+         << miny << " " << width << " " << height
+         << "\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n"
+         << "<title>OpenSCAD Model</title>\n";
 
   append_svg(geom, output);
 
   output << "</svg>\n";
-  setlocale(LC_NUMERIC, ""); // Set default locale
+  setlocale(LC_NUMERIC, "");  // Set default locale
 }
