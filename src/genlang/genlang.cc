@@ -9,17 +9,14 @@ std::shared_ptr<AbstractNode> genlang_result_node = nullptr;
 
 void show_final(void)
 {
-  mapping_name.clear(); 
+  mapping_name.clear();
   mapping_code.clear();
   mapping_level.clear();
-  if(shows.size() == 1) genlang_result_node = shows[0];
+  if (shows.size() == 1) genlang_result_node = shows[0];
   else {
     DECLARE_INSTANCE
-    genlang_result_node = std::make_shared<CsgOpNode>(instance, OpenSCADOperator::UNION); 
-    genlang_result_node -> children = shows;
+    genlang_result_node = std::make_shared<CsgOpNode>(instance, OpenSCADOperator::UNION);
+    genlang_result_node->children = shows;
   }
   shows.clear();
-
 }
-
-

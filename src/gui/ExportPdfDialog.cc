@@ -43,31 +43,35 @@ ExportPdfDialog::ExportPdfDialog()
   initButtonGroup(this->buttonGroupPaperSize, S::exportPdfPaperSize);
   initButtonGroup(this->buttonGroupOrientation, S::exportPdfOrientation);
 
-  // Get current settings or defaults modify the two enums (next two rows) to explicitly use default by lookup to string (see the later set methods).
+  // Get current settings or defaults modify the two enums (next two rows) to explicitly use default by
+  // lookup to string (see the later set methods).
   this->checkBoxShowFilename->setChecked(S::exportPdfShowFilename.value());
   this->groupScale->setChecked(S::exportPdfShowScale.value());
   this->checkBoxShowScaleMessage->setChecked(S::exportPdfShowScaleMessage.value());
   this->groupGrid->setChecked(S::exportPdfShowGrid.value());
   this->setGridSize(S::exportPdfGridSize.value());
 
-	groupMetaData->setChecked(S::exportPdfAddMetaData.value());
-	initMetaData(nullptr, this->lineEditMetaDataTitle, nullptr, S::exportPdfMetaDataTitle);
-	initMetaData(this->checkBoxMetaDataAuthor, this->lineEditMetaDataAuthor, &S::exportPdfAddMetaDataAuthor, S::exportPdfMetaDataAuthor);
-	initMetaData(this->checkBoxMetaDataSubject, this->lineEditMetaDataSubject, &S::exportPdfAddMetaDataSubject, S::exportPdfMetaDataSubject);
-	initMetaData(this->checkBoxMetaDataKeywords, this->lineEditMetaDataKeywords, &S::exportPdfAddMetaDataKeywords, S::exportPdfMetaDataKeywords);
+  groupMetaData->setChecked(S::exportPdfAddMetaData.value());
+  initMetaData(nullptr, this->lineEditMetaDataTitle, nullptr, S::exportPdfMetaDataTitle);
+  initMetaData(this->checkBoxMetaDataAuthor, this->lineEditMetaDataAuthor,
+               &S::exportPdfAddMetaDataAuthor, S::exportPdfMetaDataAuthor);
+  initMetaData(this->checkBoxMetaDataSubject, this->lineEditMetaDataSubject,
+               &S::exportPdfAddMetaDataSubject, S::exportPdfMetaDataSubject);
+  initMetaData(this->checkBoxMetaDataKeywords, this->lineEditMetaDataKeywords,
+               &S::exportPdfAddMetaDataKeywords, S::exportPdfMetaDataKeywords);
 }
 
 int ExportPdfDialog::exec()
 {
   bool showDialog = this->checkBoxAlwaysShowDialog->isChecked();
   if ((QApplication::keyboardModifiers() & Qt::ShiftModifier) != 0) {
-  	showDialog = true;
+    showDialog = true;
   }
 
   const auto result = showDialog ? QDialog::exec() : QDialog::Accepted;
 
   if (result == QDialog::Accepted) {
-  	S::exportPdfAlwaysShowDialog.setValue(this->checkBoxAlwaysShowDialog->isChecked());
+    S::exportPdfAlwaysShowDialog.setValue(this->checkBoxAlwaysShowDialog->isChecked());
     applyButtonGroup(this->buttonGroupPaperSize, S::exportPdfPaperSize);
     applyButtonGroup(this->buttonGroupOrientation, S::exportPdfOrientation);
     S::exportPdfShowFilename.setValue(this->checkBoxShowFilename->isChecked());
@@ -77,9 +81,12 @@ int ExportPdfDialog::exec()
     S::exportPdfGridSize.setValue(getGridSize());
     S::exportPdfAddMetaData.setValue(this->groupMetaData->isChecked());
     applyMetaData(nullptr, this->lineEditMetaDataTitle, nullptr, S::exportPdfMetaDataTitle);
-    applyMetaData(this->checkBoxMetaDataAuthor, this->lineEditMetaDataAuthor, &S::exportPdfAddMetaDataAuthor, S::exportPdfMetaDataAuthor);
-    applyMetaData(this->checkBoxMetaDataSubject, this->lineEditMetaDataSubject, &S::exportPdfAddMetaDataSubject, S::exportPdfMetaDataSubject);
-    applyMetaData(this->checkBoxMetaDataKeywords, this->lineEditMetaDataKeywords, &S::exportPdfAddMetaDataKeywords, S::exportPdfMetaDataKeywords);
+    applyMetaData(this->checkBoxMetaDataAuthor, this->lineEditMetaDataAuthor,
+                  &S::exportPdfAddMetaDataAuthor, S::exportPdfMetaDataAuthor);
+    applyMetaData(this->checkBoxMetaDataSubject, this->lineEditMetaDataSubject,
+                  &S::exportPdfAddMetaDataSubject, S::exportPdfMetaDataSubject);
+    applyMetaData(this->checkBoxMetaDataKeywords, this->lineEditMetaDataKeywords,
+                  &S::exportPdfAddMetaDataKeywords, S::exportPdfMetaDataKeywords);
     Settings::Settings::visit(SettingsWriter());
   }
 
@@ -101,5 +108,5 @@ void ExportPdfDialog::setGridSize(double value)
       return;
     }
   }
-  rbGs_10mm->setChecked(true); // default
+  rbGs_10mm->setChecked(true);  // default
 }

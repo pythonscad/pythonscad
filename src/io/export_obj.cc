@@ -26,7 +26,7 @@
  */
 
 #include "io/export.h"
- 
+
 #include <ostream>
 #include <memory>
 
@@ -40,7 +40,7 @@
 void export_obj(const std::shared_ptr<const Geometry>& geom, std::ostream& output)
 {
   // FIXME: In lazy union mode, should we export multiple objects?
-  
+
   std::shared_ptr<const PolySet> out = PolySetUtils::getGeometryAsPolySet(geom);
   if (Feature::ExperimentalPredictibleOutput.is_enabled()) {
     out = createSortedPolySet(*out);
@@ -50,10 +50,10 @@ void export_obj(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
 
 #ifdef ENABLE_PYTHON
   python_export_obj_att(output);
-#endif  
+#endif
 
-  for (const auto &v : out->vertices) {
-    output << "v " <<v[0] << " " << v[1] << " " << v[2] << "\n";
+  for (const auto& v : out->vertices) {
+    output << "v " << v[0] << " " << v[1] << " " << v[2] << "\n";
   }
 
   for (const auto& poly : out->indices) {

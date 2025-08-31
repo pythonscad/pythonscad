@@ -54,8 +54,7 @@
  */
 using ValueIdentifier = void *;
 
-struct IdentifierVisitor
-{
+struct IdentifierVisitor {
   ValueIdentifier operator()(const UndefType&) const { return nullptr; }
   ValueIdentifier operator()(bool) const { return nullptr; }
   ValueIdentifier operator()(double) const { return nullptr; }
@@ -69,8 +68,7 @@ struct IdentifierVisitor
   ValueIdentifier operator()(const FunctionPtr& value) const { return value.get().get(); }
 };
 
-struct UseCountVisitor
-{
+struct UseCountVisitor {
   int operator()(const UndefType&) const { return 0; }
   int operator()(bool) const { return 0; }
   int operator()(double) const { return 0; }
@@ -84,8 +82,7 @@ struct UseCountVisitor
   int operator()(const FunctionPtr& value) const { return value.get().use_count(); }
 };
 
-struct EmbeddedValuesVisitor
-{
+struct EmbeddedValuesVisitor {
   const std::vector<Value> *operator()(const UndefType&) const { return nullptr; }
   const std::vector<Value> *operator()(bool) const { return nullptr; }
   const std::vector<Value> *operator()(double) const { return nullptr; }
@@ -99,8 +96,7 @@ struct EmbeddedValuesVisitor
   const std::vector<Value> *operator()(const FunctionPtr&) const { return nullptr; }
 };
 
-struct ReferencedContextVisitor
-{
+struct ReferencedContextVisitor {
   const std::shared_ptr<const Context> *operator()(const UndefType&) const { return nullptr; }
   const std::shared_ptr<const Context> *operator()(bool) const { return nullptr; }
   const std::shared_ptr<const Context> *operator()(double) const { return nullptr; }
@@ -111,10 +107,11 @@ struct ReferencedContextVisitor
   const std::shared_ptr<const Context> *operator()(const VectorType&) const { return nullptr; }
   const std::shared_ptr<const Context> *operator()(const EmbeddedVectorType&) const { return nullptr; }
   const std::shared_ptr<const Context> *operator()(const ObjectType&) const { return nullptr; }
-  const std::shared_ptr<const Context> *operator()(const FunctionPtr& value) const { return &value->getContext(); }
+  const std::shared_ptr<const Context> *operator()(const FunctionPtr& value) const
+  {
+    return &value->getContext();
+  }
 };
-
-
 
 /*
  * Finds all contexts that have an inbound reference from something that is not
@@ -129,7 +126,8 @@ struct ReferencedContextVisitor
  *
  * Implemented as a breadth first search to save on stack space.
  */
-static std::vector<Context *> findRootContexts(const std::vector<std::shared_ptr<Context>>& managedContexts)
+static std::vector<Context *> findRootContexts(
+  const std::vector<std::shared_ptr<Context>>& managedContexts)
 {
   std::map<ValueIdentifier, int> accountedValueReferences;
   std::map<const Context *, int> accountedContextReferences;
@@ -139,48 +137,50 @@ static std::vector<Context *> findRootContexts(const std::vector<std::shared_ptr
   std::deque<const std::shared_ptr<const Context> *> contextQueue;
 
   auto visitValue = [&](const Value& value) {
-      ValueIdentifier identifier = std::visit(IdentifierVisitor(), value.getVariant());
-      if (!identifier) {
-        return;
-      }
+    ValueIdentifier identifier = std::visit(IdentifierVisitor(), value.getVariant());
+    if (!identifier) {
+      return;
+    }
 
-      if (!accountedValueReferences.count(identifier)) {
-        accountedValueReferences[identifier] = 0;
-      }
-      int accountedReferences = ++accountedValueReferences[identifier];
-      int requiredReferences = std::visit(UseCountVisitor(), value.getVariant());
-      assert(accountedReferences <= requiredReferences);
-      if (accountedReferences == requiredReferences) {
-        const std::vector<Value> *embeddedValues = std::visit(EmbeddedValuesVisitor(), value.getVariant());
-        if (embeddedValues) {
-          for (const Value& embeddedValue : *embeddedValues) {
-            valueQueue.push_back(&embeddedValue);
-          }
-        }
-
-        const std::shared_ptr<const Context> *referencedContext = std::visit(ReferencedContextVisitor(), value.getVariant());
-        if (referencedContext) {
-          contextQueue.push_back(referencedContext);
+    if (!accountedValueReferences.count(identifier)) {
+      accountedValueReferences[identifier] = 0;
+    }
+    int accountedReferences = ++accountedValueReferences[identifier];
+    int requiredReferences = std::visit(UseCountVisitor(), value.getVariant());
+    assert(accountedReferences <= requiredReferences);
+    if (accountedReferences == requiredReferences) {
+      const std::vector<Value> *embeddedValues = std::visit(EmbeddedValuesVisitor(), value.getVariant());
+      if (embeddedValues) {
+        for (const Value& embeddedValue : *embeddedValues) {
+          valueQueue.push_back(&embeddedValue);
         }
       }
-    };
+
+      const std::shared_ptr<const Context> *referencedContext =
+        std::visit(ReferencedContextVisitor(), value.getVariant());
+      if (referencedContext) {
+        contextQueue.push_back(referencedContext);
+      }
+    }
+  };
   auto visitContext = [&](const std::shared_ptr<const Context>& context) {
-      if (!accountedContextReferences.count(context.get())) {
-        accountedContextReferences[context.get()] = 0;
-      }
-      int accountedReferences = ++accountedContextReferences[context.get()];
-      int requiredReferences = context.use_count();
-      assert(accountedReferences <= requiredReferences);
-      if (accountedReferences == requiredReferences) {
-        fullyAccountedContexts.insert(context.get());
-      }
-    };
+    if (!accountedContextReferences.count(context.get())) {
+      accountedContextReferences[context.get()] = 0;
+    }
+    int accountedReferences = ++accountedContextReferences[context.get()];
+    int requiredReferences = context.use_count();
+    assert(accountedReferences <= requiredReferences);
+    if (accountedReferences == requiredReferences) {
+      fullyAccountedContexts.insert(context.get());
+    }
+  };
 
   for (const std::shared_ptr<Context>& context : managedContexts) {
     std::vector<const Value *> values = context->list_embedded_values();
     valueQueue.insert(valueQueue.end(), values.begin(), values.end());
 
-    std::vector<const std::shared_ptr<const Context> *> referencedContexts = context->list_referenced_contexts();
+    std::vector<const std::shared_ptr<const Context> *> referencedContexts =
+      context->list_referenced_contexts();
     contextQueue.insert(contextQueue.end(), referencedContexts.begin(), referencedContexts.end());
 
     accountedContextReferences[context.get()] = 1;
@@ -208,14 +208,13 @@ static std::vector<Context *> findRootContexts(const std::vector<std::shared_ptr
   return rootContexts;
 }
 
-
-
 /*
  * Finds all contexts reachable from a set of root contexts.
  *
  * Implemented as a breadth first search to save on stack space.
  */
-static std::unordered_set<const Context *> findReachableContexts(const std::vector<Context *>& rootContexts)
+static std::unordered_set<const Context *> findReachableContexts(
+  const std::vector<Context *>& rootContexts)
 {
   std::unordered_set<ValueIdentifier> valuesSeen;
   std::unordered_set<const Context *> contextsSeen;
@@ -224,21 +223,21 @@ static std::unordered_set<const Context *> findReachableContexts(const std::vect
   std::deque<const Context *> contextQueue;
 
   auto visitValue = [&](const Value& value) {
-      ValueIdentifier identifier = std::visit(IdentifierVisitor(), value.getVariant());
-      if (!identifier) {
-        return;
-      }
-      if (!valuesSeen.count(identifier)) {
-        valuesSeen.insert(identifier);
-        valueQueue.push_back(&value);
-      }
-    };
+    ValueIdentifier identifier = std::visit(IdentifierVisitor(), value.getVariant());
+    if (!identifier) {
+      return;
+    }
+    if (!valuesSeen.count(identifier)) {
+      valuesSeen.insert(identifier);
+      valueQueue.push_back(&value);
+    }
+  };
   auto visitContext = [&](const Context *context) {
-      if (!contextsSeen.count(context)) {
-        contextsSeen.insert(context);
-        contextQueue.push_back(context);
-      }
-    };
+    if (!contextsSeen.count(context)) {
+      contextsSeen.insert(context);
+      contextQueue.push_back(context);
+    }
+  };
 
   contextsSeen.insert(rootContexts.begin(), rootContexts.end());
   contextQueue.insert(contextQueue.end(), rootContexts.begin(), rootContexts.end());
@@ -247,14 +246,16 @@ static std::unordered_set<const Context *> findReachableContexts(const std::vect
       const Value *value = valueQueue.front();
       valueQueue.pop_front();
 
-      const std::vector<Value> *embeddedValues = std::visit(EmbeddedValuesVisitor(), value->getVariant());
+      const std::vector<Value> *embeddedValues =
+        std::visit(EmbeddedValuesVisitor(), value->getVariant());
       if (embeddedValues) {
         for (const Value& embeddedValue : *embeddedValues) {
           visitValue(embeddedValue);
         }
       }
 
-      const std::shared_ptr<const Context> *referencedContext = std::visit(ReferencedContextVisitor(), value->getVariant());
+      const std::shared_ptr<const Context> *referencedContext =
+        std::visit(ReferencedContextVisitor(), value->getVariant());
       if (referencedContext) {
         visitContext(referencedContext->get());
       }
@@ -268,7 +269,8 @@ static std::unordered_set<const Context *> findReachableContexts(const std::vect
         visitValue(*value);
       }
 
-      std::vector<const std::shared_ptr<const Context> *> referencedContexts = context->list_referenced_contexts();
+      std::vector<const std::shared_ptr<const Context> *> referencedContexts =
+        context->list_referenced_contexts();
       for (const std::shared_ptr<const Context> *referencedContext : referencedContexts) {
         visitContext(referencedContext->get());
       }
@@ -277,8 +279,6 @@ static std::unordered_set<const Context *> findReachableContexts(const std::vect
 
   return contextsSeen;
 }
-
-
 
 /*
  * Clean up all unreachable contexts.
@@ -355,8 +355,6 @@ static void collectGarbage(std::vector<std::weak_ptr<Context>>& managedContexts)
 #endif
 }
 
-
-
 ContextMemoryManager::~ContextMemoryManager()
 {
   collectGarbage(managedContexts);
@@ -367,7 +365,8 @@ ContextMemoryManager::~ContextMemoryManager()
 void ContextMemoryManager::addContext(const std::shared_ptr<Context>& context)
 {
   heapSizeAccounting.addContext();
-  context->setAccountingAdded();   // avoiding bad accounting when an exception threw in constructor issue #3871
+  context->setAccountingAdded();  // avoiding bad accounting when an exception threw in constructor issue
+                                  // #3871
 
   /*
    * If we are holding the last copy to this context, no point in invoking
