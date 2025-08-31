@@ -169,13 +169,9 @@ void registerDefaultIcon(const QString&) {}
 #endif
 
 int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& original_path, int argc,
-        char **argv, const std::string& gui_test)
+        char **argv, const std::string& gui_test, const bool reset_window_settings)
 {
   OpenSCADApp app(argc, argv);
-  // remove ugly frames in the QStatusBar when using additional widgets
-  app.setStyleSheet(
-    "QStatusBar::item { border: 0px solid black; }"
-    "* { font-size: 9pt }");
   QIcon::setThemeName(isDarkMode() ? "chokusen-dark" : "chokusen");
 
   // set up groups for QSettings

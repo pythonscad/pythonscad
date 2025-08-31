@@ -238,6 +238,7 @@ int curl_download(std::string url, std::string path)
 
 #include "gui/LoadShareDesignDialog.h"
 #include "gui/ShareDesignDialog.h"
+#include "input/MouseConfigWidget.h"
 
 // Global application state
 unsigned int GuiLocker::guiLocked = 0;
@@ -443,21 +444,13 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   this->addAction(editActionInsertTemplate);
   this->addAction(editActionFoldAll);
 
-  docks = {{editorDock, QString(_("Editor"))},
-           {consoleDock, QString(_("Console"))},
-           {parameterDock, QString(_("Customizer"))},
-           {errorLogDock, QString(_("Error-Log"))},
-           {animateDock, QString(_("Animate"))},
-           {fontListDock, QString(_("Font Lists"))},
-           {viewportControlDock, QString(_("Viewport-Control"))}};
-
-  this->editorDock->setConfigKey("view/hideEditor");
-  this->consoleDock->setConfigKey("view/hideConsole");
-  this->parameterDock->setConfigKey("view/hideCustomizer");
-  this->errorLogDock->setConfigKey("view/hideErrorLog");
-  this->animateDock->setConfigKey("view/hideAnimate");
-  this->fontListDock->setConfigKey("view/hideFontList");
-  this->viewportControlDock->setConfigKey("view/hideViewportControl");
+  docks = {{editorDock, _("Editor"), "view/hideEditor"},
+           {consoleDock, _("Console"), "view/hideConsole"},
+           {parameterDock, _("Customizer"), "view/hideCustomizer"},
+           {errorLogDock, _("Error-Log"), "view/hideErrorLog"},
+           {animateDock, _("Animate"), "view/hideAnimate"},
+           {fontListDock, _("Font Lists"), "view/hideFontList"},
+           {viewportControlDock, _("Viewport-Control"), "view/hideViewportControl"}};
 
   this->versionLabel = nullptr;  // must be initialized before calling updateStatusBar()
   updateStatusBar(nullptr);
@@ -518,8 +511,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   const QString version =
     QString("<b>OpenSCAD %1</b>").arg(QString::fromStdString(openscad_versionnumber));
   const QString weblink = "<a href=\"https://www.openscad.org/\">https://www.openscad.org/</a><br>";
-  this->console->setFont(GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
-                         GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
 
   consoleOutputRaw(version);
   consoleOutputRaw(weblink);
@@ -751,6 +742,8 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   connect(this->helpActionHomepage, &QAction::triggered, this, &MainWindow::helpHomepage);
   connect(this->helpActionManual, &QAction::triggered, this, &MainWindow::helpManual);
   connect(this->helpActionCheatSheet, &QAction::triggered, this, &MainWindow::helpCheatSheet);
+  connect(this->helpActionPythonCheatSheet, &QAction::triggered, this,
+          &MainWindow::helpPythonCheatSheet);
   connect(this->helpActionLibraryInfo, &QAction::triggered, this, &MainWindow::helpLibrary);
   connect(this->helpActionFontInfo, &QAction::triggered, this, &MainWindow::helpFontInfo);
 
@@ -784,8 +777,8 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
           QOverload<>::of(&QGLView::update));
   connect(GlobalPreferences::inst(), &Preferences::updateMouseCentricZoom, this->qglview,
           &QGLView::setMouseCentricZoom);
-  connect(GlobalPreferences::inst(), &Preferences::updateMouseSwapButtons, this->qglview,
-          &QGLView::setMouseSwapButtons);
+  connect(GlobalPreferences::inst()->MouseConfig, &MouseConfigWidget::updateMouseActions, this,
+          &MainWindow::setAllMouseViewActions);
   connect(GlobalPreferences::inst(), &Preferences::updateReorderMode, this,
           &MainWindow::updateReorderMode);
   connect(GlobalPreferences::inst(), &Preferences::updateUndockMode, this,
@@ -893,9 +886,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 #endif  // ifdef Q_OS_WIN
   }
 
-  updateWindowSettings(isConsoldDockVisible, isEditorDockVisible, isCustomizerDockVisible,
-                       isErrorLogVisible, isEditorToolbarVisible, is3DViewToolbarVisible,
-                       isAnimateDockVisible, isFontListDockVisible, isViewportControlVisible);
+  updateWindowSettings(isEditorToolbarVisible, is3DViewToolbarVisible);
 
   // Connect the menu "Windows/Navigation" to slot that process it by opening in a pop menu
   // the navigationMenu.
@@ -997,6 +988,47 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 
   // Kick the re-styling again, otherwise it does not catch menu items
   GlobalPreferences::inst()->fireApplicationFontChanged();
+}
+
+void MainWindow::setAllMouseViewActions()
+{
+  // Set the mouse actions to those held in the settings.
+  this->qglview->setMouseActions(MouseConfig::MouseAction::LEFT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseLeftClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::MIDDLE_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseMiddleClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::RIGHT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseRightClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::SHIFT_LEFT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseShiftLeftClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::SHIFT_MIDDLE_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseShiftMiddleClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::SHIFT_RIGHT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseShiftRightClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_LEFT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlLeftClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_MIDDLE_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlMiddleClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_RIGHT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlRightClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_SHIFT_LEFT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlShiftLeftClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_SHIFT_MIDDLE_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlShiftMiddleClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_SHIFT_RIGHT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlShiftRightClick.value())));
 }
 
 void MainWindow::onNavigationOpenContextMenu() { navigationMenu->exec(QCursor::pos()); }
@@ -1236,11 +1268,7 @@ void MainWindow::addKeyboardShortCut(const QList<QAction *>& actions)
  * Qt call. So the values are loaded before the call and restored here
  * regardless of the (potential outdated) serialized state.
  */
-void MainWindow::updateWindowSettings(bool isConsoleVisible, bool isEditorVisible,
-                                      bool isCustomizerVisible, bool isErrorLogVisible,
-                                      bool isEditorToolbarVisible, bool isViewToolbarVisible,
-                                      bool isAnimateVisible, bool isFontListVisible,
-                                      bool isViewportControlVisible)
+void MainWindow::updateWindowSettings(bool isEditorToolbarVisible, bool isViewToolbarVisible)
 {
   viewActionHideEditorToolBar->setChecked(!isEditorToolbarVisible);
   hideEditorToolbar();
@@ -2983,7 +3011,7 @@ void MainWindow::setSelectionIndicatorStatus(EditorInterface *editor, int nodeIn
   // first we flags all the nodes in the stack of the provided index
   // ends at size - 1 because we are not doing anything for the root node.
   // starts at 1 because we will process this one after later
-  for (int i = 1; i < stack.size() - 1; i++) {
+  for (size_t i = 1; i < stack.size() - 1; i++) {
     const auto& node = stack[i];
 
     auto& location = node->modinst->location();
@@ -4076,7 +4104,7 @@ Dock *MainWindow::findVisibleDockToActivate(int offset) const
     focusedDockIndice = 0;
   }
 
-  for (int o = 1; o < dockCount; ++o) {
+  for (size_t o = 1; o < dockCount; ++o) {
     // starting from dockCount + focusedDockIndice move left or right (o*offset)
     // to find the first visible one. dockCount is there so there is no situation in which
     // (-1) % dockCount
@@ -4148,6 +4176,8 @@ void MainWindow::helpManual() { UIUtils::openUserManualURL(); }
 void MainWindow::helpOfflineManual() { UIUtils::openOfflineUserManual(); }
 
 void MainWindow::helpCheatSheet() { UIUtils::openCheatSheetURL(); }
+
+void MainWindow::helpPythonCheatSheet() { UIUtils::openPythonCheatSheetURL(); }
 
 void MainWindow::helpOfflineCheatSheet() { UIUtils::openOfflineCheatSheet(); }
 

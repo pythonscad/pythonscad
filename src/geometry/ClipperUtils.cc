@@ -443,7 +443,6 @@ std::unique_ptr<Polygon2d> applyOffset(const Polygon2d& poly, double offset,
   co.Execute(std::ldexp(offset, scale_bits), result);
   auto r = toPolygon2d(result, scale_bits);
   r->transform3d(poly.getTransform3d());
-  r->setColor(*OpenSCAD::parse_color("#f9d72c"));
   return r;
 }
 

@@ -923,6 +923,7 @@ int main(int argc, char **argv)
             .c_str())("d,d", po::value<std::string>(), "deps_file -generate a dependency file for make")(
           "m,m", po::value<std::string>(), "make_cmd -runs make_cmd file if file is missing")(
           "quiet,q", "quiet mode (don't print anything *except* errors)")(
+          "reset-window-settings", "Reset GUI settings for window placement and fonts.")(
           "hardwarnings", "Stop on the first warning")("trace-depth", po::value<unsigned int>(),
                                                        "=n, maximum number of trace messages")(
           "trace-usermodule-parameters", po::value<std::string>(),

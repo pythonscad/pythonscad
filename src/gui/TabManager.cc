@@ -150,7 +150,7 @@ void TabManager::actionNew()
 {
   if (!par->editorDock->isVisible())
     par->editorDock->setVisible(true);  // if editor hidden, make it visible
-  createTab("");
+  createTab("Untitled.py");
 }
 
 void TabManager::open(const QString& filename)
@@ -616,6 +616,7 @@ bool TabManager::save(EditorInterface *edt)
 {
   assert(edt != nullptr);
 
+  if (edt->filepath.endsWith("Untitled.py")) edt->filepath = "";
   if (edt->filepath.isEmpty()) {
     return saveAs(edt);
   } else {

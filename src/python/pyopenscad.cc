@@ -31,7 +31,9 @@
 #include "pydata.h"
 #include "core/CsgOpNode.h"
 #include "Value.h"
+#ifndef OPENSCAD_NOGUI
 #include "executable.h"
+#endif
 #include "Expression.h"
 #include "PlatformUtils.h"
 #include <Context.h>
@@ -76,10 +78,9 @@ void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
  *  allocates a new PyOpenSCAD Object including its internal dictionary
  */
 
-static PyObject *PyOpenSCADObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
 {
-  PyOpenSCADObject *self;
-  self = (PyOpenSCADObject *)type->tp_alloc(type, 0);
+  PyOpenSCADObject *self = (PyOpenSCADObject *) PyType_GenericAlloc(cls, nitems);
   self->dict = PyDict_New();
   PyObject *origin = PyList_New(4);
   for (int i = 0; i < 4; i++) {
@@ -90,6 +91,11 @@ static PyObject *PyOpenSCADObject_new(PyTypeObject *type, PyObject *args, PyObje
   PyDict_SetItemString(self->dict, "origin", origin);
   Py_XDECREF(origin);
   return (PyObject *)self;
+}
+
+static PyObject *PyOpenSCADObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+  return PyOpenSCADObject_alloc(type, 0);
 }
 
 /*
@@ -160,7 +166,7 @@ int python_more_obj(std::vector<std::shared_ptr<AbstractNode>>& children, PyObje
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNode(PyObject *obj, PyObject **dict)
 {
   std::shared_ptr<AbstractNode> result = ((PyOpenSCADObject *)obj)->node;
-  if (result.use_count() > 2) {
+  if (result.use_count() > 2 && result != void_node && result != full_node) {
     result = result->clone();
   }
   *dict = ((PyOpenSCADObject *)obj)->dict;
@@ -203,7 +209,7 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs, PyObje
   std::shared_ptr<AbstractNode> result = nullptr;
   if (PyObject_IsInstance(objs, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
     result = ((PyOpenSCADObject *)objs)->node;
-    if (result.use_count() > 2) {
+    if (result.use_count() > 2 && result != void_node && result != full_node) {
       result = result->clone();
     }
     *dict = ((PyOpenSCADObject *)objs)->dict;
@@ -1152,7 +1158,7 @@ PyTypeObject PyOpenSCADType = {
   0,                                                       /* tp_descr_set */
   0,                                                       /* tp_dictoffset */
   (initproc)PyOpenSCADInit,                                /* tp_init */
-  0,                                                       /* tp_alloc */
+  PyOpenSCADObject_alloc,                                  /* tp_alloc */
   PyOpenSCADObject_new,                                    /* tp_new */
 };
 
@@ -1287,11 +1293,11 @@ int Py_RunMain_ipython(void)
 {
   int exitcode = 0;
 
-  //    pymain_run_python_ipython(&exitcode);
+  pymain_run_python_ipython(&exitcode);
 
-  //    if (Py_FinalizeEx() < 0) {
-  //        exitcode = 120;
-  //    }
+  if (Py_FinalizeEx() < 0) {
+      exitcode = 120;
+  }
 
   //    pymain_free();
 

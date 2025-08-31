@@ -754,7 +754,7 @@
               </item>
              </layout>
             </item>
-  	    <item row="1" column="0">
+            <item row="1" column="0">
              <widget class="QGroupBox" name="groupBoxIndentation">
               <property name="title">
                <string>Indentation</string>
@@ -2959,6 +2959,7 @@
    <addaction name="prefsActionInput"/>
    <addaction name="prefsActionInputButton"/>
    <addaction name="prefsActionPython"/>
+   <addaction name="prefsActionMouse"/>
    <addaction name="prefsActionDialogs"/>
   </widget>
   <action name="prefsAction3DView">
@@ -3051,6 +3052,19 @@
     <string>Buttons</string>
    </property>
   </action>
+  <action name="prefsActionMouse">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../resources/common.qrc">
+     <normaloff>:/icons/prefsInput.png</normaloff>:/icons/prefsInput.png</iconset>
+   </property>
+   <property name="text">
+    <string>Mouse</string>
+   </property>
+  </action>
+
   <action name="prefsActionPython">
    <property name="checkable">
     <bool>true</bool>

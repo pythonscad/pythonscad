@@ -357,39 +357,39 @@ void QGLView::mouseMoveEvent(QMouseEvent *event)
   double dy = (this_mouse.y() - last_mouse.y()) * 0.7;
   if (mouse_drag_active) {
     mouse_drag_moved = true;
-    auto button_compare = this->mouseSwapButtons ? Qt::RightButton : Qt::LeftButton;
-    if (event->buttons() & button_compare
-#ifdef Q_OS_MACOS
-        && !(event->modifiers() & Qt::MetaModifier)
-#endif
-    ) {
-      // Left button rotates in xz, Shift-left rotates in xy
-      // On Mac, Ctrl-Left is handled as right button on other platforms
-      if ((QApplication::keyboardModifiers() & Qt::ControlModifier) != 0) {
-        int drag_x = event->x() - mouseDraggedPoint.x();
-        int drag_y = mouseDraggedPoint.y() - event->y();
+    /* this is drag point trigger, please integrate it again into the new system
+            int drag_x=event->x() - mouseDraggedPoint.x();
+            int drag_y=mouseDraggedPoint.y() - event->y();
 
-        if (mouseDraggedSel == nullptr) {
-          mouseDraggedSel = findObject(pt.x(), pt.y());
-          if (mouseDraggedSel != nullptr && mouseDraggedSel->type != SelectionType::SELECTION_POINT)
-            mouseDraggedSel = nullptr;
-        }
-        if (mouseDraggedSel != nullptr) {
-          int viewport[4] = {0, 0, 0, 0};
-          viewport[2] = size().rwidth();
-          viewport[3] = size().rheight();
-          GLdouble viewcoord[3];
-          gluProject(mouseDraggedSel->pt[0][0], mouseDraggedSel->pt[0][1], mouseDraggedSel->pt[0][2],
-                     this->modelview, this->projection, viewport, &viewcoord[0], &viewcoord[1],
-                     &viewcoord[2]);
+            if(mouseDraggedSel == nullptr){
+              mouseDraggedSel = findObject(pt.x(), pt.y());
+              if(mouseDraggedSel != nullptr && mouseDraggedSel->type !=  SelectionType::SELECTION_POINT )
+                mouseDraggedSel = nullptr;
 
-          Vector3d newpos;
-          gluUnProject(viewcoord[0] + drag_x, viewcoord[1] + drag_y, viewcoord[2], this->modelview,
-                       this->projection, viewport, &newpos[0], &newpos[1], &newpos[2]);
-          emit dragPoint(mouseDraggedSel->pt[0], newpos);
-        }
-      } else if ((QApplication::keyboardModifiers() & Qt::ShiftModifier) != 0) {
-        rotate(dy, dx, 0.0, true);
+            }
+            if(mouseDraggedSel != nullptr){
+              int viewport[4]={0,0,0,0};
+              viewport[2]=size().rwidth();
+              viewport[3]=size().rheight();
+              GLdouble viewcoord[3];
+              gluProject(mouseDraggedSel->pt[0][0],mouseDraggedSel->pt[0][1],mouseDraggedSel->pt[0][2],
+       this->modelview, this->projection, viewport,&viewcoord[0], &viewcoord[1], &viewcoord[2]);
+
+              Vector3d newpos;
+              gluUnProject(viewcoord[0]+drag_x, viewcoord[1]+drag_y, viewcoord[2], this->modelview,
+       this->projection, viewport,&newpos[0], &newpos[1], &newpos[2]); emit
+       dragPoint(mouseDraggedSel->pt[0], newpos);
+            }
+    */
+
+    bool multipleButtonsPressed = false;
+    int buttonIndex = -1;
+    if (event->buttons() & Qt::LeftButton) {
+      buttonIndex = 0;
+    }
+    if (event->buttons() & Qt::MiddleButton) {
+      if (buttonIndex != -1) {
+        multipleButtonsPressed = true;
       } else {
         buttonIndex = 1;
       }
@@ -409,7 +409,7 @@ void QGLView::mouseMoveEvent(QMouseEvent *event)
       if (modifierIndex == 1) {
         modifierIndex = 3;  // Ctrl + Shift
       } else {
-        modifierIndex = 2;
+        modifierIndex = 2;  // Ctrl
       }
     }
 
@@ -470,14 +470,12 @@ void QGLView::mouseReleaseEvent(QMouseEvent *event)
   }
   mouseDraggedSel = nullptr;
 
-  auto button_right = this->mouseSwapButtons ? Qt::LeftButton : Qt::RightButton;
-  auto button_left = this->mouseSwapButtons ? Qt::RightButton : Qt::LeftButton;
   if (!mouse_drag_moved) {
-    if (event->button() == button_right) {
+    if (event->button() == Qt::RightButton) {
       QPoint point = event->pos();
       emit doRightClick(point);
     }
-    if (event->button() == button_left) {
+    if (event->button() == Qt::LeftButton) {
       QPoint point = event->pos();
       emit doLeftClick(point);
     }

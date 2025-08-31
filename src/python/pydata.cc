@@ -98,7 +98,6 @@ double PyDataObjectToValue(PyObject *obj)
 PyObject *python_data_str(PyObject *self)
 {
   std::ostringstream stream;
-  PyObject *dummydict;
   PyDataObject *data = (PyDataObject *)self;
   switch (data->data_type) {
   case DATA_TYPE_LIBFIVE:     stream << "Libfive Tree"; break;
@@ -218,7 +217,7 @@ PyObject *python_lv_bin_int(PyObject *self, PyObject *args, PyObject *kwargs, li
       res.push_back(new libfive::Tree(libfive::Tree::binary(op, *a1[i], *a2[0])));
     }
   } else {
-    printf("Cannot handle  bin %d binop %d \n", a1.size(), a2.size());
+    printf("Cannot handle  bin %lu binop %lu \n", a1.size(), a2.size());
     return Py_None;
   }
 #else
@@ -264,7 +263,7 @@ PyObject *python_lv_binop_int(PyObject *arg1, PyObject *arg2, libfive::Opcode::O
       res.push_back(new libfive::Tree(libfive::Tree::binary(op, *(t1[i]), *(t2[0]))));
     }
   } else {
-    printf("Cannot handle  bin %d binop %d \n", t1.size(), t2.size());
+    printf("Cannot handle bin %lu binop %lu \n", t1.size(), t2.size());
     return Py_None;
   }
 
