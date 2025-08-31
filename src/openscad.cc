@@ -1206,7 +1206,8 @@ int main(int argc, char **argv)
     if (vm.count("run-all-gui-tests")) {
       gui_test = "all";
     }
-    rc = gui(inputFiles, original_path, argc, argv, gui_test);
+    auto reset_window_settings = vm.count("reset-window-settings") > 0;
+    rc = gui(inputFiles, original_path, argc, argv, gui_test, reset_window_settings);
 #endif
   } else {
     LOG("Requested GUI mode but can't open display!\n");
