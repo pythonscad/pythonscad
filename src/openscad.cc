@@ -242,6 +242,7 @@ void help_export()
   LOG("openscad -O export-pdf/paper-size=a6 -O export-pdf/show-grid=false\n");
   help_export(Settings::SettingsExportPdf::cmdline);
   help_export(Settings::SettingsExport3mf::cmdline);
+  help_export(Settings::SettingsExportSvg::cmdline);
   exit(0);
 }
 
@@ -999,7 +1000,7 @@ int main(int argc, char **argv)
     }
     return pythonRunModule(applicationPath, vm[pymod].as<std::string>(), args);
   }
-#endif
+#endif  // ifdef ENABLE_PYTHON
   if (vm.count("quiet")) {
     OpenSCAD::quiet = true;
   }
@@ -1219,7 +1220,8 @@ int main(int argc, char **argv)
     if (vm.count("run-all-gui-tests")) {
       gui_test = "all";
     }
-    rc = gui(inputFiles, original_path, argc, argv, gui_test);
+    auto reset_window_settings = vm.count("reset-window-settings") > 0;
+    rc = gui(inputFiles, original_path, argc, argv, gui_test, reset_window_settings);
 #endif
   } else {
     LOG("Requested GUI mode but can't open display!\n");

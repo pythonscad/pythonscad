@@ -15,6 +15,7 @@ pkgs.mkShell {
     ghostscript
     glib
     gmp
+    gsettings-desktop-schemas
     harfbuzz
     lib3mf
     libGL
@@ -50,4 +51,8 @@ pkgs.mkShell {
     # used by scripts/beautify.sh to clean up code
     clang-tools
   ];
+
+  # avoid segfault when showing a file dialog or color picker
+  # this is usually handled by GTK wrappers during package build
+  GSETTINGS_SCHEMA_DIR = "${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}/glib-2.0/schemas";
 }
