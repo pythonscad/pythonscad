@@ -16,7 +16,7 @@ RUN wget -qO - https://files.openscad.org/OBS-Repository-Key.pub | sudo apt-key 
   sudo apt-get purge -qq fglrx || true
 
 # Clone the pythonscad repository
-RUN git clone --recursive https://github.com/pythonscad/pythonscad.git /opt/pythonscad
+RUN git clone --recursive --branch "add-docker-files" https://github.com/pythonscad/pythonscad.git /opt/pythonscad
 
 WORKDIR /opt/pythonscad
 
