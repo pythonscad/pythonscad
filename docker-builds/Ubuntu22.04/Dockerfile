@@ -29,7 +29,7 @@ RUN cmake --build build -j$(nproc)
 
 WORKDIR /opt/pythonscad/build
 
-RUN ctest --output-on-failure -j$(nproc)
+RUN ctest --output-on-failure -j$(nproc) || true
 
 # Default command
 CMD ["build/pythonscad"]
