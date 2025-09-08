@@ -1,4 +1,4 @@
-FROM ubuntu:25.04
+FROM ubuntu:25.04@sha256:57665ab8178042ef197191fd77d21d8a2f7f535acd26ff7bd548b1f340f081d7
 
 # Install dependencies
 RUN apt-get update && \
