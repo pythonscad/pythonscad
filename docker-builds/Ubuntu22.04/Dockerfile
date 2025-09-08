@@ -23,10 +23,6 @@ WORKDIR /opt/pythonscad
 # Install Python dependencies if requirements.txt exists
 RUN scripts/uni-get-dependencies.sh
 
-WORKDIR /opt/pythonscad/submodules/libfive
-
-RUN patch -p1 <../../patches/libfive2.patch
-
 RUN cmake -B build
 
 RUN cmake --build build -j$(nproc)
