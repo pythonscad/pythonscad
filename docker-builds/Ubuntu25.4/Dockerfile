@@ -6,7 +6,9 @@ RUN apt-get update && \
         git \
         python3 \
         python3-pip \
-        build-essential
+        build-essential \
+        wget \
+        sudo
 
 # Clone the pythonscad repository
 RUN git clone --recursive --branch "add-docker-files" https://github.com/pythonscad/pythonscad.git /opt/pythonscad
