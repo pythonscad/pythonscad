@@ -6,7 +6,9 @@ RUN apt-get update && \
         git \
         python3 \
         python3-pip \
-        build-essential
+        build-essential \
+        wget \
+        sudo
 
 # Add Lib3MF repo
 RUN wget -qO - https://files.openscad.org/OBS-Repository-Key.pub | sudo apt-key add - && \
