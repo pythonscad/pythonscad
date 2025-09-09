@@ -53,7 +53,7 @@ RUN pacman -Syu --noconfirm --needed \
 
 WORKDIR /opt/pythonscad
 
-RUN cmake -B build
+RUN cmake -B build -DENABLE_LIBFIVE=ON
 
 RUN cmake --build build -j$(nproc)
 
