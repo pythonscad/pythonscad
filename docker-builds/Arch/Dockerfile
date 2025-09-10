@@ -1,10 +1,8 @@
 FROM archlinux:latest
 
-# Install dependencies
-RUN pacman -Syu --noconfirm --needed git
+COPY ../../ /opt/pythonscad
 
-# Clone the pythonscad repository
-RUN git clone --recursive https://github.com/pythonscad/pythonscad.git /opt/pythonscad
+RUN rm -rf /opt/pythonscad/build
 
 RUN pacman -Syu --noconfirm --needed \
     base-devel \
