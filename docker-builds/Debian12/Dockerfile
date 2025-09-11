@@ -18,7 +18,7 @@ RUN scripts/uni-get-dependencies.sh
 
 RUN apt-get install -y libmimalloc-dev python3-dev libqt5gamepad5-dev python3-setuptools
 
-RUN cmake -B build -DENABLE_LIBFIVE=ON
+RUN cmake -B build
 
 RUN cmake --build build -j$(nproc)
 
