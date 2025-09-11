@@ -187,10 +187,8 @@ std::shared_ptr<PolySet> ManifoldGeometry::toPolySet() const
     }
     start = end;
   }
-  printf("manifold to poly\n");
   ps->neg_space = nullptr;
   if(neg_space != nullptr) {
-    printf("neg space\n");
     ps->neg_space = neg_space->toPolySet();
   }
   return ps;

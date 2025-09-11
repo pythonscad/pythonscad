@@ -132,7 +132,6 @@ std::shared_ptr<ManifoldGeometry> createManifoldFromPolySet(const PolySet& ps)
   // Note: We currently don't have a way of directly checking if a PolySet is manifold,
   // so we just try converting to a Manifold object and check its status.
   std::shared_ptr<ManifoldGeometry> result = nullptr;
-
   std::unique_ptr<const PolySet> triangulated;
   if (!ps.isTriangular()) {
     triangulated = PolySetUtils::tessellate_faces(ps);
@@ -199,10 +198,8 @@ std::shared_ptr<ManifoldGeometry> createManifoldFromPolySet(const PolySet& ps)
   return std::make_shared<ManifoldGeometry>();
 end:
    result->neg_space = nullptr;
-   printf("polyset to manifold\n");
    if(ps.neg_space != nullptr) {
      result->neg_space=createManifoldFromPolySet(*(ps.neg_space));
-     printf("neg space present\n");
     }
    return result;  
 }
