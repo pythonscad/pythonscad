@@ -5,11 +5,10 @@ COPY ../../ /opt/pythonscad
 RUN rm -rf /opt/pythonscad/build
 
 # Add Lib3MF repo
-RUN wget -qO - https://files.openscad.org/OBS-Repository-Key.pub | sudo apt-key add - && \
-  echo yes | sudo add-apt-repository "deb https://download.opensuse.org/repositories/home:/t-paul:/lib3mf/xUbuntu_22.04/ ./" && \
-  echo yes | sudo add-apt-repository "deb https://download.opensuse.org/repositories/home:/t-paul:/cgal/xUbuntu_22.04/ ./" && \
-  sudo apt-get update -qq && \
-  sudo apt-get purge -qq fglrx || true
+RUN apt update && apt install -y curl gpg software-properties-common && \
+  curl https://files.openscad.org/OBS-Repository-Key.pub | gpg --import && \
+  echo yes | add-apt-repository "deb https://download.opensuse.org/repositories/home:/t-paul:/lib3mf/xUbuntu_22.04/ ./" && \
+  echo yes | add-apt-repository "deb https://download.opensuse.org/repositories/home:/t-paul:/cgal/xUbuntu_22.04/ ./" && \
 
 WORKDIR /opt/pythonscad
 
