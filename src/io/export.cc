@@ -219,7 +219,7 @@ static void exportFile(const std::shared_ptr<const Geometry>& root_geom, std::os
     export_3mf(infos, output, exportInfo);
   } break;
   case FileFormat::DXF:  export_dxf(root_geom, output); break;
-  case FileFormat::SVG:  export_svg(root_geom, output); break;
+  case FileFormat::SVG:  export_svg(root_geom, output, exportInfo); break;
   case FileFormat::PDF:  export_pdf(root_geom, output, exportInfo); break;
   case FileFormat::POV:  export_pov(root_geom, output, exportInfo); break;
   case FileFormat::STEP: export_step(root_geom, output, exportInfo); break;

@@ -88,8 +88,8 @@ public:
   QTimer *waitAfterReloadTimer;
   RenderStatistic renderStatistic;
 
-  SourceFile *rootFile;                            // Result of parsing
-  SourceFile *parsedFile;                          // Last parse for include list
+  std::shared_ptr<SourceFile> rootFile;            // Result of parsing
+  std::shared_ptr<SourceFile> parsedFile;          // Last parse for include list
   std::shared_ptr<AbstractNode> absoluteRootNode;  // Result of tree evaluation
   std::shared_ptr<AbstractNode> rootNode;          // Root if the root modifier (!) is used
 #ifdef ENABLE_PYTHON
@@ -97,7 +97,6 @@ public:
   std::string untrusted_edit_document_name;
   bool trust_python_file(const std::string& file, const std::string& content);
 #endif
-
   Tree tree;
   EditorInterface *activeEditor;
   TabManager *tabManager;
@@ -187,7 +186,7 @@ public:
 
   // Parse the document contained in the editor, update the editors's parameters and returns a SourceFile
   // object if parsing suceeded. Nullptr otherwise.
-  SourceFile *parseDocument(EditorInterface *editor);
+  std::shared_ptr<SourceFile> parseDocument(EditorInterface *editor);
 
   void parseTopLevelDocument();
   void exceptionCleanup();
@@ -220,9 +219,7 @@ private:
   void loadViewSettings();
   void loadDesignSettings();
   void prepareCompile(const char *afterCompileSlot, bool procevents, bool preview);
-  void updateWindowSettings(bool console, bool editor, bool customizer, bool errorLog,
-                            bool editorToolbar, bool viewToolbar, bool animate, bool fontList,
-                            bool ViewportControlWidget);
+  void updateWindowSettings(bool isEditorToolbarVisible, bool isViewToolbarVisible);
   void saveBackup();
   void writeBackup(QFile *file);
   void show_examples();

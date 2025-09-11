@@ -256,6 +256,7 @@ namespace {
 const int autoReloadPollingPeriodMS = 200;
 const char copyrighttext[] =
   "<p>Copyright (C) 2009-2025 The OpenSCAD Developers</p>"
+  "<p>Copyright (C) 2024-2025 The PythonSCAD Developers</p>"
   "<p>This program is free software; you can redistribute it and/or modify "
   "it under the terms of the GNU General Public License as published by "
   "the Free Software Foundation; either version 2 of the License, or "
@@ -447,21 +448,13 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   this->addAction(editActionInsertTemplate);
   this->addAction(editActionFoldAll);
 
-  docks = {{editorDock, QString(_("Editor"))},
-           {consoleDock, QString(_("Console"))},
-           {parameterDock, QString(_("Customizer"))},
-           {errorLogDock, QString(_("Error-Log"))},
-           {animateDock, QString(_("Animate"))},
-           {fontListDock, QString(_("Font Lists"))},
-           {viewportControlDock, QString(_("Viewport-Control"))}};
-
-  this->editorDock->setConfigKey("view/hideEditor");
-  this->consoleDock->setConfigKey("view/hideConsole");
-  this->parameterDock->setConfigKey("view/hideCustomizer");
-  this->errorLogDock->setConfigKey("view/hideErrorLog");
-  this->animateDock->setConfigKey("view/hideAnimate");
-  this->fontListDock->setConfigKey("view/hideFontList");
-  this->viewportControlDock->setConfigKey("view/hideViewportControl");
+  docks = {{editorDock, _("Editor"), "view/hideEditor"},
+           {consoleDock, _("Console"), "view/hideConsole"},
+           {parameterDock, _("Customizer"), "view/hideCustomizer"},
+           {errorLogDock, _("Error-Log"), "view/hideErrorLog"},
+           {animateDock, _("Animate"), "view/hideAnimate"},
+           {fontListDock, _("Font Lists"), "view/hideFontList"},
+           {viewportControlDock, _("Viewport-Control"), "view/hideViewportControl"}};
 
   this->versionLabel = nullptr;  // must be initialized before calling updateStatusBar()
   updateStatusBar(nullptr);
@@ -469,8 +462,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   renderCompleteSoundEffect = new QSoundEffect();
   renderCompleteSoundEffect->setSource(QUrl("qrc:/sounds/complete.wav"));
 
-  rootFile = nullptr;
-  parsedFile = nullptr;
   absoluteRootNode = nullptr;
 
   this->csgworker = new CSGWorker(this);
@@ -520,10 +511,8 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
                          GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
 
   const QString version =
-    QString("<b>OpenSCAD %1</b>").arg(QString::fromStdString(openscad_versionnumber));
-  const QString weblink = "<a href=\"https://www.openscad.org/\">https://www.openscad.org/</a><br>";
-  this->console->setFont(GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
-                         GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
+    QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(openscad_versionnumber));
+  const QString weblink = "<a href=\"https://www.pythonscad.org/\">https://www.pythonscad.org/</a><br>";
 
   consoleOutputRaw(version);
   consoleOutputRaw(weblink);
@@ -790,8 +779,8 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
           QOverload<>::of(&QGLView::update));
   connect(GlobalPreferences::inst(), &Preferences::updateMouseCentricZoom, this->qglview,
           &QGLView::setMouseCentricZoom);
-  connect(GlobalPreferences::inst(), &Preferences::updateMouseSwapButtons, this->qglview,
-          &QGLView::setMouseSwapButtons);
+  connect(GlobalPreferences::inst()->MouseConfig, &MouseConfigWidget::updateMouseActions, this,
+          &MainWindow::setAllMouseViewActions);
   connect(GlobalPreferences::inst(), &Preferences::updateReorderMode, this,
           &MainWindow::updateReorderMode);
   connect(GlobalPreferences::inst(), &Preferences::updateUndockMode, this,
@@ -899,9 +888,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 #endif  // ifdef Q_OS_WIN
   }
 
-  updateWindowSettings(isConsoldDockVisible, isEditorDockVisible, isCustomizerDockVisible,
-                       isErrorLogVisible, isEditorToolbarVisible, is3DViewToolbarVisible,
-                       isAnimateDockVisible, isFontListDockVisible, isViewportControlVisible);
+  updateWindowSettings(isEditorToolbarVisible, is3DViewToolbarVisible);
 
   // Connect the menu "Windows/Navigation" to slot that process it by opening in a pop menu
   // the navigationMenu.
@@ -1000,9 +987,47 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 
   // fills the content of the Recents Files menu.
   updateRecentFileActions();
+}
 
-  // Kick the re-styling again, otherwise it does not catch menu items
-  GlobalPreferences::inst()->fireApplicationFontChanged();
+void MainWindow::setAllMouseViewActions()
+{
+  // Set the mouse actions to those held in the settings.
+  this->qglview->setMouseActions(MouseConfig::MouseAction::LEFT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseLeftClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::MIDDLE_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseMiddleClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::RIGHT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseRightClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::SHIFT_LEFT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseShiftLeftClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::SHIFT_MIDDLE_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseShiftMiddleClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::SHIFT_RIGHT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseShiftRightClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_LEFT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlLeftClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_MIDDLE_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlMiddleClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_RIGHT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlRightClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_SHIFT_LEFT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlShiftLeftClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_SHIFT_MIDDLE_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlShiftMiddleClick.value())));
+  this->qglview->setMouseActions(MouseConfig::MouseAction::CTRL_SHIFT_RIGHT_CLICK,
+                                 MouseConfig::viewActionArrays.at(static_cast<MouseConfig::ViewAction>(
+                                   Settings::Settings::inputMouseCtrlShiftRightClick.value())));
 }
 
 void MainWindow::onNavigationOpenContextMenu() { navigationMenu->exec(QCursor::pos()); }
@@ -1242,11 +1267,7 @@ void MainWindow::addKeyboardShortCut(const QList<QAction *>& actions)
  * Qt call. So the values are loaded before the call and restored here
  * regardless of the (potential outdated) serialized state.
  */
-void MainWindow::updateWindowSettings(bool isConsoleVisible, bool isEditorVisible,
-                                      bool isCustomizerVisible, bool isErrorLogVisible,
-                                      bool isEditorToolbarVisible, bool isViewToolbarVisible,
-                                      bool isAnimateVisible, bool isFontListVisible,
-                                      bool isViewportControlVisible)
+void MainWindow::updateWindowSettings(bool isEditorToolbarVisible, bool isViewToolbarVisible)
 {
   viewActionHideEditorToolBar->setChecked(!isEditorToolbarVisible);
   hideEditorToolbar();
@@ -1406,9 +1427,6 @@ void MainWindow::updateReorderMode(bool reorderMode)
 
 MainWindow::~MainWindow()
 {
-  // If root_file is not null then it will be the same as parsed_file,
-  // so no need to delete it.
-  delete parsedFile;
   scadApp->windowManager.remove(this);
   if (scadApp->windowManager.getWindows().empty()) {
     // Quit application even in case some other windows like
@@ -2438,15 +2456,19 @@ void MainWindow::recomputeLanguageActive()
   int oldLanguage = language;
   language = LANG_SCAD;
   if (fname != NULL) {
+#ifdef ENABLE_PYTHON
     if (boost::algorithm::ends_with(fname, ".py")) {
       std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
       if (trust_python_file(std::string(fname), content)) language = LANG_PYTHON;
       else LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
     }
+#endif
+#ifdef ENABLE_LUA
     if (boost::algorithm::ends_with(fname, ".lua")) {
       std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
       language = LANG_LUA;
     }
+#endif
   }
 
 #ifdef ENABLE_PYTHON
@@ -2455,9 +2477,8 @@ void MainWindow::recomputeLanguageActive()
   }
 #endif
 }
-#endif  // ifdef ENABLE_PYTHON
 
-SourceFile *MainWindow::parseDocument(EditorInterface *editor)
+std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
 {
   resetSuppressedMessages();
 
@@ -2493,15 +2514,15 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
       //
       // add parameters as annotation in AST
       auto error = evaluatePython(par_text, true);  // run dummy
-      this->rootFile->scope.assignments = customizer_parameters;
-      CommentParser::collectParameters(fulltext_py, this->rootFile, '#');        // add annotations
-      this->activeEditor->parameterWidget->setParameters(this->rootFile, "\n");  // set widgets values
-      this->activeEditor->parameterWidget->applyParameters(this->rootFile);      // use widget values
+      this->rootFile->scope->assignments = customizer_parameters;
+      CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');        // add annotations
+      this->activeEditor->parameterWidget->setParameters(this->rootFile.get(), "\n");  // set widgets values
+      this->activeEditor->parameterWidget->applyParameters(this->rootFile.get());      // use widget values
       this->activeEditor->parameterWidget->setEnabled(true);
       this->activeEditor->setIndicator(this->rootFile->indicatorData);
     } while (0);
 
-    if (this->rootFile != nullptr) customizer_parameters_finished = this->rootFile->scope.assignments;
+    if (this->rootFile != nullptr) customizer_parameters_finished = this->rootFile->scope->assignments;
     customizer_parameters.clear();
     if (venv.empty()) {
       LOG("Running %1$s without venv.", python_version());
@@ -2566,7 +2587,7 @@ SourceFile *MainWindow::parseDocument(EditorInterface *editor)
       editor->parameterWidget->setEnabled(false);
     }
   }
-  return sourceFile;
+  return std::shared_ptr<SourceFile>(sourceFile);
 }
 
 void MainWindow::parseTopLevelDocument()
@@ -3619,6 +3640,14 @@ void MainWindow::actionExportFileFormat(int fmt)
       }
     }
   } break;
+  case FileFormat::SVG: {
+    ExportSvgDialog exportSvgDialog;
+    if (exportSvgDialog.exec() == QDialog::Rejected) {
+      return;
+    }
+    exportInfo.optionsSvg = std::make_shared<ExportSvgOptions>(exportSvgDialog.getOptions());
+    actionExport(2, exportInfo);
+  } break;
   default: actionExport(fileformat::is3D(format) ? 3 : fileformat::is2D(format) ? 2 : 0, exportInfo);
   }
 }
@@ -4079,8 +4108,9 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   fontListDock->setNameSuffix(name);
   viewportControlDock->setNameSuffix(name);
 
-  // If there is no renderedEditor we request for a new preview.
-  if (renderedEditor == nullptr) {
+  // If there is no renderedEditor we request for a new preview if the
+  // auto-reload is enabled.
+  if (renderedEditor == nullptr && designActionAutoReload->isChecked()) {
     actionRenderPreview();
   }
 }
@@ -4180,6 +4210,8 @@ void MainWindow::helpManual() { UIUtils::openUserManualURL(); }
 void MainWindow::helpOfflineManual() { UIUtils::openOfflineUserManual(); }
 
 void MainWindow::helpCheatSheet() { UIUtils::openCheatSheetURL(); }
+
+void MainWindow::helpPythonCheatSheet() { UIUtils::openPythonCheatSheetURL(); }
 
 void MainWindow::helpOfflineCheatSheet() { UIUtils::openOfflineCheatSheet(); }
 
