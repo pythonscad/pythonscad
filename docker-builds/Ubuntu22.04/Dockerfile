@@ -11,9 +11,6 @@ RUN wget -qO - https://files.openscad.org/OBS-Repository-Key.pub | sudo apt-key 
   sudo apt-get update -qq && \
   sudo apt-get purge -qq fglrx || true
 
-# Clone the pythonscad repository
-RUN git clone --recursive --branch "add-docker-files" https://github.com/pythonscad/pythonscad.git /opt/pythonscad
-
 WORKDIR /opt/pythonscad
 
 # Install Python dependencies if requirements.txt exists
