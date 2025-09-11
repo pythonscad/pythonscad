@@ -13,10 +13,7 @@ RUN git clone --recursive https://github.com/pythonscad/pythonscad.git /opt/pyth
 
 WORKDIR /opt/pythonscad
 
-# Install Python dependencies if requirements.txt exists
 RUN scripts/uni-get-dependencies.sh
-
-RUN apt-get install -y libmimalloc-dev python3-dev libqt5gamepad5-dev python3-setuptools
 
 RUN cmake -B build
 
