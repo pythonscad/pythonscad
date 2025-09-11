@@ -42,6 +42,7 @@ public:
   [[nodiscard]] std::string dump() const override;
   [[nodiscard]] unsigned int getDimension() const override { return 3; }
   [[nodiscard]] std::unique_ptr<Geometry> copy() const override;
+  [[nodiscard]] std::shared_ptr<ManifoldGeometry> copy1() const ;
 
   [[nodiscard]] std::shared_ptr<PolySet> toPolySet() const;
 
@@ -69,6 +70,7 @@ public:
   void foreachVertexUntilTrue(const std::function<bool(const manifold::vec3& pt)>& f) const;
 
   const manifold::Manifold& getManifold() const;
+  std::shared_ptr<ManifoldGeometry> neg_space = nullptr;
 
 private:
   ManifoldGeometry binOp(const ManifoldGeometry& lhs, const ManifoldGeometry& rhs,

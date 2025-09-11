@@ -131,6 +131,8 @@ std::shared_ptr<ManifoldGeometry> createManifoldFromPolySet(const PolySet& ps)
   // We need to make sure our PolySet is triangulated before doing that.
   // Note: We currently don't have a way of directly checking if a PolySet is manifold,
   // so we just try converting to a Manifold object and check its status.
+  std::shared_ptr<ManifoldGeometry> result = nullptr;
+
   std::unique_ptr<const PolySet> triangulated;
   if (!ps.isTriangular()) {
     triangulated = PolySetUtils::tessellate_faces(ps);
@@ -138,15 +140,15 @@ std::shared_ptr<ManifoldGeometry> createManifoldFromPolySet(const PolySet& ps)
   const PolySet& triangle_set = ps.isTriangular() ? ps : *triangulated;
 
   // Note: This function also performs a merge if the first attempt fails.
-  auto mani = createManifoldFromTriangularPolySet(triangle_set);
-  if (mani->getManifold().Status() == Error::NoError) {
-    return mani;
+  result = createManifoldFromTriangularPolySet(triangle_set);
+  if (result->getManifold().Status() == Error::NoError) {
+    goto end;
   }
 
   LOG(message_group::Warning,
       "PolySet -> Manifold conversion failed: %1$s\n"
       "Trying to repair and reconstruct mesh..",
-      ManifoldUtils::statusToString(mani->getManifold().Status()));
+      ManifoldUtils::statusToString(result->getManifold().Status()));
 
   // 2. If the PolySet couldn't be converted into a Manifold object, let's try to repair it.
   // We currently have to utilize some CGAL functions to do this.
@@ -166,7 +168,10 @@ std::shared_ptr<ManifoldGeometry> createManifoldFromPolySet(const PolySet& ps)
       for (size_t i = 0, n = points3d.size(); i < n; i++) {
         points[i] = CGALUtils::vector_convert<K::Point_3>(points3d[i]);
       }
-      if (points.size() <= 3) return std::make_shared<ManifoldGeometry>();
+      if (points.size() <= 3) {
+        result = std::make_shared<ManifoldGeometry>();
+        goto end;
+      }
 
       // Apply hull
       CGAL::Surface_mesh<CGAL::Point_3<K>> r;
@@ -184,14 +189,22 @@ std::shared_ptr<ManifoldGeometry> createManifoldFromPolySet(const PolySet& ps)
       }
     }
 
-    auto geom = createManifoldFromSurfaceMesh(m);
+    result = createManifoldFromSurfaceMesh(m);
     // TODO: preserve color if polyset is fully monochrome, or maybe pass colors around in surface mesh?
-    return geom;
+    goto end;
   } catch (const std::exception& e) {
     LOG(message_group::Error, "[manifold] CGAL error: %1$s", e.what());
   }
 #endif
   return std::make_shared<ManifoldGeometry>();
+end:
+   result->neg_space = nullptr;
+   printf("polyset to manifold\n");
+   if(ps.neg_space != nullptr) {
+     result->neg_space=createManifoldFromPolySet(*(ps.neg_space));
+     printf("neg space present\n");
+    }
+   return result;  
 }
 
 std::shared_ptr<const ManifoldGeometry> createManifoldFromGeometry(

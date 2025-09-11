@@ -54,6 +54,7 @@ public:
   void setTriangular(bool triangular) { is_triangular_ = triangular; }
 
   static std::unique_ptr<PolySet> createEmpty() { return std::make_unique<PolySet>(3); }
+  std::shared_ptr<PolySet> neg_space=nullptr;
 
 private:
   bool is_triangular_ = false;

@@ -52,6 +52,15 @@ std::unique_ptr<Geometry> ManifoldGeometry::copy() const
   return std::make_unique<ManifoldGeometry>(*this);
 }
 
+std::shared_ptr<ManifoldGeometry> ManifoldGeometry::copy1() const
+{
+  auto result =std::make_shared<ManifoldGeometry>(*this);
+  result->neg_space = nullptr;
+  if(neg_space != nullptr)
+    result->neg_space = this->neg_space->copy1();
+  return result;
+}
+
 const manifold::Manifold& ManifoldGeometry::getManifold() const { return manifold_; }
 
 bool ManifoldGeometry::isEmpty() const { return getManifold().IsEmpty(); }
@@ -177,6 +186,12 @@ std::shared_ptr<PolySet> ManifoldGeometry::toPolySet() const
       ps->color_indices.push_back(colorIndex);
     }
     start = end;
+  }
+  printf("manifold to poly\n");
+  ps->neg_space = nullptr;
+  if(neg_space != nullptr) {
+    printf("neg space\n");
+    ps->neg_space = neg_space->toPolySet();
   }
   return ps;
 }
@@ -379,3 +394,4 @@ void ManifoldGeometry::foreachVertexUntilTrue(
     }
   }
 }
+
