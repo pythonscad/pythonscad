@@ -1,17 +1,8 @@
-FROM linuxmintd/mint22.2-amd64@sha256:f0fdbb7c9e8e0e1dcea5c76458215c45f4eda541a3d27731fbb5a6452fba39be
+FROM linuxmintd/mint22.2-amd64
 
-# Install dependencies
-RUN apt-get update && \
-    apt-get install -y \
-        git \
-        python3 \
-        python3-pip \
-        build-essential \
-        wget \
-        sudo
+COPY ../../ /opt/pythonscad
 
-# Clone the pythonscad repository
-RUN git clone --recursive --branch "add-docker-files" https://github.com/pythonscad/pythonscad.git /opt/pythonscad
+RUN rm -rf /opt/pythonscad/build
 
 WORKDIR /opt/pythonscad
 
