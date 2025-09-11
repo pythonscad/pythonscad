@@ -1,14 +1,8 @@
-FROM ubuntu:22.04@sha256:d0afa9fbcf16134b776fbba4a04c31d476eece2d080c66c887fdd2608e4219a9
+FROM ubuntu:22.04
 
-# Install dependencies
-RUN apt-get update && \
-    apt-get install -y \
-        git \
-        python3 \
-        python3-pip \
-        build-essential \
-        wget \
-        sudo
+COPY ../../ /opt/pythonscad
+
+RUN rm -rf /opt/pythonscad/build
 
 # Add Lib3MF repo
 RUN wget -qO - https://files.openscad.org/OBS-Repository-Key.pub | sudo apt-key add - && \
