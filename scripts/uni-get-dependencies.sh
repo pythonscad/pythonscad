@@ -18,17 +18,19 @@ get_fedora_deps_yum()
 
 get_fedora_deps_dnf()
 {
- dnf -y install qt5-qtbase-devel bison flex eigen3-devel harfbuzz-devel \
-  fontconfig-devel freetype-devel \
-  boost-devel mpfr-devel gmp-devel glew-devel CGAL-devel gcc gcc-c++ pkgconfig \
-  opencsg-devel git libXmu-devel curl ImageMagick glib2-devel make \
-  xorg-x11-server-Xvfb gettext qscintilla-qt5-devel \
-  mesa-dri-drivers libzip-devel ccache qt5-qtmultimedia-devel qt5-qtsvg-devel \
-  double-conversion-devel tbb-devel libcurl-devel
- dnf -y install libxml2-devel
- dnf -y install libffi-devel
- dnf -y install redhat-rpm-config
- dnf -y install qtchooser
+ dnf -y install \
+  qt5-qtbase-devel bison flex eigen3-devel \
+  harfbuzz-devel fontconfig-devel freetype-devel \
+  boost-devel mpfr-devel gmp-devel glew-devel CGAL-devel \
+  gcc gcc-c++ pkgconfig opencsg-devel git libXmu-devel \
+  curl ImageMagick glib2-devel make xorg-x11-server-Xvfb \
+  gettext qscintilla-qt5-devel mesa-dri-drivers libzip-devel \
+  ccache qt5-qtmultimedia-devel qt5-qtsvg-devel \
+  double-conversion-devel tbb-devel libcurl-devel mimalloc-devel \
+  python3-devel qt5-qtgamepad-devel hidapi-devel libspnav-devel \
+  lib3mf-devel guile22-devel guile30-devel python3-setuptools \
+  libxml2-devel libffi-devel redhat-rpm-config qtchooser nettle-devel \
+  ghostscript
 }
 
 get_qomo_deps()
