@@ -1,17 +1,8 @@
-FROM ubuntu:25.04@sha256:57665ab8178042ef197191fd77d21d8a2f7f535acd26ff7bd548b1f340f081d7
+FROM ubuntu:25.04
 
-# Install dependencies
-RUN apt-get update && \
-    apt-get install -y \
-        git \
-        python3 \
-        python3-pip \
-        build-essential \
-        wget \
-        sudo
+COPY ../../ /opt/pythonscad
 
-# Clone the pythonscad repository
-RUN git clone --recursive --branch "add-docker-files" https://github.com/pythonscad/pythonscad.git /opt/pythonscad
+RUN rm -rf /opt/pythonscad/build
 
 WORKDIR /opt/pythonscad
 
