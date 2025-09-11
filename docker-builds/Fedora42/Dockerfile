@@ -1,14 +1,11 @@
 FROM fedora:42
 
-# Install dependencies
-RUN dnf install -y git python3 python3-pip
+COPY ../../ /opt/pythonscad
 
-# Clone the pythonscad repository
-RUN git clone --recursive https://github.com/pythonscad/pythonscad.git /opt/pythonscad
+RUN rm -rf /opt/pythonscad/build
 
 WORKDIR /opt/pythonscad
 
-# Install Python dependencies if requirements.txt exists
 RUN scripts/uni-get-dependencies.sh
 
 RUN dnf install -y mimalloc-devel python3-devel qt5-qtgamepad-devel \
