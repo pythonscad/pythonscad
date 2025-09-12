@@ -85,7 +85,10 @@ if(USE_IMAGE_COMPARE_PY)
     message(STATUS "Setting up testing venv for image comparison")
     execute_process(
       COMMAND "${Python3_EXECUTABLE}" "-m" "venv" "venv" "--system-site-packages" "--without-pip"
-      WORKING_DIRECTORY "${CCBD}")
+      WORKING_DIRECTORY "${CCBD}"
+      OUTPUT_QUIET
+      ERROR_QUIET
+    )
     # Since msys2 on Windows prefers bin/ over Scripts, we need to look for the actual folder to determine
     # how to utilize the venv
     find_path(VENV_BIN_PATH activate PATHS "${VENV_DIR}/bin" "${VENV_DIR}/Scripts" NO_DEFAULT_PATH NO_CACHE)
@@ -96,10 +99,16 @@ if(USE_IMAGE_COMPARE_PY)
     endif()
     execute_process(
       COMMAND "${IMAGE_COMPARE_EXE}" "-m" "ensurepip"
-      WORKING_DIRECTORY "${CCBD}")
+      WORKING_DIRECTORY "${CCBD}"
+      OUTPUT_QUIET
+      ERROR_QUIET
+    )
     execute_process(
       COMMAND "${IMAGE_COMPARE_EXE}" "-m" "pip" "install" "numpy" "Pillow"
-      WORKING_DIRECTORY "${CCBD}")
+      WORKING_DIRECTORY "${CCBD}"
+      OUTPUT_QUIET
+      ERROR_QUIET
+    )
   endif()
   set(COMPARATOR "--comparator=image_compare")
   if(BUILD_VENV)
@@ -733,7 +742,7 @@ list(APPEND PREVIEW_ONLY_FILES
   ${TEST_SCAD_DIR}/2D/issues/issue5574.scad
 )
 
-list(REMOVE_ITEM ALL_RENDER_FILES 
+list(REMOVE_ITEM ALL_RENDER_FILES
   # These tests only makes sense in preview mode
   ${PREVIEW_ONLY_FILES}
 )
@@ -972,8 +981,8 @@ set_test_config(Heavy FILES
 set_test_config(Bugs FILES ${BUGS_FILES} ${BUGS_2D_FILES} PREFIXES
  render-cgal render-manifold render-csg-cgal preview-cgal preview-manifold throwntogether-cgal throwntogether-manifold)
 set_test_config(Bugs FILES ${BUGS_FILES} PREFIXES
-  preview-off render-monotone 
-  preview-stl 
+  preview-off render-monotone
+  preview-stl
   render-stl render-stl-manifold
   render-stk-force
   render-off render-force-manifold)
@@ -989,7 +998,7 @@ set_test_config(Bugs FILES
 # Remove bugs fixed by manifold from the Bugs tag, to guard against regressions
 remove_test_config(Bugs FILES
   render-manifold_issue591
-  render-manifold_issue791 
+  render-manifold_issue791
   # FIXME: #802
   render-manifold_issue1455
 )
@@ -997,8 +1006,8 @@ remove_test_config(Bugs FILES
 # Examples
 set_test_config(Examples FILES ${EXAMPLE_FILES} PREFIXES
   render-cgal render-manifold
-  preview-cgal preview-manifold preview-manifold preview throwntogether-cgal throwntogether-manifold 
-  render-csg-cgal render-monotone 
+  preview-cgal preview-manifold preview-manifold preview throwntogether-cgal throwntogether-manifold
+  render-csg-cgal render-monotone
   preview-off render-off dump-examples)
 set_test_config(Examples FILES ${EXAMPLE_2D_FILES} PREFIXES render-dxf)
 
@@ -1099,7 +1108,7 @@ add_cmdline_test(svgimport OPENSCAD ARGS --imgsize 600,600 SUFFIX png FILES
   ${TEST_SCAD_DIR}/svg/extruded/simple-center.scad
 )
 
-# 
+#
 # OBJECT echo tests
 #
 
@@ -1167,8 +1176,8 @@ ${TEST_SCAD_DIR}/3D/features/polyhedron-tests.scad
 
 #
 # There are some caveats with export and import, so we need to test a few combinations:
-# 1. It may be possible to export a non-manifold mesh (e.g. malformed polyhedron) due to 
-#    no manifoldness checks at export time. This is by design, e.g. to allow users to 
+# 1. It may be possible to export a non-manifold mesh (e.g. malformed polyhedron) due to
+#    no manifoldness checks at export time. This is by design, e.g. to allow users to
 #    troubleshoot externally.
 # 2. It may be possible to import such non-manifolds and preview or render them, but it will
 #    likely fail when trying to construct a data structure requiring manifold objects (e.g. --render=force)
@@ -1535,10 +1544,18 @@ add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-test
 set_tests_properties(
   relative-output_csg_run
   relative-output_csg_check
-  relative-output_ast_run 
+  relative-output_ast_run
   relative-output_ast_check
   PROPERTIES DISABLED TRUE
 )
+
+if(NOT ENABLE_LIBFIVE)
+  message(STATUS "LIBFIVE is not enabled. Skipping related tests.")
+  set_tests_properties(
+    pythonscad_sdf
+    PROPERTIES DISABLED TRUE
+  )
+endif()
 
 ###################################
 # Disable Tests with Known Issues #
@@ -1599,9 +1616,9 @@ set_tests_properties(
   render-csg-cgal_projection
 
   # https://github.com/openscad/openscad/issues/5158
-  #render-cgal_example017 
+  #render-cgal_example017
   #throwntogether-cgal_example017
-  
+
   # https://github.com/openscad/openscad/issues/4398
   render-csg-cgal_logo_and_text
 
@@ -1634,7 +1651,7 @@ set_tests_properties(
   render-cgal_issue2841b
   preview-cgal_issue2841b
   render-csg-cgal_issue2841b
-  
+
   PROPERTIES DISABLED TRUE
 )
 if (ENABLE_MANIFOLD)
@@ -1703,14 +1720,14 @@ if (LIB3MF_FOUND)
 
      PROPERTIES DISABLED TRUE
     )
-  endif (ENABLE_MANIFOLD)  
+  endif (ENABLE_MANIFOLD)
   set_tests_properties(
     # When exported from CGAL, the file cannot be re-imported
     render-3mf-cgal_bad-stl-wing
 
     # For some reason, only failing on Linux
     render-3mf-cgal_bad-stl-tardis
-    
+
     PROPERTIES DISABLED TRUE
   )
 else()
@@ -1743,55 +1760,6 @@ elseif(WIN32 OR MXECROSS)
     export-pdf_simple-pdf
     PROPERTIES DISABLED TRUE
   )
-endif()
-
-##############################################
-# Test Installation and Packaging (Win only) #
-##############################################
-
-# Package Tests with Windows (.zip archive only)
-if(MXECROSS AND EXPERIMENTAL)
-  set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
-
-  include(CPackComponent)
-  cpack_add_component(Tests ARCHIVE_FILE OpenSCAD-Tests-${CPACK_PACKAGE_VERSION})
-
-  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION tests
-    USE_SOURCE_PERMISSIONS
-    COMPONENT Tests
-    PATTERN ".git*" EXCLUDE
-    PATTERN "OpenSCAD_Test_Console.py" EXCLUDE
-    PATTERN "WinReadme.txt" EXCLUDE
-    PATTERN "mingw_convert_ctest.py" EXCLUDE
-    PATTERN "mingwcon.bat" EXCLUDE
-  )
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/
-    DESTINATION tests-build
-    USE_SOURCE_PERMISSIONS
-    COMPONENT Tests
-    PATTERN "venv" EXCLUDE
-    PATTERN "CMakeFiles" EXCLUDE
-    PATTERN "CMakeLists.txt" EXCLUDE
-    PATTERN "cmake_install.cmake" EXCLUDE
-  )
-
-  # Move files to top project dir for visibility
-  install(FILES OpenSCAD_Test_Console.py DESTINATION . COMPONENT Tests)
-  install(FILES WinReadme.txt DESTINATION . COMPONENT Tests RENAME "Windows_Test_Readme.txt")
-  # Move files to tests-build dir
-  install(FILES mingw_convert_ctest.py DESTINATION tests-build COMPONENT Tests)
-  install(FILES mingwcon.bat DESTINATION tests-build COMPONENT Tests)
-
-  file(GENERATE OUTPUT mingw_cross_info.py CONTENT
-"# created automatically during packaging by cmake from within linux
-linux_abs_basedir='${CMAKE_SOURCE_DIR}'
-linux_abs_builddir='${CMAKE_BINARY_DIR}'
-linux_python='${Python3_EXECUTABLE}'
-linux_convert='${IMAGE_COMPARE_EXE}'
-win_installdir='OpenSCAD-Tests-${CPACK_PACKAGE_VERSION}'
-" NEWLINE_STYLE WIN32)
-
 endif()
 
 ####################
