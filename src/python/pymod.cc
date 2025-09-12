@@ -31,7 +31,9 @@
 #include <filesystem>
 
 #include "core/Settings.h"
+#ifndef OPENSCAD_NOGUI
 #include "executable.h"
+#endif
 #include "platform/PlatformUtils.h"
 
 #include "pyopenscad.h"
@@ -42,11 +44,11 @@ using SP = Settings::SettingsPython;
 
 std::string venvBinDirFromSettings()
 {
-    const auto& venv = fs::path(SP::pythonVirtualEnv.value()) / "bin";
-    if (fs::is_directory(venv)) {
-        return venv.generic_string();
-    }
-    return "";
+  const auto& venv = fs::path(SP::pythonVirtualEnv.value()) / "bin";
+  if (fs::is_directory(venv)) {
+    return venv.generic_string();
+  }
+  return "";
 }
 
 int pythonRunArgs(int argc, char **argv)
@@ -79,7 +81,7 @@ fail:
 
 int pythonCreateVenv(const std::string& path)
 {
-  int result = pythonRunModule("", "venv", { path });
+  int result = pythonRunModule("", "venv", {path});
   if (result != 0) {
     return result;
   }

@@ -13,38 +13,10 @@
 
 #ifndef NULLGL
 
-
-namespace {
-
-GLuint compileShader(const std::string& name, GLuint shader_type) {
-  auto shader_source = ShaderUtils::loadShaderSource(name);
-  const GLuint shader = glCreateShader(shader_type);
-  auto *c_source = shader_source.c_str();
-  glShaderSource(shader, 1, (const GLchar **)&c_source, nullptr);
-  glCompileShader(shader);
-  GLint status;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-  if (!status) {
-    int loglen;
-    char logbuffer[1000];
-    glGetShaderInfoLog(shader, sizeof(logbuffer), &loglen, logbuffer);
-    PRINTDB("OpenGL shader compilation error:\n%s", logbuffer);
-    return 0;
-  }
-  return shader;
-}
-
-}  // namespace
-
 namespace RendererUtils {
 
-CSGMode getCsgMode(const bool highlight_mode, const bool background_mode, const OpenSCADOperator type) {
-  int csgmode = highlight_mode ? CSGMODE_HIGHLIGHT : (background_mode ? CSGMODE_BACKGROUND : CSGMODE_NORMAL);
-  if (type == OpenSCADOperator::DIFFERENCE) csgmode |= CSGMODE_DIFFERENCE_FLAG;
-  return static_cast<CSGMode>(csgmode);
-}
-
-std::string loadShaderSource(const std::string& name) {
+std::string loadShaderSource(const std::string& name)
+{
   std::string shaderPath = (PlatformUtils::resourcePath("shaders") / name).string();
   std::ostringstream buffer;
   const std::ifstream f(shaderPath);
@@ -56,7 +28,8 @@ std::string loadShaderSource(const std::string& name) {
   return buffer.str();
 }
 
-ShaderUtils::ShaderResource compileShaderProgram(const std::string& vs_str, const std::string& fs_str) {
+ShaderUtils::ShaderResource compileShaderProgram(const std::string& vs_str, const std::string& fs_str)
+{
   int shaderstatus;
   const char *vs_source = vs_str.c_str();
   const char *fs_source = fs_str.c_str();
@@ -178,13 +151,12 @@ bool Renderer::getShaderColor(Renderer::ColorMode colormode, const Color4f& obje
   return false;
 }
 
-
-
 /* fill colormap_ with matching entries from the colorscheme. note
    this does not change Highlight or Background colors as they are not
    represented in the colorscheme (yet). Also edgecolors are currently the
    same for CGAL & OpenCSG */
-void Renderer::setColorScheme(const ColorScheme& cs) {
+void Renderer::setColorScheme(const ColorScheme& cs)
+{
   PRINTD("setColorScheme");
   colormap_[ColorMode::MATERIAL] = ColorMap::getColor(cs, RenderColor::OPENCSG_FACE_FRONT_COLOR);
   colormap_[ColorMode::CUTOUT] = ColorMap::getColor(cs, RenderColor::OPENCSG_FACE_BACK_COLOR);
@@ -194,15 +166,31 @@ void Renderer::setColorScheme(const ColorScheme& cs) {
   colorscheme_ = &cs;
 }
 
-
-std::shared_ptr<SelectedObject> Renderer::findModelObject(const Vector3d &near_pt, const Vector3d &far_pt, int mouse_x, int mouse_y, double tolerance) { return nullptr; }
-#else //NULLGL
+std::shared_ptr<SelectedObject> Renderer::findModelObject(const Vector3d& near_pt,
+                                                          const Vector3d& far_pt, int mouse_x,
+                                                          int mouse_y, double tolerance)
+{
+  return nullptr;
+}
+#else  // NULLGL
 
 Renderer::Renderer() : colorscheme_(nullptr) {}
-bool Renderer::getColorSchemeColor(Renderer::ColorMode colormode, Color4f& outcolor) const {return false; }
-bool Renderer::getShaderColor(Renderer::ColorMode colormode, const Color4f& object_color, Color4f& outcolor) const { return false; }
+bool Renderer::getColorSchemeColor(Renderer::ColorMode colormode, Color4f& outcolor) const
+{
+  return false;
+}
+bool Renderer::getShaderColor(Renderer::ColorMode colormode, const Color4f& object_color,
+                              Color4f& outcolor) const
+{
+  return false;
+}
 std::string ShaderUtils::loadShaderSource(const std::string& name) { return ""; }
 void Renderer::setColorScheme(const ColorScheme& cs) {}
-std::shared_ptr<SelectedObject> Renderer::findModelObject(const Vector3d &near_pt, const Vector3d &far_pt, int mouse_x, int mouse_y, double tolerance) { return nullptr; }
+std::shared_ptr<SelectedObject> Renderer::findModelObject(const Vector3d& near_pt,
+                                                          const Vector3d& far_pt, int mouse_x,
+                                                          int mouse_y, double tolerance)
+{
+  return nullptr;
+}
 
-#endif //NULLGL
+#endif  // NULLGL
