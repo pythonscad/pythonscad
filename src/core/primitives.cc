@@ -25,12 +25,9 @@
  */
 
 #include "core/primitives.h"
+
 #include "geometry/Geometry.h"
 #include "geometry/linalg.h"
-#include "core/Builtins.h"
-#include "core/Children.h"
-#include "core/ModuleInstantiation.h"
-#include "core/Parameters.h"
 #include "geometry/PolySet.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/Barcode1d.h"
@@ -38,7 +35,14 @@
 #include "core/node.h"
 #include "src/core/ColorUtil.h"
 #include "utils/degree_trig.h"
+#include "core/Builtins.h"
+#include "core/Children.h"
 #include "core/module.h"
+#include "core/ModuleInstantiation.h"
+#include "core/node.h"
+#include "core/Parameters.h"
+#include "utils/calc.h"
+#include "utils/degree_trig.h"
 #include "utils/printutils.h"
 #include <algorithm>
 #include <utility>
@@ -827,7 +831,7 @@ std::unique_ptr<const Geometry> PolygonNode::createGeometry() const
   if (this->paths.empty() && this->points.size() > 2) {
     Outline2d outline;
     std::vector<size_t> path;
-    for (int i = 0; i < this->points.size(); i++) path.push_back(i);
+    for (size_t i = 0; i < this->points.size(); i++) path.push_back(i);
     outline.vertices = createGeometry_sub(this->points, path, fn, fa, fs);
     p->addOutline(outline);
   } else {
