@@ -111,8 +111,12 @@ get_debian_deps()
   imagemagick libfreetype-dev libdouble-conversion-dev libxml2-dev libqt5gamepad5\
   gtk-doc-tools libglib2.0-dev gettext xvfb pkg-config ragel libtbb-dev \
   libgl1-mesa-dev libxi-dev libxmu-dev libfontconfig-dev libzip-dev libjpeg-dev libjpeg-dev \
-  python3-dev nettle-dev python3-venv libcurl4-openssl-dev ninja-build python3-setuptools 
+  python3-dev nettle-dev python3-venv libcurl4-openssl-dev ninja-build python3-setuptools
  get_qt5_deps_debian
+ # Install lib3mf-dev if available (not present on older releases)
+ if apt-cache show lib3mf-dev >/dev/null 2>&1; then
+  apt-get -y install lib3mf-dev
+ fi
 }
 
 get_qt5_deps_debian()
@@ -120,6 +124,10 @@ get_qt5_deps_debian()
  apt-get -y install \
   libqscintilla2-qt5-dev libqt5multimedia5-plugins libqt5opengl5-dev \
   libqt5svg5-dev qt5-qmake qtbase5-dev qtmultimedia5-dev
+ # Install libqt5gamepad5-dev if available (not present on older releases)
+ if apt-cache show libqt5gamepad5-dev >/dev/null 2>&1; then
+  apt-get -y install libqt5gamepad5-dev
+ fi
 }
 
 get_arch_deps()
