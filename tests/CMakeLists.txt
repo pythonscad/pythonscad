@@ -22,7 +22,7 @@ set(CSD ${CMAKE_SOURCE_DIR}) # project top level
 set(CCBD ${CMAKE_CURRENT_BINARY_DIR}) # tests build dir
 set(CCSD ${CMAKE_CURRENT_SOURCE_DIR}) # tests source dir
 
-# When configuring OpenSCADTests as a top-level project, we 
+# When configuring OpenSCADTests as a top-level project, we
 # expect a self-contained OpenSCAD installation to exist.
 # The location can be specified via the OPENSCAD_BINARY CMake or
 # environment variable.
@@ -84,7 +84,7 @@ if(PROJECT_IS_TOP_LEVEL)
     message(STATUS "Couldn't find the OpenSCAD binary: ${OPENSCAD_BINPATH}")
     message(FATAL_ERROR "Please place an OpenSCAD binary at: ${OPENSCAD_BINPATH}")
     unset(OPENSCAD_BINPATH)
-  else() 
+  else()
     message(STATUS "Found OpenSCAD binary: ${OPENSCAD_BINPATH}")
   endif()
 endif()
@@ -178,8 +178,10 @@ configure_file(${TEST_SCAD_DIR}/templates/use-tests-template.scad
                ${TEST_SCAD_DIR}/misc/use-tests.scad)
 configure_file(${TEST_SCAD_DIR}/templates/import_stl-tests-template.scad
                ${TEST_SCAD_DIR}/3D/features/import_stl-tests.scad)
-configure_file(${TEST_SCAD_DIR}/templates/import_3mf-tests-template.scad
-               ${TEST_SCAD_DIR}/3D/features/import_3mf-tests.scad)
+if (ENABLE_LIB3MF_TESTS)
+  configure_file(${TEST_SCAD_DIR}/templates/import_3mf-tests-template.scad
+                 ${TEST_SCAD_DIR}/3D/features/import_3mf-tests.scad)
+endif()
 configure_file(${TEST_SCAD_DIR}/templates/import_dxf-tests-template.scad
                ${TEST_SCAD_DIR}/2D/features/import_dxf-tests.scad)
 configure_file(${TEST_PYTHON_DIR}/gen_issue2342-template.py
@@ -414,7 +416,9 @@ list(APPEND STL_IMPORT_FILES
 )
 
 list(APPEND OBJ_IMPORT_FILES ${TEST_SCAD_DIR}/obj/obj-import-centered.scad)
-list(APPEND 3MF_IMPORT_FILES ${TEST_SCAD_DIR}/3mf/3mf-import-centered.scad)
+if (ENABLE_LIB3MF_TESTS)
+  list(APPEND 3MF_IMPORT_FILES ${TEST_SCAD_DIR}/3mf/3mf-import-centered.scad)
+endif()
 list(APPEND OFF_IMPORT_FILES ${TEST_SCAD_DIR}/off/off-import-centered.scad)
 
 list(GET RENDER_2D_FILES 0 1 2 RENDERSTDIOTEST_FILES)
@@ -441,7 +445,10 @@ list(APPEND RENDERFORCETEST_FILES
 )
 
 set(PRUNE_TEST ${TEST_SCAD_DIR}/misc/intersection-prune-test.scad)
-list(APPEND ALL_PREVIEW_FILES ${3MF_IMPORT_FILES} ${OBJ_IMPORT_FILES} ${OFF_IMPORT_FILES} ${STL_IMPORT_FILES} ${ALL_RENDER_FILES} ${PRUNE_TEST} ${PREVIEW_ONLY_FILES})
+list(APPEND ALL_PREVIEW_FILES ${OBJ_IMPORT_FILES} ${OFF_IMPORT_FILES} ${STL_IMPORT_FILES} ${ALL_RENDER_FILES} ${PRUNE_TEST} ${PREVIEW_ONLY_FILES})
+if (ENABLE_LIB3MF_TESTS)
+  list(APPEND ALL_PREVIEW_FILES ${3MF_IMPORT_FILES})
+endif()
 
 list(APPEND COLOR_3D_TEST_FILES
   ${TEST_SCAD_DIR}/misc/color-cubes.scad
@@ -703,8 +710,8 @@ remove_test_config(Bugs FILES
 if(EXAMPLES_DIR)
   set_test_config(Examples FILES ${EXAMPLE_FILES} PREFIXES
     render-cgal render-manifold
-    preview-cgal preview-manifold preview-manifold preview throwntogether-cgal throwntogether-manifold 
-    render-csg-cgal render-monotone 
+    preview-cgal preview-manifold preview-manifold preview throwntogether-cgal throwntogether-manifold
+    render-csg-cgal render-monotone
     preview-off render-off dump-examples)
   set_test_config(Examples FILES ${EXAMPLE_2D_FILES} PREFIXES render-dxf)
 endif(EXAMPLES_DIR)
@@ -837,7 +844,9 @@ list(APPEND EXPORT_OBJ_TEST_FILES ${TEST_SCAD_DIR}/obj/obj-import-export_dodecah
 list(APPEND EXPORT_OBJ_TEST_FILES ${TEST_SCAD_DIR}/obj/obj-import-export_cube.scad)
 list(APPEND EXPORT_OBJ_TEST_FILES ${TEST_SCAD_DIR}/3D/features/polyhedron-cube.scad)
 
-list(APPEND EXPORT_3MF_TEST_FILES ${TEST_SCAD_DIR}/3mf/3mf-export.scad)
+if (ENABLE_LIB3MF_TESTS)
+  list(APPEND EXPORT_3MF_TEST_FILES ${TEST_SCAD_DIR}/3mf/3mf-export.scad)
+endif()
 
 list(APPEND EXPORT_POV_TEST_FILES ${TEST_SCAD_DIR}/pov/pov-export.scad)
 
@@ -977,7 +986,9 @@ list(REMOVE_ITEM render-off-manifold_FILES
  ${TEST_SCAD_DIR}/misc/cube10.scad
  ${TEST_SCAD_DIR}/3D/features/polyhedron-tests.scad
 )
-set(render-3mf-manifold_FILES ${render-off-manifold_FILES})
+if (ENABLE_LIB3MF_TESTS)
+  set(render-3mf-manifold_FILES ${render-off-manifold_FILES})
+endif()
 add_cmdline_test(render-off-manifold SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_RENDER_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=OFF --render=force --backend=manifold)
 add_cmdline_test(render-off-manifold SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_DIFFERENT_FILES} EXPECTEDDIR render ARGS ${OPENSCAD_EXE_ARG} --format=OFF --render=force --backend=manifold)
 add_cmdline_test(render-off-manifold SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_DIFFERENT_MANIFOLD_FILES} EXPECTEDDIR render-manifold ARGS ${OPENSCAD_EXE_ARG} --format=OFF --render=force --backend=manifold)
@@ -1014,7 +1025,9 @@ add_cmdline_test(export-stl-sanitytest  SCRIPT ${STLEXPORTSANITYTEST_PY} SUFFIX 
 
 # Export/import color support
 add_cmdline_test(offcolorpngtest EXPERIMENTAL SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${COLOR_3D_TEST_FILES} EXPECTEDDIR render-manifold ARGS ${OPENSCAD_EXE_ARG} --format=OFF --backend=manifold --render)
-add_cmdline_test(3mfcolorpngtest EXPERIMENTAL SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${COLOR_3D_TEST_FILES} EXPECTEDDIR render-manifold ARGS ${OPENSCAD_EXE_ARG} --format=3MF --backend=manifold --render)
+if (ENABLE_LIB3MF_TESTS)
+  add_cmdline_test(3mfcolorpngtest EXPERIMENTAL SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${COLOR_3D_TEST_FILES} EXPECTEDDIR render-manifold ARGS ${OPENSCAD_EXE_ARG} --format=3MF --backend=manifold --render)
+endif()
 
 # PDF Export
 add_cmdline_test(export-pdf SCRIPT ${EXPORT_PNGTEST_PY} SUFFIX png FILES ${SCAD_PDF_FILES} ARGS ${OPENSCAD_EXE_ARG} --format=PDF -O export-pdf/show-scale=false KERNEL Square:2)
@@ -1235,7 +1248,9 @@ add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-test
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT off)
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT wrl)
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT amf)
-add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT 3mf)
+if (ENABLE_LIB3MF_TESTS)
+  add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT 3mf)
+endif()
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT csg)
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/2D/features/square-tests.scad FORMAT dxf)
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/2D/features/square-tests.scad FORMAT svg)
@@ -1346,7 +1361,7 @@ set_tests_properties(
 
   PROPERTIES DISABLED TRUE
 )
-if(EXAMPLES_DIR) 
+if(EXAMPLES_DIR)
   set_tests_properties(
     # OpenCSG z fighting
     preview-cgal_surface_image
@@ -1357,9 +1372,9 @@ if(EXAMPLES_DIR)
     render-csg-cgal_projection
 
     # https://github.com/openscad/openscad/issues/5158
-    #render-cgal_example017 
+    #render-cgal_example017
     #throwntogether-cgal_example017
-    
+
     # https://github.com/openscad/openscad/issues/4398
     render-csg-cgal_logo_and_text
 
@@ -1429,7 +1444,7 @@ set_tests_properties(
 )
 endif (EXPERIMENTAL)
 
-if (ENABLE_LIB3MF_TESTS)
+if (ENABLE_LIB3MF_TESTS AND LIB3MF_ENABLED)
   if (EXPERIMENTAL)
     set_tests_properties(
       # https://github.com/openscad/openscad/issues/5800
@@ -1446,7 +1461,7 @@ if (ENABLE_LIB3MF_TESTS)
 
      PROPERTIES DISABLED TRUE
     )
-  endif (ENABLE_MANIFOLD_TESTS)  
+  endif (ENABLE_MANIFOLD_TESTS)
   set_tests_properties(
     # When exported from CGAL, the file cannot be re-imported
     render-3mf-cgal_bad-stl-wing
@@ -1462,6 +1477,9 @@ else()
     render-cgal_import_3mf-tests
     render-csg-cgal_import_3mf-tests
     throwntogether-cgal_import_3mf-tests
+    render-manifold_import_3mf-tests
+    preview-manifold_import_3mf-tests
+    render-off-manifold_issue1225
     throwntogether-manifold_import_3mf-tests
     PROPERTIES DISABLED TRUE
   )
