@@ -456,7 +456,7 @@ std::vector<sheetS> fold_3d(std::shared_ptr<const PolySet> ps, const plotSetting
 
   //  std::vector<lineS> lines,linesorg; // final postscript lines
 
-  Vector2d px, py, p1, p2, pm;
+  Vector2d px, py, p1(0,0), p2, pm;
   std::vector<plateS> plate;  // faces in final placement
                               //  int polybesttouch;
 

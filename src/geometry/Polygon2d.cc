@@ -19,6 +19,9 @@
 #include "glview/RenderSettings.h"
 #include "utils/hash.h"
 
+#include "clipper2/clipper.h"
+#include <clipper2/clipper.engine.h>
+
 Polygon2d::Polygon2d(Outline2d outline) : sanitized(true) { addOutline(std::move(outline)); }
 
 std::unique_ptr<Geometry> Polygon2d::copy() const { return std::make_unique<Polygon2d>(*this); }
@@ -302,24 +305,63 @@ Vector2d pt_round(const Vector2d& pt)
   r[1] = int(pt[1] * 1000) / 1000.0;
   return r;
 }
+
+
+int scaleBitsFromPrecision(int precision) { return std::ilogb(std::pow(10, precision)) + 1; }
+
+Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, int scale_bits)
+{
+  const bool keep_orientation = poly.isSanitized();
+  const double scale = std::ldexp(1.0, scale_bits);
+  Clipper2Lib::Paths64 result;
+  for (const auto& outline : poly.transformedOutlines()) {
+    Clipper2Lib::Path64 p;
+    for (const auto& v : outline.vertices) {
+      p.emplace_back(v[0] * scale, v[1] * scale);
+    }
+    if (!keep_orientation && !Clipper2Lib::IsPositive(p)) std::reverse(p.begin(), p.end());
+    result.push_back(std::move(p));
+  }
+  return result;
+}
+
+
 void Polygon2d::stamp_color(const Polygon2d& src)
 {
-  std::unordered_map<Vector2d, Color4f, boost::hash<Vector2d> > lookup;
 
-  // create db
-  for (const auto& o : src.outlines()) {
-    for (const auto& pt : o.vertices) {
-      lookup[pt_round(pt)] = o.color;
-    }
-  }
-  // lookup each color in dst
+  int scale_bits = scaleBitsFromPrecision(8);
+
+  std::vector<Clipper2Lib::Paths64> self_o, src_o;
+  std::vector<BoundingBox> self_b, src_b;
+
   for (auto& o : theoutlines) {
-    for (auto& pt : o.vertices) {
-      auto ptr = pt_round(pt);
-      if (lookup.count(ptr) > 0) {
-        o.color = lookup.at(ptr);
-        break;
-      }
-    }
+    self_o.push_back( fromPolygon2d(o, scale_bits));	   
+    self_b.push_back(o.getBoundingBox());
+  }
+
+  for (auto& o : src.theoutlines) {
+    src_o.push_back( fromPolygon2d(o, scale_bits));	   
+    src_b.push_back(o.getBoundingBox());
+  }
+  for (int i=0;i< theoutlines.size();i++ ) {
+    for(int j=0;j< src.theoutlines.size();j++) {
+
+      if(self_b[i].min()[0] > src_b[j].max()[0]) continue;
+      if(self_b[i].max()[0] < src_b[j].min()[0]) continue;
+      if(self_b[i].min()[1] > src_b[j].max()[1]) continue;
+      if(self_b[i].max()[1] < src_b[j].min()[1]) continue;
+
+      Clipper2Lib::Clipper64 clipper;
+      Clipper2Lib::PolyTree64 result;
+      clipper.PreserveCollinear(false);
+
+
+      clipper.AddSubject(self_o[i]);
+      clipper.AddClip(src_o[j]);
+
+      clipper.Execute(Clipper2Lib::ClipType::Intersection, Clipper2Lib::FillRule::NonZero, result);
+      auto res = Clipper2Lib::PolyTreeToPaths64(result);
+      if(res.size() >=1) theoutlines[i].color=src.theoutlines[j].color;
+    }	    
   }
 }
