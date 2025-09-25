@@ -190,13 +190,11 @@ std::unique_ptr<Polygon2d> import_svg(double fn, double fs, double fa, const std
 
     std::vector<std::shared_ptr<const Polygon2d>> polygons;
     for (const auto& shape_ptr : *shapes) {
-      //      printf("shape\n");
       if (!shape_ptr->is_excluded()) {
         Polygon2d poly;
         const auto& s = *shape_ptr;
         for (const auto& p : s.get_path_list()) {
           Outline2d outline;
-          //          printf("path\n");
           std::string fill = s.get_fill();
           if (fill.size() == 0) fill = "#f9d72c";
           outline.color = *OpenSCAD::parse_color(fill);
@@ -214,14 +212,7 @@ std::unique_ptr<Polygon2d> import_svg(double fn, double fs, double fa, const std
     }
     libsvg_free(shapes);
     std::reverse(polygons.begin(), polygons.end());
-
     auto result_cleaned = ClipperUtils::cleanUnion(polygons);
-    //    printf("colors are :\n");
-    //    for(const auto &o : result_cleaned.outlines()) {
-    //      const Color4f &c = o.color;
-    //      printf("%g/%g/%g :%d \n",c[0], c[1], c[2], o.vertices.size());
-    //    }
-
     return std::make_unique<Polygon2d>(result_cleaned);
   } catch (const std::exception& e) {
     LOG(message_group::Error, "%1$s, import() at line %2$d", e.what(), loc.firstLine());

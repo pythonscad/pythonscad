@@ -1015,7 +1015,6 @@ stderr_bak = None\n\
   python_orphan_objs.clear();
 #endif
   PyObjectUniquePtr result(nullptr, PyObjectDeleter);
-
   // debug stuff only
   debug_num = -1;
   debug_cnt = 0;
