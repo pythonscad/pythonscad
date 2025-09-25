@@ -949,6 +949,7 @@ void finishPython(void)
   show_final();
 }
 
+int debug_num, debug_cnt;
 std::string evaluatePython(const std::string& code, bool dry_run)
 {
   std::string error;
@@ -1013,8 +1014,20 @@ stderr_bak = None\n\
   python_orphan_objs.clear();
 #endif
   PyObjectUniquePtr result(nullptr, PyObjectDeleter);
+
+  // debug stuff only
+  debug_num=-1;
+  debug_cnt=0;
+  // debug end
   result.reset(PyRun_String(code.c_str(), Py_file_input, pythonInitDict.get(),
                             pythonInitDict.get())); /* actual code is run here */
+  PyObject *mainModule = PyImport_AddModule("__main__");
+  if (PyObject_HasAttrString(mainModule, "debug")) {
+    PyObjectUniquePtr varDebug(PyObject_GetAttrString(mainModule, "debug"), PyObjectDeleter);
+    if (varDebug.get() != nullptr) {
+      debug_num = PyLong_AsLong(varDebug.get());
+    }
+  }
 
 #ifndef OPENSCAD_NOGUI
   if (result == nullptr) {

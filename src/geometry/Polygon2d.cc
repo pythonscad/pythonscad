@@ -325,10 +325,15 @@ Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, int scale_bits)
   return result;
 }
 
+extern int debug_cnt, debug_num;
 
+void dump_o(const Outline2d o) {
+	for(const auto &v : o.vertices) printf("%g/%g ",v[0], v[1]);
+	printf("\n");
+}
 void Polygon2d::stamp_color(const Polygon2d& src)
 {
-
+  printf("stamp_color\n");
   int scale_bits = scaleBitsFromPrecision(8);
 
   std::vector<Clipper2Lib::Paths64> self_o, src_o;
@@ -361,7 +366,17 @@ void Polygon2d::stamp_color(const Polygon2d& src)
 
       clipper.Execute(Clipper2Lib::ClipType::Intersection, Clipper2Lib::FillRule::NonZero, result);
       auto res = Clipper2Lib::PolyTreeToPaths64(result);
-      if(res.size() >=1) theoutlines[i].color=src.theoutlines[j].color;
+      if(res.size() >=1) {
+	printf("stamp from %d to %d %d\n", i, j, debug_cnt); 
+	if(debug_cnt  <= 350) theoutlines[i].color=src.theoutlines[j].color;
+	else if(debug_cnt == 351){
+         printf("Self\n");
+	 dump_o(theoutlines[i]);
+	 dump_o(src.theoutlines[j]);
+
+	}
+	debug_cnt++;
+      }
     }	    
   }
 }
