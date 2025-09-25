@@ -82,8 +82,8 @@ static void append_svg(const Polygon2d& poly, std::ostream& output, const Export
        << std::setfill('0') << std::setw(2) << (int)(col.g() * 255) << std::setfill('0') << std::setw(2)
        << (int)(col.b() * 255);
     std::string color_str = ss.str();
-    output << "\" stroke=\"" << stroke << "\" fill=\"" << color_str << "\" stroke-width=\"" << strokeWidth
-           << "\"/>\n";
+    output << "\" stroke=\"" << stroke << "\" fill=\"" << color_str << "\" stroke-width=\""
+           << strokeWidth << "\"/>\n";
     out_work = out_remain;
   }
 }

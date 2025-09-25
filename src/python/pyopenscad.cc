@@ -80,7 +80,7 @@ void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
 
 PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
 {
-  PyOpenSCADObject *self = (PyOpenSCADObject *) PyType_GenericAlloc(cls, nitems);
+  PyOpenSCADObject *self = (PyOpenSCADObject *)PyType_GenericAlloc(cls, nitems);
   self->dict = PyDict_New();
   PyObject *origin = PyList_New(4);
   for (int i = 0; i < 4; i++) {
@@ -1016,8 +1016,8 @@ stderr_bak = None\n\
   PyObjectUniquePtr result(nullptr, PyObjectDeleter);
 
   // debug stuff only
-  debug_num=-1;
-  debug_cnt=0;
+  debug_num = -1;
+  debug_cnt = 0;
   // debug end
   result.reset(PyRun_String(code.c_str(), Py_file_input, pythonInitDict.get(),
                             pythonInitDict.get())); /* actual code is run here */
@@ -1266,7 +1266,7 @@ int Py_RunMain_ipython(void)
   pymain_run_python_ipython(&exitcode);
 
   if (Py_FinalizeEx() < 0) {
-      exitcode = 120;
+    exitcode = 120;
   }
 
   //    pymain_free();

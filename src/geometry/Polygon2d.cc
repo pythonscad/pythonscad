@@ -306,7 +306,6 @@ Vector2d pt_round(const Vector2d& pt)
   return r;
 }
 
-
 int scaleBitsFromPrecision(int precision) { return std::ilogb(std::pow(10, precision)) + 1; }
 
 Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, int scale_bits)
@@ -327,56 +326,98 @@ Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, int scale_bits)
 
 extern int debug_cnt, debug_num;
 
-void dump_o(const Outline2d o) {
-	for(const auto &v : o.vertices) printf("%g/%g ",v[0], v[1]);
-	printf("\n");
+FILE *debug_ps;
+void postscriptDebugStart(void)
+{
+  std::setlocale(LC_ALL, "en_US.UTF-8");
+  debug_ps = fopen("debug.ps", "w");
+  fprintf(debug_ps, "%%!PS\n");
+  fprintf(debug_ps, "0.3 setlinewidth \n");
+}
+
+void postscriptDebugPrint(const Outline2d o, double r, double g, double b)
+{
+  double fact = 2.0;
+  double xoff = 350;
+  double yoff = 0;
+
+  fprintf(debug_ps, "%g %g %g setrgbcolor \n", r, g, b);
+  int l = o.vertices.size();
+  fprintf(debug_ps, "%g %g moveto\n", fact * o.vertices[l - 1][0] + xoff,
+          fact * o.vertices[l - 1][1] + yoff);
+  for (int i = 0; i < l; i++)
+    fprintf(debug_ps, "%g %g lineto\n", fact * o.vertices[i][0] + xoff, fact * o.vertices[i][1] + yoff);
+  fprintf(debug_ps, "stroke\n");
+}
+
+void postscriptDebugEnd(void)
+{
+  fprintf(debug_ps, "showpage\n");
+  fclose(debug_ps);
+}
+
+double calc_area(const Outline2d o)
+{
+  double area = 0;
+  int n = o.vertices.size();
+  for (int i = 0; i < n; i++) {
+    area += o.vertices[i][0] * o.vertices[(i + 1) % n][1];
+    area -= o.vertices[i][1] * o.vertices[(i + 1) % n][0];
+  }
+  return area / 2.0;
 }
 void Polygon2d::stamp_color(const Polygon2d& src)
 {
   printf("stamp_color\n");
+
+  if (debug_cnt == debug_num) {
+    postscriptDebugStart();
+    for (int i = 0; i < theoutlines.size(); i++) postscriptDebugPrint(theoutlines[i], 1, 0, 0);
+    //	 postscriptDebugPrint(src.theoutlines[j],0,1,0);
+    postscriptDebugEnd();
+  }
+  debug_cnt++;
+
   int scale_bits = scaleBitsFromPrecision(8);
 
   std::vector<Clipper2Lib::Paths64> self_o, src_o;
   std::vector<BoundingBox> self_b, src_b;
+  std::vector<double> self_a, src_a;
 
   for (auto& o : theoutlines) {
-    self_o.push_back( fromPolygon2d(o, scale_bits));	   
+    self_o.push_back(fromPolygon2d(o, scale_bits));
     self_b.push_back(o.getBoundingBox());
+    self_a.push_back(calc_area(o));
   }
 
   for (auto& o : src.theoutlines) {
-    src_o.push_back( fromPolygon2d(o, scale_bits));	   
+    src_o.push_back(fromPolygon2d(o, scale_bits));
     src_b.push_back(o.getBoundingBox());
+    src_a.push_back(calc_area(o));
   }
-  for (int i=0;i< theoutlines.size();i++ ) {
-    for(int j=0;j< src.theoutlines.size();j++) {
+  for (int i = 0; i < theoutlines.size(); i++) {
+    if (self_a[i] < 0) continue;  // negative area cannot have color
+    for (int j = 0; j < src.theoutlines.size(); j++) {
+      if (self_b[i].min()[0] > src_b[j].max()[0]) continue;
+      if (self_b[i].max()[0] < src_b[j].min()[0]) continue;
+      if (self_b[i].min()[1] > src_b[j].max()[1]) continue;
+      if (self_b[i].max()[1] < src_b[j].min()[1]) continue;
 
-      if(self_b[i].min()[0] > src_b[j].max()[0]) continue;
-      if(self_b[i].max()[0] < src_b[j].min()[0]) continue;
-      if(self_b[i].min()[1] > src_b[j].max()[1]) continue;
-      if(self_b[i].max()[1] < src_b[j].min()[1]) continue;
+      if (src_a[j] < 0) continue;  // negative area cannot stamp color
 
       Clipper2Lib::Clipper64 clipper;
       Clipper2Lib::PolyTree64 result;
       clipper.PreserveCollinear(false);
-
 
       clipper.AddSubject(self_o[i]);
       clipper.AddClip(src_o[j]);
 
       clipper.Execute(Clipper2Lib::ClipType::Intersection, Clipper2Lib::FillRule::NonZero, result);
       auto res = Clipper2Lib::PolyTreeToPaths64(result);
-      if(res.size() >=1) {
-	printf("stamp from %d to %d %d\n", i, j, debug_cnt); 
-	if(debug_cnt  <= 350) theoutlines[i].color=src.theoutlines[j].color;
-	else if(debug_cnt == 351){
-         printf("Self\n");
-	 dump_o(theoutlines[i]);
-	 dump_o(src.theoutlines[j]);
-
-	}
-	debug_cnt++;
+      if (res.size() >= 1) {
+        printf("stamp from %d to %d %d\n", i, j, debug_cnt);
+        theoutlines[i].color = src.theoutlines[j].color;
       }
-    }	    
+    }
   }
 }
