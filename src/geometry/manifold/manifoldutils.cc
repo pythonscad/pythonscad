@@ -225,6 +225,14 @@ std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d&
   polyset->setTriangular(true);
 
   std::vector<Outline2d> outline_work = in3d ? polygon2d.untransformedOutlines() : polygon2d.outlines();
+  /*
+    std::vector<Outline2d> outline_work ;
+    std::vector<Outline2d> holes ;
+    for(const auto & o : in3d ? polygon2d.untransformedOutlines() : polygon2d.outlines()) {
+      if(outline_area(o) > 0 || true)   outline_work.push_back(o);
+      else holes.push_back(o);
+    }
+  */
   while (outline_work.size() > 0) {
     std::vector<Outline2d> outline_next;
     int v_off = polyset->vertices.size();
@@ -245,6 +253,15 @@ std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d&
       }
       polygons.push_back(std::move(simplePolygon));
     }
+    /*
+        for (const auto& outline : holes) {
+          for (const auto& vertex : outline.vertices) {
+            polyset->vertices.emplace_back(vertex[0], vertex[1], 0.0);
+            simplePolygon.emplace_back(vertex[0], vertex[1]);
+          }
+          polygons.push_back(std::move(simplePolygon));
+        }
+    */
 
     const auto triangles = manifold::Triangulate(polygons);
 

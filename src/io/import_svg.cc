@@ -201,7 +201,6 @@ std::unique_ptr<Polygon2d> import_svg(double fn, double fs, double fa, const std
           for (const auto& v : p) {
             const double x = scale.x() * (-viewbox.x() + v.x()) - cx;
             const double y = scale.y() * (-viewbox.y() - v.y()) + cy;
-            //	    printf("pt %g/%g\n",x,y);
             outline.vertices.emplace_back(x, y);
             outline.positive = true;
           }

@@ -31,7 +31,6 @@ def Compare3x3(img1, img2):
                 pixel[0] = 249
                 pixel[1] = 215
                 pixel[2] = 44
-                      
 
   d = a1-a2
   # Truncate pixel-to-pixel differences less than 3 to 0.
@@ -102,4 +101,3 @@ if __name__ == '__main__':
     # Return 0 if images compared equivalent, or 1 if a difference was
     # identified.
     sys.exit(0 if outcome else 1)
-
