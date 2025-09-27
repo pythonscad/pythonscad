@@ -217,60 +217,40 @@ std::unique_ptr<Polygon2d> apply(const std::vector<Clipper2Lib::Paths64>& pathsv
 
 Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygons)
 {
-  // first create a complete outline list;
-  std::vector<Outline2d> outlines_unsort;
-  for (auto const& p : polygons) {
-    if (p == nullptr) continue;
-    for (auto const& o : p->outlines()) {
-      outlines_unsort.push_back(o);
-    }
-  }
+  int n = polygons.size();
 
-  std::vector<Outline2d> outlines;
-  std::vector<double> area;
-
-  // sort to have equal colors seeing each other
-  while (outlines_unsort.size() > 0) {
-    std::vector<Outline2d> todo;
-    Color4f col = outlines_unsort[0].color;
-    for (const auto& o : outlines_unsort) {
-      if (o.color == col) {
-        outlines.push_back(o);
-        area.push_back(outline_area(o));
-      } else todo.push_back(o);
-    }
-    outlines_unsort = todo;
-  }
-
-  int n = outlines.size();
   const int scale_bits = scaleBitsFromPrecision();
 
   std::vector<Clipper2Lib::Paths64> pathsvector;
-  for (const auto& outline : outlines) {
-    auto polypaths = fromPolygon2d(outline, scale_bits);
-    pathsvector.push_back(std::move(polypaths));
+  for (const auto& polygon : polygons) {
+    if (polygon) {
+      auto polypaths = fromPolygon2d(*polygon, scale_bits);
+      if (!polygon->isSanitized()) {
+        polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
+      }
+      pathsvector.push_back(std::move(polypaths));
+    } else {
+      // Insert empty object as this could be the positive object in a difference
+      pathsvector.emplace_back();
+    }
   }
 
   int inputs_old = 0;
 
   Polygon2d union_result;
   while (inputs_old < n) {
-    int input_width = 1;
-    Color4f refcol = outlines[inputs_old].color;
-    while (true) {
-      // see if we can join one more input
-      if (inputs_old + input_width >= n) break;
-      if (outlines[inputs_old + input_width].color != refcol) break;
-      input_width++;
+    if (polygons[inputs_old] == nullptr) {
+      inputs_old++;
+      continue;
     }
+
+    int input_width = 1;
 
     // union all new shapes
     Clipper2Lib::Paths64 union_new;
     if (input_width > 1) {
       std::vector<Clipper2Lib::Paths64> union_operands;
-      for (int i = 0; i < input_width; i++) {
-        if (area[inputs_old + i] > 0) union_operands.push_back(pathsvector[inputs_old + i]);
-      }
+      for (int i = 0; i < input_width; i++) union_operands.push_back(pathsvector[inputs_old + i]);
       std::unique_ptr<Polygon2d> union_result =
         apply(union_operands, Clipper2Lib::ClipType::Union, scale_bits);
       union_new = fromPolygon2d(*union_result, scale_bits);
@@ -283,17 +263,15 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
     std::vector<Clipper2Lib::Paths64> diff_operands;
     diff_operands.push_back(union_new);
     for (int i = 0; i < inputs_old; i++) diff_operands.push_back(pathsvector[i]);
-    for (int i = 0; i < input_width; i++) {
-      if (area[inputs_old + i] < 0) diff_operands.push_back(pathsvector[inputs_old + i]);
-    }
     std::unique_ptr<Polygon2d> diff_result =
       apply(diff_operands, Clipper2Lib::ClipType::Difference, scale_bits);
-    diff_result->stamp_color(outlines[inputs_old]);
-    Color4f defcolor = outlines[inputs_old].color;
+    diff_result->stamp_color(*polygons[inputs_old]);
+    Color4f defcolor = polygons[inputs_old]->outlines()[0].color;
     diff_result->setColorUndef(defcolor);
     for (const auto& o : diff_result->outlines()) {
       union_result.addOutline(o);
     }
+
     inputs_old += input_width;
   }
   union_result = *sanitize(union_result);
