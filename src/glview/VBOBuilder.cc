@@ -548,7 +548,9 @@ void VBOBuilder::create_polygons(const PolySet& ps, const Transform3d& m, const 
 
   for (int i = 0; i < ps.indices.size(); i++) {
     const auto& poly = ps.indices[i];
-    const auto& tcolor = ps.colors[ps.color_indices[i]];
+    Color4f tcolor;
+    if (i < ps.color_indices.size() && ps.colors.size() > 0) tcolor = ps.colors[ps.color_indices[i]];
+    else tcolor = color;
     if (poly.size() == 3) {
       const Vector3d p0 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(0)], m);
       const Vector3d p1 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(1)], m);

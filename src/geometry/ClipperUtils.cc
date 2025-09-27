@@ -220,6 +220,7 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
   // first create a complete outline list;
   std::vector<Outline2d> outlines_unsort;
   for (auto const& p : polygons) {
+    if (p == nullptr) continue;
     for (auto const& o : p->outlines()) {
       outlines_unsort.push_back(o);
     }
