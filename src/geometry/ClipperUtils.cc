@@ -227,14 +227,17 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
   }
 
   std::vector<Outline2d> outlines;
+  std::vector<double> area;
 
   // sort to have equal colors seeing each other
   while (outlines_unsort.size() > 0) {
     std::vector<Outline2d> todo;
     Color4f col = outlines_unsort[0].color;
     for (const auto& o : outlines_unsort) {
-      if (o.color == col) outlines.push_back(o);
-      else todo.push_back(o);
+      if (o.color == col) {
+        outlines.push_back(o);
+        area.push_back(outline_area(o));
+      } else todo.push_back(o);
     }
     outlines_unsort = todo;
   }
@@ -265,7 +268,9 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
     Clipper2Lib::Paths64 union_new;
     if (input_width > 1) {
       std::vector<Clipper2Lib::Paths64> union_operands;
-      for (int i = 0; i < input_width; i++) union_operands.push_back(pathsvector[inputs_old + i]);
+      for (int i = 0; i < input_width; i++) {
+        if (area[inputs_old + i] > 0) union_operands.push_back(pathsvector[inputs_old + i]);
+      }
       std::unique_ptr<Polygon2d> union_result =
         apply(union_operands, Clipper2Lib::ClipType::Union, scale_bits);
       union_new = fromPolygon2d(*union_result, scale_bits);
@@ -278,6 +283,9 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
     std::vector<Clipper2Lib::Paths64> diff_operands;
     diff_operands.push_back(union_new);
     for (int i = 0; i < inputs_old; i++) diff_operands.push_back(pathsvector[i]);
+    for (int i = 0; i < input_width; i++) {
+      if (area[inputs_old + i] < 0) diff_operands.push_back(pathsvector[inputs_old + i]);
+    }
     std::unique_ptr<Polygon2d> diff_result =
       apply(diff_operands, Clipper2Lib::ClipType::Difference, scale_bits);
     diff_result->stamp_color(outlines[inputs_old]);
