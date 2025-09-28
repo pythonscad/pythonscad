@@ -163,12 +163,15 @@ std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d&
   }
 
   for (auto& face : polyset->indices) {
-    Vector3d pt = polyset->vertices[face[0]];
-    Color4f color;
-
-    Vector2d pt2 = Vector2d(pt[0], pt[1]);
-    if (lookup.count(pt2) > 0) color = lookup.at(pt2);
-    else color = Color4f(0, 0, 0, 1);
+    Color4f color(0, 0, 0, 1);
+    /*
+        for(int i=0;i<3;i++) {
+          Vector3d pt = polyset->vertices[face[i]];
+          Vector2d pt2 = Vector2d(pt[0], pt[1]);
+          if (lookup.count(pt2) > 0) { color = lookup.at(pt2); break ; }
+        }
+    */
+    color = polygon2d.outlines()[0].color;  // TODO fix
     auto it = std::find(polyset->colors.begin(), polyset->colors.end(), color);
     if (it == polyset->colors.end()) {
       polyset->color_indices.push_back(polyset->colors.size());
