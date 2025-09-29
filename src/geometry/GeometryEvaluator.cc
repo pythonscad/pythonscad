@@ -1376,6 +1376,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     std::shared_ptr<PolySet> result_s = std::move(result_u);
     subgeoms.push_back(result_s);  // corners
   }
+#ifdef ENABLE_MANIFOLD
   if (off > 0) {
     auto r = union_geoms(subgeoms);
 
@@ -1384,6 +1385,11 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
   } else {
     return difference_geoms(subgeoms);
   }
+#else
+  // Manifold backend not available - 3D offset operations require Manifold
+  LOG(message_group::Warning, "3D offset operations require Manifold backend, which is not enabled");
+  return subgeoms.empty() ? nullptr : subgeoms[0];  // Return original geometry as fallback
+#endif
 }
 
 std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> ps,

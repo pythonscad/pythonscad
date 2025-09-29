@@ -20,8 +20,11 @@
 #include "utils/calc.h"
 #include "utils/degree_trig.h"
 #include "utils/printutils.h"
+#ifdef ENABLE_MANIFOLD
 #include "src/geometry/manifold/manifoldutils.h"
+#endif
 
+#ifdef ENABLE_MANIFOLD
 static std::unique_ptr<PolySet> assemblePolySetForManifold(const Polygon2d& polyref,
                                                            std::vector<Vector3d>& vertices,
                                                            PolygonIndices& indices, bool closed,
@@ -60,6 +63,46 @@ static std::unique_ptr<PolySet> assemblePolySetForManifold(const Polygon2d& poly
 
   return final_polyset;
 }
+#else
+// Version when Manifold is not available - provides basic functionality
+static std::unique_ptr<PolySet> assemblePolySetForManifold(const Polygon2d& polyref,
+                                                           std::vector<Vector3d>& vertices,
+                                                           PolygonIndices& indices, bool closed,
+                                                           int convexity, int index_offset,
+                                                           bool flip_faces)
+{
+  auto final_polyset = std::make_unique<PolySet>(3, false);
+  final_polyset->setTriangular(true);
+  final_polyset->setConvexity(convexity);
+  final_polyset->vertices = std::move(vertices);
+  final_polyset->indices = std::move(indices);
+
+  if (!closed) {
+    // Create top and bottom face using basic tessellation
+    // This provides basic functionality without Manifold
+    auto ps_bottom = polyref.tessellate();  // bottom
+    // Flip vertex ordering for bottom polygon unless flip_faces is true
+    if (!flip_faces) {
+      for (auto& p : ps_bottom->indices) {
+        std::reverse(p.begin(), p.end());
+      }
+    }
+    std::copy(ps_bottom->indices.begin(), ps_bottom->indices.end(),
+              std::back_inserter(final_polyset->indices));
+
+    for (auto& p : ps_bottom->indices) {
+      std::reverse(p.begin(), p.end());
+      for (auto& i : p) {
+        i += index_offset;
+      }
+    }
+    std::copy(ps_bottom->indices.begin(), ps_bottom->indices.end(),
+              std::back_inserter(final_polyset->indices));
+  }
+
+  return final_polyset;
+}
+#endif
 
 /*!
    Input to extrude should be clean. This means non-intersecting, correct winding order
@@ -248,6 +291,7 @@ std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Pol
   } while (false);
   if (safe) return rotatePolygonSub(node, poly, num_sections, 0, num_sections, flip_faces);
 
+#ifdef ENABLE_MANIFOLD
   // now create a fragment splitting plan
   size_t splits = ceil(node.angle / 300.0);
   fragments = num_sections;
@@ -266,4 +310,10 @@ std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Pol
     fragstart = fragend - 1;
   }
   return result;
+#else
+  // Manifold backend not available - fall back to simple approach
+  LOG(message_group::Warning,
+      "Complex rotate_extrude operations may have issues without Manifold backend");
+  return rotatePolygonSub(node, poly, num_sections, 0, num_sections, flip_faces);
+#endif
 }
