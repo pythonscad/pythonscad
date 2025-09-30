@@ -2351,20 +2351,11 @@ PyObject *python__getitem__(PyObject *obj, PyObject *key)
       if (trans != nullptr) matrix = trans->matrix.matrix();
       result = python_frommatrix(matrix);
     } else if (keystr == "size") {
-      PyObject *bbox;
-      bbox = python_bbox_core(obj);
-      if (bbox == Py_None) {
-        return Py_None;
-      }
-      PyObject *negative_ones = Py_BuildValue("[f,f,f]", -1.0, -1.0, -1.0);
-      if (!negative_ones) {
-        return Py_None;
-      }
-      PyObject *size = python_nb_sub_vec3(PyTuple_GetItem(bbox, 1),
-                                          python_scale_core(PyTuple_GetItem(bbox, 0), negative_ones), 0);
-      Py_DECREF(negative_ones);
-      Py_INCREF(size);
-      return size;
+      return python_size_core(obj);
+    } else if (keystr == "position") {
+      return python_position_core(obj);
+    } else if (keystr == "bbox") {
+      return python_bbox_core(obj);
     }
   } else Py_INCREF(result);
   return result;
@@ -2541,42 +2532,48 @@ PyObject *python_oo_mesh(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_bbox_core(PyObject *obj)
 {
-  PyObject *dummydict;
-  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in bbox \n");
+  // Get position and size attributes from the object
+  PyObject *position_key = PyUnicode_FromString("position");
+  PyObject *size_key = PyUnicode_FromString("size");
+
+  PyObject *position = python__getitem__(obj, position_key);
+  PyObject *size = python__getitem__(obj, size_key);
+
+  Py_DECREF(position_key);
+  Py_DECREF(size_key);
+
+  if (position == Py_None || size == Py_None) {
+    if (position != Py_None) Py_DECREF(position);
+    if (size != Py_None) Py_DECREF(size);
+    return Py_None;
+  }
+
+  // Create cube with the size, not centered (starts at origin [0,0,0])
+  PyObject *cube_args = PyTuple_New(0);
+  PyObject *cube_kwargs = PyDict_New();
+  PyDict_SetItemString(cube_kwargs, "size", size);
+  PyDict_SetItemString(cube_kwargs, "center", Py_False);
+
+  PyObject *cube = python_cube(NULL, cube_args, cube_kwargs);
+  if (cube == NULL) {
+    Py_DECREF(position);
+    Py_DECREF(size);
+    Py_DECREF(cube_args);
+    Py_DECREF(cube_kwargs);
     return NULL;
   }
-  Tree tree(child, "");
-  GeometryEvaluator geomevaluator(tree);
-  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
-  std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
 
-  if (ps != nullptr && ps->vertices.size() > 0) {
-    Vector3d pmin = ps->vertices[0];
-    Vector3d pmax = pmin;
-    for (const auto& pt : ps->vertices) {
-      for (int i = 0; i < 3; i++) {
-        if (pt[i] > pmax[i]) pmax[i] = pt[i];
-        if (pt[i] < pmin[i]) pmin[i] = pt[i];
-      }
-    }
-    // Now create Python Vectors
-    PyObject *ptmin = PyList_New(3);
-    PyObject *ptmax = PyList_New(3);
-    for (int i = 0; i < 3; i++) {
-      PyList_SetItem(ptmin, i, PyFloat_FromDouble(pmin[i]));
-      PyList_SetItem(ptmax, i, PyFloat_FromDouble(pmax[i]));
-    }
-    Py_XINCREF(ptmin);
-    Py_XINCREF(ptmax);
+  // Translate cube to the object's position
+  PyObject *bbox_box = python_translate_core(cube, position);
 
-    PyObject *result = PyTuple_New(2);
-    PyTuple_SetItem(result, 0, ptmin);
-    PyTuple_SetItem(result, 1, ptmax);
-    return result;
-  }
-  return Py_None;
+  // Clean up
+  Py_DECREF(position);
+  Py_DECREF(size);
+  Py_DECREF(cube_args);
+  Py_DECREF(cube_kwargs);
+  Py_DECREF(cube);
+
+  return bbox_box;
 }
 
 PyObject *python_bbox(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -2598,6 +2595,84 @@ PyObject *python_oo_bbox(PyObject *obj, PyObject *args, PyObject *kwargs)
     return NULL;
   }
   return python_bbox_core(obj);
+}
+
+PyObject *python_size_core(PyObject *obj)
+{
+  PyObject *dummydict;
+  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
+  if (child == NULL) {
+    return Py_None;
+  }
+  Tree tree(child, "");
+  GeometryEvaluator geomevaluator(tree);
+  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
+
+  if (ps != nullptr && ps->vertices.size() > 0) {
+    Vector3d pmin = ps->vertices[0];
+    Vector3d pmax = pmin;
+    for (const auto& pt : ps->vertices) {
+      for (int i = 0; i < 3; i++) {
+        if (pt[i] > pmax[i]) pmax[i] = pt[i];
+        if (pt[i] < pmin[i]) pmin[i] = pt[i];
+      }
+    }
+    // Calculate size directly
+    Vector3d size = pmax - pmin;
+    PyObject *size_list = python_fromvector(size);
+    Py_INCREF(size_list);
+    return size_list;
+  }
+  return Py_None;
+}
+
+PyObject *python_position_core(PyObject *obj)
+{
+  PyObject *dummydict;
+  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
+  if (child == NULL) {
+    return Py_None;
+  }
+  Tree tree(child, "");
+  GeometryEvaluator geomevaluator(tree);
+  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
+
+  if (ps != nullptr && ps->vertices.size() > 0) {
+    Vector3d pmin = ps->vertices[0];
+    for (const auto& pt : ps->vertices) {
+      for (int i = 0; i < 3; i++) {
+        if (pt[i] < pmin[i]) pmin[i] = pt[i];
+      }
+    }
+    PyObject *position_list = python_fromvector(pmin);
+    Py_INCREF(position_list);
+    return position_list;
+  }
+  return Py_None;
+}
+
+PyObject *python_size(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"obj", NULL};
+  PyObject *obj = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &obj)) {
+    PyErr_SetString(PyExc_TypeError, "error during parsing size(obj)\n");
+    return NULL;
+  }
+  return python_size_core(obj);
+}
+
+PyObject *python_position(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"obj", NULL};
+  PyObject *obj = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &obj)) {
+    PyErr_SetString(PyExc_TypeError, "error during parsing position(obj)\n");
+    return NULL;
+  }
+  return python_position_core(obj);
 }
 
 PyObject *python_separate_core(PyObject *obj)
@@ -5836,6 +5911,9 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"sheet", (PyCFunction)python_sheet, METH_VARARGS | METH_KEYWORDS, "Sheet Object."},
   {"mesh", (PyCFunction)python_mesh, METH_VARARGS | METH_KEYWORDS, "exports mesh."},
   {"bbox", (PyCFunction)python_bbox, METH_VARARGS | METH_KEYWORDS, "caluculate bbox of object."},
+  {"size", (PyCFunction)python_size, METH_VARARGS | METH_KEYWORDS, "get size dimensions of object."},
+  {"position", (PyCFunction)python_position, METH_VARARGS | METH_KEYWORDS,
+   "get position (minimum coordinates) of object."},
   {"faces", (PyCFunction)python_faces, METH_VARARGS | METH_KEYWORDS, "exports a list of faces."},
   {"edges", (PyCFunction)python_edges, METH_VARARGS | METH_KEYWORDS,
    "exports a list of edges from a face."},
