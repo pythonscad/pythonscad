@@ -172,7 +172,7 @@ std::unique_ptr<Polygon2d> sanitize(const Polygon2d& poly)
   auto paths = ClipperUtils::fromPolygon2d(poly, scale_bits);
   auto result = toPolygon2d(*sanitize(paths), scale_bits);
   result->stamp_color(poly);
-  return std::make_unique<Polygon2d>(poly);
+  return result;
 }
 
 /*!
