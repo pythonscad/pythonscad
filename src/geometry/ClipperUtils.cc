@@ -264,6 +264,7 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
     std::vector<Clipper2Lib::Paths64> diff_operands;
     diff_operands.push_back(union_new);
     for (int i = 0; i < inputs_old; i++) {
+      if (polygons[i] == nullptr) continue;
       bool diff_color = false;
       for (const auto& o1 : polygons[i]->outlines()) {
         for (const auto& o2 : polygons[inputs_old]->outlines()) {
@@ -492,6 +493,7 @@ std::unique_ptr<Polygon2d> applyOffset(const Polygon2d& poly, double offset,
   co.Execute(std::ldexp(offset, scale_bits), result);
   auto r = toPolygon2d(result, scale_bits);
   r->transform3d(poly.getTransform3d());
+  r->stamp_color(poly);
   return r;
 }
 
@@ -516,7 +518,11 @@ std::unique_ptr<Polygon2d> applyProjection(const std::vector<std::shared_ptr<con
   //  sumclipper.StrictlySimple(true);
   sumclipper.Execute(Clipper2Lib::ClipType::Union, Clipper2Lib::FillRule::NonZero, sumresult);
   if (sumresult.Count() > 0) {
-    return ClipperUtils::toPolygon2d(sumresult, scale_bits);
+    auto res = ClipperUtils::toPolygon2d(sumresult, scale_bits);
+    for (const auto& poly : polygons) {
+      res->stamp_color(*poly);
+    }
+    return res;
   }
   return {};
 }

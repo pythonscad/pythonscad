@@ -362,4 +362,3 @@ The following command creates `build-web/openscad.wasm` & `build-web/openscad.js
 ./scripts/wasm-base-docker-run.sh emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Debug -DEXPERIMENTAL=1
 ./scripts/wasm-base-docker-run.sh cmake --build build-web -j2
 ```
->>>>>>> origin/master

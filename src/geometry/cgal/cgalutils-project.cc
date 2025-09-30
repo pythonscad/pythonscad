@@ -19,7 +19,7 @@
 #include <CGAL/version.h>
 
 #include <CGAL/convex_hull_3.h>
-
+#include "src/core/ColorUtil.h"
 #include "utils/svg.h"
 
 #include <vector>
@@ -42,6 +42,7 @@ static void add_outline_to_poly(
 
   if (!outline.vertices.empty()) {
     outline.positive = positive;
+    outline.color = *OpenSCAD::parse_color("#f9d72c");
     poly.addOutline(outline);
   }
 }
@@ -238,6 +239,7 @@ std::unique_ptr<Polygon2d> project(const CGALNefGeometry& N, bool cut)
   }
   // In projection mode all the triangles are projected manually into the XY plane
   else {
+    printf("no cut\n");
     if (auto ps = CGALUtils::createPolySetFromNefPolyhedron3(*N.p3)) {
       poly = PolySetUtils::project(*ps);
     } else {

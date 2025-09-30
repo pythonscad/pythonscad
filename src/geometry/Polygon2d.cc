@@ -358,6 +358,7 @@ void Polygon2d::stamp_color(const Polygon2d& src)
   for (int i = 0; i < theoutlines.size(); i++) {
     //  if (self_a[i] < 0) continue;  // negative area cannot have color
     for (int j = 0; j < src.theoutlines.size(); j++) {
+      if (src.theoutlines[j].color.r() < 0) continue;
       if (self_b[i].min()[0] > src_b[j].max()[0]) continue;
       if (self_b[i].max()[0] < src_b[j].min()[0]) continue;
       if (self_b[i].min()[1] > src_b[j].max()[1]) continue;
