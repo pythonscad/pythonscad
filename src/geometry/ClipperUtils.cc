@@ -263,7 +263,19 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
 
     std::vector<Clipper2Lib::Paths64> diff_operands;
     diff_operands.push_back(union_new);
-    for (int i = 0; i < inputs_old; i++) diff_operands.push_back(pathsvector[i]);
+    for (int i = 0; i < inputs_old; i++) {
+      bool diff_color = false;
+      for (const auto& o1 : polygons[i]->outlines()) {
+        for (const auto& o2 : polygons[inputs_old]->outlines()) {
+          if (o1.color != o2.color) {
+            diff_color = true;
+            break;
+          }
+        }
+        if (diff_color) break;
+      }
+      if (diff_color) diff_operands.push_back(pathsvector[i]);  // only when its different color
+    }
     std::unique_ptr<Polygon2d> diff_result =
       apply(diff_operands, Clipper2Lib::ClipType::Difference, scale_bits);
     diff_result->stamp_color(*polygons[inputs_old]);
