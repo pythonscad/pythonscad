@@ -28,6 +28,7 @@
 #ifdef ENABLE_CGAL
 #include "geometry/cgal/cgalutils.h"
 #endif
+#include "src/core/ColorUtil.h"
 
 using Error = manifold::Manifold::Error;
 
@@ -214,6 +215,7 @@ Polygon2d polygonsToPolygon2d(const manifold::Polygons& polygons)
     for (const auto& v : polygon) {
       outline.vertices.emplace_back(v[0], v[1]);
     }
+    outline.color = *OpenSCAD::parse_color("#f9d72c");
     poly2d.addOutline(std::move(outline));
   }
   return poly2d;
