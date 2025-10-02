@@ -15,7 +15,7 @@
 
 #include "geometry/PolySetBuilder.h"
 #include "geometry/Polygon2d.h"
-#include "utils/hash.h"
+#include "src/core/ColorUtil.h"
 
 namespace CGALUtils {
 
@@ -102,15 +102,6 @@ template void triangulateFaces(CGAL::Surface_mesh<CGAL::Point_3<CGAL::Epick>>& p
 
 std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d& polygon2d, bool in3d)
 {
-  std::unordered_map<Vector2d, Color4f, boost::hash<Vector2d>> lookup;
-
-  // create db
-  for (const auto& o : polygon2d.outlines()) {
-    for (const Vector2d& pt : o.vertices) {
-      lookup[pt] = o.color;
-    }
-  }
-
   auto polyset = std::make_unique<PolySet>(2);
   polyset->setTriangular(true);
 
@@ -162,24 +153,13 @@ std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d&
     }
   }
 
-  for (auto& face : polyset->indices) {
-    Color4f color(0, 0, 0, 1);
-    /*
-        for(int i=0;i<3;i++) {
-          Vector3d pt = polyset->vertices[face[i]];
-          Vector2d pt2 = Vector2d(pt[0], pt[1]);
-          if (lookup.count(pt2) > 0) { color = lookup.at(pt2); break ; }
-        }
-    */
-    color = polygon2d.outlines()[0].color;  // TODO fix
-    auto it = std::find(polyset->colors.begin(), polyset->colors.end(), color);
-    if (it == polyset->colors.end()) {
-      polyset->color_indices.push_back(polyset->colors.size());
-      polyset->colors.push_back(color);
-    } else {
-      polyset->color_indices.push_back(it - polyset->colors.begin());
-    }
-  }
+  Color4f color = *OpenSCAD::parse_color("#f9d72c");
+  polyset->colors.clear();
+
+  int colorind = polyset->colors.size();  // 0
+  polyset->colors.push_back(color);
+  for (int i = 0; i < polyset->indices.size(); i++)  // create a set of undefined color
+    polyset->color_indices.push_back(colorind);
   return polyset;
 }
 

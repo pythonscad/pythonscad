@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <vector>
 #include "src/core/ColorUtil.h"
-#include "glview/RenderSettings.h"
 
 namespace ClipperUtils {
 
@@ -288,62 +287,59 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
 
     inputs_old += input_width;
   }
-  if (RenderSettings::inst()->backend3D !=
-      RenderBackend3D::ManifoldBackend) {  // CGAL needs special treatment
-    Polygon2d union_no_holes;
-    std::vector<Polygon2d> hole_results;
+  Polygon2d union_no_holes;
+  std::vector<Polygon2d> hole_results;
 
-    std::vector<Clipper2Lib::Paths64> holes_chop;  // solid chop from holes
-    for (auto& o : union_result.outlines()) {
-      auto polypaths = fromPolygon2d(o, scale_bits);
-      polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
+  std::vector<Clipper2Lib::Paths64> holes_chop;  // solid chop from holes
+  for (auto& o : union_result.outlines()) {
+    auto polypaths = fromPolygon2d(o, scale_bits);
+    polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
 
-      if (outline_area(o) > 0) {
-        union_no_holes.addOutline(o);
-        if (holes_chop.size() > 0) {
-          holes_chop.push_back(std::move(polypaths));
-        }
-      } else {
-        if (holes_chop.size() > 0) {
-          hole_results.push_back(*apply(holes_chop, Clipper2Lib::ClipType::Difference, scale_bits));
-          holes_chop.clear();
-        }
+    if (outline_area(o) > 0) {
+      union_no_holes.addOutline(o);
+      if (holes_chop.size() > 0) {
         holes_chop.push_back(std::move(polypaths));
       }
+    } else {
+      if (holes_chop.size() > 0) {
+        hole_results.push_back(*apply(holes_chop, Clipper2Lib::ClipType::Difference, scale_bits));
+        holes_chop.clear();
+      }
+      holes_chop.push_back(std::move(polypaths));
     }
-    if (holes_chop.size() > 0) {
-      hole_results.push_back(*apply(holes_chop, Clipper2Lib::ClipType::Difference, scale_bits));
-    }
+  }
+  if (holes_chop.size() > 0) {
+    hole_results.push_back(*apply(holes_chop, Clipper2Lib::ClipType::Difference, scale_bits));
+  }
 
-    // union outlines with same color
-    union_result = Polygon2d();
-    std::vector<Outline2d> outlines = union_no_holes.outlines();
-    while (outlines.size() > 0) {
-      std::vector<Outline2d> todo;
-      std::vector<Clipper2Lib::Paths64> pathsvector;
-      Color4f refcol = outlines[0].color;
-      for (auto& o : outlines) {
-        if (o.color == refcol) {
-          auto polypaths = fromPolygon2d(o, scale_bits);
-          polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
-          pathsvector.push_back(std::move(polypaths));
-        } else todo.push_back(o);
-      }
-      std::unique_ptr<Polygon2d> tmp_result =
-        apply(pathsvector, Clipper2Lib::ClipType::Union, scale_bits);  // union part
-      for (auto& outl : tmp_result->outlines()) {
-        Outline2d o = outl;
-        o.color = refcol;
-        union_result.addOutline(o);
-      }
-      outlines = todo;
+  // union outlines with same color
+  union_result = Polygon2d();
+  std::vector<Outline2d> outlines = union_no_holes.outlines();
+  while (outlines.size() > 0) {
+    std::vector<Outline2d> todo;
+    std::vector<Clipper2Lib::Paths64> pathsvector;
+    Color4f refcol = outlines[0].color;
+    for (auto& o : outlines) {
+      if (o.color == refcol) {
+        auto polypaths = fromPolygon2d(o, scale_bits);
+        polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
+        pathsvector.push_back(std::move(polypaths));
+      } else todo.push_back(o);
     }
+    std::unique_ptr<Polygon2d> tmp_result =
+      apply(pathsvector, Clipper2Lib::ClipType::Union, scale_bits);  // union part
+    for (auto& outl : tmp_result->outlines()) {
+      Outline2d o = outl;
+      o.color = refcol;
+      union_result.addOutline(o);
+    }
+    outlines = todo;
+  }
 
-    // add holes from above
-    for (const auto& hole : hole_results) {
-      for (const auto& o : hole.outlines()) {
-        union_result.addOutline(o);
-      }
+  // add holes from above
+  for (const auto& hole : hole_results) {
+    for (const auto& o : hole.outlines()) {
+      union_result.addOutline(o);
     }
   }
   union_result = *sanitize(union_result);
