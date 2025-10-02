@@ -278,7 +278,6 @@ std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> createEdgeDb(
       for (unsigned int j = 0; j < face.size(); j++) printf("%d ", face[j]);
       printf("\n");
     }  // tri 5-9-11 missing
-    assert(0);
   }
   return edge_db;
 }
