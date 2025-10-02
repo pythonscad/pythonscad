@@ -1021,11 +1021,10 @@ stderr_bak = None\n\
   // debug end
   result.reset(PyRun_String(code.c_str(), Py_file_input, pythonInitDict.get(),
                             pythonInitDict.get())); /* actual code is run here */
-  PyObject *mainModule = PyImport_AddModule("__main__");
-  if (PyObject_HasAttrString(mainModule, "debug")) {
-    PyObjectUniquePtr varDebug(PyObject_GetAttrString(mainModule, "debug"), PyObjectDeleter);
-    if (varDebug.get() != nullptr) {
-      debug_num = PyLong_AsLong(varDebug.get());
+  if (PyObject_HasAttrString(pythonMainModule.get(), "debug")) {
+    PyObject *varDebug = PyObject_GetAttrString(pythonMainModule.get(), "debug");
+    if (varDebug != nullptr && PyLong_Check(varDebug)) {
+      debug_num = PyLong_AsLong(varDebug);
     }
   }
 
