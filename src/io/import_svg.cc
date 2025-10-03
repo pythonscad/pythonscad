@@ -196,8 +196,13 @@ std::unique_ptr<Polygon2d> import_svg(double fn, double fs, double fa, const std
         for (const auto& p : s.get_path_list()) {
           Outline2d outline;
           std::string fill = s.get_fill();
-          if (fill.size() == 0) fill = "#f9d72c";
-          outline.color = *OpenSCAD::parse_color(fill);
+          if (fill == "none") outline.color = Color4f(0, 0, 0, 0);  // transparent
+          else {
+            auto x = OpenSCAD::parse_color(fill);
+            if (x.has_value()) {
+              outline.color = *x;
+            } else outline.color = *OpenSCAD::parse_color("#f9d72c");
+          }
           for (const auto& v : p) {
             const double x = scale.x() * (-viewbox.x() + v.x()) - cx;
             const double y = scale.y() * (-viewbox.y() - v.y()) + cy;

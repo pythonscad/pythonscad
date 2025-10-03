@@ -1,4 +1,4 @@
-use <../../../ttf/liberation-2.00.1/LiberationSans-Regular.ttf>
+use <LiberationSans-Regular.ttf>
 
 s = "OpenSCAD";
 valign = "default";

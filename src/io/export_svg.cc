@@ -82,10 +82,13 @@ static void append_svg(const Polygon2d& poly, std::ostream& output, const Export
       color_str = fill;
     } else {
       std::stringstream ss;
-      ss << "#" << std::hex << std::setfill('0') << std::setw(2) << (int)(col.r() * 255)
-         << std::setfill('0') << std::setw(2) << (int)(col.g() * 255) << std::setfill('0')
-         << std::setw(2) << (int)(col.b() * 255);
-      color_str = ss.str();
+      if (col.a() == 0) color_str = "none";
+      else {
+        ss << "#" << std::hex << std::setfill('0') << std::setw(2) << (int)(col.r() * 255)
+           << std::setfill('0') << std::setw(2) << (int)(col.g() * 255) << std::setfill('0')
+           << std::setw(2) << (int)(col.b() * 255);
+        color_str = ss.str();
+      }
     }
     output << "\" stroke=\"" << stroke << "\" fill=\"" << color_str << "\" stroke-width=\""
            << strokeWidth << "\"/>\n";
