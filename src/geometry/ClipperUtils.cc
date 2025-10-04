@@ -264,17 +264,7 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
     diff_operands.push_back(union_new);
     for (int i = 0; i < inputs_old; i++) {
       if (polygons[i] == nullptr) continue;
-      bool diff_color = false;
-      for (const auto& o1 : polygons[i]->outlines()) {
-        for (const auto& o2 : polygons[inputs_old]->outlines()) {
-          if (o1.color != o2.color) {
-            diff_color = true;
-            break;
-          }
-        }
-        if (diff_color) break;
-      }
-      if (diff_color) diff_operands.push_back(pathsvector[i]);  // only when its different color
+      diff_operands.push_back(pathsvector[i]);  // only when its different color
     }
     std::unique_ptr<Polygon2d> diff_result =
       apply(diff_operands, Clipper2Lib::ClipType::Difference, scale_bits);
@@ -287,62 +277,28 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
 
     inputs_old += input_width;
   }
-  Polygon2d union_no_holes;
-  std::vector<Polygon2d> hole_results;
 
-  std::vector<Clipper2Lib::Paths64> holes_chop;  // solid chop from holes
-  for (auto& o : union_result.outlines()) {
-    auto polypaths = fromPolygon2d(o, scale_bits);
-    polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
+  // per-color sanitizing
 
-    if (outline_area(o) > 0) {
-      union_no_holes.addOutline(o);
-      if (holes_chop.size() > 0) {
-        holes_chop.push_back(std::move(polypaths));
-      }
-    } else {
-      if (holes_chop.size() > 0) {
-        hole_results.push_back(*apply(holes_chop, Clipper2Lib::ClipType::Difference, scale_bits));
-        holes_chop.clear();
-      }
-      holes_chop.push_back(std::move(polypaths));
-    }
-  }
-  if (holes_chop.size() > 0) {
-    hole_results.push_back(*apply(holes_chop, Clipper2Lib::ClipType::Difference, scale_bits));
-  }
-
-  // union outlines with same color
-  union_result = Polygon2d();
-  std::vector<Outline2d> outlines = union_no_holes.outlines();
+  std::vector<Outline2d> outlines = union_result.outlines();
+  Polygon2d union_sanitized;
   while (outlines.size() > 0) {
-    std::vector<Outline2d> todo;
-    std::vector<Clipper2Lib::Paths64> pathsvector;
     Color4f refcol = outlines[0].color;
-    for (auto& o : outlines) {
-      if (o.color == refcol) {
-        auto polypaths = fromPolygon2d(o, scale_bits);
-        polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
-        pathsvector.push_back(std::move(polypaths));
-      } else todo.push_back(o);
+    std::vector<Outline2d> outlines_todo;
+    Polygon2d outlines_singlecol;
+    for (const auto& ol : outlines) {
+      if (ol.color == refcol) {
+        outlines_singlecol.addOutline(ol);
+      } else outlines_todo.push_back(ol);
     }
-    std::unique_ptr<Polygon2d> tmp_result =
-      apply(pathsvector, Clipper2Lib::ClipType::Union, scale_bits);  // union part
-    for (auto& outl : tmp_result->outlines()) {
-      Outline2d o = outl;
-      o.color = refcol;
-      union_result.addOutline(o);
+    std::shared_ptr<Polygon2d> sanitized = sanitize(outlines_singlecol);
+    for (Outline2d ol : sanitized->outlines()) {
+      ol.color = refcol;
+      union_sanitized.addOutline(ol);
     }
-    outlines = todo;
+    outlines = outlines_todo;
   }
-
-  // add holes from above
-  for (const auto& hole : hole_results) {
-    for (const auto& o : hole.outlines()) {
-      union_result.addOutline(o);
-    }
-  }
-  union_result = *sanitize(union_result);
+  union_result = union_sanitized;
   union_result.setSanitized(true);
   return union_result;
 }
