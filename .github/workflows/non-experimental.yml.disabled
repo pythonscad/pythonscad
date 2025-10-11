@@ -17,7 +17,8 @@ jobs:
       with:
         submodules: 'recursive'
     - name: Install dependencies
-        which sudo || apt install -y sudo
+        which sudo || ( apt update && apt install -y sudo )
+
         sudo ./scripts/uni-get-dependencies.py --yes --profile pythonscad
     - uses: actions/setup-python@v6
       with:

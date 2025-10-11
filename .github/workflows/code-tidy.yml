@@ -20,7 +20,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        which sudo || apt install -y sudo
+        which sudo || ( apt update && apt install -y sudo )
         sudo ./scripts/uni-get-dependencies.py --yes --profile pythonscad
         sudo apt -qq -y install clang-tidy
 
