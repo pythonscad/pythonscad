@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         which sudo || apt install -y sudo
-        sudo ./scripts/uni-get-dependencies.sh
+        sudo ./scripts/uni-get-dependencies.py --yes --profile pythonscad
         sudo apt -qq -y install clang-tidy
 
     - name: Run CMake

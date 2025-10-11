@@ -19,7 +19,7 @@ jobs:
         submodules: 'recursive'
     - name: Install dependencies
       run: which sudo || apt install -y sudo
-        sudo ./scripts/uni-get-dependencies.sh
+        sudo ./scripts/uni-get-dependencies.py --yes --profile pythonscad
     - uses: actions/setup-python@v6
       with:
         python-version: '3.11'
