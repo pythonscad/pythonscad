@@ -33,7 +33,7 @@ jobs:
         TZ: Etc/UTC
       run: |
         which sudo || ( apt update && apt install -y sudo )
-        sudo ./scripts/uni-get-dependencies.py --yes --profile pythonscad-${{ matrix.qt }}
+        sudo -E ./scripts/uni-get-dependencies.py --yes --profile pythonscad-${{ matrix.qt }}
     - uses: actions/setup-python@v6
       with:
         python-version: '3.x'
