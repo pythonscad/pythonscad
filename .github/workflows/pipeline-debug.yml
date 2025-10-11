@@ -30,7 +30,9 @@ jobs:
     - name: Check python-versions pre install dependencies
       run: |
         which python || true
+        python --version || true
         which python3 || true
+        python3 --version || true
         find / -name "python" -executable ! -path "*snap*" ! -path "*flatpak*" ! -path "*venv*" ! -path "*gnu*" ! -type d -print -exec {} --version \; 2>/dev/null
         find / -name "python3" -executable ! -path "*snap*" ! -path "*flatpak*" ! -path "*venv*" ! -path "*gnu*" ! -type d -print -exec {} --version \; 2>/dev/null
     - name: Install dependencies
@@ -45,7 +47,9 @@ jobs:
     - name: Check python-versions post install dependencies
       run: |
         which python || true
+        python --version || true
         which python3 || true
+        python3 --version || true
         find / -name "python" -executable ! -path "*snap*" ! -path "*flatpak*" ! -path "*venv*" ! -path "*gnu*" ! -type d -print -exec {} --version \; 2>/dev/null
         find / -name "python3" -executable ! -path "*snap*" ! -path "*flatpak*" ! -path "*venv*" ! -path "*gnu*" ! -type d -print -exec {} --version \; 2>/dev/null
     - uses: actions/setup-python@v6
@@ -54,6 +58,8 @@ jobs:
     - name: Check python-versions post setup python
       run: |
         which python || true
+        python --version || true
         which python3 || true
+        python3 --version || true
         find / -name "python" -executable ! -path "*snap*" ! -path "*flatpak*" ! -path "*venv*" ! -path "*gnu*" ! -type d -print -exec {} --version \; 2>/dev/null
         find / -name "python3" -executable ! -path "*snap*" ! -path "*flatpak*" ! -path "*venv*" ! -path "*gnu*" ! -type d -print -exec {} --version \; 2>/dev/null
