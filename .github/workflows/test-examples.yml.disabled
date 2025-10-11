@@ -24,9 +24,6 @@ jobs:
       run: |
         which sudo || ( apt update && apt install -y sudo )
         sudo -E ./scripts/uni-get-dependencies.py --yes --profile pythonscad
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
     - name: Build and test
       run: ./scripts/github-ci.sh ${{ matrix.experimental && 'experimental' || ''}} enable_python build test_examples test
     - name: Upload Test Result Report
