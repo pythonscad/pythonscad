@@ -356,6 +356,7 @@
         "gtk-doc",
         "harfbuzz",
         "imagemagick",
+        "lib3mf",
         "libffi",
         "libxml2",
         "libzip",
