@@ -31,6 +31,7 @@ Config schema (profiles/*.json):
     "ubuntu": { "extends": "debian", "manager": "apt", "packages": [...],
               "pre_commands": ["command1", "command2"],
               "post_commands": ["command3", "command4"],
+              "install_flags": ["--flag1", "--flag2"],
               "version_overrides": { "24": {"add": [...], "remove": [...] } } }
   }
 
@@ -249,7 +250,8 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         if shutil.which("brew") is None:
             raise SystemExit("Homebrew not found. Install from https://brew.sh first.")
         cmds.append(["brew", "update"])
-        cmds.append(["brew", "install", *packages])
+        install_flags = d.get("install_flags", [])
+        cmds.append(["brew", "install", *install_flags, *packages])
     elif mgr == "zypper":
         if assume_yes:
             cmds.append(["sudo", "zypper", "--non-interactive", "install", *packages])
