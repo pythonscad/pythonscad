@@ -49,7 +49,7 @@ jobs:
         HOMEBREW_NO_AUTO_UPDATE: 1
       run: |
         export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
-        scripts/uni-get-dependencies.py --yes --profile pythonscad-qt${{ matrix.qt }}
+        scripts/uni-get-dependencies.py --yes --profile pythonscad-${{ matrix.qt }}
         ./scripts/macosx-build-homebrew.sh ${{ matrix.qt }}
     - name: Build OpenSCAD
       run: |
