@@ -331,7 +331,8 @@
       "pre_commands": [],
       "post_commands": [],
       "install_flags": [
-        "--force"
+        "--force",
+        "--overwrite"
       ],
       "packages": [
         "bison",
