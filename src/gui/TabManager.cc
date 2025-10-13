@@ -74,7 +74,6 @@ QWidget *TabManager::getTabContent()
 
 void TabManager::tabSwitched(int x)
 {
-  printf("Tab switched to %d\n", x);
   assert(tabWidget != nullptr);
 
   editor = (EditorInterface *)tabWidget->widget(x);
@@ -176,6 +175,7 @@ void TabManager::open(const QString& filename)
   if (editor->filepath.isEmpty() && !editor->isContentModified() &&
       !editor->parameterWidget->isModified()) {
     openTabFile(filename);
+    emit editorContentReloaded(editor);
   } else {
     createTab(filename);
   }
@@ -183,12 +183,10 @@ void TabManager::open(const QString& filename)
 
 void TabManager::createTab(const QString& filename)
 {
-  printf("createTab\n");
   assert(par != nullptr);
 
   auto scintillaEditor = new ScintillaEditor(tabWidget);
   editor = scintillaEditor;
-  editor->recomputeLanguageActive();
   //  Preferences::create(editor->colorSchemes());   // needs to be done only once, however handled
   this->use_gvim = GlobalPreferences::inst()->getValue("editor/usegvim").toBool();
   //  this->use_gvim = true;
@@ -253,6 +251,10 @@ void TabManager::createTab(const QString& filename)
   if (tabWidget->currentWidget() != editor) {
     tabWidget->setCurrentWidget(editor);
   }
+
+  editor->recomputeLanguageActive();
+  par->onLanguageActiveChanged(editor->language);
+
   emit tabCountChanged(editorList.size());
 }
 
@@ -474,8 +476,6 @@ void TabManager::openTabFile(const QString& filename)
   auto [fname, fpath] = getEditorTabNameWithModifier(editor);
   setEditorTabName(fname, fpath, editor);
   par->setWindowTitle(fname);
-
-  emit editorContentReloaded(editor);
 }
 
 std::tuple<QString, QString> TabManager::getEditorTabName(EditorInterface *edt)
