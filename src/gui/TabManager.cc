@@ -74,6 +74,7 @@ QWidget *TabManager::getTabContent()
 
 void TabManager::tabSwitched(int x)
 {
+  printf("Tab switched to %d\n", x);
   assert(tabWidget != nullptr);
 
   editor = (EditorInterface *)tabWidget->widget(x);
@@ -100,7 +101,8 @@ void TabManager::tabSwitched(int x)
     setTabsCloseButtonVisibility(idx, isVisible);
   }
 
-  par->recomputeLanguageActive();
+  editor->recomputeLanguageActive();
+  par->onLanguageActiveChanged(editor->language);
   emit currentEditorChanged(editor);
 }
 
@@ -181,10 +183,12 @@ void TabManager::open(const QString& filename)
 
 void TabManager::createTab(const QString& filename)
 {
+  printf("createTab\n");
   assert(par != nullptr);
 
-  auto scintillaEditor = new ScintillaEditor(tabWidget, *par);
+  auto scintillaEditor = new ScintillaEditor(tabWidget);
   editor = scintillaEditor;
+  editor->recomputeLanguageActive();
   //  Preferences::create(editor->colorSchemes());   // needs to be done only once, however handled
   this->use_gvim = GlobalPreferences::inst()->getValue("editor/usegvim").toBool();
   //  this->use_gvim = true;
@@ -529,6 +533,7 @@ bool TabManager::refreshDocument()
       if (editor->toPlainText() != text) {
         editor->setPlainText(text);
         setContentRenderState();  // since last render
+        editor->recomputeLanguageActive();
       }
       file_opened = true;
     }

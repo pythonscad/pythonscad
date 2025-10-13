@@ -366,6 +366,12 @@ public:
   QList<double> getRotation() const;
   QSignalMapper *addmenu_mapper;
   std::unordered_map<FileFormat, QAction *> exportMap;
+  void onLanguageActiveChanged(int language)
+  {
+    currentLanguage = language;
+    printf("lang is %d\n", currentLanguage);
+  }
+  int currentLanguage;
 
 public slots:
   void actionReloadRenderPreview();
@@ -416,7 +422,6 @@ public slots:
   void checkAutoReload();
   void waitAfterReload();
   void autoReloadSet(bool);
-  void recomputeLanguageActive();
 
 private:
   bool network_progress_func(const double permille);
@@ -461,9 +466,6 @@ private:
 signals:
   void highlightError(int);
   void unhighlightLastError();
-#ifdef ENABLE_PYTHON
-  void pythonActiveChanged(bool pythonActive);
-#endif
 
 #ifdef ENABLE_GUI_TESTS
 public:
