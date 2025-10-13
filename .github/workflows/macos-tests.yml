@@ -58,7 +58,7 @@ jobs:
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         make -j$NUMCPU
     - name: Setup (detached) tmate ssh session if enabled
-      if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+      # if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       uses: mxschmitt/action-tmate@v3
       timeout-minutes: 15
       with:
