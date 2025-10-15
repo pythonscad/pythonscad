@@ -104,30 +104,50 @@ get_debian_deps()
 {
  apt-get update
  apt-get -y install \
-  build-essential bison flex git curl cmake ninja-build libffi-dev \
-  libboost-program-options-dev libboost-regex-dev libboost-system-dev \
-  libmpfr-dev libglew-dev libcairo2-dev libharfbuzz-dev \
-  libeigen3-dev libcgal-dev libopencsg-dev libgmp-dev \
-  imagemagick libfreetype-dev libdouble-conversion-dev libxml2-dev \
-  gtk-doc-tools libglib2.0-dev gettext xvfb pkg-config ragel libtbb-dev \
-  libgl1-mesa-dev libxi-dev libxmu-dev libfontconfig-dev libzip-dev libjpeg-dev libjpeg-dev \
-  python3-dev nettle-dev python3-venv libcurl4-openssl-dev
- get_qt5_deps_debian 
+  bison build-essential cmake curl flex gettext ghostscript git \
+  gtk-doc-tools imagemagick lib3mf-dev libboost-program-options-dev \
+  libboost-regex-dev libboost-system-dev libcairo2-dev libcgal-dev \
+  libdouble-conversion-dev libeigen3-dev libffi-dev libfontconfig-dev \
+  libfreetype-dev libgl1-mesa-dev libglew-dev libglib2.0-dev libgmp-dev \
+  libharfbuzz-dev libmimalloc-dev libmpfr-dev libopencsg-dev \
+  libqt5gamepad5-dev libtbb-dev libxi-dev libxml2-dev libxmu-dev \
+  libzip-dev nettle-dev ninja-build nodejs pkg-config python3-dev \
+  python3-setuptools python3-venv ragel xvfb libcurl4-openssl-dev
+ if [ "$USE_QT6" = "1" ]; then
+  get_qt6_deps_debian
+ else
+  get_qt5_deps_debian
+ fi
 }
 
 get_qt5_deps_debian()
 {
- apt-get -y install qtbase5-dev libqscintilla2-qt5-dev libqt5opengl5-dev \
-  libqt5svg5-dev qtmultimedia5-dev libqt5multimedia5-plugins qt5-qmake
+ apt-get -y install \
+  libqscintilla2-qt5-dev libqt5multimedia5-plugins libqt5opengl5-dev \
+  libqt5svg5-dev qt5-qmake qtbase5-dev qtmultimedia5-dev
+ # Install libqt5gamepad5-dev if available (not present on older releases)
+ if apt-cache show libqt5gamepad5-dev >/dev/null 2>&1; then
+  apt-get -y install libqt5gamepad5-dev
+ fi
+}
+
+get_qt6_deps_debian()
+{
+ apt-get -y install \
+  libqscintilla2-qt6-dev libqt6core5compat6-dev libqt6svg6-dev \
+  qt6-base-dev qt6-multimedia-dev
 }
 
 get_arch_deps()
 {
-  pacman -S --noconfirm \
-  base-devel gcc bison flex make libzip \
+  pacman -S --noconfirm --needed \
+  base-devel gcc bison flex make libzip cairo \
   qt5 qscintilla-qt5 cgal gmp mpfr boost opencsg \
   glew eigen glib2 fontconfig freetype2 harfbuzz \
-  double-conversion imagemagick tbb curl
+  double-conversion imagemagick tbb curl libcurl-openssl cmake freetype2 gcc-libs ghostscript  \
+  glibc glu  hicolor-icon-themes hicolor-icon-themes  hidapi lib3mf libglvnd \
+  libspnav  libx11 libxml2 mimalloc nettle procps-ng python python-pip python-setuptools \
+  qt5-base qt5-multimedia qt5-svg  xorg-server-xvfb
 }
 
 get_solus_deps()
@@ -146,6 +166,14 @@ unknown()
  echo "Unknown system type. Please install the dependency packages listed"
  echo "in README.md using your system's package manager."
 }
+
+# Usage: $0 [qt6]
+# Qt5 is default
+if [ "`echo $* | grep qt6`" ]; then
+  USE_QT6=1
+else
+  USE_QT6=0
+fi
 
 if [ -e /etc/issue ]; then
  if [ "`grep -i ubuntu /etc/issue`" ]; then
@@ -176,7 +204,7 @@ if [ -e /etc/issue ]; then
   get_mageia_deps
  elif [ "`grep -i qomo /etc/issue`" ]; then
   get_qomo_deps
- elif [ "`grep -i arch /etc/issue`" ]; then
+ elif test -r /etc/arch-release ; then
    get_arch_deps
  elif [ -e /etc/fedora-release ]; then
   if [ "`grep -i fedora.release /etc/fedora-release`" ]; then

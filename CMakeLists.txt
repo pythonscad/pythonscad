@@ -8,6 +8,7 @@
 #   -DEXPERIMENTAL=<ON|OFF>
 #
 
+
 cmake_minimum_required(VERSION 3.13)
 
 # Let AUTOMOC and AUTOUIC process GENERATED files.
@@ -56,9 +57,14 @@ option(OFFLINE_DOCS "Download Documentation for offline usage" OFF)
 option(USE_MIMALLOC "Use mimalloc as malloc replacement." ON)
 option(USE_BUILTIN_OPENCSG "Use OpenCSG from submodule." OFF)
 option(USE_CCACHE "Use ccache to speed up compilation." ON)
-option(ENABLE_CAIRO "Enable support for cairo vector graphics library." ON)
-option(ENABLE_SPNAV "Enable support for libspnav input driver." ON)
-option(ENABLE_HIDAPI "Enable support for HIDAPI input driver." ON)
+set(ENABLE_CAIRO "AUTO" CACHE STRING "Enable support for cairo vector graphics library")
+set_property(CACHE ENABLE_CAIRO PROPERTY STRINGS "AUTO" "ON" "OFF")
+
+set(ENABLE_SPNAV "AUTO" CACHE STRING "Enable support for libspnav input driver")
+set_property(CACHE ENABLE_SPNAV PROPERTY STRINGS "AUTO" "ON" "OFF")
+
+set(ENABLE_HIDAPI "AUTO" CACHE STRING "Enable support for HIDAPI input driver")
+set_property(CACHE ENABLE_HIDAPI PROPERTY STRINGS "AUTO" "ON" "OFF")
 option(ENABLE_CGAL "Enable CGAL." ON)
 option(ENABLE_MANIFOLD "Enable Manifold." ON)
 option(ALLOW_BUNDLED_HIDAPI "Allow usage of bundled HIDAPI library (Windows only)." OFF)
@@ -71,9 +77,10 @@ option(BUILD_SHARED_LIBS "Build shared library" OFF)
 include(CMakeDependentOption)
 cmake_dependent_option(APPLE_UNIX "Build PythonSCAD in Unix mode in MacOS X instead of an Apple Bundle" OFF "APPLE" OFF)
 cmake_dependent_option(ENABLE_QTDBUS "Enable DBus input driver for Qt." ON "NOT HEADLESS" OFF)
-cmake_dependent_option(ENABLE_GAMEPAD "Enable Qt5Gamepad input driver." ON "NOT HEADLESS;NOT USE_QT6" OFF)
+set(ENABLE_GAMEPAD "AUTO" CACHE STRING "Enable Qt5Gamepad input driver")
+set_property(CACHE ENABLE_GAMEPAD PROPERTY STRINGS "AUTO" "ON" "OFF")
 set(WASM_BUILD_TYPE "web" CACHE STRING
-  "WebAssembly build type. Support web (builds a PythonSCAD module) or node (standalone .js executable)")
+  "WebAssembly build type. Support web (builds an OpenSCAD module) or node (standalone .js executable)")
 
 if (USE_QT6)
   # Minimum version required for Qt-6.5
@@ -342,7 +349,8 @@ if (MSVC)
   target_compile_definitions(OpenSCAD PRIVATE _USE_MATH_DEFINES)
   target_compile_definitions(OpenSCAD PRIVATE NOMINMAX)
 
-  find_package(Eigen3 CONFIG REQUIRED)
+  # Our code is compatible with both V3 and V5, so for now, we accept any version.
+  find_package(Eigen3 REQUIRED QUIET)
   target_link_libraries(OpenSCAD PRIVATE Eigen3::Eigen)
   message(STATUS "Eigen: ${Eigen3_VERSION}")
 
@@ -389,10 +397,10 @@ else()
     endif()
   endif()
 
-  find_package(Eigen3 3.0 REQUIRED QUIET)
-  target_include_directories(OpenSCAD SYSTEM PRIVATE ${EIGEN3_INCLUDE_DIR})
-  target_compile_definitions(OpenSCAD PRIVATE EIGEN_DONT_ALIGN)
-  message(STATUS "Eigen: ${EIGEN3_VERSION}")
+  # Our code is compatible with both V3 and V5, so for now, we accept any version.
+  find_package(Eigen3 REQUIRED QUIET)
+  target_link_libraries(OpenSCAD PRIVATE Eigen3::Eigen)
+  message(STATUS "Eigen: ${Eigen3_VERSION}")
 
   find_package(Boost 1.70 REQUIRED QUIET COMPONENTS regex program_options)
   message(STATUS "Boost: ${Boost_VERSION}")
@@ -665,8 +673,9 @@ if(NOT HEADLESS)
   endif()
 endif()
 
-if(ENABLE_HIDAPI)
-  find_package(HidAPI 0.10)
+if(ENABLE_HIDAPI STREQUAL "AUTO")
+  # AUTO: try to find, fallback gracefully if not found
+  find_package(HidAPI 0.10 QUIET)
   if(HIDAPI_FOUND)
     set(INPUT_DRIVER_HIDAPI_SOURCES src/gui/input/HidApiInputDriver.cc)
     target_include_directories(OpenSCAD SYSTEM PRIVATE ${HIDAPI_INCLUDE_DIR})
@@ -682,14 +691,24 @@ if(ENABLE_HIDAPI)
     target_link_libraries(OpenSCAD PRIVATE setupapi hid)
     message(STATUS "HidAPI: ${HIDAPI_VERSION_STRING} (bundled)")
   else()
-    message(STATUS "HIDAPI: disabled")
+    message(STATUS "HIDAPI: disabled (not found)")
   endif()
+elseif(ENABLE_HIDAPI)
+  # Explicit ON: fail if not found
+  find_package(HidAPI 0.10 REQUIRED)
+  set(INPUT_DRIVER_HIDAPI_SOURCES src/gui/input/HidApiInputDriver.cc)
+  target_include_directories(OpenSCAD SYSTEM PRIVATE ${HIDAPI_INCLUDE_DIR})
+  target_link_libraries(OpenSCAD PRIVATE ${HIDAPI_LIBRARY})
+  target_compile_definitions(OpenSCAD PRIVATE ENABLE_HIDAPI)
+  message(STATUS "HidAPI: ${HIDAPI_VERSION_STRING}")
 else()
+  # OFF: explicitly disabled
   message(STATUS "HIDAPI: disabled per user request")
 endif()
 
-if(ENABLE_SPNAV)
-  find_package(SpNav)
+if(ENABLE_SPNAV STREQUAL "AUTO")
+  # AUTO: try to find, fallback gracefully if not found
+  find_package(SpNav QUIET)
   if(SPNAV_FOUND)
     message(STATUS "SpNav: found")
     set(INPUT_DRIVER_SPNAV_SOURCES src/gui/input/SpaceNavInputDriver.cc)
@@ -697,26 +716,51 @@ if(ENABLE_SPNAV)
     target_link_libraries(OpenSCAD PRIVATE ${SPNAV_LIBRARY})
     target_compile_definitions(OpenSCAD PRIVATE ENABLE_SPNAV)
   else()
-    message(STATUS "SpNav: disabled")
+    message(STATUS "SpNav: disabled (not found)")
   endif()
+elseif(ENABLE_SPNAV)
+  # Explicit ON: fail if not found
+  find_package(SpNav REQUIRED)
+  message(STATUS "SpNav: found")
+  set(INPUT_DRIVER_SPNAV_SOURCES src/gui/input/SpaceNavInputDriver.cc)
+  target_include_directories(OpenSCAD SYSTEM PRIVATE ${SPNAV_INCLUDE_DIR})
+  target_link_libraries(OpenSCAD PRIVATE ${SPNAV_LIBRARY})
+  target_compile_definitions(OpenSCAD PRIVATE ENABLE_SPNAV)
+else()
+  # OFF: explicitly disabled
+  message(STATUS "SpNav: disabled per user request")
 endif()
 
-if(ENABLE_CAIRO)
+if(ENABLE_CAIRO STREQUAL "AUTO")
+  # AUTO: try to find, fallback gracefully if not found
   if (MSVC)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(CAIRO REQUIRED cairo)
   else()
     find_package(Cairo 1.14 QUIET)
-    if (CAIRO_VERSION)
-      message(STATUS "Cairo: ${CAIRO_VERSION}")
-      target_include_directories(OpenSCAD SYSTEM PRIVATE ${CAIRO_INCLUDE_DIRS})
-      target_link_libraries(OpenSCAD PRIVATE ${CAIRO_LIBRARIES})
-      target_compile_definitions(OpenSCAD PRIVATE ENABLE_CAIRO)
-    else()
-      message(STATUS "Cairo: disabled")
-    endif()
   endif()
+  if(CAIRO_VERSION OR CAIRO_FOUND)
+    message(STATUS "Cairo: ${CAIRO_VERSION}")
+    target_include_directories(OpenSCAD SYSTEM PRIVATE ${CAIRO_INCLUDE_DIRS})
+    target_link_libraries(OpenSCAD PRIVATE ${CAIRO_LIBRARIES})
+    target_compile_definitions(OpenSCAD PRIVATE ENABLE_CAIRO)
+  else()
+    message(STATUS "Cairo: disabled (not found)")
+  endif()
+elseif(ENABLE_CAIRO)
+  # Explicit ON: fail if not found
+  if (MSVC)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(CAIRO REQUIRED cairo)
+  else()
+    find_package(Cairo 1.14 REQUIRED)
+  endif()
+  message(STATUS "Cairo: ${CAIRO_VERSION}")
+  target_include_directories(OpenSCAD SYSTEM PRIVATE ${CAIRO_INCLUDE_DIRS})
+  target_link_libraries(OpenSCAD PRIVATE ${CAIRO_LIBRARIES})
+  target_compile_definitions(OpenSCAD PRIVATE ENABLE_CAIRO)
 else()
+  # OFF: explicitly disabled
   message(STATUS "Cairo: disabled per user request")
 endif()
 
@@ -746,7 +790,7 @@ if (Lib3MF_FOUND)
   endif()
 else()
   set(LIB3MF_SOURCES src/io/export_3mf_dummy.cc src/io/import_3mf_dummy.cc)
-  message(STATUS "lib3mf: disabled")
+  message(STATUS "lib3mf: disabled (not found)")
 endif()
 
 # Automatically add the current source and build directories to the include path.
@@ -810,7 +854,12 @@ if(NOT HEADLESS)
   endif()
 
   if (USE_QT6)
-    find_package(Qt6 COMPONENTS Core Core5Compat Widgets Multimedia OpenGL OpenGLWidgets Concurrent Network Svg ${QT_TEST_IF_ANY} REQUIRED)
+  # Validate Qt6 compatibility
+  if(ENABLE_GAMEPAD STREQUAL "ON")
+    message(FATAL_ERROR "Qt5Gamepad is not available when using Qt6. Set ENABLE_GAMEPAD to OFF or AUTO.")
+  endif()
+
+  find_package(Qt6 COMPONENTS Core Core5Compat Widgets Multimedia OpenGL OpenGLWidgets Concurrent Network Svg ${QT_TEST_IF_ANY} REQUIRED QUIET)
     message(STATUS "Qt6: ${Qt6_VERSION}")
 
     if (Qt6_POSITION_INDEPENDENT_CODE)
@@ -864,17 +913,25 @@ if(NOT HEADLESS)
       message(STATUS "DBus input driver disabled per user request.")
     endif()
 
-    if(ENABLE_GAMEPAD)
-      find_package(Qt5Gamepad)
+    if(ENABLE_GAMEPAD STREQUAL "AUTO")
+      # AUTO: try to find, fallback gracefully if not found
+      find_package(Qt5Gamepad QUIET)
       if (Qt5Gamepad_FOUND)
         message(STATUS "Qt5Gamepad input driver enabled")
         set(GUI_SOURCES ${GUI_SOURCES} src/gui/input/QGamepadInputDriver.cc)
         target_compile_definitions(OpenSCAD PRIVATE ENABLE_QGAMEPAD)
       else()
-        message(STATUS "Qt5Gamepad input driver disabled as the Qt5Gamepad module could not be found.")
+        message(STATUS "Qt5Gamepad input driver disabled (not found)")
       endif()
+    elseif(ENABLE_GAMEPAD)
+      # Explicit ON: fail if not found
+      find_package(Qt5Gamepad REQUIRED)
+      message(STATUS "Qt5Gamepad input driver enabled")
+      set(GUI_SOURCES ${GUI_SOURCES} src/gui/input/QGamepadInputDriver.cc)
+      target_compile_definitions(OpenSCAD PRIVATE ENABLE_QGAMEPAD)
     else()
-      message(STATUS "Qt5Gamepad input driver disabled per user request.")
+      # OFF: explicitly disabled
+      message(STATUS "Qt5Gamepad input driver disabled per user request")
     endif()
   endif()
 endif()
@@ -1022,6 +1079,7 @@ set(CORE_SOURCES
   src/core/SourceFileCache.cc
   src/core/StatCache.cc
   src/core/SurfaceNode.cc
+  src/core/SheetNode.cc
   src/core/TextNode.cc
   src/core/TransformNode.cc
   src/core/Tree.cc

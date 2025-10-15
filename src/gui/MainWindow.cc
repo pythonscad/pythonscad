@@ -927,10 +927,10 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   }
 
   // Adds shortcut for the prev/next window switching
-  shortcutNextWindow = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_K), this);
+  shortcutNextWindow = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_K), this);
   QObject::connect(shortcutNextWindow, &QShortcut::activated, this,
                    &MainWindow::onWindowShortcutNextPrevActivated);
-  shortcutPreviousWindow = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_H), this);
+  shortcutPreviousWindow = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_H), this);
   QObject::connect(shortcutPreviousWindow, &QShortcut::activated, this,
                    &MainWindow::onWindowShortcutNextPrevActivated);
 
@@ -1361,7 +1361,8 @@ void MainWindow::loadDesignSettings()
   CGALCache::instance()->setMaxSizeMB(cgalCacheSizeMB);
   auto backend3D =
     GlobalPreferences::inst()->getValue("advanced/renderBackend3D").toString().toStdString();
-  RenderSettings::inst()->backend3D = renderBackend3DFromString(backend3D);
+  RenderSettings::inst()->backend3D =
+    renderBackend3DFromString(backend3D).value_or(DEFAULT_RENDERING_BACKEND_3D);
 }
 
 void MainWindow::updateUndockMode(bool undockMode)
@@ -2509,9 +2510,10 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
       // add parameters as annotation in AST
       auto error = evaluatePython(par_text, true);  // run dummy
       this->rootFile->scope->assignments = customizer_parameters;
-      CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');        // add annotations
-      this->activeEditor->parameterWidget->setParameters(this->rootFile.get(), "\n");  // set widgets values
-      this->activeEditor->parameterWidget->applyParameters(this->rootFile.get());      // use widget values
+      CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');  // add annotations
+      this->activeEditor->parameterWidget->setParameters(this->rootFile.get(),
+                                                         "\n");                    // set widgets values
+      this->activeEditor->parameterWidget->applyParameters(this->rootFile.get());  // use widget values
       this->activeEditor->parameterWidget->setEnabled(true);
       this->activeEditor->setIndicator(this->rootFile->indicatorData);
     } while (0);
@@ -3116,7 +3118,7 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
       this->progresswidget = nullptr;
     }
     if (versionLabel == nullptr) {
-      versionLabel = new QLabel("OpenSCAD " + QString::fromStdString(openscad_displayversionnumber));
+      versionLabel = new QLabel("PythonSCAD " + QString::fromStdString(openscad_displayversionnumber));
       sb->addPermanentWidget(this->versionLabel);
     }
   } else {

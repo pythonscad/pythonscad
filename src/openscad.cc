@@ -237,7 +237,7 @@ void help_export(const std::array<const Settings::SettingsEntryBase *, size>& op
 
 void help_export()
 {
-  LOG("OpenSCAD version %1$s\n", TOSTRING(OPENSCAD_VERSION));
+  LOG("PythonSCAD version %1$s\n", TOSTRING(OPENSCAD_VERSION));
   LOG("List of settings that can be given using the -O option using the");
   LOG("format '<section>/<key>=value', e.g.:");
   LOG("openscad -O export-pdf/paper-size=a6 -O export-pdf/show-grid=false\n");
@@ -249,7 +249,7 @@ void help_export()
 
 void version()
 {
-  LOG("OpenSCAD version %1$s", TOSTRING(OPENSCAD_VERSION));
+  LOG("PythonSCAD version %1$s", TOSTRING(OPENSCAD_VERSION));
   exit(0);
 }
 
@@ -838,7 +838,8 @@ int main(int argc, char **argv)
   // The original name as called, not resolving links and so on. This will
   // just forward everything to the python main.
   const auto applicationName = fs::path(argv[0]).filename().generic_string();
-  if (applicationName == PYTHON_EXECUTABLE_NAME) {
+  if (applicationName == "python" || applicationName == "python3" ||
+      applicationName.rfind("python3.", 0) == 0 || applicationName == "openscad-python") {
     return pythonRunArgs(argc, argv);
   }
 #endif
@@ -1035,7 +1036,13 @@ int main(int argc, char **argv)
   if (vm.count("version")) version();
   if (vm.count("info")) arg_info = true;
   if (vm.count("backend")) {
-    RenderSettings::inst()->backend3D = renderBackend3DFromString(vm["backend"].as<std::string>());
+    auto backend_string = vm["backend"].as<std::string>();
+    auto backend = renderBackend3DFromString(backend_string);
+    if (!backend) {
+      LOG(message_group::Error, "Unknown rendering backend '%1$s'.", backend_string.c_str());
+      return 1;
+    }
+    RenderSettings::inst()->backend3D = backend.value();
   }
 
   if (vm.count("preview")) {
