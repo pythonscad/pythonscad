@@ -31,9 +31,7 @@
 #include "pydata.h"
 #include "core/CsgOpNode.h"
 #include "Value.h"
-#ifndef OPENSCAD_NOGUI
 #include "executable.h"
-#endif
 #include "Expression.h"
 #include "PlatformUtils.h"
 #include <Context.h>
@@ -916,7 +914,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, double
     }
   }
   std::ostringstream stream;
-  stream << "t=" << time << "\nphi=" << 2 * G_PI * time;
+  stream << "t=" << time << "\nphi=" << 2 * G_PI * time << "\n" << commandline_commands << "\n";
   PyRun_String(stream.str().c_str(), Py_file_input, pythonInitDict.get(), pythonInitDict.get());
   customizer_parameters_finished = customizer_parameters;
   customizer_parameters.clear();

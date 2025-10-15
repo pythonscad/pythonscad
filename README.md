@@ -36,6 +36,13 @@ features and improves existing ones.
 - [Building PythonSCAD from source](#building-pythonscad-from-source)
     - [Prerequisites](#prerequisites)
     - [Getting the source code](#getting-the-source-code)
+    - [Contributing Changes](#contributing-changes)
+    - [Building for macOS](#building-for-macos)
+    - [Building for Linux/BSD](#building-for-linuxbsd)
+    - [Building for Linux/BSD on systems with older or missing dependencies](#building-for-linuxbsd-on-systems-with-older-or-missing-dependencies)
+    - [Building on Nix](#building-on-nix)
+    - [Building for Windows](#building-for-windows)
+    - [Building for WebAssembly](#building-for-webassembly)
 
 
 # When to not use PythonSCAD
@@ -265,7 +272,7 @@ manager. A convenience script is provided that can help with this
 process on some systems:
 
 ```shell
-sudo ./scripts/uni-get-dependencies.sh
+sudo ./scripts/uni-get-dependencies.py --profile pythonscad-qt5
 ```
 
 After installing dependencies, check their versions. You can run this

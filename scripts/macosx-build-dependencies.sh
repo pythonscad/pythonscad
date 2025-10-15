@@ -74,7 +74,7 @@ PACKAGES=(
     "hidapi 0.15.0"
 
     # https://github.com/3MFConsortium/lib3mf/releases
-    "lib3mf 2.4.1"
+    "lib3mf 2.4.1 1"
 
     # https://github.com/PCRE2Project/pcre2/releases
     "pcre2 10.45"
@@ -85,11 +85,11 @@ PACKAGES=(
     # https://gitlab.freedesktop.org/pixman/pixman/-/tags
     "pixman 0.46.0"
 
-    # https://www.cairographics.org/news/ 
+    # https://www.cairographics.org/news/
     "cairo 1.18.0"
 
     # https://github.com/CGAL/cgal/releases
-    "cgal 6.0.1"
+    "cgal 6.0.2"
 
     # Using Qt6 going forward, leaving Qt5 config just in case
     # "qt5 5.15.16"
@@ -467,7 +467,7 @@ build_onetbb()
   tar xzf oneTBB-$version.tar.gz
   cd oneTBB-$version
   mkdir build
-  cd build  
+  cd build
   cmake .. -DCMAKE_INSTALL_PREFIX=$DEPLOYDIR -DCMAKE_BUILD_TYPE=Release -DTBB_TEST=OFF -DTBB_DISABLE_HWLOC_AUTOMATIC_SEARCH=ON -DCMAKE_OSX_DEPLOYMENT_TARGET="$MAC_OSX_VERSION_MIN" -DCMAKE_OSX_ARCHITECTURES="$ARCHS_COMBINED"
   make -j"$NUMCPU" install
 }
@@ -551,7 +551,7 @@ build_sparkle()
 #  xcodebuild clean
 #  xcodebuild -arch x86_64
 #  rm -rf $DEPLOYDIR/lib/Sparkle.framework
-#  cp -Rf build/Release/Sparkle.framework $DEPLOYDIR/lib/ 
+#  cp -Rf build/Release/Sparkle.framework $DEPLOYDIR/lib/
 #  Install_name_tool -id $DEPLOYDIR/lib/Sparkle.framework/Versions/A/Sparkle $DEPLOYDIR/lib/Sparkle.framework/Sparkle
 }
 
@@ -837,7 +837,7 @@ build_lib3mf()
  tar xzf lib3mf-$version.tar.gz
   cd lib3mf-$version
   patch -p1 < $OPENSCADDIR/patches/lib3mf-macos.patch
-  cmake -DLIB3MF_TESTS=false -DCMAKE_PREFIX_PATH=$DEPLOYDIR -DCMAKE_INSTALL_PREFIX=$DEPLOYDIR -DCMAKE_INSTALL_INCLUDEDIR=include/lib3mf -DUSE_INCLUDED_ZLIB=OFF -DUSE_INCLUDED_LIBZIP=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET="$MAC_OSX_VERSION_MIN" -DCMAKE_OSX_ARCHITECTURES="$ARCHS_COMBINED" .
+  cmake -DLIB3MF_TESTS=false -DCMAKE_PREFIX_PATH=$DEPLOYDIR -DCMAKE_INSTALL_PREFIX=$DEPLOYDIR -DUSE_INCLUDED_ZLIB=OFF -DUSE_INCLUDED_LIBZIP=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET="$MAC_OSX_VERSION_MIN" -DCMAKE_OSX_ARCHITECTURES="$ARCHS_COMBINED" .
   make -j"$NUMCPU" VERBOSE=1
   make -j"$NUMCPU" install
 }
@@ -895,11 +895,11 @@ build_cairo()
 
   # FIXME: Cairo cannot disable lzo2, so we patch it
   patch -p1 < $OPENSCADDIR/patches/cairo-lzo2-macos.patch
-  
+
   # Fix for cairo-1.18 build issue against freetype-2.13
   # https://lore.kernel.org/buildroot/20231116145113.1828682-1-thomas.devoogdt@barco.com/T/
   patch -p1 < $OPENSCADDIR/patches/cairo-ft-private.h-fix-missing-FT_Color-error.patch
-  
+
   # Build each arch separately
   for arch in ${ARCHS[*]}; do
     sed -e "s,@MAC_OSX_VERSION_MIN@,$MAC_OSX_VERSION_MIN,g" -e "s,@DEPLOYDIR@,$DEPLOYDIR,g" $OPENSCADDIR/scripts/macos-$arch.txt.in > macos-$arch.txt
