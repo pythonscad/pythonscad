@@ -86,7 +86,8 @@
     "macos": {
       "extends": null,
       "packages": [
-        "qt@5"
+        "qt@5",
+        "qscintilla2"
       ]
     },
     "mageia": {

@@ -330,10 +330,15 @@
       "manager": "brew",
       "pre_commands": [],
       "post_commands": [],
+      "install_flags": [
+        "--force",
+        "--overwrite"
+      ],
       "packages": [
         "bison",
         "boost",
         "cairo",
+        "ccache",
         "cgal",
         "cmake",
         "curl",
