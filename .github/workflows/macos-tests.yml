@@ -54,7 +54,9 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON $CMAKE_OPTIONS
+        # Use RelWithDebInfo to get debug symbols while keeping optimizations
+        # This helps with crash analysis while not being too slow
+        cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON $CMAKE_OPTIONS
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         make -j$NUMCPU
     - name: Setup (detached) tmate ssh session if enabled
@@ -81,8 +83,48 @@ jobs:
         echo 'from openscad import *; print("Python module loaded"); cube(10).show()' > /tmp/test.py
         build/pythonscad.app/Contents/MacOS/pythonscad /tmp/test.py -o /tmp/test.png --render --trust-python 2>&1 || echo "Exit code: $?"
         echo ""
-        echo "=== Checking linked libraries ==="
-        otool -L build/pythonscad.app/Contents/MacOS/pythonscad | grep -i python
+        echo "=== Checking all linked libraries ==="
+        otool -L build/pythonscad.app/Contents/MacOS/pythonscad
+        echo ""
+        echo "=== Checking library versions ==="
+        echo "Python version:"
+        python3 --version
+        echo "Python framework:"
+        ls -la /usr/local/opt/python@3.14/Frameworks/Python.framework/Versions/3.14/Python || echo "Not found"
+        echo "CGAL:"
+        brew list --versions cgal || echo "Not installed via brew"
+        echo "Boost:"
+        brew list --versions boost || echo "Not installed via brew"
+    - name: Test crashing Python file with lldb
+      run: |
+        echo "=== Testing fillet.py with lldb to get crash info ==="
+        echo 'from openscad import *
+        fig1 = cube(10,center=True)
+        fig1.fillet(1).show()' > /tmp/test_fillet.py
+
+        # Create lldb batch file
+        cat > /tmp/lldb_commands.txt <<'EOF'
+        file build/pythonscad.app/Contents/MacOS/pythonscad
+        settings set target.input-path /dev/null
+        process launch -- /tmp/test_fillet.py -o /tmp/test_fillet.png --render --trust-python
+        bt
+        quit
+        EOF
+
+        echo "Running with lldb to capture crash..."
+        lldb --batch --source /tmp/lldb_commands.txt 2>&1 | tee /tmp/lldb_output.txt || true
+        echo ""
+        echo "=== Checking for macOS crash reports ==="
+        ls -lt ~/Library/Logs/DiagnosticReports/ | head -20 || echo "No crash reports"
+        echo ""
+        echo "=== Checking latest crash report if exists ==="
+        LATEST_CRASH=$(ls -t ~/Library/Logs/DiagnosticReports/pythonscad*.crash 2>/dev/null | head -1)
+        if [ -n "$LATEST_CRASH" ]; then
+          echo "Found crash report: $LATEST_CRASH"
+          cat "$LATEST_CRASH"
+        else
+          echo "No pythonscad crash reports found"
+        fi
     - name: Run Test Suite
       # Disable pdf export test on macOS because Cairo >= 1.18 on Homebrew uses the
       # Quartz backend which doesn't have the Liberation Sans font we use.
