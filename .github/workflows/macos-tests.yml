@@ -64,6 +64,25 @@ jobs:
       with:
         detached: true
         limit-access-to-actor: true
+    - name: Debug Python setup
+      run: |
+        echo "=== Checking bundle structure ==="
+        ls -la build/pythonscad.app/Contents/MacOS/
+        echo ""
+        echo "=== Checking if pythonscad-python symlink exists ==="
+        if [ -L build/pythonscad.app/Contents/MacOS/pythonscad-python ]; then
+          echo "Symlink exists:"
+          ls -l build/pythonscad.app/Contents/MacOS/pythonscad-python
+        else
+          echo "ERROR: pythonscad-python symlink NOT found!"
+        fi
+        echo ""
+        echo "=== Testing simple Python execution ==="
+        echo 'from openscad import *; print("Python module loaded"); cube(10).show()' > /tmp/test.py
+        build/pythonscad.app/Contents/MacOS/pythonscad /tmp/test.py -o /tmp/test.png --render --trust-python 2>&1 || echo "Exit code: $?"
+        echo ""
+        echo "=== Checking linked libraries ==="
+        otool -L build/pythonscad.app/Contents/MacOS/pythonscad | grep -i python
     - name: Run Test Suite
       # Disable pdf export test on macOS because Cairo >= 1.18 on Homebrew uses the
       # Quartz backend which doesn't have the Liberation Sans font we use.
