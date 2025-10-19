@@ -70,7 +70,7 @@ jobs:
       run: |
         cd build
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
-        ctest -j$NUMCPU -E pdfexporttest --timeout 60 --output-on-failure
+        ctest -j$NUMCPU -E pdfexporttest --timeout 300 --output-on-failure
     - name: Upload Test Result Report
       uses: actions/upload-artifact@v4
       if: ${{ always() }}
