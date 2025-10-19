@@ -126,12 +126,14 @@ jobs:
           echo "No pythonscad crash reports found"
         fi
     - name: Run Test Suite
-      # Disable pdf export test on macOS because Cairo >= 1.18 on Homebrew uses the
-      # Quartz backend which doesn't have the Liberation Sans font we use.
+      # Only run the failing Python tests for faster debugging
+      # Full list of failing tests: pythonscad_fillet, pythonscad_fillet_csg,
+      # pythonscad_flower, pythonscad_helix, pythonscad_hinge, pythonscad_skin,
+      # pythonscad_spline, pythonscadecho_bbox, pythonscadecho_position, pythonscadecho_size
       run: |
         cd build
-        export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
-        ctest -j$NUMCPU -E pdfexporttest --timeout 300 --output-on-failure
+        echo "=== Running only failing Python tests for debugging ==="
+        ctest -R "pythonscad_(fillet|flower|helix|hinge|skin|spline)|pythonscadecho_(bbox|position|size)" --timeout 60 --output-on-failure -V
     - name: Upload Test Result Report
       uses: actions/upload-artifact@v4
       if: ${{ always() }}
