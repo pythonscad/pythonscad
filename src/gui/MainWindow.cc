@@ -295,20 +295,6 @@ void removeExportActions(QToolBar *toolbar, QAction *action)
   }
 }
 
-void addExportActions(const MainWindow *mainWindow, QToolBar *toolbar, QAction *action)
-{
-  for (const std::string& identifier :
-       {Settings::Settings::toolbarExport3D.value(), Settings::Settings::toolbarExport2D.value()}) {
-    FileFormat format;
-    fileformat::fromIdentifier(identifier, format);
-    const auto it = mainWindow->exportMap.find(format);
-    // FIXME: Allow turning off the toolbar entry?
-    if (it != mainWindow->exportMap.end()) {
-      toolbar->insertAction(action, it->second);
-    }
-  }
-}
-
 std::unique_ptr<ExternalToolInterface> createExternalToolService(print_service_t serviceType,
                                                                  const QString& serviceName,
                                                                  FileFormat fileFormat)
@@ -555,6 +541,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   this->meas.setView(qglview);
   this->designActionMeasureDistance->setEnabled(false);
   this->designActionMeasureAngle->setEnabled(false);
+  resetMeasurementsState(false, "Render (not preview) to enable measurements");
 
   autoReloadTimer = new QTimer(this);
   autoReloadTimer->setSingleShot(false);
@@ -649,18 +636,16 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
           &MainWindow::useSelectionForFind);
 
   // Design menu
+  measurementGroup = new QActionGroup(this);
+  measurementGroup->addAction(designActionMeasureDistance);
+  measurementGroup->addAction(designActionMeasureAngle);
+  measurementGroup->addAction(designActionFindHandle);
   connect(this->designActionAutoReload, &QAction::toggled, this, &MainWindow::autoReloadSet);
   connect(this->designActionReloadAndPreview, &QAction::triggered, this,
           &MainWindow::actionReloadRenderPreview);
   connect(this->designActionPreview, &QAction::triggered, this, &MainWindow::actionRenderPreview);
   connect(this->designActionRender, &QAction::triggered, this, &MainWindow::actionRender);
-  connect(this->designActionMeasureDistance, &QAction::triggered, this,
-          &MainWindow::actionMeasureDistance);
-  this->designActionMeasureDistance->setCheckable(true);
-  connect(this->designActionMeasureAngle, &QAction::triggered, this, &MainWindow::actionMeasureAngle);
-  this->designActionMeasureAngle->setCheckable(true);
-  connect(this->designActionFindHandle, &QAction::triggered, this, &MainWindow::actionFindHandle);
-  this->designActionFindHandle->setCheckable(true);
+  connect(this->measurementGroup, &QActionGroup::triggered, this, &MainWindow::handleMeasurementClicked);
   connect(this->designAction3DPrint, &QAction::triggered, this, &MainWindow::action3DPrint);
   connect(this->designShareDesign, &QAction::triggered, this, &MainWindow::actionShareDesign);
   connect(this->designLoadShareDesign, &QAction::triggered, this, &MainWindow::actionLoadShareDesign);
@@ -934,6 +919,10 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   QObject::connect(shortcutPreviousWindow, &QShortcut::activated, this,
                    &MainWindow::onWindowShortcutNextPrevActivated);
 
+  auto shortcutExport3D = new QShortcut(QKeySequence("F7"), this);
+  QObject::connect(shortcutExport3D, &QShortcut::activated, this,
+                   &MainWindow::onWindowShortcutExport3DActivated);
+
   // Adds dock specific behavior on visibility change
   QObject::connect(editorDock, &Dock::visibilityChanged, this,
                    &MainWindow::onEditorDockVisibilityChanged);
@@ -1065,15 +1054,26 @@ void MainWindow::onNavigationHoveredContextMenuEntry()
   rubberBandManager.emphasize(dock);
 }
 
+void MainWindow::addExportActions(QToolBar *toolbar, QAction *action) const
+{
+  for (const std::string& identifier :
+       {Settings::Settings::toolbarExport3D.value(), Settings::Settings::toolbarExport2D.value()}) {
+    QAction *exportAction = formatIdentifierToAction(identifier);
+    if (exportAction) {
+      toolbar->insertAction(action, exportAction);
+    }
+  }
+}
+
 void MainWindow::updateExportActions()
 {
   removeExportActions(editortoolbar, this->designAction3DPrint);
-  addExportActions(this, editortoolbar, this->designAction3DPrint);
+  addExportActions(editortoolbar, this->designAction3DPrint);
 
   // handle the hide/show of export action in view toolbar according to the visibility of editor dock
   removeExportActions(viewerToolBar, this->viewActionViewAll);
   if (!editorDock->isVisible()) {
-    addExportActions(this, viewerToolBar, this->viewActionViewAll);
+    addExportActions(viewerToolBar, this->viewActionViewAll);
   }
 }
 
@@ -2348,6 +2348,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
       this->designActionMeasureAngle->setChecked(false);
       this->designActionFindHandle->setChecked(false);
       this->qglview->handle_mode = false;
+      this->activeMeasurement = nullptr;
       meas.stopMeasure();
     }
   }
@@ -2491,7 +2492,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
 
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
-    initPython(binDir, fnameba.constData(), this->animateWidget->getAnimTval());
+    initPython(venv, fnameba.constData(), this->animateWidget->getAnimTval());
     this->activeEditor->resetHighlighting();
     this->activeEditor->parameterWidget->setEnabled(false);
     do {
@@ -2639,6 +2640,7 @@ void MainWindow::actionRenderPreview()
 
   this->designActionMeasureDistance->setEnabled(false);
   this->designActionMeasureAngle->setEnabled(false);
+  resetMeasurementsState(false, "Render (not preview) to enable measurements");
 
   prepareCompile("csgRender", !animateDock->isVisible(), true);
   compile(false, false);
@@ -2811,7 +2813,9 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
     viewModeRender();
     this->designActionMeasureDistance->setEnabled(true);
     this->designActionMeasureAngle->setEnabled(true);
+    resetMeasurementsState(true, "Click to start measuring");
   } else {
+    resetMeasurementsState(false, "No top level geometry; render something to enable measurements");
     this->designActionMeasureDistance->setEnabled(false);
     this->designActionMeasureAngle->setEnabled(false);
     LOG(message_group::UI_Warning, "No top level geometry to render");
@@ -2833,53 +2837,39 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
   compileEnded();
 }
 
-void MainWindow::actionMeasureDistance()
+void MainWindow::handleMeasurementClicked(QAction *clickedAction)
 {
-  if (this->designActionMeasureDistance->isChecked()) {
-    this->qglview->handle_mode = false;
-    meas.stopMeasure();
-    this->designActionMeasureAngle->setChecked(false);
-    this->designActionFindHandle->setChecked(false);
-    meas.startMeasureDist();
-  } else {
-    this->qglview->handle_mode = false;
-    meas.stopMeasure();
+  // If we're unchecking, just stop.
+  if (activeMeasurement == clickedAction) {
+    resetMeasurementsState(true, "Click to start measuring");
+    return;
   }
-}
+  resetMeasurementsState(true, "Click to start measuring");
+  clickedAction->setToolTip("Click to cancel measurement");
+  clickedAction->setChecked(true);
+  activeMeasurement = clickedAction;
 
-void MainWindow::actionMeasureAngle()
-{
-  if (this->designActionMeasureAngle->isChecked()) {
-    this->qglview->handle_mode = false;
-    meas.stopMeasure();
-    this->designActionMeasureDistance->setChecked(false);
-    this->designActionFindHandle->setChecked(false);
-    meas.startMeasureAngle();
-  } else {
-    this->qglview->handle_mode = false;
-    meas.stopMeasure();
+  if (clickedAction == designActionMeasureDistance) {
+    meas.startMeasureDistance();
   }
-}
-void MainWindow::actionFindHandle()
-{
-  if (this->designActionFindHandle->isChecked()) {
-    this->qglview->handle_mode = false;
-    meas.stopMeasure();
-    this->designActionMeasureDistance->setChecked(false);
-    this->designActionMeasureAngle->setChecked(false);
+  if (clickedAction == designActionMeasureAngle) {
+    meas.startMeasureAngle();
+  }
+  if (clickedAction == designActionFindHandle) {
     meas.startFindHandle();
-    qglview->handle_mode = true;
-  } else {
-    this->qglview->handle_mode = false;
-    meas.stopMeasure();
   }
 }
 
 void MainWindow::leftClick(QPoint mouse)
 {
-  QString str = meas.statemachine(mouse);
-  if (!str.isEmpty()) {
-    this->qglview->measure_state = MEASURE_IDLE;
+  std::vector<QString> strs = meas.statemachine(mouse);
+  QMenu resultmenu(this);
+  // Ensures we clean the display regardless of how menu gets closed.
+  connect(&resultmenu, &QMenu::aboutToHide, this, &MainWindow::measureFinished);
+
+  // Can eventually be replaced with C++20 std::views::reverse
+  for (const auto& str : strs) {
+    this->qglview->measure_state = MEASURE_DIRTY;
     if (str.startsWith("I:")) {
       this->activeEditor->insert(QString(str.toStdString().c_str() + 2));
       this->qglview->selected_obj.clear();
@@ -2889,10 +2879,14 @@ void MainWindow::leftClick(QPoint mouse)
       this->qglview->handle_mode = false;
       return;
     }
-    QMenu resultmenu(this);
+    // Ensures we clean the display regardless of how menu gets closed.
     auto action = resultmenu.addAction(str);
-    connect(action, &QAction::triggered, this, &MainWindow::measureFinished);
+    connect(action, &QAction::triggered, this, [str]() { QApplication::clipboard()->setText(str); });
+  }
+  if (strs.size() > 0) {
+    resultmenu.addAction("Click any above to copy its text to the clipboard");
     resultmenu.exec(qglview->mapToGlobal(mouse));
+    resetMeasurementsState(true, "Click to start measuring");
   }
 }
 
@@ -2990,7 +2984,8 @@ void MainWindow::rightClick(QPoint position)
 void MainWindow::measureFinished()
 {
   this->qglview->handle_mode = false;
-  meas.stopMeasure();
+  auto didSomething = meas.stopMeasure();
+  if (didSomething) resetMeasurementsState(true, "Click to start measuring");
 }
 
 void MainWindow::clearAllSelectionIndicators() { this->activeEditor->clearAllSelectionIndicators(); }
@@ -3991,6 +3986,26 @@ void MainWindow::onWindowShortcutNextPrevActivated()
   rubberBandManager.emphasize(dock);
 }
 
+QAction *MainWindow::formatIdentifierToAction(const std::string& identifier) const
+{
+  FileFormat format;
+  if (fileformat::fromIdentifier(identifier, format)) {
+    const auto it = exportMap.find(format);
+    if (it != exportMap.end()) {
+      return it->second;
+    }
+  }
+  return nullptr;
+}
+
+void MainWindow::onWindowShortcutExport3DActivated()
+{
+  QAction *action = formatIdentifierToAction(Settings::Settings::toolbarExport3D.value());
+  if (action) {
+    action->trigger();
+  }
+}
+
 void MainWindow::on_editActionInsertTemplate_triggered() { activeEditor->displayTemplates(); }
 
 void MainWindow::on_editActionFoldAll_triggered() { activeEditor->foldUnfold(); }
@@ -4329,3 +4344,27 @@ QString MainWindow::exportPath(const QString& suffix)
 }
 
 void MainWindow::jumpToLine(int line, int col) { this->activeEditor->setCursorPosition(line, col); }
+
+void MainWindow::resetMeasurementsState(bool enable, const QString& tooltipMessage)
+{
+  if (RenderSettings::inst()->backend3D != RenderBackend3D::ManifoldBackend) {
+    enable = false;
+    static const auto noCGALMessage =
+      "Measurements only work with Manifold backend; Preferences->Advanced->3D Rendering->Backend";
+    this->designActionMeasureDistance->setToolTip(noCGALMessage);
+    this->designActionMeasureAngle->setToolTip(noCGALMessage);
+  } else {
+    this->designActionMeasureDistance->setToolTip(tooltipMessage);
+    this->designActionMeasureAngle->setToolTip(tooltipMessage);
+  }
+
+  this->designActionMeasureDistance->setEnabled(enable);
+  this->designActionMeasureDistance->setChecked(false);
+  this->designActionMeasureAngle->setEnabled(enable);
+  this->designActionMeasureAngle->setChecked(false);
+  this->designActionFindHandle->setChecked(false);
+
+  (void)meas.stopMeasure();
+  activeMeasurement = nullptr;
+  this->qglview->handle_mode = false;
+}
