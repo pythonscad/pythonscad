@@ -68,12 +68,26 @@ jobs:
         limit-access-to-actor: true
     - name: Verify Python setup
       run: |
-        echo "=== Python version check ==="
+        echo "=== System Python version ==="
         python3 --version
         which python3
         echo ""
         echo "=== Checking pythonscad-python symlink ==="
         ls -l build/pythonscad.app/Contents/MacOS/pythonscad-python
+        echo ""
+        echo "=== Verifying bundled Python framework ==="
+        if [ -d build/pythonscad.app/Contents/Frameworks/Python.framework ]; then
+          echo "✓ Python.framework is bundled in app"
+          ls -la build/pythonscad.app/Contents/Frameworks/Python.framework/Versions/
+        else
+          echo "✗ Python.framework NOT bundled - app won't be portable!"
+        fi
+        echo ""
+        echo "=== Checking Python library reference (should use @rpath) ==="
+        otool -L build/pythonscad.app/Contents/MacOS/pythonscad | grep -i python
+        echo ""
+        echo "=== Checking RPATH settings ==="
+        otool -l build/pythonscad.app/Contents/MacOS/pythonscad | grep -A 3 "LC_RPATH"
         echo ""
         echo "=== Testing simple Python execution ==="
         echo 'from openscad import *; print("Python module loaded"); cube(10).show()' > /tmp/test.py
