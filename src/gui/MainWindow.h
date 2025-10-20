@@ -228,6 +228,8 @@ private:
   void activateDock(Dock *);
   Dock *findVisibleDockToActivate(int offset) const;
   Dock *getNextDockFromSender(QObject *sender);
+  void addExportActions(QToolBar *toolbar, QAction *action) const;
+  QAction *formatIdentifierToAction(const std::string& identifier) const;
 
   LibraryInfoDialog *libraryInfoDialog{nullptr};
   FontListDialog *fontListDialog{nullptr};
@@ -284,6 +286,7 @@ private slots:
   // Handle the Next/Prev shortcut, currently switch to the targetted dock
   // and adds the rubberband, the rubbreband is removed on shortcut key release.
   void onWindowShortcutNextPrevActivated();
+  void onWindowShortcutExport3DActivated();
 
   void onEditorDockVisibilityChanged(bool isVisible);
   void onConsoleDockVisibilityChanged(bool isVisible);
@@ -328,13 +331,12 @@ private slots:
   void actionRender();
   void actionRenderDone(const std::shared_ptr<const Geometry>&);
   void cgalRender();
-  void actionMeasureDistance();
-  void actionMeasureAngle();
-  void actionFindHandle();
   void actionShareDesignPublish();
   void actionLoadShareDesignSelect();
   void actionShareDesign();
   void actionLoadShareDesign();
+
+  void handleMeasurementClicked(QAction *clickedAction);
   void actionCheckValidity();
   void actionDisplayAST();
   void actionDisplayPython();
@@ -457,6 +459,10 @@ private:
   QMenu *navigationMenu{nullptr};
   QSoundEffect *renderCompleteSoundEffect;
   std::vector<std::unique_ptr<QTemporaryFile>> allTempFiles;
+  void resetMeasurementsState(bool enable, const QString& tooltipMessage);
+
+  QActionGroup *measurementGroup;
+  QAction *activeMeasurement = nullptr;
 
 signals:
   void highlightError(int);
