@@ -1017,11 +1017,7 @@ void ScintillaEditor::commentSelection()
 {
   auto commentString = "//";
 #ifdef ENABLE_PYTHON
-<<<<<<< HEAD
-  if (mainWindow.python_active) {
-=======
   if (language != LANG_SCAD) {
->>>>>>> master
     commentString = "#";
   }
 #endif
@@ -1042,11 +1038,7 @@ void ScintillaEditor::uncommentSelection()
 {
   auto commentString = "//";
 #ifdef ENABLE_PYTHON
-<<<<<<< HEAD
-  if (mainWindow.python_active) {
-=======
   if (language != LANG_SCAD) {
->>>>>>> master
     commentString = "#";
   }
 #endif

@@ -1305,7 +1305,7 @@ stderr_bak=sys.stderr\n\
 sys.stdout = catcher_out\n\
 sys.stderr = catcher_err\n\
 ";
-  initPython(0.0);
+  initPython(PlatformUtils::applicationPath(), "", 0.0);
   PyRun_SimpleString(python_init_code);
 
   auto logger = xeus::make_console_logger(
