@@ -31,6 +31,7 @@
 #include <filesystem>
 
 #include "core/Settings.h"
+#include "executable.h"
 #include "platform/PlatformUtils.h"
 
 #include "pyopenscad.h"
@@ -41,11 +42,11 @@ using SP = Settings::SettingsPython;
 
 std::string venvBinDirFromSettings()
 {
-    const auto& venv = fs::path(SP::pythonVirtualEnv.value()) / "bin";
-    if (fs::is_directory(venv)) {
-        return venv.generic_string();
-    }
-    return "";
+  const auto& venv = fs::path(SP::pythonVirtualEnv.value()) / "bin";
+  if (fs::is_directory(venv)) {
+    return venv.generic_string();
+  }
+  return "";
 }
 
 int pythonRunArgs(int argc, char **argv)
@@ -78,7 +79,7 @@ fail:
 
 int pythonCreateVenv(const std::string& path)
 {
-  int result = pythonRunModule("", "venv", { path });
+  int result = pythonRunModule("", "venv", {path});
   if (result != 0) {
     return result;
   }
@@ -92,7 +93,7 @@ int pythonCreateVenv(const std::string& path)
   if (getenv("APPIMAGE") != nullptr && appdirenv != nullptr) {
     // Assume we are running as AppImage
     const std::string appdir = appdirenv;
-    const auto vbin = fs::path{path} / "bin" / "openscad-python";
+    const auto vbin = fs::path{path} / "bin" / PYTHON_EXECUTABLE_NAME;
     if (fs::exists(vbin) && fs::is_symlink(vbin)) {
       const auto lbin = fs::read_symlink(vbin).generic_string();
       if (lbin.rfind(appdir, 0) == 0) {
@@ -116,7 +117,7 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
                     const std::vector<std::string>& args)
 {
   PyStatus status;
-  const auto name = "openscad-python";
+  const auto name = PYTHON_EXECUTABLE_NAME;
   const auto exe = PlatformUtils::applicationPath() + "/" + name;
 
   PyPreConfig preconfig;
