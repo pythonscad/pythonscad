@@ -1640,9 +1640,12 @@ if(APPLE AND NOT APPLE_UNIX)
   # Bundle Python framework for portability (if Python is enabled)
   if(ENABLE_PYTHON AND Python_FOUND)
     # Get the Python framework path
-    get_filename_component(PYTHON_FRAMEWORK_DIR "${Python_LIBRARIES}" DIRECTORY)
-    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)
-    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)
+    # Python_LIBRARIES is typically: .../Python.framework/Versions/X.Y/lib/libpython.dylib
+    # We need to get to: .../Python.framework
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${Python_LIBRARIES}" DIRECTORY)  # .../lib
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../3.14
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Versions
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Python.framework
 
     message(STATUS "Bundling Python framework from: ${PYTHON_FRAMEWORK_DIR}")
 
