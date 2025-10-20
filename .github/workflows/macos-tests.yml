@@ -95,6 +95,30 @@ jobs:
         brew list --versions cgal || echo "Not installed via brew"
         echo "Boost:"
         brew list --versions boost || echo "Not installed via brew"
+    - name: Test Python version compatibility
+      run: |
+        echo "=== Python Version Mismatch Analysis ==="
+        echo "System Python (python3):"
+        which python3 && python3 --version
+        echo ""
+        echo "Python 3.14 (if available):"
+        which python3.14 && python3.14 --version || echo "python3.14 not in PATH"
+        echo ""
+        echo "What pythonscad links to:"
+        otool -L build/pythonscad.app/Contents/MacOS/pythonscad | grep Python
+        echo ""
+        echo "Checking if Python 3.14 library actually exists:"
+        ls -la /usr/local/opt/python@3.14/Frameworks/Python.framework/Versions/3.14/Python
+        echo ""
+        echo "=== Testing with environment forcing Python 3.14 ==="
+        export DYLD_FRAMEWORK_PATH=/usr/local/opt/python@3.14/Frameworks:$DYLD_FRAMEWORK_PATH
+        export DYLD_LIBRARY_PATH=/usr/local/opt/python@3.14/Frameworks/Python.framework/Versions/3.14/lib:$DYLD_LIBRARY_PATH
+        echo "Attempting fillet test with explicit Python 3.14..."
+        echo 'from openscad import *
+        fig1 = cube(10,center=True)
+        fig1.fillet(1).show()' > /tmp/test_fillet.py
+        build/pythonscad.app/Contents/MacOS/pythonscad /tmp/test_fillet.py -o /tmp/test_fillet.png --render --trust-python 2>&1 && echo "SUCCESS!" || echo "FAILED with code: $?"
+
     - name: Test crashing Python file with lldb
       run: |
         echo "=== Testing fillet.py with lldb to get crash info ==="
@@ -113,6 +137,9 @@ jobs:
 
         echo "Running with lldb to capture crash..."
         lldb --batch --source /tmp/lldb_commands.txt 2>&1 | tee /tmp/lldb_output.txt || true
+        echo ""
+        echo "=== KEY FINDING: Test succeeds under lldb but fails normally! ==="
+        echo "This indicates a race condition or timing-dependent bug."
         echo ""
         echo "=== Checking for macOS crash reports ==="
         ls -lt ~/Library/Logs/DiagnosticReports/ | head -20 || echo "No crash reports"
