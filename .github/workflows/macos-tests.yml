@@ -56,11 +56,10 @@ jobs:
         cd build
         # Force CMake to use system Python (3.13) instead of Homebrew Python (3.14)
         # This ensures Python version consistency between build and runtime
-        # System Python on GitHub Actions macOS runners is at /usr/local/bin/python3
-        export Python_EXECUTABLE=/usr/local/bin/python3
+        # We need to pass this as a CMake variable, not an environment variable
         # Use RelWithDebInfo to get debug symbols while keeping optimizations
         # This helps with crash analysis while not being too slow
-        cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON $CMAKE_OPTIONS
+        cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON -DPython_EXECUTABLE=/usr/local/bin/python3 $CMAKE_OPTIONS
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         make -j$NUMCPU
     - name: Setup (detached) tmate ssh session if enabled
