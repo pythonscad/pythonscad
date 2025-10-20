@@ -79,6 +79,9 @@ jobs:
           echo "ERROR: pythonscad-python symlink NOT found!"
         fi
         echo ""
+        echo "=== Checking RPATH settings ==="
+        otool -l build/pythonscad.app/Contents/MacOS/pythonscad | grep -A 3 "LC_RPATH" || echo "No RPATH found"
+        echo ""
         echo "=== Testing simple Python execution ==="
         echo 'from openscad import *; print("Python module loaded"); cube(10).show()' > /tmp/test.py
         build/pythonscad.app/Contents/MacOS/pythonscad /tmp/test.py -o /tmp/test.png --render --trust-python 2>&1 || echo "Exit code: $?"
