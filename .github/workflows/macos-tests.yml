@@ -119,8 +119,9 @@ jobs:
         mkdir -p /tmp/cores
         cd build
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
-        # Run tests and continue even if they fail (to collect core dumps)
-        ctest -j$NUMCPU -E pdfexporttest --timeout 300 --output-on-failure || true
+        # Run ONLY the pythonscad_fillet test to debug the crash
+        # This speeds up debugging by running only the problematic test
+        ctest -R "^pythonscad_fillet$" --timeout 300 --output-on-failure || true
         # Check for core dumps and copy them
         echo "=== Checking for core dumps ==="
         if ls /cores/core.* 1> /dev/null 2>&1; then
@@ -151,7 +152,7 @@ jobs:
           echo "No core dumps found"
         fi
         # Re-run ctest to get the proper exit code for the workflow
-        ctest -j$NUMCPU -E pdfexporttest --timeout 300 --output-on-failure
+        ctest -R "^pythonscad_fillet$" --timeout 300 --output-on-failure
     - name: Upload Core Dumps
       uses: actions/upload-artifact@v4
       if: ${{ always() }}
