@@ -413,6 +413,7 @@ void python_build_hashmap(const std::shared_ptr<AbstractNode>& node, int level)
 
 void python_retrieve_pyname(const std::shared_ptr<AbstractNode>& node)
 {
+/*	
   std::string name;
   int level = -1;
   std::ostringstream stream;

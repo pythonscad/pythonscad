@@ -3663,7 +3663,6 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
     } else node->twist = pf.PyFloat_AsDouble(twist);
     node->has_twist = 1;
   } else node->has_twist = 0;
->>>>>>> 8eb37c3f6d9bcbca16ae5ab22ee38c8de0cd83a3
 
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
 }

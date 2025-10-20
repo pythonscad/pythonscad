@@ -100,6 +100,11 @@ std::vector<IndexedFace> mergeTriangles(const std::vector<IndexedFace> polygons,
                                         const std::vector<Vector4d> normals,
                                         std::vector<Vector4d>& newNormals, std::vector<int>& faceParents,
                                         const std::vector<Vector3d>& vert);
+std::vector<IndexedColorFace> mergeTriangles(const std::vector<IndexedColorFace> polygons,
+                                             const std::vector<Vector4d> normals,
+                                             std::vector<Vector4d>& newNormals,
+                                             std::vector<int>& faceParents,
+                                             const std::vector<Vector3d>& vert);
 std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> createEdgeDb(
   const std::vector<IndexedFace>& indices);
 
