@@ -156,12 +156,15 @@ jobs:
           echo "No pythonscad crash reports found"
         fi
     - name: Run Test Suite
+      # Set DYLD_FALLBACK_FRAMEWORK_PATH to ensure Python 3.14 framework is found
+      # RPATH doesn't work for frameworks on macOS, only for dylibs
       # Only run the failing Python tests for faster debugging
       # Full list of failing tests: pythonscad_fillet, pythonscad_fillet_csg,
       # pythonscad_flower, pythonscad_helix, pythonscad_hinge, pythonscad_skin,
       # pythonscad_spline, pythonscadecho_bbox, pythonscadecho_position, pythonscadecho_size
       run: |
         cd build
+        export DYLD_FALLBACK_FRAMEWORK_PATH=/usr/local/opt/python@3.14/Frameworks:$DYLD_FALLBACK_FRAMEWORK_PATH
         echo "=== Running only failing Python tests for debugging ==="
         ctest -R "pythonscad_(fillet|flower|helix|hinge|skin|spline)|pythonscadecho_(bbox|position|size)" --timeout 60 --output-on-failure -V
     - name: Upload Test Result Report
