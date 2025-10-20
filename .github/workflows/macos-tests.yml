@@ -99,9 +99,34 @@ jobs:
       # Disable pdf export test on macOS because Cairo >= 1.18 on Homebrew uses the
       # Quartz backend which doesn't have the Liberation Sans font we use.
       run: |
+        # Enable core dumps
+        ulimit -c unlimited
+        # Set core dump location
+        sudo sysctl kern.corefile=/cores/core.%P
+        mkdir -p /tmp/cores
         cd build
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
+        # Run tests and continue even if they fail (to collect core dumps)
+        ctest -j$NUMCPU -E pdfexporttest --timeout 300 --output-on-failure || true
+        # Check for core dumps and copy them
+        echo "=== Checking for core dumps ==="
+        if ls /cores/core.* 1> /dev/null 2>&1; then
+          echo "Core dumps found:"
+          ls -lh /cores/core.*
+          sudo cp /cores/core.* /tmp/cores/ || true
+          sudo chmod 644 /tmp/cores/* || true
+        else
+          echo "No core dumps found"
+        fi
+        # Re-run ctest to get the proper exit code for the workflow
         ctest -j$NUMCPU -E pdfexporttest --timeout 300 --output-on-failure
+    - name: Upload Core Dumps
+      uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      with:
+        name: Core Dumps (MacOS ${{ matrix.qt }})
+        path: /tmp/cores/core.*
+        if-no-files-found: ignore
     - name: Upload Test Result Report
       uses: actions/upload-artifact@v4
       if: ${{ always() }}
