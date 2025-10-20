@@ -1624,8 +1624,6 @@ if(APPLE AND NOT APPLE_UNIX)
     MACOSX_BUNDLE_BUNDLE_VERSION ${OPENSCAD_YEAR}.${OPENSCAD_MONTH}.${OPENSCAD_DAY}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${OPENSCAD_YEAR}.${OPENSCAD_MONTH}
     RESOURCE "${RESOURCE_FILES}"
-    BUILD_WITH_INSTALL_RPATH TRUE
-    INSTALL_RPATH "@executable_path/../Frameworks;/usr/local/opt/python@3.14/Frameworks"
   )
   set(BUNDLE_RESOURCES_DIR ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/Resources)
   # Create pythonscad-python symlink inside the macOS bundle
@@ -1633,11 +1631,6 @@ if(APPLE AND NOT APPLE_UNIX)
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS
     COMMENT "Creating ${PYTHON_EXECUTABLE_NAME} symlink in macOS bundle"
-  )
-  # Add RPATH to ensure Python 3.14 framework is loaded at runtime
-  add_custom_command(TARGET OpenSCAD POST_BUILD
-    COMMAND install_name_tool -add_rpath /usr/local/opt/python@3.14/Frameworks ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME} || true
-    COMMENT "Adding Python 3.14 framework to RPATH"
   )
   file(COPY ${CMAKE_SOURCE_DIR}/color-schemes DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/examples DESTINATION ${BUNDLE_RESOURCES_DIR})
