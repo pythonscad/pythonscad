@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glview/system-gl.h"
+#include "gui/MouseSelector.h"
 
 #include <QImage>
 #include <QMouseEvent>
@@ -16,6 +17,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include "glview/GLView.h"
+#include "../core/MouseConfig.h"
 
 class QGLView : public QOpenGLWidget, public GLView
 {
@@ -48,14 +50,18 @@ public:
   std::shared_ptr<SelectedObject> findObject(int x, int y);
   int measure_state;
 
+  int pickObject(QPoint position);
+
 public slots:
   void ZoomIn();
   void ZoomOut();
-  void setMouseCentricZoom(bool var){
-    this->mouseCentricZoom = var;
-  }
-  void setMouseSwapButtons(bool var){
-    this->mouseSwapButtons = var;
+  void setMouseCentricZoom(bool var) { this->mouseCentricZoom = var; }
+  void setMouseActions(int mouseAction, std::array<float, MouseConfig::ACTION_DIMENSION> var)
+  {
+    // Load an array defining the behaviour for a single mouse action.
+    for (int i = 0; i < MouseConfig::ACTION_DIMENSION; i++) {
+      this->mouseActions[MouseConfig::ACTION_DIMENSION * mouseAction + i] = var[i];
+    }
   }
 
 public:
@@ -74,9 +80,15 @@ private:
   bool mouse_drag_active;
   bool mouse_drag_moved = true;
   bool mouseCentricZoom = true;
-  bool mouseSwapButtons = false;
+  QPoint mouseDraggedPoint;
+  std::shared_ptr<SelectedObject> mouseDraggedSel = nullptr;
+  float mouseActions[MouseConfig::MouseAction::NUM_MOUSE_ACTIONS * MouseConfig::ACTION_DIMENSION];
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  QPointF last_mouse;
+#else
   QPoint last_mouse;
-  QImage frame; // Used by grabFrame() and save()
+#endif
+  QImage frame;  // Used by grabFrame() and save()
 
   void wheelEvent(QWheelEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
@@ -92,6 +104,7 @@ private:
 
 #ifdef ENABLE_OPENCSG
   void display_opencsg_warning() override;
+  std::unique_ptr<MouseSelector> selector;
 private slots:
   void display_opencsg_warning_dialog();
 #endif
@@ -101,7 +114,9 @@ signals:
   void resized();
   void doRightClick(QPoint screen_coordinate);
   void doLeftClick(QPoint screen_coordinate);
-  void toolTipShow(QPoint,QString msg);
+  void toolTipShow(QPoint, QString msg);
+  void dragPoint(Vector3d pt, Vector3d newpt);
+  void dragPointEnd(Vector3d pt);
 };
 
 /* These are defined in QLGView2.cc.  See the commentary there. */

@@ -31,19 +31,36 @@
 #include <QStringList>
 #include <QFileInfoList>
 #include <filesystem>
+
 namespace fs = std::filesystem;
 
 namespace UIUtils {
 
+struct ExampleCategory {
+  constexpr static int DEFAULT_SORT = 10000;
+
+  int sort = DEFAULT_SORT;
+  QString name;
+  QString tooltip;
+};
+
+struct ExampleEntry {
+  constexpr static int DEFAULT_SORT = 10000;
+
+  int sort = DEFAULT_SORT;
+  QString name;
+  QFileInfo fileInfo;
+};
+
 static const int maxRecentFiles = 10;
 
-QFileInfo openFile(QWidget *parent = nullptr);
+QFileInfo openFile(QWidget *parent = nullptr, QStringList extensions = {});
 
-QFileInfoList openFiles(QWidget *parent = nullptr);
+QFileInfoList openFiles(QWidget *parent = nullptr, QStringList extensions = {});
 
 QStringList recentFiles();
 
-QStringList exampleCategories();
+const QList<UIUtils::ExampleCategory>& exampleCategories();
 
 QFileInfoList exampleFiles(const QString& category);
 
@@ -61,14 +78,20 @@ void openOfflineUserManual();
 
 void openCheatSheetURL();
 
+void openPythonCheatSheetURL();
+
 fs::path returnOfflineCheatSheetPath();
 
 bool hasOfflineCheatSheet();
 
 void openOfflineCheatSheet();
 
-QString getBackgroundColorStyleSheet(const QColor &color);
+QString getBackgroundColorStyleSheet(const QColor& color);
 
-QString blendForBackgroundColorStyleSheet(const QColor& input, const QColor& blend, float transparency = 0.2);
+QString blendForBackgroundColorStyleSheet(const QColor& input, const QColor& blend,
+                                          float transparency = 0.2);
 
-} // namespace UIUtils
+QString readFileContents(const QString& filepath, QString& errorstring);
+
+QString getBackupFileName(QWidget *parent);
+}  // namespace UIUtils

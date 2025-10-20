@@ -1,4 +1,5 @@
 #include "geometry/Geometry.h"
+#include "geometry/linalg.h"
 #include "utils/printutils.h"
 #include <sstream>
 #include <memory>
@@ -7,14 +8,9 @@
 #include <string>
 #include <utility>
 
-GeometryList::GeometryList(Geometry::Geometries geometries) : children(std::move(geometries))
-{
-}
+GeometryList::GeometryList(Geometry::Geometries geometries) : children(std::move(geometries)) {}
 
-std::unique_ptr<Geometry> GeometryList::copy() const
-{
-  return std::make_unique<GeometryList>(*this);
-}
+std::unique_ptr<Geometry> GeometryList::copy() const { return std::make_unique<GeometryList>(*this); }
 
 size_t GeometryList::memsize() const
 {
@@ -49,7 +45,7 @@ unsigned int GeometryList::getDimension() const
   for (const auto& item : this->children) {
     if (!dim) dim = item.second->getDimension();
     else if (dim != item.second->getDimension()) {
-      LOG(message_group::Warning, "Mixing 2D and 3D objects is not supported.");
+      LOG(message_group::Warning, "Mixing objects with different dimensions not supported.");
       break;
     }
   }

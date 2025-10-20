@@ -27,21 +27,15 @@
 #pragma once
 
 #include "qtgettext.h"
-#include "export.h"
 #include "ui_LoadShareDesignDialog.h"
 
 class LoadShareDesignDialog : public QDialog, public Ui::LoadShareDesignDialog
 {
   Q_OBJECT;
-public:
 
-//  std::string getDesignName();
-//  std::string getAuthorName();
+public:
+  //  std::string getDesignName();
+  //  std::string getAuthorName();
 
   LoadShareDesignDialog();
 };
-
-
-
-
-

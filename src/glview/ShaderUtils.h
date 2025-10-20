@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+#include <string>
 #include "glview/system-gl.h"
 
 namespace ShaderUtils {
@@ -27,4 +29,4 @@ struct ShaderInfo {
 std::string loadShaderSource(const std::string& name);
 ShaderResource compileShaderProgram(const std::string& vs_str, const std::string& fs_str);
 
-} // namespace ShaderUtils
+}  // namespace ShaderUtils

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdio>
 #include <string>
 #include <map>
 #include <vector>
@@ -15,11 +14,19 @@ public:
 
   static const Feature ExperimentalRoof;
   static const Feature ExperimentalInputDriverDBus;
+  static const Feature ExperimentalSkin;
   static const Feature ExperimentalLazyUnion;
   static const Feature ExperimentalVxORenderersIndexing;
   static const Feature ExperimentalTextMetricsFunctions;
   static const Feature ExperimentalImportFunction;
+  static const Feature ExperimentalObjectFunction;
   static const Feature ExperimentalPredictibleOutput;
+
+#ifdef ENABLE_GUI_TESTS
+  static constexpr bool HasGuiTesting{true};
+#else
+  static constexpr bool HasGuiTesting{false};
+#endif
 
   [[nodiscard]] const std::string& get_name() const;
   [[nodiscard]] const std::string& get_description() const;

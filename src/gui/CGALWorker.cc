@@ -22,14 +22,11 @@ CGALWorker::CGALWorker()
   this->tree = nullptr;
   this->thread = new QThread();
   if (this->thread->stackSize() < 1024 * 1024) this->thread->setStackSize(1024 * 1024);
-  connect(this->thread, SIGNAL(started()), this, SLOT(work()));
+  connect(this->thread, &QThread::started, this, &CGALWorker::work);
   moveToThread(this->thread);
 }
 
-CGALWorker::~CGALWorker()
-{
-  delete this->thread;
-}
+CGALWorker::~CGALWorker() { delete this->thread; }
 
 void CGALWorker::start(const Tree& tree)
 {
@@ -69,9 +66,9 @@ void CGALWorker::work()
   } catch (...) {
     LOG(message_group::Error, "Rendering cancelled by unknown exception.");
   }
- #ifdef ENABLE_PYTHON
+#ifdef ENABLE_PYTHON
   python_unlock();
- #endif
+#endif
   emit done(root_geom);
   thread->quit();
 }

@@ -66,10 +66,7 @@ static std::string getXdgUserDir(const std::string& dir)
   return "";
 }
 
-std::string PlatformUtils::pathSeparatorChar()
-{
-  return ":";
-}
+std::string PlatformUtils::pathSeparatorChar() { return ":"; }
 
 std::string PlatformUtils::userDocumentsPath()
 {
@@ -141,7 +138,7 @@ unsigned long PlatformUtils::stackLimit()
       return limit.rlim_max - STACK_BUFFER_SIZE;
     }
   }
-#endif // __EMSCRIPTEN__
+#endif  // __EMSCRIPTEN__
 
   return STACK_LIMIT_DEFAULT;
 }
@@ -233,7 +230,7 @@ const std::string PlatformUtils::user_agent()
   std::lock_guard<std::mutex> lock(user_agent_mutex);
 
   if (result.empty()) {
-    result += "OpenSCAD/";
+    result += "PythonSCAD/";
     result += openscad_detailedversionnumber;
     result += " (";
     result += get_system_info(false);

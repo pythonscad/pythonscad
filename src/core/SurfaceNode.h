@@ -31,16 +31,20 @@
 #include <vector>
 
 #include "core/node.h"
+#include "core/ModuleInstantiation.h"
 #include "core/Value.h"
 
-struct img_data_t
-{
+struct img_data_t {
 public:
-  using storage_type = double; // float could be enough here
+  using storage_type = Vector3f;
 
-  img_data_t() { min_val = 0; height = width = 0; }
+  img_data_t() { height = width = 0; }
 
-  void clear() { min_val = 0; height = width = 0; storage.clear(); }
+  void clear()
+  {
+    height = width = 0;
+    storage.clear();
+  }
 
   void reserve(size_t x) { storage.reserve(x); }
 
@@ -48,33 +52,31 @@ public:
 
   storage_type& operator[](int x) { return storage[x]; }
 
-  storage_type min_value() { return min_val; } // *std::min_element(storage.begin(), storage.end());
-
 public:
-  unsigned int height; // rows
-  unsigned int width; // columns
-  storage_type min_val;
+  unsigned int height;  // rows
+  unsigned int width;   // columns
   std::vector<storage_type> storage;
-
 };
-
 
 class SurfaceNode : public LeafNode
 {
 public:
   VISITABLE();
-  SurfaceNode(const ModuleInstantiation *mi) : LeafNode(mi) { }
+  SurfaceNode(const ModuleInstantiation *mi) : LeafNode(mi) {}
   std::string toString() const override;
   std::string name() const override { return "surface"; }
 
   Filename filename;
   bool center{false};
   bool invert{false};
+  bool color{false};
   int convexity{1};
 
   std::unique_ptr<const Geometry> createGeometry() const override;
+
 private:
-  void convert_image(img_data_t& data, std::vector<uint8_t>& img, unsigned int width, unsigned int height) const;
+  void convert_image(img_data_t& data, std::vector<uint8_t>& img, unsigned int width,
+                     unsigned int height) const;
   bool is_png(std::vector<uint8_t>& img) const;
   img_data_t read_dat(std::string filename) const;
   img_data_t read_png_or_dat(std::string filename) const;

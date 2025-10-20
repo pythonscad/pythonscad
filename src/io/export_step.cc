@@ -25,58 +25,55 @@
 
 #include "export.h"
 #include "StepKernel.h"
-#include "PolySet.h"
-#include "cgalutils.h"
-#include "PolySetUtils.h"
+#include "src/geometry/PolySet.h"
+#include "src/geometry/cgal/cgalutils.h"
+#include "src/geometry/PolySetUtils.h"
 #include <unordered_map>
-#include "boost-utils.h"
-#include <hash.h>
-#include <PolySetUtils.h>
-#include <GeometryEvaluator.h>
+#include "src/utils/boost-utils.h"
+#include <src/utils/hash.h>
+#include <src/geometry/PolySetUtils.h>
+#include <src/geometry/GeometryEvaluator.h>
 
-void export_step(const std::shared_ptr<const Geometry>& geom, std::ostream& output, const ExportInfo& exportInfo)
+void export_step(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
+                 const ExportInfo& exportInfo)
 {
-	auto ps = PolySetUtils::getGeometryAsPolySet(geom);
-	if(ps == nullptr) return;
+  auto ps = PolySetUtils::getGeometryAsPolySet(geom);
+  if (ps == nullptr) return;
 
-	printf("export curves: %d\n",ps->curves.size());
-	printf("export surfaces: %d\n",ps->surfaces.size());
-	for(auto curve : ps->curves) {
-		curve->display(ps->vertices);
-	}
-	std::vector<int> faceParents;
-	std::vector<Vector4d> normals, newNormals;
+  //	printf("export curves: %zu\n",ps->curves.size());
+  //	printf("export surfaces: %zu\n",ps->surfaces.size());
+  std::vector<int> faceParents;
+  std::vector<Vector4d> normals, newNormals;
 
-	std::vector<IndexedFace> indicesNew ;
-	normals = calcTriangleNormals(ps->vertices,ps->indices);
-	indicesNew  = mergeTriangles(ps->indices,normals,newNormals, faceParents, ps->vertices ); 
+  std::vector<IndexedFace> indicesNew;
+  normals = calcTriangleNormals(ps->vertices, ps->indices);
+  indicesNew = mergeTriangles(ps->indices, normals, newNormals, faceParents, ps->vertices);
 
-	StepKernel sk;
+  StepKernel sk;
 
-	sk.build_tri_body(ps->vertices, indicesNew,ps->curves, ps->surfaces, 1e-5);
-	std::time_t tt = std ::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	struct std::tm * ptm = std::localtime(&tt);
-	std::stringstream iso_time;
-	iso_time << std::put_time(ptm, "%FT%T");
+  sk.build_tri_body(exportInfo.title.c_str(), ps->vertices, indicesNew, ps->curves, ps->surfaces,
+                    faceParents, 1e-5);
+  std::time_t tt = std ::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  struct std::tm *ptm = std::localtime(&tt);
+  std::stringstream iso_time;
+  iso_time << std::put_time(ptm, "%FT%T");
 
-	std::string author = "slugdev";
-	std::string org = "org";
-		// header info
-	output << "ISO-10303-21;\n";
-	output << "HEADER;\n";
-	output << "FILE_DESCRIPTION(('STP203'),'2;1');\n";
-	output << "FILE_NAME('" << exportInfo.sourceFilePath << "','" << iso_time.str() << "',('" << author << "'),('" << org << "'),' ','pythonscad',' ');\n";
-	output << "FILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));\n";
-	output << "ENDSEC; \n";
+  std::string author = "slugdev";
+  std::string org = "org";
+  // header info
+  output << "ISO-10303-21;\n";
+  output << "HEADER;\n";
+  output << "FILE_DESCRIPTION(('STP203'),'2;1');\n";
+  output << "FILE_NAME('" << exportInfo.sourceFilePath << "','" << iso_time.str() << "',('" << author
+         << "'),('" << org << "'),' ','pythonscad',' ');\n";
+  output << "FILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));\n";
+  output << "ENDSEC; \n";
 
-	// data section
-	output << "DATA;\n";
+  // data section
+  output << "DATA;\n";
 
-	for (auto e:sk.entities )
-		e->serialize(output);
-	// create the base csys
-	output << "ENDSEC;\n";
-	output << "END-ISO-10303-21;\n";
+  for (auto e : sk.entities) e->serialize(output);
+  // create the base csys
+  output << "ENDSEC;\n";
+  output << "END-ISO-10303-21;\n";
 }
-
-
