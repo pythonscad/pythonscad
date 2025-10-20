@@ -35,10 +35,12 @@ std::string documentsPath();
  * @return the path for saving user documents
  */
 std::string userPath(const std::string& name);
+std::string pythonUserPath(const std::string& name);
 std::string userDocumentsPath();
 std::string resourceBasePath();
 fs::path resourcePath(const std::string& resource);
 std::string userLibraryPath();
+std::string userPythonLibraryPath();
 std::string userExamplesPath();
 
 /**
@@ -119,4 +121,4 @@ void ensureStdIO();
  * a given number of digits.
  */
 std::string toMemorySizeString(uint64_t bytes, int digits);
-} // namespace PlatformUtils
+}  // namespace PlatformUtils

@@ -17,7 +17,7 @@
 #include <QSettings>
 #include <string>
 
-#include "gui/qtgettext.h" // IWYU pragma: keep
+#include "gui/qtgettext.h"  // IWYU pragma: keep
 #include "openscad_gui.h"
 #include "ui_Preferences.h"
 #include "core/Settings.h"
@@ -37,6 +37,7 @@ public:
   void apply_win() const;
   void updateGUI();
   void fireEditorConfigChanged() const;
+  void fireApplicationFontChanged() const;
   void insertListItem(QListWidget *listBox, QListWidgetItem *listItem);
 
   // Returns true if there is an higlightling color scheme configured.
@@ -84,10 +85,11 @@ public slots:
   void on_enableHidapiTraceCheckBox_toggled(bool);
   void on_checkBoxShowWarningsIn3dView_toggled(bool);
   void on_checkBoxMouseCentricZoom_toggled(bool);
-  void on_checkBoxMouseSwapButtons_toggled(bool);
   void on_timeThresholdOnRenderCompleteSoundEdit_textChanged(const QString&);
   void on_enableClearConsoleCheckBox_toggled(bool);
   void on_consoleMaxLinesEdit_textChanged(const QString&);
+  void on_fontComboBoxApplicationFontFamily_currentFontChanged(const QFont&);
+  void on_comboBoxApplicationFontSize_currentIndexChanged(int);
   void on_consoleFontChooser_currentFontChanged(const QFont&);
   void on_consoleFontSize_currentIndexChanged(int);
   void on_customizerFontChooser_currentFontChanged(const QFont&);
@@ -115,7 +117,6 @@ public slots:
   void on_comboBoxLineWrapVisualizationStart_activated(int);
   void on_comboBoxLineWrapVisualizationEnd_activated(int);
   void on_comboBoxModifierNumberScrollWheel_activated(int);
-
 
   // Display
   void on_checkBoxHighlightCurrentLine_toggled(bool);
@@ -166,6 +167,7 @@ signals:
   void updateUndockMode(bool undockMode) const;
   void updateReorderMode(bool undockMode) const;
   void fontChanged(const QString& family, uint size) const;
+  void applicationFontChanged(const QString& family, uint size) const;
   void consoleFontChanged(const QString& family, uint size) const;
   void customizerFontChanged(const QString& family, uint size) const;
   void colorSchemeChanged(const QString& scheme) const;
@@ -174,7 +176,6 @@ signals:
   void editorConfigChanged() const;
   void ExperimentalChanged() const;
   void updateMouseCentricZoom(bool state) const;
-  void updateMouseSwapButtons(bool state) const;
   void autocompleteChanged(bool status) const;
   void characterThresholdChanged(int val) const;
   void stepSizeChanged(int val) const;
@@ -197,9 +198,9 @@ private:
   void writeSettings();
   void hidePasswords();
   void addPrefPage(QActionGroup *group, QAction *action, QWidget *widget);
-  void createFontSizeMenu(QComboBox *box, const QString &setting);
-  void updateGUIFontFamily(QFontComboBox *fontSelector, const QString &setting);
-  void updateGUIFontSize(QComboBox *fsSelector, const QString &setting);
+  void createFontSizeMenu(QComboBox *box, const QString& setting);
+  void updateGUIFontFamily(QFontComboBox *fontSelector, const QString& setting);
+  void updateGUIFontSize(QComboBox *fsSelector, const QString& setting);
   void updateLocalAppParams();
   void addLocalAppParameter(const Settings::LocalAppParameterType&);
   void moveListBoxRow(QListWidget *listBox, int offset);
@@ -214,5 +215,5 @@ private:
 class GlobalPreferences
 {
 public:
-    static Preferences* inst();
+  static Preferences *inst();
 };
