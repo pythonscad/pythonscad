@@ -1647,7 +1647,11 @@ if(APPLE AND NOT APPLE_UNIX)
     get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Versions
     get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Python.framework
 
+    # The actual framework library file that the binary links to
+    set(PYTHON_FRAMEWORK_LIB "${PYTHON_FRAMEWORK_DIR}/Versions/${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/Python")
+
     message(STATUS "Bundling Python framework from: ${PYTHON_FRAMEWORK_DIR}")
+    message(STATUS "Python framework library: ${PYTHON_FRAMEWORK_LIB}")
 
     # Copy Python.framework into the app bundle
     add_custom_command(TARGET OpenSCAD POST_BUILD
@@ -1659,9 +1663,10 @@ if(APPLE AND NOT APPLE_UNIX)
     )
 
     # Fix the install name to use @rpath instead of absolute path
+    # We need to use the exact path as it appears in the binary (the framework Python file, not libpython.dylib)
     add_custom_command(TARGET OpenSCAD POST_BUILD
       COMMAND install_name_tool -change
-        ${Python_LIBRARIES}
+        ${PYTHON_FRAMEWORK_LIB}
         @rpath/Python.framework/Versions/${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/Python
         ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}
       COMMENT "Updating Python library reference to use @rpath"
