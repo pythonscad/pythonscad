@@ -78,7 +78,7 @@ jobs:
     - name: Setup (detached) tmate ssh session if enabled
       # if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       uses: mxschmitt/action-tmate@v3
-      timeout-minutes: 1
+      timeout-minutes: 5
       with:
         detached: true
         limit-access-to-actor: true
