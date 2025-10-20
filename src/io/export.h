@@ -108,11 +108,6 @@ struct ExportPdfOptions {
   std::string metaDataAuthor;
   std::string metaDataSubject;
   std::string metaDataKeywords;
-  bool fill = false;
-  std::string fillColor = "black";
-  bool stroke = true;
-  std::string strokeColor = "black";
-  double strokeWidth = 1;
 
   static std::shared_ptr<const ExportPdfOptions> withOptions(const CmdLineExportOptions& cmdLineOptions)
   {
@@ -141,16 +136,6 @@ struct ExportPdfOptions {
                                              Settings::SettingsExportPdf::exportPdfMetaDataSubject),
       .metaDataKeywords = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_PDF,
                                               Settings::SettingsExportPdf::exportPdfMetaDataKeywords),
-      .fill = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_PDF,
-                                  Settings::SettingsExportPdf::exportPdfFill),
-      .fillColor = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_PDF,
-                                       Settings::SettingsExportPdf::exportPdfFillColor),
-      .stroke = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_PDF,
-                                    Settings::SettingsExportPdf::exportPdfStroke),
-      .strokeColor = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_PDF,
-                                         Settings::SettingsExportPdf::exportPdfStrokeColor),
-      .strokeWidth = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_PDF,
-                                         Settings::SettingsExportPdf::exportPdfStrokeWidth),
     });
   }
 
@@ -172,11 +157,6 @@ struct ExportPdfOptions {
         SPDF::exportPdfAddMetaDataSubject.value() ? SPDF::exportPdfMetaDataSubject.value() : "",
       .metaDataKeywords =
         SPDF::exportPdfAddMetaDataKeywords.value() ? SPDF::exportPdfMetaDataKeywords.value() : "",
-      .fill = SPDF::exportPdfFill.value(),
-      .fillColor = SPDF::exportPdfFillColor.value(),
-      .stroke = SPDF::exportPdfStroke.value(),
-      .strokeColor = SPDF::exportPdfStrokeColor.value(),
-      .strokeWidth = SPDF::exportPdfStrokeWidth.value(),
     });
   }
 };
@@ -253,41 +233,6 @@ struct Export3mfOptions {
   }
 };
 
-struct ExportSvgOptions {
-  bool fill = false;
-  std::string fillColor = "white";
-  bool stroke = true;
-  std::string strokeColor = "black";
-  double strokeWidth = 0.35;
-
-  static std::shared_ptr<const ExportSvgOptions> withOptions(const CmdLineExportOptions& cmdLineOptions)
-  {
-    return std::make_shared<const ExportSvgOptions>(ExportSvgOptions{
-      .fill = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_SVG,
-                                  Settings::SettingsExportSvg::exportSvgFill),
-      .fillColor = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_SVG,
-                                       Settings::SettingsExportSvg::exportSvgFillColor),
-      .stroke = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_SVG,
-                                    Settings::SettingsExportSvg::exportSvgStroke),
-      .strokeColor = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_SVG,
-                                         Settings::SettingsExportSvg::exportSvgStrokeColor),
-      .strokeWidth = set_cmd_line_option(cmdLineOptions, Settings::SECTION_EXPORT_SVG,
-                                         Settings::SettingsExportSvg::exportSvgStrokeWidth),
-    });
-  }
-
-  static const std::shared_ptr<const ExportSvgOptions> fromSettings()
-  {
-    return std::make_shared<const ExportSvgOptions>(ExportSvgOptions{
-      .fill = Settings::SettingsExportSvg::exportSvgFill.value(),
-      .fillColor = Settings::SettingsExportSvg::exportSvgFillColor.value(),
-      .stroke = Settings::SettingsExportSvg::exportSvgStroke.value(),
-      .strokeColor = Settings::SettingsExportSvg::exportSvgStrokeColor.value(),
-      .strokeWidth = Settings::SettingsExportSvg::exportSvgStrokeWidth.value(),
-    });
-  }
-};
-
 struct ExportInfo {
   FileFormat format;
   FileFormatInfo info;
@@ -337,8 +282,7 @@ void export_wrl(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
 void export_ps(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_amf(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_dxf(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
-void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
-                const ExportInfo& exportInfo);
+void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_pov(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                 const ExportInfo& exportInfo);
 void export_pdf(const std::shared_ptr<const Geometry>& geom, std::ostream& output,

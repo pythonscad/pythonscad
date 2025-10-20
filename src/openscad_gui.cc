@@ -170,7 +170,7 @@ void registerDefaultIcon(const QString&) {}
 #endif
 
 int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& original_path, int argc,
-        char **argv, const std::string& gui_test, const bool reset_window_settings)
+        char **argv, const std::string& gui_test)
 {
   OpenSCADApp app(argc, argv);
   QIcon::setThemeName(isDarkMode() ? "chokusen-dark" : "chokusen");

@@ -500,7 +500,7 @@ void ScintillaEditor::setColormap(const EditorColorScheme *colorScheme)
 
     newLexer->finalizeLexer();
 #ifdef ENABLE_PYTHON
-    if (language == LANG_SCAD) {
+    if (!mainWindow.python_active) {
       setLexer(newLexer);
     }
 #else
@@ -568,7 +568,7 @@ void ScintillaEditor::setColormap(const EditorColorScheme *colorScheme)
       true);  // does not work on first word, but allows remaining words to be syntax colored
 
 #ifdef ENABLE_PYTHON
-    if (language == LANG_SCAD) {
+    if (!mainWindow.python_active) {
       setLexer(newLexer);
     }
 #else
@@ -1017,7 +1017,7 @@ void ScintillaEditor::commentSelection()
 {
   auto commentString = "//";
 #ifdef ENABLE_PYTHON
-  if (language != LANG_SCAD) {
+  if (mainWindow.python_active) {
     commentString = "#";
   }
 #endif
@@ -1038,7 +1038,7 @@ void ScintillaEditor::uncommentSelection()
 {
   auto commentString = "//";
 #ifdef ENABLE_PYTHON
-  if (language != LANG_SCAD) {
+  if (mainWindow.python_active) {
     commentString = "#";
   }
 #endif

@@ -417,12 +417,12 @@ PyObject *ifrep(const std::shared_ptr<const PolySet>& ps)
 
   // TODO fill pointToFaceInd
   //  TODO tsten
-  printf("%lu Faces, %lu Points\n", ps->indices.size(), ps->vertices.size());
+  printf("%d Faces, %d Points\n", ps->indices.size(), ps->vertices.size());
 
   std::vector<CutFace> edgeFaces;
   std::vector<CutFace> normFaces;
   edgeFaces = calculateEdgeFaces(ps->vertices, ps->indices, pointToFaceInds, normFaces);
-  printf("%lu EdgeFaces generated\n", edgeFaces.size());
+  printf("%d EdgeFaces generated\n", edgeFaces.size());
 
   std::vector<int> table;                     // x(0) dimenstion faces y(1) dimenions edgefas
   for (int i = 0; i < edgeFaces.size(); i++)  // create table

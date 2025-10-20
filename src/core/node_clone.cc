@@ -81,10 +81,10 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
                   NodeCloneFunc(TextNode) NodeCloneFunc(OffsetNode) NodeCloneFunc(ProjectionNode)
                     NodeCloneFunc(GroupNode) NodeCloneFunc(ImportNode)
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
-                      NodeCloneFunc(RoofNode)
+                    NodeCloneFunc(RoofNode)
 #endif
 
-                        std::shared_ptr<AbstractNode> AbstractNode::clone(void)
+                      std::shared_ptr<AbstractNode> AbstractNode::clone(void)
 {
   std::shared_ptr<AbstractNode> clone = nullptr;
   NodeCloneUse(CubeNode) NodeCloneUse(SphereNode) NodeCloneUse(CylinderNode) NodeCloneUse(PolyhedronNode)
@@ -98,9 +98,9 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
                   NodeCloneUse(TextNode) NodeCloneUse(OffsetNode) NodeCloneUse(ProjectionNode)
                     NodeCloneUse(GroupNode) NodeCloneUse(ImportNode)
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
-                      NodeCloneUse(RoofNode)
+                    NodeCloneUse(RoofNode)
 #endif
-                        if (clone != nullptr)
+                      if (clone != nullptr)
   {
     clone->idx = idx_counter++;
     clone->children.clear();

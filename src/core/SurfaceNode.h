@@ -36,12 +36,17 @@
 
 struct img_data_t {
 public:
-  using storage_type = Vector3f;
+  using storage_type = double;  // float could be enough here
 
-  img_data_t() { height = width = 0; }
+  img_data_t()
+  {
+    min_val = 0;
+    height = width = 0;
+  }
 
   void clear()
   {
+    min_val = 0;
     height = width = 0;
     storage.clear();
   }
@@ -52,9 +57,12 @@ public:
 
   storage_type& operator[](int x) { return storage[x]; }
 
+  storage_type min_value() { return min_val; }  // *std::min_element(storage.begin(), storage.end());
+
 public:
   unsigned int height;  // rows
   unsigned int width;   // columns
+  storage_type min_val;
   std::vector<storage_type> storage;
 };
 

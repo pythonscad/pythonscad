@@ -219,7 +219,9 @@ private:
   void loadViewSettings();
   void loadDesignSettings();
   void prepareCompile(const char *afterCompileSlot, bool procevents, bool preview);
-  void updateWindowSettings(bool isEditorToolbarVisible, bool isViewToolbarVisible);
+  void updateWindowSettings(bool console, bool editor, bool customizer, bool errorLog,
+                            bool editorToolbar, bool viewToolbar, bool animate, bool fontList,
+                            bool ViewportControlWidget);
   void saveBackup();
   void writeBackup(QFile *file);
   void show_examples();

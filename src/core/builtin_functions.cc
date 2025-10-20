@@ -371,9 +371,6 @@ Value builtin_length(Arguments arguments, const Location& loc)
   if (try_check_arguments(arguments, {Value::Type::VECTOR})) {
     return {double(arguments[0]->toVector().size())};
   }
-  if (try_check_arguments(arguments, {Value::Type::OBJECT})) {
-    return double(arguments[0]->toObject().values().size());
-  }
   if (!check_arguments("len", arguments, loc, {Value::Type::STRING})) {
     return Value::undefined.clone();
   }
@@ -1325,16 +1322,6 @@ void register_builtin_functions()
                  new BuiltinFunction(&builtin_is_object, &Feature::ExperimentalTextMetricsFunctions),
                  {
                    "is_object(arg) -> boolean",
-                 });
-
-  Builtins::init("object", new BuiltinFunction(&builtin_object, &Feature::ExperimentalObjectFunction),
-                 {
-                   "object([ object, ] [ key-val list, ] key=value, ...) -> object",
-                 });
-
-  Builtins::init("has_key", new BuiltinFunction(&builtin_has_key, &Feature::ExperimentalObjectFunction),
-                 {
-                   "has_key(object, key) -> boolean",
                  });
 
   Builtins::init("import", new BuiltinFunction(&builtin_import, &Feature::ExperimentalImportFunction),

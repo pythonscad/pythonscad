@@ -568,7 +568,7 @@ void GLView::showScalemarkers(const Color4f& col)
   int line_cnt = 0;
 
   size_t divs = l / tick_width;
-  for (size_t div = 0; div < divs; ++div) {
+  for (auto div = 0; div < divs; ++div) {
     double i = div * tick_width;  // i represents the position along the axis
     int size_div;
     if (line_cnt > 0 && line_cnt % 10 == 0) {        // major tick
@@ -694,11 +694,11 @@ void GLView::decodeMarkerValue(double i, double l, int size_div_sm)
       axis_draw(x, y, font_size, baseline_offset);
     };
 
-    hershey::DrawTextHershey(pos_number_str, i, 0, hershey::TextAlign::kCenter, font_size, plot_fun);
+    hershey::DrawText(pos_number_str, i, 0, hershey::TextAlign::kCenter, font_size, plot_fun);
     if (needs_glend) glEnd();
     needs_glend = false;
-    hershey::DrawTextHershey(neg_number_str, -i - prefix_offset, 0, hershey::TextAlign::kCenter,
-                             font_size, plot_fun);
+    hershey::DrawText(neg_number_str, -i - prefix_offset, 0, hershey::TextAlign::kCenter, font_size,
+                      plot_fun);
     if (needs_glend) glEnd();
     needs_glend = false;
   }

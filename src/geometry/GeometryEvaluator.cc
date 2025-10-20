@@ -556,7 +556,7 @@ std::vector<IndexedFace> mergeTriangles(const std::vector<IndexedFace> polygons,
       for (unsigned int l = 0; l < polygons_sorted[i_].size(); l++) {
         IndexedFace hole = polygons_sorted[i_][l];
         //				// holes dont intersect with the polygon, so its sufficent to
-        // check, if one point of the hole is inside the polygon
+        //check, if one point of the hole is inside the polygon
         if (mergeTrianglesOpposite(poly, hole)) {
           polygons_sorted[i].erase(polygons_sorted[i].begin() + k);
           polygons_sorted[i_].erase(polygons_sorted[i_].begin() + l);
@@ -602,6 +602,7 @@ std::vector<IndexedFace> mergeTriangles(const std::vector<IndexedFace> polygons,
 
   return indices;
 }
+<<<<<<< HEAD
 
 void export_debug_polyset(const PolySet& ps);
 
@@ -2597,8 +2598,6 @@ Response GeometryEvaluator::visit(State& state, const ConcatNode& node)
             pt[2] = concat_round(pt[2]);
             builder.addVertex(pt);
           }
-          if (ps->color_indices.size() > i) builder.endPolygon(ps->colors[ps->color_indices[i]]);
-          else builder.endPolygon();
         }
       }
       geom = builder.build();
@@ -2807,47 +2806,44 @@ Vector3d cross_pt(Vector3d p1, Vector3d p2, double x)
   return Vector3d(x, y, z);
 }
 
-std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder,
-                                                         const std::vector<Vector3d> vertices,
-                                                         const std::vector<IndexedColorFace>& polygons,
-                                                         const std::vector<Vector4d>& normals,
-                                                         std::vector<double> xsteps)
+std::vector<std::vector<IndexedTriangle>> wrapSlice(PolySetBuilder& builder,
+                                                    const std::vector<Vector3d> vertices,
+                                                    const std::vector<IndexedFace>& polygons,
+                                                    const std::vector<Vector4d>& normals,
+                                                    std::vector<double> xsteps)
 {
   std::vector<Vector3f> builder_vertices;
-  std::vector<std::vector<IndexedColorTriangle>> results;  // nach strips sortiert
+  std::vector<std::vector<IndexedTriangle>> results;  // nach strips sortiert
   int strips = xsteps.size() + 1;
 
   // initialize
   Polygon dmy;
   std::vector<Polygon> dmyx;
-  std::vector<IndexedColorTriangle> dmyz;
-  for (int i = 0; i < strips - 2; i++) {  // TODO check very carefully
+  std::vector<IndexedTriangle> dmyz;
+  for (int i = 0; i < strips; i++) {
     results.push_back(dmyz);
   }
 
   // sort in buckets of equal normal direction
   indexedFaceList emptyList;
   std::vector<Vector4d> norm_list;
-  std::vector<int> color_list;
   std::vector<indexedFaceList> polygons_sorted;
   //  std::vector<Vector4d> normals = calcTriangleNormals(vertices, polygons);
   // sort polygons into buckets of same orientation
   for (unsigned int i = 0; i < polygons.size(); i++) {
     Vector4d norm = normals[i];
-    const IndexedColorFace& triangle = polygons[i];
+    const IndexedFace& triangle = polygons[i];
 
-    int bucket_ind = -1;
-    for (unsigned int j = 0; bucket_ind == -1 && j < norm_list.size(); j++) {
+    int norm_ind = -1;
+    for (unsigned int j = 0; norm_ind == -1 && j < norm_list.size(); j++) {
       const auto& cur = norm_list[j];
-      if (triangle.color == color_list[j]) {
-        if (cur.head<3>().dot(norm.head<3>()) > 0.99999 && fabs(cur[3] - norm[3]) < 0.001) {
-          bucket_ind = j;
-        }
-        if (cur.norm() < 1e-6 && norm.norm() < 1e-6) bucket_ind = j;  // zero vector matches zero vector
+      if (cur.head<3>().dot(norm.head<3>()) > 0.99999 && fabs(cur[3] - norm[3]) < 0.001) {
+        norm_ind = j;
       }
+      if (cur.norm() < 1e-6 && norm.norm() < 1e-6) norm_ind = j;  // zero vector matches zero vector
     }
-    if (bucket_ind == -1) {
-      bucket_ind = norm_list.size();
+    if (norm_ind == -1) {
+      norm_ind = norm_list.size();
       norm_list.push_back(norm);
       color_list.push_back(triangle.color);
       polygons_sorted.push_back(emptyList);
@@ -2855,7 +2851,6 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
     polygons_sorted[bucket_ind].push_back(triangle.face);
   }
 
-  int color_ind = 0;
   for (auto& bucket : polygons_sorted) {
     std::vector<std::vector<Polygon>> stripPolygons;  // nach strips sortiert
     std::vector<Polygon> stripTops;                   // obere Randpunkte eines Streifens
@@ -3038,8 +3033,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
       GeometryUtils::tessellatePolygonWithHoles(builder_vertices, polys_ind, triangles);
 
       for (const auto& tri : triangles) {
-        IndexedColorTriangle tri_col(tri[0], tri[1], tri[2], color_list[color_ind]);
-        results[i].push_back(tri_col);
+        results[i].push_back(tri);
       }
     }
     color_ind++;
@@ -3052,7 +3046,7 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
   PolySetBuilder builder(0, 0, 3, true);
 
   // find maxmal xrange
-  double xmin = NAN, xmax = NAN;
+  double xmin = NAN, xmax;
   for (const auto& p : ps->indices) {
     for (int i : p) {
       double x = ps->vertices[i][0];
@@ -3099,18 +3093,33 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
     int segments = segments1 > segments2 ? segments1 : segments2;
     if (node.fn > 0) segments = node.fn;
     double arclen = 2 * G_PI * node.r / segments;
-    //    if(xmin >= 0) xmin = ceil((xmin+1e-6)/arclen)*arclen;
-    //    else xmin = -floor((-xmin+1e-6)/arclen)*arclen;
+    if (xmin >= 0) xmin = ceil((xmin + 1e-6) / arclen) * arclen;
+    else xmin = -floor((-xmin + 1e-6) / arclen) * arclen;
     do {
       Vector2d pt(node.r * cos(xmin / node.r), node.r * sin(xmin / node.r));
 
       xscale.push_back(xmin);
       polygon.push_back(pt);
       xmin += arclen;
-    } while (xmin <= xmax + 1e-6 + arclen);
-    polygonlen = polygon.size();
+    } while (xmin <= xmax + 1e-6);
     xscale.push_back(xmin);
   }
+
+  int scalelen = xscale.size();
+
+  auto wrap_convert = [node, xscale, polygon, polygonlen](Vector3d pt, double tanfact, int ind) {
+    auto& p1 = polygon[ind % polygonlen];
+    auto& p2 = polygon[(ind + 1) % polygonlen];
+    Vector2d dir = (p2 - p1).normalized();
+    Vector2d dirn = Vector2d(-dir[1], dir[0]);
+    Vector3d res;
+    Vector2d px = p1 + dir * (pt[0] - xscale[ind] - pt[1] * tanfact) + dirn * pt[1];
+    res = Vector3d(px[0], px[1], pt[2]);
+
+    // TODO dann 2D streifen
+
+    return res;
+  };
 
   std::vector<indexedFaceList> polygons_sorted;
   std::vector<Vector4d> normals = calcTriangleNormals(ps->vertices, ps->indices);
@@ -3127,13 +3136,24 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
     mergeTriangles(tri_color, normals, newnormals, faceParents, ps->vertices);
 
   // now build vector from xmin to xmax
-  std::vector<std::vector<IndexedColorTriangle>> sliceresult =
-    wrapSlice(builder, ps->vertices, tri_color_merged, newnormals, xscale);
-
+  std::vector<std::vector<IndexedTriangle>> sliceresult =
+    wrapSlice(builder, ps->vertices, tri_merged, newnormals, xscale);
   std::vector<Vector3d> builder_vertices;
   builder.copyVertices(builder_vertices);  // TODO sehr ineffizient
   int ind = 0;
+  double botfact = 0.0, topfact = 0.0;
   for (const auto& slice : sliceresult) {
+    topfact = 0;
+    if (ind < xscale.size() - 2) {
+      Vector2d p1 = polygon[ind % polygonlen];
+      Vector2d p2 = polygon[(ind + 1) % polygonlen];
+      Vector2d p3 = polygon[(ind + 2) % polygonlen];
+      Vector2d d1 = (p2 - p1).normalized();
+      Vector2d d2 = (p3 - p2).normalized();
+      double d = d1.dot(d2);
+      topfact = (1 - d) / sqrt(1 - d * d);                        // tan(acos(d)/2);
+      if (d1[0] * d2[1] - d1[1] * d2[0] < 0) topfact = -topfact;  // handle concave angles
+    }
     double xbot = xscale[ind];
     double xtop = xscale[ind + 1];
     for (const auto& poly : slice) {
@@ -3141,37 +3161,15 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
       builder.beginPolygon(3);
       for (int j = 0; j < 3; j++) {
         Vector3d pt = builder_vertices[poly[j]];
-
-        auto& p0 = polygon[ind > 1 ? ind - 1 : 0];
-        auto& p1 = polygon[ind];
-        auto& p2 = polygon[ind < polygonlen - 1 ? ind + 1 : polygonlen - 1];
-        auto& p3 = polygon[ind < polygonlen - 2 ? ind + 2 : polygonlen - 1];
-
-        Vector2d dir0 = (p1 - p0).normalized();
-        Vector2d dir0n = Vector2d(-dir0[1], dir0[0]);
-
-        Vector2d dir1u = (p2 - p1);
-        Vector2d dir1 = dir1u.normalized();
-        Vector2d dir1n = Vector2d(-dir1[1], dir1[0]);
-
-        Vector2d dir2 = (p3 - p2).normalized();
-        Vector2d dir2n = Vector2d(-dir2[1], dir2[0]);
-
-        Vector2d dirn = dir0n * (xtop - pt[0]) / (xtop - xbot) + dir2n * (pt[0] - xbot) / (xtop - xbot);
-        dirn = (dirn + dir1n).normalized();
-
-        Vector2d px =
-          p1 + dir1u * (pt[0] - xscale[ind]) / (xscale[ind + 1] - xscale[ind]) + dirn * pt[1];
-        Vector3d pt_tran = Vector3d(px[0], px[1], pt[2]);
-        pt_tran[0] = concat_round(pt_tran[0]);
-        pt_tran[1] = concat_round(pt_tran[1]);
-        pt_tran[2] = concat_round(pt_tran[2]);
-
+        double fact = 0.0;
+        if (fabs(pt[0] - xbot) < 1e-3) fact = -botfact;
+        if (fabs(pt[0] - xtop) < 1e-3) fact = topfact;
+        Vector3d pt_tran = wrap_convert(pt, fact, ind);
         builder.addVertex(pt_tran);
       }
-      if (poly[3] != -1) builder.endPolygon(ps->colors[poly[3]]);
-      else builder.endPolygon();
+      builder.endPolygon();
     }
+    botfact = topfact;
     ind++;
   }
   auto ps1 = builder.build();
@@ -3239,6 +3237,7 @@ Response GeometryEvaluator::visit(State& state, const DebugNode& node)
   return Response::ContinueTraversal;
 }
 
+<<<<<<< HEAD
 static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolySet *ps)
 {
   auto psx = std::make_unique<PolySet>(ps->getDimension(), ps->convexValue());

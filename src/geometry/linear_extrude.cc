@@ -437,6 +437,7 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
   if (node.profile_func != nullptr) {
     is_segmented = true;
     seg_poly = python_getprofile(node.profile_func, node.fn, 0);
+    num_slices = node.fn;
   }
 #endif
 
@@ -487,7 +488,13 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
                           Eigen::Affine2d(rotate_degrees(act_rot)));
 
 #ifdef ENABLE_PYTHON
-    if (node.profile_func == nullptr)
+    if (node.profile_func != nullptr) {
+      auto o = python_getprofile(node.profile_func, node.fn, full_height[2] * slice_idx / num_slices);
+      for (const auto& v : o.vertices) {
+        auto tmp = trans * v;
+        vertices.emplace_back(Vector3d(tmp[0], tmp[1], 0.0) + h1 + full_height * slice_idx / num_slices);
+      }
+    } else
 #endif
     {
       Transform3d tr = polyref.getTransform3d();

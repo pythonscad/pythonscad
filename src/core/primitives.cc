@@ -266,8 +266,8 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
     polyset->indices.back().push_back(i);
   }
 
-  for (auto i = 0; i < num_rings - 1; ++i) {
-    for (auto r = 0; r < num_fragments; ++r) {
+  for (int i = 0; i < num_rings - 1; ++i) {
+    for (int r = 0; r < num_fragments; ++r) {
       polyset->indices.push_back({
         i * num_fragments + (r + 1) % num_fragments,
         i * num_fragments + r,

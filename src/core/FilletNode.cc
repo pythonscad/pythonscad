@@ -167,6 +167,13 @@ void bezier_patch(PolySetBuilder& builder, Vector3d center, Vector3d dir[3], int
   }
 }
 
+double createFilletLimit(Vector3d v, double r)
+{
+  double l = v.norm() / 2.0;
+  if (l > r) l = r;
+  return l;
+}
+
 void debug_pt(const char *msg, Vector3d pt) { printf("%s %g/%g/%g\n", msg, pt[0], pt[1], pt[2]); }
 
 std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> ps,
@@ -187,175 +194,54 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   bool improved = false;
   std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> edge_db;
   std::vector<intList> polinds, polposs;
+  intList empty;
+  for (size_t i = 0; i < ps->vertices.size(); i++) {
+    polinds.push_back(empty);
+    polposs.push_back(empty);
+  }
+  for (size_t i = 0; i < merged.size(); i++) {
+    for (size_t j = 0; j < merged[i].size(); j++) {
+      int ind = merged[i][j];
+      polinds[ind].push_back(i);
+      polposs[ind].push_back(j);
+    }
+  }
 
+  // create Edge DB
+  std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> edge_db;
+  edge_db = createEdgeDb(merged);
+
+  // which rounded edges in a corner coner_rounds[vert]=[other_verts]
   std::vector<std::vector<int>> corner_rounds;
-  do {
-    improved = false;  // fix short edges until happy
-    std::vector<int> lockouts;
+  for (size_t i = 0; i < ps->vertices.size(); i++) corner_rounds.push_back(empty);
 
-    polinds.clear();
-    polposs.clear();
-    intList empty;
-    for (size_t i = 0; i < vertices_copy.size(); i++) {
-      polinds.push_back(empty);
-      polposs.push_back(empty);
+  std::vector<SearchReplace> sp;
+
+  for (auto& e : edge_db) {
+    if (corner_selected[e.first.ind1] && corner_selected[e.first.ind2]) {
+      assert(e.second.facea >= 0);
+      assert(e.second.faceb >= 0);
+      auto& facea = merged[e.second.facea];
+      auto& faceb = merged[e.second.faceb];
+      Vector3d fan = calcTriangleNormal(ps->vertices, facea).head<3>();
+      Vector3d fbn = calcTriangleNormal(ps->vertices, faceb).head<3>();
+      double d = fan.dot(fbn);
+      e.second.sel = 0;
+      if (d >= cos_minang) continue;  // dont create facets when the angle conner is too small
+      if (polinds[e.first.ind1].size() != 3) continue;  // start must be 3edge corner
+      if (polinds[e.first.ind2].size() != 3) continue;  // start must be 3edge corner
+
+      e.second.sel = 1;
+      corner_rounds[e.first.ind1].push_back(e.first.ind2);
+      corner_rounds[e.first.ind2].push_back(e.first.ind1);
     }
-    for (size_t i = 0; i < merged.size(); i++) {
-      for (size_t j = 0; j < merged[i].size(); j++) {
-        int ind = merged[i][j];
-        polinds[ind].push_back(i);
-        polposs[ind].push_back(j);
-      }
-    }
-
-    // create Edge DB
-
-    edge_db = createEdgeDb(merged);
-
-    // which rounded edges in a corner coner_rounds[vert]=[other_verts]
-    corner_rounds.clear();
-    for (size_t i = 0; i < vertices_copy.size(); i++) corner_rounds.push_back(empty);
-
-    for (auto& e : edge_db) {
-      if (corner_selected[e.first.ind1] && corner_selected[e.first.ind2]) {
-        assert(e.second.facea >= 0);
-        assert(e.second.faceb >= 0);
-        auto& facea = merged[e.second.facea];
-        auto& faceb = merged[e.second.faceb];
-        Vector3d fan = calcTriangleNormal(vertices_copy, facea).head<3>();
-        Vector3d fbn = calcTriangleNormal(vertices_copy, faceb).head<3>();
-        double d = fan.dot(fbn);
-        e.second.sel = 0;
-        if (d >= cos_minang) continue;  // dont create facets when the angle conner is too small
-        if (polinds[e.first.ind1].size() != 3) continue;  // start must be 3edge corner
-        if (polinds[e.first.ind2].size() != 3) continue;  // start must be 3edge corner
-
-        e.second.sel = 1;
-        corner_rounds[e.first.ind1].push_back(e.first.ind2);
-        corner_rounds[e.first.ind2].push_back(e.first.ind1);
-      }
-    }
-    /* TODO activate
-
-        // eliminate  too short edges by extrapolating the neighboring edges
-        for(auto &e: edge_db) {
-          if(!e.second.sel) continue;
-          Vector3d line = vertices_copy[e.first.ind1] - vertices_copy[e.first.ind2];
-          if(line.norm() < 2*r_) {
-
-            int a_prev=-1, a_next=-1;
-            int b_prev=-1, b_next=-1;
-
-            if(std::find(lockouts.begin(), lockouts.end(), e.first.ind1) != lockouts.end()) continue;
-            if(std::find(lockouts.begin(), lockouts.end(), e.first.ind2) != lockouts.end()) continue;
-            auto &facea = merged[e.second.facea];
-            int na=facea.size();
-            for(int i=0;i<na;i++) {
-              if(facea[i] == e.first.ind1){
-                a_prev = facea[(i+na-1)%na];
-                a_next = facea[(i+na+2)%na];
-              }
-            }
-
-            auto &faceb = merged[e.second.faceb];
-            int nb=faceb.size();
-            for(int i=0;i<nb;i++) {
-              if(faceb[i] == e.first.ind2){
-                b_prev = faceb[(i+nb-1)%nb];
-                b_next = faceb[(i+nb+2)%nb];
-              }
-            }
-
-            if(std::find(lockouts.begin(), lockouts.end(), a_prev) != lockouts.end()) continue;
-            if(std::find(lockouts.begin(), lockouts.end(), a_next) != lockouts.end()) continue;
-            if(std::find(lockouts.begin(), lockouts.end(), b_prev) != lockouts.end()) continue;
-            if(std::find(lockouts.begin(), lockouts.end(), b_next) != lockouts.end()) continue;
-
-            // is it safe to take the bigger face ?
-            int commonfaceind=-1, faceind1=-1, faceind2=-1;
-            EdgeKey ek1, ek2;
-            if(nb > na) {
-              commonfaceind=e.second.faceb; // TODO b hat die richtigen punkte
-              ek1 = EdgeKey(b_prev, e.first.ind2);
-              ek2 = EdgeKey(e.first.ind1, b_next);
-            } else { // na  > nb)
-              commonfaceind=e.second.facea; // TODO b hat die richtigen punkte
-              ek1 = EdgeKey(a_prev, e.first.ind1);
-              ek2 = EdgeKey(e.first.ind2, a_next);
-            }
-
-            if(edge_db.count(ek1)) {
-              auto &ev1 = edge_db.at(ek1);
-              if(ev1.facea == commonfaceind) faceind1= ev1.faceb;
-              if(ev1.faceb == commonfaceind) faceind1= ev1.facea;
-            }
-
-            // find opposite of e.first.ind1, b_next)
-            if(edge_db.count(ek2)) {
-              auto &ev2 = edge_db.at(ek2);
-              if(ev2.facea == commonfaceind) faceind2= ev2.faceb;
-              if(ev2.faceb == commonfaceind) faceind2= ev2.facea;
-            }
-
-            Vector3d fn1 =calcTriangleNormal(vertices_copy, merged[commonfaceind]).head<3>();
-            Vector3d fn2 =calcTriangleNormal(vertices_copy, merged[faceind1]).head<3>();
-            Vector3d fn3 =calcTriangleNormal(vertices_copy, merged[faceind2]).head<3>();
-
-            Vector3d fp1 = vertices_copy[merged[commonfaceind][0]];
-            Vector3d fp2 = vertices_copy[merged[faceind1][0]];
-            Vector3d fp3 = vertices_copy[merged[faceind2][0]];
-            Vector3d ptcut;
-            if(cut_face_face_face(fp1, fn1, fp2, fn2, fp3, fn3, ptcut,nullptr)) {
-              printf("Error during cutting\n");
-              e.second.sel=0;
-              continue;
-            }
-            //
-            // change is going to happen
-            vertices_copy[e.first.ind1]=ptcut;
-            lockouts.push_back(ek1.ind1);
-            lockouts.push_back(ek1.ind2);
-            lockouts.push_back(ek2.ind1);
-            lockouts.push_back(ek2.ind2);
-
-            for(int j=0;j<merged.size();j++) {
-              auto &tri = merged[j];
-              int n = tri.size();
-              int dupind=-1;
-              for(int i=0;i<n;i++)
-              {
-                if(tri[i] == e.first.ind2){
-                  tri[i] =e.first.ind1;
-                  if(tri[(i+1)%n] == e.first.ind1 || tri[(i+n-1)%n] == e.first.ind1) {
-                    dupind=i;
-                  }
-                }
-              }
-              if(dupind != -1) {
-                IndexedFace tri_new;
-                for(int i=0;i<dupind;i++) tri_new.push_back(tri[i]);
-                for(int i=dupind+1;i<n;i++) tri_new.push_back(tri[i]);
-                tri = tri_new;
-                n--;
-              }
-              if(n < 3) {
-                    merged.erase(merged.begin()+j);
-                    j--;
-              }
-            }
-            improved=true;
-          // TODO lockout
-          }
-
-        }
-    */
-  } while (improved == true);
+  }
 
   // start builder with existing vertices to have VertexIndex available
   //
   PolySetBuilder builder;
-  for (size_t i = 0; i < vertices_copy.size(); i++) {
-    builder.vertexIndex(vertices_copy[i]);  // allocate all vertices in the right order
+  for (size_t i = 0; i < ps->vertices.size(); i++) {
+    builder.vertexIndex(ps->vertices[i]);  // allocate all vertices in the right order
   }
 
   SearchReplace s;
@@ -364,12 +250,12 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   // plan fillets of all edges now
   for (auto& e : edge_db) {
     if (e.second.sel == 1) {
-      Vector3d p1 = vertices_copy[e.first.ind1];  // both ends of the selected edge
-      Vector3d p2 = vertices_copy[e.first.ind2];
+      Vector3d p1 = ps->vertices[e.first.ind1];  // both ends of the selected edge
+      Vector3d p2 = ps->vertices[e.first.ind2];
       Vector3d p1org = p1, p2org = p2;
       Vector3d dir = p2 - p1;
-      if (corner_rounds[e.first.ind1].size() >= 3) p1 += dir.normalized() * r_;
-      if (corner_rounds[e.first.ind2].size() >= 3) p2 -= dir.normalized() * r_;
+      if (corner_rounds[e.first.ind1].size() >= 3) p1 += dir.normalized() * createFilletLimit(dir, r_);
+      if (corner_rounds[e.first.ind2].size() >= 3) p2 -= dir.normalized() * createFilletLimit(dir, r_);
       dir = dir.normalized();  // TODO
       auto& facea = merged[e.second.facea];
       auto& faceb = merged[e.second.faceb];
@@ -379,8 +265,8 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
       int facebn = faceb.size();
       double fanf = (faceParents[e.second.facea] != -1) ? -1 : 1;  // is the edge part of a hole
       double fbnf = (faceParents[e.second.faceb] != -1) ? -1 : 1;
-      Vector3d fan = calcTriangleNormal(vertices_copy, facea).head<3>();
-      Vector3d fbn = calcTriangleNormal(vertices_copy, faceb).head<3>();
+      Vector3d fan = calcTriangleNormal(ps->vertices, facea).head<3>();
+      Vector3d fbn = calcTriangleNormal(ps->vertices, faceb).head<3>();
 
       // A 1st side of the edge
       // B 2nd face of the edge
@@ -393,55 +279,55 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
       indposbo = faceb[(e.second.posb + 2) % facebn];
       indposbi = faceb[e.second.posb];
 
-      Vector3d e_fa1 = (vertices_copy[indposao] - vertices_copy[facea[e.second.posa]]).normalized() *
+      Vector3d e_fa1 = (ps->vertices[indposao] - ps->vertices[facea[e.second.posa]]).normalized() *
                        fanf;  // Facea neben ind1
       Vector3d e_fa1p =
-        (vertices_copy[indposai] - vertices_copy[facea[e.second.posa]]) * fanf;  // Face1 nahe  richtung
-                                                                                 //
+        (ps->vertices[indposai] - ps->vertices[facea[e.second.posa]]) * fanf;  // Face1 nahe  richtung
+                                                                               //
       Vector3d e_fb1 =
-        (vertices_copy[indposbo] - vertices_copy[faceb[(e.second.posb + 1) % facebn]]).normalized() *
+        (ps->vertices[indposbo] - ps->vertices[faceb[(e.second.posb + 1) % facebn]]).normalized() *
         fbnf;  // Faceb neben ind1
       Vector3d e_fb1p =
-        (vertices_copy[indposbi] - vertices_copy[faceb[(e.second.posb + 1) % facebn]]) * fbnf;
+        (ps->vertices[indposbi] - ps->vertices[faceb[(e.second.posb + 1) % facebn]]) * fbnf;
 
       if (corner_rounds[e.first.ind1].size() == 2) {
         double a = (e_fb1.cross(e_fa1)).dot(dir);
         double b = (fan.cross(fbn)).dot(e_fa1p) * fanf * fbnf;
         if (list_included(corner_rounds[e.first.ind1], indposao)) {
-          double ang = (dir).dot(e_fa1.normalized());
           e_fa1 += dir * fanf;
           if (a * b < 0) e_fa1 = -e_fa1 * fanf;
-          e_fa1 /= sqrt(1 - ang * ang);
         }
 
         if (list_included(corner_rounds[e.first.ind1], indposbo)) {
-          double ang = (dir).dot(e_fb1.normalized());
           e_fb1 += dir * fbnf;
           if (a * b < 0) e_fb1 = -e_fb1 * fbnf;
-          e_fb1 /= sqrt(1 - ang * ang);
         }
+        e_fa1 *= r_;
+        e_fb1 *= r_;
       }
 
       if (corner_rounds[e.first.ind1].size() == 3) {
+        e_fa1 *= createFilletLimit(p2org - p1org, r_);
+        e_fb1 *= createFilletLimit(p2org - p1org, r_);
         if ((fbn.cross(fan)).dot(e_fa1p) < 0 || (fbn.cross(fan)).dot(e_fb1p) < 0) {
           if ((e_fa1p.cross(e_fa1)).dot(fan) * fanf < 0) {
-            e_fa1 = -e_fa1 * fanf - 2 * (p2org - p1org).normalized();
+            e_fa1 =
+              -e_fa1 * fanf - 2 * (p2org - p1org).normalized() * createFilletLimit(p2org - p1org, r_);
           }
           if ((e_fb1p.cross(e_fb1)).dot(fbn) * fbnf > 0) {
-            e_fb1 = -e_fb1 * fbnf - 2 * (p2org - p1org).normalized();
+            e_fb1 =
+              -e_fb1 * fbnf - 2 * (p2org - p1org).normalized() * createFilletLimit(p2org - p1org, r_);
           }
         }
         if ((fbn.cross(fan)).dot(e_fb1p) > 0) {
           if ((e_fa1p.cross(e_fa1)).dot(fan) * fanf > 0 && (e_fa1p.cross(e_fb1)).dot(fbn) * fbnf > 0) {
-            e_fb1 = -e_fb1 * fbnf - 2 * dir;
+            e_fb1 = -e_fb1 * fbnf - 2 * dir * r_;
           }
           if ((e_fb1p.cross(e_fb1)).dot(fbn) * fbnf < 0 && (e_fb1p.cross(e_fa1)).dot(fan) * fanf < 0) {
-            e_fa1 = -e_fa1 * fanf - 2 * dir;
+            e_fa1 = -e_fa1 * fanf - 2 * dir * r_;
           }
         }
       }
-      e_fa1 *= r_;
-      e_fb1 *= r_;
 
       indposao = facea[(e.second.posa + 2) % facean];
       indposai = facea[e.second.posa];
@@ -450,51 +336,52 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
       indposbi = faceb[(e.second.posb + 1) % facebn];
 
       Vector3d e_fa2 =
-        (vertices_copy[indposao] - vertices_copy[facea[(e.second.posa + 1) % facean]]).normalized() *
+        (ps->vertices[indposao] - ps->vertices[facea[(e.second.posa + 1) % facean]]).normalized() *
         fanf;  // Face1 entfernte richtung
-      Vector3d e_fa2p = (vertices_copy[indposai] - vertices_copy[facea[(e.second.posa + 1) % facean]]) *
+      Vector3d e_fa2p = (ps->vertices[indposai] - ps->vertices[facea[(e.second.posa + 1) % facean]]) *
                         fanf;  // Face1 entfernte richtung
                                //
       Vector3d e_fb2 =
-        (vertices_copy[indposbo] - vertices_copy[faceb[(e.second.posb + 0) % facebn]]).normalized() *
+        (ps->vertices[indposbo] - ps->vertices[faceb[(e.second.posb + 0) % facebn]]).normalized() *
         fbnf;  // Face2 entfernte Rcithung
-      Vector3d e_fb2p = (vertices_copy[indposbi] - vertices_copy[faceb[(e.second.posb + 0) % facebn]]) *
+      Vector3d e_fb2p = (ps->vertices[indposbi] - ps->vertices[faceb[(e.second.posb + 0) % facebn]]) *
                         fbnf;  // Face2 entfernte Rcithung
 
       //
       if (corner_rounds[e.first.ind2].size() == 2) {
         double a = (e_fb2.cross(e_fa2)).dot(dir);
         double b = (fan.cross(fbn)).dot(e_fa2p) * fanf * fbnf;
+        double c = (fan.cross(fbn)).dot(dir);
         if (list_included(corner_rounds[e.first.ind2], indposao)) {
-          double ang = (dir).dot(e_fa2.normalized());
           e_fa2 -= dir * fanf;
           if (a * b > 0) e_fa2 = -e_fa2 * fanf;
-          e_fa2 /= sqrt(1 - ang * ang);
         }
 
         if (list_included(corner_rounds[e.first.ind2], indposbo)) {
-          double ang = (dir).dot(e_fb2.normalized());
           e_fb2 -= dir * fbnf;
           if (a * b > 0) e_fb2 = -e_fb2 * fbnf;
-          e_fb2 /= sqrt(1 - ang * ang);
         }
+        e_fa2 *= r_;
+        e_fb2 *= r_;
       }
 
       if (corner_rounds[e.first.ind2].size() == 3) {
+        e_fa2 *= createFilletLimit(p2org - p1org, r_);
+        e_fb2 *= createFilletLimit(p2org - p1org, r_);
         if (-(fbn.cross(fan)).dot(e_fa2p) < 0 || -(fbn.cross(fan)).dot(e_fb2p) < 0) {
           if (-(e_fa2p.cross(e_fa2)).dot(fan) * fanf < 0) {
-            e_fa2 = -e_fa2 * fanf + 2 * dir;
+            e_fa2 = -e_fa2 * fanf + 2 * dir * r_;
           }
           if (-(e_fb2p.cross(e_fb2)).dot(fbn) * fbnf > 0) {
-            e_fb2 = -e_fb2 * fbnf + 2 * dir;
+            e_fb2 = -e_fb2 * fbnf + 2 * dir * r_;
           }
         }
         if (/* -(fbn.cross(fan)).dot(e_fa2p) > 0 || */ -(fbn.cross(fan)).dot(e_fb2p) > 0) {
           if (-(e_fb2p.cross(e_fb2)).dot(fbn) * fbnf < 0 && (e_fb2p.cross(e_fa2)).dot(fan) * fanf > 0) {
-            e_fa2 = -e_fa2 * fanf + 2 * dir;  // laengs links
+            e_fa2 = -e_fa2 * fanf + 2 * dir * r_;  // laengs links
           }
           if (-(e_fa2p.cross(e_fa2)).dot(fan) * fanf > 0 && (e_fa2p.cross(e_fb2)).dot(fbn) * fbnf < 0) {
-            e_fb2 = -e_fb2 * fbnf + 2 * dir;
+            e_fb2 = -e_fb2 * fbnf + 2 * dir * r_;
           }
         }
       }
@@ -561,6 +448,14 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
       //     e_fb2[2]);
     }
   }
+  // now dump all sp
+  //  for(int i=0;i<sp.size();i++) {
+  //    printf("Poly %d S: ",sp[i].pol);
+  //    printf("%d ",sp[i].search);
+  //    printf(" R:");
+  //    for(int j=0;j<sp[i].replace.size();j++) printf("%d ",sp[i].replace[j]);
+  //    printf("\n");
+  //  }
   // copy modified faces
   std::vector<IndexedFace> newfaces;
   for (size_t i = 0; i < merged.size(); i++) {
@@ -625,7 +520,7 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   }
   // add missing 3 corner patches
   //
-  for (size_t i = 0; i < vertices_copy.size(); i++) {
+  for (size_t i = 0; i < ps->vertices.size(); i++) {
     if (corner_rounds[i].size() > 3) {
       printf("corner %ld not possible\n", i);
     } else if (corner_rounds[i].size() == 3) {
@@ -634,7 +529,7 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
       Vector3d facenorm[3];
       for (int j = 0; j < 3; j++) {
         face[j] = merged[polinds[i][j]];
-        facenorm[j] = calcTriangleNormal(vertices_copy, face[j]).head<3>();
+        facenorm[j] = calcTriangleNormal(ps->vertices, face[j]).head<3>();
         if (faceParents[polinds[i][j]] != -1) facenorm[j] = -facenorm[j];
       }
 
@@ -649,37 +544,31 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
       std::vector<Vector3d> dir;
       Vector3d x;
       if (faceend[0] == facebeg[1]) {  // 0,1,2
-        x = vertices_copy[faceend[1]] - vertices_copy[i];
-        dir.push_back(x.normalized() * r_);
+        x = ps->vertices[faceend[1]] - ps->vertices[i];
+        dir.push_back(x.normalized() * createFilletLimit(x, r_));
         angle.push_back(
-          (facenorm[1].cross(facenorm[2])).dot(vertices_copy[faceend[1]] - vertices_copy[i]) > 0 ? 1
-                                                                                                 : -1);
-        x = vertices_copy[faceend[2]] - vertices_copy[i];
-        dir.push_back(x.normalized() * r_);
+          (facenorm[1].cross(facenorm[2])).dot(ps->vertices[faceend[1]] - ps->vertices[i]) > 0 ? 1 : -1);
+        x = ps->vertices[faceend[2]] - ps->vertices[i];
+        dir.push_back(x.normalized() * createFilletLimit(x, r_));
         angle.push_back(
-          (facenorm[2].cross(facenorm[0])).dot(vertices_copy[faceend[2]] - vertices_copy[i]) > 0 ? 1
-                                                                                                 : -1);
-        x = vertices_copy[faceend[0]] - vertices_copy[i];
-        dir.push_back(x.normalized() * r_);
+          (facenorm[2].cross(facenorm[0])).dot(ps->vertices[faceend[2]] - ps->vertices[i]) > 0 ? 1 : -1);
+        x = ps->vertices[faceend[0]] - ps->vertices[i];
+        dir.push_back(x.normalized() * createFilletLimit(x, r_));
         angle.push_back(
-          (facenorm[0].cross(facenorm[1])).dot(vertices_copy[faceend[0]] - vertices_copy[i]) > 0 ? 1
-                                                                                                 : -1);
+          (facenorm[0].cross(facenorm[1])).dot(ps->vertices[faceend[0]] - ps->vertices[i]) > 0 ? 1 : -1);
       } else if (faceend[0] == facebeg[2]) {
-        x = vertices_copy[faceend[2]] - vertices_copy[i];
-        dir.push_back(x.normalized() * r_);
+        x = ps->vertices[faceend[2]] - ps->vertices[i];
+        dir.push_back(x.normalized() * createFilletLimit(x, r_));
         angle.push_back(
-          (facenorm[2].cross(facenorm[1])).dot(vertices_copy[faceend[2]] - vertices_copy[i]) > 0 ? 1
-                                                                                                 : -1);
-        x = vertices_copy[faceend[0]] - vertices_copy[i];
-        dir.push_back(x.normalized() * r_);
+          (facenorm[2].cross(facenorm[1])).dot(ps->vertices[faceend[2]] - ps->vertices[i]) > 0 ? 1 : -1);
+        x = ps->vertices[faceend[0]] - ps->vertices[i];
+        dir.push_back(x.normalized() * createFilletLimit(x, r_));
         angle.push_back(
-          (facenorm[0].cross(facenorm[2])).dot(vertices_copy[faceend[0]] - vertices_copy[i]) > 0 ? 1
-                                                                                                 : -1);
-        x = vertices_copy[faceend[1]] - vertices_copy[i];
-        dir.push_back(x.normalized() * r_);
+          (facenorm[0].cross(facenorm[2])).dot(ps->vertices[faceend[0]] - ps->vertices[i]) > 0 ? 1 : -1);
+        x = ps->vertices[faceend[1]] - ps->vertices[i];
+        dir.push_back(x.normalized() * createFilletLimit(x, r_));
         angle.push_back(
-          (facenorm[1].cross(facenorm[0])).dot(vertices_copy[faceend[1]] - vertices_copy[i]) > 0 ? 1
-                                                                                                 : -1);
+          (facenorm[1].cross(facenorm[0])).dot(ps->vertices[faceend[1]] - ps->vertices[i]) > 0 ? 1 : -1);
       } else assert(0);
       int conc1 = -1, conc2 = -1, conc3 = -1;
       int dirshift = -1;

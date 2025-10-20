@@ -56,13 +56,7 @@ public slots:
   void ZoomIn();
   void ZoomOut();
   void setMouseCentricZoom(bool var) { this->mouseCentricZoom = var; }
-  void setMouseActions(int mouseAction, std::array<float, MouseConfig::ACTION_DIMENSION> var)
-  {
-    // Load an array defining the behaviour for a single mouse action.
-    for (int i = 0; i < MouseConfig::ACTION_DIMENSION; i++) {
-      this->mouseActions[MouseConfig::ACTION_DIMENSION * mouseAction + i] = var[i];
-    }
-  }
+  void setMouseSwapButtons(bool var) { this->mouseSwapButtons = var; }
 
 public:
   QLabel *statusLabel;

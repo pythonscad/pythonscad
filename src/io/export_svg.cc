@@ -67,8 +67,7 @@ static void append_svg(const Polygon2d& poly, std::ostream& output, const Export
     }
     output << " z\n";
   }
-  output << "\" stroke=\"" << stroke << "\" fill=\"" << fill << "\" stroke-width=\"" << strokeWidth
-         << "\"/>\n";
+  output << "\" stroke=\"black\" fill=\"lightgray\" stroke-width=\"0.5\"/>\n";
 }
 
 static void append_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
@@ -79,7 +78,7 @@ static void append_svg(const std::shared_ptr<const Geometry>& geom, std::ostream
       append_svg(item.second, output, exportInfo);
     }
   } else if (const auto poly = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
-    append_svg(*poly, output, exportInfo);
+    append_svg(*poly, output);
   } else if (std::dynamic_pointer_cast<const PolySet>(geom)) {  // NOLINT(bugprone-branch-clone)
     assert(false && "Unsupported file format");
   } else {  // NOLINT(bugprone-branch-clone)
@@ -91,6 +90,7 @@ void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
                 const ExportInfo& exportInfo)
 {
   setlocale(LC_NUMERIC, "C");  // Ensure radix is . (not ,) in output
+
   BoundingBox bbox = geom->getBoundingBox();
   const ExportSvgOptions *options;
   const ExportSvgOptions defaultSvgOptions;
@@ -116,7 +116,9 @@ void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
          << miny << " " << width << " " << height
          << "\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n"
          << "<title>OpenSCAD Model</title>\n";
-  append_svg(geom, output, exportInfo);
+
+  append_svg(geom, output);
+
   output << "</svg>\n";
   setlocale(LC_NUMERIC, "");  // Set default locale
 }

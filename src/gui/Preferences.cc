@@ -1362,9 +1362,6 @@ void Preferences::updateGUI()
   BlockSignals<QLineEdit *>(this->consoleMaxLinesEdit)
     ->setText(getValue("advanced/consoleMaxLines").toString());
 
-  updateGUIFontFamily(fontComboBoxApplicationFontFamily, "advanced/applicationFontFamily");
-  updateGUIFontSize(comboBoxApplicationFontSize, "advanced/applicationFontSize");
-
   updateGUIFontFamily(consoleFontChooser, "advanced/consoleFontFamily");
   updateGUIFontSize(consoleFontSize, "advanced/consoleFontSize");
 

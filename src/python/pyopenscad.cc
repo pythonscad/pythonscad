@@ -58,115 +58,127 @@ std::list<std::string> pythonInventory;
 AssignmentList customizer_parameters;
 AssignmentList customizer_parameters_finished;
 bool pythonDryRun = false;
+std::shared_ptr<AbstractNode> python_result_node =
+  nullptr; /* global result veriable containing the python created result */
 PyObject *python_result_obj = nullptr;
 std::vector<SelectedObject> python_result_handle;
+std::vector<std::shared_ptr<AbstractNode>> shows;
 bool python_runipython = false;
 bool pythonMainModuleInitialized = false;
 bool pythonRuntimeInitialized = false;
 
+std::vector<std::string> mapping_name;
+std::vector<std::string> mapping_code;
+std::vector<int> mapping_level;
 std::vector<std::shared_ptr<AbstractNode>> nodes_hold;  // make sure, that these nodes are not yet freed
 std::shared_ptr<AbstractNode> void_node, full_node;
 
-void *libpython_handle=nullptr;
+void *libpython_handle = nullptr;
 
-#define PYTHON_LOAD_FUNC(name, type) \
-	pf.name= (type) dlsym(libpython_handle, #name);\
-	printf("Function %s is %p\n", #name, pf.name);
+#define PYTHON_LOAD_FUNC(name, type)              \
+  pf.name = (type)dlsym(libpython_handle, #name); \
+  printf("Function %s is %p\n", #name, pf.name);
 
 struct PyKernel pf;
 
 void initDynamic(void)
 {
-  if(libpython_handle) return;	
-  libpython_handle = dlopen("/usr/lib/libpython3.13.so", RTLD_LAZY);	
-  printf("handle=%p\n",libpython_handle);
-  if(!libpython_handle) return;
+  if (libpython_handle) return;
+  libpython_handle = dlopen("/usr/lib/libpython3.13.so", RTLD_LAZY);
+  printf("handle=%p\n", libpython_handle);
+  if (!libpython_handle) return;
 
-  PYTHON_LOAD_FUNC(PyConfig_InitPythonConfig, void(*)(PyConfig *config) );
-  PYTHON_LOAD_FUNC(PyPreConfig_InitPythonConfig, void(*)(PyPreConfig *config) );
-  PYTHON_LOAD_FUNC(PyConfig_Clear, void(*)(PyConfig *config) );
-  PYTHON_LOAD_FUNC(PyConfig_Read, PyStatus(*)(PyConfig *config) );
-  PYTHON_LOAD_FUNC(PyConfig_SetBytesArgv, PyStatus(*)(PyConfig *config, Py_ssize_t argc, char * const *argv) );
-  PYTHON_LOAD_FUNC(PyConfig_SetBytesString, PyStatus(*)( PyConfig *config, wchar_t **config_str, const char *str) );
-  PYTHON_LOAD_FUNC(Py_PreInitialize, PyStatus(*)( const PyPreConfig *src_config) );
-  PYTHON_LOAD_FUNC(Py_InitializeFromConfig, PyStatus(*)( const PyConfig *src_config) );
+  PYTHON_LOAD_FUNC(PyConfig_InitPythonConfig, void (*)(PyConfig *config));
+  PYTHON_LOAD_FUNC(PyPreConfig_InitPythonConfig, void (*)(PyPreConfig *config));
+  PYTHON_LOAD_FUNC(PyConfig_Clear, void (*)(PyConfig *config));
+  PYTHON_LOAD_FUNC(PyConfig_Read, PyStatus(*)(PyConfig * config));
+  PYTHON_LOAD_FUNC(PyConfig_SetBytesArgv,
+                   PyStatus(*)(PyConfig * config, Py_ssize_t argc, char *const *argv));
+  PYTHON_LOAD_FUNC(PyConfig_SetBytesString,
+                   PyStatus(*)(PyConfig * config, wchar_t * *config_str, const char *str));
+  PYTHON_LOAD_FUNC(Py_PreInitialize, PyStatus(*)(const PyPreConfig *src_config));
+  PYTHON_LOAD_FUNC(Py_InitializeFromConfig, PyStatus(*)(const PyConfig *src_config));
 
-  PYTHON_LOAD_FUNC(PyType_GenericAlloc, PyObject *(*)(PyTypeObject *, Py_ssize_t) );
-  PYTHON_LOAD_FUNC(_Py_Dealloc, void (*)(PyObject *) );
-  PYTHON_LOAD_FUNC(PyType_Ready, int (*)(PyTypeObject *) );
+  PYTHON_LOAD_FUNC(PyType_GenericAlloc, PyObject * (*)(PyTypeObject *, Py_ssize_t));
+  PYTHON_LOAD_FUNC(_Py_Dealloc, void (*)(PyObject *));
+  PYTHON_LOAD_FUNC(PyType_Ready, int (*)(PyTypeObject *));
 
-  PYTHON_LOAD_FUNC(PyEval_RestoreThread, void (*)(PyThreadState*) );
-  PYTHON_LOAD_FUNC(PyEval_SaveThread, PyThreadState *(*)(void) );
+  PYTHON_LOAD_FUNC(PyEval_RestoreThread, void (*)(PyThreadState *));
+  PYTHON_LOAD_FUNC(PyEval_SaveThread, PyThreadState * (*)(void));
 
-  PYTHON_LOAD_FUNC(PyModule_GetDict, PyObject *(*)(PyObject *) );
-  PYTHON_LOAD_FUNC(PyBytes_AsString, const char *(*)(PyObject *) );
+  PYTHON_LOAD_FUNC(PyModule_GetDict, PyObject * (*)(PyObject *));
+  PYTHON_LOAD_FUNC(PyBytes_AsString, const char *(*)(PyObject *));
 
-  PYTHON_LOAD_FUNC(PyImport_AddModule, PyObject *(*)(const char *) );
-  PYTHON_LOAD_FUNC(PyImport_ImportModule, PyObject *(*)(const char *) );
-  PYTHON_LOAD_FUNC(PyModule_Create2, PyObject *(*)(PyModuleDef *, int apiver) );
+  PYTHON_LOAD_FUNC(PyImport_AddModule, PyObject * (*)(const char *));
+  PYTHON_LOAD_FUNC(PyImport_ImportModule, PyObject * (*)(const char *));
+  PYTHON_LOAD_FUNC(PyModule_Create2, PyObject * (*)(PyModuleDef *, int apiver));
 
-  PYTHON_LOAD_FUNC(PyArg_ParseTupleAndKeywords, int (*)(PyObject *, PyObject *, const char *, char **, ...) );
-  PYTHON_LOAD_FUNC(PyErr_SetString, void (*)(PyObject *exception, const char *string) );
+  PYTHON_LOAD_FUNC(PyArg_ParseTupleAndKeywords,
+                   int (*)(PyObject *, PyObject *, const char *, char **, ...));
+  PYTHON_LOAD_FUNC(PyErr_SetString, void (*)(PyObject *exception, const char *string));
 
-  PYTHON_LOAD_FUNC(PyRun_AnyFileExFlags, int (*)(FILE *fp, const char *filename,        int closeit, PyCompilerFlags *flags) );
-  PYTHON_LOAD_FUNC(PyRun_SimpleStringFlags, int (*)(const char *filename, PyCompilerFlags *flags) );
-  PYTHON_LOAD_FUNC(PyRun_StringFlags, PyObject *(*)(const char *, int, PyObject *, PyObject *, PyCompilerFlags *) );
-  PYTHON_LOAD_FUNC(PyObject_CallObject, PyObject *(*)(PyObject *func, PyObject *args) );
+  PYTHON_LOAD_FUNC(PyRun_AnyFileExFlags,
+                   int (*)(FILE *fp, const char *filename, int closeit, PyCompilerFlags *flags));
+  PYTHON_LOAD_FUNC(PyRun_SimpleStringFlags, int (*)(const char *filename, PyCompilerFlags *flags));
+  PYTHON_LOAD_FUNC(PyRun_StringFlags,
+                   PyObject * (*)(const char *, int, PyObject *, PyObject *, PyCompilerFlags *));
+  PYTHON_LOAD_FUNC(PyObject_CallObject, PyObject * (*)(PyObject * func, PyObject * args));
 
-  PYTHON_LOAD_FUNC(PyList_GetItem, PyObject *(*)(PyObject *, Py_ssize_t) );
-  PYTHON_LOAD_FUNC(PyList_SetItem, void (*)(PyObject *, Py_ssize_t ,PyObject *) );
-  PYTHON_LOAD_FUNC(PyList_New, PyObject *(*)(Py_ssize_t) );
-  PYTHON_LOAD_FUNC(PyList_Size, Py_ssize_t (*)(PyObject *) );
+  PYTHON_LOAD_FUNC(PyList_GetItem, PyObject * (*)(PyObject *, Py_ssize_t));
+  PYTHON_LOAD_FUNC(PyList_SetItem, void (*)(PyObject *, Py_ssize_t, PyObject *));
+  PYTHON_LOAD_FUNC(PyList_New, PyObject * (*)(Py_ssize_t));
+  PYTHON_LOAD_FUNC(PyList_Size, Py_ssize_t(*)(PyObject *));
 
-  PYTHON_LOAD_FUNC(PyDict_New, PyObject *(*)(void) );
-  PYTHON_LOAD_FUNC(PyDict_SetItem, PyObject *(*)(PyObject *, PyObject *, PyObject *) );
-  PYTHON_LOAD_FUNC(PyDict_SetItemString, PyObject *(*)(PyObject *, const char *, PyObject *) );
-  PYTHON_LOAD_FUNC(PyDict_GetItem, PyObject *(*)(PyObject *, PyObject *) );
-  PYTHON_LOAD_FUNC(PyDict_GetItemString, PyObject *(*)(PyObject *, const char *) );
-  PYTHON_LOAD_FUNC(PyDict_DelItem, void (*)(PyObject *, PyObject *) );
-  PYTHON_LOAD_FUNC(PyDict_DelItemString, void (*)(PyObject *, const char *) );
-  PYTHON_LOAD_FUNC(PyDict_Next, PyObject *(*)(PyObject *,Py_ssize_t *, PyObject **, PyObject ** ) );
+  PYTHON_LOAD_FUNC(PyDict_New, PyObject * (*)(void));
+  PYTHON_LOAD_FUNC(PyDict_SetItem, PyObject * (*)(PyObject *, PyObject *, PyObject *));
+  PYTHON_LOAD_FUNC(PyDict_SetItemString, PyObject * (*)(PyObject *, const char *, PyObject *));
+  PYTHON_LOAD_FUNC(PyDict_GetItem, PyObject * (*)(PyObject *, PyObject *));
+  PYTHON_LOAD_FUNC(PyDict_GetItemString, PyObject * (*)(PyObject *, const char *));
+  PYTHON_LOAD_FUNC(PyDict_DelItem, void (*)(PyObject *, PyObject *));
+  PYTHON_LOAD_FUNC(PyDict_DelItemString, void (*)(PyObject *, const char *));
+  PYTHON_LOAD_FUNC(PyDict_Next, PyObject * (*)(PyObject *, Py_ssize_t *, PyObject **, PyObject **));
 
-  PYTHON_LOAD_FUNC(PyTuple_New, PyObject *(*)(Py_ssize_t size) );
-  PYTHON_LOAD_FUNC(PyTuple_Pack, PyObject *(*)(Py_ssize_t, ...) );
-  PYTHON_LOAD_FUNC(PyTuple_Size, Py_ssize_t (*)(PyObject *) );
-  PYTHON_LOAD_FUNC(PyTuple_GetItem, PyObject *(*)(PyObject *,Py_ssize_t ) );
-  PYTHON_LOAD_FUNC(PyTuple_SetItem, void (*)(PyObject *, Py_ssize_t ,PyObject *) );
+  PYTHON_LOAD_FUNC(PyTuple_New, PyObject * (*)(Py_ssize_t size));
+  PYTHON_LOAD_FUNC(PyTuple_Pack, PyObject * (*)(Py_ssize_t, ...));
+  PYTHON_LOAD_FUNC(PyTuple_Size, Py_ssize_t(*)(PyObject *));
+  PYTHON_LOAD_FUNC(PyTuple_GetItem, PyObject * (*)(PyObject *, Py_ssize_t));
+  PYTHON_LOAD_FUNC(PyTuple_SetItem, void (*)(PyObject *, Py_ssize_t, PyObject *));
 
-  PYTHON_LOAD_FUNC(PyFloat_FromDouble, PyObject *(*)(double) );
-  PYTHON_LOAD_FUNC(PyFloat_AsDouble, double(*)(PyObject *) );
-  PYTHON_LOAD_FUNC(PyLong_AsLong, long(*)(PyObject *) );
-  PYTHON_LOAD_FUNC(PyLong_FromLong, PyObject *(*)(long) );
+  PYTHON_LOAD_FUNC(PyFloat_FromDouble, PyObject * (*)(double));
+  PYTHON_LOAD_FUNC(PyFloat_AsDouble, double (*)(PyObject *));
+  PYTHON_LOAD_FUNC(PyLong_AsLong, long (*)(PyObject *));
+  PYTHON_LOAD_FUNC(PyLong_FromLong, PyObject * (*)(long));
 
-  PYTHON_LOAD_FUNC(PyUnicode_AsEncodedString, PyObject *(*)(PyObject *,const char *enc, const char *errors) );
-  PYTHON_LOAD_FUNC(PyUnicode_FromString, PyObject *(*)(const char *u) );
-  PYTHON_LOAD_FUNC(PyUnicode_FromStringAndSize, PyObject *(*)(const char *u, Py_ssize_t size) );
-  PYTHON_LOAD_FUNC(PyUnicode_AsUTF8, const char *(*)(PyObject *) );
+  PYTHON_LOAD_FUNC(PyUnicode_AsEncodedString,
+                   PyObject * (*)(PyObject *, const char *enc, const char *errors));
+  PYTHON_LOAD_FUNC(PyUnicode_FromString, PyObject * (*)(const char *u));
+  PYTHON_LOAD_FUNC(PyUnicode_FromStringAndSize, PyObject * (*)(const char *u, Py_ssize_t size));
+  PYTHON_LOAD_FUNC(PyUnicode_AsUTF8, const char *(*)(PyObject *));
 
-  PYTHON_LOAD_FUNC(PyErr_Fetch, void (*)(PyObject **, PyObject **, PyObject **) );
-  PYTHON_LOAD_FUNC(PyType_IsSubtype, int (*)(PyTypeObject *, PyTypeObject *) );
+  PYTHON_LOAD_FUNC(PyErr_Fetch, void (*)(PyObject **, PyObject **, PyObject **));
+  PYTHON_LOAD_FUNC(PyType_IsSubtype, int (*)(PyTypeObject *, PyTypeObject *));
 
-  PYTHON_LOAD_FUNC(Py_ExitStatusException, void (*)(PyStatus err) );
-  PYTHON_LOAD_FUNC(PyStatus_Exception, int (*)(PyStatus err) );
-  PYTHON_LOAD_FUNC(PyStatus_IsExit, int (*)(PyStatus err) );
-  PYTHON_LOAD_FUNC(PyWideStringList_Append, PyStatus (*)(PyWideStringList *list, const wchar_t *item) );
+  PYTHON_LOAD_FUNC(Py_ExitStatusException, void (*)(PyStatus err));
+  PYTHON_LOAD_FUNC(PyStatus_Exception, int (*)(PyStatus err));
+  PYTHON_LOAD_FUNC(PyStatus_IsExit, int (*)(PyStatus err));
+  PYTHON_LOAD_FUNC(PyWideStringList_Append, PyStatus(*)(PyWideStringList * list, const wchar_t *item));
 
-  PYTHON_LOAD_FUNC(PyModule_AddObject, int (*)(PyObject *mod, const char *, PyObject *value) );
+  PYTHON_LOAD_FUNC(PyModule_AddObject, int (*)(PyObject *mod, const char *, PyObject *value));
 
-  PYTHON_LOAD_FUNC(PyCallable_Check, int (*)(PyObject *) );
-  PYTHON_LOAD_FUNC(PyErr_Clear, void (*)(void) );
-  PYTHON_LOAD_FUNC(PyErr_NormalizeException, void (*)(PyObject**, PyObject**, PyObject**) );
-  PYTHON_LOAD_FUNC(PyErr_Print, void (*)(void) );
-  PYTHON_LOAD_FUNC(PyImport_AppendInittab, int (*)(const char *name, PyObject* (*initfunc)(void)) );
-  PYTHON_LOAD_FUNC(PyObject_CallNoArgs, PyObject *(*)(PyObject *func) );
-  PYTHON_LOAD_FUNC(PyObject_GenericGetAttr, PyObject *(*)(PyObject *, PyObject *) );
-  PYTHON_LOAD_FUNC(PyObject_GetAttr, PyObject *(*)(PyObject *, PyObject *) );
-  PYTHON_LOAD_FUNC(PyObject_GetAttrString, PyObject *(*)(PyObject *, const char *) );
-  PYTHON_LOAD_FUNC(PyObject_HasAttr, int (*)(PyObject *, PyObject *) );
-  PYTHON_LOAD_FUNC(PyObject_HasAttrString, int (*)(PyObject *, const char *) );
-  PYTHON_LOAD_FUNC(PyObject_Repr, PyObject *(*)(PyObject *) );
-  PYTHON_LOAD_FUNC(PySys_Audit, int (*)(const char *event, const char *format, ...) );
-  PYTHON_LOAD_FUNC(PySys_WriteStdout, void (*)(const char *format, ...) );
+  PYTHON_LOAD_FUNC(PyCallable_Check, int (*)(PyObject *));
+  PYTHON_LOAD_FUNC(PyErr_Clear, void (*)(void));
+  PYTHON_LOAD_FUNC(PyErr_NormalizeException, void (*)(PyObject **, PyObject **, PyObject **));
+  PYTHON_LOAD_FUNC(PyErr_Print, void (*)(void));
+  PYTHON_LOAD_FUNC(PyImport_AppendInittab, int (*)(const char *name, PyObject *(*initfunc)(void)));
+  PYTHON_LOAD_FUNC(PyObject_CallNoArgs, PyObject * (*)(PyObject * func));
+  PYTHON_LOAD_FUNC(PyObject_GenericGetAttr, PyObject * (*)(PyObject *, PyObject *));
+  PYTHON_LOAD_FUNC(PyObject_GetAttr, PyObject * (*)(PyObject *, PyObject *));
+  PYTHON_LOAD_FUNC(PyObject_GetAttrString, PyObject * (*)(PyObject *, const char *));
+  PYTHON_LOAD_FUNC(PyObject_HasAttr, int (*)(PyObject *, PyObject *));
+  PYTHON_LOAD_FUNC(PyObject_HasAttrString, int (*)(PyObject *, const char *));
+  PYTHON_LOAD_FUNC(PyObject_Repr, PyObject * (*)(PyObject *));
+  PYTHON_LOAD_FUNC(PySys_Audit, int (*)(const char *event, const char *format, ...));
+  PYTHON_LOAD_FUNC(PySys_WriteStdout, void (*)(const char *format, ...));
 
   PYTHON_LOAD_FUNC(_Py_TrueStruct, PyObject *);
   PYTHON_LOAD_FUNC(_Py_FalseStruct, PyObject *);
@@ -184,7 +196,7 @@ void initDynamic(void)
 
 void finishDynamic(void)
 {
-  if(!libpython_handle) return;	
+  if (!libpython_handle) return;
   dlclose(libpython_handle);
   libpython_handle = nullptr;
 }
@@ -199,14 +211,13 @@ PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
 {
   PyObject *self = pf.PyType_GenericAlloc(cls, nitems);
   ((PyOpenSCADObject *)self)->dict = pf.PyDict_New();
-  PyObject *origin=pf.PyList_New(4);
-  for(int i=0;i<4;i++) {
-  	PyObject *row=pf.PyList_New(4);
-	for(int j=0;j<4;j++)
-		pf.PyList_SetItem(row,j,pf.PyFloat_FromDouble(i==j?1.0:0.0));
-	pf.PyList_SetItem(origin,i,row);
+  PyObject *origin = pf.PyList_New(4);
+  for (int i = 0; i < 4; i++) {
+    PyObject *row = pf.PyList_New(4);
+    for (int j = 0; j < 4; j++) pf.PyList_SetItem(row, j, pf.PyFloat_FromDouble(i == j ? 1.0 : 0.0));
+    pf.PyList_SetItem(origin, i, row);
   }
-  pf.PyDict_SetItemString(((PyOpenSCADObject *)self)->dict,"origin",origin);
+  pf.PyDict_SetItemString(((PyOpenSCADObject *)self)->dict, "origin", origin);
   Py_XDECREF_(origin);
   return self;
 }
@@ -228,9 +239,9 @@ static PyObject *PyOpenSCADObject_new(PyTypeObject *type, PyObject *args, PyObje
 PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<AbstractNode>& node)
 {
   PyOpenSCADObject *self;
-  self = (PyOpenSCADObject *)type->tp_new(type, nullptr, nullptr);
+  self = (PyOpenSCADObject *)type->tp_alloc(type, 0);
   if (self != nullptr) {
-    Py_XINCREF_((PyObject *) self);
+    Py_XINCREF_((PyObject *)self);
     self->node = node;
     return (PyObject *)self;
   }
@@ -288,7 +299,7 @@ int python_more_obj(std::vector<std::shared_ptr<AbstractNode>>& children, PyObje
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNode(PyObject *obj, PyObject **dict)
 {
   std::shared_ptr<AbstractNode> result = ((PyOpenSCADObject *)obj)->node;
-  if (result.use_count() > 2 && result != void_node && result != full_node) {
+  if (result.use_count() > 2) {
     result = result->clone();
   }
   *dict = ((PyOpenSCADObject *)obj)->dict;
@@ -329,9 +340,9 @@ PyTypeObject *PyOpenSCADObjectType(PyObject *objs)
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs, PyObject **dict)
 {
   std::shared_ptr<AbstractNode> result = nullptr;
-  if (PyObject_IsInstance(objs, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
+  if (Py_TYPE(objs) == &PyOpenSCADType) {
     result = ((PyOpenSCADObject *)objs)->node;
-    if (result.use_count() > 2 && result != void_node && result != full_node) {
+    if (result.use_count() > 2) {
       result = result->clone();
     }
     *dict =  ((PyOpenSCADObject *) objs)->dict;
@@ -402,17 +413,16 @@ void python_build_hashmap(const std::shared_ptr<AbstractNode>& node, int level)
 
 void python_retrieve_pyname(const std::shared_ptr<AbstractNode>& node)
 {
-  /*
   std::string name;
-  int level=-1;
+  int level = -1;
   std::ostringstream stream;
   python_hierdump(stream, node);
   std::string my_code = stream.str();
-  for(unsigned int i=0;i<mapping_code.size();i++) {
-    if(mapping_code[i] == my_code) {
-      if(level == -1 || level > mapping_level[i]) {
-        name=mapping_name[i];
-        level=mapping_level[i];
+  for (unsigned int i = 0; i < mapping_code.size(); i++) {
+    if (mapping_code[i] == my_code) {
+      if (level == -1 || level > mapping_level[i]) {
+        name = mapping_name[i];
+        level = mapping_level[i];
       }
     }
   }
@@ -449,7 +459,7 @@ int python_numberval(PyObject *number, double *result, int *flags, int flagor)
     return 0;
   }
   if (PyUnicode_CHECK(number) && flags != nullptr) {
-    PyObjectUniquePtr str( pf.PyUnicode_AsEncodedString(number, "utf-8", "~"), PyObjectDeleter);
+    PyObjectUniquePtr str(pf.PyUnicode_AsEncodedString(number, "utf-8", "~"), PyObjectDeleter);
     const char *str1 = pf.PyBytes_AsString(str.get());
     sscanf(str1,"%lf",result);
     if(flags != nullptr) *flags |= flagor;
@@ -465,10 +475,10 @@ std::vector<int> python_intlistval(PyObject *list)
   if( PyLong_CHECK(list)) {
     result.push_back(pf.PyLong_AsLong(list));
   }
-  if( PyList_CHECK(list)) {
-    for(int i=0;i<pf.PyList_Size(list); i++) {
-      item = pf.PyList_GetItem(list, i);	    
-      if( PyLong_CHECK(item)) {
+  if (PyList_CHECK(list)) {
+    for (int i = 0; i < pf.PyList_Size(list); i++) {
+      item = pf.PyList_GetItem(list, i);
+      if (PyLong_CHECK(item)) {
         result.push_back(pf.PyLong_AsLong(item));
       }
     }
@@ -484,8 +494,8 @@ int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y
 {
   if(flags != nullptr) *flags = 0;
   if (PyList_CHECK(vec)) {
-    if(pf.PyList_Size(vec) < minval || pf.PyList_Size(vec) > maxval) return 1;
-    	  
+    if (pf.PyList_Size(vec) < minval || pf.PyList_Size(vec) > maxval) return 1;
+
     if (pf.PyList_Size(vec) >= 1) {
       if (python_numberval(pf.PyList_GetItem(vec, 0), x, flags, 1)) return 1;
     }
@@ -736,7 +746,7 @@ PyObject *python_callfunction(const std::shared_ptr<const Context>& cxt, const s
 
     while (pf.PyDict_Next(maindict, &pos, &key, &value)) {
       PyObject *module = pf.PyObject_GetAttrString(pythonMainModule.get(), pf.PyUnicode_AsUTF8(key));
-      if(module != nullptr){
+      if (module != nullptr) {
         PyObject *moduledict = pf.PyModule_GetDict(module);
         Py_XDECREF_(module);
         if(moduledict != nullptr) {
@@ -889,11 +899,11 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
 {
   static bool alreadyTried = false;
   if (alreadyTried) return;
-  const auto name = PYTHON_EXECUTABLE_NAME;
+  const auto name = "openscad-python";
   const auto exe = binDir + "/" + name;
   initDynamic();
-  if(scriptpath.size() > 0) python_scriptpath = scriptpath;	
-  if(pythonInitDict) { /* If already initialized, undo to reinitialize after */
+  if (scriptpath.size() > 0) python_scriptpath = scriptpath;
+  if (pythonInitDict) { /* If already initialized, undo to reinitialize after */
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     PyObject *maindict = pf.PyModule_GetDict(pythonMainModule.get());
@@ -999,7 +1009,7 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
     stream << sep << scriptfile.parent_path().string();
     stream << sepchar << ".";
     pf.PyConfig_SetBytesString(&config, &config.pythonpath_env, stream.str().c_str());
-    
+
     pf.PyConfig_SetBytesString(&config, &config.program_name, name);
     pf.PyConfig_SetBytesString(&config, &config.executable, exe.c_str());
 
@@ -1016,7 +1026,8 @@ void initPython(const std::string& binDir, const std::string &scriptpath, double
     pythonInitDict.reset(pf.PyModule_GetDict(pythonMainModule.get()));
     pythonRuntimeInitialized = pythonInitDict != nullptr;
     PyInit_PyData();
-    pf.PyRun_String("from builtins import *\n", Py_file_input, pythonInitDict.get(), pythonInitDict.get());
+    pf.PyRun_String("from builtins import *\n", Py_file_input, pythonInitDict.get(),
+                    pythonInitDict.get());
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     PyObject *maindict = pf.PyModule_GetDict(pythonMainModule.get());
@@ -1179,103 +1190,44 @@ int python__setattro__(PyObject *dict, PyObject *key, PyObject *v)
   return python__setitem__(dict, key, v);
 }
 
-typedef struct {
-  PyObject_HEAD PyObject *container;  // Referenz auf das Original-Objekt
-  Py_ssize_t index;                   // Aktueller Index
-} PyOpenSCADObjectIter;
-
-extern PyTypeObject PyOpenSCADObjectIterType;
-
-PyObject *PyOpenSCADType_iter(PyObject *self)
-{
-  PyOpenSCADObjectIter *iter =
-    (PyOpenSCADObjectIter *)PyObject_New(PyOpenSCADObjectIter, &PyOpenSCADObjectIterType);
-  if (iter == NULL) {
-    return NULL;
-  }
-  Py_INCREF(iter);
-
-  Py_INCREF(self);
-  iter->container = self;
-  iter->index = 0;
-
-  return (PyObject *)iter;
-}
-
-PyObject *PyOpenSCADType_next(PyObject *self)
-{
-  PyOpenSCADObjectIter *iter = (PyOpenSCADObjectIter *)self;
-  PyOpenSCADObject *container = (PyOpenSCADObject *)iter->container;
-
-  // Prüfe ob noch Elemente vorhanden
-  Py_ssize_t size = container->node->children.size();
-  if (iter->index >= size) {
-    PyErr_SetNone(PyExc_StopIteration);
-    return NULL;
-  }
-
-  // Nächstes Element holen
-  auto node = container->node->children[iter->index];
-  iter->index++;
-  return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
-}
-
-// Iterator dealloc
-void PyOpenSCADObjectIter_dealloc(PyOpenSCADObjectIter *self)
-{
-  PyOpenSCADObjectIter *iter = (PyOpenSCADObjectIter *)self;
-  Py_XDECREF(iter->container);
-  PyObject_Del(self);
-}
-
-// Iterator Type Definition
-PyTypeObject PyOpenSCADObjectIterType = {
-  PyVarObject_HEAD_INIT(NULL, 0).tp_name = "PyOpenSCADType.Iterator",
-  .tp_basicsize = sizeof(PyOpenSCADObjectIter),
-  .tp_dealloc = (destructor)PyOpenSCADObjectIter_dealloc,
-  .tp_flags = Py_TPFLAGS_DEFAULT,
-  .tp_iter = PyOpenSCADType_iter,
-  .tp_iternext = PyOpenSCADType_next,  // <-- __next__ Implementierung
-};
-
 PyTypeObject PyOpenSCADType = {
-  PyVarObject_HEAD_INIT(nullptr, 0) "openscad.PyOpenSCAD", /* tp_name */
-  sizeof(PyOpenSCADObject),                                /* tp_basicsize */
-  0,                                                       /* tp_itemsize */
-  (destructor)PyOpenSCADObject_dealloc,                    /* tp_dealloc */
-  0,                                                       /* vectorcall_offset */
-  0,                                                       /* tp_getattr */
-  0,                                                       /* tp_setattr */
-  0,                                                       /* tp_as_async */
-  python_str,                                              /* tp_repr */
-  &PyOpenSCADNumbers,                                      /* tp_as_number */
-  0,                                                       /* tp_as_sequence */
-  &PyOpenSCADMapping,                                      /* tp_as_mapping */
-  0,                                                       /* tp_hash  */
-  0,                                                       /* tp_call */
-  python_str,                                              /* tp_str */
-  python__getattro__,                                      /* tp_getattro */
-  python__setattro__,                                      /* tp_setattro */
-  0,                                                       /* tp_as_buffer */
-  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,                /* tp_flags */
-  "PyOpenSCAD Object",                                     /* tp_doc */
-  0,                                                       /* tp_traverse */
-  0,                                                       /* tp_clear */
-  0,                                                       /* tp_richcompare */
-  0,                                                       /* tp_weaklistoffset */
-  PyOpenSCADType_iter,                                     /* tp_iter */
-  0,                                                       /* tp_iternext */
-  PyOpenSCADMethods,                                       /* tp_methods */
-  0,                                                       /* tp_members */
-  0,                                                       /* tp_getset */
-  0,                                                       /* tp_base */
-  0,                                                       /* tp_dict */
-  0,                                                       /* tp_descr_get */
-  0,                                                       /* tp_descr_set */
-  0,                                                       /* tp_dictoffset */
-  (initproc)PyOpenSCADInit,                                /* tp_init */
-  PyOpenSCADObject_alloc,                                  /* tp_alloc */
-  PyOpenSCADObject_new,                                    /* tp_new */
+  PyVarObject_HEAD_INIT(nullptr, 0) "PyOpenSCAD", /* tp_name */
+  sizeof(PyOpenSCADObject),                       /* tp_basicsize */
+  0,                                              /* tp_itemsize */
+  (destructor)PyOpenSCADObject_dealloc,           /* tp_dealloc */
+  0,                                              /* vectorcall_offset */
+  0,                                              /* tp_getattr */
+  0,                                              /* tp_setattr */
+  0,                                              /* tp_as_async */
+  python_str,                                     /* tp_repr */
+  &PyOpenSCADNumbers,                             /* tp_as_number */
+  0,                                              /* tp_as_sequence */
+  &PyOpenSCADMapping,                             /* tp_as_mapping */
+  0,                                              /* tp_hash  */
+  0,                                              /* tp_call */
+  python_str,                                     /* tp_str */
+  python__getattro__,                             /* tp_getattro */
+  python__setattro__,                             /* tp_setattro */
+  0,                                              /* tp_as_buffer */
+  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,       /* tp_flags */
+  "PyOpenSCAD Object",                            /* tp_doc */
+  0,                                              /* tp_traverse */
+  0,                                              /* tp_clear */
+  0,                                              /* tp_richcompare */
+  0,                                              /* tp_weaklistoffset */
+  0,                                              /* tp_iter */
+  0,                                              /* tp_iternext */
+  PyOpenSCADMethods,                              /* tp_methods */
+  0,                                              /* tp_members */
+  0,                                              /* tp_getset */
+  0,                                              /* tp_base */
+  0,                                              /* tp_dict */
+  0,                                              /* tp_descr_get */
+  0,                                              /* tp_descr_set */
+  0,                                              /* tp_dictoffset */
+  (initproc)PyOpenSCADInit,                       /* tp_init */
+  PyOpenSCADObject_alloc,                         /* tp_alloc */
+  PyOpenSCADObject_new,                           /* tp_new */
 };
 
 static PyModuleDef OpenSCADModule = {PyModuleDef_HEAD_INIT,
@@ -1353,7 +1305,7 @@ pymain_init(void)
 
 /* Write an exitcode into *exitcode and return 1 if we have to exit Python.
    Return 0 otherwise. */
-static int pymain_run_interactive_hook_ipython(int *exitcode)
+static int pymain_run_interactive_hook(int *exitcode)
 {
     PyObject *sys, *hook, *result;
     sys = pf.PyImport_ImportModule("sys");
@@ -1377,15 +1329,23 @@ static int pymain_run_interactive_hook_ipython(int *exitcode)
         goto error;
     }
 
-  if (PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {
+  hook = pf.PyObject_GetAttrString(sys, "__interactivehook__");
+  Py_XDECREF_(sys);
+  if (hook == NULL) {
+    pf.PyErr_Clear();
+    return 0;
+  }
+
+
+  if (pf.PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {
     goto error;
   }
-  result = PyObject_CallNoArgs(hook);
-  Py_DECREF(hook);
+  result = pf.PyObject_CallNoArgs(hook);
+  Py_XDECREF_(hook);
   if (result == NULL) {
     goto error;
   }
-  Py_DECREF(result);
+  Py_XDECREF_(result);
   return 0;
 
 error:
@@ -1394,9 +1354,9 @@ error:
     return 0;
 }
 
-static void pymain_repl_ipython(int *exitcode)
+static void pymain_repl(int *exitcode)
 {
-  if (pymain_run_interactive_hook_ipython(exitcode)) {
+  if (pymain_run_interactive_hook(exitcode)) {
     return;
   }
   PyCompilerFlags cf = _PyCompilerFlags_INIT;
@@ -1404,12 +1364,12 @@ static void pymain_repl_ipython(int *exitcode)
     pf.PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
 }
 
-static void pymain_run_python_ipython(int *exitcode)
+static void pymain_run_python(int *exitcode)
 {
   PyObject *main_importer_path = NULL;
   //    PyInterpreterState *interp = PyInterpreterState_Get();
 
-  pymain_repl_ipython(exitcode);
+  pymain_repl(exitcode);
   goto done;
 
   //    *exitcode = pymain_exit_err_print();
@@ -1419,11 +1379,11 @@ done:
     Py_XDECREF_(main_importer_path);
 }
 
-int Py_RunMain_ipython(void)
+int Py_RunMain(void)
 {
   int exitcode = 0;
 
-  pymain_run_python_ipython(&exitcode);
+  pymain_run_python(&exitcode);
 
   if (Py_FinalizeEx() < 0) {
     exitcode = 120;
@@ -1441,7 +1401,7 @@ int Py_RunMain_ipython(void)
 void ipython(void)
 {
   initPython(PlatformUtils::applicationPath(), "", 0.0);
-  Py_RunMain_ipython();
+  Py_RunMain();
   return;
 }
 // -------------------------

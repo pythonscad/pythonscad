@@ -66,18 +66,18 @@ double points_to_mm(double pts) { return pts / PTS_IN_MM; }
 
 void draw_grid(cairo_t *cr, double left, double right, double bottom, double top, double gridSize)
 {
-  if (gridSize < 1.) gridSize = 2.0;
+  if (gridSize < 1.) gridSize = 2.;
   const double darkerLine = 0.36;
   const double lightLine = 0.24;
-  const int major = (gridSize > 10.0 ? gridSize : int(10.0 / gridSize));
+  const int major = (gridSize > 10. ? gridSize : int(10. / gridSize));
 
-  double pts = 0.0;  // for iteration across page
+  double pts = 0.;  // for iteration across page
 
-  // Bounds are margins in points.
-  // Compute Xrange in units of gridSize
+  // bounds are margins in points.
+  // compute Xrange in units of gridSize
   const int Xstart = ceil(points_to_mm(left) / gridSize);
   const int Xstop = floor(points_to_mm(right) / gridSize);
-  // Draw Horizontal lines
+  // draw Horizontal lines
   for (int i = Xstart; i < Xstop + 1; i++) {
     if (i % major) {
       cairo_set_line_width(cr, lightLine);
@@ -90,11 +90,11 @@ void draw_grid(cairo_t *cr, double left, double right, double bottom, double top
     cairo_move_to(cr, pts, top);
     cairo_line_to(cr, pts, bottom);
     cairo_stroke(cr);
-  }
-  // Compute Yrange in units of gridSize
+  };
+  // compute Yrange in units of gridSize
   const int Ystart = ceil(points_to_mm(top) / gridSize);
   const int Ystop = floor(points_to_mm(bottom) / gridSize);
-  // Draw vertical lines
+  // draw vertical lines
   for (int i = Ystart; i < Ystop + 1; i++) {
     if (i % major) {
       cairo_set_line_width(cr, lightLine);
@@ -107,7 +107,7 @@ void draw_grid(cairo_t *cr, double left, double right, double bottom, double top
     cairo_move_to(cr, left, pts);
     cairo_line_to(cr, right, pts);
     cairo_stroke(cr);
-  }
+  };
 }
 
 // New draw_axes (renamed from axis since it draws both).
@@ -133,10 +133,10 @@ void draw_axes(cairo_t *cr, double left, double right, double bottom, double top
   // tics and labels
   // bounds are margins in points.
   // compute Xrange in 10mm
-  const int Xstart = ceil(points_to_mm(left) / 10.0);
-  const int Xstop = floor(points_to_mm(right) / 10.0);
+  int Xstart = ceil(points_to_mm(left) / 10.);
+  int Xstop = floor(points_to_mm(right) / 10.);
   for (int i = Xstart; i < Xstop + 1; i++) {
-    pts = mm_to_points(i * 10.0);
+    pts = mm_to_points(i * 10.);
     cairo_move_to(cr, pts, bottom);
     cairo_line_to(cr, pts, bottom + offset);
     cairo_stroke(cr);
@@ -146,10 +146,10 @@ void draw_axes(cairo_t *cr, double left, double right, double bottom, double top
     }
   }
   // compute Yrange in 10mm
-  const int Ystart = ceil(points_to_mm(top) / 10.0);
-  const int Ystop = floor(points_to_mm(bottom) / 10.0);
+  int Ystart = ceil(points_to_mm(top) / 10.);
+  int Ystop = floor(points_to_mm(bottom) / 10.);
   for (int i = Ystart; i < Ystop + 1; i++) {
-    pts = mm_to_points(i * 10.0);
+    pts = mm_to_points(i * 10.);
     cairo_move_to(cr, left, pts);
     cairo_line_to(cr, left - offset, pts);
     cairo_stroke(cr);
@@ -157,7 +157,7 @@ void draw_axes(cairo_t *cr, double left, double right, double bottom, double top
       const std::string num = std::to_string(-i * 10);
       draw_text(num.c_str(), cr, left - offset, pts - 3, 6., 0.);
     }
-  }
+  };
 }
 
 // Draws a single 2D polygon.
@@ -170,9 +170,14 @@ void draw_geom(const Polygon2d& poly, cairo_t *cr, double tcX, double tcY)
     const Eigen::Vector2d& p0 = o.vertices[0];
     // Move to the first vertice.  Note Y is inverted in Cairo.
     cairo_move_to(cr, mm_to_points(p0.x()), mm_to_points(-p0.y()));
+    // LOG(message_group::Export_Warning, "DRAW VERTICE %1$8.4f %2$8.4f",
+    // mm_to_points(p0.x()),mm_to_points(p0.y())); iterate across the remaining vertices, drawing a line
+    // to each.
     for (unsigned int idx = 1; idx < o.vertices.size(); idx++) {
       const Eigen::Vector2d& p = o.vertices[idx];
       cairo_line_to(cr, mm_to_points(p.x()), mm_to_points(-p.y()));
+      // LOG(message_group::Export_Warning, "DRAW VERTICE %1$8.4f %2$8.4f",
+      // mm_to_points(p.x()),mm_to_points(p.y()));
     }
     // Draw a line from the last vertice to the first vertice.
     cairo_line_to(cr, mm_to_points(p0.x()), mm_to_points(-p0.y()));
@@ -294,14 +299,13 @@ void export_pdf(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
   const int maxy = (int)floor(bbox.max().y());
   const int maxx = (int)ceil(bbox.max().x());
   const int miny = (int)ceil(bbox.min().y());
-
-  // Compute page attributes in points.
+  // compute page attributes in points
   const int spanX = mm_to_points(maxx - minx);
   const int spanY = mm_to_points(maxy - miny);
-  const int centerX = mm_to_points(minx) + spanX / 2.0;
-  const int centerY = mm_to_points(miny) + spanY / 2.0;
+  const int centerX = mm_to_points(minx) + spanX / 2;
+  const int centerY = mm_to_points(miny) + spanY / 2;
 
-  // Set orientation and paper size.
+  // Set orientation and paper size
   if ((options->orientation == ExportPdfPaperOrientation::AUTO && spanX > spanY) ||
       (options->orientation == ExportPdfPaperOrientation::LANDSCAPE)) {
     pdfX = paperDimensions[static_cast<int>(options->paperSize)][1];
@@ -309,7 +313,7 @@ void export_pdf(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
   } else {
     pdfX = paperDimensions[static_cast<int>(options->paperSize)][0];
     pdfY = paperDimensions[static_cast<int>(options->paperSize)][1];
-  }
+  };
 
   // Does it fit? (in points)
   const bool inpaper = (spanX <= pdfX - MARGIN) && (spanY <= pdfY - MARGIN);
@@ -320,13 +324,13 @@ void export_pdf(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
   //  Center on page.  Still in points.
   // Note Cairo inverts the Y axis, with zero at the top, positive going down.
   // Compute translation and auxiliary numbers in lieu of transform matrices.
-  const double tcX = pdfX / 2.0 - centerX;
-  const double tcY = (pdfY / 2.0 + centerY);  // Note Geometry Y will still need to be inverted.
+  const double tcX = pdfX / 2 - centerX;
+  const double tcY = (pdfY / 2 + centerY);  // Note Geometry Y will still need to be inverted.
   // Shifted exact margins
-  const double Mlx = centerX - pdfX / 2.0 + MARGIN;     // Left margin, X axis
-  const double Mrx = centerX + pdfX / 2.0 - MARGIN;     // Right margin, X axis
-  const double Mty = -(centerY - pdfY / 2.0 + MARGIN);  // INVERTED Top margin, Y axis
-  const double Mby = -(centerY + pdfY / 2.0 - MARGIN);  // INVERTED Bottom margin, Y axis
+  const double Mlx = centerX - pdfX / 2 + MARGIN;     // Left margin, X axis
+  const double Mrx = centerX + pdfX / 2 - MARGIN;     // Right margin, X axis
+  const double Mty = -(centerY - pdfY / 2 + MARGIN);  // INVERTED Top margin, Y axis
+  const double Mby = -(centerY + pdfY / 2 - MARGIN);  // INVERTED Bottom margin, Y axis
 
   // Initialize Cairo Surface and PDF
   cairo_surface_t *surface = cairo_pdf_surface_create_for_stream(export_pdf_write, &output, pdfX, pdfY);
@@ -351,26 +355,10 @@ void export_pdf(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
   // Note Y axis + is DOWN.  Drawings have to invert Y, but these translations account for that.
   cairo_translate(cr, tcX, tcY);  // Center page on geometry;
 
-  const Color4f black = Color4f(0.0f, 0.0f, 0.0f);
-
-  // create path
+  cairo_set_source_rgba(cr, 0., 0., 0., 1.0);  // Set black line, opaque
+  cairo_set_line_width(cr, 1);                 // 1 point width.
   draw_geom(geom, cr, pdfX, pdfY, tcX, tcY);
-
-  if (options->fill) {
-    Color4f fillColor = OpenSCAD::getColor(options->fillColor, black);
-    cairo_set_source_rgba(cr, fillColor.r(), fillColor.g(), fillColor.b(), fillColor.a());
-    cairo_fill_preserve(cr);
-  }
-
-  if (options->stroke) {
-    Color4f strokeColor = OpenSCAD::getColor(options->strokeColor, black);
-    cairo_set_source_rgba(cr, strokeColor.r(), strokeColor.g(), strokeColor.b(), strokeColor.a());
-    cairo_set_line_width(cr, mm_to_points(options->strokeWidth));
-    cairo_stroke_preserve(cr);
-  }
-
-  // clear path
-  cairo_new_path(cr);
+  cairo_stroke(cr);
 
   // Set Annotations
   const std::string about =
