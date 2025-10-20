@@ -1624,6 +1624,8 @@ if(APPLE AND NOT APPLE_UNIX)
     MACOSX_BUNDLE_BUNDLE_VERSION ${OPENSCAD_YEAR}.${OPENSCAD_MONTH}.${OPENSCAD_DAY}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${OPENSCAD_YEAR}.${OPENSCAD_MONTH}
     RESOURCE "${RESOURCE_FILES}"
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "@executable_path/../Frameworks;/usr/local/opt/python@3.14/Frameworks"
   )
   set(BUNDLE_RESOURCES_DIR ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/Resources)
   # Create pythonscad-python symlink inside the macOS bundle
