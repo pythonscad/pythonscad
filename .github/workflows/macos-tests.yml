@@ -137,25 +137,23 @@ jobs:
       run: |
         # Enable core dumps
         ulimit -c unlimited
-        # Set core dump location
-        sudo sysctl kern.corefile=/cores/core.%P
+        # Set core dump location to /tmp/cores (more reliable than /cores)
         mkdir -p /tmp/cores
+        sudo sysctl kern.corefile=/tmp/cores/core.%P
         cd build
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         # Run ONLY the pythonscad_fillet test to debug the crash
         # This speeds up debugging by running only the problematic test
         ctest -R "^pythonscad_fillet$" --timeout 300 --output-on-failure || true
-        # Check for core dumps and copy them
+        # Check for core dumps
         echo "=== Checking for core dumps ==="
-        if ls /cores/core.* 1> /dev/null 2>&1; then
+        if ls /tmp/cores/core.* 1> /dev/null 2>&1; then
           echo "Core dumps found:"
-          ls -lh /cores/core.*
-          sudo cp /cores/core.* /tmp/cores/ || true
-          sudo chmod 644 /tmp/cores/* || true
+          ls -lh /tmp/cores/core.*
 
           # Analyze core dumps and save output
           echo "=== Analyzing core dumps with lldb ==="
-          for corefile in /cores/core.*; do
+          for corefile in /tmp/cores/core.*; do
             pid=$(basename $corefile | cut -d. -f2)
             echo "Analyzing $corefile (PID: $pid)"
 
@@ -168,11 +166,14 @@ jobs:
             lldb -c "$corefile" -o "bt all" -o "thread backtrace all" -o "frame variable" -o "register read" -o "image list" -o "quit" >> "$output_file" 2>&1 || true
 
             echo "Analysis saved to $output_file"
-            echo "First 50 lines:"
-            head -50 "$output_file"
+            echo "First 100 lines:"
+            head -100 "$output_file"
           done
         else
-          echo "No core dumps found"
+          echo "No core dumps found in /tmp/cores/"
+          echo "Checking current directory and /cores/ just in case:"
+          ls -lh core.* 2>/dev/null || echo "No core files in current directory"
+          ls -lh /cores/core.* 2>/dev/null || echo "No core files in /cores/"
         fi
         # Re-run ctest to get the proper exit code for the workflow
         ctest -R "^pythonscad_fillet$" --timeout 300 --output-on-failure
