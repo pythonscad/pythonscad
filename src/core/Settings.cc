@@ -410,6 +410,12 @@ SettingsEntryString SettingsExportPdf::exportPdfMetaDataSubject(SECTION_EXPORT_P
                                                                 "");
 SettingsEntryString SettingsExportPdf::exportPdfMetaDataKeywords(SECTION_EXPORT_PDF,
                                                                  "meta-data-keywords", "");
+SettingsEntryBool SettingsExportPdf::exportPdfFill(SECTION_EXPORT_PDF, "fill", false);
+SettingsEntryString SettingsExportPdf::exportPdfFillColor(SECTION_EXPORT_PDF, "fill-color", "black");
+SettingsEntryBool SettingsExportPdf::exportPdfStroke(SECTION_EXPORT_PDF, "stroke", true);
+SettingsEntryString SettingsExportPdf::exportPdfStrokeColor(SECTION_EXPORT_PDF, "stroke-color", "black");
+SettingsEntryDouble SettingsExportPdf::exportPdfStrokeWidth(SECTION_EXPORT_PDF, "stroke-width", 0, 0.01,
+                                                            999, 0.35);
 
 SettingsEntryBool SettingsExport3mf::export3mfAlwaysShowDialog(SECTION_EXPORT_3MF, "always-show-dialog",
                                                                true);
@@ -466,5 +472,14 @@ SettingsEntryString SettingsExport3mf::export3mfMetaDataLicenseTerms(SECTION_EXP
                                                                      "meta-data-license-terms", "");
 SettingsEntryString SettingsExport3mf::export3mfMetaDataRating(SECTION_EXPORT_3MF, "meta-data-rating",
                                                                "");
+
+SettingsEntryBool SettingsExportSvg::exportSvgAlwaysShowDialog(SECTION_EXPORT_SVG, "always-show-dialog",
+                                                               true);
+SettingsEntryBool SettingsExportSvg::exportSvgFill(SECTION_EXPORT_SVG, "fill", false);
+SettingsEntryString SettingsExportSvg::exportSvgFillColor(SECTION_EXPORT_SVG, "fill-color", "white");
+SettingsEntryBool SettingsExportSvg::exportSvgStroke(SECTION_EXPORT_SVG, "stroke", true);
+SettingsEntryString SettingsExportSvg::exportSvgStrokeColor(SECTION_EXPORT_SVG, "stroke-color", "black");
+SettingsEntryDouble SettingsExportSvg::exportSvgStrokeWidth(SECTION_EXPORT_SVG, "stroke-width", 0, 0.01,
+                                                            999, 0.35);
 
 }  // namespace Settings

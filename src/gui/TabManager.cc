@@ -90,8 +90,11 @@ void TabManager::tabSwitched(int x)
   par->setWindowTitle(tabWidget->tabText(x).replace("&&", "&"));
   if (use_gvim) {
     // **MCH*
-    std::string str = tabWidget->tabToolTip(x).toUtf8().constData();
-    QString editorcmd = "gvim --remote-send '<esc>:sb " + QString::fromStdString(str) + "<cr>'";
+    auto *tabEditor = (EditorInterface *)tabWidget->widget(x);
+    std::string filename = tabEditor->filepath.toUtf8().constData();
+    QString editorcmd = "gvim --remote-send '<esc>:sb " + QString::fromStdString(filename) +
+                        "<cr>' || (gvim '" + QString::fromStdString(filename) + "' &)";
+    //   LOG("1. Opening file '%1$s'",editorcmd.toUtf8().constData());
     system(editorcmd.toUtf8().constData());
     // **MCH*
   }
@@ -153,7 +156,7 @@ void TabManager::actionNew()
 {
   if (!par->editorDock->isVisible())
     par->editorDock->setVisible(true);  // if editor hidden, make it visible
-  createTab("");
+  createTab("Untitled.py");
 }
 
 void TabManager::open(const QString& filename)
@@ -161,7 +164,8 @@ void TabManager::open(const QString& filename)
   assert(!filename.isEmpty());
 
   if (use_gvim) {
-    QString editorcmd = "gvim --remote-tab-silent ";
+    QString editorcmd =
+      "gvim --remote-tab-silent '" + filename.toUtf8() + "' || gvim '" + filename.toUtf8() + "' &";
     editorcmd += filename.toUtf8();
     //    LOG("2. Opening file '%1$s'",editorcmd.toUtf8().constData());
     system(editorcmd.toUtf8().constData());
@@ -188,7 +192,8 @@ void TabManager::createTab(const QString& filename)
   auto scintillaEditor = new ScintillaEditor(tabWidget, *par);
   editor = scintillaEditor;
   //  Preferences::create(editor->colorSchemes());   // needs to be done only once, however handled
-  //  this->use_gvim = Preferences::inst()->getValue("editor/usegvim").toBool();
+  this->use_gvim = GlobalPreferences::inst()->getValue("editor/usegvim").toBool();
+  //  this->use_gvim = true;
   par->activeEditor = editor;
   editor->parameterWidget = new ParameterWidget(par->parameterDock);
   connect(editor->parameterWidget, &ParameterWidget::parametersChanged, par,
@@ -523,8 +528,10 @@ bool TabManager::refreshDocument()
   if (!editor->filepath.isEmpty()) {
     QFile file(editor->filepath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      LOG("Failed to open file %1$s: %2$s", editor->filepath.toLocal8Bit().constData(),
-          file.errorString().toLocal8Bit().constData());
+      if (!boost::algorithm::ends_with(editor->filepath, "Untitled.py")) {
+        LOG("Failed to open file %1$s: %2$s", editor->filepath.toLocal8Bit().constData(),
+            file.errorString().toLocal8Bit().constData());
+      }
     } else {
       QTextStream reader(&file);
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -758,6 +765,7 @@ bool TabManager::saveACopy(EditorInterface *edt)
   QFileDialog saveCopyDialog;
   saveCopyDialog.setAcceptMode(QFileDialog::AcceptSave);  // Set the dialog to "Save" mode.
   saveCopyDialog.setWindowTitle("Save A Copy");
+
   saveCopyDialog.setNameFilter("PythonSCAD Designs (*.py, *.scad)");
 
   saveCopyDialog.setDefaultSuffix("scad");

@@ -103,6 +103,10 @@ public:
   {
     return visit(state, (const AbstractPolyNode&)node);
   }
+  Response visit(State& state, const RepairNode& node) override
+  {
+    return visit(state, (const AbstractPolyNode&)node);
+  }
   Response visit(State& state, const WrapNode& node) override
   {
     return visit(state, (const AbstractPolyNode&)node);

@@ -392,6 +392,20 @@ public:
     stream << ']';
   }
 
+  void operator()(const ObjectType& v) const
+  {
+    if (StackCheck::inst().check()) {
+      throw VectorEchoStringException::create();
+    }
+    stream << "{ ";
+    for (auto& key : v.keys()) {
+      stream << key << " = ";
+      std::visit(*this, v.get(key).getVariant());
+      stream << "; ";
+    }
+    stream << '}';
+  }
+
   void operator()(const str_utf8_wrapper& v) const { stream << '"' << v.toString() << '"'; }
 
   void operator()(const RangePtr& v) const { stream << *v; }
@@ -446,7 +460,17 @@ public:
     return stream.str();
   }
 
-  std::string operator()(const ObjectType& v) const { return STR(v); }
+  std::string operator()(const ObjectType& v) const
+  {
+    std::ostringstream stream;
+    try {
+      (tostream_visitor(stream))(v);
+    } catch (EvaluationException& e) {
+      LOG(message_group::Error, e.what());
+      throw;
+    }
+    return stream.str();
+  }
 
   std::string operator()(const RangePtr& v) const { return STR(*v); }
 
@@ -716,14 +740,34 @@ bool Value::isUncheckedUndef() const
   return this->type() == Type::UNDEFINED && !std::get<UndefType>(this->value).empty();
 }
 
-Value ObjectType::operator==(const ObjectType& /*other*/) const
+Value ObjectType::operator==(const ObjectType& other) const
 {
-  return Value::undef("operation undefined (object == object)");
+  if (other.ptr == this->ptr) {
+    return true;
+  }
+  if (other.ptr->values.size() != this->ptr->values.size()) {
+    return false;
+  }
+
+  for (size_t i = 0; i < this->ptr->values.size(); i++) {
+    auto key_the_same = this->ptr->keys[i] != other.ptr->keys[i];
+    if (key_the_same) {
+      return false;
+    }
+
+    auto value_the_same = this->ptr->values[i] != other.ptr->values[i];
+    if (value_the_same.toBool()) {
+      return false;
+    }
+  }
+  return true;
 }
-Value ObjectType::operator!=(const ObjectType& /*other*/) const
+Value ObjectType::operator!=(const ObjectType& other) const
 {
-  return Value::undef("operation undefined (object != object)");
+  Value a = *this == other;
+  return !a.toBool();
 }
+
 Value ObjectType::operator<(const ObjectType& /*other*/) const
 {
   return Value::undef("operation undefined (object < object)");
@@ -1354,15 +1398,6 @@ bool ObjectType::contains(const std::string& key) const { return ptr->find(key) 
 bool ObjectType::empty() const { return ptr->values.empty(); }
 const std::vector<std::string>& ObjectType::keys() const { return ptr->keys; }
 const std::vector<Value>& ObjectType::values() const { return ptr->values; }
-
-void ObjectType::set(const std::string& key, Value&& value)
-{
-  ptr->map.emplace(key, value.clone());
-  ptr->keys.emplace_back(key);
-  ptr->values.emplace_back(std::move(value));
-}
-
-const std::vector<std::string>& ObjectType::keys() const { return ptr->keys; }
 
 const Value& ObjectType::operator[](const str_utf8_wrapper& v) const { return this->get(v.toString()); }
 

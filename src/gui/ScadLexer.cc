@@ -323,17 +323,8 @@ int ScadLexer2::getStyleAt(int pos)
 
 void ScadLexer2::highlightingMultiple(int start, int length, char *styles)
 {
-  std::string token = results.str();
-  int style = results.id;
-
-#if DEBUG_LEXERTL
-  QString glyphs = QString::fromStdString(token);
-  std::cout << "highlighting ( " << style << " ):" << token << " [ " << token.length() << " bytes, "
-            << glyphs.length() << " glyphs ]" << std::endl;
-#endif
-
-  startStyling(start + std::distance(input.begin(), results.first));
-  setStyling(token.length(), style);
+  editor()->SendScintilla(QsciScintilla::SCI_STARTSTYLING, start);
+  editor()->SendScintilla(QsciScintilla::SCI_SETSTYLINGEX, length, styles);
 }
 
 QColor ScadLexer2::defaultColor(int style) const

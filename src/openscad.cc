@@ -410,8 +410,8 @@ int do_export(const CommandLine& cmd, const RenderVariables& render_variables, F
   std::shared_ptr<AbstractNode> absolute_root_node;
 
 #ifdef ENABLE_PYTHON
-  if (python_result_node != NULL && python_active) {
-    absolute_root_node = python_result_node;
+  if (genlang_result_node != NULL && python_active) {
+    absolute_root_node = genlang_result_node;
   } else {
 #endif
     absolute_root_node = root_file->instantiate(*builtin_context, &file_context);
@@ -612,7 +612,7 @@ int cmdline(const CommandLine& cmd)
     }
     text = "\n";
   }
-#endif
+#endif  // ifdef ENABLE_PYTHON
   text += "\n\x03\n" + commandline_commands;
 
   SourceFile *root_file = nullptr;
@@ -924,6 +924,7 @@ int main(int argc, char **argv)
             .c_str())("d,d", po::value<std::string>(), "deps_file -generate a dependency file for make")(
           "m,m", po::value<std::string>(), "make_cmd -runs make_cmd file if file is missing")(
           "quiet,q", "quiet mode (don't print anything *except* errors)")(
+          "reset-window-settings", "Reset GUI settings for window placement and fonts.")(
           "hardwarnings", "Stop on the first warning")("trace-depth", po::value<unsigned int>(),
                                                        "=n, maximum number of trace messages")(
           "trace-usermodule-parameters", po::value<std::string>(),

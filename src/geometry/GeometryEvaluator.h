@@ -47,11 +47,11 @@ struct EdgeVal {
 };
 
 class PolySetBuilder;
-std::vector<std::vector<IndexedTriangle>> wrapSlice(PolySetBuilder& builder,
-                                                    const std::vector<Vector3d> vertices,
-                                                    const std::vector<IndexedFace>& faces,
-                                                    const std::vector<Vector4d>& normals,
-                                                    std::vector<double> xsteps);
+std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder,
+                                                         const std::vector<Vector3d> vertices,
+                                                         const std::vector<IndexedColorFace>& faces,
+                                                         const std::vector<Vector4d>& normals,
+                                                         std::vector<double> xsteps);
 
 // 3D Map stuff
 //
