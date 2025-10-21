@@ -62,13 +62,26 @@ jobs:
         mkdir build
         cd build
         # Force CMake to use system Python (3.13) instead of Homebrew Python (3.14)
-        # Need to use Python3_EXECUTABLE (Python 3) not Python_EXECUTABLE (generic Python)
-        # Also set Python3_ROOT_DIR to ensure all Python 3 components come from system Python
+        # /usr/local/bin/python3 symlinks to system Python 3.13
+        # But CMake's find_package looks for headers/libs and finds Homebrew's 3.14 first
+        # Solution: Explicitly set all Python3 paths to force 3.13
+
         SYSTEM_PYTHON="/usr/local/bin/python3"
-        PYTHON_VERSION=$($SYSTEM_PYTHON --version | cut -d' ' -f2 | cut -d. -f1-2)
-        echo "Using system Python: $SYSTEM_PYTHON (version $PYTHON_VERSION)"
+        PYTHON_VERSION=$($SYSTEM_PYTHON --version 2>&1)
+        echo "Using system Python: $SYSTEM_PYTHON ($PYTHON_VERSION)"
+
+        # Resolve the actual framework location
+        PYTHON_FRAMEWORK="/Library/Frameworks/Python.framework/Versions/3.13"
+
+        # Verify it exists
+        if [ ! -d "$PYTHON_FRAMEWORK" ]; then
+          echo "ERROR: Python 3.13 framework not found at $PYTHON_FRAMEWORK"
+          echo "Available Python versions:"
+          ls -la /Library/Frameworks/Python.framework/Versions/ || true
+          exit 1
+        fi
+
         # Use RelWithDebInfo to get debug symbols while keeping optimizations
-        # This helps with crash analysis while not being too slow
         cmake .. \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
           -DCMAKE_UNITY_BUILD=OFF \
@@ -77,8 +90,11 @@ jobs:
           -DUSE_CCACHE=OFF \
           -DUSE_BUILTIN_OPENCSG=ON \
           -DPython3_EXECUTABLE="$SYSTEM_PYTHON" \
-          -DPython3_ROOT_DIR="/usr/local" \
-          -DPython_FIND_STRATEGY=LOCATION \
+          -DPython3_INCLUDE_DIR="$PYTHON_FRAMEWORK/include/python3.13" \
+          -DPython3_LIBRARY="$PYTHON_FRAMEWORK/lib/libpython3.13.dylib" \
+          -DPython3_LIBRARIES="$PYTHON_FRAMEWORK/lib/libpython3.13.dylib" \
+          -DPython3_ROOT_DIR="$PYTHON_FRAMEWORK" \
+          -DPython3_FIND_STRATEGY=LOCATION \
           $CMAKE_OPTIONS
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         make -j$NUMCPU
