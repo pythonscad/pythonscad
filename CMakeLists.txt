@@ -1653,11 +1653,13 @@ if(APPLE AND NOT APPLE_UNIX)
 
     # Copy the specific Python version into the app bundle
     # We copy just the version-specific directory, not the entire framework root
+    # Note: Use rsync instead of CMake's copy_directory because the Python framework
+    # contains broken symlinks (PrivateHeaders) that cause copy_directory to fail
     add_custom_command(TARGET OpenSCAD POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory ${BUNDLE_FRAMEWORKS_DIR}/Python.framework/Versions
-      COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PYTHON_FRAMEWORK_VERSION_DIR}
-        ${BUNDLE_FRAMEWORKS_DIR}/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}
+      COMMAND rsync -a --copy-links
+        ${PYTHON_FRAMEWORK_VERSION_DIR}/
+        ${BUNDLE_FRAMEWORKS_DIR}/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/
       COMMENT "Bundling Python.framework into app bundle for portability"
     )
 
