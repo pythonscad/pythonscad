@@ -1639,26 +1639,25 @@ if(APPLE AND NOT APPLE_UNIX)
 
   # Bundle Python framework for portability (if Python is enabled)
   if(ENABLE_PYTHON AND Python3_FOUND)
-    # Get the Python framework path
-    # Python3_LIBRARIES is typically: .../Python.framework/Versions/X.Y/lib/libpython.dylib
-    # We need to get to: .../Python.framework
-    get_filename_component(PYTHON_FRAMEWORK_DIR "${Python3_LIBRARIES}" DIRECTORY)  # .../lib
-    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../3.14
-    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Versions
-    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Python.framework
+    # Get the Python framework version directory
+    # Python3_LIBRARIES is: .../Python.framework/Versions/X.Y/lib/libpython3.X.dylib
+    # We need to get to: .../Python.framework/Versions/X.Y
+    get_filename_component(PYTHON_FRAMEWORK_VERSION_DIR "${Python3_LIBRARIES}" DIRECTORY)  # .../lib
+    get_filename_component(PYTHON_FRAMEWORK_VERSION_DIR "${PYTHON_FRAMEWORK_VERSION_DIR}" DIRECTORY)  # .../X.Y
 
     # The actual framework library file that the binary links to
-    set(PYTHON_FRAMEWORK_LIB "${PYTHON_FRAMEWORK_DIR}/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python")
+    set(PYTHON_FRAMEWORK_LIB "${PYTHON_FRAMEWORK_VERSION_DIR}/Python")
 
-    message(STATUS "Bundling Python framework from: ${PYTHON_FRAMEWORK_DIR}")
+    message(STATUS "Bundling Python framework from: ${PYTHON_FRAMEWORK_VERSION_DIR}")
     message(STATUS "Python framework library: ${PYTHON_FRAMEWORK_LIB}")
 
-    # Copy Python.framework into the app bundle
+    # Copy the specific Python version into the app bundle
+    # We copy just the version-specific directory, not the entire framework root
     add_custom_command(TARGET OpenSCAD POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E make_directory ${BUNDLE_FRAMEWORKS_DIR}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${BUNDLE_FRAMEWORKS_DIR}/Python.framework/Versions
       COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PYTHON_FRAMEWORK_DIR}
-        ${BUNDLE_FRAMEWORKS_DIR}/Python.framework
+        ${PYTHON_FRAMEWORK_VERSION_DIR}
+        ${BUNDLE_FRAMEWORKS_DIR}/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}
       COMMENT "Bundling Python.framework into app bundle for portability"
     )
 
@@ -1667,7 +1666,7 @@ if(APPLE AND NOT APPLE_UNIX)
     add_custom_command(TARGET OpenSCAD POST_BUILD
       COMMAND install_name_tool -change
         ${PYTHON_FRAMEWORK_LIB}
-        @rpath/Python.framework/Versions/${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/Python
+        @rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python
         ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}
       COMMENT "Updating Python library reference to use @rpath"
     )
