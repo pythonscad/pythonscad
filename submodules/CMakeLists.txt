@@ -8,14 +8,22 @@ if(USE_MIMALLOC)
     message(AUTHOR_WARNING "Target OpenSCAD appears to have libraries linked before mimalloc (${OSCAD_LIBS}).  This might cause problems.")
   endif()
 
-  find_package(mimalloc QUIET)
-  if(TARGET mimalloc)
+  # On macOS, always use bundled mimalloc to avoid conflicts with Python's memory allocation
+  # The Homebrew mimalloc shared library can interfere with the embedded Python interpreter
+  if(NOT APPLE)
+    find_package(mimalloc QUIET)
+  endif()
+  if(TARGET mimalloc AND NOT APPLE)
     # MSYS2 provides a mimalloc package with both static and shared builds
     message(STATUS "Using already installed mimalloc package, version ${mimalloc_VERSION}")
     target_compile_definitions(OpenSCAD PRIVATE MI_LINK_SHARED) # So cmake install/pack know which files are needed.
     target_link_libraries(OpenSCAD PRIVATE mimalloc)
   else()
-    message(STATUS "System mimalloc not found, using bundled mimalloc submodule")
+    if(APPLE)
+      message(STATUS "On macOS, using bundled mimalloc submodule to avoid conflicts with Python")
+    else()
+      message(STATUS "System mimalloc not found, using bundled mimalloc submodule")
+    endif()
     set(MI_SUBDIR mimalloc)
     set(mimalloc_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${MI_SUBDIR}/cmake" PARENT_SCOPE)
 
