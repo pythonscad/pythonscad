@@ -9,8 +9,7 @@
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
-struct PyKernel
-{
+struct PyKernel {
   void (*PyConfig_InitPythonConfig)(PyConfig *config);
   void (*PyPreConfig_InitPythonConfig)(PyPreConfig *config);
   void (*PyConfig_Clear)(PyConfig *);
@@ -59,6 +58,9 @@ struct PyKernel
 
   PyObject *(*PyTuple_New)(Py_ssize_t size);
   PyObject *(*PyTuple_Pack)(Py_ssize_t, ...);
+  PyObject *(*PyNumber_Float)(PyObject *);              // TODO fix
+  bool (*PyObject_IsInstance)(PyObject *, PyObject *);  // TODO fix
+  int (*Py_FinalizeEx)(void);                           // TODO fix
 
   Py_ssize_t (*PyTuple_Size)(PyObject *);
   PyObject *(*PyTuple_GetItem)(PyObject *, Py_ssize_t);
@@ -125,6 +127,7 @@ extern struct PyKernel pf;
 #define PyUnicode_CHECK(op) (op->ob_type == pf.PyUnicode_Type)
 #define PyTuple_CHECK(op) (op->ob_type == pf.PyTuple_Type)
 #define PyModule_CHECK(op) (op->ob_type == pf.PyModule_Type)
+#define PyNumber_CHECK(op) (op->ob_type == pf.PyLong_Type)
 
 static inline void Py_XDECREF_(PyObject *op)
 {
@@ -151,8 +154,6 @@ static inline void Py_XINCREF_(PyObject *op)
   AssignmentList inst_asslist;                                                                          \
   ModuleInstantiation *instance = new ModuleInstantiation(instance_name, inst_asslist, Location::NONE); \
   modinsts_list.push_back(instance);
-
-
 
 typedef struct {
   PyObject_HEAD std::shared_ptr<AbstractNode> node;

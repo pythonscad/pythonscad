@@ -2508,8 +2508,8 @@ PyObject *python_oo_mesh(PyObject *obj, PyObject *args, PyObject *kwargs)
 PyObject *python_bbox_core(PyObject *obj)
 {
   // Get position and size attributes from the object
-  PyObject *position_key = PyUnicode_FromString("position");
-  PyObject *size_key = PyUnicode_FromString("size");
+  PyObject *position_key = pf.PyUnicode_FromString("position");
+  PyObject *size_key = pf.PyUnicode_FromString("size");
 
   PyObject *position = python__getitem__(obj, position_key);
   PyObject *size = python__getitem__(obj, size_key);
@@ -3090,7 +3090,7 @@ PyObject *python_repair_core(PyObject *obj, PyObject *color)
     if (!python_vectorval(color, 3, 4, &col[0], &col[1], &col[2], &col[3])) {
       node->color.setRgba(float(col[0]), float(col[1]), float(col[2]), float(col[3]));
     } else if (PyUnicode_Check(color)) {
-      PyObject *value = PyUnicode_AsEncodedString(color, "utf-8", "~");
+      PyObject *value = pf.PyUnicode_AsEncodedString(color, "utf-8", "~");
       char *colorname = PyBytes_AS_STRING(value);
       const auto color = OpenSCAD::parse_color(colorname);
       if (color) {
@@ -3446,18 +3446,18 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
     type = PyOpenSCADObjectType(obj);
     child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
     if (child == NULL) {
-      PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in path_extrude\n");
+      pf.PyErr_SetString(pf.PyExc_TypeError, "Invalid type for  Object in path_extrude\n");
       return NULL;
     }
     node->children.push_back(child);
   }
-  if (path != NULL && PyList_Check(path)) {
-    int n = PyList_Size(path);
+  if (path != NULL && PyList_CHECK(path)) {
+    int n = pf.PyList_Size(path);
     for (int i = 0; i < n; i++) {
-      PyObject *point = PyList_GetItem(path, i);
+      PyObject *point = pf.PyList_GetItem(path, i);
       double x, y, z, w = 0;
       if (python_vectorval(point, 3, 4, &x, &y, &z, &w)) {
-        PyErr_SetString(PyExc_TypeError, "Cannot parse vector in path_extrude path\n");
+        pf.PyErr_SetString(pf.PyExc_TypeError, "Cannot parse vector in path_extrude path\n");
         return NULL;
       }
       Vector4d pt3d(x, y, z, w);
@@ -3473,12 +3473,12 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
   if (allow_intersect == Py_True) node->allow_intersect = true;
   if (xdir != NULL) {
     if (python_vectorval(xdir, 3, 3, &(node->xdir_x), &(node->xdir_y), &(node->xdir_z))) {
-      PyErr_SetString(PyExc_TypeError, "error in path_extrude xdir parameter\n");
+      pf.PyErr_SetString(pf.PyExc_TypeError, "error in path_extrude xdir parameter\n");
       return NULL;
     }
   }
   if (fabs(node->xdir_x) < 0.001 && fabs(node->xdir_y) < 0.001 && fabs(node->xdir_z) < 0.001) {
-    PyErr_SetString(PyExc_TypeError, "error in path_extrude xdir parameter has zero size\n");
+    pf.PyErr_SetString(pf.PyExc_TypeError, "error in path_extrude xdir parameter has zero size\n");
     return NULL;
   }
 
@@ -3509,7 +3509,7 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
     }
   }
 
-  if (scale != NULL && PyList_Check(scale) && pf.PyList_Size(scale) == 2) {
+  if (scale != NULL && PyList_CHECK(scale) && pf.PyList_Size(scale) == 2) {
     node->scale_x = pf.PyFloat_AsDouble(pf.PyList_GetItem(scale, 0));
     node->scale_y = pf.PyFloat_AsDouble(pf.PyList_GetItem(scale, 1));
   }
@@ -3931,7 +3931,7 @@ PyObject *python_nb_sub(PyObject *arg1, PyObject *arg2, OpenSCADOperator mode)
     child_dict.push_back(dict);
     if (solid != nullptr) child.push_back(solid);
     else {
-      PyErr_SetString(PyExc_TypeError, "invalid argument left to operator");
+      pf.PyErr_SetString(pf.PyExc_TypeError, "invalid argument left to operator");
       return NULL;
     }
   }
@@ -5572,7 +5572,7 @@ int type_add_method(PyTypeObject *type, PyMethodDef *meth)  // from typeobject.c
   if (isdescr) {
     name = PyDescr_NAME(descr);
   } else {
-    name = PyUnicode_FromString(meth->ml_name);
+    name = pf.PyUnicode_FromString(meth->ml_name);
     if (name == NULL) {
       Py_DECREF(descr);
       return -1;
