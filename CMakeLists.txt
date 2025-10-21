@@ -567,28 +567,28 @@ if(ENABLE_PYTHON)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
   else() #MXE
 	  if (${PYTHON_VERSION}  STREQUAL "OFF")
-      find_package(Python  REQUIRED COMPONENTS Development)
+      find_package(Python3  REQUIRED COMPONENTS Development)
     else()
-      find_package(Python  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
+      find_package(Python3  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
     endif()
     if(NOT Nettle_FOUND)
       message(WARNING "Nettle not found, disabling python support.")
       set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
     endif()
-    if(NOT Python_FOUND  AND NOT WIN32)
+    if(NOT Python3_FOUND  AND NOT WIN32)
       if(ENABLE_PYTHON)
         message(WARNING "Python not found, disabling python support.")
         set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
       endif()
     endif()
-    SET(Python_Eff_LIBRARIES ${Python_LIBRARIES} )
-    SET(Python_Eff_INCLUDE_DIRS ${Python_INCLUDE_DIRS} )
+    SET(Python_Eff_LIBRARIES ${Python3_LIBRARIES} )
+    SET(Python_Eff_INCLUDE_DIRS ${Python3_INCLUDE_DIRS} )
     target_link_libraries(OpenSCADPy PRIVATE ${Python_Eff_LIBRARIES})
     target_include_directories(OpenSCADPy PRIVATE ${Python_Eff_INCLUDE_DIRS})
     target_include_directories(OpenSCADPy PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
     message(STATUS "Python enabled")
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
-    target_link_libraries(OpenSCADPy PRIVATE ${Python_LIBRARIES})
+    target_link_libraries(OpenSCADPy PRIVATE ${Python3_LIBRARIES})
   endif() # endif MXE
   target_include_directories(OpenSCADPy PRIVATE ${Nettle_INCLUDE_DIRS})
   target_link_libraries(OpenSCADPy PRIVATE ${Nettle_LIBRARIES})
@@ -1638,17 +1638,17 @@ if(APPLE AND NOT APPLE_UNIX)
   )
 
   # Bundle Python framework for portability (if Python is enabled)
-  if(ENABLE_PYTHON AND Python_FOUND)
+  if(ENABLE_PYTHON AND Python3_FOUND)
     # Get the Python framework path
-    # Python_LIBRARIES is typically: .../Python.framework/Versions/X.Y/lib/libpython.dylib
+    # Python3_LIBRARIES is typically: .../Python.framework/Versions/X.Y/lib/libpython.dylib
     # We need to get to: .../Python.framework
-    get_filename_component(PYTHON_FRAMEWORK_DIR "${Python_LIBRARIES}" DIRECTORY)  # .../lib
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${Python3_LIBRARIES}" DIRECTORY)  # .../lib
     get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../3.14
     get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Versions
     get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Python.framework
 
     # The actual framework library file that the binary links to
-    set(PYTHON_FRAMEWORK_LIB "${PYTHON_FRAMEWORK_DIR}/Versions/${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/Python")
+    set(PYTHON_FRAMEWORK_LIB "${PYTHON_FRAMEWORK_DIR}/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python")
 
     message(STATUS "Bundling Python framework from: ${PYTHON_FRAMEWORK_DIR}")
     message(STATUS "Python framework library: ${PYTHON_FRAMEWORK_LIB}")
