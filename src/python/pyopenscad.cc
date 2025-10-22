@@ -771,6 +771,58 @@ void openscad_object_callback(PyObject *obj)
   }
 }
 #endif
+
+static int audit_hook_callback(const char *event, PyObject *args, void *userdata)
+{
+  // Dangerous module imports
+  if (strcmp(event, "import") == 0) {
+    // TODO for sys its not triggered!
+    const char *module_name = PyUnicode_AsUTF8(PyTuple_GetItem(args, 0));
+    static const char *blocked_modules[] = {// TODO block os after startup
+                                            "os",     "subprocess", "shutil",          "sys",
+                                            "socket", "ctypes",     "importlib",       "pickle",
+                                            "shelve", "dbm",        "multiprocessing", "threading",
+                                            "pty",    "tempfile",   "webbrowser",      nullptr};
+
+    for (const char **mod = blocked_modules; *mod; mod++) {
+      if (strcmp(module_name, *mod) == 0 && !python_trusted) {
+        if (strcmp(*mod, "os") == 0 && *&pythonInitDict == nullptr)
+          continue;  // os is needed during startup
+        PyErr_Format(PyExc_ImportError,
+                     "Module '%s' is not allowed in PythonSCAD for security reasons.\n"
+                     "Use 'Trust this file' option if you trust the source.",
+                     module_name);
+        return -1;  // Block the import
+      }
+    }
+  }
+
+  // File operations
+  if (strcmp(event, "open") == 0 && !python_trusted) {
+    const char *filename = PyUnicode_AsUTF8(PyTuple_GetItem(args, 0));
+    const char *mode = PyUnicode_AsUTF8(PyTuple_GetItem(args, 1));
+    if (filename != nullptr && mode != nullptr) {
+      // Block write operations
+      if (strchr(mode, 'w') || strchr(mode, 'a') || strchr(mode, '+')) {
+        PyErr_Format(PyExc_PermissionError,
+                     "Write access to '%s' is not allowed in PythonSCAD.\n"
+                     "Use 'Trust this file' option if you trust the source.",
+                     filename);
+        return -1;
+      }
+    }
+  }
+
+  // Subprocess execution
+  if (strcmp(event, "subprocess.Popen") == 0 && !python_trusted) {
+    PyErr_SetString(PyExc_PermissionError,
+                    "Subprocess execution is not allowed in PythonSCAD.\n"
+                    "Use 'Trust this file' option if you trust the source.");
+    return -1;
+  }
+  return 0;  // Allow operation
+}
+
 void initPython(const std::string& binDir, const std::string& scriptpath, double time)
 {
   static bool alreadyTried = false;
@@ -889,6 +941,8 @@ void initPython(const std::string& binDir, const std::string& scriptpath, double
     if (!binDir.empty()) {
       PyConfig_SetBytesString(&config, &config.executable, (binDir + "/python").c_str());
     }
+
+    PySys_AddAuditHook(audit_hook_callback, nullptr);  // install audits
 
     PyStatus status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
