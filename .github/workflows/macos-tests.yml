@@ -137,9 +137,6 @@ jobs:
       run: |
         # Enable core dumps
         ulimit -c unlimited
-        # Increase stack size to 64MB (default is 8MB on macOS)
-        # The fillet test with deep CSG recursion needs more stack space
-        ulimit -s 65536
         # Set core dump location to /tmp/cores (more reliable than /cores)
         mkdir -p /tmp/cores
         sudo sysctl kern.corefile=/tmp/cores/core.%P
