@@ -219,6 +219,7 @@ SettingsEntryEnum<std::string> Settings::octoPrintFileFormat(
   fileformat::info(FileFormat::ASCII_STL).description);
 
 SettingsEntryString Settings::pythonNetworkImportList("python", "networkImportList", "");
+SettingsEntryString Settings::pythonSecurityLevel("python", "securityLevel", "");
 SettingsEntryString Settings::localAppExecutable("printing", "localAppExecutable", "");
 SettingsEntryString Settings::localAppTempDir("printing", "localAppTempDir", "");
 SettingsEntryEnum<std::string> Settings::localAppFileFormat(

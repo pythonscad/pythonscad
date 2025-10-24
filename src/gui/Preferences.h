@@ -137,6 +137,9 @@ public slots:
   void on_lineEditOctoPrintApiKey_editingFinished();
   void on_pushButtonOctoPrintApiKey_clicked();
   void on_textEditPythonImportList_textChanged();
+  void on_pythonSecurityBlock_clicked();
+  void on_pythonSecurityAsk_clicked();
+  void on_pythonSecurityGrant_clicked();
   void on_pushButtonOctoPrintRequestApiKey_clicked();
   void on_lineEditLocalAppExecutable_editingFinished();
   void on_toolButtonLocalAppSelectExecutable_clicked();
