@@ -288,7 +288,7 @@ void Preferences::init()
     ->setText(QString::fromStdString(Settings::Settings::pythonNetworkImportList.value()));
   auto seclevel = Settings::Settings::pythonSecurityLevel.value();
   if (seclevel == "block" || seclevel == "") pythonSecurityBlock->click();
-  if (seclevel == "ask") pythonSecurityAsk->click();
+  //  if (seclevel == "ask") pythonSecurityAsk->click();
   if (seclevel == "grant") pythonSecurityGrant->click();
   this->comboBoxOctoPrintSlicingEngine->clear();
   this->comboBoxOctoPrintSlicingEngine->addItem(_("<Default>"), QVariant{""});

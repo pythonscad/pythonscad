@@ -2807,6 +2807,7 @@
                </property>
               </widget>
              </item>
+ <!--
              <item>
               <widget class="QRadioButton" name="pythonSecurityAsk">
                <property name="text">
@@ -2814,6 +2815,7 @@
                </property>
               </widget>
              </item>
+-->
              <item>
               <widget class="QRadioButton" name="pythonSecurityGrant">
                <property name="text">
