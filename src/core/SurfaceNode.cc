@@ -26,13 +26,13 @@
 
 #include "core/SurfaceNode.h"
 
-#include "core/module.h"
-#include "core/ModuleInstantiation.h"
-#include "core/node.h"
 #include "geometry/PolySet.h"
 #include "geometry/PolySetBuilder.h"
 #include "core/Builtins.h"
 #include "core/Children.h"
+#include "core/module.h"
+#include "core/ModuleInstantiation.h"
+#include "core/node.h"
 #include "core/Parameters.h"
 #include "utils/printutils.h"
 #include "io/fileutils.h"
@@ -101,14 +101,12 @@ void SurfaceNode::convert_image(img_data_t& data, std::vector<uint8_t>& img, uns
   data.width = width;
   data.height = height;
   data.resize((size_t)width * height);
-  double min_val = 200;
   for (unsigned int y = 0; y < height; ++y) {
     for (unsigned int x = 0; x < width; ++x) {
       long idx = 4l * (y * width + x);
       data[x + (width * (height - 1 - y))] = Vector3f(img[idx], img[idx + 1], img[idx + 2]);
     }
   }
-  //  data.min_val = min_val;
 }
 
 bool SurfaceNode::is_png(std::vector<uint8_t>& png) const

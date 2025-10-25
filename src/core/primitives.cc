@@ -25,19 +25,23 @@
  */
 
 #include "core/primitives.h"
+
 #include "geometry/Geometry.h"
 #include "geometry/linalg.h"
-#include "core/Builtins.h"
-#include "core/Children.h"
-#include "core/ModuleInstantiation.h"
-#include "core/Parameters.h"
 #include "geometry/PolySet.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/Barcode1d.h"
 #include "utils/calc.h"
 #include "core/node.h"
 #include "utils/degree_trig.h"
+#include "core/Builtins.h"
+#include "core/Children.h"
 #include "core/module.h"
+#include "core/ModuleInstantiation.h"
+#include "core/node.h"
+#include "core/Parameters.h"
+#include "utils/calc.h"
+#include "utils/degree_trig.h"
 #include "utils/printutils.h"
 #include <algorithm>
 #include <utility>
@@ -226,7 +230,7 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
     return sphereCreateFuncGeometry(this->r_func, fs, fn);
   }
 #endif
-  size_t num_rings = (num_fragments + 1) / 2;
+  auto num_rings = (num_fragments + 1) / 2;
   // Uncomment the following three lines to enable experimental sphere
   // tessellation
   //  if (num_rings % 2 == 0) num_rings++; // To ensure that the middle ring is at
@@ -236,7 +240,7 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
   polyset->vertices.reserve(num_rings * num_fragments);
 
   // double offset = 0.5 * ((fragments / 2) % 2);
-  for (size_t i = 0; i < num_rings; ++i) {
+  for (auto i = 0; i < num_rings; ++i) {
     //                double phi = (180.0 * (i + offset)) / (fragments/2);
     const double phi = (180.0 * (i + 0.5)) / num_rings;
     const double radius = r * sin_degrees(phi);
@@ -249,8 +253,8 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
     polyset->indices.back().push_back(i);
   }
 
-  for (int i = 0; i < num_rings - 1; ++i) {
-    for (int r = 0; r < num_fragments; ++r) {
+  for (auto i = 0; i < num_rings - 1; ++i) {
+    for (auto r = 0; r < num_fragments; ++r) {
       polyset->indices.push_back({
         i * num_fragments + (r + 1) % num_fragments,
         i * num_fragments + r,
@@ -811,7 +815,7 @@ std::unique_ptr<const Geometry> PolygonNode::createGeometry() const
   if (this->paths.empty() && this->points.size() > 2) {
     Outline2d outline;
     std::vector<size_t> path;
-    for (int i = 0; i < this->points.size(); i++) path.push_back(i);
+    for (size_t i = 0; i < this->points.size(); i++) path.push_back(i);
     outline.vertices = createGeometry_sub(this->points, path, fn, fa, fs);
     p->addOutline(outline);
   } else {

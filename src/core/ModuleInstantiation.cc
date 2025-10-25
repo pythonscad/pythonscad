@@ -8,6 +8,7 @@
 #include "utils/compiler_specific.h"
 #include "core/Context.h"
 #include "core/Expression.h"
+#include "core/module.h"
 #include "utils/exceptions.h"
 #include "utils/printutils.h"
 #ifdef ENABLE_PYTHON
@@ -25,14 +26,14 @@ void ModuleInstantiation::print(std::ostream& stream, const std::string& indent,
     if (!arg->getName().empty()) stream << arg->getName() << " = ";
     stream << *arg->getExpr();
   }
-  if (scope.numElements() == 0) {
+  if (scope->numElements() == 0) {
     stream << ");\n";
-  } else if (scope.numElements() == 1) {
+  } else if (scope->numElements() == 1) {
     stream << ") ";
-    scope.print(stream, indent, true);
+    scope->print(stream, indent, true);
   } else {
     stream << ") {\n";
-    scope.print(stream, indent + "\t", false);
+    scope->print(stream, indent + "\t", false);
     stream << indent << "}\n";
   }
 }
@@ -45,11 +46,11 @@ void ModuleInstantiation::print_python(std::ostream& stream, std::ostream& strea
   //  if(context_mode == 1) stream << "return ";
   stream << modname << "(";
   int n = 0;
-  if (scope.numElements() > 1) {
-    scope.print_python(stream, stream_def, indent + "\t", false, 0);
+  if (scope->numElements() > 1) {
+    scope->print_python(stream, stream_def, indent + "\t", false, 0);
     n++;
-  } else if (scope.numElements() == 1) {
-    scope.print_python(stream, stream_def, indent + "\t", true, 0);
+  } else if (scope->numElements() == 1) {
+    scope->print_python(stream, stream_def, indent + "\t", true, 0);
     n++;
   }
 
@@ -113,10 +114,10 @@ void IfElseModuleInstantiation::print_python(std::ostream& stream, std::ostream&
  * noinline is required, as we here specifically optimize for stack usage
  * during normal operating, not runtime during error handling.
  */
-static void NOINLINE print_trace(const ModuleInstantiation *mod,
+static void NOINLINE print_trace(EvaluationException& e, const ModuleInstantiation *mod,
                                  const std::shared_ptr<const Context>& context)
 {
-  LOG(message_group::Trace, mod->location(), context->documentRoot(), "called by '%1$s'", mod->name());
+  e.LOG(message_group::Trace, mod->location(), context->documentRoot(), "called by '%1$s'", mod->name());
 }
 
 std::shared_ptr<AbstractNode> ModuleInstantiation::evaluate(
@@ -143,16 +144,14 @@ std::shared_ptr<AbstractNode> ModuleInstantiation::evaluate(
     auto node = module->module->instantiate(module->defining_context, this, context);
     return node;
   } catch (EvaluationException& e) {
-    if (e.traceDepth > 0) {
-      print_trace(this, context);
-      e.traceDepth--;
-    }
+    print_trace(e, this, context);
+    e.traceDepth--;
     throw;
   }
 }
 
-LocalScope *IfElseModuleInstantiation::makeElseScope()
+std::shared_ptr<LocalScope> IfElseModuleInstantiation::makeElseScope()
 {
-  this->else_scope = std::make_unique<LocalScope>();
-  return this->else_scope.get();
+  this->else_scope = std::make_shared<LocalScope>();
+  return this->else_scope;
 }

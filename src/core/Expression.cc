@@ -25,8 +25,6 @@
  */
 #include "core/Expression.h"
 
-#include "utils/compiler_specific.h"
-#include "core/Value.h"
 #include <set>
 #include <functional>
 #include <ostream>
@@ -40,11 +38,17 @@
 #include <typeinfo>
 #include <utility>
 #include <variant>
+
+#include "core/Context.h"
+#include "core/EvaluationSession.h"
+#include "core/function.h"
+#include "core/Parameters.h"
+#include "core/Value.h"
+
+#include "utils/compiler_specific.h"
 #include "utils/printutils.h"
 #include "utils/StackCheck.h"
-#include "core/Context.h"
 #include "utils/exceptions.h"
-#include "core/Parameters.h"
 #include "utils/printutils.h"
 #include "utils/boost-utils.h"
 #include <boost/regex.hpp>
@@ -507,10 +511,11 @@ static void NOINLINE print_err(const char *name, const Location& loc,
  * noinline is required, as we here specifically optimize for stack usage
  * during normal operating, not runtime during error handling.
  */
-static void NOINLINE print_trace(const FunctionCall *val, const std::shared_ptr<const Context>& context)
+static void NOINLINE print_trace(EvaluationException& e, const FunctionCall *val,
+                                 const std::shared_ptr<const Context>& context)
 {
-  LOG(message_group::Trace, val->location(), context->documentRoot(), "called by '%1$s'",
-      val->get_name());
+  e.LOG(message_group::Trace, val->location(), context->documentRoot(), "called by '%1$s'",
+        val->get_name());
 }
 
 FunctionCall::FunctionCall(Expression *expr, AssignmentList args, const Location& loc)
@@ -607,7 +612,7 @@ static SimplificationResult simplify_function_body(const Expression *expression,
           required_parameters = &callable.function->parameters;
           defining_context = callable.defining_context;
         } else {
-          const FunctionType *function;
+          const FunctionType *function = nullptr;
           if (index == 2) {
             function = &std::get<Value>(*f).toFunction();
           } else if (index == 3) {
@@ -674,10 +679,8 @@ Value FunctionCall::evaluate(const std::shared_ptr<const Context>& context) cons
         }
       }
     } catch (EvaluationException& e) {
-      if (e.traceDepth > 0) {
-        print_trace(current_call, *expression_context);
-        e.traceDepth--;
-      }
+      print_trace(e, current_call, *expression_context);
+      e.traceDepth--;
       throw;
     }
   }

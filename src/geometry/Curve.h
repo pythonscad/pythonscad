@@ -22,4 +22,7 @@ public:
 
   double r;
   Vector3d center, normdir;
+
+private:
+  virtual int operator==(const Curve& other) { return 0; }
 };

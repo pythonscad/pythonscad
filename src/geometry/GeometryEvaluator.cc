@@ -1,8 +1,12 @@
 #include "geometry/GeometryEvaluator.h"
-#include "geometry/Geometry.h"
+
+#include "Feature.h"
+#include "geometry/boolean_utils.h"
 #include "geometry/cgal/cgal.h"
+#include "geometry/ClipperUtils.h"
 #include "geometry/linalg.h"
-#include "core/Tree.h"
+#include "geometry/linear_extrude.h"
+#include "geometry/Geometry.h"
 #include "geometry/GeometryCache.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/Barcode1d.h"
@@ -33,11 +37,30 @@
 #include "geometry/PolySet.h"
 #include "glview/Renderer.h"
 #include "geometry/PolySetBuilder.h"
-#include "utils/calc.h"
-#include "utils/printutils.h"
-#include "utils/calc.h"
+#include "geometry/roof_ss.h"
+#include "geometry/roof_vd.h"
+#include "geometry/rotate_extrude.h"
+
 #include "glview/RenderSettings.h"
+
+#include "core/CgalAdvNode.h"
+#include "core/ColorNode.h"
+#include "core/CsgOpNode.h"
+#include "core/ModuleInstantiation.h"
+#include "core/LinearExtrudeNode.h"
+#include "core/OffsetNode.h"
+#include "core/ProjectionNode.h"
+#include "core/RenderNode.h"
+#include "core/RoofNode.h"
+#include "core/RotateExtrudeNode.h"
+#include "core/State.h"
+#include "core/TextNode.h"
+#include "core/TransformNode.h"
+#include "core/Tree.h"
+#include "utils/calc.h"
 #include "utils/degree_trig.h"
+#include "utils/printutils.h"
+
 #include <iterator>
 #include <cassert>
 #include <list>
@@ -46,9 +69,9 @@
 #include "geometry/boolean_utils.h"
 #include <src/utils/hash.h>
 #include <src/core/Selection.h>
+#ifdef ENABLE_CGAL
 #include "geometry/cgal/CGALCache.h"
 #include <unordered_set>
-#ifdef ENABLE_CGAL
 #include "geometry/cgal/cgalutils.h"
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/Point_2.h>
@@ -126,7 +149,7 @@ void vectorDump(const char *msg, const Vector3d& vec)
 void triangleDump(const char *msg, const IndexedFace& face, const std::vector<Vector3d>& vert)
 {
   printf("%s ", msg);
-  for (int i = 0; i < face.size(); i++) {
+  for (size_t i = 0; i < face.size(); i++) {
     const Vector3d& pt = vert[face[i]];
     vectorDump(" ", pt);
   }
@@ -164,7 +187,6 @@ std::vector<Vector4d> calcTriangleNormals(const std::vector<Vector3d>& vertices,
 bool pointInPolygon(const std::vector<Vector3d>& vert, const IndexedFace& bnd, int ptind)
 {
   int i, n;
-  double dist;
   n = bnd.size();
   int cuts = 0;
   Vector3d p1, p2;
@@ -172,9 +194,11 @@ bool pointInPolygon(const std::vector<Vector3d>& vert, const IndexedFace& bnd, i
   Vector3d res;
   if (n < 3) return false;
   Vector3d raydir = vert[bnd[1]] - vert[bnd[0]];
-  Vector3d fn = raydir.cross(vert[bnd[1]] - vert[bnd[2]]).normalized();
+  Vector3d raydir2 = vert[bnd[1]] - vert[bnd[2]];
+  Vector3d fn = raydir.cross(raydir2).normalized();
   // check, how many times the ray crosses the 3D fence, classical algorithm in 3D
-  for (i = 1; i < n; i++) {  // 0 is always parallel
+  raydir = (raydir * 0.371 + raydir2 * 0.712).normalized();
+  for (i = 0; i < n; i++) {
     // build fence side
     const Vector3d& p1 = vert[bnd[i]];
     const Vector3d& p2 = vert[bnd[(i + 1) % n]];
@@ -221,7 +245,7 @@ std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> createEdgeDb(
   val.posa = -1;
   val.posb = -1;
   int ind1, ind2;
-  for (int i = 0; i < indices.size(); i++) {
+  for (size_t i = 0; i < indices.size(); i++) {
     int n = indices[i].size();
     for (int j = 0; j < n; j++) {
       ind1 = indices[i][j];
@@ -292,7 +316,7 @@ bool mergeTrianglesOpposite(const IndexedFace& poly1, const IndexedFace& poly2)
   return true;
 }
 
-typedef std::vector<int> intList;
+typedef std::vector<size_t> intList;
 typedef std::vector<intList> intListList;
 
 class TriCombineStub
@@ -464,16 +488,12 @@ static indexedFaceList mergeTrianglesSub(const std::vector<IndexedFace>& triangl
       // Reduce colinear points
       int n = poly.size();
       IndexedFace poly_new;
-      int last = poly[n - 1], cur = poly[0], next;
+      int cur = poly[0], next;
       for (int i = 0; i < n; i++) {
         next = poly[(i + 1) % n];
-        Vector3d p0 = vert[last];
-        Vector3d p1 = vert[cur];
-        Vector3d p2 = vert[next];
         if (1) {  // (p2-p1).cross(p1-p0).norm() > 0.00001) {
                   // TODO enable again, need partner also to remove
           poly_new.push_back(cur);
-          last = cur;
           cur = next;
         } else {
           cur = next;
@@ -571,15 +591,20 @@ std::vector<IndexedFace> mergeTriangles(const std::vector<IndexedFace> polygons,
             par = k;
           }
         }
-        if (par == -1) printf("par not found here\n");
-        // assert(par != -1); TODO fix
-        faceParents.push_back(par + off);
+        if (par != -1) faceParents.push_back(par + off);
+        else {
+          faceParents.push_back(-1);
+          printf("par not found here 1\n");
+        }
       }
     }
   }
 
   return indices;
 }
+
+void export_debug_polyset(const PolySet& ps);
+
 std::vector<IndexedColorFace> mergeTriangles(const std::vector<IndexedColorFace> polygons,
                                              const std::vector<Vector4d> normals,
                                              std::vector<Vector4d>& newNormals,
@@ -788,7 +813,7 @@ void Map3D::find_sub(int ind, double minx, double miny, double minz, double maxx
         result.push_back(this->items[ind].pts[i]);
         resultind.push_back(this->items[ind].ptsind[i]);
       }
-      if (result.size() >= maxresult) return;
+      if (result.size() >= (size_t)maxresult) return;
     }
     return;
   }
@@ -797,7 +822,7 @@ void Map3D::find_sub(int ind, double minx, double miny, double minz, double maxx
   midx = (minx + maxx) / 2.0;
   midy = (miny + maxy) / 2.0;
   midz = (minz + maxz) / 2.0;
-  if (result.size() >= maxresult) return;
+  if (result.size() >= (size_t)maxresult) return;
   if (pt[2] + r >= minz && pt[2] - r < midz) {
     if (pt[1] + r >= miny && pt[1] - r < midy) {
       if (pt[0] + r >= minx && pt[0] - r < midx)
@@ -921,27 +946,59 @@ int cut_face_line(Vector3d fp, Vector3d fn, Vector3d lp, Vector3d ld, Vector3d& 
   return 0;
 }
 
-std::shared_ptr<Geometry> union_geoms(std::vector<std::shared_ptr<PolySet>> parts)  // TODO use widely
+std::unique_ptr<Geometry> union_geoms(std::vector<std::shared_ptr<PolySet>> parts)  // TODO use widely
 {
-  std::shared_ptr<ManifoldGeometry> result = nullptr;
-  for (auto part : parts) {
-    std::shared_ptr<const ManifoldGeometry> part_mani = ManifoldUtils::createManifoldFromGeometry(part);
-    if (result == nullptr) result = std::make_shared<ManifoldGeometry>(*part_mani);
-    else *result = *result + *part_mani;
+#ifdef ENABLE_MANIFOLD
+  if (RenderSettings::inst()->backend3D == RenderBackend3D::ManifoldBackend) {
+    std::unique_ptr<ManifoldGeometry> result = nullptr;
+    for (auto part : parts) {
+      std::shared_ptr<const ManifoldGeometry> part_mani =
+        ManifoldUtils::createManifoldFromGeometry(part);
+      if (result == nullptr) result = std::make_unique<ManifoldGeometry>(*part_mani);
+      else *result = *result + *part_mani;
+    }
+    return result;
+  } else
+#endif
+  {
+    assert(parts.size() > 0);
+    std::shared_ptr<CGALNefGeometry> result = nullptr;
+    for (const std::shared_ptr<PolySet>& part : parts) {
+      std::shared_ptr<const CGALNefGeometry> op = CGALUtils::getNefPolyhedronFromGeometry(part);
+      if (result == nullptr) result = std::make_shared<CGALNefGeometry>(*op);
+      else *result += *op;
+      auto p2 = CGALUtils::getNefPolyhedronFromGeometry(parts[0]);
+    }
+    return std::make_unique<CGALNefGeometry>(result->p3);
   }
-  return result;
 }
 
-std::shared_ptr<Geometry> difference_geoms(
+std::unique_ptr<Geometry> difference_geoms(
   std::vector<std::shared_ptr<PolySet>> parts)  // TODO use widely
 {
-  std::shared_ptr<ManifoldGeometry> result = nullptr;
-  for (auto part : parts) {
-    std::shared_ptr<const ManifoldGeometry> part_mani = ManifoldUtils::createManifoldFromGeometry(part);
-    if (result == nullptr) result = std::make_shared<ManifoldGeometry>(*part_mani);
-    else *result = *result - *part_mani;
+#ifdef ENABLE_MANIFOLD
+  if (RenderSettings::inst()->backend3D == RenderBackend3D::ManifoldBackend) {
+    std::unique_ptr<ManifoldGeometry> result = nullptr;
+    for (auto part : parts) {
+      std::shared_ptr<const ManifoldGeometry> part_mani =
+        ManifoldUtils::createManifoldFromGeometry(part);
+      if (result == nullptr) result = std::make_unique<ManifoldGeometry>(*part_mani);
+      else *result = *result - *part_mani;
+    }
+    return result;
+  } else
+#endif
+  {
+    assert(parts.size() > 0);
+    std::shared_ptr<CGALNefGeometry> result = nullptr;
+    for (const std::shared_ptr<PolySet>& part : parts) {
+      std::shared_ptr<const CGALNefGeometry> op = CGALUtils::getNefPolyhedronFromGeometry(part);
+      if (result == nullptr) result = std::make_shared<CGALNefGeometry>(*op);
+      else *result -= *op;
+      auto p2 = CGALUtils::getNefPolyhedronFromGeometry(parts[0]);
+    }
+    return std::make_unique<CGALNefGeometry>(result->p3);
   }
-  return result;
 }
 
 class Offset3D_CornerContext
@@ -982,7 +1039,6 @@ bool offset3D_inside(Offset3D_CornerContext& cxt, const Vector3d& pt, double del
   for (int i = 0; i < n; i++) {
     Vector2d p1 = cxt.flatloop[i];
     Vector2d p2 = cxt.flatloop[(i + 1) % n];
-    double x;
     Vector2d dir = (p2 - p1).normalized();
     Vector2d dir_(-dir[1], dir[0]);
 
@@ -1013,7 +1069,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
   auto indicesNew = mergeTriangles(ps->indices, faceNormal, newNormals, faceParents, ps->vertices);
 
   intList empty;
-  std::vector<std::vector<int>> corner_rounds;
+  std::vector<std::vector<size_t>> corner_rounds;
   for (size_t i = 0; i < ps->vertices.size(); i++) corner_rounds.push_back(empty);
   std::vector<Vector3f> verticesFloat;
   for (const auto& v : ps->vertices) verticesFloat.push_back(v.cast<float>());
@@ -1028,7 +1084,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     std::vector<IndexedFace> face_set;
     face_set.push_back(indicesNew[a]);
     for (size_t b = 0; b < faceParents.size(); b++)
-      if (faceParents[b] == a) face_set.push_back(indicesNew[b]);
+      if ((size_t)faceParents[b] == a) face_set.push_back(indicesNew[b]);
 
     PolySetBuilder builder;
 
@@ -1153,7 +1209,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     builder.addVertex(endpt);
 
     // top rounding
-    for (size_t i = 0; i < n - 1; i++) {
+    for (size_t i = 0; i < (size_t)n - 1; i++) {
       builder.appendPolygon({start_inds[i], start_inds[i + 1], end_inds[i + 1], end_inds[i]});
     }
 
@@ -1173,7 +1229,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     subgeoms.push_back(result_s);  // edges
   }
 
-  for (int i = 0; i < ps->vertices.size(); i++) {
+  for (size_t i = 0; i < ps->vertices.size(); i++) {
     Offset3D_CornerContext cxt;
     cxt.basept = ps->vertices[i];
     cxt.r = off;
@@ -2359,9 +2415,9 @@ static std::unique_ptr<Geometry> extrudePath(const PathExtrudeNode& node, const 
     Vector3d curPt = path_round[(i + xdir_offset) % m];
     Vector3d seg = curPt - prevPt;
     double length_seg = seg.norm();
-    int split = ceil(length_seg / node.fs);
+    size_t split = ceil(length_seg / node.fs);
     if (node.twist == 0 && node.scale_x == 1.0 && node.scale_y == 1.0) split = 1;
-    for (int j = 1; j <= split; j++) {
+    for (size_t j = 1; j <= split; j++) {
       double ratio = (double)j / (double)split;
       path_os.push_back(prevPt + seg * ratio);
       length_os.push_back((i - 1 + (double)j / (double)split) / (double)(path_round.size() - 1));
@@ -2531,7 +2587,7 @@ Response GeometryEvaluator::visit(State& state, const ConcatNode& node)
           LOG(message_group::Error, "Concat only works for PolySet Data");
           continue;
         }
-        for (int i = 0; i < ps->indices.size(); i++) {
+        for (size_t i = 0; i < ps->indices.size(); i++) {
           const auto& face = ps->indices[i];
           builder.beginPolygon(face.size());
           for (int ind : face) {
@@ -2822,14 +2878,14 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
       if (n < 1) continue;
       Vector3d curpt = vertices[poly[n - 1]];
       chain.push_back(curpt);
-      int curlevel = 0;  // 0 ebene0, 1, zwishen, 2, ebene1, 3 zwischen
+      size_t curlevel = 0;  // 0 ebene0, 1, zwishen, 2, ebene1, 3 zwischen
       while ((curlevel >> 1) + 1 < xsteps.size() && curpt[0] > xsteps[(curlevel >> 1) + 1])
         curlevel += 2;
       if (curpt[0] == xsteps[(curlevel >> 1) + 1]) curlevel++;
-      int curpols = stripPolygons[curlevel >> 1].size();
+      size_t curpols = stripPolygons[curlevel >> 1].size();
       for (int i = 0; i < n; i++) {
         Vector3d newpt = vertices[poly[i]];
-        int newlevel = 0;
+        size_t newlevel = 0;
         while ((newlevel >> 1) + 1 < xsteps.size() && newpt[0] > xsteps[(newlevel >> 1) + 1])
           newlevel += 2;
         if (newpt[0] == xsteps[(newlevel >> 1) + 1]) newlevel++;
@@ -2894,7 +2950,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
       std::sort(stripTops[i].begin(), stripTops[i].end(), compare_func);
 
       Polygon chain;
-      Vector3d connpt;
+      Vector3d connpt(0, 0, 0);
       bool done = true;
       while (done) {
         done = false;
@@ -2906,7 +2962,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
             done = true;
           }
         } else {
-          for (int j = 0; j < stripPolygons[i].size(); j++) {
+          for (size_t j = 0; j < stripPolygons[i].size(); j++) {
             if ((stripPolygons[i][j][0] - connpt).norm() < 1e-3) {
               chain.insert(chain.end(), stripPolygons[i][j].begin(), stripPolygons[i][j].end());
               stripPolygons[i].erase(stripPolygons[i].begin() + j);
@@ -2916,7 +2972,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
             }
           }
         }
-        for (int j = 0; j < stripBots[i].size(); j += 2) {
+        for (size_t j = 0; j < stripBots[i].size(); j += 2) {
           if ((stripBots[i][j] - connpt).norm() < 1e-3) {
             connpt = stripBots[i][j + 1];
             stripBots[i].erase(stripBots[i].begin() + j, stripBots[i].begin() + j + 2);
@@ -2930,7 +2986,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
             break;
           }
         }
-        for (int j = 0; j < stripTops[i].size(); j += 2) {
+        for (size_t j = 0; j < stripTops[i].size(); j += 2) {
           if ((stripTops[i][j + 1] - connpt).norm() < 1e-3) {
             connpt = stripTops[i][j];
             stripTops[i].erase(stripTops[i].begin() + j, stripTops[i].begin() + j + 2);
@@ -2996,7 +3052,7 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
   PolySetBuilder builder(0, 0, 3, true);
 
   // find maxmal xrange
-  double xmin = NAN, xmax;
+  double xmin = NAN, xmax = NAN;
   for (const auto& p : ps->indices) {
     for (int i : p) {
       double x = ps->vertices[i][0];
@@ -3056,14 +3112,12 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
     xscale.push_back(xmin);
   }
 
-  int scalelen = xscale.size();
-
   std::vector<indexedFaceList> polygons_sorted;
   std::vector<Vector4d> normals = calcTriangleNormals(ps->vertices, ps->indices);
   std::vector<int> faceParents;
   std::vector<Vector4d> newnormals;
   std::vector<IndexedColorFace> tri_color;
-  for (int i = 0; i < ps->indices.size(); i++) {
+  for (size_t i = 0; i < ps->indices.size(); i++) {
     const auto& tri = ps->indices[i];
     if (i < ps->color_indices.size())
       tri_color.push_back(IndexedColorFace({.face = tri, .color = ps->color_indices[i]}));
@@ -3158,7 +3212,7 @@ static std::unique_ptr<PolySet> debugObject(const DebugNode& node, const PolySet
   int colorind = psx->colors.size();
   psx->colors.push_back(debug_color);
   for (size_t i = 0; i < node.faces.size(); i++) {
-    int ind = node.faces[i];
+    size_t ind = (size_t)node.faces[i];
     if (ind >= 0 && ind < psx->color_indices.size()) psx->color_indices[ind] = colorind;
   }
 
@@ -3202,7 +3256,7 @@ static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolyS
   }
 
   indexedFaceList defects = mergeTrianglesSub(ps->indices, ps->vertices);
-  for (int i = 0; i < defects.size(); i++) {
+  for (size_t i = 0; i < defects.size(); i++) {
     auto face = defects[i];
     auto fence = defects[i];
     IndexedFace fence_new;
@@ -3219,7 +3273,7 @@ static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolyS
       for (auto ind : fence) {
         const auto& pt = ps->vertices[ind];
         double dist = (p1 - pt).dot(n);
-        if (dist < -1e-3) {
+        if (dist > 1e-3) {
           valid = false;
           break;
         }
@@ -3246,6 +3300,43 @@ static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolyS
         if (fence_new.size() == 0) break;
         fence = fence_new;
         fence_new.clear();
+      }
+    }
+    if (face.size() > 0) {
+      printf("Recovery\n");
+      // find smallest distance between 2 pts
+      int imin = -1, jmin = -1;
+      double distmin = 1e9;
+      for (int i = 0; i < l - 1; i++) {
+        const auto& p1 = ps->vertices[face[i]];
+        const auto& p1n = ps->vertices[face[(i + 1) % l]];
+        const auto& p1d = (p1n - p1).normalized();
+        for (int j = i + 1; j < l; j++) {
+          const auto& p2 = ps->vertices[face[j]];
+          const auto& p2n = ps->vertices[face[(j + 1) % l]];
+          const auto& p2d = (p2n - p2).normalized();
+          double dist = (p1 - p2).norm();
+          if (fabs(p1d.dot((p2 - p1).normalized())) > 0.5)
+            continue;  // shortcut must be somehow perpendicular
+          if (fabs(p2d.dot((p2 - p1).normalized())) > 0.5)
+            continue;  // shortcut must be somehow perpendicular
+          if (dist < distmin) {
+            imin = i;
+            jmin = j;
+            distmin = dist;
+          }
+        }
+      }
+      printf("min is %d/%d %g\n", imin, jmin, distmin);
+      // now build 2 parts
+      if (imin != -1) {
+        IndexedFace part1, part2;
+        for (int i = 0; i <= imin; i++) part1.push_back(face[i]);
+        for (int i = jmin; i < l; i++) part1.push_back(face[i]);
+        for (int i = imin; i < jmin; i++) part2.push_back(face[i]);
+        // just skip the current one and schedule 2 new
+        defects.push_back(part1);
+        defects.push_back(part2);
       }
     }
   }

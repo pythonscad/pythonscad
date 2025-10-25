@@ -43,6 +43,7 @@
 
 #include "core/EvaluationSession.h"
 #include "io/fileutils.h"
+#include "utils/exceptions.h"
 #include "utils/printutils.h"
 #include "utils/StackCheck.h"
 #include "utils/boost-utils.h"
@@ -453,7 +454,7 @@ public:
     try {
       (tostream_visitor(stream))(v);
     } catch (EvaluationException& e) {
-      LOG(message_group::Error, e.what());
+      e.LOG(message_group::Error, e.what());
       throw;
     }
     return stream.str();
@@ -465,7 +466,7 @@ public:
     try {
       (tostream_visitor(stream))(v);
     } catch (EvaluationException& e) {
-      LOG(message_group::Error, e.what());
+      e.LOG(message_group::Error, e.what());
       throw;
     }
     return stream.str();
@@ -1379,9 +1380,7 @@ std::ostream& operator<<(std::ostream& stream, const RangeType& r)
 
 std::ostream& operator<<(std::ostream& stream, const PythonClassType& r)
 {
-  return stream << "["
-                << "pythonclass"
-                << "]";
+  return stream << "[" << "pythonclass" << "]";
 }
 
 // called by clone()

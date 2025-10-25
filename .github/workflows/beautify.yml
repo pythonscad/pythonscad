@@ -14,12 +14,16 @@ jobs:
     steps:
 
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install dependencies
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        TZ: Etc/UTC
       run: |
-        sudo apt update
-        sudo apt -qq -y install clang-format
+        which sudo || ( apt update && apt install -y sudo )
+        sudo -E apt update
+        sudo -E apt -qq -y install clang-format
 
     - name: Run check
       id: check
