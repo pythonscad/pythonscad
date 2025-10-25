@@ -239,6 +239,9 @@ else()
   set(SUFFIX_WITH_DASH "")
 endif()
 
+set(EXECUTABLE_NAME pythonscad${SUFFIX_WITH_DASH})
+set(PYTHON_EXECUTABLE_NAME pythonscad-python${SUFFIX_WITH_DASH})
+
 if (MXECROSS OR WIN32)
   add_subdirectory(winconsole)
   set_property(TARGET OpenSCAD PROPERTY WIN32_EXECUTABLE ON)
@@ -484,9 +487,6 @@ message(STATUS "LibXml2: ${LIBXML2_VERSION_STRING}")
 target_include_directories(OpenSCAD SYSTEM PRIVATE ${LIBXML2_INCLUDE_DIR})
 target_link_libraries(OpenSCAD PRIVATE ${LIBXML2_LIBRARIES})
 
-set(EXECUTABLE_NAME pythonscad${SUFFIX_WITH_DASH})
-set(PYTHON_EXECUTABLE_NAME pythonscad-python${SUFFIX_WITH_DASH})
-
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/src/executable.h.in"
   "${CMAKE_CURRENT_BINARY_DIR}/executable.h"
@@ -547,7 +547,7 @@ if(ENABLE_PYTHON)
 
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND rm -rf python_mingw && mkdir python_mingw && cd python_mingw && wget ${PYTHON_MINGW_PACKAGEFOLDER}/${PYTHON_MINGW_PACKAGEZST} && unzstd ${PYTHON_MINGW_PACKAGEZST} && tar -xf ${PYTHON_MINGW_PACKAGETAR} &&  ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh
+      COMMAND bash -c "rm -rf python_mingw && mkdir python_mingw && cd python_mingw && wget ${PYTHON_MINGW_PACKAGEFOLDER}/${PYTHON_MINGW_PACKAGEZST} && bsdtar -xf ${PYTHON_MINGW_PACKAGEZST} && ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh"
       OUTPUT ${PYTHON_MINGW_ARCHIVE}
     )
     add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
@@ -555,7 +555,7 @@ if(ENABLE_PYTHON)
 
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && unzip ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME} && rm python*._pth
+      COMMAND bash -c "rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && bsdtar -xf ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME} && rm python*._pth"
       OUTPUT ${PYTHON_EMBED_SHLIB}
     )
     add_custom_target(tgt_python_embed DEPENDS ${PYTHON_EMBED_SHLIB})
