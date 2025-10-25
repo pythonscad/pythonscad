@@ -43,17 +43,32 @@ public:
   std::string toString() const override
   {
     std::ostringstream stream;
-    stream << "cube(size = [" << dim[0] << ", " << dim[1] << ", " << dim[2] << "], center = ";
-    if (center[0] == center[1] && center[1] == center[2])
-      stream << ((center[0] == 0) ? "true" : "false");
-    else {
-      stream << "\"";
-      for (int i = 0; i < 3; i++) {
-        if (center[i] < 0) stream << "-";
-        if (center[i] == 0) stream << "|";
-        if (center[i] > 0) stream << "+";
+    int center[3], failed=0;
+    for(int i=0;i<3; i++) {
+      if(position[i] == 0) center[i]=1;
+      else if(position[i] == -dim[i]) center[i]=-1;
+      else if(position[i] == -dim[i]/2) center[i]=0;
+      else failed=1;
+    } 
+    stream << "cube(size = [" << dim[0] << ", " << dim[1] << ", " << dim[2] << "]";
+    if(failed == 0) {
+      stream << ", center = ";
+      if (center[0] == center[1] && center[1] == center[2]) {
+        stream << ((center[0] == 0) ? "true" : "false");
+      } else {
+        stream << "\"";
+        for (int i = 0; i < 3; i++) {
+          if (center[i] < 0) stream << "-";
+          if (center[i] == 0) stream << "|";
+          if (center[i] > 0) stream << "+";
+        }
+        stream << "\"";
       }
-      stream << "\"";
+     } else {
+       stream << ", position = [ " 
+		<< position[0] << " , " 
+		<< position[1] << " , " 
+		<< position[2] << "]";
     }
     stream << ")";
     return stream.str();
@@ -66,7 +81,7 @@ public:
   double dim[3] = {1, 1, 1};
   int dragflags = 0;  // X, Y, Z
   double dim_[3] = {0, 0, 0};
-  int center[3] = {1, 1, 1};  // -1 means negative side, 0 means centered, 1 means positive side
+  double position[3] = {0, 0, 0};
 };
 
 std::unique_ptr<const Geometry> sphereCreateFuncGeometry(void *funcptr, double fs, int n);
