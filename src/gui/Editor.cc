@@ -3,6 +3,7 @@
 #include <QWidget>
 #include "gui/Preferences.h"
 #include "gui/QSettingsCached.h"
+#include "genlang/genlang.h"
 
 void EditorInterface::wheelEvent(QWheelEvent *event)
 {
@@ -14,4 +15,26 @@ void EditorInterface::wheelEvent(QWheelEvent *event)
   } else {
     QWidget::wheelEvent(event);
   }
+}
+
+void EditorInterface::recomputeLanguageActive()
+{
+  auto fnameba = filepath.toLocal8Bit();
+  const char *fname = filepath.isEmpty() ? "" : fnameba;
+
+  int oldLanguage = language;
+  language = LANG_SCAD;
+  if (fname != NULL) {
+#ifdef ENABLE_PYTHON
+    if (boost::algorithm::ends_with(fname, ".py")) {
+      language = LANG_PYTHON;
+    }
+#endif
+  }
+
+#ifdef ENABLE_PYTHON
+  if (oldLanguage != language) {
+    onLanguageChanged(language);
+  }
+#endif
 }
