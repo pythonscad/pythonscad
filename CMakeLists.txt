@@ -567,32 +567,37 @@ if(ENABLE_PYTHON)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
   else() #MXE
 	  if (${PYTHON_VERSION}  STREQUAL "OFF")
-      find_package(Python  REQUIRED COMPONENTS Development)
+      find_package(Python3  REQUIRED COMPONENTS Development)
     else()
-      find_package(Python  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
+      find_package(Python3  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
     endif()
     if(NOT Nettle_FOUND)
       message(WARNING "Nettle not found, disabling python support.")
       set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
     endif()
-    if(NOT Python_FOUND  AND NOT WIN32)
+    if(NOT Python3_FOUND  AND NOT WIN32)
       if(ENABLE_PYTHON)
         message(WARNING "Python not found, disabling python support.")
         set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
       endif()
     endif()
-    SET(Python_Eff_LIBRARIES ${Python_LIBRARIES} )
-    SET(Python_Eff_INCLUDE_DIRS ${Python_INCLUDE_DIRS} )
+    SET(Python_Eff_LIBRARIES ${Python3_LIBRARIES} )
+    SET(Python_Eff_INCLUDE_DIRS ${Python3_INCLUDE_DIRS} )
     target_link_libraries(OpenSCADPy PRIVATE ${Python_Eff_LIBRARIES})
     target_include_directories(OpenSCADPy PRIVATE ${Python_Eff_INCLUDE_DIRS})
     target_include_directories(OpenSCADPy PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
     message(STATUS "Python enabled")
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
-    target_link_libraries(OpenSCADPy PRIVATE ${Python_LIBRARIES})
+    target_link_libraries(OpenSCADPy PRIVATE ${Python3_LIBRARIES})
   endif() # endif MXE
   target_include_directories(OpenSCADPy PRIVATE ${Nettle_INCLUDE_DIRS})
   target_link_libraries(OpenSCADPy PRIVATE ${Nettle_LIBRARIES})
-  add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME})
+  # Create pythonscad-python symlink
+  # On macOS bundles, this will be created via POST_BUILD command
+  # On other platforms, create it in the build directory
+  if(NOT (APPLE AND NOT APPLE_UNIX))
+    add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME})
+  endif()
   target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
   if(MSVC)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS}/harfbuzz)
@@ -949,6 +954,8 @@ endif()
 
 # Stack size 8MB; github issue 116
 target_compile_definitions(OpenSCAD PRIVATE "STACKSIZE=${STACKSIZE}") # used as default in src/platform/PlatformUtils.h
+# Disable Eigen alignment to prevent memory corruption on macOS where alignment differs between modules
+target_compile_definitions(OpenSCAD PRIVATE EIGEN_DONT_ALIGN)
 
 if(NULLGL)
   set(OFFSCREEN_METHOD "NULLGL")
@@ -1612,14 +1619,61 @@ add_custom_command(TARGET OpenSCAD POST_BUILD
 
 if(APPLE AND NOT APPLE_UNIX)
   set_target_properties(OpenSCAD PROPERTIES
+    OUTPUT_NAME ${EXECUTABLE_NAME}
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist.in
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_ICON_FILE ${MACOSX_BUNDLE_ICON_FILE}
     MACOSX_BUNDLE_BUNDLE_VERSION ${OPENSCAD_YEAR}.${OPENSCAD_MONTH}.${OPENSCAD_DAY}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${OPENSCAD_YEAR}.${OPENSCAD_MONTH}
     RESOURCE "${RESOURCE_FILES}"
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "@executable_path/../Frameworks"
   )
-  set(BUNDLE_RESOURCES_DIR ${CMAKE_CURRENT_BINARY_DIR}/OpenSCAD.app/Contents/Resources)
+  set(BUNDLE_RESOURCES_DIR ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/Resources)
+  set(BUNDLE_FRAMEWORKS_DIR ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/Frameworks)
+
+  # Create pythonscad-python symlink inside the macOS bundle
+  add_custom_command(TARGET OpenSCAD POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS
+    COMMENT "Creating ${PYTHON_EXECUTABLE_NAME} symlink in macOS bundle"
+  )
+
+  # Bundle Python framework for portability (if Python is enabled)
+  if(ENABLE_PYTHON AND Python3_FOUND)
+    # Get the Python framework path
+    # Python3_LIBRARIES is typically: .../Python.framework/Versions/X.Y/lib/libpython.dylib
+    # We need to get to: .../Python.framework
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${Python3_LIBRARIES}" DIRECTORY)  # .../lib
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../3.14
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Versions
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Python.framework
+
+    # The actual framework library file that the binary links to
+    set(PYTHON_FRAMEWORK_LIB "${PYTHON_FRAMEWORK_DIR}/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python")
+
+    message(STATUS "Bundling Python framework from: ${PYTHON_FRAMEWORK_DIR}")
+    message(STATUS "Python framework library: ${PYTHON_FRAMEWORK_LIB}")
+
+    # Copy Python.framework into the app bundle
+    add_custom_command(TARGET OpenSCAD POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${BUNDLE_FRAMEWORKS_DIR}
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PYTHON_FRAMEWORK_DIR}
+        ${BUNDLE_FRAMEWORKS_DIR}/Python.framework
+      COMMENT "Bundling Python.framework into app bundle for portability"
+    )
+
+    # Fix the install name to use @rpath instead of absolute path
+    # We need to use the exact path as it appears in the binary (the framework Python file, not libpython.dylib)
+    add_custom_command(TARGET OpenSCAD POST_BUILD
+      COMMAND install_name_tool -change
+        ${PYTHON_FRAMEWORK_LIB}
+        @rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python
+        ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}
+      COMMENT "Updating Python library reference to use @rpath"
+    )
+  endif()
   file(COPY ${CMAKE_SOURCE_DIR}/color-schemes DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/examples DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/fonts DESTINATION ${BUNDLE_RESOURCES_DIR})
