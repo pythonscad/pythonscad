@@ -2,17 +2,16 @@ name: Windows(MSVC) Tests
 
 on:
   push:
-    branches: [ main, enable-windows-tests ]
+    branches:
+      - master
   pull_request:
-    branches: [ main ]
   workflow_dispatch:
     inputs:
       debug_enabled:
         type: boolean
-        description: 'Run the build with tmate debugging enabled'
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
         required: false
         default: false
-
 jobs:
   build-and-test:
     name: windows-latest msvc
