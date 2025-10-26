@@ -47,6 +47,11 @@ jobs:
         with:
           arch: x64
 
+      - name: Create vcpkg Binary Cache Directory
+        run: |
+          if not exist "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}" mkdir "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+        shell: cmd
+
       - name: Setup vcpkg Cache
         uses: actions/cache@v4
         with:
@@ -54,10 +59,6 @@ jobs:
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: |
             vcpkg-${{ runner.os }}-
-
-      - name: Create vcpkg Binary Cache Directory
-        run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-        shell: bash
 
       - name: Setup vcpkg
         run: |
