@@ -19,7 +19,8 @@
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "ENABLE_PYTHON": "ON",
-        "EXPERIMENTAL": "ON"
+        "EXPERIMENTAL": "ON",
+        "HEADLESS": "ON"
       },
       "condition": {
         "type": "equals",

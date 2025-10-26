@@ -8,24 +8,14 @@
     "boost-program-options",
     "eigen3",
     "cgal",
-    "cairo",
-    "harfbuzz",
-    "fontconfig",
     "double-conversion",
-    "opencsg",
     "libxml2",
     "libzip",
     "glib",
-    "gperf",
-    "qscintilla",
     "tbb",
-    "freetype",
     "glew",
     "curl",
     "nettle",
-    "python3",
-    "qt5-base",
-    "qt5-multimedia",
-    "qt5-svg"
+    "python3"
   ]
 }
