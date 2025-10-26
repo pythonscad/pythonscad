@@ -1,0 +1,109 @@
+name: Windows(MSVC) Tests
+
+on:
+  push:
+    branches: [ main, enable-windows-tests ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled'
+        required: false
+        default: false
+
+jobs:
+  build-and-test:
+    name: windows-latest msvc
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Release]
+        include:
+          - build_type: Release
+            cmake_preset: windows-msvc-release
+
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Setup (detached) tmate session if enabled
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        with:
+          detached: true
+
+      - name: Setup Visual Studio Environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Setup vcpkg Cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-
+
+      - name: Create vcpkg Binary Cache Directory
+        run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        shell: bash
+
+      - name: Setup vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git ${{ env.VCPKG_ROOT }}
+          cd ${{ env.VCPKG_ROOT }}
+          ./bootstrap-vcpkg.bat
+        shell: cmd
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install bsdiff4 numpy pillow
+        shell: cmd
+
+      - name: Configure CMake
+        run: |
+          cmake --preset ${{ matrix.cmake_preset }}
+        shell: cmd
+
+      - name: Build
+        run: |
+          cmake --build --preset ${{ matrix.cmake_preset }} --parallel
+        shell: cmd
+
+      - name: Run Tests
+        run: |
+          ctest --preset ${{ matrix.cmake_preset }} --output-on-failure --parallel 4
+        shell: cmd
+        continue-on-error: true
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test Results (Windows MSVC ${{ matrix.build_type }})
+          path: |
+            build/${{ matrix.cmake_preset }}/Testing/Temporary/*_report.html
+            build/${{ matrix.cmake_preset }}/Testing/Temporary/LastTest.log
+          if-no-files-found: warn
+
+      - name: Upload Build Artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pythonscad-windows-msvc-${{ matrix.build_type }}
+          path: |
+            build/${{ matrix.cmake_preset }}/pythonscad.exe
+            build/${{ matrix.cmake_preset }}/pythonscad-python.exe
+          if-no-files-found: error
