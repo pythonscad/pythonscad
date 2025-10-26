@@ -66,6 +66,11 @@ jobs:
           bootstrap-vcpkg.bat
         shell: cmd
 
+      - name: Install Build Tools
+        run: |
+          choco install winflexbison3 -y
+        shell: cmd
+
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip

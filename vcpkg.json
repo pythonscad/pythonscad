@@ -21,14 +21,11 @@
     "tbb",
     "freetype",
     "glew",
-    "lib3mf",
     "curl",
     "nettle",
     "python3",
     "qt5-base",
     "qt5-multimedia",
-    "qt5-svg",
-    "bison",
-    "flex"
+    "qt5-svg"
   ]
 }
