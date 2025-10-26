@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "pythonscad",
   "version-string": "2025.10.26",
-  "builtin-baseline": "7ba0ba7334c3346e7eee1e049ba85da193a8d821",
+  "builtin-baseline": "271a5b8850aa50f9a40269cbf3cf414b36e333d6",
   "dependencies": [
     "boost-regex",
     "boost-program-options",
