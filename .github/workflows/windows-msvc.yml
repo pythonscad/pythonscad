@@ -26,8 +26,8 @@ jobs:
             cmake_preset: windows-msvc-release
 
     env:
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg-cache
+      VCPKG_ROOT: ${{ github.workspace }}\vcpkg
 
     steps:
       - name: Checkout Repository
@@ -60,9 +60,9 @@ jobs:
 
       - name: Setup vcpkg
         run: |
-          git clone https://github.com/microsoft/vcpkg.git ${{ env.VCPKG_ROOT }}
-          cd ${{ env.VCPKG_ROOT }}
-          ./bootstrap-vcpkg.bat
+          git clone https://github.com/microsoft/vcpkg.git "${{ env.VCPKG_ROOT }}"
+          cd "${{ env.VCPKG_ROOT }}"
+          bootstrap-vcpkg.bat
         shell: cmd
 
       - name: Install Python Dependencies
