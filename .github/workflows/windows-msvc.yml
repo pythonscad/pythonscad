@@ -26,8 +26,7 @@ jobs:
             cmake_preset: windows-msvc-release
 
     env:
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg-cache
-      VCPKG_ROOT: ${{ github.workspace }}\vcpkg
+      Qt5_DIR: ${{ github.workspace }}\Qt\5.15.2\msvc2019_64
 
     steps:
       - name: Checkout Repository
@@ -47,29 +46,20 @@ jobs:
         with:
           arch: x64
 
-      - name: Create vcpkg Binary Cache Directory
-        run: |
-          if not exist "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}" mkdir "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
-        shell: cmd
-
-      - name: Setup vcpkg Cache
-        uses: actions/cache@v4
+      - name: Install Qt5
+        uses: jurplel/install-qt-action@v3
         with:
-          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: |
-            vcpkg-${{ runner.os }}-
+          version: '5.15.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+          cache: true
 
-      - name: Setup vcpkg
-        run: |
-          git clone https://github.com/microsoft/vcpkg.git "${{ env.VCPKG_ROOT }}"
-          cd "${{ env.VCPKG_ROOT }}"
-          bootstrap-vcpkg.bat
-        shell: cmd
-
-      - name: Install Build Tools
+      - name: Install Dependencies
         run: |
           choco install winflexbison3 -y
+          choco install boost-msvc-14.2 -y
+          choco install cgal -y
         shell: cmd
 
       - name: Install Python Dependencies
@@ -80,17 +70,17 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake --preset ${{ matrix.cmake_preset }}
+          cmake -B build\${{ matrix.cmake_preset }} -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_PYTHON=ON -DEXPERIMENTAL=ON
         shell: cmd
 
       - name: Build
         run: |
-          cmake --build --preset ${{ matrix.cmake_preset }} --parallel
+          cmake --build build\${{ matrix.cmake_preset }} --config ${{ matrix.build_type }} --parallel
         shell: cmd
 
       - name: Run Tests
         run: |
-          ctest --preset ${{ matrix.cmake_preset }} --output-on-failure --parallel 4
+          cd build\${{ matrix.cmake_preset }} && ctest -C ${{ matrix.build_type }} --output-on-failure --parallel 4
         shell: cmd
         continue-on-error: true
 

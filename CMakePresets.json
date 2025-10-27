@@ -19,8 +19,7 @@
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "ENABLE_PYTHON": "ON",
-        "EXPERIMENTAL": "ON",
-        "HEADLESS": "ON"
+        "EXPERIMENTAL": "ON"
       },
       "condition": {
         "type": "equals",
@@ -31,40 +30,28 @@
     {
       "name": "windows-msvc-debug",
       "displayName": "Windows MSVC Debug",
-      "description": "Debug build using MSVC compiler with vcpkg",
+      "description": "Debug build using MSVC compiler with pre-built libraries",
       "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_TOOLCHAIN_FILE": {
-          "type": "FILEPATH",
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        }
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
       "name": "windows-msvc-release",
       "displayName": "Windows MSVC Release",
-      "description": "Release build using MSVC compiler with vcpkg",
+      "description": "Release build using MSVC compiler with pre-built libraries",
       "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_TOOLCHAIN_FILE": {
-          "type": "FILEPATH",
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        }
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
       "name": "windows-msvc-relwithdebinfo",
       "displayName": "Windows MSVC RelWithDebInfo",
-      "description": "RelWithDebInfo build using MSVC compiler with vcpkg",
+      "description": "RelWithDebInfo build using MSVC compiler with pre-built libraries",
       "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_TOOLCHAIN_FILE": {
-          "type": "FILEPATH",
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        }
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }
     }
   ],
