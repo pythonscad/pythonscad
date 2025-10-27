@@ -67,7 +67,7 @@ jobs:
         run: |
           choco install winflexbison3 -y
           ren vcpkg.json vcpkg.json.bak
-          C:\vcpkg\vcpkg.exe install cgal:x64-windows eigen3:x64-windows boost-program-options:x64-windows boost-regex:x64-windows glew:x64-windows libzip:x64-windows curl:x64-windows
+          C:\vcpkg\vcpkg.exe install cgal:x64-windows eigen3:x64-windows boost-program-options:x64-windows boost-regex:x64-windows glew:x64-windows libzip:x64-windows curl:x64-windows opencsg:x64-windows
           ren vcpkg.json.bak vcpkg.json
         shell: cmd
 
