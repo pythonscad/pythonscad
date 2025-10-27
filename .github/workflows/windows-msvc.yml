@@ -66,9 +66,7 @@ jobs:
       - name: Install Dependencies
         run: |
           choco install winflexbison3 -y
-          ren vcpkg.json vcpkg.json.bak
-          C:\vcpkg\vcpkg.exe install cgal:x64-windows eigen3:x64-windows boost-program-options:x64-windows boost-regex:x64-windows glew:x64-windows libzip:x64-windows curl:x64-windows
-          ren vcpkg.json.bak vcpkg.json
+          C:\vcpkg\vcpkg.exe install --triplet x64-windows
         shell: cmd
 
       - name: Install Python Dependencies
@@ -79,7 +77,7 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake -B build\${{ matrix.cmake_preset }} -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_PYTHON=ON -DEXPERIMENTAL=ON -DUSE_BUILTIN_OPENCSG=ON -DUSE_MIMALLOC=OFF -DENABLE_CAIRO=OFF -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
+          cmake -B build\${{ matrix.cmake_preset }} -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_PYTHON=ON -DEXPERIMENTAL=ON -DUSE_BUILTIN_OPENCSG=ON -DUSE_MIMALLOC=OFF -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
         shell: cmd
 
       - name: Build

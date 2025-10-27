@@ -18,6 +18,8 @@
     "glew",
     "curl",
     "nettle",
-    "python3"
+    "python3",
+    "cairo",
+    "pkgconf"
   ]
 }
