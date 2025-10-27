@@ -59,7 +59,6 @@ jobs:
         run: |
           choco install winflexbison3 -y
           choco install boost-msvc-14.2 -y
-          choco install cgal -y
         shell: cmd
 
       - name: Install Python Dependencies
