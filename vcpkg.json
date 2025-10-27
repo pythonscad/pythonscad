@@ -8,6 +8,8 @@
     "boost-program-options",
     "eigen3",
     "cgal",
+    "harfbuzz",
+    "freetype",
     "double-conversion",
     "libxml2",
     "libzip",
