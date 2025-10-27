@@ -1,0 +1,47 @@
+name: Test Chocolatey Package Availability
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-packages:
+    name: Check Chocolatey Packages
+    runs-on: windows-latest
+
+    steps:
+      - name: Check Package Availability
+        run: |
+          echo "=== Checking Chocolatey package availability ==="
+          echo ""
+          echo "Checking cgal..."
+          choco search cgal --exact
+          echo ""
+          echo "Checking eigen..."
+          choco search eigen --exact
+          echo ""
+          echo "Checking boost..."
+          choco search boost --exact
+          echo ""
+          echo "Checking boost-msvc-14.3..."
+          choco search boost-msvc-14.3 --exact
+          echo ""
+          echo "Checking glew..."
+          choco search glew --exact
+          echo ""
+          echo "Checking libzip..."
+          choco search libzip --exact
+          echo ""
+          echo "Checking cairo..."
+          choco search cairo --exact
+          echo ""
+          echo "Checking curl..."
+          choco search curl --exact
+          echo ""
+          echo "Checking zlib..."
+          choco search zlib --exact
+          echo ""
+          echo "Checking freetype..."
+          choco search freetype --exact
+          echo ""
+          echo "=== Check complete ==="
+        shell: cmd
