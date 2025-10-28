@@ -20,6 +20,8 @@
     "nettle",
     "python3",
     "cairo",
-    "pkgconf"
+    "pkgconf",
+    "qscintilla",
+    "lib3mf"
   ]
 }
