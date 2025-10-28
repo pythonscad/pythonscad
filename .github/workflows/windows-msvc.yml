@@ -25,9 +25,6 @@ jobs:
           - build_type: Release
             cmake_preset: windows-msvc-release
 
-    env:
-      Qt6_DIR: ${{ github.workspace }}\Qt\6.8.0\msvc2019_64
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
@@ -49,7 +46,7 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.8.0'
+          version: '6.*'
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
