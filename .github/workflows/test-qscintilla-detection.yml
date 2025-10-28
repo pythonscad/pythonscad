@@ -1,0 +1,71 @@
+name: Test QScintilla Detection
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-qscintilla:
+    name: Test QScintilla CMake Detection
+    runs-on: windows-latest
+
+    steps:
+      - name: Setup vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+          cd C:\vcpkg
+          git checkout 74e6536215718009aae747d86d84b78376bf9e09
+          bootstrap-vcpkg.bat
+        shell: cmd
+
+      - name: Install QScintilla
+        run: |
+          C:\vcpkg\vcpkg.exe install qscintilla:x64-windows
+        shell: cmd
+
+      - name: Check installed files
+        run: |
+          echo "=== QScintilla installed files ==="
+          dir C:\vcpkg\installed\x64-windows\include /s /b | findstr /i qscintilla
+          echo.
+          echo "=== CMake files ==="
+          dir C:\vcpkg\installed\x64-windows\share /s /b | findstr /i qscintilla
+          echo.
+          echo "=== Library files ==="
+          dir C:\vcpkg\installed\x64-windows\lib /s /b | findstr /i qscintilla
+        shell: cmd
+
+      - name: Create test CMakeLists.txt
+        run: |
+          echo cmake_minimum_required(VERSION 3.20) > CMakeLists.txt
+          echo project(QScintillaTest) >> CMakeLists.txt
+          echo. >> CMakeLists.txt
+          echo set(CMAKE_PREFIX_PATH "C:/vcpkg/installed/x64-windows") >> CMakeLists.txt
+          echo. >> CMakeLists.txt
+          echo # Test 1: Try find_package(Qt5Widgets) >> CMakeLists.txt
+          echo find_package(Qt5 COMPONENTS Widgets QUIET) >> CMakeLists.txt
+          echo if(Qt5_FOUND) >> CMakeLists.txt
+          echo   message(STATUS "Qt5 found: ${Qt5_VERSION}") >> CMakeLists.txt
+          echo endif() >> CMakeLists.txt
+          echo. >> CMakeLists.txt
+          echo # Test 2: Try finding qscintilla library directly >> CMakeLists.txt
+          echo find_library(QSCINTILLA_LIB NAMES qscintilla2_qt5 qscintilla PATHS "C:/vcpkg/installed/x64-windows/lib" NO_DEFAULT_PATH) >> CMakeLists.txt
+          echo if(QSCINTILLA_LIB) >> CMakeLists.txt
+          echo   message(STATUS "QScintilla library found: ${QSCINTILLA_LIB}") >> CMakeLists.txt
+          echo else() >> CMakeLists.txt
+          echo   message(STATUS "QScintilla library NOT found") >> CMakeLists.txt
+          echo endif() >> CMakeLists.txt
+          echo. >> CMakeLists.txt
+          echo # Test 3: Check for header >> CMakeLists.txt
+          echo find_path(QSCINTILLA_INCLUDE_DIR NAMES Qsci/qsciglobal.h PATHS "C:/vcpkg/installed/x64-windows/include" NO_DEFAULT_PATH) >> CMakeLists.txt
+          echo if(QSCINTILLA_INCLUDE_DIR) >> CMakeLists.txt
+          echo   message(STATUS "QScintilla headers found: ${QSCINTILLA_INCLUDE_DIR}") >> CMakeLists.txt
+          echo else() >> CMakeLists.txt
+          echo   message(STATUS "QScintilla headers NOT found") >> CMakeLists.txt
+          echo endif() >> CMakeLists.txt
+        shell: cmd
+
+      - name: Run CMake configuration test
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
+        shell: cmd
