@@ -50,7 +50,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2022_64'
-          modules: 'qt5compat qtmultimedia qtsvg'
+          modules: 'qt5compat'
           cache: true
 
       - name: Setup vcpkg
