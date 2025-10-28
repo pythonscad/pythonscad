@@ -18,8 +18,21 @@ jobs:
           bootstrap-vcpkg.bat
         shell: cmd
 
-      - name: Install QScintilla
+      - name: Search for QScintilla features
         run: |
+          echo "=== Checking qscintilla package info ==="
+          C:\vcpkg\vcpkg.exe search qscintilla --x-full-desc
+          echo.
+          echo "=== Checking for Qt5 support ==="
+          C:\vcpkg\vcpkg.exe depend-info qscintilla:x64-windows
+        shell: cmd
+
+      - name: Install Qt5 and QScintilla
+        run: |
+          echo "Installing Qt5 first..."
+          C:\vcpkg\vcpkg.exe install qt5-base:x64-windows
+          echo.
+          echo "Installing QScintilla..."
           C:\vcpkg\vcpkg.exe install qscintilla:x64-windows
         shell: cmd
 
