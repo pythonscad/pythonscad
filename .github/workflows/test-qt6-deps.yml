@@ -1,0 +1,95 @@
+name: Test Qt6 Dependencies
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-qt6:
+    name: Test Qt6 Installation and Dependencies
+    runs-on: windows-latest
+
+    steps:
+      - name: Setup Visual Studio Environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Install CMake via Choco
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+        shell: cmd
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.*'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          modules: 'qt5compat'
+          cache: true
+
+      - name: Verify Qt Installation
+        run: |
+          echo "=== Qt6 Installation Check ==="
+          echo Qt6_DIR: %Qt6_DIR%
+          dir "%Qt6_DIR%"
+          echo.
+          echo "=== Check Qt6 Modules ==="
+          dir "%Qt6_DIR%\lib\cmake" /b
+          echo.
+          echo "=== Check for required modules ==="
+          if exist "%Qt6_DIR%\lib\cmake\Qt6Core" (echo ✓ Qt6Core found) else (echo ✗ Qt6Core NOT found)
+          if exist "%Qt6_DIR%\lib\cmake\Qt6Core5Compat" (echo ✓ Qt6Core5Compat found) else (echo ✗ Qt6Core5Compat NOT found)
+          if exist "%Qt6_DIR%\lib\cmake\Qt6Widgets" (echo ✓ Qt6Widgets found) else (echo ✗ Qt6Widgets NOT found)
+          if exist "%Qt6_DIR%\lib\cmake\Qt6Multimedia" (echo ✓ Qt6Multimedia found) else (echo ✗ Qt6Multimedia NOT found)
+          if exist "%Qt6_DIR%\lib\cmake\Qt6OpenGL" (echo ✓ Qt6OpenGL found) else (echo ✗ Qt6OpenGL NOT found)
+          if exist "%Qt6_DIR%\lib\cmake\Qt6OpenGLWidgets" (echo ✓ Qt6OpenGLWidgets found) else (echo ✗ Qt6OpenGLWidgets NOT found)
+          if exist "%Qt6_DIR%\lib\cmake\Qt6Concurrent" (echo ✓ Qt6Concurrent found) else (echo ✗ Qt6Concurrent NOT found)
+          if exist "%Qt6_DIR%\lib\cmake\Qt6Network" (echo ✓ Qt6Network found) else (echo ✗ Qt6Network NOT found)
+          if exist "%Qt6_DIR%\lib\cmake\Qt6Svg" (echo ✓ Qt6Svg found) else (echo ✗ Qt6Svg NOT found)
+          if exist "%Qt6_DIR%\lib\cmake\Qt6Test" (echo ✓ Qt6Test found) else (echo ✗ Qt6Test NOT found)
+        shell: cmd
+
+      - name: Create Test CMakeLists.txt
+        run: |
+          echo cmake_minimum_required(VERSION 3.20) > CMakeLists.txt
+          echo project(Qt6Test) >> CMakeLists.txt
+          echo. >> CMakeLists.txt
+          echo # Test finding Qt6 components >> CMakeLists.txt
+          echo find_package(Qt6 COMPONENTS Core Core5Compat Widgets Multimedia OpenGL OpenGLWidgets Concurrent Network Svg Test REQUIRED) >> CMakeLists.txt
+          echo. >> CMakeLists.txt
+          echo message(STATUS "Qt6 version: ${Qt6_VERSION}") >> CMakeLists.txt
+          echo message(STATUS "Qt6Core found: ${Qt6Core_FOUND}") >> CMakeLists.txt
+          echo message(STATUS "Qt6Core5Compat found: ${Qt6Core5Compat_FOUND}") >> CMakeLists.txt
+          echo message(STATUS "Qt6Widgets found: ${Qt6Widgets_FOUND}") >> CMakeLists.txt
+          echo message(STATUS "Qt6Multimedia found: ${Qt6Multimedia_FOUND}") >> CMakeLists.txt
+          echo message(STATUS "Qt6OpenGL found: ${Qt6OpenGL_FOUND}") >> CMakeLists.txt
+          echo message(STATUS "Qt6OpenGLWidgets found: ${Qt6OpenGLWidgets_FOUND}") >> CMakeLists.txt
+          echo message(STATUS "Qt6Concurrent found: ${Qt6Concurrent_FOUND}") >> CMakeLists.txt
+          echo message(STATUS "Qt6Network found: ${Qt6Network_FOUND}") >> CMakeLists.txt
+          echo message(STATUS "Qt6Svg found: ${Qt6Svg_FOUND}") >> CMakeLists.txt
+          echo message(STATUS "Qt6Test found: ${Qt6Test_FOUND}") >> CMakeLists.txt
+          echo. >> CMakeLists.txt
+          echo # Success message >> CMakeLists.txt
+          echo message(STATUS "=== All Qt6 components found successfully! ===") >> CMakeLists.txt
+        shell: cmd
+
+      - name: Run CMake Configuration Test
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64
+        shell: cmd
+
+      - name: Display CMake Configuration Output
+        if: always()
+        run: |
+          echo "=== CMake Configuration Complete ==="
+          if exist build\CMakeCache.txt (
+            echo CMake configuration succeeded!
+            type build\CMakeCache.txt | findstr Qt6
+          ) else (
+            echo CMake configuration failed!
+            exit 1
+          )
+        shell: cmd
