@@ -1,8 +1,10 @@
 name: Windows(MSVC) Tests
 
 on:
-  # Temporarily disabled while testing QScintilla detection
-  # pull_request:
+  push:
+    branches:
+      - master
+  pull_request:
   workflow_dispatch:
     inputs:
       debug_enabled:
@@ -44,10 +46,10 @@ jobs:
         with:
           arch: x64
 
-      - name: Install Qt5
+      - name: Install Qt6
         uses: jurplel/install-qt-action@v3
         with:
-          version: '5.15.2'
+          version: '6.8.0'
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
