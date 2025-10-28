@@ -1,8 +1,7 @@
 name: Windows(MSVC) Tests
 
 on:
-  # Temporarily disabled while testing Qt6 installation
-  # pull_request:
+  pull_request:
   workflow_dispatch:
     inputs:
       debug_enabled:
@@ -48,7 +47,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2022_64'
-          modules: 'qt5compat'
+          modules: 'qt5compat qtmultimedia'
           cache: true
 
       - name: Setup vcpkg
