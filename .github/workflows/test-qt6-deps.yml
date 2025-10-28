@@ -27,7 +27,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2022_64'
-          modules: 'qt5compat'
+          modules: 'qt5compat qtmultimedia'
           cache: true
 
       - name: Verify Qt Installation
