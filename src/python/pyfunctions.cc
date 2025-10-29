@@ -57,6 +57,19 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 #define PY_KWLIST_TYPE const char *
 #define PY_KWLIST_CAST(x) x
 #endif
+
+// MSVC C++20 treats u8string() as std::u8string (char8_t), incompatible with std::string (char)
+// Helper function to convert filesystem path to regular string
+#if defined(_MSC_VER) && _MSVC_LANG >= 202002L
+inline std::string path_to_string(const fs::path& p)
+{
+  // Use generic_string() instead of u8string() to get std::string directly
+  return p.generic_string();
+}
+#else
+inline std::string path_to_string(const fs::path& p) { return p.u8string(); }
+#endif
+
 #include "GeometryUtils.h"
 #include "core/TransformNode.h"
 #include "core/LinearExtrudeNode.h"
@@ -2163,7 +2176,8 @@ PyObject *python_export_core(PyObject *obj, char *file)
 {
   std::string filename;
   if (python_scriptpath.string().size() > 0)
-    filename = lookup_file(file, python_scriptpath.parent_path().u8string(), ".");  // TODO problem hbier
+    filename =
+      lookup_file(file, path_to_string(python_scriptpath.parent_path()), ".");  // TODO problem hbier
   else filename = file;
   const auto path = fs::path(filename);
   std::string suffix = path.has_extension() ? path.extension().generic_string().substr(1) : "";
@@ -4558,7 +4572,7 @@ PyObject *python_surface_core(const char *file, PyObject *center, PyObject *inve
 
   std::string fileval = file == NULL ? "" : file;
 
-  std::string filename = lookup_file(fileval, python_scriptpath.parent_path().u8string(),
+  std::string filename = lookup_file(fileval, path_to_string(python_scriptpath.parent_path()),
                                      instance->location().filePath().parent_path().string());
   node->filename = filename;
   handle_dep(fs::path(filename).generic_string());
@@ -5295,7 +5309,7 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     PyErr_SetString(PyExc_TypeError, "Error during parsing osimport(filename)");
     return NULL;
   }
-  filename = lookup_file(v == NULL ? "" : v, python_scriptpath.parent_path().u8string(),
+  filename = lookup_file(v == NULL ? "" : v, path_to_string(python_scriptpath.parent_path()),
                          instance->location().filePath().parent_path().string());
   if (!filename.empty()) handle_dep(filename);
   ImportType actualtype = type;
@@ -5548,7 +5562,7 @@ PyObject *python_osuse_include(int mode, PyObject *self, PyObject *args, PyObjec
     else PyErr_SetString(PyExc_TypeError, "Error during parsing osuse(path)");
     return NULL;
   }
-  const std::string filename = lookup_file(file, python_scriptpath.parent_path().u8string(), ".");
+  const std::string filename = lookup_file(file, path_to_string(python_scriptpath.parent_path()), ".");
   stream << "include <" << filename << ">\n";
 
   SourceFile *source;
@@ -5724,7 +5738,7 @@ PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs, int
     PyErr_SetString(PyExc_TypeError, "Error during parsing model");
     return NULL;
   }
-  return PyUnicode_FromString(python_scriptpath.u8string().c_str());
+  return PyUnicode_FromString(path_to_string(python_scriptpath).c_str());
 }
 
 PyObject *python_oo_dict(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -5927,7 +5941,7 @@ PyObject *python_memberfunction(PyObject *self, PyObject *args, PyObject *kwargs
                python_member_names.begin();
 
   if (memberdoc == nullptr) {
-    memberdoc = "Added by member function";
+    memberdoc = const_cast<char *>("Added by member function");
   }
 
   if (curind >= PYTHON_MAX_USERMEMBERS) {
