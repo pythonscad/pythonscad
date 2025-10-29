@@ -16,10 +16,20 @@
       },
       "binaryDir": "${sourceDir}/build/${presetName}",
       "installDir": "${sourceDir}/install/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "ENABLE_PYTHON": "ON",
-        "EXPERIMENTAL": "ON"
+        "EXPERIMENTAL": "ON",
+        "USE_BUILTIN_OPENCSG": "ON",
+        "USE_MIMALLOC": "OFF",
+        "USE_QT6": "ON",
+        "CMAKE_PREFIX_PATH": "$env{Qt6_DIR}",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      },
+      "environment": {
+        "VCPKG_DEFAULT_TRIPLET": "x64-windows",
+        "VCPKG_DEFAULT_HOST_TRIPLET": "x64-windows"
       },
       "condition": {
         "type": "equals",
@@ -79,6 +89,9 @@
       "configuration": "Debug",
       "output": {
         "outputOnFailure": true
+      },
+      "execution": {
+        "jobs": 4
       }
     },
     {
@@ -87,6 +100,9 @@
       "configuration": "Release",
       "output": {
         "outputOnFailure": true
+      },
+      "execution": {
+        "jobs": 4
       }
     }
   ]
