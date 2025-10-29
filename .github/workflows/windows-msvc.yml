@@ -14,7 +14,7 @@ jobs:
     name: windows-latest msvc
     runs-on: windows-latest
     permissions:
-      actions: read
+      actions: write
       contents: read
 
     strategy:
@@ -103,6 +103,7 @@ jobs:
           runVcpkgInstall: false
           doNotCache: false
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
       - name: Install Build Tools
@@ -123,6 +124,7 @@ jobs:
           cmake -B build\${{ matrix.cmake_preset }} -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_PYTHON=ON -DEXPERIMENTAL=ON -DUSE_BUILTIN_OPENCSG=ON -DUSE_MIMALLOC=OFF -DUSE_QT6=ON -DCMAKE_PREFIX_PATH=%Qt6_DIR% -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake
         shell: cmd
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VCPKG_DEFAULT_TRIPLET: x64-windows
           VCPKG_DEFAULT_HOST_TRIPLET: x64-windows
           VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
