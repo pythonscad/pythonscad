@@ -103,7 +103,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          choco install winflexbison3 wget -y
+          choco install winflexbison3 wget libarchive -y
           C:\vcpkg\vcpkg.exe install --triplet x64-windows
         shell: cmd
 
