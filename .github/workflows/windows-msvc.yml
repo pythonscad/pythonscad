@@ -103,7 +103,9 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          choco install winflexbison3 wget libarchive -y
+          choco install winflexbison3 wget -y
+          echo Creating bsdtar symlink for Git Bash...
+          mklink "C:\Program Files\Git\usr\bin\bsdtar.exe" "C:\Windows\System32\tar.exe"
           C:\vcpkg\vcpkg.exe install --triplet x64-windows
         shell: cmd
 
