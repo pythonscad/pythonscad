@@ -1123,12 +1123,32 @@ void PyOpenSCADObjectIter_dealloc(PyOpenSCADObjectIter *self)
 
 // Iterator Type Definition
 PyTypeObject PyOpenSCADObjectIterType = {
-  PyVarObject_HEAD_INIT(NULL, 0).tp_name = "PyOpenSCADType.Iterator",
-  .tp_basicsize = sizeof(PyOpenSCADObjectIter),
-  .tp_dealloc = (destructor)PyOpenSCADObjectIter_dealloc,
-  .tp_flags = Py_TPFLAGS_DEFAULT,
-  .tp_iter = PyOpenSCADType_iter,
-  .tp_iternext = PyOpenSCADType_next,  // <-- __next__ Implementierung
+  PyVarObject_HEAD_INIT(NULL, 0) "PyOpenSCADType.Iterator", /* tp_name */
+  sizeof(PyOpenSCADObjectIter),                             /* tp_basicsize */
+  0,                                                        /* tp_itemsize */
+  (destructor)PyOpenSCADObjectIter_dealloc,                 /* tp_dealloc */
+  0,                                                        /* tp_vectorcall_offset */
+  0,                                                        /* tp_getattr */
+  0,                                                        /* tp_setattr */
+  0,                                                        /* tp_as_async */
+  0,                                                        /* tp_repr */
+  0,                                                        /* tp_as_number */
+  0,                                                        /* tp_as_sequence */
+  0,                                                        /* tp_as_mapping */
+  0,                                                        /* tp_hash */
+  0,                                                        /* tp_call */
+  0,                                                        /* tp_str */
+  0,                                                        /* tp_getattro */
+  0,                                                        /* tp_setattro */
+  0,                                                        /* tp_as_buffer */
+  Py_TPFLAGS_DEFAULT,                                       /* tp_flags */
+  0,                                                        /* tp_doc */
+  0,                                                        /* tp_traverse */
+  0,                                                        /* tp_clear */
+  0,                                                        /* tp_richcompare */
+  0,                                                        /* tp_weaklistoffset */
+  PyOpenSCADType_iter,                                      /* tp_iter */
+  PyOpenSCADType_next,                                      /* tp_iternext */
 };
 
 PyTypeObject PyOpenSCADType = {
@@ -1236,7 +1256,7 @@ static void pymain_repl_ipython(int *exitcode)
   if (pymain_run_interactive_hook_ipython(exitcode)) {
     return;
   }
-  PyCompilerFlags cf = _PyCompilerFlags_INIT;
+  PyCompilerFlags cf _PyCompilerFlags_INIT;
 
   PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
 }
