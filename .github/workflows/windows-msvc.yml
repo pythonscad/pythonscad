@@ -96,16 +96,6 @@ jobs:
           echo SUCCESS: QScintilla built and installed!
         shell: cmd
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: '74e6536215718009aae747d86d84b78376bf9e09'
-          runVcpkgInstall: false
-          doNotCache: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
-
       - name: Install Build Tools
         run: |
           choco install winflexbison3 wget -y
@@ -119,25 +109,23 @@ jobs:
           pip install bsdiff4 numpy pillow
         shell: cmd
 
-      - name: Configure CMake
-        run: |
-          cmake -B build\${{ matrix.cmake_preset }} -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_PYTHON=ON -DEXPERIMENTAL=ON -DUSE_BUILTIN_OPENCSG=ON -DUSE_MIMALLOC=OFF -DUSE_QT6=ON -DCMAKE_PREFIX_PATH=%Qt6_DIR% -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake
-        shell: cmd
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '74e6536215718009aae747d86d84b78376bf9e09'
+
+      - name: Configure and Build with CMake
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'windows-msvc-release'
+          buildPreset: 'windows-msvc-release'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VCPKG_DEFAULT_TRIPLET: x64-windows
-          VCPKG_DEFAULT_HOST_TRIPLET: x64-windows
           VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
-      - name: Build
-        run: |
-          cmake --build build\${{ matrix.cmake_preset }} --config ${{ matrix.build_type }} --parallel
-        shell: cmd
-
       - name: Run Tests
-        run: |
-          cd build\${{ matrix.cmake_preset }} && ctest -C ${{ matrix.build_type }} --output-on-failure --parallel 4
-        shell: cmd
+        uses: lukka/run-cmake@v10
+        with:
+          testPreset: 'windows-msvc-release'
         continue-on-error: true
 
       - name: Upload Test Results
