@@ -1249,7 +1249,7 @@ static void pymain_repl_ipython(int *exitcode)
   if (pymain_run_interactive_hook_ipython(exitcode)) {
     return;
   }
-  PyCompilerFlags cf _PyCompilerFlags_INIT;
+  PyCompilerFlags cf = {0};
 
   PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
 }
