@@ -13,6 +13,9 @@ jobs:
   build-and-test:
     name: windows-latest msvc
     runs-on: windows-latest
+    permissions:
+      actions: read
+      contents: read
 
     strategy:
       fail-fast: false
@@ -108,6 +111,8 @@ jobs:
           mklink "C:\Program Files\Git\usr\bin\bsdtar.exe" "C:\Windows\System32\tar.exe"
           C:\vcpkg\vcpkg.exe install --triplet x64-windows
         shell: cmd
+        env:
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
       - name: Install Python Dependencies
         run: |
