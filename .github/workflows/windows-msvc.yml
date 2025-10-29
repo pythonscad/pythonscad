@@ -77,6 +77,22 @@ jobs:
           echo SUCCESS: Qt6 installation verified!
         shell: cmd
 
+      - name: Build QScintilla from source
+        run: |
+          echo === Downloading QScintilla ===
+          curl -L -o qscintilla.tar.gz https://www.riverbankcomputing.com/static/Downloads/QScintilla/2.14.1/QScintilla_src-2.14.1.tar.gz
+          tar -xzf qscintilla.tar.gz
+          cd QScintilla_src-2.14.1\src
+          echo.
+          echo === Building QScintilla ===
+          qmake qscintilla.pro
+          nmake
+          echo.
+          echo === Installing QScintilla ===
+          nmake install
+          echo SUCCESS: QScintilla built and installed!
+        shell: cmd
+
       - name: Setup vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
