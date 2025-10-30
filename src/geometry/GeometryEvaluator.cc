@@ -2333,7 +2333,7 @@ void calculate_path_dirs(Vector3d prevpt, Vector3d curpt, Vector3d nextpt, Vecto
 }
 
 std::vector<Vector3d> calculate_path_profile(Vector3d *vec_x, Vector3d *vec_y, Vector3d curpt,
-                                             const std::vector<Vector2d>& profile)
+                                             const VectorOfVector2d& profile)
 {
   std::vector<Vector3d> result;
   for (unsigned int i = 0; i < profile.size(); i++) {
