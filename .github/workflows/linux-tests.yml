@@ -27,6 +27,11 @@ jobs:
     - uses: actions/checkout@v5
       with:
         submodules: 'recursive'
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ matrix.os }}-${{ matrix.qt }}
+        max-size: "500M"
     - name: Install dependencies
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -37,7 +42,12 @@ jobs:
     - name: Install gcovr
       run: python -m pip install -U gcovr
     - name: Build and test
+      env:
+        CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        CMAKE_C_COMPILER_LAUNCHER: ccache
       run: ./scripts/github-ci.sh experimental enable_python ${{ matrix.qt == 'qt6' && 'qt6' || '' }} build test coverage
+    - name: Show ccache statistics
+      run: ccache -s
     - name: Upload Test Result Report
       uses: actions/upload-artifact@v5
       if: ${{ always() }}

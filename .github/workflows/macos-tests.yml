@@ -51,6 +51,11 @@ jobs:
       run: |
         brew unlink python3
         brew link --overwrite python3
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ matrix.os }}-${{ matrix.qt }}
+        max-size: "500M"
     - name: Install Homebrew packages
       env:
         HOMEBREW_NO_AUTO_UPDATE: 1
@@ -61,9 +66,11 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON $CMAKE_OPTIONS
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=ON -DUSE_BUILTIN_OPENCSG=ON $CMAKE_OPTIONS
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         make -j$NUMCPU
+    - name: Show ccache statistics
+      run: ccache -s
     - name: Verify Python setup
       run: |
         echo "=== Checking pythonscad-python symlink ==="
