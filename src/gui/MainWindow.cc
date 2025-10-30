@@ -2453,7 +2453,7 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
 void MainWindow::recomputeLanguageActive()
 {
   auto fnameba = activeEditor->filepath.toLocal8Bit();
-  const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba;
+  const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba.constData();
 
   int oldLanguage = language;
   language = LANG_SCAD;
