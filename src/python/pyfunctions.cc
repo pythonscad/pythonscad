@@ -48,15 +48,10 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 #include "python/FrepNode.h"
 #endif
 
-// MSVC requires non-const char* for Python keyword lists, while GCC/Clang accept const char*
-// This workaround uses const_cast on MSVC to satisfy the API while keeping code correct
-#ifdef _MSC_VER
+// Python's C API uses char** for keyword lists (not const char**)
+// We need to const_cast string literals to satisfy the API signature on all platforms
 #define PY_KWLIST_TYPE char *
 #define PY_KWLIST_CAST(x) const_cast<char *>(x)
-#else
-#define PY_KWLIST_TYPE const char *
-#define PY_KWLIST_CAST(x) x
-#endif
 
 // MSVC C++20 treats u8string() as std::u8string (char8_t), incompatible with std::string (char)
 // Helper function to convert filesystem path to regular string
