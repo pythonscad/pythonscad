@@ -41,6 +41,11 @@
 #include <boost/lexical_cast.hpp>
 #include <filesystem>
 namespace fs = std::filesystem;
+
+#ifdef _MSC_VER
+#include <io.h>
+#define isatty _isatty
+#endif
 std::string stringcontents;
 int lexerget_lineno(void);
 extern const char *parser_input_buffer;

@@ -864,11 +864,10 @@ std::string SplineNode::toString() const
   return stream.str();
 }
 
-std::vector<Vector2d> SplineNode::draw_arc(int fn, const Vector2d& tang1, double l1,
-                                           const Vector2d& tang2, double l2,
-                                           const Vector2d& cornerpt) const
+VectorOfVector2d SplineNode::draw_arc(int fn, const Vector2d& tang1, double l1, const Vector2d& tang2,
+                                      double l2, const Vector2d& cornerpt) const
 {
-  std::vector<Vector2d> result;
+  VectorOfVector2d result;
   if (fn == 1) result.push_back(cornerpt);
   else {
     // estimate ellipsis circumfence
