@@ -105,18 +105,19 @@ jobs:
             flex
             bison
 
-      - name: Setup Build Tools Symlinks
+      - name: Create bsdtar symlink
         run: |
-          echo Adding MSYS2 tools to PATH...
-          echo C:\msys64\usr\bin>> %GITHUB_PATH%
-          echo.
-          echo Creating bsdtar symlink for Git Bash...
           mklink "C:\Program Files\Git\usr\bin\bsdtar.exe" "C:\Windows\System32\tar.exe" || echo bsdtar symlink already exists
-          echo.
-          echo Verifying flex and bison installation...
+        shell: cmd
+        continue-on-error: true
+
+      - name: Verify flex and bison installation
+        run: |
+          echo "Verifying flex and bison installation..."
+          which flex bison
           flex --version
           bison --version
-        shell: cmd
+        shell: msys2 {0}
 
       - name: Install Python Dependencies
         run: |
