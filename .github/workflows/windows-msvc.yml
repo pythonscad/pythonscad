@@ -109,6 +109,10 @@ jobs:
           pip install bsdiff4 numpy pillow
         shell: cmd
 
+      - name: Record vcpkg start time
+        run: echo "VCPKG_START_TIME=%TIME%" >> %GITHUB_ENV%
+        shell: cmd
+
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
@@ -117,6 +121,26 @@ jobs:
           runVcpkgInstall: true
         env:
           VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+      - name: Show vcpkg binary cache statistics
+        run: |
+          echo ==============================================================
+          echo vcpkg Installation Complete - Cache Effectiveness Report
+          echo ==============================================================
+          echo Start time: %VCPKG_START_TIME%
+          echo End time:   %TIME%
+          echo.
+          echo Installed packages:
+          "%VCPKG_ROOT%\vcpkg.exe" list | find /c ":"
+          echo.
+          echo Build trees (packages built from source during this run):
+          if exist "%VCPKG_ROOT%\buildtrees" (
+            dir /b "%VCPKG_ROOT%\buildtrees" | find /c /v ""
+          ) else (
+            echo 0 (All packages came from binary cache!)
+          )
+          echo ==============================================================
+        shell: cmd
 
       - name: Configure and Build with CMake
         uses: lukka/run-cmake@v10
