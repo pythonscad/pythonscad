@@ -96,11 +96,12 @@ jobs:
           echo SUCCESS: QScintilla built and installed!
         shell: cmd
 
-      - name: Install Build Tools
+      - name: Setup Build Tools
         run: |
-          choco install winflexbison3 wget -y
           echo Creating bsdtar symlink for Git Bash...
-          mklink "C:\Program Files\Git\usr\bin\bsdtar.exe" "C:\Windows\System32\tar.exe"
+          mklink "C:\Program Files\Git\usr\bin\bsdtar.exe" "C:\Windows\System32\tar.exe" || echo bsdtar symlink already exists
+          echo.
+          echo Note: flex/bison provided by vcpkg, curl available by default
         shell: cmd
 
       - name: Install Python Dependencies
@@ -109,49 +110,91 @@ jobs:
           pip install bsdiff4 numpy pillow
         shell: cmd
 
-      - name: Record vcpkg start time
-        run: echo "VCPKG_START_TIME=%TIME%" >> %GITHUB_ENV%
-        shell: cmd
+      - name: Setup vcpkg binary caching
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/vcpkg
+            ~/.cache/vcpkg
+            ~/AppData/Local/vcpkg
+            ${{ github.workspace }}/vcpkg-cache
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-${{ hashFiles('vcpkg-configuration.json', '.git/modules/vcpkg/HEAD') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-
+            vcpkg-${{ runner.os }}-
+
+      - name: Create vcpkg binary cache directory
+        run: mkdir -p ${{ github.workspace }}/vcpkg-cache
+        shell: bash
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
+          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
           vcpkgGitCommitId: '74e6536215718009aae747d86d84b78376bf9e09'
           vcpkgJsonGlob: '**/vcpkg.json'
-          runVcpkgInstall: true
+          runVcpkgInstall: false
         env:
-          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+          VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
-      - name: Show vcpkg binary cache statistics
+      - name: Install vcpkg dependencies
+        shell: cmd
         run: |
           echo ==============================================================
-          echo vcpkg Installation Complete - Cache Effectiveness Report
+          echo Installing dependencies from vcpkg.json
           echo ==============================================================
-          echo Start time: %VCPKG_START_TIME%
-          echo End time:   %TIME%
+          echo Start time: %TIME%
+          echo.
+          echo Manifest file contents:
+          type vcpkg.json
+          echo.
+          "${{ github.workspace }}\vcpkg\vcpkg.exe" install --triplet x64-windows
+          echo.
+          echo End time: %TIME%
           echo.
           echo Installed packages:
-          "%VCPKG_ROOT%\vcpkg.exe" list | find /c ":"
+          "${{ github.workspace }}\vcpkg\vcpkg.exe" list
+          echo ==============================================================
+        env:
+          VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
+
+      - name: Verify binary cache effectiveness
+        shell: cmd
+        run: |
+          echo ==============================================================
+          echo Binary Cache Effectiveness Report
+          echo ==============================================================
+          if exist "${{ github.workspace }}\vcpkg-cache\*.zip" (
+            echo SUCCESS: Binary cache files found!
+            dir "${{ github.workspace }}\vcpkg-cache" /b | find /c ".zip"
+            echo cache files created
+          ) else (
+            echo INFO: No binary cache files found (first run?)
+          )
           echo.
           echo Build trees (packages built from source during this run):
           if exist "%VCPKG_ROOT%\buildtrees" (
             dir /b "%VCPKG_ROOT%\buildtrees" | find /c /v ""
+            echo packages built from source
           ) else (
             echo 0 (All packages came from binary cache!)
           )
           echo ==============================================================
-        shell: cmd
 
       - name: Configure and Build with CMake
         uses: lukka/run-cmake@v10
         with:
           configurePreset: 'windows-msvc-release'
           buildPreset: 'windows-msvc-release'
+        env:
+          VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
       - name: Run Tests
         uses: lukka/run-cmake@v10
         with:
           testPreset: 'windows-msvc-release'
+        env:
+          VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
         continue-on-error: true
 
       - name: Upload Test Results
