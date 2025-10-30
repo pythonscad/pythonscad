@@ -96,12 +96,26 @@ jobs:
           echo SUCCESS: QScintilla built and installed!
         shell: cmd
 
-      - name: Setup Build Tools
+      - name: Setup MSYS2 and Install Build Tools
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          update: false
+          install: >-
+            flex
+            bison
+
+      - name: Setup Build Tools Symlinks
         run: |
+          echo Adding MSYS2 tools to PATH...
+          echo C:\msys64\usr\bin>> %GITHUB_PATH%
+          echo.
           echo Creating bsdtar symlink for Git Bash...
           mklink "C:\Program Files\Git\usr\bin\bsdtar.exe" "C:\Windows\System32\tar.exe" || echo bsdtar symlink already exists
           echo.
-          echo Note: flex/bison provided by vcpkg, curl available by default
+          echo Verifying flex and bison installation...
+          flex --version
+          bison --version
         shell: cmd
 
       - name: Install Python Dependencies
