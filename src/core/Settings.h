@@ -362,7 +362,6 @@ public:
     ss << encoded;
     while (ss.good()) {
       item_type item;
-      using std::operator>>;  // MSVC workaround: explicitly bring operator>> into scope
       ss >> item;
       if (item) {
         items.push_back(item);
