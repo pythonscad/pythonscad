@@ -112,9 +112,9 @@ PyObject *python_data_str(PyObject *self)
 
 PyObject *PyDataObjectFromTree(PyTypeObject *type, const std::vector<libfive::Tree *>& tree)
 {
-  if(tree.size() == 0) {
-    return Py_NONE;	  
-  } else if(tree.size() == 1) {
+  if (tree.size() == 0) {
+    return Py_NONE;
+  } else if (tree.size() == 1) {
     PyDataObject *res;
     res = (PyDataObject *)type->tp_alloc(type, 0);
     if (res != NULL) {
@@ -124,15 +124,15 @@ PyObject *PyDataObjectFromTree(PyTypeObject *type, const std::vector<libfive::Tr
       return (PyObject *)res;
     }
   } else {
-    PyObject  *res = pf.PyTuple_New(tree.size());
-    for(int i=0;i<tree.size();i++) {
+    PyObject *res = pf.PyTuple_New(tree.size());
+    for (int i = 0; i < tree.size(); i++) {
       PyDataObject *sub;
       sub = (PyDataObject *)type->tp_alloc(type, 0);
       if (sub != NULL) {
         sub->data = tree[i];
         sub->data_type = DATA_TYPE_LIBFIVE;
         Py_XINCREF(sub);
-	pf.PyTuple_SetItem(res,i,(PyObject *) sub);
+        pf.PyTuple_SetItem(res, i, (PyObject *)sub);
       }
     }
     return res;
@@ -144,27 +144,26 @@ PyObject *PyDataObjectFromTree(PyTypeObject *type, const std::vector<libfive::Tr
 std::vector<libfive::Tree *> PyDataObjectToTree(PyObject *obj)
 {
   std::vector<libfive::Tree *> result;
-  if(obj != NULL && obj->ob_type == &PyDataType) {
-	PyDataObject * dataobj = (PyDataObject *) obj;
-        if(dataobj->data_type == DATA_TYPE_LIBFIVE) result.push_back((libfive::Tree *) dataobj->data);
-  } else if(PyLong_CHECK(obj)) { 
-  	result.push_back(new libfive::Tree(libfive::Tree(pf.PyLong_AsLong(obj))));
-  } else if(PyFloat_CHECK(obj)) { 
-  	result.push_back(new libfive::Tree(libfive::Tree(pf.PyFloat_AsDouble(obj))));
-  } else if(PyTuple_CHECK(obj)){
-	  for(int i=0;i<pf.PyTuple_Size(obj);i++) {
-		PyObject *x=pf.PyTuple_GetItem(obj,i);
-		std::vector<libfive::Tree *> sub = PyDataObjectToTree(x);
-		result.insert(result.end(), sub.begin(), sub.end());
-	  }
-  } else if(PyList_CHECK(obj)){
-	  for(int i=0;i<pf.PyList_Size(obj);i++) {
-		PyObject *x=pf.PyList_GetItem(obj,i);
-		std::vector<libfive::Tree *> sub = PyDataObjectToTree(x);
-		result.insert(result.end(), sub.begin(), sub.end());
-	  }
+  if (obj != NULL && obj->ob_type == &PyDataType) {
+    PyDataObject *dataobj = (PyDataObject *)obj;
+    if (dataobj->data_type == DATA_TYPE_LIBFIVE) result.push_back((libfive::Tree *)dataobj->data);
+  } else if (PyLong_CHECK(obj)) {
+    result.push_back(new libfive::Tree(libfive::Tree(pf.PyLong_AsLong(obj))));
+  } else if (PyFloat_CHECK(obj)) {
+    result.push_back(new libfive::Tree(libfive::Tree(pf.PyFloat_AsDouble(obj))));
+  } else if (PyTuple_CHECK(obj)) {
+    for (int i = 0; i < pf.PyTuple_Size(obj); i++) {
+      PyObject *x = pf.PyTuple_GetItem(obj, i);
+      std::vector<libfive::Tree *> sub = PyDataObjectToTree(x);
+      result.insert(result.end(), sub.begin(), sub.end());
+    }
+  } else if (PyList_CHECK(obj)) {
+    for (int i = 0; i < pf.PyList_Size(obj); i++) {
+      PyObject *x = pf.PyList_GetItem(obj, i);
+      std::vector<libfive::Tree *> sub = PyDataObjectToTree(x);
+      result.insert(result.end(), sub.begin(), sub.end());
+    }
   } else {
-	  printf("Unknown type! %p %p\n",obj->ob_type, &pf.PyFloat_Type);
   }
   //  Py_XDECREF(obj); TODO cannot activate
   return result;
@@ -204,10 +203,7 @@ PyObject *python_lv_bin_int(PyObject *self, PyObject *args, PyObject *kwargs, li
   PyObject *arg1 = NULL;
   PyObject *arg2 = NULL;
 
-  if (!pf.PyArg_ParseTupleAndKeywords(args, kwargs, "OO", kwlist,
-                                   &arg1,
-                                   &arg2
-				   )) return NULL;
+  if (!pf.PyArg_ParseTupleAndKeywords(args, kwargs, "OO", kwlist, &arg1, &arg2)) return NULL;
 
   std::vector<libfive::Tree *> a1 = PyDataObjectToTree(arg1);
   std::vector<libfive::Tree *> a2 = PyDataObjectToTree(arg2);
@@ -220,24 +216,23 @@ PyObject *python_lv_bin_int(PyObject *self, PyObject *args, PyObject *kwargs, li
     for (int i = 0; i < a1.size(); i++) {
       res.push_back(new libfive::Tree(libfive::Tree::binary(op, *a1[i], *a2[0])));
     }
-  } else { 
-    printf("Cannot handle  bin %d binop %d \n",a1.size(), a2.size());
-    return Py_NONE;		    
+  } else {
+    printf("Cannot handle  bin %ld binop %ld \n", a1.size(), a2.size());
+    return Py_NONE;
   }
 #else
   int i;
   PyObject *obj = NULL;
-  if(args == NULL) return Py_NONE;
-  if(pf.PyTuple_Size(args) == 0) return Py_NONE;
-  obj= pf.PyTuple_GetItem(args, 0);
-//  Py_INCREF(obj);
+  if (args == NULL) return Py_NONE;
+  if (pf.PyTuple_Size(args) == 0) return Py_NONE;
+  obj = pf.PyTuple_GetItem(args, 0);
+  //  Py_INCREF(obj);
   Tree res = PyDataObjectToTree(obj);
-  for(i=1;i<pf.PyTuple_Size(args);i++)
-  {
-  	obj= pf.PyTuple_GetItem(args, i);
-  	//Py_INCREF(obj);
-  	Tree tmp = PyDataObjectToTree(obj);
-  	Tree res = libfive_tree_binary(op, res,tmp);
+  for (i = 1; i < pf.PyTuple_Size(args); i++) {
+    obj = pf.PyTuple_GetItem(args, i);
+    // Py_INCREF(obj);
+    Tree tmp = PyDataObjectToTree(obj);
+    Tree res = libfive_tree_binary(op, res, tmp);
   }
 #endif
   return PyDataObjectFromTree(&PyDataType, res);
@@ -267,9 +262,9 @@ PyObject *python_lv_binop_int(PyObject *arg1, PyObject *arg2, libfive::Opcode::O
     for (int i = 0; i < t1.size(); i++) {
       res.push_back(new libfive::Tree(libfive::Tree::binary(op, *(t1[i]), *(t2[0]))));
     }
-  } else { 
-    printf("Cannot handle  bin %d binop %d \n",t1.size(), t2.size());
-    return Py_NONE;		    
+  } else {
+    printf("Cannot handle  bin %ld binop %ld \n", t1.size(), t2.size());
+    return Py_NONE;
   }
 
   return PyDataObjectFromTree(&PyDataType, res);
@@ -424,8 +419,8 @@ PyObject *python_lv_add(PyObject *arg1, PyObject *arg2) { return Py_NONE; }
 PyObject *python_lv_substract(PyObject *arg1, PyObject *arg2) { return Py_NONE; }
 PyObject *python_lv_multiply(PyObject *arg1, PyObject *arg2) { return Py_NONE; }
 PyObject *python_lv_remainder(PyObject *arg1, PyObject *arg2) { return Py_NONE; }
-PyObject *python_lv_divide(PyObject *arg1, PyObject *arg2) { return  Py_NONE; }
-PyObject *python_lv_negate(PyObject *arg) { return  Py_NONE; }
+PyObject *python_lv_divide(PyObject *arg1, PyObject *arg2) { return Py_NONE; }
+PyObject *python_lv_negate(PyObject *arg) { return Py_NONE; }
 #endif
 
 Value python_convertresult(PyObject *arg, int& error);
@@ -445,15 +440,15 @@ PyObject *PyDataObject_call(PyObject *self, PyObject *args, PyObject *kwargs)
   AssignmentList pargs;
   std::vector<std::shared_ptr<ModuleInstantiation>> modinsts;
   int error;
-  for(int i=0;i<pf.PyTuple_Size(args);i++) {
-    PyObject *arg = 	pf.PyTuple_GetItem(args,i);  
-    if(Py_TYPE(arg) == &PyOpenSCADType) {
-	std::shared_ptr<AbstractNode> child = ((PyOpenSCADObject *) arg)->node;
-	Tree tree(child, "");
-	GeometryEvaluator geomevaluator(tree);
-	std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
-	std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
-	if(ps != nullptr) {
+  for (int i = 0; i < pf.PyTuple_Size(args); i++) {
+    PyObject *arg = pf.PyTuple_GetItem(args, i);
+    if (Py_TYPE(arg) == &PyOpenSCADType) {
+      std::shared_ptr<AbstractNode> child = ((PyOpenSCADObject *)arg)->node;
+      Tree tree(child, "");
+      GeometryEvaluator geomevaluator(tree);
+      std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+      std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
+      if (ps != nullptr) {
         // prepare vertices
         auto vecs3d = std::make_shared<Vector>(Location::NONE);
         for (auto vertex : ps->vertices) {
@@ -498,12 +493,12 @@ PyObject *PyDataObject_call(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (pf.PyDict_Next(kwargs, &pos, &key, &value)) {
-      PyObject* value1 = pf.PyUnicode_AsEncodedString(key, "utf-8", "~");
-      std::string value_str =  PyBytes_AS_STRING(value1);
-      if(value_str == "fn") value_str="$fn";
-      if(value_str == "fa") value_str="$fa";
-      if(value_str == "fs") value_str="$fs";
-      Value val = python_convertresult(value,error);	  
+      PyObject *value1 = pf.PyUnicode_AsEncodedString(key, "utf-8", "~");
+      std::string value_str = PyBytes_AS_STRING(value1);
+      if (value_str == "fn") value_str = "$fn";
+      if (value_str == "fa") value_str = "$fa";
+      if (value_str == "fs") value_str = "$fs";
+      Value val = python_convertresult(value, error);
       std::shared_ptr<Literal> lit = std::make_shared<Literal>(std::move(val), Location::NONE);
       std::shared_ptr<Assignment> ass = std::make_shared<Assignment>(value_str, lit);
       pargs.push_back(ass);
@@ -518,7 +513,7 @@ PyObject *PyDataObject_call(PyObject *self, PyObject *args, PyObject *kwargs)
   stream << "include <" << modulepath << ">";
 
   SourceFile *source;
-  if(!parse(source, stream.str(), "python", "python", false)) {
+  if (!parse(source, stream.str(), "python", "python", false)) {
     pf.PyErr_SetString(pf.PyExc_TypeError, "Error in SCAD code");
     return Py_NONE;
   }
@@ -640,8 +635,4 @@ PyMODINIT_FUNC PyInit_PyData(void)
   return m;
 }
 
-PyObject *PyInit_data(void)
-{
-  return pf.PyModule_Create(&DataModule);
-}
-
+PyObject *PyInit_data(void) { return pf.PyModule_Create(&DataModule); }

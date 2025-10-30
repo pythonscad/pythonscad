@@ -101,11 +101,16 @@ struct PyKernel {
   int (*PySys_Audit)(const char *event, const char *format, ...);
   void (*PySys_WriteStdout)(const char *format, ...);
 
+  PyObject *(*PyObject_Call)(PyObject *call, PyObject *newargs, PyObject *kwargs);  // TODO
+
+  PyObject *(*PyStaticMethod_New)(PyObject *);                         // TODO
+  PyObject *(*PyDescr_NewMethod)(PyTypeObject *, PyMethodDef *);       // TODO
+  PyObject *(*PyDescr_NewClassMethod)(PyTypeObject *, PyMethodDef *);  // TODO
   PyObject *_Py_TrueStruct;
   PyObject *_Py_FalseStruct;
   PyObject *_Py_NoneStruct;
   PyObject *PyExc_TypeError;
-  PyTypeObject *PyFunction_Type;
+  PyTypeObject *PyFunction_Type;  // TODO fix
   PyTypeObject *PyList_Type;
   PyTypeObject *PyFloat_Type;
   PyTypeObject *PyLong_Type;

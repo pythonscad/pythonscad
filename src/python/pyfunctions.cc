@@ -1103,14 +1103,14 @@ PyObject *python_fromvector(const Vector3d vec)
   return res;
 }
 
-PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec)
+PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
 {
   Matrix4d mat;
   if (!python_tomatrix(pynum, mat)) {
     Transform3d matrix = Transform3d::Identity();
     matrix.scale(scalevec);
     Vector3d n;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < vecs; i++) {
       n = Vector3d(mat(0, i), mat(1, i), mat(2, i));
       n = matrix * n;
       for (int j = 0; j < 3; j++) mat(j, i) = n[j];
@@ -1127,7 +1127,7 @@ PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec)
 
 PyObject *python_scale_sub(PyObject *obj, Vector3d scalevec)
 {
-  PyObject *mat = python_number_scale(obj, scalevec);
+  PyObject *mat = python_number_scale(obj, scalevec, 4);
   if (mat != nullptr) return mat;
 
   DECLARE_INSTANCE
@@ -1325,13 +1325,13 @@ PyObject *python_rotate_core(PyObject *obj, PyObject *val_a, PyObject *val_v, Py
   int dragflags = 0;
   if (val_a != nullptr && PyList_CHECK(val_a) && val_v == nullptr) {
     python_vectorval(val_a, 1, 3, &(vec3[0]), &(vec3[1]), &(vec3[2]), nullptr, &dragflags);
-    return python_rotate_sub(obj, vec3, NAN, dragflags);
+    return python_rotate_sub(obj, vec3, NAN, ref, dragflags);
   } else if (val_a != nullptr && val_v != nullptr && !python_numberval(val_a, &angle) &&
              PyList_CHECK(val_v) && pf.PyList_Size(val_v) == 3) {
     vec3[0] = pf.PyFloat_AsDouble(pf.PyList_GetItem(val_v, 0));
     vec3[1] = pf.PyFloat_AsDouble(pf.PyList_GetItem(val_v, 1));
     vec3[2] = pf.PyFloat_AsDouble(pf.PyList_GetItem(val_v, 2));
-    return python_rotate_sub(obj, vec3, angle, dragflags);
+    return python_rotate_sub(obj, vec3, angle, ref, dragflags);
   }
   pf.PyErr_SetString(pf.PyExc_TypeError, "Invalid arguments to rotate()");
   return nullptr;
@@ -1379,7 +1379,7 @@ PyObject *python_matrix_mirror(PyObject *mat, Matrix4d m)
 
 PyObject *python_mirror_sub(PyObject *obj, Matrix4d& m)
 {
-  PyObject *mat = python_matrix_mirror(obj, m);
+  PyObject *mat = python_number_mirror(obj, m, 4);
   if (mat != nullptr) return mat;
 
   DECLARE_INSTANCE
@@ -3469,7 +3469,7 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
   node->xdir_y = 0;
   node->xdir_z = 0;
   node->closed = false;
-  if (closed == Py_True) node->closed = true;
+  if (closed == Py_TRUE) node->closed = true;
   if (allow_intersect == Py_True) node->allow_intersect = true;
   if (xdir != NULL) {
     if (python_vectorval(xdir, 3, 3, &(node->xdir_x), &(node->xdir_y), &(node->xdir_z))) {
@@ -3564,13 +3564,13 @@ PyObject *python_concat(PyObject *self, PyObject *args, PyObject *kwargs)
   // dont do union in any circumstance
   for (i = 0; i < pf.PyTuple_Size(args); i++) {
     obj = pf.PyTuple_GetItem(args, i);
-    if (PyObject_IsInstance(obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
+    if (pf.PyObject_IsInstance(obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
       type = PyOpenSCADObjectType(obj);
       node->children.push_back(((PyOpenSCADObject *)obj)->node);
     } else if (PyList_CHECK(obj)) {
       for (int j = 0; j < pf.PyList_Size(obj); j++) {
         obj1 = pf.PyList_GetItem(obj, j);
-        if (PyObject_IsInstance(obj1, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
+        if (pf.PyObject_IsInstance(obj1, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
           type = PyOpenSCADObjectType(obj1);
           node->children.push_back(((PyOpenSCADObject *)obj1)->node);
         } else {
@@ -4069,7 +4069,7 @@ PyObject *python_nb_add(PyObject *arg1, PyObject *arg2)
 PyObject *python_nb_xor(PyObject *arg1, PyObject *arg2)
 {
   PyObject *dummy_dict;
-  if (PyObject_IsInstance(arg2, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
+  if (pf.PyObject_IsInstance(arg2, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
     auto node1 = PyOpenSCADObjectToNode(arg1, &dummy_dict);
     auto node2 = PyOpenSCADObjectToNode(arg2, &dummy_dict);
     if (node1 == nullptr || node2 == nullptr) {
@@ -4088,7 +4088,7 @@ PyObject *python_nb_xor(PyObject *arg1, PyObject *arg2)
 
 PyObject *python_nb_remainder(PyObject *arg1, PyObject *arg2)
 {
-  if (PyObject_IsInstance(arg2, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
+  if (pf.PyObject_IsInstance(arg2, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
     PyObject *dummy_dict;
     auto node1 = PyOpenSCADObjectToNode(arg1, &dummy_dict);
     auto node2 = PyOpenSCADObjectToNode(arg2, &dummy_dict);
@@ -4453,7 +4453,7 @@ PyObject *python_surface(PyObject *self, PyObject *args, PyObject *kwargs)
 int sheetCalcIndInt(PyObject *func, double i, double j, Vector3d& pos)
 {
   PyObject *args = pf.PyTuple_Pack(2, pf.PyFloat_FromDouble(i), pf.PyFloat_FromDouble(j));
-  PyObject *pos_p = PyObject_CallObject(func, args);
+  PyObject *pos_p = pf.PyObject_CallObject(func, args);
   if (pos_p == nullptr) {
     std::string errorstr;
     python_catch_error(errorstr);
@@ -4729,7 +4729,7 @@ PyObject *python_sheet(PyObject *self, PyObject *args, PyObject *kwargs)
     pf.PyErr_SetString(pf.PyExc_TypeError, "Error during parsing sheet(func, imin, imax, jmin, jmax)");
     return NULL;
   }
-  if (func->ob_type != &PyFunction_Type) {
+  if (func->ob_type != pf.PyFunction_Type) {
     pf.PyErr_SetString(pf.PyExc_TypeError, "must specify a function");
     return NULL;
   }
@@ -5552,17 +5552,17 @@ int type_add_method(PyTypeObject *type, PyMethodDef *meth)  // from typeobject.c
       //      pf.PyErr_SetString(PyExc_ValueError, "method cannot be both class and static");
       return -1;
     }
-    descr = PyDescr_NewClassMethod(type, meth);
+    descr = pf.PyDescr_NewClassMethod(type, meth);
   } else if (meth->ml_flags & METH_STATIC) {
-    PyObject *cfunc = PyCFunction_NewEx(meth, (PyObject *)type, NULL);
+    PyObject *cfunc = pf.PyCFunction_NewEx(meth, (PyObject *)type, NULL);
     if (cfunc == NULL) {
       return -1;
     }
-    descr = PyStaticMethod_New(cfunc);
-    isdescr = 0;  // PyStaticMethod is not PyDescrObject
+    descr = pf.PyStaticMethod_New(cfunc);
+    isdescr = 0;
     Py_DECREF(cfunc);
   } else {
-    descr = PyDescr_NewMethod(type, meth);
+    descr = pf.PyDescr_NewMethod(type, meth);
   }
   if (descr == NULL) {
     return -1;
@@ -5607,7 +5607,7 @@ PyObject *python_member_trampoline(PyObject *self, PyObject *args, PyObject *kwa
   pf.PyTuple_SetItem(newargs, 0, self);
   for (int i = 0; i < n; i++) pf.PyTuple_SetItem(newargs, i + 1, pf.PyTuple_GetItem(args, i));
 
-  return PyObject_Call(python_member_callables[python_member_callind], newargs, kwargs);
+  return pf.PyObject_Call(python_member_callables[python_member_callind], newargs, kwargs);
 }
 
 #define PYTHON_MAX_USERMEMBERS 20

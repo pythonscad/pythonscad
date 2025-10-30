@@ -84,7 +84,7 @@ std::unique_ptr<const Geometry> FrepNode::createGeometry() const
         }
       }
     }
-  } else if (exp->ob_type == &PyFunction_Type) {
+  } else if (exp->ob_type == pf.PyFunction_Type) {
     printf("Python Function!\n");
     mesh = NULL;
   } else {
