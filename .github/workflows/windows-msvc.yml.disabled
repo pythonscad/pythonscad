@@ -96,14 +96,19 @@ jobs:
           echo SUCCESS: QScintilla built and installed!
         shell: cmd
 
-      - name: Setup MSYS2 and Install Build Tools
+      - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
           msystem: MSYS
           update: false
-          install: >-
-            flex
-            bison
+
+      - name: Install flex and bison via pacman
+        run: /c/msys64/usr/bin/pacman -Sy --noconfirm flex bison
+        shell: bash
+
+      - name: Add MSYS2 to PATH
+        run: echo "C:/msys64/usr/bin" >> $GITHUB_PATH
+        shell: bash
 
       - name: Create bsdtar symlink
         run: |
@@ -113,11 +118,11 @@ jobs:
 
       - name: Verify flex and bison installation
         run: |
-          echo "Verifying flex and bison installation..."
+          echo "Verifying flex and bison are available..."
           which flex bison
           flex --version
           bison --version
-        shell: msys2 {0}
+        shell: bash
 
       - name: Install Python Dependencies
         run: |
