@@ -297,6 +297,10 @@ set(PYTHON_EXECUTABLE_NAME pythonscad-python${SUFFIX_WITH_DASH})
 if (MXECROSS OR WIN32)
   add_subdirectory(winconsole)
   set_property(TARGET OpenSCAD PROPERTY WIN32_EXECUTABLE ON)
+  # Disable auto-generation of manifest for MSVC to avoid conflict with embedded manifest in .rc file
+  if(MSVC)
+    target_link_options(OpenSCAD PRIVATE /MANIFEST:NO)
+  endif()
 endif()
 
 set(OPENSCAD_LIB_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/objects")
