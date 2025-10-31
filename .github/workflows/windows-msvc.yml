@@ -95,8 +95,9 @@ jobs:
           pip install bsdiff4 numpy pillow
         shell: cmd
 
-      - name: Setup vcpkg binary caching
-        uses: actions/cache@v4
+      - name: Restore vcpkg binary cache
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ${{ github.workspace }}/vcpkg
@@ -107,7 +108,6 @@ jobs:
           restore-keys: |
             vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-
             vcpkg-${{ runner.os }}-
-          save-always: true
 
       - name: Create vcpkg binary cache directory
         run: mkdir -p ${{ github.workspace }}/vcpkg-cache
@@ -144,28 +144,16 @@ jobs:
         env:
           VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
-      - name: Verify binary cache effectiveness
-        shell: cmd
-        run: |
-          echo ==============================================================
-          echo Binary Cache Effectiveness Report
-          echo ==============================================================
-          if exist "${{ github.workspace }}\vcpkg-cache\*.zip" (
-            echo SUCCESS: Binary cache files found!
-            dir "${{ github.workspace }}\vcpkg-cache" /b | find /c ".zip"
-            echo cache files created
-          ) else (
-            echo INFO: No binary cache files found (first run?)
-          )
-          echo.
-          echo Build trees (packages built from source during this run):
-          if exist "%VCPKG_ROOT%\buildtrees" (
-            dir /b "%VCPKG_ROOT%\buildtrees" | find /c /v ""
-            echo packages built from source
-          ) else (
-            echo 0 (All packages came from binary cache!)
-          )
-          echo ==============================================================
+      - name: Save vcpkg binary cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ github.workspace }}/vcpkg
+            ~/.cache/vcpkg
+            ~/AppData/Local/vcpkg
+            ${{ github.workspace }}/vcpkg-cache
+          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
       - name: Configure and Build with CMake
         uses: lukka/run-cmake@v10
