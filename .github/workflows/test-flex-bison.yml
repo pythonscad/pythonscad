@@ -29,6 +29,12 @@ jobs:
         run: echo "C:/msys64/usr/bin" >> $GITHUB_PATH
         shell: bash
 
+      - name: Setup tmate session for interactive debugging
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 20
+        with:
+          limit-access-to-actor: true
+
       - name: Test 1 - Verify in MSYS2 shell
         run: |
           echo "=== Test 1: Verify flex/bison in MSYS2 shell ==="
