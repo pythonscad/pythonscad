@@ -18,22 +18,19 @@ jobs:
         with:
           arch: x64
 
-      - name: Setup MSYS2 and Install flex/bison
+      - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
           msystem: MSYS
           update: false
-          install: flex bison
+
+      - name: Install flex and bison via pacman
+        run: /c/msys64/usr/bin/pacman -Sy --noconfirm flex bison
+        shell: bash
 
       - name: Add MSYS2 to PATH
         run: echo "C:/msys64/usr/bin" >> $GITHUB_PATH
         shell: bash
-
-      - name: Setup tmate session for interactive debugging
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 20
-        with:
-          limit-access-to-actor: true
 
       - name: Test 1 - Verify in MSYS2 shell
         run: |
