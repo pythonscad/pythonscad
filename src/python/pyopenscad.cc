@@ -176,6 +176,13 @@ void initDynamic(void)
   PYTHON_LOAD_FUNC(PySys_Audit, int (*)(const char *event, const char *format, ...));
   PYTHON_LOAD_FUNC(PySys_WriteStdout, void (*)(const char *format, ...));
 
+  PYTHON_LOAD_FUNC(PyObject_Call,
+                   PyObject * (*)(PyObject * call, PyObject * newargs, PyObject * kwargs));
+  PYTHON_LOAD_FUNC(PyStaticMethod_New, PyObject * (*)(PyObject *));
+  PYTHON_LOAD_FUNC(PyDescr_NewMethod, PyObject * (*)(PyTypeObject *, PyMethodDef *));
+  PYTHON_LOAD_FUNC(PyDescr_NewClassMethod, PyObject * (*)(PyTypeObject *, PyMethodDef *));
+  PYTHON_LOAD_FUNC(PyCMethod_New, PyObject * (*)(PyMethodDef *, PyObject *, PyObject *, PyTypeObject *));
+
   PYTHON_LOAD_FUNC(_Py_TrueStruct, PyObject *);
   PYTHON_LOAD_FUNC(_Py_FalseStruct, PyObject *);
   PYTHON_LOAD_FUNC(_Py_NoneStruct, PyObject *);
@@ -188,6 +195,7 @@ void initDynamic(void)
   PYTHON_LOAD_FUNC(PyTuple_Type, PyTypeObject *);
   PYTHON_LOAD_FUNC(PyModule_Type, PyTypeObject *);
   PYTHON_LOAD_FUNC(PyBaseObject_Type, PyTypeObject *);
+  PYTHON_LOAD_FUNC(PyFunction_Type, PyTypeObject *);
 }
 
 void finishDynamic(void)

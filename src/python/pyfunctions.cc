@@ -766,7 +766,7 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
       if (PyList_CHECK(element) && pf.PyList_Size(element) == 3) {
         Vector4f color(0, 0, 0, 1.0);
         for (j = 0; j < 3; j++) {
-          color[j] = pf.PyFloat_AsDouble(PyList_GetItem(element, j));
+          color[j] = pf.PyFloat_AsDouble(pf.PyList_GetItem(element, j));
         }
         int colind = -1;
         int ind = 0;
@@ -1364,12 +1364,12 @@ PyObject *python_oo_rotate(PyObject *obj, PyObject *args, PyObject *kwargs)
   return python_rotate_core(obj, val_a, val_v, ref);
 }
 
-PyObject *python_matrix_mirror(PyObject *mat, Matrix4d m)
+PyObject *python_number_mirror(PyObject *mat, Matrix4d m, int vecs)
 {
   Matrix4d raw;
   if (python_tomatrix(mat, raw)) return nullptr;
   Vector4d n;
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < vecs; i++) {
     n = Vector4d(raw(0, i), raw(1, i), raw(2, i), 0);
     n = m * n;
     for (int j = 0; j < 3; j++) raw(j, i) = n[j];
@@ -2514,12 +2514,12 @@ PyObject *python_bbox_core(PyObject *obj)
   PyObject *position = python__getitem__(obj, position_key);
   PyObject *size = python__getitem__(obj, size_key);
 
-  Py_DECREF(position_key);
-  Py_DECREF(size_key);
+  Py_XDECREF_(position_key);
+  Py_XDECREF_(size_key);
 
   if (position == Py_NONE || size == Py_NONE) {
-    if (position != Py_NONE) Py_DECREF(position);
-    if (size != Py_NONE) Py_DECREF(size);
+    if (position != Py_NONE) Py_XDECREF_(position);
+    if (size != Py_NONE) Py_XDECREF_(size);
     return Py_NONE;
   }
 
@@ -2531,10 +2531,10 @@ PyObject *python_bbox_core(PyObject *obj)
 
   PyObject *cube = python_cube(NULL, cube_args, cube_kwargs);
   if (cube == NULL) {
-    Py_DECREF(position);
-    Py_DECREF(size);
-    Py_DECREF(cube_args);
-    Py_DECREF(cube_kwargs);
+    Py_XDECREF_(position);
+    Py_XDECREF_(size);
+    Py_XDECREF_(cube_args);
+    Py_XDECREF_(cube_kwargs);
     return NULL;
   }
 
@@ -2542,11 +2542,11 @@ PyObject *python_bbox_core(PyObject *obj)
   PyObject *bbox_box = python_translate_core(cube, position);
 
   // Clean up
-  Py_DECREF(position);
-  Py_DECREF(size);
-  Py_DECREF(cube_args);
-  Py_DECREF(cube_kwargs);
-  Py_DECREF(cube);
+  Py_XDECREF_(position);
+  Py_XDECREF_(size);
+  Py_XDECREF_(cube_args);
+  Py_XDECREF_(cube_kwargs);
+  Py_XDECREF_(cube);
 
   return bbox_box;
 }
@@ -3470,7 +3470,7 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
   node->xdir_z = 0;
   node->closed = false;
   if (closed == Py_TRUE) node->closed = true;
-  if (allow_intersect == Py_True) node->allow_intersect = true;
+  if (allow_intersect == Py_TRUE) node->allow_intersect = true;
   if (xdir != NULL) {
     if (python_vectorval(xdir, 3, 3, &(node->xdir_x), &(node->xdir_y), &(node->xdir_z))) {
       pf.PyErr_SetString(pf.PyExc_TypeError, "error in path_extrude xdir parameter\n");
@@ -5539,7 +5539,7 @@ PyObject *python_oo_dict(PyObject *self, PyObject *args, PyObject *kwargs)
 
 int PyDict_SetDefaultRef(PyObject *d, PyObject *key, PyObject *default_value, PyObject **result)
 {
-  PyDict_SetDefault(d, key, default_value);
+  pf.PyDict_SetDefault(d, key, default_value);
   return 0;
 }
 
@@ -5554,13 +5554,13 @@ int type_add_method(PyTypeObject *type, PyMethodDef *meth)  // from typeobject.c
     }
     descr = pf.PyDescr_NewClassMethod(type, meth);
   } else if (meth->ml_flags & METH_STATIC) {
-    PyObject *cfunc = pf.PyCFunction_NewEx(meth, (PyObject *)type, NULL);
+    PyObject *cfunc = pf.PyCMethod_New(meth, nullptr, nullptr, type);
     if (cfunc == NULL) {
       return -1;
     }
     descr = pf.PyStaticMethod_New(cfunc);
     isdescr = 0;
-    Py_DECREF(cfunc);
+    Py_XDECREF_(cfunc);
   } else {
     descr = pf.PyDescr_NewMethod(type, meth);
   }
@@ -5574,7 +5574,7 @@ int type_add_method(PyTypeObject *type, PyMethodDef *meth)  // from typeobject.c
   } else {
     name = pf.PyUnicode_FromString(meth->ml_name);
     if (name == NULL) {
-      Py_DECREF(descr);
+      Py_XDECREF_(descr);
       return -1;
     }
   }
@@ -5587,9 +5587,9 @@ int type_add_method(PyTypeObject *type, PyMethodDef *meth)  // from typeobject.c
     err = 0;  // TODO (pf.PyDict_SetItem(dict, name, descr) < 0);
   }
   if (!isdescr) {
-    Py_DECREF(name);
+    Py_XDECREF_(name);
   }
-  Py_DECREF(descr);
+  Py_XDECREF_(descr);
   if (err) {
     return -1;  // return here
   }

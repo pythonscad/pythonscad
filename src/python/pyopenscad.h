@@ -49,6 +49,7 @@ struct PyKernel {
 
   PyObject *(*PyDict_New)(void);
   PyObject *(*PyDict_SetItem)(PyObject *, PyObject *, PyObject *);
+  PyObject *(*PyDict_SetDefault)(PyObject *, PyObject *, PyObject *);  // TODO fix
   PyObject *(*PyDict_SetItemString)(PyObject *, const char *, PyObject *);
   PyObject *(*PyDict_GetItem)(PyObject *, PyObject *);
   PyObject *(*PyDict_GetItemString)(PyObject *, const char *);
@@ -101,16 +102,17 @@ struct PyKernel {
   int (*PySys_Audit)(const char *event, const char *format, ...);
   void (*PySys_WriteStdout)(const char *format, ...);
 
-  PyObject *(*PyObject_Call)(PyObject *call, PyObject *newargs, PyObject *kwargs);  // TODO
+  PyObject *(*PyObject_Call)(PyObject *call, PyObject *newargs, PyObject *kwargs);
 
-  PyObject *(*PyStaticMethod_New)(PyObject *);                         // TODO
-  PyObject *(*PyDescr_NewMethod)(PyTypeObject *, PyMethodDef *);       // TODO
-  PyObject *(*PyDescr_NewClassMethod)(PyTypeObject *, PyMethodDef *);  // TODO
+  PyObject *(*PyStaticMethod_New)(PyObject *);
+  PyObject *(*PyDescr_NewMethod)(PyTypeObject *, PyMethodDef *);
+  PyObject *(*PyDescr_NewClassMethod)(PyTypeObject *, PyMethodDef *);
+  PyObject *(*PyCMethod_New)(PyMethodDef *, PyObject *, PyObject *, PyTypeObject *);
   PyObject *_Py_TrueStruct;
   PyObject *_Py_FalseStruct;
   PyObject *_Py_NoneStruct;
   PyObject *PyExc_TypeError;
-  PyTypeObject *PyFunction_Type;  // TODO fix
+  PyTypeObject *PyFunction_Type;
   PyTypeObject *PyList_Type;
   PyTypeObject *PyFloat_Type;
   PyTypeObject *PyLong_Type;
