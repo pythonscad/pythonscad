@@ -80,7 +80,7 @@ struct PyKernel pf;
 void initDynamic(void)
 {
   if (libpython_handle) return;
-  libpython_handle = dlopen("/usr/lib/libpython3.13.so", RTLD_LAZY);
+  libpython_handle = dlopen("/usr/lib/x86_64-linux-gnu/libpython3.12.so", RTLD_LAZY);
   printf("handle=%p\n", libpython_handle);
   if (!libpython_handle) return;
 
@@ -897,6 +897,7 @@ void openscad_object_callback(PyObject *obj)
 
 void initPython(const std::string& binDir, const std::string& scriptpath, double time)
 {
+  printf("initPython\n");
   static bool alreadyTried = false;
   if (alreadyTried) return;
   const auto name = "openscad-python";
@@ -1079,6 +1080,7 @@ int debug_num, debug_cnt;  // Hidden debug aid
 
 std::string evaluatePython(const std::string& code, bool dry_run)
 {
+  printf("EvalPytthon\n");
   std::string error;
   genlang_result_node = nullptr;
   python_result_handle.clear();
@@ -1170,6 +1172,7 @@ stderr_bak = None\n\
   }
   pf.PyRun_SimpleString(python_exit_code);
 #endif
+  printf("end\n");
   return error;
 }
 /*
