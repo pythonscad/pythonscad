@@ -48,9 +48,9 @@ jobs:
           echo (Skipping - we know this doesn't work persistently in cmd)
         shell: cmd
 
-      - name: Test 4 - CMake with MSYS2 in PATH (bash shell)
+      - name: Test 4 - CMake with explicit FLEX/BISON paths
         run: |
-          echo "=== Test 4: CMake with MSYS2 in PATH (bash shell) ==="
+          echo "=== Test 4: CMake with explicit FLEX/BISON paths ==="
 
           # Create test directory
           mkdir cmake_test
@@ -70,15 +70,10 @@ jobs:
           message(STATUS "BISON_VERSION: ${BISON_VERSION}")
           EOF
 
-          # Add MSYS2 to PATH for CMake
-          export PATH="/c/msys64/usr/bin:$PATH"
-
-          echo "Checking flex/bison before CMake:"
-          which flex
-          which bison
-
-          # Run CMake
-          cmake -B build -G "Visual Studio 17 2022" -A x64
+          # Run CMake with explicit paths to flex/bison
+          cmake -B build -G "Visual Studio 17 2022" -A x64 \
+            -DFLEX_EXECUTABLE=C:/msys64/usr/bin/flex.exe \
+            -DBISON_EXECUTABLE=C:/msys64/usr/bin/bison.exe
         shell: bash
 
       - name: Test 5 - Report findings
