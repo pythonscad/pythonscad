@@ -89,14 +89,6 @@ jobs:
         shell: cmd
         continue-on-error: true
 
-      - name: Verify flex and bison installation
-        run: |
-          echo "Verifying flex and bison are available..."
-          which flex bison
-          flex --version
-          bison --version
-        shell: bash
-
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
