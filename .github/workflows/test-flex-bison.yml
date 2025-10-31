@@ -52,9 +52,9 @@ jobs:
           bison --version
         shell: cmd
 
-      - name: Test 4 - Simple CMake test with FindFLEX
+      - name: Test 4 - CMake with MSYS2 in PATH (bash shell)
         run: |
-          echo "=== Test 4: CMake FindFLEX test ==="
+          echo "=== Test 4: CMake with MSYS2 in PATH (bash shell) ==="
 
           # Create test directory
           mkdir cmake_test
@@ -76,6 +76,10 @@ jobs:
 
           # Add MSYS2 to PATH for CMake
           export PATH="/c/msys64/usr/bin:$PATH"
+
+          echo "Checking flex/bison before CMake:"
+          which flex
+          which bison
 
           # Run CMake
           cmake -B build -G "Visual Studio 17 2022" -A x64
