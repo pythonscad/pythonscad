@@ -53,33 +53,6 @@ jobs:
           modules: 'qt5compat qtmultimedia'
           cache: true
 
-      - name: Verify Qt6 Installation
-        run: |
-          echo === Qt6 Installation Check ===
-          echo Qt6_DIR: %Qt6_DIR%
-          echo.
-          echo === Creating test directory and CMakeLists.txt ===
-          mkdir test_qt6
-          (
-            echo cmake_minimum_required(VERSION 3.20^)
-            echo project(Qt6VerificationTest^)
-            echo find_package(Qt6 COMPONENTS Core Core5Compat Widgets Multimedia OpenGL OpenGLWidgets Concurrent Network Svg Test REQUIRED^)
-            echo message(STATUS "Qt6 version: ${Qt6_VERSION}"^)
-            echo message(STATUS "All Qt6 components found successfully!"^)
-          ) > test_qt6\CMakeLists.txt
-          echo.
-          echo === Test CMakeLists.txt content ===
-          type test_qt6\CMakeLists.txt
-          echo.
-          echo === Running CMake test ===
-          cmake -B test_qt6\build -S test_qt6 -G "Visual Studio 17 2022" -A x64
-          if errorlevel 1 (
-            echo FAILED: Qt6 installation verification failed!
-            exit /b 1
-          )
-          echo SUCCESS: Qt6 installation verified!
-        shell: cmd
-
       - name: Build QScintilla from source
         run: |
           echo === Downloading QScintilla ===
