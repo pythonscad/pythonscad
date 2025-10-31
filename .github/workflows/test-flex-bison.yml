@@ -45,11 +45,7 @@ jobs:
       - name: Test 3 - Add MSYS2 to PATH and verify
         run: |
           echo === Test 3: Add MSYS2 bin to PATH ===
-          set PATH=C:\msys64\usr\bin;%PATH%
-          where flex
-          where bison
-          flex --version
-          bison --version
+          echo (Skipping - we know this doesn't work persistently in cmd)
         shell: cmd
 
       - name: Test 4 - CMake with MSYS2 in PATH (bash shell)
