@@ -774,7 +774,7 @@ VectorOfVector2d PolygonNode::createGeometry_sub(const std::vector<Vector3d>& po
                                                  const std::vector<size_t>& path, double fn, double fa,
                                                  double fs) const
 {
-  std::vector<Vector2d> result;
+  VectorOfVector2d result;
   int n = path.size();
   for (int i = 0; i < n; i++) {
     const auto& ptprev = points[path[(i + n - 1) % n]];
