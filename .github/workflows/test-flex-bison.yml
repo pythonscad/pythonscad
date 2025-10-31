@@ -1,0 +1,90 @@
+name: Test Flex/Bison Setup
+
+on:
+  push:
+    branches: [visualstudio-build]
+  workflow_dispatch:
+
+jobs:
+  test-flex-bison:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Visual Studio Environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Setup MSYS2 and Install flex/bison
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          update: false
+          install: flex bison
+
+      - name: Test 1 - Verify in MSYS2 shell
+        run: |
+          echo "=== Test 1: Verify flex/bison in MSYS2 shell ==="
+          which flex
+          which bison
+          flex --version
+          bison --version
+        shell: msys2 {0}
+
+      - name: Test 2 - Check if available in cmd
+        run: |
+          echo === Test 2: Check if flex/bison available in cmd.exe ===
+          where flex || echo flex not found in PATH
+          where bison || echo bison not found in PATH
+        shell: cmd
+        continue-on-error: true
+
+      - name: Test 3 - Add MSYS2 to PATH and verify
+        run: |
+          echo === Test 3: Add MSYS2 bin to PATH ===
+          set PATH=C:\msys64\usr\bin;%PATH%
+          where flex
+          where bison
+          flex --version
+          bison --version
+        shell: cmd
+
+      - name: Test 4 - Simple CMake test with FindFLEX
+        run: |
+          echo "=== Test 4: CMake FindFLEX test ==="
+
+          # Create test directory
+          mkdir cmake_test
+          cd cmake_test
+
+          # Create minimal CMakeLists.txt
+          cat > CMakeLists.txt << 'EOF'
+          cmake_minimum_required(VERSION 3.20)
+          project(FlexBisonTest)
+
+          find_package(FLEX REQUIRED)
+          find_package(BISON REQUIRED)
+
+          message(STATUS "FLEX_EXECUTABLE: ${FLEX_EXECUTABLE}")
+          message(STATUS "FLEX_VERSION: ${FLEX_VERSION}")
+          message(STATUS "BISON_EXECUTABLE: ${BISON_EXECUTABLE}")
+          message(STATUS "BISON_VERSION: ${BISON_VERSION}")
+          EOF
+
+          # Add MSYS2 to PATH for CMake
+          export PATH="/c/msys64/usr/bin:$PATH"
+
+          # Run CMake
+          cmake -B build -G "Visual Studio 17 2022" -A x64
+        shell: bash
+
+      - name: Test 5 - Report findings
+        run: |
+          echo "=== Test 5: Summary ==="
+          echo "If you see this, all tests passed!"
+          echo "MSYS2 location: C:\msys64\usr\bin"
+          echo "Solution: Add MSYS2 to PATH before CMake steps"
+        shell: bash
