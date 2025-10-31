@@ -137,6 +137,7 @@ jobs:
           restore-keys: |
             vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-
             vcpkg-${{ runner.os }}-
+          save-always: true
 
       - name: Create vcpkg binary cache directory
         run: mkdir -p ${{ github.workspace }}/vcpkg-cache
