@@ -977,6 +977,14 @@ if(NOT HEADLESS)
 
     find_package(Qt6QScintilla 2.8.0 REQUIRED)
     message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING}")
+    # For MSVC, ensure QScintilla is added as an imported target
+    if(MSVC AND NOT TARGET Qt6QScintilla::Qt6QScintilla)
+      add_library(Qt6QScintilla::Qt6QScintilla UNKNOWN IMPORTED)
+      set_target_properties(Qt6QScintilla::Qt6QScintilla PROPERTIES
+        IMPORTED_LOCATION "${QT6QSCINTILLA_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${QT6QSCINTILLA_INCLUDE_DIR}"
+      )
+    endif()
 
     if(ENABLE_QTDBUS)
       find_package(Qt6DBus)
@@ -1817,10 +1825,18 @@ endif()
 
 if (USE_QT6)
   if(NOT HEADLESS)
-    target_link_libraries(OpenSCAD PRIVATE
-      Qt6::Core Qt6::Core5Compat Qt6::Widgets Qt6::Multimedia Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent Qt6::Network Qt6::Svg
-      ${QT6QSCINTILLA_LIBRARY} ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
-    )
+    # Use imported target for QScintilla on MSVC, variable otherwise
+    if(MSVC AND TARGET Qt6QScintilla::Qt6QScintilla)
+      target_link_libraries(OpenSCAD PRIVATE
+        Qt6::Core Qt6::Core5Compat Qt6::Widgets Qt6::Multimedia Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent Qt6::Network Qt6::Svg
+        Qt6QScintilla::Qt6QScintilla ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
+      )
+    else()
+      target_link_libraries(OpenSCAD PRIVATE
+        Qt6::Core Qt6::Core5Compat Qt6::Widgets Qt6::Multimedia Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent Qt6::Network Qt6::Svg
+        ${QT6QSCINTILLA_LIBRARY} ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
+      )
+    endif()
   endif()
   if(ENABLE_GUI_TESTS)
     target_link_libraries(OpenSCAD PRIVATE Qt6::Test)
