@@ -26,7 +26,7 @@ jobs:
           install: flex bison
 
       - name: Add MSYS2 to PATH
-        run: echo "C:\msys64\usr\bin" >> $GITHUB_PATH
+        run: echo "C:/msys64/usr/bin" >> $GITHUB_PATH
         shell: bash
 
       - name: Test 1 - Verify in MSYS2 shell
