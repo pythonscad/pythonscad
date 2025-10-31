@@ -699,7 +699,11 @@ if(ENABLE_PYTHON)
   endif()
   target_link_libraries(OpenSCADPy PRIVATE Eigen3::Eigen)
   target_link_libraries(OpenSCADPy PRIVATE ${GETTEXT_LIBRARY})
-  target_link_libraries(OpenSCADPy PRIVATE ${GLIB2_LIBRARIES})
+  if(MSVC)
+    target_link_libraries(OpenSCADPy PRIVATE PkgConfig::GLIB2)
+  else()
+    target_link_libraries(OpenSCADPy PRIVATE ${GLIB2_LIBRARIES})
+  endif()
   # copy compile options for the main OpenSCAD target
   # duplication is not very ideal but not sure what better options do we have
   if (MSVC)
