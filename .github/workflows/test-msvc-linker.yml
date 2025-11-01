@@ -35,67 +35,35 @@ jobs:
       uses: actions/cache/restore@v4
       with:
         path: |
-          /c/vcpkg-test
+          ${{ github.workspace }}/vcpkg-test
+          ~/.cache/vcpkg
           ~/AppData/Local/vcpkg
           ${{ github.workspace }}/vcpkg-cache
-        key: vcpkg-test-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+        key: vcpkg-test-${{ runner.os }}-${{ hashFiles('test_linker/vcpkg.json') }}
         restore-keys: |
           vcpkg-test-${{ runner.os }}-
 
     - name: Create vcpkg binary cache directory
-      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
-      shell: bash
       run: mkdir -p ${{ github.workspace }}/vcpkg-cache
-
-    - name: Install vcpkg
-      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
       shell: bash
-      run: |
-        # Clone vcpkg and bootstrap
-        rm -rf /c/vcpkg-test
-        cd /c
-        git clone https://github.com/Microsoft/vcpkg.git vcpkg-test
-        cd vcpkg-test
-        git checkout 74e6536215718009aae747d86d84b78376bf9e09
-        ./bootstrap-vcpkg.bat
 
-    - name: Install vcpkg dependencies
-      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg-test'
+        vcpkgGitCommitId: '74e6536215718009aae747d86d84b78376bf9e09'
+        vcpkgJsonGlob: '**/test_linker/vcpkg.json'
+        runVcpkgInstall: false
       env:
         VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
-      shell: bash
-      run: |
-        # Install packages in classic mode (not manifest mode)
-        # Use --classic flag to force classic mode even if manifest is found
-        /c/vcpkg-test/vcpkg install \
-          --classic \
-          --clean-after-build \
-          cairo:x64-windows \
-          glib:x64-windows \
-          harfbuzz:x64-windows \
-          freetype:x64-windows \
-          boost-regex:x64-windows \
-          boost-program-options:x64-windows \
-          eigen3:x64-windows
-
-    - name: Cleanup vcpkg to reduce cache size
-      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
-      shell: bash
-      run: |
-        # Clean up buildtrees, downloads, and packages to reduce cache size
-        # Keep the installed files and binary cache
-        echo "Cleaning up vcpkg directories to reduce cache size..."
-        rm -rf /c/vcpkg-test/buildtrees
-        rm -rf /c/vcpkg-test/downloads
-        rm -rf /c/vcpkg-test/packages
-        echo "Cleanup complete"
 
     - name: Save vcpkg binary cache
-      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+      if: always()
       uses: actions/cache/save@v4
       with:
         path: |
-          /c/vcpkg-test
+          ${{ github.workspace }}/vcpkg-test
+          ~/.cache/vcpkg
           ~/AppData/Local/vcpkg
           ${{ github.workspace }}/vcpkg-cache
         key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
@@ -155,6 +123,52 @@ jobs:
       shell: bash
       run: |
         mkdir -p test_linker
+
+        # Create vcpkg.json for the test project
+        cat > test_linker/vcpkg.json << 'EOF'
+        {
+          "dependencies": [
+            "boost-regex",
+            "boost-program-options",
+            "eigen3",
+            "harfbuzz",
+            "freetype",
+            "glib",
+            "cairo"
+          ]
+        }
+        EOF
+
+        # Create CMakePresets.json for the test project
+        cat > test_linker/CMakePresets.json << 'EOF'
+        {
+          "version": 3,
+          "configurePresets": [
+            {
+              "name": "test-msvc-release",
+              "generator": "Visual Studio 17 2022",
+              "architecture": {
+                "value": "x64",
+                "strategy": "set"
+              },
+              "binaryDir": "${sourceDir}/build",
+              "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+              "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "VCPKG_TARGET_TRIPLET": "x64-windows",
+                "CMAKE_PREFIX_PATH": "$env{Qt6_DIR}"
+              }
+            }
+          ],
+          "buildPresets": [
+            {
+              "name": "test-msvc-release",
+              "configurePreset": "test-msvc-release",
+              "configuration": "Release"
+            }
+          ]
+        }
+        EOF
 
         # Create a minimal test that uses all the libraries
         cat > test_linker/test_main.cpp << 'EOF'
@@ -289,20 +303,23 @@ jobs:
         target_link_options(linker_test PRIVATE /MANIFEST:NO)
         EOF
 
-    - name: Configure CMake
-      shell: bash
+    - name: Install vcpkg dependencies
+      shell: cmd
+      working-directory: test_linker
       run: |
-        cd test_linker
-        cmake -B build \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg-test/scripts/buildsystems/vcpkg.cmake \
-          -DVCPKG_TARGET_TRIPLET=x64-windows
+        echo Installing test dependencies from vcpkg.json
+        "${{ github.workspace }}\vcpkg-test\vcpkg.exe" install --triplet x64-windows
+      env:
+        VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
-    - name: Build test
-      shell: bash
-      run: |
-        cd test_linker
-        cmake --build build --config Release
+    - name: Configure and Build with CMake
+      uses: lukka/run-cmake@v10
+      with:
+        configurePreset: 'test-msvc-release'
+        buildPreset: 'test-msvc-release'
+      env:
+        VCPKG_ROOT: ${{ github.workspace }}/vcpkg-test
+        VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
     - name: Run test
       shell: bash
