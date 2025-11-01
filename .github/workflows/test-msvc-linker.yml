@@ -1,0 +1,237 @@
+name: Test MSVC Linker Issues
+
+on:
+  push:
+    branches: [ visualstudio-build ]
+  pull_request:
+    branches: [ visualstudio-build ]
+
+jobs:
+  test-linker:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.10.0'
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc2022_64'
+        modules: 'qt5compat qtmultimedia qtshadertools'
+        cache: true
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: ${{ github.workspace }}/vcpkg
+        vcpkgGitCommitId: '74e6536215718009aae747d86d84b78376bf9e09'
+
+    - name: Install vcpkg dependencies
+      shell: bash
+      run: |
+        vcpkg install \
+          cairo \
+          glib \
+          harfbuzz \
+          freetype \
+          boost-regex \
+          boost-program-options \
+          eigen3 \
+          --triplet x64-windows
+
+    - name: Setup MSYS2 for flex/bison
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MSYS
+        update: false
+
+    - name: Install flex and bison
+      run: /c/msys64/usr/bin/pacman -Sy --noconfirm flex bison
+      shell: bash
+
+    - name: Add MSYS2 to PATH
+      run: echo "C:/msys64/usr/bin" >> $GITHUB_PATH
+      shell: bash
+
+    - name: Download and build QScintilla
+      shell: bash
+      run: |
+        echo "=== Downloading QScintilla ==="
+        curl -L -o qscintilla.tar.gz https://www.riverbankcomputing.com/static/Downloads/QScintilla/2.14.1/QScintilla_src-2.14.1.tar.gz
+        tar -xzf qscintilla.tar.gz
+        cd QScintilla_src-2.14.1/src
+        echo "=== Building QScintilla ==="
+        qmake qscintilla.pro
+        nmake release
+        echo "=== Installing QScintilla ==="
+        nmake install
+        echo "SUCCESS: QScintilla built and installed!"
+
+    - name: Create test source files
+      shell: bash
+      run: |
+        mkdir -p test_linker
+
+        # Create a minimal test that uses all the libraries
+        cat > test_linker/test_main.cpp << 'EOF'
+        #include <iostream>
+        #include <string>
+
+        // Cairo test
+        #include <cairo.h>
+        std::string test_cairo() {
+            return std::string("Cairo version: ") + CAIRO_VERSION_STRING;
+        }
+
+        // Glib test
+        #include <glib.h>
+        std::string test_glib() {
+            return std::string("GLib version: ") + std::to_string(GLIB_MAJOR_VERSION) + "." +
+                   std::to_string(GLIB_MINOR_VERSION);
+        }
+
+        // HarfBuzz test
+        #include <hb.h>
+        std::string test_harfbuzz() {
+            return std::string("HarfBuzz version: ") + HB_VERSION_STRING;
+        }
+
+        // QScintilla test - must actually use the classes to trigger linker errors
+        #include <Qsci/qsciscintilla.h>
+        #include <Qsci/qsciscintillabase.h>
+        #include <Qsci/qsciabstractapis.h>
+        #include <QApplication>
+        std::string test_qscintilla() {
+            // Reference the staticMetaObject to trigger the same linker errors
+            const QMetaObject* meta1 = &QsciScintilla::staticMetaObject;
+            const QMetaObject* meta2 = &QsciScintillaBase::staticMetaObject;
+            const QMetaObject* meta3 = &QsciAbstractAPIs::staticMetaObject;
+            (void)meta1; (void)meta2; (void)meta3;
+            return std::string("QScintilla: OK");
+        }
+
+        // Boost test
+        #include <boost/version.hpp>
+        std::string test_boost() {
+            return std::string("Boost version: ") + BOOST_LIB_VERSION;
+        }
+
+        // Eigen test
+        #include <Eigen/Core>
+        std::string test_eigen() {
+            return std::string("Eigen version: ") + std::to_string(EIGEN_WORLD_VERSION) + "." +
+                   std::to_string(EIGEN_MAJOR_VERSION);
+        }
+
+        int main(int argc, char *argv[]) {
+            QApplication app(argc, argv);
+
+            std::cout << test_cairo() << std::endl;
+            std::cout << test_glib() << std::endl;
+            std::cout << test_harfbuzz() << std::endl;
+            std::cout << test_qscintilla() << std::endl;
+            std::cout << test_boost() << std::endl;
+            std::cout << test_eigen() << std::endl;
+
+            std::cout << "All library tests passed!" << std::endl;
+            return 0;
+        }
+        EOF
+
+        # Create CMakeLists.txt for the test
+        cat > test_linker/CMakeLists.txt << 'EOF'
+        cmake_minimum_required(VERSION 3.20)
+        project(LinkerTest)
+
+        set(CMAKE_CXX_STANDARD 20)
+        set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+        # Qt6
+        find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+
+        # vcpkg packages
+        find_package(PkgConfig REQUIRED)
+
+        # Cairo
+        pkg_check_modules(CAIRO REQUIRED cairo)
+
+        # Glib
+        pkg_check_modules(GLIB2 REQUIRED IMPORTED_TARGET glib-2.0)
+
+        # HarfBuzz
+        find_package(harfbuzz CONFIG REQUIRED)
+
+        # Boost
+        find_package(Boost REQUIRED)
+
+        # Eigen
+        find_package(Eigen3 REQUIRED)
+
+        # QScintilla
+        list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../cmake/Modules")
+        find_package(Qt6QScintilla 2.8.0 REQUIRED)
+
+        # Create imported target for QScintilla
+        if(NOT TARGET Qt6QScintilla::Qt6QScintilla)
+          add_library(Qt6QScintilla::Qt6QScintilla UNKNOWN IMPORTED)
+          set_target_properties(Qt6QScintilla::Qt6QScintilla PROPERTIES
+            IMPORTED_LOCATION "${QT6QSCINTILLA_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${QT6QSCINTILLA_INCLUDE_DIR}"
+          )
+        endif()
+
+        add_executable(linker_test test_main.cpp)
+
+        target_include_directories(linker_test PRIVATE
+          ${CAIRO_INCLUDE_DIRS}
+          ${Boost_INCLUDE_DIRS}
+        )
+
+        target_link_libraries(linker_test PRIVATE
+          Qt6::Core
+          Qt6::Widgets
+          Qt6QScintilla::Qt6QScintilla
+          PkgConfig::GLIB2
+          ${CAIRO_LINK_LIBRARIES}
+          harfbuzz::harfbuzz
+          Eigen3::Eigen
+          ${Boost_LIBRARIES}
+        )
+
+        # Disable manifest auto-generation
+        target_link_options(linker_test PRIVATE /MANIFEST:NO)
+        EOF
+
+    - name: Configure CMake
+      shell: bash
+      env:
+        VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+        Qt6_DIR: ${{ env.Qt6_DIR }}
+      run: |
+        cd test_linker
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=x64-windows
+
+    - name: Build test
+      shell: bash
+      run: |
+        cd test_linker
+        cmake --build build --config Release
+
+    - name: Run test
+      shell: bash
+      run: |
+        cd test_linker/build/Release
+        ./linker_test.exe
