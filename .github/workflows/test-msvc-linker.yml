@@ -30,6 +30,43 @@ jobs:
         modules: 'qt5compat qtmultimedia qtshadertools'
         cache: true
 
+    - name: Setup MSYS2 for flex/bison
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MSYS
+        update: false
+
+    - name: Install flex and bison
+      run: /c/msys64/usr/bin/pacman -Sy --noconfirm flex bison
+      shell: bash
+
+    - name: Add MSYS2 to PATH
+      run: echo "C:/msys64/usr/bin" >> $GITHUB_PATH
+      shell: bash
+
+    - name: Create test source files
+      shell: bash
+      run: |
+        mkdir -p test_linker
+
+        # Create vcpkg.json for the test project
+        cat > test_linker/vcpkg.json << 'EOF'
+        {
+          "dependencies": [
+            "boost-regex",
+            "boost-program-options",
+            "eigen3",
+            "harfbuzz",
+            "freetype",
+            "glib",
+            "cairo",
+            "pkgconf"
+          ]
+        }
+        EOF
+
+        # Note: CMakePresets.json and test code will be created in next step
+
     - name: Restore vcpkg binary cache
       id: vcpkg-cache
       uses: actions/cache/restore@v4
@@ -52,19 +89,10 @@ jobs:
       with:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg-test'
         vcpkgGitCommitId: '74e6536215718009aae747d86d84b78376bf9e09'
+        vcpkgJsonGlob: '**/test_linker/vcpkg.json'
+        runVcpkgInstall: false
       env:
         VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
-
-    - name: Save vcpkg binary cache
-      if: always()
-      uses: actions/cache/save@v4
-      with:
-        path: |
-          ${{ github.workspace }}/vcpkg-test
-          ~/.cache/vcpkg
-          ~/AppData/Local/vcpkg
-          ${{ github.workspace }}/vcpkg-cache
-        key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
     - name: Restore QScintilla cache
       id: qscintilla-cache
@@ -103,40 +131,9 @@ jobs:
           D:\a\pythonscad\Qt\6.10.0\msvc2022_64\include\Qsci
         key: ${{ steps.qscintilla-cache.outputs.cache-primary-key }}
 
-    - name: Setup MSYS2 for flex/bison
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: MSYS
-        update: false
-
-    - name: Install flex and bison
-      run: /c/msys64/usr/bin/pacman -Sy --noconfirm flex bison
-      shell: bash
-
-    - name: Add MSYS2 to PATH
-      run: echo "C:/msys64/usr/bin" >> $GITHUB_PATH
-      shell: bash
-
-    - name: Create test source files
+    - name: Create CMake files and test code
       shell: bash
       run: |
-        mkdir -p test_linker
-
-        # Create vcpkg.json for the test project
-        cat > test_linker/vcpkg.json << 'EOF'
-        {
-          "dependencies": [
-            "boost-regex",
-            "boost-program-options",
-            "eigen3",
-            "harfbuzz",
-            "freetype",
-            "glib",
-            "cairo"
-          ]
-        }
-        EOF
-
         # Create CMakePresets.json for the test project
         cat > test_linker/CMakePresets.json << 'EOF'
         {
@@ -309,6 +306,17 @@ jobs:
         "${{ github.workspace }}\vcpkg-test\vcpkg.exe" install --triplet x64-windows
       env:
         VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
+
+    - name: Save vcpkg binary cache
+      if: always()
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ${{ github.workspace }}/vcpkg-test
+          ~/.cache/vcpkg
+          ~/AppData/Local/vcpkg
+          ${{ github.workspace }}/vcpkg-cache
+        key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
     - name: Configure and Build with CMake
       uses: lukka/run-cmake@v10
