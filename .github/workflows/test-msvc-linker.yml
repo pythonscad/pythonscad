@@ -100,7 +100,18 @@ jobs:
           ${{ github.workspace }}/vcpkg-cache
         key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
+    - name: Restore QScintilla cache
+      id: qscintilla-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.lib
+          ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.dll
+          ${{ env.Qt6_DIR }}/include/Qsci
+        key: qscintilla-${{ runner.os }}-qt6.10.0-2.14.1
+
     - name: Download and build QScintilla
+      if: steps.qscintilla-cache.outputs.cache-hit != 'true'
       shell: cmd
       run: |
         echo === Downloading QScintilla ===
@@ -115,6 +126,16 @@ jobs:
         echo === Installing QScintilla ===
         nmake install
         echo SUCCESS: QScintilla built and installed!
+
+    - name: Save QScintilla cache
+      if: steps.qscintilla-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.lib
+          ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.dll
+          ${{ env.Qt6_DIR }}/include/Qsci
+        key: ${{ steps.qscintilla-cache.outputs.cache-primary-key }}
 
     - name: Setup MSYS2 for flex/bison
       uses: msys2/setup-msys2@v2
@@ -274,7 +295,7 @@ jobs:
         cd test_linker
         cmake -B build \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=/c/vcpkg-test/scripts/buildsystems/vcpkg.cmake \
+          -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg-test/scripts/buildsystems/vcpkg.cmake \
           -DVCPKG_TARGET_TRIPLET=x64-windows
 
     - name: Build test
