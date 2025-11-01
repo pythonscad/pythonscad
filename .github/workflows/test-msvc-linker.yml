@@ -45,7 +45,9 @@ jobs:
       shell: bash
       run: |
         # Install packages in classic mode (not manifest mode)
+        # Use --classic flag to force classic mode even if manifest is found
         /c/vcpkg-test/vcpkg install \
+          --classic \
           cairo:x64-windows \
           glib:x64-windows \
           harfbuzz:x64-windows \
