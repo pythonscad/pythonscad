@@ -53,7 +53,18 @@ jobs:
           modules: 'qt5compat qtmultimedia'
           cache: true
 
+      - name: Restore QScintilla cache
+        id: qscintilla-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.lib
+            ${{ env.Qt6_DIR }}/bin/qscintilla2_qt6.dll
+            ${{ env.Qt6_DIR }}/include/Qsci
+          key: qscintilla-${{ runner.os }}-2.14.1-qt6.10.0
+
       - name: Build QScintilla from source
+        if: steps.qscintilla-cache.outputs.cache-hit != 'true'
         run: |
           echo === Downloading QScintilla ===
           curl -L -o qscintilla.tar.gz https://www.riverbankcomputing.com/static/Downloads/QScintilla/2.14.1/QScintilla_src-2.14.1.tar.gz
@@ -68,6 +79,25 @@ jobs:
           nmake install
           echo SUCCESS: QScintilla built and installed!
         shell: cmd
+
+      - name: Cleanup QScintilla build artifacts
+        if: steps.qscintilla-cache.outputs.cache-hit != 'true'
+        run: |
+          echo Cleaning up QScintilla build artifacts to reduce cache size...
+          rm -rf QScintilla_src-2.14.1
+          rm -f qscintilla.tar.gz
+          echo Cleanup complete
+        shell: bash
+
+      - name: Save QScintilla cache
+        if: steps.qscintilla-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.lib
+            ${{ env.Qt6_DIR }}/bin/qscintilla2_qt6.dll
+            ${{ env.Qt6_DIR }}/include/Qsci
+          key: ${{ steps.qscintilla-cache.outputs.cache-primary-key }}
 
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
@@ -124,6 +154,7 @@ jobs:
           VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
       - name: Install vcpkg dependencies
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         shell: cmd
         run: |
           echo ==============================================================
@@ -144,8 +175,18 @@ jobs:
         env:
           VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
+      - name: Cleanup vcpkg to reduce cache size
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          echo "Cleaning up vcpkg directories to reduce cache size..."
+          rm -rf ${{ github.workspace }}/vcpkg/buildtrees
+          rm -rf ${{ github.workspace }}/vcpkg/downloads
+          rm -rf ${{ github.workspace }}/vcpkg/packages
+          echo "Cleanup complete"
+
       - name: Save vcpkg binary cache
-        if: always()
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
