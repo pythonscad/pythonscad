@@ -30,10 +30,28 @@ jobs:
         modules: 'qt5compat qtmultimedia qtshadertools'
         cache: true
 
+    - name: Restore vcpkg binary cache
+      id: vcpkg-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          /c/vcpkg-test
+          ~/AppData/Local/vcpkg
+          ${{ github.workspace }}/vcpkg-cache
+        key: vcpkg-test-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+        restore-keys: |
+          vcpkg-test-${{ runner.os }}-
+
+    - name: Create vcpkg binary cache directory
+      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: mkdir -p ${{ github.workspace }}/vcpkg-cache
+
     - name: Install vcpkg
+      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        # Clone vcpkg fresh to avoid manifest mode issues
+        # Clone vcpkg and bootstrap
         rm -rf /c/vcpkg-test
         cd /c
         git clone https://github.com/Microsoft/vcpkg.git vcpkg-test
@@ -42,12 +60,16 @@ jobs:
         ./bootstrap-vcpkg.bat
 
     - name: Install vcpkg dependencies
+      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+      env:
+        VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
       shell: bash
       run: |
         # Install packages in classic mode (not manifest mode)
         # Use --classic flag to force classic mode even if manifest is found
         /c/vcpkg-test/vcpkg install \
           --classic \
+          --clean-after-build \
           cairo:x64-windows \
           glib:x64-windows \
           harfbuzz:x64-windows \
@@ -56,19 +78,27 @@ jobs:
           boost-program-options:x64-windows \
           eigen3:x64-windows
 
-    - name: Setup MSYS2 for flex/bison
-      uses: msys2/setup-msys2@v2
+    - name: Cleanup vcpkg to reduce cache size
+      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        # Clean up buildtrees, downloads, and packages to reduce cache size
+        # Keep the installed files and binary cache
+        echo "Cleaning up vcpkg directories to reduce cache size..."
+        rm -rf /c/vcpkg-test/buildtrees
+        rm -rf /c/vcpkg-test/downloads
+        rm -rf /c/vcpkg-test/packages
+        echo "Cleanup complete"
+
+    - name: Save vcpkg binary cache
+      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
       with:
-        msystem: MSYS
-        update: false
-
-    - name: Install flex and bison
-      run: /c/msys64/usr/bin/pacman -Sy --noconfirm flex bison
-      shell: bash
-
-    - name: Add MSYS2 to PATH
-      run: echo "C:/msys64/usr/bin" >> $GITHUB_PATH
-      shell: bash
+        path: |
+          /c/vcpkg-test
+          ~/AppData/Local/vcpkg
+          ${{ github.workspace }}/vcpkg-cache
+        key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
     - name: Download and build QScintilla
       shell: bash
@@ -83,6 +113,20 @@ jobs:
         echo "=== Installing QScintilla ==="
         nmake install
         echo "SUCCESS: QScintilla built and installed!"
+
+    - name: Setup MSYS2 for flex/bison
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MSYS
+        update: false
+
+    - name: Install flex and bison
+      run: /c/msys64/usr/bin/pacman -Sy --noconfirm flex bison
+      shell: bash
+
+    - name: Add MSYS2 to PATH
+      run: echo "C:/msys64/usr/bin" >> $GITHUB_PATH
+      shell: bash
 
     - name: Create test source files
       shell: bash
