@@ -130,6 +130,15 @@ jobs:
         dir "D:\a\pythonscad\Qt\6.10.0\msvc2022_64\lib\qscintilla*"
         dir "D:\a\pythonscad\Qt\6.10.0\msvc2022_64\include\Qsci"
 
+    - name: Cleanup QScintilla build to reduce cache size
+      if: steps.qscintilla-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        echo "Cleaning up QScintilla build artifacts to reduce cache size..."
+        rm -rf QScintilla_src-2.14.1
+        rm -f qscintilla.tar.gz
+        echo "Cleanup complete"
+
     - name: Save QScintilla cache
       if: steps.qscintilla-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
@@ -319,6 +328,16 @@ jobs:
         "${{ github.workspace }}\vcpkg-test\vcpkg.exe" list
       env:
         VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
+
+    - name: Cleanup vcpkg to reduce cache size
+      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        echo "Cleaning up vcpkg directories to reduce cache size..."
+        rm -rf ${{ github.workspace }}/vcpkg-test/buildtrees
+        rm -rf ${{ github.workspace }}/vcpkg-test/downloads
+        rm -rf ${{ github.workspace }}/vcpkg-test/packages
+        echo "Cleanup complete"
 
     - name: Add vcpkg tools to PATH
       shell: bash
