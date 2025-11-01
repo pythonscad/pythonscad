@@ -34,9 +34,10 @@ jobs:
       shell: bash
       run: |
         # Clone vcpkg fresh to avoid manifest mode issues
+        rm -rf /c/vcpkg-test
         cd /c
-        git clone https://github.com/Microsoft/vcpkg.git
-        cd vcpkg
+        git clone https://github.com/Microsoft/vcpkg.git vcpkg-test
+        cd vcpkg-test
         git checkout 74e6536215718009aae747d86d84b78376bf9e09
         ./bootstrap-vcpkg.bat
 
@@ -44,7 +45,7 @@ jobs:
       shell: bash
       run: |
         # Install packages in classic mode (not manifest mode)
-        /c/vcpkg/vcpkg install \
+        /c/vcpkg-test/vcpkg install \
           cairo:x64-windows \
           glib:x64-windows \
           harfbuzz:x64-windows \
@@ -225,7 +226,7 @@ jobs:
         cd test_linker
         cmake -B build \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=/c/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DCMAKE_TOOLCHAIN_FILE=/c/vcpkg-test/scripts/buildsystems/vcpkg.cmake \
           -DVCPKG_TARGET_TRIPLET=x64-windows
 
     - name: Build test
