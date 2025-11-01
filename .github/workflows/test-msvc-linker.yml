@@ -101,18 +101,20 @@ jobs:
         key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
     - name: Download and build QScintilla
-      shell: bash
+      shell: cmd
       run: |
-        echo "=== Downloading QScintilla ==="
+        echo === Downloading QScintilla ===
         curl -L -o qscintilla.tar.gz https://www.riverbankcomputing.com/static/Downloads/QScintilla/2.14.1/QScintilla_src-2.14.1.tar.gz
         tar -xzf qscintilla.tar.gz
-        cd QScintilla_src-2.14.1/src
-        echo "=== Building QScintilla ==="
+        cd QScintilla_src-2.14.1\src
+        echo.
+        echo === Building QScintilla ===
         qmake qscintilla.pro
-        nmake release
-        echo "=== Installing QScintilla ==="
+        nmake
+        echo.
+        echo === Installing QScintilla ===
         nmake install
-        echo "SUCCESS: QScintilla built and installed!"
+        echo SUCCESS: QScintilla built and installed!
 
     - name: Setup MSYS2 for flex/bison
       uses: msys2/setup-msys2@v2
