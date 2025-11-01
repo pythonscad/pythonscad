@@ -77,9 +77,9 @@ jobs:
           ~/.cache/vcpkg
           ~/AppData/Local/vcpkg
           ${{ github.workspace }}/vcpkg-cache
-        key: vcpkg-test-${{ runner.os }}-${{ hashFiles('test_linker/vcpkg.json') }}
+        key: vcpkg-v2-${{ runner.os }}-${{ hashFiles('test_linker/vcpkg.json') }}
         restore-keys: |
-          vcpkg-test-${{ runner.os }}-
+          vcpkg-v2-${{ runner.os }}-
 
     - name: Create vcpkg binary cache directory
       run: mkdir -p ${{ github.workspace }}/vcpkg-cache
@@ -138,6 +138,34 @@ jobs:
         rm -rf QScintilla_src-2.14.1
         rm -f qscintilla.tar.gz
         echo "Cleanup complete"
+
+    - name: Verify QScintilla files exist
+      shell: cmd
+      run: |
+        echo === Verifying QScintilla files after cache restore/build ===
+        echo Checking for .lib file:
+        if exist "D:\a\pythonscad\Qt\6.10.0\msvc2022_64\lib\qscintilla2_qt6.lib" (
+          echo [OK] qscintilla2_qt6.lib found
+          dir "D:\a\pythonscad\Qt\6.10.0\msvc2022_64\lib\qscintilla2_qt6.lib"
+        ) else (
+          echo [ERROR] qscintilla2_qt6.lib NOT FOUND
+        )
+        echo.
+        echo Checking for .dll file:
+        if exist "D:\a\pythonscad\Qt\6.10.0\msvc2022_64\lib\qscintilla2_qt6.dll" (
+          echo [OK] qscintilla2_qt6.dll found
+          dir "D:\a\pythonscad\Qt\6.10.0\msvc2022_64\lib\qscintilla2_qt6.dll"
+        ) else (
+          echo [ERROR] qscintilla2_qt6.dll NOT FOUND
+        )
+        echo.
+        echo Checking for include directory:
+        if exist "D:\a\pythonscad\Qt\6.10.0\msvc2022_64\include\Qsci" (
+          echo [OK] Qsci include directory found
+          dir "D:\a\pythonscad\Qt\6.10.0\msvc2022_64\include\Qsci"
+        ) else (
+          echo [ERROR] Qsci include directory NOT FOUND
+        )
 
     - name: Save QScintilla cache
       if: steps.qscintilla-cache.outputs.cache-hit != 'true'
@@ -280,10 +308,17 @@ jobs:
 
         # QScintilla
         list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../cmake/Modules")
+
+        message(STATUS "=== QScintilla Debug Info ===")
+        message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+        message(STATUS "Qt6_DIR: ${Qt6_DIR}")
+        message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+
         find_package(Qt6QScintilla 2.8.0 REQUIRED)
 
         message(STATUS "QScintilla library: ${QT6QSCINTILLA_LIBRARY}")
         message(STATUS "QScintilla include: ${QT6QSCINTILLA_INCLUDE_DIR}")
+        message(STATUS "QScintilla version: ${QT6QSCINTILLA_VERSION}")
 
         # Create imported target for QScintilla
         if(NOT TARGET Qt6QScintilla::Qt6QScintilla)
@@ -362,6 +397,7 @@ jobs:
         cmakeListsTxtPath: '${{ github.workspace }}/test_linker/CMakeLists.txt'
         configurePreset: 'test-msvc-release'
         buildPreset: 'test-msvc-release'
+        configurePresetAdditionalArgs: "['--debug-find', '--trace-expand']"
       env:
         VCPKG_ROOT: ${{ github.workspace }}/vcpkg-test
         VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
