@@ -976,22 +976,22 @@ if(NOT HEADLESS)
     endif()
 
     # For MSVC, manually set QScintilla paths since FindQt6QScintilla doesn't search Qt lib directory
-    if(MSVC AND DEFINED ENV{QT_ROOT_DIR})
-      set(QT6QSCINTILLA_LIBRARY "$ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.lib")
-      set(QT6QSCINTILLA_INCLUDE_DIR "$ENV{QT_ROOT_DIR}/include/Qsci")
+    if(MSVC AND DEFINED ENV{Qt6_DIR})
+      set(QT6QSCINTILLA_LIBRARY "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.lib")
+      set(QT6QSCINTILLA_INCLUDE_DIR "$ENV{Qt6_DIR}/include/Qsci")
       set(QT6QSCINTILLA_VERSION_STRING "2.14.1")
       set(QT6QSCINTILLA_FOUND TRUE)
-      message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING} (manually set for MSVC)")
+      message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING} (manually set for MSVC using Qt6_DIR)")
     else()
       find_package(Qt6QScintilla 2.8.0 REQUIRED)
       message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING}")
     endif()
 
     # For MSVC, ensure QScintilla is added as an imported target
-    if(MSVC AND NOT TARGET Qt6QScintilla::Qt6QScintilla)
+    if(MSVC AND DEFINED ENV{Qt6_DIR} AND NOT TARGET Qt6QScintilla::Qt6QScintilla)
       add_library(Qt6QScintilla::Qt6QScintilla SHARED IMPORTED)
       set_target_properties(Qt6QScintilla::Qt6QScintilla PROPERTIES
-        IMPORTED_LOCATION "$ENV{QT_ROOT_DIR}/bin/qscintilla2_qt6.dll"
+        IMPORTED_LOCATION "$ENV{Qt6_DIR}/bin/qscintilla2_qt6.dll"
         IMPORTED_IMPLIB "${QT6QSCINTILLA_LIBRARY}"
         INTERFACE_INCLUDE_DIRECTORIES "${QT6QSCINTILLA_INCLUDE_DIR}"
       )
