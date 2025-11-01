@@ -61,7 +61,8 @@ jobs:
             "glib",
             "cairo",
             "pkgconf"
-          ]
+          ],
+          "builtin-baseline": "74e6536215718009aae747d86d84b78376bf9e09"
         }
         EOF
 
@@ -120,6 +121,14 @@ jobs:
         echo === Installing QScintilla ===
         nmake install
         echo SUCCESS: QScintilla built and installed!
+
+    - name: Verify QScintilla installation
+      if: steps.qscintilla-cache.outputs.cache-hit != 'true'
+      shell: cmd
+      run: |
+        echo === Verifying QScintilla installation ===
+        dir "D:\a\pythonscad\Qt\6.10.0\msvc2022_64\lib\qscintilla*"
+        dir "D:\a\pythonscad\Qt\6.10.0\msvc2022_64\include\Qsci"
 
     - name: Save QScintilla cache
       if: steps.qscintilla-cache.outputs.cache-hit != 'true'
@@ -299,16 +308,26 @@ jobs:
         EOF
 
     - name: Install vcpkg dependencies
+      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
       shell: cmd
       working-directory: test_linker
       run: |
         echo Installing test dependencies from vcpkg.json
         "${{ github.workspace }}\vcpkg-test\vcpkg.exe" install --triplet x64-windows
+        echo.
+        echo Installed packages:
+        "${{ github.workspace }}\vcpkg-test\vcpkg.exe" list
       env:
         VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
+    - name: Add vcpkg tools to PATH
+      shell: bash
+      run: |
+        echo "${{ github.workspace }}/vcpkg-test/installed/x64-windows/tools/pkgconf" >> $GITHUB_PATH
+        echo "PKG_CONFIG_EXECUTABLE=${{ github.workspace }}/vcpkg-test/installed/x64-windows/tools/pkgconf/pkgconf.exe" >> $GITHUB_ENV
+
     - name: Save vcpkg binary cache
-      if: always()
+      if: steps.vcpkg-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
         path: |
