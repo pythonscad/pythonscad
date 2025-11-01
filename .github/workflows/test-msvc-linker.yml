@@ -52,8 +52,6 @@ jobs:
       with:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg-test'
         vcpkgGitCommitId: '74e6536215718009aae747d86d84b78376bf9e09'
-        vcpkgJsonGlob: '**/test_linker/vcpkg.json'
-        runVcpkgInstall: false
       env:
         VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
@@ -73,9 +71,9 @@ jobs:
       uses: actions/cache/restore@v4
       with:
         path: |
-          ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.lib
-          ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.dll
-          ${{ env.Qt6_DIR }}/include/Qsci
+          D:\a\pythonscad\Qt\6.10.0\msvc2022_64\lib\qscintilla2_qt6.lib
+          D:\a\pythonscad\Qt\6.10.0\msvc2022_64\lib\qscintilla2_qt6.dll
+          D:\a\pythonscad\Qt\6.10.0\msvc2022_64\include\Qsci
         key: qscintilla-${{ runner.os }}-qt6.10.0-2.14.1
 
     - name: Download and build QScintilla
@@ -100,9 +98,9 @@ jobs:
       uses: actions/cache/save@v4
       with:
         path: |
-          ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.lib
-          ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.dll
-          ${{ env.Qt6_DIR }}/include/Qsci
+          D:\a\pythonscad\Qt\6.10.0\msvc2022_64\lib\qscintilla2_qt6.lib
+          D:\a\pythonscad\Qt\6.10.0\msvc2022_64\lib\qscintilla2_qt6.dll
+          D:\a\pythonscad\Qt\6.10.0\msvc2022_64\include\Qsci
         key: ${{ steps.qscintilla-cache.outputs.cache-primary-key }}
 
     - name: Setup MSYS2 for flex/bison
@@ -315,6 +313,7 @@ jobs:
     - name: Configure and Build with CMake
       uses: lukka/run-cmake@v10
       with:
+        cmakeListsTxtPath: '${{ github.workspace }}/test_linker/CMakeLists.txt'
         configurePreset: 'test-msvc-release'
         buildPreset: 'test-msvc-release'
       env:
