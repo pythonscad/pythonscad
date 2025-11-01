@@ -30,24 +30,28 @@ jobs:
         modules: 'qt5compat qtmultimedia qtshadertools'
         cache: true
 
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgDirectory: ${{ github.workspace }}/vcpkg
-        vcpkgGitCommitId: '74e6536215718009aae747d86d84b78376bf9e09'
+    - name: Install vcpkg
+      shell: bash
+      run: |
+        # Clone vcpkg fresh to avoid manifest mode issues
+        cd /c
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg
+        git checkout 74e6536215718009aae747d86d84b78376bf9e09
+        ./bootstrap-vcpkg.bat
 
     - name: Install vcpkg dependencies
       shell: bash
       run: |
-        vcpkg install \
-          cairo \
-          glib \
-          harfbuzz \
-          freetype \
-          boost-regex \
-          boost-program-options \
-          eigen3 \
-          --triplet x64-windows
+        # Install packages in classic mode (not manifest mode)
+        /c/vcpkg/vcpkg install \
+          cairo:x64-windows \
+          glib:x64-windows \
+          harfbuzz:x64-windows \
+          freetype:x64-windows \
+          boost-regex:x64-windows \
+          boost-program-options:x64-windows \
+          eigen3:x64-windows
 
     - name: Setup MSYS2 for flex/bison
       uses: msys2/setup-msys2@v2
@@ -181,11 +185,14 @@ jobs:
         list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../cmake/Modules")
         find_package(Qt6QScintilla 2.8.0 REQUIRED)
 
+        message(STATUS "QScintilla library: ${QT6QSCINTILLA_LIBRARY}")
+        message(STATUS "QScintilla include: ${QT6QSCINTILLA_INCLUDE_DIR}")
+
         # Create imported target for QScintilla
         if(NOT TARGET Qt6QScintilla::Qt6QScintilla)
-          add_library(Qt6QScintilla::Qt6QScintilla UNKNOWN IMPORTED)
+          add_library(Qt6QScintilla::Qt6QScintilla SHARED IMPORTED)
           set_target_properties(Qt6QScintilla::Qt6QScintilla PROPERTIES
-            IMPORTED_LOCATION "${QT6QSCINTILLA_LIBRARY}"
+            IMPORTED_IMPLIB "${QT6QSCINTILLA_LIBRARY}"
             INTERFACE_INCLUDE_DIRECTORIES "${QT6QSCINTILLA_INCLUDE_DIR}"
           )
         endif()
@@ -214,14 +221,11 @@ jobs:
 
     - name: Configure CMake
       shell: bash
-      env:
-        VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-        Qt6_DIR: ${{ env.Qt6_DIR }}
       run: |
         cd test_linker
         cmake -B build \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+          -DCMAKE_TOOLCHAIN_FILE=/c/vcpkg/scripts/buildsystems/vcpkg.cmake \
           -DVCPKG_TARGET_TRIPLET=x64-windows
 
     - name: Build test
