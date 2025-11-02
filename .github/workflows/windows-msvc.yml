@@ -59,9 +59,9 @@ jobs:
         with:
           path: |
             ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.lib
-            ${{ env.Qt6_DIR }}/bin/qscintilla2_qt6.dll
+            ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.dll
             ${{ env.Qt6_DIR }}/include/Qsci
-          key: qscintilla-${{ runner.os }}-2.14.1-qt6.10.0
+          key: qscintilla-${{ runner.os }}-2.14.1-qt6.10.0-v2
 
       - name: Build QScintilla from source
         if: steps.qscintilla-cache.outputs.cache-hit != 'true'
@@ -95,7 +95,7 @@ jobs:
         with:
           path: |
             ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.lib
-            ${{ env.Qt6_DIR }}/bin/qscintilla2_qt6.dll
+            ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.dll
             ${{ env.Qt6_DIR }}/include/Qsci
           key: ${{ steps.qscintilla-cache.outputs.cache-primary-key }}
 
