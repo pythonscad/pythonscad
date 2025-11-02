@@ -991,7 +991,7 @@ if(NOT HEADLESS)
     if(MSVC AND DEFINED ENV{Qt6_DIR} AND NOT TARGET Qt6QScintilla::Qt6QScintilla)
       add_library(Qt6QScintilla::Qt6QScintilla SHARED IMPORTED)
       set_target_properties(Qt6QScintilla::Qt6QScintilla PROPERTIES
-        IMPORTED_LOCATION "$ENV{Qt6_DIR}/bin/qscintilla2_qt6.dll"
+        IMPORTED_LOCATION "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll"
         IMPORTED_IMPLIB "${QT6QSCINTILLA_LIBRARY}"
         INTERFACE_INCLUDE_DIRECTORIES "${QT6QSCINTILLA_INCLUDE_DIR}"
       )
