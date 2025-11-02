@@ -239,6 +239,9 @@ else()
   set(SUFFIX_WITH_DASH "")
 endif()
 
+set(EXECUTABLE_NAME pythonscad${SUFFIX_WITH_DASH})
+set(PYTHON_EXECUTABLE_NAME pythonscad-python${SUFFIX_WITH_DASH})
+
 if (MXECROSS OR WIN32)
   add_subdirectory(winconsole)
   set_property(TARGET OpenSCAD PROPERTY WIN32_EXECUTABLE ON)
@@ -484,9 +487,6 @@ message(STATUS "LibXml2: ${LIBXML2_VERSION_STRING}")
 target_include_directories(OpenSCAD SYSTEM PRIVATE ${LIBXML2_INCLUDE_DIR})
 target_link_libraries(OpenSCAD PRIVATE ${LIBXML2_LIBRARIES})
 
-set(EXECUTABLE_NAME pythonscad${SUFFIX_WITH_DASH})
-set(PYTHON_EXECUTABLE_NAME pythonscad-python${SUFFIX_WITH_DASH})
-
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/src/executable.h.in"
   "${CMAKE_CURRENT_BINARY_DIR}/executable.h"
@@ -547,7 +547,7 @@ if(ENABLE_PYTHON)
 
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND rm -rf python_mingw && mkdir python_mingw && cd python_mingw && wget ${PYTHON_MINGW_PACKAGEFOLDER}/${PYTHON_MINGW_PACKAGEZST} && unzstd ${PYTHON_MINGW_PACKAGEZST} && tar -xf ${PYTHON_MINGW_PACKAGETAR} &&  ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh
+      COMMAND bash -c "rm -rf python_mingw && mkdir python_mingw && cd python_mingw && wget ${PYTHON_MINGW_PACKAGEFOLDER}/${PYTHON_MINGW_PACKAGEZST} && bsdtar -xf ${PYTHON_MINGW_PACKAGEZST} && ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh"
       OUTPUT ${PYTHON_MINGW_ARCHIVE}
     )
     add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
@@ -555,7 +555,7 @@ if(ENABLE_PYTHON)
 
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && unzip ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME} && rm python*._pth
+      COMMAND bash -c "rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && bsdtar -xf ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME} && rm python*._pth"
       OUTPUT ${PYTHON_EMBED_SHLIB}
     )
     add_custom_target(tgt_python_embed DEPENDS ${PYTHON_EMBED_SHLIB})
@@ -565,34 +565,48 @@ if(ENABLE_PYTHON)
     target_link_libraries(OpenSCADPy PRIVATE "${PYTHON_MINGW_ARCHIVE}")
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
+    target_include_directories(OpenSCADPy PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
   else() #MXE
 	  if (${PYTHON_VERSION}  STREQUAL "OFF")
-      find_package(Python  REQUIRED COMPONENTS Development)
+      find_package(Python3  REQUIRED COMPONENTS Development)
     else()
-      find_package(Python  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
+      find_package(Python3  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
     endif()
     if(NOT Nettle_FOUND)
       message(WARNING "Nettle not found, disabling python support.")
       set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
     endif()
-    if(NOT Python_FOUND  AND NOT WIN32)
+    if(NOT Python3_FOUND  AND NOT WIN32)
       if(ENABLE_PYTHON)
         message(WARNING "Python not found, disabling python support.")
         set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
       endif()
     endif()
-    SET(Python_Eff_LIBRARIES ${Python_LIBRARIES} )
-    SET(Python_Eff_INCLUDE_DIRS ${Python_INCLUDE_DIRS} )
+    SET(Python_Eff_LIBRARIES ${Python3_LIBRARIES} )
+    SET(Python_Eff_INCLUDE_DIRS ${Python3_INCLUDE_DIRS} )
     target_link_libraries(OpenSCADPy PRIVATE ${Python_Eff_LIBRARIES})
     target_include_directories(OpenSCADPy PRIVATE ${Python_Eff_INCLUDE_DIRS})
     target_include_directories(OpenSCADPy PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
     message(STATUS "Python enabled")
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
-    target_link_libraries(OpenSCADPy PRIVATE ${Python_LIBRARIES})
+    target_link_libraries(OpenSCADPy PRIVATE ${Python3_LIBRARIES})
   endif() # endif MXE
   target_include_directories(OpenSCADPy PRIVATE ${Nettle_INCLUDE_DIRS})
   target_link_libraries(OpenSCADPy PRIVATE ${Nettle_LIBRARIES})
-  add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME})
+  # Create pythonscad-python symlink
+  # On macOS bundles, this will be created via POST_BUILD command
+  # On other platforms, create it in the build directory
+  if(NOT (APPLE AND NOT APPLE_UNIX))
+    if(WIN32)
+      # On Windows, copy the executable instead of symlinking (symlinks are problematic)
+      add_custom_target(OpenSCADPython ALL
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:OpenSCAD> ${CMAKE_CURRENT_BINARY_DIR}/${PYTHON_EXECUTABLE_NAME}.exe
+        DEPENDS OpenSCAD
+      )
+    else()
+      add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME})
+    endif()
+  endif()
   target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
   if(MSVC)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS}/harfbuzz)
@@ -646,7 +660,7 @@ if(ENABLE_PYTHON)
   target_link_libraries(OpenSCAD PRIVATE OpenSCADPy)
 endif()
 if(NOT HEADLESS)
-  if(MXECROSS)
+  if(MXECROSS OR WIN32)
     find_package(CURL REQUIRED)
  message(STATUS ${CURL_FOUND})
  message(STATUS ${CURL_INCLUDE_DIR})
@@ -654,7 +668,13 @@ if(NOT HEADLESS)
  message(STATUS ${CURL_VERSION_STRING})
     target_compile_definitions(OpenSCAD PRIVATE CURL_STATICLIB)
     target_include_directories(OpenSCAD SYSTEM PRIVATE ${CURL_INCLUDE_DIR})
-    target_link_libraries(OpenSCAD PRIVATE "libcurl.a;libidn2.a;libssh2.a;libunistring.a")
+    if(WIN32 AND NOT MXECROSS)
+      # On Windows with MSYS2, use CURL_LIBRARIES from find_package
+      target_link_libraries(OpenSCAD PRIVATE ${CURL_LIBRARIES})
+    else()
+      # MXECROSS
+      target_link_libraries(OpenSCAD PRIVATE "libcurl.a;libidn2.a;libssh2.a;libunistring.a")
+    endif()
   else()
     target_link_directories(OpenSCAD PRIVATE "/usr/lib64")
     target_link_libraries(OpenSCAD PRIVATE "libcurl.so")
@@ -949,6 +969,8 @@ endif()
 
 # Stack size 8MB; github issue 116
 target_compile_definitions(OpenSCAD PRIVATE "STACKSIZE=${STACKSIZE}") # used as default in src/platform/PlatformUtils.h
+# Disable Eigen alignment to prevent memory corruption on macOS where alignment differs between modules
+target_compile_definitions(OpenSCAD PRIVATE EIGEN_DONT_ALIGN)
 
 if(NULLGL)
   set(OFFSCREEN_METHOD "NULLGL")
@@ -1612,14 +1634,61 @@ add_custom_command(TARGET OpenSCAD POST_BUILD
 
 if(APPLE AND NOT APPLE_UNIX)
   set_target_properties(OpenSCAD PROPERTIES
+    OUTPUT_NAME ${EXECUTABLE_NAME}
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist.in
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_ICON_FILE ${MACOSX_BUNDLE_ICON_FILE}
     MACOSX_BUNDLE_BUNDLE_VERSION ${OPENSCAD_YEAR}.${OPENSCAD_MONTH}.${OPENSCAD_DAY}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${OPENSCAD_YEAR}.${OPENSCAD_MONTH}
     RESOURCE "${RESOURCE_FILES}"
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "@executable_path/../Frameworks"
   )
-  set(BUNDLE_RESOURCES_DIR ${CMAKE_CURRENT_BINARY_DIR}/OpenSCAD.app/Contents/Resources)
+  set(BUNDLE_RESOURCES_DIR ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/Resources)
+  set(BUNDLE_FRAMEWORKS_DIR ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/Frameworks)
+
+  # Create pythonscad-python symlink inside the macOS bundle
+  add_custom_command(TARGET OpenSCAD POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS
+    COMMENT "Creating ${PYTHON_EXECUTABLE_NAME} symlink in macOS bundle"
+  )
+
+  # Bundle Python framework for portability (if Python is enabled)
+  if(ENABLE_PYTHON AND Python3_FOUND)
+    # Get the Python framework path
+    # Python3_LIBRARIES is typically: .../Python.framework/Versions/X.Y/lib/libpython.dylib
+    # We need to get to: .../Python.framework
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${Python3_LIBRARIES}" DIRECTORY)  # .../lib
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../3.14
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Versions
+    get_filename_component(PYTHON_FRAMEWORK_DIR "${PYTHON_FRAMEWORK_DIR}" DIRECTORY)  # .../Python.framework
+
+    # The actual framework library file that the binary links to
+    set(PYTHON_FRAMEWORK_LIB "${PYTHON_FRAMEWORK_DIR}/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python")
+
+    message(STATUS "Bundling Python framework from: ${PYTHON_FRAMEWORK_DIR}")
+    message(STATUS "Python framework library: ${PYTHON_FRAMEWORK_LIB}")
+
+    # Copy Python.framework into the app bundle
+    add_custom_command(TARGET OpenSCAD POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${BUNDLE_FRAMEWORKS_DIR}
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PYTHON_FRAMEWORK_DIR}
+        ${BUNDLE_FRAMEWORKS_DIR}/Python.framework
+      COMMENT "Bundling Python.framework into app bundle for portability"
+    )
+
+    # Fix the install name to use @rpath instead of absolute path
+    # We need to use the exact path as it appears in the binary (the framework Python file, not libpython.dylib)
+    add_custom_command(TARGET OpenSCAD POST_BUILD
+      COMMAND install_name_tool -change
+        ${PYTHON_FRAMEWORK_LIB}
+        @rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python
+        ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}
+      COMMENT "Updating Python library reference to use @rpath"
+    )
+  endif()
   file(COPY ${CMAKE_SOURCE_DIR}/color-schemes DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/examples DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/fonts DESTINATION ${BUNDLE_RESOURCES_DIR})
@@ -1692,7 +1761,11 @@ if(NOT APPLE OR APPLE_UNIX)
   set_target_properties(OpenSCAD PROPERTIES OUTPUT_NAME ${EXECUTABLE_NAME})
   install(TARGETS OpenSCAD RUNTIME DESTINATION "${OPENSCAD_BINDIR}")
   if(ENABLE_PYTHON)
-    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/pythonscad-python DESTINATION "${OPENSCAD_BINDIR}")
+    if(WIN32)
+      install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${PYTHON_EXECUTABLE_NAME}.exe DESTINATION "${OPENSCAD_BINDIR}")
+    else()
+      install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/pythonscad-python DESTINATION "${OPENSCAD_BINDIR}")
+    endif()
   endif()
   if(WIN32)
     if(ENABLE_PYTHON)
@@ -1794,9 +1867,11 @@ if(MXECROSS)
   set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
   set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
 
-
-  execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "./pythonscad" "openscad")
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pythonscad DESTINATION "." COMPONENT libraries)
+  # Create openscad symlink pointing to pythonscad (Linux/Unix only, not Windows)
+  if(UNIX AND NOT APPLE)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "./pythonscad" "openscad")
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pythonscad DESTINATION "." COMPONENT libraries)
+  endif()
 
 endif()
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
