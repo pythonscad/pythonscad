@@ -977,10 +977,37 @@ if(NOT HEADLESS)
 
     # For MSVC, manually set QScintilla paths since FindQt6QScintilla doesn't search Qt lib directory
     if(MSVC AND DEFINED ENV{Qt6_DIR})
+      message(STATUS "=== QScintilla MSVC Debug Info ===")
+      message(STATUS "Qt6_DIR environment variable: $ENV{Qt6_DIR}")
+
       set(QT6QSCINTILLA_LIBRARY "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.lib")
       set(QT6QSCINTILLA_INCLUDE_DIR "$ENV{Qt6_DIR}/include/Qsci")
       set(QT6QSCINTILLA_VERSION_STRING "2.14.1")
       set(QT6QSCINTILLA_FOUND TRUE)
+
+      message(STATUS "QT6QSCINTILLA_LIBRARY: ${QT6QSCINTILLA_LIBRARY}")
+      message(STATUS "QT6QSCINTILLA_INCLUDE_DIR: ${QT6QSCINTILLA_INCLUDE_DIR}")
+      message(STATUS "QT6QSCINTILLA_VERSION_STRING: ${QT6QSCINTILLA_VERSION_STRING}")
+
+      # Check if files exist
+      if(EXISTS "${QT6QSCINTILLA_LIBRARY}")
+        message(STATUS "✓ QScintilla .lib file EXISTS: ${QT6QSCINTILLA_LIBRARY}")
+      else()
+        message(WARNING "✗ QScintilla .lib file NOT FOUND: ${QT6QSCINTILLA_LIBRARY}")
+      endif()
+
+      if(EXISTS "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll")
+        message(STATUS "✓ QScintilla .dll file EXISTS: $ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll")
+      else()
+        message(WARNING "✗ QScintilla .dll file NOT FOUND: $ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll")
+      endif()
+
+      if(EXISTS "${QT6QSCINTILLA_INCLUDE_DIR}")
+        message(STATUS "✓ QScintilla include directory EXISTS: ${QT6QSCINTILLA_INCLUDE_DIR}")
+      else()
+        message(WARNING "✗ QScintilla include directory NOT FOUND: ${QT6QSCINTILLA_INCLUDE_DIR}")
+      endif()
+
       message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING} (manually set for MSVC using Qt6_DIR)")
     else()
       find_package(Qt6QScintilla 2.8.0 REQUIRED)
@@ -989,12 +1016,36 @@ if(NOT HEADLESS)
 
     # For MSVC, ensure QScintilla is added as an imported target
     if(MSVC AND DEFINED ENV{Qt6_DIR} AND NOT TARGET Qt6QScintilla::Qt6QScintilla)
+      message(STATUS "Creating Qt6QScintilla::Qt6QScintilla imported target")
       add_library(Qt6QScintilla::Qt6QScintilla SHARED IMPORTED)
       set_target_properties(Qt6QScintilla::Qt6QScintilla PROPERTIES
         IMPORTED_LOCATION "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll"
         IMPORTED_IMPLIB "${QT6QSCINTILLA_LIBRARY}"
         INTERFACE_INCLUDE_DIRECTORIES "${QT6QSCINTILLA_INCLUDE_DIR}"
       )
+
+      # Verify the target was created
+      get_target_property(_qsci_dll Qt6QScintilla::Qt6QScintilla IMPORTED_LOCATION)
+      get_target_property(_qsci_lib Qt6QScintilla::Qt6QScintilla IMPORTED_IMPLIB)
+      get_target_property(_qsci_inc Qt6QScintilla::Qt6QScintilla INTERFACE_INCLUDE_DIRECTORIES)
+      message(STATUS "Imported target properties:")
+      message(STATUS "  IMPORTED_LOCATION: ${_qsci_dll}")
+      message(STATUS "  IMPORTED_IMPLIB: ${_qsci_lib}")
+      message(STATUS "  INTERFACE_INCLUDE_DIRECTORIES: ${_qsci_inc}")
+
+      # Dump all CMake variables for debugging
+      message(STATUS "=== CMake Variables Dump ===")
+      get_cmake_property(_variableNames VARIABLES)
+      foreach(_variableName ${_variableNames})
+        if(_variableName MATCHES "QT|QSCI|Qt6|CMAKE_CXX|CMAKE_C_COMPILER|MSVC")
+          message(STATUS "${_variableName}=${${_variableName}}")
+        endif()
+      endforeach()
+      message(STATUS "=== End CMake Variables Dump ===")
+    elseif(TARGET Qt6QScintilla::Qt6QScintilla)
+      message(STATUS "Qt6QScintilla::Qt6QScintilla target already exists")
+    else()
+      message(WARNING "Qt6QScintilla::Qt6QScintilla target NOT created (MSVC=${MSVC}, Qt6_DIR defined=${DEFINED ENV{Qt6_DIR}})")
     endif()
 
     if(ENABLE_QTDBUS)
@@ -1838,15 +1889,22 @@ if (USE_QT6)
   if(NOT HEADLESS)
     # Use imported target for QScintilla on MSVC, variable otherwise
     if(MSVC AND TARGET Qt6QScintilla::Qt6QScintilla)
+      message(STATUS "=== Linking OpenSCAD (MSVC path) ===")
+      message(STATUS "Using Qt6QScintilla::Qt6QScintilla imported target")
       target_link_libraries(OpenSCAD PRIVATE
         Qt6::Core Qt6::Core5Compat Qt6::Widgets Qt6::Multimedia Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent Qt6::Network Qt6::Svg
         Qt6QScintilla::Qt6QScintilla ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
       )
+      message(STATUS "OpenSCAD linked with Qt6QScintilla::Qt6QScintilla imported target")
     else()
+      message(STATUS "=== Linking OpenSCAD (fallback path) ===")
+      message(STATUS "Using QT6QSCINTILLA_LIBRARY variable: ${QT6QSCINTILLA_LIBRARY}")
+      message(STATUS "MSVC=${MSVC}, TARGET Qt6QScintilla::Qt6QScintilla=${TARGET Qt6QScintilla::Qt6QScintilla}")
       target_link_libraries(OpenSCAD PRIVATE
         Qt6::Core Qt6::Core5Compat Qt6::Widgets Qt6::Multimedia Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent Qt6::Network Qt6::Svg
         ${QT6QSCINTILLA_LIBRARY} ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
       )
+      message(STATUS "OpenSCAD linked with QT6QSCINTILLA_LIBRARY variable")
     endif()
   endif()
   if(ENABLE_GUI_TESTS)
