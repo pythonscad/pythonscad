@@ -20,6 +20,7 @@
 #include "utils/hash.h"
 #include "clipper2/clipper.h"
 #include <clipper2/clipper.engine.h>
+#include <locale.h>
 
 Polygon2d::Polygon2d(Outline2d outline) : sanitized(true) { addOutline(std::move(outline)); }
 
@@ -422,4 +423,32 @@ void Polygon2d::stamp_color(const Outline2d& src)
       theoutlines[i].color = src.color;
     }
   }
+}
+
+void Polygon2d::debug_eps(void) const
+{
+  FILE *in;
+  double xoff = 200;
+  double yoff = 200;
+  double scale = 3;
+  setlocale(LC_NUMERIC, "French_Canada.1252");  // ".OCP" if you want to use system settings
+
+  in = fopen("debug.ps", "w");
+
+  fprintf(in, "%%!PS\n");
+  fprintf(in, "0.3 setlinewidth\n");
+  fprintf(in, "0 1 0 setrgbcolor\n");
+  for (auto& out : outlines()) {
+    int len = out.vertices.size();
+    fprintf(in, "%.2f %.2f moveto\n", out.vertices[len - 1][0] * scale + xoff,
+            out.vertices[len - 1][1] * scale + yoff);
+    for (int i = 0; i < len; i++) {
+      fprintf(in, "%.2f %.2f lineto\n", out.vertices[i][0] * scale + xoff,
+              out.vertices[i][1] * scale + yoff);
+    }
+    fprintf(in, "stroke\n");
+  }
+
+  fprintf(in, "showpage\n");
+  fclose(in);
 }

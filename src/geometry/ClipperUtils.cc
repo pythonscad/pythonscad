@@ -245,6 +245,15 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
     }
 
     int input_width = 1;
+    while (inputs_old + input_width < n) {
+      if (polygons[inputs_old]->outlines().size() > 1) break;
+      if (polygons[inputs_old + input_width] == nullptr) break;
+      if (polygons[inputs_old + input_width]->outlines().size() > 1) break;
+      if (polygons[inputs_old]->outlines()[0].color !=
+          polygons[inputs_old + input_width]->outlines()[0].color)
+        break;
+      input_width++;
+    }
 
     // union all new shapes
     Clipper2Lib::Paths64 union_new;
