@@ -158,25 +158,49 @@ include("cmake/ImageCompare.cmake")
 include("cmake/GalliumFixes.cmake")
 
 # Determine path for openscad executable
+message(STATUS "=== DEBUG: Test executable path configuration ===")
+message(STATUS "CMAKE_GENERATOR: ${CMAKE_GENERATOR}")
+message(STATUS "CMAKE_CONFIGURATION_TYPES: ${CMAKE_CONFIGURATION_TYPES}")
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+message(STATUS "CBD (CMAKE_BINARY_DIR): ${CBD}")
+message(STATUS "WIN32: ${WIN32}, MXECROSS: ${MXECROSS}")
+
 if(EXISTS "$ENV{OPENSCAD_BINARY}")
   set(OPENSCAD_BINPATH "$ENV{OPENSCAD_BINARY}")
+  message(STATUS "Using OPENSCAD_BINARY from environment")
 elseif(APPLE)
   set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}")
+  message(STATUS "Using macOS app bundle path")
 elseif (WIN32 OR MXECROSS)
   # For multi-config generators like MSVC, executables are in config subdirectories (Release/, Debug/)
   # For single-config generators like MinGW Makefiles, they're directly in CBD
   if(CMAKE_CONFIGURATION_TYPES)
-    # Multi-config generator: use generator expression for config-specific path
-    set(OPENSCAD_BINPATH "${CBD}/$<CONFIG>/pythonscad.com")
+    # Multi-config generator: Try to determine which config to use
+    # CMAKE_BUILD_TYPE is set in presets even for multi-config generators
+    if(CMAKE_BUILD_TYPE)
+      set(OPENSCAD_BINPATH "${CBD}/${CMAKE_BUILD_TYPE}/pythonscad.com")
+      message(STATUS "Multi-config generator, using CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+    else()
+      # Fallback: assume Release (most common for testing)
+      set(OPENSCAD_BINPATH "${CBD}/Release/pythonscad.com")
+      message(STATUS "Multi-config generator, no CMAKE_BUILD_TYPE, assuming Release")
+    endif()
   else()
     # Single-config generator: executable is directly in CBD
     set(OPENSCAD_BINPATH "${CBD}/pythonscad.com")
+    message(STATUS "Single-config generator, using direct path")
   endif()
 elseif(EXISTS "${CBD}/bin/${EXECUTABLE_NAME}")
   set(OPENSCAD_BINPATH "${CBD}/bin/${EXECUTABLE_NAME}")
+  message(STATUS "Using bin/ subdirectory path")
 else()
   set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}")
+  message(STATUS "Using default path")
 endif()
+
+message(STATUS "OPENSCAD_BINPATH set to: ${OPENSCAD_BINPATH}")
+message(STATUS "=== END DEBUG ===")
+message(STATUS "")
 
 #if(EXISTS "${OPENSCAD_BINPATH}")
 #  message(STATUS "Found OpenSCAD binary: ${OPENSCAD_BINPATH}")

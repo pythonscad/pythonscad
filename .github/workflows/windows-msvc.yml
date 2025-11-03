@@ -286,6 +286,13 @@ jobs:
           VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
         continue-on-error: true
 
+      - name: Debug - Setup tmate session for 5 minutes
+        if: failure() || success()
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 5
+        with:
+          limit-access-to-actor: false
+
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
