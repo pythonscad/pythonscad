@@ -163,7 +163,15 @@ if(EXISTS "$ENV{OPENSCAD_BINARY}")
 elseif(APPLE)
   set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}")
 elseif (WIN32 OR MXECROSS)
-  set(OPENSCAD_BINPATH "${CBD}/pythonscad.com")
+  # For multi-config generators like MSVC, executables are in config subdirectories (Release/, Debug/)
+  # For single-config generators like MinGW Makefiles, they're directly in CBD
+  if(CMAKE_CONFIGURATION_TYPES)
+    # Multi-config generator: use generator expression for config-specific path
+    set(OPENSCAD_BINPATH "${CBD}/$<CONFIG>/pythonscad.com")
+  else()
+    # Single-config generator: executable is directly in CBD
+    set(OPENSCAD_BINPATH "${CBD}/pythonscad.com")
+  endif()
 elseif(EXISTS "${CBD}/bin/${EXECUTABLE_NAME}")
   set(OPENSCAD_BINPATH "${CBD}/bin/${EXECUTABLE_NAME}")
 else()
