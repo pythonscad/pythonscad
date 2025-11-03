@@ -200,6 +200,19 @@ jobs:
         env:
           VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
+      - name: Measure vcpkg size before cleanup
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          echo "=== vcpkg directory sizes BEFORE cleanup ==="
+          du -sh ${{ github.workspace }}/vcpkg || echo "vcpkg directory not found"
+          echo ""
+          echo "Breakdown by subdirectory:"
+          du -sh ${{ github.workspace }}/vcpkg/*/ 2>/dev/null || echo "No subdirectories found"
+          echo ""
+          echo "vcpkg-cache size:"
+          du -sh ${{ github.workspace }}/vcpkg-cache 2>/dev/null || echo "vcpkg-cache not found"
+
       - name: Cleanup vcpkg to reduce cache size
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         shell: bash
@@ -210,10 +223,34 @@ jobs:
           rm -rf ${{ github.workspace }}/vcpkg/packages
           echo "Cleanup complete"
 
+      - name: Measure vcpkg size after cleanup
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          echo "=== vcpkg directory sizes AFTER cleanup ==="
+          du -sh ${{ github.workspace }}/vcpkg || echo "vcpkg directory not found"
+          echo ""
+          echo "Breakdown by subdirectory:"
+          du -sh ${{ github.workspace }}/vcpkg/*/ 2>/dev/null || echo "No subdirectories found"
+          echo ""
+          echo "vcpkg-cache size:"
+          du -sh ${{ github.workspace }}/vcpkg-cache 2>/dev/null || echo "vcpkg-cache not found"
+          echo ""
+          echo "Total size that will be cached:"
+          echo "  vcpkg directory: $(du -sh ${{ github.workspace }}/vcpkg | cut -f1)"
+          echo "  vcpkg-cache directory: $(du -sh ${{ github.workspace }}/vcpkg-cache 2>/dev/null | cut -f1 || echo '0')"
+
       - name: Save vcpkg binary cache
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
+          # NOTE: This caches both vcpkg/installed AND vcpkg-cache, which is redundant.
+          # Binary cache (vcpkg-cache) contains pre-built packages that can restore vcpkg/installed.
+          # This double-caching increases cache size significantly.
+          #
+          # TODO: Consider switching to one of these strategies:
+          # 1. Cache only vcpkg-cache + vcpkg tools (smaller, relies on binary cache restore)
+          # 2. Cache only vcpkg/installed (no binary cache, simpler but larger)
           path: |
             ${{ github.workspace }}/vcpkg
             ~/.cache/vcpkg
@@ -226,6 +263,8 @@ jobs:
         with:
           configurePreset: 'windows-msvc-release'
           buildPreset: 'windows-msvc-release'
+          # Enable verbose build output to see actual link commands
+          buildPresetAdditionalArgs: "['--verbose']"
         env:
           VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 

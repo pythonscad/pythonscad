@@ -1899,11 +1899,30 @@ if (USE_QT6)
     if(MSVC AND TARGET Qt6QScintilla::Qt6QScintilla)
       message(STATUS "=== Linking OpenSCAD (MSVC path) ===")
       message(STATUS "Using Qt6QScintilla::Qt6QScintilla imported target")
+
+      # Debug: Check target properties at link time
+      get_target_property(_qsci_type Qt6QScintilla::Qt6QScintilla TYPE)
+      get_target_property(_qsci_imported Qt6QScintilla::Qt6QScintilla IMPORTED)
+      get_target_property(_qsci_configs Qt6QScintilla::Qt6QScintilla IMPORTED_CONFIGURATIONS)
+      get_target_property(_qsci_loc_r Qt6QScintilla::Qt6QScintilla IMPORTED_LOCATION_RELEASE)
+      get_target_property(_qsci_imp_r Qt6QScintilla::Qt6QScintilla IMPORTED_IMPLIB_RELEASE)
+      message(STATUS "Qt6QScintilla target debug:")
+      message(STATUS "  TYPE: ${_qsci_type}")
+      message(STATUS "  IMPORTED: ${_qsci_imported}")
+      message(STATUS "  IMPORTED_CONFIGURATIONS: ${_qsci_configs}")
+      message(STATUS "  IMPORTED_LOCATION_RELEASE: ${_qsci_loc_r}")
+      message(STATUS "  IMPORTED_IMPLIB_RELEASE: ${_qsci_imp_r}")
+      message(STATUS "  CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+
       target_link_libraries(OpenSCAD PRIVATE
         Qt6::Core Qt6::Core5Compat Qt6::Widgets Qt6::Multimedia Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent Qt6::Network Qt6::Svg
         Qt6QScintilla::Qt6QScintilla ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
       )
       message(STATUS "OpenSCAD linked with Qt6QScintilla::Qt6QScintilla imported target")
+
+      # Debug: Check what libraries OpenSCAD will actually link
+      get_target_property(_openscad_link_libs OpenSCAD LINK_LIBRARIES)
+      message(STATUS "OpenSCAD LINK_LIBRARIES: ${_openscad_link_libs}")
     else()
       message(STATUS "=== Linking OpenSCAD (fallback path) ===")
       message(STATUS "Using QT6QSCINTILLA_LIBRARY variable: ${QT6QSCINTILLA_LIBRARY}")
