@@ -94,6 +94,17 @@ jobs:
           echo Checking for staticMetaObject symbols:
           dumpbin /EXPORTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"staticMetaObject"
 
+      - name: Verify QScintilla LIB imports
+        if: steps.qscintilla-cache.outputs.cache-hit != 'true'
+        shell: cmd
+        run: |
+          echo === Checking QScintilla .lib file import references ===
+          echo Checking for staticMetaObject imports:
+          dumpbin /LINKERMEMBER "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.lib" | findstr /C:"staticMetaObject"
+          echo.
+          echo Full LINKERMEMBER output (first 100 lines):
+          dumpbin /LINKERMEMBER "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.lib" | head -100
+
       - name: Cleanup QScintilla build artifacts
         if: steps.qscintilla-cache.outputs.cache-hit != 'true'
         run: |
