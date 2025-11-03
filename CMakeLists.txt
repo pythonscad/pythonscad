@@ -1904,7 +1904,12 @@ if (USE_QT6)
     else()
       message(STATUS "=== Linking OpenSCAD (fallback path) ===")
       message(STATUS "Using QT6QSCINTILLA_LIBRARY variable: ${QT6QSCINTILLA_LIBRARY}")
-      message(STATUS "MSVC=${MSVC}, TARGET Qt6QScintilla::Qt6QScintilla=${TARGET Qt6QScintilla::Qt6QScintilla}")
+      if(TARGET Qt6QScintilla::Qt6QScintilla)
+        set(_qsci_target_status "exists")
+      else()
+        set(_qsci_target_status "does not exist")
+      endif()
+      message(STATUS "MSVC=${MSVC}, Qt6QScintilla::Qt6QScintilla target ${_qsci_target_status}")
       target_link_libraries(OpenSCAD PRIVATE
         Qt6::Core Qt6::Core5Compat Qt6::Widgets Qt6::Multimedia Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent Qt6::Network Qt6::Svg
         ${QT6QSCINTILLA_LIBRARY} ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
