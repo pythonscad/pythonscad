@@ -80,6 +80,20 @@ jobs:
           echo SUCCESS: QScintilla built and installed!
         shell: cmd
 
+      - name: Verify QScintilla DLL exports
+        if: steps.qscintilla-cache.outputs.cache-hit != 'true'
+        shell: cmd
+        run: |
+          echo === Checking QScintilla DLL exports ===
+          echo Checking for QsciScintilla symbols:
+          dumpbin /EXPORTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"QsciScintilla"
+          echo.
+          echo Checking for QsciAbstractAPIs symbols:
+          dumpbin /EXPORTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"QsciAbstractAPIs"
+          echo.
+          echo Checking for staticMetaObject symbols:
+          dumpbin /EXPORTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"staticMetaObject"
+
       - name: Cleanup QScintilla build artifacts
         if: steps.qscintilla-cache.outputs.cache-hit != 'true'
         run: |
