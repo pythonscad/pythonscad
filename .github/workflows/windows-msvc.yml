@@ -105,6 +105,16 @@ jobs:
           echo Full LINKERMEMBER output (first 100 lines):
           dumpbin /LINKERMEMBER "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.lib" | head -100
 
+      - name: Check QScintilla DLL dependencies and runtime
+        if: steps.qscintilla-cache.outputs.cache-hit != 'true'
+        shell: cmd
+        run: |
+          echo === Checking QScintilla DLL dependencies ===
+          dumpbin /DEPENDENTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll"
+          echo.
+          echo === Checking if QScintilla uses debug runtime ===
+          dumpbin /IMPORTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"MSVCR" /C:"MSVCP" /C:"VCRUNTIME" /C:"UCRTBASE"
+
       - name: Cleanup QScintilla build artifacts
         if: steps.qscintilla-cache.outputs.cache-hit != 'true'
         run: |
