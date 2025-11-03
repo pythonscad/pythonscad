@@ -74,7 +74,8 @@
     {
       "name": "windows-msvc-release",
       "configurePreset": "windows-msvc-release",
-      "configuration": "Release"
+      "configuration": "Release",
+      "jobs": 4
     },
     {
       "name": "windows-msvc-relwithdebinfo",

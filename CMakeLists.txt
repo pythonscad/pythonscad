@@ -409,6 +409,9 @@ if (MSVC)
   target_compile_definitions(OpenSCAD PRIVATE _USE_MATH_DEFINES)
   target_compile_definitions(OpenSCAD PRIVATE NOMINMAX)
 
+  # Enable parallel compilation
+  target_compile_options(OpenSCAD PRIVATE /MP)
+
   # Our code is compatible with both V3 and V5, so for now, we accept any version.
   find_package(Eigen3 REQUIRED QUIET)
   target_link_libraries(OpenSCAD PRIVATE Eigen3::Eigen)
