@@ -1019,18 +1019,21 @@ if(NOT HEADLESS)
       message(STATUS "Creating Qt6QScintilla::Qt6QScintilla imported target")
       add_library(Qt6QScintilla::Qt6QScintilla SHARED IMPORTED)
       set_target_properties(Qt6QScintilla::Qt6QScintilla PROPERTIES
-        IMPORTED_LOCATION "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll"
-        IMPORTED_IMPLIB "${QT6QSCINTILLA_LIBRARY}"
+        IMPORTED_CONFIGURATIONS "RELEASE;DEBUG"
+        IMPORTED_LOCATION_RELEASE "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll"
+        IMPORTED_IMPLIB_RELEASE "${QT6QSCINTILLA_LIBRARY}"
+        IMPORTED_LOCATION_DEBUG "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll"
+        IMPORTED_IMPLIB_DEBUG "${QT6QSCINTILLA_LIBRARY}"
         INTERFACE_INCLUDE_DIRECTORIES "${QT6QSCINTILLA_INCLUDE_DIR}"
       )
 
       # Verify the target was created
-      get_target_property(_qsci_dll Qt6QScintilla::Qt6QScintilla IMPORTED_LOCATION)
-      get_target_property(_qsci_lib Qt6QScintilla::Qt6QScintilla IMPORTED_IMPLIB)
+      get_target_property(_qsci_dll_release Qt6QScintilla::Qt6QScintilla IMPORTED_LOCATION_RELEASE)
+      get_target_property(_qsci_lib_release Qt6QScintilla::Qt6QScintilla IMPORTED_IMPLIB_RELEASE)
       get_target_property(_qsci_inc Qt6QScintilla::Qt6QScintilla INTERFACE_INCLUDE_DIRECTORIES)
       message(STATUS "Imported target properties:")
-      message(STATUS "  IMPORTED_LOCATION: ${_qsci_dll}")
-      message(STATUS "  IMPORTED_IMPLIB: ${_qsci_lib}")
+      message(STATUS "  IMPORTED_LOCATION_RELEASE: ${_qsci_dll_release}")
+      message(STATUS "  IMPORTED_IMPLIB_RELEASE: ${_qsci_lib_release}")
       message(STATUS "  INTERFACE_INCLUDE_DIRECTORIES: ${_qsci_inc}")
 
       # Dump all CMake variables for debugging
