@@ -35,7 +35,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         timeout-minutes: 25
         with:
-          limit-access-to-actor: false
+          limit-access-to-actor: true
           detached: true
       - name: Setup Visual Studio Environment
         uses: ilammy/msvc-dev-cmd@v1
