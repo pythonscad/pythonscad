@@ -31,13 +31,12 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Setup (detached) tmate session if enabled
+      - name: Debug - Setup tmate session for 5 minutes
         uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 3
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        timeout-minutes: 25
         with:
+          limit-access-to-actor: false
           detached: true
-
       - name: Setup Visual Studio Environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -283,14 +282,6 @@ jobs:
           cd build/windows-msvc-release
           ctest -C Release -j4
         continue-on-error: true
-
-      - name: Debug - Setup tmate session for 5 minutes
-        if: failure() || success()
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 5
-        with:
-          limit-access-to-actor: false
-
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
