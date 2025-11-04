@@ -280,7 +280,7 @@ jobs:
       - name: Run Tests
         run: |
           cd build/windows-msvc-release
-          ctest -C Default -j4
+          ctest -C Release -j4
         continue-on-error: true
       - name: Upload Test Results
         if: always()
