@@ -279,11 +279,9 @@ jobs:
           VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
 
       - name: Run Tests
-        uses: lukka/run-cmake@v10
-        with:
-          testPreset: 'windows-msvc-release'
-        env:
-          VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
+        run: |
+          cd build/windows-msvc-release
+          ctest -C Release -j4
         continue-on-error: true
 
       - name: Debug - Setup tmate session for 5 minutes
