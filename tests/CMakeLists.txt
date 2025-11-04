@@ -51,25 +51,41 @@ if(PROJECT_IS_TOP_LEVEL)
   option(ENABLE_LIB3MF_TESTS "Enable lib3mf tests" ON)
   option(ENABLE_MANIFOLD_TESTS "Enable manifold tests" ON)
 else() # !PROJECT_IS_TOP_LEVEL
-  message(STATUS "Configuring tests in a subdirectory")
+  message(STATUS "=== DEBUG: Configuring tests in a subdirectory ===")
   # Very commonly used cmake-provided paths
   set(CBD ${CMAKE_BINARY_DIR}) # build top level
   set(CSD ${CMAKE_SOURCE_DIR}) # project top level
   set(LIBRARIES_DIR "${CSD}/libraries")
+  message(STATUS "DEBUG: CBD=${CBD}")
+  message(STATUS "DEBUG: CSD=${CSD}")
+  message(STATUS "DEBUG: WIN32=${WIN32}, MXECROSS=${MXECROSS}, MSVC=${MSVC}")
 
   if(APPLE)
     set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}")
+    message(STATUS "DEBUG: Apple path - OPENSCAD_BINPATH=${OPENSCAD_BINPATH}")
   elseif (WIN32 OR MXECROSS)
     # Determine executable extension: MSVC uses .exe, MinGW/MSYS2 uses .com (console version)
+    message(STATUS "DEBUG: Windows/MXECROSS detected")
     if(MSVC)
       set(OPENSCAD_BINPATH "${CBD}/Release/pythonscad.exe")
+      message(STATUS "DEBUG: MSVC - OPENSCAD_BINPATH=${OPENSCAD_BINPATH}")
     else()
       set(OPENSCAD_BINPATH "${CBD}/pythonscad.com")
+      message(STATUS "DEBUG: MinGW/MSYS2 - OPENSCAD_BINPATH=${OPENSCAD_BINPATH}")
     endif()
   elseif(EXISTS "${CBD}/bin/openscad${SUFFIX_WITH_DASH}")
     set(OPENSCAD_BINPATH "${CBD}/bin/openscad${SUFFIX_WITH_DASH}")
+    message(STATUS "DEBUG: bin/ subdirectory - OPENSCAD_BINPATH=${OPENSCAD_BINPATH}")
   else()
     set(OPENSCAD_BINPATH "${CBD}/openscad${SUFFIX_WITH_DASH}")
+    message(STATUS "DEBUG: Default path - OPENSCAD_BINPATH=${OPENSCAD_BINPATH}")
+  endif()
+  message(STATUS "DEBUG: Final OPENSCAD_BINPATH=${OPENSCAD_BINPATH}")
+  message(STATUS "DEBUG: Checking if executable exists: ${OPENSCAD_BINPATH}")
+  if(EXISTS "${OPENSCAD_BINPATH}")
+    message(STATUS "DEBUG: ✓ Executable EXISTS at configure time")
+  else()
+    message(STATUS "DEBUG: ✗ Executable DOES NOT EXIST at configure time")
   endif()
 
   # MCAD
@@ -239,8 +255,12 @@ ctest_env_append_value(
 # Define Various Test File Lists #
 ##################################
 
+message(STATUS "=== DEBUG: Starting test file discovery ===")
+message(STATUS "DEBUG: TEST_SCAD_DIR=${TEST_SCAD_DIR}")
+
 # Find all scad files
 file(GLOB FEATURES_2D_FILES   ${TEST_SCAD_DIR}/2D/features/*.scad)
+message(STATUS "DEBUG: Found ${CMAKE_MATCH_COUNT} FEATURES_2D_FILES")
 list(REMOVE_ITEM FEATURES_2D_FILES
   ${TEST_SCAD_DIR}/2D/features/text-metrics.scad # -> EXPERIMENTAL_TEXTMETRICS_FILES
 )
@@ -788,6 +808,14 @@ set_directory_properties(PROPERTIES TEST_INCLUDE_FILES "${CCSD}/cmake/EnforceCon
 #############
 # Add tests #
 #############
+
+message(STATUS "=== DEBUG: Starting test registration ===")
+message(STATUS "DEBUG: OPENSCAD_BINPATH=${OPENSCAD_BINPATH}")
+message(STATUS "DEBUG: EXPERIMENTAL=${EXPERIMENTAL}")
+message(STATUS "DEBUG: Python3_EXECUTABLE=${Python3_EXECUTABLE}")
+message(STATUS "DEBUG: MISC_FILES count: ${MISC_FILES}")
+list(LENGTH MISC_FILES MISC_FILES_COUNT)
+message(STATUS "DEBUG: MISC_FILES has ${MISC_FILES_COUNT} files")
 
 # Types of tests:
 # o echo: Just record console output

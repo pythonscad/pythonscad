@@ -391,7 +391,12 @@ endfunction()
 # EXPERIMENTAL: If set, tag all tests as experimental
 #
 function(add_cmdline_test TESTCMD_BASENAME)
+  message(STATUS "DEBUG: add_cmdline_test called with TESTCMD_BASENAME=${TESTCMD_BASENAME}")
   cmake_parse_arguments(TESTCMD "OPENSCAD;STDIO;EXPERIMENTAL" "EXE;SCRIPT;SUFFIX;KERNEL;EXPECTEDDIR" "FILES;ARGS" ${ARGN})
+  list(LENGTH TESTCMD_FILES FILES_COUNT)
+  message(STATUS "DEBUG:   FILES_COUNT=${FILES_COUNT}")
+  message(STATUS "DEBUG:   TESTCMD_OPENSCAD=${TESTCMD_OPENSCAD}")
+  message(STATUS "DEBUG:   TESTCMD_EXPERIMENTAL=${TESTCMD_EXPERIMENTAL}")
 
   set(EXTRA_OPTIONS "")
 
@@ -483,7 +488,8 @@ function(add_cmdline_test TESTCMD_BASENAME)
     # only add test if it is not experimental or if it is and experimental option is enabled
     if (NOT TEST_IS_EXPERIMENTAL OR EXPERIMENTAL)
       # Use cmake option "--log-level DEBUG" during top level config to see this
-      message(DEBUG "${DBG_COMMAND_STR}")      
+      message(DEBUG "${DBG_COMMAND_STR}")
+      message(STATUS "DEBUG: Adding test ${TEST_FULLNAME} with CONFIGURATIONS=${CONFVAL}")
       add_test(NAME ${TEST_FULLNAME} CONFIGURATIONS ${CONFVAL}
         COMMAND ${Python3_EXECUTABLE}
         ${TEST_CMDLINE_TOOL_PY} ${COMPARATOR} -c ${IMAGE_COMPARE_EXE}
@@ -492,7 +498,9 @@ function(add_cmdline_test TESTCMD_BASENAME)
         ${EXPERIMENTAL_OPTION} ${MANIFOLD_OPTION} ${TESTCMD_ARGS}
       )
       set_property(TEST ${TEST_FULLNAME} PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+      message(STATUS "DEBUG: Test ${TEST_FULLNAME} added successfully")
     else()
+      message(STATUS "DEBUG: Skipping experimental test ${TEST_FULLNAME} (EXPERIMENTAL=${EXPERIMENTAL}, TEST_IS_EXPERIMENTAL=${TEST_IS_EXPERIMENTAL})")
       message(DEBUG "Experimental Test not added: ${DBG_COMMAND_STR}")
     endif()
   endforeach()
