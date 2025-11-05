@@ -56,14 +56,26 @@ else() # !PROJECT_IS_TOP_LEVEL
   set(CSD ${CMAKE_SOURCE_DIR}) # project top level
   set(LIBRARIES_DIR "${CSD}/libraries")
 
+  # DEBUG: Print variable values
+  message(STATUS "=== TESTS CMAKE DEBUG ===")
+  message(STATUS "EXECUTABLE_NAME: '${EXECUTABLE_NAME}'")
+  message(STATUS "SUFFIX_WITH_DASH: '${SUFFIX_WITH_DASH}'")
+  message(STATUS "WIN32: ${WIN32}")
+  message(STATUS "MSVC: ${MSVC}")
+  message(STATUS "MXECROSS: ${MXECROSS}")
+  message(STATUS "CBD: ${CBD}")
+  message(STATUS "========================")
+
   if(APPLE)
     set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}")
   elseif (WIN32 OR MXECROSS)
     # Determine executable extension: MSVC uses .exe, MinGW/MSYS2 uses .com (console version)
     if(MSVC)
       set(OPENSCAD_BINPATH "${CBD}/Release/${EXECUTABLE_NAME}.exe")
+      message(STATUS "MSVC: OPENSCAD_BINPATH set to: ${OPENSCAD_BINPATH}")
     else()
       set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.com")
+      message(STATUS "MinGW/MSYS2: OPENSCAD_BINPATH set to: ${OPENSCAD_BINPATH}")
     endif()
   elseif(EXISTS "${CBD}/bin/${EXECUTABLE_NAME}")
     set(OPENSCAD_BINPATH "${CBD}/bin/${EXECUTABLE_NAME}")
