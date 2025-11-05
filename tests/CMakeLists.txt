@@ -97,8 +97,17 @@ else() # !PROJECT_IS_TOP_LEVEL
 
       # Combine all DLL paths into PATH environment variable
       if(DLL_PATHS)
-        list(JOIN DLL_PATHS ";" DLL_PATHS_STR)
+        # Manually build PATH string to avoid CMake's semicolon list separator issues
+        set(DLL_PATHS_STR "")
+        foreach(DLL_PATH ${DLL_PATHS})
+          if(DLL_PATHS_STR)
+            set(DLL_PATHS_STR "${DLL_PATHS_STR};${DLL_PATH}")
+          else()
+            set(DLL_PATHS_STR "${DLL_PATH}")
+          endif()
+        endforeach()
         list(APPEND CTEST_ENVIRONMENT "PATH=${DLL_PATHS_STR};$ENV{PATH}")
+        message(STATUS "MSVC: Final PATH prefix for tests: ${DLL_PATHS_STR}")
       endif()
     else()
       set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.com")
