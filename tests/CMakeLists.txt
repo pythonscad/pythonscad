@@ -73,6 +73,14 @@ else() # !PROJECT_IS_TOP_LEVEL
     if(MSVC)
       set(OPENSCAD_BINPATH "${CBD}/Release/${EXECUTABLE_NAME}.exe")
       message(STATUS "MSVC: OPENSCAD_BINPATH set to: ${OPENSCAD_BINPATH}")
+
+      # Add vcpkg DLL directories to PATH for MSVC builds
+      # This ensures pythonscad.exe can find Qt and other dependencies during tests
+      if(EXISTS "${CBD}/vcpkg_installed/x64-windows/bin")
+        file(TO_NATIVE_PATH "${CBD}/vcpkg_installed/x64-windows/bin" VCPKG_BIN_PATH)
+        list(APPEND CTEST_ENVIRONMENT "PATH=${VCPKG_BIN_PATH};$ENV{PATH}")
+        message(STATUS "MSVC: Adding vcpkg bin to PATH: ${VCPKG_BIN_PATH}")
+      endif()
     else()
       set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.com")
       message(STATUS "MinGW/MSYS2: OPENSCAD_BINPATH set to: ${OPENSCAD_BINPATH}")
