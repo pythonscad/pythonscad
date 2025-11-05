@@ -74,12 +74,31 @@ else() # !PROJECT_IS_TOP_LEVEL
       set(OPENSCAD_BINPATH "${CBD}/Release/${EXECUTABLE_NAME}.exe")
       message(STATUS "MSVC: OPENSCAD_BINPATH set to: ${OPENSCAD_BINPATH}")
 
-      # Add vcpkg DLL directories to PATH for MSVC builds
+      # Add DLL directories to PATH for MSVC builds
       # This ensures pythonscad.exe can find Qt and other dependencies during tests
+      set(DLL_PATHS "")
+
+      # Add Qt bin directory (Qt6_DIR points to lib/cmake/Qt6, so go up 3 levels then to bin)
+      if(DEFINED Qt6_DIR)
+        get_filename_component(QT_BIN_DIR "${Qt6_DIR}/../../../bin" ABSOLUTE)
+        if(EXISTS "${QT_BIN_DIR}")
+          file(TO_NATIVE_PATH "${QT_BIN_DIR}" QT_BIN_PATH)
+          list(APPEND DLL_PATHS "${QT_BIN_PATH}")
+          message(STATUS "MSVC: Adding Qt6 bin to PATH: ${QT_BIN_PATH}")
+        endif()
+      endif()
+
+      # Add vcpkg bin directory
       if(EXISTS "${CBD}/vcpkg_installed/x64-windows/bin")
         file(TO_NATIVE_PATH "${CBD}/vcpkg_installed/x64-windows/bin" VCPKG_BIN_PATH)
-        list(APPEND CTEST_ENVIRONMENT "PATH=${VCPKG_BIN_PATH};$ENV{PATH}")
+        list(APPEND DLL_PATHS "${VCPKG_BIN_PATH}")
         message(STATUS "MSVC: Adding vcpkg bin to PATH: ${VCPKG_BIN_PATH}")
+      endif()
+
+      # Combine all DLL paths into PATH environment variable
+      if(DLL_PATHS)
+        list(JOIN DLL_PATHS ";" DLL_PATHS_STR)
+        list(APPEND CTEST_ENVIRONMENT "PATH=${DLL_PATHS_STR};$ENV{PATH}")
       endif()
     else()
       set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.com")
