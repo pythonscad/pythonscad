@@ -252,10 +252,15 @@ ctest_env_append_value(
 
 message(STATUS "=== DEBUG: Starting test file discovery ===")
 message(STATUS "DEBUG: TEST_SCAD_DIR=${TEST_SCAD_DIR}")
+message(STATUS "DEBUG: Checking if directory exists: ${TEST_SCAD_DIR}/2D/features")
+file(GLOB FEATURES_2D_FILES_CHECK LIST_DIRECTORIES false "${TEST_SCAD_DIR}/2D/features/*")
+message(STATUS "DEBUG: All files in 2D/features directory: ${FEATURES_2D_FILES_CHECK}")
 
 # Find all scad files
 file(GLOB FEATURES_2D_FILES   ${TEST_SCAD_DIR}/2D/features/*.scad)
-message(STATUS "DEBUG: Found ${CMAKE_MATCH_COUNT} FEATURES_2D_FILES")
+list(LENGTH FEATURES_2D_FILES FEATURES_2D_COUNT)
+message(STATUS "DEBUG: Found ${FEATURES_2D_COUNT} FEATURES_2D_FILES")
+message(STATUS "DEBUG: FEATURES_2D_FILES list: ${FEATURES_2D_FILES}")
 list(REMOVE_ITEM FEATURES_2D_FILES
   ${TEST_SCAD_DIR}/2D/features/text-metrics.scad # -> EXPERIMENTAL_TEXTMETRICS_FILES
 )
