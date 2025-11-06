@@ -337,6 +337,8 @@ double outline_area(const Outline2d o)
   return area / 2.0;
 }
 
+int point_in_polygon(const std::vector<Vector2d>& pol, const Vector2d& pt); // TODO move
+									    
 void Polygon2d::stamp_color(const Polygon2d& src)
 {
   int scale_bits = scaleBitsFromPrecision(8);
@@ -378,6 +380,12 @@ void Polygon2d::stamp_color(const Polygon2d& src)
       auto res = Clipper2Lib::PolyTreeToPaths64(result);
       if (res.size() >= 1) {
         theoutlines[i].color = src.theoutlines[j].color;
+	for(int k=0;k<theoutlines.size();k++) {
+          if(k == i) continue;		
+	  Vector2d pt = theoutlines[k].vertices[0];
+	  if(!point_in_polygon(theoutlines[i].vertices, pt)) continue;
+          theoutlines[k].color = src.theoutlines[j].color;
+	}
       }
     }
   }
