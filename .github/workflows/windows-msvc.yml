@@ -222,15 +222,62 @@ jobs:
           echo "vcpkg-cache size:"
           du -sh ${{ github.workspace }}/vcpkg-cache 2>/dev/null || echo "vcpkg-cache not found"
 
+      - name: Measure vcpkg size before cleanup
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          echo "=== vcpkg directory sizes BEFORE cleanup ==="
+          echo "Checking directories to be cleaned..."
+          if [ -d "${{ github.workspace }}/vcpkg/buildtrees" ]; then
+            echo "  buildtrees: $(du -sh ${{ github.workspace }}/vcpkg/buildtrees | cut -f1)"
+          else
+            echo "  buildtrees: [does not exist]"
+          fi
+          if [ -d "${{ github.workspace }}/vcpkg/downloads" ]; then
+            echo "  downloads: $(du -sh ${{ github.workspace }}/vcpkg/downloads | cut -f1)"
+          else
+            echo "  downloads: [does not exist]"
+          fi
+          if [ -d "${{ github.workspace }}/vcpkg/packages" ]; then
+            echo "  packages: $(du -sh ${{ github.workspace }}/vcpkg/packages | cut -f1)"
+          else
+            echo "  packages: [does not exist]"
+          fi
+          echo ""
+          echo "Total vcpkg size before cleanup: $(du -sh ${{ github.workspace }}/vcpkg | cut -f1)"
+
       - name: Cleanup vcpkg to reduce cache size
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           echo "Cleaning up vcpkg directories to reduce cache size..."
-          rm -rf ${{ github.workspace }}/vcpkg/buildtrees
-          rm -rf ${{ github.workspace }}/vcpkg/downloads
-          rm -rf ${{ github.workspace }}/vcpkg/packages
-          echo "Cleanup complete"
+          CLEANED=0
+          if [ -d "${{ github.workspace }}/vcpkg/buildtrees" ]; then
+            echo "  Removing buildtrees..."
+            rm -rf ${{ github.workspace }}/vcpkg/buildtrees
+            CLEANED=1
+          else
+            echo "  buildtrees: [does not exist, skipping]"
+          fi
+          if [ -d "${{ github.workspace }}/vcpkg/downloads" ]; then
+            echo "  Removing downloads..."
+            rm -rf ${{ github.workspace }}/vcpkg/downloads
+            CLEANED=1
+          else
+            echo "  downloads: [does not exist, skipping]"
+          fi
+          if [ -d "${{ github.workspace }}/vcpkg/packages" ]; then
+            echo "  Removing packages..."
+            rm -rf ${{ github.workspace }}/vcpkg/packages
+            CLEANED=1
+          else
+            echo "  packages: [does not exist, skipping]"
+          fi
+          if [ $CLEANED -eq 1 ]; then
+            echo "Cleanup complete - directories removed"
+          else
+            echo "Cleanup complete - no directories to remove"
+          fi
 
       - name: Measure vcpkg size after cleanup
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
@@ -276,6 +323,14 @@ jobs:
           buildPresetAdditionalArgs: "['--verbose']"
         env:
           VCPKG_BINARY_SOURCES: 'clear;files,${{ github.workspace }}/vcpkg-cache,readwrite'
+
+      - name: Add Qt6 and QScintilla to PATH for tests
+        shell: bash
+        run: |
+          echo "Adding Qt6 bin and lib directories to PATH..."
+          echo "${{ env.Qt6_DIR }}/bin" >> $GITHUB_PATH
+          echo "${{ env.Qt6_DIR }}/lib" >> $GITHUB_PATH
+          echo "PATH updated for subsequent steps"
 
       - name: Run Tests
         run: |
