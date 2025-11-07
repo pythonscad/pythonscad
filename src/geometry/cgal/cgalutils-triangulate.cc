@@ -102,6 +102,7 @@ template void triangulateFaces(CGAL::Surface_mesh<CGAL::Point_3<CGAL::Epick>>& p
 
 std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d& polygon2d, bool in3d)
 {
+  polygon2d.debug_eps();	
   auto polyset = std::make_unique<PolySet>(2);
   polyset->setTriangular(true);
 

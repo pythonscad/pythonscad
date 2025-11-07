@@ -1547,14 +1547,17 @@ if(NOT ENABLE_MANIFOLD)
     render-manifold_roof
   )
 endif()
-# becasuse cgal cannot do colored 2d polygon tesselation
 disable_tests_safe(
+	# becasuse cgal cannot do colored 2d polygon tesselation
 	render-cgal_resize-2d-tests
 	render-csg-cgal_resize-2d-tests
 	render-dxf_resize-2d-tests
 	render-cgal_issue835
 	render-csg-cgal_issue835
 	throwntogether-cgal_linear_extrude-parameter-tests
+	# csg tesselator aborts on self-interssection
+        preview-cgal_text-font-tests 
+	throwntogether-cgal_text-font-tests
 )  
 
 ####################
