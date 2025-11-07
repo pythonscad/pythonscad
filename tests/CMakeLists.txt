@@ -1550,6 +1550,10 @@ endif()
 # becasuse cgal cannot do colored 2d polygon tesselation
 disable_tests_safe(
 	render-cgal_resize-2d-tests
+	render-csg-cgal_resize-2d-tests
+	render-dxf_resize-2d-tests
+	render-cgal_issue835
+	render-csg-cgal_issue835
 	throwntogether-cgal_linear_extrude-parameter-tests
 )  
 
