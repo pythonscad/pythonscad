@@ -213,38 +213,30 @@ jobs:
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          echo "=== vcpkg directory sizes BEFORE cleanup ==="
-          du -sh ${{ github.workspace }}/vcpkg || echo "vcpkg directory not found"
-          echo ""
-          echo "Breakdown by subdirectory:"
-          du -sh ${{ github.workspace }}/vcpkg/*/ 2>/dev/null || echo "No subdirectories found"
-          echo ""
-          echo "vcpkg-cache size:"
-          du -sh ${{ github.workspace }}/vcpkg-cache 2>/dev/null || echo "vcpkg-cache not found"
-
-      - name: Measure vcpkg size before cleanup
-        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
+          shopt -s nullglob
           echo "=== vcpkg directory sizes BEFORE cleanup ==="
           echo "Checking directories to be cleaned..."
           if [ -d "${{ github.workspace }}/vcpkg/buildtrees" ]; then
-            echo "  buildtrees: $(du -sh ${{ github.workspace }}/vcpkg/buildtrees | cut -f1)"
+            echo "  buildtrees: $(du -sh "${{ github.workspace }}/vcpkg/buildtrees" | cut -f1)"
           else
             echo "  buildtrees: [does not exist]"
           fi
           if [ -d "${{ github.workspace }}/vcpkg/downloads" ]; then
-            echo "  downloads: $(du -sh ${{ github.workspace }}/vcpkg/downloads | cut -f1)"
+            echo "  downloads: $(du -sh "${{ github.workspace }}/vcpkg/downloads" | cut -f1)"
           else
             echo "  downloads: [does not exist]"
           fi
           if [ -d "${{ github.workspace }}/vcpkg/packages" ]; then
-            echo "  packages: $(du -sh ${{ github.workspace }}/vcpkg/packages | cut -f1)"
+            echo "  packages: $(du -sh "${{ github.workspace }}/vcpkg/packages" | cut -f1)"
           else
             echo "  packages: [does not exist]"
           fi
           echo ""
-          echo "Total vcpkg size before cleanup: $(du -sh ${{ github.workspace }}/vcpkg | cut -f1)"
+          if [ -d "${{ github.workspace }}/vcpkg" ]; then
+            echo "Total vcpkg size before cleanup: $(du -sh "${{ github.workspace }}/vcpkg" | cut -f1)"
+          else
+            echo "Total vcpkg size before cleanup: [vcpkg directory not found]"
+          fi
 
       - name: Cleanup vcpkg to reduce cache size
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
@@ -254,24 +246,29 @@ jobs:
           CLEANED=0
           if [ -d "${{ github.workspace }}/vcpkg/buildtrees" ]; then
             echo "  Removing buildtrees..."
-            rm -rf ${{ github.workspace }}/vcpkg/buildtrees
+            rm -rf "${{ github.workspace }}/vcpkg/buildtrees"
             CLEANED=1
           else
             echo "  buildtrees: [does not exist, skipping]"
           fi
           if [ -d "${{ github.workspace }}/vcpkg/downloads" ]; then
             echo "  Removing downloads..."
-            rm -rf ${{ github.workspace }}/vcpkg/downloads
+            rm -rf "${{ github.workspace }}/vcpkg/downloads"
             CLEANED=1
           else
             echo "  downloads: [does not exist, skipping]"
           fi
           if [ -d "${{ github.workspace }}/vcpkg/packages" ]; then
             echo "  Removing packages..."
-            rm -rf ${{ github.workspace }}/vcpkg/packages
+            rm -rf "${{ github.workspace }}/vcpkg/packages"
             CLEANED=1
           else
             echo "  packages: [does not exist, skipping]"
+          fi
+          if [ -d "${{ github.workspace }}/vcpkg-cache/packages" ]; then
+            echo "  Removing cached packages directory copy..."
+            rm -rf "${{ github.workspace }}/vcpkg-cache/packages"
+            CLEANED=1
           fi
           if [ $CLEANED -eq 1 ]; then
             echo "Cleanup complete - directories removed"
@@ -283,18 +280,27 @@ jobs:
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
+          shopt -s nullglob
           echo "=== vcpkg directory sizes AFTER cleanup ==="
-          du -sh ${{ github.workspace }}/vcpkg || echo "vcpkg directory not found"
+          du -sh "${{ github.workspace }}/vcpkg" || echo "vcpkg directory not found"
           echo ""
           echo "Breakdown by subdirectory:"
-          du -sh ${{ github.workspace }}/vcpkg/*/ 2>/dev/null || echo "No subdirectories found"
+          du -sh "${{ github.workspace }}/vcpkg"/*/ 2>/dev/null || echo "No subdirectories found"
           echo ""
           echo "vcpkg-cache size:"
-          du -sh ${{ github.workspace }}/vcpkg-cache 2>/dev/null || echo "vcpkg-cache not found"
+          du -sh "${{ github.workspace }}/vcpkg-cache" 2>/dev/null || echo "vcpkg-cache not found"
           echo ""
           echo "Total size that will be cached:"
-          echo "  vcpkg directory: $(du -sh ${{ github.workspace }}/vcpkg | cut -f1)"
-          echo "  vcpkg-cache directory: $(du -sh ${{ github.workspace }}/vcpkg-cache 2>/dev/null | cut -f1 || echo '0')"
+          if [ -d "${{ github.workspace }}/vcpkg" ]; then
+            echo "  vcpkg directory: $(du -sh "${{ github.workspace }}/vcpkg" | cut -f1)"
+          else
+            echo "  vcpkg directory: [not found]"
+          fi
+          if [ -d "${{ github.workspace }}/vcpkg-cache" ]; then
+            echo "  vcpkg-cache directory: $(du -sh "${{ github.workspace }}/vcpkg-cache" | cut -f1)"
+          else
+            echo "  vcpkg-cache directory: [not found]"
+          fi
 
       - name: Save vcpkg binary cache
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
@@ -362,6 +368,10 @@ jobs:
           echo "PATH updated for subsequent steps"
 
       - name: Run Tests
+        env:
+          QT_OPENGL: software
+          PYTHONHOME: '${{ github.workspace }}\build\${{ matrix.cmake_preset }}\vcpkg_installed\x64-windows\tools\python3'
+          PYTHONPATH: '${{ github.workspace }}\build\${{ matrix.cmake_preset }}\vcpkg_installed\x64-windows\tools\python3\Lib;${{ github.workspace }}\build\${{ matrix.cmake_preset }}\vcpkg_installed\x64-windows\tools\python3\Lib\site-packages'
         run: |
           cd build/windows-msvc-release
           ctest -C Release -j4
