@@ -433,6 +433,7 @@ jobs:
 
       - name: Run Tests
         env:
+          QT_QPA_PLATFORM: offscreen
           QT_OPENGL: software
           QT_DEBUG_PLUGINS: '1'
           PYTHONHOME: '${{ github.workspace }}\build\${{ matrix.cmake_preset }}\vcpkg_installed\x64-windows\tools\python3'
@@ -441,6 +442,7 @@ jobs:
         run: |
           cd build/windows-msvc-release
           echo "=== Qt OpenGL diagnostics ==="
+          echo "QT_QPA_PLATFORM=$QT_QPA_PLATFORM"
           echo "QT_OPENGL=$QT_OPENGL"
           echo "QT_DEBUG_PLUGINS=$QT_DEBUG_PLUGINS"
           echo "-- platforms/ folder contents --"
