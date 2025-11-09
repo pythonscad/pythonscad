@@ -16,13 +16,6 @@ jobs:
     permissions:
       actions: write
       contents: read
-    env:
-      SCCACHE_DIR: '${{ github.workspace }}\.sccache'
-      SCCACHE_CACHE_SIZE: 5G
-      RUST_LOG: 'sccache=warn'
-      CMAKE_C_COMPILER_LAUNCHER: sccache
-      CMAKE_CXX_COMPILER_LAUNCHER: sccache
-
     strategy:
       fail-fast: false
       matrix:
@@ -164,45 +157,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install bsdiff4 numpy pillow
         shell: cmd
-
-      - name: Restore sccache cache
-        id: sccache-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: sccache-${{ runner.os }}-${{ hashFiles('CMakePresets.json', 'CMakeLists.txt', 'vcpkg.json') }}-${{ github.sha }}
-          restore-keys: |
-            sccache-${{ runner.os }}-${{ hashFiles('CMakePresets.json', 'CMakeLists.txt', 'vcpkg.json') }}-
-            sccache-${{ runner.os }}-
-
-      - name: Install sccache
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $version = '0.7.5'
-          $url = "https://github.com/mozilla/sccache/releases/download/v$version/sccache-v$version-x86_64-pc-windows-msvc.zip"
-          $zipPath = Join-Path $env:RUNNER_TEMP 'sccache.zip'
-          Invoke-WebRequest -Uri $url -OutFile $zipPath
-          $extractPath = Join-Path $env:RUNNER_TEMP 'sccache'
-          if (Test-Path $extractPath) {
-            Remove-Item -Recurse -Force $extractPath
-          }
-          Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
-          $binary = Get-ChildItem -Path $extractPath -Recurse -Filter 'sccache.exe' | Select-Object -First 1
-          if (-not $binary) {
-            throw 'sccache.exe not found after extraction.'
-          }
-          Add-Content -Path $env:GITHUB_PATH -Value $binary.DirectoryName
-
-      - name: Start sccache
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          if (-not (Test-Path $env:SCCACHE_DIR)) {
-            New-Item -ItemType Directory -Path $env:SCCACHE_DIR | Out-Null
-          }
-          sccache --start-server
-          sccache --show-stats
 
       - name: Restore vcpkg binary cache
         id: vcpkg-cache
@@ -452,9 +406,7 @@ jobs:
 
       - name: Run Tests
         env:
-          QT_OPENGL: angle
-          QT_ANGLE_PLATFORM: warp
-          ANGLE_DEFAULT_PLATFORM: warp
+          QT_OPENGL: software
           QT_DEBUG_PLUGINS: '1'
           PYTHONHOME: '${{ github.workspace }}\build\${{ matrix.cmake_preset }}\vcpkg_installed\x64-windows\tools\python3'
           PYTHONPATH: '${{ github.workspace }}\build\${{ matrix.cmake_preset }}\vcpkg_installed\x64-windows\tools\python3\Lib;${{ github.workspace }}\build\${{ matrix.cmake_preset }}\vcpkg_installed\x64-windows\tools\python3\Lib\site-packages'
@@ -463,8 +415,6 @@ jobs:
           cd build/windows-msvc-release
           echo "=== Qt OpenGL diagnostics ==="
           echo "QT_OPENGL=$QT_OPENGL"
-          echo "QT_ANGLE_PLATFORM=$QT_ANGLE_PLATFORM"
-          echo "ANGLE_DEFAULT_PLATFORM=$ANGLE_DEFAULT_PLATFORM"
           echo "QT_DEBUG_PLUGINS=$QT_DEBUG_PLUGINS"
           echo "-- platforms/ folder contents --"
           ls -1 Release/platforms 2>/dev/null || echo "[platforms directory missing]"
@@ -473,18 +423,6 @@ jobs:
           echo "=== Running CTest ==="
           ctest -C Release -j4
 
-      - name: Show sccache statistics
-        if: always()
-        shell: pwsh
-        run: |
-          sccache --show-stats
-
-      - name: Save sccache cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: ${{ steps.sccache-cache.outputs.cache-primary-key }}
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
