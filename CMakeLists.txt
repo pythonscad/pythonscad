@@ -686,7 +686,9 @@ if(ENABLE_PYTHON)
     if(WIN32)
       # On Windows, copy the executable instead of symlinking (symlinks are problematic)
       add_custom_target(OpenSCADPython ALL
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:OpenSCAD> ${CMAKE_CURRENT_BINARY_DIR}/${PYTHON_EXECUTABLE_NAME}.exe
+        COMMAND ${CMAKE_COMMAND} -E copy
+                $<TARGET_FILE:OpenSCAD>
+                $<TARGET_FILE_DIR:OpenSCAD>/${PYTHON_EXECUTABLE_NAME}$<TARGET_FILE_SUFFIX:OpenSCAD>
         DEPENDS OpenSCAD
       )
     else()
