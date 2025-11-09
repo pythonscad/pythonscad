@@ -396,6 +396,33 @@ jobs:
             echo   opengl32sw.dll missing
           )
 
+      - name: Copy Qt platform plugins for tests
+        shell: bash
+        run: |
+          release_dir="${{ github.workspace }}/build/${{ matrix.cmake_preset }}/Release"
+          qt_plugins_dir="${{ env.Qt6_DIR }}/plugins"
+
+          echo "Copying Qt platform plugins to Release directory..."
+          if [ -d "$qt_plugins_dir/platforms" ]; then
+            mkdir -p "$release_dir/platforms"
+            cp "$qt_plugins_dir/platforms"/*.dll "$release_dir/platforms/" 2>/dev/null || true
+            echo "Copied platforms plugins"
+          fi
+
+          if [ -d "$qt_plugins_dir/styles" ]; then
+            mkdir -p "$release_dir/styles"
+            cp "$qt_plugins_dir/styles"/*.dll "$release_dir/styles/" 2>/dev/null || true
+            echo "Copied styles plugins"
+          fi
+
+          if [ -d "$qt_plugins_dir/imageformats" ]; then
+            mkdir -p "$release_dir/imageformats"
+            cp "$qt_plugins_dir/imageformats"/*.dll "$release_dir/imageformats/" 2>/dev/null || true
+            echo "Copied imageformats plugins"
+          fi
+
+          echo "Qt plugins copied successfully"
+
       - name: Add Qt6 and QScintilla to PATH for tests
         shell: bash
         run: |
