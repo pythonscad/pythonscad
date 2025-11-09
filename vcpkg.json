@@ -23,6 +23,10 @@
     "python3",
     "cairo",
     "pkgconf",
-    "lib3mf"
+    "lib3mf",
+    {
+      "name": "angle",
+      "platform": "windows"
+    }
   ]
 }

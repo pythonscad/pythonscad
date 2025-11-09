@@ -358,72 +358,19 @@ jobs:
 
           echo "Copied runtime DLLs into $release_dir"
 
-          echo "--- OpenGL-related DLL presence check ---"
-          if compgen -G "$release_dir/opengl32sw.dll" > /dev/null; then
-            echo "  [OK] opengl32sw.dll present"
-          else
-            echo "  [MISSING] opengl32sw.dll"
-          fi
+          echo "--- ANGLE EGL DLL presence check ---"
           if compgen -G "$release_dir/libEGL*.dll" > /dev/null; then
             printf '  [OK] %s\n' "$release_dir"/libEGL*.dll | sed 's#.*/##'
           else
-            echo "  [MISSING] libEGL*.dll"
+            echo "  [MISSING] libEGL*.dll (required for EGL rendering)"
           fi
           if compgen -G "$release_dir/libGLESv2*.dll" > /dev/null; then
             printf '  [OK] %s\n' "$release_dir"/libGLESv2*.dll | sed 's#.*/##'
           else
-            echo "  [MISSING] libGLESv2*.dll"
+            echo "  [MISSING] libGLESv2*.dll (required for EGL rendering)"
           fi
 
-          echo "--- Runtime directory listing (top 40 entries) ---"
-          ls -1 "$release_dir" | head -40
-
-      - name: Log Qt plugin folders resolved in Release directory
-        shell: cmd
-        run: |
-          set "RELEASE_DIR=${{ github.workspace }}\build\${{ matrix.cmake_preset }}\Release"
-          echo Runtime directory: %RELEASE_DIR%
-          echo Available Qt platform plugins:
-          if exist "%RELEASE_DIR%\platforms" (
-            dir /b "%RELEASE_DIR%\platforms"
-          ) else (
-            echo   [platforms folder not found]
-          )
-          echo Available Qt angle plugins:
-          if exist "%RELEASE_DIR%\opengl32sw.dll" (
-            echo   opengl32sw.dll present
-          ) else (
-            echo   opengl32sw.dll missing
-          )
-
-      - name: Copy Qt platform plugins for tests
-        shell: bash
-        run: |
-          release_dir="${{ github.workspace }}/build/${{ matrix.cmake_preset }}/Release"
-          qt_plugins_dir="${{ env.Qt6_DIR }}/plugins"
-
-          echo "Copying Qt platform plugins to Release directory..."
-          if [ -d "$qt_plugins_dir/platforms" ]; then
-            mkdir -p "$release_dir/platforms"
-            cp "$qt_plugins_dir/platforms"/*.dll "$release_dir/platforms/" 2>/dev/null || true
-            echo "Copied platforms plugins"
-          fi
-
-          if [ -d "$qt_plugins_dir/styles" ]; then
-            mkdir -p "$release_dir/styles"
-            cp "$qt_plugins_dir/styles"/*.dll "$release_dir/styles/" 2>/dev/null || true
-            echo "Copied styles plugins"
-          fi
-
-          if [ -d "$qt_plugins_dir/imageformats" ]; then
-            mkdir -p "$release_dir/imageformats"
-            cp "$qt_plugins_dir/imageformats"/*.dll "$release_dir/imageformats/" 2>/dev/null || true
-            echo "Copied imageformats plugins"
-          fi
-
-          echo "Qt plugins copied successfully"
-
-      - name: Add Qt6 and QScintilla to PATH for tests
+      - name: Add Qt6 to PATH for tests
         shell: bash
         run: |
           echo "Adding Qt6 bin and lib directories to PATH..."
@@ -433,22 +380,15 @@ jobs:
 
       - name: Run Tests
         env:
-          QT_QPA_PLATFORM: offscreen
-          QT_OPENGL: software
-          QT_DEBUG_PLUGINS: '1'
+          # ANGLE EGL should be used for offscreen rendering (configured via CMake)
           PYTHONHOME: '${{ github.workspace }}\build\${{ matrix.cmake_preset }}\vcpkg_installed\x64-windows\tools\python3'
           PYTHONPATH: '${{ github.workspace }}\build\${{ matrix.cmake_preset }}\vcpkg_installed\x64-windows\tools\python3\Lib;${{ github.workspace }}\build\${{ matrix.cmake_preset }}\vcpkg_installed\x64-windows\tools\python3\Lib\site-packages'
         shell: bash
         run: |
           cd build/windows-msvc-release
-          echo "=== Qt OpenGL diagnostics ==="
-          echo "QT_QPA_PLATFORM=$QT_QPA_PLATFORM"
-          echo "QT_OPENGL=$QT_OPENGL"
-          echo "QT_DEBUG_PLUGINS=$QT_DEBUG_PLUGINS"
-          echo "-- platforms/ folder contents --"
-          ls -1 Release/platforms 2>/dev/null || echo "[platforms directory missing]"
-          echo "-- opengl-related DLLs in Release/ --"
-          ls -1 Release | grep -Ei 'opengl32sw|libegl|libglesv2' || echo "[no OpenGL DLLs matched]"
+          echo "=== EGL/ANGLE diagnostics ==="
+          echo "-- EGL/ANGLE DLLs in Release/ --"
+          ls -1 Release | grep -Ei 'libegl|libglesv2|d3dcompiler' || echo "[no ANGLE DLLs found]"
           echo "=== Running CTest ==="
           ctest -C Release -j4
 
