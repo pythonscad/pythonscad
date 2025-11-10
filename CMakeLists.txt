@@ -530,6 +530,12 @@ if(ENABLE_CGAL)
   #  set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
   #endif()
   set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
+  # CGAL may set /fp:strict on MSVC, but this causes CGAL geometry assertions
+  # to fail (e.g., "e_below != SHalfedge_handle()" in SNC_FM_decorator.h).
+  # Override with /fp:precise to match other platforms' floating-point semantics.
+  if(MSVC)
+    target_compile_options(OpenSCAD PRIVATE /fp:precise)
+  endif()
 endif(ENABLE_CGAL)
 
 find_package(LibZip REQUIRED)
