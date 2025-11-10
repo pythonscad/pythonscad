@@ -56,9 +56,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.lib
-            ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.dll
-            ${{ env.Qt6_DIR }}/include/Qsci
+            ${{ env.QT_ROOT_DIR }}/lib/qscintilla2_qt6.lib
+            ${{ env.QT_ROOT_DIR }}/lib/qscintilla2_qt6.dll
+            ${{ env.QT_ROOT_DIR }}/include/Qsci
           key: qscintilla-${{ runner.os }}-2.14.1-qt6.10.0-v2
 
       - name: Build QScintilla from source
@@ -84,13 +84,13 @@ jobs:
         run: |
           echo === Checking QScintilla DLL exports ===
           echo Checking for QsciScintilla symbols:
-          dumpbin /EXPORTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"QsciScintilla"
+          dumpbin /EXPORTS "${{ env.QT_ROOT_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"QsciScintilla"
           echo.
           echo Checking for QsciAbstractAPIs symbols:
-          dumpbin /EXPORTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"QsciAbstractAPIs"
+          dumpbin /EXPORTS "${{ env.QT_ROOT_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"QsciAbstractAPIs"
           echo.
           echo Checking for staticMetaObject symbols:
-          dumpbin /EXPORTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"staticMetaObject"
+          dumpbin /EXPORTS "${{ env.QT_ROOT_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"staticMetaObject"
 
       - name: Verify QScintilla LIB imports
         if: steps.qscintilla-cache.outputs.cache-hit != 'true'
@@ -98,20 +98,20 @@ jobs:
         run: |
           echo === Checking QScintilla .lib file import references ===
           echo Checking for staticMetaObject imports:
-          dumpbin /LINKERMEMBER "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.lib" | findstr /C:"staticMetaObject"
+          dumpbin /LINKERMEMBER "${{ env.QT_ROOT_DIR }}\lib\qscintilla2_qt6.lib" | findstr /C:"staticMetaObject"
           echo.
           echo Full LINKERMEMBER output (first 100 lines):
-          dumpbin /LINKERMEMBER "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.lib" | head -100
+          dumpbin /LINKERMEMBER "${{ env.QT_ROOT_DIR }}\lib\qscintilla2_qt6.lib" | head -100
 
       - name: Check QScintilla DLL dependencies and runtime
         if: steps.qscintilla-cache.outputs.cache-hit != 'true'
         shell: cmd
         run: |
           echo === Checking QScintilla DLL dependencies ===
-          dumpbin /DEPENDENTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll"
+          dumpbin /DEPENDENTS "${{ env.QT_ROOT_DIR }}\lib\qscintilla2_qt6.dll"
           echo.
           echo === Checking if QScintilla uses debug runtime ===
-          dumpbin /IMPORTS "${{ env.Qt6_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"MSVCR" /C:"MSVCP" /C:"VCRUNTIME" /C:"UCRTBASE"
+          dumpbin /IMPORTS "${{ env.QT_ROOT_DIR }}\lib\qscintilla2_qt6.dll" | findstr /C:"MSVCR" /C:"MSVCP" /C:"VCRUNTIME" /C:"UCRTBASE"
 
       - name: Cleanup QScintilla build artifacts
         if: steps.qscintilla-cache.outputs.cache-hit != 'true'
@@ -127,9 +127,9 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.lib
-            ${{ env.Qt6_DIR }}/lib/qscintilla2_qt6.dll
-            ${{ env.Qt6_DIR }}/include/Qsci
+            ${{ env.QT_ROOT_DIR }}/lib/qscintilla2_qt6.lib
+            ${{ env.QT_ROOT_DIR }}/lib/qscintilla2_qt6.dll
+            ${{ env.QT_ROOT_DIR }}/include/Qsci
           key: ${{ steps.qscintilla-cache.outputs.cache-primary-key }}
 
       - name: Setup MSYS2
@@ -342,8 +342,8 @@ jobs:
           shopt -s nullglob
 
           release_dir="${{ github.workspace }}/build/${{ matrix.cmake_preset }}/Release"
-          qt_bin_dir="${{ env.Qt6_DIR }}/bin"
-          qt_lib_dir="${{ env.Qt6_DIR }}/lib"
+          qt_bin_dir="${{ env.QT_ROOT_DIR }}/bin"
+          qt_lib_dir="${{ env.QT_ROOT_DIR }}/lib"
           vcpkg_bin_dir="${{ github.workspace }}/build/${{ matrix.cmake_preset }}/vcpkg_installed/x64-windows/bin"
 
           mkdir -p "$release_dir"
@@ -380,8 +380,8 @@ jobs:
         shell: bash
         run: |
           echo "Adding Qt6 bin and lib directories to PATH..."
-          echo "${{ env.Qt6_DIR }}/bin" >> $GITHUB_PATH
-          echo "${{ env.Qt6_DIR }}/lib" >> $GITHUB_PATH
+          echo "${{ env.QT_ROOT_DIR }}/bin" >> $GITHUB_PATH
+          echo "${{ env.QT_ROOT_DIR }}/lib" >> $GITHUB_PATH
           echo "PATH updated for subsequent steps"
 
       - name: Run Tests
