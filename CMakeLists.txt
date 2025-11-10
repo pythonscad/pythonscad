@@ -1933,6 +1933,18 @@ elseif(MSVC)
   )
 endif()
 
+# Copy resource files to build directory for Windows (MINGW/MSVC)
+# These are needed for the application to run from the build directory during development and testing
+if(WIN32 AND NOT APPLE)
+  set(WIN_RESOURCES_DIR ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/color-schemes DESTINATION ${WIN_RESOURCES_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/fonts DESTINATION ${WIN_RESOURCES_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/libraries DESTINATION ${WIN_RESOURCES_DIR} PATTERN ".git*" EXCLUDE)
+  file(COPY ${CMAKE_SOURCE_DIR}/locale DESTINATION ${WIN_RESOURCES_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/shaders DESTINATION ${WIN_RESOURCES_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/templates DESTINATION ${WIN_RESOURCES_DIR})
+endif()
+
 if (USE_QT6)
   if(NOT HEADLESS)
     # Use imported target for QScintilla on MSVC, variable otherwise
