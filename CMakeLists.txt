@@ -1213,6 +1213,9 @@ elseif(WIN32)
   if(NOT NULLGL)
     set(OFFSCREEN_METHOD "Windows")
     # Try EGL first (ANGLE or native), then fall back to WGL
+    # Always compile WGL backend on Windows (as fallback)
+    set(PLATFORM_SOURCES ${PLATFORM_SOURCES} src/glview/offscreen-old/OffscreenContextWGL.cc)
+
     if(ENABLE_EGL)
       # On Windows, manually find ANGLE's EGL since find_package(OpenGL COMPONENTS EGL) doesn't detect it
       find_library(EGL_LIBRARY NAMES libEGL EGL)
@@ -1221,7 +1224,7 @@ elseif(WIN32)
 
       if(EGL_LIBRARY AND GLES_LIBRARY AND EGL_INCLUDE_DIR)
         target_compile_definitions(OpenSCAD PRIVATE ENABLE_EGL)
-        set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} EGL")
+        set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} EGL (with WGL fallback)")
         set(PLATFORM_SOURCES ${PLATFORM_SOURCES}
           src/glview/offscreen-old/OffscreenContextEGL.cc
           src/glview/OffscreenContextEGL.cc)
@@ -1233,15 +1236,11 @@ elseif(WIN32)
         message(STATUS "Found ANGLE EGL: ${EGL_LIBRARY}")
         message(STATUS "Found ANGLE GLESv2: ${GLES_LIBRARY}")
       else()
-        # Fall back to old WGL backend
         set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} WGL")
-        set(PLATFORM_SOURCES ${PLATFORM_SOURCES} src/glview/offscreen-old/OffscreenContextWGL.cc)
-        message(STATUS "EGL not found, using WGL fallback")
+        message(STATUS "EGL not found, using WGL")
       endif()
     else()
-      # ENABLE_EGL is OFF, use WGL
       set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} WGL")
-      set(PLATFORM_SOURCES ${PLATFORM_SOURCES} src/glview/offscreen-old/OffscreenContextWGL.cc)
     endif()
     message(STATUS "Offscreen OpenGL Context - using ${OFFSCREEN_METHOD}")
   endif()
