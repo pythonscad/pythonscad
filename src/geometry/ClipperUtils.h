@@ -18,6 +18,7 @@ std::unique_ptr<Clipper2Lib::PolyTree64> sanitize(const Clipper2Lib::Paths64& pa
 std::unique_ptr<Polygon2d> sanitize(const Polygon2d& poly);
 
 Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, int scale_bits);
+Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, int scale_bits, Color4f *col);
 std::unique_ptr<Polygon2d> toPolygon2d(const Clipper2Lib::PolyTree64& poly, int scale_bits);
 
 std::unique_ptr<Polygon2d> applyOffset(const Polygon2d& poly, double offset,

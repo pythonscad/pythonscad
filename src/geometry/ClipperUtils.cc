@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <vector>
 #include "src/core/ColorUtil.h"
+#include <glview/RenderSettings.h>
 
 namespace ClipperUtils {
 
@@ -123,15 +124,17 @@ int scaleBitsFromBounds(const BoundingBox& bounds, int total_bits)
 
 int scaleBitsFromPrecision(int precision) { return std::ilogb(std::pow(10, precision)) + 1; }
 
-Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, int scale_bits)
+Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, int scale_bits, Color4f *col)
 {
   const bool keep_orientation = poly.isSanitized();
   const double scale = std::ldexp(1.0, scale_bits);
   Clipper2Lib::Paths64 result;
   for (const auto& outline : poly.transformedOutlines()) {
     Clipper2Lib::Path64 p;
+    if(col == nullptr || *col == outline.color){
     for (const auto& v : outline.vertices) {
       p.emplace_back(v[0] * scale, v[1] * scale);
+    }
     }
     // Make sure all polygons point up, since we project also
     // back-facing polygon in PolySetUtils::project()
@@ -143,7 +146,12 @@ Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, int scale_bits)
 
 Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly)
 {
-  return fromPolygon2d(poly, scaleBitsFromPrecision());
+  return fromPolygon2d(poly, scaleBitsFromPrecision(), nullptr);
+}
+
+Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, Color4f *col)
+{
+  return fromPolygon2d(poly, scaleBitsFromPrecision(), col);
 }
 
 std::unique_ptr<Clipper2Lib::PolyTree64> sanitize(const Clipper2Lib::Paths64& paths)
@@ -168,7 +176,7 @@ std::unique_ptr<Polygon2d> sanitize(const Polygon2d& poly)
 {
   auto scale_bits = scaleBitsFromPrecision();
 
-  auto paths = ClipperUtils::fromPolygon2d(poly, scale_bits);
+  auto paths = ClipperUtils::fromPolygon2d(poly, scale_bits, nullptr);
   auto result = toPolygon2d(*sanitize(paths), scale_bits);
   result->stamp_color(poly);
   return result;
@@ -224,7 +232,7 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
   std::vector<Clipper2Lib::Paths64> pathsvector;
   for (const auto& polygon : polygons) {
     if (polygon) {
-      auto polypaths = fromPolygon2d(*polygon, scale_bits);
+      auto polypaths = fromPolygon2d(*polygon, scale_bits, nullptr); 
       if (!polygon->isSanitized()) {
         polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
       }
@@ -254,17 +262,23 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
         break;
       input_width++;
     }
+    auto cur_outlines =  polygons[inputs_old]->outlines();
+    while(cur_outlines.size() > 0) {
+      Color4f curcol = cur_outlines[0].color;	    
 
     // union all new shapes
     Clipper2Lib::Paths64 union_new;
     if (input_width > 1) {
       std::vector<Clipper2Lib::Paths64> union_operands;
-      for (int i = 0; i < input_width; i++) union_operands.push_back(pathsvector[inputs_old + i]);
+      for (int i = 0; i < input_width; i++){
+        auto polypath = fromPolygon2d(*polygons[inputs_old+i], scale_bits, &curcol);
+        union_operands.push_back(polypath);
+      }
       std::unique_ptr<Polygon2d> union_result =
         apply(union_operands, Clipper2Lib::ClipType::Union, scale_bits);
-      union_new = fromPolygon2d(*union_result, scale_bits);
+      union_new = fromPolygon2d(*union_result, scale_bits, nullptr);
     } else {
-      union_new = pathsvector[inputs_old];
+      union_new = fromPolygon2d(*polygons[inputs_old], scale_bits, &curcol);
     }
 
     // difference all old
@@ -277,11 +291,16 @@ Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygo
     }
     std::unique_ptr<Polygon2d> diff_result =
       apply(diff_operands, Clipper2Lib::ClipType::Difference, scale_bits);
-    diff_result->stamp_color(*polygons[inputs_old]);
-    Color4f defcolor = polygons[inputs_old]->outlines()[0].color;
-    diff_result->setColorUndef(defcolor);
-    for (const auto& o : diff_result->outlines()) {
+    for (Outline2d o : diff_result->outlines()) {
+      o.color = curcol;
       union_result.addOutline(o);
+    }
+    std::vector<Outline2d> new_outlines; // now create new vector with this color removed
+    for(const auto &o : cur_outlines) {
+      if(o.color == curcol) continue;	    
+      new_outlines.push_back(o);	    
+    }	    
+    cur_outlines = new_outlines;
     }
 
     inputs_old += input_width;
@@ -365,15 +384,21 @@ std::unique_ptr<Polygon2d> apply(const std::vector<std::shared_ptr<const Polygon
                                  Clipper2Lib::ClipType clipType)
 {
   const int scale_bits = scaleBitsFromPrecision();
-  if (clipType == Clipper2Lib::ClipType::Union) {
-    Polygon2d union_result = cleanUnion(polygons);
-    return std::make_unique<Polygon2d>(union_result);
-  }
+#ifdef ENABLE_MANIFOLD 
+  // only create colored data for manifold, cgal tessellator cannot handle it later
+
+  if (RenderSettings::inst()->backend3D == RenderBackend3D::ManifoldBackend) {
+    if (clipType == Clipper2Lib::ClipType::Union) {
+      Polygon2d union_result = cleanUnion(polygons);
+      return std::make_unique<Polygon2d>(union_result);
+    }
+ }
+#endif
 
   std::vector<Clipper2Lib::Paths64> pathsvector;
   for (const auto& polygon : polygons) {
     if (polygon) {
-      auto polypaths = fromPolygon2d(*polygon, scale_bits);
+      auto polypaths = fromPolygon2d(*polygon, scale_bits, nullptr);
       if (!polygon->isSanitized()) {
         polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
       }
@@ -402,12 +427,12 @@ std::unique_ptr<Polygon2d> applyMinkowski(const std::vector<std::shared_ptr<cons
 
   Clipper2Lib::Clipper64 clipper;
   clipper.PreserveCollinear(false);
-  auto lhs = fromPolygon2d(polygons[0] ? *polygons[0] : Polygon2d(), scale_bits);
+  auto lhs = fromPolygon2d(polygons[0] ? *polygons[0] : Polygon2d(), scale_bits, nullptr);
 
   for (size_t i = 1; i < polygons.size(); ++i) {
     if (!polygons[i]) continue;
     Clipper2Lib::Paths64 minkowski_terms;
-    auto rhs = fromPolygon2d(*polygons[i], scale_bits);
+    auto rhs = fromPolygon2d(*polygons[i], scale_bits, nullptr);
 
     // First, convolve each outline of lhs with the outlines of rhs
     for (auto const& rhs_path : rhs) {
@@ -448,7 +473,7 @@ std::unique_ptr<Polygon2d> applyOffset(const Polygon2d& poly, double offset,
   const int scale_bits = scaleBitsFromPrecision();
   Clipper2Lib::ClipperOffset co(isMiter ? miter_limit : 2.0,
                                 isRound ? std::ldexp(arc_tolerance, scale_bits) : 1.0);
-  auto p = ClipperUtils::fromPolygon2d(poly, scale_bits);
+  auto p = ClipperUtils::fromPolygon2d(poly, scale_bits, nullptr);
   co.AddPaths(p, joinType, Clipper2Lib::EndType::Polygon);
   Clipper2Lib::PolyTree64 result;
   co.Execute(std::ldexp(offset, scale_bits), result);
@@ -465,7 +490,7 @@ std::unique_ptr<Polygon2d> applyProjection(const std::vector<std::shared_ptr<con
   Clipper2Lib::Clipper64 sumclipper;
   sumclipper.PreserveCollinear(false);
   for (const auto& poly : polygons) {
-    Clipper2Lib::Paths64 result = ClipperUtils::fromPolygon2d(*poly, scale_bits);
+    Clipper2Lib::Paths64 result = ClipperUtils::fromPolygon2d(*poly, scale_bits, nullptr);
     // Using NonZero ensures that we don't create holes from polygons sharing
     // edges since we're unioning a mesh
     result = ClipperUtils::process(result, Clipper2Lib::ClipType::Union, Clipper2Lib::FillRule::NonZero);

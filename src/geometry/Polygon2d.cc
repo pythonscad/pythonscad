@@ -445,8 +445,8 @@ void Polygon2d::debug_eps(void) const
 
   fprintf(in, "%%!PS\n");
   fprintf(in, "0.3 setlinewidth\n");
-  fprintf(in, "0 1 0 setrgbcolor\n");
   for (auto& out : outlines()) {
+    fprintf(in, "%g %g %g setrgbcolor\n", out.color.r(), out.color.g(), out.color.b());
     int len = out.vertices.size();
     fprintf(in, "%.2f %.2f moveto\n", out.vertices[len - 1][0] * scale + xoff,
             out.vertices[len - 1][1] * scale + yoff);
@@ -454,7 +454,7 @@ void Polygon2d::debug_eps(void) const
       fprintf(in, "%.2f %.2f lineto\n", out.vertices[i][0] * scale + xoff,
               out.vertices[i][1] * scale + yoff);
     }
-    fprintf(in, "stroke\n");
+    fprintf(in, "fill\n");
   }
 
   fprintf(in, "showpage\n");
