@@ -987,12 +987,12 @@ if(NOT HEADLESS)
     endif()
 
     # For MSVC, manually set QScintilla paths since FindQt6QScintilla doesn't search Qt lib directory
-    if(MSVC AND DEFINED ENV{Qt6_DIR})
+    if(MSVC AND DEFINED ENV{QT_ROOT_DIR})
       message(STATUS "=== QScintilla MSVC Debug Info ===")
-      message(STATUS "Qt6_DIR environment variable: $ENV{Qt6_DIR}")
+      message(STATUS "QT_ROOT_DIR environment variable: $ENV{QT_ROOT_DIR}")
 
-      set(QT6QSCINTILLA_LIBRARY "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.lib")
-      set(QT6QSCINTILLA_INCLUDE_DIR "$ENV{Qt6_DIR}/include/Qsci")
+      set(QT6QSCINTILLA_LIBRARY "$ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.lib")
+      set(QT6QSCINTILLA_INCLUDE_DIR "$ENV{QT_ROOT_DIR}/include/Qsci")
       set(QT6QSCINTILLA_VERSION_STRING "2.14.1")
       set(QT6QSCINTILLA_FOUND TRUE)
 
@@ -1007,10 +1007,10 @@ if(NOT HEADLESS)
         message(WARNING "✗ QScintilla .lib file NOT FOUND: ${QT6QSCINTILLA_LIBRARY}")
       endif()
 
-      if(EXISTS "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll")
-        message(STATUS "✓ QScintilla .dll file EXISTS: $ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll")
+      if(EXISTS "$ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.dll")
+        message(STATUS "✓ QScintilla .dll file EXISTS: $ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.dll")
       else()
-        message(WARNING "✗ QScintilla .dll file NOT FOUND: $ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll")
+        message(WARNING "✗ QScintilla .dll file NOT FOUND: $ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.dll")
       endif()
 
       if(EXISTS "${QT6QSCINTILLA_INCLUDE_DIR}")
@@ -1019,21 +1019,21 @@ if(NOT HEADLESS)
         message(WARNING "✗ QScintilla include directory NOT FOUND: ${QT6QSCINTILLA_INCLUDE_DIR}")
       endif()
 
-      message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING} (manually set for MSVC using Qt6_DIR)")
+      message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING} (manually set for MSVC using QT_ROOT_DIR)")
     else()
       find_package(Qt6QScintilla 2.8.0 REQUIRED)
       message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING}")
     endif()
 
     # For MSVC, ensure QScintilla is added as an imported target
-    if(MSVC AND DEFINED ENV{Qt6_DIR} AND NOT TARGET Qt6QScintilla::Qt6QScintilla)
+    if(MSVC AND DEFINED ENV{QT_ROOT_DIR} AND NOT TARGET Qt6QScintilla::Qt6QScintilla)
       message(STATUS "Creating Qt6QScintilla::Qt6QScintilla imported target")
       add_library(Qt6QScintilla::Qt6QScintilla SHARED IMPORTED)
       set_target_properties(Qt6QScintilla::Qt6QScintilla PROPERTIES
         IMPORTED_CONFIGURATIONS "RELEASE;DEBUG"
-        IMPORTED_LOCATION_RELEASE "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll"
+        IMPORTED_LOCATION_RELEASE "$ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.dll"
         IMPORTED_IMPLIB_RELEASE "${QT6QSCINTILLA_LIBRARY}"
-        IMPORTED_LOCATION_DEBUG "$ENV{Qt6_DIR}/lib/qscintilla2_qt6.dll"
+        IMPORTED_LOCATION_DEBUG "$ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.dll"
         IMPORTED_IMPLIB_DEBUG "${QT6QSCINTILLA_LIBRARY}"
         INTERFACE_INCLUDE_DIRECTORIES "${QT6QSCINTILLA_INCLUDE_DIR}"
         INTERFACE_COMPILE_DEFINITIONS "QSCINTILLA_DLL"
@@ -1060,12 +1060,12 @@ if(NOT HEADLESS)
     elseif(TARGET Qt6QScintilla::Qt6QScintilla)
       message(STATUS "Qt6QScintilla::Qt6QScintilla target already exists")
     else()
-      if(DEFINED ENV{Qt6_DIR})
-        set(_qt6_dir_status "defined")
+      if(DEFINED ENV{QT_ROOT_DIR})
+        set(_qt_root_dir_status "defined")
       else()
-        set(_qt6_dir_status "not defined")
+        set(_qt_root_dir_status "not defined")
       endif()
-      message(WARNING "Qt6QScintilla::Qt6QScintilla target NOT created (MSVC=${MSVC}, Qt6_DIR ${_qt6_dir_status})")
+      message(WARNING "Qt6QScintilla::Qt6QScintilla target NOT created (MSVC=${MSVC}, QT_ROOT_DIR ${_qt_root_dir_status})")
     endif()
 
     if(ENABLE_QTDBUS)

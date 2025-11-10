@@ -24,7 +24,7 @@
         "USE_BUILTIN_OPENCSG": "ON",
         "USE_MIMALLOC": "OFF",
         "USE_QT6": "ON",
-        "CMAKE_PREFIX_PATH": "$env{Qt6_DIR}",
+        "CMAKE_PREFIX_PATH": "$env{QT_ROOT_DIR}",
         "VCPKG_TARGET_TRIPLET": "x64-windows"
       },
       "environment": {
