@@ -532,9 +532,30 @@ if(ENABLE_CGAL)
   set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
   # CGAL may set /fp:strict on MSVC, but this causes CGAL geometry assertions
   # to fail (e.g., "e_below != SHalfedge_handle()" in SNC_FM_decorator.h).
-  # Override with /fp:precise to match other platforms' floating-point semantics.
+  # Remove CGAL's /fp:strict flags and replace with /fp:precise to match other platforms.
   if(MSVC)
+    # Get current compile options
+    get_target_property(_compile_opts OpenSCAD COMPILE_OPTIONS)
+    get_target_property(_iface_compile_opts OpenSCAD INTERFACE_COMPILE_OPTIONS)
+
+    # Remove /fp:strict and /fp:except- from both target and interface options
+    if(_compile_opts)
+      list(FILTER _compile_opts EXCLUDE REGEX "/fp:(strict|except-)")
+      set_target_properties(OpenSCAD PROPERTIES COMPILE_OPTIONS "${_compile_opts}")
+    endif()
+    if(_iface_compile_opts)
+      list(FILTER _iface_compile_opts EXCLUDE REGEX "/fp:(strict|except-)")
+      set_target_properties(OpenSCAD PROPERTIES INTERFACE_COMPILE_OPTIONS "${_iface_compile_opts}")
+    endif()
+
+    # Also remove from CMAKE_CXX_FLAGS to catch any global settings
+    string(REGEX REPLACE "/fp:(strict|except-)( |$)" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    string(REGEX REPLACE "/fp:(strict|except-)( |$)" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
+    # Now add /fp:precise which will be the last (and winning) flag
     target_compile_options(OpenSCAD PRIVATE /fp:precise)
+
+    message(STATUS "Replaced CGAL /fp:strict with /fp:precise for MSVC compatibility")
   endif()
 endif(ENABLE_CGAL)
 
