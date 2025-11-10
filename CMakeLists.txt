@@ -1213,18 +1213,33 @@ elseif(WIN32)
   if(NOT NULLGL)
     set(OFFSCREEN_METHOD "Windows")
     # Try EGL first (ANGLE or native), then fall back to WGL
-    if(ENABLE_EGL AND OpenGL_EGL_FOUND)
-      target_compile_definitions(OpenSCAD PRIVATE ENABLE_EGL)
-      set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} EGL")
-      set(PLATFORM_SOURCES ${PLATFORM_SOURCES}
-        src/glview/offscreen-old/OffscreenContextEGL.cc
-        src/glview/OffscreenContextEGL.cc)
-      if (NOT USE_GLAD)
-        target_compile_definitions(OpenSCAD PRIVATE GLEW_EGL)
+    if(ENABLE_EGL)
+      # On Windows, manually find ANGLE's EGL since find_package(OpenGL COMPONENTS EGL) doesn't detect it
+      find_library(EGL_LIBRARY NAMES libEGL EGL)
+      find_library(GLES_LIBRARY NAMES libGLESv2 GLESv2)
+      find_path(EGL_INCLUDE_DIR EGL/egl.h)
+
+      if(EGL_LIBRARY AND GLES_LIBRARY AND EGL_INCLUDE_DIR)
+        target_compile_definitions(OpenSCAD PRIVATE ENABLE_EGL)
+        set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} EGL")
+        set(PLATFORM_SOURCES ${PLATFORM_SOURCES}
+          src/glview/offscreen-old/OffscreenContextEGL.cc
+          src/glview/OffscreenContextEGL.cc)
+        if (NOT USE_GLAD)
+          target_compile_definitions(OpenSCAD PRIVATE GLEW_EGL)
+        endif()
+        target_include_directories(OpenSCAD SYSTEM PRIVATE ${EGL_INCLUDE_DIR})
+        target_link_libraries(OpenSCAD PRIVATE ${EGL_LIBRARY} ${GLES_LIBRARY})
+        message(STATUS "Found ANGLE EGL: ${EGL_LIBRARY}")
+        message(STATUS "Found ANGLE GLESv2: ${GLES_LIBRARY}")
+      else()
+        # Fall back to old WGL backend
+        set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} WGL")
+        set(PLATFORM_SOURCES ${PLATFORM_SOURCES} src/glview/offscreen-old/OffscreenContextWGL.cc)
+        message(STATUS "EGL not found, using WGL fallback")
       endif()
-      target_link_libraries(OpenSCAD PRIVATE OpenGL::EGL)
     else()
-      # Fall back to old WGL backend
+      # ENABLE_EGL is OFF, use WGL
       set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} WGL")
       set(PLATFORM_SOURCES ${PLATFORM_SOURCES} src/glview/offscreen-old/OffscreenContextWGL.cc)
     endif()
