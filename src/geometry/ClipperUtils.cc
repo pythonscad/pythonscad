@@ -394,24 +394,67 @@ std::unique_ptr<Polygon2d> apply(const std::vector<std::shared_ptr<const Polygon
     }
  }
 #endif
+  Polygon2d result;
+  std::vector<Outline2d> outlines_work;
 
-  std::vector<Clipper2Lib::Paths64> pathsvector;
+  std::vector<Clipper2Lib::Paths64> pathsvector_diff;
+  bool first=true;
   for (const auto& polygon : polygons) {
+    // prepare subject
+    if(first) { // TODO not safe
+      if(polygon != nullptr) outlines_work =   polygon->outlines();
+      first=false;
+      continue;
+    }	    
+    if(polygon == nullptr) continue;
+    
+    // convert diff section
     if (polygon) {
       auto polypaths = fromPolygon2d(*polygon, scale_bits, nullptr);
       if (!polygon->isSanitized()) {
         polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
       }
-      pathsvector.push_back(std::move(polypaths));
+      pathsvector_diff.push_back(std::move(polypaths));
     } else {
       // Insert empty object as this could be the positive object in a difference
-      pathsvector.emplace_back();
+      pathsvector_diff.emplace_back();
     }
+  } 
+  while(outlines_work.size() > 0) {
+    Color4f col = outlines_work[0].color;
+    Polygon2d polygon_cur;
+    std::vector<Outline2d> outlines_new;
+        
+    for(const auto &outl: outlines_work) {
+      if(outl.color == col)  polygon_cur.addOutline(outl);
+      else outlines_new.push_back(outl);	      
+    }
+
+    // prepare diff for one color
+    std::vector<Clipper2Lib::Paths64> pathsvector;
+    
+    // subject
+    auto polypaths = fromPolygon2d(polygon_cur, scale_bits, nullptr);
+    if (!polygon_cur.isSanitized()) {
+      polypaths = Clipper2Lib::PolyTreeToPaths64(*sanitize(polypaths));
+    }
+    pathsvector.push_back(std::move(polypaths));
+    // and the rest
+   
+    for(auto diff : pathsvector_diff) {
+       pathsvector.push_back(diff);	    
+    }
+
+    auto res = apply(pathsvector, clipType, scale_bits);
+    for(auto out : res->outlines()) { // collect result
+      out.color = col;
+      result.addOutline(out);      
+    }
+    assert(res);
+    outlines_work = outlines_new;
   }
-  auto res = apply(pathsvector, clipType, scale_bits);
-  assert(res);
-  if (polygons.size() > 0 && polygons[0] != nullptr) res->stamp_color(*polygons[0]);
-  return res;
+  result.setSanitized(true);
+  return std::make_unique<Polygon2d>(result);
 }
 
 std::unique_ptr<Polygon2d> applyMinkowski(const std::vector<std::shared_ptr<const Polygon2d>>& polygons)
