@@ -30,12 +30,13 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Debug - Setup tmate session for 5 minutes
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 25
-        with:
-          limit-access-to-actor: true
-          detached: true
+      # Temporarily disabled to reduce runner resource usage
+      # - name: Debug - Setup tmate session for 5 minutes
+      #   uses: mxschmitt/action-tmate@v3
+      #   timeout-minutes: 25
+      #   with:
+      #     limit-access-to-actor: true
+      #     detached: true
       - name: Setup Visual Studio Environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -396,7 +397,7 @@ jobs:
           echo "-- EGL/ANGLE DLLs in Release/ --"
           ls -1 Release | grep -Ei 'libegl|libglesv2|d3dcompiler' || echo "[no ANGLE DLLs found]"
           echo "=== Running CTest ==="
-          ctest -C Release -j4
+          ctest -C Release -j2
 
       - name: Upload Test Results
         if: always()
