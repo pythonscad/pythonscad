@@ -538,18 +538,33 @@ if(ENABLE_CGAL)
     # MSVC uses first-wins semantics for /fp: flags, so we must remove CGAL's flags
     # from the imported target properties directly.
 
-    get_target_property(_cgal_compile_options CGAL::CGAL INTERFACE_COMPILE_OPTIONS)
+    # Resolve ALIAS target to real target if needed
+    get_target_property(_cgal_aliased CGAL::CGAL ALIASED_TARGET)
+    if(_cgal_aliased)
+      set(_cgal_target ${_cgal_aliased})
+    else()
+      set(_cgal_target CGAL::CGAL)
+    endif()
+
+    get_target_property(_cgal_compile_options ${_cgal_target} INTERFACE_COMPILE_OPTIONS)
     if(_cgal_compile_options)
       list(FILTER _cgal_compile_options EXCLUDE REGEX "/fp:(strict|except-)")
-      set_target_properties(CGAL::CGAL PROPERTIES INTERFACE_COMPILE_OPTIONS "${_cgal_compile_options}")
+      set_target_properties(${_cgal_target} PROPERTIES INTERFACE_COMPILE_OPTIONS "${_cgal_compile_options}")
     endif()
 
     # Also remove from CGAL::CGAL_Core if it exists
     if(TARGET CGAL::CGAL_Core)
-      get_target_property(_cgal_core_compile_options CGAL::CGAL_Core INTERFACE_COMPILE_OPTIONS)
+      get_target_property(_cgal_core_aliased CGAL::CGAL_Core ALIASED_TARGET)
+      if(_cgal_core_aliased)
+        set(_cgal_core_target ${_cgal_core_aliased})
+      else()
+        set(_cgal_core_target CGAL::CGAL_Core)
+      endif()
+
+      get_target_property(_cgal_core_compile_options ${_cgal_core_target} INTERFACE_COMPILE_OPTIONS)
       if(_cgal_core_compile_options)
         list(FILTER _cgal_core_compile_options EXCLUDE REGEX "/fp:(strict|except-)")
-        set_target_properties(CGAL::CGAL_Core PROPERTIES INTERFACE_COMPILE_OPTIONS "${_cgal_core_compile_options}")
+        set_target_properties(${_cgal_core_target} PROPERTIES INTERFACE_COMPILE_OPTIONS "${_cgal_core_compile_options}")
       endif()
     endif()
 
