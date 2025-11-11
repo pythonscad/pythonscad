@@ -530,27 +530,33 @@ if(ENABLE_CGAL)
   #  set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
   #endif()
   set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
-  # CGAL may set /fp:strict on MSVC, but this causes CGAL geometry assertions
-  # to fail (e.g., "e_below != SHalfedge_handle()" in SNC_FM_decorator.h).
-  # Remove CGAL's /fp:strict flags and replace with /fp:precise to match other platforms.
+  # CGAL sets /fp:strict on MSVC which causes geometry assertions to fail
+  # (e.g., "e_below != SHalfedge_handle()" in SNC_FM_decorator.h).
+  # We must use /fp:precise instead to match GCC/Clang behavior.
   if(MSVC)
-    # CGAL adds /fp:strict through its imported targets' INTERFACE_COMPILE_OPTIONS.
-    # We need to override this AFTER linking but use a compile flag that wins.
-    # The solution: Add /fp:precise to CMAKE_CXX_FLAGS so it appears AFTER CGAL's flags.
+    # CGAL adds /fp:strict via INTERFACE_COMPILE_OPTIONS from its imported targets.
+    # MSVC uses first-wins semantics for /fp: flags, so we must remove CGAL's flags
+    # from the imported target properties directly.
 
-    # First remove any existing /fp: flags from global flags
-    string(REGEX REPLACE "/fp:[a-z-]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    string(REGEX REPLACE "/fp:[a-z-]+" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-    string(REGEX REPLACE "/fp:[a-z-]+" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+    get_target_property(_cgal_compile_options CGAL::CGAL INTERFACE_COMPILE_OPTIONS)
+    if(_cgal_compile_options)
+      list(FILTER _cgal_compile_options EXCLUDE REGEX "/fp:(strict|except-)")
+      set_target_properties(CGAL::CGAL PROPERTIES INTERFACE_COMPILE_OPTIONS "${_cgal_compile_options}")
+    endif()
 
-    # Now add /fp:precise to global flags - this will be appended AFTER CGAL's interface flags
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:precise")
+    # Also remove from CGAL::CGAL_Core if it exists
+    if(TARGET CGAL::CGAL_Core)
+      get_target_property(_cgal_core_compile_options CGAL::CGAL_Core INTERFACE_COMPILE_OPTIONS)
+      if(_cgal_core_compile_options)
+        list(FILTER _cgal_core_compile_options EXCLUDE REGEX "/fp:(strict|except-)")
+        set_target_properties(CGAL::CGAL_Core PROPERTIES INTERFACE_COMPILE_OPTIONS "${_cgal_core_compile_options}")
+      endif()
+    endif()
 
-    # Also set on the target to ensure it sticks
+    # Now add /fp:precise to our target
     target_compile_options(OpenSCAD PRIVATE /fp:precise)
 
-    message(STATUS "Replaced CGAL /fp:strict with /fp:precise for MSVC compatibility")
-    message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+    message(STATUS "Removed CGAL /fp:strict and added /fp:precise for MSVC compatibility")
   endif()
 endif(ENABLE_CGAL)
 
@@ -1238,8 +1244,11 @@ elseif(WIN32)
     # Always compile WGL backend on Windows (as fallback)
     set(PLATFORM_SOURCES ${PLATFORM_SOURCES} src/glview/offscreen-old/OffscreenContextWGL.cc)
 
-    if(ENABLE_EGL)
-      # On Windows, manually find ANGLE's EGL since find_package(OpenGL COMPONENTS EGL) doesn't detect it
+    # EGL (ANGLE) doesn't work reliably with GLEW on MSVC in CI environments
+    # GLEW + EGL combination fails with EGL_BAD_DISPLAY in headless CI
+    # MinGW builds work fine, so only disable for MSVC
+    if(ENABLE_EGL AND NOT MSVC)
+      # On Windows with MinGW, manually find ANGLE's EGL since find_package(OpenGL COMPONENTS EGL) doesn't detect it
       find_library(EGL_LIBRARY NAMES libEGL EGL)
       find_library(GLES_LIBRARY NAMES libGLESv2 GLESv2)
       find_path(EGL_INCLUDE_DIR EGL/egl.h)
@@ -1263,6 +1272,9 @@ elseif(WIN32)
       endif()
     else()
       set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} WGL")
+      if(MSVC)
+        message(STATUS "EGL disabled for MSVC (GLEW+ANGLE incompatibility), using WGL with Mesa")
+      endif()
     endif()
     message(STATUS "Offscreen OpenGL Context - using ${OFFSCREEN_METHOD}")
   endif()
