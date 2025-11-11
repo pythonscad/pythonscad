@@ -534,28 +534,23 @@ if(ENABLE_CGAL)
   # to fail (e.g., "e_below != SHalfedge_handle()" in SNC_FM_decorator.h).
   # Remove CGAL's /fp:strict flags and replace with /fp:precise to match other platforms.
   if(MSVC)
-    # Get current compile options
-    get_target_property(_compile_opts OpenSCAD COMPILE_OPTIONS)
-    get_target_property(_iface_compile_opts OpenSCAD INTERFACE_COMPILE_OPTIONS)
+    # CGAL adds /fp:strict through its imported targets' INTERFACE_COMPILE_OPTIONS.
+    # We need to override this AFTER linking but use a compile flag that wins.
+    # The solution: Add /fp:precise to CMAKE_CXX_FLAGS so it appears AFTER CGAL's flags.
 
-    # Remove /fp:strict and /fp:except- from both target and interface options
-    if(_compile_opts)
-      list(FILTER _compile_opts EXCLUDE REGEX "/fp:(strict|except-)")
-      set_target_properties(OpenSCAD PROPERTIES COMPILE_OPTIONS "${_compile_opts}")
-    endif()
-    if(_iface_compile_opts)
-      list(FILTER _iface_compile_opts EXCLUDE REGEX "/fp:(strict|except-)")
-      set_target_properties(OpenSCAD PROPERTIES INTERFACE_COMPILE_OPTIONS "${_iface_compile_opts}")
-    endif()
+    # First remove any existing /fp: flags from global flags
+    string(REGEX REPLACE "/fp:[a-z-]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    string(REGEX REPLACE "/fp:[a-z-]+" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+    string(REGEX REPLACE "/fp:[a-z-]+" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 
-    # Also remove from CMAKE_CXX_FLAGS to catch any global settings
-    string(REGEX REPLACE "/fp:(strict|except-)( |$)" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    string(REGEX REPLACE "/fp:(strict|except-)( |$)" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+    # Now add /fp:precise to global flags - this will be appended AFTER CGAL's interface flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:precise")
 
-    # Now add /fp:precise which will be the last (and winning) flag
+    # Also set on the target to ensure it sticks
     target_compile_options(OpenSCAD PRIVATE /fp:precise)
 
     message(STATUS "Replaced CGAL /fp:strict with /fp:precise for MSVC compatibility")
+    message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
   endif()
 endif(ENABLE_CGAL)
 
