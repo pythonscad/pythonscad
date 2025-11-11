@@ -530,48 +530,20 @@ if(ENABLE_CGAL)
   #  set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
   #endif()
   set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
-  # CGAL sets /fp:strict on MSVC which causes geometry assertions to fail
-  # (e.g., "e_below != SHalfedge_handle()" in SNC_FM_decorator.h).
-  # We must use /fp:precise instead to match GCC/Clang behavior.
+
+  # Match CGAL's floating-point flags on MSVC for ABI compatibility
   if(MSVC)
-    # CGAL adds /fp:strict via INTERFACE_COMPILE_OPTIONS from its imported targets.
-    # MSVC uses first-wins semantics for /fp: flags, so we must remove CGAL's flags
-    # from the imported target properties directly.
+    # CGAL is compiled with /fp:strict and /fp:except- on MSVC (see CGAL's CMakeLists.txt).
+    # We must match these flags to ensure ABI compatibility between our code and CGAL's
+    # precompiled libraries. Mixing /fp:precise with /fp:strict can cause crashes at the
+    # interface boundary due to different floating-point behavior and exception handling.
+    #
+    # Note: CGAL's INTERFACE_COMPILE_OPTIONS will also add these flags, but we add them
+    # explicitly here to make the requirement clear and ensure they're applied even if
+    # CGAL's interface properties change.
+    target_compile_options(OpenSCAD PRIVATE /fp:strict /fp:except-)
 
-    # Resolve ALIAS target to real target if needed
-    get_target_property(_cgal_aliased CGAL::CGAL ALIASED_TARGET)
-    if(_cgal_aliased)
-      set(_cgal_target ${_cgal_aliased})
-    else()
-      set(_cgal_target CGAL::CGAL)
-    endif()
-
-    get_target_property(_cgal_compile_options ${_cgal_target} INTERFACE_COMPILE_OPTIONS)
-    if(_cgal_compile_options)
-      list(FILTER _cgal_compile_options EXCLUDE REGEX "/fp:(strict|except-)")
-      set_target_properties(${_cgal_target} PROPERTIES INTERFACE_COMPILE_OPTIONS "${_cgal_compile_options}")
-    endif()
-
-    # Also remove from CGAL::CGAL_Core if it exists
-    if(TARGET CGAL::CGAL_Core)
-      get_target_property(_cgal_core_aliased CGAL::CGAL_Core ALIASED_TARGET)
-      if(_cgal_core_aliased)
-        set(_cgal_core_target ${_cgal_core_aliased})
-      else()
-        set(_cgal_core_target CGAL::CGAL_Core)
-      endif()
-
-      get_target_property(_cgal_core_compile_options ${_cgal_core_target} INTERFACE_COMPILE_OPTIONS)
-      if(_cgal_core_compile_options)
-        list(FILTER _cgal_core_compile_options EXCLUDE REGEX "/fp:(strict|except-)")
-        set_target_properties(${_cgal_core_target} PROPERTIES INTERFACE_COMPILE_OPTIONS "${_cgal_core_compile_options}")
-      endif()
-    endif()
-
-    # Now add /fp:precise to our target
-    target_compile_options(OpenSCAD PRIVATE /fp:precise)
-
-    message(STATUS "Removed CGAL /fp:strict and added /fp:precise for MSVC compatibility")
+    message(STATUS "Added CGAL-compatible flags: /fp:strict /fp:except- for MSVC")
   endif()
 endif(ENABLE_CGAL)
 
