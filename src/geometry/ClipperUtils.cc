@@ -429,6 +429,7 @@ std::unique_ptr<Polygon2d> apply(const std::vector<std::shared_ptr<const Polygon
       if(outl.color == col)  polygon_cur.addOutline(outl);
       else outlines_new.push_back(outl);	      
     }
+    polygon_cur.setSanitized(true);
 
     // prepare diff for one color
     std::vector<Clipper2Lib::Paths64> pathsvector;
