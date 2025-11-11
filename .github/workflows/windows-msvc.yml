@@ -165,6 +165,10 @@ jobs:
           version: '24.2.3'
           build-type: 'release-msvc'
 
+      - name: Install Ghostscript for PDF export tests
+        run: choco install ghostscript -y
+        shell: cmd
+
       - name: Restore vcpkg binary cache
         id: vcpkg-cache
         uses: actions/cache/restore@v4
