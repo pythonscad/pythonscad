@@ -400,8 +400,9 @@ std::unique_ptr<Polygon2d> apply(const std::vector<std::shared_ptr<const Polygon
   std::vector<Clipper2Lib::Paths64> pathsvector_diff;
   bool first=true;
   for (const auto& polygon : polygons) {
+    if(clipType == Clipper2Lib::ClipType::Union && polygon == nullptr) continue;
     // prepare subject
-    if(first) { // TODO not safe
+    if(first) { 
       if(polygon != nullptr) outlines_work =   polygon->outlines();
       first=false;
       continue;
