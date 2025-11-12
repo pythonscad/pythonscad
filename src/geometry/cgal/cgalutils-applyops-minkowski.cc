@@ -1,6 +1,7 @@
 #include "geometry/cgal/cgalutils.h"
 
 #include <memory>
+#include <mutex>
 
 #include <CGAL/Timer.h>
 #include <CGAL/convex_hull_3.h>
@@ -13,13 +14,23 @@ std::shared_ptr<const Geometry> applyMinkowski3D(const Geometry::Geometries& chi
 {
   assert(children.size() >= 2);
 
-  CGAL::Timer t;
-  CGAL::Timer t_tot;
-  t_tot.start();
   AssignmentList inst_asslist;
   std::string instance_name;
   ModuleInstantiation *instance = new ModuleInstantiation(instance_name, inst_asslist, Location::NONE);
   CsgOpNode node(instance, OpenSCADOperator::UNION);
+
+#if defined(_MSC_VER)
+  static std::once_flag warn_once;
+  std::call_once(warn_once, []() {
+    LOG(message_group::Warning,
+        "CGAL Minkowski polyhedron decomposition disabled on MSVC; forcing Nef Minkowski fallback");
+  });
+  return CGALUtils::applyOperator3D(node, children, OpenSCADOperator::MINKOWSKI);
+#endif
+
+  CGAL::Timer t;
+  CGAL::Timer t_tot;
+  t_tot.start();
 
   auto it = children.begin();
   std::shared_ptr<const Geometry> operands[2] = {it->second, std::shared_ptr<const Geometry>()};
