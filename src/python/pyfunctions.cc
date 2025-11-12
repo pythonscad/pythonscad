@@ -1111,10 +1111,10 @@ PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
     Transform3d matrix = Transform3d::Identity();
     matrix.scale(scalevec);
     Vector3d n;
-    for (int i = 0; i < 3; i++) { // row
-      for(int j=0;j<4;j++) { // col
-        mat(j, i) = mat(j,i) * scalevec[i];
-      }	
+    for (int i = 0; i < 3; i++) {    // row
+      for (int j = 0; j < 4; j++) {  // col
+        mat(j, i) = mat(j, i) * scalevec[i];
+      }
     }
     return python_frommatrix(mat);
   }
@@ -5158,9 +5158,9 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   int convexity = 2;
   double scale = 1.0, width = 1, height = 1, dpi = 1.0;
   PyObject *origin = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|slO!dddsfOddd", kwlist, &v, &layer, &convexity,
-                                   &PyList_Type, origin, &scale, &width, &height, &center, &dpi, &id,
-                                   &fn, &fa, &fs
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|slO!dddsOdsddd", kwlist, &v, &layer, &convexity,
+                                   &PyList_Type, &origin, &scale, &width, &height, &v, &center, &dpi,
+                                   &id, &fn, &fa, &fs
 
                                    )) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing osimport(filename)");
