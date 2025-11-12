@@ -152,8 +152,27 @@ std::shared_ptr<const Geometry> applyOperator3D(const CsgOpNode& node,
       switch (op) {
       case OpenSCADOperator::INTERSECTION: *N *= *chN; break;
       case OpenSCADOperator::DIFFERENCE:   *N -= *chN; break;
-      case OpenSCADOperator::MINKOWSKI:    N->minkowski(*chN); break;
-      default:                             LOG(message_group::Error, "Unsupported CGAL operator: %1$d", static_cast<int>(op));
+      case OpenSCADOperator::MINKOWSKI:
+#if defined(_MSC_VER)
+      {
+        // On MSVC, CGAL Nef minkowski has been observed to crash with access violations
+        // for large inputs. Avoid calling into the fragile code for very large inputs
+        // and instead fall back to a safe (empty) result so tests fail gracefully
+        // instead of crashing the whole test runner.
+        size_t f0 = (N && N->p3) ? N->p3->number_of_facets() : 0;
+        size_t f1 = (chN && chN->p3) ? chN->p3->number_of_facets() : 0;
+        const size_t FACET_LIMIT = 20000;
+        if (f0 > FACET_LIMIT || f1 > FACET_LIMIT) {
+          LOG(message_group::Warning,
+              "Skipping CGAL Nef minkowski on MSVC due to large input (%1$d, %2$d facets)", f0, f1);
+          N = nullptr;
+          break;
+        }
+      }
+#endif
+        N->minkowski(*chN);
+        break;
+      default: LOG(message_group::Error, "Unsupported CGAL operator: %1$d", static_cast<int>(op));
       }
       if (item.first) item.first->progress_report();
     }
