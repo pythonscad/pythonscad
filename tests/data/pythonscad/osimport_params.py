@@ -11,7 +11,7 @@ from openscad import *
 
 # Test import with center parameter (was parsed as float, should be PyObject/bool)
 # Using a simple STL file from test data
-obj = osimport(file="empty.stl", center=True, convexity=2)
+obj = osimport(file="../scad/3D/features/import.stl", center=True, convexity=2)
 
 # Render it to verify it works
 obj.show()

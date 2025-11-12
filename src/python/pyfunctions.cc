@@ -5149,7 +5149,7 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
 {
   DECLARE_INSTANCE
   char *kwlist[] = {"file",   "layer",    "convexity", "origin", "scale", "width",
-                    "height", "filename", "center",    "dpi",    "id",    NULL};
+                    "height", "center",    "dpi",    "id",  "fn", "fa","fs",  NULL};
   double fn = NAN, fa = NAN, fs = NAN;
 
   std::string filename;
@@ -5158,8 +5158,8 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   int convexity = 2;
   double scale = 1.0, width = 1, height = 1, dpi = 1.0;
   PyObject *origin = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|slO!dddsOdsddd", kwlist, &v, &layer, &convexity,
-                                   &PyList_Type, &origin, &scale, &width, &height, &v, &center, &dpi,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|slO!dddOdsddd", kwlist, &v, &layer, &convexity,
+                                   &PyList_Type, &origin, &scale, &width, &height, &center, &dpi,
                                    &id, &fn, &fa, &fs
 
                                    )) {
