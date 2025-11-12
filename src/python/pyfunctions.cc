@@ -2002,7 +2002,7 @@ PyObject *python_show_core(PyObject *obj)
 
   if (child == full_node) {
     PyErr_SetString(PyExc_TypeError, "Cannot display infinite space");
-    return Py_None;
+    return Py_True;
   }
 
   PyObject *key, *value;
