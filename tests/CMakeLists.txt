@@ -51,20 +51,72 @@ if(PROJECT_IS_TOP_LEVEL)
   option(ENABLE_LIB3MF_TESTS "Enable lib3mf tests" ON)
   option(ENABLE_MANIFOLD_TESTS "Enable manifold tests" ON)
 else() # !PROJECT_IS_TOP_LEVEL
-  message(STATUS "Configuring tests in a subdirectory")
   # Very commonly used cmake-provided paths
   set(CBD ${CMAKE_BINARY_DIR}) # build top level
   set(CSD ${CMAKE_SOURCE_DIR}) # project top level
   set(LIBRARIES_DIR "${CSD}/libraries")
 
+  # DEBUG: Print variable values
+  message(STATUS "=== TESTS CMAKE DEBUG ===")
+  message(STATUS "EXECUTABLE_NAME: '${EXECUTABLE_NAME}'")
+  message(STATUS "SUFFIX_WITH_DASH: '${SUFFIX_WITH_DASH}'")
+  message(STATUS "WIN32: ${WIN32}")
+  message(STATUS "MSVC: ${MSVC}")
+  message(STATUS "MXECROSS: ${MXECROSS}")
+  message(STATUS "CBD: ${CBD}")
+  message(STATUS "========================")
+
   if(APPLE)
     set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}")
   elseif (WIN32 OR MXECROSS)
-    set(OPENSCAD_BINPATH "${CBD}/openscad.com")
-  elseif(EXISTS "${CBD}/bin/openscad${SUFFIX_WITH_DASH}")
-    set(OPENSCAD_BINPATH "${CBD}/bin/openscad${SUFFIX_WITH_DASH}")
+    # Determine executable extension: MSVC uses .exe, MinGW/MSYS2 uses .com (console version)
+    if(MSVC)
+      set(OPENSCAD_BINPATH "${CBD}/Release/${EXECUTABLE_NAME}.exe")
+      message(STATUS "MSVC: OPENSCAD_BINPATH set to: ${OPENSCAD_BINPATH}")
+
+      # Add DLL directories to PATH for MSVC builds
+      # This ensures pythonscad.exe can find Qt and other dependencies during tests
+      set(DLL_PATHS "")
+
+      # Add Qt bin directory (Qt6_DIR points to lib/cmake/Qt6, so go up 3 levels then to bin)
+      if(DEFINED Qt6_DIR)
+        get_filename_component(QT_BIN_DIR "${Qt6_DIR}/../../../bin" ABSOLUTE)
+        if(EXISTS "${QT_BIN_DIR}")
+          file(TO_NATIVE_PATH "${QT_BIN_DIR}" QT_BIN_PATH)
+          list(APPEND DLL_PATHS "${QT_BIN_PATH}")
+          message(STATUS "MSVC: Adding Qt6 bin to PATH: ${QT_BIN_PATH}")
+        endif()
+      endif()
+
+      # Add vcpkg bin directory
+      if(EXISTS "${CBD}/vcpkg_installed/x64-windows/bin")
+        file(TO_NATIVE_PATH "${CBD}/vcpkg_installed/x64-windows/bin" VCPKG_BIN_PATH)
+        list(APPEND DLL_PATHS "${VCPKG_BIN_PATH}")
+        message(STATUS "MSVC: Adding vcpkg bin to PATH: ${VCPKG_BIN_PATH}")
+      endif()
+
+      # Combine all DLL paths into PATH environment variable
+      if(DLL_PATHS)
+        # Manually build PATH string to avoid CMake's semicolon list separator issues
+        set(DLL_PATHS_STR "")
+        foreach(DLL_PATH ${DLL_PATHS})
+          if(DLL_PATHS_STR)
+            set(DLL_PATHS_STR "${DLL_PATHS_STR};${DLL_PATH}")
+          else()
+            set(DLL_PATHS_STR "${DLL_PATH}")
+          endif()
+        endforeach()
+        list(APPEND CTEST_ENVIRONMENT "PATH=${DLL_PATHS_STR};$ENV{PATH}")
+        message(STATUS "MSVC: Final PATH prefix for tests: ${DLL_PATHS_STR}")
+      endif()
+    else()
+      set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.com")
+      message(STATUS "MinGW/MSYS2: OPENSCAD_BINPATH set to: ${OPENSCAD_BINPATH}")
+    endif()
+  elseif(EXISTS "${CBD}/bin/${EXECUTABLE_NAME}")
+    set(OPENSCAD_BINPATH "${CBD}/bin/${EXECUTABLE_NAME}")
   else()
-    set(OPENSCAD_BINPATH "${CBD}/openscad${SUFFIX_WITH_DASH}")
+    set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}")
   endif()
 
   # MCAD
@@ -157,19 +209,6 @@ message(STATUS "Found Python at ${Python3_EXECUTABLE}")
 include("cmake/ImageCompare.cmake")
 include("cmake/GalliumFixes.cmake")
 
-# Determine path for openscad executable
-if(EXISTS "$ENV{OPENSCAD_BINARY}")
-  set(OPENSCAD_BINPATH "$ENV{OPENSCAD_BINARY}")
-elseif(APPLE)
-  set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}")
-elseif (WIN32 OR MXECROSS)
-  set(OPENSCAD_BINPATH "${CBD}/pythonscad.com")
-elseif(EXISTS "${CBD}/bin/${EXECUTABLE_NAME}")
-  set(OPENSCAD_BINPATH "${CBD}/bin/${EXECUTABLE_NAME}")
-else()
-  set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}")
-endif()
-
 #if(EXISTS "${OPENSCAD_BINPATH}")
 #  message(STATUS "Found OpenSCAD binary: ${OPENSCAD_BINPATH}")
 #else()
@@ -247,8 +286,17 @@ ctest_env_append_value(
 # Define Various Test File Lists #
 ##################################
 
+message(STATUS "=== DEBUG: Starting test file discovery ===")
+message(STATUS "DEBUG: TEST_SCAD_DIR=${TEST_SCAD_DIR}")
+message(STATUS "DEBUG: Checking if directory exists: ${TEST_SCAD_DIR}/2D/features")
+file(GLOB FEATURES_2D_FILES_CHECK LIST_DIRECTORIES false "${TEST_SCAD_DIR}/2D/features/*")
+message(STATUS "DEBUG: All files in 2D/features directory: ${FEATURES_2D_FILES_CHECK}")
+
 # Find all scad files
 file(GLOB FEATURES_2D_FILES   ${TEST_SCAD_DIR}/2D/features/*.scad)
+list(LENGTH FEATURES_2D_FILES FEATURES_2D_COUNT)
+message(STATUS "DEBUG: Found ${FEATURES_2D_COUNT} FEATURES_2D_FILES")
+message(STATUS "DEBUG: FEATURES_2D_FILES list: ${FEATURES_2D_FILES}")
 list(REMOVE_ITEM FEATURES_2D_FILES
   ${TEST_SCAD_DIR}/2D/features/text-metrics.scad # -> EXPERIMENTAL_TEXTMETRICS_FILES
 )
