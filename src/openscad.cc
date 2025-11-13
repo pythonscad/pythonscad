@@ -837,9 +837,21 @@ int main(int argc, char **argv)
 #ifdef ENABLE_PYTHON
   // The original name as called, not resolving links and so on. This will
   // just forward everything to the python main.
-  const auto applicationName = fs::path(argv[0]).filename().generic_string();
-  if (applicationName == "python" || applicationName == "python3" ||
-      applicationName.rfind("python3.", 0) == 0 || applicationName == "openscad-python") {
+  const auto applicationEntry = fs::path(argv[0]).filename();
+  const auto applicationStem = applicationEntry.stem().generic_string();
+  const auto applicationName = applicationEntry.generic_string();
+  const std::string pythonExecutableName = PYTHON_EXECUTABLE_NAME;
+
+  const auto isPythonAlias = [](const std::string& name) {
+    return name == "python" || name == "python3" || name.rfind("python3.", 0) == 0;
+  };
+
+  const auto isProjectPythonLauncher = [&](const std::string& name) {
+    return name == "openscad-python" || name == pythonExecutableName;
+  };
+
+  if (isPythonAlias(applicationStem) || isPythonAlias(applicationName) ||
+      isProjectPythonLauncher(applicationStem) || isProjectPythonLauncher(applicationName)) {
     return pythonRunArgs(argc, argv);
   }
 #endif

@@ -217,8 +217,8 @@ public:
   SplineNode(const ModuleInstantiation *mi) : LeafNode(mi) {}
   std::string toString() const override;
   std::string name() const override { return "spline"; }
-  std::vector<Vector2d> draw_arc(int fn, const Vector2d& tang1, double l1, const Vector2d& tang2,
-                                 double l2, const Vector2d& cornerpt) const;
+  VectorOfVector2d draw_arc(int fn, const Vector2d& tang1, double l1, const Vector2d& tang2, double l2,
+                            const Vector2d& cornerpt) const;
   std::unique_ptr<const Geometry> createGeometry() const override;
 
   std::vector<Vector2d> points;
