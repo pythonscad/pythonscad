@@ -196,7 +196,8 @@ bool useGUI()
 #endif
 }
 #endif  // OPENSCAD_NOGUI
-// cmd: /home/gsohler/git/pythonscad/build/pythonscad text-metrics.scad   --camera=0,0,100,0,0,0 --viewall --autocenter --projection=ortho --render=force --enable=textmetrics --backend=cgal -o a.svg
+// cmd: /home/gsohler/git/pythonscad/build/pythonscad text-metrics.scad   --camera=0,0,100,0,0,0
+// --viewall --autocenter --projection=ortho --render=force --enable=textmetrics --backend=cgal -o a.svg
 //
 bool checkAndExport(const std::shared_ptr<const Geometry>& root_geom, unsigned dimensions,
                     ExportInfo& exportInfo, const bool is_stdout, const std::string& filename)

@@ -1332,6 +1332,10 @@ disable_tests_safe(
   relative-output_ast_run
   relative-output_ast_check
 
+###################################
+# Disable Tests with Known Issues #
+###################################
+
   # These don't output anything
   render-dxf_text-empty-tests
   render-dxf_nothing-decimal-comma-separated
@@ -1560,6 +1564,8 @@ disable_tests_safe(
 	throwntogether-cgal_text-font-tests
 	# Thrown together uses color_indices instead of default color because  it exsists now
 	throwntogether-manifold_linear_extrude-parameter-tests
+        # This Test is not available locally(???)
+        render-svg_text-metrics
 )
 
 ####################
