@@ -297,6 +297,10 @@ set(PYTHON_EXECUTABLE_NAME pythonscad-python${SUFFIX_WITH_DASH})
 if (MXECROSS OR WIN32)
   add_subdirectory(winconsole)
   set_property(TARGET OpenSCAD PROPERTY WIN32_EXECUTABLE ON)
+  # Disable auto-generation of manifest for MSVC to avoid conflict with embedded manifest in .rc file
+  if(MSVC)
+    target_link_options(OpenSCAD PRIVATE /MANIFEST:NO)
+  endif()
 endif()
 
 set(OPENSCAD_LIB_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/objects")
@@ -399,9 +403,14 @@ endmacro(find_graphics)
 
 if (MSVC)
   # Flex lexer options
-  set(WINCOMPAT "--wincompat --nounistd")
+  # MSYS2 flex doesn't support --wincompat, but we need --nounistd
+  # to prevent inclusion of unistd.h which doesn't exist on Windows
+  set(WINCOMPAT "--nounistd")
   target_compile_definitions(OpenSCAD PRIVATE _USE_MATH_DEFINES)
   target_compile_definitions(OpenSCAD PRIVATE NOMINMAX)
+
+  # Enable parallel compilation
+  target_compile_options(OpenSCAD PRIVATE /MP)
 
   # Our code is compatible with both V3 and V5, so for now, we accept any version.
   find_package(Eigen3 REQUIRED QUIET)
@@ -521,6 +530,55 @@ if(ENABLE_CGAL)
   #  set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
   #endif()
   set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
+
+  # CGAL sets /fp:strict on MSVC which causes geometry assertions to fail
+  # (e.g., "e_below != SHalfedge_handle()" in SNC_FM_decorator.h).
+  # We must use /fp:precise instead to match GCC/Clang behavior.
+  if(MSVC)
+    # Helper function to resolve ALIAS targets recursively
+    function(resolve_alias_target target_name out_var)
+      set(current_target ${target_name})
+      # Resolve up to 10 levels of ALIAS indirection (should be more than enough)
+      foreach(i RANGE 10)
+        if(TARGET ${current_target})
+          get_target_property(aliased_target ${current_target} ALIASED_TARGET)
+          if(aliased_target)
+            set(current_target ${aliased_target})
+          else()
+            # Not an ALIAS, we found the real target
+            set(${out_var} ${current_target} PARENT_SCOPE)
+            return()
+          endif()
+        else()
+          # Target doesn't exist
+          set(${out_var} "" PARENT_SCOPE)
+          return()
+        endif()
+      endforeach()
+      # If we get here, we have too many ALIAS levels or infinite loop
+      message(WARNING "Could not resolve ALIAS target ${target_name} after 10 iterations")
+      set(${out_var} "" PARENT_SCOPE)
+    endfunction()
+
+    # Remove /fp:strict and /fp:except- from CGAL targets
+    foreach(cgal_target CGAL::CGAL CGAL::CGAL_Core)
+      if(TARGET ${cgal_target})
+        resolve_alias_target(${cgal_target} real_target)
+        if(real_target)
+          get_target_property(compile_options ${real_target} INTERFACE_COMPILE_OPTIONS)
+          if(compile_options)
+            list(FILTER compile_options EXCLUDE REGEX "/fp:(strict|except-)")
+            set_target_properties(${real_target} PROPERTIES INTERFACE_COMPILE_OPTIONS "${compile_options}")
+            message(STATUS "Removed /fp:strict and /fp:except- from ${cgal_target} (real target: ${real_target})")
+          endif()
+        endif()
+      endif()
+    endforeach()
+
+    # Add /fp:precise to our target for consistent floating-point behavior
+    target_compile_options(OpenSCAD PRIVATE /fp:precise)
+    message(STATUS "Using /fp:precise for MSVC (matching MinGW/GCC behavior)")
+  endif()
 endif(ENABLE_CGAL)
 
 find_package(LibZip REQUIRED)
@@ -577,47 +635,72 @@ if(ENABLE_PYTHON)
   target_compile_definitions(OpenSCADPy PRIVATE ENABLE_EXPERIMENTAL)
   find_package(Nettle 3.4)
   if(WIN32)
-    #MINGW environment
-    SET(CALLSTACK "ucrt")
-    SET(PYTHON_MINGW_VERSION "3.12") # define python version here
-    #	SET(CALLSTACK "mingw")
-    #	SET(CALLSTACK "clang")
+    if(MSVC)
+      # MSVC: Use vcpkg's native Python (no MINGW, no patching needed)
+      if (${PYTHON_VERSION} STREQUAL "OFF")
+        find_package(Python3 REQUIRED COMPONENTS Development)
+      else()
+        find_package(Python3 ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
+      endif()
+      if(NOT Nettle_FOUND)
+        message(WARNING "Nettle not found, disabling python support.")
+        set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
+      endif()
+      if(NOT Python3_FOUND)
+        if(ENABLE_PYTHON)
+          message(WARNING "Python not found, disabling python support.")
+          set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
+        endif()
+      endif()
+      target_link_libraries(OpenSCADPy PRIVATE ${Python3_LIBRARIES})
+      target_include_directories(OpenSCADPy PRIVATE ${Python3_INCLUDE_DIRS})
+      target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
+      target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
+      target_include_directories(OpenSCADPy PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
+      message(STATUS "Python enabled (MSVC with vcpkg)")
+    else()
+      # MINGW environment (non-MSVC Windows compilers)
+      SET(CALLSTACK "ucrt")
+      SET(PYTHON_MINGW_VERSION "3.12") # define python version here
+      #	SET(CALLSTACK "mingw")
+      #	SET(CALLSTACK "clang")
 
-    # Caller side
-    SET(PYTHON_MINGW_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_mingw")
-    SET(PYTHON_MINGW_PACKAGEFOLDER "https://mirror.msys2.org/mingw/${CALLSTACK}64")
-    SET(PYTHON_MINGW_PACKAGETAR "mingw-w64-${CALLSTACK}-x86_64-python-${PYTHON_MINGW_VERSION}.9-5-any.pkg.tar")   # adapt here
-    SET(PYTHON_MINGW_PACKAGEZST "${PYTHON_MINGW_PACKAGETAR}.zst")
-    SET(PYTHON_MINGW_ARCHIVE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/lib/libpython${PYTHON_MINGW_VERSION}.dll.a")
+      # Caller side
+      SET(PYTHON_MINGW_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_mingw")
+      SET(PYTHON_MINGW_PACKAGEFOLDER "https://mirror.msys2.org/mingw/${CALLSTACK}64")
+      SET(PYTHON_MINGW_PACKAGETAR "mingw-w64-${CALLSTACK}-x86_64-python-${PYTHON_MINGW_VERSION}.9-5-any.pkg.tar")   # adapt here
+      SET(PYTHON_MINGW_PACKAGEZST "${PYTHON_MINGW_PACKAGETAR}.zst")
+      SET(PYTHON_MINGW_ARCHIVE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/lib/libpython${PYTHON_MINGW_VERSION}.dll.a")
 
-    # these dll are actually used
-    SET(PYTHON_EMBED_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_embed")
-    SET(PYTHON_EMBED_FILENAME "python-${PYTHON_MINGW_VERSION}.2-embed-amd64.zip") #adapt here
-    SET(PYTHON_EMBED_ARCHIVE "${PYTHON_EMBED_DEVPATH}/${PYTHON_EMBED_FILENAME}")
-    SET(PYTHON_EMBED_SHLIB "${PYTHON_EMBED_DEVPATH}/python312.dll")
-    SET(PYTHON_EMBED_URL "https://www.python.org/ftp/python/${PYTHON_MINGW_VERSION}.2/${PYTHON_EMBED_FILENAME}")
+      # these dll are actually used
+      SET(PYTHON_EMBED_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_embed")
+      SET(PYTHON_EMBED_FILENAME "python-${PYTHON_MINGW_VERSION}.2-embed-amd64.zip") #adapt here
+      SET(PYTHON_EMBED_ARCHIVE "${PYTHON_EMBED_DEVPATH}/${PYTHON_EMBED_FILENAME}")
+      SET(PYTHON_EMBED_SHLIB "${PYTHON_EMBED_DEVPATH}/python312.dll")
+      SET(PYTHON_EMBED_URL "https://www.python.org/ftp/python/${PYTHON_MINGW_VERSION}.2/${PYTHON_EMBED_FILENAME}")
 
-    add_custom_command(
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND bash -c "rm -rf python_mingw && mkdir python_mingw && cd python_mingw && wget ${PYTHON_MINGW_PACKAGEFOLDER}/${PYTHON_MINGW_PACKAGEZST} && bsdtar -xf ${PYTHON_MINGW_PACKAGEZST} && ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh"
-      OUTPUT ${PYTHON_MINGW_ARCHIVE}
-    )
-    add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
-    add_dependencies(OpenSCADPy tgt_python_mingw)
+      add_custom_command(
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND bash -c "rm -rf python_mingw && mkdir python_mingw && cd python_mingw && curl -L -O ${PYTHON_MINGW_PACKAGEFOLDER}/${PYTHON_MINGW_PACKAGEZST} && bsdtar -xf ${PYTHON_MINGW_PACKAGEZST} && ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh"
+        OUTPUT ${PYTHON_MINGW_ARCHIVE}
+      )
+      add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
+      add_dependencies(OpenSCADPy tgt_python_mingw)
 
-    add_custom_command(
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND bash -c "rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && bsdtar -xf ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME} && rm python*._pth"
-      OUTPUT ${PYTHON_EMBED_SHLIB}
-    )
-    add_custom_target(tgt_python_embed DEPENDS ${PYTHON_EMBED_SHLIB})
-    add_dependencies(OpenSCADPy tgt_python_embed)
+      add_custom_command(
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND bash -c "rm -rf python_embed && mkdir python_embed && cd python_embed && curl -L -O ${PYTHON_EMBED_URL} && bsdtar -xf ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME} && rm python*._pth"
+        OUTPUT ${PYTHON_EMBED_SHLIB}
+      )
+      add_custom_target(tgt_python_embed DEPENDS ${PYTHON_EMBED_SHLIB})
+      add_dependencies(OpenSCADPy tgt_python_embed)
 
-    target_include_directories(OpenSCADPy SYSTEM PRIVATE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/include/python${PYTHON_MINGW_VERSION}")
-    target_link_libraries(OpenSCADPy PRIVATE "${PYTHON_MINGW_ARCHIVE}")
-    target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
-    target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
-    target_include_directories(OpenSCADPy PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
+      target_include_directories(OpenSCADPy SYSTEM PRIVATE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/include/python${PYTHON_MINGW_VERSION}")
+      target_link_libraries(OpenSCADPy PRIVATE "${PYTHON_MINGW_ARCHIVE}")
+      target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
+      target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
+      target_include_directories(OpenSCADPy PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
+    endif() # endif MSVC vs MINGW
   else() #MXE
 	  if (${PYTHON_VERSION}  STREQUAL "OFF")
       find_package(Python3  REQUIRED COMPONENTS Development)
@@ -652,7 +735,9 @@ if(ENABLE_PYTHON)
     if(WIN32)
       # On Windows, copy the executable instead of symlinking (symlinks are problematic)
       add_custom_target(OpenSCADPython ALL
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:OpenSCAD> ${CMAKE_CURRENT_BINARY_DIR}/${PYTHON_EXECUTABLE_NAME}.exe
+        COMMAND ${CMAKE_COMMAND} -E copy
+                $<TARGET_FILE:OpenSCAD>
+                $<TARGET_FILE_DIR:OpenSCAD>/${PYTHON_EXECUTABLE_NAME}$<TARGET_FILE_SUFFIX:OpenSCAD>
         DEPENDS OpenSCAD
       )
     else()
@@ -672,10 +757,18 @@ if(ENABLE_PYTHON)
   endif()
   target_link_libraries(OpenSCADPy PRIVATE Eigen3::Eigen)
   target_link_libraries(OpenSCADPy PRIVATE ${GETTEXT_LIBRARY})
-  target_link_libraries(OpenSCADPy PRIVATE ${GLIB2_LIBRARIES})
+  if(MSVC)
+    target_link_libraries(OpenSCADPy PRIVATE PkgConfig::GLIB2)
+  else()
+    target_link_libraries(OpenSCADPy PRIVATE ${GLIB2_LIBRARIES})
+  endif()
   # copy compile options for the main OpenSCAD target
   # duplication is not very ideal but not sure what better options do we have
-  set_property(TARGET OpenSCADPy PROPERTY CXX_STANDARD 17)
+  if (MSVC)
+    set_property(TARGET OpenSCADPy PROPERTY CXX_STANDARD 20)
+  else()
+    set_property(TARGET OpenSCADPy PROPERTY CXX_STANDARD 17)
+  endif()
   set_property(TARGET OpenSCADPy PROPERTY CXX_EXTENSIONS OFF)
   set_property(TARGET OpenSCADPy PROPERTY CXX_STANDARD_REQUIRED ON)
   target_compile_definitions(OpenSCADPy PRIVATE "STACKSIZE=${STACKSIZE}")
@@ -802,7 +895,12 @@ if(ENABLE_CAIRO STREQUAL "AUTO")
   if(CAIRO_VERSION OR CAIRO_FOUND)
     message(STATUS "Cairo: ${CAIRO_VERSION}")
     target_include_directories(OpenSCAD SYSTEM PRIVATE ${CAIRO_INCLUDE_DIRS})
-    target_link_libraries(OpenSCAD PRIVATE ${CAIRO_LIBRARIES})
+    # Use CAIRO_LINK_LIBRARIES for pkg-config on MSVC (includes full paths)
+    if (MSVC)
+      target_link_libraries(OpenSCAD PRIVATE ${CAIRO_LINK_LIBRARIES})
+    else()
+      target_link_libraries(OpenSCAD PRIVATE ${CAIRO_LIBRARIES})
+    endif()
     target_compile_definitions(OpenSCAD PRIVATE ENABLE_CAIRO)
   else()
     message(STATUS "Cairo: disabled (not found)")
@@ -817,7 +915,12 @@ elseif(ENABLE_CAIRO)
   endif()
   message(STATUS "Cairo: ${CAIRO_VERSION}")
   target_include_directories(OpenSCAD SYSTEM PRIVATE ${CAIRO_INCLUDE_DIRS})
-  target_link_libraries(OpenSCAD PRIVATE ${CAIRO_LIBRARIES})
+  # Use CAIRO_LINK_LIBRARIES for pkg-config on MSVC (includes full paths)
+  if (MSVC)
+    target_link_libraries(OpenSCAD PRIVATE ${CAIRO_LINK_LIBRARIES})
+  else()
+    target_link_libraries(OpenSCAD PRIVATE ${CAIRO_LIBRARIES})
+  endif()
   target_compile_definitions(OpenSCAD PRIVATE ENABLE_CAIRO)
 else()
   # OFF: explicitly disabled
@@ -926,8 +1029,87 @@ if(NOT HEADLESS)
       set_property(TARGET OpenSCAD PROPERTY POSITION_INDEPENDENT_CODE ON)
     endif()
 
-    find_package(Qt6QScintilla 2.8.0 REQUIRED)
-    message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING}")
+    # For MSVC, manually set QScintilla paths since FindQt6QScintilla doesn't search Qt lib directory
+    if(MSVC AND DEFINED ENV{QT_ROOT_DIR})
+      message(STATUS "=== QScintilla MSVC Debug Info ===")
+      message(STATUS "QT_ROOT_DIR environment variable: $ENV{QT_ROOT_DIR}")
+
+      set(QT6QSCINTILLA_LIBRARY "$ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.lib")
+      set(QT6QSCINTILLA_INCLUDE_DIR "$ENV{QT_ROOT_DIR}/include/Qsci")
+      set(QT6QSCINTILLA_VERSION_STRING "2.14.1")
+      set(QT6QSCINTILLA_FOUND TRUE)
+
+      message(STATUS "QT6QSCINTILLA_LIBRARY: ${QT6QSCINTILLA_LIBRARY}")
+      message(STATUS "QT6QSCINTILLA_INCLUDE_DIR: ${QT6QSCINTILLA_INCLUDE_DIR}")
+      message(STATUS "QT6QSCINTILLA_VERSION_STRING: ${QT6QSCINTILLA_VERSION_STRING}")
+
+      # Check if files exist
+      if(EXISTS "${QT6QSCINTILLA_LIBRARY}")
+        message(STATUS "✓ QScintilla .lib file EXISTS: ${QT6QSCINTILLA_LIBRARY}")
+      else()
+        message(WARNING "✗ QScintilla .lib file NOT FOUND: ${QT6QSCINTILLA_LIBRARY}")
+      endif()
+
+      if(EXISTS "$ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.dll")
+        message(STATUS "✓ QScintilla .dll file EXISTS: $ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.dll")
+      else()
+        message(WARNING "✗ QScintilla .dll file NOT FOUND: $ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.dll")
+      endif()
+
+      if(EXISTS "${QT6QSCINTILLA_INCLUDE_DIR}")
+        message(STATUS "✓ QScintilla include directory EXISTS: ${QT6QSCINTILLA_INCLUDE_DIR}")
+      else()
+        message(WARNING "✗ QScintilla include directory NOT FOUND: ${QT6QSCINTILLA_INCLUDE_DIR}")
+      endif()
+
+      message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING} (manually set for MSVC using QT_ROOT_DIR)")
+    else()
+      find_package(Qt6QScintilla 2.8.0 REQUIRED)
+      message(STATUS "QScintilla: ${QT6QSCINTILLA_VERSION_STRING}")
+    endif()
+
+    # For MSVC, ensure QScintilla is added as an imported target
+    if(MSVC AND DEFINED ENV{QT_ROOT_DIR} AND NOT TARGET Qt6QScintilla::Qt6QScintilla)
+      message(STATUS "Creating Qt6QScintilla::Qt6QScintilla imported target")
+      add_library(Qt6QScintilla::Qt6QScintilla SHARED IMPORTED)
+      set_target_properties(Qt6QScintilla::Qt6QScintilla PROPERTIES
+        IMPORTED_CONFIGURATIONS "RELEASE;DEBUG"
+        IMPORTED_LOCATION_RELEASE "$ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.dll"
+        IMPORTED_IMPLIB_RELEASE "${QT6QSCINTILLA_LIBRARY}"
+        IMPORTED_LOCATION_DEBUG "$ENV{QT_ROOT_DIR}/lib/qscintilla2_qt6.dll"
+        IMPORTED_IMPLIB_DEBUG "${QT6QSCINTILLA_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${QT6QSCINTILLA_INCLUDE_DIR}"
+        INTERFACE_COMPILE_DEFINITIONS "QSCINTILLA_DLL"
+      )
+
+      # Verify the target was created
+      get_target_property(_qsci_dll_release Qt6QScintilla::Qt6QScintilla IMPORTED_LOCATION_RELEASE)
+      get_target_property(_qsci_lib_release Qt6QScintilla::Qt6QScintilla IMPORTED_IMPLIB_RELEASE)
+      get_target_property(_qsci_inc Qt6QScintilla::Qt6QScintilla INTERFACE_INCLUDE_DIRECTORIES)
+      message(STATUS "Imported target properties:")
+      message(STATUS "  IMPORTED_LOCATION_RELEASE: ${_qsci_dll_release}")
+      message(STATUS "  IMPORTED_IMPLIB_RELEASE: ${_qsci_lib_release}")
+      message(STATUS "  INTERFACE_INCLUDE_DIRECTORIES: ${_qsci_inc}")
+
+      # Dump all CMake variables for debugging
+      message(STATUS "=== CMake Variables Dump ===")
+      get_cmake_property(_variableNames VARIABLES)
+      foreach(_variableName ${_variableNames})
+        if(_variableName MATCHES "QT|QSCI|Qt6|CMAKE_CXX|CMAKE_C_COMPILER|MSVC")
+          message(STATUS "${_variableName}=${${_variableName}}")
+        endif()
+      endforeach()
+      message(STATUS "=== End CMake Variables Dump ===")
+    elseif(TARGET Qt6QScintilla::Qt6QScintilla)
+      message(STATUS "Qt6QScintilla::Qt6QScintilla target already exists")
+    else()
+      if(DEFINED ENV{QT_ROOT_DIR})
+        set(_qt_root_dir_status "defined")
+      else()
+        set(_qt_root_dir_status "not defined")
+      endif()
+      message(WARNING "Qt6QScintilla::Qt6QScintilla target NOT created (MSVC=${MSVC}, QT_ROOT_DIR ${_qt_root_dir_status})")
+    endif()
 
     if(ENABLE_QTDBUS)
       find_package(Qt6DBus)
@@ -1076,12 +1258,46 @@ elseif(UNIX)
 elseif(WIN32)
   target_compile_definitions(OpenSCAD PRIVATE NOGDI)
   target_compile_definitions(OpenSCAD PRIVATE OPENSCAD_OS="Windows")
-  message(STATUS "Offscreen OpenGL Context - using Microsoft WGL")
   set(PLATFORM_SOURCES src/io/imageutils-lodepng.cc src/platform/PlatformUtils-win.cc)
   if(NOT NULLGL)
-    set(OFFSCREEN_METHOD "Windows WGL")
-    message(STATUS "Offscreen OpenGL Context - using Microsoft WGL")
+    set(OFFSCREEN_METHOD "Windows")
+    # Try EGL first (ANGLE or native), then fall back to WGL
+    # Always compile WGL backend on Windows (as fallback)
     set(PLATFORM_SOURCES ${PLATFORM_SOURCES} src/glview/offscreen-old/OffscreenContextWGL.cc)
+
+    # EGL (ANGLE) doesn't work reliably with GLEW on MSVC in CI environments
+    # GLEW + EGL combination fails with EGL_BAD_DISPLAY in headless CI
+    # MinGW builds work fine, so only disable for MSVC
+    if(ENABLE_EGL AND NOT MSVC)
+      # On Windows with MinGW, manually find ANGLE's EGL since find_package(OpenGL COMPONENTS EGL) doesn't detect it
+      find_library(EGL_LIBRARY NAMES libEGL EGL)
+      find_library(GLES_LIBRARY NAMES libGLESv2 GLESv2)
+      find_path(EGL_INCLUDE_DIR EGL/egl.h)
+
+      if(EGL_LIBRARY AND GLES_LIBRARY AND EGL_INCLUDE_DIR)
+        target_compile_definitions(OpenSCAD PRIVATE ENABLE_EGL)
+        set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} EGL (with WGL fallback)")
+        set(PLATFORM_SOURCES ${PLATFORM_SOURCES}
+          src/glview/offscreen-old/OffscreenContextEGL.cc
+          src/glview/OffscreenContextEGL.cc)
+        if (NOT USE_GLAD)
+          target_compile_definitions(OpenSCAD PRIVATE GLEW_EGL)
+        endif()
+        target_include_directories(OpenSCAD SYSTEM PRIVATE ${EGL_INCLUDE_DIR})
+        target_link_libraries(OpenSCAD PRIVATE ${EGL_LIBRARY} ${GLES_LIBRARY})
+        message(STATUS "Found ANGLE EGL: ${EGL_LIBRARY}")
+        message(STATUS "Found ANGLE GLESv2: ${GLES_LIBRARY}")
+      else()
+        set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} WGL")
+        message(STATUS "EGL not found, using WGL")
+      endif()
+    else()
+      set(OFFSCREEN_METHOD "${OFFSCREEN_METHOD} WGL")
+      if(MSVC)
+        message(STATUS "EGL disabled for MSVC (GLEW+ANGLE incompatibility), using WGL with Mesa")
+      endif()
+    endif()
+    message(STATUS "Offscreen OpenGL Context - using ${OFFSCREEN_METHOD}")
   endif()
 endif()
 
@@ -1762,16 +1978,67 @@ elseif(MINGW)
   )
 elseif(MSVC)
   set_target_properties(OpenSCAD PROPERTIES
-    LINK_FLAGS "-subsystem:windows -ENTRY:mainCRTStartup -stack:${STACKSIZE}"
+    LINK_FLAGS "-subsystem:windows -ENTRY:mainCRTStartup -stack:${STACKSIZE} /VERBOSE:LIB"
   )
+endif()
+
+# Copy resource files to build directory for Windows (MINGW/MSVC)
+# These are needed for the application to run from the build directory during development and testing
+if(WIN32 AND NOT APPLE)
+  set(WIN_RESOURCES_DIR ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/color-schemes DESTINATION ${WIN_RESOURCES_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/fonts DESTINATION ${WIN_RESOURCES_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/libraries DESTINATION ${WIN_RESOURCES_DIR} PATTERN ".git*" EXCLUDE)
+  file(COPY ${CMAKE_SOURCE_DIR}/locale DESTINATION ${WIN_RESOURCES_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/shaders DESTINATION ${WIN_RESOURCES_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/templates DESTINATION ${WIN_RESOURCES_DIR})
 endif()
 
 if (USE_QT6)
   if(NOT HEADLESS)
-    target_link_libraries(OpenSCAD PRIVATE
-      Qt6::Core Qt6::Core5Compat Qt6::Widgets Qt6::Multimedia Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent Qt6::Network Qt6::Svg
-      ${QT6QSCINTILLA_LIBRARY} ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
-    )
+    # Use imported target for QScintilla on MSVC, variable otherwise
+    if(MSVC AND TARGET Qt6QScintilla::Qt6QScintilla)
+      message(STATUS "=== Linking OpenSCAD (MSVC path) ===")
+      message(STATUS "Using Qt6QScintilla::Qt6QScintilla imported target")
+
+      # Debug: Check target properties at link time
+      get_target_property(_qsci_type Qt6QScintilla::Qt6QScintilla TYPE)
+      get_target_property(_qsci_imported Qt6QScintilla::Qt6QScintilla IMPORTED)
+      get_target_property(_qsci_configs Qt6QScintilla::Qt6QScintilla IMPORTED_CONFIGURATIONS)
+      get_target_property(_qsci_loc_r Qt6QScintilla::Qt6QScintilla IMPORTED_LOCATION_RELEASE)
+      get_target_property(_qsci_imp_r Qt6QScintilla::Qt6QScintilla IMPORTED_IMPLIB_RELEASE)
+      message(STATUS "Qt6QScintilla target debug:")
+      message(STATUS "  TYPE: ${_qsci_type}")
+      message(STATUS "  IMPORTED: ${_qsci_imported}")
+      message(STATUS "  IMPORTED_CONFIGURATIONS: ${_qsci_configs}")
+      message(STATUS "  IMPORTED_LOCATION_RELEASE: ${_qsci_loc_r}")
+      message(STATUS "  IMPORTED_IMPLIB_RELEASE: ${_qsci_imp_r}")
+      message(STATUS "  CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+
+      target_link_libraries(OpenSCAD PRIVATE
+        Qt6::Core Qt6::Core5Compat Qt6::Widgets Qt6::Multimedia Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent Qt6::Network Qt6::Svg
+        Qt6QScintilla::Qt6QScintilla ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
+      )
+      message(STATUS "OpenSCAD linked with Qt6QScintilla::Qt6QScintilla imported target")
+
+      # Debug: Check what libraries OpenSCAD will actually link
+      get_target_property(_openscad_link_libs OpenSCAD LINK_LIBRARIES)
+      message(STATUS "OpenSCAD LINK_LIBRARIES: ${_openscad_link_libs}")
+    else()
+      message(STATUS "=== Linking OpenSCAD (fallback path) ===")
+      message(STATUS "Using QT6QSCINTILLA_LIBRARY variable: ${QT6QSCINTILLA_LIBRARY}")
+      if(TARGET Qt6QScintilla::Qt6QScintilla)
+        set(_qsci_target_status "exists")
+      else()
+        set(_qsci_target_status "does not exist")
+      endif()
+      message(STATUS "MSVC=${MSVC}, Qt6QScintilla::Qt6QScintilla target ${_qsci_target_status}")
+      target_link_libraries(OpenSCAD PRIVATE
+        Qt6::Core Qt6::Core5Compat Qt6::Widgets Qt6::Multimedia Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Concurrent Qt6::Network Qt6::Svg
+        ${QT6QSCINTILLA_LIBRARY} ${Qt6DBus_LIBRARIES} ${Qt6Gamepad_LIBRARIES}
+      )
+      message(STATUS "OpenSCAD linked with QT6QSCINTILLA_LIBRARY variable")
+    endif()
   endif()
   if(ENABLE_GUI_TESTS)
     target_link_libraries(OpenSCAD PRIVATE Qt6::Test)
