@@ -1556,9 +1556,11 @@ disable_tests_safe(
 	render-csg-cgal_issue835
 	throwntogether-cgal_linear_extrude-parameter-tests
 	# csg tesselator aborts on self-interssection
-        preview-cgal_text-font-tests 
+        preview-cgal_text-font-tests
 	throwntogether-cgal_text-font-tests
-)  
+	# Thrown together uses color_indices instead of default color because  it exsists now
+	throwntogether-manifold_linear_extrude-parameter-tests
+)
 
 ####################
 # Extra Debug Info #
