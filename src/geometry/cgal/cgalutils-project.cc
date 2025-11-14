@@ -239,7 +239,6 @@ std::unique_ptr<Polygon2d> project(const CGALNefGeometry& N, bool cut)
   }
   // In projection mode all the triangles are projected manually into the XY plane
   else {
-    printf("no cut\n");
     if (auto ps = CGALUtils::createPolySetFromNefPolyhedron3(*N.p3)) {
       poly = PolySetUtils::project(*ps);
     } else {
