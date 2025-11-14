@@ -20,6 +20,7 @@ struct Outline2d {
   Color4f color;
   [[nodiscard]] BoundingBox getBoundingBox() const;
 };
+double outline_area(const Outline2d o);
 
 class Polygon2d : public Geometry
 {
@@ -81,6 +82,10 @@ public:
   [[nodiscard]] bool isSanitized() const { return this->sanitized; }
   void setSanitized(bool s) { this->sanitized = s; }
   [[nodiscard]] bool is_convex() const;
+  void setColor(const Color4f& c) override;
+  void setColorUndef(const Color4f& c);
+  void stamp_color(const Polygon2d& src);
+  void stamp_color(const Outline2d& src);
 
 private:
   Outlines2d theoutlines;
