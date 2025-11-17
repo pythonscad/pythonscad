@@ -543,6 +543,7 @@ bool TabManager::refreshDocument()
         editor->setPlainText(text);
         setContentRenderState();  // since last render
       }
+      par->trust_python_file(editor->filepath.toStdString(), text.toStdString());
       file_opened = true;
     }
   }
