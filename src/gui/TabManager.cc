@@ -31,6 +31,7 @@
 #include "gui/ScintillaEditor.h"
 #include "gui/Preferences.h"
 #include "gui/MainWindow.h"
+#include <genlang/genlang.h>
 
 #include <cstddef>
 
@@ -50,6 +51,9 @@ TabManager::TabManager(MainWindow *o, const QString& filename)
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::stopAnimation);
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::updateFindState);
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::tabSwitched);
+
+  connect(par->editActionZoomTextIn, &QAction::triggered, this, &TabManager::zoomIn);
+  connect(par->editActionZoomTextOut, &QAction::triggered, this, &TabManager::zoomOut);
 
   createTab(filename);
 
@@ -227,9 +231,6 @@ void TabManager::createTab(const QString& filename)
           &ScintillaEditor::onCharacterThresholdChanged);
   scintillaEditor->applySettings();
   editor->addTemplate();
-
-  connect(par->editActionZoomTextIn, &QAction::triggered, editor, &EditorInterface::zoomIn);
-  connect(par->editActionZoomTextOut, &QAction::triggered, editor, &EditorInterface::zoomOut);
 
   connect(editor, &EditorInterface::contentsChanged, this, &TabManager::updateActionUndoState);
   connect(editor, &EditorInterface::contentsChanged, par, &MainWindow::editorContentChanged);
@@ -452,7 +453,7 @@ void TabManager::openTabFile(const QString& filename)
 #ifdef ENABLE_PYTHON
   if (boost::algorithm::ends_with(filename, ".py")) {
     std::string templ = "from openscad import *\n";
-    std::string libs = Settings::Settings::pythonNetworkImportList.value();
+    std::string libs = Settings::SettingsPython::pythonNetworkImportList.value();
     std::stringstream ss(libs);
     std::string word;
     while (std::getline(ss, word, '\n')) {
@@ -543,6 +544,8 @@ bool TabManager::refreshDocument()
         editor->setPlainText(text);
         setContentRenderState();  // since last render
       }
+      if (language == LANG_PYTHON)
+        par->trust_python_file(editor->filepath.toStdString(), text.toStdString());
       file_opened = true;
     }
   }
@@ -765,6 +768,7 @@ bool TabManager::saveACopy(EditorInterface *edt)
   QFileDialog saveCopyDialog;
   saveCopyDialog.setAcceptMode(QFileDialog::AcceptSave);  // Set the dialog to "Save" mode.
   saveCopyDialog.setWindowTitle("Save A Copy");
+
   saveCopyDialog.setNameFilter("PythonSCAD Designs (*.py, *.scad)");
 
   saveCopyDialog.setDefaultSuffix("scad");
@@ -812,4 +816,18 @@ bool TabManager::saveAll()
     }
   }
   return true;
+}
+
+void TabManager::zoomIn()
+{
+  if (editor) {
+    editor->zoomIn();
+  }
+}
+
+void TabManager::zoomOut()
+{
+  if (editor) {
+    editor->zoomOut();
+  }
 }

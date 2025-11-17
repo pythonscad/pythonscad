@@ -1111,10 +1111,10 @@ PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
     Transform3d matrix = Transform3d::Identity();
     matrix.scale(scalevec);
     Vector3d n;
-    for (int i = 0; i < vecs; i++) {
-      n = Vector3d(mat(0, i), mat(1, i), mat(2, i));
-      n = matrix * n;
-      for (int j = 0; j < 3; j++) mat(j, i) = n[j];
+    for (int i = 0; i < 3; i++) {    // row
+      for (int j = 0; j < 4; j++) {  // col
+        mat(j, i) = mat(j, i) * scalevec[i];
+      }
     }
     return python_frommatrix(mat);
   }
@@ -1345,7 +1345,7 @@ PyObject *python_rotate(PyObject *self, PyObject *args, PyObject *kwargs)
   PyObject *val_v = nullptr;
   PyObject *obj = nullptr;
   PyObject *ref = nullptr;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|OO", kwlist, &obj, &val_a, &val_v), &ref) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|OO", kwlist, &obj, &val_a, &val_v, &ref)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing rotate(object, vec3)");
     return NULL;
   }
@@ -1784,7 +1784,7 @@ PyObject *python_multmatrix_sub(PyObject *pyobj, PyObject *pymat, int div)
 
   Matrix4d objmat;
   if (!python_tomatrix(pyobj, objmat)) {
-    objmat = mat * objmat;
+    objmat = objmat * mat;
     return python_frommatrix(objmat);
   }
 
@@ -1997,12 +1997,12 @@ PyObject *python_show_core(PyObject *obj)
     return NULL;
   }
   if (child == void_node) {
-    return nullptr;
+    return Py_None;
   }
 
   if (child == full_node) {
     PyErr_SetString(PyExc_TypeError, "Cannot display infinite space");
-    return nullptr;
+    return Py_True;
   }
 
   PyObject *key, *value;
@@ -2027,19 +2027,19 @@ PyObject *python_show_core(PyObject *obj)
     }
   }
   shows.push_back(child);
-  Py_INCREF(obj);
   return obj;
 }
 
 PyObject *python_show(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   PyObject *obj = NULL;
-  char *kwlist[] = {"obj", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &obj)) {
-    PyErr_SetString(PyExc_TypeError, "Error during parsing output(object)");
-    return NULL;
+  PyObject *result = Py_None;
+  if (args == nullptr) return result;
+  for (int i = 0; i < PyTuple_Size(args); i++) {
+    result = python_show_core(PyTuple_GetItem(args, i));
   }
-  return python_show_core(obj);
+  if (result != Py_None) Py_INCREF(result);
+  return result;
 }
 
 PyObject *python_oo_show(PyObject *obj, PyObject *args, PyObject *kwargs)
@@ -2049,7 +2049,9 @@ PyObject *python_oo_show(PyObject *obj, PyObject *args, PyObject *kwargs)
     PyErr_SetString(PyExc_TypeError, "Error during parsing output(object)");
     return NULL;
   }
-  return python_show_core(obj);
+  auto res = python_show_core(obj);
+  Py_INCREF(res);
+  return res;
 }
 
 PyObject *python_output(PyObject *obj, PyObject *args, PyObject *kwargs)
@@ -4260,9 +4262,9 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
   std::shared_ptr<AbstractNode> child;
 
   auto node = std::make_shared<CgalAdvNode>(instance, CgalAdvType::RESIZE);
-  PyObject *dummydict;
+  PyObject *child_dict;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
-  child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
+  child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
   if (child == NULL) {
     PyErr_SetString(PyExc_TypeError, "Invalid type for Object in resize");
     return NULL;
@@ -4295,7 +4297,15 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
   node->children.push_back(child);
   node->convexity = convexity;
 
-  return PyOpenSCADObjectFromNode(type, node);
+  auto pyresult = PyOpenSCADObjectFromNode(type, node);
+  if (child_dict != nullptr) {
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(child_dict, &pos, &key, &value)) {
+      PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    }
+  }
+  return pyresult;
 }
 
 PyObject *python_resize(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -5138,8 +5148,8 @@ PyObject *python_oo_align(PyObject *obj, PyObject *args, PyObject *kwargs)
 PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, ImportType type)
 {
   DECLARE_INSTANCE
-  char *kwlist[] = {"file",   "layer",    "convexity", "origin", "scale", "width",
-                    "height", "filename", "center",    "dpi",    "id",    NULL};
+  char *kwlist[] = {"file",   "layer", "convexity", "origin", "scale", "width", "height",
+                    "center", "dpi",   "id",        "fn",     "fa",    "fs",    NULL};
   double fn = NAN, fa = NAN, fs = NAN;
 
   std::string filename;
@@ -5148,8 +5158,8 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   int convexity = 2;
   double scale = 1.0, width = 1, height = 1, dpi = 1.0;
   PyObject *origin = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|slO!dddsfOddd", kwlist, &v, &layer, &convexity,
-                                   &PyList_Type, origin, &scale, &width, &height, &center, &dpi, &id,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|siO!dddOdsddd", kwlist, &v, &layer, &convexity,
+                                   &PyList_Type, &origin, &scale, &width, &height, &center, &dpi, &id,
                                    &fn, &fa, &fs
 
                                    )) {
