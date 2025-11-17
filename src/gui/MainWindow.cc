@@ -2397,6 +2397,10 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
   QSettingsCached settings;
   char setting_key[256];
   if (python_trusted) return true;
+  if (Settings::SettingsPython::globalTrustPython.value() == true) {
+    printf("trustedfrom settings\n");
+    return true;
+  }
 
   std::string act_hash, ref_hash;
   snprintf(setting_key, sizeof(setting_key) - 1, "python_hash/%s", file.c_str());
