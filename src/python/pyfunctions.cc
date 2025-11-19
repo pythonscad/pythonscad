@@ -531,14 +531,15 @@ PyObject *python_sphere(PyObject *self, PyObject *args, PyObject *kwargs)
   DECLARE_INSTANCE();
   auto node = std::make_shared<SphereNode>(instance, CreateCurveDiscretizer(kwargs));
 
-  char *kwlist[] = {"r", "d", NULL};
+  char *kwlist[] = {"r", "d", "fn", "fa", "fs", NULL};
   double r = NAN;
   PyObject *rp = nullptr;
   double d = NAN;
+  double fn = NAN, fa = NAN, fs = NAN;
 
   double vr = 1;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Od", kwlist, &rp, &d)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Odddd", kwlist, &rp, &d, &fn, &fa, &fs)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing sphere(r|d)");
     return NULL;
   }
@@ -585,11 +586,13 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
   double d2 = NAN;
   double angle = NAN;
 
+  double fn = NAN, fa = NAN, fs = NAN;
+
   PyObject *center = NULL;
   double vr1 = 1, vr2 = 1, vh = 1;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OddOOdddd", kwlist, &h_, &r1, &r2, &center, &r_, &d,
-                                   &d1, &d2, &angle)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OddOOddddddd", kwlist, &h_, &r1, &r2, &center, &r_,
+                                   &d, &d1, &d2, &angle, &fn, &fa, &fs)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing cylinder(h,r|r1+r2|d1+d2)");
     return NULL;
   }
@@ -875,14 +878,15 @@ PyObject *python_circle(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE();
 
-  double angle = NAN;
-  char *kwlist[] = {"r", "d", "angle", NULL};
+  char *kwlist[] = {"r", "d", "angle", "fn", "fa", "fs", NULL};
   double r = NAN;
   double d = NAN;
+  double angle = NAN;
+  double fn = NAN, fa = NAN, fs = NAN;
 
   double vr = 1;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|dddddd", kwlist, &r, &d, &angle)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|dddddd", kwlist, &r, &d, &angle, &fn, &fa, &fs)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing circle(r|d)");
     return NULL;
   }
@@ -907,6 +911,8 @@ PyObject *python_circle(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   auto node = std::make_shared<CircleNode>(instance, CreateCurveDiscretizer(kwargs));
+
+  if (!isnan(angle)) node->angle = angle;
 
   node->r = vr;
 
@@ -3278,10 +3284,11 @@ PyObject *python_rotate_extrude(PyObject *self, PyObject *args, PyObject *kwargs
   char *method = NULL;
   PyObject *origin = NULL;
   PyObject *offset = NULL;
-  char *kwlist[] = {"obj",    "convexity", "scale", "angle",  "twist",
-                    "origin", "offset",    "v",     "method", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iddOOOOs", kwlist, &obj, &convexity, &scale, &angle,
-                                   &twist, &origin, &offset, &v, &method)) {
+  double fn = NAN, fa = NAN, fs = NAN;
+  char *kwlist[] = {"obj", "convexity", "scale", "angle", "twist", "origin", "offset",
+                    "v",   "method",    "fn",    "fa",    "fs",    NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iddOOOOsddd", kwlist, &obj, &convexity, &scale,
+                                   &angle, &twist, &origin, &offset, &v, &method, &fn, &fa, &fs)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing rotate_extrude(object,...)");
     return NULL;
   }
@@ -3297,11 +3304,13 @@ PyObject *python_oo_rotate_extrude(PyObject *obj, PyObject *args, PyObject *kwar
   PyObject *twist = NULL;
   PyObject *origin = NULL;
   PyObject *offset = NULL;
+  double fn = NAN, fa = NAN, fs = NAN;
   PyObject *v = NULL;
   char *method = NULL;
-  char *kwlist[] = {"convexity", "scale", "angle", "twist", "origin", "offset", "v", "method", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iddOOOOs", kwlist, &convexity, &scale, &angle, &twist,
-                                   &origin, &offset, &v, &method)) {
+  char *kwlist[] = {"convexity", "scale",  "angle", "twist", "origin", "offset",
+                    "v",         "method", "fn",    "fa",    "fs",     NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iddOOOOsddd", kwlist, &convexity, &scale, &angle,
+                                   &twist, &origin, &offset, &v, &method, &fn, &fa, &fs)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
@@ -5809,7 +5818,7 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"roof", (PyCFunction)python_roof, METH_VARARGS | METH_KEYWORDS, "Roof Object."},
 #endif
   {"pull", (PyCFunction)python_pull, METH_VARARGS | METH_KEYWORDS, "Pull apart Object."},
-  {"wrap", (PyCFunction)python_wrap, METH_VARARGS | METH_KEYWORDS, "Wrap Object around cylidner."},
+  {"wrap", (PyCFunction)python_wrap, METH_VARARGS | METH_KEYWORDS, "Wrap Object around cylinder."},
   {"color", (PyCFunction)python_color, METH_VARARGS | METH_KEYWORDS, "Color Object."},
   {"output", (PyCFunction)python_output, METH_VARARGS | METH_KEYWORDS, "Output the result."},
   {"show", (PyCFunction)python_show, METH_VARARGS | METH_KEYWORDS, "Show the result."},

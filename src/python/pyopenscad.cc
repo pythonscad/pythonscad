@@ -458,27 +458,18 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
  */
 CurveDiscretizer CreateCurveDiscretizer(PyObject *kwargs)
 {
-  PyObject *mainModule = PyImport_AddModule("__main__");
-
+  PyObject *mainModule = pythonMainModule.get();
   return CurveDiscretizer([kwargs, mainModule](const char *key) -> std::optional<double> {
-    if (PyDict_Check(kwargs)) {
+    double result;
+    if (kwargs != nullptr && PyDict_Check(kwargs)) {
       PyObject *value = PyDict_GetItemString(kwargs, key);
-
-      if (value != nullptr && PyFloat_Check(value)) {
-        double result = PyFloat_AsDouble(value);
-        if (!(result == -1.0 && PyErr_Occurred())) {
-          return result;
-        }
-      }
+      if (!(python_numberval(value, &result, nullptr, 0))) return result;
     }
     if (mainModule != nullptr) {
       if (PyObject_HasAttrString(mainModule, key)) {
         PyObjectUniquePtr var(PyObject_GetAttrString(mainModule, key), PyObjectDeleter);
         if (var.get() != nullptr) {
-          double val = PyFloat_AsDouble(var.get());
-          if (!isnan(val) && val >= 0) {
-            return val;
-          }
+          if (!(python_numberval(var.get(), &result, nullptr, 0))) return result;
         }
       }
     }
