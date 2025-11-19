@@ -234,7 +234,7 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
   int num_fragments = discretizer.getCircularSegmentCount(r, 360.0).value_or(3);
 #ifdef ENABLE_PYTHON
   if (this->r_func != nullptr) {
-    int fs = discretizer.getMinimalEdgeLength();
+    double fs = discretizer.getMinimalEdgeLength();
     return sphereCreateFuncGeometry(this->r_func, fs, num_fragments);
   }
 #endif
@@ -310,7 +310,7 @@ static std::shared_ptr<AbstractNode> builtin_sphere(const ModuleInstantiation *i
 std::string CylinderNode::toString() const
 {
   std::ostringstream stream;
-  stream << "cylinder" << discretizer << ", h = " << h << ", r1 = " << r1 << ", r2 = " << r2;
+  stream << "cylinder(" << discretizer << ", h = " << h << ", r1 = " << r1 << ", r2 = " << r2;
   if (angle != 360) stream << ", angle = " << angle;
   stream << ", center = " << (center ? "true" : "false") << ")";
   return stream.str();
