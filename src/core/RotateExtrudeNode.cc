@@ -134,7 +134,9 @@ std::string RotateExtrudeNode::toString() const
   } else
 #endif
     if (twist != 0)
-    stream << "twist = " << this->twist << ", " << this->convexity << ", " << discretizer << ")";
+    stream << "twist = " << this->twist << ", ";
+
+  stream << discretizer << ")";
 
   return stream.str();
 }

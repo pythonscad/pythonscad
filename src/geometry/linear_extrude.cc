@@ -246,6 +246,7 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
 
   // Calculate outline segments if appropriate.
   Polygon2d seg_poly;
+  seg_poly.transform3d(poly.getTransform3d());
 
   // We skip segmentation if the user passed in segments=0
   if (!(node.has_segments && node.segments == 0)) {
@@ -267,7 +268,7 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
   Vector3d height(0, 0, 1);
   if (node.has_heightvector) height = node.height;
   else {
-    auto mat = poly.getTransform3d();
+    auto mat = seg_poly.getTransform3d();
     height = Vector3d(mat(0, 2), mat(1, 2), mat(2, 2)).normalized() * node.height[2];
   }
   Polygon2d polyref = seg_poly.isEmpty() ? poly : seg_poly;
