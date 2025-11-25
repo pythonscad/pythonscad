@@ -16,7 +16,6 @@ on:
 jobs:
   build:
     strategy:
-      fail-fast: false
       matrix:
         qt: [ qt5, qt6 ]
     runs-on: windows-latest
@@ -38,15 +37,10 @@ jobs:
           limit-access-to-actor: true
       - name: Setup MSYS2 Environment
         uses: msys2/setup-msys2@v2
-        id: msys2
         with:
           msystem: UCRT64
           update: true
-          install: libxml2
-          pacboy: ${{ env.PACBOY_PACKAGES }}
-
-      - name: Calculate PACBOY_PACKAGES
-        shell: bash
+      - name: Install MSYS2 Dependencies
         run: |
           pwd
           ./scripts/msys2-install-dependencies.sh ${{ matrix.qt }}
