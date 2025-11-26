@@ -110,7 +110,8 @@ void TabManager::tabSwitched(int x)
     setTabsCloseButtonVisibility(idx, isVisible);
   }
 
-  par->recomputeLanguageActive();
+  editor->recomputeLanguageActive();
+  par->onLanguageActiveChanged(editor->language);
   emit currentEditorChanged(editor);
 }
 
@@ -184,6 +185,9 @@ void TabManager::open(const QString& filename)
   if (editor->filepath.isEmpty() && !editor->isContentModified() &&
       !editor->parameterWidget->isModified()) {
     openTabFile(filename);
+    editor->recomputeLanguageActive();
+    par->onLanguageActiveChanged(editor->language);
+    emit editorContentReloaded(editor);
   } else {
     createTab(filename);
   }
@@ -193,7 +197,7 @@ void TabManager::createTab(const QString& filename)
 {
   assert(par != nullptr);
 
-  auto scintillaEditor = new ScintillaEditor(tabWidget, *par);
+  auto scintillaEditor = new ScintillaEditor(tabWidget);
   editor = scintillaEditor;
   //  Preferences::create(editor->colorSchemes());   // needs to be done only once, however handled
   this->use_gvim = GlobalPreferences::inst()->getValue("editor/usegvim").toBool();
@@ -263,6 +267,10 @@ void TabManager::createTab(const QString& filename)
   if (tabWidget->currentWidget() != editor) {
     tabWidget->setCurrentWidget(editor);
   }
+
+  editor->recomputeLanguageActive();
+  par->onLanguageActiveChanged(editor->language);
+
   emit tabCountChanged(editorList.size());
 }
 
@@ -484,8 +492,6 @@ void TabManager::openTabFile(const QString& filename)
   auto [fname, fpath] = getEditorTabNameWithModifier(editor);
   setEditorTabName(fname, fpath, editor);
   par->setWindowTitle(fname);
-
-  emit editorContentReloaded(editor);
 }
 
 std::tuple<QString, QString> TabManager::getEditorTabName(EditorInterface *edt)
@@ -543,9 +549,12 @@ bool TabManager::refreshDocument()
       if (editor->toPlainText() != text) {
         editor->setPlainText(text);
         setContentRenderState();  // since last render
+        editor->recomputeLanguageActive();
       }
-      if (language == LANG_PYTHON)
+#ifdef ENABLE_PYTHON
+      if (editor->language == LANG_PYTHON)
         par->trust_python_file(editor->filepath.toStdString(), text.toStdString());
+#endif
       file_opened = true;
     }
   }
