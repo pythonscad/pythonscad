@@ -29,32 +29,34 @@ else
 fi
 
 date "+### %Y-%m-%d %T install remaining packages"
-pacboy --noconfirm --sync --needed \
-    $QT_PACKAGES \
-    git: \
-    make: \
-    bison: \
-    flex: \
-    toolchain:p \
-    cmake:p \
-    ninja:p \
-    boost:p \
-    cgal:p \
-    eigen3:p \
-    glew:p \
-    opencsg:p \
-    lib3mf:p \
-    libzip:p \
-    mimalloc:p \
-    double-conversion:p \
-    cairo:p \
-    ghostscript:p \
-    imagemagick:p \
-    tbb:p \
-    python:p \
-    python-pip:p \
-    python-numpy:p \
-    python-pillow:p
+PACKAGE_LIST=(
+    "$QT_PACKAGES"
+    "git:"
+    "make:"
+    "bison:"
+    "flex:"
+    "toolchain:p"
+    "cmake:p"
+    "ninja:p"
+    "boost:p"
+    "catch:p"
+    "cgal:p"
+    "eigen3:p"
+    "glew:p"
+    "opencsg:p"
+    "lib3mf:p"
+    "libzip:p"
+    "mimalloc:p"
+    "double-conversion:p"
+    "cairo:p"
+    "ghostscript:p"
+    "imagemagick:p"
+    "tbb:p"
+    "python:p"
+    "python-pip:p"
+    "python-numpy:p"
+    "python-pillow:p"
+)
 
 # Install bsdiff4 via pip for libpython_patch.sh (provides bspatch4 command)
 date "+### %Y-%m-%d %T install bsdiff4 via pip"
