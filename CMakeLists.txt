@@ -133,32 +133,6 @@ set_target_properties(OpenSCADLibInternal PROPERTIES
     OUTPUT_NAME "openscadinternal" # results in `libopenscadinternal`
 )
 
-add_library(svg STATIC)
-target_link_libraries(OpenSCADExe PUBLIC svg)
-# TODO: https://github.com/openscad/openscad/issues/6369 - Update includes so we don't need this, which also prevents trivially including other parts of OpenSCAD.
-target_include_directories(svg PUBLIC
-  "src"
-)
-target_sources(svg PRIVATE
-  src/libsvg/circle.cc
-  src/libsvg/data.cc
-  src/libsvg/ellipse.cc
-  src/libsvg/group.cc
-  src/libsvg/libsvg.cc
-  src/libsvg/line.cc
-  src/libsvg/path.cc
-  src/libsvg/polygon.cc
-  src/libsvg/polyline.cc
-  src/libsvg/rect.cc
-  src/libsvg/shape.cc
-  src/libsvg/svgpage.cc
-  src/libsvg/text.cc
-  src/libsvg/transformation.cc
-  src/libsvg/tspan.cc
-  src/libsvg/use.cc
-  src/libsvg/util.cc
-)
-
 if (MINGW)
   # Configure Debug flags (MinGW) to keep rich symbols and avoid PE/COFF
   # RIP-relative relocation overflows in large template-heavy builds.
@@ -182,12 +156,6 @@ if (MINGW)
     )
     # Unsure if it helps to double this
     target_link_options(OpenSCADExe PRIVATE
-      $<$<CONFIG:Debug>:
-        -Wl,--gc-sections;        # Linker: drop unused sections
-      >
-    )
-    # Unsure if it helps to triple this
-    target_link_options(svg PRIVATE
       $<$<CONFIG:Debug>:
         -Wl,--gc-sections;        # Linker: drop unused sections
       >
@@ -226,13 +194,6 @@ if (MINGW)
       >
     )
     # Unsure if it helps to triple this
-    target_link_options(svg PRIVATE
-      $<$<CONFIG:Debug>:
-        -Wl,--gc-sections;        # Linker: drop unused sections
-        -Wl,--icf=all;            # ICF: fold identical code/data (effective with lld)
-        -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
-      >
-    )
   endif()
   if (NOT MXECROSS)
     target_compile_definitions(OpenSCADLibInternal PRIVATE QSCINTILLA_DLL)
@@ -244,15 +205,15 @@ find_package(Sanitizers)
 
 # Strict c++17, e.g. no GNU extensions
 if (MSVC) # For MSVC, errors show up when using c++ 17 for build.
-  set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
+  set_target_properties(OpenSCADLibInternal OpenSCADExe PROPERTIES
     CXX_STANDARD 20
   )
 else()
-  set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
+  set_target_properties(OpenSCADLibInternal OpenSCADExe PROPERTIES
     CXX_STANDARD 17
   )
 endif()
-set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
+set_target_properties(OpenSCADLibInternal OpenSCADExe PROPERTIES
   # Output compilation database (compile_commands.json), so we can e.g. run clang-tidy or other tools separately
   EXPORT_COMPILE_COMMANDS ON
   LINKER_LANGUAGE CXX
@@ -263,7 +224,6 @@ set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
 # Verbose link step
 if(("${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}" STREQUAL "GNU") OR
    ("${CMAKE_CXX_COMPILER_ID}" MATCHES "AppleClang|Clang|GNU"))
-  target_link_options(svg BEFORE PUBLIC "-v")
   target_link_options(OpenSCADLibInternal BEFORE PUBLIC "-v")
   target_link_options(OpenSCADExe BEFORE PUBLIC "-v")
 endif()
@@ -383,7 +343,6 @@ file(MAKE_DIRECTORY ${OPENSCAD_LIB_OUTPUT_DIR})
 
 target_compile_options(OpenSCADLibInternal PUBLIC "$<$<CONFIG:DEBUG>:-DDEBUG>")
 target_compile_options(OpenSCADExe PUBLIC "$<$<CONFIG:DEBUG>:-DDEBUG>")
-target_compile_options(svg PUBLIC "$<$<CONFIG:DEBUG>:-DDEBUG>")
 
 target_compile_definitions(OpenSCADLibInternal PUBLIC
   _REENTRANT
@@ -472,7 +431,6 @@ if (MSVC)
   # Our code is compatible with both V3 and V5, so for now, we accept any version.
   find_package(Eigen3 REQUIRED QUIET)
   target_link_libraries(OpenSCADLibInternal PUBLIC Eigen3::Eigen)
-  target_link_libraries(svg PUBLIC Eigen3::Eigen)
   message(STATUS "Eigen: ${Eigen3_VERSION}")
 
   set(Boost_USE_STATIC_LIBS TRUE)
@@ -480,7 +438,6 @@ if (MSVC)
   message(STATUS "Boost: ${Boost_VERSION}")
   target_compile_definitions(OpenSCADLibInternal PRIVATE BOOST_DLL_USE_STD_FS)
   target_link_libraries(OpenSCADLibInternal PUBLIC Boost::headers Boost::regex Boost::program_options)
-  target_link_libraries(svg PUBLIC Boost::headers)
 
   find_package(harfbuzz CONFIG REQUIRED)
   find_path(HARFBUZZ_INCLUDE_DIRS harfbuzz)
@@ -521,14 +478,12 @@ else()
   # Our code is compatible with both V3 and V5, so for now, we accept any version.
   find_package(Eigen3 REQUIRED QUIET)
   target_link_libraries(OpenSCADLibInternal PUBLIC Eigen3::Eigen)
-  target_link_libraries(svg PUBLIC Eigen3::Eigen)
   message(STATUS "Eigen: ${Eigen3_VERSION}")
 
   find_package(Boost 1.70 REQUIRED QUIET COMPONENTS regex program_options)
   message(STATUS "Boost: ${Boost_VERSION}")
   target_compile_definitions(OpenSCADLibInternal PRIVATE BOOST_DLL_USE_STD_FS)
   target_link_libraries(OpenSCADLibInternal PUBLIC Boost::headers Boost::regex Boost::program_options)
-  target_link_libraries(svg PUBLIC Boost::headers)
 
   find_package(HarfBuzz 0.9.19 REQUIRED)
   message(STATUS "Harfbuzz: ${HARFBUZZ_VERSION}")
@@ -605,7 +560,6 @@ target_link_libraries(OpenSCADLibInternal PUBLIC ${FREETYPE_LIBRARIES})
 find_package(LibXml2 2.9 REQUIRED)
 message(STATUS "LibXml2: ${LIBXML2_VERSION_STRING}")
 target_link_libraries(OpenSCADLibInternal PUBLIC LibXml2::LibXml2)
-target_link_libraries(svg PUBLIC LibXml2::LibXml2)
 
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/src/executable.h.in"
@@ -667,7 +621,7 @@ if(ENABLE_PYTHON)
 
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND bash -c "rm -rf python_mingw && mkdir python_mingw && cd python_mingw && wget ${PYTHON_MINGW_PACKAGEFOLDER}/${PYTHON_MINGW_PACKAGEZST} && bsdtar -xf ${PYTHON_MINGW_PACKAGEZST} && ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh"
+      COMMAND rm -rf python_mingw && mkdir python_mingw && cd python_mingw && wget ${PYTHON_MINGW_PACKAGEFOLDER}/${PYTHON_MINGW_PACKAGEZST} && bsdtar -xf ${PYTHON_MINGW_PACKAGEZST} && ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh
       OUTPUT ${PYTHON_MINGW_ARCHIVE}
     )
     add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
@@ -675,7 +629,7 @@ if(ENABLE_PYTHON)
 
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND bash -c "rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && bsdtar -xf ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME} && rm python*._pth"
+      COMMAND rm -rf python_embed && mkdir python_embed && cd python_embed && wget ${PYTHON_EMBED_URL} && bsdtar -xf ${PYTHON_EMBED_FILENAME} && rm ${PYTHON_EMBED_FILENAME} && rm python*._pth
       OUTPUT ${PYTHON_EMBED_SHLIB}
     )
     add_custom_target(tgt_python_embed DEPENDS ${PYTHON_EMBED_SHLIB})
@@ -720,8 +674,8 @@ if(ENABLE_PYTHON)
     if(WIN32)
       # On Windows, copy the executable instead of symlinking (symlinks are problematic)
       add_custom_target(OpenSCADPython ALL
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:OpenSCAD> ${CMAKE_CURRENT_BINARY_DIR}/${PYTHON_EXECUTABLE_NAME}.exe
-        DEPENDS OpenSCAD
+	      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:OpenSCADLibInternal> ${CMAKE_CURRENT_BINARY_DIR}/${PYTHON_EXECUTABLE_NAME}.exe
+	      DEPENDS OpenSCADLibInternal
       )
     else()
       add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME})
@@ -786,14 +740,14 @@ if(NOT HEADLESS)
  message(STATUS ${CURL_INCLUDE_DIR})
  message(STATUS ${CURL_INCLUDE_LIBRARIES})
  message(STATUS ${CURL_VERSION_STRING})
-    target_compile_definitions(OpenSCAD PRIVATE CURL_STATICLIB)
-    target_include_directories(OpenSCAD SYSTEM PRIVATE ${CURL_INCLUDE_DIR})
+   target_compile_definitions(OpenSCADLibInternal PRIVATE CURL_STATICLIB)
+   target_include_directories(OpenSCADLibInternal SYSTEM PRIVATE ${CURL_INCLUDE_DIR})
     if(WIN32 AND NOT MXECROSS)
       # On Windows with MSYS2, use CURL_LIBRARIES from find_package
-      target_link_libraries(OpenSCAD PRIVATE ${CURL_LIBRARIES})
+      target_link_libraries(OpenSCADLibInternal PRIVATE ${CURL_LIBRARIES})
     else()
       # MXECROSS
-      target_link_libraries(OpenSCAD PRIVATE "libcurl.a;libidn2.a;libssh2.a;libunistring.a")
+      target_link_libraries(OpenSCADLibInternal PRIVATE "libcurl.a;libidn2.a;libssh2.a;libunistring.a")
     endif()
   else()
 	  target_link_directories(OpenSCADLibInternal PRIVATE "/usr/lib64")
@@ -938,7 +892,6 @@ if (MXECROSS)
   # ld: .../libzip.a(zip_crypto_win.c.obj):zip_crypto_win:(.text+0x1074): undefined reference to `BCryptGenRandom'
   # I guess before separate libraries, something transitively included zlib and that was good enough.
   find_package(ZLIB REQUIRED)
-  target_link_libraries(svg PRIVATE ZLIB::ZLIB)
   target_link_libraries(OpenSCADLibInternal PUBLIC bcrypt)
 endif()
 
@@ -1005,7 +958,7 @@ if(NOT HEADLESS)
     message(STATUS "Qt6: ${Qt6_VERSION}")
 
     if (Qt6_POSITION_INDEPENDENT_CODE)
-      set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
+      set_target_properties(OpenSCADLibInternal  OpenSCADExe PROPERTIES
 	POSITION_INDEPENDENT_CODE ON
       )
     endif()
@@ -1032,7 +985,7 @@ if(NOT HEADLESS)
     message(STATUS "Qt5: ${Qt5_VERSION}")
 
     if (Qt5_POSITION_INDEPENDENT_CODE)
-      set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
+      set_target_properties(OpenSCADLibInternal OpenSCADExe PROPERTIES
 	POSITION_INDEPENDENT_CODE ON
       )
     endif()
@@ -1313,6 +1266,23 @@ set(CORE_SOURCES
   src/utils/version_check.h
   src/genlang/genlang.cc
   src/version.cc
+  src/libsvg/circle.cc
+  src/libsvg/data.cc
+  src/libsvg/ellipse.cc
+  src/libsvg/group.cc
+  src/libsvg/libsvg.cc
+  src/libsvg/line.cc
+  src/libsvg/path.cc
+  src/libsvg/polygon.cc
+  src/libsvg/polyline.cc
+  src/libsvg/rect.cc
+  src/libsvg/shape.cc
+  src/libsvg/svgpage.cc
+  src/libsvg/text.cc
+  src/libsvg/transformation.cc
+  src/libsvg/tspan.cc
+  src/libsvg/use.cc
+  src/libsvg/util.cc
   ${LIB3MF_SOURCES}
   ${PLATFORM_SOURCES}
   ${FLEX_openscad_lexer_OUTPUTS}
@@ -1373,7 +1343,6 @@ else()
   message(STATUS "Clipper2: ${Clipper2_VERSION}")
 endif()
 target_link_libraries(OpenSCADLibInternal PUBLIC Clipper2::Clipper2)
-target_link_libraries(svg PUBLIC Clipper2::Clipper2)
 
 if(ENABLE_MANIFOLD)
   if(NOT DEFINED MANIFOLD_PAR)
@@ -2017,10 +1986,10 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/nsis/extra-uninstall-commands.
 set(CPACK_PROJECT_CONFIG_FILE "${CMAKE_BINARY_DIR}/openscad_cpack.cmake")
 set(CPACK_THREADS 0)
 if (MXECROSS)
-  get_target_property(TARGET_LIBRARIES OpenSCAD LINK_LIBRARIES)
+	get_target_property(TARGET_LIBRARIES OpenSCADLibInternal LINK_LIBRARIES)
   LIST(FILTER TARGET_LIBRARIES EXCLUDE REGEX .*libdouble-conversion.a )
-  set_property(TARGET OpenSCAD PROPERTY LINK_LIBRARIES  ${TARGET_LIBRARIES} )
-  get_target_property(TARGET_LIBRARIES2 OpenSCAD LINK_LIBRARIES)
+  set_property(TARGET OpenSCADLibInternal PROPERTY LINK_LIBRARIES  ${TARGET_LIBRARIES} )
+  get_target_property(TARGET_LIBRARIES2 OpenSCADLibInternal LINK_LIBRARIES)
 endif()
 
 if(ENABLE_TESTS)
