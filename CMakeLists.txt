@@ -1769,7 +1769,7 @@ set_target_properties(OpenSCADExe PROPERTIES
     message(STATUS "Python framework library: ${PYTHON_FRAMEWORK_LIB}")
 
     # Copy Python.framework into the app bundle
-    add_custom_command(TARGET OpenSCAD POST_BUILD
+    add_custom_command(TARGET OpenSCADLibInternal POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory ${BUNDLE_FRAMEWORKS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${PYTHON_FRAMEWORK_DIR}
@@ -1779,7 +1779,7 @@ set_target_properties(OpenSCADExe PROPERTIES
 
     # Fix the install name to use @rpath instead of absolute path
     # We need to use the exact path as it appears in the binary (the framework Python file, not libpython.dylib)
-    add_custom_command(TARGET OpenSCAD POST_BUILD
+    add_custom_command(TARGET OpenSCADLibInternal POST_BUILD
       COMMAND install_name_tool -change
         ${PYTHON_FRAMEWORK_LIB}
         @rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python
