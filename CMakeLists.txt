@@ -1746,7 +1746,7 @@ set_target_properties(OpenSCADExe PROPERTIES
   set(BUNDLE_FRAMEWORKS_DIR ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/Frameworks)
 
   # Create pythonscad-python symlink inside the macOS bundle
-  add_custom_command(TARGET OpenSCAD POST_BUILD
+  add_custom_command(TARGET OpenSCADLibInternal POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS
     COMMENT "Creating ${PYTHON_EXECUTABLE_NAME} symlink in macOS bundle"
