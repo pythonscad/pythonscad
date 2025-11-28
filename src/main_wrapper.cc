@@ -40,6 +40,6 @@ int wmain(int argc, wchar_t **argv)
   }
   argv8[argc] = NULL;
 
-  return 0;  // (main(argc, argv8));
+  return (main(argc, argv8));
 }
 #endif

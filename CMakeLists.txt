@@ -1283,6 +1283,7 @@ set(CORE_SOURCES
   src/libsvg/tspan.cc
   src/libsvg/use.cc
   src/libsvg/util.cc
+  src/version.cc
   ${LIB3MF_SOURCES}
   ${PLATFORM_SOURCES}
   ${FLEX_openscad_lexer_OUTPUTS}

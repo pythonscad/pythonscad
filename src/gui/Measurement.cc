@@ -123,7 +123,6 @@ std::vector<QString> Measurement::statemachine(QPoint mouse)
     break;
   case MEASURE_DIST2:
     if (qglview->selected_obj.size() == 2) {
-      double lat;
       QString extra;
       ruler.type = SelectionType::SELECTION_INVALID;
       obj1 = qglview->selected_obj[0];
