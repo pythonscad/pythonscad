@@ -25,6 +25,7 @@
  */
 
 #include "openscad.h"
+#include "version.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -178,9 +179,6 @@ struct CommandLine {
 
 namespace {
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-
 #ifndef OPENSCAD_NOGUI
 bool useGUI()
 {
@@ -237,7 +235,7 @@ void help_export(const std::array<const Settings::SettingsEntryBase *, size>& op
 
 void help_export()
 {
-  LOG("PythonSCAD version %1$s\n", TOSTRING(OPENSCAD_VERSION));
+  LOG("PythonSCAD version %1$s\n", openscad_versionnumber);
   LOG("List of settings that can be given using the -O option using the");
   LOG("format '<section>/<key>=value', e.g.:");
   LOG("openscad -O export-pdf/paper-size=a6 -O export-pdf/show-grid=false\n");
@@ -249,7 +247,7 @@ void help_export()
 
 void version()
 {
-  LOG("PythonSCAD version %1$s", TOSTRING(OPENSCAD_VERSION));
+  LOG("PythonSCAD version %1$s", openscad_versionnumber);
   exit(0);
 }
 

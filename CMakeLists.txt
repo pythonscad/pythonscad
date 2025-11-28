@@ -1272,8 +1272,6 @@ set(CORE_SOURCES
   src/utils/vector_math.cc
   src/utils/version_check.h
   src/genlang/genlang.cc
-  src/version.cc
-  src/version.cc
   ${LIB3MF_SOURCES}
   ${PLATFORM_SOURCES}
   ${FLEX_openscad_lexer_OUTPUTS}
