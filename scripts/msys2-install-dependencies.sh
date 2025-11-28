@@ -33,6 +33,7 @@ PACKAGE_LIST=(
     "$QT_PACKAGES"
     "git:"
     "make:"
+    "cmake:"
     "bison:"
     "flex:"
     "toolchain:p"
