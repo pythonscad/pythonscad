@@ -185,15 +185,6 @@ if (MINGW)
         -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
       >
     )
-    # Unsure if it helps to double this
-    target_link_options(OpenSCADExe PRIVATE
-      $<$<CONFIG:Debug>:
-        -Wl,--gc-sections;        # Linker: drop unused sections
-        -Wl,--icf=all;            # ICF: fold identical code/data (effective with lld)
-        -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
-      >
-    )
-    # Unsure if it helps to triple this
   endif()
   if (NOT MXECROSS)
     target_compile_definitions(OpenSCADLibInternal PRIVATE QSCINTILLA_DLL)
@@ -1254,17 +1245,6 @@ set(CORE_SOURCES
   src/io/import_step.cc
   src/io/StepKernel.cc
   src/io/import_svg.cc
-  src/platform/PlatformUtils.cc
-  src/utils/StackCheck.h
-  src/utils/calc.cc
-  src/utils/degree_trig.cc
-  src/utils/hash.cc
-  src/utils/printutils.cc
-  src/utils/svg.cc
-  src/utils/vector_math.cc
-  src/utils/version_check.h
-  src/genlang/genlang.cc
-  src/version.cc
   src/libsvg/circle.cc
   src/libsvg/data.cc
   src/libsvg/ellipse.cc
@@ -1282,6 +1262,17 @@ set(CORE_SOURCES
   src/libsvg/tspan.cc
   src/libsvg/use.cc
   src/libsvg/util.cc
+  src/platform/PlatformUtils.cc
+  src/utils/StackCheck.h
+  src/utils/calc.cc
+  src/utils/degree_trig.cc
+  src/utils/hash.cc
+  src/utils/printutils.cc
+  src/utils/svg.cc
+  src/utils/vector_math.cc
+  src/utils/version_check.h
+  src/genlang/genlang.cc
+  src/version.cc
   src/version.cc
   ${LIB3MF_SOURCES}
   ${PLATFORM_SOURCES}
