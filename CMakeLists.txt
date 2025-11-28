@@ -160,6 +160,12 @@ if (MINGW)
         -Wl,--gc-sections;        # Linker: drop unused sections
       >
     )
+    # Unsure if it helps to triple this
+    target_link_options(svg PRIVATE
+      $<$<CONFIG:Debug>:
+        -Wl,--gc-sections;        # Linker: drop unused sections
+      >
+    )
   elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     include(CheckCXXCompilerFlag)
     check_cxx_compiler_flag("-gz=zlib" HAS_GZ_ZLIB)

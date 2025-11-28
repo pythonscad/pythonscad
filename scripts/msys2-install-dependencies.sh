@@ -62,12 +62,9 @@ PACKAGE_LIST=(
 # Expand array to a single space-separated string
 PACBOY_PACKAGES="${PACKAGE_LIST[*]}"
 
-if [[ -z "${GITHUB_RUN_ID}" ]]; then
-    date "+### %Y-%m-%d %T install remaining packages"
-    pacboy --noconfirm --sync --needed $PACBOY_PACKAGES
-else
-    echo "PACBOY_PACKAGES=${PACBOY_PACKAGES}" >> ${GITHUB_ENV}
-fi
+date "+### %Y-%m-%d %T install remaining packages start"
+pacboy --noconfirm --sync --needed $PACBOY_PACKAGES
+date "+### %Y-%m-%d %T install remaining packages done"
 
 # Install bsdiff4 via pip for libpython_patch.sh (provides bspatch4 command)
 date "+### %Y-%m-%d %T install bsdiff4 via pip"
