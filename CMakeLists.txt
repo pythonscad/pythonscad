@@ -701,7 +701,6 @@ if(ENABLE_PYTHON)
   set_property(TARGET OpenSCADPy PROPERTY CXX_EXTENSIONS OFF)
   set_property(TARGET OpenSCADPy PROPERTY CXX_STANDARD_REQUIRED ON)
   target_compile_definitions(OpenSCADPy PRIVATE "STACKSIZE=${STACKSIZE}")
-  target_compile_definitions(OpenSCADPy PRIVATE EIGEN_DONT_ALIGN)
   target_compile_options(OpenSCADPy PRIVATE "$<$<CONFIG:DEBUG>:-DDEBUG>")
   target_compile_definitions(OpenSCADPy PRIVATE
     OPENSCAD_VERSION=${OPENSCAD_VERSION}
