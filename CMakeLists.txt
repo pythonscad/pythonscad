@@ -2008,7 +2008,7 @@ if(ENABLE_TESTS)
     # and how the system Catch2 static library is compiled. It should be fine.
 
     add_executable(OpenSCADUnitTests ${TEST_SOURCES})
-    target_link_libraries(OpenSCADUnitTests PRIVATE Catch2::Catch2WithMain OpenSCADLibInternal svg)
+    target_link_libraries(OpenSCADUnitTests PRIVATE Catch2::Catch2WithMain OpenSCADLibInternal)
     include(CTest)
     include(Catch)
     catch_discover_tests(OpenSCADUnitTests ADD_TAGS_AS_LABELS)
