@@ -1766,9 +1766,8 @@ set_target_properties(OpenSCADExe PROPERTIES
     # Copy Python.framework into the app bundle
     add_custom_command(TARGET OpenSCADLibInternal POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory ${BUNDLE_FRAMEWORKS_DIR}
-      COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PYTHON_FRAMEWORK_DIR}
-        ${BUNDLE_FRAMEWORKS_DIR}/Python.framework
+      COMMAND rm -rf ${BUNDLE_FRAMEWORKS_DIR}/Python.framework
+      COMMAND cp -a  ${PYTHON_FRAMEWORK_DIR} ${BUNDLE_FRAMEWORKS_DIR}/Python.framework
       COMMENT "Bundling Python.framework into app bundle for portability"
     )
 
