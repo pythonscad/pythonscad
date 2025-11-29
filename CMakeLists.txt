@@ -1980,7 +1980,7 @@ if (MXECROSS)
 endif()
 
 if(ENABLE_TESTS)
-  find_package(Catch2 3 QUIET)
+  find_package(Catch2_invalid 3 QUIET)
 
   # Note: Since Catch2 is only used for testing, we install it via Homebrew.
   # However, we need to temporarily re-enable searching in Homebrew for this to work.
