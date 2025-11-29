@@ -849,6 +849,10 @@ message(STATUS "Bison: ${BISON_VERSION}")
 if(APPLE)
 	target_include_directories(OpenSCADLibInternal PRIVATE "/usr/local/include")
 	target_link_directories(OpenSCADLibInternal PRIVATE "/usr/local/lib")
+<<<<<<< HEAD
+=======
+	target_link_libraries(OpenSCADLibInternal PRIVATE "libjpeg.a")
+>>>>>>> master
 endif()
 
 find_package(Lib3MF)
