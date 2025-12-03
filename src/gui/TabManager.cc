@@ -110,7 +110,8 @@ void TabManager::tabSwitched(int x)
     setTabsCloseButtonVisibility(idx, isVisible);
   }
 
-  par->recomputeLanguageActive();
+  editor->recomputeLanguageActive();
+  par->onLanguageActiveChanged(editor->language);
   emit currentEditorChanged(editor);
 }
 
@@ -184,6 +185,10 @@ void TabManager::open(const QString& filename)
   if (editor->filepath.isEmpty() && !editor->isContentModified() &&
       !editor->parameterWidget->isModified()) {
     openTabFile(filename);
+    editor->recomputeLanguageActive();
+    par->onLanguageActiveChanged(editor->language);
+    updateTabIcon(editor);
+    emit editorContentReloaded(editor);
   } else {
     createTab(filename);
   }
@@ -193,7 +198,7 @@ void TabManager::createTab(const QString& filename)
 {
   assert(par != nullptr);
 
-  auto scintillaEditor = new ScintillaEditor(tabWidget, *par);
+  auto scintillaEditor = new ScintillaEditor(tabWidget);
   editor = scintillaEditor;
   //  Preferences::create(editor->colorSchemes());   // needs to be done only once, however handled
   this->use_gvim = GlobalPreferences::inst()->getValue("editor/usegvim").toBool();
@@ -263,6 +268,11 @@ void TabManager::createTab(const QString& filename)
   if (tabWidget->currentWidget() != editor) {
     tabWidget->setCurrentWidget(editor);
   }
+
+  editor->recomputeLanguageActive();
+  par->onLanguageActiveChanged(editor->language);
+  updateTabIcon(editor);
+
   emit tabCountChanged(editorList.size());
 }
 
@@ -484,8 +494,6 @@ void TabManager::openTabFile(const QString& filename)
   auto [fname, fpath] = getEditorTabNameWithModifier(editor);
   setEditorTabName(fname, fpath, editor);
   par->setWindowTitle(fname);
-
-  emit editorContentReloaded(editor);
 }
 
 std::tuple<QString, QString> TabManager::getEditorTabName(EditorInterface *edt)
@@ -523,6 +531,23 @@ void TabManager::setEditorTabName(const QString& tabName, const QString& tabTool
   tabWidget->setTabToolTip(index, tabToolTip);
 }
 
+void TabManager::updateTabIcon(EditorInterface *edt)
+{
+  if (!edt) return;
+
+  int index = tabWidget->indexOf(edt);
+  if (index < 0) return;
+
+  QIcon icon;
+  switch (edt->language) {
+  case LANG_PYTHON: icon = QIcon(":/icons/filetype-python.svg"); break;
+  case LANG_SCAD:
+  default:          icon = QIcon(":/icons/filetype-openscad.svg"); break;
+  }
+
+  tabWidget->setTabIcon(index, icon);
+}
+
 bool TabManager::refreshDocument()
 {
   bool file_opened = false;
@@ -539,13 +564,16 @@ bool TabManager::refreshDocument()
       reader.setCodec("UTF-8");
 #endif
       auto text = reader.readAll();
-      LOG("Loaded design '%1$s'.", editor->filepath.toLocal8Bit().constData());
+      LOG("Loaded design '%1$s'.", editor->filepath.toStdString());
       if (editor->toPlainText() != text) {
         editor->setPlainText(text);
         setContentRenderState();  // since last render
+        editor->recomputeLanguageActive();
       }
-      if (language == LANG_PYTHON)
+#ifdef ENABLE_PYTHON
+      if (editor->language == LANG_PYTHON)
         par->trust_python_file(editor->filepath.toStdString(), text.toStdString());
+#endif
       file_opened = true;
     }
   }
@@ -671,7 +699,7 @@ bool TabManager::save(EditorInterface *edt, const QString& path)
     file.cancelWriting();
   }
   if (saveOk) {
-    LOG("Saved design '%1$s'.", path.toLocal8Bit().constData());
+    LOG("Saved design '%1$s'.", path.toStdString());
     edt->parameterWidget->saveFile(path);
     edt->setContentModified(false);
     edt->parameterWidget->setModified(false);

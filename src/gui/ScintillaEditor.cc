@@ -123,8 +123,7 @@ int EditorColorScheme::index() const { return _index; }
 
 const boost::property_tree::ptree& EditorColorScheme::propertyTree() const { return pt; }
 
-ScintillaEditor::ScintillaEditor(QWidget *parent, MainWindow& mainWindow)
-  : EditorInterface(parent), mainWindow(mainWindow)
+ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
 {
   api = nullptr;
   lexer = nullptr;
@@ -237,6 +236,7 @@ ScintillaEditor::ScintillaEditor(QWidget *parent, MainWindow& mainWindow)
 #else
   setLexer(new ScadLexer(this));
 #endif
+  recomputeLanguageActive();
 
   initMargin();
 
@@ -263,11 +263,6 @@ ScintillaEditor::ScintillaEditor(QWidget *parent, MainWindow& mainWindow)
 
   // Disabling buffered drawing resolves non-integer HiDPI scaling.
   qsci->SendScintilla(QsciScintillaBase::SCI_SETBUFFEREDDRAW, false);
-
-#ifdef ENABLE_PYTHON
-  connect(&this->mainWindow, &MainWindow::pythonActiveChanged, this,
-          &ScintillaEditor::onPythonActiveChanged);
-#endif
 }
 
 QPoint ScintillaEditor::mapToGlobal(const QPoint& pos) { return qsci->mapToGlobal(pos); }
@@ -1086,16 +1081,19 @@ bool ScintillaEditor::eventFilter(QObject *obj, QEvent *e)
     }
   }
 
-  bool enableNumberScrollWheel = Settings::Settings::enableNumberScrollWheel.value();
-
-  if (obj == qsci->viewport() && enableNumberScrollWheel) {
+  if (obj == qsci->viewport()) {
     if (e->type() == QEvent::Wheel) {
       auto *wheelEvent = static_cast<QWheelEvent *>(e);
       PRINTDB("%s - modifier: %s",
               (e->type() == QEvent::Wheel ? "Wheel Event" : "") %
                 (wheelEvent->modifiers() & Qt::AltModifier ? "Alt" : "Other Button"));
-      if (handleWheelEventNavigateNumber(wheelEvent)) {
+      bool enableNumberScrollWheel = Settings::Settings::enableNumberScrollWheel.value();
+      if (enableNumberScrollWheel && handleWheelEventNavigateNumber(wheelEvent)) {
         qsci->SendScintilla(QsciScintilla::SCI_SETCARETWIDTH, 1);
+        return true;
+      }
+      bool wheelzoom_enabled = GlobalPreferences::inst()->getValue("editor/ctrlmousewheelzoom").toBool();
+      if ((wheelEvent->modifiers() == Qt::ControlModifier) && !wheelzoom_enabled) {
         return true;
       }
     }
@@ -1552,19 +1550,21 @@ void ScintillaEditor::onIndicatorReleased(int line, int col, Qt::KeyboardModifie
   }
 }
 
-#ifdef ENABLE_PYTHON
-void ScintillaEditor::onPythonActiveChanged(bool pythonActive)
+void ScintillaEditor::onLanguageChanged(int lang)
 {
-  if (pythonActive) {
+#ifdef ENABLE_PYTHON
+  if (language == LANG_PYTHON) {
     this->qsci->setLexer(this->pythonLexer);
   } else {
     this->qsci->setLexer(this->lexer);
   }
+#else
+  this->qsci->setLexer(this->lexer);
+#endif
   this->qsci->update();
   // This is needed otherwise the sidebar with line numbers has the wrong size and bg color
   this->setHighlightScheme(GlobalPreferences::inst()->getValue("editor/syntaxhighlight").toString());
 }
-#endif
 
 void ScintillaEditor::setCursorPosition(int line, int col)
 {

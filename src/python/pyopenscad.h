@@ -9,6 +9,8 @@
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
+class CurveDiscretizer;
+
 typedef struct {
   PyObject_HEAD std::shared_ptr<AbstractNode> node;
   PyObject *dict;
@@ -21,7 +23,6 @@ using PyObjectUniquePtr = std::unique_ptr<PyObject, decltype(PyObjectDeleter)&>;
 PyMODINIT_FUNC PyInit_PyOpenSCAD(void);
 
 extern PyTypeObject PyOpenSCADType;
-
 extern PyObject *python_result_obj;
 extern std::vector<SelectedObject> python_result_handle;
 extern void python_catch_error(std::string& errorstr);
@@ -59,6 +60,7 @@ void python_startjupyter(void);
 
 extern SourceFile *osinclude_source;
 
+CurveDiscretizer CreateCurveDiscretizer(PyObject *kwargs);
 PyObject *python_str(PyObject *self);
 
 extern PyNumberMethods PyOpenSCADNumbers;
