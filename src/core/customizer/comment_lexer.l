@@ -8,15 +8,16 @@
     YY_BUFFER_STATE yy_scan_string ( const char *str ) ;
     std::string stringcon;
 
-    //isatty for visual c++ and mingw-cross-env
-    #if defined __WIN32__ && ! defined _MSC_VER
-    #include "unistd.h"
-    #endif
-    #if defined __WIN32__ || defined _MSC_VER
-    extern "C" int __cdecl _isatty(int _FileHandle);
-    #define isatty _isatty
-    #define strdup _strdup
-    #define fileno _fileno
+    // Windows: get correct declarations from headers; avoid redeclaring _isatty.
+    #if defined(_WIN32)
+    #  include <io.h>
+    #  ifdef _MSC_VER
+    #    define isatty  _isatty
+    #    define strdup  _strdup
+    #    define fileno  _fileno
+    #  endif
+    #else
+    #  include <unistd.h> // isatty on POSIX
     #endif
 
 %}
@@ -43,12 +44,12 @@ UNICODE {U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U}
                         return NUM;
                     } catch (boost::bad_lexical_cast&) {}
                 }
-                
+
 "[" { return yytext[0];}
 "]" { return yytext[0];}
 "," { return yytext[0];}
 ":" { return yytext[0];}
-  
+
 [ \t]
 
 \"			{ BEGIN(cond_string); stringcon.clear(); }
@@ -68,7 +69,7 @@ UNICODE {U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U}
 			return WORD; }
 }
 
-   
+
 [^(\[ \] \, \" \:)]* { comment_parserlval.text=strdup(yytext); return WORD;}
 
 . { }

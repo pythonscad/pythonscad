@@ -439,8 +439,10 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
            {fontListDock, _("Font Lists"), "view/hideFontList"},
            {viewportControlDock, _("Viewport-Control"), "view/hideViewportControl"}};
 
-  this->versionLabel = nullptr;  // must be initialized before calling updateStatusBar()
+  this->versionLabel = nullptr;   // must be initialized before calling updateStatusBar()
+  this->languageLabel = nullptr;  // must be initialized before calling updateLanguageLabel()
   updateStatusBar(nullptr);
+  updateLanguageLabel();
 
   renderCompleteSoundEffect = new QSoundEffect();
   renderCompleteSoundEffect->setSource(QUrl("qrc:/sounds/complete.wav"));
@@ -494,7 +496,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
                          GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
 
   const QString version =
-    QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(openscad_versionnumber));
+    QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(std::string(openscad_versionnumber)));
   const QString weblink = "<a href=\"https://www.pythonscad.org/\">https://www.pythonscad.org/</a><br>";
 
   consoleOutputRaw(version);
@@ -1226,6 +1228,7 @@ void MainWindow::dragPointEnd(Vector3d pt)
           std::string arg = sourcecode.substr(parstart - sourcecode_c, parend - parstart);
           // created patched sourcecode
           std::stringstream ss;
+          setlocale(LC_ALL, "C");
           std::string newval = boost::lexical_cast<std::string>(mod.value);
           ss << sourcecode.substr(0, parstart - sourcecode_c) << "\"" << newval << "\""
              << sourcecode.substr(parend - sourcecode_c);
@@ -1726,7 +1729,7 @@ void MainWindow::instantiateRoot()
 
     std::shared_ptr<const FileContext> file_context;
 #ifdef ENABLE_PYTHON
-    if (genlang_result_node != NULL && language != LANG_SCAD)
+    if (genlang_result_node != NULL && currentLanguage != LANG_SCAD)
       this->absoluteRootNode = genlang_result_node;
     else
 #endif
@@ -1923,8 +1926,7 @@ void MainWindow::actionOpenRecent()
 {
   auto action = qobject_cast<QAction *>(sender());
   tabManager->open(action->data().toString());
-  language = LANG_NONE;  // unknown
-  recomputeLanguageActive();
+  // recomputeLanguageActive(); // should be done in open
 }
 
 void MainWindow::clearRecentFiles()
@@ -2021,7 +2023,7 @@ void MainWindow::saveBackup()
 
   if (!this->tempFile) {
 #ifdef ENABLE_PYTHON
-    const QString suffix = language == LANG_PYTHON ? "py" : "scad";
+    const QString suffix = currentLanguage == LANG_PYTHON ? "py" : "scad";
 #else
     const QString suffix = "scad";
 #endif
@@ -2321,6 +2323,11 @@ bool MainWindow::event(QEvent *event)
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+  if (obj == languageLabel && event->type() == QEvent::MouseButtonPress) {
+    showLanguageMenu();
+    return true;
+  }
+
   if (rubberBandManager.isVisible()) {
     if (event->type() == QEvent::KeyRelease) {
       auto keyEvent = static_cast<QKeyEvent *>(event);
@@ -2397,6 +2404,12 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
   QSettingsCached settings;
   char setting_key[256];
   if (python_trusted) return true;
+  if (Settings::SettingsPython::globalTrustPython.value() == true) return true;
+
+  // Trust unsaved files (empty filepath) - they're created by the user, not loaded from disk
+  if (file.empty()) {
+    return true;
+  }
 
   std::string act_hash, ref_hash;
   snprintf(setting_key, sizeof(setting_key) - 1, "python_hash/%s", file.c_str());
@@ -2413,15 +2426,15 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
     this->trusted_edit_document_name = file;
     return true;
   }
-  if (content.rfind("from openscad import", 0) == 0) {  // 1st character already typed
-    this->trusted_edit_document_name = file;
-    return true;
-  }
+  /*
+    if (content.rfind("from openscad import", 0) == 0) {  // 1st character already typed
+      this->trusted_edit_document_name = file;
+      return true;
+    }
+  */
 
   if (settings.contains(setting_key)) {
-    QString str = settings.value(setting_key).toString();
-    QByteArray ba = str.toLocal8Bit();
-    ref_hash = std::string(ba.data());
+    ref_hash = settings.value(setting_key).toString().toStdString();
   }
 
   if (act_hash == ref_hash) {
@@ -2450,29 +2463,6 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
   return false;
 }
 #endif  // ifdef ENABLE_PYTHON
-void MainWindow::recomputeLanguageActive()
-{
-  auto fnameba = activeEditor->filepath.toLocal8Bit();
-  const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba;
-
-  int oldLanguage = language;
-  language = LANG_SCAD;
-  if (fname != NULL) {
-#ifdef ENABLE_PYTHON
-    if (boost::algorithm::ends_with(fname, ".py")) {
-      std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
-      if (trust_python_file(std::string(fname), content)) language = LANG_PYTHON;
-      else LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
-    }
-#endif
-  }
-
-#ifdef ENABLE_PYTHON
-  if (oldLanguage != language) {
-    emit this->pythonActiveChanged(language == LANG_PYTHON);
-  }
-#endif
-}
 
 std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
 {
@@ -2485,11 +2475,10 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
   auto fulltext_py = std::string(this->lastCompiledDoc.toUtf8().constData());
   const char *fname = editor->filepath.isEmpty() ? "" : fnameba.constData();
   SourceFile *sourceFile;
-  recomputeLanguageActive();
 #ifdef ENABLE_PYTHON
-  if (language == LANG_PYTHON) {
-    auto fulltext_py = std::string(this->lastCompiledDoc.toUtf8().constData());
-
+  if (editor->language == LANG_PYTHON && !trust_python_file(std::string(fname), fulltext_py)) {
+    LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
+  } else if (editor->language == LANG_PYTHON) {
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
     initPython(venv, fnameba.constData(), this->animateWidget->getAnimTval());
@@ -3111,7 +3100,8 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
       this->progresswidget = nullptr;
     }
     if (versionLabel == nullptr) {
-      versionLabel = new QLabel("PythonSCAD " + QString::fromStdString(openscad_displayversionnumber));
+      versionLabel =
+        new QLabel("PythonSCAD " + QString::fromStdString(std::string(openscad_displayversionnumber)));
       sb->addPermanentWidget(this->versionLabel);
     }
   } else {
@@ -3121,6 +3111,74 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
       this->versionLabel = nullptr;
     }
     sb->addPermanentWidget(progressWidget);
+  }
+}
+
+void MainWindow::updateLanguageLabel()
+{
+  auto sb = this->statusBar();
+
+  if (languageLabel == nullptr) {
+    languageLabel = new QLabel();
+    languageLabel->setCursor(Qt::PointingHandCursor);
+    languageLabel->installEventFilter(this);
+    languageLabel->setToolTip(_("Click to change language"));
+    sb->addPermanentWidget(this->languageLabel);
+  }
+
+  QString languageText;
+  switch (currentLanguage) {
+  case LANG_SCAD:   languageText = "OpenSCAD"; break;
+  case LANG_PYTHON: languageText = "Python"; break;
+  case LANG_JS:     languageText = "JavaScript"; break;
+  case LANG_LUA:    languageText = "Lua"; break;
+  default:          languageText = "Unknown"; break;
+  }
+
+  languageLabel->setText(languageText);
+}
+
+void MainWindow::showLanguageMenu()
+{
+  if (!activeEditor) return;
+
+  QMenu menu(this);
+
+  QAction *scadAction = menu.addAction(QIcon(":/icons/filetype-openscad.svg"), "OpenSCAD");
+  scadAction->setCheckable(true);
+  scadAction->setChecked(activeEditor->language == LANG_SCAD);
+
+#ifdef ENABLE_PYTHON
+  QAction *pythonAction = menu.addAction(QIcon(":/icons/filetype-python.svg"), "Python");
+  pythonAction->setCheckable(true);
+  pythonAction->setChecked(activeEditor->language == LANG_PYTHON);
+#endif
+
+  menu.addSeparator();
+
+  QAction *autoDetectAction =
+    menu.addAction(QIcon(":/icons/filetype-autodetect.svg"), _("Auto-detect from file extension"));
+  autoDetectAction->setCheckable(true);
+  autoDetectAction->setChecked(!activeEditor->languageManuallySet);
+
+  QAction *selected = menu.exec(QCursor::pos());
+
+  if (selected == scadAction) {
+    activeEditor->setLanguageManually(LANG_SCAD);
+    onLanguageActiveChanged(LANG_SCAD);
+    tabManager->updateTabIcon(activeEditor);
+  }
+#ifdef ENABLE_PYTHON
+  else if (selected == pythonAction) {
+    activeEditor->setLanguageManually(LANG_PYTHON);
+    onLanguageActiveChanged(LANG_PYTHON);
+    tabManager->updateTabIcon(activeEditor);
+  }
+#endif
+  else if (selected == autoDetectAction) {
+    activeEditor->resetLanguageDetection();
+    onLanguageActiveChanged(activeEditor->language);
+    tabManager->updateTabIcon(activeEditor);
   }
 }
 
@@ -3565,9 +3623,9 @@ void MainWindow::actionExportFileFormat(int fmt)
       return;
     }
 
-    std::ofstream fstream(csg_filename.toLocal8Bit());
+    std::ofstream fstream(std::filesystem::u8path(csg_filename.toStdString()));
     if (!fstream.is_open()) {
-      LOG("Can't open file \"%1$s\" for export", csg_filename.toLocal8Bit().constData());
+      LOG("Can't open file \"%1$s\" for export", csg_filename.toStdString());
     } else {
       fstream << this->tree.getString(*this->rootNode, "\t") << "\n";
       fstream.close();
@@ -3584,14 +3642,14 @@ void MainWindow::actionExportFileFormat(int fmt)
     auto img_filename =
       QFileDialog::getSaveFileName(this, _("Export Image"), exportPath(suffix), _("PNG Files (*.png)"));
     if (!img_filename.isEmpty()) {
-      const bool saveResult = qglview->save(img_filename.toLocal8Bit().constData());
+      const bool saveResult = qglview->save(img_filename.toStdString().c_str());
       if (saveResult) {
         this->exportPaths[suffix] = img_filename;
         setCurrentOutput();
         fileExportedMessage("PNG", img_filename);
         clearCurrentOutput();
       } else {
-        LOG("Can't open file \"%1$s\" for export image", img_filename.toLocal8Bit().constData());
+        LOG("Can't open file \"%1$s\" for export image", img_filename.toStdString());
       }
     }
   } break;

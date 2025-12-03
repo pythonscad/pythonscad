@@ -222,6 +222,7 @@ SettingsEntryString Settings::pythonNetworkImportList("python", "networkImportLi
 SettingsEntryString Settings::pythonSecurityLevel("python", "securityLevel", "");
 SettingsEntryString Settings::localAppExecutable("printing", "localAppExecutable", "");
 SettingsEntryString Settings::localAppTempDir("printing", "localAppTempDir", "");
+
 SettingsEntryEnum<std::string> Settings::localAppFileFormat(
   "printing", "localAppFileFormat", createFileFormatItems(fileformat::all3D()),
   fileformat::info(FileFormat::ASCII_STL).description);
@@ -371,6 +372,8 @@ SettingsEntryInt Settings::joystickNr("input", "joystickNr", 0, 9, 0);
 
 SettingsEntryString SettingsPython::pythonTrustedFiles(SECTION_PYTHON, "trusted-files", "");
 SettingsEntryString SettingsPython::pythonVirtualEnv(SECTION_PYTHON, "virtual-env", "");
+SettingsEntryString SettingsPython::pythonNetworkImportList(SECTION_PYTHON, "networkImportList", "");
+SettingsEntryBool SettingsPython::globalTrustPython(SECTION_PYTHON, "global-trust-python", false);
 
 SettingsEntryBool SettingsExportPdf::exportPdfAlwaysShowDialog(SECTION_EXPORT_PDF, "always-show-dialog",
                                                                true);

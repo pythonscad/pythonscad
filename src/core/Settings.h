@@ -525,6 +525,8 @@ class SettingsPython
 public:
   static SettingsEntryString pythonTrustedFiles;
   static SettingsEntryString pythonVirtualEnv;
+  static SettingsEntryString pythonNetworkImportList;
+  static SettingsEntryBool globalTrustPython;
 };
 
 class SettingsExportPdf

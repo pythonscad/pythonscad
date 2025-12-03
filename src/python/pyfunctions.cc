@@ -48,10 +48,12 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 #include "python/FrepNode.h"
 #endif
 #include "GeometryUtils.h"
+#include "core/FreetypeRenderer.h"
 #include "core/TransformNode.h"
 #include "core/LinearExtrudeNode.h"
 #include "core/RotateExtrudeNode.h"
 #include "core/PathExtrudeNode.h"
+#include "core/ImportNode.h"
 #include "core/PullNode.h"
 #include "core/WrapNode.h"
 #include "core/OversampleNode.h"
@@ -67,11 +69,11 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 #include "core/SurfaceNode.h"
 #include "core/SheetNode.h"
 #include "core/TextNode.h"
+#include "core/CurveDiscretizer.h"
 #include "core/OffsetNode.h"
 #include <hash.h>
 #include "geometry/PolySetUtils.h"
 #include "core/ProjectionNode.h"
-#include "core/ImportNode.h"
 #include "core/Tree.h"
 #include "geometry/PolySet.h"
 #include "geometry/GeometryEvaluator.h"
@@ -95,7 +97,7 @@ extern std::unordered_map<std::string, Color4f> webcolors;
 
 PyObject *python_edge(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<EdgeNode>(instance);
 
   char *kwlist[] = {"size", "center", NULL};
@@ -123,7 +125,7 @@ PyObject *python_edge(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_marked(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<EdgeNode>(instance);
 
   char *kwlist[] = {"value", NULL};
@@ -138,7 +140,7 @@ PyObject *python_marked(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_cube(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<CubeNode>(instance);
 
   char *kwlist[] = {"size", "center", NULL};
@@ -526,8 +528,8 @@ std::unique_ptr<const Geometry> sphereCreateFuncGeometry(void *funcptr, double f
 
 PyObject *python_sphere(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
-  auto node = std::make_shared<SphereNode>(instance);
+  DECLARE_INSTANCE();
+  auto node = std::make_shared<SphereNode>(instance, CreateCurveDiscretizer(kwargs));
 
   char *kwlist[] = {"r", "d", "fn", "fa", "fs", NULL};
   double r = NAN;
@@ -564,11 +566,6 @@ PyObject *python_sphere(PyObject *self, PyObject *args, PyObject *kwargs)
     vr = d / 2.0;
   }
 
-  get_fnas(node->fn, node->fa, node->fs);
-  if (!isnan(fn)) node->fn = fn;
-  if (!isnan(fa)) node->fa = fa;
-  if (!isnan(fs)) node->fs = fs;
-
   node->r = vr;
 
   python_retrieve_pyname(node);
@@ -577,8 +574,7 @@ PyObject *python_sphere(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
-  auto node = std::make_shared<CylinderNode>(instance);
+  DECLARE_INSTANCE();
 
   char *kwlist[] = {"h", "r1", "r2", "center", "r", "d", "d1", "d2", "angle", "fn", "fa", "fs", NULL};
   PyObject *h_ = nullptr;
@@ -603,6 +599,7 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
   double r = NAN;
   double h = NAN;
 
+  auto node = std::make_shared<CylinderNode>(instance, CreateCurveDiscretizer(kwargs));
   python_numberval(r_, &r, &(node->dragflags), 1);
   python_numberval(h_, &h, &(node->dragflags), 2);
 
@@ -651,10 +648,6 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   if (!isnan(angle)) node->angle = angle;
-  get_fnas(node->fn, node->fa, node->fs);
-  if (!isnan(fn)) node->fn = fn;
-  if (!isnan(fa)) node->fa = fa;
-  if (!isnan(fs)) node->fs = fs;
 
   node->r1 = vr1;
   node->r2 = vr2;
@@ -673,7 +666,7 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   unsigned int i, j, pointIndex;
   auto node = std::make_shared<PolyhedronNode>(instance);
 
@@ -800,7 +793,7 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
 #ifdef ENABLE_LIBFIVE
 PyObject *python_frep(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<FrepNode>(instance);
   PyObject *expression = NULL;
   PyObject *bmin = NULL, *bmax = NULL;
@@ -830,7 +823,7 @@ PyObject *python_frep(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_ifrep(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   PyObject *object = NULL;
   PyObject *dummydict;
 
@@ -851,7 +844,7 @@ PyObject *python_ifrep(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_square(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<SquareNode>(instance);
 
   char *kwlist[] = {"dim", "center", NULL};
@@ -883,8 +876,7 @@ PyObject *python_square(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_circle(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
-  auto node = std::make_shared<CircleNode>(instance);
+  DECLARE_INSTANCE();
 
   char *kwlist[] = {"r", "d", "angle", "fn", "fa", "fs", NULL};
   double r = NAN;
@@ -918,12 +910,9 @@ PyObject *python_circle(PyObject *self, PyObject *args, PyObject *kwargs)
     vr = d / 2.0;
   }
 
-  if (!isnan(angle)) node->angle = angle;
+  auto node = std::make_shared<CircleNode>(instance, CreateCurveDiscretizer(kwargs));
 
-  get_fnas(node->fn, node->fa, node->fs);
-  if (!isnan(fn)) node->fn = fn;
-  if (!isnan(fa)) node->fa = fa;
-  if (!isnan(fs)) node->fs = fs;
+  if (!isnan(angle)) node->angle = angle;
 
   node->r = vr;
 
@@ -933,9 +922,9 @@ PyObject *python_circle(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_polygon(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   unsigned int i, j, pointIndex;
-  auto node = std::make_shared<PolygonNode>(instance);
+  auto node = std::make_shared<PolygonNode>(instance, CreateCurveDiscretizer(kwargs));
 
   char *kwlist[] = {"points", "paths", "convexity", NULL};
   PyObject *points = NULL;
@@ -1004,7 +993,7 @@ PyObject *python_polygon(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_spline(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   unsigned int i;
   auto node = std::make_shared<SplineNode>(instance);
 
@@ -1054,13 +1043,12 @@ int python_tomatrix(PyObject *pyt, Matrix4d& mat)
   if (pyt == nullptr) return 1;
   PyObject *row, *cell;
   double val;
+  mat = Matrix4d::Identity();
   if (!PyList_Check(pyt)) return 1;
-  if (PyList_Size(pyt) != 4) return 1;
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < std::min(4, (int)PyList_Size(pyt)); i++) {
     row = PyList_GetItem(pyt, i);
     if (!PyList_Check(row)) return 1;
-    if (PyList_Size(row) != 4) return 1;
-    for (int j = 0; j < 4; j++) {
+    for (int j = 0; j < std::min(4, (int)PyList_Size(row)); j++) {
       cell = PyList_GetItem(row, j);
       if (python_numberval(cell, &val)) return 1;
       mat(i, j) = val;
@@ -1111,10 +1099,10 @@ PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
     Transform3d matrix = Transform3d::Identity();
     matrix.scale(scalevec);
     Vector3d n;
-    for (int i = 0; i < vecs; i++) {
-      n = Vector3d(mat(0, i), mat(1, i), mat(2, i));
-      n = matrix * n;
-      for (int j = 0; j < 3; j++) mat(j, i) = n[j];
+    for (int i = 0; i < 3; i++) {    // row
+      for (int j = 0; j < 4; j++) {  // col
+        mat(j, i) = mat(j, i) * scalevec[i];
+      }
     }
     return python_frommatrix(mat);
   }
@@ -1131,7 +1119,7 @@ PyObject *python_scale_sub(PyObject *obj, Vector3d scalevec)
   PyObject *mat = python_number_scale(obj, scalevec, 4);
   if (mat != nullptr) return mat;
 
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
   auto node = std::make_shared<TransformNode>(instance, "scale");
   PyObject *child_dict;
@@ -1269,7 +1257,7 @@ PyObject *python_rotate_sub(PyObject *obj, Vector3d vec3, double angle, PyObject
   PyObject *mat = python_number_rot(obj, M, 4);
   if (mat != nullptr) return mat;
 
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<TransformNode>(instance, "rotate");
   node->dragflags = dragflags;
 
@@ -1293,12 +1281,12 @@ PyObject *python_rotate_sub(PyObject *obj, Vector3d vec3, double angle, PyObject
 
     std::shared_ptr<TransformNode> prenode, postnode;
     {
-      DECLARE_INSTANCE
+      DECLARE_INSTANCE();
       prenode = std::make_shared<TransformNode>(instance, "translate");
       prenode->matrix.translate(-vec3);
     }
     {
-      DECLARE_INSTANCE
+      DECLARE_INSTANCE();
       postnode = std::make_shared<TransformNode>(instance, "translate");
       postnode->matrix.translate(vec3);
     }
@@ -1345,7 +1333,7 @@ PyObject *python_rotate(PyObject *self, PyObject *args, PyObject *kwargs)
   PyObject *val_v = nullptr;
   PyObject *obj = nullptr;
   PyObject *ref = nullptr;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|OO", kwlist, &obj, &val_a, &val_v), &ref) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|OO", kwlist, &obj, &val_a, &val_v, &ref)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing rotate(object, vec3)");
     return NULL;
   }
@@ -1383,7 +1371,7 @@ PyObject *python_mirror_sub(PyObject *obj, Matrix4d& m)
   PyObject *mat = python_number_mirror(obj, m, 4);
   if (mat != nullptr) return mat;
 
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<TransformNode>(instance, "mirror");
   node->matrix = m;
   PyObject *child_dict;
@@ -1479,7 +1467,7 @@ PyObject *python_translate_sub(PyObject *obj, Vector3d translatevec, int dragfla
   PyObject *mat = python_number_trans(obj, translatevec, 4);
   if (mat != nullptr) return mat;
 
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<TransformNode>(instance, "translate");
   std::shared_ptr<AbstractNode> child;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
@@ -1784,11 +1772,11 @@ PyObject *python_multmatrix_sub(PyObject *pyobj, PyObject *pymat, int div)
 
   Matrix4d objmat;
   if (!python_tomatrix(pyobj, objmat)) {
-    objmat = mat * objmat;
+    objmat = objmat * mat;
     return python_frommatrix(objmat);
   }
 
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<TransformNode>(instance, "multmatrix");
   std::shared_ptr<AbstractNode> child;
   PyObject *child_dict;
@@ -1865,7 +1853,7 @@ PyObject *python_oo_divmatrix(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_pull_core(PyObject *obj, PyObject *anchor, PyObject *dir)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<PullNode>(instance);
   PyObject *dummydict;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
@@ -1920,7 +1908,7 @@ PyObject *python_oo_pull(PyObject *obj, PyObject *args, PyObject *kwargs)
 PyObject *python_wrap_core(PyObject *obj, PyObject *target, double r, double d, double fn, double fa,
                            double fs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<WrapNode>(instance);
 
   PyObject *dummydict;
@@ -1948,10 +1936,6 @@ PyObject *python_wrap_core(PyObject *obj, PyObject *target, double r, double d, 
     return NULL;
   }
 
-  get_fnas(node->fn, node->fa, node->fs);
-  if (!isnan(fn)) node->fn = fn;
-  if (!isnan(fa)) node->fa = fa;
-  if (!isnan(fs)) node->fs = fs;
   node->children.push_back(child);
   return PyOpenSCADObjectFromNode(type, node);
 }
@@ -1997,12 +1981,12 @@ PyObject *python_show_core(PyObject *obj)
     return NULL;
   }
   if (child == void_node) {
-    return nullptr;
+    return Py_None;
   }
 
   if (child == full_node) {
     PyErr_SetString(PyExc_TypeError, "Cannot display infinite space");
-    return nullptr;
+    return Py_True;
   }
 
   PyObject *key, *value;
@@ -2027,19 +2011,19 @@ PyObject *python_show_core(PyObject *obj)
     }
   }
   shows.push_back(child);
-  Py_INCREF(obj);
   return obj;
 }
 
 PyObject *python_show(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   PyObject *obj = NULL;
-  char *kwlist[] = {"obj", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &obj)) {
-    PyErr_SetString(PyExc_TypeError, "Error during parsing output(object)");
-    return NULL;
+  PyObject *result = Py_None;
+  if (args == nullptr) return result;
+  for (int i = 0; i < PyTuple_Size(args); i++) {
+    result = python_show_core(PyTuple_GetItem(args, i));
   }
-  return python_show_core(obj);
+  if (result != Py_None) Py_INCREF(result);
+  return result;
 }
 
 PyObject *python_oo_show(PyObject *obj, PyObject *args, PyObject *kwargs)
@@ -2049,7 +2033,9 @@ PyObject *python_oo_show(PyObject *obj, PyObject *args, PyObject *kwargs)
     PyErr_SetString(PyExc_TypeError, "Error during parsing output(object)");
     return NULL;
   }
-  return python_show_core(obj);
+  auto res = python_show_core(obj);
+  Py_INCREF(res);
+  return res;
 }
 
 PyObject *python_output(PyObject *obj, PyObject *args, PyObject *kwargs)
@@ -2278,7 +2264,7 @@ PyObject *python_sitonto_core(PyObject *pyobj, PyObject *vecx_p, PyObject *vecy_
   if (cut_face_face_face(vecx.head<3>() * vecx[3], vecx.head<3>(), vecy.head<3>() * vecy[3],
                          vecy.head<3>(), vecz.head<3>() * vecz[3], vecz.head<3>(), cut))
     return Py_None;
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<TransformNode>(instance, "sitontonode");
   std::shared_ptr<AbstractNode> child;
   PyObject *dummydict;
@@ -2382,7 +2368,7 @@ PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha)
     PyErr_SetString(PyExc_TypeError, "Invalid type for Object in color");
     return NULL;
   }
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<ColorNode>(instance);
 
   Vector4d col(0, 0, 0, alpha);
@@ -2445,7 +2431,7 @@ PyObject *python_oo_color(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 typedef std::vector<int> intList;
 
-PyObject *python_mesh_core(PyObject *obj, bool tessellate)
+PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
 {
   PyObject *dummydict;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
@@ -2493,12 +2479,23 @@ PyObject *python_mesh_core(PyObject *obj, bool tessellate)
     PyObject *pyth_outlines = PyList_New(outlines.size());
     for (unsigned int i = 0; i < outlines.size(); i++) {
       const Outline2d& outline = outlines[i];
-      PyObject *pyth_outline = PyList_New(outline.vertices.size());
+      int items = outline.vertices.size();
+      if (color) items++;
+      PyObject *pyth_outline = PyList_New(items);
+      int ind = 0;
+      if (color) {
+        PyObject *pyth_col = PyList_New(4);
+        PyList_SetItem(pyth_col, 0, PyFloat_FromDouble(outline.color.r()));
+        PyList_SetItem(pyth_col, 1, PyFloat_FromDouble(outline.color.g()));
+        PyList_SetItem(pyth_col, 2, PyFloat_FromDouble(outline.color.b()));
+        PyList_SetItem(pyth_col, 3, PyFloat_FromDouble(outline.color.a()));
+        PyList_SetItem(pyth_outline, ind++, pyth_col);
+      }
       for (unsigned int j = 0; j < outline.vertices.size(); j++) {
         Vector2d pt = outline.vertices[j];
         PyObject *pyth_pt = PyList_New(2);
         for (int k = 0; k < 2; k++) PyList_SetItem(pyth_pt, k, PyFloat_FromDouble(pt[k]));
-        PyList_SetItem(pyth_outline, j, pyth_pt);
+        PyList_SetItem(pyth_outline, ind++, pyth_pt);
       }
       PyList_SetItem(pyth_outlines, i, pyth_outline);
     }
@@ -2509,25 +2506,27 @@ PyObject *python_mesh_core(PyObject *obj, bool tessellate)
 
 PyObject *python_mesh(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = {"obj", "triangulate", NULL};
+  char *kwlist[] = {"obj", "triangulate", "color", NULL};
   PyObject *obj = NULL;
   PyObject *tess = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O", kwlist, &obj, &tess)) {
+  PyObject *color = Py_False;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OO", kwlist, &obj, &tess, &color)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
-  return python_mesh_core(obj, tess == Py_True);
+  return python_mesh_core(obj, tess == Py_True, color == Py_True);
 }
 
 PyObject *python_oo_mesh(PyObject *obj, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = {"triangulate", NULL};
+  char *kwlist[] = {"triangulate", "color", NULL};
   PyObject *tess = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O", kwlist, &tess)) {
+  PyObject *color = Py_False;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OO", kwlist, &tess, &color)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
-  return python_mesh_core(obj, tess == Py_True);
+  return python_mesh_core(obj, tess == Py_True, color == Py_True);
 }
 
 PyObject *python_bbox_core(PyObject *obj)
@@ -2732,7 +2731,7 @@ PyObject *python_separate_core(PyObject *obj)
     PyObject *objects = PyList_New(obj_num);
     for (int i = 0; i < obj_num; i++) {
       // create a polyhedron for each
-      DECLARE_INSTANCE
+      DECLARE_INSTANCE();
       auto node = std::make_shared<PolyhedronNode>(instance);
       node->convexity = 2;
       std::vector<int> vert_map;
@@ -2825,12 +2824,12 @@ PyObject *python_edges_core(PyObject *obj)
       mat << xdir[0], ydir[0], zdir[0], pt[0], xdir[1], ydir[1], zdir[1], pt[1], xdir[2], ydir[2],
         zdir[2], pt[2], 0, 0, 0, 1;
 
-      DECLARE_INSTANCE
+      DECLARE_INSTANCE();
       auto edge = std::make_shared<EdgeNode>(instance);
       edge->size = (p2 - p1).norm();
       edge->center = true;
       {
-        DECLARE_INSTANCE
+        DECLARE_INSTANCE();
         auto mult = std::make_shared<TransformNode>(instance, "multmatrix");
         mult->matrix = mat;
         mult->children.push_back(edge);
@@ -2922,8 +2921,8 @@ PyObject *python_faces_core(PyObject *obj, bool tessellate)
 
       Matrix4d invmat = mat.inverse();
 
-      DECLARE_INSTANCE
-      auto poly = std::make_shared<PolygonNode>(instance);
+      DECLARE_INSTANCE();
+      auto poly = std::make_shared<PolygonNode>(instance, CurveDiscretizer(3));
       std::vector<size_t> path;
       for (size_t i = 0; i < face.size(); i++) {
         Vector3d pt = ps->vertices[face[i]];
@@ -2972,7 +2971,7 @@ PyObject *python_faces_core(PyObject *obj, bool tessellate)
         }
       }
       {
-        DECLARE_INSTANCE
+        DECLARE_INSTANCE();
         auto mult = std::make_shared<TransformNode>(instance, "multmatrix");
         // mat um arcshift drehen
         Vector3d xvec(mat(0, 0), mat(1, 0), mat(2, 0));
@@ -3033,7 +3032,7 @@ PyObject *python_oversample_core(PyObject *obj, int n, PyObject *round)
     return NULL;
   }
 
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<OversampleNode>(instance);
   node->children.push_back(child);
   node->n = n;
@@ -3078,7 +3077,7 @@ PyObject *python_debug_core(PyObject *obj, PyObject *faces)
     return NULL;
   }
 
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<DebugNode>(instance);
   node->children.push_back(child);
   if (faces != nullptr) {
@@ -3121,7 +3120,7 @@ PyObject *python_repair_core(PyObject *obj, PyObject *color)
     return NULL;
   }
 
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<RepairNode>(instance);
   node->children.push_back(child);
   if (color != nullptr) {
@@ -3173,7 +3172,7 @@ PyObject *python_oo_repair(PyObject *self, PyObject *args, PyObject *kwargs)
 PyObject *python_fillet_core(PyObject *obj, double r, int fn, PyObject *sel, double minang)
 {
   PyObject *dummydict;
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<FilletNode>(instance);
   PyTypeObject *type = &PyOpenSCADType;
   node->r = r;
@@ -3199,7 +3198,7 @@ PyObject *python_fillet_core(PyObject *obj, double r, int fn, PyObject *sel, dou
 PyObject *python_fillet(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   double r = 1.0;
-  double fn = NAN;
+  double fn = 3;
   double minang = 30;
   char *kwlist[] = {"obj", "r", "sel", "fn", "minang", NULL};
   PyObject *obj = NULL;
@@ -3209,7 +3208,6 @@ PyObject *python_fillet(PyObject *self, PyObject *args, PyObject *kwargs)
     return NULL;
   }
   double dummy;
-  if (isnan(fn)) get_fnas(fn, dummy, dummy);
   return python_fillet_core(obj, r, fn, sel, minang);
 }
 
@@ -3225,17 +3223,16 @@ PyObject *python_oo_fillet(PyObject *obj, PyObject *args, PyObject *kwargs)
     return NULL;
   }
   double dummy;
-  if (isnan(fn)) get_fnas(fn, dummy, dummy);
   return python_fillet_core(obj, r, fn, sel, minang);
 }
 
 PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double angle, PyObject *twist,
-                              PyObject *origin, PyObject *offset, PyObject *vp, char *method, double fn,
-                              double fa, double fs)
+                              PyObject *origin, PyObject *offset, PyObject *vp, char *method,
+                              CurveDiscretizer&& discretizer)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
-  auto node = std::make_shared<RotateExtrudeNode>(instance);
+  auto node = std::make_shared<RotateExtrudeNode>(instance, discretizer);
   PyTypeObject *type = &PyOpenSCADType;
   node->profile_func = NULL;
   node->twist_func = NULL;
@@ -3254,11 +3251,6 @@ PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double
     }
     node->children.push_back(child);
   }
-
-  get_fnas(node->fn, node->fa, node->fs);
-  if (!isnan(fn)) node->fn = fn;
-  if (!isnan(fa)) node->fa = fa;
-  if (!isnan(fs)) node->fs = fs;
 
   node->convexity = convexity;
   node->scale = scale;
@@ -3305,7 +3297,6 @@ PyObject *python_rotate_extrude(PyObject *self, PyObject *args, PyObject *kwargs
   PyObject *origin = NULL;
   PyObject *offset = NULL;
   double fn = NAN, fa = NAN, fs = NAN;
-  get_fnas(fn, fa, fs);
   char *kwlist[] = {"obj", "convexity", "scale", "angle", "twist", "origin", "offset",
                     "v",   "method",    "fn",    "fa",    "fs",    NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iddOOOOsddd", kwlist, &obj, &convexity, &scale,
@@ -3313,7 +3304,8 @@ PyObject *python_rotate_extrude(PyObject *self, PyObject *args, PyObject *kwargs
     PyErr_SetString(PyExc_TypeError, "Error during parsing rotate_extrude(object,...)");
     return NULL;
   }
-  return rotate_extrude_core(obj, convexity, scale, angle, twist, origin, offset, v, method, fn, fa, fs);
+  return rotate_extrude_core(obj, convexity, scale, angle, twist, origin, offset, v, method,
+                             CreateCurveDiscretizer(kwargs));
 }
 
 PyObject *python_oo_rotate_extrude(PyObject *obj, PyObject *args, PyObject *kwargs)
@@ -3325,7 +3317,6 @@ PyObject *python_oo_rotate_extrude(PyObject *obj, PyObject *args, PyObject *kwar
   PyObject *origin = NULL;
   PyObject *offset = NULL;
   double fn = NAN, fa = NAN, fs = NAN;
-  get_fnas(fn, fa, fs);
   PyObject *v = NULL;
   char *method = NULL;
   char *kwlist[] = {"convexity", "scale",  "angle", "twist", "origin", "offset",
@@ -3335,25 +3326,23 @@ PyObject *python_oo_rotate_extrude(PyObject *obj, PyObject *args, PyObject *kwar
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
-  return rotate_extrude_core(obj, convexity, scale, angle, twist, origin, offset, v, method, fn, fa, fs);
+  return rotate_extrude_core(obj, convexity, scale, angle, twist, origin, offset, v, method,
+                             CreateCurveDiscretizer(kwargs));
 }
 
 PyObject *linear_extrude_core(PyObject *obj, PyObject *height, int convexity, PyObject *origin,
                               PyObject *scale, PyObject *center, int slices, int segments,
-                              PyObject *twist, double fn, double fa, double fs)
+                              PyObject *twist, CurveDiscretizer&& discretizer)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
-  auto node = std::make_shared<LinearExtrudeNode>(instance);
+  auto node = std::make_shared<LinearExtrudeNode>(instance, discretizer);
   PyTypeObject *type = &PyOpenSCADType;
-
   node->profile_func = NULL;
   node->twist_func = NULL;
-  get_fnas(node->fn, node->fa, node->fs);
   if (obj->ob_type == &PyFunction_Type) {
     Py_XINCREF(obj);  // TODO there to decref it ?
     node->profile_func = obj;
-    node->fn = 2;
     auto dummy_node = std::make_shared<SquareNode>(instance);
     node->children.push_back(dummy_node);
   } else {
@@ -3366,10 +3355,6 @@ PyObject *linear_extrude_core(PyObject *obj, PyObject *height, int convexity, Py
     }
     node->children.push_back(child);
   }
-
-  if (!isnan(fn)) node->fn = fn;
-  if (!isnan(fa)) node->fa = fa;
-  if (!isnan(fs)) node->fs = fs;
 
   Vector3d height_vec(0, 0, 0);
   double dummy;
@@ -3433,19 +3418,17 @@ PyObject *python_linear_extrude(PyObject *self, PyObject *args, PyObject *kwargs
   int slices = 1;
   int segments = 0;
   PyObject *twist = NULL;
-  double fn = NAN, fa = NAN, fs = NAN;
 
-  char *kwlist[] = {"obj",      "height", "convexity", "origin", "scale", "center", "slices",
-                    "segments", "twist",  "fn",        "fa",     "fs",    NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OiOOOiiOddd", kwlist, &obj, &height, &convexity,
-                                   &origin, &scale, &center, &slices, &segments, &twist, &fn, &fs,
-                                   &fs)) {
+  char *kwlist[] = {"obj",    "height", "convexity", "origin", "scale",
+                    "center", "slices", "segments",  "twist",  NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OiOOOiiO", kwlist, &obj, &height, &convexity,
+                                   &origin, &scale, &center, &slices, &segments, &twist)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
 
-  return linear_extrude_core(obj, height, convexity, origin, scale, center, slices, segments, twist, fn,
-                             fa, fs);
+  return linear_extrude_core(obj, height, convexity, origin, scale, center, slices, segments, twist,
+                             CreateCurveDiscretizer(kwargs));
 }
 
 PyObject *python_oo_linear_extrude(PyObject *obj, PyObject *args, PyObject *kwargs)
@@ -3458,25 +3441,24 @@ PyObject *python_oo_linear_extrude(PyObject *obj, PyObject *args, PyObject *kwar
   int slices = 1;
   int segments = 0;
   PyObject *twist = NULL;
-  double fn = NAN, fa = NAN, fs = NAN;
 
-  char *kwlist[] = {"height",   "convexity", "origin", "scale", "center", "slices",
-                    "segments", "twist",     "fn",     "fa",    "fs",     NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OiOOOiiOddd", kwlist, &height, &convexity, &origin,
-                                   &scale, &center, &slices, &segments, &twist, &fn, &fs, &fs)) {
+  char *kwlist[] = {"height", "convexity", "origin", "scale", "center",
+                    "slices", "segments",  "twist",  NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OiOOOiiO", kwlist, &height, &convexity, &origin,
+                                   &scale, &center, &slices, &segments, &twist)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
 
-  return linear_extrude_core(obj, height, convexity, origin, scale, center, slices, segments, twist, fn,
-                             fa, fs);
+  return linear_extrude_core(obj, height, convexity, origin, scale, center, slices, segments, twist,
+                             CreateCurveDiscretizer(kwargs));
 }
 
 PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int convexity,
                             PyObject *origin, PyObject *scale, PyObject *twist, PyObject *closed,
                             PyObject *allow_intersect, double fn, double fa, double fs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
   auto node = std::make_shared<PathExtrudeNode>(instance);
   PyTypeObject *type = &PyOpenSCADType;
@@ -3527,11 +3509,6 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
     PyErr_SetString(PyExc_TypeError, "error in path_extrude xdir parameter has zero size\n");
     return NULL;
   }
-
-  get_fnas(node->fn, node->fa, node->fs);
-  if (fn != -1) node->fn = fn;
-  if (fa != -1) node->fa = fa;
-  if (fs != -1) node->fs = fs;
 
   node->convexity = convexity;
 
@@ -3598,7 +3575,7 @@ PyObject *python_path_extrude(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_concat(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   int i;
 
   auto node = std::make_shared<ConcatNode>(instance);
@@ -3643,7 +3620,7 @@ PyObject *python_concat(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_skin(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   int i;
 
   auto node = std::make_shared<SkinNode>(instance);
@@ -3756,7 +3733,7 @@ PyObject *python_csg_core(std::shared_ptr<CsgOpNode>& node,
 
 PyObject *python_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, OpenSCADOperator mode)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   int i;
   auto node = std::make_shared<CsgOpNode>(instance, mode);
   node->r = 0;
@@ -3853,7 +3830,7 @@ PyObject *python_intersection(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_oo_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, OpenSCADOperator mode)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   int i;
 
   auto node = std::make_shared<CsgOpNode>(instance, mode);
@@ -3955,7 +3932,7 @@ PyObject *python_oo_intersection(PyObject *self, PyObject *args, PyObject *kwarg
 
 PyObject *python_nb_sub(PyObject *arg1, PyObject *arg2, OpenSCADOperator mode)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::vector<std::shared_ptr<AbstractNode>> child;
   std::vector<PyObject *> child_dict;
 
@@ -4001,7 +3978,7 @@ PyObject *python_nb_sub(PyObject *arg1, PyObject *arg2, OpenSCADOperator mode)
 PyObject *python_nb_sub_vec3(PyObject *arg1, PyObject *arg2,
                              int mode)  // 0: translate, 1: scale, 2: translateneg, 3=translate-exp
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
   PyObject *child_dict;
 
@@ -4089,7 +4066,7 @@ PyObject *python_nb_sub_vec3(PyObject *arg1, PyObject *arg2,
       return pyresult;
     } else {
       auto node = std::make_shared<CsgOpNode>(instance, OpenSCADOperator::UNION);
-      DECLARE_INSTANCE
+      DECLARE_INSTANCE();
       for (auto x : nodes) node->children.push_back(x->clone());
       return PyOpenSCADObjectFromNode(type, node);
     }
@@ -4113,7 +4090,7 @@ PyObject *python_nb_xor(PyObject *arg1, PyObject *arg2)
       PyErr_SetString(PyExc_TypeError, "Error during parsing hull. arguments must be solids.");
       return nullptr;
     }
-    DECLARE_INSTANCE
+    DECLARE_INSTANCE();
     std::shared_ptr<AbstractNode> child;
     auto node = std::make_shared<CgalAdvNode>(instance, CgalAdvType::HULL);
     node->children.push_back(node1);
@@ -4133,7 +4110,7 @@ PyObject *python_nb_remainder(PyObject *arg1, PyObject *arg2)
       PyErr_SetString(PyExc_TypeError, "Error during parsing hull. arguments must be solids.");
       return nullptr;
     }
-    DECLARE_INSTANCE
+    DECLARE_INSTANCE();
     std::shared_ptr<AbstractNode> child;
     auto node = std::make_shared<CgalAdvNode>(instance, CgalAdvType::MINKOWSKI);
     node->children.push_back(node1);
@@ -4183,7 +4160,7 @@ PyObject *python_nb_matmult(PyObject *arg1, PyObject *arg2)
 
 PyObject *python_csg_adv_sub(PyObject *self, PyObject *args, PyObject *kwargs, CgalAdvType mode)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
   PyTypeObject *type = &PyOpenSCADType;
   int i;
@@ -4219,7 +4196,7 @@ PyObject *python_csg_adv_sub(PyObject *self, PyObject *args, PyObject *kwargs, C
 
 PyObject *python_minkowski(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
   int convexity = 2;
 
@@ -4256,13 +4233,13 @@ PyObject *python_fill(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosize, int convexity)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
 
   auto node = std::make_shared<CgalAdvNode>(instance, CgalAdvType::RESIZE);
-  PyObject *dummydict;
+  PyObject *child_dict;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
-  child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
+  child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
   if (child == NULL) {
     PyErr_SetString(PyExc_TypeError, "Invalid type for Object in resize");
     return NULL;
@@ -4295,7 +4272,15 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
   node->children.push_back(child);
   node->convexity = convexity;
 
-  return PyOpenSCADObjectFromNode(type, node);
+  auto pyresult = PyOpenSCADObjectFromNode(type, node);
+  if (child_dict != nullptr) {
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(child_dict, &pos, &key, &value)) {
+      PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    }
+  }
+  return pyresult;
 }
 
 PyObject *python_resize(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -4330,12 +4315,12 @@ PyObject *python_oo_resize(PyObject *obj, PyObject *args, PyObject *kwargs)
 }
 
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
-PyObject *python_roof_core(PyObject *obj, const char *method, int convexity, double fn, double fa,
-                           double fs)
+PyObject *python_roof_core(PyObject *obj, const char *method, int convexity,
+                           CurveDiscretizer&& discretizer)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
-  auto node = std::make_shared<RoofNode>(instance);
+  auto node = std::make_shared<RoofNode>(instance, discretizer);
   PyObject *dummydict;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
@@ -4344,24 +4329,11 @@ PyObject *python_roof_core(PyObject *obj, const char *method, int convexity, dou
     return NULL;
   }
 
-  get_fnas(node->fn, node->fa, node->fs);
-  if (!isnan(fn)) node->fn = fn;
-  if (!isnan(fa)) node->fa = fa;
-  if (!isnan(fs)) node->fs = fs;
-
-  node->fa = std::max(node->fa, 0.01);
-  node->fs = std::max(node->fs, 0.01);
-  if (node->fn > 0) {
-    node->fa = 360.0 / node->fn;
-    node->fs = 0.0;
-  }
-
   if (method == NULL) {
     node->method = "voronoi";
   } else {
     node->method = method;
-    // method can only be one of...
-    if (node->method != "voronoi" && node->method != "straight") {
+    if (!RoofNode::knownMethods.count(node->method)) {
       //      LOG(message_group::Warning, inst->location(), parameters.documentRoot(),
       //          "Unknown roof method '" + node->method + "'. Using 'voronoi'.");
       node->method = "voronoi";
@@ -4379,35 +4351,34 @@ PyObject *python_roof_core(PyObject *obj, const char *method, int convexity, dou
 PyObject *python_roof(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   double fn = NAN, fa = NAN, fs = NAN;
-  char *kwlist[] = {"obj", "method", "convexity", "fn", "fa", "fs", NULL};
+  char *kwlist[] = {"obj", "method", "convexity", NULL};
   PyObject *obj = NULL;
   const char *method = NULL;
   int convexity = 2;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|sdddd", kwlist, &obj, &method, convexity, &fn, &fa,
-                                   &fs)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|sd", kwlist, &obj, &method, convexity)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing roof(object)");
     return NULL;
   }
-  return python_roof_core(obj, method, convexity, fn, fa, fs);
+  return python_roof_core(obj, method, convexity, CreateCurveDiscretizer(kwargs));
 }
 
 PyObject *python_oo_roof(PyObject *obj, PyObject *args, PyObject *kwargs)
 {
   double fn = NAN, fa = NAN, fs = NAN;
-  char *kwlist[] = {"method", "convexity", "fn", "fa", "fs", NULL};
+  char *kwlist[] = {"method", "convexity", NULL};
   const char *method = NULL;
   int convexity = 2;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sdddd", kwlist, &method, convexity, &fn, &fa, &fs)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sd", kwlist, &method, convexity)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing roof(object)");
     return NULL;
   }
-  return python_roof_core(obj, method, convexity, fn, fa, fs);
+  return python_roof_core(obj, method, convexity, CreateCurveDiscretizer(kwargs));
 }
 #endif
 
 PyObject *python_render_core(PyObject *obj, int convexity)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<RenderNode>(instance);
 
   PyObject *dummydict;
@@ -4444,7 +4415,7 @@ PyObject *python_oo_render(PyObject *obj, PyObject *args, PyObject *kwargs)
 PyObject *python_surface_core(const char *file, PyObject *center, PyObject *invert, PyObject *color,
                               int convexity)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
 
   auto node = std::make_shared<SurfaceNode>(instance);
@@ -4750,7 +4721,7 @@ std::unique_ptr<const Geometry> sheetCreateFuncGeometry(void *funcptr, double im
 PyObject *python_sheet_core(PyObject *func, double imin, double imax, double jmin, double jmax,
                             double fs, PyObject *ispan, PyObject *jspan)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<SheetNode>(instance);
   // TODO check type of func
   node->func = (void *)func;
@@ -4771,8 +4742,7 @@ PyObject *python_sheet(PyObject *self, PyObject *args, PyObject *kwargs)
   PyObject *func = NULL;
   double imin, imax, jmin, jmax;
   PyObject *ispan = nullptr, *jspan = nullptr;
-  double dum1, dum2, fs;
-  get_fnas(dum1, dum2, fs);
+  double fs = 1.0;
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Odddd|dOO", kwlist, &func, &imin, &imax, &jmin, &jmax,
                                    &fs, &ispan, &jspan)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing sheet(func, imin, imax, jmin, jmax)");
@@ -4786,46 +4756,46 @@ PyObject *python_sheet(PyObject *self, PyObject *args, PyObject *kwargs)
   return python_sheet_core(func, imin, imax, jmin, jmax, fs, ispan, jspan);
 }
 
+std::optional<std::string> to_optional_string(const char *ptr)
+{
+  if (ptr != nullptr) {
+    return std::string(ptr);
+  }
+  return {};
+}
+
 PyObject *python_text(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
-  auto node = std::make_shared<TextNode>(instance);
-
-  char *kwlist[] = {"text",   "size",   "font", "spacing", "direction", "language", "script",
-                    "halign", "valign", "fn",   "fa",      "fs",        NULL};
+  DECLARE_INSTANCE();
+  char *kwlist[] = {"text",     "size",   "font",   "spacing", "direction",
+                    "language", "script", "halign", "valign",  NULL};
 
   double size = 1.0, spacing = 1.0;
-  double fn = NAN, fa = NAN, fs = NAN;
-
-  get_fnas(fn, fa, fs);
 
   const char *text = "", *font = NULL, *direction = "ltr", *language = "en", *script = "latin",
              *valign = "baseline", *halign = "left";
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|dsdsssssddd", kwlist, &text, &size, &font, &spacing,
-                                   &direction, &language, &script, &halign, &valign, &fn, &fa, &fs)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|dsdsssss", kwlist, &text, &size, &font, &spacing,
+                                   &direction, &language, &script, &halign, &valign)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing text(string, ...))");
     return NULL;
   }
 
-  node->params.set_fn(fn);
-  node->params.set_fa(fa);
-  node->params.set_fs(fs);
-  node->params.set_size(size);
-  if (text != NULL) node->params.set_text(text);
-  node->params.set_spacing(spacing);
-  if (font != NULL) node->params.set_font(font);
-  if (direction != NULL) node->params.set_direction(direction);
-  if (language != NULL) node->params.set_language(language);
-  if (script != NULL) node->params.set_script(script);
-  if (valign != NULL) node->params.set_halign(halign);
-  if (halign != NULL) node->params.set_valign(valign);
-  node->params.set_loc(instance->location());
+  auto node = std::make_shared<TextNode>(
+    instance, FreetypeRenderer::Params(FreetypeRenderer::Params::ParamsOptions{
+                .curve_discretizer = std::make_shared<CurveDiscretizer>(CreateCurveDiscretizer(kwargs)),
+                .size = size,
+                .spacing = spacing,
+                .text = to_optional_string(text),
+                .font = to_optional_string(font),
+                .direction = to_optional_string(direction),
+                .language = to_optional_string(language),
+                .script = to_optional_string(script),
+                .halign = to_optional_string(halign),
+                .valign = to_optional_string(valign),
+                .loc = instance->location(),
+              }));
 
-  /*
-     node->params.set_documentPath(session->documentRoot());
-     }
-   */
   node->params.detect_properties();
 
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
@@ -4833,9 +4803,7 @@ PyObject *python_text(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_textmetrics(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
-  auto node = std::make_shared<TextNode>(instance);
-
+  DECLARE_INSTANCE();
   char *kwlist[] = {"text",     "size",   "font",   "spacing", "direction",
                     "language", "script", "halign", "valign",  NULL};
 
@@ -4850,18 +4818,19 @@ PyObject *python_textmetrics(PyObject *self, PyObject *args, PyObject *kwargs)
     return NULL;
   }
 
-  FreetypeRenderer::Params ftparams;
-
-  ftparams.set_size(size);
-  if (text != NULL) ftparams.set_text(text);
-  ftparams.set_spacing(spacing);
-  if (font != NULL) ftparams.set_font(font);
-  if (direction != NULL) ftparams.set_direction(direction);
-  if (language != NULL) ftparams.set_language(language);
-  if (script != NULL) ftparams.set_script(script);
-  if (valign != NULL) ftparams.set_halign(halign);
-  if (halign != NULL) ftparams.set_valign(valign);
-  ftparams.set_loc(instance->location());
+  FreetypeRenderer::Params ftparams(FreetypeRenderer::Params::ParamsOptions{
+    .curve_discretizer = {},
+    .size = size,
+    .spacing = spacing,
+    .text = to_optional_string(text),
+    .font = to_optional_string(font),
+    .direction = to_optional_string(direction),
+    .language = to_optional_string(language),
+    .script = to_optional_string(script),
+    .halign = to_optional_string(halign),
+    .valign = to_optional_string(valign),
+    .loc = instance->location(),
+  });
 
   FreetypeRenderer::TextMetrics metrics(ftparams);
   if (!metrics.ok) {
@@ -4930,11 +4899,11 @@ PyObject *python_osversion_num(PyObject *self, PyObject *args, PyObject *kwargs)
   return PyFloat_FromDouble(version);
 }
 
-PyObject *python_offset_core(PyObject *obj, double r, double delta, PyObject *chamfer, double fn,
-                             double fa, double fs)
+PyObject *python_offset_core(PyObject *obj, double r, double delta, PyObject *chamfer,
+                             CurveDiscretizer&& discretizer)
 {
-  DECLARE_INSTANCE
-  auto node = std::make_shared<OffsetNode>(instance);
+  DECLARE_INSTANCE();
+  auto node = std::make_shared<OffsetNode>(instance, discretizer);
 
   PyObject *dummydict;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
@@ -4943,11 +4912,6 @@ PyObject *python_offset_core(PyObject *obj, double r, double delta, PyObject *ch
     PyErr_SetString(PyExc_TypeError, "Invalid type for Object in offset");
     return NULL;
   }
-
-  get_fnas(node->fn, node->fa, node->fs);
-  if (!isnan(fn)) node->fn = fn;
-  if (!isnan(fa)) node->fa = fa;
-  if (!isnan(fs)) node->fs = fs;
 
   node->delta = 1;
   node->chamfer = false;
@@ -4972,36 +4936,32 @@ PyObject *python_offset_core(PyObject *obj, double r, double delta, PyObject *ch
 
 PyObject *python_offset(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = {"obj", "r", "delta", "chamfer", "fn", "fa", "fs", NULL};
+  char *kwlist[] = {"obj", "r", "delta", "chamfer", NULL};
   PyObject *obj = NULL;
   double r = NAN, delta = NAN;
   PyObject *chamfer = NULL;
-  double fn = NAN, fa = NAN, fs = NAN;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|ddOddd", kwlist, &obj, &r, &delta, &chamfer, &fn,
-                                   &fa, &fs)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|ddO", kwlist, &obj, &r, &delta, &chamfer)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing offset(object,r,delta)");
     return NULL;
   }
-  return python_offset_core(obj, r, delta, chamfer, fn, fa, fs);
+  return python_offset_core(obj, r, delta, chamfer, CreateCurveDiscretizer(kwargs));
 }
 
 PyObject *python_oo_offset(PyObject *obj, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = {"r", "delta", "chamfer", "fn", "fa", "fs", NULL};
+  char *kwlist[] = {"r", "delta", "chamfer", NULL};
   double r = NAN, delta = NAN;
   PyObject *chamfer = NULL;
-  double fn = NAN, fa = NAN, fs = NAN;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ddOddd", kwlist, &r, &delta, &chamfer, &fn, &fa,
-                                   &fs)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ddO", kwlist, &r, &delta, &chamfer)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing offset(object,r,delta)");
     return NULL;
   }
-  return python_offset_core(obj, r, delta, chamfer, fn, fa, fs);
+  return python_offset_core(obj, r, delta, chamfer, CreateCurveDiscretizer(kwargs));
 }
 
 PyObject *python_projection_core(PyObject *obj, PyObject *cut, int convexity)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto node = std::make_shared<ProjectionNode>(instance);
   PyObject *dummydict;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
@@ -5050,7 +5010,7 @@ PyObject *python_oo_projection(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_group(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
 
   auto node = std::make_shared<GroupNode>(instance);
@@ -5069,7 +5029,7 @@ PyObject *python_group(PyObject *self, PyObject *args, PyObject *kwargs)
   return PyOpenSCADObjectFromNode(type, node);
 }
 
-PyObject *python_align_core(PyObject *obj, PyObject *pyrefmat, PyObject *pydstmat)
+PyObject *python_align_core(PyObject *obj, PyObject *pyrefmat, PyObject *pydstmat, PyObject *flip)
 {
   if (!PyObject_IsInstance(obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
     PyErr_SetString(PyExc_TypeError, "Must specify Object as 1st parameter");
@@ -5082,14 +5042,20 @@ PyObject *python_align_core(PyObject *obj, PyObject *pyrefmat, PyObject *pydstma
     PyErr_SetString(PyExc_TypeError, "Invalid align object");
     return Py_None;
   }
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto multmatnode = std::make_shared<TransformNode>(instance, "align");
   multmatnode->children.push_back(dstnode);
   Matrix4d mat;
   Matrix4d MT = Matrix4d::Identity();
 
   if (!python_tomatrix(pyrefmat, mat)) MT = MT * mat;
-  if (!python_tomatrix(pydstmat, mat)) MT = MT * mat.inverse();
+  if (!python_tomatrix(pydstmat, mat)) {
+    if (flip == Py_True) {
+      for (int j = 0; j < 3; j++)
+        for (int i = 0; i < 3; i++) mat(j, i) = -mat(j, i);
+    }
+    MT = MT * mat.inverse();
+  }
 
   multmatnode->matrix = MT;
   multmatnode->setPyName(dstnode->getPyName());
@@ -5112,34 +5078,36 @@ PyObject *python_align_core(PyObject *obj, PyObject *pyrefmat, PyObject *pydstma
 
 PyObject *python_align(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = {"obj", "refmat", "objmat", NULL};
+  char *kwlist[] = {"obj", "refmat", "objmat", "flip", NULL};
   PyObject *obj = NULL;
   PyObject *pyrefmat = NULL;
   PyObject *pyobjmat = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O", kwlist, &obj, &pyrefmat, &pyobjmat)) {
+  PyObject *flip = Py_False;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|OO", kwlist, &obj, &pyrefmat, &pyobjmat, &flip)) {
     PyErr_SetString(PyExc_TypeError, "Error during align");
     return NULL;
   }
-  return python_align_core(obj, pyrefmat, pyobjmat);
+  return python_align_core(obj, pyrefmat, pyobjmat, flip);
 }
 
 PyObject *python_oo_align(PyObject *obj, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = {"refmat", "objmat", NULL};
+  char *kwlist[] = {"refmat", "objmat", "flip", NULL};
   PyObject *pyrefmat = NULL;
   PyObject *pyobjmat = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O", kwlist, &pyrefmat, &pyobjmat)) {
+  PyObject *flip = Py_False;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OO", kwlist, &pyrefmat, &pyobjmat, &flip)) {
     PyErr_SetString(PyExc_TypeError, "Error during align");
     return NULL;
   }
-  return python_align_core(obj, pyrefmat, pyobjmat);
+  return python_align_core(obj, pyrefmat, pyobjmat, flip);
 }
 
 PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, ImportType type)
 {
-  DECLARE_INSTANCE
-  char *kwlist[] = {"file",   "layer",    "convexity", "origin", "scale", "width",
-                    "height", "filename", "center",    "dpi",    "id",    NULL};
+  DECLARE_INSTANCE();
+  char *kwlist[] = {"file",   "layer", "convexity", "origin", "scale", "width", "height",
+                    "center", "dpi",   "id",        "fn",     "fa",    "fs",    NULL};
   double fn = NAN, fa = NAN, fs = NAN;
 
   std::string filename;
@@ -5148,8 +5116,8 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   int convexity = 2;
   double scale = 1.0, width = 1, height = 1, dpi = 1.0;
   PyObject *origin = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|slO!dddsfOddd", kwlist, &v, &layer, &convexity,
-                                   &PyList_Type, origin, &scale, &width, &height, &center, &dpi, &id,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|siO!dddOdsddd", kwlist, &v, &layer, &convexity,
+                                   &PyList_Type, &origin, &scale, &width, &height, &center, &dpi, &id,
                                    &fn, &fa, &fs
 
                                    )) {
@@ -5175,12 +5143,7 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     else if (ext == ".step") actualtype = ImportType::STEP;
   }
 
-  auto node = std::make_shared<ImportNode>(instance, actualtype);
-
-  get_fnas(node->fn, node->fa, node->fs);
-  if (!isnan(fn)) node->fn = fn;
-  if (!isnan(fa)) node->fa = fa;
-  if (!isnan(fs)) node->fs = fs;
+  auto node = std::make_shared<ImportNode>(instance, actualtype, CreateCurveDiscretizer(kwargs));
 
   node->filename = filename;
 
@@ -5372,7 +5335,7 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs,
 
 PyObject *python_scad(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   char *kwlist[] = {"code", NULL};
   const char *code = NULL;
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist, &code)) {
@@ -5399,7 +5362,7 @@ PyObject *python_scad(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_osuse_include(int mode, PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   auto empty = std::make_shared<CubeNode>(instance);
   char *kwlist[] = {"file", NULL};
   const char *file = NULL;
@@ -5477,7 +5440,7 @@ PyObject *python_osinclude(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_debug_modifier(PyObject *arg, int mode)
 {
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   PyObject *dummydict;
   PyTypeObject *type = PyOpenSCADObjectType(arg);
   auto child = PyOpenSCADObjectToNode(arg, &dummydict);
@@ -5875,7 +5838,7 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"roof", (PyCFunction)python_roof, METH_VARARGS | METH_KEYWORDS, "Roof Object."},
 #endif
   {"pull", (PyCFunction)python_pull, METH_VARARGS | METH_KEYWORDS, "Pull apart Object."},
-  {"wrap", (PyCFunction)python_wrap, METH_VARARGS | METH_KEYWORDS, "Wrap Object around cylidner."},
+  {"wrap", (PyCFunction)python_wrap, METH_VARARGS | METH_KEYWORDS, "Wrap Object around cylinder."},
   {"color", (PyCFunction)python_color, METH_VARARGS | METH_KEYWORDS, "Color Object."},
   {"output", (PyCFunction)python_output, METH_VARARGS | METH_KEYWORDS, "Output the result."},
   {"show", (PyCFunction)python_show, METH_VARARGS | METH_KEYWORDS, "Show the result."},

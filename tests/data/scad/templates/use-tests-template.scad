@@ -1,13 +1,13 @@
 //Test blank
 use <>
 
-//Test that the entire path is pushed onto the stack up to the last '/' 
+//Test that the entire path is pushed onto the stack up to the last '/'
 use <sub1/sub2/sub3/sub4/use-test2.scad>
 
 //Test that a non existent path/file doesn't screw things up
 use <non/existent/path/non-file>
 
-//Test with empty path 
+//Test with empty path
 use <use-test5.scad>
 
 //Test without preceding space
@@ -15,6 +15,10 @@ use<use-test5.scad>
 
 //Test that filenames with spaces work
 use <use test6.scad>
+
+//Test UTF-8 file name
+use <use-☠.scad>
+utf8_module();
 
 //Test with empty file
 use<test/>

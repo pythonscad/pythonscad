@@ -42,17 +42,6 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-//isatty for visual c++ and mingw-cross-env
-#if defined __WIN32__ && ! defined _MSC_VER
-#include "unistd.h"
-#endif
-#if defined __WIN32__ || defined _MSC_VER
-extern "C" int __cdecl _isatty(int _FileHandle);
-#define isatty _isatty
-#define strdup _strdup
-#define fileno _fileno
-#endif
-
 std::string stringcontents;
 int lexerget_lineno(void);
 extern const char *parser_input_buffer;
@@ -96,7 +85,7 @@ extern YYLTYPE parserlloc;
             (loc).last_line++; \
             (loc).last_column = 1; \
         } \
-    } 
+    }
 
 #define YY_USER_ACTION parserlloc.last_column += yyleng;
 
@@ -358,7 +347,7 @@ void includefile(const Location& loc)
   }
   else {
     rootfile->registerInclude(localpath.generic_string(), localpath.generic_string(), Location::NONE);
-    LOG(message_group::Warning,LOCATION(parserlloc),"","Can't open include file '%1$s'.",localpath.generic_string());
+    LOG(message_group::Warning,LOCATION(parserlloc),"","Can't find include file '%1$s'.",localpath.generic_string());
     return;
   };
 
@@ -377,7 +366,7 @@ void includefile(const Location& loc)
   }
 
   loc_stack.push_back(parserlloc);
-  LOCATION_INIT(parserlloc);  
+  LOCATION_INIT(parserlloc);
   openfiles.push_back(yyin);
   openfilenames.push_back(fullname);
   filename.clear();

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "core/RotateExtrudeNode.h"
+#include "core/CurveDiscretizer.h"
 #include "geometry/GeometryUtils.h"
 #include "geometry/Geometry.h"
 #include "geometry/GeometryEvaluator.h"
@@ -26,17 +27,25 @@
 #endif
 
 #ifdef ENABLE_MANIFOLD
-static std::unique_ptr<PolySet> assemblePolySetForManifold(const Polygon2d& polyref,
-                                                           std::vector<Vector3d>& vertices,
-                                                           PolygonIndices& indices, bool closed,
-                                                           int convexity, int index_offset,
-                                                           bool flip_faces)
+static std::unique_ptr<PolySet> assemblePolySetForManifold(
+  const Polygon2d& polyref, std::vector<Vector3d>& vertices, PolygonIndices& indices,
+  std::vector<Color4f>& colors, std::vector<int> color_indices, bool closed, int convexity,
+  int index_offset, bool flip_faces)
 {
   auto final_polyset = std::make_unique<PolySet>(3, false);
   final_polyset->setTriangular(true);
   final_polyset->setConvexity(convexity);
   final_polyset->vertices = std::move(vertices);
   final_polyset->indices = std::move(indices);
+  final_polyset->colors = std::move(colors);
+  final_polyset->color_indices = std::move(color_indices);
+
+  std::vector<int> colormap;
+  for (int i = 0; i < final_polyset->vertices.size(); i++) colormap.push_back(0);
+  for (int i = 0; i < final_polyset->indices.size(); i++) {
+    auto& pol = final_polyset->indices[i];
+    for (auto ind : pol) colormap[ind] = final_polyset->color_indices[i];
+  }
 
   if (!closed) {
     // Create top and bottom face.
@@ -58,6 +67,10 @@ static std::unique_ptr<PolySet> assemblePolySetForManifold(const Polygon2d& poly
     }
     std::copy(ps_bottom->indices.begin(), ps_bottom->indices.end(),
               std::back_inserter(final_polyset->indices));
+  }
+
+  for (int j = final_polyset->color_indices.size(); j < final_polyset->indices.size(); j++) {
+    final_polyset->color_indices.push_back(colormap[final_polyset->indices[j][0]]);
   }
 
   //  LOG(PolySetUtils::polySetToPolyhedronSource(*final_polyset));
@@ -143,7 +156,7 @@ std::unique_ptr<PolySet> rotatePolygonSub(const RotateExtrudeNode& node, const P
   int num_vertices = 0;
 #ifdef ENABLE_PYTHON
   if (node.profile_func != NULL) {
-    Outline2d outl = python_getprofile(node.profile_func, node.fn, 0);
+    Outline2d outl = python_getprofile(node.profile_func, 3, 0);
     slice_stride += outl.vertices.size();
   } else
 #endif
@@ -156,7 +169,10 @@ std::unique_ptr<PolySet> rotatePolygonSub(const RotateExtrudeNode& node, const P
   std::vector<Vector3d> vertices;
   vertices.reserve(num_vertices);
   PolygonIndices indices;
+  std::vector<int> color_indices;
+  std::vector<Color4f> colors;
   indices.reserve(slice_stride * num_rings * 2);  // sides + endcaps if needed
+  color_indices.reserve(slice_stride * num_rings * 2);
 
   for (unsigned int j = fragstart; j <= fragend; ++j) {
     Vector3d dv = node.v * j / fragments;
@@ -169,7 +185,7 @@ std::unique_ptr<PolySet> rotatePolygonSub(const RotateExtrudeNode& node, const P
       if (node.profile_func != NULL) {
         Outline2d lastFace;
         Outline2d curFace;
-        Outline2d outl = python_getprofile(node.profile_func, node.fn, j / (double)fragments);
+        Outline2d outl = python_getprofile(node.profile_func, 3, j / (double)fragments);
         vertices2d = outl.vertices;
       } else
 #endif
@@ -215,6 +231,8 @@ std::unique_ptr<PolySet> rotatePolygonSub(const RotateExtrudeNode& node, const P
     int curr_outline = 0;
     for (const auto& outline : poly.outlines()) {
       assert(outline.vertices.size() > 2);
+      int color_ind = colors.size();
+      colors.push_back(outline.color);  // TODO effizienter
       for (size_t i = 1; i <= outline.vertices.size(); ++i) {
         const int curr_idx = curr_outline + (i % outline.vertices.size());
         const int prev_idx = curr_outline + i - 1;
@@ -241,6 +259,8 @@ std::unique_ptr<PolySet> rotatePolygonSub(const RotateExtrudeNode& node, const P
             (curr_slice + curr_idx) % num_vertices,
           });
         }
+        color_indices.push_back(color_ind);
+        color_indices.push_back(color_ind);
       }
       curr_outline += outline.vertices.size();
     }
@@ -250,8 +270,8 @@ std::unique_ptr<PolySet> rotatePolygonSub(const RotateExtrudeNode& node, const P
   // modify vertices, so we technically may end up with broken end caps if we build OpenSCAD without
   // ENABLE_MANIFOLD. Should be fixed, but it's low priority and it's not trivial to come up with a test
   // case for this.
-  return assemblePolySetForManifold(poly, vertices, indices, closed, node.convexity,
-                                    slice_stride * num_sections, flip_faces);
+  return assemblePolySetForManifold(poly, vertices, indices, colors, color_indices, closed,
+                                    node.convexity, slice_stride * num_sections, flip_faces);
 }
 
 std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Polygon2d& poly)
@@ -275,10 +295,11 @@ std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Pol
         min_x, max_x);
     return nullptr;
   }
-  const auto num_sections = (unsigned int)std::ceil(
-    fmax(Calc::get_fragments_from_r(max_x - min_x, 360.0, node.fn, node.fs, node.fa) *
-           std::abs(node.angle) / 360,
-         1));
+
+  const int num_sections = node.discretizer.getCircularSegmentCount(max_x - min_x, node.angle)
+                             .value_or(std::max(1, static_cast<int>(std::fabs(node.angle) / 360 * 3)));
+  const bool closed = node.angle == 360;
+
   bool flip_faces = (min_x >= 0 && node.angle > 0) || (min_x < 0 && node.angle < 0);
 
   // check if its save to extrude
