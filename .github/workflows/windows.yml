@@ -16,6 +16,7 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         qt: [ qt5, qt6 ]
     runs-on: windows-latest
@@ -25,7 +26,7 @@ jobs:
         shell: msys2 {0}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Setup (detached) tmate session if enabled
@@ -44,6 +45,14 @@ jobs:
         run: |
           pwd
           ./scripts/msys2-install-dependencies.sh ${{ matrix.qt }}
+      - name: Setup MSYS2 Environment
+        uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: UCRT64
+          update: true
+          install: libxml2
+          pacboy: ${{ env.PACBOY_PACKAGES }}
       - name: Install Mesa
         uses: ssciwr/setup-mesa-dist-win@v2
         with:
