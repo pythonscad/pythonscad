@@ -56,6 +56,7 @@
 #include "core/State.h"
 #include "core/TextNode.h"
 #include "core/TransformNode.h"
+#include "core/CurveDiscretizer.h"
 #include "core/Tree.h"
 #include "utils/calc.h"
 #include "utils/degree_trig.h"
@@ -194,9 +195,11 @@ bool pointInPolygon(const std::vector<Vector3d>& vert, const IndexedFace& bnd, i
   Vector3d res;
   if (n < 3) return false;
   Vector3d raydir = vert[bnd[1]] - vert[bnd[0]];
-  Vector3d fn = raydir.cross(vert[bnd[1]] - vert[bnd[2]]).normalized();
+  Vector3d raydir2 = vert[bnd[1]] - vert[bnd[2]];
+  Vector3d fn = raydir.cross(raydir2).normalized();
   // check, how many times the ray crosses the 3D fence, classical algorithm in 3D
-  for (i = 1; i < n; i++) {  // 0 is always parallel
+  raydir = (raydir * 0.371 + raydir2 * 0.712).normalized();
+  for (i = 0; i < n; i++) {
     // build fence side
     const Vector3d& p1 = vert[bnd[i]];
     const Vector3d& p2 = vert[bnd[(i + 1) % n]];
@@ -589,15 +592,20 @@ std::vector<IndexedFace> mergeTriangles(const std::vector<IndexedFace> polygons,
             par = k;
           }
         }
-        if (par == -1) printf("par not found here\n");
-        // assert(par != -1); TODO fix
-        faceParents.push_back(par + off);
+        if (par != -1) faceParents.push_back(par + off);
+        else {
+          faceParents.push_back(-1);
+          printf("par not found here 1\n");
+        }
       }
     }
   }
 
   return indices;
 }
+
+void export_debug_polyset(const PolySet& ps);
+
 std::vector<IndexedColorFace> mergeTriangles(const std::vector<IndexedColorFace> polygons,
                                              const std::vector<Vector4d> normals,
                                              std::vector<Vector4d>& newNormals,
@@ -806,7 +814,7 @@ void Map3D::find_sub(int ind, double minx, double miny, double minz, double maxx
         result.push_back(this->items[ind].pts[i]);
         resultind.push_back(this->items[ind].ptsind[i]);
       }
-      if (result.size() >= (size_t) maxresult) return;
+      if (result.size() >= (size_t)maxresult) return;
     }
     return;
   }
@@ -815,7 +823,7 @@ void Map3D::find_sub(int ind, double minx, double miny, double minz, double maxx
   midx = (minx + maxx) / 2.0;
   midy = (miny + maxy) / 2.0;
   midz = (minz + maxz) / 2.0;
-  if (result.size() >= (size_t) maxresult) return;
+  if (result.size() >= (size_t)maxresult) return;
   if (pt[2] + r >= minz && pt[2] - r < midz) {
     if (pt[1] + r >= miny && pt[1] - r < midy) {
       if (pt[0] + r >= minx && pt[0] - r < midx)
@@ -939,27 +947,59 @@ int cut_face_line(Vector3d fp, Vector3d fn, Vector3d lp, Vector3d ld, Vector3d& 
   return 0;
 }
 
-std::shared_ptr<Geometry> union_geoms(std::vector<std::shared_ptr<PolySet>> parts)  // TODO use widely
+std::unique_ptr<Geometry> union_geoms(std::vector<std::shared_ptr<PolySet>> parts)  // TODO use widely
 {
-  std::shared_ptr<ManifoldGeometry> result = nullptr;
-  for (auto part : parts) {
-    std::shared_ptr<const ManifoldGeometry> part_mani = ManifoldUtils::createManifoldFromGeometry(part);
-    if (result == nullptr) result = std::make_shared<ManifoldGeometry>(*part_mani);
-    else *result = *result + *part_mani;
+#ifdef ENABLE_MANIFOLD
+  if (RenderSettings::inst()->backend3D == RenderBackend3D::ManifoldBackend) {
+    std::unique_ptr<ManifoldGeometry> result = nullptr;
+    for (auto part : parts) {
+      std::shared_ptr<const ManifoldGeometry> part_mani =
+        ManifoldUtils::createManifoldFromGeometry(part);
+      if (result == nullptr) result = std::make_unique<ManifoldGeometry>(*part_mani);
+      else *result = *result + *part_mani;
+    }
+    return result;
+  } else
+#endif
+  {
+    assert(parts.size() > 0);
+    std::shared_ptr<CGALNefGeometry> result = nullptr;
+    for (const std::shared_ptr<PolySet>& part : parts) {
+      std::shared_ptr<const CGALNefGeometry> op = CGALUtils::getNefPolyhedronFromGeometry(part);
+      if (result == nullptr) result = std::make_shared<CGALNefGeometry>(*op);
+      else *result += *op;
+      auto p2 = CGALUtils::getNefPolyhedronFromGeometry(parts[0]);
+    }
+    return std::make_unique<CGALNefGeometry>(result->p3);
   }
-  return result;
 }
 
-std::shared_ptr<Geometry> difference_geoms(
+std::unique_ptr<Geometry> difference_geoms(
   std::vector<std::shared_ptr<PolySet>> parts)  // TODO use widely
 {
-  std::shared_ptr<ManifoldGeometry> result = nullptr;
-  for (auto part : parts) {
-    std::shared_ptr<const ManifoldGeometry> part_mani = ManifoldUtils::createManifoldFromGeometry(part);
-    if (result == nullptr) result = std::make_shared<ManifoldGeometry>(*part_mani);
-    else *result = *result - *part_mani;
+#ifdef ENABLE_MANIFOLD
+  if (RenderSettings::inst()->backend3D == RenderBackend3D::ManifoldBackend) {
+    std::unique_ptr<ManifoldGeometry> result = nullptr;
+    for (auto part : parts) {
+      std::shared_ptr<const ManifoldGeometry> part_mani =
+        ManifoldUtils::createManifoldFromGeometry(part);
+      if (result == nullptr) result = std::make_unique<ManifoldGeometry>(*part_mani);
+      else *result = *result - *part_mani;
+    }
+    return result;
+  } else
+#endif
+  {
+    assert(parts.size() > 0);
+    std::shared_ptr<CGALNefGeometry> result = nullptr;
+    for (const std::shared_ptr<PolySet>& part : parts) {
+      std::shared_ptr<const CGALNefGeometry> op = CGALUtils::getNefPolyhedronFromGeometry(part);
+      if (result == nullptr) result = std::make_shared<CGALNefGeometry>(*op);
+      else *result -= *op;
+      auto p2 = CGALUtils::getNefPolyhedronFromGeometry(parts[0]);
+    }
+    return std::make_unique<CGALNefGeometry>(result->p3);
   }
-  return result;
 }
 
 class Offset3D_CornerContext
@@ -1017,8 +1057,8 @@ bool offset3D_inside(Offset3D_CornerContext& cxt, const Vector3d& pt, double del
   return result;
 }
 
-std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& ps, double off, int fn,
-                                         double fa, double fs)
+std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& ps, double off,
+                                         const CurveDiscretizer& discretizer)
 {
   std::vector<std::shared_ptr<PolySet>> subgeoms;
   std::shared_ptr<PolySet> inner = std::make_shared<PolySet>(*ps);
@@ -1045,7 +1085,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     std::vector<IndexedFace> face_set;
     face_set.push_back(indicesNew[a]);
     for (size_t b = 0; b < faceParents.size(); b++)
-      if ((size_t) faceParents[b] == a) face_set.push_back(indicesNew[b]);
+      if ((size_t)faceParents[b] == a) face_set.push_back(indicesNew[b]);
 
     PolySetBuilder builder;
 
@@ -1118,12 +1158,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     startarc.push_back(p1 + off * fan);
     endarc.push_back(p2 + off * fan);
 
-    int fn_a = totang * 180.0 / (3.14 * fa);
-    int fn_s = totang * off / fs;
-    int eff_fn = fn_a;
-    if (fn_s > eff_fn) eff_fn = fn_s;
-    if (fn != 0) eff_fn = fn;
-    if (eff_fn > abs_eff_fn) abs_eff_fn = eff_fn;
+    int eff_fn = discretizer.getCircularSegmentCount(off, totang).value_or(3);
 
     for (int i = 1; i < eff_fn - 1; i++) {
       Transform3d matrix = Transform3d::Identity();
@@ -1170,7 +1205,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     builder.addVertex(endpt);
 
     // top rounding
-    for (size_t i = 0; i < (size_t) n - 1; i++) {
+    for (size_t i = 0; i < (size_t)n - 1; i++) {
       builder.appendPolygon({start_inds[i], start_inds[i + 1], end_inds[i + 1], end_inds[i]});
     }
 
@@ -1510,7 +1545,7 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
 
     std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
     if (ps != nullptr) {
-      auto ps_offset = offset3D(ps, offNode->delta, offNode->fn, offNode->fa, offNode->fs);
+      auto ps_offset = offset3D(ps, offNode->delta, offNode->discretizer);
 
       geom = std::move(ps_offset);
       return ResultObject::mutableResult(geom);
@@ -1555,7 +1590,7 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyHull2D(const AbstractNode& no
 {
   auto children = collectChildren2D(node);
   auto geometry = std::make_unique<Polygon2d>();
-
+  Color4f resultcolor;
 #ifdef ENABLE_CGAL
   using CGALPoint2 = CGAL::Point_2<CGAL_DoubleKernel>;
   // Collect point cloud
@@ -1563,6 +1598,7 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyHull2D(const AbstractNode& no
   for (const auto& p : children) {
     if (p) {
       for (const auto& o : p->outlines()) {
+        if (resultcolor.r() < 0) resultcolor = o.color;
         for (const auto& v : o.vertices) {
           points.emplace_back(v[0], v[1]);
         }
@@ -1579,6 +1615,7 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyHull2D(const AbstractNode& no
       for (const auto& p : result) {
         outline.vertices.emplace_back(p[0], p[1]);
       }
+      outline.color = resultcolor;
       geometry->addOutline(outline);
       geometry->setSanitized(true);
     } catch (const CGAL::Failure_exception& e) {
@@ -1828,8 +1865,7 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyToChildren2D(const AbstractNo
     const OffsetNode *offNode = dynamic_cast<const OffsetNode *>(&node);
     // ClipperLib documentation: The formula for the number of steps in a full
     // circular arc is ... Pi / acos(1 - arc_tolerance / abs(delta))
-    double n =
-      Calc::get_fragments_from_r(std::abs(offNode->delta), 360.0, offNode->fn, offNode->fs, offNode->fa);
+    double n = offNode->discretizer.getCircularSegmentCount(offNode->delta).value_or(3);
     double arc_tolerance = std::abs(offNode->delta) * (1 - cos_degrees(180 / n));
     auto r1 = ClipperUtils::applyOffset(*pol, offNode->delta, offNode->join_type, offNode->miter_limit,
                                         arc_tolerance);
@@ -2911,7 +2947,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
       std::sort(stripTops[i].begin(), stripTops[i].end(), compare_func);
 
       Polygon chain;
-      Vector3d connpt(0,0,0);
+      Vector3d connpt(0, 0, 0);
       bool done = true;
       while (done) {
         done = false;
@@ -3010,6 +3046,85 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
 
 static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *ps)
 {
+  if (!Feature::ExperimentalWrapPolygon.is_enabled()) {
+    PolySetBuilder builder(0, 0, 3, true);
+    int segments1 = 360.0 / node.fa;
+    int segments2 = 2 * G_PI * node.r / node.fs;
+    int segments = segments1 > segments2 ? segments1 : segments2;
+    if (node.fn > 0) segments = node.fn;
+    double arclen = 2 * G_PI * node.r / segments;
+
+    for (const auto& p : ps->indices) {
+      // find leftmost point
+      int n = p.size();
+      int minind = 0;
+      for (size_t j = 1; j < p.size(); j++) {
+        if (ps->vertices[p[j]][0] < ps->vertices[p[minind]][0]) minind = j;
+      }
+      int forw_ind = minind;
+      int back_ind = minind;
+      double xcur, xnext;
+
+      xcur = ps->vertices[p[minind]][0];
+      std::vector<Vector3d> curslice;
+      curslice.push_back(ps->vertices[p[minind]]);
+
+      int end = 0;
+      do {
+        if (xcur >= 0) xnext = ceil((xcur + 1e-6) / arclen) * arclen;
+        else xnext = -floor((-xcur + 1e-6) / arclen) * arclen;
+        while (ps->vertices[p[(forw_ind + 1) % n]][0] <= xnext && ((forw_ind + 1) % n) != back_ind) {
+          forw_ind = (forw_ind + 1) % n;
+          curslice.push_back(ps->vertices[p[forw_ind]]);
+        }
+        while (ps->vertices[p[(back_ind + n - 1) % n]][0] <= xnext &&
+               ((back_ind + n - 1) % n) != forw_ind) {
+          back_ind = (back_ind + n - 1) % n;
+          curslice.insert(curslice.begin(), ps->vertices[p[back_ind]]);
+        }
+
+        Vector3d forw_pt, back_pt;
+        if (back_ind == ((forw_ind + 1) % n)) {
+          end = 1;
+        } else {
+          // calculate intermediate forward point
+          Vector3d tmp1, tmp2;
+
+          tmp1 = ps->vertices[p[forw_ind]];
+          tmp2 = ps->vertices[p[(forw_ind + 1) % n]];
+          forw_pt = tmp1 + (tmp2 - tmp1) * (xnext - tmp1[0]) / (tmp2[0] - tmp1[0]);
+          curslice.push_back(forw_pt);
+          tmp1 = ps->vertices[p[back_ind]];
+          tmp2 = ps->vertices[p[(back_ind + n - 1) % n]];
+          back_pt = tmp1 + (tmp2 - tmp1) * (xnext - tmp1[0]) / (tmp2[0] - tmp1[0]);
+          curslice.insert(curslice.begin(), back_pt);
+        }
+
+        double ang, rad;
+
+        for (size_t j = 0; j < curslice.size(); j++) {
+          auto& pt = curslice[j];
+          ang = pt[0] / node.r;
+          rad = node.r - pt[1];
+          pt = Vector3d(rad * cos(ang), rad * sin(ang), pt[2]);
+        }
+        for (size_t j = 0; j < curslice.size() - 2; j++) {
+          builder.beginPolygon(curslice.size());
+          builder.addVertex(curslice[0]);
+          builder.addVertex(curslice[j + 1]);
+          builder.addVertex(curslice[j + 2]);
+          builder.endPolygon();
+        }
+        // TODO color alpha
+        curslice.clear();
+        xcur = xnext;
+        curslice.push_back(back_pt);
+        curslice.push_back(forw_pt);
+      } while (end == 0);
+    }
+    auto ps1 = builder.build();
+    return ps1;
+  }
   PolySetBuilder builder(0, 0, 3, true);
 
   // find maxmal xrange
@@ -3175,8 +3290,8 @@ static std::unique_ptr<PolySet> debugObject(const DebugNode& node, const PolySet
   int colorind = psx->colors.size();
   psx->colors.push_back(debug_color);
   for (size_t i = 0; i < node.faces.size(); i++) {
-    size_t ind = (size_t) node.faces[i];
-    if (ind >= 0 && ind <  psx->color_indices.size()) psx->color_indices[ind] = colorind;
+    size_t ind = (size_t)node.faces[i];
+    if (ind >= 0 && ind < psx->color_indices.size()) psx->color_indices[ind] = colorind;
   }
 
   return psx;
@@ -3236,7 +3351,7 @@ static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolyS
       for (auto ind : fence) {
         const auto& pt = ps->vertices[ind];
         double dist = (p1 - pt).dot(n);
-        if (dist < -1e-3) {
+        if (dist > 1e-3) {
           valid = false;
           break;
         }
@@ -3263,6 +3378,43 @@ static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolyS
         if (fence_new.size() == 0) break;
         fence = fence_new;
         fence_new.clear();
+      }
+    }
+    if (face.size() > 0) {
+      printf("Recovery\n");
+      // find smallest distance between 2 pts
+      int imin = -1, jmin = -1;
+      double distmin = 1e9;
+      for (int i = 0; i < l - 1; i++) {
+        const auto& p1 = ps->vertices[face[i]];
+        const auto& p1n = ps->vertices[face[(i + 1) % l]];
+        const auto& p1d = (p1n - p1).normalized();
+        for (int j = i + 1; j < l; j++) {
+          const auto& p2 = ps->vertices[face[j]];
+          const auto& p2n = ps->vertices[face[(j + 1) % l]];
+          const auto& p2d = (p2n - p2).normalized();
+          double dist = (p1 - p2).norm();
+          if (fabs(p1d.dot((p2 - p1).normalized())) > 0.5)
+            continue;  // shortcut must be somehow perpendicular
+          if (fabs(p2d.dot((p2 - p1).normalized())) > 0.5)
+            continue;  // shortcut must be somehow perpendicular
+          if (dist < distmin) {
+            imin = i;
+            jmin = j;
+            distmin = dist;
+          }
+        }
+      }
+      printf("min is %d/%d %g\n", imin, jmin, distmin);
+      // now build 2 parts
+      if (imin != -1) {
+        IndexedFace part1, part2;
+        for (int i = 0; i <= imin; i++) part1.push_back(face[i]);
+        for (int i = jmin; i < l; i++) part1.push_back(face[i]);
+        for (int i = imin; i < jmin; i++) part2.push_back(face[i]);
+        // just skip the current one and schedule 2 new
+        defects.push_back(part1);
+        defects.push_back(part2);
       }
     }
   }
@@ -3486,7 +3638,7 @@ static std::unique_ptr<Geometry> roofOverPolygon(const RoofNode& node, const Pol
 {
   std::unique_ptr<PolySet> roof;
   if (node.method == "voronoi") {
-    roof = roof_vd::voronoi_diagram_roof(poly, node.fa, node.fs);
+    roof = roof_vd::voronoi_diagram_roof(poly, node.discretizer);
     roof->setConvexity(node.convexity);
   } else if (node.method == "straight") {
     roof = roof_ss::straight_skeleton_roof(poly);

@@ -132,10 +132,10 @@ jobs:
       with:
         submodules: 'recursive'
     - name: Install dependencies
-      run: ./scripts/github-ci-linux-get-dependencies.sh
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      run: |
+        which sudo || ( apt update && apt install -y sudo )
+
+        sudo ./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt5
     - name: Build
       run: |
         cmake ${CMAKE_EXTRA} -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} -DEXPERIMENTAL=${{ inputs.enable_experimental }} -DUSE_MIMALLOC=${{ inputs.use_mimalloc }} -DUSE_BUILTIN_OPENCSG=${{ inputs.use_builtin_opencsg }} -B b .
@@ -143,9 +143,9 @@ jobs:
         echo "Build exit code: $?"
     - name: Test
       run: ./scripts/github-ci.sh test
-      if: ${{ ! inputs.enable_wasm }} 
+      if: ${{ ! inputs.enable_wasm }}
     - name: Upload Test Result Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: ${{ always() }}
       with:
         name: Test Result Report (${{ matrix.os }})

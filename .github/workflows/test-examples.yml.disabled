@@ -18,14 +18,16 @@ jobs:
       with:
         submodules: 'recursive'
     - name: Install dependencies
-      run: ./scripts/github-ci-linux-get-dependencies.sh
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        TZ: Etc/UTC
+      run: |
+        which sudo || ( apt update && apt install -y sudo )
+        sudo -E ./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt5
     - name: Build and test
       run: ./scripts/github-ci.sh ${{ matrix.experimental && 'experimental' || ''}} enable_python build test_examples test
     - name: Upload Test Result Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: ${{ always() }}
       with:
         name: Test Result Report (Test examples ${{ matrix.experimental && 'experimental' || 'non-experimental' }})

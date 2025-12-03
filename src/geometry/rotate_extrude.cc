@@ -10,8 +10,10 @@
 #include <vector>
 
 #include "core/RotateExtrudeNode.h"
+#include "core/CurveDiscretizer.h"
 #include "geometry/GeometryUtils.h"
 #include "geometry/Geometry.h"
+#include "geometry/GeometryEvaluator.h"
 #include "geometry/PolySetBuilder.h"
 #include "geometry/PolySetUtils.h"
 #include "geometry/Polygon2d.h"
@@ -20,19 +22,30 @@
 #include "utils/calc.h"
 #include "utils/degree_trig.h"
 #include "utils/printutils.h"
+#ifdef ENABLE_MANIFOLD
 #include "src/geometry/manifold/manifoldutils.h"
+#endif
 
-static std::unique_ptr<PolySet> assemblePolySetForManifold(const Polygon2d& polyref,
-                                                           std::vector<Vector3d>& vertices,
-                                                           PolygonIndices& indices, bool closed,
-                                                           int convexity, int index_offset,
-                                                           bool flip_faces)
+#ifdef ENABLE_MANIFOLD
+static std::unique_ptr<PolySet> assemblePolySetForManifold(
+  const Polygon2d& polyref, std::vector<Vector3d>& vertices, PolygonIndices& indices,
+  std::vector<Color4f>& colors, std::vector<int> color_indices, bool closed, int convexity,
+  int index_offset, bool flip_faces)
 {
   auto final_polyset = std::make_unique<PolySet>(3, false);
   final_polyset->setTriangular(true);
   final_polyset->setConvexity(convexity);
   final_polyset->vertices = std::move(vertices);
   final_polyset->indices = std::move(indices);
+  final_polyset->colors = std::move(colors);
+  final_polyset->color_indices = std::move(color_indices);
+
+  std::vector<int> colormap;
+  for (int i = 0; i < final_polyset->vertices.size(); i++) colormap.push_back(0);
+  for (int i = 0; i < final_polyset->indices.size(); i++) {
+    auto& pol = final_polyset->indices[i];
+    for (auto ind : pol) colormap[ind] = final_polyset->color_indices[i];
+  }
 
   if (!closed) {
     // Create top and bottom face.
@@ -56,10 +69,54 @@ static std::unique_ptr<PolySet> assemblePolySetForManifold(const Polygon2d& poly
               std::back_inserter(final_polyset->indices));
   }
 
+  for (int j = final_polyset->color_indices.size(); j < final_polyset->indices.size(); j++) {
+    final_polyset->color_indices.push_back(colormap[final_polyset->indices[j][0]]);
+  }
+
   //  LOG(PolySetUtils::polySetToPolyhedronSource(*final_polyset));
 
   return final_polyset;
 }
+#else
+// Version when Manifold is not available - provides basic functionality
+static std::unique_ptr<PolySet> assemblePolySetForManifold(const Polygon2d& polyref,
+                                                           std::vector<Vector3d>& vertices,
+                                                           PolygonIndices& indices, bool closed,
+                                                           int convexity, int index_offset,
+                                                           bool flip_faces)
+{
+  auto final_polyset = std::make_unique<PolySet>(3, false);
+  final_polyset->setTriangular(true);
+  final_polyset->setConvexity(convexity);
+  final_polyset->vertices = std::move(vertices);
+  final_polyset->indices = std::move(indices);
+
+  if (!closed) {
+    // Create top and bottom face using basic tessellation
+    // This provides basic functionality without Manifold
+    auto ps_bottom = polyref.tessellate();  // bottom
+    // Flip vertex ordering for bottom polygon unless flip_faces is true
+    if (!flip_faces) {
+      for (auto& p : ps_bottom->indices) {
+        std::reverse(p.begin(), p.end());
+      }
+    }
+    std::copy(ps_bottom->indices.begin(), ps_bottom->indices.end(),
+              std::back_inserter(final_polyset->indices));
+
+    for (auto& p : ps_bottom->indices) {
+      std::reverse(p.begin(), p.end());
+      for (auto& i : p) {
+        i += index_offset;
+      }
+    }
+    std::copy(ps_bottom->indices.begin(), ps_bottom->indices.end(),
+              std::back_inserter(final_polyset->indices));
+  }
+
+  return final_polyset;
+}
+#endif
 
 /*!
    Input to extrude should be clean. This means non-intersecting, correct winding order
@@ -81,9 +138,9 @@ static std::unique_ptr<PolySet> assemblePolySetForManifold(const Polygon2d& poly
 VectorOfVector2d alterprofile(VectorOfVector2d vertices, double scalex, double scaley, double origin_x,
                               double origin_y, double offset_x, double offset_y, double rot);
 
-std::unique_ptr<Geometry> rotatePolygonSub(const RotateExtrudeNode& node, const Polygon2d& poly,
-                                           int fragments, size_t fragstart, size_t fragend,
-                                           bool flip_faces)
+std::unique_ptr<PolySet> rotatePolygonSub(const RotateExtrudeNode& node, const Polygon2d& poly,
+                                          int fragments, size_t fragstart, size_t fragend,
+                                          bool flip_faces)
 {
   double fact = (node.v[2] / node.angle) * (180.0 / G_PI);
 
@@ -99,7 +156,7 @@ std::unique_ptr<Geometry> rotatePolygonSub(const RotateExtrudeNode& node, const 
   int num_vertices = 0;
 #ifdef ENABLE_PYTHON
   if (node.profile_func != NULL) {
-    Outline2d outl = python_getprofile(node.profile_func, node.fn, 0);
+    Outline2d outl = python_getprofile(node.profile_func, 3, 0);
     slice_stride += outl.vertices.size();
   } else
 #endif
@@ -112,7 +169,10 @@ std::unique_ptr<Geometry> rotatePolygonSub(const RotateExtrudeNode& node, const 
   std::vector<Vector3d> vertices;
   vertices.reserve(num_vertices);
   PolygonIndices indices;
+  std::vector<int> color_indices;
+  std::vector<Color4f> colors;
   indices.reserve(slice_stride * num_rings * 2);  // sides + endcaps if needed
+  color_indices.reserve(slice_stride * num_rings * 2);
 
   for (unsigned int j = fragstart; j <= fragend; ++j) {
     Vector3d dv = node.v * j / fragments;
@@ -125,7 +185,7 @@ std::unique_ptr<Geometry> rotatePolygonSub(const RotateExtrudeNode& node, const 
       if (node.profile_func != NULL) {
         Outline2d lastFace;
         Outline2d curFace;
-        Outline2d outl = python_getprofile(node.profile_func, node.fn, j / (double)fragments);
+        Outline2d outl = python_getprofile(node.profile_func, 3, j / (double)fragments);
         vertices2d = outl.vertices;
       } else
 #endif
@@ -171,6 +231,8 @@ std::unique_ptr<Geometry> rotatePolygonSub(const RotateExtrudeNode& node, const 
     int curr_outline = 0;
     for (const auto& outline : poly.outlines()) {
       assert(outline.vertices.size() > 2);
+      int color_ind = colors.size();
+      colors.push_back(outline.color);  // TODO effizienter
       for (size_t i = 1; i <= outline.vertices.size(); ++i) {
         const int curr_idx = curr_outline + (i % outline.vertices.size());
         const int prev_idx = curr_outline + i - 1;
@@ -197,6 +259,8 @@ std::unique_ptr<Geometry> rotatePolygonSub(const RotateExtrudeNode& node, const 
             (curr_slice + curr_idx) % num_vertices,
           });
         }
+        color_indices.push_back(color_ind);
+        color_indices.push_back(color_ind);
       }
       curr_outline += outline.vertices.size();
     }
@@ -206,8 +270,8 @@ std::unique_ptr<Geometry> rotatePolygonSub(const RotateExtrudeNode& node, const 
   // modify vertices, so we technically may end up with broken end caps if we build OpenSCAD without
   // ENABLE_MANIFOLD. Should be fixed, but it's low priority and it's not trivial to come up with a test
   // case for this.
-  return assemblePolySetForManifold(poly, vertices, indices, closed, node.convexity,
-                                    slice_stride * num_sections, flip_faces);
+  return assemblePolySetForManifold(poly, vertices, indices, colors, color_indices, closed,
+                                    node.convexity, slice_stride * num_sections, flip_faces);
 }
 
 std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Polygon2d& poly)
@@ -225,16 +289,17 @@ std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Pol
   }
 
   if (max_x > 0 && min_x < 0) {
-    LOG(
-      message_group::Error,
-      "all points for rotate_extrude() must have the same X coordinate sign (range is %1$.2f -> %2$.2f)",
-      min_x, max_x);
+    LOG(message_group::Error,
+        "Children of rotate_extrude() may not lie across the Y axis (Range of X coords for all children "
+        "[%1$.2f : %2$.2f])",
+        min_x, max_x);
     return nullptr;
   }
-  const auto num_sections = (unsigned int)std::ceil(
-    fmax(Calc::get_fragments_from_r(max_x - min_x, 360.0, node.fn, node.fs, node.fa) *
-           std::abs(node.angle) / 360,
-         1));
+
+  const int num_sections = node.discretizer.getCircularSegmentCount(max_x - min_x, node.angle)
+                             .value_or(std::max(1, static_cast<int>(std::fabs(node.angle) / 360 * 3)));
+  const bool closed = node.angle == 360;
+
   bool flip_faces = (min_x >= 0 && node.angle > 0) || (min_x < 0 && node.angle < 0);
 
   // check if its save to extrude
@@ -252,18 +317,15 @@ std::unique_ptr<Geometry> rotatePolygon(const RotateExtrudeNode& node, const Pol
   size_t splits = ceil(node.angle / 300.0);
   fragments = num_sections;
   size_t fragstart = 0, fragend;
-  std::unique_ptr<ManifoldGeometry> result = nullptr;
-
+  std::vector<std::shared_ptr<PolySet>> result_s;
   for (size_t i = 0; i < splits; i++) {
     fragend = fragstart + (fragments / splits) + 1;
     if (fragend > fragments) fragend = fragments;
-    std::unique_ptr<Geometry> part_u =
+    std::unique_ptr<PolySet> part_u =
       rotatePolygonSub(node, poly, fragments, fragstart, fragend, flip_faces);
-    std::shared_ptr<Geometry> part_s = std::move(part_u);
-    std::shared_ptr<const ManifoldGeometry> term = ManifoldUtils::createManifoldFromGeometry(part_s);
-    if (result == nullptr) result = std::make_unique<ManifoldGeometry>(*term);
-    else *result = *result + *term;
+    std::shared_ptr<PolySet> part_s = std::move(part_u);
+    result_s.push_back(part_s);
     fragstart = fragend - 1;
   }
-  return result;
+  return union_geoms(result_s);
 }

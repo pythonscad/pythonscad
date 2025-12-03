@@ -25,6 +25,7 @@
  */
 
 #include "openscad.h"
+#include "version.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -134,7 +135,7 @@ public:
   {
     set_output_handler(&Echostream::output, nullptr, this);
   }
-  Echostream(const std::string& filename) : fstream(filename), stream(fstream)
+  Echostream(const std::string& filename) : fstream(std::filesystem::u8path(filename)), stream(fstream)
   {
     set_output_handler(&Echostream::output, nullptr, this);
   }
@@ -177,9 +178,6 @@ struct CommandLine {
 };
 
 namespace {
-
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
 
 #ifndef OPENSCAD_NOGUI
 bool useGUI()
@@ -237,7 +235,7 @@ void help_export(const std::array<const Settings::SettingsEntryBase *, size>& op
 
 void help_export()
 {
-  LOG("OpenSCAD version %1$s\n", TOSTRING(OPENSCAD_VERSION));
+  LOG("PythonSCAD version %1$s\n", openscad_versionnumber);
   LOG("List of settings that can be given using the -O option using the");
   LOG("format '<section>/<key>=value', e.g.:");
   LOG("openscad -O export-pdf/paper-size=a6 -O export-pdf/show-grid=false\n");
@@ -249,7 +247,7 @@ void help_export()
 
 void version()
 {
-  LOG("OpenSCAD version %1$s", TOSTRING(OPENSCAD_VERSION));
+  LOG("PythonSCAD version %1$s", openscad_versionnumber);
   exit(0);
 }
 
@@ -281,7 +279,7 @@ bool with_output(const bool is_stdout, const std::string& filename, const F& f,
     f(std::cout);
     return true;
   }
-  std::ofstream fstream(filename, mode);
+  std::ofstream fstream(std::filesystem::u8path(filename), mode);
   if (!fstream.is_open()) {
     LOG("Can't open file \"%1$s\" for export", filename);
     return false;
@@ -583,7 +581,7 @@ int cmdline(const CommandLine& cmd)
   if (cmd.is_stdin) {
     text = std::string((std::istreambuf_iterator<char>(std::cin)), std::istreambuf_iterator<char>());
   } else {
-    std::ifstream ifs(cmd.filename);
+    std::ifstream ifs(std::filesystem::u8path(cmd.filename));
     if (!ifs.is_open()) {
       LOG("Can't open input file '%1$s'!\n", cmd.filename);
       return 1;
@@ -604,7 +602,7 @@ int cmdline(const CommandLine& cmd)
   std::string text_py = text;
   if (python_active) {
     if (cmd.animate.frames == 0) {
-      initPython(PlatformUtils::applicationPath(), cmd.filename, 0.0);
+      initPython("", cmd.filename, 0.0);
       auto error = evaluatePython(commandline_commands);
       error += evaluatePython(text_py);
       finishPython();
@@ -808,7 +806,7 @@ struct CommaSeparatedVector {
 };
 
 // OpenSCAD
-int main(int argc, char **argv)
+int openscad_main(int argc, char **argv)
 {
 #if defined(ENABLE_CGAL) && defined(USE_MIMALLOC)
   // call init_mimalloc before any GMP variables are initialized. (defined in src/openscad_mimalloc.h)
@@ -838,7 +836,8 @@ int main(int argc, char **argv)
   // The original name as called, not resolving links and so on. This will
   // just forward everything to the python main.
   const auto applicationName = fs::path(argv[0]).filename().generic_string();
-  if (applicationName == PYTHON_EXECUTABLE_NAME) {
+  if (applicationName == "python" || applicationName == "python3" ||
+      applicationName.rfind("python3.", 0) == 0 || applicationName == "openscad-python") {
     return pythonRunArgs(argc, argv);
   }
 #endif
@@ -891,7 +890,7 @@ int main(int argc, char **argv)
          "=eye_x,y,z,center_x,y,z")("autocenter", "adjust camera to look at object's center")(
           "viewall", "adjust camera to fit object")(
           "backend", po::value<std::string>(),
-          "3D rendering backend to use: 'CGAL' (old/slow) [default] or 'Manifold' (new/fast)")(
+          "3D rendering backend to use: 'CGAL' (old/slow) or 'Manifold' (new/fast) [default]")(
           "imgsize", po::value<std::string>(), "=width,height of exported png")(
           "render", po::value<std::string>()->implicit_value(""),
           "for full geometry evaluation when exporting png")(
@@ -1026,7 +1025,13 @@ int main(int argc, char **argv)
   if (vm.count("version")) version();
   if (vm.count("info")) arg_info = true;
   if (vm.count("backend")) {
-    RenderSettings::inst()->backend3D = renderBackend3DFromString(vm["backend"].as<std::string>());
+    auto backend_string = vm["backend"].as<std::string>();
+    auto backend = renderBackend3DFromString(backend_string);
+    if (!backend) {
+      LOG(message_group::Error, "Unknown rendering backend '%1$s'.", backend_string.c_str());
+      return 1;
+    }
+    RenderSettings::inst()->backend3D = backend.value();
   }
 
   if (vm.count("preview")) {

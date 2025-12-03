@@ -1,6 +1,10 @@
 #include "gui/TabManager.h"
 
 #include <QApplication>
+#include <QStringBuilder>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QKeyCombination>
+#endif
 #include <QPoint>
 #include <QTabBar>
 #include <QWidget>
@@ -10,6 +14,8 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QDir>
+#include <QByteArray>
+#include <QStringList>
 #include <QSaveFile>
 #include <QShortcut>
 #include <QTextStream>
@@ -25,6 +31,7 @@
 #include "gui/ScintillaEditor.h"
 #include "gui/Preferences.h"
 #include "gui/MainWindow.h"
+#include <genlang/genlang.h>
 
 #include <cstddef>
 
@@ -44,6 +51,9 @@ TabManager::TabManager(MainWindow *o, const QString& filename)
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::stopAnimation);
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::updateFindState);
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::tabSwitched);
+
+  connect(par->editActionZoomTextIn, &QAction::triggered, this, &TabManager::zoomIn);
+  connect(par->editActionZoomTextOut, &QAction::triggered, this, &TabManager::zoomOut);
 
   createTab(filename);
 
@@ -100,7 +110,8 @@ void TabManager::tabSwitched(int x)
     setTabsCloseButtonVisibility(idx, isVisible);
   }
 
-  par->recomputeLanguageActive();
+  editor->recomputeLanguageActive();
+  par->onLanguageActiveChanged(editor->language);
   emit currentEditorChanged(editor);
 }
 
@@ -174,6 +185,10 @@ void TabManager::open(const QString& filename)
   if (editor->filepath.isEmpty() && !editor->isContentModified() &&
       !editor->parameterWidget->isModified()) {
     openTabFile(filename);
+    editor->recomputeLanguageActive();
+    par->onLanguageActiveChanged(editor->language);
+    updateTabIcon(editor);
+    emit editorContentReloaded(editor);
   } else {
     createTab(filename);
   }
@@ -183,7 +198,7 @@ void TabManager::createTab(const QString& filename)
 {
   assert(par != nullptr);
 
-  auto scintillaEditor = new ScintillaEditor(tabWidget, *par);
+  auto scintillaEditor = new ScintillaEditor(tabWidget);
   editor = scintillaEditor;
   //  Preferences::create(editor->colorSchemes());   // needs to be done only once, however handled
   this->use_gvim = GlobalPreferences::inst()->getValue("editor/usegvim").toBool();
@@ -196,10 +211,17 @@ void TabManager::createTab(const QString& filename)
 
   // clearing default mapping of keyboard shortcut for font size
   QsciCommandSet *qcmdset = scintillaEditor->qsci->standardCommands();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  QsciCommand *qcmd = qcmdset->boundTo((Qt::ControlModifier | Qt::Key_Plus).toCombined());
+  qcmd->setKey(0);
+  qcmd = qcmdset->boundTo((Qt::ControlModifier | Qt::Key_Minus).toCombined());
+  qcmd->setKey(0);
+#else
   QsciCommand *qcmd = qcmdset->boundTo(Qt::ControlModifier | Qt::Key_Plus);
   qcmd->setKey(0);
   qcmd = qcmdset->boundTo(Qt::ControlModifier | Qt::Key_Minus);
   qcmd->setKey(0);
+#endif
 
   connect(scintillaEditor, &ScintillaEditor::uriDropped, par, &MainWindow::handleFileDrop);
   connect(scintillaEditor, &ScintillaEditor::previewRequest, par, &MainWindow::actionRenderPreview);
@@ -214,9 +236,6 @@ void TabManager::createTab(const QString& filename)
           &ScintillaEditor::onCharacterThresholdChanged);
   scintillaEditor->applySettings();
   editor->addTemplate();
-
-  connect(par->editActionZoomTextIn, &QAction::triggered, editor, &EditorInterface::zoomIn);
-  connect(par->editActionZoomTextOut, &QAction::triggered, editor, &EditorInterface::zoomOut);
 
   connect(editor, &EditorInterface::contentsChanged, this, &TabManager::updateActionUndoState);
   connect(editor, &EditorInterface::contentsChanged, par, &MainWindow::editorContentChanged);
@@ -249,6 +268,11 @@ void TabManager::createTab(const QString& filename)
   if (tabWidget->currentWidget() != editor) {
     tabWidget->setCurrentWidget(editor);
   }
+
+  editor->recomputeLanguageActive();
+  par->onLanguageActiveChanged(editor->language);
+  updateTabIcon(editor);
+
   emit tabCountChanged(editorList.size());
 }
 
@@ -439,7 +463,7 @@ void TabManager::openTabFile(const QString& filename)
 #ifdef ENABLE_PYTHON
   if (boost::algorithm::ends_with(filename, ".py")) {
     std::string templ = "from openscad import *\n";
-    std::string libs = Settings::Settings::pythonNetworkImportList.value();
+    std::string libs = Settings::SettingsPython::pythonNetworkImportList.value();
     std::stringstream ss(libs);
     std::string word;
     while (std::getline(ss, word, '\n')) {
@@ -470,8 +494,6 @@ void TabManager::openTabFile(const QString& filename)
   auto [fname, fpath] = getEditorTabNameWithModifier(editor);
   setEditorTabName(fname, fpath, editor);
   par->setWindowTitle(fname);
-
-  emit editorContentReloaded(editor);
 }
 
 std::tuple<QString, QString> TabManager::getEditorTabName(EditorInterface *edt)
@@ -509,6 +531,23 @@ void TabManager::setEditorTabName(const QString& tabName, const QString& tabTool
   tabWidget->setTabToolTip(index, tabToolTip);
 }
 
+void TabManager::updateTabIcon(EditorInterface *edt)
+{
+  if (!edt) return;
+
+  int index = tabWidget->indexOf(edt);
+  if (index < 0) return;
+
+  QIcon icon;
+  switch (edt->language) {
+  case LANG_PYTHON: icon = QIcon(":/icons/filetype-python.svg"); break;
+  case LANG_SCAD:
+  default:          icon = QIcon(":/icons/filetype-openscad.svg"); break;
+  }
+
+  tabWidget->setTabIcon(index, icon);
+}
+
 bool TabManager::refreshDocument()
 {
   bool file_opened = false;
@@ -525,11 +564,16 @@ bool TabManager::refreshDocument()
       reader.setCodec("UTF-8");
 #endif
       auto text = reader.readAll();
-      LOG("Loaded design '%1$s'.", editor->filepath.toLocal8Bit().constData());
+      LOG("Loaded design '%1$s'.", editor->filepath.toStdString());
       if (editor->toPlainText() != text) {
         editor->setPlainText(text);
         setContentRenderState();  // since last render
+        editor->recomputeLanguageActive();
       }
+#ifdef ENABLE_PYTHON
+      if (editor->language == LANG_PYTHON)
+        par->trust_python_file(editor->filepath.toStdString(), text.toStdString());
+#endif
       file_opened = true;
     }
   }
@@ -634,6 +678,8 @@ bool TabManager::save(EditorInterface *edt, const QString& path)
   // full properly and happily commits a 0 byte file.
   // Checking the QTextStream status flag after flush() seems to catch
   // this condition.
+  // FIXME jeff hayes - i have recently seen a better way to handle this, when i have found that note
+  // again i will revist this
   QSaveFile file(path);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
     saveError(file, _("Failed to open file for writing"), path);
@@ -653,7 +699,7 @@ bool TabManager::save(EditorInterface *edt, const QString& path)
     file.cancelWriting();
   }
   if (saveOk) {
-    LOG("Saved design '%1$s'.", path.toLocal8Bit().constData());
+    LOG("Saved design '%1$s'.", path.toStdString());
     edt->parameterWidget->saveFile(path);
     edt->setContentModified(false);
     edt->parameterWidget->setModified(false);
@@ -722,39 +768,70 @@ bool TabManager::saveAs(EditorInterface *edt, const QString& filepath)
   return saveOk;
 }
 
+/*
+ If the editor content has not yet been saved it will be saved
+ to Untitled.scad in the application root directory.
+ Otherwise append  "_copy" to the base file name.
+ The name of the editor tab should NOT be changed
+ */
 bool TabManager::saveACopy(EditorInterface *edt)
 {
   assert(edt != nullptr);
 
-  const auto dir = edt->filepath.isEmpty() ? _("Untitled.scad") : edt->filepath;
-#ifdef ENABLE_PYTHON
-  QString selectedFilter;
-  QString pythonFilter = _("PythonSCAD Designs (*.py)");
-  auto filename = QFileDialog::getSaveFileName(par, _("Save a Copy"), dir,
-                                               QString("%1").arg(pythonFilter), &selectedFilter);
-#else
-  auto filename =
-    QFileDialog::getSaveFileName(par, _("Save a Copy"), dir, _("OpenSCAD Designs (*.scad)"));
-#endif
-  if (filename.isEmpty()) {
+  const QString path = edt->filepath;
+
+  QString suffix = ".scad";
+  QDir dir(_("Untitled.scad"));
+  if (path.endsWith(".py")) {
+    suffix = ".py";
+    dir = QDir(_("Untitled.py"));
+  }
+
+  if (!path.isEmpty()) {
+    QFileInfo info(path);
+    QString filecopy(info.absolutePath() % "/" % info.baseName() % "_copy" % suffix);
+    dir.setPath(filecopy);
+  }
+
+  QFileDialog saveCopyDialog;
+  saveCopyDialog.setAcceptMode(QFileDialog::AcceptSave);  // Set the dialog to "Save" mode.
+  saveCopyDialog.setWindowTitle("Save A Copy");
+
+  saveCopyDialog.setNameFilter("PythonSCAD Designs (*.py, *.scad)");
+
+  saveCopyDialog.setDefaultSuffix("scad");
+  saveCopyDialog.setViewMode(QFileDialog::List);
+  saveCopyDialog.setDirectory(dir);
+
+  if (saveCopyDialog.exec() != QDialog::Accepted) return false;
+
+  QStringList selectedFiles = saveCopyDialog.selectedFiles();
+  if (selectedFiles.isEmpty()) return false;
+
+  QString savefile = selectedFiles.first();
+
+  if (savefile.isEmpty()) return false;
+
+  QSaveFile file(savefile);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+    saveError(file, _("Failed to open file for writing"), path);
     return false;
   }
-
-  if (QFileInfo(filename).suffix().isEmpty()) {
-#ifdef ENABLE_PYTHON
-    // Check if the user selected the Python filter
-    if (selectedFilter == pythonFilter) {
-      filename.append(".py");
-    } else {
-      // For other cases, use .scad as the default extension
-      filename.append(".scad");
-    }
-#else
-    filename.append(".scad");
+  QTextStream writer(&file);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+  writer.setCodec("UTF-8");
 #endif
-  }
+  writer << edt->toPlainText();
+  writer.flush();
 
-  return save(edt, filename);
+  bool saveOk = writer.status() == QTextStream::Ok;
+  if (!saveOk) file.cancelWriting();
+  else {
+    saveOk = file.commit();
+    if (!saveOk) saveError(file, _("Error saving design"), savefile);
+    else LOG("Saved design '%1$s'.", savefile.toLocal8Bit().constData());
+  }
+  return saveOk;
 }
 
 bool TabManager::saveAll()
@@ -767,4 +844,18 @@ bool TabManager::saveAll()
     }
   }
   return true;
+}
+
+void TabManager::zoomIn()
+{
+  if (editor) {
+    editor->zoomIn();
+  }
+}
+
+void TabManager::zoomOut()
+{
+  if (editor) {
+    editor->zoomOut();
+  }
 }

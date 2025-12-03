@@ -31,7 +31,7 @@
 #include "pydata.h"
 #include "core/CsgOpNode.h"
 #include "Value.h"
-#ifndef OPENSCAD_NOGUI
+#ifndef PYTHON_EXECUTABLE_NAME
 #include "executable.h"
 #endif
 #include "Expression.h"
@@ -88,7 +88,7 @@ void PyOpenSCADObject_dealloc(PyOpenSCADObject *self)
 
 PyObject *PyOpenSCADObject_alloc(PyTypeObject *cls, Py_ssize_t nitems)
 {
-  PyOpenSCADObject *self = (PyOpenSCADObject *) PyType_GenericAlloc(cls, nitems);
+  PyOpenSCADObject *self = (PyOpenSCADObject *)PyType_GenericAlloc(cls, nitems);
   self->dict = PyDict_New();
   PyObject *origin = PyList_New(4);
   for (int i = 0; i < 4; i++) {
@@ -174,10 +174,18 @@ int python_more_obj(std::vector<std::shared_ptr<AbstractNode>>& children, PyObje
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNode(PyObject *obj, PyObject **dict)
 {
   std::shared_ptr<AbstractNode> result = ((PyOpenSCADObject *)obj)->node;
-  if (result.use_count() > 2 && result != void_node && result != full_node) {
-    result = result->clone();
-  }
-  *dict = ((PyOpenSCADObject *)obj)->dict;
+  if (result != nullptr) {
+    if (result.use_count() > 2 && result != void_node && result != full_node) {
+      result = result->clone();
+    }
+    *dict = ((PyOpenSCADObject *)obj)->dict;
+  } else if (obj == Py_None || obj == Py_False) {
+    result = void_node;
+    *dict = nullptr;
+  } else if (obj == Py_True) {
+    result = full_node;
+    *dict = nullptr;
+  } else result = nullptr;
   return result;
 }
 
@@ -222,7 +230,7 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs, PyObje
     }
     *dict = ((PyOpenSCADObject *)objs)->dict;
   } else if (PyList_Check(objs)) {
-    DECLARE_INSTANCE
+    DECLARE_INSTANCE();
     auto node = std::make_shared<CsgOpNode>(instance, OpenSCADOperator::UNION);
 
     int n = PyList_Size(objs);
@@ -232,6 +240,7 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs, PyObje
       PyObject *obj = PyList_GetItem(objs, i);
       if (PyObject_IsInstance(obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
         std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNode(obj, &subdict);
+        if (child == nullptr) continue;
         node->children.push_back(child);
         child_dict.push_back(subdict);
       } else return nullptr;
@@ -454,38 +463,28 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
   return results;  // Error
 }
 
-/*
- * Helper function to extract actual values for fn, fa and fs
+/**
+ * Create a CurveDiscretizer by extracting parameters from __main__ and kwargs
  */
-
-void get_fnas(double& fn, double& fa, double& fs)
+CurveDiscretizer CreateCurveDiscretizer(PyObject *kwargs)
 {
-  PyObject *mainModule = PyImport_AddModule("__main__");
-  if (mainModule == nullptr) return;
-  fn = 0;
-  fa = 12;
-  fs = 2;
-
-  if (PyObject_HasAttrString(mainModule, "fn")) {
-    PyObjectUniquePtr varFn(PyObject_GetAttrString(mainModule, "fn"), PyObjectDeleter);
-    if (varFn.get() != nullptr) {
-      fn = PyFloat_AsDouble(varFn.get());
+  PyObject *mainModule = pythonMainModule.get();
+  return CurveDiscretizer([kwargs, mainModule](const char *key) -> std::optional<double> {
+    double result;
+    if (kwargs != nullptr && PyDict_Check(kwargs)) {
+      PyObject *value = PyDict_GetItemString(kwargs, key);
+      if (!(python_numberval(value, &result, nullptr, 0))) return result;
     }
-  }
-
-  if (PyObject_HasAttrString(mainModule, "fa")) {
-    PyObjectUniquePtr varFa(PyObject_GetAttrString(mainModule, "fa"), PyObjectDeleter);
-    if (varFa.get() != nullptr) {
-      fa = PyFloat_AsDouble(varFa.get());
+    if (mainModule != nullptr) {
+      if (PyObject_HasAttrString(mainModule, key)) {
+        PyObjectUniquePtr var(PyObject_GetAttrString(mainModule, key), PyObjectDeleter);
+        if (var.get() != nullptr) {
+          if (!(python_numberval(var.get(), &result, nullptr, 0))) return result;
+        }
+      }
     }
-  }
-
-  if (PyObject_HasAttrString(mainModule, "fs")) {
-    PyObjectUniquePtr varFs(PyObject_GetAttrString(mainModule, "fs"), PyObjectDeleter);
-    if (varFs.get() != nullptr) {
-      fs = PyFloat_AsDouble(varFs.get());
-    }
-  }
+    return {};
+  });
 }
 
 /*
@@ -896,8 +895,9 @@ void initPython(const std::string& binDir, const std::string& scriptpath, double
     stream << sepchar << ".";
     PyConfig_SetBytesString(&config, &config.pythonpath_env, stream.str().c_str());
 
-    PyConfig_SetBytesString(&config, &config.program_name, name);
-    PyConfig_SetBytesString(&config, &config.executable, exe.c_str());
+    if (!binDir.empty()) {
+      PyConfig_SetBytesString(&config, &config.executable, (binDir + "/python").c_str());
+    }
 
     PyStatus status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -924,13 +924,13 @@ void initPython(const std::string& binDir, const std::string& scriptpath, double
     }
   }
   std::ostringstream stream;
-  stream << "t=" << time << "\nphi=" << 2 * G_PI * time;
+  stream << "t=" << time << "\nphi=" << 2 * G_PI * time << "\n" << commandline_commands << "\n";
   PyRun_String(stream.str().c_str(), Py_file_input, pythonInitDict.get(), pythonInitDict.get());
   customizer_parameters_finished = customizer_parameters;
   customizer_parameters.clear();
   python_result_handle.clear();
   nodes_hold.clear();
-  DECLARE_INSTANCE
+  DECLARE_INSTANCE();
   void_node = std::make_shared<CubeNode>(instance);  // just placeholders
   full_node = std::make_shared<CubeNode>(instance);  // just placeholders
 }
@@ -956,6 +956,8 @@ void finishPython(void)
 #endif
   show_final();
 }
+
+int debug_num, debug_cnt;  // Hidden debug aid
 
 std::string evaluatePython(const std::string& code, bool dry_run)
 {
@@ -1261,7 +1263,7 @@ int Py_RunMain_ipython(void)
   pymain_run_python_ipython(&exitcode);
 
   if (Py_FinalizeEx() < 0) {
-      exitcode = 120;
+    exitcode = 120;
   }
 
   //    pymain_free();

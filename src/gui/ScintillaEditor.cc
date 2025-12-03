@@ -4,6 +4,9 @@
 #include <QCursor>
 #include <QEvent>
 #include <QGuiApplication>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QKeyCombination>
+#endif
 #include <QMenu>
 #include <QObject>
 #include <QTimer>
@@ -120,8 +123,7 @@ int EditorColorScheme::index() const { return _index; }
 
 const boost::property_tree::ptree& EditorColorScheme::propertyTree() const { return pt; }
 
-ScintillaEditor::ScintillaEditor(QWidget *parent, MainWindow& mainWindow)
-  : EditorInterface(parent), mainWindow(mainWindow)
+ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
 {
   api = nullptr;
   lexer = nullptr;
@@ -144,18 +146,35 @@ ScintillaEditor::ScintillaEditor(QWidget *parent, MainWindow& mainWindow)
 #ifdef Q_OS_MACOS
   // Alt-Backspace should delete left word (Alt-Delete already deletes right word)
   c = qsci->standardCommands()->find(QsciCommand::DeleteWordLeft);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  c->setKey((Qt::Key_Backspace | Qt::ALT).toCombined());
+#else
   c->setKey(Qt::Key_Backspace | Qt::ALT);
 #endif
+#endif
   // Cmd/Ctrl-T is handled by the menu
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  c = qsci->standardCommands()->boundTo((Qt::Key_T | Qt::CTRL).toCombined());
+#else
   c = qsci->standardCommands()->boundTo(Qt::Key_T | Qt::CTRL);
+#endif
   c->setKey(0);
   // Cmd/Ctrl-D is handled by the menu
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  c = qsci->standardCommands()->boundTo((Qt::Key_D | Qt::CTRL).toCombined());
+#else
   c = qsci->standardCommands()->boundTo(Qt::Key_D | Qt::CTRL);
+#endif
   c->setKey(0);
   // Ctrl-Shift-Z should redo on all platforms
   c = qsci->standardCommands()->find(QsciCommand::Redo);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  c->setKey(QKeyCombination(Qt::CTRL | Qt::SHIFT, Qt::Key_Z).toCombined());
+  c->setAlternateKey((Qt::Key_Y | Qt::CTRL).toCombined());
+#else
   c->setKey(Qt::Key_Z | Qt::CTRL | Qt::SHIFT);
   c->setAlternateKey(Qt::Key_Y | Qt::CTRL);
+#endif
 
 #ifdef Q_OS_MACOS
   const unsigned long modifier = Qt::META;
@@ -217,6 +236,7 @@ ScintillaEditor::ScintillaEditor(QWidget *parent, MainWindow& mainWindow)
 #else
   setLexer(new ScadLexer(this));
 #endif
+  recomputeLanguageActive();
 
   initMargin();
 
@@ -243,11 +263,6 @@ ScintillaEditor::ScintillaEditor(QWidget *parent, MainWindow& mainWindow)
 
   // Disabling buffered drawing resolves non-integer HiDPI scaling.
   qsci->SendScintilla(QsciScintillaBase::SCI_SETBUFFEREDDRAW, false);
-
-#ifdef ENABLE_PYTHON
-  connect(&this->mainWindow, &MainWindow::pythonActiveChanged, this,
-          &ScintillaEditor::onPythonActiveChanged);
-#endif
 }
 
 QPoint ScintillaEditor::mapToGlobal(const QPoint& pos) { return qsci->mapToGlobal(pos); }
@@ -1066,16 +1081,19 @@ bool ScintillaEditor::eventFilter(QObject *obj, QEvent *e)
     }
   }
 
-  bool enableNumberScrollWheel = Settings::Settings::enableNumberScrollWheel.value();
-
-  if (obj == qsci->viewport() && enableNumberScrollWheel) {
+  if (obj == qsci->viewport()) {
     if (e->type() == QEvent::Wheel) {
       auto *wheelEvent = static_cast<QWheelEvent *>(e);
       PRINTDB("%s - modifier: %s",
               (e->type() == QEvent::Wheel ? "Wheel Event" : "") %
                 (wheelEvent->modifiers() & Qt::AltModifier ? "Alt" : "Other Button"));
-      if (handleWheelEventNavigateNumber(wheelEvent)) {
+      bool enableNumberScrollWheel = Settings::Settings::enableNumberScrollWheel.value();
+      if (enableNumberScrollWheel && handleWheelEventNavigateNumber(wheelEvent)) {
         qsci->SendScintilla(QsciScintilla::SCI_SETCARETWIDTH, 1);
+        return true;
+      }
+      bool wheelzoom_enabled = GlobalPreferences::inst()->getValue("editor/ctrlmousewheelzoom").toBool();
+      if ((wheelEvent->modifiers() == Qt::ControlModifier) && !wheelzoom_enabled) {
         return true;
       }
     }
@@ -1532,19 +1550,21 @@ void ScintillaEditor::onIndicatorReleased(int line, int col, Qt::KeyboardModifie
   }
 }
 
-#ifdef ENABLE_PYTHON
-void ScintillaEditor::onPythonActiveChanged(bool pythonActive)
+void ScintillaEditor::onLanguageChanged(int lang)
 {
-  if (pythonActive) {
+#ifdef ENABLE_PYTHON
+  if (language == LANG_PYTHON) {
     this->qsci->setLexer(this->pythonLexer);
   } else {
     this->qsci->setLexer(this->lexer);
   }
+#else
+  this->qsci->setLexer(this->lexer);
+#endif
   this->qsci->update();
   // This is needed otherwise the sidebar with line numbers has the wrong size and bg color
   this->setHighlightScheme(GlobalPreferences::inst()->getValue("editor/syntaxhighlight").toString());
 }
-#endif
 
 void ScintillaEditor::setCursorPosition(int line, int col)
 {

@@ -115,6 +115,7 @@ public:
   QShortcut *shortcutPreviousWindow{nullptr};
 
   QLabel *versionLabel;
+  QLabel *languageLabel;
 
   Measurement meas;
 
@@ -225,9 +226,13 @@ private:
   void show_examples();
   void addKeyboardShortCut(const QList<QAction *>& actions);
   void updateStatusBar(ProgressWidget *progressWidget);
+  void updateLanguageLabel();
+  void showLanguageMenu();
   void activateDock(Dock *);
   Dock *findVisibleDockToActivate(int offset) const;
   Dock *getNextDockFromSender(QObject *sender);
+  void addExportActions(QToolBar *toolbar, QAction *action) const;
+  QAction *formatIdentifierToAction(const std::string& identifier) const;
 
   LibraryInfoDialog *libraryInfoDialog{nullptr};
   FontListDialog *fontListDialog{nullptr};
@@ -284,6 +289,7 @@ private slots:
   // Handle the Next/Prev shortcut, currently switch to the targetted dock
   // and adds the rubberband, the rubbreband is removed on shortcut key release.
   void onWindowShortcutNextPrevActivated();
+  void onWindowShortcutExport3DActivated();
 
   void onEditorDockVisibilityChanged(bool isVisible);
   void onConsoleDockVisibilityChanged(bool isVisible);
@@ -328,13 +334,12 @@ private slots:
   void actionRender();
   void actionRenderDone(const std::shared_ptr<const Geometry>&);
   void cgalRender();
-  void actionMeasureDistance();
-  void actionMeasureAngle();
-  void actionFindHandle();
   void actionShareDesignPublish();
   void actionLoadShareDesignSelect();
   void actionShareDesign();
   void actionLoadShareDesign();
+
+  void handleMeasurementClicked(QAction *clickedAction);
   void actionCheckValidity();
   void actionDisplayAST();
   void actionDisplayPython();
@@ -366,6 +371,12 @@ public:
   QList<double> getRotation() const;
   QSignalMapper *addmenu_mapper;
   std::unordered_map<FileFormat, QAction *> exportMap;
+  void onLanguageActiveChanged(int language)
+  {
+    currentLanguage = language;
+    updateLanguageLabel();
+  }
+  int currentLanguage;
 
 public slots:
   void actionReloadRenderPreview();
@@ -416,7 +427,6 @@ public slots:
   void checkAutoReload();
   void waitAfterReload();
   void autoReloadSet(bool);
-  void recomputeLanguageActive();
 
 private:
   bool network_progress_func(const double permille);
@@ -457,17 +467,25 @@ private:
   QMenu *navigationMenu{nullptr};
   QSoundEffect *renderCompleteSoundEffect;
   std::vector<std::unique_ptr<QTemporaryFile>> allTempFiles;
+  void resetMeasurementsState(bool enable, const QString& tooltipMessage);
+
+  QActionGroup *measurementGroup;
+  QAction *activeMeasurement = nullptr;
 
 signals:
   void highlightError(int);
   void unhighlightLastError();
+/*  
+<<<<<<< HEAD
 #ifdef ENABLE_PYTHON
   void pythonActiveChanged(bool pythonActive);
 #endif
 #ifdef ENABLE_LUA
   void luaActiveChanged(bool pythonActive);
 #endif
-
+=======
+>>>>>>> master
+*/
 #ifdef ENABLE_GUI_TESTS
 public:
   std::shared_ptr<AbstractNode> instantiateRootFromSource(SourceFile *file);

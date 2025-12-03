@@ -285,7 +285,7 @@ void Preferences::init()
   BlockSignals<QLineEdit *>(this->lineEditLocalAppTempDir)
     ->setText(QString::fromStdString(Settings::Settings::localAppTempDir.value()));
   BlockSignals<QTextEdit *>(this->textEditPythonImportList)
-    ->setText(QString::fromStdString(Settings::Settings::pythonNetworkImportList.value()));
+    ->setText(QString::fromStdString(Settings::SettingsPython::pythonNetworkImportList.value()));
   this->comboBoxOctoPrintSlicingEngine->clear();
   this->comboBoxOctoPrintSlicingEngine->addItem(_("<Default>"), QVariant{""});
   if (!slicer.isEmpty()) {
@@ -310,6 +310,7 @@ void Preferences::update()
     Settings::SettingsExport3mf::export3mfAlwaysShowDialog.value());
   this->checkBoxAlwaysShowPrintServiceDialog->setChecked(
     Settings::Settings::printServiceAlwaysShowDialog.value());
+  this->checkBoxGlobalTrustPython->setChecked(Settings::SettingsPython::globalTrustPython.value());
 }
 
 /**
@@ -864,7 +865,8 @@ void Preferences::on_comboBoxRenderBackend3D_activated(int val)
 {
   applyComboBox(this->comboBoxRenderBackend3D, val, Settings::Settings::renderBackend3D);
   RenderSettings::inst()->backend3D =
-    renderBackend3DFromString(Settings::Settings::renderBackend3D.value());
+    renderBackend3DFromString(Settings::Settings::renderBackend3D.value())
+      .value_or(DEFAULT_RENDERING_BACKEND_3D);
 }
 
 void Preferences::on_comboBoxToolbarExport3D_activated(int val)
@@ -1102,7 +1104,7 @@ void Preferences::updateLocalAppParams()
 
 void Preferences::on_textEditPythonImportList_textChanged()
 {
-  Settings::Settings::pythonNetworkImportList.setValue(
+  Settings::SettingsPython::pythonNetworkImportList.setValue(
     this->textEditPythonImportList->document()->toPlainText().toStdString());
   writeSettings();
 }
@@ -1248,6 +1250,12 @@ void Preferences::on_checkBoxAlwaysShowExport3mfDialog_toggled(bool state)
 void Preferences::on_checkBoxAlwaysShowPrintServiceDialog_toggled(bool state)
 {
   Settings::Settings::printServiceAlwaysShowDialog.setValue(state);
+  writeSettings();
+}
+
+void Preferences::on_checkBoxGlobalTrustPython_toggled(bool state)
+{
+  Settings::SettingsPython::globalTrustPython.setValue(state);
   writeSettings();
 }
 

@@ -33,6 +33,7 @@ public:
 
   void setEditorTabName(const QString& tabName, const QString& tabTooltip,
                         EditorInterface *edt = nullptr);
+  void updateTabIcon(EditorInterface *edt);
   bool refreshDocument();  // returns false if the file could not be opened
   bool shouldClose();
   bool save(EditorInterface *edt);
@@ -71,6 +72,8 @@ private:
   void setTabsCloseButtonVisibility(int tabIndice, bool isVisible);
 
   QTabBar::ButtonPosition getClosingButtonPosition();
+  void zoomIn();
+  void zoomOut();
 
 private slots:
   void tabSwitched(int);

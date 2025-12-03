@@ -4,6 +4,7 @@
 #include <ios>
 #include <string>
 #include <map>
+#include <boost/nowide/convert.hpp>
 
 #include "utils/printutils.h"
 #include "utils/findversion.h"
@@ -27,6 +28,8 @@
 std::string PlatformUtils::pathSeparatorChar() { return ";"; }
 
 // convert from windows api w_char strings (usually utf16) to utf8 std::string
+// C++ does not currently have a fully-endorsed way to translate UTF-16 wchar_t to UTF-8
+// std::string.  std::codevct is deprecated without a replacement.
 std::string winapi_wstr_to_utf8(std::wstring wstr)
 {
   UINT CodePage = CP_UTF8;
@@ -135,7 +138,7 @@ const std::string PlatformUtils::user_agent()
 {
   std::string result;
 
-  result += "OpenSCAD/";
+  result += "PythonSCAD/";
   result += openscad_detailedversionnumber;
   result += " (";
   result += sysinfo(false);
