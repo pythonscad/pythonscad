@@ -461,7 +461,7 @@ void TabManager::onTabModified(EditorInterface *edt)
 void TabManager::openTabFile(const QString& filename)
 {
 #ifdef ENABLE_PYTHON
-  if (boost::algorithm::ends_with(filename, ".py")) {
+  if(languageDesc[LANG_PYTHON]->check_validfile(filename.toStdString().c_str(),""))	{
     std::string templ = "from openscad import *\n";
     std::string libs = Settings::SettingsPython::pythonNetworkImportList.value();
     std::stringstream ss(libs);
@@ -732,7 +732,8 @@ bool TabManager::saveAs(EditorInterface *edt)
 #ifdef ENABLE_PYTHON
     // Check if the user selected the Python filter
     if (selectedFilter == pythonFilter) {
-      filename.append(".py");
+      filename.append(".");
+      filename.append(languageDesc[edt->language]->suffix);
     } else {
       // For other cases, use .scad as the default extension
       filename.append(".scad");

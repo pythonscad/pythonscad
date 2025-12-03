@@ -14,18 +14,18 @@ void EditorInterface::recomputeLanguageActive()
   int oldLanguage = language;
   language = LANG_SCAD;
   if (fname != NULL) {
-#ifdef ENABLE_PYTHON
-    if (boost::algorithm::ends_with(fname, ".py")) {
-      language = LANG_PYTHON;
-    }
-#endif
+    for(int i=0;i<LANG_NUM;i++) {
+      if(languageDesc[i] == nullptr) continue;
+      if(languageDesc[i]->check_validfile(fname, "")) {
+        language=i;	      
+      }      
+    }	    
   }
+  
 
-#ifdef ENABLE_PYTHON
   if (oldLanguage != language) {
     onLanguageChanged(language);
   }
-#endif
 }
 
 void EditorInterface::setLanguageManually(int lang)

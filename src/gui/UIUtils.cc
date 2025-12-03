@@ -41,6 +41,7 @@
 #include <QRegularExpression>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include "genlang/genlang.h"
 
 #include "version.h"
 #include "platform/PlatformUtils.h"
@@ -56,9 +57,10 @@ QString fileOpenFilter(const QString& pattern, QStringList extensions)
 {
   if (extensions.isEmpty()) {
     extensions << "scad" << "csg";
-#ifdef ENABLE_PYTHON
-    extensions << "py";
-#endif
+    for(int i=0;i<LANG_NUM;i++) {
+      if(languageDesc[i] == nullptr) continue;	    
+      extensions << languageDesc[i]-> suffix;
+    }
   }
   extensions.replaceInStrings(QRegularExpression("^"), "*.");
   return pattern.arg(extensions.join(" "));
@@ -94,8 +96,12 @@ void readExamplesDir(const QJsonObject& obj, const fs::path& dir)
       continue;
     }
     const auto& path = entry.path();
-    if (path.extension() != ".scad")
-      if (path.extension() != ".py") continue;
+    int valid=0;
+    for(int i=0;i<LANG_NUM;i++) {
+      if(languageDesc[i] == nullptr) continue;	    
+      if (path.extension() == std::string(".")+ languageDesc[i]-> suffix) valid=1;
+    }
+    if(!valid) continue;
     examples.append(
       UIUtils::ExampleEntry{.name = QString::fromStdString(path.filename().generic_string()),
                             .fileInfo = QFileInfo(QString::fromStdString(path.generic_string()))});
@@ -328,9 +334,10 @@ QString UIUtils::getBackupFileName(QWidget *parent)
   QString dirname(PlatformUtils::backupPath().c_str());
   QStringList extensions = {};
   extensions << "scad" << "csg";
-#ifdef ENABLE_PYTHON
-  extensions << "py";
-#endif
+  for(int i=0;i<LANG_NUM;i++) {
+    if(languageDesc[i] == nullptr) continue;	    
+    extensions << languageDesc[i]-> suffix;
+  }
   extensions.replaceInStrings(QRegularExpression("^"), "*.");
   const auto filter = QString("OpenSCAD Backups (%1)").arg(extensions.join(" "));
 

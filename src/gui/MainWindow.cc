@@ -411,7 +411,7 @@ void MainWindow::customSetup(void)
   finishPython();
 }
 
-#endif
+#endif  // ENABLE_PYTHON
 
 MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 {
@@ -2022,11 +2022,8 @@ void MainWindow::saveBackup()
   }
 
   if (!this->tempFile) {
-#ifdef ENABLE_PYTHON
-    const QString suffix = currentLanguage == LANG_PYTHON ? "py" : "scad";
-#else
-    const QString suffix = "scad";
-#endif
+    QString suffix;
+    if (activeEditor->language >= 0 && languageDesc[activeEditor->language] != nullptr) suffix = languageDesc[activeEditor->language]->suffix;
     this->tempFile = new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
   }
 
