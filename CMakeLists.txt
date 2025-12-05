@@ -185,25 +185,6 @@ if (MINGW)
         -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
       >
     )
-    # Unsure if it helps to double this
-    target_link_options(OpenSCADExe PRIVATE
-      $<$<CONFIG:Debug>:
-        -Wl,--gc-sections;        # Linker: drop unused sections
-        -Wl,--icf=all;            # ICF: fold identical code/data (effective with lld)
-        -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
-      >
-    )
-    # Unsure if it helps to triple this
-    target_link_options(svg PRIVATE
-      $<$<CONFIG:Debug>:
-        -Wl,--gc-sections;        # Linker: drop unused sections
-        -Wl,--icf=all;            # ICF: fold identical code/data (effective with lld)
-        -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
-      >
-    )
-  endif()
-  if (NOT MXECROSS)
-    target_compile_definitions(OpenSCADLibInternal PRIVATE QSCINTILLA_DLL)
   endif()
   if (NOT MXECROSS)
     target_compile_definitions(OpenSCADLibInternal PRIVATE QSCINTILLA_DLL)
