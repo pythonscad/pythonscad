@@ -335,7 +335,7 @@ std::unique_ptr<Geometry> rotateBarcode(const RotateExtrudeNode& node, const Bar
 {
   Polygon2d p;
   for (auto e : barcode.untransformedEdges()) {
-    if (node.angle == 360) {
+    if (node.angle == 360 && node.v.norm() < 1e-6) {
       for (int j = 0; j < 2; j++) {
         double d = (j == 0) ? e.end : e.begin;
         int fragments = node.discretizer.getCircularSegmentCount(d, 360).value_or(3);
@@ -349,14 +349,17 @@ std::unique_ptr<Geometry> rotateBarcode(const RotateExtrudeNode& node, const Bar
         p.addOutline(o);
       }
     } else {
+      double v = node.v.norm();
       int fragments = node.discretizer.getCircularSegmentCount(e.end, node.angle).value_or(3);
       Outline2d o;
       o.color = e.color;
       o.vertices.resize(2 * fragments);
       for (int i = 0; i < fragments; ++i) {
+        double vext = v * i / (fragments + 1);
         double phi = node.angle * i / (fragments - 1);
-        o.vertices[i] = {e.end * cos_degrees(phi), e.end * sin_degrees(phi)};
-        o.vertices[2 * fragments - 1 - i] = {e.begin * cos_degrees(phi), e.begin * sin_degrees(phi)};
+        o.vertices[i] = {(e.end + vext) * cos_degrees(phi), (e.end + vext) * sin_degrees(phi)};
+        o.vertices[2 * fragments - 1 - i] = {(e.begin + vext) * cos_degrees(phi),
+                                             (e.begin + vext) * sin_degrees(phi)};
       }
       p.addOutline(o);
     }
