@@ -211,3 +211,19 @@ public:
   std::vector<Vector2d> points;
   double fn, fa, fs;
 };
+
+class TesseractNode : public LeafNode
+{
+public:
+  TesseractNode(const ModuleInstantiation *mi) : LeafNode(mi) {}
+  std::string toString() const override
+  {
+    std::ostringstream stream;
+    stream << "tesseract(size = [" << dim[0] << ", " << dim[1] << ", " << dim[2] << ", " << dim[3]
+           << "])";
+    return stream.str();
+  }
+  std::string name() const override { return "tesseract"; }
+  std::unique_ptr<const Geometry> createGeometry() const override;
+  double dim[4] = {1, 1, 1, 1};
+};

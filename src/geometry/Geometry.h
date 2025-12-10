@@ -15,6 +15,7 @@ class GeometryList;
 class GeometryVisitor;
 class Polygon2d;
 class Barcode1d;
+class HyperObject;
 class PolySet;
 #ifdef ENABLE_MANIFOLD
 class ManifoldGeometry;
@@ -63,6 +64,7 @@ class GeometryVisitor
 {
 public:
   virtual void visit(const GeometryList& node) = 0;
+  virtual void visit(const HyperObject& node) = 0;
   virtual void visit(const PolySet& node) = 0;
   virtual void visit(const Polygon2d& node) = 0;
   virtual void visit(const Barcode1d& node) = 0;

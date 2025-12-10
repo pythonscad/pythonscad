@@ -213,6 +213,7 @@ private:
   bool isValidDim(const Geometry::GeometryItem& item, unsigned int& dim) const;
   std::vector<std::shared_ptr<const Barcode1d>> collectChildren1D(const AbstractNode& node);
   std::vector<std::shared_ptr<const Polygon2d>> collectChildren2D(const AbstractNode& node);
+  std::vector<std::shared_ptr<const HyperObject>> collectChildren4D(const AbstractNode& node);
   Geometry::Geometries collectChildren3D(const AbstractNode& node);
   std::unique_ptr<Polygon2d> applyMinkowski2D(const AbstractNode& node);
   std::unique_ptr<Polygon2d> applyHull2D(const AbstractNode& node);
@@ -222,6 +223,7 @@ private:
                      const Eigen::Matrix<bool, 3, 1>& autosize);
   std::unique_ptr<Barcode1d> applyToChildren1D(const AbstractNode& node, OpenSCADOperator op);
   std::unique_ptr<Polygon2d> applyToChildren2D(const AbstractNode& node, OpenSCADOperator op);
+  std::unique_ptr<HyperObject> applyToChildren4D(const AbstractNode& node, OpenSCADOperator op);
   ResultObject applyToChildren3D(const AbstractNode& node, OpenSCADOperator op);
   ResultObject applyToChildren(const AbstractNode& node, OpenSCADOperator op);
   std::shared_ptr<const Geometry> projectionCut(const ProjectionNode& node);

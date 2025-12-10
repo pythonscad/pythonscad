@@ -99,10 +99,12 @@ void PolySetRenderer::addGeometry(const std::shared_ptr<const Geometry>& geom)
   } else if (const auto barcode = std::dynamic_pointer_cast<const Barcode1d>(geom)) {
     auto poly = barcode->to2d();
     this->polygons_.emplace_back(poly, std::shared_ptr<const PolySet>(poly->tessellate(true)));
+    //  } else if (const auto hyper = std::dynamic_pointer_cast<const HyperObject>(geom)) {
+    //    LOG("How shall I display a 4D object on a 2D display ?");
   } else {
     const auto& geom_ref = *geom.get();
-    LOG("Unsupported geom '%1$s' in PolySetRenderer", typeid(geom_ref).name());
-    assert(false && "Unsupported geom in PolySetRenderer");
+    LOG("How shall I display a 4D object on a 2D display ?");
+    //    assert(false && "Unsupported geom in PolySetRenderer");
   }
 }
 

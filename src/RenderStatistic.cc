@@ -44,6 +44,7 @@
 #include "geometry/linalg.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/Barcode1d.h"
+#include "geometry/HyperObject.h"
 #include "geometry/PolySet.h"
 #include "glview/Camera.h"
 #include "utils/printutils.h"
@@ -87,6 +88,7 @@ struct LogVisitor : public StatisticVisitor {
   void visit(const PolySet& node) override;
   void visit(const Polygon2d& node) override;
   void visit(const Barcode1d& node) override;
+  void visit(const HyperObject& node) override;
 #ifdef ENABLE_CGAL
   void visit(const CGALNefGeometry& node) override;
 #endif  // ENABLE_CGAL
@@ -119,6 +121,7 @@ struct StreamVisitor : public StatisticVisitor {
   void visit(const PolySet& node) override;
   void visit(const Polygon2d& node) override;
   void visit(const Barcode1d& node) override;
+  void visit(const HyperObject& node) override;
 #ifdef ENABLE_CGAL
   void visit(const CGALNefGeometry& node) override;
 #endif  // ENABLE_CGAL
@@ -269,6 +272,7 @@ void LogVisitor::visit(const Polygon2d& poly)
 }
 
 void LogVisitor::visit(const Barcode1d& poly) { LOG("Top level object is a 1D object:"); }
+void LogVisitor::visit(const HyperObject& poly) { LOG("Top level object is a 4D object:"); }
 
 void LogVisitor::printBoundingBox3(const BoundingBox& bb)
 {
@@ -388,6 +392,15 @@ void StreamVisitor::visit(const Barcode1d& poly)
   if (is_enabled(RenderStatistic::GEOMETRY)) {
     nlohmann::json geometryJson;
     geometryJson["dimensions"] = 1;
+    json["geometry"] = geometryJson;
+  }
+}
+
+void StreamVisitor::visit(const HyperObject& poly)
+{
+  if (is_enabled(RenderStatistic::GEOMETRY)) {
+    nlohmann::json geometryJson;
+    geometryJson["dimensions"] = 4;
     json["geometry"] = geometryJson;
   }
 }

@@ -210,6 +210,27 @@ PyObject *python_cube(PyObject *self, PyObject *args, PyObject *kwargs)
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
 }
 
+PyObject *python_tesseract(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"size", NULL};
+  PyObject *size = NULL;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O", kwlist, &size)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing cube(size)");
+    return NULL;
+  }
+  DECLARE_INSTANCE();
+  auto node = std::make_shared<TesseractNode>(instance);
+  if (size != NULL) {
+    if (python_vectorval(size, 4, 4, &(node->dim[0]), &(node->dim[1]), &(node->dim[2]),
+                         &(node->dim[3]))) {
+      PyErr_SetString(PyExc_TypeError, "Invalid Cube dimensions");
+      return NULL;
+    }
+  }
+  return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
+}
+
 int sphereCalcIndInt(PyObject *func, Vector3d& dir)
 {
   dir.normalize();
@@ -5810,6 +5831,7 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"textmetrics", (PyCFunction)python_textmetrics, METH_VARARGS | METH_KEYWORDS, "Get textmetrics."},
 
   {"cube", (PyCFunction)python_cube, METH_VARARGS | METH_KEYWORDS, "Create Cube."},
+  {"tesseract", (PyCFunction)python_tesseract, METH_VARARGS | METH_KEYWORDS, "Create Tesseract."},
   {"cylinder", (PyCFunction)python_cylinder, METH_VARARGS | METH_KEYWORDS, "Create Cylinder."},
   {"sphere", (PyCFunction)python_sphere, METH_VARARGS | METH_KEYWORDS, "Create Sphere."},
   {"polyhedron", (PyCFunction)python_polyhedron, METH_VARARGS | METH_KEYWORDS, "Create Polyhedron."},

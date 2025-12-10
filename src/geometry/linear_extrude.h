@@ -7,4 +7,5 @@
 #include "core/LinearExtrudeNode.h"
 
 std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Polygon2d& poly);
-std::unique_ptr<Geometry> extrudeBarcode(const LinearExtrudeNode& node, const Barcode1d& poly);
+std::unique_ptr<Geometry> extrudeBarcode(const LinearExtrudeNode& node, const Barcode1d& barcode);
+std::unique_ptr<Geometry> extrudePolySet(const LinearExtrudeNode& node, const PolySet& ps);

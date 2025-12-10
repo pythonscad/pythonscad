@@ -1202,6 +1202,7 @@ set(CORE_SOURCES
   src/geometry/GeometryEvaluator.cc
   src/geometry/GeometryUtils.cc
   src/geometry/PolySet.cc
+  src/geometry/HyperObject.cc
   src/geometry/PolySetBuilder.cc
   src/geometry/Curve.cc
   src/geometry/Surface.cc

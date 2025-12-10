@@ -10,6 +10,7 @@
 #include "geometry/GeometryCache.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/Barcode1d.h"
+#include "geometry/HyperObject.h"
 #include "core/ModuleInstantiation.h"
 #include "core/State.h"
 #include "core/ColorNode.h"
@@ -3474,6 +3475,7 @@ Response GeometryEvaluator::visit(State& /*state*/, const AbstractPolyNode& /*no
   assert(false);
   return Response::AbortTraversal;
 }
+std::shared_ptr<const Geometry> hyper_projection(std::shared_ptr<const HyperObject> hyper);
 
 std::shared_ptr<const Geometry> GeometryEvaluator::projectionCut(const ProjectionNode& node)
 {
@@ -3495,11 +3497,13 @@ std::shared_ptr<const Geometry> GeometryEvaluator::projectionCut(const Projectio
       auto poly = CGALUtils::project(*Nptr, node.cut_mode);
       if (poly) {
         poly->setConvexity(node.convexity);
-        geom = std::move(poly);
+        return std::move(poly);
       }
     }
 #endif
   }
+  if (const auto hyper = std::dynamic_pointer_cast<const HyperObject>(newgeom))
+    return hyper_projection(hyper);
   return geom;
 }
 

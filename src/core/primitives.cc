@@ -28,6 +28,7 @@
 
 #include "geometry/Geometry.h"
 #include "geometry/linalg.h"
+#include "geometry/HyperObject.h"
 #include "geometry/PolySet.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/Barcode1d.h"
@@ -211,7 +212,6 @@ static std::shared_ptr<AbstractNode> builtin_cube(const ModuleInstantiation *ins
 
   return node;
 }
-
 std::string SphereNode::toString() const
 {
   std::ostringstream stream;
@@ -1077,4 +1077,115 @@ void register_builtin_primitives()
                    "polygon([points])",
                    "polygon([points], [paths])",
                  });
+}
+
+std::unique_ptr<const Geometry> TesseractNode::createGeometry() const
+{
+  auto tess = std::make_unique<HyperObject>(4, /*convex*/ true);
+  for (int i = 0; i < 16; i++) {
+    tess->vertices.push_back(Vector4d((i & 1) ? dim[0] : 0.0, (i & 2) ? dim[1] : 0.0,
+                                      (i & 4) ? dim[2] : 0.0, (i & 8) ? dim[3] : 0.0));
+  }
+  tess->indices = {{0, 1, 3, 2},  // 0,1
+                   {6, 7, 5, 4},   {10, 11, 9, 8},  {12, 13, 15, 14},
+
+                   {1, 5, 4, 0},  // 0,2
+                   {3, 7, 6, 2},   {9, 13, 12, 8},  {11, 15, 14, 10},
+
+                   {1, 9, 8, 0},  // 0,3
+                   {3, 11, 10, 2}, {5, 13, 12, 4},  {7, 15, 14, 6},
+
+                   {2, 6, 4, 0},  // 1,2
+                   {3, 7, 5, 1},   {10, 14, 12, 8}, {11, 15, 13, 9},
+
+                   {0, 2, 10, 8},  // 1,3
+                   {1, 3, 11, 9},  {4, 6, 14, 12},  {5, 7, 15, 13},
+
+                   {0, 4, 12, 8},  // 2,3
+                   {1, 5, 13, 9},  {2, 6, 14, 10},  {3, 7, 15, 11}};
+
+  return tess;
+}
+
+void tesseract(Vector4d size)
+{
+  Vector2i edges[32] = {Vector2i(0, 1),   Vector2i(0, 2),   Vector2i(0, 4),   Vector2i(0, 8),
+                        Vector2i(1, 3),   Vector2i(1, 5),   Vector2i(1, 9),   Vector2i(2, 3),
+                        Vector2i(2, 6),   Vector2i(2, 10),  Vector2i(4, 5),   Vector2i(4, 6),
+                        Vector2i(4, 12),  Vector2i(8, 9),   Vector2i(8, 10),  Vector2i(8, 12),
+                        Vector2i(3, 7),   Vector2i(3, 11),  Vector2i(5, 7),   Vector2i(5, 13),
+                        Vector2i(6, 7),   Vector2i(6, 14),  Vector2i(9, 11),  Vector2i(9, 13),
+                        Vector2i(10, 11), Vector2i(10, 14), Vector2i(12, 13), Vector2i(12, 14),
+                        Vector2i(7, 15),  Vector2i(11, 15), Vector2i(13, 15), Vector2i(14, 15)};
+}
+
+std::shared_ptr<const Geometry> hyper_projection(std::shared_ptr<const HyperObject> hyper)
+{
+  auto ps = std::make_shared<PolySet>(3, /*convex*/ true);
+
+  Eigen::Matrix<double, 5, 5> transform;
+  transform.setIdentity();
+  transform(0, 4) = 0.5;
+  transform(1, 4) = 0.5;
+  transform(2, 4) = 0.5;
+  transform(3, 4) = 0.5;
+
+  Vector4d X = transform.block<4, 1>(0, 0);
+  Vector4d Y = transform.block<4, 1>(0, 1);
+  Vector4d Z = transform.block<4, 1>(0, 2);
+
+  Vector4d P0 = transform.block<4, 1>(0, 4);
+
+  // Baue die 3x4 Matrix M mit X^T, Y^T, Z^T als Zeilen
+  Eigen::Matrix<double, 3, 4> M;
+  M.row(0) = X.transpose();
+  M.row(1) = Y.transpose();
+  M.row(2) = Z.transpose();
+
+  // SVD zur Bestimmung des Nullraums: M * n = 0
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(M.cast<double>(), Eigen::ComputeFullV);
+  Eigen::MatrixXd V = svd.matrixV();  // 4x4
+  Eigen::Vector4d n = V.col(3);       // Spalte zum kleinsten Singulärwert
+
+  n.normalize();
+  double d = n.dot(P0);
+
+  for (const auto& face : hyper->indices) {
+    std::vector<Vector3d> cuts;
+    int l = face.size();
+    for (int i = 0; i < l; i++) {  // kante mit hyperevebe gibt einen punkt
+      Vector4d p1 = hyper->vertices[face[i]];
+      Vector4d p2 = hyper->vertices[face[(i + 1) % l]];
+      Vector4d dir = p2 - p1;
+      double det = dir.dot(n);
+      if (fabs(det) > 1e-6) {
+        double t = (d - p1.dot(n)) / det;
+        if (t >= 0 && t <= 1) {
+          Vector4d px = p1 + t * dir;
+          // convert it to 3d coorindates
+          Vector3d pt3d;
+          linsystem(X.head<3>(), Y.head<3>(), Z.head<3>(), px.head<3>(),
+                    pt3d);  // evt mangelhaft wenn irgendwas 0 ist
+          cuts.push_back(pt3d);
+        }
+      }
+    }
+    if (cuts.size() == 2) {
+      Vector3d p1 = cuts[0];
+      Vector3d p2 = cuts[1];
+      Vector3d p1x = p1, p2x = p2;
+      for (int i = 0; i < 3; i++) {
+        p1x[i] += 0.1;
+        p2x[i] += 0.1;
+      }
+
+      int ind = ps->vertices.size();
+      ps->vertices.push_back(p1);
+      ps->vertices.push_back(p2);
+      ps->vertices.push_back(p2x);
+      ps->vertices.push_back(p1x);
+      ps->indices.push_back({ind, ind + 1, ind + 2, ind + 3});
+    }
+  }
+  return ps;
 }
