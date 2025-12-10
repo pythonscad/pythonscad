@@ -911,6 +911,7 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren(const Abstrac
   case 1:  return ResultObject::mutableResult(std::shared_ptr<Geometry>(applyToChildren1D(node, op)));
   case 2:  return ResultObject::mutableResult(std::shared_ptr<Geometry>(applyToChildren2D(node, op)));
   case 3:  return applyToChildren3D(node, op);
+  case 4:  return ResultObject::mutableResult(std::shared_ptr<Geometry>(applyToChildren4D(node, op)));
   default: return {};
   }
 }
@@ -1703,6 +1704,42 @@ std::vector<std::shared_ptr<const Barcode1d>> GeometryEvaluator::collectChildren
   return children;
 }
 
+std::vector<std::shared_ptr<const HyperObject>> GeometryEvaluator::collectChildren4D(
+  const AbstractNode& node)
+{
+  std::vector<std::shared_ptr<const HyperObject>> children;
+  for (const auto& item : this->visitedchildren[node.index()]) {
+    auto& chnode = item.first;
+    auto& chgeom = item.second;
+    if (chnode->modinst->isBackground()) continue;
+
+    // NB! We insert into the cache here to ensure that all children of
+    // a node is a valid object. If we inserted as we created them, the
+    // cache could have been modified before we reach this point due to a large
+    // sibling object.
+    smartCacheInsert(*chnode, chgeom);
+
+    if (chgeom) {
+      if (chgeom->getDimension() != 4) {
+        LOG(message_group::Warning, item.first->modinst->location(), this->tree.getDocumentPath(),
+            "Ignoring other child object for 1D operation");
+        children.push_back(nullptr);  // replace 3D geometry with empty geometry
+      } else {
+        if (chgeom->isEmpty()) {
+          children.push_back(nullptr);
+        } else {
+          const auto hyper = std::dynamic_pointer_cast<const HyperObject>(chgeom);
+          assert(hyper);
+          children.push_back(hyper);
+        }
+      }
+    } else {
+      children.push_back(nullptr);
+    }
+  }
+  return children;
+}
+
 /*!
    Returns a list of Polygon2d children of the given node.
    May return empty Polygon2d object, but not nullptr objects
@@ -1891,6 +1928,19 @@ std::unique_ptr<Barcode1d> GeometryEvaluator::applyToChildren1D(const AbstractNo
     }
   }
   return std::make_unique<Barcode1d>(result);
+}
+
+std::unique_ptr<HyperObject> GeometryEvaluator::applyToChildren4D(const AbstractNode& node,
+                                                                  OpenSCADOperator op)
+{
+  node.progress_report();
+  std::vector<std::shared_ptr<const HyperObject>> children = collectChildren4D(node);
+
+  if (children.empty()) {
+    return nullptr;
+  }
+  HyperObject result = *children[0];
+  return std::make_unique<HyperObject>(result);
 }
 
 /*!
@@ -2200,6 +2250,30 @@ Response GeometryEvaluator::visit(State& state, const TransformNode& node)
           case 3: {
             auto mutableGeom = res.asMutableGeometry();
             if (mutableGeom) mutableGeom->transform(node.matrix);
+            geom = mutableGeom;
+          } break;
+          case 4: {  // Hyper object
+            auto mutableGeom = res.asMutableGeometry();
+            if (mutableGeom) {
+              const auto& ho = std::dynamic_pointer_cast<const HyperObject>(mutableGeom);
+              auto& m = node.matrix;
+              auto res = std::make_shared<HyperObject>(4, /*convex*/ true);  // TODO more efficient
+
+              Eigen::Matrix<double, 5, 5> transform;
+              Eigen::Matrix<double, 5, 1> h, r;
+              transform << m(0, 0), m(0, 1), 0, m(0, 2), m(0, 3), m(1, 0), m(1, 1), 0, m(1, 2), m(1, 3),
+                0, 0, 1, 0, 0, m(2, 0), m(2, 1), 0, m(2, 2), m(2, 3), m(3, 0), m(3, 1), 0, m(3, 2),
+                m(3, 3);
+              for (auto& v : ho->vertices) {
+                h << v, 1.0;
+                r = (transform * h);
+                res->vertices.push_back(r.head<4>());
+              }
+              res->indices = ho->indices;
+              geom = res;
+              break;
+              // mutableGeom->transform(matrix);
+            }
             geom = mutableGeom;
           } break;
           }  // switch
