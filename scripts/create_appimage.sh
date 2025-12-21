@@ -14,4 +14,3 @@ export PATH=/appimage/usr/local/bin:$PATH
 rm AppDir/usr/lib/python3.12/config-3.12-x86_64-linux-gnu/python.o
 linuxdeploy --plugin qt --output appimage --appdir AppDir
 echo finished
-
