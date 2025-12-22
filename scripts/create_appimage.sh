@@ -175,6 +175,8 @@ fi
 # Request specific Qt plugins to be bundled
 # Note: linuxdeploy-plugin-qt uses semicolons as delimiters
 export EXTRA_QT_PLUGINS="svg;platforms"
+# Explicitly bundle wayland platform plugins for Wayland support
+export EXTRA_PLATFORM_PLUGINS="libqwayland-egl.so;libqwayland-generic.so"
 
 # Configure Qt6 paths for linuxdeploy-plugin-qt
 if command -v qmake6 >/dev/null 2>&1; then
@@ -297,9 +299,8 @@ export PYTHONPATH="\${HERE}/usr/lib/python${PYTHON_VERSION}:\${HERE}/usr/lib/pyt
 export PYTHONHOME="\${HERE}/usr"
 export QT_PLUGIN_PATH="\${HERE}/usr/plugins"
 
-# Use xcb platform plugin (X11) - wayland is not bundled
-# This prevents "Could not find Qt platform plugin wayland" warning
-export QT_QPA_PLATFORM=xcb
+# Qt will auto-detect the platform (Wayland or X11) based on the environment
+# Both platform plugins are bundled for maximum compatibility
 
 # Run the application
 exec "\${HERE}/usr/bin/${EXEC_NAME}" "\$@"
