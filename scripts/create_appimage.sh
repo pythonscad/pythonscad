@@ -50,7 +50,9 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Configuration
 BUILD_DIR="${PROJECT_ROOT}/build"
-APPDIR="${PROJECT_ROOT}/AppDir"
+DIST_DIR="${PROJECT_ROOT}/dist"
+TOOLS_DIR="${DIST_DIR}/tools"
+APPDIR="${DIST_DIR}/AppDir"
 NUM_JOBS="${NUM_JOBS:-$(nproc)}"
 
 # Auto-detect Python version
@@ -92,7 +94,8 @@ fi
 # Check for appimagetool (replacement for linuxdeploy for final packaging)
 if ! command_exists appimagetool; then
     warn "appimagetool not found, will download it..."
-    APPIMAGETOOL_PATH="${PROJECT_ROOT}/appimagetool-x86_64.AppImage"
+    mkdir -p "${TOOLS_DIR}"
+    APPIMAGETOOL_PATH="${TOOLS_DIR}/appimagetool-x86_64.AppImage"
 
     if [ ! -f "${APPIMAGETOOL_PATH}" ]; then
         info "Downloading appimagetool..."
@@ -100,9 +103,9 @@ if ! command_exists appimagetool; then
             "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
             || die "Failed to download appimagetool"
         chmod +x "${APPIMAGETOOL_PATH}"
-        # Make it available in PATH
-        export PATH="${PROJECT_ROOT}:${PATH}"
     fi
+    # Make tools directory available in PATH
+    export PATH="${TOOLS_DIR}:${PATH}"
 else
     info "Found appimagetool"
 fi
@@ -114,7 +117,8 @@ if command_exists linuxdeploy-plugin-qt; then
     info "Found linuxdeploy-plugin-qt at: ${PLUGIN_QT_PATH}"
 else
     warn "linuxdeploy-plugin-qt not found, will download it..."
-    PLUGIN_QT_PATH="${PROJECT_ROOT}/linuxdeploy-plugin-qt-x86_64.AppImage"
+    mkdir -p "${TOOLS_DIR}"
+    PLUGIN_QT_PATH="${TOOLS_DIR}/linuxdeploy-plugin-qt-x86_64.AppImage"
 
     if [ ! -f "${PLUGIN_QT_PATH}" ]; then
         info "Downloading linuxdeploy-plugin-qt..."
@@ -128,9 +132,15 @@ fi
 # Ensure we're in the project root
 cd "${PROJECT_ROOT}"
 
-# Clean up previous build artifacts
+# Create dist directory structure
+info "Setting up dist directory structure..."
+mkdir -p "${DIST_DIR}"
+
+# Clean up previous AppImage build artifacts
 info "Cleaning up previous AppImage build artifacts..."
 rm -rf "${APPDIR}"
+# Remove old AppImage files from dist directory
+rm -f "${DIST_DIR}"/*.AppImage
 
 # Create build directory if it doesn't exist
 if [ ! -d "${BUILD_DIR}" ]; then
@@ -187,8 +197,8 @@ else
     warn "qmake6 not found, linuxdeploy may not find Qt plugins correctly"
 fi
 
-# Add project root to PATH so linuxdeploy can find downloaded plugins
-export PATH="${PROJECT_ROOT}:${PATH}"
+# Add tools directory to PATH so linuxdeploy can find downloaded plugins
+export PATH="${TOOLS_DIR}:${PATH}"
 
 # Set the output version (you can override with OPENSCAD_VERSION environment variable)
 if [ -n "${OPENSCAD_VERSION:-}" ]; then
@@ -329,6 +339,9 @@ if [ -n "${LINUXDEPLOY_OUTPUT_VERSION:-}" ]; then
     export VERSION="${LINUXDEPLOY_OUTPUT_VERSION}"
 fi
 
+# Change to dist directory so appimagetool creates the AppImage there
+cd "${DIST_DIR}"
+
 # Use appimagetool to create the final AppImage
 # Note: appimagetool uses the VERSION environment variable for the filename
 if command_exists appimagetool; then
@@ -339,26 +352,31 @@ else
     die "appimagetool not found"
 fi
 
+# Return to project root
+cd "${PROJECT_ROOT}"
+
 # Report success
 info "AppImage created successfully!"
 echo ""
 
-# List the created AppImage files
+# List the created AppImage files in dist directory
+cd "${DIST_DIR}"
 APPIMAGES=(PythonSCAD*.AppImage OpenSCAD*.AppImage pythonscad*.AppImage)
 for pattern in "${APPIMAGES[@]}"; do
     if compgen -G "${pattern}" > /dev/null; then
         for appimage in ${pattern}; do
             if [ -f "${appimage}" ]; then
-                info "Created: ${appimage} ($(du -h "${appimage}" | cut -f1))"
+                info "Created: dist/${appimage} ($(du -h "${appimage}" | cut -f1))"
             fi
         done
     fi
 done
+cd "${PROJECT_ROOT}"
 
 echo ""
 info "You can now run the AppImage directly:"
-echo "  ./PythonSCAD-*.AppImage"
+echo "  ./dist/PythonSCAD-*.AppImage"
 echo ""
 info "Or install it to your system:"
-echo "  chmod +x PythonSCAD-*.AppImage"
-echo "  sudo mv PythonSCAD-*.AppImage /usr/local/bin/pythonscad"
+echo "  chmod +x dist/PythonSCAD-*.AppImage"
+echo "  sudo mv dist/PythonSCAD-*.AppImage /usr/local/bin/pythonscad"
