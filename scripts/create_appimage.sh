@@ -175,8 +175,6 @@ fi
 # Request specific Qt plugins to be bundled
 # Note: linuxdeploy-plugin-qt uses semicolons as delimiters
 export EXTRA_QT_PLUGINS="svg;platforms"
-# Explicitly bundle wayland platform plugins for Wayland support
-export EXTRA_PLATFORM_PLUGINS="libqwayland-egl.so;libqwayland-generic.so"
 
 # Configure Qt6 paths for linuxdeploy-plugin-qt
 if command -v qmake6 >/dev/null 2>&1; then
@@ -299,8 +297,10 @@ export PYTHONPATH="\${HERE}/usr/lib/python${PYTHON_VERSION}:\${HERE}/usr/lib/pyt
 export PYTHONHOME="\${HERE}/usr"
 export QT_PLUGIN_PATH="\${HERE}/usr/plugins"
 
-# Qt will auto-detect the platform (Wayland or X11) based on the environment
-# Both platform plugins are bundled for maximum compatibility
+# Force X11 platform (xcb) for maximum compatibility
+# PythonSCAD uses OpenGL (QOpenGLWidget) which works better with XWayland on Wayland systems
+# than native Wayland support in AppImages (requires complex EGL integration bundling)
+export QT_QPA_PLATFORM=xcb
 
 # Run the application
 exec "\${HERE}/usr/bin/${EXEC_NAME}" "\$@"
