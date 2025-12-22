@@ -149,6 +149,7 @@ cmake .. \
     -DENABLE_PYTHON=ON \
     -DPYTHON_VERSION="${PYTHON_VERSION}" \
     -DENABLE_LIBFIVE=OFF \
+    -DUSE_QT6=ON \
     || die "CMake configuration failed"
 
 # Build
@@ -172,7 +173,8 @@ fi
 
 # Set up environment for linuxdeploy
 # Request specific Qt plugins to be bundled
-export EXTRA_QT_PLUGINS=svg;platforms;platformthemes;platforminputcontexts
+# Note: linuxdeploy-plugin-qt uses semicolons as delimiters
+export EXTRA_QT_PLUGINS="svg;platforms"
 
 # Configure Qt6 paths for linuxdeploy-plugin-qt
 if command -v qmake6 >/dev/null 2>&1; then
@@ -191,14 +193,20 @@ export PATH="${PROJECT_ROOT}:${PATH}"
 # Set the output version (you can override with OPENSCAD_VERSION environment variable)
 if [ -n "${OPENSCAD_VERSION:-}" ]; then
     export LINUXDEPLOY_OUTPUT_VERSION="${OPENSCAD_VERSION}"
+    info "Using version from environment: ${LINUXDEPLOY_OUTPUT_VERSION}"
+elif [ -f "${PROJECT_ROOT}/VERSION.txt" ]; then
+    # Read version from VERSION.txt (canonical source)
+    export LINUXDEPLOY_OUTPUT_VERSION=$(cat "${PROJECT_ROOT}/VERSION.txt" | tr -d '[:space:]')
+    info "Using version from VERSION.txt: ${LINUXDEPLOY_OUTPUT_VERSION}"
 else
-    # Try to get version from git
+    # Fall back to git describe
     if git describe --tags --always >/dev/null 2>&1; then
         export LINUXDEPLOY_OUTPUT_VERSION=$(git describe --tags --always)
+        info "Using version from git: ${LINUXDEPLOY_OUTPUT_VERSION}"
     else
         export LINUXDEPLOY_OUTPUT_VERSION="dev"
+        warn "No version source found, using: ${LINUXDEPLOY_OUTPUT_VERSION}"
     fi
-    info "Using version: ${LINUXDEPLOY_OUTPUT_VERSION}"
 fi
 
 # Remove problematic python.o file if it exists
@@ -216,6 +224,9 @@ info "Bundling Qt dependencies with linuxdeploy..."
 
 # Use linuxdeploy to bundle Qt libraries (NOT to create final AppImage)
 # The --plugin qt handles Qt libraries and QML dependencies
+# DEPLOY_PLATFORM_THEMES tells the plugin to deploy platform-related plugins
+export DEPLOY_PLATFORM_THEMES=1
+
 linuxdeploy \
     --appdir "${APPDIR}" \
     --plugin qt \
@@ -285,6 +296,10 @@ export LD_LIBRARY_PATH="\${HERE}/usr/lib:\${LD_LIBRARY_PATH}"
 export PYTHONPATH="\${HERE}/usr/lib/python${PYTHON_VERSION}:\${HERE}/usr/lib/python${PYTHON_VERSION}/site-packages:\${PYTHONPATH}"
 export PYTHONHOME="\${HERE}/usr"
 export QT_PLUGIN_PATH="\${HERE}/usr/plugins"
+
+# Use xcb platform plugin (X11) - wayland is not bundled
+# This prevents "Could not find Qt platform plugin wayland" warning
+export QT_QPA_PLATFORM=xcb
 
 # Run the application
 exec "\${HERE}/usr/bin/${EXEC_NAME}" "\$@"
