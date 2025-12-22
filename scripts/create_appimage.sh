@@ -237,6 +237,9 @@ info "Bundling Qt dependencies with linuxdeploy..."
 # DEPLOY_PLATFORM_THEMES tells the plugin to deploy platform-related plugins
 export DEPLOY_PLATFORM_THEMES=1
 
+# Add AppDir/usr/lib to LD_LIBRARY_PATH so linuxdeploy can find custom libraries like libfive.so
+export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${LD_LIBRARY_PATH:-}"
+
 linuxdeploy \
     --appdir "${APPDIR}" \
     --plugin qt \
