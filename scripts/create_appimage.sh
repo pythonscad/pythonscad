@@ -158,7 +158,7 @@ cmake .. \
     -DEXPERIMENTAL=ON \
     -DENABLE_PYTHON=ON \
     -DPYTHON_VERSION="${PYTHON_VERSION}" \
-    -DENABLE_LIBFIVE=OFF \
+    -DENABLE_LIBFIVE=ON \
     -DUSE_QT6=ON \
     || die "CMake configuration failed"
 
