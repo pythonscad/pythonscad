@@ -74,13 +74,46 @@ jobs:
         run: |
           pacman --noconfirm -S mingw-w64-ucrt-x86_64-nsis
 
+      - name: Bundle runtime dependencies
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          cd build
+          # Find and copy all DLL dependencies
+          echo "Copying MinGW runtime dependencies..."
+
+          # Get the pythonscad executable path
+          EXE_PATH=$(find . -name "pythonscad.exe" -type f | head -1)
+          if [ -z "$EXE_PATH" ]; then
+            echo "Error: pythonscad.exe not found"
+            exit 1
+          fi
+
+          EXE_DIR=$(dirname "$EXE_PATH")
+          echo "Found executable at: $EXE_PATH"
+          echo "Installing DLLs to: $EXE_DIR"
+
+          # Use ntldd to find all dependencies, filter for ucrt64 DLLs, and copy them
+          pacman --noconfirm -S mingw-w64-ucrt-x86_64-ntldd-git
+
+          # Get all DLL dependencies and copy them
+          ntldd -R "$EXE_PATH" | grep -i "ucrt64" | awk '{print $3}' | sort -u | while read dll; do
+            if [ -f "$dll" ]; then
+              echo "Copying: $(basename $dll)"
+              cp "$dll" "$EXE_DIR/"
+            fi
+          done
+
+          echo "DLL bundling complete"
+          ls -lh "$EXE_DIR"/*.dll | head -20
+
       - name: Create distribution packages
         if: github.event_name != 'pull_request'
         run: |
           cd build
           cpack -G "ZIP;NSIS"
 
-      - name: Find generated packages
+      - name: Find and prepare packages
         if: github.event_name != 'pull_request'
         id: packages
         shell: bash
@@ -92,16 +125,25 @@ jobs:
           EXE_FILE=$(ls *.exe 2>/dev/null | head -1 || echo "")
 
           if [ -n "$ZIP_FILE" ]; then
-            # Insert Qt version after "PythonSCAD-" in artifact name
-            ARTIFACT_NAME="${ZIP_FILE/PythonSCAD-/PythonSCAD-${QT_VERSION}-}"
-            echo "zip_path=build/$ZIP_FILE" >> $GITHUB_OUTPUT
+            # Extract ZIP to avoid double-zipping when downloading from GitHub
+            ZIP_DIR="${ZIP_FILE%.zip}"
+            mkdir -p "$ZIP_DIR"
+            unzip -q "$ZIP_FILE" -d "$ZIP_DIR"
+
+            # Insert Qt version after "PythonSCAD-" in artifact name (without .zip extension)
+            ARTIFACT_NAME="${ZIP_FILE%.zip}"
+            ARTIFACT_NAME="${ARTIFACT_NAME/PythonSCAD-/PythonSCAD-${QT_VERSION}-}"
+
+            echo "zip_path=build/$ZIP_DIR" >> $GITHUB_OUTPUT
             echo "zip_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
-            echo "Found ZIP: $ZIP_FILE (artifact: $ARTIFACT_NAME)"
+            echo "Found ZIP: $ZIP_FILE (extracted to: $ZIP_DIR, artifact: $ARTIFACT_NAME)"
           fi
 
           if [ -n "$EXE_FILE" ]; then
-            # Insert Qt version after "PythonSCAD-" in artifact name
-            ARTIFACT_NAME="${EXE_FILE/PythonSCAD-/PythonSCAD-${QT_VERSION}-}"
+            # Insert Qt version after "PythonSCAD-" in artifact name (without .exe extension)
+            ARTIFACT_NAME="${EXE_FILE%.exe}"
+            ARTIFACT_NAME="${ARTIFACT_NAME/PythonSCAD-/PythonSCAD-${QT_VERSION}-}"
+
             echo "exe_path=build/$EXE_FILE" >> $GITHUB_OUTPUT
             echo "exe_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
             echo "Found EXE: $EXE_FILE (artifact: $ARTIFACT_NAME)"
