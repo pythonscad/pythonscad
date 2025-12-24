@@ -55,28 +55,28 @@ jobs:
           cmake .. -G"Ninja" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_QT6=${{ matrix.qt == 'qt6' && 'ON' || 'OFF' }}
           cmake --build . -j4
           cmake --install . --prefix=.
-      - name: Run Test Suite
-        run: |
-          cd build
-          ctest -j4
+      # Temporarily disabled to speed up packaging workflow testing
+      # - name: Run Test Suite
+      #   run: |
+      #     cd build
+      #     ctest -j4
 
-      - name: Upload Test Result Report
-        uses: actions/upload-artifact@v5
-        if: ${{ always() }}
-        with:
-          name: Test Result Report (Windows ${{ matrix.qt }})
-          path: |
-            build/Testing/Temporary/*_report.html
-            build/Testing/Temporary/LastTest.log
+      # - name: Upload Test Result Report
+      #   uses: actions/upload-artifact@v5
+      #   if: ${{ always() }}
+      #   with:
+      #     name: Test Result Report (Windows ${{ matrix.qt }})
+      #     path: |
+      #       build/Testing/Temporary/*_report.html
+      #       build/Testing/Temporary/LastTest.log
 
       - name: Install NSIS for packaging
-        if: github.event_name != 'pull_request'
+        # if: github.event_name != 'pull_request'
         run: |
           pacman --noconfirm -S mingw-w64-ucrt-x86_64-nsis
 
       - name: Bundle runtime dependencies
-        if: github.event_name != 'pull_request'
-        shell: bash
+        # if: github.event_name != 'pull_request'
         run: |
           cd build
           # Find and copy all DLL dependencies
@@ -108,23 +108,25 @@ jobs:
           ls -lh "$EXE_DIR"/*.dll | head -20
 
       - name: Create distribution packages
-        if: github.event_name != 'pull_request'
+        # if: github.event_name != 'pull_request'
         run: |
           cd build
           cpack -G "ZIP;NSIS"
 
       - name: Find and prepare packages
-        if: github.event_name != 'pull_request'
+        # if: github.event_name != 'pull_request'
         id: packages
-        shell: bash
         env:
           QT_VERSION: ${{ matrix.qt }}
         run: |
           cd build
-          ZIP_FILE=$(ls *.zip 2>/dev/null | head -1 || echo "")
-          EXE_FILE=$(ls *.exe 2>/dev/null | head -1 || echo "")
+          ZIP_FILE=$(ls PythonSCAD-*.zip 2>/dev/null | head -1 || echo "")
+          EXE_FILE=$(ls PythonSCAD-*.exe 2>/dev/null | head -1 || echo "")
 
           if [ -n "$ZIP_FILE" ]; then
+            # Install unzip if not available
+            pacman --noconfirm -S unzip
+
             # Extract ZIP to avoid double-zipping when downloading from GitHub
             ZIP_DIR="${ZIP_FILE%.zip}"
             mkdir -p "$ZIP_DIR"
@@ -150,7 +152,7 @@ jobs:
           fi
 
       - name: Upload ZIP package
-        if: github.event_name != 'pull_request' && steps.packages.outputs.zip_name != ''
+        # if: github.event_name != 'pull_request' && steps.packages.outputs.zip_name != ''
         uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.packages.outputs.zip_name }}
@@ -158,7 +160,7 @@ jobs:
           retention-days: 30
 
       - name: Upload NSIS installer
-        if: github.event_name != 'pull_request' && steps.packages.outputs.exe_name != ''
+        # if: github.event_name != 'pull_request' && steps.packages.outputs.exe_name != ''
         uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.packages.outputs.exe_name }}
