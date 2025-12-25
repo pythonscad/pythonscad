@@ -44,51 +44,46 @@ jobs:
         run: |
           pwd
           ./scripts/msys2-install-dependencies.sh ${{ matrix.qt }}
-      - name: Install Mesa
-        uses: ssciwr/setup-mesa-dist-win@v2
-        with:
-          version: '22.1.7'
-          build-type: 'release-mingw'
-      - name: Copy Mesa DLLs to MinGW bin
+      - name: Download and install Mesa OpenGL DLLs
         run: |
-          echo "=== DEBUG: Searching for Mesa DLLs ==="
-          echo "Searching in /d/a/_temp for setup-mesa-dist-win directory..."
-          find /d/a/_temp -maxdepth 2 -type d 2>/dev/null || echo "Find failed"
+          echo "=== Downloading Mesa 22.1.7 ==="
+          MESA_URL="https://github.com/pal1000/mesa-dist-win/releases/download/22.1.7/mesa3d-22.1.7-release-mingw.7z"
+          MESA_DIR="/tmp/mesa"
+
+          mkdir -p "$MESA_DIR"
+          cd "$MESA_DIR"
+
+          echo "Downloading from: $MESA_URL"
+          curl -L -o mesa.7z "$MESA_URL"
+
+          echo "Extracting Mesa archive..."
+          7z x mesa.7z
 
           echo ""
-          echo "Looking for any Mesa-related directories..."
-          find /d/a/_temp -maxdepth 3 -name "*mesa*" -o -name "*Mesa*" 2>/dev/null || echo "No Mesa directories found"
+          echo "=== Mesa directory contents ==="
+          ls -la
 
           echo ""
-          echo "Contents of /d/a/_temp:"
-          ls -la /d/a/_temp/ 2>/dev/null || echo "Cannot list /d/a/_temp"
+          echo "=== x64 directory contents ==="
+          ls -la x64/
 
-          MESA_DIR=$(find /d/a/_temp -name "setup-mesa-dist-win" -type d 2>/dev/null | head -1)
-          if [ -n "$MESA_DIR" ] && [ -d "$MESA_DIR" ]; then
-            echo ""
-            echo "Found Mesa directory: $MESA_DIR"
-            echo "Contents of Mesa directory:"
-            ls -la "$MESA_DIR"
-            echo ""
-            echo "Searching for DLLs in Mesa directory..."
-            find "$MESA_DIR" -name "*.dll" -type f
-            echo ""
-            echo "Copying Mesa DLLs to /ucrt64/bin/..."
-            find "$MESA_DIR" -name "*.dll" -type f | while read dll; do
+          echo ""
+          echo "=== Copying Mesa DLLs to /ucrt64/bin ==="
+          # Copy all DLLs from x64 directory to MinGW bin
+          for dll in x64/*.dll; do
+            if [ -f "$dll" ]; then
               dll_name=$(basename "$dll")
-              echo "  Copying: $dll_name from $(dirname $dll)"
-              cp "$dll" /ucrt64/bin/ && echo "    ✓ Success" || echo "    ✗ Failed"
-            done
-          else
-            echo ""
-            echo "ERROR: Mesa directory not found!"
-            echo "Trying alternative search in D:/a/_temp..."
-            ls -la "D:/a/_temp/" 2>/dev/null || echo "Cannot access D:/a/_temp"
-          fi
+              echo "Copying: $dll_name"
+              cp "$dll" /ucrt64/bin/
+            fi
+          done
 
           echo ""
-          echo "=== Checking what OpenGL DLLs exist in /ucrt64/bin ==="
-          ls -lh /ucrt64/bin/libEGL* /ucrt64/bin/libGLES* /ucrt64/bin/opengl32* /ucrt64/bin/libglapi* /ucrt64/bin/libgallium* 2>&1 || echo "Some Mesa DLLs not found in /ucrt64/bin"
+          echo "=== Verifying Mesa DLLs in /ucrt64/bin ==="
+          ls -lh /ucrt64/bin/libEGL* /ucrt64/bin/libGLESv2* /ucrt64/bin/opengl32* /ucrt64/bin/libglapi* /ucrt64/bin/libgallium* 2>&1 || echo "Some DLLs not found"
+
+          echo ""
+          echo "=== Mesa DLL installation complete ==="
       - name: Get version from git
         id: version
         run: |
