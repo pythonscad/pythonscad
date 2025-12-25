@@ -1907,37 +1907,16 @@ set(CPACK_PACKAGE_VENDOR "The OpenSCAD and PythonSCAD Developers")
 set(CPACK_PACKAGE_VERSION "${OPENSCAD_VERSION}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The Programmer's Solid 3D CAD Modeler")
 
-
-if(MXECROSS)
-  set(CPACK_GENERATOR ZIP;NSIS)
-  set(CPACK_SYSTEM_NAME ${PACKAGE_ARCH})
-  set(CPACK_PACKAGE_EXECUTABLES "pythonscad;${CPACK_PACKAGE_NAME}")
-  set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME}")
-  set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME}")
-  if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.22")
-    set(CPACK_NSIS_IGNORE_LICENSE_PAGE ON)
-  else()
-    message(FATAL_ERROR "CPACK_NSIS_IGNORE_LICENSE_PAGE requires cmake 3.22")
-  endif()
-  set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "\
-    !include \\\"FileFunc.nsh\\\"\n\
-    !include \\\"${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh\\\"\
-  ")
-  set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "\
-    !include \\\"${CMAKE_BINARY_DIR}/nsis-extra-install-commands.nsh\\\"\n\
-    CreateShortCut $INSTDIR\\\\openscad.lnk $INSTDIR\\\\pythonscad.exe\
-  ")
-  set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "\
-    !include \\\"${CMAKE_BINARY_DIR}/nsis-extra-uninstall-commands.nsh\\\"\
-  ")
-  set (CPACK_NSIS_MODIFY_PATH "ON")
-
-  # Bundle runtime DLL dependencies for Windows MinGW builds
+# Bundle runtime DLL dependencies for Windows MinGW builds (both MSYS2 and MXE)
+if(MINGW OR MXECROSS)
   install(CODE "
     message(STATUS \"Bundling runtime DLL dependencies...\")
 
-    # Find the installed executable
-    file(GLOB_RECURSE EXE_PATH \"\${CMAKE_INSTALL_PREFIX}/bin/pythonscad.exe\")
+    # Find the installed executable (search in both bin and root of install directory)
+    file(GLOB_RECURSE EXE_PATH
+      \"\${CMAKE_INSTALL_PREFIX}/pythonscad.exe\"
+      \"\${CMAKE_INSTALL_PREFIX}/bin/pythonscad.exe\"
+    )
     if(NOT EXE_PATH)
       message(FATAL_ERROR \"pythonscad.exe not found in install directory\")
     endif()
@@ -1983,6 +1962,31 @@ if(MXECROSS)
       message(WARNING \"Unresolved dependencies: \${_unresolved_deps}\")
     endif()
   " COMPONENT Runtime)
+endif()
+
+if(MXECROSS)
+  set(CPACK_GENERATOR ZIP;NSIS)
+  set(CPACK_SYSTEM_NAME ${PACKAGE_ARCH})
+  set(CPACK_PACKAGE_EXECUTABLES "pythonscad;${CPACK_PACKAGE_NAME}")
+  set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME}")
+  set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME}")
+  if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.22")
+    set(CPACK_NSIS_IGNORE_LICENSE_PAGE ON)
+  else()
+    message(FATAL_ERROR "CPACK_NSIS_IGNORE_LICENSE_PAGE requires cmake 3.22")
+  endif()
+  set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "\
+    !include \\\"FileFunc.nsh\\\"\n\
+    !include \\\"${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh\\\"\
+  ")
+  set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "\
+    !include \\\"${CMAKE_BINARY_DIR}/nsis-extra-install-commands.nsh\\\"\n\
+    CreateShortCut $INSTDIR\\\\openscad.lnk $INSTDIR\\\\pythonscad.exe\
+  ")
+  set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "\
+    !include \\\"${CMAKE_BINARY_DIR}/nsis-extra-uninstall-commands.nsh\\\"\
+  ")
+  set (CPACK_NSIS_MODIFY_PATH "ON")
 
   else()
   set(CPACK_GENERATOR RPM;DEB)
