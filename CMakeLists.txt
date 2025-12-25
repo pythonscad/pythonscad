@@ -1925,13 +1925,24 @@ if(MINGW OR MXECROSS)
     message(STATUS \"Found executable at: \${EXE_PATH}\")
     message(STATUS \"Bundling DLLs to: \${EXE_DIR}\")
 
+    # Determine MinGW bin directory (use environment variable if available)
+    if(DEFINED ENV{MSYSTEM_PREFIX})
+      file(TO_CMAKE_PATH \"\$ENV{MSYSTEM_PREFIX}/bin\" MINGW_BIN_DIR)
+      file(TO_CMAKE_PATH \"\$ENV{MSYSTEM_PREFIX}/lib\" MINGW_LIB_DIR)
+    else()
+      # Fallback for MXE or other cross-compilation environments
+      set(MINGW_BIN_DIR \"/ucrt64/bin\")
+      set(MINGW_LIB_DIR \"/ucrt64/lib\")
+    endif()
+    message(STATUS \"Searching for DLLs in: \${MINGW_BIN_DIR}\")
+
     # Get all runtime dependencies
     file(GET_RUNTIME_DEPENDENCIES
       EXECUTABLES \"\${EXE_PATH}\"
       RESOLVED_DEPENDENCIES_VAR _resolved_deps
       UNRESOLVED_DEPENDENCIES_VAR _unresolved_deps
-      DIRECTORIES /ucrt64/bin /ucrt64/lib
-      POST_EXCLUDE_REGEXES \".*system32.*\" \".*windows.*\" \".*System32.*\" \".*Windows.*\"
+      DIRECTORIES \"\${MINGW_BIN_DIR}\" \"\${MINGW_LIB_DIR}\"
+      POST_EXCLUDE_REGEXES \".*system32.*\" \".*windows.*\" \".*System32.*\" \".*Windows.*\" \".*api-ms-win.*\"
     )
 
     # Copy each resolved dependency to the executable directory
@@ -1943,12 +1954,20 @@ if(MINGW OR MXECROSS)
       endif()
     endforeach()
 
-    # Also copy common MinGW runtime DLLs that might be missed
-    set(_common_dlls libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll)
-    foreach(_dll \${_common_dlls})
-      if(EXISTS \"/ucrt64/bin/\${_dll}\" AND NOT EXISTS \"\${EXE_DIR}/\${_dll}\")
-        message(STATUS \"Copying common DLL: \${_dll}\")
-        file(COPY \"/ucrt64/bin/\${_dll}\" DESTINATION \"\${EXE_DIR}\")
+    # Also manually copy common MinGW runtime DLLs and any unresolved ones that exist
+    set(_manual_dlls libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll)
+    # Add unresolved dependencies to manual copy list (filter out Windows system DLLs)
+    foreach(_dll \${_unresolved_deps})
+      if(NOT \"\${_dll}\" MATCHES \"api-ms-win\" AND NOT \"\${_dll}\" MATCHES \"^(kernel32|user32|gdi32|advapi32|shell32|ole32|ws2_32|msvcrt|ucrtbase)\")
+        list(APPEND _manual_dlls \"\${_dll}\")
+      endif()
+    endforeach()
+    list(REMOVE_DUPLICATES _manual_dlls)
+
+    foreach(_dll \${_manual_dlls})
+      if(EXISTS \"\${MINGW_BIN_DIR}/\${_dll}\" AND NOT EXISTS \"\${EXE_DIR}/\${_dll}\")
+        message(STATUS \"Copying (manual): \${_dll}\")
+        file(COPY \"\${MINGW_BIN_DIR}/\${_dll}\" DESTINATION \"\${EXE_DIR}\")
       endif()
     endforeach()
 
@@ -1957,9 +1976,17 @@ if(MINGW OR MXECROSS)
     list(LENGTH DLL_FILES DLL_COUNT)
     message(STATUS \"DLL bundling complete. Total DLLs: \${DLL_COUNT}\")
 
-    # Warn about unresolved dependencies
-    if(_unresolved_deps)
-      message(WARNING \"Unresolved dependencies: \${_unresolved_deps}\")
+    # Warn about remaining unresolved dependencies (excluding Windows system DLLs)
+    set(_remaining_unresolved)
+    foreach(_dll \${_unresolved_deps})
+      if(NOT \"\${_dll}\" MATCHES \"api-ms-win\" AND NOT \"\${_dll}\" MATCHES \"^(kernel32|user32|gdi32|advapi32|shell32|ole32|ws2_32|msvcrt|ucrtbase)\")
+        if(NOT EXISTS \"\${MINGW_BIN_DIR}/\${_dll}\")
+          list(APPEND _remaining_unresolved \"\${_dll}\")
+        endif()
+      endif()
+    endforeach()
+    if(_remaining_unresolved)
+      message(WARNING \"Unresolved dependencies (not found in \${MINGW_BIN_DIR}): \${_remaining_unresolved}\")
     endif()
   " COMPONENT Runtime)
 endif()
