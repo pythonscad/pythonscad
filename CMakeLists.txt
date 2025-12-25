@@ -1975,9 +1975,33 @@ if(MINGW OR MXECROSS)
     list(REMOVE_DUPLICATES _manual_dlls)
 
     foreach(_dll \${_manual_dlls})
-      if(EXISTS \"\${MINGW_BIN_DIR}/\${_dll}\" AND NOT EXISTS \"\${EXE_DIR}/\${_dll}\")
-        message(STATUS \"Copying (manual): \${_dll}\")
-        file(COPY \"\${MINGW_BIN_DIR}/\${_dll}\" DESTINATION \"\${EXE_DIR}\")
+      set(_dll_found FALSE)
+      # Search in multiple locations for DLLs (Mesa DLLs might not be in MinGW bin)
+      set(_search_paths
+        \"\${MINGW_BIN_DIR}\"
+        \"\${CMAKE_BINARY_DIR}\"
+        \"\${CMAKE_CURRENT_BINARY_DIR}\"
+      )
+
+      foreach(_search_path \${_search_paths})
+        if(EXISTS \"\${_search_path}/\${_dll}\" AND NOT EXISTS \"\${EXE_DIR}/\${_dll}\")
+          message(STATUS \"Copying (manual): \${_dll} from \${_search_path}\")
+          file(COPY \"\${_search_path}/\${_dll}\" DESTINATION \"\${EXE_DIR}\")
+          set(_dll_found TRUE)
+          break()
+        endif()
+      endforeach()
+
+      # If still not found and it's a Mesa/OpenGL DLL, try to find it in PATH
+      if(NOT _dll_found AND NOT EXISTS \"\${EXE_DIR}/\${_dll}\")
+        if(\"\${_dll}\" MATCHES \"libEGL|libGLESv2|opengl32|libgallium|libglapi\")
+          find_file(_dll_path \"\${_dll}\" PATHS ENV PATH NO_DEFAULT_PATH)
+          if(_dll_path)
+            message(STATUS \"Copying (found in PATH): \${_dll} from \${_dll_path}\")
+            file(COPY \"\${_dll_path}\" DESTINATION \"\${EXE_DIR}\")
+            unset(_dll_path CACHE)
+          endif()
+        endif()
       endif()
     endforeach()
 
