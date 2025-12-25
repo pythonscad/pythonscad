@@ -1955,7 +1955,17 @@ if(MINGW OR MXECROSS)
     endforeach()
 
     # Also manually copy common MinGW runtime DLLs and any unresolved ones that exist
-    set(_manual_dlls libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll)
+    # Include Mesa OpenGL/EGL libraries for graphics rendering
+    set(_manual_dlls
+      libgcc_s_seh-1.dll
+      libstdc++-6.dll
+      libwinpthread-1.dll
+      libEGL.dll
+      libGLESv2.dll
+      opengl32.dll
+      libgallium_wgl.dll
+      libglapi.dll
+    )
     # Add unresolved dependencies to manual copy list (filter out Windows system DLLs)
     foreach(_dll \${_unresolved_deps})
       if(NOT \"\${_dll}\" MATCHES \"api-ms-win\" AND NOT \"\${_dll}\" MATCHES \"^(kernel32|user32|gdi32|advapi32|shell32|ole32|ws2_32|msvcrt|ucrtbase)\")
