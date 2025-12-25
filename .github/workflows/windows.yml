@@ -51,18 +51,44 @@ jobs:
           build-type: 'release-mingw'
       - name: Copy Mesa DLLs to MinGW bin
         run: |
-          # Find Mesa DLLs and copy to MinGW bin so they can be found during bundling
+          echo "=== DEBUG: Searching for Mesa DLLs ==="
+          echo "Searching in /d/a/_temp for setup-mesa-dist-win directory..."
+          find /d/a/_temp -maxdepth 2 -type d 2>/dev/null || echo "Find failed"
+
+          echo ""
+          echo "Looking for any Mesa-related directories..."
+          find /d/a/_temp -maxdepth 3 -name "*mesa*" -o -name "*Mesa*" 2>/dev/null || echo "No Mesa directories found"
+
+          echo ""
+          echo "Contents of /d/a/_temp:"
+          ls -la /d/a/_temp/ 2>/dev/null || echo "Cannot list /d/a/_temp"
+
           MESA_DIR=$(find /d/a/_temp -name "setup-mesa-dist-win" -type d 2>/dev/null | head -1)
           if [ -n "$MESA_DIR" ] && [ -d "$MESA_DIR" ]; then
+            echo ""
             echo "Found Mesa directory: $MESA_DIR"
+            echo "Contents of Mesa directory:"
+            ls -la "$MESA_DIR"
+            echo ""
+            echo "Searching for DLLs in Mesa directory..."
+            find "$MESA_DIR" -name "*.dll" -type f
+            echo ""
+            echo "Copying Mesa DLLs to /ucrt64/bin/..."
             find "$MESA_DIR" -name "*.dll" -type f | while read dll; do
               dll_name=$(basename "$dll")
-              echo "Copying Mesa DLL: $dll_name"
-              cp "$dll" /ucrt64/bin/ || true
+              echo "  Copying: $dll_name from $(dirname $dll)"
+              cp "$dll" /ucrt64/bin/ && echo "    ✓ Success" || echo "    ✗ Failed"
             done
           else
-            echo "Warning: Mesa directory not found"
+            echo ""
+            echo "ERROR: Mesa directory not found!"
+            echo "Trying alternative search in D:/a/_temp..."
+            ls -la "D:/a/_temp/" 2>/dev/null || echo "Cannot access D:/a/_temp"
           fi
+
+          echo ""
+          echo "=== Checking what OpenGL DLLs exist in /ucrt64/bin ==="
+          ls -lh /ucrt64/bin/libEGL* /ucrt64/bin/libGLES* /ucrt64/bin/opengl32* /ucrt64/bin/libglapi* /ucrt64/bin/libgallium* 2>&1 || echo "Some Mesa DLLs not found in /ucrt64/bin"
       - name: Get version from git
         id: version
         run: |
@@ -106,6 +132,30 @@ jobs:
           cd build
           # Install application (DLL bundling happens automatically via CMake install script)
           cmake --install . --prefix=.
+
+      - name: Debug - Check bundled DLLs
+        run: |
+          cd build
+          echo "=== DEBUG: Checking installed files ==="
+          EXE_PATH=$(find . -name "pythonscad.exe" -type f | head -1)
+          if [ -n "$EXE_PATH" ]; then
+            EXE_DIR=$(dirname "$EXE_PATH")
+            echo "Executable found at: $EXE_PATH"
+            echo ""
+            echo "OpenGL-related DLLs in install directory:"
+            ls -lh "$EXE_DIR"/*.dll 2>/dev/null | grep -i "egl\|gles\|opengl\|glapi\|gallium" || echo "No OpenGL DLLs found!"
+            echo ""
+            echo "Total DLL count in install directory:"
+            ls -1 "$EXE_DIR"/*.dll 2>/dev/null | wc -l
+            echo ""
+            echo "Qt plugin directories:"
+            ls -d "$EXE_DIR"/platforms "$EXE_DIR"/styles "$EXE_DIR"/imageformats "$EXE_DIR"/iconengines 2>/dev/null || echo "Some Qt plugin directories missing"
+            echo ""
+            echo "Sample of first 10 DLLs:"
+            ls "$EXE_DIR"/*.dll 2>/dev/null | head -10
+          else
+            echo "ERROR: pythonscad.exe not found after install!"
+          fi
 
       - name: Create distribution packages
         # if: github.event_name != 'pull_request'
