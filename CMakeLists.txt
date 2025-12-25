@@ -1971,6 +1971,45 @@ if(MINGW OR MXECROSS)
       endif()
     endforeach()
 
+    # Copy Qt plugins (required for Qt to work on Windows)
+    if(DEFINED ENV{MSYSTEM_PREFIX})
+      file(TO_CMAKE_PATH \"\$ENV{MSYSTEM_PREFIX}\" MINGW_PREFIX)
+    else()
+      set(MINGW_PREFIX \"/ucrt64\")
+    endif()
+
+    # Determine Qt version and plugins path
+    set(QT_PLUGINS_PATHS
+      \"\${MINGW_PREFIX}/share/qt6/plugins\"
+      \"\${MINGW_PREFIX}/share/qt5/plugins\"
+      \"\${MINGW_PREFIX}/lib/qt6/plugins\"
+      \"\${MINGW_PREFIX}/lib/qt5/plugins\"
+    )
+
+    set(QT_PLUGINS_DIR \"\")
+    foreach(_path \${QT_PLUGINS_PATHS})
+      if(EXISTS \"\${_path}\")
+        set(QT_PLUGINS_DIR \"\${_path}\")
+        break()
+      endif()
+    endforeach()
+
+    if(QT_PLUGINS_DIR)
+      message(STATUS \"Found Qt plugins at: \${QT_PLUGINS_DIR}\")
+
+      # Copy essential Qt plugins
+      set(_plugin_dirs platforms styles imageformats iconengines)
+      foreach(_plugin_dir \${_plugin_dirs})
+        if(EXISTS \"\${QT_PLUGINS_DIR}/\${_plugin_dir}\")
+          message(STATUS \"Copying Qt plugin directory: \${_plugin_dir}\")
+          file(COPY \"\${QT_PLUGINS_DIR}/\${_plugin_dir}\"
+               DESTINATION \"\${EXE_DIR}\")
+        endif()
+      endforeach()
+    else()
+      message(WARNING \"Qt plugins directory not found\")
+    endif()
+
     # Report bundling results
     file(GLOB DLL_FILES \"\${EXE_DIR}/*.dll\")
     list(LENGTH DLL_FILES DLL_COUNT)
