@@ -57,7 +57,7 @@ jobs:
           curl -L -o mesa.7z "$MESA_URL"
 
           echo "Extracting Mesa archive..."
-          7z x mesa.7z
+          "/c/ProgramData/Chocolatey/bin/7z.exe" x mesa.7z
 
           echo ""
           echo "=== Mesa directory contents ==="
