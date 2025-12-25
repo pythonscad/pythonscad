@@ -9,7 +9,7 @@
 #
 
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.16)
 
 # Let AUTOMOC and AUTOUIC process GENERATED files.
 cmake_policy(SET CMP0071 NEW)
@@ -1931,6 +1931,59 @@ if(MXECROSS)
     !include \\\"${CMAKE_BINARY_DIR}/nsis-extra-uninstall-commands.nsh\\\"\
   ")
   set (CPACK_NSIS_MODIFY_PATH "ON")
+
+  # Bundle runtime DLL dependencies for Windows MinGW builds
+  install(CODE "
+    message(STATUS \"Bundling runtime DLL dependencies...\")
+
+    # Find the installed executable
+    file(GLOB_RECURSE EXE_PATH \"\${CMAKE_INSTALL_PREFIX}/bin/pythonscad.exe\")
+    if(NOT EXE_PATH)
+      message(FATAL_ERROR \"pythonscad.exe not found in install directory\")
+    endif()
+    list(GET EXE_PATH 0 EXE_PATH)
+    get_filename_component(EXE_DIR \"\${EXE_PATH}\" DIRECTORY)
+    message(STATUS \"Found executable at: \${EXE_PATH}\")
+    message(STATUS \"Bundling DLLs to: \${EXE_DIR}\")
+
+    # Get all runtime dependencies
+    file(GET_RUNTIME_DEPENDENCIES
+      EXECUTABLES \"\${EXE_PATH}\"
+      RESOLVED_DEPENDENCIES_VAR _resolved_deps
+      UNRESOLVED_DEPENDENCIES_VAR _unresolved_deps
+      DIRECTORIES /ucrt64/bin /ucrt64/lib
+      POST_EXCLUDE_REGEXES \".*system32.*\" \".*windows.*\" \".*System32.*\" \".*Windows.*\"
+    )
+
+    # Copy each resolved dependency to the executable directory
+    foreach(_file \${_resolved_deps})
+      get_filename_component(_filename \"\${_file}\" NAME)
+      if(NOT EXISTS \"\${EXE_DIR}/\${_filename}\")
+        message(STATUS \"Copying: \${_filename}\")
+        file(COPY \"\${_file}\" DESTINATION \"\${EXE_DIR}\")
+      endif()
+    endforeach()
+
+    # Also copy common MinGW runtime DLLs that might be missed
+    set(_common_dlls libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll)
+    foreach(_dll \${_common_dlls})
+      if(EXISTS \"/ucrt64/bin/\${_dll}\" AND NOT EXISTS \"\${EXE_DIR}/\${_dll}\")
+        message(STATUS \"Copying common DLL: \${_dll}\")
+        file(COPY \"/ucrt64/bin/\${_dll}\" DESTINATION \"\${EXE_DIR}\")
+      endif()
+    endforeach()
+
+    # Report bundling results
+    file(GLOB DLL_FILES \"\${EXE_DIR}/*.dll\")
+    list(LENGTH DLL_FILES DLL_COUNT)
+    message(STATUS \"DLL bundling complete. Total DLLs: \${DLL_COUNT}\")
+
+    # Warn about unresolved dependencies
+    if(_unresolved_deps)
+      message(WARNING \"Unresolved dependencies: \${_unresolved_deps}\")
+    endif()
+  " COMPONENT Runtime)
+
   else()
   set(CPACK_GENERATOR RPM;DEB)
   set(CPACK_RPM_COMPONENT_INSTALL OFF)

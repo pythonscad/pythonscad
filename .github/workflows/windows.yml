@@ -49,6 +49,12 @@ jobs:
         with:
           version: '22.1.7'
           build-type: 'release-mingw'
+      - name: Get version from git
+        id: version
+        run: |
+          VERSION=$(git describe --tags --always --dirty)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
       - name: Build OpenSCAD
         run: |
           mkdir build && cd build
@@ -74,54 +80,18 @@ jobs:
       #       build/Testing/Temporary/*_report.html
       #       build/Testing/Temporary/LastTest.log
 
-      - name: Install application
+      - name: Install packaging tools
+        # if: github.event_name != 'pull_request'
+        run: |
+          # Install NSIS for installer creation and unzip for package preparation
+          pacman --noconfirm -S mingw-w64-ucrt-x86_64-nsis unzip
+
+      - name: Install application and create packages
         # if: github.event_name != 'pull_request'
         run: |
           cd build
+          # Install application (DLL bundling happens automatically via CMake install script)
           cmake --install . --prefix=.
-
-      - name: Install packaging tools and bundle DLLs
-        # if: github.event_name != 'pull_request'
-        run: |
-          # Install required tools
-          pacman --noconfirm -S mingw-w64-ucrt-x86_64-nsis unzip mingw-w64-ucrt-x86_64-ntldd-git
-
-          cd build
-
-          # Find the installed executable
-          EXE_PATH=$(find . -name "pythonscad.exe" -type f | head -1)
-          if [ -z "$EXE_PATH" ]; then
-            echo "Error: pythonscad.exe not found after install"
-            exit 1
-          fi
-
-          EXE_DIR=$(dirname "$EXE_PATH")
-          echo "Found executable at: $EXE_PATH"
-          echo "Bundling DLLs to: $EXE_DIR"
-
-          # Copy all DLL dependencies
-          echo "Scanning for DLL dependencies..."
-          ntldd -R "$EXE_PATH" 2>/dev/null | grep -oP '(?<= => ).*\.dll' | sort -u | while read dll; do
-            if [ -f "$dll" ] && [ ! -f "$EXE_DIR/$(basename $dll)" ]; then
-              echo "Copying: $(basename $dll)"
-              cp "$dll" "$EXE_DIR/" || true
-            fi
-          done
-
-          # Also copy common runtime DLLs that might be missed
-          MINGW_BIN="/ucrt64/bin"
-          COMMON_DLLS="libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll"
-          for dll in $COMMON_DLLS; do
-            if [ -f "$MINGW_BIN/$dll" ] && [ ! -f "$EXE_DIR/$dll" ]; then
-              echo "Copying common DLL: $dll"
-              cp "$MINGW_BIN/$dll" "$EXE_DIR/" || true
-            fi
-          done
-
-          echo "DLL bundling complete. Total DLLs:"
-          ls -1 "$EXE_DIR"/*.dll 2>/dev/null | wc -l
-          echo "Sample DLLs:"
-          ls "$EXE_DIR"/*.dll 2>/dev/null | head -10 || echo "No DLLs found!"
 
       - name: Create distribution packages
         # if: github.event_name != 'pull_request'
@@ -134,6 +104,7 @@ jobs:
         id: packages
         env:
           QT_VERSION: ${{ matrix.qt }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           cd build
           ZIP_FILE=$(ls PythonSCAD-*.zip 2>/dev/null | head -1 || echo "")
@@ -152,11 +123,12 @@ jobs:
               exit 1
             fi
 
-            # Create new directory name with Qt version
-            NEW_DIR_NAME="${ZIP_FILE%.zip}"
-            NEW_DIR_NAME="${NEW_DIR_NAME/PythonSCAD-/PythonSCAD-${QT_VERSION}-}"
+            # Create new directory name with Qt version and git version
+            # Example: PythonSCAD-qt5-v0.6.0-123-g8aa869b-win64
+            BASE_NAME=$(basename "$EXTRACTED_DIR")
+            NEW_DIR_NAME="${BASE_NAME/PythonSCAD-/PythonSCAD-${QT_VERSION}-${VERSION}-}"
 
-            # Move to final location with Qt version in name
+            # Move to final location with new name
             mv "$EXTRACTED_DIR" "$NEW_DIR_NAME"
             rm -rf "$TEMP_DIR"
 
@@ -173,9 +145,10 @@ jobs:
           fi
 
           if [ -n "$EXE_FILE" ]; then
-            # Insert Qt version after "PythonSCAD-" in artifact name (without .exe extension)
+            # Create artifact name with Qt version and git version
+            # Example: PythonSCAD-qt5-v0.6.0-123-g8aa869b-win64-Installer
             ARTIFACT_NAME="${EXE_FILE%.exe}"
-            ARTIFACT_NAME="${ARTIFACT_NAME/PythonSCAD-/PythonSCAD-${QT_VERSION}-}"
+            ARTIFACT_NAME="${ARTIFACT_NAME/PythonSCAD-/PythonSCAD-${QT_VERSION}-${VERSION}-}"
 
             echo "exe_path=build/$EXE_FILE" >> $GITHUB_OUTPUT
             echo "exe_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
