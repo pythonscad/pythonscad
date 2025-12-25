@@ -49,6 +49,20 @@ jobs:
         with:
           version: '22.1.7'
           build-type: 'release-mingw'
+      - name: Copy Mesa DLLs to MinGW bin
+        run: |
+          # Find Mesa DLLs and copy to MinGW bin so they can be found during bundling
+          MESA_DIR=$(find /d/a/_temp -name "setup-mesa-dist-win" -type d 2>/dev/null | head -1)
+          if [ -n "$MESA_DIR" ] && [ -d "$MESA_DIR" ]; then
+            echo "Found Mesa directory: $MESA_DIR"
+            find "$MESA_DIR" -name "*.dll" -type f | while read dll; do
+              dll_name=$(basename "$dll")
+              echo "Copying Mesa DLL: $dll_name"
+              cp "$dll" /ucrt64/bin/ || true
+            done
+          else
+            echo "Warning: Mesa directory not found"
+          fi
       - name: Get version from git
         id: version
         run: |
