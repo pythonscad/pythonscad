@@ -52,9 +52,13 @@ jobs:
       - name: Build OpenSCAD
         run: |
           mkdir build && cd build
-          cmake .. -G"Ninja" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_QT6=${{ matrix.qt == 'qt6' && 'ON' || 'OFF' }}
+          cmake .. -G"Ninja" \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DEXPERIMENTAL=ON \
+            -DSNAPSHOT=ON \
+            -DUSE_QT6=${{ matrix.qt == 'qt6' && 'ON' || 'OFF' }}
           cmake --build . -j4
-          cmake --install . --prefix=.
       # Temporarily disabled to speed up packaging workflow testing
       # - name: Run Test Suite
       #   run: |
@@ -70,42 +74,54 @@ jobs:
       #       build/Testing/Temporary/*_report.html
       #       build/Testing/Temporary/LastTest.log
 
-      - name: Install NSIS for packaging
-        # if: github.event_name != 'pull_request'
-        run: |
-          pacman --noconfirm -S mingw-w64-ucrt-x86_64-nsis
-
-      - name: Bundle runtime dependencies
+      - name: Install application
         # if: github.event_name != 'pull_request'
         run: |
           cd build
-          # Find and copy all DLL dependencies
-          echo "Copying MinGW runtime dependencies..."
+          cmake --install . --prefix=.
 
-          # Get the pythonscad executable path
+      - name: Install packaging tools and bundle DLLs
+        # if: github.event_name != 'pull_request'
+        run: |
+          # Install required tools
+          pacman --noconfirm -S mingw-w64-ucrt-x86_64-nsis unzip mingw-w64-ucrt-x86_64-ntldd-git
+
+          cd build
+
+          # Find the installed executable
           EXE_PATH=$(find . -name "pythonscad.exe" -type f | head -1)
           if [ -z "$EXE_PATH" ]; then
-            echo "Error: pythonscad.exe not found"
+            echo "Error: pythonscad.exe not found after install"
             exit 1
           fi
 
           EXE_DIR=$(dirname "$EXE_PATH")
           echo "Found executable at: $EXE_PATH"
-          echo "Installing DLLs to: $EXE_DIR"
+          echo "Bundling DLLs to: $EXE_DIR"
 
-          # Use ntldd to find all dependencies, filter for ucrt64 DLLs, and copy them
-          pacman --noconfirm -S mingw-w64-ucrt-x86_64-ntldd-git
-
-          # Get all DLL dependencies and copy them
-          ntldd -R "$EXE_PATH" | grep -i "ucrt64" | awk '{print $3}' | sort -u | while read dll; do
-            if [ -f "$dll" ]; then
+          # Copy all DLL dependencies
+          echo "Scanning for DLL dependencies..."
+          ntldd -R "$EXE_PATH" 2>/dev/null | grep -oP '(?<= => ).*\.dll' | sort -u | while read dll; do
+            if [ -f "$dll" ] && [ ! -f "$EXE_DIR/$(basename $dll)" ]; then
               echo "Copying: $(basename $dll)"
-              cp "$dll" "$EXE_DIR/"
+              cp "$dll" "$EXE_DIR/" || true
             fi
           done
 
-          echo "DLL bundling complete"
-          ls -lh "$EXE_DIR"/*.dll | head -20
+          # Also copy common runtime DLLs that might be missed
+          MINGW_BIN="/ucrt64/bin"
+          COMMON_DLLS="libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll"
+          for dll in $COMMON_DLLS; do
+            if [ -f "$MINGW_BIN/$dll" ] && [ ! -f "$EXE_DIR/$dll" ]; then
+              echo "Copying common DLL: $dll"
+              cp "$MINGW_BIN/$dll" "$EXE_DIR/" || true
+            fi
+          done
+
+          echo "DLL bundling complete. Total DLLs:"
+          ls -1 "$EXE_DIR"/*.dll 2>/dev/null | wc -l
+          echo "Sample DLLs:"
+          ls "$EXE_DIR"/*.dll 2>/dev/null | head -10 || echo "No DLLs found!"
 
       - name: Create distribution packages
         # if: github.event_name != 'pull_request'
@@ -124,21 +140,36 @@ jobs:
           EXE_FILE=$(ls PythonSCAD-*.exe 2>/dev/null | head -1 || echo "")
 
           if [ -n "$ZIP_FILE" ]; then
-            # Install unzip if not available
-            pacman --noconfirm -S unzip
+            # Extract ZIP to temporary directory
+            TEMP_DIR="${ZIP_FILE%.zip}-temp"
+            mkdir -p "$TEMP_DIR"
+            unzip -q "$ZIP_FILE" -d "$TEMP_DIR"
 
-            # Extract ZIP to avoid double-zipping when downloading from GitHub
-            ZIP_DIR="${ZIP_FILE%.zip}"
-            mkdir -p "$ZIP_DIR"
-            unzip -q "$ZIP_FILE" -d "$ZIP_DIR"
+            # Find the extracted directory (CPack creates a subdirectory)
+            EXTRACTED_DIR=$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -1)
+            if [ -z "$EXTRACTED_DIR" ]; then
+              echo "Error: No directory found in extracted ZIP"
+              exit 1
+            fi
 
-            # Insert Qt version after "PythonSCAD-" in artifact name (without .zip extension)
-            ARTIFACT_NAME="${ZIP_FILE%.zip}"
-            ARTIFACT_NAME="${ARTIFACT_NAME/PythonSCAD-/PythonSCAD-${QT_VERSION}-}"
+            # Create new directory name with Qt version
+            NEW_DIR_NAME="${ZIP_FILE%.zip}"
+            NEW_DIR_NAME="${NEW_DIR_NAME/PythonSCAD-/PythonSCAD-${QT_VERSION}-}"
 
-            echo "zip_path=build/$ZIP_DIR" >> $GITHUB_OUTPUT
-            echo "zip_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
-            echo "Found ZIP: $ZIP_FILE (extracted to: $ZIP_DIR, artifact: $ARTIFACT_NAME)"
+            # Move to final location with Qt version in name
+            mv "$EXTRACTED_DIR" "$NEW_DIR_NAME"
+            rm -rf "$TEMP_DIR"
+
+            echo "Renamed extracted directory to: $NEW_DIR_NAME"
+
+            # Verify DLLs are present
+            DLL_COUNT=$(find "$NEW_DIR_NAME" -name "*.dll" | wc -l)
+            echo "Package contains $DLL_COUNT DLL files"
+
+            # Use the new directory name for artifact
+            echo "zip_path=build/$NEW_DIR_NAME" >> $GITHUB_OUTPUT
+            echo "zip_name=$NEW_DIR_NAME" >> $GITHUB_OUTPUT
+            echo "Found ZIP: $ZIP_FILE (extracted and renamed to: $NEW_DIR_NAME)"
           fi
 
           if [ -n "$EXE_FILE" ]; then
