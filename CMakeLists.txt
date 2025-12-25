@@ -1971,13 +1971,27 @@ if(MINGW OR MXECROSS)
       endif()
     endforeach()
 
-    # Copy Qt plugins (required for Qt to work on Windows)
+    # Determine MinGW prefix for plugin and config paths
     if(DEFINED ENV{MSYSTEM_PREFIX})
       file(TO_CMAKE_PATH \"\$ENV{MSYSTEM_PREFIX}\" MINGW_PREFIX)
     else()
       set(MINGW_PREFIX \"/ucrt64\")
     endif()
 
+    # Copy fontconfig configuration files (helps find bundled fonts)
+    if(EXISTS \"\${MINGW_PREFIX}/etc/fonts\")
+      message(STATUS \"Copying fontconfig files from: \${MINGW_PREFIX}/etc/fonts\")
+      file(GLOB FONTCONFIG_FILES \"\${MINGW_PREFIX}/etc/fonts/*.conf\")
+      foreach(_fontconfig_file \${FONTCONFIG_FILES})
+        get_filename_component(_filename \"\${_fontconfig_file}\" NAME)
+        # Only copy if not already present from source tree
+        if(NOT EXISTS \"\${EXE_DIR}/../fonts/\${_filename}\")
+          file(COPY \"\${_fontconfig_file}\" DESTINATION \"\${EXE_DIR}/../fonts/\")
+        endif()
+      endforeach()
+    endif()
+
+    # Copy Qt plugins (required for Qt to work on Windows)
     # Determine Qt version and plugins path
     set(QT_PLUGINS_PATHS
       \"\${MINGW_PREFIX}/share/qt6/plugins\"
