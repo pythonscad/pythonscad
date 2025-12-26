@@ -36,6 +36,7 @@ jobs:
       - name: Build libcurl for MXE
         env:
           MXE_TARGETS: x86_64-w64-mingw32.static.posix
+        shell: bash
         run: |
           echo "Building libcurl (curl package) for MXE..."
           cd /mxe
@@ -44,6 +45,7 @@ jobs:
 
       - name: Establish Version
         id: version
+        shell: bash
         run: |
           source scripts/establish_version.sh
           OPENSCAD_COMMIT=$(openscad_commit)
@@ -69,6 +71,7 @@ jobs:
           LC_ALL: C.UTF-8
           MXEDIR: /mxe
           PKG_CONFIG_PATH: /mxe/usr/x86_64-w64-mingw32.static.posix/lib/pkgconfig
+        shell: bash
         run: |
           # Create python3 symlink if needed
           ln -sf /usr/bin/python3 /usr/bin/python || true
@@ -78,6 +81,7 @@ jobs:
 
       - name: Prepare artifacts
         id: artifacts
+        shell: bash
         run: |
           mkdir -p /tmp/out
 
