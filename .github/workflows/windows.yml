@@ -33,6 +33,12 @@ jobs:
           detached: true
           limit-access-to-actor: true
 
+      - name: Install additional dependencies
+        shell: bash
+        run: |
+          apt-get update
+          apt-get install -y bsdtar bdiff
+
       - name: Build libcurl for MXE
         env:
           MXE_TARGETS: x86_64-w64-mingw32.static.posix
