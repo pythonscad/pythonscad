@@ -134,6 +134,10 @@ set_target_properties(OpenSCADLibInternal PROPERTIES
 )
 
 if (MINGW)
+  # Add big-obj support for all MinGW builds (not just Debug) to handle
+  # template-heavy files like cgalutils.cc that exceed COFF section limits
+  target_compile_options(OpenSCADLibInternal PRIVATE -Wa,-mbig-obj)
+
   # Configure Debug flags (MinGW) to keep rich symbols and avoid PE/COFF
   # RIP-relative relocation overflows in large template-heavy builds.
   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
