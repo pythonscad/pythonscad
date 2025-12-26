@@ -91,8 +91,11 @@ jobs:
         run: |
           mkdir -p /tmp/out
 
-          # Find the generated packages (both .zip and .exe)
-          for f in mingw*/*.zip mingw*/*.exe; do
+          # Find the generated packages in build_UNIX_CROSS_WIN directory
+          BUILD_DIR="build_UNIX_CROSS_WIN"
+
+          echo "Looking for packages in $BUILD_DIR..."
+          find "$BUILD_DIR" -maxdepth 1 -name "*.zip" -o -name "*.exe" | while read f; do
             if [ -f "$f" ]; then
               basename_f=$(basename "$f")
               echo "Found package: $f -> $basename_f"
@@ -115,7 +118,7 @@ jobs:
 
           if [ -n "$EXE_FILE" ]; then
             echo "exe_path=$EXE_FILE" >> $GITHUB_OUTPUT
-            echo "exe_name=$(basename "$EXE_FILE" .exe)-Installer" >> $GITHUB_OUTPUT
+            echo "exe_name=$(basename "$EXE_FILE" .exe)" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload ZIP package
