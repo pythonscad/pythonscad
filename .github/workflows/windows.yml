@@ -1,4 +1,4 @@
-name: Windows(msys2) Experimental Tests
+name: Windows (MXE Cross-Compile)
 
 on:
   push:
@@ -14,20 +14,17 @@ on:
         default: false
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        qt: [ qt5, qt6 ]
-    runs-on: windows-latest
-    name: windows-latest ${{ matrix.qt }}
-    defaults:
-      run:
-        shell: msys2 {0}
+  build-mxe-64bit:
+    runs-on: ubuntu-latest
+    container:
+      image: openscad/mxe-x86_64-gui:latest
+    name: Windows MXE 64-bit
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           submodules: 'recursive'
+
       - name: Setup (detached) tmate session if enabled
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         uses: mxschmitt/action-tmate@v3
@@ -35,201 +32,98 @@ jobs:
         with:
           detached: true
           limit-access-to-actor: true
-      - name: Setup MSYS2 Environment
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          update: true
-      - name: Install MSYS2 Dependencies
+
+      - name: Build libcurl for MXE
+        env:
+          MXE_TARGETS: x86_64-w64-mingw32.static.posix
         run: |
-          pwd
-          ./scripts/msys2-install-dependencies.sh ${{ matrix.qt }}
-      - name: Download and install Mesa OpenGL DLLs
+          echo "Building libcurl (curl package) for MXE..."
+          cd /mxe
+          make curl MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4
+          echo "libcurl build complete"
+
+      - name: Establish Version
+        id: version
         run: |
-          echo "=== Downloading Mesa 22.1.7 ==="
-          MESA_URL="https://github.com/pal1000/mesa-dist-win/releases/download/22.1.7/mesa3d-22.1.7-release-mingw.7z"
-          MESA_DIR="/tmp/mesa"
+          source scripts/establish_version.sh
+          OPENSCAD_COMMIT=$(openscad_commit)
+          BASE_VERSION=$(openscad_version)
 
-          mkdir -p "$MESA_DIR"
-          cd "$MESA_DIR"
+          if [ -n "${{ github.run_number }}" ]; then
+            OPENSCAD_VERSION="${BASE_VERSION}.ci${{ github.run_number }}"
+          else
+            OPENSCAD_VERSION="${BASE_VERSION}"
+          fi
 
-          echo "Downloading from: $MESA_URL"
-          curl -L -o mesa.7z "$MESA_URL"
+          echo "OPENSCAD_COMMIT=$OPENSCAD_COMMIT" >> $GITHUB_ENV
+          echo "OPENSCAD_VERSION=$OPENSCAD_VERSION" >> $GITHUB_ENV
+          echo "commit=$OPENSCAD_COMMIT" >> $GITHUB_OUTPUT
+          echo "version=$OPENSCAD_VERSION" >> $GITHUB_OUTPUT
 
-          echo "Extracting Mesa archive..."
-          "/c/ProgramData/Chocolatey/bin/7z.exe" x mesa.7z
+          echo "Version: $OPENSCAD_VERSION"
+          echo "Commit: $OPENSCAD_COMMIT"
 
-          echo ""
-          echo "=== Mesa directory contents ==="
-          ls -la
+      - name: Build Windows Application (64-bit) using MXE
+        env:
+          NUMCPU: 4
+          LC_ALL: C.UTF-8
+          MXEDIR: /mxe
+          PKG_CONFIG_PATH: /mxe/usr/x86_64-w64-mingw32.static.posix/lib/pkgconfig
+        run: |
+          # Create python3 symlink if needed
+          ln -sf /usr/bin/python3 /usr/bin/python || true
 
-          echo ""
-          echo "=== x64 directory contents ==="
-          ls -la x64/
+          # Run the same build script as CircleCI
+          ./scripts/release-common.sh snapshot mingw64 -v "$OPENSCAD_VERSION" -c "$OPENSCAD_COMMIT"
 
-          echo ""
-          echo "=== Copying Mesa DLLs to /ucrt64/bin ==="
-          # Copy all DLLs from x64 directory to MinGW bin
-          for dll in x64/*.dll; do
-            if [ -f "$dll" ]; then
-              dll_name=$(basename "$dll")
-              echo "Copying: $dll_name"
-              cp "$dll" /ucrt64/bin/
+      - name: Prepare artifacts
+        id: artifacts
+        run: |
+          mkdir -p /tmp/out
+
+          # Find the generated packages (both .zip and .exe)
+          for f in mingw*/*.zip mingw*/*.exe; do
+            if [ -f "$f" ]; then
+              basename_f=$(basename "$f")
+              echo "Found package: $f -> $basename_f"
+              cp -v "$f" /tmp/out/"$basename_f"
             fi
           done
 
-          echo ""
-          echo "=== Verifying Mesa DLLs in /ucrt64/bin ==="
-          ls -lh /ucrt64/bin/libEGL* /ucrt64/bin/libGLESv2* /ucrt64/bin/opengl32* /ucrt64/bin/libglapi* /ucrt64/bin/libgallium* 2>&1 || echo "Some DLLs not found"
+          # List what we have
+          echo "Artifacts prepared:"
+          ls -lh /tmp/out/
 
-          echo ""
-          echo "=== Mesa DLL installation complete ==="
-      - name: Get version from git
-        id: version
-        run: |
-          VERSION=$(git describe --tags --always --dirty)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
-      - name: Build OpenSCAD
-        run: |
-          mkdir build && cd build
-          cmake .. -G"Ninja" \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DEXPERIMENTAL=ON \
-            -DSNAPSHOT=ON \
-            -DUSE_QT6=${{ matrix.qt == 'qt6' && 'ON' || 'OFF' }}
-          cmake --build . -j4
-      # Temporarily disabled to speed up packaging workflow testing
-      # - name: Run Test Suite
-      #   run: |
-      #     cd build
-      #     ctest -j4
-
-      # - name: Upload Test Result Report
-      #   uses: actions/upload-artifact@v5
-      #   if: ${{ always() }}
-      #   with:
-      #     name: Test Result Report (Windows ${{ matrix.qt }})
-      #     path: |
-      #       build/Testing/Temporary/*_report.html
-      #       build/Testing/Temporary/LastTest.log
-
-      - name: Install packaging tools
-        # if: github.event_name != 'pull_request'
-        run: |
-          # Install NSIS for installer creation and unzip for package preparation
-          pacman --noconfirm -S mingw-w64-ucrt-x86_64-nsis unzip
-
-      - name: Install application and create packages
-        # if: github.event_name != 'pull_request'
-        run: |
-          cd build
-          # Install application (DLL bundling happens automatically via CMake install script)
-          cmake --install . --prefix=.
-
-      - name: Debug - Check bundled DLLs
-        run: |
-          cd build
-          echo "=== DEBUG: Checking installed files ==="
-          EXE_PATH=$(find . -name "pythonscad.exe" -type f | head -1)
-          if [ -n "$EXE_PATH" ]; then
-            EXE_DIR=$(dirname "$EXE_PATH")
-            echo "Executable found at: $EXE_PATH"
-            echo ""
-            echo "OpenGL-related DLLs in install directory:"
-            ls -lh "$EXE_DIR"/*.dll 2>/dev/null | grep -i "egl\|gles\|opengl\|glapi\|gallium" || echo "No OpenGL DLLs found!"
-            echo ""
-            echo "Total DLL count in install directory:"
-            ls -1 "$EXE_DIR"/*.dll 2>/dev/null | wc -l
-            echo ""
-            echo "Qt plugin directories:"
-            ls -d "$EXE_DIR"/platforms "$EXE_DIR"/styles "$EXE_DIR"/imageformats "$EXE_DIR"/iconengines 2>/dev/null || echo "Some Qt plugin directories missing"
-            echo ""
-            echo "Sample of first 10 DLLs:"
-            ls "$EXE_DIR"/*.dll 2>/dev/null | head -10
-          else
-            echo "ERROR: pythonscad.exe not found after install!"
-          fi
-
-      - name: Create distribution packages
-        # if: github.event_name != 'pull_request'
-        run: |
-          cd build
-          cpack -G "ZIP;NSIS"
-
-      - name: Find and prepare packages
-        # if: github.event_name != 'pull_request'
-        id: packages
-        env:
-          QT_VERSION: ${{ matrix.qt }}
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          cd build
-          ZIP_FILE=$(ls PythonSCAD-*.zip 2>/dev/null | head -1 || echo "")
-          EXE_FILE=$(ls PythonSCAD-*.exe 2>/dev/null | head -1 || echo "")
+          # Set outputs for artifact upload
+          ZIP_FILE=$(ls /tmp/out/*.zip 2>/dev/null | head -1 || echo "")
+          EXE_FILE=$(ls /tmp/out/*.exe 2>/dev/null | head -1 || echo "")
 
           if [ -n "$ZIP_FILE" ]; then
-            # Extract ZIP to temporary directory
-            TEMP_DIR="${ZIP_FILE%.zip}-temp"
-            mkdir -p "$TEMP_DIR"
-            unzip -q "$ZIP_FILE" -d "$TEMP_DIR"
-
-            # Find the extracted directory (CPack creates a subdirectory)
-            EXTRACTED_DIR=$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -1)
-            if [ -z "$EXTRACTED_DIR" ]; then
-              echo "Error: No directory found in extracted ZIP"
-              exit 1
-            fi
-
-            # Create new directory name with Qt version and git version
-            # Example: PythonSCAD-qt5-v0.6.0-123-g8aa869b-win64
-            BASE_NAME=$(basename "$EXTRACTED_DIR")
-            NEW_DIR_NAME="${BASE_NAME/PythonSCAD-/PythonSCAD-${QT_VERSION}-${VERSION}-}"
-
-            # Move to final location with new name
-            mv "$EXTRACTED_DIR" "$NEW_DIR_NAME"
-            rm -rf "$TEMP_DIR"
-
-            echo "Renamed extracted directory to: $NEW_DIR_NAME"
-
-            # Verify DLLs are present
-            DLL_COUNT=$(find "$NEW_DIR_NAME" -name "*.dll" | wc -l)
-            echo "Package contains $DLL_COUNT DLL files"
-
-            # Use the new directory name for artifact
-            echo "zip_path=build/$NEW_DIR_NAME" >> $GITHUB_OUTPUT
-            echo "zip_name=$NEW_DIR_NAME" >> $GITHUB_OUTPUT
-            echo "Found ZIP: $ZIP_FILE (extracted and renamed to: $NEW_DIR_NAME)"
+            echo "zip_path=$ZIP_FILE" >> $GITHUB_OUTPUT
+            echo "zip_name=$(basename "$ZIP_FILE" .zip)" >> $GITHUB_OUTPUT
           fi
 
           if [ -n "$EXE_FILE" ]; then
-            # Create artifact name with Qt version and git version
-            # Example: PythonSCAD-qt5-v0.6.0-123-g8aa869b-win64-Installer
-            ARTIFACT_NAME="${EXE_FILE%.exe}"
-            ARTIFACT_NAME="${ARTIFACT_NAME/PythonSCAD-/PythonSCAD-${QT_VERSION}-${VERSION}-}"
-
-            echo "exe_path=build/$EXE_FILE" >> $GITHUB_OUTPUT
-            echo "exe_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
-            echo "Found EXE: $EXE_FILE (artifact: $ARTIFACT_NAME)"
+            echo "exe_path=$EXE_FILE" >> $GITHUB_OUTPUT
+            echo "exe_name=$(basename "$EXE_FILE" .exe)-Installer" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload ZIP package
-        # if: github.event_name != 'pull_request' && steps.packages.outputs.zip_name != ''
+        if: steps.artifacts.outputs.zip_path != ''
         uses: actions/upload-artifact@v5
         with:
-          name: ${{ steps.packages.outputs.zip_name }}
-          path: ${{ steps.packages.outputs.zip_path }}
+          name: ${{ steps.artifacts.outputs.zip_name }}
+          path: ${{ steps.artifacts.outputs.zip_path }}
           retention-days: 30
 
       - name: Upload NSIS installer
-        # if: github.event_name != 'pull_request' && steps.packages.outputs.exe_name != ''
+        if: steps.artifacts.outputs.exe_path != ''
         uses: actions/upload-artifact@v5
         with:
-          name: ${{ steps.packages.outputs.exe_name }}
-          path: ${{ steps.packages.outputs.exe_path }}
+          name: ${{ steps.artifacts.outputs.exe_name }}
+          path: ${{ steps.artifacts.outputs.exe_path }}
           retention-days: 30
 
-      - name: Setup (detached) tmate session if enabled
-        uses: mxschmitt/action-tmate@v3
+      - name: Setup (attached) tmate session if enabled
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        uses: mxschmitt/action-tmate@v3
