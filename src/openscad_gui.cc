@@ -171,6 +171,17 @@ void registerDefaultIcon(const QString&) {}
 int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& original_path, int argc,
         char **argv, const std::string& gui_test, const bool reset_window_settings)
 {
+#ifdef Q_OS_WIN
+  // Force Qt to use desktop OpenGL instead of ANGLE (OpenGL ES → DirectX)
+  // ANGLE requires libEGL.dll/libGLESv2.dll which may not work in all environments
+  // Desktop OpenGL uses the bundled Mesa opengl32.dll for software rendering
+  // MUST be set before QApplication is created
+  QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+#endif
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+  QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+
   OpenSCADApp app(argc, argv);
   QIcon::setThemeName(isDarkMode() ? "chokusen-dark" : "chokusen");
 
@@ -181,15 +192,6 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   QCoreApplication::setApplicationVersion(QString::fromStdString(std::string(openscad_versionnumber)));
   QGuiApplication::setApplicationDisplayName("PythonSCAD");
   QGuiApplication::setDesktopFileName(DESKTOP_FILENAME);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-  QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-#endif
-#ifdef Q_OS_WIN
-  // Force Qt to use desktop OpenGL instead of ANGLE (OpenGL ES → DirectX)
-  // ANGLE requires libEGL.dll/libGLESv2.dll which may not work in all environments
-  // Desktop OpenGL uses the bundled Mesa opengl32.dll for software rendering
-  QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-#endif
 
 #ifdef Q_OS_MACOS
   app.setWindowIcon(QIcon(":/icon-macos.png"));
