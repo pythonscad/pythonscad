@@ -1,9 +1,8 @@
 name: Build and upload Windows build (MXE Cross-Compile)
 
 on:
-  push:
-    branches:
-      - master
+  release:
+    types: [published]
   pull_request:
   workflow_dispatch:
     inputs:
