@@ -184,6 +184,11 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
+#ifdef Q_OS_WIN
+  // Force Qt to use desktop OpenGL instead of ANGLE (OpenGL ES → DirectX)
+  // ANGLE requires libEGL.dll/libGLESv2.dll which we don't bundle
+  QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+#endif
 
 #ifdef Q_OS_MACOS
   app.setWindowIcon(QIcon(":/icon-macos.png"));
