@@ -149,14 +149,17 @@ void GLView::setupCamera()
 
 void GLView::paintGL()
 {
+  std::cerr << "DEBUG: GLView::paintGL() started" << std::endl;
   glDisable(GL_LIGHTING);
   auto bgcol = ColorMap::getColor(*this->colorscheme, RenderColor::BACKGROUND_COLOR);
   auto bgstopcol = ColorMap::getColor(*this->colorscheme, RenderColor::BACKGROUND_STOP_COLOR);
   auto axescolor = ColorMap::getColor(*this->colorscheme, RenderColor::AXES_COLOR);
   auto crosshaircol = ColorMap::getColor(*this->colorscheme, RenderColor::CROSSHAIR_COLOR);
 
+  std::cerr << "DEBUG: Clearing buffers..." << std::endl;
   glClearColor(bgcol.r(), bgcol.g(), bgcol.b(), 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+  std::cerr << "DEBUG: Buffers cleared" << std::endl;
 
   if (bgcol != bgstopcol) {
     glDisable(GL_DEPTH_TEST);
@@ -295,6 +298,7 @@ void GLView::enable_opencsg_shaders()
 
 void GLView::initializeGL()
 {
+  std::cerr << "DEBUG: GLView::initializeGL() started" << std::endl;
 #ifdef DEBUG
 /*
    // Requires OpenGL 4.3+
@@ -303,11 +307,13 @@ void GLView::initializeGL()
    //*/
 #endif
 
+  std::cerr << "DEBUG: Setting up GL state..." << std::endl;
   glEnable(GL_DEPTH_TEST);
   glDepthRange(-far_far_away, +far_far_away);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  std::cerr << "DEBUG: GL state setup complete" << std::endl;
 
   GLfloat light_diffuse[] = {1.0, 1.0, 1.0, 1.0};
   GLfloat light_position0[] = {-1.0, +1.0, +1.0, 0.0};

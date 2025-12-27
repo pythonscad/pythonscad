@@ -106,12 +106,15 @@ void QGLView::viewAll()
 
 void QGLView::initializeGL()
 {
+  std::cerr << "DEBUG: QGLView::initializeGL() started" << std::endl;
 #if defined(USE_GLEW) || defined(OPENCSG_GLEW)
   // Since OpenCSG requires glew, we need to initialize it.
   // ..in a separate compilation unit to avoid duplicate symbols with x.
+  std::cerr << "DEBUG: Initializing GLEW..." << std::endl;
   initializeGlew();
 #endif
 #ifdef USE_GLAD
+  std::cerr << "DEBUG: Initializing GLAD..." << std::endl;
   // We could ask for gladLoadGLES2UserPtr() here if we want to use GLES2+
   const auto version = gladLoadGLUserPtr(
     [](void *ctx, const char *name) -> GLADapiproc {
@@ -123,13 +126,18 @@ void QGLView::initializeGL()
     return;
   }
   PRINTDB("GLAD: Loaded OpenGL %d.%d", GLAD_VERSION_MAJOR(version) % GLAD_VERSION_MINOR(version));
+  std::cerr << "DEBUG: GLAD initialized successfully" << std::endl;
 #endif  // ifdef USE_GLAD
 
+  std::cerr << "DEBUG: Calling gl_dump()..." << std::endl;
   PRINTD(gl_dump());
 
+  std::cerr << "DEBUG: Calling GLView::initializeGL()..." << std::endl;
   GLView::initializeGL();
 
+  std::cerr << "DEBUG: Creating MouseSelector..." << std::endl;
   this->selector = std::make_unique<MouseSelector>(this);
+  std::cerr << "DEBUG: QGLView::initializeGL() completed" << std::endl;
 }
 
 std::string QGLView::getRendererInfo() const
@@ -188,13 +196,17 @@ void QGLView::display_opencsg_warning_dialog()
 
 void QGLView::resizeGL(int w, int h)
 {
+  std::cerr << "DEBUG: QGLView::resizeGL(" << w << ", " << h << ")" << std::endl;
   GLView::resizeGL(w, h);
   emit resized();
+  std::cerr << "DEBUG: QGLView::resizeGL() completed" << std::endl;
 }
 
 void QGLView::paintGL()
 {
+  std::cerr << "DEBUG: QGLView::paintGL() started" << std::endl;
   GLView::paintGL();
+  std::cerr << "DEBUG: GLView::paintGL() completed" << std::endl;
 
   Vector3d p1, p2, p3, norm;
   if (statusLabel) {
