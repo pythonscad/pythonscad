@@ -65,6 +65,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include "utils/vector_math.h"
 
 #ifdef ENABLE_OPENCSG
 #include <opencsg.h>
