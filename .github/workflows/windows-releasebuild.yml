@@ -1,0 +1,180 @@
+name: Windows (MXE Cross-Compile)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
+
+jobs:
+  build-mxe-64bit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        qt: [qt5, qt6]
+    container:
+      image: openscad/mxe-x86_64-gui:latest
+    name: Windows MXE 64-bit (${{ matrix.qt }})
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Setup (detached) tmate session if enabled
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 5
+        with:
+          detached: true
+          limit-access-to-actor: true
+
+      - name: Install additional dependencies
+        shell: bash
+        run: |
+          apt-get update
+          apt-get install -y libarchive-tools bsdiff
+
+      - name: Build dependencies for MXE
+        env:
+          MXE_TARGETS: x86_64-w64-mingw32.static.posix
+        shell: bash
+        run: |
+          echo "Building Qt ${{ matrix.qt }} and libcurl for MXE..."
+          cd /mxe
+
+          # Build the appropriate Qt version
+          if [ "${{ matrix.qt }}" = "qt5" ]; then
+            echo "Building Qt5..."
+            make qtbase MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4 || true
+          else
+            echo "Building Qt6..."
+            make qt6-qtbase MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4 || true
+          fi
+
+          # Build libcurl
+          echo "Building libcurl..."
+          make curl MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4
+
+          echo "MXE dependencies build complete"
+
+      - name: Establish Version
+        id: version
+        shell: bash
+        run: |
+          source scripts/establish_version.sh
+          OPENSCAD_COMMIT=$(openscad_commit)
+          BASE_VERSION=$(openscad_version)
+
+          if [ -n "${{ github.run_number }}" ]; then
+            OPENSCAD_VERSION="${BASE_VERSION}.ci${{ github.run_number }}"
+          else
+            OPENSCAD_VERSION="${BASE_VERSION}"
+          fi
+
+          echo "OPENSCAD_COMMIT=$OPENSCAD_COMMIT" >> $GITHUB_ENV
+          echo "OPENSCAD_VERSION=$OPENSCAD_VERSION" >> $GITHUB_ENV
+          echo "commit=$OPENSCAD_COMMIT" >> $GITHUB_OUTPUT
+          echo "version=$OPENSCAD_VERSION" >> $GITHUB_OUTPUT
+
+          echo "Version: $OPENSCAD_VERSION"
+          echo "Commit: $OPENSCAD_COMMIT"
+
+      - name: Build Windows Application (64-bit) using MXE
+        env:
+          NUMCPU: 4
+          LC_ALL: C.UTF-8
+          MXEDIR: /mxe
+          PKG_CONFIG_PATH: /mxe/usr/x86_64-w64-mingw32.static.posix/lib/pkgconfig
+          QT_VERSION: ${{ matrix.qt }}
+        shell: bash
+        run: |
+          # Create python3 symlink if needed
+          ln -sf /usr/bin/python3 /usr/bin/python || true
+
+          # Run the same build script as CircleCI
+          ./scripts/release-common.sh snapshot mingw64 -v "$OPENSCAD_VERSION" -c "$OPENSCAD_COMMIT"
+
+      - name: Prepare artifacts
+        id: artifacts
+        shell: bash
+        run: |
+          mkdir -p /tmp/out
+
+          # Find the generated packages in build_UNIX_CROSS_WIN directory
+          BUILD_DIR="build_UNIX_CROSS_WIN"
+
+          echo "Looking for packages in $BUILD_DIR..."
+
+          # Copy distribution ZIP files as-is (for GitHub Releases)
+          find "$BUILD_DIR" -maxdepth 1 -name "*.zip" ! -name "*-Installer.zip" | while read f; do
+            if [ -f "$f" ]; then
+              basename_f=$(basename "$f")
+              echo "Found ZIP package: $f"
+              cp -v "$f" /tmp/out/"$basename_f"
+            fi
+          done
+
+          # Extract NSIS installer .exe from its .zip wrapper
+          # CPack wraps NSIS exe in zip, but we want the .exe directly for releases
+          find "$BUILD_DIR" -maxdepth 1 -name "*-Installer.zip" | while read f; do
+            if [ -f "$f" ]; then
+              echo "Found NSIS installer zip: $f"
+              unzip -j "$f" '*.exe' -d /tmp/out/
+              echo "Extracted installer .exe to /tmp/out/"
+            fi
+          done
+
+          # Also check for direct .exe files (if CPack behavior changes)
+          find "$BUILD_DIR" -maxdepth 1 -name "*.exe" | while read f; do
+            if [ -f "$f" ]; then
+              basename_f=$(basename "$f")
+              echo "Found EXE file: $f"
+              cp -v "$f" /tmp/out/"$basename_f"
+            fi
+          done
+
+          # List what we have
+          echo "Artifacts prepared:"
+          ls -lh /tmp/out/
+
+          # Set outputs for artifact upload
+          ZIP_FILE=$(ls /tmp/out/*.zip 2>/dev/null | head -1 || echo "")
+          EXE_FILE=$(ls /tmp/out/*-Installer.exe 2>/dev/null | head -1 || echo "")
+
+          if [ -n "$ZIP_FILE" ]; then
+            echo "zip_path=$ZIP_FILE" >> $GITHUB_OUTPUT
+            echo "zip_name=$(basename "$ZIP_FILE" .zip)" >> $GITHUB_OUTPUT
+          fi
+
+          if [ -n "$EXE_FILE" ]; then
+            echo "exe_path=$EXE_FILE" >> $GITHUB_OUTPUT
+            echo "exe_name=$(basename "$EXE_FILE" .exe)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload ZIP package
+        if: steps.artifacts.outputs.zip_path != ''
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.artifacts.outputs.zip_name }}
+          path: ${{ steps.artifacts.outputs.zip_path }}
+          retention-days: 30
+
+      - name: Upload NSIS installer
+        if: steps.artifacts.outputs.exe_path != ''
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.artifacts.outputs.exe_name }}
+          path: ${{ steps.artifacts.outputs.exe_path }}
+          retention-days: 30
+
+      - name: Setup (attached) tmate session if enabled
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        uses: mxschmitt/action-tmate@v3
