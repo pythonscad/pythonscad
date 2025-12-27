@@ -43,6 +43,7 @@
 #include <QPalette>
 #include <QStyleHints>
 #include <QStringList>
+#include <QSurfaceFormat>
 #include <QtConcurrentRun>
 
 #include "Feature.h"
@@ -177,6 +178,16 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   // Desktop OpenGL uses the bundled Mesa opengl32.dll for software rendering
   // MUST be set before QApplication is created
   QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+
+  // Set default surface format for OpenGL context
+  // Request OpenGL 2.1 which is well-supported by Mesa software renderer
+  QSurfaceFormat format;
+  format.setVersion(2, 1);
+  format.setProfile(QSurfaceFormat::NoProfile);
+  format.setDepthBufferSize(24);
+  format.setStencilBufferSize(8);
+  format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+  QSurfaceFormat::setDefaultFormat(format);
 #endif
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
