@@ -1,4 +1,4 @@
-name: Windows (MXE Cross-Compile)
+name: Build and upload Windows build (MXE Cross-Compile)
 
 on:
   push:
