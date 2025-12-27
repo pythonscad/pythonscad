@@ -1,4 +1,4 @@
-name: Windows(msys2) Experimental Tests
+name: Windows (MXE Cross-Compile)
 
 on:
   push:
@@ -14,20 +14,20 @@ on:
         default: false
 
 jobs:
-  build:
+  build-mxe-64bit:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        qt: [ qt5, qt6 ]
-    runs-on: windows-latest
-    name: windows-latest ${{ matrix.qt }}
-    defaults:
-      run:
-        shell: msys2 {0}
+        qt: [qt5, qt6]
+    container:
+      image: openscad/mxe-x86_64-gui:latest
+    name: Windows MXE 64-bit (${{ matrix.qt }})
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           submodules: 'recursive'
+
       - name: Setup (detached) tmate session if enabled
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         uses: mxschmitt/action-tmate@v3
@@ -35,94 +35,146 @@ jobs:
         with:
           detached: true
           limit-access-to-actor: true
-      - name: Setup MSYS2 Environment
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          update: true
-      - name: Install MSYS2 Dependencies
-        run: |
-          pwd
-          ./scripts/msys2-install-dependencies.sh ${{ matrix.qt }}
-      - name: Install Mesa
-        uses: ssciwr/setup-mesa-dist-win@v2
-        with:
-          version: '22.1.7'
-          build-type: 'release-mingw'
-      - name: Build OpenSCAD
-        run: |
-          mkdir build && cd build
-          cmake .. -G"Ninja" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_QT6=${{ matrix.qt == 'qt6' && 'ON' || 'OFF' }}
-          cmake --build . -j4
-          cmake --install . --prefix=.
-      - name: Run Test Suite
-        run: |
-          cd build
-          ctest -j4
 
-      - name: Upload Test Result Report
-        uses: actions/upload-artifact@v5
-        if: ${{ always() }}
-        with:
-          name: Test Result Report (Windows ${{ matrix.qt }})
-          path: |
-            build/Testing/Temporary/*_report.html
-            build/Testing/Temporary/LastTest.log
-
-      - name: Install NSIS for packaging
-        if: github.event_name != 'pull_request'
-        run: |
-          pacman --noconfirm -S mingw-w64-ucrt-x86_64-nsis
-
-      - name: Create distribution packages
-        if: github.event_name != 'pull_request'
-        run: |
-          cd build
-          cpack -G "ZIP;NSIS"
-
-      - name: Find generated packages
-        if: github.event_name != 'pull_request'
-        id: packages
+      - name: Install additional dependencies
         shell: bash
-        env:
-          QT_VERSION: ${{ matrix.qt }}
         run: |
-          cd build
-          ZIP_FILE=$(ls *.zip 2>/dev/null | head -1 || echo "")
-          EXE_FILE=$(ls *.exe 2>/dev/null | head -1 || echo "")
+          apt-get update
+          apt-get install -y libarchive-tools bsdiff
+
+      - name: Build dependencies for MXE
+        env:
+          MXE_TARGETS: x86_64-w64-mingw32.static.posix
+        shell: bash
+        run: |
+          echo "Building Qt ${{ matrix.qt }} and libcurl for MXE..."
+          cd /mxe
+
+          # Build the appropriate Qt version
+          if [ "${{ matrix.qt }}" = "qt5" ]; then
+            echo "Building Qt5..."
+            make qtbase MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4 || true
+          else
+            echo "Building Qt6..."
+            make qt6-qtbase MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4 || true
+          fi
+
+          # Build libcurl
+          echo "Building libcurl..."
+          make curl MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4
+
+          echo "MXE dependencies build complete"
+
+      - name: Establish Version
+        id: version
+        shell: bash
+        run: |
+          source scripts/establish_version.sh
+          OPENSCAD_COMMIT=$(openscad_commit)
+          BASE_VERSION=$(openscad_version)
+
+          if [ -n "${{ github.run_number }}" ]; then
+            OPENSCAD_VERSION="${BASE_VERSION}.ci${{ github.run_number }}"
+          else
+            OPENSCAD_VERSION="${BASE_VERSION}"
+          fi
+
+          echo "OPENSCAD_COMMIT=$OPENSCAD_COMMIT" >> $GITHUB_ENV
+          echo "OPENSCAD_VERSION=$OPENSCAD_VERSION" >> $GITHUB_ENV
+          echo "commit=$OPENSCAD_COMMIT" >> $GITHUB_OUTPUT
+          echo "version=$OPENSCAD_VERSION" >> $GITHUB_OUTPUT
+
+          echo "Version: $OPENSCAD_VERSION"
+          echo "Commit: $OPENSCAD_COMMIT"
+
+      - name: Build Windows Application (64-bit) using MXE
+        env:
+          NUMCPU: 4
+          LC_ALL: C.UTF-8
+          MXEDIR: /mxe
+          PKG_CONFIG_PATH: /mxe/usr/x86_64-w64-mingw32.static.posix/lib/pkgconfig
+          QT_VERSION: ${{ matrix.qt }}
+        shell: bash
+        run: |
+          # Create python3 symlink if needed
+          ln -sf /usr/bin/python3 /usr/bin/python || true
+
+          # Run the same build script as CircleCI
+          ./scripts/release-common.sh snapshot mingw64 -v "$OPENSCAD_VERSION" -c "$OPENSCAD_COMMIT"
+
+      - name: Prepare artifacts
+        id: artifacts
+        shell: bash
+        run: |
+          mkdir -p /tmp/out
+
+          # Find the generated packages in build_UNIX_CROSS_WIN directory
+          BUILD_DIR="build_UNIX_CROSS_WIN"
+
+          echo "Looking for packages in $BUILD_DIR..."
+
+          # Copy ZIP files (distribution archives)
+          find "$BUILD_DIR" -maxdepth 1 -name "*.zip" ! -name "*-Installer.exe.zip" | while read f; do
+            if [ -f "$f" ]; then
+              basename_f=$(basename "$f")
+              echo "Found ZIP package: $f -> $basename_f"
+              cp -v "$f" /tmp/out/"$basename_f"
+            fi
+          done
+
+          # Copy and extract NSIS installer from .exe.zip if present
+          find "$BUILD_DIR" -maxdepth 1 -name "*-Installer.exe.zip" | while read f; do
+            if [ -f "$f" ]; then
+              echo "Found NSIS installer zip: $f"
+              # Extract the .exe from the .zip
+              unzip -j "$f" -d /tmp/out/
+              echo "Extracted installer to /tmp/out/"
+            fi
+          done
+
+          # Also check for direct .exe files
+          find "$BUILD_DIR" -maxdepth 1 -name "*.exe" | while read f; do
+            if [ -f "$f" ]; then
+              basename_f=$(basename "$f")
+              echo "Found EXE package: $f -> $basename_f"
+              cp -v "$f" /tmp/out/"$basename_f"
+            fi
+          done
+
+          # List what we have
+          echo "Artifacts prepared:"
+          ls -lh /tmp/out/
+
+          # Set outputs for artifact upload
+          ZIP_FILE=$(ls /tmp/out/*.zip 2>/dev/null | head -1 || echo "")
+          EXE_FILE=$(ls /tmp/out/*.exe 2>/dev/null | head -1 || echo "")
 
           if [ -n "$ZIP_FILE" ]; then
-            # Insert Qt version after "PythonSCAD-" in artifact name
-            ARTIFACT_NAME="${ZIP_FILE/PythonSCAD-/PythonSCAD-${QT_VERSION}-}"
-            echo "zip_path=build/$ZIP_FILE" >> $GITHUB_OUTPUT
-            echo "zip_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
-            echo "Found ZIP: $ZIP_FILE (artifact: $ARTIFACT_NAME)"
+            echo "zip_path=$ZIP_FILE" >> $GITHUB_OUTPUT
+            echo "zip_name=$(basename "$ZIP_FILE" .zip)" >> $GITHUB_OUTPUT
           fi
 
           if [ -n "$EXE_FILE" ]; then
-            # Insert Qt version after "PythonSCAD-" in artifact name
-            ARTIFACT_NAME="${EXE_FILE/PythonSCAD-/PythonSCAD-${QT_VERSION}-}"
-            echo "exe_path=build/$EXE_FILE" >> $GITHUB_OUTPUT
-            echo "exe_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
-            echo "Found EXE: $EXE_FILE (artifact: $ARTIFACT_NAME)"
+            echo "exe_path=$EXE_FILE" >> $GITHUB_OUTPUT
+            echo "exe_name=$(basename "$EXE_FILE" .exe)" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload ZIP package
-        if: github.event_name != 'pull_request' && steps.packages.outputs.zip_name != ''
+        if: steps.artifacts.outputs.zip_path != ''
         uses: actions/upload-artifact@v5
         with:
-          name: ${{ steps.packages.outputs.zip_name }}
-          path: ${{ steps.packages.outputs.zip_path }}
+          name: ${{ steps.artifacts.outputs.zip_name }}
+          path: ${{ steps.artifacts.outputs.zip_path }}
           retention-days: 30
 
       - name: Upload NSIS installer
-        if: github.event_name != 'pull_request' && steps.packages.outputs.exe_name != ''
+        if: steps.artifacts.outputs.exe_path != ''
         uses: actions/upload-artifact@v5
         with:
-          name: ${{ steps.packages.outputs.exe_name }}
-          path: ${{ steps.packages.outputs.exe_path }}
+          name: ${{ steps.artifacts.outputs.exe_name }}
+          path: ${{ steps.artifacts.outputs.exe_path }}
           retention-days: 30
 
-      - name: Setup (detached) tmate session if enabled
-        uses: mxschmitt/action-tmate@v3
+      - name: Setup (attached) tmate session if enabled
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        uses: mxschmitt/action-tmate@v3
