@@ -52,7 +52,13 @@ void GLView::setupShader()
   edge_shader = std::make_unique<ShaderUtils::ShaderInfo>(ShaderUtils::ShaderInfo{
     .resource = resource,
     .type = ShaderUtils::ShaderType::EDGE_RENDERING,
-    .uniforms = {},
+    .uniforms =
+      {
+        {"color_area", glGetUniformLocation(resource.shader_program, "color_area")},
+        {"color_edge", glGetUniformLocation(resource.shader_program, "color_edge")},
+        {"tex1", glGetUniformLocation(resource.shader_program, "tex1")},
+        {"texturefactor", glGetUniformLocation(resource.shader_program, "texturefactor")},
+      },
     .attributes =
       {
         {"barycentric", glGetAttribLocation(resource.shader_program, "barycentric")},
@@ -149,17 +155,14 @@ void GLView::setupCamera()
 
 void GLView::paintGL()
 {
-  std::cerr << "DEBUG: GLView::paintGL() started" << std::endl;
   glDisable(GL_LIGHTING);
   auto bgcol = ColorMap::getColor(*this->colorscheme, RenderColor::BACKGROUND_COLOR);
   auto bgstopcol = ColorMap::getColor(*this->colorscheme, RenderColor::BACKGROUND_STOP_COLOR);
   auto axescolor = ColorMap::getColor(*this->colorscheme, RenderColor::AXES_COLOR);
   auto crosshaircol = ColorMap::getColor(*this->colorscheme, RenderColor::CROSSHAIR_COLOR);
 
-  std::cerr << "DEBUG: Clearing buffers..." << std::endl;
   glClearColor(bgcol.r(), bgcol.g(), bgcol.b(), 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-  std::cerr << "DEBUG: Buffers cleared" << std::endl;
 
   if (bgcol != bgstopcol) {
     glDisable(GL_DEPTH_TEST);
@@ -298,7 +301,6 @@ void GLView::enable_opencsg_shaders()
 
 void GLView::initializeGL()
 {
-  std::cerr << "DEBUG: GLView::initializeGL() started" << std::endl;
 #ifdef DEBUG
 /*
    // Requires OpenGL 4.3+
@@ -307,13 +309,11 @@ void GLView::initializeGL()
    //*/
 #endif
 
-  std::cerr << "DEBUG: Setting up GL state..." << std::endl;
   glEnable(GL_DEPTH_TEST);
   glDepthRange(-far_far_away, +far_far_away);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  std::cerr << "DEBUG: GL state setup complete" << std::endl;
 
   GLfloat light_diffuse[] = {1.0, 1.0, 1.0, 1.0};
   GLfloat light_position0[] = {-1.0, +1.0, +1.0, 0.0};
@@ -352,9 +352,7 @@ void GLView::showSmallaxes(const Color4f& col)
   auto scale = 90.0;
   glOrtho(-scale * dpi * aspectratio, scale * dpi * aspectratio, -scale * dpi, scale * dpi, -scale * dpi,
           scale * dpi);
-  gluLookAt(0.0, -1.0, 0.0,  // eye
-            0.0, 0.0, 0.0,   // center
-            0.0, 0.0, 1.0);  // up
+  gluLookAt(0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -477,7 +475,7 @@ void GLView::showCrosshairs(const Color4f& col)
 void GLView::showObject(const SelectedObject& obj, const Vector3d& eyedir)
 {
   auto dpi = this->getDPI();
-  auto vd = cam.zoomValue() / 200.0;
+  auto vd = cam.zoomValue() / 100.0;
   switch (obj.type) {
   case SelectionType::SELECTION_POINT:
   case SelectionType::SELECTION_HANDLE: {
@@ -505,6 +503,7 @@ void GLView::showObject(const SelectedObject& obj, const Vector3d& eyedir)
     }
     glEnd();
     if (obj.type != SelectionType::SELECTION_HANDLE) break;
+    glLineWidth(dpi);
     glBegin(GL_LINES);
     for (int i = 0; i < 3; i++) {
       switch (i) {

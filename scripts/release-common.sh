@@ -123,7 +123,15 @@ case $OS in
         ZIP="zip"
         ZIPARGS="-r -q"
         echo Mingw-cross build using ARCH=$ARCH MXELIBTYPE=$MXELIBTYPE
-        CMAKE_CONFIG="$CMAKE_CONFIG -GNinja -DMXECROSS=ON -DALLOW_BUNDLED_HIDAPI=ON -DPACKAGE_ARCH=x86-$ARCH"
+
+        # Add Qt version to package name if QT_VERSION is set
+        PACKAGE_ARCH_NAME="x86-$ARCH"
+        if [ -n "$QT_VERSION" ]; then
+          PACKAGE_ARCH_NAME="$PACKAGE_ARCH_NAME-$QT_VERSION"
+          echo "Building with Qt version: $QT_VERSION"
+        fi
+
+        CMAKE_CONFIG="$CMAKE_CONFIG -GNinja -DMXECROSS=ON -DALLOW_BUNDLED_HIDAPI=ON -DPACKAGE_ARCH=$PACKAGE_ARCH_NAME"
     ;;
 esac
 

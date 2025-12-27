@@ -16,9 +16,12 @@ on:
 jobs:
   build-mxe-64bit:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        qt: [qt5, qt6]
     container:
       image: openscad/mxe-x86_64-gui:latest
-    name: Windows MXE 64-bit
+    name: Windows MXE 64-bit (${{ matrix.qt }})
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -39,15 +42,28 @@ jobs:
           apt-get update
           apt-get install -y libarchive-tools bsdiff
 
-      - name: Build libcurl for MXE
+      - name: Build dependencies for MXE
         env:
           MXE_TARGETS: x86_64-w64-mingw32.static.posix
         shell: bash
         run: |
-          echo "Building libcurl (curl package) for MXE..."
+          echo "Building Qt ${{ matrix.qt }} and libcurl for MXE..."
           cd /mxe
+
+          # Build the appropriate Qt version
+          if [ "${{ matrix.qt }}" = "qt5" ]; then
+            echo "Building Qt5..."
+            make qtbase MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4 || true
+          else
+            echo "Building Qt6..."
+            make qt6-qtbase MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4 || true
+          fi
+
+          # Build libcurl
+          echo "Building libcurl..."
           make curl MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4
-          echo "libcurl build complete"
+
+          echo "MXE dependencies build complete"
 
       - name: Establish Version
         id: version
@@ -77,6 +93,7 @@ jobs:
           LC_ALL: C.UTF-8
           MXEDIR: /mxe
           PKG_CONFIG_PATH: /mxe/usr/x86_64-w64-mingw32.static.posix/lib/pkgconfig
+          QT_VERSION: ${{ matrix.qt }}
         shell: bash
         run: |
           # Create python3 symlink if needed
@@ -95,10 +112,31 @@ jobs:
           BUILD_DIR="build_UNIX_CROSS_WIN"
 
           echo "Looking for packages in $BUILD_DIR..."
-          find "$BUILD_DIR" -maxdepth 1 -name "*.zip" -o -name "*.exe" | while read f; do
+
+          # Copy ZIP files (distribution archives)
+          find "$BUILD_DIR" -maxdepth 1 -name "*.zip" ! -name "*-Installer.exe.zip" | while read f; do
             if [ -f "$f" ]; then
               basename_f=$(basename "$f")
-              echo "Found package: $f -> $basename_f"
+              echo "Found ZIP package: $f -> $basename_f"
+              cp -v "$f" /tmp/out/"$basename_f"
+            fi
+          done
+
+          # Copy and extract NSIS installer from .exe.zip if present
+          find "$BUILD_DIR" -maxdepth 1 -name "*-Installer.exe.zip" | while read f; do
+            if [ -f "$f" ]; then
+              echo "Found NSIS installer zip: $f"
+              # Extract the .exe from the .zip
+              unzip -j "$f" -d /tmp/out/
+              echo "Extracted installer to /tmp/out/"
+            fi
+          done
+
+          # Also check for direct .exe files
+          find "$BUILD_DIR" -maxdepth 1 -name "*.exe" | while read f; do
+            if [ -f "$f" ]; then
+              basename_f=$(basename "$f")
+              echo "Found EXE package: $f -> $basename_f"
               cp -v "$f" /tmp/out/"$basename_f"
             fi
           done

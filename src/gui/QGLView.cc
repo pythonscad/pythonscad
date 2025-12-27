@@ -65,7 +65,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "utils/vector_math.h"
 
 #ifdef ENABLE_OPENCSG
 #include <opencsg.h>
@@ -106,15 +105,12 @@ void QGLView::viewAll()
 
 void QGLView::initializeGL()
 {
-  std::cerr << "DEBUG: QGLView::initializeGL() started" << std::endl;
 #if defined(USE_GLEW) || defined(OPENCSG_GLEW)
   // Since OpenCSG requires glew, we need to initialize it.
   // ..in a separate compilation unit to avoid duplicate symbols with x.
-  std::cerr << "DEBUG: Initializing GLEW..." << std::endl;
   initializeGlew();
 #endif
 #ifdef USE_GLAD
-  std::cerr << "DEBUG: Initializing GLAD..." << std::endl;
   // We could ask for gladLoadGLES2UserPtr() here if we want to use GLES2+
   const auto version = gladLoadGLUserPtr(
     [](void *ctx, const char *name) -> GLADapiproc {
@@ -126,18 +122,10 @@ void QGLView::initializeGL()
     return;
   }
   PRINTDB("GLAD: Loaded OpenGL %d.%d", GLAD_VERSION_MAJOR(version) % GLAD_VERSION_MINOR(version));
-  std::cerr << "DEBUG: GLAD initialized successfully" << std::endl;
 #endif  // ifdef USE_GLAD
-
-  std::cerr << "DEBUG: Calling gl_dump()..." << std::endl;
-  PRINTD(gl_dump());
-
-  std::cerr << "DEBUG: Calling GLView::initializeGL()..." << std::endl;
   GLView::initializeGL();
 
-  std::cerr << "DEBUG: Creating MouseSelector..." << std::endl;
   this->selector = std::make_unique<MouseSelector>(this);
-  std::cerr << "DEBUG: QGLView::initializeGL() completed" << std::endl;
 }
 
 std::string QGLView::getRendererInfo() const
@@ -196,17 +184,13 @@ void QGLView::display_opencsg_warning_dialog()
 
 void QGLView::resizeGL(int w, int h)
 {
-  std::cerr << "DEBUG: QGLView::resizeGL(" << w << ", " << h << ")" << std::endl;
   GLView::resizeGL(w, h);
   emit resized();
-  std::cerr << "DEBUG: QGLView::resizeGL() completed" << std::endl;
 }
 
 void QGLView::paintGL()
 {
-  std::cerr << "DEBUG: QGLView::paintGL() started" << std::endl;
   GLView::paintGL();
-  std::cerr << "DEBUG: GLView::paintGL() completed" << std::endl;
 
   Vector3d p1, p2, p3, norm;
   if (statusLabel) {
@@ -263,6 +247,7 @@ void QGLView::mousePressEvent(QMouseEvent *event)
     mouse_drag_moved = false;
   }
 
+  mouse_drag_active = true;
   mouseDraggedPoint = event->pos();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   last_mouse = event->globalPosition();
@@ -366,13 +351,13 @@ void QGLView::normalizeAngle(GLdouble& angle)
 
 void QGLView::mouseMoveEvent(QMouseEvent *event)
 {
+  QPoint pt = event->pos();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   auto this_mouse = event->globalPosition();
 #else
   auto this_mouse = event->globalPos();
 #endif
   if (measure_state != MEASURE_IDLE) {
-    QPoint pt = event->pos();
     this->shown_obj = findObject(pt.x(), pt.y());
     update();
   }
@@ -380,107 +365,104 @@ void QGLView::mouseMoveEvent(QMouseEvent *event)
   double dy = (this_mouse.y() - last_mouse.y()) * 0.7;
   if (mouse_drag_active) {
     mouse_drag_moved = true;
-    int drag_x = event->x() - mouseDraggedPoint.x();
-    int drag_y = mouseDraggedPoint.y() - event->y();
+    /* this is drag point trigger, please integrate it again into the new system
+            int drag_x=event->x() - mouseDraggedPoint.x();
+            int drag_y=mouseDraggedPoint.y() - event->y();
 
-    if (mouseDraggedSel == nullptr) {
-      mouseDraggedSel = findObject(mouseDraggedPoint.x(), mouseDraggedPoint.y());
-      if (mouseDraggedSel != nullptr && mouseDraggedSel->type != SelectionType::SELECTION_POINT)
-        mouseDraggedSel = nullptr;
-    }
-    if (mouseDraggedSel != nullptr) {
-      int viewport[4] = {0, 0, 0, 0};
-      viewport[2] = size().rwidth();
-      viewport[3] = size().rheight();
-      GLdouble viewcoord[3];
-      gluProject(mouseDraggedSel->pt[0][0], mouseDraggedSel->pt[0][1], mouseDraggedSel->pt[0][2],
-                 this->modelview, this->projection, viewport, &viewcoord[0], &viewcoord[1],
-                 &viewcoord[2]);
+            if(mouseDraggedSel == nullptr){
+              mouseDraggedSel = findObject(pt.x(), pt.y());
+              if(mouseDraggedSel != nullptr && mouseDraggedSel->type !=  SelectionType::SELECTION_POINT )
+                mouseDraggedSel = nullptr;
 
-      Vector3d newpos;
-      gluUnProject(viewcoord[0] + drag_x, viewcoord[1] + drag_y, viewcoord[2], this->modelview,
-                   this->projection, viewport, &newpos[0], &newpos[1], &newpos[2]);
-      emit dragPoint(mouseDraggedSel->pt[0], newpos);
-    }
-    return;
-  }
+            }
+            if(mouseDraggedSel != nullptr){
+              int viewport[4]={0,0,0,0};
+              viewport[2]=size().rwidth();
+              viewport[3]=size().rheight();
+              GLdouble viewcoord[3];
+              gluProject(mouseDraggedSel->pt[0][0],mouseDraggedSel->pt[0][1],mouseDraggedSel->pt[0][2],
+       this->modelview, this->projection, viewport,&viewcoord[0], &viewcoord[1], &viewcoord[2]);
 
-  bool multipleButtonsPressed = false;
-  int buttonIndex = -1;
-  if (event->buttons() & Qt::LeftButton) {
-    buttonIndex = 0;
-  }
-  if (event->buttons() & Qt::MiddleButton) {
-    if (buttonIndex != -1) {
-      multipleButtonsPressed = true;
-    } else {
-      buttonIndex = 1;
-    }
-  }
-  if (event->buttons() & Qt::RightButton) {
-    if (buttonIndex != -1) {
-      multipleButtonsPressed = true;
-    } else {
-      buttonIndex = 2;
-    }
-  }
-  int modifierIndex = 0;
-  if (QApplication::keyboardModifiers() & Qt::ShiftModifier) {
-    modifierIndex = 1;
-  }
-  if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
-    if (modifierIndex == 1) {
-      modifierIndex = 3;  // Ctrl + Shift
-    } else {
-      modifierIndex = 2;
-    }
-  }
+              Vector3d newpos;
+              gluUnProject(viewcoord[0]+drag_x, viewcoord[1]+drag_y, viewcoord[2], this->modelview,
+       this->projection, viewport,&newpos[0], &newpos[1], &newpos[2]); emit
+       dragPoint(mouseDraggedSel->pt[0], newpos);
+            }
+    */
 
-  if (buttonIndex != -1 && !multipleButtonsPressed) {
-    float *selectedMouseActions =
-      &this->mouseActions[MouseConfig::ACTION_DIMENSION * (buttonIndex + modifierIndex * 3)];
-    if (selectedMouseActions[14] > 0.5) {
-      mouse_drag_active = true;
-      return;
+    bool multipleButtonsPressed = false;
+    int buttonIndex = -1;
+    if (event->buttons() & Qt::LeftButton) {
+      buttonIndex = 0;
+    }
+    if (event->buttons() & Qt::MiddleButton) {
+      if (buttonIndex != -1) {
+        multipleButtonsPressed = true;
+      } else {
+        buttonIndex = 1;
+      }
+    }
+    if (event->buttons() & Qt::RightButton) {
+      if (buttonIndex != -1) {
+        multipleButtonsPressed = true;
+      } else {
+        buttonIndex = 2;
+      }
+    }
+    int modifierIndex = 0;
+    if (QApplication::keyboardModifiers() & Qt::ShiftModifier) {
+      modifierIndex = 1;
+    }
+    if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
+      if (modifierIndex == 1) {
+        modifierIndex = 3;  // Ctrl + Shift
+      } else {
+        modifierIndex = 2;  // Ctrl
+      }
     }
 
-    // Rotation angles from mouse movement
-    // First 6 elements to selectedMouseActions are interpreted as a row-major 3x2 matrix, which is
-    // right-multiplied by (dx, dy)^T to produce the rotation angle increments.
-    double rx = selectedMouseActions[0] * dx + selectedMouseActions[1] * dy;
-    double ry = selectedMouseActions[2] * dx + selectedMouseActions[3] * dy;
-    double rz = selectedMouseActions[4] * dx + selectedMouseActions[5] * dy;
-    if (!(rx == 0.0 && ry == 0.0 && rz == 0.0)) {
-      rotate(rx, ry, rz, true);
-      normalizeAngle(cam.object_rot.x());
-      normalizeAngle(cam.object_rot.y());
-      normalizeAngle(cam.object_rot.z());
-    }
+    if (buttonIndex != -1 && !multipleButtonsPressed) {
+      float *selectedMouseActions =
+        &this->mouseActions[MouseConfig::ACTION_DIMENSION * (buttonIndex + modifierIndex * 3)];
 
-    // Panning from mouse movement
-    // Elements 6..12 of selectedMouseActions are interpreted as another row-major 3x2 matrix, which is
-    // right-multiplied by (dx, dy)^T, and then scaled by the zoom, to produce the translation
-    // increments.
-    double mx = selectedMouseActions[6 + 0] * (dx / QWidget::width()) +
-                selectedMouseActions[6 + 1] * (dy / QWidget::height());
-    double my = selectedMouseActions[6 + 2] * (dx / QWidget::width()) +
-                selectedMouseActions[6 + 3] * (dy / QWidget::height());
-    double mz = selectedMouseActions[6 + 4] * (dx / QWidget::width()) +
-                selectedMouseActions[6 + 5] * (dy / QWidget::height());
-    if (!(mx == 0.0 && my == 0.0 && mz == 0.0)) {
-      mx *= 3.0 * cam.zoomValue();
-      my *= 3.0 * cam.zoomValue();
-      mz *= 3.0 * cam.zoomValue();
-    }
-    translate(mx, my, mz, true);
+      // Rotation angles from mouse movement
+      // First 6 elements to selectedMouseActions are interpreted as a row-major 3x2 matrix, which is
+      // right-multiplied by (dx, dy)^T to produce the rotation angle increments.
+      double rx = selectedMouseActions[0] * dx + selectedMouseActions[1] * dy;
+      double ry = selectedMouseActions[2] * dx + selectedMouseActions[3] * dy;
+      double rz = selectedMouseActions[4] * dx + selectedMouseActions[5] * dy;
+      if (!(rx == 0.0 && ry == 0.0 && rz == 0.0)) {
+        rotate(rx, ry, rz, true);
+        normalizeAngle(cam.object_rot.x());
+        normalizeAngle(cam.object_rot.y());
+        normalizeAngle(cam.object_rot.z());
+      }
 
-    // Zoom from mouse movement
-    // Final 2 elements of selectedMouseActions are interpreted as a 2-dimensional vector. The inner
-    // product of this is taken with (dx, dy)^T to produce the zoom increment.
-    double dZoom = selectedMouseActions[12] * dx + selectedMouseActions[13] * dy;
-    if (dZoom != 0.0) {
-      dZoom *= 12.0;
-      zoom(dZoom, true);
+      // Panning from mouse movement
+      // Elements 6..12 of selectedMouseActions are interpreted as another row-major 3x2 matrix, which is
+      // right-multiplied by (dx, dy)^T, and then scaled by the zoom, to produce the translation
+      // increments.
+      double mx = selectedMouseActions[6 + 0] * (dx / QWidget::width()) +
+                  selectedMouseActions[6 + 1] * (dy / QWidget::height());
+      double my = selectedMouseActions[6 + 2] * (dx / QWidget::width()) +
+                  selectedMouseActions[6 + 3] * (dy / QWidget::height());
+      double mz = selectedMouseActions[6 + 4] * (dx / QWidget::width()) +
+                  selectedMouseActions[6 + 5] * (dy / QWidget::height());
+      if (!(mx == 0.0 && my == 0.0 && mz == 0.0)) {
+        mx *= 3.0 * cam.zoomValue();
+        my *= 3.0 * cam.zoomValue();
+        mz *= 3.0 * cam.zoomValue();
+      }
+      translate(mx, my, mz, true);
+
+      // Zoom from mouse movement
+      // Final 2 elements of selectedMouseActions are interpreted as a 2-dimensional vector. The inner
+      // product of this is taken with (dx, dy)^T to produce the zoom increment.
+      double dZoom = selectedMouseActions[12] * dx + selectedMouseActions[13] * dy;
+      if (dZoom != 0.0) {
+        dZoom *= 12.0;
+        zoom(dZoom, true);
+      }
     }
   }
   last_mouse = this_mouse;
@@ -589,12 +571,7 @@ void QGLView::translate(double x, double y, double z, bool relative, bool viewPo
   }
 
   Matrix4d vec;
-  // clang-format off
-  vec << 0, 0, 0, x,
-         0, 0, 0, y,
-         0, 0, 0, z,
-         0, 0, 0, 1;
-  // clang-format on
+  vec << 0, 0, 0, x, 0, 0, 0, y, 0, 0, 0, z, 0, 0, 0, 1;
   tm = tm * vec;
   double f = relative ? 1 : 0;
   cam.object_trans.x() = f * cam.object_trans.x() + tm(0, 3);
