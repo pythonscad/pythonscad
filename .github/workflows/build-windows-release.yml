@@ -64,28 +64,6 @@ jobs:
 
           echo "MXE dependencies build complete"
 
-      - name: Establish Version
-        id: version
-        shell: bash
-        run: |
-          source scripts/establish_version.sh
-          OPENSCAD_COMMIT=$(openscad_commit)
-          BASE_VERSION=$(openscad_version)
-
-          if [ -n "${{ github.run_number }}" ]; then
-            OPENSCAD_VERSION="${BASE_VERSION}.ci${{ github.run_number }}"
-          else
-            OPENSCAD_VERSION="${BASE_VERSION}"
-          fi
-
-          echo "OPENSCAD_COMMIT=$OPENSCAD_COMMIT" >> $GITHUB_ENV
-          echo "OPENSCAD_VERSION=$OPENSCAD_VERSION" >> $GITHUB_ENV
-          echo "commit=$OPENSCAD_COMMIT" >> $GITHUB_OUTPUT
-          echo "version=$OPENSCAD_VERSION" >> $GITHUB_OUTPUT
-
-          echo "Version: $OPENSCAD_VERSION"
-          echo "Commit: $OPENSCAD_COMMIT"
-
       - name: Build Windows Application (64-bit) using MXE
         env:
           NUMCPU: 4
@@ -99,7 +77,8 @@ jobs:
           ln -sf /usr/bin/python3 /usr/bin/python || true
 
           # Run the same build script as CircleCI
-          ./scripts/release-common.sh snapshot mingw64 -v "$OPENSCAD_VERSION" -c "$OPENSCAD_COMMIT"
+          # CMake will automatically detect version from git describe
+          ./scripts/release-common.sh snapshot mingw64
 
       - name: Prepare artifacts
         id: artifacts
