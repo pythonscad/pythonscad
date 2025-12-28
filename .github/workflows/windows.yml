@@ -29,6 +29,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Fetch tags for version detection
+        shell: bash
         run: |
           git fetch --unshallow --tags || git fetch --tags
           git describe --tags --always --dirty
