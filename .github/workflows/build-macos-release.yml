@@ -54,58 +54,71 @@ jobs:
           brew install automake libtool cmake pkg-config wget meson python-packaging
 
       - name: Build dependencies
+        timeout-minutes: 30
         env:
           NUMCPU: 4
         run: |
           # Build universal binaries (arm64 + x86_64) for deployment
-          timeout 30m ./scripts/macosx-build-dependencies.sh -x -a || {
-            echo "Dependency build timed out or failed"
-            exit 1
-          }
+          ./scripts/macosx-build-dependencies.sh -x -a
 
       - name: Build macOS Application
         env:
           NUMCPU: 4
         run: |
           # Run the same build script as CircleCI for consistency
-          # This will create a universal binary DMG
+          # This will create a universal binary .app bundle
           ./scripts/release-common.sh snapshot
+
+      - name: Determine app bundle name
+        id: appname
+        run: |
+          # Find the actual .app bundle name (could be pythonscad.app or pythonscad-snapshot.app)
+          APP_BUNDLE=$(find build_MACOSX -maxdepth 1 -name "*.app" -type d | head -1)
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "ERROR: No .app bundle found in build_MACOSX"
+            exit 1
+          fi
+          echo "app_bundle=$APP_BUNDLE" >> $GITHUB_OUTPUT
+          echo "Found app bundle: $APP_BUNDLE"
 
       - name: Run macOS sanity check
         run: |
           # Validate the built application
-          python3 ./scripts/macosx-sanity-check.py build_MACOSX/OpenSCAD.app
+          python3 ./scripts/macosx-sanity-check.py ${{ steps.appname.outputs.app_bundle }}
+
+      - name: Create DMG
+        id: dmg
+        run: |
+          # Get version from git
+          VERSION=$(git describe --tags --always --dirty)
+          APP_BUNDLE="${{ steps.appname.outputs.app_bundle }}"
+          DMG_NAME="PythonSCAD-${VERSION}.dmg"
+
+          # Create DMG using hdiutil (same as CircleCI)
+          hdiutil create -volname "PythonSCAD" -srcfolder "$APP_BUNDLE" -ov -format UDZO "build_MACOSX/$DMG_NAME"
+
+          echo "dmg_file=build_MACOSX/$DMG_NAME" >> $GITHUB_OUTPUT
+          echo "Created DMG: $DMG_NAME"
 
       - name: Prepare artifacts
         id: artifacts
         run: |
           mkdir -p /tmp/out
 
-          # Find the generated DMG in build_MACOSX directory
-          BUILD_DIR="build_MACOSX"
+          DMG_FILE="${{ steps.dmg.outputs.dmg_file }}"
+          basename_dmg=$(basename "$DMG_FILE")
 
-          echo "Looking for DMG in $BUILD_DIR..."
+          echo "Copying DMG: $DMG_FILE"
+          cp -v "$DMG_FILE" /tmp/out/"$basename_dmg"
 
-          # Find and copy DMG file
-          DMG_FILE=$(find "$BUILD_DIR" -maxdepth 1 -name "*.dmg" | head -1)
+          # Generate checksums
+          cd /tmp/out
+          shasum -a 256 "$basename_dmg" > "$basename_dmg.sha256"
+          shasum -a 512 "$basename_dmg" > "$basename_dmg.sha512"
+          cd -
 
-          if [ -f "$DMG_FILE" ]; then
-            basename_dmg=$(basename "$DMG_FILE")
-            echo "Found DMG package: $DMG_FILE"
-            cp -v "$DMG_FILE" /tmp/out/"$basename_dmg"
-
-            # Generate checksums
-            cd /tmp/out
-            shasum -a 256 "$basename_dmg" > "$basename_dmg.sha256"
-            shasum -a 512 "$basename_dmg" > "$basename_dmg.sha512"
-            cd -
-
-            echo "dmg_path=/tmp/out/$basename_dmg" >> $GITHUB_OUTPUT
-            echo "dmg_name=$(basename "$basename_dmg" .dmg)" >> $GITHUB_OUTPUT
-          else
-            echo "ERROR: No DMG file found in $BUILD_DIR"
-            exit 1
-          fi
+          echo "dmg_path=/tmp/out/$basename_dmg" >> $GITHUB_OUTPUT
+          echo "dmg_name=$(basename "$basename_dmg" .dmg)" >> $GITHUB_OUTPUT
 
           # List what we have
           echo "Artifacts prepared:"
