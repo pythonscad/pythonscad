@@ -344,8 +344,10 @@ build_gmp()
   cd $BASEDIR/src
   rm -rf gmp-$version
   if [ ! -f gmp-$version.tar.bz2 ]; then
-    # FIXME: -k is only to ignore libgmp's expired SSL certificate
-    curl -kO https://gmplib.org/download/gmp/gmp-$version.tar.bz2
+    # Try GNU FTP first (official GNU mirror), then gmplib.org, then ftpmirror
+    curl -LO https://ftp.gnu.org/gnu/gmp/gmp-$version.tar.bz2 || \
+    curl -LO https://gmplib.org/download/gmp/gmp-$version.tar.bz2 || \
+    curl -LO https://ftpmirror.gnu.org/gmp/gmp-$version.tar.bz2
   fi
   tar xjf gmp-$version.tar.bz2
   cd gmp-$version
@@ -385,7 +387,9 @@ build_mpfr()
   cd $BASEDIR/src
   rm -rf mpfr-$version
   if [ ! -f mpfr-$version.tar.bz2 ]; then
-    curl -L -O http://www.mpfr.org/mpfr-$version/mpfr-$version.tar.bz2
+    # Try GNU FTP first (official GNU mirror), then mpfr.org
+    curl -LO https://ftp.gnu.org/gnu/mpfr/mpfr-$version.tar.bz2 || \
+    curl -LO http://www.mpfr.org/mpfr-$version/mpfr-$version.tar.bz2
   fi
   tar xjf mpfr-$version.tar.bz2
   cd mpfr-$version
@@ -422,7 +426,7 @@ build_boost()
   cd $BASEDIR/src
   rm -rf boost_$bversion
   if [ ! -f boost_$bversion.tar.bz2 ]; then
-    curl -LO http://downloads.sourceforge.net/project/boost/boost/$version/boost_$bversion.tar.bz2
+    curl -LO https://downloads.sourceforge.net/project/boost/boost/$version/boost_$bversion.tar.bz2
   fi
   tar xjf boost_$bversion.tar.bz2
   cd boost_$bversion
@@ -478,7 +482,7 @@ build_opencsg()
   cd $BASEDIR/src
   rm -rf OpenCSG-$version
   if [ ! -f OpenCSG-$version.tar.gz ]; then
-    curl -O http://www.opencsg.org/OpenCSG-$version.tar.gz
+    curl -LO http://www.opencsg.org/OpenCSG-$version.tar.gz
   fi
   tar xzf OpenCSG-$version.tar.gz
   cd OpenCSG-$version
@@ -561,7 +565,9 @@ build_freetype()
   cd "$BASEDIR"/src
   rm -rf "freetype-$version"
   if [ ! -f "freetype-$version.tar.gz" ]; then
-    curl --insecure -LO "http://downloads.sourceforge.net/project/freetype/freetype2/$version/freetype-$version.tar.gz"
+    # Try Savannah (official GNU) first, then SourceForge
+    curl -LO "https://download.savannah.gnu.org/releases/freetype/freetype-$version.tar.gz" || \
+    curl -LO "http://downloads.sourceforge.net/project/freetype/freetype2/$version/freetype-$version.tar.gz"
   fi
   tar xzf "freetype-$version.tar.gz"
   cd "freetype-$version"
