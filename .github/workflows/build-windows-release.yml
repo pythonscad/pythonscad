@@ -31,7 +31,8 @@ jobs:
         shell: bash
         run: |
           git config --global --add safe.directory /__w/pythonscad/pythonscad
-          git fetch --tags --depth=1
+          git fetch --unshallow --tags || git fetch --tags
+          git describe --tags --always --dirty
 
       - name: Setup (detached) tmate session if enabled
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}

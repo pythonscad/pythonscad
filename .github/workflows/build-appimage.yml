@@ -20,7 +20,9 @@ jobs:
         submodules: 'recursive'
 
     - name: Fetch tags for version detection
-      run: git fetch --tags --depth=1
+      run: |
+        git fetch --unshallow --tags || git fetch --tags
+        git describe --tags --always --dirty
 
     - name: Install dependencies
       env:
