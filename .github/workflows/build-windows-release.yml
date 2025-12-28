@@ -29,7 +29,9 @@ jobs:
 
       - name: Fetch tags for version detection
         shell: bash
-        run: git fetch --tags --depth=1
+        run: |
+          git config --global --add safe.directory /__w/pythonscad/pythonscad
+          git fetch --tags --depth=1
 
       - name: Setup (detached) tmate session if enabled
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
