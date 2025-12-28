@@ -53,6 +53,15 @@ jobs:
         run: |
           brew install automake libtool cmake pkg-config wget meson python-packaging
 
+      - name: Restore cached dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/../libraries/install
+          key: macos-libs-${{ runner.arch }}-${{ hashFiles('scripts/macosx-build-dependencies.sh') }}
+          restore-keys: |
+            macos-libs-${{ runner.arch }}-
+
       - name: Build dependencies
         timeout-minutes: 30
         env:
