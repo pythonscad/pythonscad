@@ -10,9 +10,7 @@ if ("${OPENSCAD_VERSION}" STREQUAL "")
   if (VERSION_RESULT EQUAL 0 AND NOT "${OPENSCAD_VERSION}" STREQUAL "")
     message(STATUS "Detected version: ${OPENSCAD_VERSION}")
   else()
-    # Fallback if script fails
-    string(TIMESTAMP OPENSCAD_VERSION "%Y.%m.%d")
-    message(STATUS "Version detection script failed, defaulting to: ${OPENSCAD_VERSION}")
+    message(FATAL_ERROR "Version detection failed. Please ensure git tags are available or VERSION.txt exists.")
   endif()
 endif()
 
@@ -41,6 +39,12 @@ set(OPENSCAD_MINOR ${CMAKE_MATCH_3})
 set(OPENSCAD_PATCH ${CMAKE_MATCH_5})
 set(OPENSCAD_PRERELEASE ${CMAKE_MATCH_7})
 set(OPENSCAD_BUILD ${CMAKE_MATCH_9})
+
+# If regex didn't match (e.g., git describe returned just a commit hash with no tags),
+# fail with an error
+if ("${OPENSCAD_SHORTVERSION}" STREQUAL "")
+  message(FATAL_ERROR "Version string '${OPENSCAD_VERSION}' doesn't match expected format. Please ensure git tags are fetched or VERSION.txt contains a valid version.")
+endif()
 
 # For backward compatibility, also set YEAR/MONTH/DAY
 # If using semantic versioning (e.g., 0.6.0), these will be the version components

@@ -4,12 +4,11 @@
 # Can be called from CMake, bash scripts, or other build tools
 #
 # Output: Prints version string to stdout (e.g., "0.6.0-28-g89c44cac7")
-# Exit code: 0 on success
+# Exit code: 0 on success, 1 on failure
 #
 # This script implements the version detection priority:
 # 1. git describe (preferred)
 # 2. VERSION.txt file (fallback for source distributions)
-# 3. Current date YYYY.MM.DD (last resort)
 
 # Determine script directory (works in both bash and zsh)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]:-$0}" )" &> /dev/null && pwd )"
@@ -42,7 +41,6 @@ if [ -f "$VERSION_FILE" ]; then
     fi
 fi
 
-# Default to YYYY.MM.DD of current day
-VERSION=$(date "+%Y.%m.%d")
-echo "$VERSION"
-exit 0
+# No version found
+echo "ERROR: Could not detect version. Please ensure git tags are available or VERSION.txt exists." >&2
+exit 1

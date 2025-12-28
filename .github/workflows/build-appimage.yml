@@ -19,6 +19,9 @@ jobs:
       with:
         submodules: 'recursive'
 
+    - name: Fetch tags for version detection
+      run: git fetch --tags --depth=1
+
     - name: Install dependencies
       env:
         DEBIAN_FRONTEND: noninteractive
