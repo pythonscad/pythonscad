@@ -63,7 +63,6 @@ jobs:
             macos-libs-${{ runner.arch }}-
 
       - name: Build dependencies
-        timeout-minutes: 30
         env:
           NUMCPU: 4
           OPENSCAD_LIBRARIES: ${{ github.workspace }}/../libraries/install
