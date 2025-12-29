@@ -61,6 +61,9 @@ PACKAGES=(
     # https://savannah.gnu.org/news/?group=gettext
     "gettext 0.22.5"
 
+    # https://www.openssl.org/source/
+    "openssl 3.4.0"
+
     # https://freetype.org/index.html#news
     "freetype 2.13.3"
 
@@ -470,6 +473,61 @@ build_nettle()
   install_name_tool -id @rpath/libhogweed.dylib $DEPLOYDIR/lib/libhogweed.dylib
 }
 
+build_openssl()
+{
+  version=$1
+  cd $BASEDIR/src
+  rm -rf openssl-$version
+  if [ ! -f openssl-$version.tar.gz ]; then
+    curl -LO https://www.openssl.org/source/openssl-$version.tar.gz
+  fi
+  tar xzf openssl-$version.tar.gz
+  cd openssl-$version
+
+  # Build each arch separately - OpenSSL uses Configure (capital C) not configure
+  for i in ${!ARCHS[@]}; do
+    arch=${ARCHS[$i]}
+
+    # Determine OpenSSL target for this architecture
+    if [ "$arch" = "arm64" ]; then
+      OPENSSL_TARGET="darwin64-arm64-cc"
+    elif [ "$arch" = "x86_64" ]; then
+      OPENSSL_TARGET="darwin64-x86_64-cc"
+    else
+      echo "ERROR: Unknown architecture $arch for OpenSSL"
+      exit 1
+    fi
+
+    mkdir build-$arch
+    cd build-$arch
+
+    # Configure OpenSSL for this architecture
+    ../Configure $OPENSSL_TARGET \
+      --prefix=$DEPLOYDIR \
+      -mmacosx-version-min=$MAC_OSX_VERSION_MIN \
+      no-shared \
+      no-tests
+
+    make -j"$NUMCPU"
+    make install_sw install_ssldirs DESTDIR=$PWD/install/
+    cd ..
+  done
+
+  # Install the first arch
+  cp -R build-${ARCHS[0]}/install/$DEPLOYDIR/* $DEPLOYDIR
+
+  # If we're building for multiple archs, create fat binaries
+  if (( ${#ARCHS[@]} > 1 )); then
+    for lib in libssl.a libcrypto.a; do
+      LIBS=()
+      for arch in ${ARCHS[*]}; do
+        LIBS+=(build-$arch/install/$DEPLOYDIR/lib/$lib)
+      done
+      lipo -create ${LIBS[@]} -output $DEPLOYDIR/lib/$lib
+    done
+  fi
+}
+
 build_curl()
 {
   version=$1
@@ -481,29 +539,17 @@ build_curl()
   tar xjf curl-$version.tar.bz2
   cd curl-$version
 
-  # Detect Homebrew OpenSSL location
-  if [ -d "/opt/homebrew/opt/openssl@3" ]; then
-    OPENSSL_PATH="/opt/homebrew/opt/openssl@3"
-  elif [ -d "/usr/local/opt/openssl@3" ]; then
-    OPENSSL_PATH="/usr/local/opt/openssl@3"
-  elif [ -d "/opt/homebrew/opt/openssl@1.1" ]; then
-    OPENSSL_PATH="/opt/homebrew/opt/openssl@1.1"
-  elif [ -d "/usr/local/opt/openssl@1.1" ]; then
-    OPENSSL_PATH="/usr/local/opt/openssl@1.1"
-  else
-    echo "ERROR: OpenSSL not found in Homebrew"
-    exit 1
-  fi
-
   # Build each arch separately
   for i in ${!ARCHS[@]}; do
     arch=${ARCHS[$i]}
     mkdir build-$arch
     cd build-$arch
+    PKG_CONFIG_PATH=$DEPLOYDIR/lib/pkgconfig \
     ../configure --prefix=$DEPLOYDIR \
-      --with-openssl=$OPENSSL_PATH \
-      CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" \
-      LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" \
+      --with-openssl=$DEPLOYDIR \
+      CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -I$DEPLOYDIR/include" \
+      CPPFLAGS="-I$DEPLOYDIR/include" \
+      LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -L$DEPLOYDIR/lib" \
       --disable-static \
       --build=$LOCAL_GNU_ARCH-apple-darwin --host=${GNU_ARCHS[$i]}-apple-darwin17.0.0
     make -j"$NUMCPU" install DESTDIR=$PWD/install/
