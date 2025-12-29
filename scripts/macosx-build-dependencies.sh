@@ -55,14 +55,14 @@ PACKAGES=(
     # https://ftp.gnu.org/gnu/nettle/
     "nettle 3.10.2"
 
+    # https://www.openssl.org/source/
+    "openssl 3.4.0"
+
     # https://curl.se/download.html
     "curl 8.17.0"
 
     # https://savannah.gnu.org/news/?group=gettext
     "gettext 0.22.5"
-
-    # https://www.openssl.org/source/
-    "openssl 3.4.0"
 
     # https://freetype.org/index.html#news
     "freetype 2.13.3"
