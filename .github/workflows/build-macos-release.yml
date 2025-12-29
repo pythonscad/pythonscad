@@ -60,6 +60,7 @@ jobs:
           HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
         run: |
           ./scripts/macosx-build-homebrew.sh qt6
+          brew install clipper2
 
       - name: Build x86_64 Application
         env:
@@ -80,7 +81,7 @@ jobs:
             -DENABLE_LIBFIVE=OFF \
             -DENABLE_GAMEPAD=OFF \
             -DUSE_BUILTIN_CLIPPER2=OFF \
-            -DUSE_BUILTIN_MANIFOLD=OFF
+            -DUSE_BUILTIN_MANIFOLD=ON
 
           # Build
           make -j$NUMCPU
@@ -163,6 +164,7 @@ jobs:
           HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
         run: |
           ./scripts/macosx-build-homebrew.sh qt6
+          brew install clipper2
 
       - name: Build arm64 Application
         env:
@@ -183,7 +185,7 @@ jobs:
             -DENABLE_LIBFIVE=OFF \
             -DENABLE_GAMEPAD=OFF \
             -DUSE_BUILTIN_CLIPPER2=OFF \
-            -DUSE_BUILTIN_MANIFOLD=OFF
+            -DUSE_BUILTIN_MANIFOLD=ON
 
           # Build
           make -j$NUMCPU
