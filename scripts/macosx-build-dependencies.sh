@@ -441,7 +441,13 @@ build_nettle()
     arch=${ARCHS[$i]}
     mkdir build-$arch
     cd build-$arch
-    ../configure --prefix=$DEPLOYDIR CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" --disable-static --disable-documentation --build=$LOCAL_GNU_ARCH-apple-darwin --host=${GNU_ARCHS[$i]}-apple-darwin17.0.0
+    PKG_CONFIG_PATH=$DEPLOYDIR/lib/pkgconfig \
+    ../configure --prefix=$DEPLOYDIR \
+      CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -I$DEPLOYDIR/include" \
+      CPPFLAGS="-I$DEPLOYDIR/include" \
+      LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -L$DEPLOYDIR/lib" \
+      --disable-static --disable-documentation \
+      --build=$LOCAL_GNU_ARCH-apple-darwin --host=${GNU_ARCHS[$i]}-apple-darwin17.0.0
     make -j"$NUMCPU" install DESTDIR=$PWD/install/
     cd ..
   done
