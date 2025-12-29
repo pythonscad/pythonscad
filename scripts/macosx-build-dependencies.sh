@@ -58,6 +58,21 @@ PACKAGES=(
     # https://www.openssl.org/source/
     "openssl 3.4.0"
 
+    # https://ftp.gnu.org/gnu/libunistring/
+    "libunistring 1.3"
+
+    # https://ftp.gnu.org/gnu/libidn/
+    "libidn2 2.3.7"
+
+    # https://github.com/rockdaboot/libpsl/releases
+    "libpsl 0.21.5"
+
+    # https://github.com/facebook/zstd/releases
+    "zstd 1.5.6"
+
+    # https://github.com/google/brotli/releases
+    "brotli 1.1.0"
+
     # https://curl.se/download.html
     "curl 8.17.0"
 
@@ -528,6 +543,220 @@ build_openssl()
   fi
 }
 
+build_libunistring()
+{
+  version=$1
+  cd $BASEDIR/src
+  rm -rf libunistring-$version
+  if [ ! -f libunistring-$version.tar.gz ]; then
+    curl -LO https://ftp.gnu.org/gnu/libunistring/libunistring-$version.tar.gz
+  fi
+  tar xzf libunistring-$version.tar.gz
+  cd libunistring-$version
+
+  # Build each arch separately
+  for i in ${!ARCHS[@]}; do
+    arch=${ARCHS[$i]}
+    mkdir build-$arch
+    cd build-$arch
+    ../configure --prefix=$DEPLOYDIR \
+      CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" \
+      LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" \
+      --disable-static \
+      --build=$LOCAL_GNU_ARCH-apple-darwin --host=${GNU_ARCHS[$i]}-apple-darwin17.0.0
+    make -j"$NUMCPU" install DESTDIR=$PWD/install/
+    cd ..
+  done
+
+  # Install the first arch
+  cp -R build-${ARCHS[0]}/install/$DEPLOYDIR/* $DEPLOYDIR
+
+  # If we're building for multiple archs, create fat binaries
+  if (( ${#ARCHS[@]} > 1 )); then
+    LIBS=()
+    for arch in ${ARCHS[*]}; do
+      LIBS+=(build-$arch/install/$DEPLOYDIR/lib/libunistring.dylib)
+    done
+    lipo -create ${LIBS[@]} -output $DEPLOYDIR/lib/libunistring.dylib
+  fi
+
+  install_name_tool -id @rpath/libunistring.dylib $DEPLOYDIR/lib/libunistring.dylib
+}
+
+build_libidn2()
+{
+  version=$1
+  cd $BASEDIR/src
+  rm -rf libidn2-$version
+  if [ ! -f libidn2-$version.tar.gz ]; then
+    curl -LO https://ftp.gnu.org/gnu/libidn/libidn2-$version.tar.gz
+  fi
+  tar xzf libidn2-$version.tar.gz
+  cd libidn2-$version
+
+  # Build each arch separately
+  for i in ${!ARCHS[@]}; do
+    arch=${ARCHS[$i]}
+    mkdir build-$arch
+    cd build-$arch
+    PKG_CONFIG_PATH=$DEPLOYDIR/lib/pkgconfig \
+    ../configure --prefix=$DEPLOYDIR \
+      CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -I$DEPLOYDIR/include" \
+      CPPFLAGS="-I$DEPLOYDIR/include" \
+      LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -L$DEPLOYDIR/lib" \
+      --disable-static \
+      --build=$LOCAL_GNU_ARCH-apple-darwin --host=${GNU_ARCHS[$i]}-apple-darwin17.0.0
+    make -j"$NUMCPU" install DESTDIR=$PWD/install/
+    cd ..
+  done
+
+  # Install the first arch
+  cp -R build-${ARCHS[0]}/install/$DEPLOYDIR/* $DEPLOYDIR
+
+  # If we're building for multiple archs, create fat binaries
+  if (( ${#ARCHS[@]} > 1 )); then
+    LIBS=()
+    for arch in ${ARCHS[*]}; do
+      LIBS+=(build-$arch/install/$DEPLOYDIR/lib/libidn2.dylib)
+    done
+    lipo -create ${LIBS[@]} -output $DEPLOYDIR/lib/libidn2.dylib
+  fi
+
+  install_name_tool -id @rpath/libidn2.dylib $DEPLOYDIR/lib/libidn2.dylib
+}
+
+build_libpsl()
+{
+  version=$1
+  cd $BASEDIR/src
+  rm -rf libpsl-$version
+  if [ ! -f libpsl-$version.tar.gz ]; then
+    curl -LO https://github.com/rockdaboot/libpsl/releases/download/$version/libpsl-$version.tar.gz
+  fi
+  tar xzf libpsl-$version.tar.gz
+  cd libpsl-$version
+
+  # Build each arch separately
+  for i in ${!ARCHS[@]}; do
+    arch=${ARCHS[$i]}
+    mkdir build-$arch
+    cd build-$arch
+    PKG_CONFIG_PATH=$DEPLOYDIR/lib/pkgconfig \
+    ../configure --prefix=$DEPLOYDIR \
+      CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -I$DEPLOYDIR/include" \
+      CPPFLAGS="-I$DEPLOYDIR/include" \
+      LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -L$DEPLOYDIR/lib" \
+      --disable-static \
+      --build=$LOCAL_GNU_ARCH-apple-darwin --host=${GNU_ARCHS[$i]}-apple-darwin17.0.0
+    make -j"$NUMCPU" install DESTDIR=$PWD/install/
+    cd ..
+  done
+
+  # Install the first arch
+  cp -R build-${ARCHS[0]}/install/$DEPLOYDIR/* $DEPLOYDIR
+
+  # If we're building for multiple archs, create fat binaries
+  if (( ${#ARCHS[@]} > 1 )); then
+    LIBS=()
+    for arch in ${ARCHS[*]}; do
+      LIBS+=(build-$arch/install/$DEPLOYDIR/lib/libpsl.dylib)
+    done
+    lipo -create ${LIBS[@]} -output $DEPLOYDIR/lib/libpsl.dylib
+  fi
+
+  install_name_tool -id @rpath/libpsl.dylib $DEPLOYDIR/lib/libpsl.dylib
+}
+
+build_zstd()
+{
+  version=$1
+  cd $BASEDIR/src
+  rm -rf zstd-$version
+  if [ ! -f zstd-$version.tar.gz ]; then
+    curl -LO https://github.com/facebook/zstd/releases/download/v$version/zstd-$version.tar.gz
+  fi
+  tar xzf zstd-$version.tar.gz
+  cd zstd-$version
+
+  # Build each arch separately - zstd uses make not configure
+  for i in ${!ARCHS[@]}; do
+    arch=${ARCHS[$i]}
+    mkdir build-$arch
+
+    # zstd builds in-place, so we need to clean between builds
+    if [ $i -gt 0 ]; then
+      make clean
+    fi
+
+    make -j"$NUMCPU" \
+      PREFIX=$DEPLOYDIR \
+      CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" \
+      LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN"
+
+    make install PREFIX=$DEPLOYDIR DESTDIR=$PWD/build-$arch/install/
+  done
+
+  # Install the first arch
+  cp -R build-${ARCHS[0]}/install/$DEPLOYDIR/* $DEPLOYDIR
+
+  # If we're building for multiple archs, create fat binaries
+  if (( ${#ARCHS[@]} > 1 )); then
+    LIBS=()
+    for arch in ${ARCHS[*]}; do
+      LIBS+=(build-$arch/install/$DEPLOYDIR/lib/libzstd.dylib)
+    done
+    lipo -create ${LIBS[@]} -output $DEPLOYDIR/lib/libzstd.dylib
+  fi
+
+  install_name_tool -id @rpath/libzstd.dylib $DEPLOYDIR/lib/libzstd.dylib
+}
+
+build_brotli()
+{
+  version=$1
+  cd $BASEDIR/src
+  rm -rf brotli-$version
+  if [ ! -f brotli-$version.tar.gz ]; then
+    curl -LO https://github.com/google/brotli/archive/refs/tags/v$version.tar.gz -o brotli-$version.tar.gz
+  fi
+  tar xzf brotli-$version.tar.gz
+  cd brotli-$version
+
+  # Build each arch separately - brotli uses CMake
+  for i in ${!ARCHS[@]}; do
+    arch=${ARCHS[$i]}
+    mkdir build-$arch
+    cd build-$arch
+    cmake .. \
+      -DCMAKE_INSTALL_PREFIX=$DEPLOYDIR \
+      -DCMAKE_OSX_ARCHITECTURES=$arch \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=$MAC_OSX_VERSION_MIN \
+      -DBUILD_SHARED_LIBS=ON \
+      -DCMAKE_BUILD_TYPE=Release
+    make -j"$NUMCPU"
+    make install DESTDIR=$PWD/install/
+    cd ..
+  done
+
+  # Install the first arch
+  cp -R build-${ARCHS[0]}/install/$DEPLOYDIR/* $DEPLOYDIR
+
+  # If we're building for multiple archs, create fat binaries
+  if (( ${#ARCHS[@]} > 1 )); then
+    for lib in libbrotlicommon.dylib libbrotlidec.dylib libbrotlienc.dylib; do
+      LIBS=()
+      for arch in ${ARCHS[*]}; do
+        LIBS+=(build-$arch/install/$DEPLOYDIR/lib/$lib)
+      done
+      lipo -create ${LIBS[@]} -output $DEPLOYDIR/lib/$lib
+    done
+  fi
+
+  install_name_tool -id @rpath/libbrotlicommon.dylib $DEPLOYDIR/lib/libbrotlicommon.dylib
+  install_name_tool -id @rpath/libbrotlidec.dylib $DEPLOYDIR/lib/libbrotlidec.dylib
+  install_name_tool -id @rpath/libbrotlienc.dylib $DEPLOYDIR/lib/libbrotlienc.dylib
+}
+
 build_curl()
 {
   version=$1
@@ -547,6 +776,7 @@ build_curl()
     PKG_CONFIG_PATH=$DEPLOYDIR/lib/pkgconfig \
     ../configure --prefix=$DEPLOYDIR \
       --with-openssl=$DEPLOYDIR \
+      --without-librtmp \
       CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -I$DEPLOYDIR/include" \
       CPPFLAGS="-I$DEPLOYDIR/include" \
       LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -L$DEPLOYDIR/lib" \
