@@ -70,9 +70,11 @@ jobs:
           cd build_MACOSX
 
           # Configure CMake for x86_64 only (NOT universal)
+          # On Intel Macs, Homebrew prefix is /usr/local
           cmake .. \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+            -DCMAKE_PREFIX_PATH="/usr/local" \
             -DENABLE_TESTS=OFF \
             -DEXPERIMENTAL=ON \
             -DSNAPSHOT=ON \
@@ -174,9 +176,11 @@ jobs:
           cd build_MACOSX
 
           # Configure CMake for arm64 only (NOT universal)
+          # On Apple Silicon, Homebrew prefix is /opt/homebrew
           cmake .. \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_PREFIX_PATH="/opt/homebrew" \
             -DENABLE_TESTS=OFF \
             -DEXPERIMENTAL=ON \
             -DSNAPSHOT=ON \
