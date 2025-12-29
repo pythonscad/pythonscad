@@ -63,6 +63,7 @@ jobs:
             macos-libs-${{ runner.arch }}-
 
       - name: Build dependencies
+        id: build-deps
         env:
           NUMCPU: 4
           OPENSCAD_LIBRARIES: ${{ github.workspace }}/../libraries/install
@@ -74,6 +75,35 @@ jobs:
           # Add library paths to PATH for dependency discovery
           export PATH="${OPENSCAD_LIBRARIES}/bin:$PATH"
           ./scripts/macosx-build-dependencies.sh -x -a -d
+
+      - name: Clean up build artifacts
+        if: steps.build-deps.outcome == 'success'
+        run: |
+          # Remove build directories and source files to reduce cache size
+          # Keep only the installed libraries
+          LIBS_DIR="${{ github.workspace }}/../libraries"
+          if [ -d "$LIBS_DIR/src" ]; then
+            echo "Cleaning up source directory..."
+            rm -rf "$LIBS_DIR/src"
+          fi
+          if [ -d "$LIBS_DIR/install" ]; then
+            echo "Cache size before cleanup:"
+            du -sh "$LIBS_DIR/install"
+            # Remove unnecessary files from install directory
+            find "$LIBS_DIR/install" -name "*.a" -delete  # Static libraries
+            find "$LIBS_DIR/install" -name "*.la" -delete  # Libtool files
+            rm -rf "$LIBS_DIR/install/share/man"  # Man pages
+            rm -rf "$LIBS_DIR/install/share/doc"  # Documentation
+            echo "Cache size after cleanup:"
+            du -sh "$LIBS_DIR/install"
+          fi
+
+      - name: Save dependency cache
+        if: steps.build-deps.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/../libraries/install
+          key: macos-libs-${{ runner.arch }}-${{ hashFiles('scripts/macosx-build-dependencies.sh') }}-${{ github.run_id }}
 
       - name: Build macOS Application
         env:

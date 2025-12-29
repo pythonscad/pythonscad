@@ -52,6 +52,12 @@ PACKAGES=(
     # https://www.mpfr.org/mpfr-current/
     "mpfr 4.2.2"
 
+    # https://ftp.gnu.org/gnu/nettle/
+    "nettle 3.10.2"
+
+    # https://curl.se/download.html
+    "curl 8.17.0"
+
     # https://savannah.gnu.org/news/?group=gettext
     "gettext 0.22.5"
 
@@ -417,6 +423,81 @@ build_mpfr()
   fi
 
   install_name_tool -id @rpath/libmpfr.dylib $DEPLOYDIR/lib/libmpfr.dylib
+}
+
+build_nettle()
+{
+  version=$1
+  cd $BASEDIR/src
+  rm -rf nettle-$version
+  if [ ! -f nettle-$version.tar.gz ]; then
+    curl -LO https://ftp.gnu.org/gnu/nettle/nettle-$version.tar.gz
+  fi
+  tar xzf nettle-$version.tar.gz
+  cd nettle-$version
+
+  # Build each arch separately
+  for i in ${!ARCHS[@]}; do
+    arch=${ARCHS[$i]}
+    mkdir build-$arch
+    cd build-$arch
+    ../configure --prefix=$DEPLOYDIR CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" --disable-static --disable-documentation --build=$LOCAL_GNU_ARCH-apple-darwin --host=${GNU_ARCHS[$i]}-apple-darwin17.0.0
+    make -j"$NUMCPU" install DESTDIR=$PWD/install/
+    cd ..
+  done
+
+  # Install the first arch
+  cp -R build-${ARCHS[0]}/install/$DEPLOYDIR/* $DEPLOYDIR
+
+  # If we're building for multiple archs, create fat binaries
+  if (( ${#ARCHS[@]} > 1 )); then
+    for lib in libnettle.dylib libhogweed.dylib; do
+      LIBS=()
+      for arch in ${ARCHS[*]}; do
+        LIBS+=(build-$arch/install/$DEPLOYDIR/lib/$lib)
+      done
+      lipo -create ${LIBS[@]} -output $DEPLOYDIR/lib/$lib
+    done
+  fi
+
+  install_name_tool -id @rpath/libnettle.dylib $DEPLOYDIR/lib/libnettle.dylib
+  install_name_tool -id @rpath/libhogweed.dylib $DEPLOYDIR/lib/libhogweed.dylib
+}
+
+build_curl()
+{
+  version=$1
+  cd $BASEDIR/src
+  rm -rf curl-$version
+  if [ ! -f curl-$version.tar.bz2 ]; then
+    curl -LO https://curl.se/download/curl-$version.tar.bz2
+  fi
+  tar xjf curl-$version.tar.bz2
+  cd curl-$version
+
+  # Build each arch separately
+  for i in ${!ARCHS[@]}; do
+    arch=${ARCHS[$i]}
+    mkdir build-$arch
+    cd build-$arch
+    ../configure --prefix=$DEPLOYDIR --with-secure-transport CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" --disable-static --build=$LOCAL_GNU_ARCH-apple-darwin --host=${GNU_ARCHS[$i]}-apple-darwin17.0.0
+    make -j"$NUMCPU" install DESTDIR=$PWD/install/
+    cd ..
+  done
+
+  # Install the first arch
+  cp -R build-${ARCHS[0]}/install/$DEPLOYDIR/* $DEPLOYDIR
+
+  # If we're building for multiple archs, create fat binaries
+  if (( ${#ARCHS[@]} > 1 )); then
+    LIBS=()
+    for arch in ${ARCHS[*]}; do
+      LIBS+=(build-$arch/install/$DEPLOYDIR/lib/libcurl.dylib)
+    done
+    lipo -create ${LIBS[@]} -output $DEPLOYDIR/lib/libcurl.dylib
+  fi
+
+  install_name_tool -id @rpath/libcurl.dylib $DEPLOYDIR/lib/libcurl.dylib
 }
 
 build_boost()
