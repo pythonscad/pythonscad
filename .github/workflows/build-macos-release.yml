@@ -248,6 +248,13 @@ jobs:
           git fetch --unshallow --tags || git fetch --tags
           git describe --tags --always --dirty
 
+      - name: Install Qt for macdeployqt
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+        run: |
+          brew install qt@6
+
       - name: Download x86_64 artifact
         uses: actions/download-artifact@v5
         with:
