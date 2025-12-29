@@ -326,54 +326,174 @@ jobs:
           echo "=== Merging main executable ==="
           merge_binary "Contents/MacOS/$EXEC_NAME"
 
-          # Merge all .dylib files
+          # Merge all .dylib files from both bundles
           echo "=== Merging .dylib files ==="
-          find "$X86_BUNDLE/Contents/Frameworks" -name "*.dylib" -type f 2>/dev/null | while read x86_lib; do
-            rel_path="${x86_lib#$X86_BUNDLE/}"
-            merge_binary "$rel_path"
+          # Create a list of all unique dylib paths from both bundles
+          DYLIB_PATHS=""
+          if [ -d "$X86_BUNDLE/Contents/Frameworks" ]; then
+            DYLIB_PATHS=$(find "$X86_BUNDLE/Contents/Frameworks" -name "*.dylib" -type f 2>/dev/null | sed "s|$X86_BUNDLE/||")
+          fi
+          if [ -d "$ARM_BUNDLE/Contents/Frameworks" ]; then
+            ARM_DYLIBS=$(find "$ARM_BUNDLE/Contents/Frameworks" -name "*.dylib" -type f 2>/dev/null | sed "s|$ARM_BUNDLE/||")
+            DYLIB_PATHS=$(echo -e "$DYLIB_PATHS\n$ARM_DYLIBS" | sort -u)
+          fi
+
+          echo "$DYLIB_PATHS" | while read rel_path; do
+            [ -z "$rel_path" ] && continue
+            x86_file="$X86_BUNDLE/$rel_path"
+            arm_file="$ARM_BUNDLE/$rel_path"
+            merged_file="$MERGED_DIR/$APP_NAME/$rel_path"
+
+            if [ -f "$x86_file" ] && [ -f "$arm_file" ]; then
+              # Both exist - merge with lipo
+              if file "$x86_file" | grep -q "Mach-O"; then
+                echo "Merging: $rel_path"
+                lipo -create "$x86_file" "$arm_file" -output "$merged_file"
+              fi
+            elif [ -f "$arm_file" ]; then
+              # Only in arm64 - copy it
+              echo "Copying arm64-only: $rel_path"
+              mkdir -p "$(dirname "$merged_file")"
+              cp "$arm_file" "$merged_file"
+            fi
           done
 
-          # Merge Qt framework binaries
+          # Merge Qt framework binaries from both bundles
           echo "=== Merging Qt frameworks ==="
-          find "$X86_BUNDLE/Contents/Frameworks" -name "*.framework" -type d 2>/dev/null | while read framework_dir; do
-            framework_name=$(basename "$framework_dir" .framework)
+          # Get unique list of frameworks from both bundles
+          FRAMEWORK_PATHS=""
+          if [ -d "$X86_BUNDLE/Contents/Frameworks" ]; then
+            FRAMEWORK_PATHS=$(find "$X86_BUNDLE/Contents/Frameworks" -name "*.framework" -type d 2>/dev/null | sed "s|$X86_BUNDLE/Contents/Frameworks/||")
+          fi
+          if [ -d "$ARM_BUNDLE/Contents/Frameworks" ]; then
+            ARM_FRAMEWORKS=$(find "$ARM_BUNDLE/Contents/Frameworks" -name "*.framework" -type d 2>/dev/null | sed "s|$ARM_BUNDLE/Contents/Frameworks/||")
+            FRAMEWORK_PATHS=$(echo -e "$FRAMEWORK_PATHS\n$ARM_FRAMEWORKS" | sort -u)
+          fi
+
+          echo "$FRAMEWORK_PATHS" | while read framework_rel; do
+            [ -z "$framework_rel" ] && continue
+            framework_name=$(basename "$framework_rel" .framework)
+
+            # Handle framework in both or only one architecture
+            x86_framework="$X86_BUNDLE/Contents/Frameworks/$framework_rel"
+            arm_framework="$ARM_BUNDLE/Contents/Frameworks/$framework_rel"
+            merged_framework="$MERGED_DIR/$APP_NAME/Contents/Frameworks/$framework_rel"
+
+            if [ ! -d "$x86_framework" ] && [ -d "$arm_framework" ]; then
+              # Only in arm64 - copy entire framework
+              echo "Copying arm64-only framework: $framework_rel"
+              mkdir -p "$(dirname "$merged_framework")"
+              cp -R "$arm_framework" "$merged_framework"
+              continue
+            fi
+
             # Qt frameworks have binary at: QtCore.framework/Versions/Current/QtCore
-            framework_binary="$(echo ${framework_dir#$X86_BUNDLE/})/Versions/Current/$framework_name"
-            if [ -f "$X86_BUNDLE/$framework_binary" ]; then
-              merge_binary "$framework_binary"
+            framework_binary="Versions/Current/$framework_name"
+            if [ -f "$x86_framework/$framework_binary" ]; then
+              x86_bin="$x86_framework/$framework_binary"
+              arm_bin="$arm_framework/$framework_binary"
+              merged_bin="$merged_framework/$framework_binary"
+
+              if [ -f "$arm_bin" ]; then
+                echo "Merging framework binary: $framework_rel/$framework_binary"
+                lipo -create "$x86_bin" "$arm_bin" -output "$merged_bin"
+              fi
             fi
 
             # Also merge framework Resources if they contain binaries
-            find "$framework_dir/Versions/Current" -name "*.dylib" -type f 2>/dev/null | while read lib; do
-              rel_path="${lib#$X86_BUNDLE/}"
-              merge_binary "$rel_path"
-            done
+            if [ -d "$x86_framework/Versions/Current" ]; then
+              find "$x86_framework/Versions/Current" -name "*.dylib" -type f 2>/dev/null | while read lib; do
+                lib_rel="${lib#$x86_framework/}"
+                x86_lib="$x86_framework/$lib_rel"
+                arm_lib="$arm_framework/$lib_rel"
+                merged_lib="$merged_framework/$lib_rel"
+
+                if [ -f "$arm_lib" ]; then
+                  if file "$x86_lib" | grep -q "Mach-O"; then
+                    echo "Merging framework lib: $framework_rel/$lib_rel"
+                    lipo -create "$x86_lib" "$arm_lib" -output "$merged_lib"
+                  fi
+                fi
+              done
+            fi
           done
 
-          # Merge Python framework binary if present
-          if [ -d "$X86_BUNDLE/Contents/Frameworks/Python.framework" ]; then
-            echo "=== Merging Python framework ==="
-            # Find Python version (e.g., 3.11)
-            PYTHON_VERSION=$(ls "$X86_BUNDLE/Contents/Frameworks/Python.framework/Versions/" | grep -E "^[0-9]+\.[0-9]+$" | head -1)
-            if [ -n "$PYTHON_VERSION" ]; then
-              merge_binary "Contents/Frameworks/Python.framework/Versions/$PYTHON_VERSION/Python"
+          # Merge Python framework binary if present in either bundle
+          echo "=== Merging Python framework ==="
+          x86_python="$X86_BUNDLE/Contents/Frameworks/Python.framework"
+          arm_python="$ARM_BUNDLE/Contents/Frameworks/Python.framework"
 
-              # Merge Python extension modules (.so files)
-              find "$X86_BUNDLE/Contents/Frameworks/Python.framework" -name "*.so" -type f 2>/dev/null | while read so_file; do
-                rel_path="${so_file#$X86_BUNDLE/}"
-                merge_binary "$rel_path"
-              done
+          if [ -d "$x86_python" ] || [ -d "$arm_python" ]; then
+            if [ ! -d "$x86_python" ] && [ -d "$arm_python" ]; then
+              # Only in arm64 - copy entire framework
+              echo "Copying arm64-only Python framework"
+              mkdir -p "$MERGED_DIR/$APP_NAME/Contents/Frameworks"
+              cp -R "$arm_python" "$MERGED_DIR/$APP_NAME/Contents/Frameworks/"
+            elif [ -d "$x86_python" ] && [ -d "$arm_python" ]; then
+              # In both - merge binaries
+              PYTHON_VERSION=$(ls "$x86_python/Versions/" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+$" | head -1)
+              if [ -z "$PYTHON_VERSION" ]; then
+                PYTHON_VERSION=$(ls "$arm_python/Versions/" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+$" | head -1)
+              fi
+
+              if [ -n "$PYTHON_VERSION" ]; then
+                x86_py_bin="$x86_python/Versions/$PYTHON_VERSION/Python"
+                arm_py_bin="$arm_python/Versions/$PYTHON_VERSION/Python"
+                merged_py_bin="$MERGED_DIR/$APP_NAME/Contents/Frameworks/Python.framework/Versions/$PYTHON_VERSION/Python"
+
+                if [ -f "$x86_py_bin" ] && [ -f "$arm_py_bin" ]; then
+                  echo "Merging Python binary"
+                  lipo -create "$x86_py_bin" "$arm_py_bin" -output "$merged_py_bin"
+                fi
+
+                # Merge Python extension modules (.so files)
+                find "$x86_python" -name "*.so" -type f 2>/dev/null | while read so_file; do
+                  rel_path="${so_file#$x86_python/}"
+                  x86_so="$x86_python/$rel_path"
+                  arm_so="$arm_python/$rel_path"
+                  merged_so="$MERGED_DIR/$APP_NAME/Contents/Frameworks/Python.framework/$rel_path"
+
+                  if [ -f "$arm_so" ]; then
+                    if file "$x86_so" | grep -q "Mach-O"; then
+                      echo "Merging Python .so: $rel_path"
+                      lipo -create "$x86_so" "$arm_so" -output "$merged_so"
+                    fi
+                  fi
+                done
+              fi
             fi
           fi
 
-          # Merge Qt plugin .dylib files
+          # Merge Qt plugin .dylib files from both bundles
+          echo "=== Merging Qt plugins ==="
+          PLUGIN_PATHS=""
           if [ -d "$X86_BUNDLE/Contents/PlugIns" ]; then
-            echo "=== Merging Qt plugins ==="
-            find "$X86_BUNDLE/Contents/PlugIns" -name "*.dylib" -type f 2>/dev/null | while read plugin; do
-              rel_path="${plugin#$X86_BUNDLE/}"
-              merge_binary "$rel_path"
-            done
+            PLUGIN_PATHS=$(find "$X86_BUNDLE/Contents/PlugIns" -name "*.dylib" -type f 2>/dev/null | sed "s|$X86_BUNDLE/||")
           fi
+          if [ -d "$ARM_BUNDLE/Contents/PlugIns" ]; then
+            ARM_PLUGINS=$(find "$ARM_BUNDLE/Contents/PlugIns" -name "*.dylib" -type f 2>/dev/null | sed "s|$ARM_BUNDLE/||")
+            PLUGIN_PATHS=$(echo -e "$PLUGIN_PATHS\n$ARM_PLUGINS" | sort -u)
+          fi
+
+          echo "$PLUGIN_PATHS" | while read rel_path; do
+            [ -z "$rel_path" ] && continue
+            x86_plugin="$X86_BUNDLE/$rel_path"
+            arm_plugin="$ARM_BUNDLE/$rel_path"
+            merged_plugin="$MERGED_DIR/$APP_NAME/$rel_path"
+
+            if [ -f "$x86_plugin" ] && [ -f "$arm_plugin" ]; then
+              # Both exist - merge
+              if file "$x86_plugin" | grep -q "Mach-O"; then
+                echo "Merging plugin: $rel_path"
+                lipo -create "$x86_plugin" "$arm_plugin" -output "$merged_plugin"
+              fi
+            elif [ -f "$arm_plugin" ]; then
+              # Only in arm64 - copy it
+              echo "Copying arm64-only plugin: $rel_path"
+              mkdir -p "$(dirname "$merged_plugin")"
+              cp "$arm_plugin" "$merged_plugin"
+            fi
+          done
 
           echo "=== Merge complete ==="
           echo "Merged app location: $MERGED_DIR/$APP_NAME"
