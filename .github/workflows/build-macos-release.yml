@@ -265,19 +265,37 @@ jobs:
         run: |
           set -e
 
+          # Debug: List what was downloaded
+          echo "=== x86_64 artifact contents ==="
+          ls -la /tmp/x86_64-app/
+          echo "=== arm64 artifact contents ==="
+          ls -la /tmp/arm64-app/
+
           # Find app bundle names (should be identical)
-          X86_BUNDLE=$(find /tmp/x86_64-app -maxdepth 1 -name "*.app" -type d | head -1)
-          ARM_BUNDLE=$(find /tmp/arm64-app -maxdepth 1 -name "*.app" -type d | head -1)
+          # GitHub Actions downloads the artifact contents, so look for .app directories or Contents directory
+          if [ -d "/tmp/x86_64-app/Contents" ]; then
+            # Artifact was uploaded as app bundle contents, reconstruct the path
+            X86_BUNDLE="/tmp/x86_64-app"
+            ARM_BUNDLE="/tmp/arm64-app"
+            # Get app name from uploaded artifact metadata or use default
+            APP_NAME="pythonscad.app"
+          else
+            # Artifact preserved the .app directory structure
+            X86_BUNDLE=$(find /tmp/x86_64-app -maxdepth 2 -name "*.app" -type d | head -1)
+            ARM_BUNDLE=$(find /tmp/arm64-app -maxdepth 2 -name "*.app" -type d | head -1)
+            APP_NAME=$(basename "$X86_BUNDLE")
+          fi
 
           if [ -z "$X86_BUNDLE" ] || [ -z "$ARM_BUNDLE" ]; then
-            echo "ERROR: Could not find .app bundles"
+            echo "ERROR: Could not find or reconstruct .app bundles"
             echo "x86_64: $X86_BUNDLE"
             echo "arm64: $ARM_BUNDLE"
             exit 1
           fi
 
-          APP_NAME=$(basename "$X86_BUNDLE")
           echo "Merging $APP_NAME"
+          echo "x86_64 bundle: $X86_BUNDLE"
+          echo "arm64 bundle: $ARM_BUNDLE"
 
           # Create merged bundle by copying x86_64 as base
           MERGED_DIR=/tmp/merged
