@@ -386,7 +386,13 @@ jobs:
       - name: Run macOS sanity check
         run: |
           # Validate the merged universal binary
-          python3 ./scripts/macosx-sanity-check.py ${{ steps.merge.outputs.app_bundle }}
+          APP_BUNDLE="${{ steps.merge.outputs.app_bundle }}"
+          # Determine executable name (pythonscad or pythonscad-snapshot)
+          EXEC_NAME=$(basename "$APP_BUNDLE" .app)
+          EXEC_PATH="$APP_BUNDLE/Contents/MacOS/$EXEC_NAME"
+
+          echo "Validating executable: $EXEC_PATH"
+          python3 ./scripts/macosx-sanity-check.py "$EXEC_PATH"
 
       - name: Create DMG
         id: dmg
