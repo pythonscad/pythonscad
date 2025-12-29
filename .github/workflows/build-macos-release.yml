@@ -497,6 +497,11 @@ jobs:
 
           echo "=== Merge complete ==="
           echo "Merged app location: $MERGED_DIR/$APP_NAME"
+
+          # Re-run macdeployqt on merged bundle to catch any missing dependencies
+          echo "=== Running macdeployqt on merged bundle ==="
+          macdeployqt "$MERGED_DIR/$APP_NAME" -no-strip
+
           echo "app_bundle=$MERGED_DIR/$APP_NAME" >> $GITHUB_OUTPUT
 
           # Verify main executable is universal
