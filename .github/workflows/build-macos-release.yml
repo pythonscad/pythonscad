@@ -65,6 +65,7 @@ jobs:
       - name: Build x86_64 Application
         env:
           NUMCPU: 4
+          LDFLAGS: "-L/usr/local/lib"
         run: |
           mkdir build_MACOSX
           cd build_MACOSX
@@ -171,6 +172,7 @@ jobs:
       - name: Build arm64 Application
         env:
           NUMCPU: 4
+          LDFLAGS: "-L/opt/homebrew/lib"
         run: |
           mkdir build_MACOSX
           cd build_MACOSX
