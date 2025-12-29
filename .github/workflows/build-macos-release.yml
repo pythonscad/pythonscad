@@ -51,7 +51,7 @@ jobs:
           HOMEBREW_NO_AUTO_UPDATE: 1
           HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
         run: |
-          brew install automake libtool cmake pkg-config wget meson python-packaging
+          brew install automake libtool cmake pkg-config wget meson python-packaging openssl@3
 
       - name: Restore cached dependencies
         id: cache-deps

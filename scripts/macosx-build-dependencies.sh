@@ -481,12 +481,31 @@ build_curl()
   tar xjf curl-$version.tar.bz2
   cd curl-$version
 
+  # Detect Homebrew OpenSSL location
+  if [ -d "/opt/homebrew/opt/openssl@3" ]; then
+    OPENSSL_PATH="/opt/homebrew/opt/openssl@3"
+  elif [ -d "/usr/local/opt/openssl@3" ]; then
+    OPENSSL_PATH="/usr/local/opt/openssl@3"
+  elif [ -d "/opt/homebrew/opt/openssl@1.1" ]; then
+    OPENSSL_PATH="/opt/homebrew/opt/openssl@1.1"
+  elif [ -d "/usr/local/opt/openssl@1.1" ]; then
+    OPENSSL_PATH="/usr/local/opt/openssl@1.1"
+  else
+    echo "ERROR: OpenSSL not found in Homebrew"
+    exit 1
+  fi
+
   # Build each arch separately
   for i in ${!ARCHS[@]}; do
     arch=${ARCHS[$i]}
     mkdir build-$arch
     cd build-$arch
-    ../configure --prefix=$DEPLOYDIR --with-secure-transport CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" --disable-static --build=$LOCAL_GNU_ARCH-apple-darwin --host=${GNU_ARCHS[$i]}-apple-darwin17.0.0
+    ../configure --prefix=$DEPLOYDIR \
+      --with-openssl=$OPENSSL_PATH \
+      CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" \
+      LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" \
+      --disable-static \
+      --build=$LOCAL_GNU_ARCH-apple-darwin --host=${GNU_ARCHS[$i]}-apple-darwin17.0.0
     make -j"$NUMCPU" install DESTDIR=$PWD/install/
     cd ..
   done
