@@ -676,39 +676,22 @@ build_zstd()
     curl -LO https://github.com/facebook/zstd/releases/download/v$version/zstd-$version.tar.gz
   fi
   tar xzf zstd-$version.tar.gz
-  cd zstd-$version
+  cd zstd-$version/build/cmake
 
-  # Build each arch separately - zstd uses make not configure
-  for i in ${!ARCHS[@]}; do
-    arch=${ARCHS[$i]}
-    mkdir build-$arch
+  # Use CMake to build universal binary directly
+  mkdir build
+  cd build
+  cmake .. \
+    -DCMAKE_INSTALL_PREFIX=$DEPLOYDIR \
+    -DCMAKE_OSX_ARCHITECTURES="$ARCHS_COMBINED" \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=$MAC_OSX_VERSION_MIN \
+    -DZSTD_BUILD_SHARED=ON \
+    -DZSTD_BUILD_STATIC=OFF \
+    -DCMAKE_BUILD_TYPE=Release
+  make -j"$NUMCPU"
+  make install
 
-    # zstd builds in-place, so we need to clean between builds
-    if [ $i -gt 0 ]; then
-      make clean
-    fi
-
-    make -j"$NUMCPU" \
-      PREFIX=$DEPLOYDIR \
-      CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN" \
-      LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN"
-
-    make install PREFIX=$DEPLOYDIR DESTDIR=$PWD/build-$arch/install/
-  done
-
-  # Install the first arch
-  cp -R build-${ARCHS[0]}/install/$DEPLOYDIR/* $DEPLOYDIR
-
-  # If we're building for multiple archs, create fat binaries
-  if (( ${#ARCHS[@]} > 1 )); then
-    LIBS=()
-    for arch in ${ARCHS[*]}; do
-      LIBS+=(build-$arch/install/$DEPLOYDIR/lib/libzstd.dylib)
-    done
-    lipo -create ${LIBS[@]} -output $DEPLOYDIR/lib/libzstd.dylib
-  fi
-
-  install_name_tool -id @rpath/libzstd.dylib $DEPLOYDIR/lib/libzstd.dylib
+  install_name_tool -id @rpath/libzstd.dylib $DEPLOYDIR/lib/libzstd.*.dylib
 }
 
 build_brotli()
