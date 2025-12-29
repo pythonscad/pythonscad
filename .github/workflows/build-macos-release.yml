@@ -17,11 +17,12 @@ on:
         default: false
 
 jobs:
-  build-macos:
-    runs-on: macos-latest
-    name: macOS Universal Binary
-    # If it's not done in 120 minutes, something is wrong.
-    timeout-minutes: 120
+  build-intel:
+    runs-on: macos-13
+    name: macOS x86_64 Build
+    timeout-minutes: 90
+    outputs:
+      app-name: ${{ steps.appname.outputs.app_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -53,95 +54,326 @@ jobs:
         run: |
           brew install automake libtool cmake pkg-config wget meson python-packaging
 
-      - name: Restore cached dependencies
-        id: cache-deps
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/../libraries/install
-          key: macos-libs-${{ runner.arch }}-${{ hashFiles('scripts/macosx-build-dependencies.sh') }}
-          restore-keys: |
-            macos-libs-${{ runner.arch }}-
-
-      - name: Build dependencies
-        id: build-deps
+      - name: Install Homebrew dependencies
         env:
-          NUMCPU: 4
-          OPENSCAD_LIBRARIES: ${{ github.workspace }}/../libraries/install
-          PKG_CONFIG_PATH: ${{ github.workspace }}/../libraries/install/lib/pkgconfig
-          DYLD_LIBRARY_PATH: ${{ github.workspace }}/../libraries/install/lib
-          DYLD_FRAMEWORK_PATH: ${{ github.workspace }}/../libraries/install/lib
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
         run: |
-          # Build universal binaries (arm64 + x86_64) for deployment
-          # Add library paths to PATH for dependency discovery
-          export PATH="${OPENSCAD_LIBRARIES}/bin:$PATH"
-          ./scripts/macosx-build-dependencies.sh -x -a -d
+          ./scripts/macosx-build-homebrew.sh qt6
 
-      - name: Clean up build artifacts
-        if: steps.build-deps.outcome == 'success'
-        run: |
-          # Remove build directories and source files to reduce cache size
-          # Keep only the installed libraries
-          LIBS_DIR="${{ github.workspace }}/../libraries"
-          if [ -d "$LIBS_DIR/src" ]; then
-            echo "Cleaning up source directory..."
-            rm -rf "$LIBS_DIR/src"
-          fi
-          if [ -d "$LIBS_DIR/install" ]; then
-            echo "Cache size before cleanup:"
-            du -sh "$LIBS_DIR/install"
-            # Remove unnecessary files from install directory
-            find "$LIBS_DIR/install" -name "*.a" -delete  # Static libraries
-            find "$LIBS_DIR/install" -name "*.la" -delete  # Libtool files
-            rm -rf "$LIBS_DIR/install/share/man"  # Man pages
-            rm -rf "$LIBS_DIR/install/share/doc"  # Documentation
-            echo "Cache size after cleanup:"
-            du -sh "$LIBS_DIR/install"
-          fi
-
-      - name: Save dependency cache
-        if: steps.build-deps.outcome == 'success'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ github.workspace }}/../libraries/install
-          key: macos-libs-${{ runner.arch }}-${{ hashFiles('scripts/macosx-build-dependencies.sh') }}-${{ github.run_id }}
-
-      - name: Build macOS Application
+      - name: Build x86_64 Application
         env:
           NUMCPU: 4
         run: |
-          # Run the same build script as CircleCI for consistency
-          # This will create a universal binary .app bundle
-          ./scripts/release-common.sh snapshot
+          mkdir build_MACOSX
+          cd build_MACOSX
+
+          # Configure CMake for x86_64 only (NOT universal)
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+            -DENABLE_TESTS=OFF \
+            -DEXPERIMENTAL=ON \
+            -DSNAPSHOT=ON \
+            -DENABLE_PYTHON=ON \
+            -DENABLE_TBB=OFF \
+            -DENABLE_LIBFIVE=OFF \
+            -DENABLE_GAMEPAD=OFF \
+            -DUSE_BUILTIN_CLIPPER2=OFF \
+            -DUSE_BUILTIN_MANIFOLD=OFF
+
+          # Build
+          make -j$NUMCPU
+
+          # Find the app bundle
+          APP_BUNDLE=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "ERROR: No .app bundle found"
+            exit 1
+          fi
+
+          echo "Built x86_64 app: $APP_BUNDLE"
+
+          # Update version in Info.plist
+          VERSION=$(git describe --tags --always --dirty)
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$APP_BUNDLE/Contents/Info.plist"
+
+          # Bundle Qt frameworks
+          macdeployqt "$APP_BUNDLE" -no-strip
+
+          echo "x86_64 build complete"
 
       - name: Determine app bundle name
         id: appname
         run: |
-          # Find the actual .app bundle name (could be pythonscad.app or pythonscad-snapshot.app)
           APP_BUNDLE=$(find build_MACOSX -maxdepth 1 -name "*.app" -type d | head -1)
           if [ -z "$APP_BUNDLE" ]; then
             echo "ERROR: No .app bundle found in build_MACOSX"
             exit 1
           fi
           echo "app_bundle=$APP_BUNDLE" >> $GITHUB_OUTPUT
+          echo "app_name=$(basename $APP_BUNDLE)" >> $GITHUB_OUTPUT
           echo "Found app bundle: $APP_BUNDLE"
+
+      - name: Upload x86_64 artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: pythonscad-x86_64-app
+          path: ${{ steps.appname.outputs.app_bundle }}
+          retention-days: 1
+
+  build-arm64:
+    runs-on: macos-latest
+    name: macOS arm64 Build
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Fetch tags for version detection
+        run: |
+          git fetch --unshallow --tags || git fetch --tags
+          git describe --tags --always --dirty
+
+      - name: Setup (detached) tmate session if enabled
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 5
+        with:
+          detached: true
+          limit-access-to-actor: true
+
+      - name: Workaround for python3 linking issue
+        run: |
+          brew unlink python3
+          brew link --overwrite python3
+
+      - name: Install Homebrew prerequisites
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+        run: |
+          brew install automake libtool cmake pkg-config wget meson python-packaging
+
+      - name: Install Homebrew dependencies
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+        run: |
+          ./scripts/macosx-build-homebrew.sh qt6
+
+      - name: Build arm64 Application
+        env:
+          NUMCPU: 4
+        run: |
+          mkdir build_MACOSX
+          cd build_MACOSX
+
+          # Configure CMake for arm64 only (NOT universal)
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DENABLE_TESTS=OFF \
+            -DEXPERIMENTAL=ON \
+            -DSNAPSHOT=ON \
+            -DENABLE_PYTHON=ON \
+            -DENABLE_TBB=OFF \
+            -DENABLE_LIBFIVE=OFF \
+            -DENABLE_GAMEPAD=OFF \
+            -DUSE_BUILTIN_CLIPPER2=OFF \
+            -DUSE_BUILTIN_MANIFOLD=OFF
+
+          # Build
+          make -j$NUMCPU
+
+          # Find the app bundle
+          APP_BUNDLE=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "ERROR: No .app bundle found"
+            exit 1
+          fi
+
+          echo "Built arm64 app: $APP_BUNDLE"
+
+          # Update version in Info.plist
+          VERSION=$(git describe --tags --always --dirty)
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$APP_BUNDLE/Contents/Info.plist"
+
+          # Bundle Qt frameworks
+          macdeployqt "$APP_BUNDLE" -no-strip
+
+          echo "arm64 build complete"
+
+      - name: Determine app bundle name
+        id: appname
+        run: |
+          APP_BUNDLE=$(find build_MACOSX -maxdepth 1 -name "*.app" -type d | head -1)
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "ERROR: No .app bundle found in build_MACOSX"
+            exit 1
+          fi
+          echo "app_bundle=$APP_BUNDLE" >> $GITHUB_OUTPUT
+          echo "app_name=$(basename $APP_BUNDLE)" >> $GITHUB_OUTPUT
+          echo "Found app bundle: $APP_BUNDLE"
+
+      - name: Upload arm64 artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: pythonscad-arm64-app
+          path: ${{ steps.appname.outputs.app_bundle }}
+          retention-days: 1
+
+  merge-and-package:
+    runs-on: macos-latest
+    needs: [build-intel, build-arm64]
+    name: Merge Universal Binary and Package
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        # No submodules needed, only for scripts
+
+      - name: Fetch tags for version detection
+        run: |
+          git fetch --unshallow --tags || git fetch --tags
+          git describe --tags --always --dirty
+
+      - name: Download x86_64 artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: pythonscad-x86_64-app
+          path: /tmp/x86_64-app
+
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: pythonscad-arm64-app
+          path: /tmp/arm64-app
+
+      - name: Merge architectures with lipo
+        id: merge
+        run: |
+          set -e
+
+          # Find app bundle names (should be identical)
+          X86_BUNDLE=$(find /tmp/x86_64-app -maxdepth 1 -name "*.app" -type d | head -1)
+          ARM_BUNDLE=$(find /tmp/arm64-app -maxdepth 1 -name "*.app" -type d | head -1)
+
+          if [ -z "$X86_BUNDLE" ] || [ -z "$ARM_BUNDLE" ]; then
+            echo "ERROR: Could not find .app bundles"
+            echo "x86_64: $X86_BUNDLE"
+            echo "arm64: $ARM_BUNDLE"
+            exit 1
+          fi
+
+          APP_NAME=$(basename "$X86_BUNDLE")
+          echo "Merging $APP_NAME"
+
+          # Create merged bundle by copying x86_64 as base
+          MERGED_DIR=/tmp/merged
+          mkdir -p $MERGED_DIR
+          echo "Copying x86_64 bundle as base..."
+          cp -R "$X86_BUNDLE" "$MERGED_DIR/$APP_NAME"
+
+          # Function to merge a single binary file
+          merge_binary() {
+            local rel_path="$1"
+            local x86_file="$X86_BUNDLE/$rel_path"
+            local arm_file="$ARM_BUNDLE/$rel_path"
+            local merged_file="$MERGED_DIR/$APP_NAME/$rel_path"
+
+            if [ -f "$x86_file" ] && [ -f "$arm_file" ]; then
+              # Check if it's a binary file (not a symlink or text file)
+              if file "$x86_file" | grep -q "Mach-O"; then
+                echo "Merging: $rel_path"
+                lipo -create "$x86_file" "$arm_file" -output "$merged_file"
+              fi
+            fi
+          }
+
+          # Determine executable name (pythonscad or pythonscad-snapshot)
+          EXEC_NAME=$(basename "$APP_NAME" .app)
+
+          # Merge main executable
+          echo "=== Merging main executable ==="
+          merge_binary "Contents/MacOS/$EXEC_NAME"
+
+          # Merge all .dylib files
+          echo "=== Merging .dylib files ==="
+          find "$X86_BUNDLE/Contents/Frameworks" -name "*.dylib" -type f 2>/dev/null | while read x86_lib; do
+            rel_path="${x86_lib#$X86_BUNDLE/}"
+            merge_binary "$rel_path"
+          done
+
+          # Merge Qt framework binaries
+          echo "=== Merging Qt frameworks ==="
+          find "$X86_BUNDLE/Contents/Frameworks" -name "*.framework" -type d 2>/dev/null | while read framework_dir; do
+            framework_name=$(basename "$framework_dir" .framework)
+            # Qt frameworks have binary at: QtCore.framework/Versions/Current/QtCore
+            framework_binary="$(echo ${framework_dir#$X86_BUNDLE/})/Versions/Current/$framework_name"
+            if [ -f "$X86_BUNDLE/$framework_binary" ]; then
+              merge_binary "$framework_binary"
+            fi
+
+            # Also merge framework Resources if they contain binaries
+            find "$framework_dir/Versions/Current" -name "*.dylib" -type f 2>/dev/null | while read lib; do
+              rel_path="${lib#$X86_BUNDLE/}"
+              merge_binary "$rel_path"
+            done
+          done
+
+          # Merge Python framework binary if present
+          if [ -d "$X86_BUNDLE/Contents/Frameworks/Python.framework" ]; then
+            echo "=== Merging Python framework ==="
+            # Find Python version (e.g., 3.11)
+            PYTHON_VERSION=$(ls "$X86_BUNDLE/Contents/Frameworks/Python.framework/Versions/" | grep -E "^[0-9]+\.[0-9]+$" | head -1)
+            if [ -n "$PYTHON_VERSION" ]; then
+              merge_binary "Contents/Frameworks/Python.framework/Versions/$PYTHON_VERSION/Python"
+
+              # Merge Python extension modules (.so files)
+              find "$X86_BUNDLE/Contents/Frameworks/Python.framework" -name "*.so" -type f 2>/dev/null | while read so_file; do
+                rel_path="${so_file#$X86_BUNDLE/}"
+                merge_binary "$rel_path"
+              done
+            fi
+          fi
+
+          # Merge Qt plugin .dylib files
+          if [ -d "$X86_BUNDLE/Contents/PlugIns" ]; then
+            echo "=== Merging Qt plugins ==="
+            find "$X86_BUNDLE/Contents/PlugIns" -name "*.dylib" -type f 2>/dev/null | while read plugin; do
+              rel_path="${plugin#$X86_BUNDLE/}"
+              merge_binary "$rel_path"
+            done
+          fi
+
+          echo "=== Merge complete ==="
+          echo "Merged app location: $MERGED_DIR/$APP_NAME"
+          echo "app_bundle=$MERGED_DIR/$APP_NAME" >> $GITHUB_OUTPUT
+
+          # Verify main executable is universal
+          echo "=== Verifying main executable ==="
+          lipo -info "$MERGED_DIR/$APP_NAME/Contents/MacOS/$EXEC_NAME"
 
       - name: Run macOS sanity check
         run: |
-          # Validate the built application
-          python3 ./scripts/macosx-sanity-check.py ${{ steps.appname.outputs.app_bundle }}
+          # Validate the merged universal binary
+          python3 ./scripts/macosx-sanity-check.py ${{ steps.merge.outputs.app_bundle }}
 
       - name: Create DMG
         id: dmg
         run: |
           # Get version from git
           VERSION=$(git describe --tags --always --dirty)
-          APP_BUNDLE="${{ steps.appname.outputs.app_bundle }}"
+          APP_BUNDLE="${{ steps.merge.outputs.app_bundle }}"
           DMG_NAME="PythonSCAD-${VERSION}.dmg"
 
-          # Create DMG using hdiutil (same as CircleCI)
-          hdiutil create -volname "PythonSCAD" -srcfolder "$APP_BUNDLE" -ov -format UDZO "build_MACOSX/$DMG_NAME"
+          # Create DMG using hdiutil
+          hdiutil create -volname "PythonSCAD" -srcfolder "$APP_BUNDLE" -ov -format UDZO "$DMG_NAME"
 
-          echo "dmg_file=build_MACOSX/$DMG_NAME" >> $GITHUB_OUTPUT
+          echo "dmg_file=$DMG_NAME" >> $GITHUB_OUTPUT
           echo "Created DMG: $DMG_NAME"
 
       - name: Prepare artifacts
