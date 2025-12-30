@@ -303,6 +303,28 @@ jobs:
           echo "Copying x86_64 bundle as base..."
           cp -R "$X86_BUNDLE" "$MERGED_DIR/$APP_NAME"
 
+          # Debug: List frameworks in each bundle
+          echo "=== Debug: x86_64 frameworks ==="
+          if [ -d "$X86_BUNDLE/Contents/Frameworks" ]; then
+            find "$X86_BUNDLE/Contents/Frameworks" -name "*.framework" -type d -maxdepth 1 2>/dev/null | while read fw; do
+              fw_name=$(basename "$fw")
+              fw_bin="$fw/Versions/Current/$(basename "$fw" .framework)"
+              if [ -f "$fw_bin" ]; then
+                echo "$fw_name: $(lipo -info "$fw_bin" 2>&1 | grep -o 'x86_64\|arm64' | tr '\n' ' ')"
+              fi
+            done
+          fi
+          echo "=== Debug: arm64 frameworks ==="
+          if [ -d "$ARM_BUNDLE/Contents/Frameworks" ]; then
+            find "$ARM_BUNDLE/Contents/Frameworks" -name "*.framework" -type d -maxdepth 1 2>/dev/null | while read fw; do
+              fw_name=$(basename "$fw")
+              fw_bin="$fw/Versions/Current/$(basename "$fw" .framework)"
+              if [ -f "$fw_bin" ]; then
+                echo "$fw_name: $(lipo -info "$fw_bin" 2>&1 | grep -o 'x86_64\|arm64' | tr '\n' ' ')"
+              fi
+            done
+          fi
+
           # Function to merge a single binary file
           merge_binary() {
             local rel_path="$1"
@@ -502,18 +524,25 @@ jobs:
           echo "=== Merge complete ==="
           echo "Merged app location: $MERGED_DIR/$APP_NAME"
 
-          # Manually copy any missing transitive dependencies
-          echo "=== Copying missing dependencies ==="
+          # Manually merge any missing transitive dependencies
+          echo "=== Merging missing dependencies ==="
           FRAMEWORKS_DIR="$MERGED_DIR/$APP_NAME/Contents/Frameworks"
 
-          # Copy libbrotlicommon if missing (dependency of libbrotlidec)
+          # Merge libbrotlicommon if missing (dependency of libbrotlidec)
           if [ ! -f "$FRAMEWORKS_DIR/libbrotlicommon.1.dylib" ]; then
-            echo "Copying libbrotlicommon.1.dylib"
-            # Try both Homebrew locations
-            if [ -f "/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib" ]; then
-              cp "/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/"
-            elif [ -f "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" ]; then
-              cp "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/"
+            echo "Merging libbrotlicommon.1.dylib from both architectures"
+            X86_BROTLI="/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib"
+            ARM_BROTLI="/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib"
+
+            if [ -f "$X86_BROTLI" ] && [ -f "$ARM_BROTLI" ]; then
+              # Both exist - merge with lipo
+              lipo -create "$X86_BROTLI" "$ARM_BROTLI" -output "$FRAMEWORKS_DIR/libbrotlicommon.1.dylib"
+            elif [ -f "$ARM_BROTLI" ]; then
+              # Only ARM exists - copy it
+              cp "$ARM_BROTLI" "$FRAMEWORKS_DIR/"
+            elif [ -f "$X86_BROTLI" ]; then
+              # Only x86 exists - copy it
+              cp "$X86_BROTLI" "$FRAMEWORKS_DIR/"
             fi
 
             # Fix install_name ID of libbrotlicommon itself

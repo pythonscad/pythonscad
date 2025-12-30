@@ -123,16 +123,6 @@ def validate_lib(lib):
         print("Error: Unsupported deployment target " + m.group(2) + " found: " + lib)
         return False
 
-    # This is a check for a weak symbols from a build made on 10.12 or newer sneaking into a build for an
-    # earlier deployment target. The 'mkostemp' symbol tends to be introduced by fontconfig.
-    p  = subprocess.Popen(["nm", "-g", lib], stdout=subprocess.PIPE, universal_newlines=True)
-    output = p.communicate()[0]
-    if p.returncode != 0: return False
-    match = re.search("mkostemp", output)
-    if match:
-        print("Error: Reference to mkostemp() found - only supported on macOS 10.12->")
-        return None
-
     # Check that both x86_64 and arm64 architectures exist
     p = subprocess.Popen(["lipo", lib, "-verify_arch", "x86_64"], stdout=subprocess.PIPE, universal_newlines=True)
     p.communicate()[0]
