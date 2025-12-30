@@ -307,20 +307,22 @@ jobs:
           echo "=== Debug: x86_64 frameworks ==="
           if [ -d "$X86_BUNDLE/Contents/Frameworks" ]; then
             find "$X86_BUNDLE/Contents/Frameworks" -name "*.framework" -type d -maxdepth 1 2>/dev/null | while read fw; do
-              fw_name=$(basename "$fw")
-              fw_bin="$fw/Versions/Current/$(basename "$fw" .framework)"
-              if [ -f "$fw_bin" ]; then
-                echo "$fw_name: $(lipo -info "$fw_bin" 2>&1 | grep -o 'x86_64\|arm64' | tr '\n' ' ')"
+              fw_name=$(basename "$fw" .framework)
+              # Find actual version directory instead of using Current symlink
+              ACTUAL_VER=$(ls "$fw/Versions/" 2>/dev/null | grep -v "Current" | head -1)
+              if [ -n "$ACTUAL_VER" ] && [ -f "$fw/Versions/$ACTUAL_VER/$fw_name" ]; then
+                echo "$(basename "$fw"): $(lipo -info "$fw/Versions/$ACTUAL_VER/$fw_name" 2>&1 | grep -o 'x86_64\|arm64' | tr '\n' ' ')"
               fi
             done
           fi
           echo "=== Debug: arm64 frameworks ==="
           if [ -d "$ARM_BUNDLE/Contents/Frameworks" ]; then
             find "$ARM_BUNDLE/Contents/Frameworks" -name "*.framework" -type d -maxdepth 1 2>/dev/null | while read fw; do
-              fw_name=$(basename "$fw")
-              fw_bin="$fw/Versions/Current/$(basename "$fw" .framework)"
-              if [ -f "$fw_bin" ]; then
-                echo "$fw_name: $(lipo -info "$fw_bin" 2>&1 | grep -o 'x86_64\|arm64' | tr '\n' ' ')"
+              fw_name=$(basename "$fw" .framework)
+              # Find actual version directory instead of using Current symlink
+              ACTUAL_VER=$(ls "$fw/Versions/" 2>/dev/null | grep -v "Current" | head -1)
+              if [ -n "$ACTUAL_VER" ] && [ -f "$fw/Versions/$ACTUAL_VER/$fw_name" ]; then
+                echo "$(basename "$fw"): $(lipo -info "$fw/Versions/$ACTUAL_VER/$fw_name" 2>&1 | grep -o 'x86_64\|arm64' | tr '\n' ' ')"
               fi
             done
           fi
@@ -409,34 +411,40 @@ jobs:
               continue
             fi
 
-            # Qt frameworks have binary at: QtCore.framework/Versions/Current/QtCore
-            framework_binary="Versions/Current/$framework_name"
-            if [ -f "$x86_framework/$framework_binary" ]; then
-              x86_bin="$x86_framework/$framework_binary"
-              arm_bin="$arm_framework/$framework_binary"
-              merged_bin="$merged_framework/$framework_binary"
+            # Qt frameworks have binary at: QtCore.framework/Versions/A/QtCore
+            # Find the actual version directory (usually 'A') instead of using 'Current' symlink
+            if [ -d "$x86_framework/Versions" ]; then
+              ACTUAL_VERSION=$(ls "$x86_framework/Versions/" 2>/dev/null | grep -v "Current" | head -1)
+              if [ -n "$ACTUAL_VERSION" ]; then
+                framework_binary="Versions/$ACTUAL_VERSION/$framework_name"
+                if [ -f "$x86_framework/$framework_binary" ]; then
+                  x86_bin="$x86_framework/$framework_binary"
+                  arm_bin="$arm_framework/$framework_binary"
+                  merged_bin="$merged_framework/$framework_binary"
 
-              if [ -f "$arm_bin" ]; then
-                echo "Merging framework binary: $framework_rel/$framework_binary"
-                lipo -create "$x86_bin" "$arm_bin" -output "$merged_bin"
-              fi
-            fi
-
-            # Also merge framework Resources if they contain binaries
-            if [ -d "$x86_framework/Versions/Current" ]; then
-              find "$x86_framework/Versions/Current" -name "*.dylib" -type f 2>/dev/null | while read lib; do
-                lib_rel="${lib#$x86_framework/}"
-                x86_lib="$x86_framework/$lib_rel"
-                arm_lib="$arm_framework/$lib_rel"
-                merged_lib="$merged_framework/$lib_rel"
-
-                if [ -f "$arm_lib" ]; then
-                  if file "$x86_lib" | grep -q "Mach-O"; then
-                    echo "Merging framework lib: $framework_rel/$lib_rel"
-                    lipo -create "$x86_lib" "$arm_lib" -output "$merged_lib"
+                  if [ -f "$arm_bin" ]; then
+                    echo "Merging framework binary: $framework_rel/$framework_binary"
+                    lipo -create "$x86_bin" "$arm_bin" -output "$merged_bin"
                   fi
                 fi
-              done
+
+                # Also merge framework Resources if they contain binaries
+                if [ -d "$x86_framework/Versions/$ACTUAL_VERSION" ]; then
+                  find "$x86_framework/Versions/$ACTUAL_VERSION" -name "*.dylib" -type f 2>/dev/null | while read lib; do
+                    lib_rel="${lib#$x86_framework/}"
+                    x86_lib="$x86_framework/$lib_rel"
+                    arm_lib="$arm_framework/$lib_rel"
+                    merged_lib="$merged_framework/$lib_rel"
+
+                    if [ -f "$arm_lib" ]; then
+                      if file "$x86_lib" | grep -q "Mach-O"; then
+                        echo "Merging framework lib: $framework_rel/$lib_rel"
+                        lipo -create "$x86_lib" "$arm_lib" -output "$merged_lib"
+                      fi
+                    fi
+                  done
+                fi
+              fi
             fi
           done
 
