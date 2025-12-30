@@ -511,6 +511,14 @@ jobs:
             elif [ -f "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" ]; then
               cp "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/"
             fi
+
+            # Fix install name in libbrotlidec to reference the bundled version
+            if [ -f "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" ]; then
+              echo "Fixing install names in libbrotlidec.1.dylib"
+              # Change references from Homebrew paths to @loader_path
+              install_name_tool -change "/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" 2>/dev/null || true
+              install_name_tool -change "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" 2>/dev/null || true
+            fi
           fi
 
           echo "app_bundle=$MERGED_DIR/$APP_NAME" >> $GITHUB_OUTPUT
