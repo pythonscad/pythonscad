@@ -515,9 +515,18 @@ jobs:
             # Fix install name in libbrotlidec to reference the bundled version
             if [ -f "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" ]; then
               echo "Fixing install names in libbrotlidec.1.dylib"
+
+              # Show before
+              echo "BEFORE install_name_tool:"
+              otool -L "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" | grep brotli || echo "No brotli refs found"
+
               # Change references from Homebrew paths to @loader_path
-              install_name_tool -change "/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" 2>/dev/null || true
-              install_name_tool -change "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" 2>/dev/null || true
+              install_name_tool -change "/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" 2>&1 || echo "First install_name_tool returned: $?"
+              install_name_tool -change "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" 2>&1 || echo "Second install_name_tool returned: $?"
+
+              # Show after
+              echo "AFTER install_name_tool:"
+              otool -L "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" | grep brotli || echo "No brotli refs found"
             fi
           fi
 
@@ -526,6 +535,38 @@ jobs:
           # Verify main executable is universal
           echo "=== Verifying main executable ==="
           lipo -info "$MERGED_DIR/$APP_NAME/Contents/MacOS/$EXEC_NAME"
+
+          # Debug: Check dependency references
+          echo "=== Debug: Checking library references ==="
+
+          # Check if ICU libraries exist
+          echo "ICU libraries in bundle:"
+          ls -la "$FRAMEWORKS_DIR"/libicu*.dylib || echo "No ICU libraries found"
+
+          # Check libbrotlicommon
+          echo ""
+          echo "Brotli libraries:"
+          ls -la "$FRAMEWORKS_DIR"/libbrotli*.dylib || echo "No brotli libraries found"
+
+          # Check what libbrotlidec references
+          echo ""
+          echo "libbrotlidec.1.dylib dependencies:"
+          otool -L "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" || echo "Cannot read libbrotlidec"
+
+          # Check what libicuuc references (should reference libicudata)
+          echo ""
+          echo "libicuuc.78.dylib dependencies:"
+          otool -L "$FRAMEWORKS_DIR/libicuuc.78.dylib" || echo "Cannot read libicuuc"
+
+          # Check what libicui18n references
+          echo ""
+          echo "libicui18n.78.dylib dependencies:"
+          otool -L "$FRAMEWORKS_DIR/libicui18n.78.dylib" || echo "Cannot read libicui18n"
+
+          # Check QtCore framework references
+          echo ""
+          echo "QtCore framework dependencies:"
+          otool -L "$FRAMEWORKS_DIR/QtCore.framework/Versions/A/QtCore" | grep -E "icu|brotli" || echo "No ICU or brotli references found"
 
       - name: Run macOS sanity check
         run: |
