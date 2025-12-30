@@ -248,13 +248,6 @@ jobs:
           git fetch --unshallow --tags || git fetch --tags
           git describe --tags --always --dirty
 
-      - name: Install Qt for macdeployqt
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: 1
-          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
-        run: |
-          brew install qt@6
-
       - name: Download x86_64 artifact
         uses: actions/download-artifact@v5
         with:
@@ -505,9 +498,20 @@ jobs:
           echo "=== Merge complete ==="
           echo "Merged app location: $MERGED_DIR/$APP_NAME"
 
-          # Re-run macdeployqt on merged bundle to catch any missing dependencies
-          echo "=== Running macdeployqt on merged bundle ==="
-          macdeployqt "$MERGED_DIR/$APP_NAME" -no-strip
+          # Manually copy any missing transitive dependencies
+          echo "=== Copying missing dependencies ==="
+          FRAMEWORKS_DIR="$MERGED_DIR/$APP_NAME/Contents/Frameworks"
+
+          # Copy libbrotlicommon if missing (dependency of libbrotlidec)
+          if [ ! -f "$FRAMEWORKS_DIR/libbrotlicommon.1.dylib" ]; then
+            echo "Copying libbrotlicommon.1.dylib"
+            # Try both Homebrew locations
+            if [ -f "/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib" ]; then
+              cp "/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/"
+            elif [ -f "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" ]; then
+              cp "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/"
+            fi
+          fi
 
           echo "app_bundle=$MERGED_DIR/$APP_NAME" >> $GITHUB_OUTPUT
 
