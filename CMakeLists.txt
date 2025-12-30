@@ -29,6 +29,11 @@ if(POLICY CMP0167) # Since CMake 3.30
 endif()
 
 include("cmake/Modules/openscad_version.cmake")
+configure_file(
+  ${CMAKE_SOURCE_DIR}/src/version.cc.in
+  ${CMAKE_BINARY_DIR}/version.cc
+  @ONLY
+)
 
 option(INFO "Display build configuration info at end of cmake config" ON)
 option(ENABLE_TESTS "Run testsuite after building." ON)
@@ -189,6 +194,25 @@ if (MINGW)
         -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
       >
     )
+    # Unsure if it helps to double this
+    target_link_options(OpenSCADExe PRIVATE
+      $<$<CONFIG:Debug>:
+        -Wl,--gc-sections;        # Linker: drop unused sections
+        -Wl,--icf=all;            # ICF: fold identical code/data (effective with lld)
+        -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
+      >
+    )
+    # Unsure if it helps to triple this
+    target_link_options(svg PRIVATE
+      $<$<CONFIG:Debug>:
+        -Wl,--gc-sections;        # Linker: drop unused sections
+        -Wl,--icf=all;            # ICF: fold identical code/data (effective with lld)
+        -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
+      >
+    )
+  endif()
+  if (NOT MXECROSS)
+    target_compile_definitions(OpenSCADLibInternal PRIVATE QSCINTILLA_DLL)
   endif()
   if (NOT MXECROSS)
     target_compile_definitions(OpenSCADLibInternal PRIVATE QSCINTILLA_DLL)
@@ -245,7 +269,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   set(ENV{PKG_CONFIG_PATH} "/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig")
   target_compile_definitions(OpenSCADLibInternal PUBLIC CGAL_DISABLE_ROUNDING_MATH_CHECK)
   target_link_libraries(OpenSCADLibInternal PUBLIC /emsdk/upstream/emscripten/cache/sysroot/lib/libz.a)
-
   # https://emscripten.org/docs/tools_reference/emcc.html
   # https://emscripten.org/docs/tools_reference/settings_reference.html
   target_compile_options(OpenSCADLibInternal PUBLIC -fexceptions)
@@ -1257,23 +1280,6 @@ set(CORE_SOURCES
   src/io/import_step.cc
   src/io/StepKernel.cc
   src/io/import_svg.cc
-  src/libsvg/circle.cc
-  src/libsvg/data.cc
-  src/libsvg/ellipse.cc
-  src/libsvg/group.cc
-  src/libsvg/libsvg.cc
-  src/libsvg/line.cc
-  src/libsvg/path.cc
-  src/libsvg/polygon.cc
-  src/libsvg/polyline.cc
-  src/libsvg/rect.cc
-  src/libsvg/shape.cc
-  src/libsvg/svgpage.cc
-  src/libsvg/text.cc
-  src/libsvg/transformation.cc
-  src/libsvg/tspan.cc
-  src/libsvg/use.cc
-  src/libsvg/util.cc
   src/platform/PlatformUtils.cc
   src/utils/StackCheck.h
   src/utils/calc.cc
@@ -1622,7 +1628,12 @@ endif()
 if (ENABLE_MANIFOLD AND ENABLE_CGAL)
   list(APPEND Sources ${MANIFOLD_CGAL_SOURCES})
 endif()
-list(APPEND Sources src/openscad.cc ${CORE_SOURCES} ${OFFSCREEN_SOURCES})
+list(APPEND Sources
+  src/openscad.cc
+  ${CMAKE_BINARY_DIR}/version.cc
+  ${CORE_SOURCES}
+  ${OFFSCREEN_SOURCES}
+)
 
 set_source_files_properties(
   # flex and bison tends to generate many macros, which does not work well with
@@ -1732,7 +1743,7 @@ add_custom_command(TARGET OpenSCADExe POST_BUILD
     COMMENT "Compiling language files")
 
 if(APPLE AND NOT APPLE_UNIX)
-set_target_properties(OpenSCADExe PROPERTIES
+  set_target_properties(OpenSCADExe PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist.in
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_ICON_FILE ${MACOSX_BUNDLE_ICON_FILE}
@@ -2009,7 +2020,7 @@ if(ENABLE_TESTS)
 
   # Note: Since Catch2 is only used for testing, we install it via Homebrew.
   # However, we need to temporarily re-enable searching in Homebrew for this to work.
-  if(NOT Catch2_FOUND AND APPLE)
+  if(NOT Catch2_FOUND AND APPLE)s
     set(CMAKE_IGNORE_PREFIX_PATH_BACKUP "${CMAKE_IGNORE_PREFIX_PATH}")
     set(CMAKE_IGNORE_PREFIX_PATH "")
     list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")

@@ -126,20 +126,16 @@ std::string RotateExtrudeNode::toString() const
             "convexity = "
          << this->convexity << ", ";
 #ifdef ENABLE_PYTHON
-  if (this->profile_func != NULL) {
-    stream << ", profile = " << rand();
-  }
-  if (this->twist_func != NULL) {
-    stream << ", twist_func = " << rand();
-  } else
-#endif
-    if (twist != 0)
-    stream << "twist = " << this->twist << ", ";
-
-  stream << discretizer << ")";
-
-  return stream.str();
+  stream << ", profile = " << rand();
 }
+if (this->twist_func != NULL) {
+  stream << ", twist_func = " << rand();
+} else
+#endif
+  if (twist != 0)
+  stream << "twist = " << this->twist << ", ";
+
+stream << discretizer << ")";
 
 void register_builtin_rotate_extrude()
 {

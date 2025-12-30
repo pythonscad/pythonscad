@@ -261,6 +261,13 @@ file(GLOB SCAD_DXF_FILES      ${TEST_SCAD_DIR}/dxf/*.scad
 file(GLOB SCAD_PDF_FILES      ${TEST_SCAD_DIR}/pdf/*.scad)
 file(GLOB PYTHONSCAD_FILES    ${TEST_PYTHONSCAD_DIR}/*.py)
 file(GLOB PYTHONSCAD_ECHO_FILES    ${TEST_PYTHONSCAD_ECHO_DIR}/*.py)
+if(NOT MINGW)
+  # GhostScript on MSYS2/MINGW can't handle the names.
+  list(APPEND SCAD_PDF_FILES
+    ${TEST_SCAD_DIR}/misc/utf8-☠-2D.scad
+  )
+endif()
+
 file(GLOB SCAD_SVG_FILES      ${TEST_SCAD_DIR}/svg/svg-spec/*.scad
   ${TEST_SCAD_DIR}/svg/box-w-holes-2d.scad
   ${TEST_SCAD_DIR}/svg/display.scad
@@ -887,8 +894,9 @@ add_cmdline_test(render-force-manifold      OPENSCAD SUFFIX png FILES ${RENDERFO
 add_cmdline_test(render-force-manifold-hardwarnings OPENSCAD SUFFIX png FILES ${MANIFOLDHARDWARNING_FILES} EXPECTEDDIR render ARGS --render=force --backend=manifold --hardwarnings --trust-python)
 endif()
 
-add_cmdline_test(preview-cgal    OPENSCAD FILES ${PREVIEW_COMMON_FILES} EXPECTEDDIR preview SUFFIX png ARGS --backend=cgal --trust-python)
-add_cmdline_test(preview-cgal    OPENSCAD FILES ${PREVIEW_DIFFERENT_EXPECTATIONS} SUFFIX png ARGS --backend=cgal --trust-python)
+add_cmdline_test(preview-cgal    OPENSCAD FILES ${PREVIEW_COMMON_FILES} EXPECTEDDIR preview SUFFIX png ARGS --backend=cgal)
+add_cmdline_test(preview-cgal    OPENSCAD FILES ${PREVIEW_DIFFERENT_EXPECTATIONS} SUFFIX png ARGS --backend=cgal)
+add_cmdline_test(preview-cgal    OPENSCAD FILES ${PREVIEW_ERRORS} SUFFIX png ARGS --backend=cgal)
 if (ENABLE_MANIFOLD_TESTS)
 add_cmdline_test(preview-manifold OPENSCAD SUFFIX png FILES ${PREVIEW_COMMON_FILES} EXPECTEDDIR preview ARGS --backend=manifold --trust-python)
 add_cmdline_test(preview-manifold OPENSCAD SUFFIX png FILES ${PREVIEW_DIFFERENT_EXPECTATIONS} ARGS --backend=manifold --trust-python)

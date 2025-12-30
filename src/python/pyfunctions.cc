@@ -534,7 +534,6 @@ PyObject *python_sphere(PyObject *self, PyObject *args, PyObject *kwargs)
   double r = NAN;
   PyObject *rp = nullptr;
   double d = NAN;
-  double fn = NAN, fa = NAN, fs = NAN;
 
   double vr = 1;
 
@@ -586,8 +585,6 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
   double d1 = NAN;
   double d2 = NAN;
   double angle = NAN;
-
-  double fn = NAN, fa = NAN, fs = NAN;
 
   PyObject *center = NULL;
   double vr1 = 1, vr2 = 1, vh = 1;
@@ -4763,6 +4760,14 @@ PyObject *python_sheet(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   return python_sheet_core(func, imin, imax, jmin, jmax, fs, ispan, jspan);
+}
+
+std::optional<std::string> to_optional_string(const char *ptr)
+{
+  if (ptr != nullptr) {
+    return std::string(ptr);
+  }
+  return {};
 }
 
 std::optional<std::string> to_optional_string(const char *ptr)
