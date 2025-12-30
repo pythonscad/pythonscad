@@ -512,21 +512,10 @@ jobs:
               cp "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/"
             fi
 
-            # Fix install name in libbrotlidec to reference the bundled version
-            if [ -f "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" ]; then
-              echo "Fixing install names in libbrotlidec.1.dylib"
-
-              # Show before
-              echo "BEFORE install_name_tool:"
-              otool -L "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" | grep brotli || echo "No brotli refs found"
-
-              # Change references from Homebrew paths to @loader_path
-              install_name_tool -change "/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" 2>&1 || echo "First install_name_tool returned: $?"
-              install_name_tool -change "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" 2>&1 || echo "Second install_name_tool returned: $?"
-
-              # Show after
-              echo "AFTER install_name_tool:"
-              otool -L "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" | grep brotli || echo "No brotli refs found"
+            # Fix install_name ID of libbrotlicommon itself
+            if [ -f "$FRAMEWORKS_DIR/libbrotlicommon.1.dylib" ]; then
+              echo "Fixing libbrotlicommon.1.dylib install_name ID"
+              install_name_tool -id "@executable_path/../Frameworks/libbrotlicommon.1.dylib" "$FRAMEWORKS_DIR/libbrotlicommon.1.dylib"
             fi
           fi
 
