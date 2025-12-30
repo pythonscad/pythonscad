@@ -105,6 +105,18 @@ jobs:
           # Bundle Qt frameworks
           macdeployqt "$APP_BUNDLE" -no-strip
 
+          # Manually copy libbrotlicommon (dependency of libbrotlidec that macdeployqt misses)
+          if [ ! -f "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib" ]; then
+            BROTLI_LIB="/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib"
+            if [ -f "$BROTLI_LIB" ]; then
+              echo "Copying libbrotlicommon.1.dylib to app bundle"
+              cp "$BROTLI_LIB" "$APP_BUNDLE/Contents/Frameworks/"
+              # Fix install_name to use @executable_path
+              install_name_tool -id "@executable_path/../Frameworks/libbrotlicommon.1.dylib" \
+                "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib"
+            fi
+          fi
+
           echo "x86_64 build complete"
 
       - name: Determine app bundle name
@@ -211,6 +223,18 @@ jobs:
 
           # Bundle Qt frameworks
           macdeployqt "$APP_BUNDLE" -no-strip
+
+          # Manually copy libbrotlicommon (dependency of libbrotlidec that macdeployqt misses)
+          if [ ! -f "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib" ]; then
+            BROTLI_LIB="/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib"
+            if [ -f "$BROTLI_LIB" ]; then
+              echo "Copying libbrotlicommon.1.dylib to app bundle"
+              cp "$BROTLI_LIB" "$APP_BUNDLE/Contents/Frameworks/"
+              # Fix install_name to use @executable_path
+              install_name_tool -id "@executable_path/../Frameworks/libbrotlicommon.1.dylib" \
+                "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib"
+            fi
+          fi
 
           echo "arm64 build complete"
 
