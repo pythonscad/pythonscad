@@ -444,6 +444,10 @@ jobs:
                 if [ -f "$x86_py_bin" ] && [ -f "$arm_py_bin" ]; then
                   echo "Merging Python binary"
                   lipo -create "$x86_py_bin" "$arm_py_bin" -output "$merged_py_bin"
+
+                  # Fix install_name ID of the Python framework binary
+                  echo "Fixing Python framework install_name ID"
+                  install_name_tool -id "@executable_path/../Frameworks/Python.framework/Versions/$PYTHON_VERSION/Python" "$merged_py_bin"
                 fi
 
                 # Merge Python extension modules (.so files)
