@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.1](https://github.com/pythonscad/pythonscad/compare/v0.8.0...v0.8.1) (2025-12-31)
+
+
+### Bug Fixes
+
+* change release trigger from published to created ([#256](https://github.com/pythonscad/pythonscad/issues/256)) ([ea76cb4](https://github.com/pythonscad/pythonscad/commit/ea76cb454cdad1e1c725234ba9aa7b972c281e7d))
+* prevent macOS release builds from triggering on pull requests ([#258](https://github.com/pythonscad/pythonscad/issues/258)) ([a45e9f4](https://github.com/pythonscad/pythonscad/commit/a45e9f49be39b38a24aa760485881907d417d62b))
+
 ## [0.8.0](https://github.com/pythonscad/pythonscad/compare/v0.7.2...v0.8.0) (2025-12-30)
 
 
