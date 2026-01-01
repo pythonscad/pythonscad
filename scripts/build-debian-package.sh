@@ -80,17 +80,13 @@ if [ "$RUN_LINTIAN" = "yes" ] && ! command_exists lintian; then
     RUN_LINTIAN="no"
 fi
 
+# Note: Individual .deb signing with dpkg-sig is deprecated
+# Modern practice is to sign the APT repository Release file instead
+# See scripts/update-apt-repo.sh for repository-level signing
 if [ "$SIGN_PACKAGE" = "yes" ]; then
-    if ! command_exists dpkg-sig; then
-        warn "dpkg-sig not found, package signing disabled. Install with: sudo apt-get install dpkg-sig"
-        SIGN_PACKAGE="no"
-    elif [ -z "$GPG_KEY" ]; then
-        warn "GPG_KEY not set, package signing disabled"
-        SIGN_PACKAGE="no"
-    elif ! gpg --list-secret-keys | grep -q "$GPG_KEY"; then
-        warn "GPG key $GPG_KEY not found in keyring, package signing disabled"
-        SIGN_PACKAGE="no"
-    fi
+    warn "Individual .deb signing is deprecated - packages will be unsigned"
+    warn "Use repository-level signing instead (handled by update-apt-repo.sh)"
+    SIGN_PACKAGE="no"
 fi
 
 # Verify we're in the project root
@@ -173,15 +169,9 @@ if [ "$RUN_LINTIAN" = "yes" ]; then
     fi
 fi
 
-# Sign the package if requested
-if [ "$SIGN_PACKAGE" = "yes" ]; then
-    info "Signing package with GPG key ${GPG_KEY}..."
-    if dpkg-sig --sign builder -k "$GPG_KEY" "$DEB_FILE"; then
-        info "Package signed successfully"
-    else
-        warn "Package signing failed, continuing anyway"
-    fi
-fi
+# Individual package signing is deprecated
+# Packages will be verified via repository-level GPG signing
+# (Release file signature in the APT repository)
 
 # Generate checksums
 info "Generating checksums..."
