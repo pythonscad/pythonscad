@@ -16,8 +16,14 @@ BuildRequires:  cmake >= 3.16
 BuildRequires:  gcc-c++
 BuildRequires:  make
 BuildRequires:  git
+BuildRequires:  flex
+BuildRequires:  bison
 BuildRequires:  python3-devel
+BuildRequires:  python3-setuptools
+BuildRequires:  nettle-devel >= 3.4
+BuildRequires:  nettle
 BuildRequires:  boost-devel >= 1.35
+BuildRequires:  tbb-devel
 BuildRequires:  eigen3-devel >= 3.0
 BuildRequires:  CGAL-devel >= 5.0
 BuildRequires:  gmp-devel >= 5.0.0
@@ -31,6 +37,7 @@ BuildRequires:  libxml2-devel >= 2.9
 BuildRequires:  double-conversion-devel
 BuildRequires:  lib3mf-devel
 BuildRequires:  libzip-devel
+BuildRequires:  libcurl-devel
 BuildRequires:  cairo-devel
 BuildRequires:  gettext
 BuildRequires:  qt6-qtbase-devel

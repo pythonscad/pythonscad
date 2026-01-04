@@ -64,15 +64,18 @@ info "=============================="
 info "Checking for required tools..."
 
 if ! command_exists rpmbuild; then
-    die "rpmbuild not found. Please install: sudo dnf install rpm-build rpmdevtools"
+    die "rpmbuild not found. Please install: sudo dnf install rpm-build rpmdevtools (Fedora/RHEL) or sudo apt-get install rpm (Ubuntu/Debian)"
 fi
 
+# Note: rpmdev-setuptree is part of rpmdevtools which is Fedora/RHEL specific
+# On Ubuntu/Debian, this tool doesn't exist but we handle it by manually creating
+# the directory structure below, so this is just an informational warning
 if ! command_exists rpmdev-setuptree; then
-    warn "rpmdev-setuptree not found. Install rpmdevtools for better experience: sudo dnf install rpmdevtools"
+    warn "rpmdev-setuptree not found (expected on Ubuntu/Debian, will create directories manually)"
 fi
 
 if [ "$RUN_RPMLINT" = "yes" ] && ! command_exists rpmlint; then
-    warn "rpmlint not found, quality checks will be skipped. Install with: sudo dnf install rpmlint"
+    warn "rpmlint not found, quality checks will be skipped. Install with: sudo dnf install rpmlint (Fedora/RHEL) or sudo apt-get install rpmlint (Ubuntu/Debian)"
     RUN_RPMLINT="no"
 fi
 
@@ -96,6 +99,32 @@ info "Building version: ${VERSION}"
 # Detect architecture
 ARCH=$(uname -m)
 info "Building for architecture: ${ARCH}"
+
+# Export environment variables needed by spec file
+# These must be set before dnf builddep parses the spec file
+export VERSION
+export CHANGELOG_DATE=$(date "+%a %b %d %Y")
+
+# Install build dependencies from spec file
+info "Installing build dependencies..."
+if command_exists dnf; then
+    info "Using dnf to install BuildRequires from spec file..."
+    if dnf builddep -y "${PROJECT_ROOT}/pythonscad.spec"; then
+        info "Build dependencies installed successfully"
+    else
+        warn "Failed to install some build dependencies, build may fail"
+    fi
+elif command_exists yum; then
+    info "Using yum-builddep to install BuildRequires from spec file..."
+    if yum-builddep -y "${PROJECT_ROOT}/pythonscad.spec"; then
+        info "Build dependencies installed successfully"
+    else
+        warn "Failed to install some build dependencies, build may fail"
+    fi
+else
+    warn "Neither dnf nor yum found, skipping automatic dependency installation"
+    warn "You may need to manually install BuildRequires listed in pythonscad.spec"
+fi
 
 # Set up RPM build tree
 info "Setting up RPM build tree..."
@@ -133,10 +162,6 @@ info "Source tarball created: ${TARBALL_NAME}"
 # Copy spec file to SPECS directory
 cp "${PROJECT_ROOT}/pythonscad.spec" "${RPMBUILD_DIR}/SPECS/"
 
-# Set environment variables for spec file
-export VERSION
-export CHANGELOG_DATE=$(date "+%a %b %d %Y")
-
 # Detect dist tag if not provided
 if [ -z "$FEDORA_RELEASE" ]; then
     if [ -f /etc/fedora-release ]; then
@@ -146,7 +171,10 @@ if [ -z "$FEDORA_RELEASE" ]; then
         RHEL_VERSION=$(rpm -E %{rhel})
         DIST_TAG=".el${RHEL_VERSION}"
     else
-        DIST_TAG=""
+        # Default for Ubuntu/Debian or unknown systems
+        # Using .local to indicate it's a locally built package
+        DIST_TAG=".local"
+        info "Building on non-Fedora/RHEL system, using .local dist tag"
     fi
 else
     DIST_TAG=".fc${FEDORA_RELEASE}"
