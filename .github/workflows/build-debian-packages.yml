@@ -3,6 +3,9 @@ name: Build Debian packages
 on:
   release:
     types: [created]
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       upload_to_release:
@@ -58,6 +61,8 @@ jobs:
             lintian \
             dpkg-dev \
             fakeroot
+          # Install Build-Depends from debian/control
+          sudo apt-get install -y libboost-all-dev
 
       - name: Import GPG signing key
         if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''

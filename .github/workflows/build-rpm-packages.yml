@@ -3,6 +3,9 @@ name: Build RPM packages
 on:
   release:
     types: [created]
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       upload_to_release:
