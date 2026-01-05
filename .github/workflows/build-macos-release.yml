@@ -674,6 +674,12 @@ jobs:
             fi
           fi
 
+          # Sign all framework bundles (required before signing app bundle)
+          for fw in "$APP_BUNDLE/Contents/Frameworks"/*.framework; do
+            [ ! -d "$fw" ] && continue
+            codesign --force --sign - "$fw" 2>&1 | grep -v "replacing existing signature" || true
+          done
+
           # Sign helper and main executables
           if [ -f "$APP_BUNDLE/Contents/MacOS/$EXEC_NAME-python" ]; then
             codesign --force --sign - "$APP_BUNDLE/Contents/MacOS/$EXEC_NAME-python"
