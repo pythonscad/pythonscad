@@ -99,7 +99,7 @@ modern features.
 find %{buildroot} -type f \( -name "*.so*" -o -perm /111 \) -exec chrpath --delete {} \; 2>/dev/null || true
 
 %files
-%license LICENSE
+%license COPYING
 %doc README.md CHANGELOG.md
 %{_bindir}/pythonscad
 %{_bindir}/pythonscad-python
