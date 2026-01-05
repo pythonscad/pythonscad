@@ -56,7 +56,6 @@ Requires:       qt6-qtmultimedia
 Requires:       qt6-qtsvg
 Requires:       qt6-qt5compat
 Requires:       opencsg >= 1.3.2
-Requires:       CGAL >= 5.0
 Requires:       glew >= 1.5.4
 Requires:       harfbuzz >= 0.9.19
 Requires:       freetype >= 2.4
