@@ -121,7 +121,7 @@ jobs:
           dnf install -y /tmp/rpms/pythonscad-*.rpm
 
           # Verify binary exists and shows version
-          which pythonscad
+          command -v pythonscad
           pythonscad --version || echo "Version check skipped (may require display)"
 
           # Verify library dependencies
