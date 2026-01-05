@@ -45,6 +45,7 @@ BuildRequires:  qt6-qtmultimedia-devel
 BuildRequires:  qt6-qtsvg-devel
 BuildRequires:  qt6-qt5compat-devel
 BuildRequires:  qscintilla-qt6-devel
+BuildRequires:  chrpath
 
 Requires:       python3
 Requires:       qt6-qtbase
@@ -77,10 +78,7 @@ modern features.
 %cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
-    -DCMAKE_SKIP_BUILD_RPATH=FALSE \
-    -DCMAKE_BUILD_WITH_INSTALL_RPATH=FALSE \
-    -DCMAKE_INSTALL_RPATH=%{_libdir} \
-    -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=FALSE \
+    -DCMAKE_SKIP_INSTALL_RPATH=TRUE \
     -DEXPERIMENTAL=ON \
     -DENABLE_PYTHON=ON \
     -DPYTHON_VERSION=%{python3_version} \
@@ -95,6 +93,10 @@ modern features.
 
 %install
 %cmake_install
+
+# Remove RPATH from all binaries and libraries
+# This ensures clean packaging without RPATH warnings
+find %{buildroot} -type f \( -name "*.so*" -o -perm /111 \) -exec chrpath --delete {} \; 2>/dev/null || true
 
 %files
 %license LICENSE
