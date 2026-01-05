@@ -9,6 +9,11 @@ on:
         description: 'Release tag to upload to (leave empty for test build)'
         required: false
         default: ''
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
 
 jobs:
   build-rpm:
@@ -67,6 +72,13 @@ jobs:
           git fetch --unshallow --tags 2>/dev/null || git fetch --tags
           git describe --tags --always --dirty || echo "No tags found"
 
+      - name: Setup (detached) tmate session if enabled
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 5
+        with:
+          detached: true
+          limit-access-to-actor: true
       - name: Set up QEMU for ARM64
         if: matrix.arch == 'arm64'
         run: |
