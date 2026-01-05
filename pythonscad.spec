@@ -103,6 +103,7 @@ find %{buildroot} -type f \( -name "*.so*" -o -perm /111 \) -exec chrpath --dele
 %doc README.md CHANGELOG.md
 %{_bindir}/pythonscad
 %{_bindir}/pythonscad-python
+%{_libdir}/libfive.so*
 %{_datadir}/pythonscad/
 %{_datadir}/icons/hicolor/*/apps/pythonscad.png
 %{_datadir}/applications/pythonscad.desktop
