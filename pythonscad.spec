@@ -3,6 +3,9 @@
 
 %global debug_package %{nil}
 
+# Filter out automatic requires for built-in libraries that aren't installed separately
+%global __requires_exclude ^(libClipper2\\.so\\.1|libOpenSCADPy\\.so|libmanifold\\.so\\.3)\\(
+
 Name:           pythonscad
 Version:        %{getenv:VERSION}
 Release:        1%{?dist}
