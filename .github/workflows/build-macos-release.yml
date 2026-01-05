@@ -675,9 +675,28 @@ jobs:
           fi
 
           # Sign all framework bundles (required before signing app bundle)
+          echo "=== Signing framework bundles ==="
           for fw in "$APP_BUNDLE/Contents/Frameworks"/*.framework; do
             [ ! -d "$fw" ] && continue
-            codesign --force --sign - "$fw" 2>&1 | grep -v "replacing existing signature" || true
+            fw_name=$(basename "$fw")
+            echo "Signing framework: $fw_name"
+
+            # Verify framework structure before signing
+            if [ ! -f "$fw/Resources/Info.plist" ] && [ ! -f "$fw/Versions/A/Resources/Info.plist" ]; then
+              echo "WARNING: $fw_name missing Info.plist, signing may fail"
+            fi
+
+            # Attempt to sign, show errors but continue
+            if ! codesign --force --sign - "$fw" 2>&1 | grep -v "replacing existing signature"; then
+              echo "ERROR: Failed to sign $fw_name"
+              # Try to diagnose the issue
+              echo "Framework structure:"
+              ls -la "$fw/" | head -20
+              if [ -d "$fw/Versions" ]; then
+                echo "Versions directory:"
+                ls -la "$fw/Versions/" | head -20
+              fi
+            fi
           done
 
           # Sign helper and main executables
