@@ -15,7 +15,7 @@ on:
 
 jobs:
   build-rpm:
-    name: Build .rpm (${{ matrix.distro }} ${{ matrix.arch }})
+    name: Build .rpm (${{ matrix.distro }} ${{ matrix.version }} ${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
