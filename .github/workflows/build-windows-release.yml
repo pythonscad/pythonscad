@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       upload_to_release:
-        description: 'Upload to latest release (leave empty for test builds)'
+        description: 'Release tag to upload to (leave empty for test build)'
         required: false
         default: ''
       debug_enabled:
