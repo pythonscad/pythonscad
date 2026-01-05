@@ -23,24 +23,30 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Fedora 40 (amd64)
+          # Fedora 42 (amd64)
           - distro: fedora
-            version: '40'
+            version: '42'
             arch: amd64
             runner: ubuntu-24.04
-            container: fedora:40
-          # Fedora 40 (arm64)
+            container: fedora:42
+          # Fedora 42 (arm64)
           - distro: fedora
-            version: '40'
+            version: '42'
             arch: arm64
             runner: ubuntu-24.04
-            container: fedora:40
-          # Fedora 41 (amd64)
+            container: fedora:42
+          # Fedora 43 (amd64)
           - distro: fedora
-            version: '41'
+            version: '43'
             arch: amd64
             runner: ubuntu-24.04
-            container: fedora:41
+            container: fedora:43
+          # Fedora 43 (arm64)
+          - distro: fedora
+            version: '43'
+            arch: arm64
+            runner: ubuntu-24.04
+            container: fedora:43
           # RHEL 9 compatible (amd64)
           - distro: el
             version: '9'
