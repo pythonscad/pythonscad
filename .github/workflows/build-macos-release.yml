@@ -674,39 +674,38 @@ jobs:
             fi
           fi
 
-          # Sign all framework bundles (required before signing app bundle)
-          echo "=== Signing framework bundles ==="
+          # Diagnose framework structure before signing
+          echo "=== Diagnosing framework structures ==="
           for fw in "$APP_BUNDLE/Contents/Frameworks"/*.framework; do
             [ ! -d "$fw" ] && continue
             fw_name=$(basename "$fw")
-            echo "Signing framework: $fw_name"
-
-            # Verify framework structure before signing
-            if [ ! -f "$fw/Resources/Info.plist" ] && [ ! -f "$fw/Versions/A/Resources/Info.plist" ]; then
-              echo "WARNING: $fw_name missing Info.plist, signing may fail"
+            echo "--- Framework: $fw_name ---"
+            echo "Top-level structure:"
+            ls -la "$fw/" 2>/dev/null | head -15
+            echo ""
+            echo "Recursive structure (max depth 3):"
+            find "$fw" -maxdepth 3 -ls 2>/dev/null | head -30
+            echo ""
+            echo "Info.plist locations:"
+            find "$fw" -name "Info.plist" -type f 2>/dev/null || echo "No Info.plist found"
+            if [ -f "$fw/Resources/Info.plist" ]; then
+              echo "Bundle type from Resources/Info.plist:"
+              /usr/libexec/PlistBuddy -c "Print :CFBundlePackageType" "$fw/Resources/Info.plist" 2>/dev/null || echo "No CFBundlePackageType"
             fi
-
-            # Attempt to sign, show errors but continue
-            if ! codesign --force --sign - "$fw" 2>&1 | grep -v "replacing existing signature"; then
-              echo "ERROR: Failed to sign $fw_name"
-              # Try to diagnose the issue
-              echo "Framework structure:"
-              ls -la "$fw/" | head -20
-              if [ -d "$fw/Versions" ]; then
-                echo "Versions directory:"
-                ls -la "$fw/Versions/" | head -20
-              fi
+            if [ -f "$fw/Versions/A/Resources/Info.plist" ]; then
+              echo "Bundle type from Versions/A/Resources/Info.plist:"
+              /usr/libexec/PlistBuddy -c "Print :CFBundlePackageType" "$fw/Versions/A/Resources/Info.plist" 2>/dev/null || echo "No CFBundlePackageType"
             fi
+            echo "All symlinks in framework:"
+            find "$fw" -type l -ls 2>/dev/null | head -10 || echo "No symlinks found"
+            echo "==="
+            echo ""
           done
 
-          # Sign helper and main executables
-          if [ -f "$APP_BUNDLE/Contents/MacOS/$EXEC_NAME-python" ]; then
-            codesign --force --sign - "$APP_BUNDLE/Contents/MacOS/$EXEC_NAME-python"
-          fi
-          codesign --force --sign - "$APP_BUNDLE/Contents/MacOS/$EXEC_NAME"
-
-          # Sign the app bundle itself
-          codesign --force --sign - "$APP_BUNDLE"
+          # Sign the app bundle with --deep to recursively sign all nested code
+          # This handles frameworks, plugins, and executables in one pass
+          echo "=== Signing app bundle (deep) ==="
+          codesign --deep --force --sign - --verbose=4 "$APP_BUNDLE" 2>&1 || true
 
           # Remove quarantine attributes
           xattr -cr "$APP_BUNDLE" 2>/dev/null || true
