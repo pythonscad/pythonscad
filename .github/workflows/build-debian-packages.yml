@@ -178,7 +178,6 @@ jobs:
         run: |
           cp main-repo/scripts/update-apt-repo.sh /tmp/
           chmod +x /tmp/update-apt-repo.sh
-          cd apt-repo
           /tmp/update-apt-repo.sh /tmp/debs/all
 
       - name: Commit and push repository updates
