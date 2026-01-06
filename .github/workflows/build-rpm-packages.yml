@@ -160,7 +160,7 @@ jobs:
 
   publish-yum-repo:
     name: Update YUM repository
-    needs: build-rpm
+    needs: [build-rpm, create-yum-repo-branch]
     runs-on: ubuntu-24.04
     if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
 

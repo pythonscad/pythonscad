@@ -129,7 +129,7 @@ jobs:
 
   publish-apt-repo:
     name: Update APT repository
-    needs: build-debian
+    needs: [build-debian, create-apt-repo-branch]
     runs-on: ubuntu-24.04
     if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
 
