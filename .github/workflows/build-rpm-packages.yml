@@ -206,6 +206,7 @@ jobs:
         run: |
           # Download existing repo to preserve old versions
           mkdir -p /tmp/yum-repo-existing
+          mkdir -p /tmp/yum-repo
 
           # Download existing repo (ignore errors if doesn't exist yet)
           rsync -avz \
