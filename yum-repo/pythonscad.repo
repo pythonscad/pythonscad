@@ -1,0 +1,22 @@
+# PythonSCAD YUM/DNF Repository
+#
+# Installation:
+#   sudo curl -o /etc/yum.repos.d/pythonscad.repo \
+#     https://pythonscad.github.io/pythonscad/pythonscad.repo
+#   sudo dnf install pythonscad
+
+[pythonscad]
+name=PythonSCAD
+baseurl=https://pythonscad.github.io/pythonscad/packages/fedora/$releasever/$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://pythonscad.github.io/pythonscad/RPM-GPG-KEY-pythonscad
+metadata_expire=1d
+
+[pythonscad-el9]
+name=PythonSCAD EL9
+baseurl=https://pythonscad.github.io/pythonscad/packages/el/9/$basearch
+enabled=0
+gpgcheck=1
+gpgkey=https://pythonscad.github.io/pythonscad/RPM-GPG-KEY-pythonscad
+metadata_expire=1d
