@@ -144,7 +144,6 @@ if [ "$KEEP_VERSIONS" -gt 0 ]; then
                 echo "$OLD_PACKAGES" | while read -r pkg; do
                     info "  Removing old package: $(basename "$pkg")"
                     rm -f "$pkg"
-                    rm -f "${pkg}.sha256"
                 done
             fi
         done
