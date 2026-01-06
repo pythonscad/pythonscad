@@ -125,6 +125,7 @@ jobs:
         env:
           OUTPUT_DIR: /tmp/rpms
           FEDORA_RELEASE: ${{ matrix.version }}
+          DISTRO_TYPE: ${{ matrix.distro }}
         run: |
           # Set architecture for cross-compilation if needed
           if [ "${{ matrix.arch }}" = "arm64" ]; then

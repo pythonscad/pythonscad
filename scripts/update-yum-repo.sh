@@ -80,6 +80,10 @@ mkdir -p "${REPO_DIR}/packages/fedora/40/x86_64"
 mkdir -p "${REPO_DIR}/packages/fedora/40/aarch64"
 mkdir -p "${REPO_DIR}/packages/fedora/41/x86_64"
 mkdir -p "${REPO_DIR}/packages/fedora/41/aarch64"
+mkdir -p "${REPO_DIR}/packages/fedora/42/x86_64"
+mkdir -p "${REPO_DIR}/packages/fedora/42/aarch64"
+mkdir -p "${REPO_DIR}/packages/fedora/43/x86_64"
+mkdir -p "${REPO_DIR}/packages/fedora/43/aarch64"
 mkdir -p "${REPO_DIR}/packages/el/9/x86_64"
 mkdir -p "${REPO_DIR}/packages/el/9/aarch64"
 
@@ -111,11 +115,15 @@ for rpm in "${RPM_SOURCE_DIR}"/*.rpm; do
         dest="${REPO_DIR}/packages/fedora/40/${arch}"
     elif [[ "$filename" == *".fc41."* ]]; then
         dest="${REPO_DIR}/packages/fedora/41/${arch}"
+    elif [[ "$filename" == *".fc42."* ]]; then
+        dest="${REPO_DIR}/packages/fedora/42/${arch}"
+    elif [[ "$filename" == *".fc43."* ]]; then
+        dest="${REPO_DIR}/packages/fedora/43/${arch}"
     elif [[ "$filename" == *".el9."* ]]; then
         dest="${REPO_DIR}/packages/el/9/${arch}"
     else
-        warn "Unknown distribution for $filename, defaulting to Fedora 40"
-        dest="${REPO_DIR}/packages/fedora/40/${arch}"
+        warn "Unknown distribution for $filename, defaulting to Fedora 43"
+        dest="${REPO_DIR}/packages/fedora/43/${arch}"
     fi
 
     info "Copying $filename to $dest"
