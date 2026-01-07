@@ -3300,8 +3300,8 @@ PyObject *python_rotate_extrude(PyObject *self, PyObject *args, PyObject *kwargs
   PyObject *origin = NULL;
   PyObject *offset = NULL;
   double fn = NAN, fa = NAN, fs = NAN;
-  char *kwlist[] = {"obj", "convexity", "scale", "angle", "twist", "origin", "offset",
-                    "v",   "method",      NULL};
+  char *kwlist[] = {"obj",    "convexity", "scale", "angle",  "twist",
+                    "origin", "offset",    "v",     "method", NULL};
   auto discretizer = CreateCurveDiscretizer(kwargs);
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iddOOOOsddd", kwlist, &obj, &convexity, &scale,
                                    &angle, &twist, &origin, &offset, &v, &method, &fn, &fa, &fs)) {
@@ -3326,8 +3326,8 @@ PyObject *python_oo_rotate_extrude(PyObject *obj, PyObject *args, PyObject *kwar
   char *kwlist[] = {"convexity", "scale",  "angle", "twist", "origin", "offset",
                     "v",         "method", "fn",    "fa",    "fs",     NULL};
   auto discretizer = CreateCurveDiscretizer(kwargs);
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iddOOOOs", kwlist, &convexity, &scale, &angle,
-                                   &twist, &origin, &offset, &v, &method)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iddOOOOs", kwlist, &convexity, &scale, &angle, &twist,
+                                   &origin, &offset, &v, &method)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
@@ -3516,6 +3516,11 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
     PyErr_SetString(PyExc_TypeError, "error in path_extrude xdir parameter has zero size\n");
     return NULL;
   }
+
+  get_fnas(node->fn, node->fa, node->fs);
+  if (fn != -1) node->fn = fn;
+  if (fa != -1) node->fa = fa;
+  if (fs != -1) node->fs = fs;
 
   node->convexity = convexity;
 
