@@ -64,8 +64,9 @@ public:
    * Used to find the point or line the user's mouse cursor is closest to when over the viewport.
    * Near_pt will be on the "camera lens" and far_pt will be "the back wall" of the render cube.
    */
-  virtual std::vector<SelectedObject> findModelObject(const Vector3d& near_pt, const Vector3d& far_pt,
-                                                      int mouse_x, int mouse_y, double tolerance);
+  virtual std::shared_ptr<SelectedObject> findModelObject(const Vector3d& near_pt,
+                                                          const Vector3d& far_pt, int mouse_x,
+                                                          int mouse_y, double tolerance);
 
 protected:
   std::map<ColorMode, Color4f> colormap_;
