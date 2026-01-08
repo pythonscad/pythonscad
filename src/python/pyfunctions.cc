@@ -593,8 +593,8 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
   double vr1 = 1, vr2 = 1, vh = 1;
 
   auto discretizer = CreateCurveDiscretizer(kwargs);
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|dddOdddd", kwlist, &h, &r1, &r2, &center, &r, &d, &d1,
-                                   &d2)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|dddOdddd", kwlist, &h_, &r1, &r2, &center, &r_, &d,
+                                   &d1, &d2)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing cylinder(h,r|r1+r2|d1+d2)");
     return NULL;
   }
