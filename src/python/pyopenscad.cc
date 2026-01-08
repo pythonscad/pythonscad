@@ -461,6 +461,7 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
  * Create a CurveDiscretizer by extracting parameters from __main__ and kwargs
  * @param kwargs *Remove* any control parameter arguments found.
  */
+
 CurveDiscretizer CreateCurveDiscretizer(PyObject *kwargs)
 {
   PyObject *mainModule = pythonMainModule.get();

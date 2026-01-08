@@ -124,7 +124,6 @@
 #include "gui/ExportPdfDialog.h"
 #include "gui/ExportSvgDialog.h"
 #include "gui/ExternalToolInterface.h"
-#include "gui/FontListDialog.h"
 #include "gui/ImportUtils.h"
 #include "gui/input/InputDriverEvent.h"
 #include "gui/input/InputDriverManager.h"
@@ -436,7 +435,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
            {parameterDock, _("Customizer"), "view/hideCustomizer"},
            {errorLogDock, _("Error-Log"), "view/hideErrorLog"},
            {animateDock, _("Animate"), "view/hideAnimate"},
-           {fontListDock, _("Font Lists"), "view/hideFontList"},
+           {fontListDock, _("Font List"), "view/hideFontList"},
            {viewportControlDock, _("Viewport-Control"), "view/hideViewportControl"}};
 
   this->versionLabel = nullptr;   // must be initialized before calling updateStatusBar()
@@ -492,8 +491,9 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
           &MainWindow::onTabManagerEditorContentReloaded);
 
   connect(GlobalPreferences::inst(), &Preferences::consoleFontChanged, this->console, &Console::setFont);
-  this->console->setFont(GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
-                         GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
+  this->console->setConsoleFont(
+    GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
+    GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
 
   const QString version =
     QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(std::string(openscad_versionnumber)));
@@ -731,7 +731,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   connect(this->helpActionPythonCheatSheet, &QAction::triggered, this,
           &MainWindow::helpPythonCheatSheet);
   connect(this->helpActionLibraryInfo, &QAction::triggered, this, &MainWindow::helpLibrary);
-  connect(this->helpActionFontInfo, &QAction::triggered, this, &MainWindow::helpFontInfo);
 
   // Checks if the Documentation has been downloaded and hides the Action otherwise
   if (UIUtils::hasOfflineUserManual()) {
@@ -2470,7 +2469,6 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
 
   auto document = editor->toPlainText();
   auto fulltext = std::string(document.toUtf8().constData()) + "\n\x03\n" + commandline_commands;
-  auto fnameba = editor->filepath.toLocal8Bit();
 
   auto fulltext_py = std::string(this->lastCompiledDoc.toUtf8().constData());
   const char *fname = editor->filepath.isEmpty() ? "" : fnameba.constData();
@@ -4256,16 +4254,6 @@ void MainWindow::helpLibrary()
     this->libraryInfoDialog = dialog;
   }
   this->libraryInfoDialog->show();
-}
-
-void MainWindow::helpFontInfo()
-{
-  if (!this->fontListDialog) {
-    auto dialog = new FontListDialog();
-    this->fontListDialog = dialog;
-  }
-  this->fontListDialog->updateFontList();
-  this->fontListDialog->show();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

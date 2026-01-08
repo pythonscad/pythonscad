@@ -592,8 +592,9 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
   PyObject *center = NULL;
   double vr1 = 1, vr2 = 1, vh = 1;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OddOOddddddd", kwlist, &h_, &r1, &r2, &center, &r_,
-                                   &d, &d1, &d2, &angle, &fn, &fa, &fs)) {
+  auto discretizer = CreateCurveDiscretizer(kwargs);
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|dddOdddd", kwlist, &h, &r1, &r2, &center, &r, &d, &d1,
+                                   &d2)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing cylinder(h,r|r1+r2|d1+d2)");
     return NULL;
   }
@@ -3323,8 +3324,7 @@ PyObject *python_oo_rotate_extrude(PyObject *obj, PyObject *args, PyObject *kwar
   double fn = NAN, fa = NAN, fs = NAN;
   PyObject *v = NULL;
   char *method = NULL;
-  char *kwlist[] = {"convexity", "scale",  "angle", "twist", "origin", "offset",
-                    "v",         "method", "fn",    "fa",    "fs",     NULL};
+  char *kwlist[] = {"convexity", "scale", "angle", "twist", "origin", "offset", "v", "method", NULL};
   auto discretizer = CreateCurveDiscretizer(kwargs);
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iddOOOOs", kwlist, &convexity, &scale, &angle, &twist,
                                    &origin, &offset, &v, &method)) {
