@@ -1938,6 +1938,10 @@ PyObject *python_wrap_core(PyObject *obj, PyObject *target, double r, double d, 
     return NULL;
   }
 
+  get_fnas(node->fn, node->fa, node->fs);
+  if (!isnan(fn)) node->fn = fn;
+  if (!isnan(fa)) node->fa = fa;
+  if (!isnan(fs)) node->fs = fs;
   node->children.push_back(child);
   return PyOpenSCADObjectFromNode(type, node);
 }
