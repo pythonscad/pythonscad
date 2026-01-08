@@ -1,0 +1,248 @@
+name: Build RPM packages
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      upload_to_release:
+        description: 'Release tag to upload to (leave empty for test build)'
+        required: false
+        default: ''
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
+
+concurrency:
+  group: publish-yum-repo
+  cancel-in-progress: false
+
+jobs:
+  build-rpm:
+    name: Build .rpm (${{ matrix.distro }} ${{ matrix.version }} ${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # To add new Fedora/RHEL versions:
+        # 1. Add new matrix entries below (copy existing pattern)
+        # 2. No changes needed to scripts - they auto-detect versions from RPM dist tags
+        # 3. Remove EOL versions by deleting their matrix entries
+        # 4. Check available containers: https://hub.docker.com/_/fedora or https://hub.docker.com/_/rockylinux
+        include:
+          # Fedora 42 (amd64)
+          - distro: fedora
+            version: '42'
+            arch: amd64
+            runner: ubuntu-24.04
+            container: fedora:42
+          # Fedora 42 (arm64)
+          - distro: fedora
+            version: '42'
+            arch: arm64
+            runner: ubuntu-24.04
+            container: fedora:42
+          # Fedora 43 (amd64)
+          - distro: fedora
+            version: '43'
+            arch: amd64
+            runner: ubuntu-24.04
+            container: fedora:43
+          # Fedora 43 (arm64)
+          - distro: fedora
+            version: '43'
+            arch: arm64
+            runner: ubuntu-24.04
+            container: fedora:43
+          # RHEL 9 compatible (amd64)
+          - distro: el
+            version: '9'
+            arch: amd64
+            runner: ubuntu-24.04
+            container: rockylinux:9
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+      - name: Install git and basic tools
+        run: |
+          if [ -f /etc/fedora-release ]; then
+            dnf install -y git tar gzip
+          else
+            dnf install -y git tar gzip epel-release
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Fetch tags for version detection
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git fetch --unshallow --tags 2>/dev/null || git fetch --tags
+          git describe --tags --always --dirty || echo "No tags found"
+
+      - name: Setup (detached) tmate session if enabled
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 5
+        with:
+          detached: true
+          limit-access-to-actor: true
+      - name: Set up QEMU for ARM64
+        if: matrix.arch == 'arm64'
+        run: |
+          dnf install -y qemu-user-static
+
+      - name: Install build dependencies
+        run: |
+          # Install RPM build tools
+          if [ -f /etc/fedora-release ]; then
+            dnf install -y \
+              rpm-build \
+              rpmdevtools \
+              rpmlint \
+              dnf-plugins-core
+          else
+            # RHEL/Rocky/Alma
+            dnf install -y \
+              rpm-build \
+              rpmdevtools \
+              rpmlint \
+              dnf-plugins-core \
+              'dnf-command(config-manager)'
+            dnf config-manager --set-enabled crb || true
+          fi
+
+          # Set VERSION environment variable for spec file parsing
+          export VERSION=$(cat VERSION.txt | tr -d '\n' | tr -d '\r')
+          export CHANGELOG_DATE=$(date "+%a %b %d %Y")
+
+          # Install build dependencies from spec file
+          dnf builddep -y pythonscad.spec
+
+      - name: Build RPM package
+        env:
+          OUTPUT_DIR: /tmp/rpms
+          FEDORA_RELEASE: ${{ matrix.version }}
+          DISTRO_TYPE: ${{ matrix.distro }}
+        run: |
+          # Set architecture for cross-compilation if needed
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            export ARCH=aarch64
+          fi
+
+          ./scripts/build-rpm-package.sh
+
+      - name: Test package installation (amd64 only)
+        if: matrix.arch == 'amd64'
+        run: |
+          # Install the package to verify it works
+          dnf install -y /tmp/rpms/pythonscad-*.rpm
+
+          # Verify binary exists and shows version
+          command -v pythonscad
+          pythonscad --version || echo "Version check skipped (may require display)"
+
+          # Verify library dependencies
+          ldd /usr/bin/pythonscad | head -20 || true
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pythonscad-${{ matrix.distro }}${{ matrix.version }}-${{ matrix.arch }}-rpm
+          path: /tmp/rpms/*
+          retention-days: 30
+
+      - name: Upload to GitHub Release
+        if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          files: /tmp/rpms/*
+          tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-yum-repo:
+    name: Publish YUM repository to SFTP
+    needs: build-rpm
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
+
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+
+      - name: Download all RPM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/rpms
+          pattern: pythonscad-*-rpm
+
+      - name: Merge packages
+        run: |
+          mkdir -p /tmp/rpms/all
+          find /tmp/rpms -name "*.rpm" -exec cp {} /tmp/rpms/all/ \;
+          ls -lh /tmp/rpms/all/
+
+      - name: Install createrepo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y createrepo-c
+
+      - name: Import GPG signing key
+        run: |
+          echo "${{ secrets.DEB_SIGNING_KEY }}" | gpg --batch --import
+          gpg --list-secret-keys
+
+      - name: Setup SSH key for SFTP
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.REPO_SFTP_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.REPO_SFTP_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Download existing repository from SFTP
+        run: |
+          # Download existing repo to preserve old versions
+          mkdir -p /tmp/yum-repo-existing
+          mkdir -p /tmp/yum-repo
+
+          # Download existing repo (ignore errors if doesn't exist yet)
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ${{ secrets.REPO_SFTP_USER }}@${{ secrets.REPO_SFTP_HOST }}:${{ secrets.REPO_SFTP_BASE_PATH }}/yum/ \
+            /tmp/yum-repo-existing/ || echo "No existing repository found (first run)"
+
+          # Copy existing packages to new repo location
+          if [ -d /tmp/yum-repo-existing/packages ]; then
+            cp -r /tmp/yum-repo-existing/packages /tmp/yum-repo/ || true
+          fi
+
+      - name: Build YUM repository structure
+        env:
+          REPO_DIR: /tmp/yum-repo
+          GPG_KEY: ${{ secrets.GPG_KEY_ID }}
+          KEEP_VERSIONS: ${{ vars.REPO_KEEP_VERSIONS || '3' }}
+          REPO_BASE_URL: ${{ secrets.REPO_BASE_URL }}
+        run: |
+          # Repository now contains both old and new packages
+          # update-yum-repo.sh will clean up old versions based on KEEP_VERSIONS
+          chmod +x ./scripts/update-yum-repo.sh
+          ./scripts/update-yum-repo.sh /tmp/rpms/all
+
+      - name: Upload to SFTP server
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            /tmp/yum-repo/ \
+            ${{ secrets.REPO_SFTP_USER }}@${{ secrets.REPO_SFTP_HOST }}:${{ secrets.REPO_SFTP_BASE_PATH }}/yum/
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

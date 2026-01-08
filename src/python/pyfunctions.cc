@@ -5420,15 +5420,10 @@ PyObject *python_osuse_include(int mode, PyObject *self, PyObject *args, PyObjec
                          PyDataObjectFromModule(&PyDataType, filename, mod.first));
   }
 
-  for (auto fun : source->scope->functions) {           // copy functions
-    std::shared_ptr<UserFunction> usfunc = fun.second;  // install lambda functions ?
-                                                        //    printf("%s\n",fun.first.c_str());
-                                                        //    InstantiableModule m;
-                                                        //    m.defining_context=osinclude_context;
-                                                        //    m.module=mod.second.get();
-                                                        //    boost::optional<InstantiableModule> res(m);
-    //    PyDict_SetItemString(result->dict, mod.first.c_str(),PyDataObjectFromModule(&PyDataType, res
-    //    ));
+  for (auto fun : source->scope->functions) {  // copy functions
+    std::shared_ptr<UserFunction> usfunc = fun.second;
+    PyDict_SetItemString(result->dict, fun.first.c_str(),
+                         PyDataObjectFromFunction(&PyDataType, filename, fun.first));
   }
 
   for (auto ass : source->scope->assignments) {  // copy assignments
