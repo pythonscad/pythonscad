@@ -43,11 +43,19 @@ const Feature Feature::ExperimentalPredictibleOutput(
   "predictible-output",
   "Attempt to produce predictible, diffable outputs (e.g. sorting the STL, or remeshing in a determined "
   "order)");
-
 const Feature Feature::ExperimentalWrapPolygon("wrap-polygon",
                                                "New Wrap feature which can wrap shapes around polygon");
 const Feature Feature::ExperimentalVectorSwizzle(
   "vector-swizzle", "Enable vector swizzling (e.g. <code>vec4.zyx</code> to reverse a 3D vector).");
+
+#ifdef ENABLE_PYTHON
+const Feature Feature::ExperimentalPythonEngine(
+  "python-engine", "Enable experimental Python Engine (implies risk of malicious scripts downloaded).");
+const Feature Feature::ExperimentalAddParameterPureFunction(
+  "add-parameter-pure-function",
+  "Make <code>add_parameter()</code> a pure function that only returns the value without creating a "
+  "global variable.");
+#endif
 
 Feature::Feature(const std::string& name, std::string description, bool hidden)
   : name(name), description(std::move(description))
