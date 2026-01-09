@@ -577,7 +577,7 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE();
 
-  char *kwlist[] = {"h", "r1", "r2", "center", "r", "d", "d1", "d2", "angle", "fn", "fa", "fs", NULL};
+  char *kwlist[] = {"h", "r1", "r2", "center", "r", "d", "d1", "d2", "angle", NULL};
   PyObject *h_ = nullptr;
   PyObject *r_ = nullptr;
   double r1 = NAN;
@@ -587,21 +587,19 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
   double d2 = NAN;
   double angle = NAN;
 
-  double fn = NAN, fa = NAN, fs = NAN;
-
   PyObject *center = NULL;
   double vr1 = 1, vr2 = 1, vh = 1;
 
   auto discretizer = CreateCurveDiscretizer(kwargs);
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OddOOddddddd", kwlist, &h_, &r1, &r2, &center, &r_,
-                                   &d, &d1, &d2, &angle, &fn, &fa, &fs)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OddOOdddd", kwlist, &h_, &r1, &r2, &center, &r_, &d,
+                                   &d1, &d2, &angle)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing cylinder(h,r|r1+r2|d1+d2)");
     return NULL;
   }
   double r = NAN;
   double h = NAN;
 
-  auto node = std::make_shared<CylinderNode>(instance, CreateCurveDiscretizer(kwargs));
+  auto node = std::make_shared<CylinderNode>(instance, discretizer);
   python_numberval(r_, &r, &(node->dragflags), 1);
   python_numberval(h_, &h, &(node->dragflags), 2);
 
