@@ -37,50 +37,41 @@ jobs:
 
           # Extract matrix for Debian/Ubuntu only, expand to distro x arch combinations
           python3 - <<'EOF'
-            from textwrap import dedent
-            import json
-            import os
-            from datetime import datetime
+          from datetime import datetime
+          import json
+          import os
 
-            code = """
-            import json
-            import os
-            from datetime import datetime
+          with open('supported-distributions.json') as f:
+            config = json.load(f)
 
-            with open('supported-distributions.json') as f:
-              config = json.load(f)
+          today = datetime.utcnow().strftime('%Y-%m')
+          matrix_include = []
 
-            today = datetime.utcnow().strftime('%Y-%m')
-            matrix_include = []
+          for dist in config['distributions']:
+            if dist['family'] not in ['debian', 'ubuntu']:
+              continue
 
-            for dist in config['distributions']:
-              if dist['family'] not in ['debian', 'ubuntu']:
-                continue
+            if dist.get('eol_date') and dist['eol_date'] < today:
+              continue
 
-              if dist.get('eol_date') and dist['eol_date'] < today:
-                continue
+            for arch in dist['architectures']:
+              matrix_include.append({
+                'distro': dist['codename'],
+                'distro_name': dist['name'],
+                'distro_version': dist['version'],
+                'family': dist['family'],
+                'arch': arch,
+                'runner': dist['runner'] if dist['runner'] else 'ubuntu-24.04',
+                'docker_image': dist['docker_image'],
+                'qemu': arch == 'arm64'
+              })
 
-              for arch in dist['architectures']:
-                matrix_include.append({
-                  'distro': dist['codename'],
-                  'distro_name': dist['name'],
-                  'distro_version': dist['version'],
-                  'family': dist['family'],
-                  'arch': arch,
-                  'runner': dist['runner'] if dist['runner'] else 'ubuntu-24.04',
-                  'docker_image': dist['docker_image'],
-                  'qemu': arch == 'arm64'
-                })
+          matrix = {
+            'include': matrix_include
+          }
 
-            matrix = {
-              'include': matrix_include
-            }
-
-            with open(os.environ['GITHUB_OUTPUT'], 'a') as output_file:
-              output_file.write(f"matrix={json.dumps(matrix)}\n")
-            """
-
-            exec(dedent(code))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output_file:
+            output_file.write(f"matrix={json.dumps(matrix)}\n")
           EOF
 
   build-debian:
