@@ -152,8 +152,8 @@ jobs:
           TZ: Etc/UTC
         run: |
           apt-get update
-          # Install git, Python, and sudo first (needed for uni-get-dependencies)
-          apt-get install -y git python3 sudo
+          # Install git and Python first (needed for uni-get-dependencies)
+          apt-get install -y git python3
 
           # Determine Qt profile based on distribution version
           # Older distros (Ubuntu 22.04, Debian 11) use Qt5, newer use Qt6
@@ -164,7 +164,7 @@ jobs:
           fi
           echo "Using profile: $QT_PROFILE for ${{ matrix.distro }}"
 
-          # Install base dependencies using uni-get-dependencies
+          # Install base dependencies using uni-get-dependencies (running as root, no sudo needed)
           ./scripts/uni-get-dependencies.py --yes --profile "$QT_PROFILE"
           # Install Debian packaging tools
           apt-get install -y \
