@@ -32,6 +32,7 @@
 #include <Python.h>
 #include "pyfunctions.h"
 #include "python/pyopenscad.h"
+#include "python/pyconversion.h"
 #include "core/primitives.h"
 #include "core/CsgOpNode.h"
 #include "core/ColorNode.h"
@@ -1038,60 +1039,6 @@ PyObject *python_spline(PyObject *self, PyObject *args, PyObject *kwargs)
 
   python_retrieve_pyname(node);
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
-}
-
-int python_tomatrix(PyObject *pyt, Matrix4d& mat)
-{
-  if (pyt == nullptr) return 1;
-  PyObject *row, *cell;
-  double val;
-  mat = Matrix4d::Identity();
-  if (!PyList_Check(pyt)) return 1;
-  for (int i = 0; i < std::min(4, (int)PyList_Size(pyt)); i++) {
-    row = PyList_GetItem(pyt, i);
-    if (!PyList_Check(row)) return 1;
-    for (int j = 0; j < std::min(4, (int)PyList_Size(row)); j++) {
-      cell = PyList_GetItem(row, j);
-      if (python_numberval(cell, &val, nullptr, 0)) return 1;
-      mat(i, j) = val;
-    }
-  }
-  return 0;
-}
-
-int python_tovector(PyObject *pyt, Vector3d& vec)
-{
-  if (pyt == nullptr) return 1;
-  PyObject *cell;
-  double val;
-  if (!PyList_Check(pyt)) return 1;
-  if (PyList_Size(pyt) != 3) return 1;
-  for (int i = 0; i < 3; i++) {
-    cell = PyList_GetItem(pyt, i);
-    if (python_numberval(cell, &val, nullptr, 0)) return 1;
-    vec[i] = val;
-  }
-  return 0;
-}
-
-PyObject *python_frommatrix(const Matrix4d& mat)
-{
-  PyObject *pyo = PyList_New(4);
-  PyObject *row;
-  for (int i = 0; i < 4; i++) {
-    row = PyList_New(4);
-    for (int j = 0; j < 4; j++) PyList_SetItem(row, j, PyFloat_FromDouble(mat(i, j)));
-    PyList_SetItem(pyo, i, row);
-    //      Py_XDECREF(row);
-  }
-  return pyo;
-}
-
-PyObject *python_fromvector(const Vector3d vec)
-{
-  PyObject *res = PyList_New(3);
-  for (int i = 0; i < 3; i++) PyList_SetItem(res, i, PyFloat_FromDouble(vec[i]));
-  return res;
 }
 
 PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
@@ -2324,33 +2271,87 @@ PyObject *python_oo_sitonto(PyObject *obj, PyObject *args, PyObject *kwargs)
   return python_sitonto_core(obj, vecx, vecy, vecz);
 }
 
+PyObject *python__getitem_hier(std::shared_ptr<AbstractNode> node, const std::string& keystr, int hier)
+{
+  PyObject *result = nullptr;
+
+  if (keystr == "matrix") {
+    std::shared_ptr<const TransformNode> trans = std::dynamic_pointer_cast<const TransformNode>(node);
+    if (trans != nullptr) {
+      Matrix4d matrix = Matrix4d::Identity();
+      matrix = trans->matrix.matrix();
+      result = python_frommatrix(matrix);
+    }
+  }
+
+  if (keystr == "points") {
+    std::shared_ptr<const PolygonNode> polygon = std::dynamic_pointer_cast<const PolygonNode>(node);
+    if (polygon != nullptr) {
+      result = python_from2dvarpointlist(polygon->points);
+    }
+    std::shared_ptr<const PolyhedronNode> polyhedron =
+      std::dynamic_pointer_cast<const PolyhedronNode>(node);
+    if (polyhedron != nullptr) {
+      result = python_from3dpointlist(polyhedron->points);
+    }
+  }
+
+  if (keystr == "paths") {
+    std::shared_ptr<const PolygonNode> polygon = std::dynamic_pointer_cast<const PolygonNode>(node);
+    if (polygon != nullptr) {
+      result = python_from2dint(polygon->paths);
+    }
+  }
+
+  if (keystr == "faces") {
+    std::shared_ptr<const PolyhedronNode> polyhedron =
+      std::dynamic_pointer_cast<const PolyhedronNode>(node);
+    if (polyhedron != nullptr) {
+      result = python_from2dlong(polyhedron->faces);
+    }
+  }
+  if (result != nullptr) return result;
+
+  if (hier > 0) {
+    for (auto& child : node->children) {
+      result = python__getitem_hier(child, keystr, hier - 1);
+      if (result != nullptr) return result;
+    }
+  }
+  return result;
+}
+
 PyObject *python__getitem__(PyObject *obj, PyObject *key)
 {
   PyOpenSCADObject *self = (PyOpenSCADObject *)obj;
   if (self->dict == nullptr) {
     return nullptr;
   }
+  // object dict
   PyObject *result = PyDict_GetItem(self->dict, key);
-  if (result == NULL) {
-    PyObject *keyname = PyUnicode_AsEncodedString(key, "utf-8", "~");
-    if (keyname == nullptr) return nullptr;
-    std::string keystr = PyBytes_AS_STRING(keyname);
-    result = Py_None;
-    if (keystr == "matrix") {
-      PyObject *dummy_dict;
-      std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(obj, &dummy_dict);
-      std::shared_ptr<const TransformNode> trans = std::dynamic_pointer_cast<const TransformNode>(node);
-      Matrix4d matrix = Matrix4d::Identity();
-      if (trans != nullptr) matrix = trans->matrix.matrix();
-      result = python_frommatrix(matrix);
-    } else if (keystr == "size") {
-      return python_size_core(obj);
-    } else if (keystr == "position") {
-      return python_position_core(obj);
-    } else if (keystr == "bbox") {
-      return python_bbox_core(obj);
-    }
-  } else Py_INCREF(result);
+  if (result != NULL) {
+    Py_INCREF(result);
+    return result;
+  }
+  PyObject *keyname = PyUnicode_AsEncodedString(key, "utf-8", "~");
+  if (keyname == nullptr) return nullptr;
+  std::string keystr = PyBytes_AS_STRING(keyname);
+
+  PyObject *dummy_dict;
+  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(obj, &dummy_dict);
+  if (node != nullptr) {
+    result = python__getitem_hier(node, keystr, 2);
+    if (result != nullptr) return result;
+  }
+
+  result = Py_None;
+  if (keystr == "size") {
+    return python_size_core(obj);
+  } else if (keystr == "position") {
+    return python_position_core(obj);
+  } else if (keystr == "bbox") {
+    return python_bbox_core(obj);
+  }
   return result;
 }
 
