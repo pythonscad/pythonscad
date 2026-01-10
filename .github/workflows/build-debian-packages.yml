@@ -44,9 +44,16 @@ jobs:
               config = json.load(f)
 
           matrix_include = []
-          for dist in config['distributions']:
+            from datetime import datetime
+            today = datetime.utcnow().strftime('%Y-%m')
+
+            for dist in config['distributions']:
               if dist['family'] not in ['debian', 'ubuntu']:
                   continue
+
+              # Skip distributions past EOL
+              if 'eol_date' in dist and dist['eol_date'] < today:
+                continue
 
               for arch in dist['architectures']:
                   entry = {
@@ -70,7 +77,7 @@ jobs:
           EOF
 
   build-debian:
-    name: Build .deb (${{ matrix.distro }} / ${{ matrix.arch }})
+    name: Build .deb (${{ matrix.family }} / ${{ matrix.distro }} / ${{ matrix.arch }})
     needs: prepare-matrix
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -79,6 +86,9 @@ jobs:
     container: ${{ matrix.docker_image || null }}
 
     steps:
+      - name: Mark workspace safe for git
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE" || true
       - name: Ensure git is available in container
         if: matrix.docker_image
         run: |
