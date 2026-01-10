@@ -123,8 +123,18 @@ jobs:
           TZ: Etc/UTC
         run: |
           sudo apt-get update
+
+          # Determine Qt profile based on distribution version
+          # Older distros (Ubuntu 22.04, Debian 11) use Qt5, newer use Qt6
+          if [ "${{ matrix.distro }}" = "jammy" ] || [ "${{ matrix.distro }}" = "bullseye" ]; then
+            QT_PROFILE="pythonscad-qt5"
+          else
+            QT_PROFILE="pythonscad-qt6"
+          fi
+          echo "Using profile: $QT_PROFILE for ${{ matrix.distro }}"
+
           # Install base dependencies using uni-get-dependencies
-          sudo ./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt6
+          sudo ./scripts/uni-get-dependencies.py --yes --profile "$QT_PROFILE"
           # Install Debian packaging tools
           sudo apt-get install -y \
             debhelper \
@@ -144,8 +154,18 @@ jobs:
           apt-get update
           # Install git, Python, and sudo first (needed for uni-get-dependencies)
           apt-get install -y git python3 sudo
+
+          # Determine Qt profile based on distribution version
+          # Older distros (Ubuntu 22.04, Debian 11) use Qt5, newer use Qt6
+          if [ "${{ matrix.distro }}" = "jammy" ] || [ "${{ matrix.distro }}" = "bullseye" ]; then
+            QT_PROFILE="pythonscad-qt5"
+          else
+            QT_PROFILE="pythonscad-qt6"
+          fi
+          echo "Using profile: $QT_PROFILE for ${{ matrix.distro }}"
+
           # Install base dependencies using uni-get-dependencies
-          ./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt6
+          ./scripts/uni-get-dependencies.py --yes --profile "$QT_PROFILE"
           # Install Debian packaging tools
           apt-get install -y \
             debhelper \
@@ -169,6 +189,8 @@ jobs:
         env:
           OUTPUT_DIR: /tmp/debs
           DEBIAN_DISTRO: ${{ matrix.distro }}
+          # Set Qt version for older distros
+          USE_QT6: ${{ (matrix.distro == 'jammy' || matrix.distro == 'bullseye') && 'OFF' || 'ON' }}
         run: |
           mkdir -p "$OUTPUT_DIR"
           chmod +x ./scripts/build-debian-package.sh
