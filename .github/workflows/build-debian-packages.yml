@@ -61,13 +61,11 @@ jobs:
                   }
                   matrix_include.append(entry)
 
-            # Output only the matrix section (with include list)
-            matrix = {
+          matrix = {
               'include': matrix_include
-            }
+          }
 
-            # Write matrix JSON to $GITHUB_OUTPUT
-            with open(os.environ['GITHUB_OUTPUT'], 'a') as output_file:
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output_file:
               output_file.write(f"matrix={json.dumps(matrix)}\n")
           EOF
 
