@@ -79,6 +79,12 @@ jobs:
     container: ${{ matrix.docker_image || null }}
 
     steps:
+      - name: Ensure git is available in container
+        if: matrix.docker_image
+        run: |
+          apt-get update
+          apt-get install -y git ca-certificates
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
