@@ -142,8 +142,8 @@ jobs:
           TZ: Etc/UTC
         run: |
           apt-get update
-          # Install git and Python first (needed for uni-get-dependencies)
-          apt-get install -y git python3
+          # Install git, Python, and sudo first (needed for uni-get-dependencies)
+          apt-get install -y git python3 sudo
           # Install base dependencies using uni-get-dependencies
           ./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt6
           # Install Debian packaging tools
@@ -152,8 +152,7 @@ jobs:
             devscripts \
             lintian \
             dpkg-dev \
-            fakeroot \
-            sudo
+            fakeroot
           # Install Build-Depends from debian/control
           apt-get install -y libboost-all-dev
 
