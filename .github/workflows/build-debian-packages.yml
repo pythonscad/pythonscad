@@ -84,14 +84,12 @@ jobs:
     container: ${{ matrix.docker_image || null }}
 
     steps:
-      - name: Mark workspace safe for git
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE" || true
-      - name: Ensure git is available in container
+      - name: Ensure git is available and configure
         if: matrix.docker_image
         run: |
           apt-get update
           apt-get install -y git ca-certificates
+          git config --global --add safe.directory '*'
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -102,7 +100,7 @@ jobs:
       - name: Fetch tags for version detection
         run: |
           git fetch --unshallow --tags 2>/dev/null || git fetch --tags
-          git describe --tags --always --dirty || echo "No tags found"
+          git describe --tags --always --dirty
 
       - name: Setup (detached) tmate session if enabled
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
