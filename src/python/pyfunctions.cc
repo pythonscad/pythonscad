@@ -4780,14 +4780,6 @@ std::optional<std::string> to_optional_string(const char *ptr)
   return {};
 }
 
-std::optional<std::string> to_optional_string(const char *ptr)
-{
-  if (ptr != nullptr) {
-    return std::string(ptr);
-  }
-  return {};
-}
-
 PyObject *python_text(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE();
