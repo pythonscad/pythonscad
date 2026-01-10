@@ -489,32 +489,26 @@ CurveDiscretizer CreateCurveDiscretizer(PyObject *kwargs)
 
 void get_fnas(double& fn, double& fa, double& fs)
 {
-  PyObject *mainModule = PyImport_AddModule("__main__");
-  if (mainModule == nullptr) return;
-  fn = 0;
-  fa = 12;
-  fs = 2;
-
-  if (PyObject_HasAttrString(mainModule, "fn")) {
-    PyObjectUniquePtr varFn(PyObject_GetAttrString(mainModule, "fn"), PyObjectDeleter);
-    if (varFn.get() != nullptr) {
-      fn = PyFloat_AsDouble(varFn.get());
+  PyObject *mainModule = pythonMainModule.get();
+  return CurveDiscretizer([kwargs, mainModule](const char *key) -> std::optional<double> {
+    double result;
+    if (kwargs != nullptr && PyDict_Check(kwargs)) {  // kwargs can be nullptr
+      if (PyObject *value = PyDict_GetItemString(kwargs, key); value != nullptr) {
+        // PyArg_ParseTupleAndKeywords does not allow unspecified keyword args.
+        PyDict_DelItemString(kwargs, key);
+        if (!(python_numberval(value, &result))) return result;  // value can be Integer, Number, ...
+      }
     }
-  }
-
-  if (PyObject_HasAttrString(mainModule, "fa")) {
-    PyObjectUniquePtr varFa(PyObject_GetAttrString(mainModule, "fa"), PyObjectDeleter);
-    if (varFa.get() != nullptr) {
-      fa = PyFloat_AsDouble(varFa.get());
+    if (mainModule != nullptr) {
+      if (PyObject_HasAttrString(mainModule, key)) {
+        PyObjectUniquePtr var(PyObject_GetAttrString(mainModule, key), PyObjectDeleter);
+        if (var.get() != nullptr) {
+          if (!(python_numberval(var.get(), &result))) return result;
+        }
+      }
     }
-  }
-
-  if (PyObject_HasAttrString(mainModule, "fs")) {
-    PyObjectUniquePtr varFs(PyObject_GetAttrString(mainModule, "fs"), PyObjectDeleter);
-    if (varFs.get() != nullptr) {
-      fs = PyFloat_AsDouble(varFs.get());
-    }
-  }
+    return {};
+  });
 }
 
 /*
