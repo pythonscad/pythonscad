@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.14](https://github.com/pythonscad/pythonscad/compare/v0.8.13...v0.8.14) (2026-01-10)
+
+
+### Bug Fixes
+
+* **scripts:** allow bash variable expansion in update-apt-repo.sh ([#304](https://github.com/pythonscad/pythonscad/issues/304)) ([3440af7](https://github.com/pythonscad/pythonscad/commit/3440af714a6909cb8871af36e88ef740ae2d56f0))
+
+## [0.8.13](https://github.com/pythonscad/pythonscad/compare/v0.8.12...v0.8.13) (2026-01-10)
+
+
+### Bug Fixes
+
+* **actions:** correct strategy structure; matrix include output ([#301](https://github.com/pythonscad/pythonscad/issues/301)) ([d5105a0](https://github.com/pythonscad/pythonscad/commit/d5105a0c94dfc368a21440a2be80b1ee80e7d143))
+
 ## [0.8.12](https://github.com/pythonscad/pythonscad/compare/v0.8.11...v0.8.12) (2026-01-10)
 
 
