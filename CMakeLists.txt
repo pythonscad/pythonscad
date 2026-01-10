@@ -694,9 +694,10 @@ if(ENABLE_PYTHON)
     SET(PYTHON_MINGW_INCLUDE "/${CALLSTACK}64/include/python${PYTHON_MINGW_VERSION}")
 
     # Copy MSYS2 Python to local directory for patching
+    # Use bash to ensure Unix commands work in MSYS2 environment
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND rm -rf python_mingw && mkdir -p python_mingw/${CALLSTACK}64/lib && mkdir -p python_mingw/${CALLSTACK}64/include && cp -r ${PYTHON_MINGW_SYSTEM_LIB} python_mingw/${CALLSTACK}64/lib/ && cp -r ${PYTHON_MINGW_INCLUDE} python_mingw/${CALLSTACK}64/include/ && cd python_mingw && ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh
+      COMMAND bash -c "rm -rf python_mingw && mkdir -p python_mingw/${CALLSTACK}64/lib && mkdir -p python_mingw/${CALLSTACK}64/include && cp -r ${PYTHON_MINGW_SYSTEM_LIB} python_mingw/${CALLSTACK}64/lib/ && cp -r ${PYTHON_MINGW_INCLUDE} python_mingw/${CALLSTACK}64/include/ && cd python_mingw && ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh"
       OUTPUT ${PYTHON_MINGW_ARCHIVE}
     )
     add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
