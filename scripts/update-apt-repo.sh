@@ -107,7 +107,7 @@ for deb in "$PACKAGES_DIR"/*.deb; do
     fi
 
     cp "$deb" "pool/main/p/pythonscad/$BASENAME"
-    ((PACKAGE_COUNT++))
+    ((++PACKAGE_COUNT))
 done
 
 info "Total packages copied: $PACKAGE_COUNT"
