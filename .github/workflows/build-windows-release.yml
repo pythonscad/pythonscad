@@ -51,6 +51,11 @@ jobs:
           apt-get update
           apt-get install -y libarchive-tools bsdiff python3-dev
 
+      - name: Detect host Python version and paths
+        shell: bash
+        run: |
+          ./scripts/detect-host-python.sh >> "$GITHUB_ENV"
+
       - name: Build dependencies for MXE
         env:
           MXE_TARGETS: x86_64-w64-mingw32.static.posix
@@ -81,10 +86,9 @@ jobs:
           MXEDIR: /mxe
           PKG_CONFIG_PATH: /mxe/usr/x86_64-w64-mingw32.static.posix/lib/pkgconfig
           QT_VERSION: ${{ matrix.qt }}
-          # Point CMake to host Python for cross-compilation
-          Python3_ROOT_DIR: /usr
-          Python3_INCLUDE_DIR: /usr/include/python3.12
-          Python3_LIBRARY: /usr/lib/x86_64-linux-gnu/libpython3.12.so
+          # Pass host Python version info only (used for embed/versioning); do not force host libs
+          PYTHON_VERSION: ${{ env.PYTHON_VERSION }}
+          PYTHON_FULL_VERSION: ${{ env.PYTHON_FULL_VERSION }}
         shell: bash
         run: |
           # Create python3 symlink if needed
