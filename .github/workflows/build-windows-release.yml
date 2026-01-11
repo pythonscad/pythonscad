@@ -56,8 +56,12 @@ jobs:
           MXE_TARGETS: x86_64-w64-mingw32.static.posix
         shell: bash
         run: |
-          echo "Building Qt ${{ matrix.qt }} and libcurl for MXE..."
+          echo "Building Qt ${{ matrix.qt }}, Python, and libcurl for MXE..."
           cd /mxe
+
+          # Build Python for Windows target
+          echo "Building Python..."
+          make python3 MXE_TARGETS='x86_64-w64-mingw32.static.posix' -j4
 
           # Build the appropriate Qt version
           if [ "${{ matrix.qt }}" = "qt5" ]; then
