@@ -49,7 +49,7 @@ jobs:
         shell: bash
         run: |
           apt-get update
-          apt-get install -y libarchive-tools bsdiff
+          apt-get install -y libarchive-tools bsdiff python3-dev
 
       - name: Build dependencies for MXE
         env:
