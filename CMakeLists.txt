@@ -704,7 +704,10 @@ if(ENABLE_PYTHON)
 
       add_custom_command(
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND bash -c "set -euo pipefail; rm -rf python_mingw; mkdir python_mingw; cd python_mingw; echo 'Downloading ${PYTHON_MINGW_REPOURL}/${PYTHON_MINGW_PACKAGEFILE}'; curl -fsSLO '${PYTHON_MINGW_REPOURL}/${PYTHON_MINGW_PACKAGEFILE}'; bsdtar -xf '${PYTHON_MINGW_PACKAGEFILE}'; ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh"
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/download-msys2-python.sh
+                "${PYTHON_MINGW_REPOURL}"
+                "${PYTHON_MINGW_PACKAGEFILE}"
+                "${PYTHON_MINGW_DEVPATH}"
         OUTPUT ${PYTHON_MINGW_ARCHIVE}
       )
       add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
@@ -739,7 +742,10 @@ if(ENABLE_PYTHON)
       # Use bash to ensure Unix commands work in MSYS2 environment
       add_custom_command(
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND bash -c "rm -rf python_mingw && mkdir -p python_mingw/${CALLSTACK}64/lib && mkdir -p python_mingw/${CALLSTACK}64/include && cp -r ${PYTHON_MINGW_SYSTEM_LIB} python_mingw/${CALLSTACK}64/lib/ && cp -r ${PYTHON_MINGW_INCLUDE} python_mingw/${CALLSTACK}64/include/ && cd python_mingw && ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh"
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/prepare-msys2-python.sh
+                "${CALLSTACK}"
+                "${PYTHON_MINGW_VERSION}"
+                "${PYTHON_MINGW_DEVPATH}"
         OUTPUT ${PYTHON_MINGW_ARCHIVE}
       )
       add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
