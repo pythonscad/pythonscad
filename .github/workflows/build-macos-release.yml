@@ -110,10 +110,14 @@ jobs:
             if [ -f "$BROTLI_LIB" ]; then
               echo "Copying libbrotlicommon.1.dylib to app bundle"
               cp "$BROTLI_LIB" "$APP_BUNDLE/Contents/Frameworks/"
-              # Fix install_name to use @executable_path
-              install_name_tool -id "@executable_path/../Frameworks/libbrotlicommon.1.dylib" \
-                "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib"
             fi
+          fi
+
+          # Always fix libbrotlicommon install_name (macdeployqt may have copied it)
+          if [ -f "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib" ]; then
+            echo "Fixing libbrotlicommon.1.dylib install_name ID"
+            install_name_tool -id "@executable_path/../Frameworks/libbrotlicommon.1.dylib" \
+              "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib"
           fi
 
           # Fix references in libbrotlidec to use the bundled libbrotlicommon (always run this)
@@ -237,10 +241,14 @@ jobs:
             if [ -f "$BROTLI_LIB" ]; then
               echo "Copying libbrotlicommon.1.dylib to app bundle"
               cp "$BROTLI_LIB" "$APP_BUNDLE/Contents/Frameworks/"
-              # Fix install_name to use @executable_path
-              install_name_tool -id "@executable_path/../Frameworks/libbrotlicommon.1.dylib" \
-                "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib"
             fi
+          fi
+
+          # Always fix libbrotlicommon install_name (macdeployqt may have copied it)
+          if [ -f "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib" ]; then
+            echo "Fixing libbrotlicommon.1.dylib install_name ID"
+            install_name_tool -id "@executable_path/../Frameworks/libbrotlicommon.1.dylib" \
+              "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib"
           fi
 
           # Fix references in libbrotlidec to use the bundled libbrotlicommon (always run this)
@@ -613,6 +621,13 @@ jobs:
             install_name_tool -change "/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib" \
               "@executable_path/../Frameworks/libbrotlicommon.1.dylib" \
               "$FRAMEWORKS_DIR/libbrotlidec.1.dylib" 2>/dev/null || true
+          fi
+
+          # Always fix libbrotlicommon install_name after merge
+          if [ -f "$FRAMEWORKS_DIR/libbrotlicommon.1.dylib" ]; then
+            echo "Fixing merged libbrotlicommon.1.dylib install_name ID"
+            install_name_tool -id "@executable_path/../Frameworks/libbrotlicommon.1.dylib" \
+              "$FRAMEWORKS_DIR/libbrotlicommon.1.dylib"
           fi
 
           echo "app_bundle=$MERGED_DIR/$APP_NAME" >> $GITHUB_OUTPUT
