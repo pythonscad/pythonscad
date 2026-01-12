@@ -142,11 +142,21 @@ jobs:
           echo "app_name=$(basename $APP_BUNDLE)" >> $GITHUB_OUTPUT
           echo "Found app bundle: $APP_BUNDLE"
 
+      - name: Create x86_64 app archive
+        run: |
+          set -e
+          APP_BUNDLE="${{ steps.appname.outputs.app_bundle }}"
+          APP_DIR=$(dirname "$APP_BUNDLE")
+          APP_NAME=$(basename "$APP_BUNDLE")
+          echo "Archiving $APP_BUNDLE (preserve symlinks)"
+          tar --xattrs -C "$APP_DIR" -cf pythonscad-x86_64-app.tar "$APP_NAME"
+          ls -lh pythonscad-x86_64-app.tar
+
       - name: Upload x86_64 artifact
         uses: actions/upload-artifact@v5
         with:
           name: pythonscad-x86_64-app
-          path: ${{ steps.appname.outputs.app_bundle }}
+          path: pythonscad-x86_64-app.tar
           retention-days: 1
 
   build-arm64:
@@ -273,11 +283,21 @@ jobs:
           echo "app_name=$(basename $APP_BUNDLE)" >> $GITHUB_OUTPUT
           echo "Found app bundle: $APP_BUNDLE"
 
+      - name: Create arm64 app archive
+        run: |
+          set -e
+          APP_BUNDLE="${{ steps.appname.outputs.app_bundle }}"
+          APP_DIR=$(dirname "$APP_BUNDLE")
+          APP_NAME=$(basename "$APP_BUNDLE")
+          echo "Archiving $APP_BUNDLE (preserve symlinks)"
+          tar --xattrs -C "$APP_DIR" -cf pythonscad-arm64-app.tar "$APP_NAME"
+          ls -lh pythonscad-arm64-app.tar
+
       - name: Upload arm64 artifact
         uses: actions/upload-artifact@v5
         with:
           name: pythonscad-arm64-app
-          path: ${{ steps.appname.outputs.app_bundle }}
+          path: pythonscad-arm64-app.tar
           retention-days: 1
 
   merge-and-package:
@@ -299,13 +319,38 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: pythonscad-x86_64-app
-          path: /tmp/x86_64-app
+          path: /tmp/x86_64-archive
 
       - name: Download arm64 artifact
         uses: actions/download-artifact@v5
         with:
           name: pythonscad-arm64-app
-          path: /tmp/arm64-app
+          path: /tmp/arm64-archive
+
+      - name: Extract build artifacts
+        run: |
+          set -e
+          mkdir -p /tmp/x86_64-app /tmp/arm64-app
+
+          X86_TAR=$(find /tmp/x86_64-archive -maxdepth 1 -name "*.tar" -type f | head -1)
+          ARM_TAR=$(find /tmp/arm64-archive -maxdepth 1 -name "*.tar" -type f | head -1)
+
+          if [ -z "$X86_TAR" ] || [ -z "$ARM_TAR" ]; then
+            echo "ERROR: Missing tar artifacts"
+            echo "x86_64 tar: $X86_TAR"
+            echo "arm64 tar: $ARM_TAR"
+            echo "x86_64 archive contents:"
+            ls -la /tmp/x86_64-archive || true
+            echo "arm64 archive contents:"
+            ls -la /tmp/arm64-archive || true
+            exit 1
+          fi
+
+          echo "Extracting $X86_TAR -> /tmp/x86_64-app"
+          tar -xf "$X86_TAR" -C /tmp/x86_64-app
+
+          echo "Extracting $ARM_TAR -> /tmp/arm64-app"
+          tar -xf "$ARM_TAR" -C /tmp/arm64-app
 
       - name: Merge architectures with lipo
         id: merge
