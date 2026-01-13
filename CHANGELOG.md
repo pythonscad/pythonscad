@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.21](https://github.com/pythonscad/pythonscad/compare/v0.8.20...v0.8.21) (2026-01-13)
+
+
+### Bug Fixes
+
+* **macos:** correct CFBundleExecutable to match actual binary name ([#327](https://github.com/pythonscad/pythonscad/issues/327)) ([b7c8991](https://github.com/pythonscad/pythonscad/commit/b7c8991f557e976ae590f6fcbf22444ec095fee5))
+
 ## [0.8.20](https://github.com/pythonscad/pythonscad/compare/v0.8.19...v0.8.20) (2026-01-12)
 
 
