@@ -226,12 +226,12 @@ jobs:
               # Sign packages if building for release
               if [ "${{ github.event_name }}" = "release" ] || [ "${{ github.event.inputs.upload_to_release }}" != "" ]; then
                 # Import GPG key
-                echo "${{ secrets.DEB_SIGNING_KEY }}" | gpg --batch --import
+                echo '\''${{ secrets.DEB_SIGNING_KEY }}'\'' | gpg --batch --import
                 gpg --list-secret-keys
 
                 # Create temporary passphrase file
                 PASSPHRASE_FILE=$(mktemp)
-                echo "${{ secrets.GPG_PASSPHRASE }}" > "$PASSPHRASE_FILE"
+                echo '\''${{ secrets.GPG_PASSPHRASE }}'\'' > "$PASSPHRASE_FILE"
 
                 # Configure RPM signing
                 echo "%_signature gpg" > ~/.rpmmacros
