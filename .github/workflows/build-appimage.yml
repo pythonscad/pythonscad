@@ -17,7 +17,29 @@ on:
 
 jobs:
   build-appimage:
+    name: Build AppImage (Qt${{ matrix.qt_version }}, ${{ matrix.arch }})
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        qt_version: [5, 6]
+        arch: [x86_64, aarch64]
+        include:
+          # Qt5 builds
+          - qt_version: 5
+            arch: x86_64
+            profile: pythonscad-qt5
+          - qt_version: 5
+            arch: aarch64
+            profile: pythonscad-qt5
+          # Qt6 builds
+          - qt_version: 6
+            arch: x86_64
+            profile: pythonscad-qt6
+          - qt_version: 6
+            arch: aarch64
+            profile: pythonscad-qt6
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -28,6 +50,13 @@ jobs:
       run: |
         git fetch --unshallow --tags || git fetch --tags
         git describe --tags --always --dirty
+
+    - name: Set up QEMU for ARM64 builds
+      if: matrix.arch == 'aarch64'
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: linux/arm64
+
     - name: Setup (detached) tmate session if enabled
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       uses: mxschmitt/action-tmate@v3
@@ -35,13 +64,14 @@ jobs:
       with:
         detached: true
         limit-access-to-actor: true
+
     - name: Install dependencies
       env:
         DEBIAN_FRONTEND: noninteractive
         TZ: Etc/UTC
       run: |
         which sudo || ( apt update && apt install -y sudo )
-        sudo -E ./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt6
+        sudo -E ./scripts/uni-get-dependencies.py --yes --profile ${{ matrix.profile }}
 
     - name: Install additional AppImage dependencies
       run: |
@@ -49,6 +79,9 @@ jobs:
         sudo apt-get install -y wget file libfuse2
 
     - name: Build AppImage
+      env:
+        QT_VERSION: ${{ matrix.qt_version }}
+        ARCH: ${{ matrix.arch }}
       run: |
         chmod +x ./scripts/create_appimage.sh
         ./scripts/create_appimage.sh
@@ -63,7 +96,7 @@ jobs:
     - name: Upload AppImage as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ steps.appimage.outputs.filename }}
+        name: pythonscad-qt${{ matrix.qt_version }}-${{ matrix.arch }}-appimage
         path: ${{ steps.appimage.outputs.filepath }}
         retention-days: 30
 
