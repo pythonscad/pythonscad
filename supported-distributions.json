@@ -11,7 +11,7 @@
       "version": "22.04",
       "codename": "jammy",
       "lts": true,
-      "eol_date": "2027-04",
+      "eol_date": "2027-06",
       "runner": "ubuntu-22.04",
       "docker_image": null,
       "architectures": [
