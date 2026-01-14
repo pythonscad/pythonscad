@@ -25,7 +25,7 @@
       "version": "24.04",
       "codename": "noble",
       "lts": true,
-      "eol_date": "2029-04",
+      "eol_date": "2029-05",
       "runner": "ubuntu-24.04",
       "docker_image": null,
       "architectures": [
