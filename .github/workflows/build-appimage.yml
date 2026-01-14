@@ -17,7 +17,7 @@ on:
 
 jobs:
   build-appimage:
-    name: Build AppImage (Qt${{ matrix.qt_version }}, ${{ matrix.arch }})
+    name: Build AppImage (Qt${{ matrix.qt_version }} / ${{ matrix.arch }})
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -25,22 +25,29 @@ jobs:
         qt_version: [5, 6]
         arch: [x86_64, aarch64]
         include:
-          # Qt5 builds
           - qt_version: 5
-            arch: x86_64
             profile: pythonscad-qt5
-          - qt_version: 5
-            arch: aarch64
-            profile: pythonscad-qt5
-          # Qt6 builds
           - qt_version: 6
-            arch: x86_64
             profile: pythonscad-qt6
-          - qt_version: 6
-            arch: aarch64
-            profile: pythonscad-qt6
+          # Use Docker container for ARM64 builds
+          - arch: aarch64
+            docker_image: ubuntu:24.04
+            platform: linux/arm64
+          # Native build for x86_64 (no container needed)
+          - arch: x86_64
+            docker_image: null
+            platform: linux/amd64
+
+    container: ${{ matrix.docker_image }}
 
     steps:
+    - name: Ensure git is available and configure
+      if: matrix.docker_image
+      run: |
+        apt-get update
+        apt-get install -y git ca-certificates
+        git config --global --add safe.directory '*'
+
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -51,12 +58,6 @@ jobs:
         git fetch --unshallow --tags || git fetch --tags
         git describe --tags --always --dirty
 
-    - name: Set up QEMU for ARM64 builds
-      if: matrix.arch == 'aarch64'
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: linux/arm64
-
     - name: Setup (detached) tmate session if enabled
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       uses: mxschmitt/action-tmate@v3
@@ -65,18 +66,35 @@ jobs:
         detached: true
         limit-access-to-actor: true
 
-    - name: Install dependencies
+    - name: Set up QEMU for ARM64
+      if: matrix.arch == 'aarch64' && !matrix.docker_image
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: arm64
+
+    - name: Install dependencies (native runner)
+      if: '!matrix.docker_image'
       env:
         DEBIAN_FRONTEND: noninteractive
         TZ: Etc/UTC
       run: |
-        which sudo || ( apt update && apt install -y sudo )
-        sudo -E ./scripts/uni-get-dependencies.py --yes --profile ${{ matrix.profile }}
-
-    - name: Install additional AppImage dependencies
-      run: |
         sudo apt-get update
+        sudo -E ./scripts/uni-get-dependencies.py --yes --profile ${{ matrix.profile }}
         sudo apt-get install -y wget file libfuse2
+
+    - name: Install dependencies (Docker container)
+      if: matrix.docker_image
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        TZ: Etc/UTC
+      run: |
+        apt-get update
+        # Install git and Python first (needed for uni-get-dependencies)
+        apt-get install -y git python3
+        # Install build dependencies (running as root, no sudo needed)
+        ./scripts/uni-get-dependencies.py --yes --profile ${{ matrix.profile }}
+        # Install additional AppImage dependencies
+        apt-get install -y wget file libfuse2
 
     - name: Build AppImage
       env:

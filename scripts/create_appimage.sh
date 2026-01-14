@@ -239,8 +239,8 @@ else
     info "Using base version from establish_version.sh: ${BASE_VERSION}"
 fi
 
-# Append architecture and Qt version to the version string for unique filenames
-# This ensures Qt5/Qt6 and x86_64/aarch64 builds have different names
+# Append Qt version to the version string for unique filenames
+# This ensures Qt5/Qt6 builds have different names
 export LINUXDEPLOY_OUTPUT_VERSION="${BASE_VERSION}-qt${QT_VERSION}-${ARCH}"
 info "AppImage version: ${LINUXDEPLOY_OUTPUT_VERSION}"
 
