@@ -13,7 +13,7 @@
       "lts": true,
       "eol_date": "2027-06",
       "runner": "ubuntu-22.04",
-      "docker_image": null,
+      "docker_image": "ubuntu:jammy",
       "architectures": [
         "amd64",
         "arm64"
@@ -27,7 +27,7 @@
       "lts": true,
       "eol_date": "2029-05",
       "runner": "ubuntu-24.04",
-      "docker_image": null,
+      "docker_image": "ubuntu:noble",
       "architectures": [
         "amd64",
         "arm64"
