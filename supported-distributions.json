@@ -15,8 +15,7 @@
       "runner": "ubuntu-22.04",
       "docker_image": "ubuntu:jammy",
       "architectures": [
-        "amd64",
-        "arm64"
+        "amd64"
       ]
     },
     {
@@ -29,8 +28,7 @@
       "runner": "ubuntu-24.04",
       "docker_image": "ubuntu:noble",
       "architectures": [
-        "amd64",
-        "arm64"
+        "amd64"
       ]
     },
     {
@@ -43,8 +41,7 @@
       "runner": "ubuntu-24.04",
       "docker_image": "ubuntu:questing",
       "architectures": [
-        "amd64",
-        "arm64"
+        "amd64"
       ]
     },
     {
@@ -57,8 +54,7 @@
       "runner": null,
       "docker_image": "debian:bullseye",
       "architectures": [
-        "amd64",
-        "arm64"
+        "amd64"
       ]
     },
     {
@@ -71,8 +67,7 @@
       "runner": null,
       "docker_image": "debian:bookworm",
       "architectures": [
-        "amd64",
-        "arm64"
+        "amd64"
       ]
     },
     {
@@ -85,8 +80,7 @@
       "runner": null,
       "docker_image": "debian:trixie",
       "architectures": [
-        "amd64",
-        "arm64"
+        "amd64"
       ]
     }
   ],
