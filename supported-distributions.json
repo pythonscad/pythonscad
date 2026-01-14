@@ -36,20 +36,6 @@
     {
       "family": "ubuntu",
       "name": "Ubuntu",
-      "version": "24.10",
-      "codename": "oracular",
-      "lts": false,
-      "eol_date": "2025-07",
-      "runner": "ubuntu-24.04",
-      "docker_image": "ubuntu:oracular",
-      "architectures": [
-        "amd64",
-        "arm64"
-      ]
-    },
-    {
-      "family": "ubuntu",
-      "name": "Ubuntu",
       "version": "25.10",
       "codename": "questing",
       "lts": false,
