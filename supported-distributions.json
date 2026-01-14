@@ -95,7 +95,7 @@
       "version": "13",
       "codename": "trixie",
       "lts": false,
-      "eol_date": "2025-06",
+      "eol_date": "2030-06",
       "runner": null,
       "docker_image": "debian:trixie",
       "architectures": [
