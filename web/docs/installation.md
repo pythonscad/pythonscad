@@ -16,6 +16,10 @@ PythonSCAD packages are published to a YUM repository. See <https://repos.python
 
 Alternatively you can download the latest RPM package from our [downlaods page](/downloads/).
 
+## GNU Guix
+
+We try to keep PythonSCAD up to date in GNU Guix by periodically submitting updated package defintions. You can just run `guix install pythonscad` to install it or use one of the other methods (e.g. guix home).
+
 ## AppImage (Linux)
 
 AppImages should be distribution agnostic and should run on most Linux distributions.
