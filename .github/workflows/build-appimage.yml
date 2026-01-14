@@ -29,25 +29,8 @@ jobs:
             profile: pythonscad-qt5
           - qt_version: 6
             profile: pythonscad-qt6
-          # Use Docker container for ARM64 builds
-          - arch: aarch64
-            docker_image: ubuntu:24.04
-            platform: linux/arm64
-          # Native build for x86_64 (no container needed)
-          - arch: x86_64
-            docker_image: null
-            platform: linux/amd64
-
-    container: ${{ matrix.docker_image }}
 
     steps:
-    - name: Ensure git is available and configure
-      if: matrix.docker_image
-      run: |
-        apt-get update
-        apt-get install -y git ca-certificates
-        git config --global --add safe.directory '*'
-
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -67,13 +50,13 @@ jobs:
         limit-access-to-actor: true
 
     - name: Set up QEMU for ARM64
-      if: matrix.arch == 'aarch64' && !matrix.docker_image
+      if: matrix.arch == 'aarch64'
       uses: docker/setup-qemu-action@v3
       with:
         platforms: arm64
 
-    - name: Install dependencies (native runner)
-      if: '!matrix.docker_image'
+    - name: Install dependencies (x86_64)
+      if: matrix.arch == 'x86_64'
       env:
         DEBIAN_FRONTEND: noninteractive
         TZ: Etc/UTC
@@ -82,27 +65,36 @@ jobs:
         sudo -E ./scripts/uni-get-dependencies.py --yes --profile ${{ matrix.profile }}
         sudo apt-get install -y wget file libfuse2
 
-    - name: Install dependencies (Docker container)
-      if: matrix.docker_image
-      env:
-        DEBIAN_FRONTEND: noninteractive
-        TZ: Etc/UTC
-      run: |
-        apt-get update
-        # Install git and Python first (needed for uni-get-dependencies)
-        apt-get install -y git python3
-        # Install build dependencies (running as root, no sudo needed)
-        ./scripts/uni-get-dependencies.py --yes --profile ${{ matrix.profile }}
-        # Install additional AppImage dependencies
-        apt-get install -y wget file libfuse2
-
-    - name: Build AppImage
+    - name: Build AppImage (x86_64)
+      if: matrix.arch == 'x86_64'
       env:
         QT_VERSION: ${{ matrix.qt_version }}
         ARCH: ${{ matrix.arch }}
       run: |
         chmod +x ./scripts/create_appimage.sh
         ./scripts/create_appimage.sh
+
+    - name: Build AppImage (aarch64) in Docker
+      if: matrix.arch == 'aarch64'
+      run: |
+        # Run the entire build inside a Docker container with proper ARM64 emulation
+        docker run --rm \
+          --platform linux/arm64 \
+          -v "$PWD:/workspace" \
+          -w /workspace \
+          -e QT_VERSION=${{ matrix.qt_version }} \
+          -e ARCH=aarch64 \
+          -e DEBIAN_FRONTEND=noninteractive \
+          -e TZ=Etc/UTC \
+          ubuntu:24.04 \
+          bash -c '
+            set -e
+            apt-get update
+            apt-get install -y git python3 wget file libfuse2
+            ./scripts/uni-get-dependencies.py --yes --profile ${{ matrix.profile }}
+            chmod +x ./scripts/create_appimage.sh
+            ./scripts/create_appimage.sh
+          '
 
     - name: Get AppImage filename
       id: appimage
