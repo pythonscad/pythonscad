@@ -93,8 +93,7 @@
       "runner": "ubuntu-24.04",
       "docker_image": "fedora:42",
       "architectures": [
-        "amd64",
-        "arm64"
+        "amd64"
       ]
     },
     {
@@ -107,8 +106,7 @@
       "runner": "ubuntu-24.04",
       "docker_image": "fedora:43",
       "architectures": [
-        "amd64",
-        "arm64"
+        "amd64"
       ]
     },
     {
