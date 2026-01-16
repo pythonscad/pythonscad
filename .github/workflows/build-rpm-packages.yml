@@ -152,6 +152,17 @@ jobs:
             dnf install -y gnupg2 rpm-sign
           fi
 
+          # Set up GNUPGHOME for this step
+          export GNUPGHOME="${GNUPGHOME:-$HOME/.gnupg}"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+
+          # Configure gpg-agent for loopback pinentry (required for non-TTY environments)
+          echo "allow-loopback-pinentry" > "$GNUPGHOME/gpg-agent.conf"
+
+          # Kill any existing agent to pick up new config
+          gpgconf --kill gpg-agent 2>/dev/null || true
+
           # Import GPG key
           echo "${{ secrets.DEB_SIGNING_KEY }}" | gpg --batch --import
 
@@ -162,13 +173,17 @@ jobs:
           # Create temporary passphrase file
           PASSPHRASE_FILE=$(mktemp)
           echo "${{ secrets.GPG_PASSPHRASE }}" > "$PASSPHRASE_FILE"
+          chmod 600 "$PASSPHRASE_FILE"
 
           # Configure RPM signing with passphrase file
+          # IMPORTANT: --batch must come FIRST before other options for proper parsing
+          # The macro uses -sbo which is short for: --sign --binary --output
           echo "%_signature gpg" > ~/.rpmmacros
           echo "%_gpg_name ${{ secrets.GPG_KEY_ID }}" >> ~/.rpmmacros
-          echo "%_gpg_digest_algo SHA256" >> ~/.rpmmacros
-          # Override the GPG sign command to use passphrase file
-          echo "%__gpg_sign_cmd %{__gpg} gpg --batch --no-verbose --no-armor --pinentry-mode loopback --passphrase-file $PASSPHRASE_FILE --no-secmem-warning -u \"%{_gpg_name}\" --sign --detach-sign --output %{__signature_filename} %{__plaintext_filename}" >> ~/.rpmmacros
+          echo "%__gpg_sign_cmd %{__gpg} --batch --no-verbose --no-armor --passphrase-file $PASSPHRASE_FILE --pinentry-mode loopback --no-secmem-warning -u \"%{_gpg_name}\" -sbo %{__signature_filename} %{__plaintext_filename}" >> ~/.rpmmacros
+
+          # Set GPG_TTY to empty to avoid TTY-related warnings in CI
+          export GPG_TTY=""
 
           # Sign all RPM packages
           echo "Signing RPM packages..."
@@ -225,6 +240,15 @@ jobs:
 
               # Sign packages if building for release
               if [ "${{ github.event_name }}" = "release" ] || [ "${{ github.event.inputs.upload_to_release }}" != "" ]; then
+                # Set up GNUPGHOME
+                export GNUPGHOME="${GNUPGHOME:-$HOME/.gnupg}"
+                mkdir -p "$GNUPGHOME"
+                chmod 700 "$GNUPGHOME"
+
+                # Configure gpg-agent for loopback pinentry (required for non-TTY)
+                echo "allow-loopback-pinentry" > "$GNUPGHOME/gpg-agent.conf"
+                gpgconf --kill gpg-agent 2>/dev/null || true
+
                 # Import GPG key
                 echo '\''${{ secrets.DEB_SIGNING_KEY }}'\'' | gpg --batch --import
                 gpg --list-secret-keys
@@ -232,12 +256,16 @@ jobs:
                 # Create temporary passphrase file
                 PASSPHRASE_FILE=$(mktemp)
                 echo '\''${{ secrets.GPG_PASSPHRASE }}'\'' > "$PASSPHRASE_FILE"
+                chmod 600 "$PASSPHRASE_FILE"
 
                 # Configure RPM signing
+                # IMPORTANT: --batch must come FIRST before other options
                 echo "%_signature gpg" > ~/.rpmmacros
                 echo "%_gpg_name ${{ secrets.GPG_KEY_ID }}" >> ~/.rpmmacros
-                echo "%_gpg_digest_algo SHA256" >> ~/.rpmmacros
-                echo "%__gpg_sign_cmd %{__gpg} gpg --batch --no-verbose --no-armor --pinentry-mode loopback --passphrase-file $PASSPHRASE_FILE --no-secmem-warning -u \"%{_gpg_name}\" --sign --detach-sign --output %{__signature_filename} %{__plaintext_filename}" >> ~/.rpmmacros
+                echo "%__gpg_sign_cmd %{__gpg} --batch --no-verbose --no-armor --passphrase-file $PASSPHRASE_FILE --pinentry-mode loopback --no-secmem-warning -u \"%{_gpg_name}\" -sbo %{__signature_filename} %{__plaintext_filename}" >> ~/.rpmmacros
+
+                # Set GPG_TTY to empty to avoid warnings
+                export GPG_TTY=""
 
                 # Sign all RPM packages
                 echo "Signing RPM packages..."
@@ -321,6 +349,16 @@ jobs:
 
       - name: Import GPG signing key
         run: |
+          # Set up GNUPGHOME
+          export GNUPGHOME="${GNUPGHOME:-$HOME/.gnupg}"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+
+          # Configure gpg-agent for loopback pinentry (required for non-TTY)
+          echo "allow-loopback-pinentry" > "$GNUPGHOME/gpg-agent.conf"
+          gpgconf --kill gpg-agent 2>/dev/null || true
+
+          # Import GPG key
           echo "${{ secrets.DEB_SIGNING_KEY }}" | gpg --batch --import
           gpg --list-secret-keys
 
