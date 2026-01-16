@@ -20,48 +20,66 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  prepare-matrix:
+    name: Prepare build matrix from supported distributions
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate and prepare matrix
+        id: set-matrix
+        run: |
+          # Validate JSON syntax
+          python3 -c "import json; json.load(open('supported-distributions.json'))"
+
+          # Extract matrix for Fedora/EL only, expand to distro x arch combinations
+          python3 - <<'EOF'
+          from datetime import datetime
+          import json
+          import os
+
+          with open('supported-distributions.json') as f:
+            config = json.load(f)
+
+          today = datetime.utcnow().strftime('%Y-%m')
+          matrix_include = []
+
+          for dist in config['distributions']:
+            if dist['family'] not in ['fedora', 'el']:
+              continue
+
+            if dist.get('eol_date') and dist['eol_date'] < today:
+              continue
+
+            for arch in dist['architectures']:
+              matrix_include.append({
+                'distro': dist['family'],
+                'distro_name': dist['name'],
+                'version': dist['version'],
+                'arch': arch,
+                'runner': dist['runner'] if dist['runner'] else 'ubuntu-24.04',
+                'container': dist['docker_image'],
+                'qemu': arch == 'arm64'
+              })
+
+          matrix = {
+            'include': matrix_include
+          }
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output_file:
+            output_file.write(f"matrix={json.dumps(matrix)}\n")
+          EOF
+
   build-rpm:
     name: Build .rpm (${{ matrix.distro }} ${{ matrix.version }} ${{ matrix.arch }})
+    needs: prepare-matrix
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
-      matrix:
-        # To add new Fedora/RHEL versions:
-        # 1. Add new matrix entries below (copy existing pattern)
-        # 2. No changes needed to scripts - they auto-detect versions from RPM dist tags
-        # 3. Remove EOL versions by deleting their matrix entries
-        # 4. Check available containers: https://hub.docker.com/_/fedora or https://hub.docker.com/_/rockylinux
-        include:
-          # Fedora 42 (amd64)
-          - distro: fedora
-            version: '42'
-            arch: amd64
-            runner: ubuntu-24.04
-            container: fedora:42
-          # Fedora 42 (arm64)
-          - distro: fedora
-            version: '42'
-            arch: arm64
-            runner: ubuntu-24.04
-            container: fedora:42
-          # Fedora 43 (amd64)
-          - distro: fedora
-            version: '43'
-            arch: amd64
-            runner: ubuntu-24.04
-            container: fedora:43
-          # Fedora 43 (arm64)
-          - distro: fedora
-            version: '43'
-            arch: arm64
-            runner: ubuntu-24.04
-            container: fedora:43
-          # RHEL 9 compatible (amd64)
-          - distro: el
-            version: '9'
-            arch: amd64
-            runner: ubuntu-24.04
-            container: rockylinux:9
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
 
     # Note: Don't use container field for ARM64 - it pulls amd64 images
     # ARM64 builds use explicit docker run with --platform flag
