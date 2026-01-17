@@ -1456,6 +1456,9 @@ void MainWindow::updateReorderMode(bool reorderMode)
 
 MainWindow::~MainWindow()
 {
+  // Mark that we're being destroyed so eventFilter won't access freed members
+  isBeingDestroyed = true;
+
   scadApp->windowManager.remove(this);
   if (scadApp->windowManager.getWindows().empty()) {
     // Quit application even in case some other windows like
@@ -2384,6 +2387,11 @@ bool MainWindow::event(QEvent *event)
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+  // Don't process events during destruction - member objects may be partially destroyed
+  if (isBeingDestroyed) {
+    return QMainWindow::eventFilter(obj, event);
+  }
+
   if (obj == languageLabel && event->type() == QEvent::MouseButtonPress) {
     showLanguageMenu();
     return true;
