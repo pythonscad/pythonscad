@@ -5433,7 +5433,7 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs,
   }
 
   if (found) {
-    AnnotationList annotationList;
+    auto *annotationList = new AnnotationList();
 
     // Create Parameter annotation with constraints
     std::shared_ptr<Expression> param_expr;
@@ -5506,19 +5506,19 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs,
       param_expr = std::make_shared<Literal>("", Location::NONE);
     }
 
-    annotationList.push_back(Annotation("Parameter", param_expr));
+    annotationList->push_back(Annotation("Parameter", param_expr));
 
     if (description != NULL) {
-      annotationList.push_back(
+      annotationList->push_back(
         Annotation("Description", std::make_shared<Literal>(description, Location::NONE)));
     }
 
     if (group != NULL) {
-      annotationList.push_back(Annotation("Group", std::make_shared<Literal>(group, Location::NONE)));
+      annotationList->push_back(Annotation("Group", std::make_shared<Literal>(group, Location::NONE)));
     }
 
     auto assignment = std::make_shared<Assignment>(name, default_expr);
-    assignment->addAnnotations(&annotationList);
+    assignment->addAnnotations(annotationList);
     customizer_parameters.push_back(assignment);
 
     PyObject *value_effective = value;
