@@ -1,0 +1,178 @@
+name: Build Windows Native Package
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      upload_to_release:
+        description: 'Release tag to upload to (leave empty for test build)'
+        required: false
+        default: ''
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled'
+        required: false
+        default: false
+
+jobs:
+  build-package:
+    runs-on: windows-latest
+    name: Windows Native Package (Qt6)
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Fetch tags for version detection
+        shell: bash
+        run: |
+          git fetch --unshallow --tags || git fetch --tags
+          git describe --tags --always --dirty
+
+      - name: Setup (detached) tmate session if enabled
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 5
+        with:
+          detached: true
+
+      - name: Calculate PACBOY_PACKAGES
+        shell: bash
+        run: |
+          ./scripts/msys2-install-dependencies.sh qt6
+
+      - name: Setup MSYS2 Environment
+        uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: UCRT64
+          update: true
+          install: libxml2
+          # Add nsis for CPack installer generation
+          pacboy: ${{ env.PACBOY_PACKAGES }} nsis:p
+
+      - name: Detect Python version
+        id: detect-python
+        run: |
+          PYTHON_VERSION=$(python --version | cut -d' ' -f2 | cut -d'.' -f1,2)
+          echo "Python version detected: $PYTHON_VERSION"
+          echo "PYTHON_VERSION=$PYTHON_VERSION" >> $GITHUB_ENV
+
+          PYTHON_FULL_VERSION=$(python --version | cut -d' ' -f2)
+          echo "Full Python version: $PYTHON_FULL_VERSION"
+          echo "PYTHON_FULL_VERSION=$PYTHON_FULL_VERSION" >> $GITHUB_ENV
+
+      - name: Install Mesa
+        uses: ssciwr/setup-mesa-dist-win@v2
+        with:
+          version: '22.1.7'
+          build-type: 'release-mingw'
+
+      - name: Build PythonSCAD
+        run: |
+          mkdir build && cd build
+          cmake .. -G"Ninja" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DEXPERIMENTAL=ON \
+            -DSNAPSHOT=ON \
+            -DUSE_QT6=ON \
+            -DENABLE_PYTHON=ON \
+            -DENABLE_TESTS=OFF \
+            -DPACKAGE_ARCH=windows-x86-64
+          cmake --build . -j4
+
+      - name: Install to staging directory
+        run: |
+          cd build
+          cmake --install . --prefix=staging
+
+      - name: Package with CPack
+        id: cpack
+        run: |
+          cd build
+          cpack -G ZIP
+          cpack -G NSIS
+
+          # List generated packages
+          echo "Generated packages:"
+          ls -la *.zip *.exe
+
+      - name: Sanity test - verify executable runs
+        run: |
+          cd build/staging
+          echo "Testing pythonscad --info..."
+          ./pythonscad.exe --info
+          echo "Sanity test passed!"
+
+      - name: Prepare artifacts
+        id: artifacts
+        run: |
+          mkdir -p /tmp/out
+
+          # Copy and rename ZIP files to include msys2-experimental
+          for f in build/*.zip; do
+            if [ -f "$f" ] && [[ ! "$f" == *"-Installer.zip" ]]; then
+              basename_f=$(basename "$f" .zip)
+              newname="${basename_f}-msys2-experimental.zip"
+              cp -v "$f" "/tmp/out/$newname"
+            fi
+          done
+
+          # Copy and rename NSIS installer to include msys2-experimental
+          for f in build/*-Installer.exe; do
+            if [ -f "$f" ]; then
+              basename_f=$(basename "$f" -Installer.exe)
+              newname="${basename_f}-msys2-experimental-Installer.exe"
+              cp -v "$f" "/tmp/out/$newname"
+            fi
+          done
+
+          echo "Artifacts prepared:"
+          ls -lh /tmp/out/
+
+          # Set outputs
+          ZIP_FILE=$(ls /tmp/out/*.zip 2>/dev/null | head -1 || echo "")
+          EXE_FILE=$(ls /tmp/out/*-Installer.exe 2>/dev/null | head -1 || echo "")
+
+          if [ -n "$ZIP_FILE" ]; then
+            echo "zip_path=$ZIP_FILE" >> $GITHUB_OUTPUT
+            echo "zip_name=$(basename "$ZIP_FILE" .zip)" >> $GITHUB_OUTPUT
+          fi
+
+          if [ -n "$EXE_FILE" ]; then
+            echo "exe_path=$EXE_FILE" >> $GITHUB_OUTPUT
+            echo "exe_name=$(basename "$EXE_FILE" .exe)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload ZIP package
+        if: steps.artifacts.outputs.zip_path != ''
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.artifacts.outputs.zip_name }}
+          path: ${{ steps.artifacts.outputs.zip_path }}
+          retention-days: 30
+
+      - name: Upload NSIS installer
+        if: steps.artifacts.outputs.exe_path != ''
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.artifacts.outputs.exe_name }}
+          path: ${{ steps.artifacts.outputs.exe_path }}
+          retention-days: 30
+
+      - name: Upload artifacts to release
+        if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            /tmp/out/*.zip
+            /tmp/out/*.exe
+          tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
