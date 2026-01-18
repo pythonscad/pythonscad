@@ -2070,6 +2070,35 @@ if(NOT APPLE OR APPLE_UNIX)
       endif()
       install(FILES ${CMAKE_BINARY_DIR}/submodules/mimalloc/mimalloc.dll DESTINATION ".")
     endif()
+
+    # For native MSYS2 Windows builds, bundle runtime DLLs
+    # This is needed because unlike MXE (which uses static linking), MSYS2 uses dynamic linking
+    if(NOT MXECROSS AND CMAKE_VERSION VERSION_GREATER_EQUAL "3.21")
+      # Get the MSYS2 bin directory for DLL search
+      if(DEFINED ENV{MSYSTEM_PREFIX})
+        set(MSYS2_BIN_DIR "$ENV{MSYSTEM_PREFIX}/bin")
+      else()
+        set(MSYS2_BIN_DIR "/ucrt64/bin")
+      endif()
+
+      # Use CMake's runtime dependency resolution to find and install required DLLs
+      install(TARGETS OpenSCADExe
+        RUNTIME_DEPENDENCY_SET runtime_deps
+      )
+      install(RUNTIME_DEPENDENCY_SET runtime_deps
+        PRE_EXCLUDE_REGEXES
+          "api-ms-.*"    # Windows API sets
+          "ext-ms-.*"    # Windows extension API sets
+        POST_EXCLUDE_REGEXES
+          ".*[Ss]ystem32.*"  # System DLLs
+          ".*[Ww]indows.*"   # Windows DLLs
+        DIRECTORIES
+          "${MSYS2_BIN_DIR}"
+          "${CMAKE_BINARY_DIR}"
+        DESTINATION "."
+      )
+      message(STATUS "Native MSYS2 build: Runtime DLLs will be bundled from ${MSYS2_BIN_DIR}")
+    endif()
   else()
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/doc/openscad.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 RENAME openscad${SUFFIX_WITH_DASH}.1)
     install(FILES ${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/metainfo RENAME org.pythonscad.PythonSCAD.appdata.xml)

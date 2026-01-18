@@ -92,38 +92,10 @@ jobs:
           cd build
           cmake --install . --prefix=staging
 
-      - name: Bundle MSYS2 runtime DLLs
+      - name: List installed DLLs
         run: |
           cd build/staging
-
-          echo "Finding and copying DLL dependencies..."
-
-          # Iteratively copy DLL dependencies
-          changed=1
-          iterations=0
-          max_iterations=10
-
-          while [ $changed -eq 1 ] && [ $iterations -lt $max_iterations ]; do
-            changed=0
-            iterations=$((iterations + 1))
-            echo "Iteration $iterations: Scanning for missing DLLs..."
-
-            # Check all executables and DLLs for dependencies
-            for file in *.exe *.dll; do
-              if [ -f "$file" ]; then
-                # Get DLL dependencies
-                while IFS= read -r dll_path; do
-                  dll_name=$(basename "$dll_path")
-                  if [ ! -f "$dll_name" ]; then
-                    echo "  Copying: $dll_name"
-                    cp "$dll_path" . && changed=1
-                  fi
-                done < <(ldd "$file" 2>/dev/null | grep -i "ucrt64" | awk '{print $3}' | grep -v '^$')
-              fi
-            done
-          done
-
-          echo "DLLs bundled (showing first 30):"
+          echo "DLLs installed by CMake (showing first 30):"
           ls -lh *.dll 2>/dev/null | head -30 || echo "No DLLs found"
           echo "Total DLLs: $(ls -1 *.dll 2>/dev/null | wc -l)"
 
