@@ -113,14 +113,14 @@ jobs:
       - name: Prepare artifacts
         id: artifacts
         run: |
-          mkdir -p /tmp/out
+          mkdir -p artifacts
 
           # Copy and rename ZIP files to include msys2-experimental
           for f in build/*.zip; do
             if [ -f "$f" ] && [[ ! "$f" == *"-Installer.zip" ]]; then
               basename_f=$(basename "$f" .zip)
               newname="${basename_f}-msys2-experimental.zip"
-              cp -v "$f" "/tmp/out/$newname"
+              cp -v "$f" "artifacts/$newname"
             fi
           done
 
@@ -129,16 +129,16 @@ jobs:
             if [ -f "$f" ]; then
               basename_f=$(basename "$f" -Installer.exe)
               newname="${basename_f}-msys2-experimental-Installer.exe"
-              cp -v "$f" "/tmp/out/$newname"
+              cp -v "$f" "artifacts/$newname"
             fi
           done
 
           echo "Artifacts prepared:"
-          ls -lh /tmp/out/
+          ls -lh artifacts/
 
-          # Set outputs
-          ZIP_FILE=$(ls /tmp/out/*.zip 2>/dev/null | head -1 || echo "")
-          EXE_FILE=$(ls /tmp/out/*-Installer.exe 2>/dev/null | head -1 || echo "")
+          # Set outputs using relative paths
+          ZIP_FILE=$(ls artifacts/*.zip 2>/dev/null | head -1 || echo "")
+          EXE_FILE=$(ls artifacts/*-Installer.exe 2>/dev/null | head -1 || echo "")
 
           if [ -n "$ZIP_FILE" ]; then
             echo "zip_path=$ZIP_FILE" >> $GITHUB_OUTPUT
@@ -171,8 +171,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            /tmp/out/*.zip
-            /tmp/out/*.exe
+            artifacts/*.zip
+            artifacts/*.exe
           tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
