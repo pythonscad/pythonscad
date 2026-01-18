@@ -2071,33 +2071,64 @@ if(NOT APPLE OR APPLE_UNIX)
       install(FILES ${CMAKE_BINARY_DIR}/submodules/mimalloc/mimalloc.dll DESTINATION ".")
     endif()
 
-    # For native MSYS2 Windows builds, bundle runtime DLLs
+    # For native MSYS2 Windows builds, bundle runtime DLLs and Qt plugins
     # This is needed because unlike MXE (which uses static linking), MSYS2 uses dynamic linking
-    if(NOT MXECROSS AND CMAKE_VERSION VERSION_GREATER_EQUAL "3.21")
-      # Get the MSYS2 bin directory for DLL search
+    if(NOT MXECROSS)
+      # Get the MSYS2 prefix directory
       if(DEFINED ENV{MSYSTEM_PREFIX})
-        set(MSYS2_BIN_DIR "$ENV{MSYSTEM_PREFIX}/bin")
+        set(MSYS2_PREFIX "$ENV{MSYSTEM_PREFIX}")
       else()
-        set(MSYS2_BIN_DIR "/ucrt64/bin")
+        set(MSYS2_PREFIX "/ucrt64")
+      endif()
+      set(MSYS2_BIN_DIR "${MSYS2_PREFIX}/bin")
+
+      # Install Qt platform plugins (required for Qt to start)
+      if(USE_QT6)
+        set(QT_PLUGINS_DIR "${MSYS2_PREFIX}/share/qt6/plugins")
+      else()
+        set(QT_PLUGINS_DIR "${MSYS2_PREFIX}/share/qt5/plugins")
       endif()
 
+      # Platform plugin is mandatory
+      install(FILES "${QT_PLUGINS_DIR}/platforms/qwindows.dll"
+              DESTINATION "platforms")
+
+      # Install style plugins for native look
+      install(DIRECTORY "${QT_PLUGINS_DIR}/styles/"
+              DESTINATION "styles"
+              FILES_MATCHING PATTERN "*.dll")
+
+      # Install image format plugins (for icons, etc.)
+      install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats/"
+              DESTINATION "imageformats"
+              FILES_MATCHING PATTERN "*.dll")
+
+      # Install icon engine plugins (for SVG icons)
+      install(DIRECTORY "${QT_PLUGINS_DIR}/iconengines/"
+              DESTINATION "iconengines"
+              FILES_MATCHING PATTERN "*.dll")
+
+      message(STATUS "Native MSYS2 build: Qt plugins will be bundled from ${QT_PLUGINS_DIR}")
+
       # Use CMake's runtime dependency resolution to find and install required DLLs
-      install(TARGETS OpenSCADExe
-        RUNTIME_DEPENDENCY_SET runtime_deps
-      )
-      install(RUNTIME_DEPENDENCY_SET runtime_deps
-        PRE_EXCLUDE_REGEXES
-          "api-ms-.*"    # Windows API sets
-          "ext-ms-.*"    # Windows extension API sets
-        POST_EXCLUDE_REGEXES
-          ".*[Ss]ystem32.*"  # System DLLs
-          ".*[Ww]indows.*"   # Windows DLLs
-        DIRECTORIES
-          "${MSYS2_BIN_DIR}"
-          "${CMAKE_BINARY_DIR}"
-        DESTINATION "."
-      )
-      message(STATUS "Native MSYS2 build: Runtime DLLs will be bundled from ${MSYS2_BIN_DIR}")
+      if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.21")
+        install(TARGETS OpenSCADExe
+          RUNTIME_DEPENDENCY_SET runtime_deps
+        )
+        install(RUNTIME_DEPENDENCY_SET runtime_deps
+          PRE_EXCLUDE_REGEXES
+            "api-ms-.*"    # Windows API sets
+            "ext-ms-.*"    # Windows extension API sets
+          POST_EXCLUDE_REGEXES
+            ".*[Ss]ystem32.*"  # System DLLs
+            ".*[Ww]indows.*"   # Windows DLLs
+          DIRECTORIES
+            "${MSYS2_BIN_DIR}"
+            "${CMAKE_BINARY_DIR}"
+          DESTINATION "."
+        )
+        message(STATUS "Native MSYS2 build: Runtime DLLs will be bundled from ${MSYS2_BIN_DIR}")
+      endif()
     endif()
   else()
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/doc/openscad.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 RENAME openscad${SUFFIX_WITH_DASH}.1)

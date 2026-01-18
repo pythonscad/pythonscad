@@ -92,12 +92,21 @@ jobs:
           cd build
           cmake --install . --prefix=staging
 
-      - name: List installed DLLs
+      - name: List installed files
         run: |
           cd build/staging
-          echo "DLLs installed by CMake (showing first 30):"
+          echo "=== Root DLLs (showing first 30) ==="
           ls -lh *.dll 2>/dev/null | head -30 || echo "No DLLs found"
-          echo "Total DLLs: $(ls -1 *.dll 2>/dev/null | wc -l)"
+          echo "Total root DLLs: $(ls -1 *.dll 2>/dev/null | wc -l)"
+          echo ""
+          echo "=== Qt Platform Plugins ==="
+          ls -lh platforms/ 2>/dev/null || echo "No platforms/ directory"
+          echo ""
+          echo "=== Qt Style Plugins ==="
+          ls -lh styles/ 2>/dev/null || echo "No styles/ directory"
+          echo ""
+          echo "=== Qt Image Format Plugins ==="
+          ls -lh imageformats/ 2>/dev/null || echo "No imageformats/ directory"
 
       - name: Package with CPack
         id: cpack
