@@ -2108,6 +2108,11 @@ if(NOT APPLE OR APPLE_UNIX)
               DESTINATION "iconengines"
               FILES_MATCHING PATTERN "*.dll")
 
+      # Create qt.conf to tell Qt where to find plugins
+      # Without this, Qt won't find the plugins in the non-standard locations
+      file(WRITE "${CMAKE_BINARY_DIR}/qt.conf" "[Paths]\nPlugins = .\n")
+      install(FILES "${CMAKE_BINARY_DIR}/qt.conf" DESTINATION ".")
+
       message(STATUS "Native MSYS2 build: Qt plugins will be bundled from ${QT_PLUGINS_DIR}")
 
       # Use CMake's runtime dependency resolution to find and install required DLLs

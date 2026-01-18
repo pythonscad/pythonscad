@@ -95,9 +95,12 @@ jobs:
       - name: List installed files
         run: |
           cd build/staging
-          echo "=== Root DLLs (showing first 30) ==="
-          ls -lh *.dll 2>/dev/null | head -30 || echo "No DLLs found"
+          echo "=== Root files ==="
+          ls -lh *.dll *.conf 2>/dev/null | head -30 || echo "No root DLLs/conf found"
           echo "Total root DLLs: $(ls -1 *.dll 2>/dev/null | wc -l)"
+          echo ""
+          echo "=== qt.conf contents ==="
+          cat qt.conf 2>/dev/null || echo "No qt.conf"
           echo ""
           echo "=== Qt Platform Plugins ==="
           ls -lh platforms/ 2>/dev/null || echo "No platforms/ directory"
@@ -107,6 +110,9 @@ jobs:
           echo ""
           echo "=== Qt Image Format Plugins ==="
           ls -lh imageformats/ 2>/dev/null || echo "No imageformats/ directory"
+          echo ""
+          echo "=== Qt Icon Engine Plugins ==="
+          ls -lh iconengines/ 2>/dev/null || echo "No iconengines/ directory"
 
       - name: Package with CPack
         id: cpack
