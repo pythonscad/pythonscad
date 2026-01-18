@@ -96,34 +96,35 @@ jobs:
         run: |
           cd build/staging
 
-          # Function to recursively copy DLL dependencies
-          copy_dll_deps() {
-            local exe="$1"
-            echo "Finding dependencies for: $exe"
+          echo "Finding and copying DLL dependencies..."
 
-            # Get list of DLL dependencies using ldd
-            ldd "$exe" 2>/dev/null | grep -i "ucrt64" | awk '{print $3}' | while read dll; do
-              if [ -n "$dll" ] && [ -f "$dll" ]; then
-                local dll_name=$(basename "$dll")
-                if [ ! -f "$dll_name" ]; then
-                  echo "Copying: $dll_name"
-                  cp "$dll" .
-                  # Recursively copy dependencies of this DLL
-                  copy_dll_deps "$dll_name"
-                fi
+          # Iteratively copy DLL dependencies
+          changed=1
+          iterations=0
+          max_iterations=10
+
+          while [ $changed -eq 1 ] && [ $iterations -lt $max_iterations ]; do
+            changed=0
+            iterations=$((iterations + 1))
+            echo "Iteration $iterations: Scanning for missing DLLs..."
+
+            # Check all executables and DLLs for dependencies
+            for file in *.exe *.dll; do
+              if [ -f "$file" ]; then
+                # Get DLL dependencies
+                while IFS= read -r dll_path; do
+                  dll_name=$(basename "$dll_path")
+                  if [ ! -f "$dll_name" ]; then
+                    echo "  Copying: $dll_name"
+                    cp "$dll_path" . && changed=1
+                  fi
+                done < <(ldd "$file" 2>/dev/null | grep -i "ucrt64" | awk '{print $3}' | grep -v '^$')
               fi
             done
-          }
-
-          # Copy dependencies for all executables
-          for exe in *.exe; do
-            if [ -f "$exe" ]; then
-              copy_dll_deps "$exe"
-            fi
           done
 
-          echo "DLLs bundled:"
-          ls -lh *.dll | head -20
+          echo "DLLs bundled (showing first 30):"
+          ls -lh *.dll 2>/dev/null | head -30 || echo "No DLLs found"
           echo "Total DLLs: $(ls -1 *.dll 2>/dev/null | wc -l)"
 
       - name: Package with CPack
