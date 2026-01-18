@@ -92,6 +92,40 @@ jobs:
           cd build
           cmake --install . --prefix=staging
 
+      - name: Bundle MSYS2 runtime DLLs
+        run: |
+          cd build/staging
+
+          # Function to recursively copy DLL dependencies
+          copy_dll_deps() {
+            local exe="$1"
+            echo "Finding dependencies for: $exe"
+
+            # Get list of DLL dependencies using ldd
+            ldd "$exe" 2>/dev/null | grep -i "ucrt64" | awk '{print $3}' | while read dll; do
+              if [ -n "$dll" ] && [ -f "$dll" ]; then
+                local dll_name=$(basename "$dll")
+                if [ ! -f "$dll_name" ]; then
+                  echo "Copying: $dll_name"
+                  cp "$dll" .
+                  # Recursively copy dependencies of this DLL
+                  copy_dll_deps "$dll_name"
+                fi
+              fi
+            done
+          }
+
+          # Copy dependencies for all executables
+          for exe in *.exe; do
+            if [ -f "$exe" ]; then
+              copy_dll_deps "$exe"
+            fi
+          done
+
+          echo "DLLs bundled:"
+          ls -lh *.dll | head -20
+          echo "Total DLLs: $(ls -1 *.dll 2>/dev/null | wc -l)"
+
       - name: Package with CPack
         id: cpack
         run: |
