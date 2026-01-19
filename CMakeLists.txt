@@ -2108,6 +2108,13 @@ if(NOT APPLE OR APPLE_UNIX)
               DESTINATION "iconengines"
               FILES_MATCHING PATTERN "*.dll")
 
+      # Ensure Qt SVG runtime library is bundled (required by SVG plugins)
+      if(USE_QT6)
+        install(FILES "${MSYS2_BIN_DIR}/Qt6Svg.dll" DESTINATION ".")
+      else()
+        install(FILES "${MSYS2_BIN_DIR}/Qt5Svg.dll" DESTINATION ".")
+      endif()
+
       # Create qt.conf to tell Qt where to find plugins
       # Without this, Qt won't find the plugins in the non-standard locations
       file(WRITE "${CMAKE_BINARY_DIR}/qt.conf" "[Paths]\nPlugins = .\n")
