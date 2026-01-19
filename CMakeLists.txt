@@ -2058,8 +2058,25 @@ if(NOT APPLE OR APPLE_UNIX)
 	      install(DIRECTORY "${PYTHON_MINGW_DEVPATH}/${PYTHON_MINGW_REPODIR}/lib/"
 	              DESTINATION "lib")
 	    else()
-	      # For native MSYS2 Windows builds, use python.org embed package
-	      install(DIRECTORY "${PYTHON_EMBED_DEVPATH}/" DESTINATION "." )
+	      # For native MSYS2 Windows builds, install from system MSYS2 Python
+	      # This ensures ABI compatibility since the executable is linked against MSYS2 Python
+	      # (The python.org embed package uses a different DLL name and structure)
+	      if(DEFINED ENV{MSYSTEM_PREFIX})
+	        set(_MSYS2_PYTHON_PREFIX "$ENV{MSYSTEM_PREFIX}")
+	      else()
+	        set(_MSYS2_PYTHON_PREFIX "/ucrt64")
+	      endif()
+
+	      # Install Python standard library and extension modules
+	      # Python will search for lib/python3.x/ relative to the DLL location
+	      install(DIRECTORY "${_MSYS2_PYTHON_PREFIX}/lib/python${PYTHON_MINGW_VERSION}/"
+	              DESTINATION "lib/python${PYTHON_MINGW_VERSION}"
+	              PATTERN "__pycache__" EXCLUDE
+	              PATTERN "test" EXCLUDE
+	              PATTERN "tests" EXCLUDE
+	              PATTERN "*.pyc" EXCLUDE)
+
+	      message(STATUS "Native MSYS2 build: Python stdlib will be installed from ${_MSYS2_PYTHON_PREFIX}/lib/python${PYTHON_MINGW_VERSION}")
 	    endif()
     endif()
     if(USE_MIMALLOC AND MI_LINK_SHARED)
