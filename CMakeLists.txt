@@ -2198,13 +2198,17 @@ set(CPACK_PACKAGE_VENDOR "The OpenSCAD and PythonSCAD Developers")
 set(CPACK_PACKAGE_VERSION "${OPENSCAD_VERSION}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The Programmer's Solid 3D CAD Modeler")
 
-# Note: DLL bundling removed - MXE produces statically linked binaries
-# that don't require separate DLL files
-
-if(MXECROSS)
+# Windows NSIS installer configuration - applies to both cross-compile (MXE) and native builds
+if(WIN32)
   set(CPACK_GENERATOR ZIP;NSIS)
-  set(CPACK_SYSTEM_NAME ${PACKAGE_ARCH})
   set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)
+
+  # MXE cross-compile uses PACKAGE_ARCH; native builds detect architecture
+  if(MXECROSS)
+    set(CPACK_SYSTEM_NAME ${PACKAGE_ARCH})
+  else()
+    set(CPACK_SYSTEM_NAME "windows-x86-64")
+  endif()
 
   # Custom filename format: PythonSCAD-qt6-0.6.0-28-g89c44cac7-windows-x86-64
   # This overrides the default ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME}
@@ -2217,25 +2221,44 @@ if(MXECROSS)
   set(CPACK_PACKAGE_EXECUTABLES "pythonscad;${CPACK_PACKAGE_NAME}")
   set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME}")
   set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME}")
+
   if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.22")
     set(CPACK_NSIS_IGNORE_LICENSE_PAGE ON)
   else()
     message(FATAL_ERROR "CPACK_NSIS_IGNORE_LICENSE_PAGE requires cmake 3.22")
   endif()
+
+  # NSIS installer configuration
+  set(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_NAME}")
+  set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_NAME}")
+
+  # Enable per-user installation option (no admin required)
+  # This allows installing to user's local AppData instead of Program Files
+  set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+
+  # Add "Run PythonSCAD" checkbox on finish page
+  set(CPACK_NSIS_MUI_FINISHPAGE_RUN "pythonscad.exe")
+
+  # Pre-install includes for file association and utility macros
   set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "\
     !include \\\"FileFunc.nsh\\\"\n\
-    !include \\\"${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh\\\"\
+    !include \\\"${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh\\\"\n\
+    !include \\\"${CMAKE_SOURCE_DIR}/cmake/nsis/multiuser.nsh\\\"\
   ")
+
+  # Extra install commands - includes file association and compatibility shortcut
   set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "\
     !include \\\"${CMAKE_BINARY_DIR}/nsis-extra-install-commands.nsh\\\"\n\
     CreateShortCut $INSTDIR\\\\openscad.lnk $INSTDIR\\\\pythonscad.exe\
   ")
+
   set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "\
     !include \\\"${CMAKE_BINARY_DIR}/nsis-extra-uninstall-commands.nsh\\\"\
   ")
-  set (CPACK_NSIS_MODIFY_PATH "ON")
 
-  else()
+  set(CPACK_NSIS_MODIFY_PATH "ON")
+
+elseif(UNIX AND NOT APPLE)
   set(CPACK_GENERATOR RPM;DEB)
   set(CPACK_RPM_COMPONENT_INSTALL OFF)
   set(CPACK_RPM_PACKAGE_SUMMARY "The Programmer's Solid 3D CAD Modeler")
