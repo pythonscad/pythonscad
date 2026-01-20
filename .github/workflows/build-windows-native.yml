@@ -137,21 +137,17 @@ jobs:
         run: |
           mkdir -p artifacts
 
-          # Copy and rename ZIP files to include msys2-experimental
+          # Copy ZIP files
           for f in build/*.zip; do
             if [ -f "$f" ] && [[ ! "$f" == *"-Installer.zip" ]]; then
-              basename_f=$(basename "$f" .zip)
-              newname="${basename_f}-msys2-experimental.zip"
-              cp -v "$f" "artifacts/$newname"
+              cp -v "$f" "artifacts/"
             fi
           done
 
-          # Copy and rename NSIS installer to include msys2-experimental
+          # Copy NSIS installer
           for f in build/*-Installer.exe; do
             if [ -f "$f" ]; then
-              basename_f=$(basename "$f" -Installer.exe)
-              newname="${basename_f}-msys2-experimental-Installer.exe"
-              cp -v "$f" "artifacts/$newname"
+              cp -v "$f" "artifacts/"
             fi
           done
 
