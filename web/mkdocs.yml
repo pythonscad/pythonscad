@@ -44,7 +44,6 @@ nav:
   - Examples: examples.md
   - Cheat-Sheet: cheatsheet.md
   - References: references.md
-  - Future: future.md
   - Contact: contact.md
 
 markdown_extensions:
