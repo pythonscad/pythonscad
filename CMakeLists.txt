@@ -2239,25 +2239,26 @@ if(WIN32)
   # Add "Run PythonSCAD" checkbox on finish page
   set(CPACK_NSIS_MUI_FINISHPAGE_RUN "pythonscad.exe")
 
-  # Convert paths to Windows native format for NSIS (forward slashes -> backslashes)
-  file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh" NSIS_FILE_ASSOC_PATH)
-  file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/nsis-extra-install-commands.nsh" NSIS_INSTALL_COMMANDS_PATH)
-  file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/nsis-extra-uninstall-commands.nsh" NSIS_UNINSTALL_COMMANDS_PATH)
+  # Copy NSIS helper files to build directory so they're accessible with simple paths
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh"
+                 "${CMAKE_BINARY_DIR}/nsis-mingw-file-association.nsh" COPYONLY)
 
   # Pre-install includes for file association and utility macros
+  # CPack runs NSIS from build/_CPack_Packages/<system>/NSIS/
+  # Use relative path back to build directory: ../../../
   set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "\
     !include \\\"FileFunc.nsh\\\"\n\
-    !include \\\"${NSIS_FILE_ASSOC_PATH}\\\"\
+    !include \\\"..\\\\..\\\\..\\\\nsis-mingw-file-association.nsh\\\"\
   ")
 
   # Extra install commands - includes file association and compatibility shortcut
   set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "\
-    !include \\\"${NSIS_INSTALL_COMMANDS_PATH}\\\"\n\
+    !include \\\"..\\\\..\\\\..\\\\nsis-extra-install-commands.nsh\\\"\n\
     CreateShortCut $INSTDIR\\\\openscad.lnk $INSTDIR\\\\pythonscad.exe\
   ")
 
   set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "\
-    !include \\\"${NSIS_UNINSTALL_COMMANDS_PATH}\\\"\
+    !include \\\"..\\\\..\\\\..\\\\nsis-extra-uninstall-commands.nsh\\\"\
   ")
 
   set(CPACK_NSIS_MODIFY_PATH "ON")
