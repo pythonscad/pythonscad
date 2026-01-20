@@ -33,6 +33,7 @@ nav:
   - Get started: get_started.md
   - Downloads: downloads.md
   - Installation: installation.md
+  - Building: building.md
   - Tutorial:
       - Getting Started: tutorial/getting_started.md
       - Combining Objects: tutorial/combining_objects.md
