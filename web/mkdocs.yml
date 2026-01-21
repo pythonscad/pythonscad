@@ -28,6 +28,10 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
+
+extra_css:
+  - stylesheets/extra.css
+
 nav:
   - Home: index.md
   - Get started: get_started.md
