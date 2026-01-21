@@ -39,7 +39,3 @@
     border-radius: 5px;
     overflow-x: auto;
 }
-
-.cheatsheet-grid code {
-  font-family: 'Intel One Mono', monospace;
-}
