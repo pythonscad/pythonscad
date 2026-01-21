@@ -46,9 +46,8 @@
 
 ## 🔄 Transformations
 
-<div class="cheatsheet-section">
-  <div class="cheatsheet-grid">
-  <pre><code>translate(obj, [x, y, z])       # Translate object by x, y, z
+```python
+translate(obj, [x, y, z])       # Translate object by x, y, z
 rotate(obj, [x, y, z])          # Rotate object by x, y, z degrees
 scale(obj, [x, y, z])           # Scale obj by x, y, z factors
 mirror([obj, x, y, z])          # Mirror object across the plane defined by x, y, z
@@ -56,65 +55,51 @@ right(obj, val)                 # shift  obj by val, alternatively left, front, 
 obj + [x,y,z ]                  # translate object by displacement
 rotx(obj, val)                  # Rotation in one axis , alternatively roty, rotz
 obj * factor                    # scale obj by factor
-</code></pre>
-  </div>
-</div>
+```
 
 ## 🔗 Boolean Operations
 
-<div class="cheatsheet-section">
-  <div class="cheatsheet-grid">
-  <pre><code>union(obj1, obj2)               # Union of obj1 and obj2, alternatively use obj1 | obj2
+```python
+union(obj1, obj2)               # Union of obj1 and obj2, alternatively use obj1 | obj2
 difference(obj1, obj2)          # Subtract obj2 from obj1, alternatively use obj1 - obj2
 intersection(obj1, obj2)        # Intersection of obj1 and obj2, alternatively use obj1 &amp; obj2
-  </code></pre>
-  </div>
-</div>
+```
 
 ## 🌀 Extrusions
 
-<div class="cheatsheet-section">
-  <div class="cheatsheet-grid">
-  <pre><code>linear_extrude(shape, height=5) # Extrude 2D shape linearly
+```python
+linear_extrude(shape, height=5) # Extrude 2D shape linearly
 rotate_extrude(shape, angle=45) # Extrude 2D shape by rotating it
-path_extrude(square(3), path)   # Extrude shape along a specified path</code></pre>
-  </div>
-</div>
+path_extrude(square(3), path)   # Extrude shape along a specified path
+```
 
 ## 🎨 Appearance
 
-<div class="cheatsheet-section">
-  <div class="cheatsheet-grid">
-  <pre><code>color(obj, "red")               # Apply red color to object
-color(obj, [r, g, b])           # Apply RGB color to object</code></pre>
-  </div>
-</div>
+```python
+color(obj, "red")               # Apply red color to object
+color(obj, [r, g, b])           # Apply RGB color to object
+```
 
 ## 🧰 Advanced Features
 
-<div class="cheatsheet-section">
-  <div class="cheatsheet-grid">
-  <pre><code>hull()(obj1, obj2)              # Create convex hull of obj1 and obj2
+```python
+hull()(obj1, obj2)              # Create convex hull of obj1 and obj2
 minkowski(obj1, obj2)           # Minkowski sum of obj1 and obj2
-offset(shape, delta)            # Offset shape by delta</code></pre>
-  </div>
-</div>
+offset(shape, delta)            # Offset shape by delta
+```
+
 
 ## 🧪 Displaying Objects
 
-<div class="cheatsheet-section">
-  <div class="cheatsheet-grid">
-  <pre><code>show(obj)                       # Render the object
+```python
+show(obj)                       # Render the object
 export(obj,"output.3mf")        # Exporting to a file
-</code></pre>
-  </div>
-</div>
+```
 
 ## 🐍 Python-Specific Gadgets
 
-<div class="cheatsheet-section">
-  <div class="cheatsheet-grid">
-  <pre><code> # Quickly arrange objects
+```python
+# Quickly arrange objects
 show([ cube(4).right(5*i) for i in range(5) ])
 
 # Modify the mesh
@@ -125,27 +110,23 @@ if pt[2] &gt; 3 and pt[1] &gt; 3:
   pt[2] = pt[2] + 3
 polyhedron(pts, tri).show()
 
-show(pillar())</code></pre>
-  </div>
-</div>
+show(pillar())
+```
 
 ## 📌 Handles
-<div class="cheatsheet-section">
-  <div class="cheatsheet-grid">
-  <pre><code>c = cube([10,10,10r])
+
+```python
+c = cube([10,10,10r])
 c.right_side = translate(roty(c.origin, 90),[10,5,5]) # create handle on the right side of the cube
-c |= cylinder(r=1,h=8).align(c.right_side)  # Attach a cylinder to the new handle</code></pre>
-  </div>
-</div>
+c |= cylinder(r=1,h=8).align(c.right_side)  # Attach a cylinder to the new handle
+```
 
 ## 🐍 Special variables
 
-<div class="cheatsheet-section">
-  <div class="cheatsheet-grid">
-  <pre><code>fn, fa, fs           # define roundness of things
-time, phi            # like in openSCAD , phi = 2*PI*time</code></pre>
-  </div>
-</div>
+```python
+fn, fa, fs           # define roundness of things
+time, phi            # like in openSCAD , phi = 2*PI*time
+```
 
 ## 🎛️ Customizer
 
