@@ -1338,10 +1338,7 @@ void MainWindow::onActionEvent(InputEventAction *event)
   }
 }
 
-void MainWindow::onZoomEvent(InputEventZoom *event)
-{
-  qglview->zoom(event->zoom, event->relative);
-}
+void MainWindow::onZoomEvent(InputEventZoom *event) { qglview->zoom(event->zoom, event->relative); }
 
 void MainWindow::loadViewSettings()
 {
@@ -1466,10 +1463,7 @@ MainWindow::~MainWindow()
   }
 }
 
-void MainWindow::showProgress()
-{
-  updateStatusBar(qobject_cast<ProgressWidget *>(sender()));
-}
+void MainWindow::showProgress() { updateStatusBar(qobject_cast<ProgressWidget *>(sender())); }
 
 void MainWindow::report_func(const std::shared_ptr<const AbstractNode>&, void *vp, int mark)
 {
@@ -1637,10 +1631,7 @@ void MainWindow::waitAfterReload()
   this->waitAfterReloadTimer->start();
 }
 
-void MainWindow::on_toolButtonCompileResultClose_clicked()
-{
-  frameCompileResult->hide();
-}
+void MainWindow::on_toolButtonCompileResultClose_clicked() { frameCompileResult->hide(); }
 
 void MainWindow::updateCompileResult()
 {
@@ -1945,10 +1936,7 @@ void MainWindow::actionOpen()
   }
 }
 
-void MainWindow::actionNewWindow()
-{
-  new MainWindow(QStringList());
-}
+void MainWindow::actionNewWindow() { new MainWindow(QStringList()); }
 
 void MainWindow::actionOpenWindow()
 {
@@ -2076,15 +2064,9 @@ void MainWindow::saveBackup()
   return writeBackup(this->tempFile);
 }
 
-void MainWindow::actionSave()
-{
-  tabManager->save(activeEditor);
-}
+void MainWindow::actionSave() { tabManager->save(activeEditor); }
 
-void MainWindow::actionSaveAs()
-{
-  tabManager->saveAs(activeEditor);
-}
+void MainWindow::actionSaveAs() { tabManager->saveAs(activeEditor); }
 
 void MainWindow::actionPythonRevokeTrustedFiles()
 {
@@ -2158,10 +2140,7 @@ void MainWindow::actionPythonSelectVenv()
 #endif  // ifdef ENABLE_PYTHON
 }
 
-void MainWindow::actionSaveACopy()
-{
-  tabManager->saveACopy(activeEditor);
-}
+void MainWindow::actionSaveACopy() { tabManager->saveACopy(activeEditor); }
 
 void MainWindow::actionShowLibraryFolder()
 {
@@ -2342,20 +2321,11 @@ void MainWindow::convertTabsToSpaces()
   activeEditor->setText(converted);
 }
 
-void MainWindow::findNext()
-{
-  activeEditor->find(this->findInputField->text(), true);
-}
+void MainWindow::findNext() { activeEditor->find(this->findInputField->text(), true); }
 
-void MainWindow::findPrev()
-{
-  activeEditor->find(this->findInputField->text(), true, true);
-}
+void MainWindow::findPrev() { activeEditor->find(this->findInputField->text(), true, true); }
 
-void MainWindow::useSelectionForFind()
-{
-  findInputField->setText(activeEditor->selectedText());
-}
+void MainWindow::useSelectionForFind() { findInputField->setText(activeEditor->selectedText()); }
 
 void MainWindow::updateFindBuffer(const QString& s)
 {
@@ -3043,10 +3013,7 @@ void MainWindow::measureFinished()
   if (didSomething) resetMeasurementsState(true, "Click to start measuring");
 }
 
-void MainWindow::clearAllSelectionIndicators()
-{
-  this->activeEditor->clearAllSelectionIndicators();
-}
+void MainWindow::clearAllSelectionIndicators() { this->activeEditor->clearAllSelectionIndicators(); }
 
 void MainWindow::setSelectionIndicatorStatus(EditorInterface *editor, int nodeIndex,
                                              EditorSelectionIndicatorStatus status)
@@ -3852,10 +3819,7 @@ void MainWindow::viewModeShowScaleProportional()
   this->qglview->update();
 }
 
-bool MainWindow::isEmpty()
-{
-  return activeEditor->toPlainText().isEmpty();
-}
+bool MainWindow::isEmpty() { return activeEditor->toPlainText().isEmpty(); }
 
 void MainWindow::editorContentChanged()
 {
@@ -4165,10 +4129,7 @@ void MainWindow::on_editActionInsertTemplate_triggered()
   activeEditor->displayTemplates();
 }
 
-void MainWindow::on_editActionFoldAll_triggered()
-{
-  activeEditor->foldUnfold();
-}
+void MainWindow::on_editActionFoldAll_triggered() { activeEditor->foldUnfold(); }
 
 QString MainWindow::getCurrentFileName() const
 {
@@ -4341,25 +4302,13 @@ void MainWindow::helpAbout()
   dialog->deleteLater();
 }
 
-void MainWindow::helpHomepage()
-{
-  UIUtils::openHomepageURL();
-}
+void MainWindow::helpHomepage() { UIUtils::openHomepageURL(); }
 
-void MainWindow::helpManual()
-{
-  UIUtils::openUserManualURL();
-}
+void MainWindow::helpManual() { UIUtils::openUserManualURL(); }
 
-void MainWindow::helpOfflineManual()
-{
-  UIUtils::openOfflineUserManual();
-}
+void MainWindow::helpOfflineManual() { UIUtils::openOfflineUserManual(); }
 
-void MainWindow::helpCheatSheet()
-{
-  UIUtils::openCheatSheetURL();
-}
+void MainWindow::helpCheatSheet() { UIUtils::openCheatSheetURL(); }
 
 void MainWindow::helpPythonCheatSheet()
 {
@@ -4467,10 +4416,7 @@ void MainWindow::errorLogOutput(const Message& log_msg, void *userdata)
   QMetaObject::invokeMethod(thisp, "errorLogOutput", Q_ARG(Message, log_msg));
 }
 
-void MainWindow::errorLogOutput(const Message& log_msg)
-{
-  this->errorLogWidget->toErrorLog(log_msg);
-}
+void MainWindow::errorLogOutput(const Message& log_msg) { this->errorLogWidget->toErrorLog(log_msg); }
 
 void MainWindow::setCurrentOutput()
 {
@@ -4482,10 +4428,7 @@ void MainWindow::hideCurrentOutput()
   set_output_handler(&MainWindow::noOutputConsole, &MainWindow::noOutputErrorLog, this);
 }
 
-void MainWindow::clearCurrentOutput()
-{
-  set_output_handler(nullptr, nullptr, nullptr);
-}
+void MainWindow::clearCurrentOutput() { set_output_handler(nullptr, nullptr, nullptr); }
 
 void MainWindow::openCSGSettingsChanged()
 {

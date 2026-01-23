@@ -54,15 +54,9 @@ InputDriverManager *InputDriverManager::instance()
   return self;
 }
 
-void InputDriverManager::registerDriver(InputDriver *driver)
-{
-  this->drivers.push_back(driver);
-}
+void InputDriverManager::registerDriver(InputDriver *driver) { this->drivers.push_back(driver); }
 
-void InputDriverManager::unregisterDriver(InputDriver *driver)
-{
-  this->drivers.remove(driver);
-}
+void InputDriverManager::unregisterDriver(InputDriver *driver) { this->drivers.remove(driver); }
 
 void InputDriverManager::registerActions(const QList<QAction *>& actions, const QString& parent,
                                          const QString& target)
@@ -165,10 +159,7 @@ void InputDriverManager::closeDrivers()
   }
 }
 
-void InputDriverManager::sendEvent(InputEvent *event)
-{
-  event->deliver(&mapper);
-}
+void InputDriverManager::sendEvent(InputEvent *event) { event->deliver(&mapper); }
 
 void InputDriverManager::postEvent(InputEvent *event)
 {
@@ -178,10 +169,7 @@ void InputDriverManager::postEvent(InputEvent *event)
   }
 }
 
-const std::list<ActionStruct>& InputDriverManager::getActions() const
-{
-  return actions;
-}
+const std::list<ActionStruct>& InputDriverManager::getActions() const { return actions; }
 
 QList<double> InputDriverManager::getTranslation() const
 {
@@ -208,20 +196,11 @@ void InputDriverManager::onFocusChanged(QWidget *, QWidget *current)
   }
 }
 
-void InputDriverManager::onInputMappingUpdated()
-{
-  mapper.onInputMappingUpdated();
-}
+void InputDriverManager::onInputMappingUpdated() { mapper.onInputMappingUpdated(); }
 
-void InputDriverManager::onInputCalibrationUpdated()
-{
-  mapper.onInputCalibrationUpdated();
-}
+void InputDriverManager::onInputCalibrationUpdated() { mapper.onInputCalibrationUpdated(); }
 
-void InputDriverManager::onInputGainUpdated()
-{
-  mapper.onInputGainUpdated();
-}
+void InputDriverManager::onInputGainUpdated() { mapper.onInputGainUpdated(); }
 
 size_t InputDriverManager::getButtonCount() const
 {

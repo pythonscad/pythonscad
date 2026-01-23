@@ -47,10 +47,7 @@ const QString OctoPrint::url() const
   return QString::fromStdString(Settings::Settings::octoPrintUrl.value());
 }
 
-const std::string OctoPrint::apiKey() const
-{
-  return Settings::Settings::octoPrintApiKey.value();
-}
+const std::string OctoPrint::apiKey() const { return Settings::Settings::octoPrintApiKey.value(); }
 
 const QJsonDocument OctoPrint::getJsonData(const QString& endpoint) const
 {

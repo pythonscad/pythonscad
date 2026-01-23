@@ -37,9 +37,7 @@ DrawingCallback::DrawingCallback(unsigned long fn, double size)
 {
 }
 
-DrawingCallback::~DrawingCallback()
-{
-}
+DrawingCallback::~DrawingCallback() {}
 
 void DrawingCallback::start_glyph()
 {
@@ -66,10 +64,7 @@ void DrawingCallback::finish_glyph()
   }
 }
 
-std::vector<std::shared_ptr<const Polygon2d>> DrawingCallback::get_result()
-{
-  return this->polygons;
-}
+std::vector<std::shared_ptr<const Polygon2d>> DrawingCallback::get_result() { return this->polygons; }
 
 void DrawingCallback::set_glyph_offset(double offset_x, double offset_y)
 {

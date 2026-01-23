@@ -36,20 +36,9 @@ void DBusInputDriver::run()
 {
 }
 
-DBusInputDriver::DBusInputDriver()
-{
-  name = "DBusInputDriver";
-}
+bool DBusInputDriver::openOnce() const { return true; }
 
-bool DBusInputDriver::openOnce() const
-{
-  return true;
-}
-
-bool DBusInputDriver::isOpen() const
-{
-  return is_open;
-}
+bool DBusInputDriver::isOpen() const { return is_open; }
 
 bool DBusInputDriver::open()
 {
@@ -142,10 +131,7 @@ const QList<double> DBusInputDriver::getTranslation() const
   return InputDriverManager::instance()->getTranslation();
 }
 
-const std::string& DBusInputDriver::get_name() const
-{
-  return this->name;
-}
+const std::string& DBusInputDriver::get_name() const { return this->name; }
 
 std::string DBusInputDriver::get_info() const
 {

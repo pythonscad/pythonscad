@@ -71,10 +71,7 @@ size_t CGALNefGeometry::memsize() const
   return memsize;
 }
 
-bool CGALNefGeometry::isEmpty() const
-{
-  return !this->p3 || this->p3->is_empty();
-}
+bool CGALNefGeometry::isEmpty() const { return !this->p3 || this->p3->is_empty(); }
 
 BoundingBox CGALNefGeometry::getBoundingBox() const
 {
@@ -98,10 +95,7 @@ void CGALNefGeometry::resize(const Vector3d& newsize, const Eigen::Matrix<bool, 
                                               autosize));
 }
 
-std::string CGALNefGeometry::dump() const
-{
-  return OpenSCAD::dump_svg(*this->p3);
-}
+std::string CGALNefGeometry::dump() const { return OpenSCAD::dump_svg(*this->p3); }
 
 void CGALNefGeometry::transform(const Transform3d& matrix)
 {

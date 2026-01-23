@@ -86,15 +86,9 @@ LaunchingScreen::LaunchingScreen(QWidget *parent) : QDialog(parent)
   connect(this->checkBox, &QCheckBox::toggled, this, &LaunchingScreen::checkboxState);
 }
 
-LaunchingScreen::~LaunchingScreen()
-{
-  LaunchingScreen::inst = nullptr;
-}
+LaunchingScreen::~LaunchingScreen() { LaunchingScreen::inst = nullptr; }
 
-QStringList LaunchingScreen::selectedFiles() const
-{
-  return this->files;
-}
+QStringList LaunchingScreen::selectedFiles() const { return this->files; }
 
 bool LaunchingScreen::isForceShowEditor() const
 {
@@ -168,7 +162,4 @@ void LaunchingScreen::checkboxState(bool state) const
   settings.setValue("launcher/showOnStartup", !state);
 }
 
-void LaunchingScreen::openUserManualURL() const
-{
-  UIUtils::openUserManualURL();
-}
+void LaunchingScreen::openUserManualURL() const { UIUtils::openUserManualURL(); }

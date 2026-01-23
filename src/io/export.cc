@@ -142,10 +142,7 @@ std::vector<FileFormat> all3D()
   return all3DFormats;
 }
 
-const FileFormatInfo& info(FileFormat fileFormat)
-{
-  return containers().fileFormatToInfo[fileFormat];
-}
+const FileFormatInfo& info(FileFormat fileFormat) { return containers().fileFormatToInfo[fileFormat]; }
 
 bool fromIdentifier(const std::string& identifier, FileFormat& format)
 {
@@ -155,9 +152,12 @@ bool fromIdentifier(const std::string& identifier, FileFormat& format)
   return true;
 }
 
-const std::string& toSuffix(FileFormat format)
+const std::string& toSuffix(FileFormat format) { return containers().fileFormatToInfo[format].suffix; }
+
+bool canPreview(FileFormat format)
 {
-  return containers().fileFormatToInfo[format].suffix;
+  return (format == FileFormat::AST || format == FileFormat::CSG || format == FileFormat::PARAM ||
+          format == FileFormat::ECHO || format == FileFormat::TERM || format == FileFormat::PNG);
 }
 
 bool canPreview(FileFormat format)

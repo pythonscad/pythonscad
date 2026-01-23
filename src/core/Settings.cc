@@ -72,10 +72,7 @@ SettingsEntryBase::SettingsEntryBase(std::string category, std::string name)
   entries.push_back(this);
 }
 
-std::string SettingsEntryBool::encode() const
-{
-  return _value ? "true" : "false";
-}
+std::string SettingsEntryBool::encode() const { return _value ? "true" : "false"; }
 
 const bool SettingsEntryBool::decode(const std::string& encoded) const
 {
@@ -93,10 +90,7 @@ const bool SettingsEntryBool::decode(const std::string& encoded) const
   }
 }
 
-std::string SettingsEntryInt::encode() const
-{
-  return STR(_value);
-}
+std::string SettingsEntryInt::encode() const { return STR(_value); }
 
 const int SettingsEntryInt::decode(const std::string& encoded) const
 {
@@ -107,10 +101,7 @@ const int SettingsEntryInt::decode(const std::string& encoded) const
   }
 }
 
-std::string SettingsEntryDouble::encode() const
-{
-  return STR(_value);
-}
+std::string SettingsEntryDouble::encode() const { return STR(_value); }
 
 const double SettingsEntryDouble::decode(const std::string& encoded) const
 {

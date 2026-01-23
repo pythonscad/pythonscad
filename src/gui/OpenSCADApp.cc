@@ -31,10 +31,7 @@ OpenSCADApp::OpenSCADApp(int& argc, char **argv) : QApplication(argc, argv)
   // the OpenSCADApp instance is created.
 }
 
-OpenSCADApp::~OpenSCADApp()
-{
-  delete this->fontCacheDialog;
-}
+OpenSCADApp::~OpenSCADApp() { delete this->fontCacheDialog; }
 
 #include <QMessageBox>
 

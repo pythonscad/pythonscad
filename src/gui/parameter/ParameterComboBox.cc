@@ -29,7 +29,4 @@ void ParameterComboBox::onChanged(int index)
   }
 }
 
-void ParameterComboBox::setValue()
-{
-  comboBox->setCurrentIndex(parameter->valueIndex);
-}
+void ParameterComboBox::setValue() { comboBox->setCurrentIndex(parameter->valueIndex); }

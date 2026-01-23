@@ -66,10 +66,7 @@ Value Expression::checkUndef(Value&& val, const std::shared_ptr<const Context>& 
   return std::move(val);
 }
 
-bool Expression::isLiteral() const
-{
-  return false;
-}
+bool Expression::isLiteral() const { return false; }
 
 UnaryOp::UnaryOp(UnaryOp::Op op, Expression *expr, const Location& loc)
   : Expression(loc), op(op), expr(expr)
@@ -247,15 +244,9 @@ void ArrayLookup::print_python(std::ostream& stream, std::ostream& stream_def, c
   stream << *array << "[" << *index << "]";
 }
 
-Value Literal::evaluate(const std::shared_ptr<const Context>&) const
-{
-  return value.clone();
-}
+Value Literal::evaluate(const std::shared_ptr<const Context>&) const { return value.clone(); }
 
-void Literal::print(std::ostream& stream, const std::string&) const
-{
-  stream << value;
-}
+void Literal::print(std::ostream& stream, const std::string&) const { stream << value; }
 
 void Literal::print_python(std::ostream& stream, std::ostream& stream_def, const std::string&) const
 {
@@ -335,6 +326,8 @@ bool Range::isLiteral() const
 
 Vector::Vector(const Location& loc) : Expression(loc), literal_flag(unknown)
 {
+  return this->step ? begin->isLiteral() && end->isLiteral() && step->isLiteral()
+                    : begin->isLiteral() && end->isLiteral();
 }
 
 bool Vector::isLiteral() const
@@ -353,10 +346,7 @@ bool Vector::isLiteral() const
   }
 }
 
-void Vector::emplace_back(Expression *expr)
-{
-  this->children.emplace_back(expr);
-}
+void Vector::emplace_back(Expression *expr) { this->children.emplace_back(expr); }
 
 Value Vector::evaluate(const std::shared_ptr<const Context>& context) const
 {
@@ -398,19 +388,14 @@ void Vector::print_python(std::ostream& stream, std::ostream& stream_def, const 
   stream << "]";
 }
 
-Lookup::Lookup(std::string name, const Location& loc) : Expression(loc), name(std::move(name))
-{
-}
+Lookup::Lookup(std::string name, const Location& loc) : Expression(loc), name(std::move(name)) {}
 
 Value Lookup::evaluate(const std::shared_ptr<const Context>& context) const
 {
   return context->lookup_variable(this->name, loc).clone();
 }
 
-void Lookup::print(std::ostream& stream, const std::string&) const
-{
-  stream << this->name;
-}
+void Lookup::print(std::ostream& stream, const std::string&) const { stream << this->name; }
 
 void Lookup::print_python(std::ostream& stream, std::ostream& stream_def, const std::string&) const
 {
@@ -908,9 +893,7 @@ void Let::print_python(std::ostream& stream, std::ostream& stream_def, const std
   stream << "let(" << this->arguments << ") " << *expr;
 }
 
-ListComprehension::ListComprehension(const Location& loc) : Expression(loc)
-{
-}
+ListComprehension::ListComprehension(const Location& loc) : Expression(loc) {}
 
 LcIf::LcIf(Expression *cond, Expression *ifexpr, Expression *elseexpr, const Location& loc)
   : ListComprehension(loc), cond(cond), ifexpr(ifexpr), elseexpr(elseexpr)
@@ -944,9 +927,7 @@ void LcIf::print_python(std::ostream& stream, std::ostream& stream_def, const st
   }
 }
 
-LcEach::LcEach(Expression *expr, const Location& loc) : ListComprehension(loc), expr(expr)
-{
-}
+LcEach::LcEach(Expression *expr, const Location& loc) : ListComprehension(loc), expr(expr) {}
 
 // Need this for recurring into already embedded vectors, and performing "each" on their elements
 //    Context is only passed along for the possible use in Range warning.

@@ -43,7 +43,6 @@
 #include "primitives.h"
 namespace fs = std::filesystem;
 
-
 #include "xeus/xeus_context.hpp"
 #include "xeus/xkernel.hpp"
 #include "xeus/xkernel_configuration.hpp"
@@ -53,7 +52,6 @@ namespace fs = std::filesystem;
 #include "xeus-zmq/xzmq_context.hpp"
 
 #include "openscad_jupyter.h"
-
 
 // #define HAVE_PYTHON_YIELD
 extern "C" PyObject *PyInit_openscad(void);

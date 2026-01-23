@@ -27,7 +27,7 @@ Polygon2d::Polygon2d(Outline2d outline) : sanitized(true)
   addOutline(std::move(outline));
 }
 
-std::unique_ptr<Geometry> Polygon2d::copy() const
+BoundingBox Outline2d::getBoundingBox() const
 {
   return std::make_unique<Polygon2d>(*this);
 }
@@ -106,10 +106,7 @@ std::string Polygon2d::dump() const
   return out.str();
 }
 
-bool Polygon2d::isEmpty() const
-{
-  return this->theoutlines.empty();
-}
+bool Polygon2d::isEmpty() const { return this->theoutlines.empty(); }
 
 void Polygon2d::transform(const Transform2d& mat)
 {

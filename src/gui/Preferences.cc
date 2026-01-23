@@ -301,10 +301,7 @@ void Preferences::init()
   emit editorConfigChanged();
 }
 
-Preferences::~Preferences()
-{
-  removeDefaultSettings();
-}
+Preferences::~Preferences() { removeDefaultSettings(); }
 
 void Preferences::update()
 {
@@ -1269,10 +1266,7 @@ void Preferences::writeSettings()
   fireEditorConfigChanged();
 }
 
-void Preferences::fireEditorConfigChanged() const
-{
-  emit editorConfigChanged();
-}
+void Preferences::fireEditorConfigChanged() const { emit editorConfigChanged(); }
 
 void Preferences::keyPressEvent(QKeyEvent *e)
 {

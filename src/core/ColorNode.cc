@@ -101,10 +101,7 @@ std::string ColorNode::toString() const
              this->color.a(), "])");
 }
 
-std::string ColorNode::name() const
-{
-  return "color";
-}
+std::string ColorNode::name() const { return "color"; }
 
 void register_builtin_color()
 {

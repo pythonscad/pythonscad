@@ -17,10 +17,7 @@
 
 #include <string>
 
-void InitConfigurator::writeSettings()
-{
-  Settings::Settings::visit(SettingsWriter());
-}
+void InitConfigurator::writeSettings() { Settings::Settings::visit(SettingsWriter()); }
 
 void InitConfigurator::initUpdateCheckBox(const BlockSignals<QCheckBox *>& checkBox,
                                           const Settings::SettingsEntryBool& entry)

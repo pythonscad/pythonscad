@@ -98,10 +98,7 @@ void ErrorLog::showtheErrorInGUI(const Message& logMsg)
   }
 }
 
-void ErrorLog::resize()
-{
-  logTable->resizeRowsToContents();
-}
+void ErrorLog::resize() { logTable->resizeRowsToContents(); }
 
 void ErrorLog::onSectionResized(int /*logicalIndex*/, int /*oldSize*/, int /*newSize*/)
 {
@@ -121,10 +118,7 @@ void ErrorLog::clearModel()
   lastMessages.clear();
 }
 
-int ErrorLog::getLine(int row, int col)
-{
-  return logTable->model()->index(row, col).data().toInt();
-}
+int ErrorLog::getLine(int row, int col) { return logTable->model()->index(row, col).data().toInt(); }
 
 void ErrorLog::on_errorLogComboBox_currentTextChanged(const QString& group)
 {
@@ -138,10 +132,7 @@ void ErrorLog::on_errorLogComboBox_currentTextChanged(const QString& group)
   }
 }
 
-void ErrorLog::on_logTable_doubleClicked(const QModelIndex& index)
-{
-  onIndexSelected(index);
-}
+void ErrorLog::on_logTable_doubleClicked(const QModelIndex& index) { onIndexSelected(index); }
 
 void ErrorLog::on_actionRowSelected_triggered(bool)
 {

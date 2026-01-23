@@ -9,39 +9,30 @@
 
 namespace nl = nlohmann;
 
-namespace openscad_jupyter
+namespace openscad_jupyter {
+class XEUS_CALC_API interpreter : public xeus::xinterpreter
 {
-    class XEUS_CALC_API interpreter : public xeus::xinterpreter
-    {
-    public:
+public:
+  interpreter() = default;
 
-        interpreter() = default;
+  virtual ~interpreter() = default;
 
-        virtual ~interpreter() = default;
+private:
+  void configure_impl() override;
 
-    private:
+  void execute_request_impl(send_reply_callback cb, int execution_counter, const std::string& code,
+                            xeus::execute_request_config config, nl::json user_expressions) override;
 
-        void configure_impl() override;
+  nl::json complete_request_impl(const std::string& code, int cursor_pos) override;
 
-        void execute_request_impl(send_reply_callback cb,
-                                  int execution_counter,
-                                  const std::string& code,
-                                  xeus::execute_request_config config, 
-                                  nl::json user_expressions) override;
+  nl::json inspect_request_impl(const std::string& code, int cursor_pos, int detail_level) override;
 
-        nl::json complete_request_impl(const std::string& code,
-                                       int cursor_pos) override;
+  nl::json is_complete_request_impl(const std::string& code) override;
 
-        nl::json inspect_request_impl(const std::string& code,
-                                      int cursor_pos,
-                                      int detail_level) override;
+  nl::json kernel_info_request_impl() override;
 
-        nl::json is_complete_request_impl(const std::string& code) override;
+  void shutdown_request_impl() override;
+};
 
-        nl::json kernel_info_request_impl() override;
-
-        void shutdown_request_impl() override;
-    };
-
-}
+}  // namespace openscad_jupyter
 #endif

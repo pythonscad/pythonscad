@@ -24,7 +24,4 @@ void ParameterCheckBox::onChanged()
   emit changed(true);
 }
 
-void ParameterCheckBox::setValue()
-{
-  checkBox->setChecked(parameter->value);
-}
+void ParameterCheckBox::setValue() { checkBox->setChecked(parameter->value); }

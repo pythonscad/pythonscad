@@ -277,10 +277,7 @@ std::string ImportNode::toString() const
   return stream.str();
 }
 
-std::string ImportNode::name() const
-{
-  return "import";
-}
+std::string ImportNode::name() const { return "import"; }
 
 void register_builtin_import()
 {

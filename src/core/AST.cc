@@ -17,7 +17,9 @@ bool operator==(Location const& lhs, Location const& rhs)
 
 bool operator!=(Location const& lhs, Location const& rhs)
 {
-  return !(lhs == rhs);
+  return lhs.firstLine() == rhs.firstLine() && lhs.firstColumn() == rhs.firstColumn() &&
+         lhs.lastLine() == rhs.lastLine() && lhs.lastColumn() == rhs.lastColumn() &&
+         lhs.filePath() == rhs.filePath();
 }
 
 bool Location::isNone() const

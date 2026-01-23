@@ -33,12 +33,4 @@ InputEvent::InputEvent(const bool activeOnly) : QEvent(eventType), activeOnly(ac
 {
 }
 
-bool InputDriver::isOpen() const
-{
-  return isRunning();
-}
-
-bool InputDriver::openOnce() const
-{
-  return false;
-}
+bool InputDriver::openOnce() const { return false; }

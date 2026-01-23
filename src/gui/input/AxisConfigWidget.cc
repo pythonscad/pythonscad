@@ -42,10 +42,7 @@
 #include "gui/InitConfigurator.h"
 #include "gui/input/InputEventMapper.h"
 
-AxisConfigWidget::AxisConfigWidget(QWidget *parent) : QWidget(parent)
-{
-  setupUi(this);
-}
+AxisConfigWidget::AxisConfigWidget(QWidget *parent) : QWidget(parent) { setupUi(this); }
 
 void AxisConfigWidget::AxesChanged(int nr, double val) const
 {
@@ -510,7 +507,9 @@ void AxisConfigWidget::applyComboBox(QComboBox * /*comboBox*/, int val,
   writeSettings();
 }
 
-void AxisConfigWidget::writeSettings()
+void AxisConfigWidget::writeSettings() { Settings::Settings::visit(SettingsWriter()); }
+
+void AxisConfigWidget::updateStates()
 {
   Settings::Settings::visit(SettingsWriter());
 }

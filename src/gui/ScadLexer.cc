@@ -45,10 +45,7 @@ ScadLexer::ScadLexer(QObject *parent) : QsciLexerCPP(parent)
   setFoldAtElse(true);
 }
 
-const char *ScadLexer::language() const
-{
-  return "SCAD";
-}
+const char *ScadLexer::language() const { return "SCAD"; }
 
 void ScadLexer::setKeywords(int set, const std::string& keywords)
 {
@@ -228,10 +225,7 @@ ScadLexer2::ScadLexer2(QObject *parent) : QsciLexerCustom(parent), LexInterface(
   my_lexer->default_rules();
 }
 
-ScadLexer2::~ScadLexer2()
-{
-  delete my_lexer;
-}
+ScadLexer2::~ScadLexer2() { delete my_lexer; }
 
 void ScadLexer2::styleText(int start, int end)
 {
@@ -377,10 +371,7 @@ QString ScadLexer2::description(int style) const
   return {QString::number(style)};
 }
 
-const char *ScadLexer2::language() const
-{
-  return "SCAD";
-}
+const char *ScadLexer2::language() const { return "SCAD"; }
 
 QStringList ScadLexer2::autoCompletionWordSeparators() const
 {

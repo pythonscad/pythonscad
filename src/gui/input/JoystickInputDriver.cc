@@ -89,10 +89,7 @@ bool JoystickInputDriver::open()
   return true;
 }
 
-void JoystickInputDriver::close()
-{
-  stopRequest = true;
-}
+void JoystickInputDriver::close() { stopRequest = true; }
 
 const std::string& JoystickInputDriver::get_name() const
 {
@@ -106,7 +103,4 @@ std::string JoystickInputDriver::get_info() const
              "Axis: ", (int)axes, " ", "Buttons: ", (int)buttons, " ");
 }
 
-void JoystickInputDriver::setJoystickNr(std::string jnr)
-{
-  this->nr = std::move(jnr);
-}
+void JoystickInputDriver::setJoystickNr(std::string jnr) { this->nr = std::move(jnr); }
