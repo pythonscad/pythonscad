@@ -123,7 +123,10 @@ QString assemblePath(const std::filesystem::path& absoluteBaseDir, const std::st
   return fileInfo.absoluteFilePath();
 }
 
-void dialogThreadFunc(FontCacheInitializer *initializer) { initializer->run(); }
+void dialogThreadFunc(FontCacheInitializer *initializer)
+{
+  initializer->run();
+}
 
 void dialogInitHandler(FontCacheInitializer *initializer, void *)
 {
@@ -157,15 +160,17 @@ void registerDefaultIcon(QString applicationFilePath)
                        QVariant(appPath));
 }
 #else
-void registerDefaultIcon(const QString&) {}
+void registerDefaultIcon(const QString&)
+{
+}
 #endif
 
 }  // namespace
 
 #ifdef OPENSCAD_SUFFIX
-#define DESKTOP_FILENAME "openscad" OPENSCAD_SUFFIX
+#define DESKTOP_FILENAME "pythonscad" OPENSCAD_SUFFIX
 #else
-#define DESKTOP_FILENAME "openscad"
+#define DESKTOP_FILENAME "pythonscad"
 #endif
 
 int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& original_path, int argc,
@@ -249,6 +254,8 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 
   QObject::connect(GlobalPreferences::inst(), &Preferences::applicationFontChanged, &app,
                    &OpenSCADApp::setApplicationFont);
+  QObject::connect(GlobalPreferences::inst(), &Preferences::renderBackend3DChanged, &app,
+                   &OpenSCADApp::setRenderBackend3D);
 
   set_render_color_scheme(arg_colorscheme, false);
   auto noInputFiles = false;

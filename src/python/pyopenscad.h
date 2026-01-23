@@ -60,6 +60,8 @@ void python_startjupyter(void);
 
 extern SourceFile *osinclude_source;
 
+std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim);
+int python_numberval(PyObject *number, double *result);
 CurveDiscretizer CreateCurveDiscretizer(PyObject *kwargs);
 PyObject *python_str(PyObject *self);
 

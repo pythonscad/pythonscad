@@ -38,6 +38,7 @@
 #include "PlatformUtils.h"
 #include <Context.h>
 #include <Selection.h>
+#include "core/CurveDiscretizer.h"
 #include "platform/PlatformUtils.h"
 #include "primitives.h"
 namespace fs = std::filesystem;
@@ -61,7 +62,10 @@ bool python_trusted;
 fs::path python_scriptpath;
 // https://docs.python.org/3.10/extending/newtypes.html
 
-void PyObjectDeleter(PyObject *pObject) { Py_XDECREF(pObject); };
+void PyObjectDeleter(PyObject *pObject)
+{
+  Py_XDECREF(pObject);
+};
 
 PyObjectUniquePtr pythonInitDict(nullptr, PyObjectDeleter);
 PyObjectUniquePtr pythonMainModule(nullptr, PyObjectDeleter);
@@ -334,93 +338,6 @@ void python_retrieve_pyname(const std::shared_ptr<AbstractNode>& node)
  * converts a python obejct into an integer by all means
  */
 
-int python_numberval(PyObject *number, double *result, int *flags, int flagor)
-{
-  if (number == nullptr) return 1;
-  if (number == Py_False) return 1;
-  if (number == Py_True) return 1;
-  if (number == Py_None) return 1;
-  if (PyFloat_Check(number)) {
-    *result = PyFloat_AsDouble(number);
-    return 0;
-  }
-  if (PyLong_Check(number)) {
-    *result = PyLong_AsLong(number);
-    return 0;
-  }
-  if (number->ob_type == &PyDataType && flags != nullptr) {
-    *flags |= flagor;
-    *result = PyDataObjectToValue(number);
-    return 0;
-  }
-  if (PyNumber_Check(number)) {
-    // Handle other python number protocol objects (e.g. numpy.int64)
-    PyObject *f = PyNumber_Float(number);
-    *result = PyFloat_AsDouble(f);
-    return 0;
-  }
-  if (PyUnicode_Check(number) && flags != nullptr) {
-    PyObjectUniquePtr str(PyUnicode_AsEncodedString(number, "utf-8", "~"), PyObjectDeleter);
-    char *str1 = PyBytes_AS_STRING(str.get());
-    sscanf(str1, "%lf", result);
-    if (flags != nullptr) *flags |= flagor;
-    return 0;
-  }
-  return 1;
-}
-
-std::vector<int> python_intlistval(PyObject *list)
-{
-  std::vector<int> result;
-  PyObject *item;
-  if (PyLong_Check(list)) {
-    result.push_back(PyLong_AsLong(list));
-  }
-  if (PyList_Check(list)) {
-    for (int i = 0; i < PyList_Size(list); i++) {
-      item = PyList_GetItem(list, i);
-      if (PyLong_Check(item)) {
-        result.push_back(PyLong_AsLong(item));
-      }
-    }
-  }
-  return result;
-}
-/*
- * Tries to extract an 3D vector out of a python list
- */
-
-int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y, double *z, double *w,
-                     int *flags)
-{
-  if (vec == nullptr) return 1;
-  if (flags != nullptr) *flags = 0;
-  if (PyList_Check(vec)) {
-    if (PyList_Size(vec) < minval || PyList_Size(vec) > maxval) return 1;
-
-    if (PyList_Size(vec) >= 1) {
-      if (python_numberval(PyList_GetItem(vec, 0), x, flags, 1)) return 1;
-    }
-    if (PyList_Size(vec) >= 2) {
-      if (python_numberval(PyList_GetItem(vec, 1), y, flags, 2)) return 1;
-    }
-    if (PyList_Size(vec) >= 3) {
-      if (python_numberval(PyList_GetItem(vec, 2), z, flags, 4)) return 1;
-    }
-    if (PyList_Size(vec) >= 4 && w != NULL) {
-      if (python_numberval(PyList_GetItem(vec, 3), w, flags, 8)) return 1;
-    }
-    return 0;
-  }
-  if (!python_numberval(vec, x)) {
-    *y = *x;
-    *z = *x;
-    if (w != NULL) *w = *x;
-    return 0;
-  }
-  return 1;
-}
-
 std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int *dragflags)
 {
   std::vector<Vector3d> results;
@@ -438,7 +355,8 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
         if (PyList_Size(item) >= mindim && PyList_Size(item) <= maxdim) {
           for (int i = 0; i < PyList_Size(item); i++) {
             if (PyList_Size(item) > i) {
-              if (python_numberval(PyList_GetItem(item, i), &result[i])) return results;  // Error
+              if (python_numberval(PyList_GetItem(item, i), &result[i], nullptr, 0))
+                return results;  // Error
             }
           }
         }
@@ -458,7 +376,7 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
     results.push_back(result);
   }
   Vector3d result(0, 0, 0);
-  if (!python_numberval(vec, &result[0])) {
+  if (!python_numberval(vec, &result[0], nullptr, 0)) {
     result[1] = result[0];
     result[2] = result[1];
     results.push_back(result);
@@ -468,15 +386,21 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
 
 /**
  * Create a CurveDiscretizer by extracting parameters from __main__ and kwargs
+ * @param kwargs *Remove* any control parameter arguments found.
  */
+
 CurveDiscretizer CreateCurveDiscretizer(PyObject *kwargs)
 {
   PyObject *mainModule = pythonMainModule.get();
   return CurveDiscretizer([kwargs, mainModule](const char *key) -> std::optional<double> {
     double result;
-    if (kwargs != nullptr && PyDict_Check(kwargs)) {
-      PyObject *value = PyDict_GetItemString(kwargs, key);
-      if (!(python_numberval(value, &result, nullptr, 0))) return result;
+    if (kwargs != nullptr && PyDict_Check(kwargs)) {  // kwargs can be nullptr
+      if (PyObject *value = PyDict_GetItemString(kwargs, key); value != nullptr) {
+        // PyArg_ParseTupleAndKeywords does not allow unspecified keyword args.
+        PyDict_DelItemString(kwargs, key);
+        if (!(python_numberval(value, &result, nullptr, 0)))
+          return result;  // value can be Integer, Number, ...
+      }
     }
     if (mainModule != nullptr) {
       if (PyObject_HasAttrString(mainModule, key)) {
@@ -488,6 +412,36 @@ CurveDiscretizer CreateCurveDiscretizer(PyObject *kwargs)
     }
     return {};
   });
+}
+
+void get_fnas(double& fn, double& fa, double& fs)
+{
+  PyObject *mainModule = PyImport_AddModule("__main__");
+  if (mainModule == nullptr) return;
+  fn = 0;
+  fa = 12;
+  fs = 2;
+
+  if (PyObject_HasAttrString(mainModule, "fn")) {
+    PyObjectUniquePtr varFn(PyObject_GetAttrString(mainModule, "fn"), PyObjectDeleter);
+    if (varFn.get() != nullptr) {
+      fn = PyFloat_AsDouble(varFn.get());
+    }
+  }
+
+  if (PyObject_HasAttrString(mainModule, "fa")) {
+    PyObjectUniquePtr varFa(PyObject_GetAttrString(mainModule, "fa"), PyObjectDeleter);
+    if (varFa.get() != nullptr) {
+      fa = PyFloat_AsDouble(varFa.get());
+    }
+  }
+
+  if (PyObject_HasAttrString(mainModule, "fs")) {
+    PyObjectUniquePtr varFs(PyObject_GetAttrString(mainModule, "fs"), PyObjectDeleter);
+    if (varFs.get() != nullptr) {
+      fs = PyFloat_AsDouble(varFs.get());
+    }
+  }
 }
 
 /*
@@ -940,23 +894,6 @@ void initPython(const std::string& binDir, const std::string& scriptpath, double
 
 void finishPython(void)
 {
-#ifdef HAVE_PYTHON_YIELD
-  set_object_callback(NULL);
-  if (python_result_node == nullptr) {
-    if (python_orphan_objs.size() == 1) {
-      python_result_node = PyOpenSCADObjectToNode(python_orphan_objs[0]);
-    } else if (python_orphan_objs.size() > 1) {
-      DECLARE_INSTANCE
-      auto node = std::make_shared<CsgOpNode>(instance, OpenSCADOperator::UNION);
-      int n = python_orphan_objs.size();
-      for (int i = 0; i < n; i++) {
-        std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNode(python_orphan_objs[i]);
-        node->children.push_back(child);
-      }
-      python_result_node = node;
-    }
-  }
-#endif
   show_final();
 }
 
@@ -1184,7 +1121,10 @@ static PyModuleDef OpenSCADModule = {PyModuleDef_HEAD_INIT,
                                      NULL,
                                      NULL};
 
-extern "C" PyObject *PyInit_openscad(void) { return PyModule_Create(&OpenSCADModule); }
+extern "C" PyObject *PyInit_openscad(void)
+{
+  return PyModule_Create(&OpenSCADModule);
+}
 
 PyMODINIT_FUNC PyInit_PyOpenSCAD(void)
 {

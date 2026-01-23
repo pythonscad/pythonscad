@@ -1,0 +1,120 @@
+name: Build and Upload AppImage
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      upload_to_release:
+        description: 'Release tag to upload to (leave empty for test build)'
+        required: false
+        default: ''
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
+
+jobs:
+  build-appimage:
+    name: Build AppImage (Qt${{ matrix.qt_version }} / ${{ matrix.arch }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        qt_version: [5, 6]
+        arch: [x86_64]
+        include:
+          - qt_version: 5
+            profile: pythonscad-qt5
+          - qt_version: 6
+            profile: pythonscad-qt6
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: Fetch tags for version detection
+      run: |
+        git fetch --unshallow --tags || git fetch --tags
+        git describe --tags --always --dirty
+
+    - name: Setup (detached) tmate session if enabled
+      if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+      uses: mxschmitt/action-tmate@v3
+      timeout-minutes: 5
+      with:
+        detached: true
+        limit-access-to-actor: true
+
+    - name: Set up QEMU for ARM64
+      if: matrix.arch == 'aarch64'
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: arm64
+
+    - name: Install dependencies (x86_64)
+      if: matrix.arch == 'x86_64'
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        TZ: Etc/UTC
+      run: |
+        sudo apt-get update
+        sudo -E ./scripts/uni-get-dependencies.py --yes --profile ${{ matrix.profile }}
+        sudo apt-get install -y wget file libfuse2
+
+    - name: Build AppImage (x86_64)
+      if: matrix.arch == 'x86_64'
+      env:
+        QT_VERSION: ${{ matrix.qt_version }}
+        ARCH: ${{ matrix.arch }}
+      run: |
+        chmod +x ./scripts/create_appimage.sh
+        ./scripts/create_appimage.sh
+
+    - name: Build AppImage (aarch64) in Docker
+      if: matrix.arch == 'aarch64'
+      run: |
+        # Run the entire build inside a Docker container with proper ARM64 emulation
+        docker run --rm \
+          --platform linux/arm64 \
+          -v "$PWD:/workspace" \
+          -w /workspace \
+          -e QT_VERSION=${{ matrix.qt_version }} \
+          -e ARCH=aarch64 \
+          -e DEBIAN_FRONTEND=noninteractive \
+          -e TZ=Etc/UTC \
+          ubuntu:24.04 \
+          bash -c '
+            set -e
+            apt-get update
+            apt-get install -y git python3 wget file libfuse2
+            ./scripts/uni-get-dependencies.py --yes --profile ${{ matrix.profile }}
+            chmod +x ./scripts/create_appimage.sh
+            ./scripts/create_appimage.sh
+          '
+
+    - name: Get AppImage filename
+      id: appimage
+      run: |
+        APPIMAGE_FILE=$(ls dist/PythonSCAD-*.AppImage | head -1)
+        echo "filename=$(basename ${APPIMAGE_FILE})" >> $GITHUB_OUTPUT
+        echo "filepath=${APPIMAGE_FILE}" >> $GITHUB_OUTPUT
+
+    - name: Upload AppImage as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pythonscad-qt${{ matrix.qt_version }}-${{ matrix.arch }}-appimage
+        path: ${{ steps.appimage.outputs.filepath }}
+        retention-days: 30
+
+    - name: Upload AppImage to release
+      if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ${{ steps.appimage.outputs.filepath }}
+        tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
