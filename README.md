@@ -178,10 +178,15 @@ numbers in brackets specify the versions which have been used for
 development. Other versions may or may not work as well.
 
 If you're using a newer version of Ubuntu, you can install these
+<<<<<<< HEAD
 libraries with the built in package manager. If you're using Mac, or
 an older Linux/BSD, there are build scripts that download and compile
 the libraries from source.
 
+=======
+libraries from aptitude. If you're using Mac, or an older Linux/BSD, there
+are build scripts that download and compile the libraries from source.
+>>>>>>> upstream/master
 Follow the instructions for the platform you're compiling on below.
 
 * A C++ compiler supporting C++17
@@ -273,9 +278,13 @@ the dependency packages listed above using your system's package
 manager. A convenience script is provided that can help with this
 process on some systems:
 
+<<<<<<< HEAD
 ```shell
 sudo ./scripts/uni-get-dependencies.py --profile pythonscad-qt5
 ```
+=======
+    sudo ./scripts/uni-get-dependencies.sh qt6
+>>>>>>> upstream/master
 
 After installing dependencies, check their versions. You can run this
 script to help you:
@@ -286,6 +295,7 @@ script to help you:
 
 Take care that you don't have old local copies anywhere (`/usr/local/`).
 If all dependencies are present and of a high enough version, skip ahead
+<<<<<<< HEAD
 to the Compilation instructions. These are as simple as:
 
 
@@ -297,6 +307,9 @@ make
 make test
 sudo make install
 ```
+=======
+to the Compilation instructions.
+>>>>>>> upstream/master
 
 ### Building for Linux/BSD on systems with older or missing dependencies
 
@@ -381,3 +394,80 @@ The following command creates `build-web/openscad.wasm` & `build-web/openscad.js
 ./scripts/wasm-base-docker-run.sh emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Debug -DEXPERIMENTAL=1
 ./scripts/wasm-base-docker-run.sh cmake --build build-web -j2
 ```
+<<<<<<< HEAD
+=======
+
+[openscad/openscad-playground](https://github.com/openscad/openscad-playground) uses this WASM build to provide a [Web UI](https://ochafik.com/openscad2/) with a subset of features of OpenSCAD.
+
+> [!NOTE]
+> With a debug build (`-DCMAKE_BUILD_TYPE=Debug`), you can set C++ breakpoints in Firefox and in Chrome (the latter [needs an extension](https://developer.chrome.com/docs/devtools/wasm)).
+
+#### Standalone node.js build
+
+The following command creates `build-node/openscad.js`, which is executable (requires `node`):
+
+```bash
+./scripts/wasm-base-docker-run.sh emcmake cmake -B build-node -DWASM_BUILD_TYPE=node -DCMAKE_BUILD_TYPE=Debug -DEXPERIMENTAL=1
+./scripts/wasm-base-docker-run.sh cmake --build build-node -j2
+build-node/openscad.js --help
+```
+
+> [!NOTE]
+> With a debug build (`-DCMAKE_BUILD_TYPE=Debug`), you can set C++ breakpoints in VSCode + Node ([needs an extension](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_debugging-webassembly)).
+
+### Compilation
+
+First, run `cmake -B build -DEXPERIMENTAL=1` to generate a Makefile in the `build` folder.
+
+Then run `cmake --build build`. Finally, on Linux you might run `cmake --install build` as root.
+
+If you had problems compiling from source, raise a new issue in the
+[issue tracker on the github page](https://github.com/openscad/openscad/issues).
+
+This site and it's subpages can also be helpful:
+https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Building_OpenSCAD_from_Sources
+
+Once built, you can run tests with `ctest` from the `build` directory.
+
+Note: Both `cmake --build` and `ctest` accepts a `-j N` argument for distributing the load over `N` parallel processes.
+
+### Running CI workflows locally
+
+*   Install [circleci-cli](https://circleci.com/docs/2.0/local-cli/) (you'll need an API key)
+
+    *Note*: we also use GitHub Workflows, but only to run tests on Windows (which we cross-build for in the Linux-based CircleCI workflows below). Also, [act](https://github.com/nektos/act) doesn't like our submodule setup anyway.
+
+*   Run the CI jobs
+
+	```bash
+	# When "successful", these will fail to upload at the very end of the workflow.
+	circleci local execute --job  openscad-mxe-64bit
+	circleci local execute --job  openscad-mxe-32bit
+	circleci local execute --job  openscad-appimage-64bit
+	```
+
+	*Note*: openscad-macos can't be built locally.
+
+*   If/when GCC gets randomly killed, give docker more RAM (e.g. 4GB per concurrent image you plan to run)
+
+*   To debug the jobs more interactively, you can go the manual route (inspect .circleci/config.yml to get the actual docker image you need)
+
+	```bash
+	docker run --entrypoint=/bin/bash -it openscad/mxe-x86_64-gui:latest
+	```
+
+	Then once you get the console:
+
+	```bash
+	git clone https://github.com/%your username%/openscad.git workspace
+	cd workspace
+	git checkout %your branch%
+	git submodule init
+	git submodule update
+
+	# Then execute the commands from .circleci/config.yml:
+	#    export NUMCPU=2
+	#    ...
+	#    ./scripts/release-common.sh -snapshot -mingw64 -v "$OPENSCAD_VERSION"
+	```
+>>>>>>> upstream/master
