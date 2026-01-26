@@ -621,7 +621,12 @@ target_include_directories(OpenSCADLibInternal SYSTEM PUBLIC ${LIBZIP_INCLUDE_DI
 target_link_libraries(OpenSCADLibInternal PUBLIC ${LIBZIP_LIBRARY})
 target_compile_definitions(OpenSCADLibInternal PUBLIC ENABLE_LIBZIP)
 
-find_package(LibXml2 2.9 REQUIRED QUIET)
+find_package(Freetype 2.4.9 REQUIRED)
+message(STATUS "Freetype: ${FREETYPE_VERSION_STRING}")
+target_include_directories(OpenSCADLibInternal SYSTEM PUBLIC ${FREETYPE_INCLUDE_DIRS})
+target_link_libraries(OpenSCADLibInternal PUBLIC ${FREETYPE_LIBRARIES})
+
+find_package(LibXml2 2.9 REQUIRED)
 message(STATUS "LibXml2: ${LIBXML2_VERSION_STRING}")
 target_link_libraries(OpenSCADLibInternal PUBLIC LibXml2::LibXml2)
 
