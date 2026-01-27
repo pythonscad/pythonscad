@@ -169,26 +169,26 @@ void PolySet::quantizeVertices(std::vector<Vector3d> *pPointsOut)
 
 bool PolySet::point_inside(const Vector3d& pt) const
 {
-  // polygons are clockwise
-  int cuts = 0;
-  /*
-    for(const auto &o : theoutlines) {
-      int n = o.vertices.size();
-      for (int i = 0; i < n; i++) {
-        Vector2d p1 = o.vertices[i];
-        Vector2d p2 = o.vertices[(i + 1) % n];
-        if (fabs(p1[1] - p2[1]) > 1e-9) {
-          if (pt[1] < p1[1] && pt[1] > p2[1]) {
-            double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
-            if (x > pt[0]) cuts++;
-          }
-          if (pt[1] < p2[1] && pt[1] > p1[1]) {
-            double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
-            if (x > pt[0]) cuts++;
-          }
-        }
-      }
-    }
-  */
-  return cuts & 1;
+  Vector3d dir(0.9, 0.1234, 0.4);
+  auto ps_tess = PolySetUtils::tessellate_faces(*this);
+  int count = 0;
+  for (const auto& ind : ps_tess->indices) {
+    Vector3d e1 = ps_tess->vertices[ind[1]] - ps_tess->vertices[ind[0]];
+    Vector3d e2 = ps_tess->vertices[ind[2]] - ps_tess->vertices[ind[0]];
+    Vector3d h = dir.cross(e2);
+    double a = e1.dot(h);
+    if (fabs(a) < 1e-6) continue;  // is parallel
+    double f = 1.0 / a;
+    Vector3d s = pt - ps_tess->vertices[ind[0]];
+    double u = f * s.dot(h);
+    if (u < 0.0 || u >= 1) continue;
+    Vector3d q = s.cross(e1);
+    double v = f * dir.dot(q);
+    if (v < 0.0 || u + v > 1.0) continue;
+    double t = f * e2.dot(q);
+    if (t < 1e-6) continue;
+    if (a > 0) count++;
+    else count--;
+  }
+  return count == 0 ? false : true;
 }

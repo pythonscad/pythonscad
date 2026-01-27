@@ -2554,7 +2554,6 @@ PyObject *python_inside_core(PyObject *pyobj, PyObject *pypoint)
   const std::shared_ptr<const PolygonNode> polygonnode =
     std::dynamic_pointer_cast<const PolygonNode>(node);
   if (polygonnode != nullptr) {
-    printf("Poly found\n");
     auto geom = polygonnode->createGeometry();
     const Polygon2d poly2 = dynamic_cast<const Polygon2d&>(*geom);
     Vector2d vec2(vec3[0], vec3[1]);
@@ -2564,13 +2563,23 @@ PyObject *python_inside_core(PyObject *pyobj, PyObject *pypoint)
   const std::shared_ptr<const PolyhedronNode> polyhedronnode =
     std::dynamic_pointer_cast<const PolyhedronNode>(node);
   if (polyhedronnode != nullptr) {
-    printf("Polyhedron found\n");
     auto geom = polyhedronnode->createGeometry();
     const PolySet ps = dynamic_cast<const PolySet&>(*geom);
     return ps.point_inside(vec3) ? Py_True : Py_False;
   }
-  PyErr_SetString(PyExc_TypeError, "No supported node for inside\n");
-  return nullptr;
+
+  Tree tree(node, "");
+  GeometryEvaluator geomevaluator(tree);
+  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
+  if (auto poly2 = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
+    Vector2d vec2(vec3[0], vec3[1]);
+    return poly2->point_inside(vec2) ? Py_True : Py_False;
+  }
+  if (ps != nullptr) {
+    return ps->point_inside(vec3) ? Py_True : Py_False;
+  }
+  return Py_None;
 }
 
 PyObject *python_inside(PyObject *self, PyObject *args, PyObject *kwargs)
