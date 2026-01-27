@@ -21,7 +21,6 @@
 #include "clipper2/clipper.h"
 #include <clipper2/clipper.engine.h>
 #include <locale.h>
-#include "utils/vector_math.h"
 
 Polygon2d::Polygon2d(Outline2d outline) : sanitized(true)
 {
@@ -350,7 +349,6 @@ double outline_area(const Outline2d o)
   return area / 2.0;
 }
 
-
 void Polygon2d::stamp_color(const Polygon2d& src)
 {
   int scale_bits = scaleBitsFromPrecision(8);
@@ -395,7 +393,8 @@ void Polygon2d::stamp_color(const Polygon2d& src)
         for (int k = 0; k < theoutlines.size(); k++) {
           if (k == i) continue;
           Vector2d pt = theoutlines[k].vertices[0];
-          if (!point_inside_polygon(theoutlines[i].vertices, pt)) continue;
+          Polygon2d testpol(theoutlines[i]);
+          if (!testpol.point_inside(pt)) continue;
           theoutlines[k].color = src.theoutlines[j].color;
         }
       }
@@ -443,4 +442,28 @@ void Polygon2d::stamp_color(const Outline2d& src)
       theoutlines[i].color = src.color;
     }
   }
+}
+
+bool Polygon2d::point_inside(const Vector2d& pt) const
+{
+  // polygons are clockwise
+  int cuts = 0;
+  for (const auto& o : theoutlines) {
+    int n = o.vertices.size();
+    for (int i = 0; i < n; i++) {
+      Vector2d p1 = o.vertices[i];
+      Vector2d p2 = o.vertices[(i + 1) % n];
+      if (fabs(p1[1] - p2[1]) > 1e-9) {
+        if (pt[1] < p1[1] && pt[1] > p2[1]) {
+          double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
+          if (x > pt[0]) cuts++;
+        }
+        if (pt[1] < p2[1] && pt[1] > p1[1]) {
+          double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
+          if (x > pt[0]) cuts++;
+        }
+      }
+    }
+  }
+  return cuts & 1;
 }

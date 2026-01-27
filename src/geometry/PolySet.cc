@@ -166,3 +166,29 @@ void PolySet::quantizeVertices(std::vector<Vector3d> *pPointsOut)
     }
   }
 }
+
+bool PolySet::point_inside(const Vector3d& pt) const
+{
+  // polygons are clockwise
+  int cuts = 0;
+  /*
+    for(const auto &o : theoutlines) {
+      int n = o.vertices.size();
+      for (int i = 0; i < n; i++) {
+        Vector2d p1 = o.vertices[i];
+        Vector2d p2 = o.vertices[(i + 1) % n];
+        if (fabs(p1[1] - p2[1]) > 1e-9) {
+          if (pt[1] < p1[1] && pt[1] > p2[1]) {
+            double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
+            if (x > pt[0]) cuts++;
+          }
+          if (pt[1] < p2[1] && pt[1] > p1[1]) {
+            double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
+            if (x > pt[0]) cuts++;
+          }
+        }
+      }
+    }
+  */
+  return cuts & 1;
+}
