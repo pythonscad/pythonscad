@@ -21,6 +21,7 @@
 #include "clipper2/clipper.h"
 #include <clipper2/clipper.engine.h>
 #include <locale.h>
+#include "utils/vector_math.h"
 
 Polygon2d::Polygon2d(Outline2d outline) : sanitized(true)
 {
@@ -349,7 +350,6 @@ double outline_area(const Outline2d o)
   return area / 2.0;
 }
 
-int point_in_polygon(const std::vector<Vector2d>& pol, const Vector2d& pt);  // TODO move
 
 void Polygon2d::stamp_color(const Polygon2d& src)
 {
@@ -395,7 +395,7 @@ void Polygon2d::stamp_color(const Polygon2d& src)
         for (int k = 0; k < theoutlines.size(); k++) {
           if (k == i) continue;
           Vector2d pt = theoutlines[k].vertices[0];
-          if (!point_in_polygon(theoutlines[i].vertices, pt)) continue;
+          if (!point_inside_polygon(theoutlines[i].vertices, pt)) continue;
           theoutlines[k].color = src.theoutlines[j].color;
         }
       }

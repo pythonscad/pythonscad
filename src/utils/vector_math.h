@@ -1,6 +1,7 @@
 #pragma once
 
 #include "geometry/linalg.h"
+#include "core/Selection.h"
 
 /**
  * @brief Calculates the shortest distance between a point and a line segment in 3D space.
@@ -87,3 +88,7 @@ SelectedObject calculateSegSegDistance(const Vector3d& l1b, const Vector3d& l1e,
 
 SelectedObject calculatePointFaceDistance(const Vector3d& pt, const Vector3d& p1, const Vector3d& p2,
                                           const Vector3d& p3);
+
+bool point_inside_polygon(const std::vector<Vector2d>& pol, const Vector2d& pt);
+//bool point_inside_polyhedron(const PolyhedronNode& pol, const Vector3d& pt);
+

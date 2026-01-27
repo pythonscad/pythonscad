@@ -2538,6 +2538,55 @@ PyObject *python_oo_mesh(PyObject *obj, PyObject *args, PyObject *kwargs)
   return python_mesh_core(obj, tess == Py_True, color == Py_True);
 }
 
+PyObject *python_inside_core(PyObject *pyobj, PyObject *pypoint)
+{
+  PyObject *dummydict;
+  Vector3d vec3;
+  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(pyobj, &dummydict);
+  if(node == nullptr) {
+    PyErr_SetString(PyExc_TypeError, "Object must be a solid\n");
+    return nullptr;
+  }
+  if (python_vectorval(pypoint, 1, 3, &(vec3[0]), &(vec3[1]), &(vec3[2]), nullptr)) {
+    PyErr_SetString(PyExc_TypeError, "must specify a point to check\n");
+    return nullptr;
+  }
+  const std::shared_ptr<const PolygonNode> polygonnode = std::dynamic_pointer_cast<const PolygonNode>(node);
+  if(polygonnode != nullptr) {
+    printf("Poly found\n");	  
+  }
+
+  const std::shared_ptr<const PolyhedronNode> polyhedronnode = std::dynamic_pointer_cast<const PolyhedronNode>(node);
+  if(polyhedronnode != nullptr) {
+    printf("Polyhedron found\n");	  
+  }
+	return Py_False;
+	// offset3D_inside
+}
+
+PyObject *python_inside(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"obj", "point", NULL};
+  PyObject *obj = NULL;
+  PyObject *pypoint;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO", kwlist, &obj, &pypoint)) {
+    PyErr_SetString(PyExc_TypeError, "error during parsing\n");
+    return NULL;
+  }
+  return python_inside_core(obj, pypoint);
+}
+
+PyObject *python_oo_inside(PyObject *obj, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"point", NULL};
+  PyObject *pypoint;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &pypoint)) {
+    PyErr_SetString(PyExc_TypeError, "error during parsing\n");
+    return NULL;
+  }
+  return python_inside_core(obj, pypoint);
+}
+
 PyObject *python_bbox_core(PyObject *obj)
 {
   // Get position and size attributes from the object
@@ -6143,6 +6192,7 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"surface", (PyCFunction)python_surface, METH_VARARGS | METH_KEYWORDS, "Surface Object."},
   {"sheet", (PyCFunction)python_sheet, METH_VARARGS | METH_KEYWORDS, "Sheet Object."},
   {"mesh", (PyCFunction)python_mesh, METH_VARARGS | METH_KEYWORDS, "exports mesh."},
+  {"inside", (PyCFunction)python_inside, METH_VARARGS | METH_KEYWORDS, "checks if a given point is inside"},
   {"bbox", (PyCFunction)python_bbox, METH_VARARGS | METH_KEYWORDS, "caluculate bbox of object."},
   {"size", (PyCFunction)python_size, METH_VARARGS | METH_KEYWORDS, "get size dimensions of object."},
   {"position", (PyCFunction)python_position, METH_VARARGS | METH_KEYWORDS,
@@ -6222,8 +6272,10 @@ PyMethodDef PyOpenSCADMethods[] = {
                           OO_METHOD_ENTRY(rotate_extrude, "Rotate_extrude Object") OO_METHOD_ENTRY(
                             path_extrude, "Path_extrude Object") OO_METHOD_ENTRY(resize, "Resize Object")
 
-                            OO_METHOD_ENTRY(explode, "Explode a solid with a vector") OO_METHOD_ENTRY(
-                              mesh, "Mesh Object") OO_METHOD_ENTRY(bbox, "Evaluate Bound Box of object")
+                            OO_METHOD_ENTRY(explode, "Explode a solid with a vector") 
+			    OO_METHOD_ENTRY( mesh, "Mesh Object") 
+			    OO_METHOD_ENTRY( inside, "check if given point is inside") 
+			    OO_METHOD_ENTRY(bbox, "Evaluate Bound Box of object")
                               OO_METHOD_ENTRY(faces, "Create Faces list") OO_METHOD_ENTRY(
                                 children, "Return Tupple from solid children")
                                 OO_METHOD_ENTRY(edges, "Create Edges list")
