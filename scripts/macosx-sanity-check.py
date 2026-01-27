@@ -151,6 +151,8 @@ if __name__ == '__main__':
     parser.add_argument('executable', help='Path to the executable to check')
     parser.add_argument('--skip-arch-check', action='store_true',
                         help='Skip universal binary (x86_64/arm64) architecture validation')
+    parser.add_argument('--allow-homebrew-deps', action='store_true',
+                        help='Allow external dependencies from Homebrew (/usr/local/opt/) for test builds')
     args = parser.parse_args()
 
     skip_arch_check = args.skip_arch_check
@@ -187,9 +189,15 @@ if __name__ == '__main__':
                 print("  ..required by " + str(processed[dep]))
                 error = True
                 continue
-            if not re.match(executable_path, absfile):
+            # Allow Homebrew dependencies in test builds if flag is set
+            is_homebrew_dep = absfile.startswith('/usr/local/opt/') or absfile.startswith('/opt/homebrew/')
+            if not absfile.startswith(executable_path) and not (args.allow_homebrew_deps and is_homebrew_dep):
                 print("Error: External dependency " + d)
                 sys.exit(1)
+            # Skip validation of external Homebrew dependencies (they're not bundled)
+            if args.allow_homebrew_deps and is_homebrew_dep:
+                if DEBUG: print("Skipping validation of Homebrew dependency: " + absfile)
+                continue
             if absfile in processed:
                 processed[absfile].append(dep)
             else:

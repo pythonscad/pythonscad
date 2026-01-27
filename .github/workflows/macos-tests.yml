@@ -72,7 +72,8 @@ jobs:
       run: |
         # Run sanity check to validate deployment targets of bundled libraries.
         # Skip architecture check since test builds are single-arch (not universal).
-        python3 ./scripts/macosx-sanity-check.py --skip-arch-check \
+        # Allow Homebrew dependencies since test builds use Homebrew libraries.
+        python3 ./scripts/macosx-sanity-check.py --skip-arch-check --allow-homebrew-deps \
           build/pythonscad.app/Contents/MacOS/pythonscad
     - name: Verify Python setup
       run: |
