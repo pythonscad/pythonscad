@@ -134,34 +134,6 @@ void python_unlock(void)
   if (pythonInitDict != nullptr) tstate = PyEval_SaveThread();
   // #endif
 }
-/*
- *  extracts Absrtract Node from PyOpenSCAD Object
- */
-
-/*
- *  parses either a PyOpenSCAD Object or an List of PyOpenScad Object and adds it to the list of supplied
- * children, returns 1 on success
- */
-
-int python_more_obj(std::vector<std::shared_ptr<AbstractNode>>& children, PyObject *more_obj)
-{
-  int i, n;
-  PyObject *obj;
-  PyObject *dummy_dict;
-  std::shared_ptr<AbstractNode> child;
-  if (PyList_Check(more_obj)) {
-    n = PyList_Size(more_obj);
-    for (i = 0; i < n; i++) {
-      obj = PyList_GetItem(more_obj, i);
-      child = PyOpenSCADObjectToNode(obj, &dummy_dict);
-      children.push_back(child);
-    }
-  } else if (PyObject_IsInstance(more_obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
-    child = PyOpenSCADObjectToNode(more_obj, &dummy_dict);
-    children.push_back(child);
-  } else return 1;
-  return 0;
-}
 
 /*
  *  extracts Absrtract Node from PyOpenSCAD Object
@@ -169,6 +141,9 @@ int python_more_obj(std::vector<std::shared_ptr<AbstractNode>>& children, PyObje
 
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNode(PyObject *obj, PyObject **dict)
 {
+  if (!PyObject_IsInstance(obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
+    return void_node;
+  }
   std::shared_ptr<AbstractNode> result = ((PyOpenSCADObject *)obj)->node;
   if (result != nullptr) {
     if (result.use_count() > 2 && result != void_node && result != full_node) {
@@ -537,7 +512,7 @@ void python_catch_error(std::string& errorstr)
     Py_XDECREF(pyExcValue);
   }
   if (pyExcTraceback != nullptr) {
-    auto *tb_o = (PyTracebackObject *)pyExcTraceback;
+    const auto *tb_o = (PyTracebackObject *)pyExcTraceback;
     int line_num = tb_o->tb_lineno;
     errorstr += " in line ";
     errorstr += std::to_string(line_num);
