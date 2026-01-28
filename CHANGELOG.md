@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.12.0](https://github.com/pythonscad/pythonscad/compare/v0.11.0...v0.12.0) (2026-01-28)
+
+
+### Features
+
+* add GUI theme preference (light/dark/auto) with native look for light mode ([#405](https://github.com/pythonscad/pythonscad/issues/405)) ([3a1fe90](https://github.com/pythonscad/pythonscad/commit/3a1fe900f2a49e464966f56c23450ae3a5f12c1f))
+
+## [0.11.0](https://github.com/pythonscad/pythonscad/compare/v0.10.4...v0.11.0) (2026-01-27)
+
+
+### Features
+
+* **macos:** improve DMG install experience and fix release build ([#401](https://github.com/pythonscad/pythonscad/issues/401)) ([f9cccb3](https://github.com/pythonscad/pythonscad/commit/f9cccb3a1c5c085f56a64396131559af50a9af76))
+
+## [0.10.4](https://github.com/pythonscad/pythonscad/compare/v0.10.3...v0.10.4) (2026-01-26)
+
+
+### Bug Fixes
+
+* include filename in warnings for files included via osuse() ([#387](https://github.com/pythonscad/pythonscad/issues/387)) ([#397](https://github.com/pythonscad/pythonscad/issues/397)) ([103fa36](https://github.com/pythonscad/pythonscad/commit/103fa36272e9e76ac9d628e82ef276a6c8b0bff5))
+* negative offset3d creates correct number of roundings ([#392](https://github.com/pythonscad/pythonscad/issues/392)) ([d62134e](https://github.com/pythonscad/pythonscad/commit/d62134ed78fa4579a72bc3d6b85711c3d4cb6809))
+* **python:** handle $-variables correctly when calling functions via osuse() ([#386](https://github.com/pythonscad/pythonscad/issues/386)) ([#398](https://github.com/pythonscad/pythonscad/issues/398)) ([900afa4](https://github.com/pythonscad/pythonscad/commit/900afa47ab56be7639218ad28e70d6907c5a038c))
+
+## [0.10.3](https://github.com/pythonscad/pythonscad/compare/v0.10.2...v0.10.3) (2026-01-23)
+
+
+### Bug Fixes
+
+* **ci:** mark published release as latest in GitHub ([#394](https://github.com/pythonscad/pythonscad/issues/394)) ([30f22bf](https://github.com/pythonscad/pythonscad/commit/30f22bf676fdb92ad94dbe5dabeb2e5d1241f704))
+* disable -march=native for portable AppImage builds ([#395](https://github.com/pythonscad/pythonscad/issues/395)) ([390cf27](https://github.com/pythonscad/pythonscad/commit/390cf27773baaa47fc3ccd0ef370bd96f2d00f3f))
+
 ## [0.10.2](https://github.com/pythonscad/pythonscad/compare/v0.10.1...v0.10.2) (2026-01-22)
 
 
