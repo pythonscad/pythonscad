@@ -17,7 +17,7 @@ on:
 
 jobs:
   build-intel:
-    runs-on: macos-15-intel
+    runs-on: macos-13
     name: macOS x86_64 Build
     timeout-minutes: 90
     outputs:
@@ -160,7 +160,7 @@ jobs:
           retention-days: 1
 
   build-arm64:
-    runs-on: macos-latest
+    runs-on: macos-14
     name: macOS arm64 Build
     timeout-minutes: 90
     steps:
@@ -301,7 +301,7 @@ jobs:
           retention-days: 1
 
   merge-and-package:
-    runs-on: macos-latest
+    runs-on: macos-14
     needs: [build-intel, build-arm64]
     name: Merge Universal Binary and Package
     timeout-minutes: 30

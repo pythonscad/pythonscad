@@ -30,9 +30,9 @@ DEBUG = False
 
 cxxlib = None
 
-# PythonSCAD uses Homebrew bottles which target macOS 15.0 on GitHub Actions runners.
+# PythonSCAD uses Homebrew bottles which target macOS 14.0 on GitHub Actions runners.
 # Upstream OpenSCAD builds dependencies from source with older deployment targets.
-macos_version_min = '15.0'
+macos_version_min = '14.0'
 
 # Global flag to skip architecture validation (for single-arch test builds)
 skip_arch_check = False
