@@ -9,7 +9,7 @@
 #  source ./scripts/setenv-mingw-xbuild.sh 64        # 64 bit build
 #  source ./scripts/setenv-mingw-xbuild.sh 64 shared # 64 bit build, shared libs
 #  source ./scripts/setenv-mingw-xbuild.sh clean     # Clean up exported variables
-#  source ./scripts/setenv-mingw-xbuild.sh qt6       # use qt6
+#  source ./scripts/setenv-mingw-xbuild.sh qt5       # use qt5 (experimental)
 #
 # Prerequisites:
 #
@@ -53,9 +53,6 @@ fi
 if [ ! $MXEQTSUBDIR ]; then
 	# default is qt5 see issue #252
 	MXEQTSUBDIR=qt5
-	if [ "`echo $* | grep qt6 `" ]; then
-		MXEQTSUBDIR=qt6
-	fi
 fi
 
 if [ ! -e $DEPLOYDIR ]; then
