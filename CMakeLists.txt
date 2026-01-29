@@ -44,7 +44,11 @@ option(USE_BUILTIN_MANIFOLD "Use manifold from submodule" ON)
 option(USE_BUILTIN_CLIPPER2 "Use Clipper2 from submodule" ON)
 option(SNAPSHOT "Create dev snapshot, uses nightly icons" OFF)
 option(HEADLESS "Build without GUI frontend" OFF)
-option(USE_QT6 "Build the GUI with Qt6" ON)
+if(APPLE)
+  option(USE_QT6 "Build the GUI with Qt6" ON)
+else()
+option(USE_QT6 "Build the GUI with Qt6" OFF)
+endif()
 option(ENABLE_EGL "Enable EGL support if available" ON)
 option(ENABLE_GLX "Enable GLX support if available" ON)
 # For now, we'll default to whatever OpenCSG uses (>=1.6 -> GLAD, <1.6 -> GLEW)
@@ -839,8 +843,6 @@ if(ENABLE_PYTHON)
     target_include_directories(OpenSCADPy PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
     message(STATUS "Python enabled")
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
-
-
     if(Python3_LIBRARIES)
       target_link_libraries(OpenSCADPy PRIVATE ${Python3_LIBRARIES})
     endif()
@@ -1224,15 +1226,6 @@ if(NOT HEADLESS)
     endif()
   endif()
 endif()
-
-# Find after Qt which otherwise gets confused when building on MXE
-find_package(Freetype 2.4.9 REQUIRED QUIET)
-message(STATUS "Freetype: ${FREETYPE_VERSION_STRING}")
-message(STATUS "XXX Setting include dir: ${FREETYPE_INCLUDE_DIR}")
-message(STATUS "XXX Setting include dir: ${FREETYPE_FOUND}")
-message(STATUS "XXX Setting include dir: ${FREETYPE2_FOUND}")
-target_include_directories(OpenSCADLibInternal SYSTEM PUBLIC ${FREETYPE_INCLUDE_DIRS})
-target_link_libraries(OpenSCADLibInternal PUBLIC ${FREETYPE_LIBRARIES})
 
 # Setup ccache (if available) to speed up recompiles. It's especially useful
 # when switching back and forth between branches where large numbers of files
