@@ -73,6 +73,14 @@
 - **Python-only call tips:** Add more entries from the Python `openscad` module (e.g. from `PyOpenSCADFunctions` / `doc/openscad.pyi`) as needed.
 - **Method chaining:** Completion after `obj.` (e.g. `obj.translate`, `obj.rotate`) would require context-aware completion (detecting that we are after a dot) and a list of method names; this can be a follow-up.
 
+#### Complexity of optional refinements
+
+| Refinement | Complexity | Effort | Notes |
+|------------|------------|--------|--------|
+| **Skip completion inside strings** (triple quotes) | **Low** | ~0.25 day | Single/double quotes are already handled in `isInPythonString()`. Add detection for `'''` and `"""`: track a 3‑char window, toggle “in triple string” when seeing the delimiter, respect that we’re inside a string when the line started in one (would need line‑continuation / multi‑line state to be fully correct; a single‑line triple‑quote check is still simple). |
+| **Python-only call tips** (more entries) | **Low** | ~0.25–0.5 day | Purely additive: add more `PythonApiFunc` entries in `PythonApi` constructor. Copy names (and optionally 1–2 call-tip strings) from `PyOpenSCADFunctions` in `src/python/pyfunctions.cc` (e.g. `version`, `version_num`, `scad`, `align`, `nimport`, etc.) or from `doc/openscad.pyi`. No new APIs; just data. |
+| **Method chaining** (completion after `obj.`) | **Medium** | ~1 day | **Implemented:** In `updateAutoCompletionList()`, detect that the cursor is completing a name after a dot (scan line backwards for `.`); if so, fill the completion list from a fixed list of OpenSCADObject method names (aligned with `PyOpenSCADMethods`). Call tips for methods (e.g. `obj.translate(`) are provided from the same `methodFuncs` list. No type analysis: any expression before `.` gets the same method list. **High** (out of scope): real “object type → methods” would require static analysis or a language server. |
+
 ---
 
 ## Implementation Steps
@@ -117,6 +125,41 @@
 | Testing (manual + regression) | 0.25–0.5 day |
 | Optional: skip completion in Python strings | 0.25 day |
 | **Total** | **~1–2.5 days** |
+
+---
+
+## Language server (LSP) – feasibility
+
+Integrating a **Language Server Protocol (LSP)** client would let the editor talk to an external Python language server (e.g. Pylance, pyright, jedi-language-server) for richer completion, hover, go-to-definition, and diagnostics.
+
+### How tricky is integration? (Windows, macOS, Linux)
+
+| Aspect | Notes |
+|--------|--------|
+| **LSP client in C++/Qt** | **Medium–high.** The app uses QScintilla, not an IDE that already has LSP. You need to implement (or embed) an LSP client: JSON-RPC over stdio/socket, `initialize` / `initialized`, `textDocument/didOpen`, `textDocument/didChange`, and requests like `textDocument/completion`, `textDocument/hover`, `textDocument/definition`. No standard C++ LSP client library is as ubiquitous as in VS Code; options include [qlsp](https://github.com/nicolo-ribaudo/qlsp), custom minimal client, or wrapping a small library. |
+| **Spawning the server** | **Moderate.** Use `QProcess` to start the language server (e.g. `pyright-langserver` or `jedi-language-server`). Works on all three platforms; you need to resolve the executable (bundled path, `PATH`, or user setting). |
+| **Cross-platform** | **Moderate.** Paths and line endings differ; the LSP spec uses URIs and UTF-8, which Qt can handle. On **Windows**, finding Python/Node for the server (if not bundled), antivirus blocking child processes, and console vs. GUI process quirks can bite. On **macOS**, sandboxing and app-bundle layout matter if you bundle the server. On **Linux**, generally straightforward. |
+| **Mapping LSP → editor** | **Moderate.** You must turn LSP responses (e.g. completion items, hover content, diagnostic ranges) into QScintilla/Qsci APIs: show completion list, show call tips or hover popup, underline diagnostics, handle “go to definition” (e.g. open file + set cursor). |
+| **openscad module** | **Low.** The server won’t know `from openscad import *` unless it sees your types. Point the server at `doc/openscad.pyi` (or `libraries/python/openscad.pyi`) via `extraPaths` / stub path so completion and hover for `cube`, `show`, etc. are accurate. |
+
+**Rough effort:** on the order of **2–6 weeks** for an experienced developer (client impl, process lifecycle, UI wiring, and testing on all three platforms), depending on how complete and robust you want it.
+
+### Benefits
+
+- **Richer completion:** After `obj.`, completion can show methods and attributes; imports and variables can be resolved.
+- **Type-aware behaviour:** With stubs, the server can infer types and offer context-aware suggestions and signatures.
+- **Hover documentation:** Hover over a symbol to see docstrings/signatures without running code.
+- **Go to definition / find references:** Jump to where a name is defined or find all usages.
+- **Diagnostics:** Errors and warnings (syntax, type, undefined names) as you type.
+- **Standard protocol:** Same LSP works with different servers; you could later support other languages or swap Python servers.
+
+### Drawbacks
+
+- **Implementation cost:** Significant C++/Qt work for the client, IPC, and UI; ongoing maintenance.
+- **Extra process and resources:** Language server runs as a separate process (often Node or Python); more memory and CPU, especially on large files or many files.
+- **Dependency and distribution:** You must ship a compatible language server or require the user to install it (Python/Node version matrix, platform-specific binaries).
+- **Debugging and compatibility:** IPC and server version quirks can be hard to debug; version combos (app + Qt + server) need testing on all platforms.
+- **Overlap with current completion:** Existing `PythonApi` completion and call tips would need to be merged or deferred to the LSP (e.g. only use LSP when available, else fall back to `PythonApi`).
 
 ---
 
