@@ -9,26 +9,83 @@
 
 namespace {
 
+// Returns true if the cursor at col is inside a string (single, double, or triple-quoted).
 bool isInPythonString(const QString& text, int col)
 {
   bool lastWasEscape = false;
-  bool inSingle = false;
-  bool inDouble = false;
-  int dx = 0;
-  int count = col;
-  while (count-- > 0 && dx < text.length()) {
-    QChar ch = text[dx++];
-    if (ch == '\\') {
-      lastWasEscape = true;
-    } else if (lastWasEscape) {
-      lastWasEscape = false;
-    } else if (ch == '\'' && !inDouble) {
-      inSingle = !inSingle;
-    } else if (ch == '"' && !inSingle) {
-      inDouble = !inDouble;
+  enum State { Normal, Single, Double, TripleSingle, TripleDouble };
+  State state = Normal;
+
+  for (int dx = 0; dx < col && dx < text.length(); ++dx) {
+    QChar ch = text[dx];
+
+    if (state == Normal) {
+      if (ch == '\'') {
+        if (dx + 2 < text.length() && text[dx + 1] == '\'' && text[dx + 2] == '\'') {
+          state = TripleSingle;
+          dx += 2;
+        } else {
+          state = Single;
+        }
+      } else if (ch == '"') {
+        if (dx + 2 < text.length() && text[dx + 1] == '"' && text[dx + 2] == '"') {
+          state = TripleDouble;
+          dx += 2;
+        } else {
+          state = Double;
+        }
+      }
+      continue;
+    }
+
+    if (state == Single) {
+      if (ch == '\\') {
+        lastWasEscape = true;
+      } else if (lastWasEscape) {
+        lastWasEscape = false;
+      } else if (ch == '\'') {
+        state = Normal;
+      }
+      continue;
+    }
+
+    if (state == Double) {
+      if (ch == '\\') {
+        lastWasEscape = true;
+      } else if (lastWasEscape) {
+        lastWasEscape = false;
+      } else if (ch == '"') {
+        state = Normal;
+      }
+      continue;
+    }
+
+    if (state == TripleSingle) {
+      if (ch == '\\') {
+        lastWasEscape = true;
+      } else if (lastWasEscape) {
+        lastWasEscape = false;
+      } else if (ch == '\'' && dx + 2 < text.length() && text[dx + 1] == '\'' && text[dx + 2] == '\'') {
+        state = Normal;
+        dx += 2;
+      }
+      continue;
+    }
+
+    if (state == TripleDouble) {
+      if (ch == '\\') {
+        lastWasEscape = true;
+      } else if (lastWasEscape) {
+        lastWasEscape = false;
+      } else if (ch == '"' && dx + 2 < text.length() && text[dx + 1] == '"' && text[dx + 2] == '"') {
+        state = Normal;
+        dx += 2;
+      }
+      continue;
     }
   }
-  return inSingle || inDouble;
+
+  return state != Normal;
 }
 
 }  // namespace
