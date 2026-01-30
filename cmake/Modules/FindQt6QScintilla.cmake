@@ -81,7 +81,7 @@ endif ()
 
 find_library ( QT6QSCINTILLA_LIBRARY
   NAMES qt6scintilla2 qscintilla2-qt6 qscintilla2 qscintilla2_qt6
-  HINTS ${Qt6Widgets_LIBRARIES}
+  HINTS /qt6/lib ${Qt6Widgets_LIBRARIES}
 )
 
 set ( QT6QSCINTILLA_LIBRARIES ${QT6QSCINTILLA_LIBRARY} )
