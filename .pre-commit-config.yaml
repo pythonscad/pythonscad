@@ -46,3 +46,9 @@ repos:
       rev: v0.20.0
       hooks:
           - id: markdownlint-cli2
+    - repo: https://github.com/RodrigoGonzalez/check-mkdocs
+      rev: v1.2.0
+      hooks:
+          - id: check-mkdocs
+            name: check-mkdocs
+            args: ["--config", "web/mkdocs.yml"]
