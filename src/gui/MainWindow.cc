@@ -463,7 +463,10 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 
   // Preferences initialization happens on first tab creation, and depends on colorschemes from editor.
   // Any code dependent on Preferences must come after the TabManager instantiation
-  tabManager = new TabManager(this, filenames.isEmpty() ? QString() : filenames[0]);
+  const QString firstFile = filenames.isEmpty()
+                              ? QString()
+                              : (filenames[0] == QStringLiteral(":session:") ? QString() : filenames[0]);
+  tabManager = new TabManager(this, firstFile);
   editorDockContents->layout()->addWidget(tabManager->getTabContent());
 
   connect(this, &MainWindow::highlightError, tabManager, &TabManager::highlightError);
@@ -968,6 +971,9 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   clearCurrentOutput();
 
   for (int i = 1; i < filenames.size(); ++i) tabManager->createTab(filenames[i]);
+  if (filenames.size() == 1 && filenames[0] == QStringLiteral(":session:")) {
+    tabManager->restoreSession(TabManager::getSessionFilePath());
+  }
 
   updateExportActions();
 
@@ -4383,27 +4389,23 @@ void MainWindow::helpLibrary()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-  if (tabManager->shouldClose()) {
-    isClosing = true;
-    progress_report_fin();
-    // Disable invokeMethod calls for consoleOutput during shutdown,
-    // otherwise will segfault if echos are in progress.
-    hideCurrentOutput();
+  isClosing = true;
+  progress_report_fin();
+  hideCurrentOutput();
 
-    QSettingsCached settings;
-    settings.setValue("window/geometry", saveGeometry());
-    settings.setValue("window/state", saveState());
-    if (this->tempFile) {
-      delete this->tempFile;
-      this->tempFile = nullptr;
-    }
-    for (auto dock : findChildren<Dock *>()) {
-      dock->disableSettingsUpdate();
-    }
-    event->accept();
-  } else {
-    event->ignore();
+  tabManager->saveSession(TabManager::getSessionFilePath());
+
+  QSettingsCached settings;
+  settings.setValue("window/geometry", saveGeometry());
+  settings.setValue("window/state", saveState());
+  if (this->tempFile) {
+    delete this->tempFile;
+    this->tempFile = nullptr;
   }
+  for (auto dock : findChildren<Dock *>()) {
+    dock->disableSettingsUpdate();
+  }
+  event->accept();
 }
 
 void MainWindow::preferences()
