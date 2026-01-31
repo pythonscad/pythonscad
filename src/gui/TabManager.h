@@ -45,6 +45,10 @@ public:
   void open(const QString& filename);
   size_t count();
 
+  void saveSession(const QString& path);
+  bool restoreSession(const QString& path);
+  static QString getSessionFilePath();
+
 public:
   static constexpr const int FIND_HIDDEN = 0;
   static constexpr const int FIND_VISIBLE = 1;
@@ -72,6 +76,8 @@ private:
   void saveError(const QIODevice& file, const std::string& msg, const QString& filepath);
   void applyAction(QObject *object, const std::function<void(int, EditorInterface *)>& func);
   void setTabsCloseButtonVisibility(int tabIndice, bool isVisible);
+  void setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
+                         bool contentModified, bool parameterModified);
 
   QTabBar::ButtonPosition getClosingButtonPosition();
   void zoomIn();

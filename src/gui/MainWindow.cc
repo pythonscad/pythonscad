@@ -3882,24 +3882,23 @@ void MainWindow::on_helpActionLibraryInfo_triggered()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-  if (tabManager->shouldClose()) {
-    isClosing = true;
-    progress_report_fin();
-    // Disable invokeMethod calls for consoleOutput during shutdown,
-    // otherwise will segfault if echos are in progress.
-    hideCurrentOutput();
+  isClosing = true;
+  progress_report_fin();
+  hideCurrentOutput();
 
-    QSettingsCached settings;
-    settings.setValue("window/geometry", saveGeometry());
-    settings.setValue("window/state", saveState());
-    if (this->tempFile) {
-      delete this->tempFile;
-      this->tempFile = nullptr;
-    }
-    event->accept();
-  } else {
-    event->ignore();
+  tabManager->saveSession(TabManager::getSessionFilePath());
+
+  QSettingsCached settings;
+  settings.setValue("window/geometry", saveGeometry());
+  settings.setValue("window/state", saveState());
+  if (this->tempFile) {
+    delete this->tempFile;
+    this->tempFile = nullptr;
   }
+  for (auto dock : findChildren<Dock *>()) {
+    dock->disableSettingsUpdate();
+  }
+  event->accept();
 }
 
 void MainWindow::on_editActionPreferences_triggered()
