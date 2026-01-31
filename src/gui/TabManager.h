@@ -77,7 +77,8 @@ private:
   void applyAction(QObject *object, const std::function<void(int, EditorInterface *)>& func);
   void setTabsCloseButtonVisibility(int tabIndice, bool isVisible);
   void setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
-                         bool contentModified, bool parameterModified);
+                         bool contentModified, bool parameterModified,
+                         const QByteArray& customizerState = QByteArray());
 
   QTabBar::ButtonPosition getClosingButtonPosition();
   void zoomIn();
