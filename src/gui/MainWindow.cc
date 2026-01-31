@@ -2041,14 +2041,16 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
         if (pos != -1) {
           std::string par_text = fulltext_py.substr(0, pos);
           auto error = evaluatePython(par_text, true);  // run dummy
-          this->rootFile->scope->assignments = customizer_parameters;
-          CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');  // add annotations
-          this->activeEditor->parameterWidget->setParameters(this->rootFile.get(),
-                                                             "\n");  // set widgets values
-          this->activeEditor->parameterWidget->applyParameters(
-            this->rootFile.get());  // use widget values
+          if (!customizer_parameters.empty()) {
+            this->rootFile->scope->assignments = customizer_parameters;
+            CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');  // add annotations
+            this->activeEditor->parameterWidget->setParameters(this->rootFile.get(),
+                                                               "\n");  // set widgets values
+            this->activeEditor->parameterWidget->applyParameters(
+              this->rootFile.get());  // use widget values
+            this->activeEditor->setIndicator(this->rootFile->indicatorData);
+          }
           this->activeEditor->parameterWidget->setEnabled(true);
-          this->activeEditor->setIndicator(this->rootFile->indicatorData);
         }
       }
     } else {
@@ -2064,13 +2066,14 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
         if (pos != -1) {
           std::string par_text = fulltext_py.substr(0, pos);
           auto error = evaluatePython(par_text, true);  // run dummy
-          if (parse(sourceFile, "", fname, fname, false) && sourceFile != nullptr) {
+          if (!customizer_parameters.empty() && parse(sourceFile, "", fname, fname, false) &&
+              sourceFile != nullptr) {
             sourceFile->scope->assignments = customizer_parameters;
             CommentParser::collectParameters(fulltext_py, sourceFile, '#');
             editor->parameterWidget->setParameters(sourceFile, document.toStdString());
             editor->parameterWidget->applyParameters(sourceFile);
-            editor->parameterWidget->setEnabled(true);
           }
+          editor->parameterWidget->setEnabled(true);
         }
       }
     }
@@ -3384,7 +3387,15 @@ void MainWindow::editorContentChanged()
 
     // removes the live selection feedbacks in both the 3d view and editor.
     clearAllSelectionIndicators();
+
+    // debounced refresh of customizer parameters so they show without F5
+    parameterRefreshTimer->start();
   }
+}
+
+void MainWindow::refreshParametersFromEditor()
+{
+  parseTopLevelDocument();
 }
 
 void MainWindow::on_viewActionTop_triggered()
@@ -4107,6 +4118,11 @@ void MainWindow::setupCoreSubsystems()
   consoleUpdater->setSingleShot(true);
   connect(consoleUpdater, &QTimer::timeout, this->console, &Console::update);
   this->consoleUpdater->start(0);  // Show initial messages immediately
+
+  parameterRefreshTimer = new QTimer(this);
+  parameterRefreshTimer->setSingleShot(true);
+  parameterRefreshTimer->setInterval(1000);
+  connect(parameterRefreshTimer, &QTimer::timeout, this, &MainWindow::refreshParametersFromEditor);
 
   progressThrottle->start();
 }

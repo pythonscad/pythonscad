@@ -88,6 +88,7 @@ public:
 
   QTimer *autoReloadTimer;
   QTimer *waitAfterReloadTimer;
+  QTimer *parameterRefreshTimer;
   RenderStatistic renderStatistic;
 
   std::shared_ptr<SourceFile> rootFile;            // Result of parsing
@@ -446,6 +447,7 @@ public slots:
   void on_viewActionResetView_triggered();
   void on_viewActionViewAll_triggered();
   void editorContentChanged();
+  void refreshParametersFromEditor();
   void leftClick(QPoint coordinate);
   void rightClick(QPoint coordinate);
   void dragEnterEvent(QDragEnterEvent *event) override;
