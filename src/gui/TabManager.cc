@@ -664,13 +664,15 @@ bool TabManager::maybeSave(int x)
 {
   auto *edt = (EditorInterface *)tabWidget->widget(x);
   if (edt->isContentModified() || edt->parameterWidget->isModified()) {
+    auto [fname, fpath] = getEditorTabName(edt);
     QMessageBox box(parent);
-    box.setText(_("The document has been modified."));
-    box.setInformativeText(_("Do you want to save your changes?"));
+    box.setText(QString(_("Do you want to save the changes you made to %1?")).arg(fname));
+    box.setInformativeText(_("Your changes will be lost if you don't save them."));
     box.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
     box.setDefaultButton(QMessageBox::Save);
     box.setIcon(QMessageBox::Warning);
     box.setWindowModality(Qt::ApplicationModal);
+    box.button(QMessageBox::Discard)->setText(_("Don't save"));
 #ifdef Q_OS_MACOS
     // Cmd-D is the standard shortcut for this button on Mac
     box.button(QMessageBox::Discard)->setShortcut(QKeySequence("Ctrl+D"));
