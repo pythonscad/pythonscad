@@ -6,6 +6,7 @@
 #include <tuple>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QKeyCombination>
+#include <QStringConverter>
 #endif
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -798,10 +799,26 @@ bool TabManager::restoreSession(const QString& path)
   for (int i = 0; i < tabs.size(); ++i) {
     const QJsonObject obj = tabs[i].toObject();
     const QString filepath = obj.value(QStringLiteral("filepath")).toString();
-    const QString content = obj.value(QStringLiteral("content")).toString();
+    QString content = obj.value(QStringLiteral("content")).toString();
     const bool contentModified = obj.value(QStringLiteral("contentModified")).toBool();
     const bool parameterModified = obj.value(QStringLiteral("parameterModified")).toBool();
     const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
+
+    // If tab had no unsaved changes, reload from disk (match behavior when app is running).
+    if (!filepath.isEmpty() && !contentModified) {
+      QFile diskFile(filepath);
+      if (diskFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&diskFile);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        in.setEncoding(QStringConverter::Utf8);
+#else
+        in.setCodec("UTF-8");
+#endif
+        content = in.readAll();
+        diskFile.close();
+      }
+    }
+
     EditorInterface *edt;
     if (i == 0) {
       edt = static_cast<EditorInterface *>(tabWidget->widget(0));
