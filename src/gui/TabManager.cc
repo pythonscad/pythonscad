@@ -714,12 +714,16 @@ QString TabManager::getSessionFilePath()
 }
 
 void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
-                                   bool contentModified, bool parameterModified)
+                                   bool contentModified, bool parameterModified,
+                                   const QByteArray& customizerState)
 {
   edt->filepath = filepath;
   edt->setPlainText(content);
   edt->setContentModified(contentModified);
   edt->parameterWidget->setModified(parameterModified);
+  if (!customizerState.isEmpty()) {
+    edt->parameterWidget->setSessionState(customizerState);
+  }
   edt->recomputeLanguageActive();
   par->onLanguageActiveChanged(edt->language);
   auto [fname, fpath] = getEditorTabNameWithModifier(edt);
@@ -736,6 +740,10 @@ void TabManager::saveSession(const QString& path)
     obj.insert(QStringLiteral("content"), edt->toPlainText());
     obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
     obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
+    const QByteArray customizerState = edt->parameterWidget->getSessionState();
+    if (!customizerState.isEmpty()) {
+      obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
+    }
     tabs.append(obj);
   }
   QJsonObject root;
@@ -767,6 +775,7 @@ bool TabManager::restoreSession(const QString& path)
     const QString content = obj.value(QStringLiteral("content")).toString();
     const bool contentModified = obj.value(QStringLiteral("contentModified")).toBool();
     const bool parameterModified = obj.value(QStringLiteral("parameterModified")).toBool();
+    const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
     EditorInterface *edt;
     if (i == 0) {
       edt = static_cast<EditorInterface *>(tabWidget->widget(0));
@@ -774,7 +783,7 @@ bool TabManager::restoreSession(const QString& path)
       createTab(QString());
       edt = editor;
     }
-    setTabSessionData(edt, filepath, content, contentModified, parameterModified);
+    setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState);
   }
   par->setWindowTitle(tabWidget->tabText(tabWidget->currentIndex()).replace("&&", "&"));
   par->updateRecentFileActions();
