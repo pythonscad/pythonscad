@@ -27,6 +27,8 @@
 
 #include <QAction>
 #include <QInputDialog>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLayoutItem>
 #include <QMenu>
 #include <QMessageBox>
@@ -167,8 +169,51 @@ void ParameterWidget::setParameters(const SourceFile *sourceFile, const std::str
   // Now it's safe to load new parameters - old widgets have been deleted
   // and oldParameters will be destroyed when this function returns.
   this->parameters = ParameterObjects::fromSourceFile(sourceFile);
+
+  if (!pendingSessionState.isEmpty()) {
+    const QJsonDocument doc = QJsonDocument::fromJson(pendingSessionState);
+    pendingSessionState.clear();
+    if (doc.isObject()) {
+      const QJsonObject root = doc.object();
+      const int currentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
+      const QString setsJson = root.value(QStringLiteral("setsJson")).toString();
+      std::string setsStr = setsJson.toStdString();
+      if (!setsStr.empty() && this->sets.readFromString(setsStr)) {
+        comboBoxPreset->clear();
+        comboBoxPreset->addItem(_("<design default>"));
+        for (const auto& set : this->sets) {
+          comboBoxPreset->addItem(QString::fromStdString(set.name()));
+        }
+        const int idx = std::max(0, std::min(currentIndex, comboBoxPreset->count() - 1));
+        comboBoxPreset->setCurrentIndex(idx);
+      }
+    }
+  }
+
   rebuildWidgets();
   loadSet(comboBoxPreset->currentIndex());
+}
+
+QByteArray ParameterWidget::getSessionState()
+{
+  const int idx = comboBoxPreset->currentIndex();
+  if (idx > 0 && static_cast<size_t>(idx) <= sets.size()) {
+    for (const auto& param : parameters) {
+      sets[idx - 1][param->name()] = param->exportValue();
+    }
+  }
+  std::string setsStr;
+  cleanSets();
+  sets.writeToString(setsStr);
+  QJsonObject root;
+  root.insert(QStringLiteral("currentIndex"), idx);
+  root.insert(QStringLiteral("setsJson"), QString::fromStdString(setsStr));
+  return QJsonDocument(root).toJson(QJsonDocument::Compact);
+}
+
+void ParameterWidget::setSessionState(const QByteArray& state)
+{
+  pendingSessionState = state;
 }
 
 void ParameterWidget::applyParameters(SourceFile *sourceFile)
