@@ -4,6 +4,7 @@
 #include <QStringBuilder>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QKeyCombination>
+#include <QStringConverter>
 #endif
 #include <QPoint>
 #include <QTabBar>
@@ -20,8 +21,13 @@
 #include <QShortcut>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QSettings>
 #include <QFileDialog>
 #include <QClipboard>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QStandardPaths>
 #include <QDesktopServices>
 #include <Qsci/qscicommand.h>
 #include <Qsci/qscicommandset.h>
@@ -33,6 +39,7 @@
 #include "gui/MainWindow.h"
 #include <genlang/genlang.h>
 
+#include <algorithm>
 #include <cstddef>
 
 TabManager::TabManager(MainWindow *o, const QString& filename)
@@ -638,13 +645,15 @@ bool TabManager::maybeSave(int x)
 {
   auto *edt = (EditorInterface *)tabWidget->widget(x);
   if (edt->isContentModified() || edt->parameterWidget->isModified()) {
+    auto [fname, fpath] = getEditorTabName(edt);
     QMessageBox box(par);
-    box.setText(_("The document has been modified."));
-    box.setInformativeText(_("Do you want to save your changes?"));
+    box.setText(QString(_("Do you want to save the changes you made to %1?")).arg(fname));
+    box.setInformativeText(_("Your changes will be lost if you don't save them."));
     box.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
     box.setDefaultButton(QMessageBox::Save);
     box.setIcon(QMessageBox::Warning);
     box.setWindowModality(Qt::ApplicationModal);
+    box.button(QMessageBox::Discard)->setText(_("Don't save"));
 #ifdef Q_OS_MACOS
     // Cmd-D is the standard shortcut for this button on Mac
     box.button(QMessageBox::Discard)->setShortcut(QKeySequence("Ctrl+D"));
@@ -692,6 +701,115 @@ bool TabManager::shouldClose()
       return saveAll();
     }
   }
+  return true;
+}
+
+QString TabManager::getSessionFilePath()
+{
+  QSettings s;
+  const QString configFile = s.fileName();
+  if (configFile.isEmpty()) {
+    return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) +
+           QStringLiteral("/session.json");
+  }
+  return QFileInfo(configFile).absolutePath() + QStringLiteral("/session.json");
+}
+
+void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
+                                   bool contentModified, bool parameterModified,
+                                   const QByteArray& customizerState)
+{
+  edt->filepath = filepath;
+  edt->setPlainText(content);
+  edt->setContentModified(contentModified);
+  edt->parameterWidget->setModified(parameterModified);
+  if (!customizerState.isEmpty()) {
+    edt->parameterWidget->setSessionState(customizerState);
+  }
+  edt->recomputeLanguageActive();
+  par->onLanguageActiveChanged(edt->language);
+  auto [fname, fpath] = getEditorTabNameWithModifier(edt);
+  setEditorTabName(fname, fpath, edt);
+  updateTabIcon(edt);
+}
+
+void TabManager::saveSession(const QString& path)
+{
+  QJsonArray tabs;
+  for (int i = 0; i < tabWidget->count(); ++i) {
+    auto *edt = static_cast<EditorInterface *>(tabWidget->widget(i));
+    QJsonObject obj;
+    obj.insert(QStringLiteral("filepath"), edt->filepath);
+    obj.insert(QStringLiteral("content"), edt->toPlainText());
+    obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
+    obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
+    const QByteArray customizerState = edt->parameterWidget->getSessionState();
+    if (!customizerState.isEmpty()) {
+      obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
+    }
+    tabs.append(obj);
+  }
+  QJsonObject root;
+  root.insert(QStringLiteral("tabs"), tabs);
+  root.insert(QStringLiteral("currentIndex"), tabWidget->currentIndex());
+  const QFileInfo pathInfo(path);
+  const QDir dir = pathInfo.absoluteDir();
+  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) return;
+  QFile file(path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
+  const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
+  if (file.write(json) != json.size()) return;
+  file.flush();
+  file.close();
+}
+
+bool TabManager::restoreSession(const QString& path)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
+  const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+  file.close();
+  if (!doc.isObject()) return false;
+  const QJsonArray tabs = doc.object().value(QStringLiteral("tabs")).toArray();
+  if (tabs.isEmpty()) return false;
+  const int savedCurrentIndex = doc.object().value(QStringLiteral("currentIndex")).toInt(0);
+
+  for (int i = 0; i < tabs.size(); ++i) {
+    const QJsonObject obj = tabs[i].toObject();
+    const QString filepath = obj.value(QStringLiteral("filepath")).toString();
+    QString content = obj.value(QStringLiteral("content")).toString();
+    const bool contentModified = obj.value(QStringLiteral("contentModified")).toBool();
+    const bool parameterModified = obj.value(QStringLiteral("parameterModified")).toBool();
+    const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
+
+    // If tab had no unsaved changes, reload from disk (match behavior when app is running).
+    if (!filepath.isEmpty() && !contentModified) {
+      QFile diskFile(filepath);
+      if (diskFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&diskFile);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        in.setEncoding(QStringConverter::Utf8);
+#else
+        in.setCodec("UTF-8");
+#endif
+        content = in.readAll();
+        diskFile.close();
+      }
+    }
+
+    EditorInterface *edt;
+    if (i == 0) {
+      edt = static_cast<EditorInterface *>(tabWidget->widget(0));
+    } else {
+      createTab(QString());
+      edt = editor;
+    }
+    setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState);
+  }
+  const int currentIndex = std::max(0, std::min(savedCurrentIndex, tabWidget->count() - 1));
+  tabWidget->setCurrentIndex(currentIndex);
+  par->setWindowTitle(tabWidget->tabText(tabWidget->currentIndex()).replace("&&", "&"));
+  par->updateRecentFileActions();
   return true;
 }
 
