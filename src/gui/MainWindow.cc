@@ -2144,31 +2144,56 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
     initPython(venv, fnameNative, &r);
     editor->resetHighlighting();
     editor->parameterWidget->setEnabled(false);
-    do {
-      if (this->rootFile == nullptr) break;
+    if (this->rootFile != nullptr) {
       int pos = -1, pos1;
       while (1) {
         pos1 = fulltext_py.find("add_parameter", pos + 1);
         if (pos1 == -1) break;
         pos = pos1;
       }
-      if (pos == -1) break;  // no parameter statements included
-      pos = fulltext_py.find("\n", pos);
-      if (pos == -1) break;  // no parameter statements included
-      std::string par_text = fulltext_py.substr(0, pos);
-      //
-      // add parameters as annotation in AST
-      auto error = evaluatePython(par_text, true);  // run dummy
-      this->rootFile->scope->assignments = customizer_parameters;
-      CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');  // add annotations
-      editor->parameterWidget->setParameters(this->rootFile.get(),
-                                             "\n");                    // set widgets values
-      editor->parameterWidget->applyParameters(this->rootFile.get());  // use widget values
-      editor->parameterWidget->setEnabled(true);
-      editor->setIndicator(this->rootFile->indicatorData);
-    } while (0);
+      if (pos != -1) {
+        pos = fulltext_py.find("\n", pos);
+        if (pos != -1) {
+          std::string par_text = fulltext_py.substr(0, pos);
+          //
+          // add parameters as annotation in AST
+          auto error = evaluatePython(par_text, true);  // run dummy
+          this->rootFile->scope->assignments = customizer_parameters;
+          CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');  // add annotations
+          editor->parameterWidget->setParameters(this->rootFile.get(),
+                                                 "\n");                    // set widgets values
+          editor->parameterWidget->applyParameters(this->rootFile.get());  // use widget values
+          editor->parameterWidget->setEnabled(true);
+          editor->setIndicator(this->rootFile->indicatorData);
+        }
+      }
+    } else {
+      // No prior rootFile (e.g. session restore): parse to get parameters for customizer
+      int pos = -1, pos1;
+      while (1) {
+        pos1 = fulltext_py.find("add_parameter", pos + 1);
+        if (pos1 == -1) break;
+        pos = pos1;
+      }
+      if (pos != -1) {
+        pos = fulltext_py.find("\n", pos);
+        if (pos != -1) {
+          std::string par_text = fulltext_py.substr(0, pos);
+          auto error = evaluatePython(par_text, true);  // run dummy
+          if (parse(sourceFile, "", fnameNative, fnameNative, false) && sourceFile != nullptr) {
+            sourceFile->scope->assignments = customizer_parameters;
+            CommentParser::collectParameters(fulltext_py, sourceFile, '#');
+            editor->parameterWidget->setParameters(sourceFile, document.toStdString());
+            editor->parameterWidget->applyParameters(sourceFile);
+            editor->parameterWidget->setEnabled(true);
+          }
+        }
+      }
+    }
 
-    if (this->rootFile != nullptr) customizer_parameters_finished = this->rootFile->scope->assignments;
+    customizer_parameters_finished =
+      (this->rootFile != nullptr ? this->rootFile->scope->assignments
+                                 : (sourceFile ? sourceFile->scope->assignments : AssignmentList()));
     customizer_parameters.clear();
     if (venv.empty()) {
       LOG("Running %1$s without venv.", python_version());
@@ -2185,7 +2210,9 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
       viewportControlWidget->cameraChanged();
       renderVarsSet = nullptr;
     }
-    sourceFile = parse(sourceFile, "", fnameNative, fnameNative, false) ? sourceFile : nullptr;
+    if (sourceFile == nullptr) {
+      sourceFile = parse(sourceFile, "", fnameNative, fnameNative, false) ? sourceFile : nullptr;
+    }
 
   } else  // python not enabled
 #endif    // ifdef ENABLE_PYTHON
@@ -4773,6 +4800,11 @@ void MainWindow::restoreWindowState()
 void MainWindow::openRemainingFiles(const QStringList& filenames)
 {
   for (int i = 1; i < filenames.size(); ++i) tabManager->createTab(filenames[i]);
+  if (filenames.size() == 1 && filenames[0] == QStringLiteral(":session:")) {
+    if (tabManager->restoreSession(TabManager::getSessionFilePath())) {
+      parseTopLevelDocument();  // populate customizer parameters so they show without F5
+    }
+  }
 
   activeEditor->setFocus();
 }
