@@ -39,6 +39,7 @@
 #include "gui/MainWindow.h"
 #include <genlang/genlang.h>
 
+#include <algorithm>
 #include <cstddef>
 
 TabManager::TabManager(MainWindow *o, const QString& filename)
@@ -735,7 +736,8 @@ void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath
 void TabManager::saveSession(const QString& path)
 {
   QJsonArray tabs;
-  foreach (EditorInterface *edt, editorList) {
+  for (int i = 0; i < tabWidget->count(); ++i) {
+    auto *edt = static_cast<EditorInterface *>(tabWidget->widget(i));
     QJsonObject obj;
     obj.insert(QStringLiteral("filepath"), edt->filepath);
     obj.insert(QStringLiteral("content"), edt->toPlainText());
@@ -749,6 +751,7 @@ void TabManager::saveSession(const QString& path)
   }
   QJsonObject root;
   root.insert(QStringLiteral("tabs"), tabs);
+  root.insert(QStringLiteral("currentIndex"), tabWidget->currentIndex());
   const QFileInfo pathInfo(path);
   const QDir dir = pathInfo.absoluteDir();
   if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) return;
@@ -769,6 +772,7 @@ bool TabManager::restoreSession(const QString& path)
   if (!doc.isObject()) return false;
   const QJsonArray tabs = doc.object().value(QStringLiteral("tabs")).toArray();
   if (tabs.isEmpty()) return false;
+  const int savedCurrentIndex = doc.object().value(QStringLiteral("currentIndex")).toInt(0);
 
   for (int i = 0; i < tabs.size(); ++i) {
     const QJsonObject obj = tabs[i].toObject();
@@ -802,6 +806,8 @@ bool TabManager::restoreSession(const QString& path)
     }
     setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState);
   }
+  const int currentIndex = std::max(0, std::min(savedCurrentIndex, tabWidget->count() - 1));
+  tabWidget->setCurrentIndex(currentIndex);
   par->setWindowTitle(tabWidget->tabText(tabWidget->currentIndex()).replace("&&", "&"));
   par->updateRecentFileActions();
   return true;
