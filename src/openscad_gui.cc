@@ -242,38 +242,41 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     inputFiles.emplace_back("");
   }
 
-  auto showOnStartup = settings.value("launcher/showOnStartup");
-  bool showLauncher = noInputFiles && (showOnStartup.isNull() || showOnStartup.toBool());
-#ifdef ENABLE_GUI_TESTS
-  if (gui_test != "none") {
-    showLauncher = false;
-  }
-#endif
-
-  if (showLauncher) {
-    LaunchingScreen launcher;
-    if (launcher.exec() == QDialog::Accepted) {
-      if (launcher.isForceShowEditor()) {
-        settings.setValue("view/hideEditor", false);
-      }
-      const QStringList files = launcher.selectedFiles();
-      // If nothing is selected in the launching screen, leave
-      // the "" dummy in inputFiles to open an empty MainWindow.
-      if (!files.empty()) {
-        inputFiles.clear();
-        for (const auto& f : files) {
-          inputFiles.push_back(f.toStdString());
-        }
-      }
-    } else {
-      return 0;
-    }
-  }
-
   QStringList inputFilesList;
   for (const auto& infile : inputFiles) {
     inputFilesList.append(assemblePath(original_path, infile));
   }
+
+  // When no files given, restore session if it exists (skip launcher)
+  if (inputFilesList.size() == 1 && inputFilesList[0].isEmpty()) {
+    const QString sessionPath = TabManager::getSessionFilePath();
+    if (QFileInfo(sessionPath).exists()) {
+      inputFilesList[0] = QStringLiteral(":session:");
+    }
+  }
+
+  // Show launcher only when no files and no session to restore
+  if (noInputFiles && inputFilesList.size() == 1 && inputFilesList[0].isEmpty()) {
+    auto showOnStartup = settings.value("launcher/showOnStartup");
+    if (showOnStartup.isNull() || showOnStartup.toBool()) {
+      LaunchingScreen launcher;
+      if (launcher.exec() == QDialog::Accepted) {
+        if (launcher.isForceShowEditor()) {
+          settings.setValue("view/hideEditor", false);
+        }
+        const QStringList files = launcher.selectedFiles();
+        if (!files.empty()) {
+          inputFilesList.clear();
+          for (const auto& f : files) {
+            inputFilesList.append(assemblePath(original_path, f.toStdString()));
+          }
+        }
+      } else {
+        return 0;
+      }
+    }
+  }
+
   new MainWindow(inputFilesList);
   QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
     QSettingsCached{}.release();

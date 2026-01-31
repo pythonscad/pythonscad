@@ -7,6 +7,11 @@
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QKeyCombination>
 #endif
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QSettings>
+#include <QStandardPaths>
 #include <Qsci/qscicommand.h>
 #include <Qsci/qscicommandset.h>
 
@@ -720,6 +725,85 @@ bool TabManager::shouldClose()
       return saveAll();
     }
   }
+  return true;
+}
+
+QString TabManager::getSessionFilePath()
+{
+  QSettings s;
+  const QString configFile = s.fileName();
+  if (configFile.isEmpty()) {
+    return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) +
+           QStringLiteral("/session.json");
+  }
+  return QFileInfo(configFile).absolutePath() + QStringLiteral("/session.json");
+}
+
+void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
+                                   bool contentModified, bool parameterModified)
+{
+  edt->filepath = filepath;
+  edt->setPlainText(content);
+  edt->setContentModified(contentModified);
+  edt->parameterWidget->setModified(parameterModified);
+  edt->recomputeLanguageActive();
+  par->onLanguageActiveChanged(edt->language);
+  auto [fname, fpath] = getEditorTabNameWithModifier(edt);
+  setEditorTabName(fname, fpath, edt);
+  updateTabIcon(edt);
+}
+
+void TabManager::saveSession(const QString& path)
+{
+  QJsonArray tabs;
+  foreach (EditorInterface *edt, editorList) {
+    QJsonObject obj;
+    obj.insert(QStringLiteral("filepath"), edt->filepath);
+    obj.insert(QStringLiteral("content"), edt->toPlainText());
+    obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
+    obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
+    tabs.append(obj);
+  }
+  QJsonObject root;
+  root.insert(QStringLiteral("tabs"), tabs);
+  const QFileInfo pathInfo(path);
+  const QDir dir = pathInfo.absoluteDir();
+  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) return;
+  QFile file(path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
+  const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
+  if (file.write(json) != json.size()) return;
+  file.flush();
+  file.close();
+}
+
+bool TabManager::restoreSession(const QString& path)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
+  const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+  file.close();
+  if (!doc.isObject()) return false;
+  const QJsonArray tabs = doc.object().value(QStringLiteral("tabs")).toArray();
+  if (tabs.isEmpty()) return false;
+
+  for (int i = 0; i < tabs.size(); ++i) {
+    const QJsonObject obj = tabs[i].toObject();
+    const QString filepath = obj.value(QStringLiteral("filepath")).toString();
+    const QString content = obj.value(QStringLiteral("content")).toString();
+    const bool contentModified = obj.value(QStringLiteral("contentModified")).toBool();
+    const bool parameterModified = obj.value(QStringLiteral("parameterModified")).toBool();
+    EditorInterface *edt;
+    if (i == 0) {
+      edt = static_cast<EditorInterface *>(tabWidget->widget(0));
+    } else {
+      createTab(QString());
+      edt = editor;
+    }
+    setTabSessionData(edt, filepath, content, contentModified, parameterModified);
+  }
+  par->setWindowTitle(tabWidget->tabText(tabWidget->currentIndex()).replace("&&", "&"));
+  par->updateRecentFileActions();
   return true;
 }
 
