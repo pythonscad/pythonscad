@@ -4049,6 +4049,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
     // Log to stdout from now on
     clearCurrentOutput();
 
+    tabManager->saveSession(TabManager::getSessionFilePath());
+
     QSettingsCached settings;
     settings.setValue("window/geometry", saveGeometry());
     auto windowState = saveState();
@@ -4062,6 +4064,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
     // Disable invokeMethod calls for consoleOutput during shutdown,
     // otherwise will segfault if echos are in progress.
     hideCurrentOutput();
+    for (auto dock : findChildren<Dock *>()) {
+      dock->disableSettingsUpdate();
+    }
     event->accept();
   } else {
     event->ignore();
