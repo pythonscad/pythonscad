@@ -1841,14 +1841,17 @@ set_source_files_properties(
   PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 set(RESOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/resources)
+set(BUILD_RESOURCE_DIR ${CMAKE_BINARY_DIR}/resources)
+set(BUILD_RESOURCE_ICONS_DIR ${CMAKE_BINARY_DIR}/resources/icons)
 if(HEADLESS)
   target_compile_definitions(OpenSCADLibInternal PUBLIC OPENSCAD_NOGUI)
   target_compile_definitions(OpenSCADPy PUBLIC OPENSCAD_NOGUI)
   set(ENABLE_GUI_TESTS OFF)
 else()
   # Every qrc file added to RESOURCE_FILES must have a matching Q_INIT_RESOURCE() call in main_wrapper.cc
+  # common.qrc (and mac.qrc on Apple) are configured into BUILD_RESOURCE_DIR so source tree stays read-only
   list(APPEND RESOURCE_FILES
-    ${RESOURCE_DIR}/common.qrc
+    ${BUILD_RESOURCE_DIR}/common.qrc
     ${RESOURCE_DIR}/icons-chokusen.qrc
     ${RESOURCE_DIR}/icons-chokusen-dark.qrc
   )
@@ -1887,7 +1890,7 @@ set(WINDOWS_RESOURCE_PATH ${CMAKE_BINARY_DIR}/pythonscad_win32${SNAPSHOT_SUFFIX}
 set(MACOSX_BUNDLE_ICON_FILE icon${SNAPSHOT_SUFFIX}.icns)
 
 if (APPLE)
-  list(APPEND RESOURCE_FILES ${RESOURCE_DIR}/mac.qrc)
+  list(APPEND RESOURCE_FILES ${BUILD_RESOURCE_DIR}/mac.qrc)
   list(APPEND RESOURCE_FILES ${RESOURCE_DIR}/icons/${MACOSX_BUNDLE_ICON_FILE})
 elseif(WIN32)
   list(APPEND RESOURCE_FILES ${WINDOWS_RESOURCE_PATH})
@@ -2027,12 +2030,15 @@ else()
   endif()
 endif()
 
-# Configure icon-related files, for release vs nightly
-configure_file(doc/pythonscad.1.in doc/pythonscad.1)
-configure_file(${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in ${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in2)
-configure_file(${RESOURCE_DIR}/icons/pythonscad.desktop.in ${RESOURCE_DIR}/icons/pythonscad.desktop)
-configure_file(${RESOURCE_DIR}/common.qrc.in ${RESOURCE_DIR}/common.qrc)
-configure_file(${RESOURCE_DIR}/mac.qrc.in ${RESOURCE_DIR}/mac.qrc)
+# Configure icon-related files into the build tree (source may be read-only, e.g. Guix)
+# Copy resource subdirs so rcc finds them when processing common.qrc/mac.qrc in build tree
+file(MAKE_DIRECTORY ${BUILD_RESOURCE_DIR} ${BUILD_RESOURCE_ICONS_DIR})
+file(COPY ${RESOURCE_DIR}/icons ${RESOURCE_DIR}/html ${RESOURCE_DIR}/sounds DESTINATION ${BUILD_RESOURCE_DIR})
+configure_file(doc/pythonscad.1.in ${CMAKE_BINARY_DIR}/doc/pythonscad.1)
+configure_file(${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in ${CMAKE_BINARY_DIR}/pythonscad.appdata.xml.in2)
+configure_file(${RESOURCE_DIR}/icons/pythonscad.desktop.in ${BUILD_RESOURCE_ICONS_DIR}/pythonscad.desktop)
+configure_file(${RESOURCE_DIR}/common.qrc.in ${BUILD_RESOURCE_DIR}/common.qrc)
+configure_file(${RESOURCE_DIR}/mac.qrc.in ${BUILD_RESOURCE_DIR}/mac.qrc)
 
 # Installation
 if(WIN32)
@@ -2176,7 +2182,7 @@ if(NOT APPLE OR APPLE_UNIX)
     if(ENABLE_LIBFIVE AND USE_BUILTIN_LIBFIVE)
       install(FILES ${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.so DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
-    install(FILES ${RESOURCE_DIR}/icons/pythonscad.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications RENAME ${EXECUTABLE_NAME}.desktop)
+    install(FILES ${BUILD_RESOURCE_ICONS_DIR}/pythonscad.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications RENAME ${EXECUTABLE_NAME}.desktop)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.xml DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages RENAME ${EXECUTABLE_NAME}.xml)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad${SNAPSHOT_SUFFIX}-48.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/48x48/apps RENAME pythonscad${SNAPSHOT_SUFFIX}.png)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad${SNAPSHOT_SUFFIX}-64.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/64x64/apps RENAME pythonscad${SNAPSHOT_SUFFIX}.png)
