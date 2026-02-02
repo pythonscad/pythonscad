@@ -463,7 +463,10 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 
   // Preferences initialization happens on first tab creation, and depends on colorschemes from editor.
   // Any code dependent on Preferences must come after the TabManager instantiation
-  tabManager = new TabManager(this, filenames.isEmpty() ? QString() : filenames[0]);
+  const QString firstFile = filenames.isEmpty()
+                              ? QString()
+                              : (filenames[0] == QStringLiteral(":session:") ? QString() : filenames[0]);
+  tabManager = new TabManager(this, firstFile);
   editorDockContents->layout()->addWidget(tabManager->getTabContent());
 
   connect(this, &MainWindow::highlightError, tabManager, &TabManager::highlightError);
@@ -566,6 +569,11 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   waitAfterReloadTimer->setSingleShot(true);
   waitAfterReloadTimer->setInterval(autoReloadPollingPeriodMS);
   connect(waitAfterReloadTimer, &QTimer::timeout, this, &MainWindow::waitAfterReload);
+
+  parameterRefreshTimer = new QTimer(this);
+  parameterRefreshTimer->setSingleShot(true);
+  parameterRefreshTimer->setInterval(1000);
+  connect(parameterRefreshTimer, &QTimer::timeout, this, &MainWindow::refreshParametersFromEditor);
 
   progressThrottle->start();
 
@@ -968,6 +976,11 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   clearCurrentOutput();
 
   for (int i = 1; i < filenames.size(); ++i) tabManager->createTab(filenames[i]);
+  if (filenames.size() == 1 && filenames[0] == QStringLiteral(":session:")) {
+    if (tabManager->restoreSession(TabManager::getSessionFilePath())) {
+      parseTopLevelDocument();  // populate customizer parameters so they show without F5
+    }
+  }
 
   updateExportActions();
 
@@ -2544,7 +2557,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
 
   auto fulltext_py = std::string(this->lastCompiledDoc.toUtf8().constData());
   const char *fname = editor->filepath.isEmpty() ? "" : fnameba.constData();
-  SourceFile *sourceFile;
+  SourceFile *sourceFile = nullptr;
 #ifdef ENABLE_PYTHON
   if (editor->language == LANG_PYTHON && !trust_python_file(std::string(fname), fulltext_py)) {
     LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
@@ -2554,31 +2567,58 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
     initPython(venv, fnameba.constData(), this->animateWidget->getAnimTval());
     this->activeEditor->resetHighlighting();
     this->activeEditor->parameterWidget->setEnabled(false);
-    do {
-      if (this->rootFile == nullptr) break;
+    if (this->rootFile != nullptr) {
       int pos = -1, pos1;
       while (1) {
         pos1 = fulltext_py.find("add_parameter", pos + 1);
         if (pos1 == -1) break;
         pos = pos1;
       }
-      if (pos == -1) break;  // no parameter statements included
-      pos = fulltext_py.find("\n", pos);
-      if (pos == -1) break;  // no parameter statements included
-      std::string par_text = fulltext_py.substr(0, pos);
-      //
-      // add parameters as annotation in AST
-      auto error = evaluatePython(par_text, true);  // run dummy
-      this->rootFile->scope->assignments = customizer_parameters;
-      CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');  // add annotations
-      this->activeEditor->parameterWidget->setParameters(this->rootFile.get(),
-                                                         "\n");                    // set widgets values
-      this->activeEditor->parameterWidget->applyParameters(this->rootFile.get());  // use widget values
-      this->activeEditor->parameterWidget->setEnabled(true);
-      this->activeEditor->setIndicator(this->rootFile->indicatorData);
-    } while (0);
+      if (pos != -1) {
+        pos = fulltext_py.find("\n", pos);
+        if (pos != -1) {
+          std::string par_text = fulltext_py.substr(0, pos);
+          auto error = evaluatePython(par_text, true);  // run dummy
+          if (!customizer_parameters.empty()) {
+            this->rootFile->scope->assignments = customizer_parameters;
+            CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');  // add annotations
+            this->activeEditor->parameterWidget->setParameters(this->rootFile.get(),
+                                                               "\n");  // set widgets values
+            this->activeEditor->parameterWidget->applyParameters(
+              this->rootFile.get());  // use widget values
+            this->activeEditor->setIndicator(this->rootFile->indicatorData);
+          }
+          this->activeEditor->parameterWidget->setEnabled(true);
+        }
+      }
+    } else {
+      // No prior rootFile (e.g. session restore): parse to get parameters for customizer
+      int pos = -1, pos1;
+      while (1) {
+        pos1 = fulltext_py.find("add_parameter", pos + 1);
+        if (pos1 == -1) break;
+        pos = pos1;
+      }
+      if (pos != -1) {
+        pos = fulltext_py.find("\n", pos);
+        if (pos != -1) {
+          std::string par_text = fulltext_py.substr(0, pos);
+          auto error = evaluatePython(par_text, true);  // run dummy
+          if (!customizer_parameters.empty() && parse(sourceFile, "", fname, fname, false) &&
+              sourceFile != nullptr) {
+            sourceFile->scope->assignments = customizer_parameters;
+            CommentParser::collectParameters(fulltext_py, sourceFile, '#');
+            editor->parameterWidget->setParameters(sourceFile, document.toStdString());
+            editor->parameterWidget->applyParameters(sourceFile);
+          }
+          editor->parameterWidget->setEnabled(true);
+        }
+      }
+    }
 
-    if (this->rootFile != nullptr) customizer_parameters_finished = this->rootFile->scope->assignments;
+    customizer_parameters_finished =
+      (this->rootFile != nullptr ? this->rootFile->scope->assignments
+                                 : (sourceFile ? sourceFile->scope->assignments : AssignmentList()));
     customizer_parameters.clear();
     if (venv.empty()) {
       LOG("Running %1$s without venv.", python_version());
@@ -2589,7 +2629,9 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
     auto error = evaluatePython(fulltext_py, false);  // add assignments TODO check
     if (error.size() > 0) LOG(message_group::Error, Location::NONE, "", error.c_str());
     finishPython();
-    sourceFile = parse(sourceFile, "", fname, fname, false) ? sourceFile : nullptr;
+    if (sourceFile == nullptr) {
+      parse(sourceFile, "", fname, fname, false);
+    }
 
   } else  // python not enabled
 #endif    // ifdef ENABLE_PYTHON
@@ -3868,7 +3910,15 @@ void MainWindow::editorContentChanged()
 
     // removes the live selection feedbacks in both the 3d view and editor.
     clearAllSelectionIndicators();
+
+    // debounced refresh of customizer parameters so they show without F5
+    parameterRefreshTimer->start();
   }
+}
+
+void MainWindow::refreshParametersFromEditor()
+{
+  parseTopLevelDocument();
 }
 
 void MainWindow::viewAngleTop()
@@ -4383,27 +4433,23 @@ void MainWindow::helpLibrary()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-  if (tabManager->shouldClose()) {
-    isClosing = true;
-    progress_report_fin();
-    // Disable invokeMethod calls for consoleOutput during shutdown,
-    // otherwise will segfault if echos are in progress.
-    hideCurrentOutput();
+  isClosing = true;
+  progress_report_fin();
+  hideCurrentOutput();
 
-    QSettingsCached settings;
-    settings.setValue("window/geometry", saveGeometry());
-    settings.setValue("window/state", saveState());
-    if (this->tempFile) {
-      delete this->tempFile;
-      this->tempFile = nullptr;
-    }
-    for (auto dock : findChildren<Dock *>()) {
-      dock->disableSettingsUpdate();
-    }
-    event->accept();
-  } else {
-    event->ignore();
+  tabManager->saveSession(TabManager::getSessionFilePath());
+
+  QSettingsCached settings;
+  settings.setValue("window/geometry", saveGeometry());
+  settings.setValue("window/state", saveState());
+  if (this->tempFile) {
+    delete this->tempFile;
+    this->tempFile = nullptr;
   }
+  for (auto dock : findChildren<Dock *>()) {
+    dock->disableSettingsUpdate();
+  }
+  event->accept();
 }
 
 void MainWindow::preferences()
