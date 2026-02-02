@@ -33,6 +33,7 @@
 #include "geometry/Barcode1d.h"
 #include "utils/calc.h"
 #include "core/node.h"
+#include "src/core/ColorUtil.h"
 #include "utils/degree_trig.h"
 #include "core/Builtins.h"
 #include "core/Children.h"
@@ -56,8 +57,6 @@
 #include <vector>
 
 using namespace boost::assign;  // bring 'operator+=()' into scope
-
-#define F_MINIMUM 0.01
 
 template <class InsertIterator>
 static void generate_circle(InsertIterator iter, double r, double z, double angle, int fragments)
@@ -104,25 +103,6 @@ static Value lookup_radius(const Parameters& parameters, const ModuleInstantiati
     return r.clone();
   } else {
     return Value::undefined.clone();
-  }
-}
-
-static void set_fragments(const Parameters& parameters, const ModuleInstantiation *inst, double& fn,
-                          double& fs, double& fa)
-{
-  fn = parameters["$fn"].toDouble();
-  fs = parameters["$fs"].toDouble();
-  fa = parameters["$fa"].toDouble();
-
-  if (fs < F_MINIMUM) {
-    LOG(message_group::Warning, inst->location(), parameters.documentRoot(),
-        "$fs too small - clamping to %1$f", F_MINIMUM);
-    fs = F_MINIMUM;
-  }
-  if (fa < F_MINIMUM) {
-    LOG(message_group::Warning, inst->location(), parameters.documentRoot(),
-        "$fa too small - clamping to %1$f", F_MINIMUM);
-    fa = F_MINIMUM;
   }
 }
 
@@ -232,15 +212,30 @@ static std::shared_ptr<AbstractNode> builtin_cube(const ModuleInstantiation *ins
   return node;
 }
 
+std::string SphereNode::toString() const
+{
+  std::ostringstream stream;
+  stream << "sphere(" << discretizer;
+#ifdef ENABLE_PYTHON
+  if (r_func != nullptr) stream << ", r_func = " << rand();
+  else
+#endif
+    stream << ", r = " << r;
+  stream << ")";
+  return stream.str();
+}
+
 std::unique_ptr<const Geometry> SphereNode::createGeometry() const
 {
   if (this->r <= 0 || !std::isfinite(this->r)) {
     return PolySet::createEmpty();
   }
-  auto num_fragments = Calc::get_fragments_from_r(r, 360.0, fn, fs, fa);
+
+  int num_fragments = discretizer.getCircularSegmentCount(r, 360.0).value_or(3);
 #ifdef ENABLE_PYTHON
   if (this->r_func != nullptr) {
-    return sphereCreateFuncGeometry(this->r_func, fs, fn);
+    double fs = discretizer.getMinimalEdgeLength();
+    return sphereCreateFuncGeometry(this->r_func, fs, num_fragments);
   }
 #endif
   auto num_rings = (num_fragments + 1) / 2;
@@ -296,11 +291,10 @@ std::shared_ptr<const Geometry> SphereNode::dragPoint(const Vector3d& pt, const 
 
 static std::shared_ptr<AbstractNode> builtin_sphere(const ModuleInstantiation *inst, Arguments arguments)
 {
-  auto node = std::make_shared<SphereNode>(inst);
-
   Parameters parameters = Parameters::parse(std::move(arguments), inst->location(), {"r"}, {"d"});
 
-  set_fragments(parameters, inst, node->fn, node->fs, node->fa);
+  auto node = std::make_shared<SphereNode>(inst, CurveDiscretizer(parameters, inst->location()));
+
   const auto r = lookup_radius(parameters, inst, "d", "r");
   if (r.type() == Value::Type::NUMBER) {
     node->r = r.toDouble();
@@ -313,6 +307,15 @@ static std::shared_ptr<AbstractNode> builtin_sphere(const ModuleInstantiation *i
   return node;
 }
 
+std::string CylinderNode::toString() const
+{
+  std::ostringstream stream;
+  stream << "cylinder(" << discretizer << ", h = " << h << ", r1 = " << r1 << ", r2 = " << r2;
+  if (angle != 360) stream << ", angle = " << angle;
+  stream << ", center = " << (center ? "true" : "false") << ")";
+  return stream.str();
+}
+
 std::unique_ptr<const Geometry> CylinderNode::createGeometry() const
 {
   if (this->h <= 0 || !std::isfinite(this->h) || this->r1 < 0 || !std::isfinite(this->r1) ||
@@ -321,8 +324,9 @@ std::unique_ptr<const Geometry> CylinderNode::createGeometry() const
     return PolySet::createEmpty();
   }
 
-  auto num_fragments =
-    Calc::get_fragments_from_r(std::fmax(this->r1, this->r2), 360.0, this->fn, this->fs, this->fa);
+  int num_fragments =
+    discretizer.getCircularSegmentCount(std::fmax(this->r1, this->r2), 360.0).value_or(3);
+
   if (this->angle < 360) num_fragments++;
   double z1, z2;
   if (this->center) {
@@ -392,13 +396,11 @@ std::shared_ptr<const Geometry> CylinderNode::dragPoint(const Vector3d& pt, cons
 static std::shared_ptr<AbstractNode> builtin_cylinder(const ModuleInstantiation *inst,
                                                       Arguments arguments)
 {
-  auto node = std::make_shared<CylinderNode>(inst);
-
   Parameters parameters =
-    Parameters::parse(std::move(arguments), inst->location(), {"h", "r1", "r2", "center"},
-                      {"r", "d", "d1", "d2", "angle"});
+    Parameters::parse(std::move(arguments), inst->location(), {"h", "r1", "r2", "center", "angle"},
+                      {"r", "d", "d1", "d2"});
 
-  set_fragments(parameters, inst, node->fn, node->fs, node->fa);
+  auto node = std::make_shared<CylinderNode>(inst, CurveDiscretizer(parameters, inst->location()));
   if (parameters["h"].type() == Value::Type::NUMBER) {
     node->h = parameters["h"].toDouble();
   }
@@ -627,6 +629,7 @@ std::unique_ptr<const Geometry> EdgeNode::createGeometry() const
   }
 
   Edge1d e(beg, end);
+  e.color = *OpenSCAD::parse_color("#f9d72c");
   Barcode1d b(e);
   return std::make_unique<Barcode1d>(b);
 }
@@ -646,6 +649,7 @@ std::unique_ptr<const Geometry> SquareNode::createGeometry() const
 
   Outline2d o;
   o.vertices = {v1, {v2[0], v1[1]}, v2, {v1[0], v2[1]}};
+  o.color = *OpenSCAD::parse_color("#f9d72c");
   return std::make_unique<Polygon2d>(o);
 }
 
@@ -682,13 +686,22 @@ static std::shared_ptr<AbstractNode> builtin_square(const ModuleInstantiation *i
   return node;
 }
 
+std::string CircleNode::toString() const
+{
+  std::ostringstream stream;
+  stream << "circle(" << discretizer << ", r = " << r;
+  if (angle != 360) stream << ", angle = " << angle;
+  stream << ")";
+  return stream.str();
+}
+
 std::unique_ptr<const Geometry> CircleNode::createGeometry() const
 {
   if (this->r <= 0 || !std::isfinite(this->r) || angle <= 0 || angle > 360.0) {
     return std::make_unique<Polygon2d>();
   }
 
-  auto fragments = Calc::get_fragments_from_r(this->r, this->angle, this->fn, this->fs, this->fa);
+  int fragments = discretizer.getCircularSegmentCount(this->r, this->angle).value_or(3);
   Outline2d o;
   int fragments_div = fragments;
   if (this->angle < 360.0) {
@@ -700,17 +713,16 @@ std::unique_ptr<const Geometry> CircleNode::createGeometry() const
     double phi = (this->angle * i) / fragments_div;
     o.vertices[i] = {this->r * cos_degrees(phi), this->r * sin_degrees(phi)};
   }
+  o.color = *OpenSCAD::parse_color("#f9d72c");
   return std::make_unique<Polygon2d>(o);
 }
 
 static std::shared_ptr<AbstractNode> builtin_circle(const ModuleInstantiation *inst, Arguments arguments)
 {
-  auto node = std::make_shared<CircleNode>(inst);
-
   Parameters parameters =
     Parameters::parse(std::move(arguments), inst->location(), {"r"}, {"d", "angle"});
+  auto node = std::make_shared<CircleNode>(inst, CurveDiscretizer(parameters, inst->location()));
 
-  set_fragments(parameters, inst, node->fn, node->fs, node->fa);
   const auto r = lookup_radius(parameters, inst, "d", "r");
   if (r.type() == Value::Type::NUMBER) {
     node->r = r.toDouble();
@@ -768,11 +780,8 @@ std::string PolygonNode::toString() const
   return stream.str();
 }
 
-void get_fnas(double& fn, double& fa, double& fs);
-
 VectorOfVector2d PolygonNode::createGeometry_sub(const std::vector<Vector3d>& points,
-                                                 const std::vector<size_t>& path, double fn, double fa,
-                                                 double fs) const
+                                                 const std::vector<size_t>& path) const
 {
   std::vector<Vector2d> result;
   int n = path.size();
@@ -806,8 +815,7 @@ VectorOfVector2d PolygonNode::createGeometry_sub(const std::vector<Vector3d>& po
       if (ang_en - ang_st > M_PI) ang_en -= 2 * M_PI;
       if (ang_st - ang_en > M_PI) ang_st -= 2 * M_PI;
 
-      int segs = (fabs(ang_en - ang_st) * 180 / M_PI) / (double)fa;
-      if (fn != 0) segs = fn;
+      int segs = this->discretizer.getCircularSegmentCount(r, ang_en - ang_st).value_or(3);
       for (int j = 0; j < segs; j++) {
         double ang = ang_st + (ang_en - ang_st) * (j + 1) / (segs + 1);
         result.push_back(Vector2d(cent[0] + r * cos(ang), cent[1] + r * sin(ang)));
@@ -821,22 +829,18 @@ extern bool pythonMainModuleInitialized;
 std::unique_ptr<const Geometry> PolygonNode::createGeometry() const
 {
   auto p = std::make_unique<Polygon2d>();
-  double fn = 2, fa = 12, fs = 2;
-#ifdef ENABLE_PYTHON
-  if (pythonMainModuleInitialized) get_fnas(fn, fa, fs);
-#endif
   if (this->paths.empty() && this->points.size() > 2) {
     Outline2d outline;
     std::vector<size_t> path;
     for (size_t i = 0; i < this->points.size(); i++) path.push_back(i);
-    outline.vertices = createGeometry_sub(this->points, path, fn, fa, fs);
+    outline.vertices = createGeometry_sub(this->points, path);
     p->addOutline(outline);
   } else {
     bool positive = true;  // First outline is positive
     for (const auto& path : this->paths) {
       Outline2d outline;
       outline.positive = positive;
-      outline.vertices = createGeometry_sub(this->points, path, fn, fa, fs);
+      outline.vertices = createGeometry_sub(this->points, path);
       p->addOutline(outline);
       positive = false;  // Subsequent outlines are holes
     }
@@ -844,6 +848,7 @@ std::unique_ptr<const Geometry> PolygonNode::createGeometry() const
   if (p->outlines().size() > 0) {
     p->setConvexity(convexity);
   }
+  p->setColor(*OpenSCAD::parse_color("#f9d72c"));
   return p;
 }
 
@@ -949,13 +954,14 @@ std::unique_ptr<const Geometry> SplineNode::createGeometry() const
     }
   }
   p->addOutline(result);
+  p->setColor(*OpenSCAD::parse_color("#f9d72c"));
   return p;
 }
 
 static std::shared_ptr<AbstractNode> builtin_polygon(const ModuleInstantiation *inst,
                                                      Arguments arguments)
 {
-  auto node = std::make_shared<PolygonNode>(inst);
+  auto node = std::make_shared<PolygonNode>(inst, CurveDiscretizer(3));
 
   Parameters parameters =
     Parameters::parse(std::move(arguments), inst->location(), {"points", "paths", "convexity"});

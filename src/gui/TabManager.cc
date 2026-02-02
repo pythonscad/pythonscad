@@ -31,6 +31,7 @@
 #include "gui/ScintillaEditor.h"
 #include "gui/Preferences.h"
 #include "gui/MainWindow.h"
+#include <genlang/genlang.h>
 
 #include <cstddef>
 
@@ -50,6 +51,9 @@ TabManager::TabManager(MainWindow *o, const QString& filename)
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::stopAnimation);
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::updateFindState);
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::tabSwitched);
+
+  connect(par->editActionZoomTextIn, &QAction::triggered, this, &TabManager::zoomIn);
+  connect(par->editActionZoomTextOut, &QAction::triggered, this, &TabManager::zoomOut);
 
   createTab(filename);
 
@@ -106,7 +110,8 @@ void TabManager::tabSwitched(int x)
     setTabsCloseButtonVisibility(idx, isVisible);
   }
 
-  par->recomputeLanguageActive();
+  editor->recomputeLanguageActive();
+  par->onLanguageActiveChanged(editor->language);
   emit currentEditorChanged(editor);
 }
 
@@ -180,6 +185,10 @@ void TabManager::open(const QString& filename)
   if (editor->filepath.isEmpty() && !editor->isContentModified() &&
       !editor->parameterWidget->isModified()) {
     openTabFile(filename);
+    editor->recomputeLanguageActive();
+    par->onLanguageActiveChanged(editor->language);
+    updateTabIcon(editor);
+    emit editorContentReloaded(editor);
   } else {
     createTab(filename);
   }
@@ -189,7 +198,7 @@ void TabManager::createTab(const QString& filename)
 {
   assert(par != nullptr);
 
-  auto scintillaEditor = new ScintillaEditor(tabWidget, *par);
+  auto scintillaEditor = new ScintillaEditor(tabWidget);
   editor = scintillaEditor;
   //  Preferences::create(editor->colorSchemes());   // needs to be done only once, however handled
   this->use_gvim = GlobalPreferences::inst()->getValue("editor/usegvim").toBool();
@@ -228,9 +237,6 @@ void TabManager::createTab(const QString& filename)
   scintillaEditor->applySettings();
   editor->addTemplate();
 
-  connect(par->editActionZoomTextIn, &QAction::triggered, editor, &EditorInterface::zoomIn);
-  connect(par->editActionZoomTextOut, &QAction::triggered, editor, &EditorInterface::zoomOut);
-
   connect(editor, &EditorInterface::contentsChanged, this, &TabManager::updateActionUndoState);
   connect(editor, &EditorInterface::contentsChanged, par, &MainWindow::editorContentChanged);
   connect(editor, &EditorInterface::contentsChanged, this, &TabManager::setContentRenderState);
@@ -262,44 +268,103 @@ void TabManager::createTab(const QString& filename)
   if (tabWidget->currentWidget() != editor) {
     tabWidget->setCurrentWidget(editor);
   }
+
+  editor->recomputeLanguageActive();
+  par->onLanguageActiveChanged(editor->language);
+  updateTabIcon(editor);
+
   emit tabCountChanged(editorList.size());
 }
 
-size_t TabManager::count() { return tabWidget->count(); }
+size_t TabManager::count()
+{
+  return tabWidget->count();
+}
 
-void TabManager::highlightError(int i) { editor->highlightError(i); }
+void TabManager::highlightError(int i)
+{
+  editor->highlightError(i);
+}
 
-void TabManager::unhighlightLastError() { editor->unhighlightLastError(); }
+void TabManager::unhighlightLastError()
+{
+  editor->unhighlightLastError();
+}
 
-void TabManager::undo() { editor->undo(); }
+void TabManager::undo()
+{
+  editor->undo();
+}
 
-void TabManager::redo() { editor->redo(); }
+void TabManager::redo()
+{
+  editor->redo();
+}
 
-void TabManager::cut() { editor->cut(); }
+void TabManager::cut()
+{
+  editor->cut();
+}
 
-void TabManager::copy() { editor->copy(); }
+void TabManager::copy()
+{
+  editor->copy();
+}
 
-void TabManager::paste() { editor->paste(); }
+void TabManager::paste()
+{
+  editor->paste();
+}
 
-void TabManager::indentSelection() { editor->indentSelection(); }
+void TabManager::indentSelection()
+{
+  editor->indentSelection();
+}
 
-void TabManager::unindentSelection() { editor->unindentSelection(); }
+void TabManager::unindentSelection()
+{
+  editor->unindentSelection();
+}
 
-void TabManager::commentSelection() { editor->commentSelection(); }
+void TabManager::commentSelection()
+{
+  editor->commentSelection();
+}
 
-void TabManager::uncommentSelection() { editor->uncommentSelection(); }
+void TabManager::uncommentSelection()
+{
+  editor->uncommentSelection();
+}
 
-void TabManager::toggleBookmark() { editor->toggleBookmark(); }
+void TabManager::toggleBookmark()
+{
+  editor->toggleBookmark();
+}
 
-void TabManager::nextBookmark() { editor->nextBookmark(); }
+void TabManager::nextBookmark()
+{
+  editor->nextBookmark();
+}
 
-void TabManager::prevBookmark() { editor->prevBookmark(); }
+void TabManager::prevBookmark()
+{
+  editor->prevBookmark();
+}
 
-void TabManager::jumpToNextError() { editor->jumpToNextError(); }
+void TabManager::jumpToNextError()
+{
+  editor->jumpToNextError();
+}
 
-void TabManager::setFocus() { editor->setFocus(); }
+void TabManager::setFocus()
+{
+  editor->setFocus();
+}
 
-void TabManager::updateActionUndoState() { par->editActionUndo->setEnabled(editor->canUndo()); }
+void TabManager::updateActionUndoState()
+{
+  par->editActionUndo->setEnabled(editor->canUndo());
+}
 
 void TabManager::onHyperlinkIndicatorClicked(int val)
 {
@@ -452,7 +517,7 @@ void TabManager::openTabFile(const QString& filename)
 #ifdef ENABLE_PYTHON
   if (boost::algorithm::ends_with(filename, ".py")) {
     std::string templ = "from openscad import *\n";
-    std::string libs = Settings::Settings::pythonNetworkImportList.value();
+    std::string libs = Settings::SettingsPython::pythonNetworkImportList.value();
     std::stringstream ss(libs);
     std::string word;
     while (std::getline(ss, word, '\n')) {
@@ -483,8 +548,6 @@ void TabManager::openTabFile(const QString& filename)
   auto [fname, fpath] = getEditorTabNameWithModifier(editor);
   setEditorTabName(fname, fpath, editor);
   par->setWindowTitle(fname);
-
-  emit editorContentReloaded(editor);
 }
 
 std::tuple<QString, QString> TabManager::getEditorTabName(EditorInterface *edt)
@@ -522,6 +585,23 @@ void TabManager::setEditorTabName(const QString& tabName, const QString& tabTool
   tabWidget->setTabToolTip(index, tabToolTip);
 }
 
+void TabManager::updateTabIcon(EditorInterface *edt)
+{
+  if (!edt) return;
+
+  int index = tabWidget->indexOf(edt);
+  if (index < 0) return;
+
+  QIcon icon;
+  switch (edt->language) {
+  case LANG_PYTHON: icon = QIcon(":/icons/filetype-python.svg"); break;
+  case LANG_SCAD:
+  default:          icon = QIcon(":/icons/filetype-openscad.svg"); break;
+  }
+
+  tabWidget->setTabIcon(index, icon);
+}
+
 bool TabManager::refreshDocument()
 {
   bool file_opened = false;
@@ -538,11 +618,16 @@ bool TabManager::refreshDocument()
       reader.setCodec("UTF-8");
 #endif
       auto text = reader.readAll();
-      LOG("Loaded design '%1$s'.", editor->filepath.toLocal8Bit().constData());
+      LOG("Loaded design '%1$s'.", editor->filepath.toStdString());
       if (editor->toPlainText() != text) {
         editor->setPlainText(text);
         setContentRenderState();  // since last render
+        editor->recomputeLanguageActive();
       }
+#ifdef ENABLE_PYTHON
+      if (editor->language == LANG_PYTHON)
+        par->trust_python_file(editor->filepath.toStdString(), text.toStdString());
+#endif
       file_opened = true;
     }
   }
@@ -668,7 +753,7 @@ bool TabManager::save(EditorInterface *edt, const QString& path)
     file.cancelWriting();
   }
   if (saveOk) {
-    LOG("Saved design '%1$s'.", path.toLocal8Bit().constData());
+    LOG("Saved design '%1$s'.", path.toStdString());
     edt->parameterWidget->saveFile(path);
     edt->setContentModified(false);
     edt->parameterWidget->setModified(false);
@@ -765,6 +850,7 @@ bool TabManager::saveACopy(EditorInterface *edt)
   QFileDialog saveCopyDialog;
   saveCopyDialog.setAcceptMode(QFileDialog::AcceptSave);  // Set the dialog to "Save" mode.
   saveCopyDialog.setWindowTitle("Save A Copy");
+
   saveCopyDialog.setNameFilter("PythonSCAD Designs (*.py, *.scad)");
 
   saveCopyDialog.setDefaultSuffix("scad");
@@ -812,4 +898,18 @@ bool TabManager::saveAll()
     }
   }
   return true;
+}
+
+void TabManager::zoomIn()
+{
+  if (editor) {
+    editor->zoomIn();
+  }
+}
+
+void TabManager::zoomOut()
+{
+  if (editor) {
+    editor->zoomOut();
+  }
 }

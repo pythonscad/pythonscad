@@ -115,8 +115,9 @@ public:
   QShortcut *shortcutPreviousWindow{nullptr};
 
   QLabel *versionLabel;
+  QLabel *languageLabel;
 
-  Measurement meas;
+  Measurement::Measurement meas;
 
   int compileErrors;
   int compileWarnings;
@@ -133,6 +134,7 @@ private:
   std::vector<std::tuple<Dock *, QString, QString>> docks;
 
   volatile bool isClosing = false;
+  bool isBeingDestroyed = false;  // Set in destructor to guard eventFilter
   void consoleOutputRaw(const QString& msg);
   void clearAllSelectionIndicators();
   void setSelectionIndicatorStatus(EditorInterface *editor, int nodeIndex,
@@ -225,6 +227,8 @@ private:
   void show_examples();
   void addKeyboardShortCut(const QList<QAction *>& actions);
   void updateStatusBar(ProgressWidget *progressWidget);
+  void updateLanguageLabel();
+  void showLanguageMenu();
   void activateDock(Dock *);
   Dock *findVisibleDockToActivate(int offset) const;
   Dock *getNextDockFromSender(QObject *sender);
@@ -264,7 +268,6 @@ private slots:
   void instantiateRoot();
   void compileDone(bool didchange);
   void compileEnded();
-  void changeParameterWidget();
 
 private slots:
   void copyViewportTranslation();
@@ -293,8 +296,11 @@ private slots:
   void onErrorLogDockVisibilityChanged(bool isVisible);
   void onAnimateDockVisibilityChanged(bool isVisible);
   void onFontListDockVisibilityChanged(bool isVisible);
+  void onColorListDockVisibilityChanged(bool isVisible);
   void onViewportControlDockVisibilityChanged(bool isVisible);
   void onParametersDockVisibilityChanged(bool isVisible);
+
+  void onColorListColorSelected(const QString&);
 
   void on_editActionInsertTemplate_triggered();
   void on_editActionFoldAll_triggered();
@@ -368,6 +374,12 @@ public:
   QList<double> getRotation() const;
   QSignalMapper *addmenu_mapper;
   std::unordered_map<FileFormat, QAction *> exportMap;
+  void onLanguageActiveChanged(int language)
+  {
+    currentLanguage = language;
+    updateLanguageLabel();
+  }
+  int currentLanguage;
 
 public slots:
   void actionReloadRenderPreview();
@@ -414,11 +426,9 @@ public slots:
   void helpPythonCheatSheet();
   void helpOfflineCheatSheet();
   void helpLibrary();
-  void helpFontInfo();
   void checkAutoReload();
   void waitAfterReload();
   void autoReloadSet(bool);
-  void recomputeLanguageActive();
 
 private:
   bool network_progress_func(const double permille);
@@ -467,9 +477,6 @@ private:
 signals:
   void highlightError(int);
   void unhighlightLastError();
-#ifdef ENABLE_PYTHON
-  void pythonActiveChanged(bool pythonActive);
-#endif
 
 #ifdef ENABLE_GUI_TESTS
 public:

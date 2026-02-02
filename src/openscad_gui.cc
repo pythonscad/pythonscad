@@ -25,6 +25,7 @@
  */
 
 #include "openscad_gui.h"
+#include <QtCore/qstringliteral.h>
 #include <memory>
 #include <filesystem>
 #include <string>
@@ -39,8 +40,6 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QObject>
-#include <QPalette>
-#include <QStyleHints>
 #include <QStringList>
 #include <QtConcurrentRun>
 
@@ -51,6 +50,7 @@
 #include "geometry/Geometry.h"
 #include "gui/AppleEvents.h"
 #include "gui/input/InputDriverManager.h"
+#include "version.h"
 #ifdef ENABLE_HIDAPI
 #include "gui/input/HidApiInputDriver.h"
 #endif
@@ -84,47 +84,23 @@ Q_DECLARE_METATYPE(std::shared_ptr<const Geometry>);
 
 extern std::string arg_colorscheme;
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-
-namespace {
-
-// Check if running with light or dark theme. This should really just be used
-// to switch the icon theme globally.
-//
-// For applying a color change, e.g. highlighting the background of an input
-// field, see:
-// UIUtils::blendForBackgroundColorStyleSheet(const QColor& input, const QColor& blend)
-
-bool isDarkMode()
-{
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-  const auto scheme = QGuiApplication::styleHints()->colorScheme();
-  return scheme == Qt::ColorScheme::Dark;
-#else
-  const QPalette defaultPalette;
-  const auto& text = defaultPalette.color(QPalette::WindowText);
-  const auto& window = defaultPalette.color(QPalette::Window);
-  return text.lightness() > window.lightness();
-#endif  // QT_VERSION
-}
-
-}  // namespace
-
 namespace {
 
 // Only if "fileName" is not absolute, prepend the "absoluteBase".
 QString assemblePath(const std::filesystem::path& absoluteBaseDir, const std::string& fileName)
 {
   if (fileName.empty()) return "";
-  auto qsDir = QString::fromLocal8Bit(absoluteBaseDir.generic_string().c_str());
-  auto qsFile = QString::fromLocal8Bit(fileName.c_str());
+  auto qsDir = QString::fromStdString(absoluteBaseDir.generic_string());
+  auto qsFile = QString::fromStdString(fileName);
   // if qsfile is absolute, dir is ignored. (see documentation of QFileInfo)
   const QFileInfo fileInfo(qsDir, qsFile);
   return fileInfo.absoluteFilePath();
 }
 
-void dialogThreadFunc(FontCacheInitializer *initializer) { initializer->run(); }
+void dialogThreadFunc(FontCacheInitializer *initializer)
+{
+  initializer->run();
+}
 
 void dialogInitHandler(FontCacheInitializer *initializer, void *)
 {
@@ -158,28 +134,29 @@ void registerDefaultIcon(QString applicationFilePath)
                        QVariant(appPath));
 }
 #else
-void registerDefaultIcon(const QString&) {}
+void registerDefaultIcon(const QString&)
+{
+}
 #endif
 
 }  // namespace
 
 #ifdef OPENSCAD_SUFFIX
-#define DESKTOP_FILENAME "openscad" OPENSCAD_SUFFIX
+#define DESKTOP_FILENAME "pythonscad" OPENSCAD_SUFFIX
 #else
-#define DESKTOP_FILENAME "openscad"
+#define DESKTOP_FILENAME "pythonscad"
 #endif
 
 int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& original_path, int argc,
         char **argv, const std::string& gui_test, const bool reset_window_settings)
 {
   OpenSCADApp app(argc, argv);
-  QIcon::setThemeName(isDarkMode() ? "chokusen-dark" : "chokusen");
 
   // set up groups for QSettings
   QCoreApplication::setOrganizationName("PythonSCAD");
   QCoreApplication::setOrganizationDomain("pythonscad.org");
   QCoreApplication::setApplicationName("PythonSCAD");
-  QCoreApplication::setApplicationVersion(TOSTRING(OPENSCAD_VERSION));
+  QCoreApplication::setApplicationVersion(QString::fromStdString(std::string(openscad_versionnumber)));
   QGuiApplication::setApplicationDisplayName("PythonSCAD");
   QGuiApplication::setDesktopFileName(DESKTOP_FILENAME);
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -237,9 +214,7 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 #endif
 
   registerDefaultIcon(app.applicationFilePath());
-  app.setApplicationFont(
-    GlobalPreferences::inst()->getValue("advanced/applicationFontFamily").toString(),
-    GlobalPreferences::inst()->getValue("advanced/applicationFontSize").toUInt());
+  app.setGuiTheme(GlobalPreferences::inst()->getValue("advanced/guiTheme").toString());
 
 #ifdef OPENSCAD_UPDATER
   AutoUpdater *updater = new SparkleAutoUpdater;
@@ -250,6 +225,10 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 
   QObject::connect(GlobalPreferences::inst(), &Preferences::applicationFontChanged, &app,
                    &OpenSCADApp::setApplicationFont);
+  QObject::connect(GlobalPreferences::inst(), &Preferences::guiThemeChanged, &app,
+                   &OpenSCADApp::setGuiTheme);
+  QObject::connect(GlobalPreferences::inst(), &Preferences::renderBackend3DChanged, &app,
+                   &OpenSCADApp::setRenderBackend3D);
 
   set_render_color_scheme(arg_colorscheme, false);
   auto noInputFiles = false;

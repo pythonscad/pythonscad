@@ -21,6 +21,12 @@ public:
   static const Feature ExperimentalImportFunction;
   static const Feature ExperimentalObjectFunction;
   static const Feature ExperimentalPredictibleOutput;
+  static const Feature ExperimentalWrapPolygon;
+  static const Feature ExperimentalVectorSwizzle;
+#ifdef ENABLE_PYTHON
+  static const Feature ExperimentalPythonEngine;
+  static const Feature ExperimentalAddParameterPureFunction;
+#endif
 
 #ifdef ENABLE_GUI_TESTS
   static constexpr bool HasGuiTesting{true};

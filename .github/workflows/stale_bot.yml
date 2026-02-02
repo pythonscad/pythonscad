@@ -1,7 +1,7 @@
 name: OpenSCAD Stale bot
 on:
   schedule:
-    - cron: "10 * * * *"
+    - cron: "10 3 * * *"
   workflow_dispatch:
     inputs:
       logLevel:
@@ -17,7 +17,7 @@ jobs:
       pull-requests: write
       actions: write
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v10
         with:
           # Max number of operations per run
           operations-per-run: 10

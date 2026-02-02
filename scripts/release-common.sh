@@ -5,17 +5,16 @@
 # Windows under msys has not been tested recently.
 #
 # The script will create a file called openscad-<versionstring>.<extension> in
-# the current directory (or under ./mingw32 or ./mingw64)
+# the current directory (or under ./mingw64)
 #
-# Usage: release-common.sh [-v <versionstring>] [-c] [-mingw[32|64]]
+# Usage: release-common.sh [-v <versionstring>] [-c <commit>] [mingw64] [shared] [snapshot]
 #  -v       Version string (e.g. -v 2010.01)
-#  -d       Version date (e.g. -d 2010.01.23)
-#  mingw32 Cross-compile for win32 using MXE
-#  mingw64 Cross-compile for win64 using MXE
-#  snapshot Build a snapshot binary (make e.g. experimental features available, build with commit info)
+#           Version can be YYYY.MM[.DD][-patch][.build_id]
+#  mingw64  Cross-compile for win64 using MXE
+#  shared   Use shared libs for mingw build
+#  snapshot Build a snapshot binary (make e.g. experimental features available)
 #
-# If no version string or version date is given, today's date will be used (YYYY-MM-DD)
-# If only version date is given, it will be used also as version string.
+# If no version string is given, today's date will be used (YYYY.MM.DD)
 # If no make target is given, release will be used on Windows, none one Mac OS X
 #
 # The mingw cross compile depends on the MXE cross-build tools. Please
@@ -46,13 +45,12 @@ lf2crlf()
 
 printUsage()
 {
-  echo "Usage: $0 -v <versionstring> -d <versiondate> [mingw32|mingw64] [shared] [snapshot]"
+  echo "Usage: $0 -v <versionstring> [mingw64] [shared] [snapshot]"
   echo
-  echo "  -d <versiondate>: YYYY.MM.DD format; defaults to today\'s date"
-  echo "  -v <versionstring>: YYYY.MM format; defaults to <versiondate>"
-  echo "  mingw32|mingw64: Override \$OSTYPE"
-  echo "  shared:          Use shared libraries for mingw build"
-  echo "  snapshot:        Build a development snapshot (-DSNAPSHOT=ON -DEXPERIMENTAL=ON)"
+  echo "  -v <versionstring>: YYYY.MM[.DD][-patch][.build_id] format; defaults to YYYY.MM.DD"
+  echo "  mingw64:   Override \$OSTYPE"
+  echo "  shared:    Use shared libraries for mingw build"
+  echo "  snapshot:  Build a development snapshot (-DSNAPSHOT=ON -DEXPERIMENTAL=ON)"
   echo
   echo "  Example: $0 -v 2021.01"
 }
@@ -63,7 +61,11 @@ if [ ! -f $OPENSCADDIR/src/openscad.cc ]; then
   exit 1
 fi
 
-CMAKE_CONFIG=
+CMAKE_CONFIG="-DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=OFF"
+
+if [ -n "${USE_SCCACHE}" ] && command -v sccache >/dev/null 2>&1; then
+  CMAKE_CONFIG="$CMAKE_CONFIG -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
+fi
 
 if [[ "$OSTYPE" =~ "darwin" ]]; then
   OS=MACOSX
@@ -125,35 +127,46 @@ case $OS in
         ZIP="zip"
         ZIPARGS="-r -q"
         echo Mingw-cross build using ARCH=$ARCH MXELIBTYPE=$MXELIBTYPE
-        CMAKE_CONFIG="$CMAKE_CONFIG -GNinja -DMXECROSS=ON -DALLOW_BUNDLED_HIDAPI=ON -DPACKAGE_ARCH=x86-$ARCH"
+
+        # Build complete package filename components
+        # Format: PythonSCAD-qt6-0.6.0-28-g89c44cac7-windows-x86-64
+        QT_PART=""
+        if [ -n "$QT_VERSION" ]; then
+          QT_PART="$QT_VERSION-"
+          echo "Building with Qt version: $QT_VERSION"
+        fi
+
+        # PACKAGE_ARCH will be used in CPACK_SYSTEM_NAME
+        PACKAGE_ARCH="windows-x86-$ARCH"
+
+        CMAKE_CONFIG="$CMAKE_CONFIG -GNinja -DMXECROSS=ON -DALLOW_BUNDLED_HIDAPI=ON -DPACKAGE_ARCH=$PACKAGE_ARCH -DQT_VERSION_STR=$QT_PART"
     ;;
 esac
 
 if [ "`echo $* | grep snapshot`" ]; then
   CMAKE_CONFIG="$CMAKE_CONFIG -DSNAPSHOT=ON -DEXPERIMENTAL=ON"
-  BUILD_TYPE="Release"
-  OPENSCAD_COMMIT=`git log -1 --pretty=format:"%h"`
-else
-  BUILD_TYPE="Release"
 fi
 
-while getopts 'v:d:' c
+while getopts 'v:c:' c
 do
   case $c in
     v) VERSION=$OPTARG;;
-    d) VERSIONDATE=$OPTARG;;
+    c) COMMIT=$OPTARG;;
   esac
 done
 
-if test -z "$VERSIONDATE"; then
-    VERSIONDATE=`date "+%Y.%m.%d"`
-fi
+. ./scripts/establish_version.sh
+
 if test -z "$VERSION"; then
-    VERSION=$VERSIONDATE
+    VERSION=$(openscad_version)
 fi
 
-export VERSIONDATE
+if test -z "$COMMIT"; then
+    COMMIT=$(openscad_commit)
+fi
+
 export VERSION
+export COMMIT
 
 if [ $FAKEMAKE ]; then
   echo 'fake make on:' $FAKEMAKE
@@ -170,11 +183,7 @@ case $OS in
     ;;
 esac
 
-echo "Checking pre-requisites..."
-
-git submodule update --init --recursive
-
-echo "Building openscad-$VERSION ($VERSIONDATE)"
+echo "Building openscad-$VERSION"
 echo "  CMake args: $CMAKE_CONFIG"
 echo "  DEPLOYDIR: " $DEPLOYDIR
 
@@ -185,20 +194,18 @@ fi
 echo "  NUMCPU: $NUMCPU"
 
 cd $DEPLOYDIR
-CMAKE_CONFIG="${CMAKE_CONFIG}\
- -DCMAKE_BUILD_TYPE=${BUILD_TYPE}\
- -DOPENSCAD_VERSION=${VERSION}\
- -DEXPERIMENTAL=ON\
- -DENABLE_TBB=OFF\
- -DENABLE_PYTHON=ON\
- -DENABLE_LIBFIVE=OFF\
- -DENABLE_GAMEPAD=OFF\
- -DOPENSCAD_COMMIT=${OPENSCAD_COMMIT}"
+# Note: OPENSCAD_VERSION and OPENSCAD_COMMIT are now auto-detected by CMake via openscad_version.cmake
+CMAKE_CONFIG="${CMAKE_CONFIG} \
+ -DEXPERIMENTAL=ON \
+ -DENABLE_TBB=OFF \
+ -DENABLE_PYTHON=ON \
+ -DENABLE_LIBFIVE=OFF \
+ -DENABLE_GAMEPAD=OFF"
 
 echo "Running CMake from ${DEPLOYDIR}"
 echo "${CMAKE}  ${CMAKE_CONFIG}" ..
 
-"${CMAKE}"  ${CMAKE_CONFIG}  .. 
+"${CMAKE}"  ${CMAKE_CONFIG}  ..
 cd $OPENSCADDIR
 
 echo "Building Project..."
@@ -286,7 +293,7 @@ if [ -n $FONTDIR ]; then
   cp -a fonts/10-liberation.conf $FONTDIR
   cp -a fonts/Liberation-2.00.1 $FONTDIR
   case $OS in
-    MACOSX) 
+    MACOSX)
       cp -a fonts/05-osx-fonts.conf $FONTDIR
       cp -a fonts-osx/* $FONTDIR
       ;;
@@ -333,7 +340,7 @@ fi
 case $OS in
     MACOSX)
         cd $DEPLOYDIR
-        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSIONDATE" OpenSCAD.app/Contents/Info.plist
+        /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" OpenSCAD.app/Contents/Info.plist
         macdeployqt OpenSCAD.app -no-strip
         echo "Binary created: OpenSCAD.app"
         cd $OPENSCADDIR

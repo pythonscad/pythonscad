@@ -124,7 +124,7 @@ supported 3D model formats.
 
 ## Python
 
-One obvious difference is that you can us Python when programming in
+One obvious difference is that you can use Python when programming in
 PythonSCAD. While part of the Python support has been merged to
 OpenSCAD already, not all of it is in there yet, so you probably will
 have a better experience when using PythonSCAD for writing models in
@@ -205,11 +205,13 @@ Follow the instructions for the platform you're compiling on below.
 * [libzip (0.10.1 -> )](https://libzip.org/)
 * [Bison (2.4 -> )](https://www.gnu.org/software/bison/)
 * [Flex (2.5.35 -> )](http://flex.sourceforge.net/)
-* [pkg-config (0.26 ->
-  )](https://www.freedesktop.org/wiki/Software/pkg-config/)
-* [double-conversion (2.0.1 ->
-  )](https://github.com/google/double-conversion/)
-* [python (3.8 -> )](https://github.com/python/cpython/)
+* [pkg-config (0.26 -> )](https://www.freedesktop.org/wiki/Software/pkg-config/)
+* [double-conversion (2.0.1 -> )](https://github.com/google/double-conversion/)
+
+For the test suite, additional requirements are:
+* Python3 (3.8 -> )
+* [Ghostscript (10.x ->)](https://www.ghostscript.com/index.html)
+* [Catch2 (3.0 ->)](https://github.com/catchorg/Catch2)
 
 ### Getting the source code
 
@@ -284,7 +286,17 @@ script to help you:
 
 Take care that you don't have old local copies anywhere (`/usr/local/`).
 If all dependencies are present and of a high enough version, skip ahead
-to the Compilation instructions.
+to the Compilation instructions. These are as simple as:
+
+
+```shell
+mkdir build
+cd build
+cmake ..
+make
+make test
+sudo make install
+```
 
 ### Building for Linux/BSD on systems with older or missing dependencies
 
@@ -361,7 +373,7 @@ For a 32-bit Windows cross-build, replace 64 with 32 in the above instructions.
 
 We support building OpenSCAD headless for WebAssembly w/ Emscripten, using a premade Docker image built in [openscad/openscad-wasm](https://github.com/openscad/openscad-wasm) (which also has usage examples)
 
-#### Browser
+#### Browser
 
 The following command creates `build-web/openscad.wasm` & `build-web/openscad.js`:
 

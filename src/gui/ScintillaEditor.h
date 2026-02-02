@@ -20,7 +20,6 @@
 #include <Qsci/qscilexerpython.h>
 
 #include "gui/Editor.h"
-#include "gui/MainWindow.h"
 #include "gui/ScadApi.h"
 
 // don't need the full definition, because it confuses Qt
@@ -55,7 +54,7 @@ class ScintillaEditor : public EditorInterface
   using colorscheme_set_t = std::multimap<int, std::shared_ptr<EditorColorScheme>, std::less<>>;
 
 public:
-  ScintillaEditor(QWidget *parent, MainWindow& mainWindow);
+  ScintillaEditor(QWidget *parent);
   QsciScintilla *qsci;
   QString toPlainText() override;
   void initMargin();
@@ -64,7 +63,8 @@ public:
   QString selectedText() override;
   int updateFindIndicators(const QString& findText, bool visibility = true) override;
   bool find(const QString&, bool findNext = false, bool findBackwards = false) override;
-  void replaceSelectedText(const QString&) override;
+  bool replaceSelectedText(const QString&) override;
+  void insertOrReplaceText(const QString&) override;
   void replaceAll(const QString& findText, const QString& replaceText) override;
   QStringList colorSchemes() override;
   bool canUndo() override;
@@ -155,9 +155,7 @@ private slots:
   void fireModificationChanged();
   void onIndicatorClicked(int line, int col, Qt::KeyboardModifiers state);
   void onIndicatorReleased(int line, int col, Qt::KeyboardModifiers state);
-#ifdef ENABLE_PYTHON
-  void onPythonActiveChanged(bool pythonActive);
-#endif
+  void onLanguageChanged(int lang) override;
 signals:
   void escapePressed(void);
 
@@ -195,5 +193,4 @@ private:
   QStringList userList;
   QMap<QString, ScadTemplate> templateMap;
   static const QString cursorPlaceHolder;
-  MainWindow& mainWindow;
 };

@@ -5,12 +5,18 @@
 #include <Python.h>
 #include "pydata.h"
 
+#include <filesystem>
+namespace fs = std::filesystem;
+
 #include "Assignment.h"
 #include "ModuleInstantiation.h"
 #include "BuiltinContext.h"
 #include "Expression.h"
 #include "pyopenscad.h"
 #include "genlang/genlang.h"
+#include "core/Parameters.h"
+#include "core/Arguments.h"
+#include "core/function.h"
 
 #include "../src/geometry/GeometryEvaluator.h"
 #include "../src/core/primitives.h"
@@ -68,6 +74,36 @@ void PyDataObjectToModule(PyObject *obj, std::string& modulepath, std::string& m
   }
 }
 
+PyObject *PyDataObjectFromFunction(PyTypeObject *type, std::string functionpath,
+                                   std::string functionname)
+{
+  std::string result = functionpath + "|" + functionname;
+  PyDataObject *res;
+  res = (PyDataObject *)type->tp_alloc(type, 0);
+  if (res != NULL) {
+    res->data_type = DATA_TYPE_SCADFUNCTION;
+    res->data = (void *)strdup(result.c_str());  // TODO memory leak!
+    Py_XINCREF(res);
+    return (PyObject *)res;
+  }
+  return Py_None;
+}
+
+void PyDataObjectToFunction(PyObject *obj, std::string& functionpath, std::string& functionname)
+{
+  if (obj != NULL && obj->ob_type == &PyDataType) {
+    PyDataObject *dataobj = (PyDataObject *)obj;
+    if (dataobj->data_type == DATA_TYPE_SCADFUNCTION) {
+      std::string result((char *)dataobj->data);
+      int sep = result.find("|");
+      if (sep >= 0) {
+        functionpath = result.substr(0, sep);
+        functionname = result.substr(sep + 1);
+      }
+    }
+  }
+}
+
 PyObject *PyDataObjectFromValue(PyTypeObject *type, double value)
 {
   PyDataObject *res;
@@ -100,9 +136,10 @@ PyObject *python_data_str(PyObject *self)
   std::ostringstream stream;
   PyDataObject *data = (PyDataObject *)self;
   switch (data->data_type) {
-  case DATA_TYPE_LIBFIVE:     stream << "Libfive Tree"; break;
-  case DATA_TYPE_SCADMODULE:  stream << "SCAD Class Module"; break;
-  case DATA_TYPE_MARKEDVALUE: stream << "Marked Value (" << PyDataObjectToValue(self) << ")"; break;
+  case DATA_TYPE_LIBFIVE:      stream << "Libfive Tree"; break;
+  case DATA_TYPE_SCADMODULE:   stream << "SCAD Class Module"; break;
+  case DATA_TYPE_SCADFUNCTION: stream << "SCAD Class Function"; break;
+  case DATA_TYPE_MARKEDVALUE:  stream << "Marked Value (" << PyDataObjectToValue(self) << ")"; break;
   }
   return PyUnicode_FromStringAndSize(stream.str().c_str(), stream.str().size());
 }
@@ -170,7 +207,10 @@ std::vector<libfive::Tree *> PyDataObjectToTree(PyObject *obj)
 }
 
 #endif
-static int PyDataInit(PyDataObject *self, PyObject *args, PyObject *kwds) { return 0; }
+static int PyDataInit(PyDataObject *self, PyObject *args, PyObject *kwds)
+{
+  return 0;
+}
 
 #ifdef ENABLE_LIBFIVE
 PyObject *python_lv_void_int(PyObject *self, PyObject *args, PyObject *kwargs, libfive::Tree *t)
@@ -413,14 +453,35 @@ PyObject *python_lv_divide(PyObject *arg1, PyObject *arg2)
 {
   return python_lv_binop_int(arg1, arg2, libfive::Opcode::OP_DIV);
 }
-PyObject *python_lv_negate(PyObject *arg) { return python_lv_unop_int(arg, libfive::Opcode::OP_NEG); }
+PyObject *python_lv_negate(PyObject *arg)
+{
+  return python_lv_unop_int(arg, libfive::Opcode::OP_NEG);
+}
 #else
-PyObject *python_lv_add(PyObject *arg1, PyObject *arg2) { return Py_None; }
-PyObject *python_lv_substract(PyObject *arg1, PyObject *arg2) { return Py_None; }
-PyObject *python_lv_multiply(PyObject *arg1, PyObject *arg2) { return Py_None; }
-PyObject *python_lv_remainder(PyObject *arg1, PyObject *arg2) { return Py_None; }
-PyObject *python_lv_divide(PyObject *arg1, PyObject *arg2) { return Py_None; }
-PyObject *python_lv_negate(PyObject *arg) { return Py_None; }
+PyObject *python_lv_add(PyObject *arg1, PyObject *arg2)
+{
+  return Py_None;
+}
+PyObject *python_lv_substract(PyObject *arg1, PyObject *arg2)
+{
+  return Py_None;
+}
+PyObject *python_lv_multiply(PyObject *arg1, PyObject *arg2)
+{
+  return Py_None;
+}
+PyObject *python_lv_remainder(PyObject *arg1, PyObject *arg2)
+{
+  return Py_None;
+}
+PyObject *python_lv_divide(PyObject *arg1, PyObject *arg2)
+{
+  return Py_None;
+}
+PyObject *python_lv_negate(PyObject *arg)
+{
+  return Py_None;
+}
 #endif
 
 Value python_convertresult(PyObject *arg, int& error);
@@ -428,10 +489,10 @@ Value python_convertresult(PyObject *arg, int& error);
 extern bool parse(SourceFile *& file, const std::string& text, const std::string& filename,
                   const std::string& mainFile, int debug);
 
-PyObject *PyDataObject_call(PyObject *self, PyObject *args, PyObject *kwargs)
+PyObject *PyDataObject_call_module(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   if (pythonDryRun) {
-    DECLARE_INSTANCE
+    DECLARE_INSTANCE();
     auto empty = std::make_shared<CubeNode>(instance);
     return PyOpenSCADObjectFromNode(&PyOpenSCADType, empty);
   }
@@ -528,6 +589,107 @@ PyObject *PyDataObject_call(PyObject *self, PyObject *args, PyObject *kwargs)
   nodes_hold.push_back(resultnode);  // dirty hacks so resultnode does not go out of context
   resultnode = resultnode->clone();  // use own ModuleInstatiation
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, resultnode);
+}
+
+PyObject *PyDataObject_call_function(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  if (pythonDryRun) {
+    return Py_None;
+  }
+
+  std::string functionpath, functionname;
+  PyDataObjectToFunction(self, functionpath, functionname);
+
+  // Convert Python args/kwargs to OpenSCAD AssignmentList
+  AssignmentList pargs;
+  int error;
+
+  // Handle positional args
+  for (int i = 0; i < PyTuple_Size(args); i++) {
+    PyObject *arg = PyTuple_GetItem(args, i);
+    Value val = python_convertresult(arg, error);
+    std::shared_ptr<Literal> lit = std::make_shared<Literal>(std::move(val), Location::NONE);
+    std::shared_ptr<Assignment> ass = std::make_shared<Assignment>(std::string(""), lit);
+    pargs.push_back(ass);
+  }
+
+  // Handle keyword args
+  if (kwargs != nullptr) {
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(kwargs, &pos, &key, &value)) {
+      PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
+      std::string value_str = PyBytes_AS_STRING(value1);
+      Value val = python_convertresult(value, error);
+      std::shared_ptr<Literal> lit = std::make_shared<Literal>(std::move(val), Location::NONE);
+      std::shared_ptr<Assignment> ass = std::make_shared<Assignment>(value_str, lit);
+      pargs.push_back(ass);
+    }
+  }
+
+  // Parse the file to get function definition
+  std::ostringstream stream;
+  stream << "include <" << functionpath << ">";
+
+  // Use the function's file path as the source file for proper Location tracking
+  fs::path funcFilePath(functionpath);
+  std::string parentPath = funcFilePath.parent_path().string();
+
+  SourceFile *source;
+  if (!parse(source, stream.str(), parentPath, parentPath, false)) {
+    PyErr_SetString(PyExc_TypeError, "Error parsing SCAD file for function");
+    return Py_None;
+  }
+  source->handleDependencies(true);
+
+  // Create evaluation context with proper document path
+  EvaluationSession session{parentPath};
+  ContextHandle<BuiltinContext> builtin_context{Context::create<BuiltinContext>(&session)};
+  std::shared_ptr<const FileContext> file_context;
+  source->instantiate(*builtin_context, &file_context);
+
+  // Find the function in the scope
+  auto func_it = source->scope->functions.find(functionname);
+  if (func_it == source->scope->functions.end()) {
+    PyErr_SetString(PyExc_TypeError, "Function not found in SCAD file");
+    return Py_None;
+  }
+
+  std::shared_ptr<UserFunction> userfunc = func_it->second;
+
+  // Create body context from file context
+  ContextHandle<Context> body_context{Context::create<Context>(file_context)};
+  // Apply config variables ($-prefixed) from file_context so they're available during function
+  // evaluation
+  body_context->apply_config_variables(*file_context);
+
+  // Parse arguments against function parameters
+  Arguments arguments{pargs, *builtin_context};
+  Parameters parameters =
+    Parameters::parse(std::move(arguments), Location::NONE, userfunc->parameters, file_context);
+  body_context->apply_variables(std::move(parameters).to_context_frame());
+
+  // Evaluate function expression
+  Value result_val = userfunc->expr->evaluate(*body_context);
+
+  // Convert OpenSCAD Value to Python
+  PyObject *result = python_fromopenscad(result_val);
+
+  return result;
+}
+
+PyObject *PyDataObject_call(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  PyDataObject *dataobj = (PyDataObject *)self;
+
+  if (dataobj->data_type == DATA_TYPE_SCADMODULE) {
+    return PyDataObject_call_module(self, args, kwargs);
+  } else if (dataobj->data_type == DATA_TYPE_SCADFUNCTION) {
+    return PyDataObject_call_function(self, args, kwargs);
+  }
+
+  PyErr_SetString(PyExc_TypeError, "PyDataObject is not callable");
+  return Py_None;
 }
 
 PyNumberMethods PyDataNumbers = {
@@ -635,4 +797,7 @@ PyMODINIT_FUNC PyInit_PyData(void)
   return m;
 }
 
-PyObject *PyInit_data(void) { return PyModule_Create(&DataModule); }
+PyObject *PyInit_data(void)
+{
+  return PyModule_Create(&DataModule);
+}

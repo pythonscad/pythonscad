@@ -1,0 +1,95 @@
+name: Windows(msys2) Experimental Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        qt: [ qt6 ]
+    runs-on: windows-latest
+    name: windows-latest ${{ matrix.qt }}
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Fetch tags for version detection
+        shell: bash
+        run: |
+          git fetch --unshallow --tags || git fetch --tags
+          git describe --tags --always --dirty
+      - name: Setup (detached) tmate session if enabled
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 5
+        with:
+          detached: true
+      - name: Calculate PACBOY_PACKAGES
+        shell: bash
+        run: |
+          pwd
+          ./scripts/msys2-install-dependencies.sh ${{ matrix.qt }}
+      - name: Setup MSYS2 Environment
+        uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: UCRT64
+          update: true
+          install: libxml2
+          pacboy: ${{ env.PACBOY_PACKAGES }}
+      - name: Detect Python version
+        id: detect-python
+        run: |
+          # Get the Python version installed by MSYS2
+          PYTHON_VERSION=$(python --version | cut -d' ' -f2 | cut -d'.' -f1,2)
+          echo "Python version detected: $PYTHON_VERSION"
+          echo "PYTHON_VERSION=$PYTHON_VERSION" >> $GITHUB_ENV
+
+          # Get the full Python version for embed downloads
+          PYTHON_FULL_VERSION=$(python --version | cut -d' ' -f2)
+          echo "Full Python version: $PYTHON_FULL_VERSION"
+          echo "PYTHON_FULL_VERSION=$PYTHON_FULL_VERSION" >> $GITHUB_ENV
+      - name: Install Mesa
+        uses: ssciwr/setup-mesa-dist-win@v2
+        with:
+          version: '22.1.7'
+          build-type: 'release-mingw'
+      - name: Build OpenSCAD
+        run: |
+          mkdir build && cd build
+          cmake .. -G"Ninja" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_QT6=${{ matrix.qt == 'qt6' && 'ON' || 'OFF' }}
+          cmake --build . -j4
+          cmake --install . --prefix=.
+      - name: Run Test Suite
+        run: |
+          cd build
+          ctest -j4
+
+      - name: Upload Test Result Report
+        uses: actions/upload-artifact@v6
+        if: ${{ always() }}
+        with:
+          name: Test Result Report (Windows ${{ matrix.qt }})
+          path: |
+            build/Testing/Temporary/*_report.html
+            build/Testing/Temporary/LastTest.log
+
+      - name: Setup (detached) tmate session if enabled
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}

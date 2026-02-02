@@ -115,16 +115,27 @@ EditorColorScheme::EditorColorScheme(const fs::path& path) : path(path)
   }
 }
 
-bool EditorColorScheme::valid() const { return !_name.isEmpty(); }
+bool EditorColorScheme::valid() const
+{
+  return !_name.isEmpty();
+}
 
-const QString& EditorColorScheme::name() const { return _name; }
+const QString& EditorColorScheme::name() const
+{
+  return _name;
+}
 
-int EditorColorScheme::index() const { return _index; }
+int EditorColorScheme::index() const
+{
+  return _index;
+}
 
-const boost::property_tree::ptree& EditorColorScheme::propertyTree() const { return pt; }
+const boost::property_tree::ptree& EditorColorScheme::propertyTree() const
+{
+  return pt;
+}
 
-ScintillaEditor::ScintillaEditor(QWidget *parent, MainWindow& mainWindow)
-  : EditorInterface(parent), mainWindow(mainWindow)
+ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
 {
   api = nullptr;
   lexer = nullptr;
@@ -237,6 +248,7 @@ ScintillaEditor::ScintillaEditor(QWidget *parent, MainWindow& mainWindow)
 #else
   setLexer(new ScadLexer(this));
 #endif
+  recomputeLanguageActive();
 
   initMargin();
 
@@ -263,16 +275,17 @@ ScintillaEditor::ScintillaEditor(QWidget *parent, MainWindow& mainWindow)
 
   // Disabling buffered drawing resolves non-integer HiDPI scaling.
   qsci->SendScintilla(QsciScintillaBase::SCI_SETBUFFEREDDRAW, false);
-
-#ifdef ENABLE_PYTHON
-  connect(&this->mainWindow, &MainWindow::pythonActiveChanged, this,
-          &ScintillaEditor::onPythonActiveChanged);
-#endif
 }
 
-QPoint ScintillaEditor::mapToGlobal(const QPoint& pos) { return qsci->mapToGlobal(pos); }
+QPoint ScintillaEditor::mapToGlobal(const QPoint& pos)
+{
+  return qsci->mapToGlobal(pos);
+}
 
-QMenu *ScintillaEditor::createStandardContextMenu() { return qsci->createStandardContextMenu(); }
+QMenu *ScintillaEditor::createStandardContextMenu()
+{
+  return qsci->createStandardContextMenu();
+}
 
 void ScintillaEditor::addTemplate()
 {
@@ -309,9 +322,15 @@ void ScintillaEditor::addTemplate(const fs::path& path)
   }
 }
 
-void ScintillaEditor::displayTemplates() { qsci->showUserList(1, userList); }
+void ScintillaEditor::displayTemplates()
+{
+  qsci->showUserList(1, userList);
+}
 
-void ScintillaEditor::foldUnfold() { qsci->foldAll(); }
+void ScintillaEditor::foldUnfold()
+{
+  qsci->foldAll();
+}
 
 /**
  * Apply the settings that are changeable in the preferences. This is also
@@ -378,7 +397,10 @@ void ScintillaEditor::setupAutoComplete(const bool forceOff)
   qsci->setAutoCompletionThreshold(val <= 0 ? 1 : val);
 }
 
-void ScintillaEditor::fireModificationChanged() { emit modificationChanged(this); }
+void ScintillaEditor::fireModificationChanged()
+{
+  emit modificationChanged(this);
+}
 
 void ScintillaEditor::setPlainText(const QString& text)
 {
@@ -386,7 +408,10 @@ void ScintillaEditor::setPlainText(const QString& text)
   setContentModified(false);
 }
 
-QString ScintillaEditor::toPlainText() { return qsci->text(); }
+QString ScintillaEditor::toPlainText()
+{
+  return qsci->text();
+}
 
 void ScintillaEditor::setContentModified(bool modified)
 {
@@ -395,7 +420,10 @@ void ScintillaEditor::setContentModified(bool modified)
   qsci->setModified(modified);
 }
 
-bool ScintillaEditor::isContentModified() { return qsci->isModified(); }
+bool ScintillaEditor::isContentModified()
+{
+  return qsci->isModified();
+}
 
 void ScintillaEditor::highlightError(int error_pos)
 {
@@ -811,7 +839,10 @@ QStringList ScintillaEditor::colorSchemes()
   return colorSchemes;
 }
 
-bool ScintillaEditor::canUndo() { return qsci->isUndoAvailable(); }
+bool ScintillaEditor::canUndo()
+{
+  return qsci->isUndoAvailable();
+}
 
 void ScintillaEditor::setHighlightScheme(const QString& name)
 {
@@ -826,7 +857,10 @@ void ScintillaEditor::setHighlightScheme(const QString& name)
   noColor();
 }
 
-void ScintillaEditor::insert(const QString& text) { qsci->insert(text); }
+void ScintillaEditor::insert(const QString& text)
+{
+  qsci->insert(text);
+}
 
 void ScintillaEditor::setText(const QString& text)
 {
@@ -834,19 +868,40 @@ void ScintillaEditor::setText(const QString& text)
   qsci->replaceSelectedText(text);
 }
 
-void ScintillaEditor::undo() { qsci->undo(); }
+void ScintillaEditor::undo()
+{
+  qsci->undo();
+}
 
-void ScintillaEditor::redo() { qsci->redo(); }
+void ScintillaEditor::redo()
+{
+  qsci->redo();
+}
 
-void ScintillaEditor::cut() { qsci->cut(); }
+void ScintillaEditor::cut()
+{
+  qsci->cut();
+}
 
-void ScintillaEditor::copy() { qsci->copy(); }
+void ScintillaEditor::copy()
+{
+  qsci->copy();
+}
 
-void ScintillaEditor::paste() { qsci->paste(); }
+void ScintillaEditor::paste()
+{
+  qsci->paste();
+}
 
-void ScintillaEditor::zoomIn() { qsci->zoomIn(); }
+void ScintillaEditor::zoomIn()
+{
+  qsci->zoomIn();
+}
 
-void ScintillaEditor::zoomOut() { qsci->zoomOut(); }
+void ScintillaEditor::zoomOut()
+{
+  qsci->zoomOut();
+}
 
 void ScintillaEditor::initFont(const QString& fontName, uint size)
 {
@@ -883,8 +938,8 @@ int ScintillaEditor::updateFindIndicators(const QString& findText, bool visibili
   qsci->SendScintilla(QsciScintilla::SCI_SETINDICATORCURRENT, findIndicatorNumber);
   qsci->SendScintilla(qsci->SCI_INDICATORCLEARRANGE, 0, qsci->length());
 
-  const auto txt = qsci->text().toUtf8();
-  const auto findTextUtf8 = findText.toUtf8();
+  const auto txt = qsci->text().toUtf8().toLower();
+  const auto findTextUtf8 = findText.toUtf8().toLower();
   auto pos = txt.indexOf(findTextUtf8);
   auto len = findTextUtf8.length();
   if (visibility && len > 0) {
@@ -915,9 +970,20 @@ bool ScintillaEditor::find(const QString& expr, bool findNext, bool findBackward
   return qsci->findFirst(expr, false, false, false, true, !findBackwards, startline, startindex);
 }
 
-void ScintillaEditor::replaceSelectedText(const QString& newText)
+bool ScintillaEditor::replaceSelectedText(const QString& newText)
 {
-  if ((qsci->selectedText() != newText) && (qsci->hasSelectedText())) qsci->replaceSelectedText(newText);
+  if ((qsci->selectedText() != newText) && (qsci->hasSelectedText())) {
+    qsci->replaceSelectedText(newText);
+    return true;
+  }
+  return false;
+}
+
+void ScintillaEditor::insertOrReplaceText(const QString& newText)
+{
+  if (!replaceSelectedText(newText)) {
+    qsci->insert(newText);
+  }
 }
 
 void ScintillaEditor::replaceAll(const QString& findText, const QString& replaceText)
@@ -1063,7 +1129,10 @@ void ScintillaEditor::uncommentSelection()
   }
 }
 
-QString ScintillaEditor::selectedText() { return qsci->selectedText(); }
+QString ScintillaEditor::selectedText()
+{
+  return qsci->selectedText();
+}
 
 bool ScintillaEditor::eventFilter(QObject *obj, QEvent *e)
 {
@@ -1086,16 +1155,19 @@ bool ScintillaEditor::eventFilter(QObject *obj, QEvent *e)
     }
   }
 
-  bool enableNumberScrollWheel = Settings::Settings::enableNumberScrollWheel.value();
-
-  if (obj == qsci->viewport() && enableNumberScrollWheel) {
+  if (obj == qsci->viewport()) {
     if (e->type() == QEvent::Wheel) {
       auto *wheelEvent = static_cast<QWheelEvent *>(e);
       PRINTDB("%s - modifier: %s",
               (e->type() == QEvent::Wheel ? "Wheel Event" : "") %
                 (wheelEvent->modifiers() & Qt::AltModifier ? "Alt" : "Other Button"));
-      if (handleWheelEventNavigateNumber(wheelEvent)) {
+      bool enableNumberScrollWheel = Settings::Settings::enableNumberScrollWheel.value();
+      if (enableNumberScrollWheel && handleWheelEventNavigateNumber(wheelEvent)) {
         qsci->SendScintilla(QsciScintilla::SCI_SETCARETWIDTH, 1);
+        return true;
+      }
+      bool wheelzoom_enabled = GlobalPreferences::inst()->getValue("editor/ctrlmousewheelzoom").toBool();
+      if ((wheelEvent->modifiers() == Qt::ControlModifier) && !wheelzoom_enabled) {
         return true;
       }
     }
@@ -1552,19 +1624,21 @@ void ScintillaEditor::onIndicatorReleased(int line, int col, Qt::KeyboardModifie
   }
 }
 
-#ifdef ENABLE_PYTHON
-void ScintillaEditor::onPythonActiveChanged(bool pythonActive)
+void ScintillaEditor::onLanguageChanged(int lang)
 {
-  if (pythonActive) {
+#ifdef ENABLE_PYTHON
+  if (language == LANG_PYTHON) {
     this->qsci->setLexer(this->pythonLexer);
   } else {
     this->qsci->setLexer(this->lexer);
   }
+#else
+  this->qsci->setLexer(this->lexer);
+#endif
   this->qsci->update();
   // This is needed otherwise the sidebar with line numbers has the wrong size and bg color
   this->setHighlightScheme(GlobalPreferences::inst()->getValue("editor/syntaxhighlight").toString());
 }
-#endif
 
 void ScintillaEditor::setCursorPosition(int line, int col)
 {

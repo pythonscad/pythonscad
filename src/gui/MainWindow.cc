@@ -117,6 +117,7 @@
 #include "glview/RenderSettings.h"
 #include "gui/AboutDialog.h"
 #include "gui/CGALWorker.h"
+#include "gui/ColorList.h"
 #include "gui/Editor.h"
 #include "gui/Dock.h"
 #include "gui/Measurement.h"
@@ -124,7 +125,6 @@
 #include "gui/ExportPdfDialog.h"
 #include "gui/ExportSvgDialog.h"
 #include "gui/ExternalToolInterface.h"
-#include "gui/FontListDialog.h"
 #include "gui/ImportUtils.h"
 #include "gui/input/InputDriverEvent.h"
 #include "gui/input/InputDriverManager.h"
@@ -204,7 +204,7 @@ static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *st
   return size * nmemb;
 }
 
-int curl_download(std::string url, std::string path)
+int curl_download(const std::string& url, const std::string& path)
 {
   CURLcode status;
   QFile fh((path).c_str());
@@ -252,8 +252,8 @@ namespace {
 
 const int autoReloadPollingPeriodMS = 200;
 const char copyrighttext[] =
-  "<p>Copyright (C) 2009-2025 The OpenSCAD Developers</p>"
-  "<p>Copyright (C) 2024-2025 The PythonSCAD Developers</p>"
+  "<p>Copyright (C) 2009-2026 The OpenSCAD Developers</p>"
+  "<p>Copyright (C) 2024-2026 The PythonSCAD Developers</p>"
   "<p>This program is free software; you can redistribute it and/or modify "
   "it under the terms of the GNU General Public License as published by "
   "the Free Software Foundation; either version 2 of the License, or "
@@ -431,16 +431,19 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   this->addAction(editActionInsertTemplate);
   this->addAction(editActionFoldAll);
 
-  docks = {{editorDock, _("Editor"), "view/hideEditor"},
-           {consoleDock, _("Console"), "view/hideConsole"},
-           {parameterDock, _("Customizer"), "view/hideCustomizer"},
-           {errorLogDock, _("Error-Log"), "view/hideErrorLog"},
-           {animateDock, _("Animate"), "view/hideAnimate"},
-           {fontListDock, _("Font Lists"), "view/hideFontList"},
-           {viewportControlDock, _("Viewport-Control"), "view/hideViewportControl"}};
+  docks = {{editorDock, _("&Editor"), "view/hideEditor"},
+           {consoleDock, _("&Console"), "view/hideConsole"},
+           {parameterDock, _("C&ustomizer"), "view/hideCustomizer"},
+           {errorLogDock, _("Error-&Log"), "view/hideErrorLog"},
+           {animateDock, _("&Animate"), "view/hideAnimate"},
+           {fontListDock, _("&Font List"), "view/hideFontList"},
+           {colorListDock, _("C&olor List"), "view/hideColorList"},
+           {viewportControlDock, _("&Viewport-Control"), "view/hideViewportControl"}};
 
-  this->versionLabel = nullptr;  // must be initialized before calling updateStatusBar()
+  this->versionLabel = nullptr;   // must be initialized before calling updateStatusBar()
+  this->languageLabel = nullptr;  // must be initialized before calling updateLanguageLabel()
   updateStatusBar(nullptr);
+  updateLanguageLabel();
 
   renderCompleteSoundEffect = new QSoundEffect();
   renderCompleteSoundEffect->setSource(QUrl("qrc:/sounds/complete.wav"));
@@ -489,12 +492,14 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   connect(tabManager, &TabManager::editorContentReloaded, this,
           &MainWindow::onTabManagerEditorContentReloaded);
 
+  connect(this->console, &Console::openWindowRequested, this, &MainWindow::showLink);
   connect(GlobalPreferences::inst(), &Preferences::consoleFontChanged, this->console, &Console::setFont);
-  this->console->setFont(GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
-                         GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
+  this->console->setConsoleFont(
+    GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
+    GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
 
   const QString version =
-    QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(openscad_versionnumber));
+    QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(std::string(openscad_versionnumber)));
   const QString weblink = "<a href=\"https://www.pythonscad.org/\">https://www.pythonscad.org/</a><br>";
 
   consoleOutputRaw(version);
@@ -561,8 +566,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   waitAfterReloadTimer->setSingleShot(true);
   waitAfterReloadTimer->setInterval(autoReloadPollingPeriodMS);
   connect(waitAfterReloadTimer, &QTimer::timeout, this, &MainWindow::waitAfterReload);
-  connect(GlobalPreferences::inst(), &Preferences::ExperimentalChanged, this,
-          &MainWindow::changeParameterWidget);
 
   progressThrottle->start();
 
@@ -729,7 +732,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   connect(this->helpActionPythonCheatSheet, &QAction::triggered, this,
           &MainWindow::helpPythonCheatSheet);
   connect(this->helpActionLibraryInfo, &QAction::triggered, this, &MainWindow::helpLibrary);
-  connect(this->helpActionFontInfo, &QAction::triggered, this, &MainWindow::helpFontInfo);
 
   // Checks if the Documentation has been downloaded and hides the Action otherwise
   if (UIUtils::hasOfflineUserManual()) {
@@ -848,7 +850,8 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
     activeEditor->setInitialSizeHint(QSize((5 * this->width() / 11), 100));
     tabifyDockWidget(consoleDock, errorLogDock);
     tabifyDockWidget(errorLogDock, fontListDock);
-    tabifyDockWidget(fontListDock, animateDock);
+    tabifyDockWidget(fontListDock, colorListDock);
+    tabifyDockWidget(colorListDock, animateDock);
     consoleDock->show();
   } else {
 #ifdef Q_OS_WIN
@@ -893,6 +896,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
     menuWindow->addAction(dock->toggleViewAction());
 
     auto dockAction = navigationMenu->addAction(title);
+    dockAction->setShortcut(QKeySequence::mnemonic(title));
     dockAction->setProperty("id", QVariant::fromValue(dock));
     connect(dockAction, &QAction::triggered, this, &MainWindow::onNavigationTriggerContextMenuEntry);
     connect(dockAction, &QAction::hovered, this, &MainWindow::onNavigationHoveredContextMenuEntry);
@@ -934,10 +938,16 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
                    &MainWindow::onAnimateDockVisibilityChanged);
   QObject::connect(fontListDock, &Dock::visibilityChanged, this,
                    &MainWindow::onFontListDockVisibilityChanged);
+  QObject::connect(colorListDock, &Dock::visibilityChanged, this,
+                   &MainWindow::onColorListDockVisibilityChanged);
   QObject::connect(viewportControlDock, &Dock::visibilityChanged, this,
                    &MainWindow::onViewportControlDockVisibilityChanged);
   QObject::connect(parameterDock, &Dock::visibilityChanged, this,
                    &MainWindow::onParametersDockVisibilityChanged);
+
+  // Other dock specific signals
+  QObject::connect(colorListWidget, &ColorList::colorSelected, this,
+                   &MainWindow::onColorListColorSelected);
 
   connect(this->activeEditor, &EditorInterface::escapePressed, this, &MainWindow::measureFinished);
   // display this window and check for OpenGL 2.0 (OpenCSG) support
@@ -1016,9 +1026,15 @@ void MainWindow::setAllMouseViewActions()
                                    Settings::Settings::inputMouseCtrlShiftRightClick.value())));
 }
 
-void MainWindow::onNavigationOpenContextMenu() { navigationMenu->exec(QCursor::pos()); }
+void MainWindow::onNavigationOpenContextMenu()
+{
+  navigationMenu->exec(QCursor::pos());
+}
 
-void MainWindow::onNavigationCloseContextMenu() { rubberBandManager.hide(); }
+void MainWindow::onNavigationCloseContextMenu()
+{
+  rubberBandManager.hide();
+}
 
 void MainWindow::onNavigationTriggerContextMenuEntry()
 {
@@ -1028,8 +1044,8 @@ void MainWindow::onNavigationTriggerContextMenuEntry()
   Dock *dock = action->property("id").value<Dock *>();
   assert(dock != nullptr);
 
-  dock->raise();
   dock->show();
+  dock->raise();
   dock->setFocus();
 
   // Forward the focus on the content of the tabmanager
@@ -1226,6 +1242,7 @@ void MainWindow::dragPointEnd(Vector3d pt)
           std::string arg = sourcecode.substr(parstart - sourcecode_c, parend - parstart);
           // created patched sourcecode
           std::stringstream ss;
+          setlocale(LC_ALL, "C");
           std::string newval = boost::lexical_cast<std::string>(mod.value);
           ss << sourcecode.substr(0, parstart - sourcecode_c) << "\"" << newval << "\""
              << sourcecode.substr(parend - sourcecode_c);
@@ -1272,9 +1289,13 @@ void MainWindow::updateWindowSettings(bool isEditorToolbarVisible, bool isViewTo
   hide3DViewToolbar();
 }
 
-void MainWindow::onAxisChanged(InputEventAxisChanged *) {}
+void MainWindow::onAxisChanged(InputEventAxisChanged *)
+{
+}
 
-void MainWindow::onButtonChanged(InputEventButtonChanged *) {}
+void MainWindow::onButtonChanged(InputEventButtonChanged *)
+{
+}
 
 void MainWindow::onTranslateEvent(InputEventTranslate *event)
 {
@@ -1317,7 +1338,10 @@ void MainWindow::onActionEvent(InputEventAction *event)
   }
 }
 
-void MainWindow::onZoomEvent(InputEventZoom *event) { qglview->zoom(event->zoom, event->relative); }
+void MainWindow::onZoomEvent(InputEventZoom *event)
+{
+  qglview->zoom(event->zoom, event->relative);
+}
 
 void MainWindow::loadViewSettings()
 {
@@ -1375,6 +1399,7 @@ void MainWindow::updateUndockMode(bool undockMode)
     errorLogDock->setFeatures(errorLogDock->features() | QDockWidget::DockWidgetFloatable);
     animateDock->setFeatures(animateDock->features() | QDockWidget::DockWidgetFloatable);
     fontListDock->setFeatures(fontListDock->features() | QDockWidget::DockWidgetFloatable);
+    colorListDock->setFeatures(colorListDock->features() | QDockWidget::DockWidgetFloatable);
     viewportControlDock->setFeatures(viewportControlDock->features() | QDockWidget::DockWidgetFloatable);
   } else {
     if (editorDock->isFloating()) {
@@ -1407,6 +1432,11 @@ void MainWindow::updateUndockMode(bool undockMode)
     }
     fontListDock->setFeatures(fontListDock->features() & ~QDockWidget::DockWidgetFloatable);
 
+    if (colorListDock->isFloating()) {
+      colorListDock->setFloating(false);
+    }
+    colorListDock->setFeatures(colorListDock->features() & ~QDockWidget::DockWidgetFloatable);
+
     if (viewportControlDock->isFloating()) {
       viewportControlDock->setFloating(false);
     }
@@ -1425,6 +1455,9 @@ void MainWindow::updateReorderMode(bool reorderMode)
 
 MainWindow::~MainWindow()
 {
+  // Mark that we're being destroyed so eventFilter won't access freed members
+  isBeingDestroyed = true;
+
   scadApp->windowManager.remove(this);
   if (scadApp->windowManager.getWindows().empty()) {
     // Quit application even in case some other windows like
@@ -1433,7 +1466,10 @@ MainWindow::~MainWindow()
   }
 }
 
-void MainWindow::showProgress() { updateStatusBar(qobject_cast<ProgressWidget *>(sender())); }
+void MainWindow::showProgress()
+{
+  updateStatusBar(qobject_cast<ProgressWidget *>(sender()));
+}
 
 void MainWindow::report_func(const std::shared_ptr<const AbstractNode>&, void *vp, int mark)
 {
@@ -1601,7 +1637,10 @@ void MainWindow::waitAfterReload()
   this->waitAfterReloadTimer->start();
 }
 
-void MainWindow::on_toolButtonCompileResultClose_clicked() { frameCompileResult->hide(); }
+void MainWindow::on_toolButtonCompileResultClose_clicked()
+{
+  frameCompileResult->hide();
+}
 
 void MainWindow::updateCompileResult()
 {
@@ -1726,7 +1765,7 @@ void MainWindow::instantiateRoot()
 
     std::shared_ptr<const FileContext> file_context;
 #ifdef ENABLE_PYTHON
-    if (genlang_result_node != NULL && language != LANG_SCAD)
+    if (genlang_result_node != NULL && currentLanguage != LANG_SCAD)
       this->absoluteRootNode = genlang_result_node;
     else
 #endif
@@ -1906,7 +1945,10 @@ void MainWindow::actionOpen()
   }
 }
 
-void MainWindow::actionNewWindow() { new MainWindow(QStringList()); }
+void MainWindow::actionNewWindow()
+{
+  new MainWindow(QStringList());
+}
 
 void MainWindow::actionOpenWindow()
 {
@@ -1923,8 +1965,7 @@ void MainWindow::actionOpenRecent()
 {
   auto action = qobject_cast<QAction *>(sender());
   tabManager->open(action->data().toString());
-  language = LANG_NONE;  // unknown
-  recomputeLanguageActive();
+  // recomputeLanguageActive(); // should be done in open
 }
 
 void MainWindow::clearRecentFiles()
@@ -2021,7 +2062,7 @@ void MainWindow::saveBackup()
 
   if (!this->tempFile) {
 #ifdef ENABLE_PYTHON
-    const QString suffix = language == LANG_PYTHON ? "py" : "scad";
+    const QString suffix = currentLanguage == LANG_PYTHON ? "py" : "scad";
 #else
     const QString suffix = "scad";
 #endif
@@ -2035,9 +2076,15 @@ void MainWindow::saveBackup()
   return writeBackup(this->tempFile);
 }
 
-void MainWindow::actionSave() { tabManager->save(activeEditor); }
+void MainWindow::actionSave()
+{
+  tabManager->save(activeEditor);
+}
 
-void MainWindow::actionSaveAs() { tabManager->saveAs(activeEditor); }
+void MainWindow::actionSaveAs()
+{
+  tabManager->saveAs(activeEditor);
+}
 
 void MainWindow::actionPythonRevokeTrustedFiles()
 {
@@ -2111,7 +2158,10 @@ void MainWindow::actionPythonSelectVenv()
 #endif  // ifdef ENABLE_PYTHON
 }
 
-void MainWindow::actionSaveACopy() { tabManager->saveACopy(activeEditor); }
+void MainWindow::actionSaveACopy()
+{
+  tabManager->saveACopy(activeEditor);
+}
 
 void MainWindow::actionShowLibraryFolder()
 {
@@ -2235,7 +2285,10 @@ void MainWindow::showFind(bool doFindAndReplace)
   findInputField->selectAll();
 }
 
-void MainWindow::actionShowFind() { showFind(false); }
+void MainWindow::actionShowFind()
+{
+  showFind(false);
+}
 
 void MainWindow::findString(const QString& textToFind)
 {
@@ -2244,7 +2297,10 @@ void MainWindow::findString(const QString& textToFind)
   activeEditor->find(textToFind);
 }
 
-void MainWindow::actionShowFindAndReplace() { showFind(true); }
+void MainWindow::actionShowFindAndReplace()
+{
+  showFind(true);
+}
 
 void MainWindow::actionSelectFind(int type)
 {
@@ -2286,11 +2342,20 @@ void MainWindow::convertTabsToSpaces()
   activeEditor->setText(converted);
 }
 
-void MainWindow::findNext() { activeEditor->find(this->findInputField->text(), true); }
+void MainWindow::findNext()
+{
+  activeEditor->find(this->findInputField->text(), true);
+}
 
-void MainWindow::findPrev() { activeEditor->find(this->findInputField->text(), true, true); }
+void MainWindow::findPrev()
+{
+  activeEditor->find(this->findInputField->text(), true, true);
+}
 
-void MainWindow::useSelectionForFind() { findInputField->setText(activeEditor->selectedText()); }
+void MainWindow::useSelectionForFind()
+{
+  findInputField->setText(activeEditor->selectedText());
+}
 
 void MainWindow::updateFindBuffer(const QString& s)
 {
@@ -2321,6 +2386,16 @@ bool MainWindow::event(QEvent *event)
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+  // Don't process events during destruction - member objects may be partially destroyed
+  if (isBeingDestroyed) {
+    return QMainWindow::eventFilter(obj, event);
+  }
+
+  if (obj == languageLabel && event->type() == QEvent::MouseButtonPress) {
+    showLanguageMenu();
+    return true;
+  }
+
   if (rubberBandManager.isVisible()) {
     if (event->type() == QEvent::KeyRelease) {
       auto keyEvent = static_cast<QKeyEvent *>(event);
@@ -2341,15 +2416,17 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
     return false;
   }
 
-  auto keyEvent = static_cast<QKeyEvent *>(event);
-  if (keyEvent != nullptr && keyEvent->key() == Qt::Key_Escape) {
-    if (this->qglview->measure_state != MEASURE_IDLE) {
-      this->designActionMeasureDistance->setChecked(false);
-      this->designActionMeasureAngle->setChecked(false);
-      this->designActionFindHandle->setChecked(false);
-      this->qglview->handle_mode = false;
-      this->activeMeasurement = nullptr;
-      meas.stopMeasure();
+  if (event->type() == QEvent::KeyPress) {
+    auto keyEvent = static_cast<QKeyEvent *>(event);
+    if (keyEvent->key() == Qt::Key_Escape) {
+      if (this->qglview->measure_state != Measurement::MEASURE_IDLE) {
+        this->designActionMeasureDistance->setChecked(false);
+        this->designActionMeasureAngle->setChecked(false);
+        this->designActionFindHandle->setChecked(false);
+        this->qglview->handle_mode = false;
+        this->activeMeasurement = nullptr;
+        meas.stopMeasure();
+      }
     }
   }
   return QMainWindow::eventFilter(obj, event);
@@ -2397,6 +2474,12 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
   QSettingsCached settings;
   char setting_key[256];
   if (python_trusted) return true;
+  if (Settings::SettingsPython::globalTrustPython.value() == true) return true;
+
+  // Trust unsaved files (empty filepath) - they're created by the user, not loaded from disk
+  if (file.empty()) {
+    return true;
+  }
 
   std::string act_hash, ref_hash;
   snprintf(setting_key, sizeof(setting_key) - 1, "python_hash/%s", file.c_str());
@@ -2413,15 +2496,15 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
     this->trusted_edit_document_name = file;
     return true;
   }
-  if (content.rfind("from openscad import", 0) == 0) {  // 1st character already typed
-    this->trusted_edit_document_name = file;
-    return true;
-  }
+  /*
+    if (content.rfind("from openscad import", 0) == 0) {  // 1st character already typed
+      this->trusted_edit_document_name = file;
+      return true;
+    }
+  */
 
   if (settings.contains(setting_key)) {
-    QString str = settings.value(setting_key).toString();
-    QByteArray ba = str.toLocal8Bit();
-    ref_hash = std::string(ba.data());
+    ref_hash = settings.value(setting_key).toString().toStdString();
   }
 
   if (act_hash == ref_hash) {
@@ -2450,29 +2533,6 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
   return false;
 }
 #endif  // ifdef ENABLE_PYTHON
-void MainWindow::recomputeLanguageActive()
-{
-  auto fnameba = activeEditor->filepath.toLocal8Bit();
-  const char *fname = activeEditor->filepath.isEmpty() ? "" : fnameba;
-
-  int oldLanguage = language;
-  language = LANG_SCAD;
-  if (fname != NULL) {
-#ifdef ENABLE_PYTHON
-    if (boost::algorithm::ends_with(fname, ".py")) {
-      std::string content = std::string(this->lastCompiledDoc.toUtf8().constData());
-      if (trust_python_file(std::string(fname), content)) language = LANG_PYTHON;
-      else LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
-    }
-#endif
-  }
-
-#ifdef ENABLE_PYTHON
-  if (oldLanguage != language) {
-    emit this->pythonActiveChanged(language == LANG_PYTHON);
-  }
-#endif
-}
 
 std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
 {
@@ -2485,11 +2545,10 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
   auto fulltext_py = std::string(this->lastCompiledDoc.toUtf8().constData());
   const char *fname = editor->filepath.isEmpty() ? "" : fnameba.constData();
   SourceFile *sourceFile;
-  recomputeLanguageActive();
 #ifdef ENABLE_PYTHON
-  if (language == LANG_PYTHON) {
-    auto fulltext_py = std::string(this->lastCompiledDoc.toUtf8().constData());
-
+  if (editor->language == LANG_PYTHON && !trust_python_file(std::string(fname), fulltext_py)) {
+    LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
+  } else if (editor->language == LANG_PYTHON) {
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
     initPython(venv, fnameba.constData(), this->animateWidget->getAnimTval());
@@ -2563,8 +2622,6 @@ void MainWindow::parseTopLevelDocument()
   this->rootFile = parseDocument(activeEditor);
   this->parsedFile = this->rootFile;
 }
-
-void MainWindow::changeParameterWidget() { parameterDock->setVisible(true); }
 
 void MainWindow::checkAutoReload()
 {
@@ -2867,13 +2924,13 @@ void MainWindow::leftClick(QPoint mouse)
 
   // Can eventually be replaced with C++20 std::views::reverse
   for (const auto& str : strs) {
-    this->qglview->measure_state = MEASURE_DIRTY;
+    this->qglview->measure_state = Measurement::MEASURE_DIRTY;
     if (str.startsWith("I:")) {
       this->activeEditor->insert(QString(str.toStdString().c_str() + 2));
       this->qglview->selected_obj.clear();
       this->qglview->shown_obj = nullptr;
       this->qglview->update();
-      this->qglview->measure_state = MEASURE_IDLE;
+      this->qglview->measure_state = Measurement::MEASURE_IDLE;
       this->qglview->handle_mode = false;
       return;
     }
@@ -2986,7 +3043,10 @@ void MainWindow::measureFinished()
   if (didSomething) resetMeasurementsState(true, "Click to start measuring");
 }
 
-void MainWindow::clearAllSelectionIndicators() { this->activeEditor->clearAllSelectionIndicators(); }
+void MainWindow::clearAllSelectionIndicators()
+{
+  this->activeEditor->clearAllSelectionIndicators();
+}
 
 void MainWindow::setSelectionIndicatorStatus(EditorInterface *editor, int nodeIndex,
                                              EditorSelectionIndicatorStatus status)
@@ -3089,7 +3149,10 @@ void MainWindow::onHoveredObjectInSelectionMenu()
   setSelection(action->property("id").toInt());
 }
 
-void MainWindow::setLastFocus(QWidget *widget) { this->lastFocus = widget; }
+void MainWindow::setLastFocus(QWidget *widget)
+{
+  this->lastFocus = widget;
+}
 
 /**
  * Switch version label and progress widget. When switching to the progress
@@ -3111,7 +3174,8 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
       this->progresswidget = nullptr;
     }
     if (versionLabel == nullptr) {
-      versionLabel = new QLabel("PythonSCAD " + QString::fromStdString(openscad_displayversionnumber));
+      versionLabel =
+        new QLabel("PythonSCAD " + QString::fromStdString(std::string(openscad_displayversionnumber)));
       sb->addPermanentWidget(this->versionLabel);
     }
   } else {
@@ -3121,6 +3185,74 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
       this->versionLabel = nullptr;
     }
     sb->addPermanentWidget(progressWidget);
+  }
+}
+
+void MainWindow::updateLanguageLabel()
+{
+  auto sb = this->statusBar();
+
+  if (languageLabel == nullptr) {
+    languageLabel = new QLabel();
+    languageLabel->setCursor(Qt::PointingHandCursor);
+    languageLabel->installEventFilter(this);
+    languageLabel->setToolTip(_("Click to change language"));
+    sb->addPermanentWidget(this->languageLabel);
+  }
+
+  QString languageText;
+  switch (currentLanguage) {
+  case LANG_SCAD:   languageText = "OpenSCAD"; break;
+  case LANG_PYTHON: languageText = "Python"; break;
+  case LANG_JS:     languageText = "JavaScript"; break;
+  case LANG_LUA:    languageText = "Lua"; break;
+  default:          languageText = "Unknown"; break;
+  }
+
+  languageLabel->setText(languageText);
+}
+
+void MainWindow::showLanguageMenu()
+{
+  if (!activeEditor) return;
+
+  QMenu menu(this);
+
+  QAction *scadAction = menu.addAction(QIcon(":/icons/filetype-openscad.svg"), "OpenSCAD");
+  scadAction->setCheckable(true);
+  scadAction->setChecked(activeEditor->language == LANG_SCAD);
+
+#ifdef ENABLE_PYTHON
+  QAction *pythonAction = menu.addAction(QIcon(":/icons/filetype-python.svg"), "Python");
+  pythonAction->setCheckable(true);
+  pythonAction->setChecked(activeEditor->language == LANG_PYTHON);
+#endif
+
+  menu.addSeparator();
+
+  QAction *autoDetectAction =
+    menu.addAction(QIcon(":/icons/filetype-autodetect.svg"), _("Auto-detect from file extension"));
+  autoDetectAction->setCheckable(true);
+  autoDetectAction->setChecked(!activeEditor->languageManuallySet);
+
+  QAction *selected = menu.exec(QCursor::pos());
+
+  if (selected == scadAction) {
+    activeEditor->setLanguageManually(LANG_SCAD);
+    onLanguageActiveChanged(LANG_SCAD);
+    tabManager->updateTabIcon(activeEditor);
+  }
+#ifdef ENABLE_PYTHON
+  else if (selected == pythonAction) {
+    activeEditor->setLanguageManually(LANG_PYTHON);
+    onLanguageActiveChanged(LANG_PYTHON);
+    tabManager->updateTabIcon(activeEditor);
+  }
+#endif
+  else if (selected == autoDetectAction) {
+    activeEditor->resetLanguageDetection();
+    onLanguageActiveChanged(activeEditor->language);
+    tabManager->updateTabIcon(activeEditor);
   }
 }
 
@@ -3565,9 +3697,9 @@ void MainWindow::actionExportFileFormat(int fmt)
       return;
     }
 
-    std::ofstream fstream(csg_filename.toLocal8Bit());
+    std::ofstream fstream(std::filesystem::u8path(csg_filename.toStdString()));
     if (!fstream.is_open()) {
-      LOG("Can't open file \"%1$s\" for export", csg_filename.toLocal8Bit().constData());
+      LOG("Can't open file \"%1$s\" for export", csg_filename.toStdString());
     } else {
       fstream << this->tree.getString(*this->rootNode, "\t") << "\n";
       fstream.close();
@@ -3584,14 +3716,14 @@ void MainWindow::actionExportFileFormat(int fmt)
     auto img_filename =
       QFileDialog::getSaveFileName(this, _("Export Image"), exportPath(suffix), _("PNG Files (*.png)"));
     if (!img_filename.isEmpty()) {
-      const bool saveResult = qglview->save(img_filename.toLocal8Bit().constData());
+      const bool saveResult = qglview->save(img_filename.toStdString().c_str());
       if (saveResult) {
         this->exportPaths[suffix] = img_filename;
         setCurrentOutput();
         fileExportedMessage("PNG", img_filename);
         clearCurrentOutput();
       } else {
-        LOG("Can't open file \"%1$s\" for export image", img_filename.toLocal8Bit().constData());
+        LOG("Can't open file \"%1$s\" for export image", img_filename.toStdString());
       }
     }
   } break;
@@ -3720,7 +3852,10 @@ void MainWindow::viewModeShowScaleProportional()
   this->qglview->update();
 }
 
-bool MainWindow::isEmpty() { return activeEditor->toPlainText().isEmpty(); }
+bool MainWindow::isEmpty()
+{
+  return activeEditor->toPlainText().isEmpty();
+}
 
 void MainWindow::editorContentChanged()
 {
@@ -3801,9 +3936,15 @@ void MainWindow::setProjectionType(ProjectionType mode)
   qglview->update();
 }
 
-void MainWindow::viewPerspective() { setProjectionType(ProjectionType::PERSPECTIVE); }
+void MainWindow::viewPerspective()
+{
+  setProjectionType(ProjectionType::PERSPECTIVE);
+}
 
-void MainWindow::viewOrthogonal() { setProjectionType(ProjectionType::ORTHOGONAL); }
+void MainWindow::viewOrthogonal()
+{
+  setProjectionType(ProjectionType::ORTHOGONAL);
+}
 
 void MainWindow::viewTogglePerspective()
 {
@@ -3856,6 +3997,8 @@ void MainWindow::showLink(const QString& link)
     consoleDock->show();
   } else if (link == "#errorlog") {
     errorLogDock->show();
+  } else if (link == "#colorlist") {
+    colorListDock->show();
   }
 }
 
@@ -3914,6 +4057,14 @@ void MainWindow::onFontListDockVisibilityChanged(bool isVisible)
   }
 }
 
+void MainWindow::onColorListDockVisibilityChanged(bool isVisible)
+{
+  if (isVisible) {
+    colorListWidget->setFocus();
+    colorListDock->raise();
+  }
+}
+
 void MainWindow::onViewportControlDockVisibilityChanged(bool isVisible)
 {
   if (isVisible) {
@@ -3928,6 +4079,11 @@ void MainWindow::onParametersDockVisibilityChanged(bool isVisible)
     parameterDock->raise();
     activeEditor->parameterWidget->scrollArea->setFocus();
   }
+}
+
+void MainWindow::onColorListColorSelected(const QString& selectedColor)
+{
+  activeEditor->insertOrReplaceText(selectedColor);
 }
 
 // Use the sender's to detect if we are moving forward/backward in docks
@@ -4004,9 +4160,15 @@ void MainWindow::onWindowShortcutExport3DActivated()
   }
 }
 
-void MainWindow::on_editActionInsertTemplate_triggered() { activeEditor->displayTemplates(); }
+void MainWindow::on_editActionInsertTemplate_triggered()
+{
+  activeEditor->displayTemplates();
+}
 
-void MainWindow::on_editActionFoldAll_triggered() { activeEditor->foldUnfold(); }
+void MainWindow::on_editActionFoldAll_triggered()
+{
+  activeEditor->foldUnfold();
+}
 
 QString MainWindow::getCurrentFileName() const
 {
@@ -4081,6 +4243,7 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   errorLogDock->setNameSuffix(name);
   animateDock->setNameSuffix(name);
   fontListDock->setNameSuffix(name);
+  colorListDock->setNameSuffix(name);
   viewportControlDock->setNameSuffix(name);
 
   // If there is no renderedEditor we request for a new preview if the
@@ -4178,17 +4341,35 @@ void MainWindow::helpAbout()
   dialog->deleteLater();
 }
 
-void MainWindow::helpHomepage() { UIUtils::openHomepageURL(); }
+void MainWindow::helpHomepage()
+{
+  UIUtils::openHomepageURL();
+}
 
-void MainWindow::helpManual() { UIUtils::openUserManualURL(); }
+void MainWindow::helpManual()
+{
+  UIUtils::openUserManualURL();
+}
 
-void MainWindow::helpOfflineManual() { UIUtils::openOfflineUserManual(); }
+void MainWindow::helpOfflineManual()
+{
+  UIUtils::openOfflineUserManual();
+}
 
-void MainWindow::helpCheatSheet() { UIUtils::openCheatSheetURL(); }
+void MainWindow::helpCheatSheet()
+{
+  UIUtils::openCheatSheetURL();
+}
 
-void MainWindow::helpPythonCheatSheet() { UIUtils::openPythonCheatSheetURL(); }
+void MainWindow::helpPythonCheatSheet()
+{
+  UIUtils::openPythonCheatSheetURL();
+}
 
-void MainWindow::helpOfflineCheatSheet() { UIUtils::openOfflineCheatSheet(); }
+void MainWindow::helpOfflineCheatSheet()
+{
+  UIUtils::openOfflineCheatSheet();
+}
 
 void MainWindow::helpLibrary()
 {
@@ -4198,16 +4379,6 @@ void MainWindow::helpLibrary()
     this->libraryInfoDialog = dialog;
   }
   this->libraryInfoDialog->show();
-}
-
-void MainWindow::helpFontInfo()
-{
-  if (!this->fontListDialog) {
-    auto dialog = new FontListDialog();
-    this->fontListDialog = dialog;
-  }
-  this->fontListDialog->updateFontList();
-  this->fontListDialog->show();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -4296,7 +4467,10 @@ void MainWindow::errorLogOutput(const Message& log_msg, void *userdata)
   QMetaObject::invokeMethod(thisp, "errorLogOutput", Q_ARG(Message, log_msg));
 }
 
-void MainWindow::errorLogOutput(const Message& log_msg) { this->errorLogWidget->toErrorLog(log_msg); }
+void MainWindow::errorLogOutput(const Message& log_msg)
+{
+  this->errorLogWidget->toErrorLog(log_msg);
+}
 
 void MainWindow::setCurrentOutput()
 {
@@ -4308,7 +4482,10 @@ void MainWindow::hideCurrentOutput()
   set_output_handler(&MainWindow::noOutputConsole, &MainWindow::noOutputErrorLog, this);
 }
 
-void MainWindow::clearCurrentOutput() { set_output_handler(nullptr, nullptr, nullptr); }
+void MainWindow::clearCurrentOutput()
+{
+  set_output_handler(nullptr, nullptr, nullptr);
+}
 
 void MainWindow::openCSGSettingsChanged()
 {
@@ -4341,7 +4518,10 @@ QString MainWindow::exportPath(const QString& suffix)
   return QString("%1/%2.%3").arg(dir, basename, suffix);
 }
 
-void MainWindow::jumpToLine(int line, int col) { this->activeEditor->setCursorPosition(line, col); }
+void MainWindow::jumpToLine(int line, int col)
+{
+  this->activeEditor->setCursorPosition(line, col);
+}
 
 void MainWindow::resetMeasurementsState(bool enable, const QString& tooltipMessage)
 {

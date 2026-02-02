@@ -39,6 +39,7 @@
 #include "utils/degree_trig.h"
 #include "io/import.h"
 #include "io/fileutils.h"
+#include "version.h"
 
 #include <utility>
 #include <cstdint>
@@ -833,9 +834,6 @@ Value builtin_search(Arguments arguments, const Location& loc)
   return std::move(returnvec);
 }
 
-#define QUOTE(x__) #x__
-#define QUOTED(x__) QUOTE(x__)
-
 Value builtin_version(Arguments arguments, const Location& /*loc*/)
 {
   VectorType vec(arguments.session());
@@ -954,10 +952,9 @@ Value builtin_textmetrics(Arguments arguments, const Location& loc)
                       {"direction", "language", "script", "halign", "valign", "spacing"});
   parameters.set_caller("textmetrics");
 
-  FreetypeRenderer::Params ftparams;
+  FreetypeRenderer::Params ftparams(parameters);
   ftparams.set_loc(loc);
   ftparams.set_documentPath(session->documentRoot());
-  ftparams.set(parameters);
   ftparams.detect_properties();
 
   FreetypeRenderer::TextMetrics metrics(ftparams);
@@ -1005,10 +1002,9 @@ Value builtin_fontmetrics(Arguments arguments, const Location& loc)
   Parameters parameters = Parameters::parse(std::move(arguments), loc, {"size", "font"});
   parameters.set_caller("fontmetrics");
 
-  FreetypeRenderer::Params ftparams;
+  FreetypeRenderer::Params ftparams(parameters);
   ftparams.set_loc(loc);
   ftparams.set_documentPath(session->documentRoot());
-  ftparams.set(parameters);
   ftparams.detect_properties();
 
   FreetypeRenderer::FontMetrics metrics(ftparams);
