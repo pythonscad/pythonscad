@@ -17,6 +17,7 @@
 #include <QSettings>
 #include <string>
 
+#include "glview/RenderSettings.h"
 #include "gui/qtgettext.h"  // IWYU pragma: keep
 #include "openscad_gui.h"
 #include "ui_Preferences.h"
@@ -88,6 +89,7 @@ public slots:
   void on_timeThresholdOnRenderCompleteSoundEdit_textChanged(const QString&);
   void on_enableClearConsoleCheckBox_toggled(bool);
   void on_consoleMaxLinesEdit_textChanged(const QString&);
+  void on_comboBoxGuiTheme_activated(int);
   void on_fontComboBoxApplicationFontFamily_currentFontChanged(const QFont&);
   void on_comboBoxApplicationFontSize_currentIndexChanged(int);
   void on_consoleFontChooser_currentFontChanged(const QFont&);
@@ -172,6 +174,7 @@ signals:
   void consoleFontChanged(const QString& family, uint size) const;
   void customizerFontChanged(const QString& family, uint size) const;
   void colorSchemeChanged(const QString& scheme) const;
+  void guiThemeChanged(const QString& theme) const;
   void openCSGSettingsChanged() const;
   void syntaxHighlightChanged(const QString& s) const;
   void editorConfigChanged() const;
@@ -181,6 +184,7 @@ signals:
   void characterThresholdChanged(int val) const;
   void stepSizeChanged(int val) const;
   void toolbarExportChanged() const;
+  void renderBackend3DChanged(RenderBackend3D backend) const;
 
 private slots:
   void on_lineEditStepSize_textChanged(const QString& arg1);

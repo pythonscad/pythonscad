@@ -13,7 +13,7 @@ jobs:
     name: Non-experimental
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
     - name: Install dependencies
@@ -24,11 +24,11 @@ jobs:
         which sudo || ( apt update && apt install -y sudo )
         sudo -E ./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt5
     - name: Install gcovr
-      run: python -m pip install -U gcovr
+      run: uv sync --frozen --project .github/ci/openscad-coverage
     - name: Build and test
       run: ./scripts/github-ci.sh enable_python build test coverage
     - name: Upload Test Result Report
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       if: ${{ always() }}
       with:
         name: Test Result Report (non-experimental)
@@ -36,7 +36,7 @@ jobs:
           b/Testing/Temporary/*_report.html
           b/Testing/Temporary/LastTest.log
     - name: Upload Code Coverage Report
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: Code Coverage Report (non-experimental)
         path: c/coverage*.html

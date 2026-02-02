@@ -117,7 +117,7 @@ public:
   QLabel *versionLabel;
   QLabel *languageLabel;
 
-  Measurement meas;
+  Measurement::Measurement meas;
 
   int compileErrors;
   int compileWarnings;
@@ -134,6 +134,7 @@ private:
   std::vector<std::tuple<Dock *, QString, QString>> docks;
 
   volatile bool isClosing = false;
+  bool isBeingDestroyed = false;  // Set in destructor to guard eventFilter
   void consoleOutputRaw(const QString& msg);
   void clearAllSelectionIndicators();
   void setSelectionIndicatorStatus(EditorInterface *editor, int nodeIndex,
@@ -267,7 +268,6 @@ private slots:
   void instantiateRoot();
   void compileDone(bool didchange);
   void compileEnded();
-  void changeParameterWidget();
 
 private slots:
   void copyViewportTranslation();
@@ -296,8 +296,11 @@ private slots:
   void onErrorLogDockVisibilityChanged(bool isVisible);
   void onAnimateDockVisibilityChanged(bool isVisible);
   void onFontListDockVisibilityChanged(bool isVisible);
+  void onColorListDockVisibilityChanged(bool isVisible);
   void onViewportControlDockVisibilityChanged(bool isVisible);
   void onParametersDockVisibilityChanged(bool isVisible);
+
+  void onColorListColorSelected(const QString&);
 
   void on_editActionInsertTemplate_triggered();
   void on_editActionFoldAll_triggered();
@@ -423,7 +426,6 @@ public slots:
   void helpPythonCheatSheet();
   void helpOfflineCheatSheet();
   void helpLibrary();
-  void helpFontInfo();
   void checkAutoReload();
   void waitAfterReload();
   void autoReloadSet(bool);

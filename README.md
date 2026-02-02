@@ -124,7 +124,7 @@ supported 3D model formats.
 
 ## Python
 
-One obvious difference is that you can us Python when programming in
+One obvious difference is that you can use Python when programming in
 PythonSCAD. While part of the Python support has been merged to
 OpenSCAD already, not all of it is in there yet, so you probably will
 have a better experience when using PythonSCAD for writing models in
@@ -373,7 +373,7 @@ For a 32-bit Windows cross-build, replace 64 with 32 in the above instructions.
 
 We support building OpenSCAD headless for WebAssembly w/ Emscripten, using a premade Docker image built in [openscad/openscad-wasm](https://github.com/openscad/openscad-wasm) (which also has usage examples)
 
-#### Browser
+#### Browser
 
 The following command creates `build-web/openscad.wasm` & `build-web/openscad.js`:
 

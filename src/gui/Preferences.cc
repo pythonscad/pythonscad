@@ -125,6 +125,7 @@ void Preferences::init()
   const QFont applicationFont = QTextDocument().defaultFont();
   this->defaultmap["advanced/applicationFontFamily"] = applicationFont.family();
   this->defaultmap["advanced/applicationFontSize"] = applicationFont.pointSize();
+  this->defaultmap["advanced/guiTheme"] = "auto";
 
   // Leave Console font with default if user has not chosen another.
   this->defaultmap["advanced/consoleFontFamily"] = applicationFont.family();
@@ -182,6 +183,7 @@ void Preferences::init()
   this->defaultmap["view/hideAnimate"] = true;
   this->defaultmap["view/hideCustomizer"] = true;
   this->defaultmap["view/hideFontList"] = true;
+  this->defaultmap["view/hideColorList"] = true;
   this->defaultmap["view/hideViewportControl"] = true;
   this->defaultmap["editor/enableAutocomplete"] = true;
   this->defaultmap["editor/characterThreshold"] = 1;
@@ -300,7 +302,10 @@ void Preferences::init()
   emit editorConfigChanged();
 }
 
-Preferences::~Preferences() { removeDefaultSettings(); }
+Preferences::~Preferences()
+{
+  removeDefaultSettings();
+}
 
 void Preferences::update()
 {
@@ -758,6 +763,31 @@ void Preferences::fireApplicationFontChanged() const
   emit applicationFontChanged(family, size);
 }
 
+static QString guiThemeValueFromIndex(int index)
+{
+  switch (index) {
+  case 0: return "light";
+  case 1: return "dark";
+  case 2: return "auto";
+  default: return "auto";
+  }
+}
+
+static int guiThemeIndexFromValue(const QString& value)
+{
+  if (value == "light") return 0;
+  if (value == "dark") return 1;
+  return 2;  // "auto" or unknown
+}
+
+void Preferences::on_comboBoxGuiTheme_activated(int index)
+{
+  const QString value = guiThemeValueFromIndex(index);
+  QSettingsCached settings;
+  settings.setValue("advanced/guiTheme", value);
+  emit guiThemeChanged(value);
+}
+
 void Preferences::on_fontComboBoxApplicationFontFamily_currentFontChanged(const QFont& font)
 {
   QSettingsCached settings;
@@ -864,9 +894,9 @@ void Preferences::on_enableRangeCheckBox_toggled(bool state)
 void Preferences::on_comboBoxRenderBackend3D_activated(int val)
 {
   applyComboBox(this->comboBoxRenderBackend3D, val, Settings::Settings::renderBackend3D);
-  RenderSettings::inst()->backend3D =
-    renderBackend3DFromString(Settings::Settings::renderBackend3D.value())
-      .value_or(DEFAULT_RENDERING_BACKEND_3D);
+  auto backend = renderBackend3DFromString(Settings::Settings::renderBackend3D.value())
+                   .value_or(DEFAULT_RENDERING_BACKEND_3D);
+  emit renderBackend3DChanged(backend);
 }
 
 void Preferences::on_comboBoxToolbarExport3D_activated(int val)
@@ -1265,7 +1295,10 @@ void Preferences::writeSettings()
   fireEditorConfigChanged();
 }
 
-void Preferences::fireEditorConfigChanged() const { emit editorConfigChanged(); }
+void Preferences::fireEditorConfigChanged() const
+{
+  emit editorConfigChanged();
+}
 
 void Preferences::keyPressEvent(QKeyEvent *e)
 {
@@ -1369,6 +1402,8 @@ void Preferences::updateGUI()
   BlockSignals<QLineEdit *>(this->consoleMaxLinesEdit)
     ->setText(getValue("advanced/consoleMaxLines").toString());
 
+  BlockSignals<QComboBox *>(this->comboBoxGuiTheme)
+    ->setCurrentIndex(guiThemeIndexFromValue(getValue("advanced/guiTheme").toString()));
   updateGUIFontFamily(fontComboBoxApplicationFontFamily, "advanced/applicationFontFamily");
   updateGUIFontSize(comboBoxApplicationFontSize, "advanced/applicationFontSize");
 

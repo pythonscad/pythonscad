@@ -74,7 +74,10 @@
 #include "gui/qt-obsolete.h"
 #include "gui/Measurement.h"
 
-QGLView::QGLView(QWidget *parent) : QOpenGLWidget(parent) { init(); }
+QGLView::QGLView(QWidget *parent) : QOpenGLWidget(parent)
+{
+  init();
+}
 
 QGLView::~QGLView()
 {
@@ -93,7 +96,10 @@ void QGLView::init()
   mouseDraggedSel = nullptr;
 }
 
-void QGLView::resetView() { cam.resetView(); }
+void QGLView::resetView()
+{
+  cam.resetView();
+}
 
 void QGLView::viewAll()
 {
@@ -359,7 +365,7 @@ void QGLView::mouseMoveEvent(QMouseEvent *event)
 #else
   auto this_mouse = event->globalPos();
 #endif
-  if (measure_state != MEASURE_IDLE) {
+  if (measure_state != Measurement::MEASURE_IDLE) {
     QPoint pt = event->pos();
     this->shown_obj = findObject(pt.x(), pt.y());
     update();
@@ -505,7 +511,10 @@ const QImage& QGLView::grabFrame()
   return this->frame;
 }
 
-bool QGLView::save(const char *filename) const { return this->frame.save(filename, "PNG"); }
+bool QGLView::save(const char *filename) const
+{
+  return this->frame.save(filename, "PNG");
+}
 
 void QGLView::wheelEvent(QWheelEvent *event)
 {
@@ -520,9 +529,15 @@ void QGLView::wheelEvent(QWheelEvent *event)
   }
 }
 
-void QGLView::ZoomIn() { zoom(120, true); }
+void QGLView::ZoomIn()
+{
+  zoom(120, true);
+}
 
-void QGLView::ZoomOut() { zoom(-120, true); }
+void QGLView::ZoomOut()
+{
+  zoom(-120, true);
+}
 
 void QGLView::zoom(double v, bool relative)
 {

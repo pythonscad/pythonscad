@@ -28,7 +28,7 @@ VS_VERSION_INFO VERSIONINFO
 				VALUE "FileDescription", "PythonSCAD Application\0"
 				VALUE "FileVersion", "${OPENSCAD_VERSION}\0"
 				VALUE "InternalName", "pythonscad\0"
-				VALUE "LegalCopyright", "Copyright (C) 2009-2025 The OpenSCAD Developers\nCopyright (C) 2024-2025 The PythonSCAD Developers\0"
+				VALUE "LegalCopyright", "Copyright (C) 2009-2026 The OpenSCAD Developers\nCopyright (C) 2024-2026 The PythonSCAD Developers\0"
 				VALUE "OriginalFilename", "pythonscad.exe\0"
 				VALUE "ProductName", "${CPACK_PACKAGE_NAME}\0"
 				VALUE "ProductVersion", "${OPENSCAD_VERSION}\0"
@@ -41,5 +41,8 @@ VS_VERSION_INFO VERSIONINFO
 	END
 /* End of Version info */
 
-IDI_ICON1   ICON    DISCARDABLE "resources/icons/pythonscad.ico"
-IDI_ICON2   ICON    DISCARDABLE "resources/icons/pythonscad.ico"
+/* Application icon ID 1 so Explorer and taskbar use PythonSCAD icon */
+1 ICON DISCARDABLE "@CMAKE_SOURCE_DIR@/resources/icons/pythonscad.ico"
+
+IDI_ICON1   ICON    DISCARDABLE "@CMAKE_SOURCE_DIR@/resources/icons/pythonscad.ico"
+IDI_ICON2   ICON    DISCARDABLE "@CMAKE_SOURCE_DIR@/resources/icons/pythonscad.ico"

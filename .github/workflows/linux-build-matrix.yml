@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - cicd-pipeline-tests
   workflow_dispatch:
 
 jobs:
@@ -22,9 +21,13 @@ jobs:
     name: ${{ matrix.os }}:HEADLESS=${{ matrix.headless }},ENABLE_TESTS=${{ matrix.enable_tests }},ENABLE_MANIFOLD=${{ matrix.enable_manifold }}
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
+    - name: Fetch tags for version detection
+      run: |
+        git fetch --unshallow --tags || git fetch --tags
+        git describe --tags --always --dirty
     - name: Install dependencies
       env:
         DEBIAN_FRONTEND: noninteractive

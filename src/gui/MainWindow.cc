@@ -117,6 +117,7 @@
 #include "glview/RenderSettings.h"
 #include "gui/AboutDialog.h"
 #include "gui/CGALWorker.h"
+#include "gui/ColorList.h"
 #include "gui/Editor.h"
 #include "gui/Dock.h"
 #include "gui/Measurement.h"
@@ -124,7 +125,6 @@
 #include "gui/ExportPdfDialog.h"
 #include "gui/ExportSvgDialog.h"
 #include "gui/ExternalToolInterface.h"
-#include "gui/FontListDialog.h"
 #include "gui/ImportUtils.h"
 #include "gui/input/InputDriverEvent.h"
 #include "gui/input/InputDriverManager.h"
@@ -204,7 +204,7 @@ static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *st
   return size * nmemb;
 }
 
-int curl_download(std::string url, std::string path)
+int curl_download(const std::string& url, const std::string& path)
 {
   CURLcode status;
   QFile fh((path).c_str());
@@ -255,8 +255,8 @@ namespace {
 
 const int autoReloadPollingPeriodMS = 200;
 const char copyrighttext[] =
-  "<p>Copyright (C) 2009-2025 The OpenSCAD Developers</p>"
-  "<p>Copyright (C) 2024-2025 The PythonSCAD Developers</p>"
+  "<p>Copyright (C) 2009-2026 The OpenSCAD Developers</p>"
+  "<p>Copyright (C) 2024-2026 The PythonSCAD Developers</p>"
   "<p>This program is free software; you can redistribute it and/or modify "
   "it under the terms of the GNU General Public License as published by "
   "the Free Software Foundation; either version 2 of the License, or "
@@ -434,13 +434,14 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   this->addAction(editActionInsertTemplate);
   this->addAction(editActionFoldAll);
 
-  docks = {{editorDock, _("Editor"), "view/hideEditor"},
-           {consoleDock, _("Console"), "view/hideConsole"},
-           {parameterDock, _("Customizer"), "view/hideCustomizer"},
-           {errorLogDock, _("Error-Log"), "view/hideErrorLog"},
-           {animateDock, _("Animate"), "view/hideAnimate"},
-           {fontListDock, _("Font Lists"), "view/hideFontList"},
-           {viewportControlDock, _("Viewport-Control"), "view/hideViewportControl"}};
+  docks = {{editorDock, _("&Editor"), "view/hideEditor"},
+           {consoleDock, _("&Console"), "view/hideConsole"},
+           {parameterDock, _("C&ustomizer"), "view/hideCustomizer"},
+           {errorLogDock, _("Error-&Log"), "view/hideErrorLog"},
+           {animateDock, _("&Animate"), "view/hideAnimate"},
+           {fontListDock, _("&Font List"), "view/hideFontList"},
+           {colorListDock, _("C&olor List"), "view/hideColorList"},
+           {viewportControlDock, _("&Viewport-Control"), "view/hideViewportControl"}};
 
   this->versionLabel = nullptr;   // must be initialized before calling updateStatusBar()
   this->languageLabel = nullptr;  // must be initialized before calling updateLanguageLabel()
@@ -494,9 +495,11 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   connect(tabManager, &TabManager::editorContentReloaded, this,
           &MainWindow::onTabManagerEditorContentReloaded);
 
+  connect(this->console, &Console::openWindowRequested, this, &MainWindow::showLink);
   connect(GlobalPreferences::inst(), &Preferences::consoleFontChanged, this->console, &Console::setFont);
-  this->console->setFont(GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
-                         GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
+  this->console->setConsoleFont(
+    GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
+    GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
 
   const QString version =
     QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(std::string(openscad_versionnumber)));
@@ -566,8 +569,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   waitAfterReloadTimer->setSingleShot(true);
   waitAfterReloadTimer->setInterval(autoReloadPollingPeriodMS);
   connect(waitAfterReloadTimer, &QTimer::timeout, this, &MainWindow::waitAfterReload);
-  connect(GlobalPreferences::inst(), &Preferences::ExperimentalChanged, this,
-          &MainWindow::changeParameterWidget);
 
   progressThrottle->start();
 
@@ -734,7 +735,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   connect(this->helpActionPythonCheatSheet, &QAction::triggered, this,
           &MainWindow::helpPythonCheatSheet);
   connect(this->helpActionLibraryInfo, &QAction::triggered, this, &MainWindow::helpLibrary);
-  connect(this->helpActionFontInfo, &QAction::triggered, this, &MainWindow::helpFontInfo);
 
   // Checks if the Documentation has been downloaded and hides the Action otherwise
   if (UIUtils::hasOfflineUserManual()) {
@@ -853,7 +853,8 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
     activeEditor->setInitialSizeHint(QSize((5 * this->width() / 11), 100));
     tabifyDockWidget(consoleDock, errorLogDock);
     tabifyDockWidget(errorLogDock, fontListDock);
-    tabifyDockWidget(fontListDock, animateDock);
+    tabifyDockWidget(fontListDock, colorListDock);
+    tabifyDockWidget(colorListDock, animateDock);
     consoleDock->show();
   } else {
 #ifdef Q_OS_WIN
@@ -898,6 +899,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
     menuWindow->addAction(dock->toggleViewAction());
 
     auto dockAction = navigationMenu->addAction(title);
+    dockAction->setShortcut(QKeySequence::mnemonic(title));
     dockAction->setProperty("id", QVariant::fromValue(dock));
     connect(dockAction, &QAction::triggered, this, &MainWindow::onNavigationTriggerContextMenuEntry);
     connect(dockAction, &QAction::hovered, this, &MainWindow::onNavigationHoveredContextMenuEntry);
@@ -939,10 +941,16 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
                    &MainWindow::onAnimateDockVisibilityChanged);
   QObject::connect(fontListDock, &Dock::visibilityChanged, this,
                    &MainWindow::onFontListDockVisibilityChanged);
+  QObject::connect(colorListDock, &Dock::visibilityChanged, this,
+                   &MainWindow::onColorListDockVisibilityChanged);
   QObject::connect(viewportControlDock, &Dock::visibilityChanged, this,
                    &MainWindow::onViewportControlDockVisibilityChanged);
   QObject::connect(parameterDock, &Dock::visibilityChanged, this,
                    &MainWindow::onParametersDockVisibilityChanged);
+
+  // Other dock specific signals
+  QObject::connect(colorListWidget, &ColorList::colorSelected, this,
+                   &MainWindow::onColorListColorSelected);
 
   connect(this->activeEditor, &EditorInterface::escapePressed, this, &MainWindow::measureFinished);
   // display this window and check for OpenGL 2.0 (OpenCSG) support
@@ -1021,9 +1029,15 @@ void MainWindow::setAllMouseViewActions()
                                    Settings::Settings::inputMouseCtrlShiftRightClick.value())));
 }
 
-void MainWindow::onNavigationOpenContextMenu() { navigationMenu->exec(QCursor::pos()); }
+void MainWindow::onNavigationOpenContextMenu()
+{
+  navigationMenu->exec(QCursor::pos());
+}
 
-void MainWindow::onNavigationCloseContextMenu() { rubberBandManager.hide(); }
+void MainWindow::onNavigationCloseContextMenu()
+{
+  rubberBandManager.hide();
+}
 
 void MainWindow::onNavigationTriggerContextMenuEntry()
 {
@@ -1033,8 +1047,8 @@ void MainWindow::onNavigationTriggerContextMenuEntry()
   Dock *dock = action->property("id").value<Dock *>();
   assert(dock != nullptr);
 
-  dock->raise();
   dock->show();
+  dock->raise();
   dock->setFocus();
 
   // Forward the focus on the content of the tabmanager
@@ -1278,9 +1292,13 @@ void MainWindow::updateWindowSettings(bool isEditorToolbarVisible, bool isViewTo
   hide3DViewToolbar();
 }
 
-void MainWindow::onAxisChanged(InputEventAxisChanged *) {}
+void MainWindow::onAxisChanged(InputEventAxisChanged *)
+{
+}
 
-void MainWindow::onButtonChanged(InputEventButtonChanged *) {}
+void MainWindow::onButtonChanged(InputEventButtonChanged *)
+{
+}
 
 void MainWindow::onTranslateEvent(InputEventTranslate *event)
 {
@@ -1323,7 +1341,10 @@ void MainWindow::onActionEvent(InputEventAction *event)
   }
 }
 
-void MainWindow::onZoomEvent(InputEventZoom *event) { qglview->zoom(event->zoom, event->relative); }
+void MainWindow::onZoomEvent(InputEventZoom *event)
+{
+  qglview->zoom(event->zoom, event->relative);
+}
 
 void MainWindow::loadViewSettings()
 {
@@ -1381,6 +1402,7 @@ void MainWindow::updateUndockMode(bool undockMode)
     errorLogDock->setFeatures(errorLogDock->features() | QDockWidget::DockWidgetFloatable);
     animateDock->setFeatures(animateDock->features() | QDockWidget::DockWidgetFloatable);
     fontListDock->setFeatures(fontListDock->features() | QDockWidget::DockWidgetFloatable);
+    colorListDock->setFeatures(colorListDock->features() | QDockWidget::DockWidgetFloatable);
     viewportControlDock->setFeatures(viewportControlDock->features() | QDockWidget::DockWidgetFloatable);
   } else {
     if (editorDock->isFloating()) {
@@ -1413,6 +1435,11 @@ void MainWindow::updateUndockMode(bool undockMode)
     }
     fontListDock->setFeatures(fontListDock->features() & ~QDockWidget::DockWidgetFloatable);
 
+    if (colorListDock->isFloating()) {
+      colorListDock->setFloating(false);
+    }
+    colorListDock->setFeatures(colorListDock->features() & ~QDockWidget::DockWidgetFloatable);
+
     if (viewportControlDock->isFloating()) {
       viewportControlDock->setFloating(false);
     }
@@ -1431,6 +1458,9 @@ void MainWindow::updateReorderMode(bool reorderMode)
 
 MainWindow::~MainWindow()
 {
+  // Mark that we're being destroyed so eventFilter won't access freed members
+  isBeingDestroyed = true;
+
   scadApp->windowManager.remove(this);
   if (scadApp->windowManager.getWindows().empty()) {
     // Quit application even in case some other windows like
@@ -1439,7 +1469,10 @@ MainWindow::~MainWindow()
   }
 }
 
-void MainWindow::showProgress() { updateStatusBar(qobject_cast<ProgressWidget *>(sender())); }
+void MainWindow::showProgress()
+{
+  updateStatusBar(qobject_cast<ProgressWidget *>(sender()));
+}
 
 void MainWindow::report_func(const std::shared_ptr<const AbstractNode>&, void *vp, int mark)
 {
@@ -1607,7 +1640,10 @@ void MainWindow::waitAfterReload()
   this->waitAfterReloadTimer->start();
 }
 
-void MainWindow::on_toolButtonCompileResultClose_clicked() { frameCompileResult->hide(); }
+void MainWindow::on_toolButtonCompileResultClose_clicked()
+{
+  frameCompileResult->hide();
+}
 
 void MainWindow::updateCompileResult()
 {
@@ -1912,7 +1948,10 @@ void MainWindow::actionOpen()
   }
 }
 
-void MainWindow::actionNewWindow() { new MainWindow(QStringList()); }
+void MainWindow::actionNewWindow()
+{
+  new MainWindow(QStringList());
+}
 
 void MainWindow::actionOpenWindow()
 {
@@ -2037,9 +2076,15 @@ void MainWindow::saveBackup()
   return writeBackup(this->tempFile);
 }
 
-void MainWindow::actionSave() { tabManager->save(activeEditor); }
+void MainWindow::actionSave()
+{
+  tabManager->save(activeEditor);
+}
 
-void MainWindow::actionSaveAs() { tabManager->saveAs(activeEditor); }
+void MainWindow::actionSaveAs()
+{
+  tabManager->saveAs(activeEditor);
+}
 
 void MainWindow::actionPythonRevokeTrustedFiles()
 {
@@ -2113,7 +2158,10 @@ void MainWindow::actionPythonSelectVenv()
 #endif  // ifdef ENABLE_PYTHON
 }
 
-void MainWindow::actionSaveACopy() { tabManager->saveACopy(activeEditor); }
+void MainWindow::actionSaveACopy()
+{
+  tabManager->saveACopy(activeEditor);
+}
 
 void MainWindow::actionShowLibraryFolder()
 {
@@ -2237,7 +2285,10 @@ void MainWindow::showFind(bool doFindAndReplace)
   findInputField->selectAll();
 }
 
-void MainWindow::actionShowFind() { showFind(false); }
+void MainWindow::actionShowFind()
+{
+  showFind(false);
+}
 
 void MainWindow::findString(const QString& textToFind)
 {
@@ -2246,7 +2297,10 @@ void MainWindow::findString(const QString& textToFind)
   activeEditor->find(textToFind);
 }
 
-void MainWindow::actionShowFindAndReplace() { showFind(true); }
+void MainWindow::actionShowFindAndReplace()
+{
+  showFind(true);
+}
 
 void MainWindow::actionSelectFind(int type)
 {
@@ -2288,11 +2342,20 @@ void MainWindow::convertTabsToSpaces()
   activeEditor->setText(converted);
 }
 
-void MainWindow::findNext() { activeEditor->find(this->findInputField->text(), true); }
+void MainWindow::findNext()
+{
+  activeEditor->find(this->findInputField->text(), true);
+}
 
-void MainWindow::findPrev() { activeEditor->find(this->findInputField->text(), true, true); }
+void MainWindow::findPrev()
+{
+  activeEditor->find(this->findInputField->text(), true, true);
+}
 
-void MainWindow::useSelectionForFind() { findInputField->setText(activeEditor->selectedText()); }
+void MainWindow::useSelectionForFind()
+{
+  findInputField->setText(activeEditor->selectedText());
+}
 
 void MainWindow::updateFindBuffer(const QString& s)
 {
@@ -2323,6 +2386,11 @@ bool MainWindow::event(QEvent *event)
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+  // Don't process events during destruction - member objects may be partially destroyed
+  if (isBeingDestroyed) {
+    return QMainWindow::eventFilter(obj, event);
+  }
+
   if (obj == languageLabel && event->type() == QEvent::MouseButtonPress) {
     showLanguageMenu();
     return true;
@@ -2348,15 +2416,17 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
     return false;
   }
 
-  auto keyEvent = static_cast<QKeyEvent *>(event);
-  if (keyEvent != nullptr && keyEvent->key() == Qt::Key_Escape) {
-    if (this->qglview->measure_state != MEASURE_IDLE) {
-      this->designActionMeasureDistance->setChecked(false);
-      this->designActionMeasureAngle->setChecked(false);
-      this->designActionFindHandle->setChecked(false);
-      this->qglview->handle_mode = false;
-      this->activeMeasurement = nullptr;
-      meas.stopMeasure();
+  if (event->type() == QEvent::KeyPress) {
+    auto keyEvent = static_cast<QKeyEvent *>(event);
+    if (keyEvent->key() == Qt::Key_Escape) {
+      if (this->qglview->measure_state != Measurement::MEASURE_IDLE) {
+        this->designActionMeasureDistance->setChecked(false);
+        this->designActionMeasureAngle->setChecked(false);
+        this->designActionFindHandle->setChecked(false);
+        this->qglview->handle_mode = false;
+        this->activeMeasurement = nullptr;
+        meas.stopMeasure();
+      }
     }
   }
   return QMainWindow::eventFilter(obj, event);
@@ -2618,8 +2688,6 @@ void MainWindow::parseTopLevelDocument()
   this->rootFile = parseDocument(activeEditor);
   this->parsedFile = this->rootFile;
 }
-
-void MainWindow::changeParameterWidget() { parameterDock->setVisible(true); }
 
 void MainWindow::checkAutoReload()
 {
@@ -2922,13 +2990,13 @@ void MainWindow::leftClick(QPoint mouse)
 
   // Can eventually be replaced with C++20 std::views::reverse
   for (const auto& str : strs) {
-    this->qglview->measure_state = MEASURE_DIRTY;
+    this->qglview->measure_state = Measurement::MEASURE_DIRTY;
     if (str.startsWith("I:")) {
       this->activeEditor->insert(QString(str.toStdString().c_str() + 2));
       this->qglview->selected_obj.clear();
       this->qglview->shown_obj = nullptr;
       this->qglview->update();
-      this->qglview->measure_state = MEASURE_IDLE;
+      this->qglview->measure_state = Measurement::MEASURE_IDLE;
       this->qglview->handle_mode = false;
       return;
     }
@@ -3041,7 +3109,10 @@ void MainWindow::measureFinished()
   if (didSomething) resetMeasurementsState(true, "Click to start measuring");
 }
 
-void MainWindow::clearAllSelectionIndicators() { this->activeEditor->clearAllSelectionIndicators(); }
+void MainWindow::clearAllSelectionIndicators()
+{
+  this->activeEditor->clearAllSelectionIndicators();
+}
 
 void MainWindow::setSelectionIndicatorStatus(EditorInterface *editor, int nodeIndex,
                                              EditorSelectionIndicatorStatus status)
@@ -3144,7 +3215,10 @@ void MainWindow::onHoveredObjectInSelectionMenu()
   setSelection(action->property("id").toInt());
 }
 
-void MainWindow::setLastFocus(QWidget *widget) { this->lastFocus = widget; }
+void MainWindow::setLastFocus(QWidget *widget)
+{
+  this->lastFocus = widget;
+}
 
 /**
  * Switch version label and progress widget. When switching to the progress
@@ -3844,7 +3918,10 @@ void MainWindow::viewModeShowScaleProportional()
   this->qglview->update();
 }
 
-bool MainWindow::isEmpty() { return activeEditor->toPlainText().isEmpty(); }
+bool MainWindow::isEmpty()
+{
+  return activeEditor->toPlainText().isEmpty();
+}
 
 void MainWindow::editorContentChanged()
 {
@@ -3925,9 +4002,15 @@ void MainWindow::setProjectionType(ProjectionType mode)
   qglview->update();
 }
 
-void MainWindow::viewPerspective() { setProjectionType(ProjectionType::PERSPECTIVE); }
+void MainWindow::viewPerspective()
+{
+  setProjectionType(ProjectionType::PERSPECTIVE);
+}
 
-void MainWindow::viewOrthogonal() { setProjectionType(ProjectionType::ORTHOGONAL); }
+void MainWindow::viewOrthogonal()
+{
+  setProjectionType(ProjectionType::ORTHOGONAL);
+}
 
 void MainWindow::viewTogglePerspective()
 {
@@ -3980,6 +4063,8 @@ void MainWindow::showLink(const QString& link)
     consoleDock->show();
   } else if (link == "#errorlog") {
     errorLogDock->show();
+  } else if (link == "#colorlist") {
+    colorListDock->show();
   }
 }
 
@@ -4038,6 +4123,14 @@ void MainWindow::onFontListDockVisibilityChanged(bool isVisible)
   }
 }
 
+void MainWindow::onColorListDockVisibilityChanged(bool isVisible)
+{
+  if (isVisible) {
+    colorListWidget->setFocus();
+    colorListDock->raise();
+  }
+}
+
 void MainWindow::onViewportControlDockVisibilityChanged(bool isVisible)
 {
   if (isVisible) {
@@ -4052,6 +4145,11 @@ void MainWindow::onParametersDockVisibilityChanged(bool isVisible)
     parameterDock->raise();
     activeEditor->parameterWidget->scrollArea->setFocus();
   }
+}
+
+void MainWindow::onColorListColorSelected(const QString& selectedColor)
+{
+  activeEditor->insertOrReplaceText(selectedColor);
 }
 
 // Use the sender's to detect if we are moving forward/backward in docks
@@ -4128,9 +4226,15 @@ void MainWindow::onWindowShortcutExport3DActivated()
   }
 }
 
-void MainWindow::on_editActionInsertTemplate_triggered() { activeEditor->displayTemplates(); }
+void MainWindow::on_editActionInsertTemplate_triggered()
+{
+  activeEditor->displayTemplates();
+}
 
-void MainWindow::on_editActionFoldAll_triggered() { activeEditor->foldUnfold(); }
+void MainWindow::on_editActionFoldAll_triggered()
+{
+  activeEditor->foldUnfold();
+}
 
 QString MainWindow::getCurrentFileName() const
 {
@@ -4205,6 +4309,7 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   errorLogDock->setNameSuffix(name);
   animateDock->setNameSuffix(name);
   fontListDock->setNameSuffix(name);
+  colorListDock->setNameSuffix(name);
   viewportControlDock->setNameSuffix(name);
 
   // If there is no renderedEditor we request for a new preview if the
@@ -4302,17 +4407,35 @@ void MainWindow::helpAbout()
   dialog->deleteLater();
 }
 
-void MainWindow::helpHomepage() { UIUtils::openHomepageURL(); }
+void MainWindow::helpHomepage()
+{
+  UIUtils::openHomepageURL();
+}
 
-void MainWindow::helpManual() { UIUtils::openUserManualURL(); }
+void MainWindow::helpManual()
+{
+  UIUtils::openUserManualURL();
+}
 
-void MainWindow::helpOfflineManual() { UIUtils::openOfflineUserManual(); }
+void MainWindow::helpOfflineManual()
+{
+  UIUtils::openOfflineUserManual();
+}
 
-void MainWindow::helpCheatSheet() { UIUtils::openCheatSheetURL(); }
+void MainWindow::helpCheatSheet()
+{
+  UIUtils::openCheatSheetURL();
+}
 
-void MainWindow::helpPythonCheatSheet() { UIUtils::openPythonCheatSheetURL(); }
+void MainWindow::helpPythonCheatSheet()
+{
+  UIUtils::openPythonCheatSheetURL();
+}
 
-void MainWindow::helpOfflineCheatSheet() { UIUtils::openOfflineCheatSheet(); }
+void MainWindow::helpOfflineCheatSheet()
+{
+  UIUtils::openOfflineCheatSheet();
+}
 
 void MainWindow::helpLibrary()
 {
@@ -4322,16 +4445,6 @@ void MainWindow::helpLibrary()
     this->libraryInfoDialog = dialog;
   }
   this->libraryInfoDialog->show();
-}
-
-void MainWindow::helpFontInfo()
-{
-  if (!this->fontListDialog) {
-    auto dialog = new FontListDialog();
-    this->fontListDialog = dialog;
-  }
-  this->fontListDialog->updateFontList();
-  this->fontListDialog->show();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -4420,7 +4533,10 @@ void MainWindow::errorLogOutput(const Message& log_msg, void *userdata)
   QMetaObject::invokeMethod(thisp, "errorLogOutput", Q_ARG(Message, log_msg));
 }
 
-void MainWindow::errorLogOutput(const Message& log_msg) { this->errorLogWidget->toErrorLog(log_msg); }
+void MainWindow::errorLogOutput(const Message& log_msg)
+{
+  this->errorLogWidget->toErrorLog(log_msg);
+}
 
 void MainWindow::setCurrentOutput()
 {
@@ -4432,7 +4548,10 @@ void MainWindow::hideCurrentOutput()
   set_output_handler(&MainWindow::noOutputConsole, &MainWindow::noOutputErrorLog, this);
 }
 
-void MainWindow::clearCurrentOutput() { set_output_handler(nullptr, nullptr, nullptr); }
+void MainWindow::clearCurrentOutput()
+{
+  set_output_handler(nullptr, nullptr, nullptr);
+}
 
 void MainWindow::openCSGSettingsChanged()
 {
@@ -4465,7 +4584,10 @@ QString MainWindow::exportPath(const QString& suffix)
   return QString("%1/%2.%3").arg(dir, basename, suffix);
 }
 
-void MainWindow::jumpToLine(int line, int col) { this->activeEditor->setCursorPosition(line, col); }
+void MainWindow::jumpToLine(int line, int col)
+{
+  this->activeEditor->setCursorPosition(line, col);
+}
 
 void MainWindow::resetMeasurementsState(bool enable, const QString& tooltipMessage)
 {

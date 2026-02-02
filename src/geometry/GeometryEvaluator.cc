@@ -94,7 +94,9 @@ class Geometry;
 class Polygon2d;
 class Tree;
 
-GeometryEvaluator::GeometryEvaluator(const Tree& tree) : tree(tree) {}
+GeometryEvaluator::GeometryEvaluator(const Tree& tree) : tree(tree)
+{
+}
 
 /*!
    Set allownef to false to force the result to _not_ be a Nef polyhedron
@@ -897,7 +899,10 @@ void Map3D::dump_hier(int i, int hier, float minx, float miny, float minz, float
   if (items[i].ind[6] != -1) dump_hier(items[i].ind[6], hier + 1, minx, midy, midz, midx, maxy, maxz);
   if (items[i].ind[7] != -1) dump_hier(items[i].ind[7], hier + 1, midx, midy, midz, maxx, maxy, maxz);
 }
-void Map3D::dump(void) { dump_hier(0, 0, min[0], min[1], min[2], max[0], max[1], max[2]); }
+void Map3D::dump(void)
+{
+  dump_hier(0, 0, min[0], min[1], min[2], max[0], max[1], max[2]);
+}
 
 GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren(const AbstractNode& node,
                                                                    OpenSCADOperator op)
@@ -1158,7 +1163,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     startarc.push_back(p1 + off * fan);
     endarc.push_back(p2 + off * fan);
 
-    int eff_fn = discretizer.getCircularSegmentCount(off, totang).value_or(3);
+    int eff_fn = discretizer.getCircularSegmentCountAlt(fabs(off), 180.0*totang/M_PI).value_or(3);
 
     for (int i = 1; i < eff_fn - 1; i++) {
       Transform3d matrix = Transform3d::Identity();
@@ -1883,9 +1888,13 @@ std::unique_ptr<Barcode1d> GeometryEvaluator::applyToChildren1D(const AbstractNo
   if (children.empty()) {
     return nullptr;
   }
-
-  auto result = std::make_unique<Barcode1d>(*children[0]);
-  return result;
+  Barcode1d result;
+  for (auto child : children) {
+    for (const auto& e : child->edges()) {
+      result.addEdge(e);
+    }
+  }
+  return std::make_unique<Barcode1d>(result);
 }
 
 /*!
@@ -2676,10 +2685,14 @@ Response GeometryEvaluator::visit(State& state, const RotateExtrudeNode& node)
   if (state.isPostfix()) {
     std::shared_ptr<const Geometry> geom;
     if (!isSmartCached(node)) {
-      const std::shared_ptr<const Polygon2d> geometry = applyToChildren2D(node, OpenSCADOperator::UNION);
-      if (geometry) {
-        geom = rotatePolygon(node, *geometry);
-      }
+      ResultObject res = applyToChildren(node, OpenSCADOperator::UNION);
+      const std::shared_ptr<const Geometry> geometry = res.constptr();
+      const auto polygons = std::dynamic_pointer_cast<const Polygon2d>(geometry);
+      const auto barcode1d = std::dynamic_pointer_cast<const Barcode1d>(geometry);
+
+      if (polygons != nullptr) geom = rotatePolygon(node, *polygons);
+      if (barcode1d != nullptr) geom = rotateBarcode(node, *barcode1d);
+      if (geom == nullptr) geom = {};
     } else {
       geom = smartCacheGet(node, false);
     }

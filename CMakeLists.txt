@@ -9,7 +9,7 @@
 #
 
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.16)
 
 # Let AUTOMOC and AUTOUIC process GENERATED files.
 cmake_policy(SET CMP0071 NEW)
@@ -29,6 +29,11 @@ if(POLICY CMP0167) # Since CMake 3.30
 endif()
 
 include("cmake/Modules/openscad_version.cmake")
+configure_file(
+  ${CMAKE_SOURCE_DIR}/src/version.cc.in
+  ${CMAKE_BINARY_DIR}/version.cc
+  @ONLY
+)
 
 option(INFO "Display build configuration info at end of cmake config" ON)
 option(ENABLE_TESTS "Run testsuite after building." ON)
@@ -73,6 +78,7 @@ option(ENABLE_LUA "Enable experimental LUA Interpreter" OFF)
 option(PYTHON_VERSION "Specify Exact Python Version" "")
 option(ENABLE_LIBFIVE "Enable libfive Library" OFF)
 option(USE_BUILTIN_LIBFIVE "Use libfive from submodule." ON)
+option(PORTABLE_BINARY "Build portable binary without -march=native (for distribution)" OFF)
 option(BUILD_SHARED_LIBS "Build shared library" OFF)
 include(CMakeDependentOption)
 cmake_dependent_option(APPLE_UNIX "Build PythonSCAD in Unix mode in MacOS X instead of an Apple Bundle" OFF "APPLE" OFF)
@@ -83,8 +89,8 @@ set(WASM_BUILD_TYPE "web" CACHE STRING
   "WebAssembly build type. Support web (builds an OpenSCAD module) or node (standalone .js executable)")
 
 if (USE_QT6)
-  # Minimum version required for Qt-6.5
-  set(DEPLOYMENT_TARGET "11.0")
+  # Minimum version required for Qt-6.8
+  set(DEPLOYMENT_TARGET "12.0")
 else()
   # Minimum version required for std::filesystem
   set(DEPLOYMENT_TARGET "10.15")
@@ -124,9 +130,15 @@ if(CLANG_TIDY)
 endif(CLANG_TIDY)
 
 add_executable(OpenSCADExe src/main_wrapper.cc)
-set_target_properties(OpenSCADExe PROPERTIES
-    OUTPUT_NAME "pythonscad"
-)
+if (APPLE)
+  set_target_properties(OpenSCADExe PROPERTIES
+      OUTPUT_NAME "PythonSCAD"
+  )
+else()
+  set_target_properties(OpenSCADExe PROPERTIES
+      OUTPUT_NAME "pythonscad"
+  )
+endif()
 
 add_library(OpenSCADLibInternal STATIC)
 target_link_libraries(OpenSCADExe PUBLIC OpenSCADLibInternal)
@@ -134,7 +146,37 @@ set_target_properties(OpenSCADLibInternal PROPERTIES
     OUTPUT_NAME "OpenSCADLibInternal" # results in `libopenscadinternal`
 )
 
+add_library(svg STATIC)
+target_link_libraries(OpenSCADExe PUBLIC svg)
+# TODO: https://github.com/openscad/openscad/issues/6369 - Update includes so we don't need this, which also prevents trivially including other parts of OpenSCAD.
+target_include_directories(svg PUBLIC
+  "src"
+)
+target_sources(svg PRIVATE
+  src/libsvg/circle.cc
+  src/libsvg/data.cc
+  src/libsvg/ellipse.cc
+  src/libsvg/group.cc
+  src/libsvg/libsvg.cc
+  src/libsvg/line.cc
+  src/libsvg/path.cc
+  src/libsvg/polygon.cc
+  src/libsvg/polyline.cc
+  src/libsvg/rect.cc
+  src/libsvg/shape.cc
+  src/libsvg/svgpage.cc
+  src/libsvg/text.cc
+  src/libsvg/transformation.cc
+  src/libsvg/tspan.cc
+  src/libsvg/use.cc
+  src/libsvg/util.cc
+)
+
 if (MINGW)
+  # Add big-obj support for all MinGW builds (not just Debug) to handle
+  # template-heavy files like cgalutils.cc that exceed COFF section limits
+  target_compile_options(OpenSCADLibInternal PRIVATE -Wa,-mbig-obj)
+
   # Configure Debug flags (MinGW) to keep rich symbols and avoid PE/COFF
   # RIP-relative relocation overflows in large template-heavy builds.
   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -157,6 +199,12 @@ if (MINGW)
     )
     # Unsure if it helps to double this
     target_link_options(OpenSCADExe PRIVATE
+      $<$<CONFIG:Debug>:
+        -Wl,--gc-sections;        # Linker: drop unused sections
+      >
+    )
+    # Unsure if it helps to triple this
+    target_link_options(svg PRIVATE
       $<$<CONFIG:Debug>:
         -Wl,--gc-sections;        # Linker: drop unused sections
       >
@@ -186,6 +234,22 @@ if (MINGW)
         -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
       >
     )
+    # Unsure if it helps to double this
+    target_link_options(OpenSCADExe PRIVATE
+      $<$<CONFIG:Debug>:
+        -Wl,--gc-sections;        # Linker: drop unused sections
+        -Wl,--icf=all;            # ICF: fold identical code/data (effective with lld)
+        -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
+      >
+    )
+    # Unsure if it helps to triple this
+    target_link_options(svg PRIVATE
+      $<$<CONFIG:Debug>:
+        -Wl,--gc-sections;        # Linker: drop unused sections
+        -Wl,--icf=all;            # ICF: fold identical code/data (effective with lld)
+        -fuse-ld=lld;             # Use LLVM lld (robust with huge C++/COFF debug)
+      >
+    )
   endif()
   if (NOT MXECROSS)
     target_compile_definitions(OpenSCADLibInternal PRIVATE QSCINTILLA_DLL)
@@ -197,15 +261,15 @@ find_package(Sanitizers)
 
 # Strict c++17, e.g. no GNU extensions
 if (MSVC) # For MSVC, errors show up when using c++ 17 for build.
-  set_target_properties(OpenSCADLibInternal OpenSCADExe PROPERTIES
+  set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
     CXX_STANDARD 20
   )
 else()
-  set_target_properties(OpenSCADLibInternal OpenSCADExe PROPERTIES
+  set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
     CXX_STANDARD 17
   )
 endif()
-set_target_properties(OpenSCADLibInternal OpenSCADExe PROPERTIES
+set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
   # Output compilation database (compile_commands.json), so we can e.g. run clang-tidy or other tools separately
   EXPORT_COMPILE_COMMANDS ON
   LINKER_LANGUAGE CXX
@@ -216,6 +280,7 @@ set_target_properties(OpenSCADLibInternal OpenSCADExe PROPERTIES
 # Verbose link step
 if(("${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}" STREQUAL "GNU") OR
    ("${CMAKE_CXX_COMPILER_ID}" MATCHES "AppleClang|Clang|GNU"))
+  target_link_options(svg BEFORE PUBLIC "-v")
   target_link_options(OpenSCADLibInternal BEFORE PUBLIC "-v")
   target_link_options(OpenSCADExe BEFORE PUBLIC "-v")
 endif()
@@ -313,7 +378,11 @@ else()
   set(SUFFIX_WITH_DASH "")
 endif()
 
-set(EXECUTABLE_NAME pythonscad${SUFFIX_WITH_DASH})
+if (APPLE)
+  set(EXECUTABLE_NAME PythonSCAD${SUFFIX_WITH_DASH})
+else()
+  set(EXECUTABLE_NAME pythonscad${SUFFIX_WITH_DASH})
+endif()
 set(PYTHON_EXECUTABLE_NAME pythonscad-python${SUFFIX_WITH_DASH})
 
 if (MXECROSS OR WIN32)
@@ -335,6 +404,7 @@ file(MAKE_DIRECTORY ${OPENSCAD_LIB_OUTPUT_DIR})
 
 target_compile_options(OpenSCADLibInternal PUBLIC "$<$<CONFIG:DEBUG>:-DDEBUG>")
 target_compile_options(OpenSCADExe PUBLIC "$<$<CONFIG:DEBUG>:-DDEBUG>")
+target_compile_options(svg PUBLIC "$<$<CONFIG:DEBUG>:-DDEBUG>")
 
 target_compile_definitions(OpenSCADLibInternal PUBLIC
   _REENTRANT
@@ -423,6 +493,7 @@ if (MSVC)
   # Our code is compatible with both V3 and V5, so for now, we accept any version.
   find_package(Eigen3 REQUIRED QUIET)
   target_link_libraries(OpenSCADLibInternal PUBLIC Eigen3::Eigen)
+  target_link_libraries(svg PUBLIC Eigen3::Eigen)
   message(STATUS "Eigen: ${Eigen3_VERSION}")
 
   set(Boost_USE_STATIC_LIBS TRUE)
@@ -430,6 +501,7 @@ if (MSVC)
   message(STATUS "Boost: ${Boost_VERSION}")
   target_compile_definitions(OpenSCADLibInternal PRIVATE BOOST_DLL_USE_STD_FS)
   target_link_libraries(OpenSCADLibInternal PUBLIC Boost::headers Boost::regex Boost::program_options)
+  target_link_libraries(svg PUBLIC Boost::headers)
 
   find_package(harfbuzz CONFIG REQUIRED)
   find_path(HARFBUZZ_INCLUDE_DIRS harfbuzz)
@@ -470,12 +542,14 @@ else()
   # Our code is compatible with both V3 and V5, so for now, we accept any version.
   find_package(Eigen3 REQUIRED QUIET)
   target_link_libraries(OpenSCADLibInternal PUBLIC Eigen3::Eigen)
+  target_link_libraries(svg PUBLIC Eigen3::Eigen)
   message(STATUS "Eigen: ${Eigen3_VERSION}")
 
   find_package(Boost 1.70 REQUIRED QUIET COMPONENTS regex program_options)
   message(STATUS "Boost: ${Boost_VERSION}")
   target_compile_definitions(OpenSCADLibInternal PRIVATE BOOST_DLL_USE_STD_FS)
   target_link_libraries(OpenSCADLibInternal PUBLIC Boost::headers Boost::regex Boost::program_options)
+  target_link_libraries(svg PUBLIC Boost::headers)
 
   find_package(HarfBuzz 0.9.19 REQUIRED)
   message(STATUS "Harfbuzz: ${HARFBUZZ_VERSION}")
@@ -536,6 +610,14 @@ if(ENABLE_CGAL)
   #  set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
   #endif()
   set(CMAKE_MODULE_PATH ${OPENSCAD_ORIGINAL_CMAKE_MODULE_PATH})
+else()
+  message(WARNING "\n"
+	  "*** Configuration with ENABLE_CGAL=OFF ***\n"
+          "This settings is currently only meant for developement purposes.\n"
+	  "Please do not disabled CGAL for any normal builds as this will "
+          "disable a couple of features that are normally expected to be "
+          "available even with the Manifold geometry engine is the default "
+	  "(e.g. Minkowski).")
 endif(ENABLE_CGAL)
 
 find_package(LibZip REQUIRED)
@@ -558,21 +640,30 @@ configure_file(
   "${CMAKE_CURRENT_BINARY_DIR}/executable.h"
 )
 
+target_link_libraries(svg PUBLIC LibXml2::LibXml2)
+
 if(ENABLE_PYTHON)
   SET(PYTHON_SOURCES
     src/python/pyopenscad.cc
     src/python/pydata.cc
     src/python/pymod.cc
-    src/python/pyfunctions.cc)
+    src/python/pyfunctions.cc
+    src/python/pyconversion.cc)
   if(ENABLE_LIBFIVE)
     list(APPEND PYTHON_SOURCES
       src/python/FrepNode.cc)
   endif()
   add_library(OpenSCADPy ${PYTHON_SOURCES} )
   if(ENABLE_LIBFIVE)
-    target_compile_definitions(OpenSCAD PRIVATE ENABLE_LIBFIVE)
+    target_compile_definitions(OpenSCADLibInternal PRIVATE ENABLE_LIBFIVE)
     target_compile_definitions(OpenSCADPy PRIVATE ENABLE_LIBFIVE)
     if(USE_BUILTIN_LIBFIVE)
+      # For portable builds (e.g., AppImage), disable -march=native to avoid
+      # generating AVX-512 or other CPU-specific instructions that may not be
+      # available on all target machines.
+      if(PORTABLE_BINARY)
+        set(MARCH_SUPPORTED OFF CACHE BOOL "Disable -march=native for portable builds" FORCE)
+      endif()
       add_subdirectory(submodules/libfive EXCLUDE_FROM_ALL)
       target_link_libraries(OpenSCADPy PRIVATE libfive)
     else()
@@ -591,33 +682,120 @@ if(ENABLE_PYTHON)
   target_compile_definitions(OpenSCADPy PRIVATE ENABLE_EXPERIMENTAL)
   find_package(Nettle 3.4)
   if(WIN32)
+    # Windows target build.
+    # - Native MSYS2 build: use MSYS2-installed Python files.
+    # - MXE cross-compilation: download MSYS2 python package to get Windows headers/libs.
     #MINGW environment
     SET(CALLSTACK "ucrt")
-    SET(PYTHON_MINGW_VERSION "3.12") # define python version here
     #	SET(CALLSTACK "mingw")
     #	SET(CALLSTACK "clang")
 
-    # Caller side
-    SET(PYTHON_MINGW_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_mingw")
-    SET(PYTHON_MINGW_PACKAGEFOLDER "https://mirror.msys2.org/mingw/${CALLSTACK}64")
-    SET(PYTHON_MINGW_PACKAGETAR "mingw-w64-${CALLSTACK}-x86_64-python-${PYTHON_MINGW_VERSION}.9-5-any.pkg.tar")   # adapt here
-    SET(PYTHON_MINGW_PACKAGEZST "${PYTHON_MINGW_PACKAGETAR}.zst")
-    SET(PYTHON_MINGW_ARCHIVE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/lib/libpython${PYTHON_MINGW_VERSION}.dll.a")
+    if(MXECROSS)
+      # MXE cross-compilation: obtain Windows Python headers/libs from MSYS2 mirror.
+      set(PYTHON_MINGW_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_mingw")
+      set(PYTHON_MINGW_REPODIR "${CALLSTACK}64")
+      set(PYTHON_MINGW_REPOURL "https://mirror.msys2.org/mingw/${PYTHON_MINGW_REPODIR}")
 
-    # these dll are actually used
+      # Resolve the latest mingw-w64-<callstack>-x86_64-python package filename from the mirror.
+      # Example filename: mingw-w64-ucrt-x86_64-python-3.13.2-2-any.pkg.tar.zst
+      execute_process(
+        COMMAND bash -c "set -euo pipefail; html=$(curl -fsSL '${PYTHON_MINGW_REPOURL}/'); echo \"$html\" | grep -oE 'mingw-w64-${CALLSTACK}-x86_64-python-[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+-any\\.pkg\\.tar\\.(zst|xz|gz)' | sort -V | tail -n 1"
+        OUTPUT_VARIABLE PYTHON_MINGW_PACKAGEFILE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+      if(NOT PYTHON_MINGW_PACKAGEFILE)
+        message(FATAL_ERROR "Could not resolve MSYS2 python package filename from ${PYTHON_MINGW_REPOURL}.")
+      endif()
+
+      # Extract Python versions from the package filename.
+      string(REGEX MATCH "python-([0-9]+\\.[0-9]+\\.[0-9]+)-" _ ${PYTHON_MINGW_PACKAGEFILE})
+      set(PYTHON_FULL_VERSION "${CMAKE_MATCH_1}")
+      string(REGEX MATCH "^([0-9]+\\.[0-9]+)" _ "${PYTHON_FULL_VERSION}")
+      set(PYTHON_MINGW_VERSION "${CMAKE_MATCH_1}")
+      if(NOT PYTHON_MINGW_VERSION OR NOT PYTHON_FULL_VERSION)
+        message(FATAL_ERROR "Failed to parse Python version from MSYS2 package filename: ${PYTHON_MINGW_PACKAGEFILE}")
+      endif()
+
+      set(PYTHON_MINGW_ARCHIVE "${PYTHON_MINGW_DEVPATH}/${PYTHON_MINGW_REPODIR}/lib/libpython${PYTHON_MINGW_VERSION}.dll.a")
+      message(STATUS "MXE: Using MSYS2 python package: ${PYTHON_MINGW_PACKAGEFILE}")
+      message(STATUS "MXE: Python version: ${PYTHON_MINGW_VERSION} (full: ${PYTHON_FULL_VERSION})")
+
+      add_custom_command(
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/download-msys2-python.sh
+                "${PYTHON_MINGW_REPOURL}"
+                "${PYTHON_MINGW_PACKAGEFILE}"
+                "${PYTHON_MINGW_DEVPATH}"
+        OUTPUT ${PYTHON_MINGW_ARCHIVE}
+      )
+      add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
+      add_dependencies(OpenSCADPy tgt_python_mingw)
+    else()
+      # Native MSYS2 Windows build: use MSYS2-installed Python.
+      # Auto-detect Python version from MSYS2 environment
+      # First check if PYTHON_VERSION env var is set (from CI), otherwise detect
+      if(DEFINED ENV{PYTHON_VERSION})
+        SET(PYTHON_MINGW_VERSION "$ENV{PYTHON_VERSION}")
+        message(STATUS "Using Python version from environment: ${PYTHON_MINGW_VERSION}")
+      else()
+        # Detect Python version by checking installed libraries
+        file(GLOB PYTHON_LIBS "/${CALLSTACK}64/lib/libpython3.*.dll.a")
+        if(PYTHON_LIBS)
+          list(GET PYTHON_LIBS 0 FIRST_LIB)
+          string(REGEX MATCH "libpython([0-9]+\\.[0-9]+)\\.dll\\.a" _ ${FIRST_LIB})
+          SET(PYTHON_MINGW_VERSION ${CMAKE_MATCH_1})
+          message(STATUS "Auto-detected Python version: ${PYTHON_MINGW_VERSION}")
+        else()
+          message(FATAL_ERROR "Could not detect Python version. Ensure Python is installed via MSYS2.")
+        endif()
+      endif()
+
+      # Use MSYS2-installed Python instead of downloading it separately
+      SET(PYTHON_MINGW_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_mingw")
+      SET(PYTHON_MINGW_SYSTEM_LIB "/${CALLSTACK}64/lib/libpython${PYTHON_MINGW_VERSION}.dll.a")
+      SET(PYTHON_MINGW_ARCHIVE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/lib/libpython${PYTHON_MINGW_VERSION}.dll.a")
+      SET(PYTHON_MINGW_INCLUDE "/${CALLSTACK}64/include/python${PYTHON_MINGW_VERSION}")
+
+      # Copy MSYS2 Python to local directory for patching
+      # Use bash to ensure Unix commands work in MSYS2 environment
+      add_custom_command(
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/prepare-msys2-python.sh
+                "${CALLSTACK}"
+                "${PYTHON_MINGW_VERSION}"
+                "${PYTHON_MINGW_DEVPATH}"
+        OUTPUT ${PYTHON_MINGW_ARCHIVE}
+      )
+      add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
+      add_dependencies(OpenSCADPy tgt_python_mingw)
+
+      # Get the full Python version for embed downloads (e.g., 3.13.2)
+      # Check if PYTHON_FULL_VERSION env var is set (from CI), otherwise try to detect
+      if(DEFINED ENV{PYTHON_FULL_VERSION})
+        SET(PYTHON_FULL_VERSION "$ENV{PYTHON_FULL_VERSION}")
+        message(STATUS "Using full Python version from environment: ${PYTHON_FULL_VERSION}")
+      else()
+        # Try to detect full version by running python
+        execute_process(
+          COMMAND python --version
+          OUTPUT_VARIABLE PYTHON_VERSION_OUTPUT
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        string(REGEX MATCH "Python ([0-9]+\\.[0-9]+\\.[0-9]+)" _ ${PYTHON_VERSION_OUTPUT})
+        SET(PYTHON_FULL_VERSION ${CMAKE_MATCH_1})
+        message(STATUS "Auto-detected full Python version: ${PYTHON_FULL_VERSION}")
+      endif()
+    endif()
+
+    # Calculate the DLL name based on version (e.g., python313.dll for 3.13)
+    string(REPLACE "." "" PYTHON_DLL_VER ${PYTHON_MINGW_VERSION})
+
+    # These dll are actually used
     SET(PYTHON_EMBED_DEVPATH "${CMAKE_CURRENT_SOURCE_DIR}/python_embed")
-    SET(PYTHON_EMBED_FILENAME "python-${PYTHON_MINGW_VERSION}.2-embed-amd64.zip") #adapt here
+    SET(PYTHON_EMBED_FILENAME "python-${PYTHON_FULL_VERSION}-embed-amd64.zip")
     SET(PYTHON_EMBED_ARCHIVE "${PYTHON_EMBED_DEVPATH}/${PYTHON_EMBED_FILENAME}")
-    SET(PYTHON_EMBED_SHLIB "${PYTHON_EMBED_DEVPATH}/python312.dll")
-    SET(PYTHON_EMBED_URL "https://www.python.org/ftp/python/${PYTHON_MINGW_VERSION}.2/${PYTHON_EMBED_FILENAME}")
-
-    add_custom_command(
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND rm -rf python_mingw && mkdir python_mingw && cd python_mingw && wget ${PYTHON_MINGW_PACKAGEFOLDER}/${PYTHON_MINGW_PACKAGEZST} && bsdtar -xf ${PYTHON_MINGW_PACKAGEZST} && ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh
-      OUTPUT ${PYTHON_MINGW_ARCHIVE}
-    )
-    add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
-    add_dependencies(OpenSCADPy tgt_python_mingw)
+    SET(PYTHON_EMBED_SHLIB "${PYTHON_EMBED_DEVPATH}/python${PYTHON_DLL_VER}.dll")
+    SET(PYTHON_EMBED_URL "https://www.python.org/ftp/python/${PYTHON_FULL_VERSION}/${PYTHON_EMBED_FILENAME}")
 
     add_custom_command(
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -633,10 +811,19 @@ if(ENABLE_PYTHON)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
     target_include_directories(OpenSCADPy PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
   else() #MXE
-	  if (${PYTHON_VERSION}  STREQUAL "OFF")
-      find_package(Python3  REQUIRED COMPONENTS Development)
+	  if (MXECROSS)
+      # Cross builds only need the host interpreter for tooling; avoid pulling host dev libs
+      find_package(Python3 REQUIRED COMPONENTS Interpreter)
+      set(Python_Eff_LIBRARIES "")
+      set(Python_Eff_INCLUDE_DIRS "")
     else()
-      find_package(Python3  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
+      if (${PYTHON_VERSION}  STREQUAL "OFF")
+        find_package(Python3  REQUIRED COMPONENTS Development)
+      else()
+        find_package(Python3  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
+      endif()
+      SET(Python_Eff_LIBRARIES ${Python3_LIBRARIES} )
+      SET(Python_Eff_INCLUDE_DIRS ${Python3_INCLUDE_DIRS} )
     endif()
     if(NOT Nettle_FOUND)
       message(WARNING "Nettle not found, disabling python support.")
@@ -648,17 +835,23 @@ if(ENABLE_PYTHON)
         set(ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
       endif()
     endif()
-    SET(Python_Eff_LIBRARIES ${Python3_LIBRARIES} )
-    SET(Python_Eff_INCLUDE_DIRS ${Python3_INCLUDE_DIRS} )
-    target_link_libraries(OpenSCADPy PRIVATE ${Python_Eff_LIBRARIES})
-    target_include_directories(OpenSCADPy PRIVATE ${Python_Eff_INCLUDE_DIRS})
+    if(Python_Eff_LIBRARIES)
+      target_link_libraries(OpenSCADPy PRIVATE ${Python_Eff_LIBRARIES})
+    endif()
+    if(Python_Eff_INCLUDE_DIRS)
+      target_include_directories(OpenSCADPy PRIVATE ${Python_Eff_INCLUDE_DIRS})
+    endif()
     target_include_directories(OpenSCADPy PRIVATE "${CMAKE_SOURCE_DIR}/submodules/Clipper2/CPP/Clipper2Lib/include")
     message(STATUS "Python enabled")
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
-    target_link_libraries(OpenSCADPy PRIVATE ${Python3_LIBRARIES})
+    if(Python3_LIBRARIES)
+      target_link_libraries(OpenSCADPy PRIVATE ${Python3_LIBRARIES})
+    endif()
   endif() # endif MXE
   target_include_directories(OpenSCADPy PRIVATE ${Nettle_INCLUDE_DIRS})
   target_link_libraries(OpenSCADPy PRIVATE ${Nettle_LIBRARIES})
+  # OpenSCADExe also needs nettle (used in MainWindow.cc)
+  target_link_libraries(OpenSCADExe PRIVATE ${Nettle_LIBRARIES})
   # Create pythonscad-python symlink
   # On macOS bundles, this will be created via POST_BUILD command
   # On other platforms, create it in the build directory
@@ -669,6 +862,8 @@ if(ENABLE_PYTHON)
 	      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:OpenSCADLibInternal> ${CMAKE_CURRENT_BINARY_DIR}/${PYTHON_EXECUTABLE_NAME}.exe
 	      DEPENDS OpenSCADLibInternal
       )
+      else()
+        add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME})
     endif()
   endif()
   target_include_directories(OpenSCADPy SYSTEM PRIVATE ${FREETYPE_INCLUDE_DIRS})
@@ -726,19 +921,25 @@ if(ENABLE_PYTHON)
 endif()
 if(NOT HEADLESS)
   if(MXECROSS OR WIN32)
-    find_package(CURL REQUIRED)
- message(STATUS ${CURL_FOUND})
- message(STATUS ${CURL_INCLUDE_DIR})
- message(STATUS ${CURL_INCLUDE_LIBRARIES})
- message(STATUS ${CURL_VERSION_STRING})
-   target_compile_definitions(OpenSCADLibInternal PRIVATE CURL_STATICLIB)
-   target_include_directories(OpenSCADLibInternal SYSTEM PRIVATE ${CURL_INCLUDE_DIR})
-    if(WIN32 AND NOT MXECROSS)
-      # On Windows with MSYS2, use CURL_LIBRARIES from find_package
-      target_link_libraries(OpenSCADLibInternal PRIVATE ${CURL_LIBRARIES})
+    if(MXECROSS)
+      # For MXE cross-compilation, use pkg-config to get all static dependencies
+      find_package(PkgConfig REQUIRED)
+      pkg_check_modules(CURL REQUIRED IMPORTED_TARGET libcurl)
+      message(STATUS "CURL found via pkg-config: ${CURL_VERSION}")
+      message(STATUS "CURL include dirs: ${CURL_INCLUDE_DIRS}")
+      message(STATUS "CURL libraries: ${CURL_LIBRARIES}")
+      message(STATUS "CURL static libraries: ${CURL_STATIC_LIBRARIES}")
+      target_compile_definitions(OpenSCADLibInternal PRIVATE CURL_STATICLIB)
+      target_link_libraries(OpenSCADLibInternal PRIVATE PkgConfig::CURL)
     else()
-      # MXECROSS
-      target_link_libraries(OpenSCADLibInternal PRIVATE "libcurl.a;libidn2.a;libssh2.a;libunistring.a")
+      # Windows with MSYS2
+      find_package(CURL REQUIRED)
+      message(STATUS "CURL found: ${CURL_VERSION_STRING}")
+      message(STATUS "CURL include dir: ${CURL_INCLUDE_DIR}")
+      message(STATUS "CURL libraries: ${CURL_LIBRARIES}")
+      target_compile_definitions(OpenSCADLibInternal PRIVATE CURL_STATICLIB)
+      target_include_directories(OpenSCADLibInternal SYSTEM PRIVATE ${CURL_INCLUDE_DIR})
+      target_link_libraries(OpenSCADLibInternal PRIVATE ${CURL_LIBRARIES})
     endif()
   else()
 	  target_link_directories(OpenSCADLibInternal PRIVATE "/usr/lib64")
@@ -941,6 +1142,7 @@ if (MXECROSS)
   # ld: .../libzip.a(zip_crypto_win.c.obj):zip_crypto_win:(.text+0x1074): undefined reference to `BCryptGenRandom'
   # I guess before separate libraries, something transitively included zlib and that was good enough.
   find_package(ZLIB REQUIRED)
+  target_link_libraries(svg PRIVATE ZLIB::ZLIB)
   target_link_libraries(OpenSCADLibInternal PUBLIC bcrypt)
 endif()
 
@@ -1007,7 +1209,7 @@ if(NOT HEADLESS)
     message(STATUS "Qt6: ${Qt6_VERSION}")
 
     if (Qt6_POSITION_INDEPENDENT_CODE)
-      set_target_properties(OpenSCADLibInternal  OpenSCADExe PROPERTIES
+      set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
 	POSITION_INDEPENDENT_CODE ON
       )
     endif()
@@ -1034,7 +1236,7 @@ if(NOT HEADLESS)
     message(STATUS "Qt5: ${Qt5_VERSION}")
 
     if (Qt5_POSITION_INDEPENDENT_CODE)
-      set_target_properties(OpenSCADLibInternal OpenSCADExe PROPERTIES
+      set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
 	POSITION_INDEPENDENT_CODE ON
       )
     endif()
@@ -1223,6 +1425,7 @@ set(CORE_SOURCES
   src/core/RenderVariables.cc
   src/core/RotateExtrudeNode.cc
   src/core/ScopeContext.cc
+  src/core/Selection.cc
   src/core/Settings.cc
   src/core/SourceFile.cc
   src/core/SourceFileCache.cc
@@ -1304,23 +1507,6 @@ set(CORE_SOURCES
   src/io/import_step.cc
   src/io/StepKernel.cc
   src/io/import_svg.cc
-  src/libsvg/circle.cc
-  src/libsvg/data.cc
-  src/libsvg/ellipse.cc
-  src/libsvg/group.cc
-  src/libsvg/libsvg.cc
-  src/libsvg/line.cc
-  src/libsvg/path.cc
-  src/libsvg/polygon.cc
-  src/libsvg/polyline.cc
-  src/libsvg/rect.cc
-  src/libsvg/shape.cc
-  src/libsvg/svgpage.cc
-  src/libsvg/text.cc
-  src/libsvg/transformation.cc
-  src/libsvg/tspan.cc
-  src/libsvg/use.cc
-  src/libsvg/util.cc
   src/platform/PlatformUtils.cc
   src/utils/StackCheck.h
   src/utils/calc.cc
@@ -1391,6 +1577,7 @@ else()
   message(STATUS "Clipper2: ${Clipper2_VERSION}")
 endif()
 target_link_libraries(OpenSCADLibInternal PUBLIC Clipper2::Clipper2)
+target_link_libraries(svg PUBLIC Clipper2::Clipper2)
 
 if(ENABLE_MANIFOLD)
   if(NOT DEFINED MANIFOLD_PAR)
@@ -1504,7 +1691,6 @@ set(GUI_SOURCES
   src/gui/ShareDesignDialog.cc
   src/gui/ExportSvgDialog.cc
   src/gui/OctoPrintApiKeyDialog.cc
-  src/gui/FontListDialog.cc
   src/gui/FontListTableView.cc
   src/gui/InitConfigurator.cc
   src/gui/ImportUtils.cc
@@ -1514,6 +1700,9 @@ set(GUI_SOURCES
   src/gui/Measurement.cc
   src/gui/Animate.cc
   src/gui/FontList.cc
+  src/gui/ColorList.cc
+  src/gui/ColorLabel.cc
+  src/gui/ColorLayout.cc
   src/gui/MouseSelector.cc
   src/gui/OctoPrint.cc
   src/gui/OpenCSGWarningDialog.cc
@@ -1579,7 +1768,9 @@ set(GUI_HEADERS
     src/gui/ExportSvgDialog.h
     src/gui/OctoPrintApiKeyDialog.h
     src/gui/FontList.h
-    src/gui/FontListDialog.h
+    src/gui/ColorList.h
+    src/gui/ColorLabel.h
+    src/gui/ColorLayout.h
     src/gui/FontListTableView.h
     src/gui/IgnoreWheelWhenNotFocused.h
     src/gui/ImportUtils.h
@@ -1637,7 +1828,7 @@ set(GUI_UIS
     src/gui/ExportSvgDialog.ui
     src/gui/OctoPrintApiKeyDialog.ui
     src/gui/FontList.ui
-    src/gui/FontListDialog.ui
+    src/gui/ColorList.ui
     src/gui/LaunchingScreen.ui
     src/gui/LibraryInfoDialog.ui
     src/gui/MainWindow.ui
@@ -1669,7 +1860,11 @@ endif()
 if (ENABLE_MANIFOLD AND ENABLE_CGAL)
   list(APPEND Sources ${MANIFOLD_CGAL_SOURCES})
 endif()
-list(APPEND Sources src/openscad.cc ${CORE_SOURCES} ${OFFSCREEN_SOURCES})
+list(APPEND Sources
+  src/openscad.cc
+  ${CORE_SOURCES}
+  ${OFFSCREEN_SOURCES}
+)
 
 set_source_files_properties(
   # flex and bison tends to generate many macros, which does not work well with
@@ -1758,7 +1953,10 @@ elseif(WIN32)
 endif()
 
 file(GLOB_RECURSE TEST_SOURCES
-  "src/*_test.cc"
+  "src/utils/*_test.cc"
+)
+file(GLOB_RECURSE GUI_TEST_SOURCES
+  "src/gui/*_test.cc"
 )
 list(FILTER Sources EXCLUDE REGEX ".*_test[.]cc")
 list(REMOVE_ITEM Sources "src/main_wrapper.cc")
@@ -1779,7 +1977,7 @@ add_custom_command(TARGET OpenSCADExe POST_BUILD
     COMMENT "Compiling language files")
 
 if(APPLE AND NOT APPLE_UNIX)
-set_target_properties(OpenSCADExe PROPERTIES
+  set_target_properties(OpenSCADExe PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist.in
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_ICON_FILE ${MACOSX_BUNDLE_ICON_FILE}
@@ -1889,6 +2087,7 @@ else()
 endif()
 
 # Configure icon-related files, for release vs nightly
+configure_file(doc/pythonscad.1.in doc/pythonscad.1)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in ${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in2)
 configure_file(${RESOURCE_DIR}/icons/pythonscad.desktop.in ${RESOURCE_DIR}/icons/pythonscad.desktop)
 configure_file(${RESOURCE_DIR}/common.qrc.in ${RESOURCE_DIR}/common.qrc)
@@ -1915,7 +2114,40 @@ if(NOT APPLE OR APPLE_UNIX)
   endif()
   if(WIN32)
     if(ENABLE_PYTHON)
-	    install(DIRECTORY "${PYTHON_EMBED_DEVPATH}/" DESTINATION "." )
+	    if(MXECROSS)
+	      # For MXE cross-compilation, install Python runtime from MSYS2 package
+	      # This ensures ABI compatibility since the executable was linked against MSYS2 Python
+
+	      # Install all DLLs from ucrt64/bin/ (includes libpython3.13.dll and dependencies)
+	      install(DIRECTORY "${PYTHON_MINGW_DEVPATH}/${PYTHON_MINGW_REPODIR}/bin/"
+	              DESTINATION "."
+	              FILES_MATCHING PATTERN "*.dll")
+
+	      # Install Python standard library and extension modules
+	      # Python will search for lib/python3.x/ relative to the DLL location
+	      install(DIRECTORY "${PYTHON_MINGW_DEVPATH}/${PYTHON_MINGW_REPODIR}/lib/"
+	              DESTINATION "lib")
+	    else()
+	      # For native MSYS2 Windows builds, install from system MSYS2 Python
+	      # This ensures ABI compatibility since the executable is linked against MSYS2 Python
+	      # (The python.org embed package uses a different DLL name and structure)
+	      if(DEFINED ENV{MSYSTEM_PREFIX})
+	        set(_MSYS2_PYTHON_PREFIX "$ENV{MSYSTEM_PREFIX}")
+	      else()
+	        set(_MSYS2_PYTHON_PREFIX "/ucrt64")
+	      endif()
+
+	      # Install Python standard library and extension modules
+	      # Python will search for lib/python3.x/ relative to the DLL location
+	      install(DIRECTORY "${_MSYS2_PYTHON_PREFIX}/lib/python${PYTHON_MINGW_VERSION}/"
+	              DESTINATION "lib/python${PYTHON_MINGW_VERSION}"
+	              PATTERN "__pycache__" EXCLUDE
+	              PATTERN "test" EXCLUDE
+	              PATTERN "tests" EXCLUDE
+	              PATTERN "*.pyc" EXCLUDE)
+
+	      message(STATUS "Native MSYS2 build: Python stdlib will be installed from ${_MSYS2_PYTHON_PREFIX}/lib/python${PYTHON_MINGW_VERSION}")
+	    endif()
     endif()
     if(USE_MIMALLOC AND MI_LINK_SHARED)
       if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -1925,11 +2157,83 @@ if(NOT APPLE OR APPLE_UNIX)
       endif()
       install(FILES ${CMAKE_BINARY_DIR}/submodules/mimalloc/mimalloc.dll DESTINATION ".")
     endif()
+
+    # For native MSYS2 Windows builds, bundle runtime DLLs and Qt plugins
+    # This is needed because unlike MXE (which uses static linking), MSYS2 uses dynamic linking
+    if(NOT MXECROSS)
+      # Get the MSYS2 prefix directory
+      if(DEFINED ENV{MSYSTEM_PREFIX})
+        set(MSYS2_PREFIX "$ENV{MSYSTEM_PREFIX}")
+      else()
+        set(MSYS2_PREFIX "/ucrt64")
+      endif()
+      set(MSYS2_BIN_DIR "${MSYS2_PREFIX}/bin")
+
+      # Install Qt platform plugins (required for Qt to start)
+      if(USE_QT6)
+        set(QT_PLUGINS_DIR "${MSYS2_PREFIX}/share/qt6/plugins")
+      else()
+        set(QT_PLUGINS_DIR "${MSYS2_PREFIX}/share/qt5/plugins")
+      endif()
+
+      # Platform plugin is mandatory
+      install(FILES "${QT_PLUGINS_DIR}/platforms/qwindows.dll"
+              DESTINATION "platforms")
+
+      # Install style plugins for native look
+      install(DIRECTORY "${QT_PLUGINS_DIR}/styles/"
+              DESTINATION "styles"
+              FILES_MATCHING PATTERN "*.dll")
+
+      # Install image format plugins (for icons, etc.)
+      install(DIRECTORY "${QT_PLUGINS_DIR}/imageformats/"
+              DESTINATION "imageformats"
+              FILES_MATCHING PATTERN "*.dll")
+
+      # Install icon engine plugins (for SVG icons)
+      install(DIRECTORY "${QT_PLUGINS_DIR}/iconengines/"
+              DESTINATION "iconengines"
+              FILES_MATCHING PATTERN "*.dll")
+
+      # Ensure Qt SVG runtime library is bundled (required by SVG plugins)
+      if(USE_QT6)
+        install(FILES "${MSYS2_BIN_DIR}/Qt6Svg.dll" DESTINATION ".")
+      else()
+        install(FILES "${MSYS2_BIN_DIR}/Qt5Svg.dll" DESTINATION ".")
+      endif()
+
+      # Create qt.conf to tell Qt where to find plugins
+      # Without this, Qt won't find the plugins in the non-standard locations
+      file(WRITE "${CMAKE_BINARY_DIR}/qt.conf" "[Paths]\nPlugins = .\n")
+      install(FILES "${CMAKE_BINARY_DIR}/qt.conf" DESTINATION ".")
+
+      message(STATUS "Native MSYS2 build: Qt plugins will be bundled from ${QT_PLUGINS_DIR}")
+
+      # Use CMake's runtime dependency resolution to find and install required DLLs
+      if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.21")
+        install(TARGETS OpenSCADExe
+          RUNTIME_DEPENDENCY_SET runtime_deps
+        )
+        install(RUNTIME_DEPENDENCY_SET runtime_deps
+          PRE_EXCLUDE_REGEXES
+            "api-ms-.*"    # Windows API sets
+            "ext-ms-.*"    # Windows extension API sets
+          POST_EXCLUDE_REGEXES
+            ".*[Ss]ystem32.*"  # System DLLs
+            ".*[Ww]indows.*"   # Windows DLLs
+          DIRECTORIES
+            "${MSYS2_BIN_DIR}"
+            "${CMAKE_BINARY_DIR}"
+          DESTINATION "."
+        )
+        message(STATUS "Native MSYS2 build: Runtime DLLs will be bundled from ${MSYS2_BIN_DIR}")
+      endif()
+    endif()
   else()
-    install(FILES ${CMAKE_CURRENT_LIST_DIR}/doc/openscad.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 RENAME openscad${SUFFIX_WITH_DASH}.1)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/doc/pythonscad.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 RENAME pythonscad${SUFFIX_WITH_DASH}.1)
     install(FILES ${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/metainfo RENAME org.pythonscad.PythonSCAD.appdata.xml)
     if(ENABLE_LIBFIVE AND USE_BUILTIN_LIBFIVE)
-      install(FILES ${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.so DESTINATION "lib")
+      install(FILES ${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.so DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications RENAME ${EXECUTABLE_NAME}.desktop)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.xml DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages RENAME ${EXECUTABLE_NAME}.xml)
@@ -1964,31 +2268,72 @@ set(CPACK_PACKAGE_VENDOR "The OpenSCAD and PythonSCAD Developers")
 set(CPACK_PACKAGE_VERSION "${OPENSCAD_VERSION}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The Programmer's Solid 3D CAD Modeler")
 
-
-if(MXECROSS)
+# Windows NSIS installer configuration - applies to both cross-compile (MXE) and native builds
+if(WIN32)
   set(CPACK_GENERATOR ZIP;NSIS)
-  set(CPACK_SYSTEM_NAME ${PACKAGE_ARCH})
-  set(CPACK_PACKAGE_EXECUTABLES "pythonscad;${CPACK_PACKAGE_NAME}${SNAPSHOT_NAME_SUFFIX}")
-  set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME}${SNAPSHOT_NAME_SUFFIX}")
-  set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME}${SNAPSHOT_NAME_SUFFIX}")
+  set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)
+
+  # MXE cross-compile uses PACKAGE_ARCH; native builds detect architecture
+  if(MXECROSS)
+    set(CPACK_SYSTEM_NAME ${PACKAGE_ARCH})
+  else()
+    set(CPACK_SYSTEM_NAME "windows-x86-64")
+  endif()
+
+  # Custom filename format: PythonSCAD-qt6-0.6.0-28-g89c44cac7-windows-x86-64
+  # This overrides the default ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME}
+  if(DEFINED QT_VERSION_STR)
+    set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${QT_VERSION_STR}${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME}")
+  else()
+    set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME}")
+  endif()
+
+  set(CPACK_PACKAGE_EXECUTABLES "pythonscad;${CPACK_PACKAGE_NAME}")
+  set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME}")
+  set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME}")
+
   if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.22")
     set(CPACK_NSIS_IGNORE_LICENSE_PAGE ON)
   else()
     message(FATAL_ERROR "CPACK_NSIS_IGNORE_LICENSE_PAGE requires cmake 3.22")
   endif()
+
+  # NSIS installer configuration
+  set(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_NAME}")
+  set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_NAME}")
+
+  # Enable per-user installation option (no admin required)
+  # This allows installing to user's local AppData instead of Program Files
+  set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+
+  # Add "Run PythonSCAD" checkbox on finish page
+  set(CPACK_NSIS_MUI_FINISHPAGE_RUN "pythonscad.exe")
+
+  # Copy NSIS helper files to build directory so they're accessible with simple paths
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh"
+                 "${CMAKE_BINARY_DIR}/nsis-mingw-file-association.nsh" COPYONLY)
+
+  # Pre-install includes for file association and utility macros
+  # CPack runs NSIS from build/_CPack_Packages/<system>/NSIS/
+  # Use relative path back to build directory: ../../../
   set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "\
     !include \\\"FileFunc.nsh\\\"\n\
-    !include \\\"${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh\\\"\
+    !include \\\"..\\\\..\\\\..\\\\nsis-mingw-file-association.nsh\\\"\
   ")
+
+  # Extra install commands - includes file association and compatibility shortcut
   set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "\
-    !include \\\"${CMAKE_BINARY_DIR}/nsis-extra-install-commands.nsh\\\"\n\
+    !include \\\"..\\\\..\\\\..\\\\nsis-extra-install-commands.nsh\\\"\n\
     CreateShortCut $INSTDIR\\\\openscad.lnk $INSTDIR\\\\pythonscad.exe\
   ")
+
   set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "\
-    !include \\\"${CMAKE_BINARY_DIR}/nsis-extra-uninstall-commands.nsh\\\"\
+    !include \\\"..\\\\..\\\\..\\\\nsis-extra-uninstall-commands.nsh\\\"\
   ")
-  set (CPACK_NSIS_MODIFY_PATH "ON")
-  else()
+
+  set(CPACK_NSIS_MODIFY_PATH "ON")
+
+elseif(UNIX AND NOT APPLE)
   set(CPACK_GENERATOR RPM;DEB)
   set(CPACK_RPM_COMPONENT_INSTALL OFF)
   set(CPACK_RPM_PACKAGE_SUMMARY "The Programmer's Solid 3D CAD Modeler")
@@ -2013,12 +2358,6 @@ if(MXECROSS)
   set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
   set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
 
-  # Create openscad symlink pointing to pythonscad (Linux/Unix only, not Windows)
-  if(UNIX AND NOT APPLE)
-    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "./pythonscad" "openscad")
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pythonscad DESTINATION "." COMPONENT libraries)
-  endif()
-
 endif()
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
 # None of config time variables are available for CPACK_PROJECT_CONFIG_FILE, so we configure it now with values.
@@ -2039,7 +2378,7 @@ if (MXECROSS)
 endif()
 
 if(ENABLE_TESTS)
-  find_package(Catch2_invalid 3 QUIET)
+  find_package(Catch2 3 QUIET)
 
   # Note: Since Catch2 is only used for testing, we install it via Homebrew.
   # However, we need to temporarily re-enable searching in Homebrew for this to work.
@@ -2052,7 +2391,7 @@ if(ENABLE_TESTS)
   endif()
 
   if(NOT Catch2_FOUND)
-	  find_package(Catch2_Invalid 3)
+    find_package(Catch2 3)
   endif()
 
   enable_testing()
