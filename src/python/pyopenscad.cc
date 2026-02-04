@@ -817,10 +817,16 @@ void initPython(const std::string& binDir, const std::string& scriptpath, double
       }
     }
 #endif
+    // Add resource-based libraries directory (works for development, installed, and packaged builds)
+    const auto resourceLibPath = fs::path(PlatformUtils::resourceBasePath()) / "libraries" / "python";
+    if (fs::is_directory(resourceLibPath)) {
+      stream << sepchar << fs::absolute(resourceLibPath).generic_string();
+    }
+
     fs::path scriptfile(python_scriptpath);
-    stream << sep << PlatformUtils::userPythonLibraryPath();
-    stream << sep << PlatformUtils::userLibraryPath();
-    stream << sep << scriptfile.parent_path().string();
+    stream << sepchar << PlatformUtils::userPythonLibraryPath();
+    stream << sepchar << PlatformUtils::userLibraryPath();
+    stream << sepchar << scriptfile.parent_path().string();
     stream << sepchar << ".";
     PyConfig_SetBytesString(&config, &config.pythonpath_env, stream.str().c_str());
 
