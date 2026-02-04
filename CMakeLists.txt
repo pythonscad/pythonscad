@@ -1982,6 +1982,25 @@ if(APPLE AND NOT APPLE_UNIX)
       COMMENT "Updating Python library reference to use @rpath"
     )
   endif()
+
+  # Bundle libfive.dylib for portability (if libfive is enabled and built-in)
+  if(ENABLE_LIBFIVE AND USE_BUILTIN_LIBFIVE)
+    set(LIBFIVE_DYLIB "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.dylib")
+    add_custom_command(TARGET OpenSCADExe POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${BUNDLE_FRAMEWORKS_DIR}
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LIBFIVE_DYLIB} ${BUNDLE_FRAMEWORKS_DIR}/
+      COMMENT "Bundling libfive.dylib into app bundle for portability"
+    )
+    # Fix the install name to use @rpath instead of the build path
+    add_custom_command(TARGET OpenSCADExe POST_BUILD
+      COMMAND install_name_tool -change
+        ${LIBFIVE_DYLIB}
+        @rpath/libfive.dylib
+        ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}
+      COMMENT "Updating libfive library reference to use @rpath"
+    )
+  endif()
+
   file(COPY ${CMAKE_SOURCE_DIR}/color-schemes DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/examples DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/fonts DESTINATION ${BUNDLE_RESOURCES_DIR})
