@@ -2038,8 +2038,10 @@ elseif(MINGW)
   set_property(TARGET OpenSCADLibInternal APPEND_STRING PROPERTY LINK_FLAGS " -municode")
   set_property(TARGET OpenSCADExe APPEND_STRING PROPERTY LINK_FLAGS " -municode")
 
-  # Copy libfive.dll to build directory so tests can find it at runtime
+  # Copy libfive.dll and Python module to build directory so tests can find them at runtime
   if(ENABLE_LIBFIVE AND USE_BUILTIN_LIBFIVE)
+    # Ensure libfive-python target has built the Python files before we copy them
+    add_dependencies(OpenSCADExe libfive-python)
     add_custom_command(TARGET OpenSCADExe POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.dll"
