@@ -2175,6 +2175,7 @@ if(NOT APPLE OR APPLE_UNIX)
           DIRECTORIES
             "${MSYS2_BIN_DIR}"
             "${CMAKE_BINARY_DIR}"
+            "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src"
           DESTINATION "."
         )
         message(STATUS "Native MSYS2 build: Runtime DLLs will be bundled from ${MSYS2_BIN_DIR}")
