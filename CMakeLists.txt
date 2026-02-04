@@ -661,17 +661,9 @@ if(ENABLE_PYTHON)
       if(PORTABLE_BINARY)
         set(MARCH_SUPPORTED OFF CACHE BOOL "Disable -march=native for portable builds" FORCE)
       endif()
-      # Pre-define PYTHON_SITE_PACKAGES_DIR using modern sysconfig (not deprecated distutils)
-      # This prevents libfive's CMakeLists.txt from using distutils.sysconfig which was
-      # removed in Python 3.12+
-      if(UNIX)
-        execute_process(
-          COMMAND ${Python3_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_paths()['purelib'], end='')"
-          OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR)
-        message(STATUS "Python site-packages directory: ${PYTHON_SITE_PACKAGES_DIR}")
-      endif()
-      add_subdirectory(submodules/libfive EXCLUDE_FROM_ALL)
-      target_link_libraries(OpenSCADPy PRIVATE libfive)
+      # Note: add_subdirectory(libfive) is deferred to after Python3 is found,
+      # so we can define PYTHON_SITE_PACKAGES_DIR using modern sysconfig
+      # (avoids deprecated distutils removed in Python 3.12+)
     else()
       pkg_check_modules(libfive REQUIRED libfive)
       include_directories(${libfive_INCLUDE_DIRS})
@@ -854,6 +846,23 @@ if(ENABLE_PYTHON)
       target_link_libraries(OpenSCADPy PRIVATE ${Python3_LIBRARIES})
     endif()
   endif() # endif MXE
+
+  # Add libfive submodule now that Python3 is found
+  # (deferred from earlier so we can use Python3_EXECUTABLE for PYTHON_SITE_PACKAGES_DIR)
+  if(ENABLE_LIBFIVE AND USE_BUILTIN_LIBFIVE)
+    # Pre-define PYTHON_SITE_PACKAGES_DIR using modern sysconfig (not deprecated distutils)
+    # This prevents libfive's CMakeLists.txt from using distutils.sysconfig which was
+    # removed in Python 3.12+
+    if(UNIX AND Python3_EXECUTABLE)
+      execute_process(
+        COMMAND ${Python3_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_paths()['purelib'], end='')"
+        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR)
+      message(STATUS "Python site-packages directory: ${PYTHON_SITE_PACKAGES_DIR}")
+    endif()
+    add_subdirectory(submodules/libfive EXCLUDE_FROM_ALL)
+    target_link_libraries(OpenSCADPy PRIVATE libfive)
+  endif()
+
   target_include_directories(OpenSCADPy PRIVATE ${Nettle_INCLUDE_DIRS})
   target_link_libraries(OpenSCADPy PRIVATE ${Nettle_LIBRARIES})
   # OpenSCADExe also needs nettle (used in MainWindow.cc)
