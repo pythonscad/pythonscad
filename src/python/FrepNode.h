@@ -1,5 +1,10 @@
 #pragma once
 
+// Define _USE_MATH_DEFINES for Windows MinGW to enable M_PI
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
+
 #include "core/node.h"
 #include "Value.h"
 #include <linalg.h>
