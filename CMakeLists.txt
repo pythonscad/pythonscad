@@ -649,6 +649,8 @@ if(ENABLE_PYTHON)
       src/python/FrepNode.cc)
   endif()
   add_library(OpenSCADPy ${PYTHON_SOURCES} )
+  # _USE_MATH_DEFINES must be defined before cmath is included for M_PI on Windows
+  target_compile_definitions(OpenSCADPy PRIVATE _USE_MATH_DEFINES)
   if(ENABLE_LIBFIVE)
     target_compile_definitions(OpenSCADLibInternal PRIVATE ENABLE_LIBFIVE)
     target_compile_definitions(OpenSCADPy PRIVATE ENABLE_LIBFIVE)
@@ -659,6 +661,9 @@ if(ENABLE_PYTHON)
       if(PORTABLE_BINARY)
         set(MARCH_SUPPORTED OFF CACHE BOOL "Disable -march=native for portable builds" FORCE)
       endif()
+      # Disable libfive's Python bindings since PythonSCAD has its own
+      # This avoids issues with distutils in Python 3.12+
+      set(BUILD_PYTHON_BINDINGS OFF CACHE BOOL "Disable libfive Python bindings" FORCE)
       add_subdirectory(submodules/libfive EXCLUDE_FROM_ALL)
       target_link_libraries(OpenSCADPy PRIVATE libfive)
     else()
