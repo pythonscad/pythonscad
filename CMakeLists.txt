@@ -2046,6 +2046,13 @@ elseif(MINGW)
         "${CMAKE_BINARY_DIR}/"
       COMMENT "Copying libfive.dll to build directory for runtime"
     )
+    # Copy libfive Python module to build directory so tests can import it
+    add_custom_command(TARGET OpenSCADExe POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/bind/python/libfive"
+        "${CMAKE_BINARY_DIR}/libfive"
+      COMMENT "Copying libfive Python module to build directory"
+    )
   endif()
 elseif(MSVC)
   set_target_properties(OpenSCADExe PROPERTIES
