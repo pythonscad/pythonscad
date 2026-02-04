@@ -661,9 +661,15 @@ if(ENABLE_PYTHON)
       if(PORTABLE_BINARY)
         set(MARCH_SUPPORTED OFF CACHE BOOL "Disable -march=native for portable builds" FORCE)
       endif()
-      # Disable libfive's Python bindings since PythonSCAD has its own
-      # This avoids issues with distutils in Python 3.12+
-      set(BUILD_PYTHON_BINDINGS OFF CACHE BOOL "Disable libfive Python bindings" FORCE)
+      # Pre-define PYTHON_SITE_PACKAGES_DIR using modern sysconfig (not deprecated distutils)
+      # This prevents libfive's CMakeLists.txt from using distutils.sysconfig which was
+      # removed in Python 3.12+
+      if(UNIX)
+        execute_process(
+          COMMAND ${Python3_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_paths()['purelib'], end='')"
+          OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR)
+        message(STATUS "Python site-packages directory: ${PYTHON_SITE_PACKAGES_DIR}")
+      endif()
       add_subdirectory(submodules/libfive EXCLUDE_FROM_ALL)
       target_link_libraries(OpenSCADPy PRIVATE libfive)
     else()
