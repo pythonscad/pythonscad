@@ -444,7 +444,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   this->languageLabel = nullptr;  // must be initialized before calling updateLanguageLabel()
   updateStatusBar(nullptr);
   updateLanguageLabel();
-  setupMenusAndActions();
   setupInput();
 
   restoreWindowState();
