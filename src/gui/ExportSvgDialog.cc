@@ -5,8 +5,15 @@
 ExportSvgDialog::ExportSvgDialog()
 {
   setupUi(this);
-  fillColor = QColor(Qt::white);
-  strokeColor = QColor(Qt::black);
+  this->checkBoxEnableFill->setChecked (Settings::SettingsExportSvg::exportSvgFill.value());
+  this->checkBoxEnableStroke->setChecked(Settings::SettingsExportSvg::exportSvgStroke.value());
+  QColor color;
+
+  auto colorName = Settings::SettingsExportSvg::exportSvgFillColor.value();
+  fillColor.setNamedColor(colorName.c_str());  
+
+  colorName = Settings::SettingsExportSvg::exportSvgStrokeColor.value();
+  strokeColor.setNamedColor(colorName.c_str());  
   doubleSpinBoxStrokeWidth->setValue(defaultStrokeWidth);
   updateFillColor(fillColor);
   updateStrokeColor(strokeColor);
@@ -114,6 +121,9 @@ void ExportSvgDialog::updateFillColor(const QColor& color)
   labelFillColor->setAutoFillBackground(true);
   labelFillColor->setPalette(pal);
   labelFillColor->update();
+  std::string colorname = getFillColor().name(QColor::HexRgb).toStdString();
+  Settings::SettingsExportSvg::exportSvgFillColor.setValue(colorname);
+  writeSettings();
 }
 
 void ExportSvgDialog::updateFillControlsEnabled()
@@ -122,6 +132,8 @@ void ExportSvgDialog::updateFillControlsEnabled()
   labelFillColor->setEnabled(enabled);
   toolButtonFillColor->setEnabled(enabled);
   toolButtonFillColorReset->setEnabled(enabled);
+  Settings::SettingsExportSvg::exportSvgFill.setValue(enabled);
+  writeSettings();
 }
 
 void ExportSvgDialog::updateStrokeColor(const QColor& color)
@@ -132,6 +144,9 @@ void ExportSvgDialog::updateStrokeColor(const QColor& color)
   labelStrokeColor->setAutoFillBackground(true);
   labelStrokeColor->setPalette(pal);
   labelStrokeColor->update();
+  std::string colorname = getStrokeColor().name(QColor::HexRgb).toStdString();
+  Settings::SettingsExportSvg::exportSvgStrokeColor.setValue(colorname);
+  writeSettings();
 }
 
 void ExportSvgDialog::updateStrokeControlsEnabled()
@@ -143,4 +158,6 @@ void ExportSvgDialog::updateStrokeControlsEnabled()
   labelStrokeWidth->setEnabled(enabled);
   doubleSpinBoxStrokeWidth->setEnabled(enabled);
   toolButtonStrokeWidthReset->setEnabled(enabled);
+  Settings::SettingsExportSvg::exportSvgStroke.setValue(enabled);
+  writeSettings();
 }
