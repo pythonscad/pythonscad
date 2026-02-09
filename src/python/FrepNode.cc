@@ -63,19 +63,16 @@ std::unique_ptr<const Geometry> FrepNode::createGeometry() const
 
   if (exp->ob_type == &PyDataType) {
     std::vector<Tree *> tree = PyDataObjectToTree(exp);
-#ifdef _WIN32
-    // On Windows, Mesh::render() allocates inside libfive.dll using Eigen's
-    // aligned_allocator, but the unique_ptr destructor would run here in the
-    // main executable with a potentially different allocator, causing a
-    // cross-DLL heap mismatch crash.  Use the libfive C API instead, which
-    // handles all allocation and deallocation inside the DLL.
-    libfive_region3 reg = {
-      {(float)this->x1, (float)this->x2},
-      {(float)this->y1, (float)this->y2},
-      {(float)this->z1, (float)this->z2}
-    };
+    // Use libfive C API on all platforms to avoid heap allocation mismatches.
+    // Mesh::render() allocates using Eigen's aligned_allocator, but the
+    // unique_ptr destructor would run here with a potentially different
+    // allocator, causing crashes. The C API handles all allocation and
+    // deallocation inside the libfive library.
+    libfive_region3 reg = {{(float)this->x1, (float)this->x2},
+                           {(float)this->y1, (float)this->y2},
+                           {(float)this->z1, (float)this->z2}};
     libfive_tree lt = tree[0]->get();
-    libfive_mesh* mesh = libfive_tree_render_mesh_st(lt, reg, (float)this->res);
+    libfive_mesh *mesh = libfive_tree_render_mesh_st(lt, reg, (float)this->res);
     if (mesh != nullptr) {
       for (uint32_t ti = 0; ti < mesh->tri_count; ti++) {
         builder.beginPolygon(3);
@@ -87,22 +84,6 @@ std::unique_ptr<const Geometry> FrepNode::createGeometry() const
       }
       libfive_mesh_delete(mesh);
     }
-#else
-    libfive::Region<3> reg({this->x1, this->y1, this->z1}, {this->x2, this->y2, this->z2});
-    libfive::BRepSettings settings;
-    settings.workers = 1;
-    settings.min_feature = 1.0 / this->res;
-    auto mesh = Mesh::render(*tree[0], reg, settings);
-    if (mesh != nullptr) {
-      for (const auto& t : mesh->branes) {
-        builder.beginPolygon(3);
-        for (int i = 0; i < 3; i++) {
-          builder.addVertex(builder.vertexIndex(
-            Vector3d(mesh->verts[t[i]].x(), mesh->verts[t[i]].y(), mesh->verts[t[i]].z())));
-        }
-      }
-    }
-#endif
   } else if (exp->ob_type == &PyFunction_Type) {
     printf("Python Function!\n");
   } else {
