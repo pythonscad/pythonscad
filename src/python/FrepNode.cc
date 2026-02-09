@@ -75,7 +75,7 @@ std::unique_ptr<const Geometry> FrepNode::createGeometry() const
       {(float)this->z1, (float)this->z2}
     };
     libfive_tree lt = tree[0]->get();
-    libfive_mesh* mesh = libfive_tree_render_mesh_st(lt, reg, 1.0f / this->res);
+    libfive_mesh* mesh = libfive_tree_render_mesh_st(lt, reg, (float)this->res);
     if (mesh != nullptr) {
       for (uint32_t ti = 0; ti < mesh->tri_count; ti++) {
         builder.beginPolygon(3);
