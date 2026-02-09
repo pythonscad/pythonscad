@@ -737,7 +737,16 @@ if(ENABLE_PYTHON)
         message(STATUS "Using Python version from environment: ${PYTHON_MINGW_VERSION}")
       else()
         # Detect Python version by checking installed libraries
+        # Try MSYS2 Unix-style path first (works when CMake runs under MSYS2 translation)
         file(GLOB PYTHON_LIBS "/${CALLSTACK}64/lib/libpython3.*.dll.a")
+        if(NOT PYTHON_LIBS)
+          # Try Windows-native path (needed when CMake doesn't translate MSYS2 paths)
+          if(DEFINED ENV{MSYSTEM_PREFIX})
+            file(GLOB PYTHON_LIBS "$ENV{MSYSTEM_PREFIX}/lib/libpython3.*.dll.a")
+          else()
+            file(GLOB PYTHON_LIBS "C:/msys64/${CALLSTACK}64/lib/libpython3.*.dll.a")
+          endif()
+        endif()
         if(PYTHON_LIBS)
           list(GET PYTHON_LIBS 0 FIRST_LIB)
           string(REGEX MATCH "libpython([0-9]+\\.[0-9]+)\\.dll\\.a" _ ${FIRST_LIB})
@@ -2038,15 +2047,21 @@ elseif(MINGW)
   set_property(TARGET OpenSCADLibInternal APPEND_STRING PROPERTY LINK_FLAGS " -municode")
   set_property(TARGET OpenSCADExe APPEND_STRING PROPERTY LINK_FLAGS " -municode")
 
-  # Copy libfive.dll and Python module to build directory so tests can find them at runtime
+  # Copy libfive DLLs and Python module to build directory so tests can find them at runtime
   if(ENABLE_LIBFIVE AND USE_BUILTIN_LIBFIVE)
-    # Ensure libfive-python target has built the Python files before we copy them
-    add_dependencies(OpenSCADExe libfive-python)
+    # Ensure libfive-python and libfive-stdlib targets are built
+    add_dependencies(OpenSCADExe libfive-python libfive-stdlib)
     add_custom_command(TARGET OpenSCADExe POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.dll"
         "${CMAKE_BINARY_DIR}/"
       COMMENT "Copying libfive.dll to build directory for runtime"
+    )
+    add_custom_command(TARGET OpenSCADExe POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/stdlib/libfive-stdlib.dll"
+        "${CMAKE_BINARY_DIR}/"
+      COMMENT "Copying libfive-stdlib.dll to build directory for runtime"
     )
     # Copy libfive Python module to build directory so tests can import it
     add_custom_command(TARGET OpenSCADExe POST_BUILD
