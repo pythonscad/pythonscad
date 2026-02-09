@@ -296,7 +296,6 @@ def main():
                   "/usr/lib/x86_64-linux-gnu/glib-2.0/include"
                 ],libraries=[
                   "freetype",
-                  "jpeg",
                   "xml2",
                   "fontconfig",
                   "double-conversion",
