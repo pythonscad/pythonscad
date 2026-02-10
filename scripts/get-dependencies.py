@@ -284,11 +284,18 @@ def run_commands(cmds: List[List[str]], dry_run: bool):
         print("$", " ".join(cmd))
         if dry_run:
             continue
-        try:
-            subprocess.check_call(cmd)
-        except subprocess.CalledProcessError as e:
-            print(f"Command failed ({e.returncode}): {' '.join(cmd)}", file=sys.stderr)
-            raise
+        # Use subprocess.run to get better error information
+        result = subprocess.run(cmd, capture_output=False, text=True)
+        if result.returncode != 0:
+            print(f"\nCommand failed with exit code {result.returncode}: {' '.join(cmd)}", file=sys.stderr)
+            print(f"Attempting to re-run command with captured output for debugging...", file=sys.stderr)
+            # Re-run with captured output to show any stderr that might have been missed
+            debug_result = subprocess.run(cmd, capture_output=True, text=True)
+            if debug_result.stdout:
+                print(f"STDOUT:\n{debug_result.stdout}", file=sys.stderr)
+            if debug_result.stderr:
+                print(f"STDERR:\n{debug_result.stderr}", file=sys.stderr)
+            raise subprocess.CalledProcessError(result.returncode, cmd)
 
 
 def load_profile_with_inheritance(profile_name: str, loaded_profiles: set = None) -> dict:
