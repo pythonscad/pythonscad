@@ -334,13 +334,18 @@
     },
     "macos": {
       "manager": "brew",
-      "pre_commands": [],
+      "pre_commands": [
+        "brew tap openscad/homebrew-tap"
+      ],
       "post_commands": [],
       "packages": [
         "bison",
         "boost",
         "cairo",
+        "catch2",
+        "ccache",
         "cgal",
+        "clipper2",
         "cmake",
         "curl",
         "double-conversion",
@@ -357,6 +362,7 @@
         "gtk-doc",
         "harfbuzz",
         "imagemagick",
+        "lib3mf",
         "libffi",
         "libxml2",
         "libzip",

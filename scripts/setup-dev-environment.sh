@@ -67,8 +67,8 @@ echo "Your development environment is now configured!"
 echo
 echo "Next steps:"
 echo "  1. Install build dependencies for your platform:"
-echo "     - Linux/BSD: ./scripts/get-dependencies.py --yes --profile pythonscad-qt5"
-echo "     - macOS: ./scripts/macosx-build-dependencies.sh"
+echo "     - Linux/BSD: sudo ./scripts/get-dependencies.py --yes --profile pythonscad-qt5"
+echo "     - macOS: ./scripts/get-dependencies.py --yes --profile pythonscad-qt6"
 echo "     - Windows (MSYS2): ./scripts/get-dependencies.py --yes --profile pythonscad-qt6"
 echo
 echo "  2. Build the project following instructions in README.md"

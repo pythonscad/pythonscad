@@ -243,12 +243,14 @@ PythonSCAD supports two geometry computation backends:
 ### macOS Build
 
 ```bash
-# Install dependencies via Homebrew
-./scripts/macosx-build-homebrew.sh
+# Install dependencies via Homebrew (Qt6 only on macOS)
+./scripts/get-dependencies.py --yes --profile pythonscad-qt6
 
-# Or build from source
-source scripts/setenv-macos.sh
-./scripts/macosx-build-dependencies.sh
+# Configure and build
+mkdir build
+cd build
+cmake ..
+make -j$(sysctl -n hw.ncpu)
 ```
 
 ### Windows Build
