@@ -3,6 +3,8 @@
 from openscad import *
 
 c = cube(5)
-c.show()
+# show() requires the full GUI runtime (pythonMainModule), which is not
+# initialised when openscad is loaded as a plain pip module.  Skip it here;
+# the GUI path is already covered by the regular ctest suite.
 export(c, "/tmp/pip-smoke.3mf")
 print("smoke test OK")
