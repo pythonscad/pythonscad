@@ -295,6 +295,15 @@ def run_commands(cmds: List[List[str]], dry_run: bool):
                 print(f"STDOUT:\n{debug_result.stdout}", file=sys.stderr)
             if debug_result.stderr:
                 print(f"STDERR:\n{debug_result.stderr}", file=sys.stderr)
+
+            # Check if this is a brew command where all packages are already installed
+            # Brew returns exit code 1 when packages are already installed, which is not a real error
+            if cmd[0] == 'brew' and 'install' in cmd:
+                stderr_lower = debug_result.stderr.lower()
+                if 'already installed' in stderr_lower or 'up-to-date' in stderr_lower:
+                    print(f"Note: Packages are already installed, treating as success", file=sys.stderr)
+                    continue
+
             raise subprocess.CalledProcessError(result.returncode, cmd)
 
 
