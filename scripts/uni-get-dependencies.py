@@ -12,7 +12,7 @@
 
 Features:
  - Detect distro & version (Debian, Ubuntu, Arch, Gentoo, Fedora, NetBSD, FreeBSD, macOS,
-    openSUSE, Mageia, Solus, ALT Linux, Qomo, NixOS)
+    openSUSE, Mageia, Solus, ALT Linux, Qomo, MSYS2)
  - Configurable package lists via JSON with inheritance & version overrides
  - Dry-run & confirmation support
  - Minimal duplication ("extends" + per-version add/remove)
@@ -62,7 +62,7 @@ class DistroInfo:
 
 
 SUPPORTED = {"debian", "ubuntu", "arch", "gentoo", "fedora", "netbsd", "freebsd", "macos",
-             "opensuse", "mageia", "solus", "altlinux", "qomo"}
+             "opensuse", "mageia", "solus", "altlinux", "qomo", "msys2"}
 
 
 def detect_distro() -> DistroInfo:
@@ -70,6 +70,11 @@ def detect_distro() -> DistroInfo:
     if sys.platform == "darwin":
         ver = platform.mac_ver()[0]
         return DistroInfo("macos", ver or "")
+
+    # MSYS2 on Windows (check MSYSTEM env var set by MSYS2 shells)
+    msystem = os.environ.get("MSYSTEM", "")
+    if msystem or (sys.platform == "win32" and shutil.which("pacman")):
+        return DistroInfo("msys2", msystem or "UCRT64")
 
     uname_s = platform.system().lower()
     if "freebsd" in uname_s:
@@ -258,6 +263,12 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
     elif mgr == "urpmi":
         # Mageia
         cmds.append(["urpmi", "--auto", *packages])
+    elif mgr == "pacboy":
+        # MSYS2 - pacboy is a pacman wrapper that handles MINGW_PACKAGE_PREFIX
+        # Package suffixes: :p = MINGW_PACKAGE_PREFIX-only, : = no prefix translation
+        confirm = "--noconfirm" if assume_yes else "--needed"
+        cmds.append(["pacman", "--sync", "--needed", confirm, "pactoys", "libxml2"])
+        cmds.append(["pacboy", "--sync", "--needed", confirm, *packages])
     elif mgr == "eopkg":
         # Solus
         cmds.append(["eopkg", "-y", "install", *packages])
@@ -400,6 +411,16 @@ def main():
     parser.add_argument("--yes", action="store_true", help="Assume yes / non-interactive")
     parser.add_argument("--dry-run", action="store_true", help="Show commands without executing")
     parser.add_argument("--list", action="store_true", help="Only list resolved packages")
+    parser.add_argument(
+        "--output-env",
+        metavar="FILE",
+        help="Append PACKAGES=<space-separated list> to FILE (for CI integration, e.g. $GITHUB_ENV)",
+    )
+    parser.add_argument(
+        "--env-var",
+        default="PACKAGES",
+        help="Variable name to use with --output-env (default: PACKAGES)",
+    )
     args = parser.parse_args()
 
     # Default to base profile if no profiles specified
@@ -427,6 +448,14 @@ def main():
     print(f"Detected distro: {distro.id} version: {distro.version}")
     print(f"Active profiles: {', '.join(cfg.get('active_profiles', []))}")
     print(f"Package count: {len(packages)}")
+    # --output-env: write package list to a file (e.g. $GITHUB_ENV) and exit
+    if args.output_env:
+        pkg_str = " ".join(packages)
+        with open(args.output_env, "a") as fh:
+            fh.write(f"{args.env_var}={pkg_str}\n")
+        print(f"Wrote {args.env_var}={pkg_str} to {args.output_env}")
+        return 0
+
     # Always show package list for transparency; --list prints raw for scripting
     if args.list:
         for p in packages:
