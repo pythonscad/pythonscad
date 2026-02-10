@@ -30,9 +30,9 @@ DEBUG = False
 
 cxxlib = None
 
-# PythonSCAD targets macOS 14.0 (Sonoma) as the minimum supported version.
+# PythonSCAD targets macOS 15.0 (Sequoia) as the minimum supported version.
 # Only currently Apple-supported macOS versions are targeted.
-macos_version_min = '14.0'
+macos_version_min = '15.0'
 
 # Global flag to skip architecture validation (for single-arch test builds)
 skip_arch_check = False
