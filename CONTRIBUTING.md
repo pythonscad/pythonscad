@@ -41,10 +41,10 @@ PythonSCAD requires the following tools for development:
    for your platform:
 
    - **Linux/BSD**:
-     `./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt5`
+     `./scripts/get-dependencies.py --yes --profile pythonscad-qt5`
    - **macOS**: `./scripts/macosx-build-dependencies.sh`
    - **Windows (MSYS2)**:
-     `./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt6`
+     `./scripts/get-dependencies.py --yes --profile pythonscad-qt6`
 
 3. **Install pre-commit hooks**:
 

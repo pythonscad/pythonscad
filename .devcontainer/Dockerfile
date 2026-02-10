@@ -4,9 +4,9 @@
 FROM mcr.microsoft.com/devcontainers/base:bookworm
 
 # Essential dependencies.
-COPY ./uni-get-dependencies.py /tmp/
+COPY ./get-dependencies.py /tmp/
 COPY ./deps /tmp/deps/
-RUN /tmp/uni-get-dependencies.py --yes --profile pythonscad-qt5
+RUN /tmp/get-dependencies.py --yes --profile pythonscad-qt5
 
 # Debuggers.
 RUN apt-get -y install gdb lldb

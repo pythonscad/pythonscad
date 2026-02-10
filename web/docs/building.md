@@ -14,14 +14,14 @@ all required build dependencies for most Linux distributions
 (Debian, Ubuntu, Fedora, Arch, openSUSE, and others):
 
 ```bash
-sudo ./scripts/uni-get-dependencies.py --profile pythonscad-qt5
+sudo ./scripts/get-dependencies.py --profile pythonscad-qt5
 ```
 
 To see what the script would do without actually installing
 anything, use:
 
 ```bash
-./scripts/uni-get-dependencies.py --profile pythonscad-qt5 --dry-run
+./scripts/get-dependencies.py --profile pythonscad-qt5 --dry-run
 ```
 
 ### Build
@@ -86,7 +86,7 @@ Download and install MSYS2 from
 From the repository root inside the MSYS2 terminal:
 
 ```bash
-./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt6
+./scripts/get-dependencies.py --yes --profile pythonscad-qt6
 ```
 
 #### Build with MSYS2

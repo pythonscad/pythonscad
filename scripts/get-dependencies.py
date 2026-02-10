@@ -8,7 +8,7 @@
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
 #
-"""Install build dependencies across supported Unix flavors.
+"""Install build dependencies across supported platforms.
 
 Features:
  - Detect distro & version (Debian, Ubuntu, Arch, Gentoo, Fedora, NetBSD, FreeBSD, macOS,
@@ -19,12 +19,12 @@ Features:
  - Support for pre_commands and post_commands in the config for additional setup or cleanup
 
 Usage examples:
-  scripts/uni-get-dependencies.py                                     # auto-detect and show plan (base profile)
-  scripts/uni-get-dependencies.py --profile openscad-qt5              # single profile
-  scripts/uni-get-dependencies.py --profile base --profile qt5        # multiple profiles combined in order
-  scripts/uni-get-dependencies.py --yes                               # auto-install without prompt
-  scripts/uni-get-dependencies.py --dry-run                           # show commands only
-  scripts/uni-get-dependencies.py --distro fedora --version 42 --yes
+  scripts/get-dependencies.py                                     # auto-detect and show plan (base profile)
+  scripts/get-dependencies.py --profile openscad-qt5              # single profile
+  scripts/get-dependencies.py --profile base --profile qt5        # multiple profiles combined in order
+  scripts/get-dependencies.py --yes                               # auto-install without prompt
+  scripts/get-dependencies.py --dry-run                           # show commands only
+  scripts/get-dependencies.py --distro fedora --version 42 --yes
 
 Config schema (profiles/*.json):
   distros: {
