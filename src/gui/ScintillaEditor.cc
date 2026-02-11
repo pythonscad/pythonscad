@@ -33,6 +33,9 @@
 #include "platform/PlatformUtils.h"
 #include "core/Settings.h"
 #include "gui/ScadLexer.h"
+#ifdef ENABLE_PYTHON
+#include "gui/PythonApi.h"
+#endif
 
 #include <QWheelEvent>
 #include <QPoint>
@@ -216,6 +219,13 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
   setLexer(new ScadLexer(this));
 #endif
   recomputeLanguageActive();
+
+#ifdef ENABLE_PYTHON
+  {
+    auto *pythonApi = new PythonApi(this, this->pythonLexer);
+    this->pythonLexer->setAPIs(pythonApi);
+  }
+#endif
 
   initMargin();
 
