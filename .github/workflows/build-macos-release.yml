@@ -658,6 +658,7 @@ jobs:
           fi
 
           echo "app_bundle=$MERGED_DIR/$APP_NAME" >> $GITHUB_OUTPUT
+          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
 
           # Verify main executable is universal
           echo "=== Verifying main executable ==="
@@ -695,10 +696,41 @@ jobs:
           echo "QtCore framework dependencies:"
           otool -L "$FRAMEWORKS_DIR/QtCore.framework/Versions/A/QtCore" | grep -E "icu|brotli" || echo "No ICU or brotli references found"
 
+      - name: Install Apple code signing certificate
+        id: install_cert
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          if [ -z "$BUILD_CERTIFICATE_BASE64" ]; then
+            echo "cert_installed=false" >> $GITHUB_OUTPUT
+            echo "No BUILD_CERTIFICATE_BASE64 secret set; skipping certificate install (ad-hoc signing will be used)."
+            exit 0
+          fi
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERTIFICATE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          echo "cert_installed=true" >> $GITHUB_OUTPUT
+          echo "Apple code signing certificate installed."
+
       - name: Fix app bundle for macOS distribution
+        env:
+          SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
         run: |
           APP_BUNDLE="${{ steps.merge.outputs.app_bundle }}"
           EXEC_NAME=$(basename "$APP_BUNDLE" .app)
+          if [ "${{ steps.install_cert.outputs.cert_installed }}" = "true" ] && [ -n "$SIGNING_IDENTITY" ]; then
+            SIGN_ID="$SIGNING_IDENTITY"
+          else
+            SIGN_ID="-"
+          fi
 
           echo "=== Fixing executable permissions ==="
           chmod +x "$APP_BUNDLE/Contents/MacOS/$EXEC_NAME"
@@ -722,8 +754,8 @@ jobs:
 
           echo "=== Signing all binaries ==="
           # Sign all dylibs
-          find "$APP_BUNDLE/Contents/Frameworks" -name "*.dylib" -type f -exec codesign --force --sign - {} \; 2>&1 | grep -v "replacing existing signature" || true
-          find "$APP_BUNDLE/Contents/PlugIns" -name "*.dylib" -type f -exec codesign --force --sign - {} \; 2>&1 | grep -v "replacing existing signature" || true
+          find "$APP_BUNDLE/Contents/Frameworks" -name "*.dylib" -type f -exec codesign --force --sign "$SIGN_ID" {} \; 2>&1 | grep -v "replacing existing signature" || true
+          find "$APP_BUNDLE/Contents/PlugIns" -name "*.dylib" -type f -exec codesign --force --sign "$SIGN_ID" {} \; 2>&1 | grep -v "replacing existing signature" || true
 
           # Sign Qt framework binaries
           for fw in "$APP_BUNDLE/Contents/Frameworks"/Qt*.framework; do
@@ -732,7 +764,7 @@ jobs:
 
             # Sign the versioned binary
             if [ -f "$fw/Versions/A/$fw_name" ]; then
-              codesign --force --sign - "$fw/Versions/A/$fw_name" 2>&1 | grep -v "replacing existing signature" || true
+              codesign --force --sign "$SIGN_ID" "$fw/Versions/A/$fw_name" 2>&1 | grep -v "replacing existing signature" || true
             fi
           done
 
@@ -741,7 +773,7 @@ jobs:
             # Find Python version
             PY_VER=$(ls "$APP_BUNDLE/Contents/Frameworks/Python.framework/Versions/" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+$" | head -1)
             if [ -n "$PY_VER" ] && [ -f "$APP_BUNDLE/Contents/Frameworks/Python.framework/Versions/$PY_VER/Python" ]; then
-              codesign --force --sign - "$APP_BUNDLE/Contents/Frameworks/Python.framework/Versions/$PY_VER/Python" 2>&1 | grep -v "replacing existing signature" || true
+              codesign --force --sign "$SIGN_ID" "$APP_BUNDLE/Contents/Frameworks/Python.framework/Versions/$PY_VER/Python" 2>&1 | grep -v "replacing existing signature" || true
             fi
           fi
 
@@ -775,8 +807,13 @@ jobs:
 
           # Sign the app bundle with --deep to recursively sign all nested code
           # This handles frameworks, plugins, and executables in one pass
+          # Use --options runtime when signing with Developer ID for notarization
           echo "=== Signing app bundle (deep) ==="
-          codesign --deep --force --sign - --verbose=4 "$APP_BUNDLE" 2>&1 || true
+          if [ "$SIGN_ID" = "-" ]; then
+            codesign --deep --force --sign "$SIGN_ID" --verbose=4 "$APP_BUNDLE" 2>&1 || true
+          else
+            codesign --deep --force --sign "$SIGN_ID" --options runtime --verbose=4 "$APP_BUNDLE" 2>&1 || true
+          fi
 
           # Remove quarantine attributes
           xattr -cr "$APP_BUNDLE" 2>/dev/null || true
@@ -824,6 +861,43 @@ jobs:
           echo "dmg_file=$DMG_NAME" >> $GITHUB_OUTPUT
           echo "Created DMG: $DMG_NAME"
 
+      - name: Sign DMG
+        if: steps.install_cert.outputs.cert_installed == 'true'
+        env:
+          SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
+        run: |
+          DMG_FILE="${{ steps.dmg.outputs.dmg_file }}"
+          if [ -z "$SIGNING_IDENTITY" ]; then
+            echo "SIGNING_IDENTITY not set; skipping DMG signing."
+            exit 0
+          fi
+          codesign --force --sign "$SIGNING_IDENTITY" --options runtime --verbose=4 "$DMG_FILE"
+          echo "DMG signed."
+
+      - name: Notarize DMG
+        if: steps.install_cert.outputs.cert_installed == 'true'
+        env:
+          APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+        run: |
+          if [ -z "$APPLE_API_KEY_P8_BASE64" ] || [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_ISSUER_ID" ]; then
+            echo "App Store Connect API key secrets not set; skipping notarization."
+            exit 0
+          fi
+          DMG_FILE="${{ steps.dmg.outputs.dmg_file }}"
+          KEY_P8="$RUNNER_TEMP/authkey.p8"
+          echo -n "$APPLE_API_KEY_P8_BASE64" | base64 --decode -o "$KEY_P8"
+          xcrun notarytool store-credentials "notarytool-profile" \
+            --key "$KEY_P8" \
+            --key-id "$APPLE_API_KEY_ID" \
+            --issuer "$APPLE_ISSUER_ID"
+          xcrun notarytool submit "$DMG_FILE" \
+            --keychain-profile "notarytool-profile" \
+            --wait
+          xcrun stapler staple "$DMG_FILE"
+          echo "DMG notarized and stapled."
+
       - name: Prepare artifacts
         id: artifacts
         run: |
@@ -858,3 +932,8 @@ jobs:
           tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Clean up signing keychain
+        if: always() && steps.install_cert.outputs.cert_installed == 'true'
+        run: |
+          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
