@@ -887,6 +887,7 @@ jobs:
           fi
           DMG_FILE="${{ steps.dmg.outputs.dmg_file }}"
           KEY_P8="$RUNNER_TEMP/authkey.p8"
+          SUBMIT_LOG="$RUNNER_TEMP/notarytool_submit.log"
           echo -n "$APPLE_API_KEY_P8_BASE64" | base64 --decode -o "$KEY_P8"
           xcrun notarytool store-credentials "notarytool-profile" \
             --key "$KEY_P8" \
@@ -894,7 +895,21 @@ jobs:
             --issuer "$APPLE_ISSUER_ID"
           xcrun notarytool submit "$DMG_FILE" \
             --keychain-profile "notarytool-profile" \
-            --wait
+            --wait 2>&1 | tee "$SUBMIT_LOG" || true
+          if grep -q "status: Invalid" "$SUBMIT_LOG"; then
+            echo "=== Notarization was rejected (Invalid). Fetching Apple's log... ==="
+            SUBMISSION_ID=$(grep -E "^\s*id: " "$SUBMIT_LOG" | head -1 | sed 's/.*id: *//' | tr -d ' ')
+            if [ -n "$SUBMISSION_ID" ]; then
+              xcrun notarytool log "$SUBMISSION_ID" --keychain-profile "notarytool-profile" 2>&1 || true
+            fi
+            echo "=== Fix the issues above and re-run. Do not run stapler when notarization is Invalid. ==="
+            exit 1
+          fi
+          if ! grep -q "status: Accepted" "$SUBMIT_LOG"; then
+            echo "=== Notarization status unclear. Submit log: ==="
+            cat "$SUBMIT_LOG"
+            exit 1
+          fi
           xcrun stapler staple "$DMG_FILE"
           echo "DMG notarized and stapled."
 
