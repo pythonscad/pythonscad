@@ -885,12 +885,23 @@ jobs:
 
           echo "=== Validating with Gatekeeper (spctl) ==="
           # This is the critical validation that checks if macOS will allow the app to run
-          spctl --assess --type execute --verbose=4 "$APP_BUNDLE" 2>&1 || {
-            echo "ERROR: Gatekeeper validation failed!"
-            echo "The app will show 'cannot be verified' errors on macOS."
-            echo "This indicates a code signing or bundle structure issue."
-            exit 1
-          }
+          # At this stage, "Unnotarized Developer ID" is acceptable (notarization happens later with DMG)
+          # But we want to catch issues like "invalid destination for symbolic link"
+          SPCTL_OUTPUT=$(spctl --assess --type execute --verbose=4 "$APP_BUNDLE" 2>&1) || SPCTL_RESULT=$?
+          echo "$SPCTL_OUTPUT"
+
+          if echo "$SPCTL_OUTPUT" | grep -q "rejected"; then
+            if echo "$SPCTL_OUTPUT" | grep -q "source=Unnotarized Developer ID"; then
+              echo "⚠ App is signed but not yet notarized (expected at this stage)"
+              echo "✓ Notarization will happen when creating the DMG"
+            else
+              echo "ERROR: Gatekeeper validation failed with unexpected error!"
+              echo "This indicates a code signing or bundle structure issue."
+              exit 1
+            fi
+          else
+            echo "✓ App passes Gatekeeper validation"
+          fi
 
           echo "=== Checking notarization status ==="
           if codesign -dv "$APP_BUNDLE" 2>&1 | grep -q "Authority=Developer ID Application"; then
