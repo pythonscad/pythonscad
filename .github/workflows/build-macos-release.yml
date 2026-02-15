@@ -533,17 +533,6 @@ jobs:
               echo "Copying arm64-only Python framework"
               mkdir -p "$MERGED_DIR/$APP_NAME/Contents/Frameworks"
               cp -R "$arm_python" "$MERGED_DIR/$APP_NAME/Contents/Frameworks/"
-
-              # Remove broken site-packages symlink that points outside the bundle
-              SITE_PACKAGES_LINK="$MERGED_DIR/$APP_NAME/Contents/Frameworks/Python.framework/Versions/*/lib/python*/site-packages"
-              for link in $SITE_PACKAGES_LINK; do
-                if [ -L "$link" ] && [ ! -e "$link" ]; then
-                  echo "Removing broken site-packages symlink: $link"
-                  rm "$link"
-                  # Create an empty directory instead
-                  mkdir -p "$link"
-                fi
-              done
             elif [ -d "$x86_python" ] && [ -d "$arm_python" ]; then
               # In both - merge binaries
               PYTHON_VERSION=$(ls "$x86_python/Versions/" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+$" | head -1)
@@ -582,6 +571,20 @@ jobs:
               fi
             fi
           fi
+
+          # Remove broken site-packages symlink that points outside the bundle
+          # This must happen after Python.framework is fully assembled (regardless of merge path)
+          echo "=== Cleaning up Python.framework ==="
+          SITE_PACKAGES_LINK="$MERGED_DIR/$APP_NAME/Contents/Frameworks/Python.framework/Versions/*/lib/python*/site-packages"
+          for link in $SITE_PACKAGES_LINK; do
+            if [ -L "$link" ] && [ ! -e "$link" ]; then
+              echo "Removing broken site-packages symlink: $link"
+              rm "$link"
+              # Create an empty directory instead
+              mkdir -p "$link"
+              echo "✓ Created empty site-packages directory"
+            fi
+          done
 
           # Merge Qt plugin .dylib files from both bundles
           echo "=== Merging Qt plugins ==="
@@ -1218,13 +1221,24 @@ jobs:
           fi
 
       - name: Upload artifacts to release
-        if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
+        if: (github.event_name == 'release' || github.event.inputs.upload_to_release != '') && steps.validation.outcome == 'success'
         uses: softprops/action-gh-release@v2
         with:
           files: /tmp/out/*.dmg
           tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail workflow if validation failed
+        if: always()
+        run: |
+          if [ "${{ steps.validation.outcome }}" != "success" ]; then
+            echo "❌ Workflow failed because validation did not pass"
+            echo "DMG and artifacts are available for inspection but were NOT uploaded to the release"
+            exit 1
+          else
+            echo "✅ Validation passed - DMG was uploaded to release (if applicable)"
+          fi
 
       - name: Clean up signing keychain
         if: always() && steps.install_cert.outputs.cert_installed == 'true'
