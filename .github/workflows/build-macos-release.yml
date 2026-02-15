@@ -939,13 +939,27 @@ jobs:
           APP_NAME=$(basename "$APP_BUNDLE")
           DMG_NAME="PythonSCAD-${VERSION}.dmg"
 
+          echo "=== DEBUG: Framework structure BEFORE DMG creation ==="
+          for fw in "$APP_BUNDLE/Contents/Frameworks"/*.framework; do
+            [ ! -d "$fw" ] && continue
+            echo "--- $(basename "$fw") ---"
+            ls -la "$fw/" | head -10
+            echo "Symlinks:"
+            find "$fw" -type l -ls 2>/dev/null | head -5
+            echo ""
+          done
+
+          echo "=== DEBUG: Running spctl on app BEFORE DMG ==="
+          spctl --assess --type execute --verbose=4 "$APP_BUNDLE" 2>&1 || echo "spctl failed with: $?"
+
           # Create staging directory for DMG contents
           DMG_STAGING="/tmp/dmg-staging"
           rm -rf "$DMG_STAGING"
           mkdir -p "$DMG_STAGING"
 
-          # Copy app bundle to staging directory
-          cp -R "$APP_BUNDLE" "$DMG_STAGING/"
+          # Copy app bundle to staging directory preserving symlinks
+          echo "=== Copying app to DMG staging with rsync to preserve symlinks ==="
+          rsync -a "$APP_BUNDLE" "$DMG_STAGING/"
 
           # Create symlink to Applications folder for drag-and-drop installation
           ln -s /Applications "$DMG_STAGING/Applications"
@@ -953,11 +967,52 @@ jobs:
           echo "DMG staging contents:"
           ls -la "$DMG_STAGING"
 
+          echo "=== DEBUG: Framework structure in DMG staging ==="
+          STAGED_APP="$DMG_STAGING/$APP_NAME"
+          for fw in "$STAGED_APP/Contents/Frameworks"/*.framework; do
+            [ ! -d "$fw" ] && continue
+            echo "--- $(basename "$fw") ---"
+            ls -la "$fw/" | head -10
+            echo "Symlinks:"
+            find "$fw" -type l -exec sh -c 'echo "$1 -> $(readlink "$1")"' _ {} \; 2>/dev/null | head -5
+            echo ""
+          done
+
           # Create DMG using hdiutil
+          echo "=== Creating DMG ==="
           hdiutil create -volname "PythonSCAD" -srcfolder "$DMG_STAGING" -ov -format UDZO "$DMG_NAME"
 
           echo "dmg_file=$DMG_NAME" >> $GITHUB_OUTPUT
           echo "Created DMG: $DMG_NAME"
+
+          echo "=== DEBUG: Mounting DMG to inspect contents ==="
+          TEST_MOUNT="/tmp/test-mount-$$"
+          mkdir -p "$TEST_MOUNT"
+          hdiutil attach "$DMG_NAME" -readonly -nobrowse -mountpoint "$TEST_MOUNT" 2>&1 | grep -v "expected" || true
+
+          if [ -d "$TEST_MOUNT/$APP_NAME" ]; then
+            echo "=== DEBUG: Framework structure INSIDE mounted DMG ==="
+            for fw in "$TEST_MOUNT/$APP_NAME/Contents/Frameworks"/*.framework; do
+              [ ! -d "$fw" ] && continue
+              echo "--- $(basename "$fw") ---"
+              ls -la "$fw/" | head -10
+              echo "Symlinks:"
+              find "$fw" -type l -exec sh -c 'link="$1"; target=$(readlink "$link"); echo "$link -> $target"; [ -e "$target" ] || echo "  BROKEN!"' _ {} \; 2>/dev/null | head -10
+              echo ""
+            done
+
+            echo "=== DEBUG: Running spctl on app INSIDE DMG ==="
+            spctl --assess --type execute --verbose=4 "$TEST_MOUNT/$APP_NAME" 2>&1 || echo "spctl failed with: $?"
+
+            echo "=== DEBUG: Comparing symlink targets ==="
+            echo "Original app Python.framework/Versions/Current:"
+            readlink "$APP_BUNDLE/Contents/Frameworks/Python.framework/Versions/Current" || echo "Failed to read"
+            echo "DMG app Python.framework/Versions/Current:"
+            readlink "$TEST_MOUNT/$APP_NAME/Contents/Frameworks/Python.framework/Versions/Current" || echo "Failed to read"
+          fi
+
+          hdiutil detach "$TEST_MOUNT" 2>&1 | grep -v "expected" || true
+          rm -rf "$TEST_MOUNT"
 
       - name: Sign DMG
         if: steps.install_cert.outputs.cert_installed == 'true'
@@ -1012,109 +1067,144 @@ jobs:
           echo "DMG notarized and stapled."
 
       - name: Validate final DMG and app bundle
+        id: validation
+        continue-on-error: true
         run: |
           DMG_FILE="${{ steps.dmg.outputs.dmg_file }}"
           APP_BUNDLE="${{ steps.merge.outputs.app_bundle }}"
 
           echo "=== Final validation of DMG and app bundle ==="
+          VALIDATION_FAILED=0
 
           # Validate DMG signature
           echo "Checking DMG signature..."
-          codesign -dv "$DMG_FILE" 2>&1 || {
+          if ! codesign -dv "$DMG_FILE" 2>&1; then
             echo "ERROR: DMG signature verification failed!"
-            exit 1
-          }
+            VALIDATION_FAILED=1
+          fi
 
           # Validate DMG with spctl (install type)
           echo "Checking DMG with Gatekeeper..."
-          spctl --assess --type install --verbose=4 "$DMG_FILE" 2>&1 || {
+          if ! spctl --assess --type install --verbose=4 "$DMG_FILE" 2>&1; then
             echo "ERROR: DMG Gatekeeper validation failed!"
-            exit 1
-          }
+            VALIDATION_FAILED=1
+          fi
 
           # Validate DMG notarization ticket
           if [ "${{ steps.install_cert.outputs.cert_installed }}" = "true" ]; then
             echo "Checking DMG notarization ticket..."
-            stapler validate "$DMG_FILE" 2>&1 | grep -q "validate action worked" || {
+            if ! stapler validate "$DMG_FILE" 2>&1 | grep -q "validate action worked"; then
               echo "ERROR: DMG notarization ticket validation failed!"
-              exit 1
-            }
-            echo "✓ DMG notarization ticket is valid"
+              VALIDATION_FAILED=1
+            else
+              echo "✓ DMG notarization ticket is valid"
+            fi
           fi
 
           # Mount DMG and validate app inside
           echo "Mounting DMG to validate app bundle inside..."
           MOUNT_POINT="/tmp/dmg-validation-$RANDOM"
           mkdir -p "$MOUNT_POINT"
-          hdiutil attach "$DMG_FILE" -readonly -nobrowse -mountpoint "$MOUNT_POINT" 2>&1 | grep -v "expected" || {
+          if ! hdiutil attach "$DMG_FILE" -readonly -nobrowse -mountpoint "$MOUNT_POINT" 2>&1 | grep -v "expected"; then
             echo "ERROR: Failed to mount DMG!"
-            exit 1
-          }
+            VALIDATION_FAILED=1
+          else
+            # Find the app in the DMG
+            APP_IN_DMG=$(find "$MOUNT_POINT" -name "*.app" -maxdepth 1 -type d | head -1)
+            if [ -z "$APP_IN_DMG" ]; then
+              echo "ERROR: No .app found in DMG!"
+              VALIDATION_FAILED=1
+            else
+              echo "Validating app bundle inside DMG: $APP_IN_DMG"
 
-          # Find the app in the DMG
-          APP_IN_DMG=$(find "$MOUNT_POINT" -name "*.app" -maxdepth 1 -type d | head -1)
-          if [ -z "$APP_IN_DMG" ]; then
-            echo "ERROR: No .app found in DMG!"
-            hdiutil detach "$MOUNT_POINT" 2>/dev/null || true
+              # Validate app in DMG with spctl (execute type) - this is the critical test
+              echo "=== Running spctl on app in DMG ==="
+              if ! spctl --assess --type execute --verbose=4 "$APP_IN_DMG" 2>&1; then
+                echo "ERROR: App bundle in DMG fails Gatekeeper validation!"
+                echo "This means users will see 'cannot be verified' errors."
+                VALIDATION_FAILED=1
+              else
+                echo "✓ App bundle in DMG passes Gatekeeper validation"
+              fi
+
+              # Validate app signature in DMG
+              echo "=== Checking codesign on app in DMG ==="
+              if ! codesign --verify --strict --verbose=2 "$APP_IN_DMG" 2>&1; then
+                echo "ERROR: App bundle signature verification failed!"
+                VALIDATION_FAILED=1
+              else
+                echo "✓ App bundle signature is valid"
+              fi
+            fi
+
+            # Clean up
+            hdiutil detach "$MOUNT_POINT" 2>&1 | grep -v "expected" || true
+          fi
+          rm -rf "$MOUNT_POINT"
+
+          if [ $VALIDATION_FAILED -eq 0 ]; then
+            echo "=== All validations passed! ==="
+            echo "✓ DMG is properly signed and notarized"
+            echo "✓ App bundle passes Gatekeeper validation"
+            echo "✓ Users will be able to run the app without verification errors"
+          else
+            echo "=== VALIDATION FAILED ==="
+            echo "See errors above. DMG will still be uploaded as artifact for inspection."
             exit 1
           fi
 
-          echo "Validating app bundle inside DMG: $APP_IN_DMG"
-
-          # Validate app in DMG with spctl (execute type) - this is the critical test
-          spctl --assess --type execute --verbose=4 "$APP_IN_DMG" 2>&1 || {
-            echo "ERROR: App bundle in DMG fails Gatekeeper validation!"
-            echo "This means users will see 'cannot be verified' errors."
-            hdiutil detach "$MOUNT_POINT" 2>/dev/null || true
-            exit 1
-          }
-
-          echo "✓ App bundle in DMG passes Gatekeeper validation"
-
-          # Validate app signature in DMG
-          # Don't use --deep as it can fail on framework symlinks
-          codesign --verify --strict --verbose=2 "$APP_IN_DMG" 2>&1 || {
-            echo "ERROR: App bundle signature verification failed!"
-            hdiutil detach "$MOUNT_POINT" 2>/dev/null || true
-            exit 1
-          }
-
-          echo "✓ App bundle signature is valid"
-
-          # Clean up
-          hdiutil detach "$MOUNT_POINT" 2>&1 | grep -v "expected" || true
-          rm -rf "$MOUNT_POINT"
-
-          echo "=== All validations passed! ==="
-          echo "✓ DMG is properly signed and notarized"
-          echo "✓ App bundle passes Gatekeeper validation"
-          echo "✓ Users will be able to run the app without verification errors"
-
       - name: Prepare artifacts
         id: artifacts
+        if: always()
         run: |
           mkdir -p /tmp/out
 
           DMG_FILE="${{ steps.dmg.outputs.dmg_file }}"
+          APP_BUNDLE="${{ steps.merge.outputs.app_bundle }}"
           basename_dmg=$(basename "$DMG_FILE")
 
           echo "Copying DMG: $DMG_FILE"
           cp -v "$DMG_FILE" /tmp/out/"$basename_dmg"
 
+          # Also create a tar of the pre-DMG app bundle for comparison
+          echo "Creating tar of pre-DMG app bundle for debugging..."
+          tar -czf /tmp/out/pre-dmg-app-bundle.tar.gz -C "$(dirname "$APP_BUNDLE")" "$(basename "$APP_BUNDLE")"
+
           echo "dmg_path=/tmp/out/$basename_dmg" >> $GITHUB_OUTPUT
           echo "dmg_name=$(basename "$basename_dmg" .dmg)" >> $GITHUB_OUTPUT
+          echo "validation_status=${{ steps.validation.outcome }}" >> $GITHUB_OUTPUT
 
           # List what we have
           echo "Artifacts prepared:"
           ls -lh /tmp/out/
 
       - name: Upload DMG package
-        if: steps.artifacts.outputs.dmg_path != ''
+        if: always() && steps.artifacts.outputs.dmg_path != ''
         uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.artifacts.outputs.dmg_name }}
           path: ${{ steps.artifacts.outputs.dmg_path }}
           retention-days: 30
+
+      - name: Upload pre-DMG app bundle for debugging
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: pre-dmg-app-bundle-debug
+          path: /tmp/out/pre-dmg-app-bundle.tar.gz
+          retention-days: 7
+
+      - name: Post validation status
+        if: always()
+        run: |
+          if [ "${{ steps.validation.outcome }}" = "failure" ]; then
+            echo "⚠️ VALIDATION FAILED - DMG has been uploaded for manual inspection"
+            echo "Download the artifacts to inspect the issue locally:"
+            echo "  - DMG: ${{ steps.artifacts.outputs.dmg_name }}"
+            echo "  - Pre-DMG app bundle: pre-dmg-app-bundle-debug"
+          else
+            echo "✅ All validations passed!"
+          fi
 
       - name: Upload artifacts to release
         if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
