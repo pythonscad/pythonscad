@@ -533,6 +533,17 @@ jobs:
               echo "Copying arm64-only Python framework"
               mkdir -p "$MERGED_DIR/$APP_NAME/Contents/Frameworks"
               cp -R "$arm_python" "$MERGED_DIR/$APP_NAME/Contents/Frameworks/"
+
+              # Remove broken site-packages symlink that points outside the bundle
+              SITE_PACKAGES_LINK="$MERGED_DIR/$APP_NAME/Contents/Frameworks/Python.framework/Versions/*/lib/python*/site-packages"
+              for link in $SITE_PACKAGES_LINK; do
+                if [ -L "$link" ] && [ ! -e "$link" ]; then
+                  echo "Removing broken site-packages symlink: $link"
+                  rm "$link"
+                  # Create an empty directory instead
+                  mkdir -p "$link"
+                fi
+              done
             elif [ -d "$x86_python" ] && [ -d "$arm_python" ]; then
               # In both - merge binaries
               PYTHON_VERSION=$(ls "$x86_python/Versions/" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+$" | head -1)
