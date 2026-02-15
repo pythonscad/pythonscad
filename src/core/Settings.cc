@@ -498,6 +498,7 @@ SettingsEntryInt SettingsExportGcode::exportGcodeLaserMode(SECTION_EXPORT_GCODE,
 SettingsEntryBool SettingsExportGcode::exportGcodeAlwaysShowDialog(SECTION_EXPORT_GCODE, "always-show-dialog", true);
 SettingsEntryString SettingsExportGcode::exportGcodeInitCode("gcode", "initCode", "G90");
 SettingsEntryString SettingsExportGcode::exportGcodeExitCode("gcode", "exitCode", "");
+SettingsEntryString SettingsExportGcode::exportGcodeConfigFile("gcode", "configFile", "~/pythonscad.conf");
 
 SettingsEntryEnum<ColorListFilterType> SettingsColorList::colorListFilterType(
   SECTION_COLOR_LIST, "filter-type",
