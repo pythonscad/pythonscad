@@ -66,7 +66,18 @@
                     macos: "macOS",
                     other: "Other"
                 };
+                const sectionBlurbs = {
+                    "linux-debian":
+                        "The <a href=\"https://repos.pythonscad.org/apt/\">APT repository</a> is the "
+                        + "preferred way to install PythonSCAD on Debian and Ubuntu.",
+                    "linux-fedora":
+                        "The <a href=\"https://repos.pythonscad.org/yum/\">YUM/DNF repository</a> is the "
+                        + "preferred way to install PythonSCAD on Fedora and RHEL-based systems."
+                };
                 html += `<h4>${titles[platform]}</h4>`;
+                if (sectionBlurbs[platform]) {
+                    html += `<p class="downloads-repo-note">${sectionBlurbs[platform]}</p>`;
+                }
                 html += `<table class="downloads-table"><thead><tr><th>File</th><th>Size</th><th>SHA256</th><th>SHA512</th></tr></thead><tbody>`;
 
                 list.forEach(asset => {
