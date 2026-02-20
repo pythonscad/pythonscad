@@ -20,7 +20,6 @@
 #include "xeus/xinterpreter.hpp"
 
 void PyObjectDeleter(PyObject *pObject);
-using PyObjectUniquePtr = std::unique_ptr<PyObject, const decltype(PyObjectDeleter)&>;
 
 namespace openscad_jupyter {
 void interpreter::configure_impl() {}
