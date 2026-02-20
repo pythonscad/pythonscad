@@ -40,15 +40,12 @@ option(ENABLE_TESTS "Run testsuite after building." ON)
 option(ENABLE_GUI_TESTS "Compile a special version of the PythonSCAD gui with feature for testing." OFF)
 option(EXPERIMENTAL "Enable Experimental Features" ON)
 option(USE_MANIFOLD_TRIANGULATOR "Use Manifold's triangulator instead of CGAL's" ON)
+option(USE_MANIFOLD_MINKOWSKI "Use Manifold's Minkowski instead of CGAL's" OFF)
 option(USE_BUILTIN_MANIFOLD "Use manifold from submodule" ON)
 option(USE_BUILTIN_CLIPPER2 "Use Clipper2 from submodule" ON)
 option(SNAPSHOT "Create dev snapshot, uses nightly icons" OFF)
 option(HEADLESS "Build without GUI frontend" OFF)
-if(APPLE)
-  option(USE_QT6 "Build the GUI with Qt6" ON)
-else()
-option(USE_QT6 "Build the GUI with Qt6" OFF)
-endif()
+option(USE_QT6 "Build the GUI with Qt6" ON)
 option(ENABLE_EGL "Enable EGL support if available" ON)
 option(ENABLE_GLX "Enable GLX support if available" ON)
 # For now, we'll default to whatever OpenCSG uses (>=1.6 -> GLAD, <1.6 -> GLEW)
@@ -88,8 +85,9 @@ set(WASM_BUILD_TYPE "web" CACHE STRING
   "WebAssembly build type. Support web (builds an OpenSCAD module) or node (standalone .js executable)")
 
 if (USE_QT6)
-  # Minimum version required for Qt-6.8
-  set(DEPLOYMENT_TARGET "12.0")
+  # Minimum version required for PythonSCAD: macOS 14.0 (Sonoma)
+  # Only currently Apple-supported macOS versions are targeted.
+  set(DEPLOYMENT_TARGET "14.0")
 else()
   # Minimum version required for std::filesystem
   set(DEPLOYMENT_TARGET "10.15")
@@ -653,6 +651,8 @@ if(ENABLE_PYTHON)
       src/python/FrepNode.cc)
   endif()
   add_library(OpenSCADPy ${PYTHON_SOURCES} )
+  # _USE_MATH_DEFINES must be defined before cmath is included for M_PI on Windows
+  target_compile_definitions(OpenSCADPy PRIVATE _USE_MATH_DEFINES)
   if(ENABLE_LIBFIVE)
     target_compile_definitions(OpenSCADLibInternal PRIVATE ENABLE_LIBFIVE)
     target_compile_definitions(OpenSCADPy PRIVATE ENABLE_LIBFIVE)
@@ -663,8 +663,9 @@ if(ENABLE_PYTHON)
       if(PORTABLE_BINARY)
         set(MARCH_SUPPORTED OFF CACHE BOOL "Disable -march=native for portable builds" FORCE)
       endif()
-      add_subdirectory(submodules/libfive EXCLUDE_FROM_ALL)
-      target_link_libraries(OpenSCADPy PRIVATE libfive)
+      # Note: add_subdirectory(libfive) is deferred to after Python3 is found,
+      # so we can define PYTHON_SITE_PACKAGES_DIR using modern sysconfig
+      # (avoids deprecated distutils removed in Python 3.12+)
     else()
       pkg_check_modules(libfive REQUIRED libfive)
       include_directories(${libfive_INCLUDE_DIRS})
@@ -738,7 +739,16 @@ if(ENABLE_PYTHON)
         message(STATUS "Using Python version from environment: ${PYTHON_MINGW_VERSION}")
       else()
         # Detect Python version by checking installed libraries
+        # Try MSYS2 Unix-style path first (works when CMake runs under MSYS2 translation)
         file(GLOB PYTHON_LIBS "/${CALLSTACK}64/lib/libpython3.*.dll.a")
+        if(NOT PYTHON_LIBS)
+          # Try Windows-native path (needed when CMake doesn't translate MSYS2 paths)
+          if(DEFINED ENV{MSYSTEM_PREFIX})
+            file(GLOB PYTHON_LIBS "$ENV{MSYSTEM_PREFIX}/lib/libpython3.*.dll.a")
+          else()
+            file(GLOB PYTHON_LIBS "C:/msys64/${CALLSTACK}64/lib/libpython3.*.dll.a")
+          endif()
+        endif()
         if(PYTHON_LIBS)
           list(GET PYTHON_LIBS 0 FIRST_LIB)
           string(REGEX MATCH "libpython([0-9]+\\.[0-9]+)\\.dll\\.a" _ ${FIRST_LIB})
@@ -817,9 +827,9 @@ if(ENABLE_PYTHON)
       set(Python_Eff_INCLUDE_DIRS "")
     else()
       if (${PYTHON_VERSION}  STREQUAL "OFF")
-        find_package(Python3  REQUIRED COMPONENTS Development)
+        find_package(Python3  REQUIRED COMPONENTS Interpreter Development)
       else()
-        find_package(Python3  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Development)
+        find_package(Python3  ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Interpreter Development)
       endif()
       SET(Python_Eff_LIBRARIES ${Python3_LIBRARIES} )
       SET(Python_Eff_INCLUDE_DIRS ${Python3_INCLUDE_DIRS} )
@@ -847,6 +857,23 @@ if(ENABLE_PYTHON)
       target_link_libraries(OpenSCADPy PRIVATE ${Python3_LIBRARIES})
     endif()
   endif() # endif MXE
+
+  # Add libfive submodule now that Python3 is found
+  # (deferred from earlier so we can use Python3_EXECUTABLE for PYTHON_SITE_PACKAGES_DIR)
+  if(ENABLE_LIBFIVE AND USE_BUILTIN_LIBFIVE)
+    # Pre-define PYTHON_SITE_PACKAGES_DIR using modern sysconfig (not deprecated distutils)
+    # This prevents libfive's CMakeLists.txt from using distutils.sysconfig which was
+    # removed in Python 3.12+
+    if(UNIX AND Python3_EXECUTABLE)
+      execute_process(
+        COMMAND ${Python3_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_paths()['purelib'], end='')"
+        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR)
+      message(STATUS "Python site-packages directory: ${PYTHON_SITE_PACKAGES_DIR}")
+    endif()
+    add_subdirectory(submodules/libfive EXCLUDE_FROM_ALL)
+    target_link_libraries(OpenSCADPy PRIVATE libfive)
+  endif()
+
   target_include_directories(OpenSCADPy PRIVATE ${Nettle_INCLUDE_DIRS})
   target_link_libraries(OpenSCADPy PRIVATE ${Nettle_LIBRARIES})
   # OpenSCADExe also needs nettle (used in MainWindow.cc)
@@ -870,13 +897,6 @@ if(ENABLE_PYTHON)
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS}/harfbuzz)
   else()
     target_include_directories(OpenSCADPy SYSTEM PRIVATE ${HARFBUZZ_INCLUDE_DIRS})
-  endif()
-  if(APPLE) # Nettle
-    target_include_directories(OpenSCADPy PRIVATE "/usr/local/include")
-    target_link_directories(OpenSCADPy PRIVATE "/usr/local/lib")
-    target_link_directories(OpenSCADExe PRIVATE "/usr/local/lib")
-    target_link_libraries(OpenSCADPy PRIVATE "libnettle.a")
-    target_link_libraries(OpenSCADExe PRIVATE "libnettle.a")
   endif()
   target_link_libraries(OpenSCADPy PRIVATE Eigen3::Eigen)
   target_link_libraries(OpenSCADPy PRIVATE ${GETTEXT_LIBRARY})
@@ -1045,12 +1065,6 @@ message(STATUS "curl: found in ${CURL_INCLUDE_DIRS}")
 
 find_package(BISON REQUIRED)
 message(STATUS "Bison: ${BISON_VERSION}")
-if(APPLE)
-	target_include_directories(OpenSCADLibInternal PRIVATE "/usr/local/include")
-	target_link_directories(OpenSCADLibInternal PRIVATE "/usr/local/lib")
-	target_link_libraries(OpenSCADLibInternal PRIVATE "libjpeg.a")
-endif()
-
 find_package(Lib3MF)
 if (Lib3MF_FOUND)
   message(STATUS "lib3mf: ${Lib3MF_VERSION}")
@@ -1226,6 +1240,12 @@ if(NOT HEADLESS)
     endif()
   endif()
 endif()
+
+# Find after Qt which otherwise gets confused when building on MXE
+find_package(Freetype 2.4.9 REQUIRED QUIET)
+message(STATUS "Freetype: ${FREETYPE_VERSION_STRING}")
+target_include_directories(OpenSCADLibInternal SYSTEM PUBLIC ${FREETYPE_INCLUDE_DIRS})
+target_link_libraries(OpenSCADLibInternal PUBLIC ${FREETYPE_LIBRARIES})
 
 # Setup ccache (if available) to speed up recompiles. It's especially useful
 # when switching back and forth between branches where large numbers of files
@@ -1435,6 +1455,7 @@ set(CORE_SOURCES
   src/io/export_pdf.cc
   src/io/export_stl.cc
   src/io/export_svg.cc
+  src/io/export_gcode.cc
   src/io/export_step.cc
   src/io/export_pov.cc
   src/io/export_param.cc
@@ -1566,6 +1587,9 @@ if(ENABLE_MANIFOLD)
   if (USE_MANIFOLD_TRIANGULATOR)
     target_compile_definitions(OpenSCADLibInternal PUBLIC USE_MANIFOLD_TRIANGULATOR)
   endif()
+  if (USE_MANIFOLD_MINKOWSKI)
+    target_compile_definitions(OpenSCADLibInternal PUBLIC USE_MANIFOLD_MINKOWSKI)
+  endif()
 endif()
 
 #
@@ -1627,6 +1651,7 @@ set(GUI_SOURCES
   src/gui/ErrorLog.cc
   src/gui/EventFilter.h
   src/gui/Export3mfDialog.cc
+  src/gui/ExportGcodeDialog.cc
   src/gui/ExportPdfDialog.cc
   src/gui/LoadShareDesignDialog.cc
   src/gui/ShareDesignDialog.cc
@@ -1644,6 +1669,7 @@ set(GUI_SOURCES
   src/gui/ColorList.cc
   src/gui/ColorLabel.cc
   src/gui/ColorLayout.cc
+  src/gui/EditorColorMap.cc
   src/gui/MouseSelector.cc
   src/gui/OctoPrint.cc
   src/gui/OpenCSGWarningDialog.cc
@@ -1972,6 +1998,25 @@ if(APPLE AND NOT APPLE_UNIX)
       COMMENT "Updating Python library reference to use @rpath"
     )
   endif()
+
+  # Bundle libfive.dylib for portability (if libfive is enabled and built-in)
+  if(ENABLE_LIBFIVE AND USE_BUILTIN_LIBFIVE)
+    set(LIBFIVE_DYLIB "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.dylib")
+    add_custom_command(TARGET OpenSCADExe POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${BUNDLE_FRAMEWORKS_DIR}
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LIBFIVE_DYLIB} ${BUNDLE_FRAMEWORKS_DIR}/
+      COMMENT "Bundling libfive.dylib into app bundle for portability"
+    )
+    # Fix the install name to use @rpath instead of the build path
+    add_custom_command(TARGET OpenSCADExe POST_BUILD
+      COMMAND install_name_tool -change
+        ${LIBFIVE_DYLIB}
+        @rpath/libfive.dylib
+        ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}
+      COMMENT "Updating libfive library reference to use @rpath"
+    )
+  endif()
+
   file(COPY ${CMAKE_SOURCE_DIR}/color-schemes DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/examples DESTINATION ${BUNDLE_RESOURCES_DIR})
   file(COPY ${CMAKE_SOURCE_DIR}/fonts DESTINATION ${BUNDLE_RESOURCES_DIR})
@@ -1993,6 +2038,31 @@ elseif(MINGW)
   )
   set_property(TARGET OpenSCADLibInternal APPEND_STRING PROPERTY LINK_FLAGS " -municode")
   set_property(TARGET OpenSCADExe APPEND_STRING PROPERTY LINK_FLAGS " -municode")
+
+  # Copy libfive DLLs and Python module to build directory so tests can find them at runtime
+  if(ENABLE_LIBFIVE AND USE_BUILTIN_LIBFIVE)
+    # Ensure libfive-python and libfive-stdlib targets are built
+    add_dependencies(OpenSCADExe libfive-python libfive-stdlib)
+    add_custom_command(TARGET OpenSCADExe POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.dll"
+        "${CMAKE_BINARY_DIR}/"
+      COMMENT "Copying libfive.dll to build directory for runtime"
+    )
+    add_custom_command(TARGET OpenSCADExe POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/stdlib/libfive-stdlib.dll"
+        "${CMAKE_BINARY_DIR}/"
+      COMMENT "Copying libfive-stdlib.dll to build directory for runtime"
+    )
+    # Copy libfive Python module to build directory so tests can import it
+    add_custom_command(TARGET OpenSCADExe POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/bind/python/libfive"
+        "${CMAKE_BINARY_DIR}/libfive"
+      COMMENT "Copying libfive Python module to build directory"
+    )
+  endif()
 elseif(MSVC)
   set_target_properties(OpenSCADExe PROPERTIES
     LINK_FLAGS "-subsystem:windows -ENTRY:mainCRTStartup -stack:${STACKSIZE}"
@@ -2165,6 +2235,7 @@ if(NOT APPLE OR APPLE_UNIX)
           DIRECTORIES
             "${MSYS2_BIN_DIR}"
             "${CMAKE_BINARY_DIR}"
+            "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src"
           DESTINATION "."
         )
         message(STATUS "Native MSYS2 build: Runtime DLLs will be bundled from ${MSYS2_BIN_DIR}")
