@@ -940,6 +940,9 @@ int openscad_main(int argc, char **argv)
     ("debug", po::value<std::string>(),
       "special debug info - specify 'all' or a set of source file names")
 #ifdef ENABLE_PYTHON
+#ifdef ENABLE_JUPYTER
+            ("jupyter", po::value<std::string>(), "Run inside Jupyter")
+#endif
           ("trust-python", "Trust python")("ipython", "Run ipython Interpreter")(
             "python-module", po::value<std::string>(), "=module Call pip python module")
 #endif
@@ -994,6 +997,12 @@ int openscad_main(int argc, char **argv)
     LOG("Running ipython interpreter", OpenSCAD::debug);
     python_runipython = true;
   }
+#ifdef ENABLE_JUPYTER
+  if (vm.count("jupyter")) {
+    LOG("Running jupyter", OpenSCAD::debug);
+    python_jupyterconfig = vm["jupyter"].as<std::string>();
+  }
+#endif
   const auto pymod = "python-module";
   if (vm.count(pymod)) {
     PRINTDB("Running Python Module %s", pymod);
@@ -1162,6 +1171,12 @@ int openscad_main(int argc, char **argv)
     ipython();
     exit(0);
   }
+#ifdef ENABLE_JUPYTER
+  if (python_jupyterconfig.size() > 0) {
+    python_startjupyter();
+    exit(0);
+  }
+#endif
 #endif
 
   auto cmdlinemode = false;
