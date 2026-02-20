@@ -1,8 +1,41 @@
+dist/
 .uuid
-.cache/
+
+# Debian packaging build artifacts
+obj-x86_64-linux-gnu/
+deb-build.log
+deb-build-clean.log
+*.deb
+*.ddeb
+*.changes
+*.buildinfo
+*.sha256
+debian/pythonscad/
+debian/.debhelper/
+debian/*.substvars
+debian/*.debhelper.log
+debian/debhelper-build-stamp
+debian/files
+debian/changelog
+
+# RPM packaging build artifacts
+*.rpm
+*.src.rpm
+rpm-build.log
+pythonscad-*.tar.gz
+
+# Python virtual environments and caches
+__pycache__/
+.venv/
+
+# IDEs and editors
 .vs/
 .vscode/
+*.code-workspace
 .idea/
+
+.cache/
+.claude/
 .clangd/
 /*.scad
 **/out*.*
@@ -104,3 +137,17 @@ scripts/run-clang-tidy-cached
 resources/icons/pythonscad.desktop
 pythonscad.appdata.xml.in2
 .clangd
+python_mingw/
+python_embed/
+artifacts/
+
+# Python pip build artifacts
+src/core/lexer.cc
+src/core/parser.hxx
+src/core/parser.tab.h
+src/core/parser.cc
+pythonscad.egg-info/
+
+# MkDocs build output
+web/site/
+web/.venv/

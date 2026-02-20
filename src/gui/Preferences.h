@@ -8,20 +8,21 @@
 #include <QFontComboBox>
 #include <QHash>
 #include <QKeyEvent>
+#include <QMainWindow>
+#include <QSettings>
 #include <QShowEvent>
 #include <QString>
 #include <QStringList>
 #include <QVariant>
 #include <QWidget>
-#include <QMainWindow>
-#include <QSettings>
 #include <string>
 
+#include "core/Settings.h"
+#include "glview/RenderSettings.h"
+#include "gui/InitConfigurator.h"
 #include "gui/qtgettext.h"  // IWYU pragma: keep
 #include "openscad_gui.h"
 #include "ui_Preferences.h"
-#include "core/Settings.h"
-#include "gui/InitConfigurator.h"
 
 class GlobalPreferences;
 class Preferences : public QMainWindow, public Ui::Preferences, public InitConfigurator
@@ -39,12 +40,6 @@ public:
   void fireEditorConfigChanged() const;
   void fireApplicationFontChanged() const;
   void insertListItem(QListWidget *listBox, QListWidgetItem *listItem);
-
-  // Returns true if there is an higlightling color scheme configured.
-  bool hasHighlightingColorScheme() const;
-
-  // Set a new colorScheme.
-  void setHighlightingColorSchemes(const QStringList& colorSchemes);
 
 public slots:
   void actionTriggered(class QAction *);
@@ -88,6 +83,7 @@ public slots:
   void on_timeThresholdOnRenderCompleteSoundEdit_textChanged(const QString&);
   void on_enableClearConsoleCheckBox_toggled(bool);
   void on_consoleMaxLinesEdit_textChanged(const QString&);
+  void on_comboBoxGuiTheme_activated(int);
   void on_fontComboBoxApplicationFontFamily_currentFontChanged(const QFont&);
   void on_comboBoxApplicationFontSize_currentIndexChanged(int);
   void on_consoleFontChooser_currentFontChanged(const QFont&);
@@ -160,6 +156,8 @@ public slots:
   // Dialogs
   void on_checkBoxAlwaysShowExportPdfDialog_toggled(bool);
   void on_checkBoxAlwaysShowExport3mfDialog_toggled(bool);
+  void on_checkBoxAlwaysShowExportSvgDialog_toggled(bool);
+  void on_checkBoxAlwaysShowExportGcodeDialog_toggled(bool);
   void on_checkBoxAlwaysShowPrintServiceDialog_toggled(bool);
   void on_checkBoxGlobalTrustPython_toggled(bool);
 
@@ -172,6 +170,7 @@ signals:
   void consoleFontChanged(const QString& family, uint size) const;
   void customizerFontChanged(const QString& family, uint size) const;
   void colorSchemeChanged(const QString& scheme) const;
+  void guiThemeChanged(const QString& theme) const;
   void openCSGSettingsChanged() const;
   void syntaxHighlightChanged(const QString& s) const;
   void editorConfigChanged() const;
@@ -181,6 +180,7 @@ signals:
   void characterThresholdChanged(int val) const;
   void stepSizeChanged(int val) const;
   void toolbarExportChanged() const;
+  void renderBackend3DChanged(RenderBackend3D backend) const;
 
 private slots:
   void on_lineEditStepSize_textChanged(const QString& arg1);
@@ -193,6 +193,7 @@ private:
   void keyPressEvent(QKeyEvent *e) override;
   void showEvent(QShowEvent *e) override;
   void closeEvent(QCloseEvent *e) override;
+  bool event(QEvent *e) override;
   void removeDefaultSettings();
   void setupFeaturesPage();
   void setup3DPrintPage();

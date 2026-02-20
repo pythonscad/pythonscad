@@ -17,29 +17,22 @@ jobs:
   build_and_test:
     strategy:
       matrix:
-        os: [macos-15-intel, macos-latest]
-        qt: [qt5, qt6]
-        exclude:
-          # macos-latest runs on arm64, which has a broken SW renderer
-          - os: macos-latest
-          # QScintilla for qt5 is not longer available on Homebrew, and
-          # it's too much work to keep that running.
-          - qt: qt5
+        os: [macos-15-intel]
+        # Note: macos-14 (ARM64) excluded due to known SW renderer issues causing image test failures
     runs-on:  ${{ matrix.os }}
-    name: ${{ matrix.os }} ${{ matrix.qt }}
+    name: ${{ matrix.os }} qt6
     # If it's not done in 90 minutes, something is wrong.
     # Default is 6 hours, which is a bit long to wait.
     timeout-minutes: 90
     steps:
-    - name: Set Qt version
-      run: |
-        case ${{ matrix.qt }} in
-        qt5) echo "CMAKE_OPTIONS=-DUSE_QT6=0" >> $GITHUB_ENV ;;
-        esac
     - name: Checkout
       uses: actions/checkout@v6
       with:
         submodules: 'recursive'
+    - name: Fetch tags for version detection
+      run: |
+        git fetch --unshallow --tags || git fetch --tags
+        git describe --tags --always --dirty
     - name: Setup (detached) tmate ssh session if enabled
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       uses: mxschmitt/action-tmate@v3
@@ -51,19 +44,25 @@ jobs:
       run: |
         brew unlink python3
         brew link --overwrite python3
-    - name: Install Homebrew packages
+    - name: Install dependencies
       env:
-        HOMEBREW_NO_AUTO_UPDATE: 1
+        HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       run: |
-        export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
-        ./scripts/macosx-build-homebrew.sh ${{ matrix.qt }}
+        ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
     - name: Build OpenSCAD
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON $CMAKE_OPTIONS
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON -DENABLE_LIBFIVE=ON
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         make -j$NUMCPU
+    - name: Run macOS sanity check
+      run: |
+        # Run sanity check to validate deployment targets of bundled libraries.
+        # Skip architecture check since test builds are single-arch (not universal).
+        # Allow Homebrew dependencies since test builds use Homebrew libraries.
+        python3 ./scripts/macosx-sanity-check.py --skip-arch-check --allow-homebrew-deps \
+          build/pythonscad.app/Contents/MacOS/pythonscad
     - name: Verify Python setup
       run: |
         echo "=== Checking pythonscad-python symlink ==="
@@ -87,10 +86,10 @@ jobs:
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         ctest -j$NUMCPU -E pdfexporttest
     - name: Upload Test Result Report
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       if: ${{ always() }}
       with:
-        name: Test Result Report (MacOS ${{ matrix.qt }})
+        name: Test Result Report (MacOS ${{ matrix.os }})
         path: |
           build/Testing/Temporary/*_report.html
           build/Testing/Temporary/LastTest.log

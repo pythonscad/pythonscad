@@ -26,30 +26,31 @@
 
 #include "core/Value.h"
 
-#include <filesystem>
-#include <cmath>
-#include <variant>
-#include <limits>
-#include <ostream>
-#include <utility>
-#include <cstdint>
+#include <double-conversion/double-conversion.h>
+#include <double-conversion/ieee.h>
+#include <double-conversion/utils.h>
+
+#include <boost/lexical_cast.hpp>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <limits>
 #include <memory>
+#include <ostream>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <variant>
 #include <vector>
-#include <boost/lexical_cast.hpp>
 
 #include "core/EvaluationSession.h"
 #include "io/fileutils.h"
-#include "utils/exceptions.h"
-#include "utils/printutils.h"
 #include "utils/StackCheck.h"
 #include "utils/boost-utils.h"
-#include <double-conversion/double-conversion.h>
-#include <double-conversion/utils.h>
-#include <double-conversion/ieee.h>
+#include "utils/exceptions.h"
+#include "utils/printutils.h"
 
 namespace fs = std::filesystem;
 
@@ -219,49 +220,82 @@ std::ostream& operator<<(std::ostream& stream, const QuotedString& s)
 Value Value::clone() const
 {
   switch (this->type()) {
-  case Type::UNDEFINED:   return {};
-  case Type::BOOL:        return std::get<bool>(this->value);
-  case Type::NUMBER:      return std::get<double>(this->value);
-  case Type::STRING:      return std::get<str_utf8_wrapper>(this->value).clone();
-  case Type::RANGE:       return std::get<RangePtr>(this->value).clone();
+  case Type::UNDEFINED: return {};
+  case Type::BOOL:      return std::get<bool>(this->value);
+  case Type::NUMBER:    return std::get<double>(this->value);
+  case Type::STRING:    return std::get<str_utf8_wrapper>(this->value).clone();
+  case Type::RANGE:     return std::get<RangePtr>(this->value).clone();
   case Type::PYTHONCLASS: return std::get<PythonClassPtr>(this->value).clone();
-  case Type::VECTOR:      return std::get<VectorType>(this->value).clone();
-  case Type::OBJECT:      return std::get<ObjectType>(this->value).clone();
-  case Type::FUNCTION:    return std::get<FunctionPtr>(this->value).clone();
-  default:                assert(false && "unknown Value variant type"); return {};
+  case Type::VECTOR:    return std::get<VectorType>(this->value).clone();
+  case Type::OBJECT:    return std::get<ObjectType>(this->value).clone();
+  case Type::FUNCTION:  return std::get<FunctionPtr>(this->value).clone();
+  default:              assert(false && "unknown Value variant type"); return {};
   }
 }
 
-Value Value::undef(const std::string& why) { return Value{UndefType{why}}; }
+Value Value::undef(const std::string& why)
+{
+  return Value{UndefType{why}};
+}
 
 std::string Value::typeName(Type type)
 {
   switch (type) {
-  case Type::UNDEFINED:   return "undefined";
-  case Type::BOOL:        return "bool";
-  case Type::NUMBER:      return "number";
-  case Type::STRING:      return "string";
-  case Type::VECTOR:      return "vector";
-  case Type::RANGE:       return "range";
+  case Type::UNDEFINED: return "undefined";
+  case Type::BOOL:      return "bool";
+  case Type::NUMBER:    return "number";
+  case Type::STRING:    return "string";
+  case Type::VECTOR:    return "vector";
+  case Type::RANGE:     return "range";
   case Type::PYTHONCLASS: return "pythonclass";
-  case Type::OBJECT:      return "object";
-  case Type::FUNCTION:    return "function";
-  default:                assert(false && "unknown Value variant type"); return "<unknown>";
+  case Type::OBJECT:    return "object";
+  case Type::FUNCTION:  return "function";
+  default:              assert(false && "unknown Value variant type"); return "<unknown>";
   }
 }
 
-const std::string Value::typeName() const { return typeName(this->type()); }
+const std::string Value::typeName() const
+{
+  return typeName(this->type());
+}
 
 // free functions for use by static_visitor templated functions in creating undef messages.
-std::string getTypeName(const UndefType&) { return "undefined"; }
-std::string getTypeName(bool) { return "bool"; }
-std::string getTypeName(double) { return "number"; }
-std::string getTypeName(const str_utf8_wrapper&) { return "string"; }
-std::string getTypeName(const VectorType&) { return "vector"; }
-std::string getTypeName(const ObjectType&) { return "object"; }
-std::string getTypeName(const RangePtr&) { return "range"; }
-std::string getTypeName(const PythonClassPtr&) { return "pythonclass"; }
-std::string getTypeName(const FunctionPtr&) { return "function"; }
+std::string getTypeName(const UndefType&)
+{
+  return "undefined";
+}
+std::string getTypeName(bool)
+{
+  return "bool";
+}
+std::string getTypeName(double)
+{
+  return "number";
+}
+std::string getTypeName(const str_utf8_wrapper&)
+{
+  return "string";
+}
+std::string getTypeName(const VectorType&)
+{
+  return "vector";
+}
+std::string getTypeName(const ObjectType&)
+{
+  return "object";
+}
+std::string getTypeName(const RangePtr&)
+{
+  return "range";
+}
+std::string getTypeName(const PythonClassPtr&)
+{
+  return "pythonclass";
+}
+std::string getTypeName(const FunctionPtr&)
+{
+  return "function";
+}
 
 bool Value::toBool() const
 {
@@ -283,9 +317,15 @@ bool Value::toBool() const
 // Convert the value to a double with an integer value, for use in bitwise operations.
 // Since there are several possible ways to do this (floor, ceil, round, trunc) this function
 // centralizes the choice for consistency.
-double Value::toInteger() const { return trunc(this->toDouble()); }
+double Value::toInteger() const
+{
+  return trunc(this->toDouble());
+}
 
-int64_t Value::toInt64() const { return this->toInteger(); }
+int64_t Value::toInt64() const
+{
+  return this->toInteger();
+}
 
 double Value::toDouble() const
 {
@@ -479,7 +519,10 @@ public:
   std::string operator()(const FunctionPtr& v) const { return STR(*v); }
 };
 
-std::string Value::toString() const { return std::visit(tostring_visitor(), this->value); }
+std::string Value::toString() const
+{
+  return std::visit(tostring_visitor(), this->value);
+}
 
 std::string Value::toEchoString() const
 {
@@ -501,9 +544,15 @@ std::string Value::toEchoStringNoThrow() const
   return ret;
 }
 
-const UndefType& Value::toUndef() const { return std::get<UndefType>(this->value); }
+const UndefType& Value::toUndef() const
+{
+  return std::get<UndefType>(this->value);
+}
 
-std::string Value::toUndefString() const { return std::get<UndefType>(this->value).toString(); }
+std::string Value::toUndefString() const
+{
+  return std::get<UndefType>(this->value).toString();
+}
 
 class chr_visitor
 {
@@ -553,7 +602,10 @@ public:
   std::string operator()(const PythonClassPtr& v) const { return "pythonclass"; }
 };
 
-std::string Value::chrString() const { return std::visit(chr_visitor(), this->value); }
+std::string Value::chrString() const
+{
+  return std::visit(chr_visitor(), this->value);
+}
 
 VectorType::VectorType(EvaluationSession *session)
   : ptr(std::shared_ptr<VectorObject>(new VectorObject(), VectorObjectDeleter()))
@@ -656,7 +708,10 @@ const VectorType& Value::toVector() const
   return v ? *v : empty;
 }
 
-VectorType& Value::toVectorNonConst() { return std::get<VectorType>(this->value); }
+VectorType& Value::toVectorNonConst()
+{
+  return std::get<VectorType>(this->value);
+}
 
 const ObjectType& Value::toObject() const
 {
@@ -733,7 +788,10 @@ const PythonClassType& Value::toPythonClass() const
   return **val;
 }
 
-const FunctionType& Value::toFunction() const { return *std::get<FunctionPtr>(this->value); }
+const FunctionType& Value::toFunction() const
+{
+  return *std::get<FunctionPtr>(this->value);
+}
 
 bool Value::isUncheckedUndef() const
 {
@@ -824,7 +882,10 @@ Value VectorType::operator<(const VectorType& v) const
   return (first1 == last1) && (first2 != last2);
 }
 
-Value VectorType::operator>(const VectorType& v) const { return v.VectorType::operator<(*this); }
+Value VectorType::operator>(const VectorType& v) const
+{
+  return v.VectorType::operator<(*this);
+}
 
 Value VectorType::operator<=(const VectorType& v) const
 {
@@ -972,7 +1033,10 @@ Value Value::operator!=(const Value& v) const
   return std::visit(notequal_visitor(), this->value, v.value);
 }
 
-Value Value::operator<(const Value& v) const { return std::visit(less_visitor(), this->value, v.value); }
+Value Value::operator<(const Value& v) const
+{
+  return std::visit(less_visitor(), this->value, v.value);
+}
 
 Value Value::operator>=(const Value& v) const
 {
@@ -989,7 +1053,10 @@ Value Value::operator<=(const Value& v) const
   return std::visit(lessequal_visitor(), this->value, v.value);
 }
 
-bool Value::cmp_less(const Value& v1, const Value& v2) { return v1.operator<(v2).toBool(); }
+bool Value::cmp_less(const Value& v1, const Value& v2)
+{
+  return v1.operator<(v2).toBool();
+}
 
 class plus_visitor
 {
@@ -1017,7 +1084,10 @@ public:
   }
 };
 
-Value Value::operator+(const Value& v) const { return std::visit(plus_visitor(), this->value, v.value); }
+Value Value::operator+(const Value& v) const
+{
+  return std::visit(plus_visitor(), this->value, v.value);
+}
 
 class minus_visitor
 {
@@ -1384,25 +1454,54 @@ std::ostream& operator<<(std::ostream& stream, const PythonClassType& r)
 }
 
 // called by clone()
-ObjectType::ObjectType(const std::shared_ptr<ObjectObject>& copy) : ptr(copy) {}
+ObjectType::ObjectType(const std::shared_ptr<ObjectObject>& copy) : ptr(copy)
+{
+}
 
 ObjectType::ObjectType(EvaluationSession *session) : ptr(std::make_shared<ObjectObject>())
 {
   ptr->evaluation_session = session;
 }
 
-const Value& ObjectType::get(const std::string& key) const { return ptr->get(key); }
-bool ObjectType::set(const std::string& key, Value value) { return ptr->set(key, std::move(value)); }
-bool ObjectType::del(const std::string& key) { return ptr->del(key) != NOINDEX; }
-bool ObjectType::contains(const std::string& key) const { return ptr->find(key) != NOINDEX; }
-bool ObjectType::empty() const { return ptr->values.empty(); }
-const std::vector<std::string>& ObjectType::keys() const { return ptr->keys; }
-const std::vector<Value>& ObjectType::values() const { return ptr->values; }
+const Value& ObjectType::get(const std::string& key) const
+{
+  return ptr->get(key);
+}
+bool ObjectType::set(const std::string& key, Value value)
+{
+  return ptr->set(key, std::move(value));
+}
+bool ObjectType::del(const std::string& key)
+{
+  return ptr->del(key) != NOINDEX;
+}
+bool ObjectType::contains(const std::string& key) const
+{
+  return ptr->find(key) != NOINDEX;
+}
+bool ObjectType::empty() const
+{
+  return ptr->values.empty();
+}
+const std::vector<std::string>& ObjectType::keys() const
+{
+  return ptr->keys;
+}
+const std::vector<Value>& ObjectType::values() const
+{
+  return ptr->values;
+}
 
-const Value& ObjectType::operator[](const str_utf8_wrapper& v) const { return this->get(v.toString()); }
+const Value& ObjectType::operator[](const str_utf8_wrapper& v) const
+{
+  return this->get(v.toString());
+}
 
 // Copy explicitly only when necessary
-ObjectType ObjectType::clone() const { return ObjectType(this->ptr); }
+ObjectType ObjectType::clone() const
+{
+  return ObjectType(this->ptr);
+}
 
 std::ostream& operator<<(std::ostream& stream, const ObjectType& v)
 {

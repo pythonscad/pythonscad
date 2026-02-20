@@ -25,21 +25,38 @@
  */
 
 #include <Eigen/Core>
-#include "Selection.h"
-#include "system-gl.h"
+#include "core/Selection.h"
 
-void SelectedObject::paint(double zoomval) const { printf("paint base\n"); }
+#include <Eigen/Dense>
+#include <iomanip>
+#include <limits>
+#include <sstream>
+#include <string>
 
-SelectedPoint::SelectedPoint(const Vector3d& pt) { this->pt = pt; }
-void SelectedPoint::paint(double zoomval) const
+std::string SelectionTypeToString(SelectionType type)
 {
-  auto vd = zoomval * 0.005;
-  glBegin(GL_LINES);
-  for (double xf : {-1.0, 1.0}) {
-    for (double yf : {-1.0, 1.0}) {
-      glVertex3d(pt[0] + xf * vd, pt[1] + yf * vd, pt[2] - vd);
-      glVertex3d(pt[0] - xf * vd, pt[1] - yf * vd, pt[2] + vd);
-    }
+  switch (type) {
+  case SelectionType::SELECTION_POINT: return "point";
+  case SelectionType::SELECTION_LINE:  return "line";
+  default:                             return "unknown_SelectionType";
   }
-  glEnd();
+}
+// FIXME: should be somewhere reusable
+std::string Vector3dtoString(const Eigen::Vector3d& vec,
+                             int precision = std::numeric_limits<double>::max_digits10)
+{
+  std::ostringstream oss;
+  oss << std::setprecision(precision);
+
+  oss << "[" << vec.x() << ", " << vec.y() << ", " << vec.z() << "]";
+
+  return oss.str();
+}
+
+std::string SelectedObject::toString() const
+{
+  if (type == SelectionType::SELECTION_LINE) {
+    return Vector3dtoString(pt[0]) + " to " + Vector3dtoString(pt[1]);
+  }
+  return Vector3dtoString(pt[0]);
 }

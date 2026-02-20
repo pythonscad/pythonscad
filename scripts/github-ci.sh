@@ -6,6 +6,8 @@ PARALLEL_MAKE=-j2  # runners have insufficient memory for -j4
 PARALLEL_CTEST=-j4
 PARALLEL_GCOVR=-j4
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 BUILDDIR=b
 GCOVRDIR=c
 
@@ -19,9 +21,19 @@ do_enable_python() {
 	PYTHON_DEFINE="-DENABLE_PYTHON=ON"
 }
 
+do_enable_libfive() {
+	echo "do_enable_libfive()"
+	LIBFIVE_DEFINE="-DENABLE_LIBFIVE=ON"
+}
+
+do_qt5() {
+	echo "do_qt5()"
+	QT="-DUSE_QT6=OFF"
+}
+
 do_qt6() {
 	echo "do_qt6()"
-	USE_QT6="-DUSE_QT6=ON"
+	QT=""
 }
 
 do_build() {
@@ -31,7 +43,7 @@ do_build() {
 	mkdir "$BUILDDIR"
 	(
 		cd "$BUILDDIR"
-		cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DPROFILE=ON -DUSE_BUILTIN_OPENCSG=1 ${EXPERIMENTAL} ${PYTHON_DEFINE} ${USE_QT6} .. && make $PARALLEL_MAKE
+		cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DPROFILE=ON -DUSE_BUILTIN_OPENCSG=1 ${EXPERIMENTAL} ${PYTHON_DEFINE} ${LIBFIVE_DEFINE} ${QT} .. && make $PARALLEL_MAKE
 	)
 	if [[ $? != 0 ]]; then
 		echo "Build failure"
@@ -50,9 +62,6 @@ do_test() {
 	(
 		cd "$BUILDDIR"
 		ctest $PARALLEL_CTEST $CTEST_ARGS
-		if [[ $? != 0 ]]; then
-			exit 1
-		fi
 	)
 	if [[ $? != 0 ]]; then
 		echo "Test failure"
@@ -68,7 +77,7 @@ do_coverage() {
 	(
 		cd "$BUILDDIR"
 		echo "Generating code coverage report..."
-		gcovr -r ../src CMakeFiles/OpenSCADLibInternal.dir $PARALLEL_GCOVR --html --html-details --sort uncovered-percent -o coverage.html
+		gcovr -r ../src CMakeFiles/OpenSCADLibInternal.dir $PARALLEL_GCOVR --merge-mode-functions=merge-use-line-0 --html --html-details --sort uncovered-percent -o coverage.html
 		if [[ $? != 0 ]]; then
 			exit 1
 		fi

@@ -61,7 +61,11 @@ if [ ! -f $OPENSCADDIR/src/openscad.cc ]; then
   exit 1
 fi
 
-CMAKE_CONFIG="-DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=OFF"
+CMAKE_CONFIG="-DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=OFF $OPENSCAD_CMAKE_EXTRA_OPTS"
+
+if [ -n "${USE_SCCACHE}" ] && command -v sccache >/dev/null 2>&1; then
+  CMAKE_CONFIG="$CMAKE_CONFIG -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
+fi
 
 if [[ "$OSTYPE" =~ "darwin" ]]; then
   OS=MACOSX
@@ -102,7 +106,7 @@ case $OS in
     ;;
     LINUX)
         TARGET=
-        export QT_SELECT=5
+        export QT_SELECT=6
     ;;
     WIN)
         export QTDIR=/c/devmingw/qt2009.03
@@ -118,12 +122,24 @@ case $OS in
           SHARED=-shared
         fi
         MINGWCONFIG=mingw-cross-env$SHARED
-        . ./scripts/setenv-mingw-xbuild.sh $ARCH $SHARED
+        . ./scripts/setenv-mingw-xbuild.sh $ARCH $SHARED qt6
         TARGET=
         ZIP="zip"
         ZIPARGS="-r -q"
         echo Mingw-cross build using ARCH=$ARCH MXELIBTYPE=$MXELIBTYPE
-        CMAKE_CONFIG="$CMAKE_CONFIG -GNinja -DMXECROSS=ON -DALLOW_BUNDLED_HIDAPI=ON -DPACKAGE_ARCH=x86-$ARCH"
+
+        # Build complete package filename components
+        # Format: PythonSCAD-qt6-0.6.0-28-g89c44cac7-windows-x86-64
+        QT_PART=""
+        if [ -n "$QT_VERSION" ]; then
+          QT_PART="$QT_VERSION-"
+          echo "Building with Qt version: $QT_VERSION"
+        fi
+
+        # PACKAGE_ARCH will be used in CPACK_SYSTEM_NAME
+        PACKAGE_ARCH="windows-x86-$ARCH"
+
+        CMAKE_CONFIG="$CMAKE_CONFIG -GNinja -DMXECROSS=ON -DALLOW_BUNDLED_HIDAPI=ON -DPACKAGE_ARCH=$PACKAGE_ARCH -DQT_VERSION_STR=$QT_PART"
     ;;
 esac
 
@@ -178,15 +194,13 @@ fi
 echo "  NUMCPU: $NUMCPU"
 
 cd $DEPLOYDIR
-CMAKE_CONFIG="${CMAKE_CONFIG}\
- -DCMAKE_BUILD_TYPE=${BUILD_TYPE}\
- -DOPENSCAD_VERSION=${VERSION}\
- -DEXPERIMENTAL=ON\
- -DENABLE_TBB=OFF\
- -DENABLE_PYTHON=ON\
- -DENABLE_LIBFIVE=OFF\
- -DENABLE_GAMEPAD=OFF\
- -DOPENSCAD_COMMIT=${COMMIT}"
+# Note: OPENSCAD_VERSION and OPENSCAD_COMMIT are now auto-detected by CMake via openscad_version.cmake
+CMAKE_CONFIG="${CMAKE_CONFIG} \
+ -DEXPERIMENTAL=ON \
+ -DENABLE_TBB=OFF \
+ -DENABLE_PYTHON=ON \
+ -DENABLE_LIBFIVE=OFF \
+ -DENABLE_GAMEPAD=OFF"
 
 echo "Running CMake from ${DEPLOYDIR}"
 echo "${CMAKE}  ${CMAKE_CONFIG}" ..

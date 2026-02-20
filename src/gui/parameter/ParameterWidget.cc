@@ -25,32 +25,35 @@
  */
 #include "gui/parameter/ParameterWidget.h"
 
-#include <QLayoutItem>
-#include <QString>
-#include <stdexcept>
-#include <cassert>
-#include <map>
-#include <set>
-#include <memory>
-#include <QWidget>
-
-#include "gui/parameter/GroupWidget.h"
-#include "gui/parameter/ParameterSpinBox.h"
-#include "gui/parameter/ParameterComboBox.h"
-#include "gui/parameter/ParameterSlider.h"
-#include "gui/parameter/ParameterCheckBox.h"
-#include "gui/parameter/ParameterText.h"
-#include "gui/parameter/ParameterVector.h"
-#include "gui/Preferences.h"
-
-#include <filesystem>
-
+#include <QAction>
 #include <QInputDialog>
+#include <QLayoutItem>
+#include <QMenu>
 #include <QMessageBox>
+#include <QString>
+#include <QToolButton>
+#include <QWidget>
+#include <cassert>
 #include <cstddef>
+#include <filesystem>
+#include <map>
+#include <memory>
+#include <set>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "core/customizer/ParameterObject.h"
+#include "gui/Preferences.h"
+#include "gui/parameter/GroupWidget.h"
+#include "gui/parameter/ParameterCheckBox.h"
+#include "gui/parameter/ParameterComboBox.h"
+#include "gui/parameter/ParameterSlider.h"
+#include "gui/parameter/ParameterSpinBox.h"
+#include "gui/parameter/ParameterText.h"
+#include "gui/parameter/ParameterVector.h"
+#include "gui/parameter/ParameterVirtualWidget.h"
 
 ParameterWidget::ParameterWidget(QWidget *parent) : QWidget(parent)
 {
@@ -61,14 +64,16 @@ ParameterWidget::ParameterWidget(QWidget *parent) : QWidget(parent)
   autoPreviewTimer.setSingleShot(true);
 
   connect(&autoPreviewTimer, &QTimer::timeout, this, &ParameterWidget::emitParametersChanged);
-  connect(checkBoxAutoPreview, &QCheckBox::toggled, [this]() { this->autoPreview(true); });
-  connect(comboBoxDetails, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          &ParameterWidget::rebuildWidgets);
-  connect(comboBoxPreset, QOverload<int>::of(&QComboBox::activated), this,
-          &ParameterWidget::onSetChanged);
   // connect(comboBoxPreset, &QComboBox::editTextChanged, this, &ParameterWidget::onSetNameChanged);
-  connect(addButton, &QPushButton::clicked, this, &ParameterWidget::onSetAdd);
-  connect(deleteButton, &QPushButton::clicked, this, &ParameterWidget::onSetDelete);
+
+  auto *customizer_menu = new QMenu(this);
+  parameterMenuButton->setMenu(customizer_menu);
+
+  QAction *collapseAction = customizer_menu->addAction(_("Collapse All"));
+  connect(collapseAction, &QAction::triggered, this, &ParameterWidget::onCollapseAll);
+
+  QAction *expandAction = customizer_menu->addAction(_("Expand All"));
+  connect(expandAction, &QAction::triggered, this, &ParameterWidget::onExpandAll);
 
   QString fontfamily = GlobalPreferences::inst()->getValue("advanced/customizerFontFamily").toString();
   uint fontsize = GlobalPreferences::inst()->getValue("advanced/customizerFontSize").toUInt();
@@ -135,12 +140,41 @@ void ParameterWidget::setParameters(const SourceFile *sourceFile, const std::str
 {
   this->source = source;
 
+  // Store old parameters temporarily - they must stay alive until widgets using them
+  // are fully deleted. Using deleteLater() defers widget deletion until the event
+  // loop, but if the parameters are destroyed first, the widgets will access freed
+  // memory when Qt delivers pending events (like mouse release on a slider).
+  ParameterObjects oldParameters = std::move(this->parameters);
+
+  // Schedule widgets for deletion. Use deleteLater() because Qt may have captured
+  // pointers to widgets during mouse press events. Direct deletion would leave
+  // Qt with dangling pointers when it tries to deliver the mouse release event.
+  widgets.clear();
+  QLayout *layout = this->scrollAreaWidgetContents->layout();
+  while (layout->count() > 0) {
+    QLayoutItem *child = layout->takeAt(0);
+    if (child->widget()) {
+      child->widget()->deleteLater();
+    }
+    delete child;
+  }
+
+  // Process pending events to ensure widgets are deleted while old parameters
+  // are still valid. This handles the case where a slider is being dragged
+  // when F5 is pressed - the release event will be processed here.
+  QCoreApplication::processEvents();
+
+  // Now it's safe to load new parameters - old widgets have been deleted
+  // and oldParameters will be destroyed when this function returns.
   this->parameters = ParameterObjects::fromSourceFile(sourceFile);
   rebuildWidgets();
   loadSet(comboBoxPreset->currentIndex());
 }
 
-void ParameterWidget::applyParameters(SourceFile *sourceFile) { this->parameters.apply(sourceFile); }
+void ParameterWidget::applyParameters(SourceFile *sourceFile)
+{
+  this->parameters.apply(sourceFile);
+}
 
 bool ParameterWidget::childHasFocus()
 {
@@ -186,7 +220,17 @@ void ParameterWidget::autoPreview(bool immediate)
   }
 }
 
-void ParameterWidget::onSetChanged(int index)
+void ParameterWidget::on_checkBoxAutoPreview_toggled(bool)
+{
+  autoPreview(true);
+}
+
+void ParameterWidget::on_comboBoxDetails_currentIndexChanged(int)
+{
+  rebuildWidgets();
+}
+
+void ParameterWidget::on_comboBoxPreset_activated(int index)
 {
   loadSet(index);
   autoPreview(true);
@@ -200,7 +244,7 @@ void ParameterWidget::onSetNameChanged()
   setModified();
 }
 
-void ParameterWidget::onSetAdd()
+void ParameterWidget::on_addButton_clicked()
 {
   bool ok = true;
   QString result =
@@ -213,7 +257,7 @@ void ParameterWidget::onSetAdd()
   setModified();
 }
 
-void ParameterWidget::onSetDelete()
+void ParameterWidget::on_deleteButton_clicked()
 {
   int index = comboBoxPreset->currentIndex();
   assert(index > 0);
@@ -230,6 +274,20 @@ void ParameterWidget::onSetDelete()
   sets.erase(sets.begin() + (index - 1));
   setModified();
   autoPreview(true);
+}
+
+void ParameterWidget::onCollapseAll()
+{
+  for (GroupWidget *groupWidget : this->findChildren<GroupWidget *>()) {
+    groupWidget->setExpanded(false);
+  }
+}
+
+void ParameterWidget::onExpandAll()
+{
+  for (GroupWidget *groupWidget : this->findChildren<GroupWidget *>()) {
+    groupWidget->setExpanded(true);
+  }
 }
 
 void ParameterWidget::parameterModified(bool immediate)

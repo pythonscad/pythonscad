@@ -1,5 +1,7 @@
 #include "glview/GLView.h"
 #include "geometry/linalg.h"
+#include "glview/ShaderUtils.h"
+#include "core/Selection.h"
 #include "glview/system-gl.h"
 #include "glview/ColorMap.h"
 #include "glview/RenderSettings.h"
@@ -40,7 +42,10 @@ GLView::GLView()
   this->handle_mode = false;
 }
 
-GLView::~GLView() { teardownShader(); }
+GLView::~GLView()
+{
+  teardownShader();
+}
 
 void GLView::setupShader()
 {
@@ -74,7 +79,10 @@ void GLView::teardownShader()
   }
 }
 
-void GLView::setRenderer(std::shared_ptr<Renderer> r) { this->renderer = r; }
+void GLView::setRenderer(std::shared_ptr<Renderer> r)
+{
+  this->renderer = r;
+}
 
 /* update the color schemes of the Renderer attached to this GLView
    to match the colorscheme of this GLView.*/
@@ -112,7 +120,10 @@ void GLView::resizeGL(int w, int h)
   setupShader();
 }
 
-void GLView::setCamera(const Camera& cam) { this->cam = cam; }
+void GLView::setCamera(const Camera& cam)
+{
+  this->cam = cam;
+}
 
 void GLView::setupCamera()
 {
@@ -513,7 +524,7 @@ void GLView::showObject(const SelectedObject& obj, const Vector3d& eyedir)
     glEnd();
 
   } break;
-  case SelectionType::SELECTION_SEGMENT: {
+  case SelectionType::SELECTION_LINE: {
     if (obj.pt.size() < 2) break;
     Vector3d p1 = obj.pt[0];
     Vector3d p2 = obj.pt[1];
