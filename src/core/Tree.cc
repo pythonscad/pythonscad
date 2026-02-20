@@ -1,12 +1,18 @@
 #include "core/Tree.h"
-#include "core/NodeDumper.h"
 
-#include <memory>
 #include <cassert>
+#include <memory>
 #include <string>
 #include <tuple>
 
-Tree::~Tree() { this->nodecachemap.clear(); }
+#include "core/NodeCache.h"
+#include "core/NodeDumper.h"
+#include "core/node.h"
+
+Tree::~Tree()
+{
+  this->nodecachemap.clear();
+}
 
 /*!
    Returns the cached string representation of the subtree rooted by \a node.
@@ -68,4 +74,7 @@ void Tree::setDocumentPath(const std::string& path)
   this->document_path = path;
 }
 
-const std::string Tree::getDocumentPath() const { return this->document_path; }
+const std::string Tree::getDocumentPath() const
+{
+  return this->document_path;
+}

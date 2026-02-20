@@ -1,10 +1,9 @@
 #include "Feature.h"
 
-#include <string>
-#include <utility>
-
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <string>
+#include <utility>
 
 #include "utils/exceptions.h"
 #include "utils/printutils.h"
@@ -47,6 +46,9 @@ const Feature Feature::ExperimentalWrapPolygon("wrap-polygon",
                                                "New Wrap feature which can wrap shapes around polygon");
 const Feature Feature::ExperimentalVectorSwizzle(
   "vector-swizzle", "Enable vector swizzling (e.g. <code>vec4.zyx</code> to reverse a 3D vector).");
+const Feature Feature::ExperimentalDiscretizationByError(
+  "discretization-by-error",
+  "Specify the maximum error in $fe and shapes will be segmented appropriately.");
 
 #ifdef ENABLE_PYTHON
 const Feature Feature::ExperimentalPythonEngine(

@@ -1,13 +1,13 @@
 #include "geometry/cgal/CGALNefGeometry.h"
 
-#include <memory>
 #include <cstddef>
+#include <memory>
 #include <string>
 
 #include "geometry/Geometry.h"
-#include "geometry/linalg.h"
 #include "geometry/cgal/cgal.h"
 #include "geometry/cgal/cgalutils.h"
+#include "geometry/linalg.h"
 #include "utils/printutils.h"
 #include "utils/svg.h"
 
@@ -71,7 +71,10 @@ size_t CGALNefGeometry::memsize() const
   return memsize;
 }
 
-bool CGALNefGeometry::isEmpty() const { return !this->p3 || this->p3->is_empty(); }
+bool CGALNefGeometry::isEmpty() const
+{
+  return !this->p3 || this->p3->is_empty();
+}
 
 BoundingBox CGALNefGeometry::getBoundingBox() const
 {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm.hpp>
 #include <filesystem>
 #include <iostream>
 #include <iterator>
@@ -9,12 +11,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include <boost/range/algorithm.hpp>
-#include <boost/range/adaptor/map.hpp>
-
 #include "core/Settings.h"
-#include "core/Tree.h"
 #include "core/SourceFile.h"
+#include "core/Tree.h"
 #include "geometry/Geometry.h"
 #include "geometry/linalg.h"
 #include "glview/Camera.h"
@@ -47,6 +46,7 @@ enum class FileFormat {
   PS,
   POV,
   STEP,
+  GCODE,
   PARAM
 };
 
@@ -288,6 +288,14 @@ struct ExportSvgOptions {
   }
 };
 
+struct ExportGcodeOptions {
+  double feedrate;
+  double laserpower;  
+  int lasermode;
+  std::string initCode;
+  std::string exitCode;
+};
+
 struct ExportInfo {
   FileFormat format;
   FileFormatInfo info;
@@ -300,6 +308,7 @@ struct ExportInfo {
   std::shared_ptr<const ExportPdfOptions> optionsPdf;
   std::shared_ptr<const Export3mfOptions> options3mf;
   std::shared_ptr<const ExportSvgOptions> optionsSvg;
+  std::shared_ptr<const ExportGcodeOptions> optionsGcode;
 };
 
 class Export3mfPartInfo
@@ -338,6 +347,8 @@ void export_ps(const std::shared_ptr<const Geometry>& geom, std::ostream& output
 void export_amf(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_dxf(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
+                const ExportInfo& exportInfo);
+void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                 const ExportInfo& exportInfo);
 void export_pov(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                 const ExportInfo& exportInfo);

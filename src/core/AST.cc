@@ -1,9 +1,11 @@
 #include "core/AST.h"
+
 #include <filesystem>
-#include <ostream>
 #include <memory>
+#include <ostream>
 #include <sstream>
 #include <string>
+
 #include "io/fileutils.h"
 
 const Location Location::NONE(0, 0, 0, 0, std::make_shared<fs::path>(fs::path{}));
@@ -17,9 +19,7 @@ bool operator==(Location const& lhs, Location const& rhs)
 
 bool operator!=(Location const& lhs, Location const& rhs)
 {
-  return lhs.firstLine() == rhs.firstLine() && lhs.firstColumn() == rhs.firstColumn() &&
-         lhs.lastLine() == rhs.lastLine() && lhs.lastColumn() == rhs.lastColumn() &&
-         lhs.filePath() == rhs.filePath();
+  return !(lhs == rhs);
 }
 
 bool Location::isNone() const

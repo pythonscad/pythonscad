@@ -1,25 +1,22 @@
-#include "io/export.h"
-
-#include <cassert>
-#include <ostream>
-#include <memory>
-#include <string>
-#include <cmath>
-
 #include <Eigen/Core>
+#include <cassert>
+#include <cmath>
+#include <memory>
+#include <ostream>
+#include <string>
 
 #include "core/ColorUtil.h"
 #include "geometry/Geometry.h"
-#include "geometry/linalg.h"
-#include "geometry/Polygon2d.h"
 #include "geometry/PolySet.h"
+#include "geometry/Polygon2d.h"
+#include "geometry/linalg.h"
+#include "io/export.h"
 #include "io/export_enums.h"
 #include "utils/printutils.h"
 #include "utils/version_helper.h"
 
 #ifdef ENABLE_CAIRO
 
-#include <cairo.h>
 #include <cairo-pdf.h>
 #include "src/geometry/PolySetUtils.h"
 #include "export_foldable.h"
@@ -60,9 +57,15 @@ void draw_text(const char *text, cairo_t *cr, double x, double y, double fontSiz
   cairo_restore(cr);
 }
 
-double mm_to_points(double mm) { return mm * PTS_IN_MM; }
+double mm_to_points(double mm)
+{
+  return mm * PTS_IN_MM;
+}
 
-double points_to_mm(double pts) { return pts / PTS_IN_MM; }
+double points_to_mm(double pts)
+{
+  return pts / PTS_IN_MM;
+}
 
 void draw_grid(cairo_t *cr, double left, double right, double bottom, double top, double gridSize)
 {

@@ -51,6 +51,7 @@ def main():
     python =[
               "src/genlang/genlang.cc",
               "src/python/pyfunctions.cc",
+              "src/python/pyconversion.cc",
               "src/python/pydata.cc",
               "src/python/pyopenscad.cc",
               "src/python/pymod.cc",
@@ -59,6 +60,8 @@ def main():
     geometry = [
               "src/geometry/GeometryEvaluator.cc",
               "src/geometry/rotate_extrude.cc",
+              "src/geometry/roof_ss.cc",
+              "src/geometry/roof_vd.cc",
               "src/geometry/skin.cc",
               "src/geometry/linear_extrude.cc",
               "src/geometry/cgal/CGALCache.cc",
@@ -181,6 +184,7 @@ def main():
               "src/io/export_off.cc",
               "src/io/export_pov.cc",
               "src/io/export_svg.cc",
+              "src/io/export_gcode.cc",
               "src/io/export_foldable.cc",
               "src/io/export_3mf_dummy.cc",
               "src/io/export_ps.cc",
@@ -243,6 +247,8 @@ def main():
               "submodules/manifold/src/sdf.cpp",
               "submodules/manifold/src/polygon.cpp",
               "submodules/manifold/src/tree2d.cpp",
+              "submodules/manifold/src/lazy_collider.cpp",
+              "submodules/manifold/src/minkowski.cpp",
               "submodules/manifold/src/impl.cpp" ]
     clipper = [
               "submodules/Clipper2/CPP/Clipper2Lib/src/clipper.engine.cpp",
@@ -295,7 +301,6 @@ def main():
                   "/usr/lib/x86_64-linux-gnu/glib-2.0/include"
                 ],libraries=[
                   "freetype",
-                  "jpeg",
                   "xml2",
                   "fontconfig",
                   "double-conversion",

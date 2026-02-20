@@ -1,10 +1,11 @@
 #include "geometry/GeometryCache.h"
-#include "utils/printutils.h"
-#include "geometry/Geometry.h"
 
-#include <memory>
 #include <cstddef>
+#include <memory>
 #include <string>
+
+#include "geometry/Geometry.h"
+#include "utils/printutils.h"
 
 #ifdef ENABLE_CGAL
 #include "geometry/cgal/CGALNefGeometry.h"
@@ -32,13 +33,25 @@ bool GeometryCache::insert(const std::string& id, const std::shared_ptr<const Ge
   return inserted;
 }
 
-size_t GeometryCache::size() const { return cache.size(); }
+size_t GeometryCache::size() const
+{
+  return cache.size();
+}
 
-size_t GeometryCache::totalCost() const { return cache.totalCost(); }
+size_t GeometryCache::totalCost() const
+{
+  return cache.totalCost();
+}
 
-size_t GeometryCache::maxSizeMB() const { return this->cache.maxCost() / (1024ul * 1024ul); }
+size_t GeometryCache::maxSizeMB() const
+{
+  return this->cache.maxCost() / (1024ul * 1024ul);
+}
 
-void GeometryCache::setMaxSizeMB(size_t limit) { this->cache.setMaxCost(limit * 1024ul * 1024ul); }
+void GeometryCache::setMaxSizeMB(size_t limit)
+{
+  this->cache.setMaxCost(limit * 1024ul * 1024ul);
+}
 
 void GeometryCache::print()
 {

@@ -25,24 +25,27 @@
  */
 
 #include "geometry/PolySetBuilder.h"
-#include "geometry/linalg.h"
-#include "geometry/PolySet.h"
+
 #include "geometry/Geometry.h"
+#include "geometry/PolySet.h"
+#include "geometry/linalg.h"
+#include "utils/printutils.h"
 
 #ifdef ENABLE_CGAL
-#include "geometry/cgal/cgalutils.h"
 #include "geometry/cgal/CGALNefGeometry.h"
+#include "geometry/cgal/cgalutils.h"
 #endif
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/ManifoldGeometry.h"
 #endif
 
 #include <algorithm>
-#include <iterator>
 #include <cassert>
-#include <utility>
+#include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <memory>
+#include <utility>
 #include <vector>
 
 PolySetBuilder::PolySetBuilder(int vertices_count, int indices_count, int dim, boost::tribool convex)
@@ -62,9 +65,15 @@ void PolySetBuilder::setConvexity(int convexity)
   convexity_ = convexity;
 }
 
-void PolySetBuilder::addColor(const Color4f& color) { colors_.push_back(color); }
+void PolySetBuilder::addColor(const Color4f& color)
+{
+  colors_.push_back(color);
+}
 
-void PolySetBuilder::addColorIndex(const int32_t idx) { color_indices_.push_back(idx); }
+void PolySetBuilder::addColorIndex(const int32_t idx)
+{
+  color_indices_.push_back(idx);
+}
 
 int PolySetBuilder::numVertices() const
 {
@@ -81,7 +90,10 @@ bool PolySetBuilder::isEmpty() const
   return vertices_.size() == 0 && indices_.size() == 0;
 }
 
-int PolySetBuilder::vertexIndex(const Vector3d& pt) { return vertices_.lookup(pt); }
+int PolySetBuilder::vertexIndex(const Vector3d& pt)
+{
+  return vertices_.lookup(pt);
+}
 
 void PolySetBuilder::appendGeometry(const std::shared_ptr<const Geometry>& geom)
 {

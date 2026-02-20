@@ -25,14 +25,9 @@
  */
 
 #include "openscad_gui.h"
-#include <QtCore/qstringliteral.h>
-#include <memory>
-#include <filesystem>
-#include <string>
-#include <vector>
 
-#include <QtGlobal>
-#include <Qt>
+#include <QtCore/qstringliteral.h>
+
 #include <QDialog>
 #include <QDir>
 #include <QFileInfo>
@@ -40,13 +35,22 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QObject>
+#include <QPalette>
 #include <QStringList>
+#include <QStyleHints>
+#include <Qt>
 #include <QtConcurrentRun>
+#include <QtGlobal>
+#include <array>
+#include <filesystem>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "Feature.h"
-#include "core/parsersettings.h"
-#include "core/Settings.h"
 #include "FontCache.h"
+#include "core/Settings.h"
+#include "core/parsersettings.h"
 #include "geometry/Geometry.h"
 #include "gui/AppleEvents.h"
 #include "gui/input/InputDriverManager.h"
@@ -69,8 +73,8 @@
 #include "gui/LaunchingScreen.h"
 #include "gui/MainWindow.h"
 #include "gui/OpenSCADApp.h"
-#include "gui/QSettingsCached.h"
 #include "gui/Preferences.h"
+#include "gui/QSettingsCached.h"
 #include "openscad.h"
 #include "platform/CocoaUtils.h"
 #include "utils/printutils.h"
@@ -239,7 +243,14 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   }
 
   auto showOnStartup = settings.value("launcher/showOnStartup");
-  if (noInputFiles && (showOnStartup.isNull() || showOnStartup.toBool())) {
+  bool showLauncher = noInputFiles && (showOnStartup.isNull() || showOnStartup.toBool());
+#ifdef ENABLE_GUI_TESTS
+  if (gui_test != "none") {
+    showLauncher = false;
+  }
+#endif
+
+  if (showLauncher) {
     LaunchingScreen launcher;
     if (launcher.exec() == QDialog::Accepted) {
       if (launcher.isForceShowEditor()) {

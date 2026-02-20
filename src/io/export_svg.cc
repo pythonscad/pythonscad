@@ -23,18 +23,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-#include "io/export.h"
-
 #include <cassert>
 #include <clocale>
 #include <cmath>
 #include <memory>
 #include <ostream>
+#include <string>
 
 #include "geometry/Geometry.h"
-#include "geometry/linalg.h"
-#include "geometry/Polygon2d.h"
 #include "geometry/PolySet.h"
+#include "geometry/Polygon2d.h"
+#include "geometry/linalg.h"
+#include "io/export.h"
 
 static void append_svg(const Polygon2d& poly, std::ostream& output, const ExportInfo& exportInfo)
 {
@@ -53,7 +53,6 @@ static void append_svg(const Polygon2d& poly, std::ostream& output, const Export
       options = &defaultSvgOptions;
     }
 
-    const std::string stroke = options->stroke ? options->strokeColor : "none";
     const std::string fill = options->fill ? options->fillColor : "none";
     const double strokeWidth = options->strokeWidth;
     output << "<path d=\"\n";
@@ -90,8 +89,10 @@ static void append_svg(const Polygon2d& poly, std::ostream& output, const Export
         color_str = ss.str();
       }
     }
-    output << "\" stroke=\"" << stroke << "\" fill=\"" << color_str << "\" stroke-width=\""
-           << strokeWidth << "\"/>\n";
+    output << "\"";
+    if(options-> stroke) output << " stroke=\"" << options->strokeColor << "\" stroke-width=\"" << strokeWidth << "\"";
+    output << " fill=\"" << color_str << "\"";
+    output << "/>\n";
     out_work = out_remain;
   }
 }

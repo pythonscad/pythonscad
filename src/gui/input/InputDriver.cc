@@ -24,7 +24,9 @@
  *
  */
 #include "gui/input/InputDriver.h"
+
 #include <QEvent>
+
 #include "gui/input/InputDriverEvent.h"
 
 const QEvent::Type InputEvent::eventType = static_cast<QEvent::Type>(QEvent::registerEventType());
@@ -33,4 +35,12 @@ InputEvent::InputEvent(const bool activeOnly) : QEvent(eventType), activeOnly(ac
 {
 }
 
-bool InputDriver::openOnce() const { return false; }
+bool InputDriver::isOpen() const
+{
+  return isRunning();
+}
+
+bool InputDriver::openOnce() const
+{
+  return false;
+}

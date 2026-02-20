@@ -26,21 +26,21 @@
 
 #include "core/ColorNode.h"
 
-#include <utility>
-#include <memory>
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/assign/list_of.hpp>
+#include <boost/assign/std/vector.hpp>
 #include <cctype>
 #include <cstddef>
+#include <memory>
 #include <string>
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/assign/std/vector.hpp>
-#include <boost/assign/list_of.hpp>
+#include <utility>
 
 #include "core/Builtins.h"
 #include "core/Children.h"
-#include "core/module.h"
+#include "core/ColorUtil.h"
 #include "core/ModuleInstantiation.h"
 #include "core/Parameters.h"
-#include "core/ColorUtil.h"
+#include "core/module.h"
 #include "geometry/linalg.h"
 #include "utils/printutils.h"
 
@@ -51,8 +51,7 @@ static std::shared_ptr<AbstractNode> builtin_color(const ModuleInstantiation *in
 {
   auto node = std::make_shared<ColorNode>(inst);
 
-  Parameters parameters =
-    Parameters::parse(std::move(arguments), inst->location(), {"c", "alpha", "texture"});
+  Parameters parameters = Parameters::parse(std::move(arguments), inst->location(), {"c", "alpha"});
   if (parameters["c"].type() == Value::Type::VECTOR) {
     const auto& vec = parameters["c"].toVector();
     Vector4f color;
@@ -84,13 +83,6 @@ static std::shared_ptr<AbstractNode> builtin_color(const ModuleInstantiation *in
           "color() expects alpha between 0.0 and 1.0. Value of %1$.1f is out of range", node->color.a());
     }
   }
-  node->textureind = 0;
-  if (parameters["texture"].type() == Value::Type::NUMBER) {
-    node->textureind = (int)parameters["texture"].toDouble();
-    if (node->color.r() < 0) {
-      node->color.setRgba(0.5f, 0.5f, 0.5f, 1.0f);
-    }
-  }
 
   return children.instantiate(node);
 }
@@ -101,7 +93,10 @@ std::string ColorNode::toString() const
              this->color.a(), "])");
 }
 
-std::string ColorNode::name() const { return "color"; }
+std::string ColorNode::name() const
+{
+  return "color";
+}
 
 void register_builtin_color()
 {

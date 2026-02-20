@@ -31,22 +31,22 @@
 
 #include "gui/input/HidApiInputDriver.h"
 
-#include <ios>
-#include <sstream>
-#include <cstdint>
 #include <bitset>
 #include <boost/format.hpp>
 #include <boost/nowide/convert.hpp>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <iomanip>
+#include <ios>
+#include <sstream>
 #include <string>
 
 #include "core/Settings.h"
-#include "platform/PlatformUtils.h"
 #include "gui/input/InputDriverEvent.h"
 #include "gui/input/InputDriverManager.h"
+#include "platform/PlatformUtils.h"
 #include "utils/printutils.h"
 
 static constexpr int BUFLEN = 64;
@@ -144,9 +144,15 @@ static const device_id *match_device(const struct hid_device_info *info)
   return nullptr;
 }
 
-HidApiInputDriver::HidApiInputDriver() { name = "HidApiInputDriver"; }
+HidApiInputDriver::HidApiInputDriver()
+{
+  name = "HidApiInputDriver";
+}
 
-void HidApiInputDriver::run() { hidapi_input(hid_dev); }
+void HidApiInputDriver::run()
+{
+  hidapi_input(hid_dev);
+}
 
 void HidApiInputDriver::hidapi_decode_axis(const unsigned char *buf, unsigned int len)
 {
@@ -304,7 +310,10 @@ void HidApiInputDriver::close()
   logstream.close();
 }
 
-const std::string& HidApiInputDriver::get_name() const { return name; }
+const std::string& HidApiInputDriver::get_name() const
+{
+  return name;
+}
 
 std::string HidApiInputDriver::get_info() const
 {

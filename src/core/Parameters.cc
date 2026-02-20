@@ -26,17 +26,18 @@
 
 #include "core/Parameters.h"
 
-#include <initializer_list>
 #include <cassert>
-#include <sstream>
-#include <memory>
 #include <cstddef>
+#include <initializer_list>
+#include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "core/AST.h"
+#include "core/Assignment.h"
 #include "core/Context.h"
 #include "core/EvaluationSession.h"
 #include "core/Expression.h"
@@ -276,13 +277,9 @@ Parameters Parameters::parse(Arguments arguments, const Location& loc,
   return Parameters{std::move(frame), loc};
 }
 
-void Parameters::set_caller(const std::string& caller) { this->caller = caller; }
-
-void print_argCnt_warning(const std::string& name, int found, const std::string& expected,
-                          const Location& loc, const std::string& documentRoot)
+void Parameters::set_caller(const std::string& caller)
 {
-  LOG(message_group::Warning, loc, documentRoot,
-      "%1$s() number of parameters does not match: expected %2$s, found %3$i", name, expected, found);
+  this->caller = caller;
 }
 
 void print_argCnt_warning(const std::string& name, int found, const std::string& expected,

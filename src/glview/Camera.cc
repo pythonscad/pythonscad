@@ -4,6 +4,7 @@
 #include "utils/printutils.h"
 #include "utils/degree_trig.h"
 
+#include <cmath>
 #include <cassert>
 #include <memory>
 #include <vector>
@@ -81,7 +82,10 @@ void Camera::zoom(int zoom, bool relative)
   }
 }
 
-void Camera::setProjection(ProjectionType type) { this->projection = type; }
+void Camera::setProjection(ProjectionType type)
+{
+  this->projection = type;
+}
 
 void Camera::resetView()
 {
