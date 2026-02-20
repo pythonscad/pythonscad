@@ -297,7 +297,11 @@ void Preferences::init()
   BlockSignals<QLineEdit *>(this->lineEditLocalAppTempDir)
     ->setText(QString::fromStdString(Settings::Settings::localAppTempDir.value()));
   BlockSignals<QTextEdit *>(this->textEditPythonImportList)
-    ->setText(QString::fromStdString(Settings::SettingsPython::pythonNetworkImportList.value()));
+    ->setText(QString::fromStdString(Settings::Settings::pythonNetworkImportList.value()));
+  auto seclevel = Settings::Settings::pythonSecurityLevel.value();
+  if (seclevel == "block" || seclevel == "") pythonSecurityBlock->click();
+  //  if (seclevel == "ask") pythonSecurityAsk->click();
+  if (seclevel == "grant") pythonSecurityGrant->click();
   this->comboBoxOctoPrintSlicingEngine->clear();
   this->comboBoxOctoPrintSlicingEngine->addItem(_("<Default>"), QVariant{""});
   if (!slicer.isEmpty()) {
@@ -1150,6 +1154,24 @@ void Preferences::on_textEditPythonImportList_textChanged()
 {
   Settings::SettingsPython::pythonNetworkImportList.setValue(
     this->textEditPythonImportList->document()->toPlainText().toStdString());
+  writeSettings();
+}
+
+void Preferences::on_pythonSecurityBlock_clicked()
+{
+  Settings::Settings::pythonSecurityLevel.setValue("block");
+  writeSettings();
+}
+
+void Preferences::on_pythonSecurityAsk_clicked()
+{
+  Settings::Settings::pythonSecurityLevel.setValue("ask");
+  writeSettings();
+}
+
+void Preferences::on_pythonSecurityGrant_clicked()
+{
+  Settings::Settings::pythonSecurityLevel.setValue("grant");
   writeSettings();
 }
 

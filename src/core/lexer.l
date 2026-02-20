@@ -85,7 +85,7 @@ extern YYLTYPE parserlloc;
             (loc).last_line++; \
             (loc).last_column = 1; \
         } \
-    } 
+    }
 
 #define YY_USER_ACTION parserlloc.last_column += yyleng;
 
@@ -391,7 +391,7 @@ void includefile(const Location& loc)
   }
 
   loc_stack.push_back(parserlloc);
-  LOCATION_INIT(parserlloc);  
+  LOCATION_INIT(parserlloc);
   openfiles.push_back(yyin);
   openfilenames.push_back(fullname);
   filename.clear();

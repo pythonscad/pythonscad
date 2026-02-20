@@ -43,6 +43,8 @@
 #include "core/node.h"
 #include "platform/PlatformUtils.h"
 #include "primitives.h"
+#include "core/Settings.h"
+
 namespace fs = std::filesystem;
 
 // #define HAVE_PYTHON_YIELD
@@ -711,6 +713,73 @@ void openscad_object_callback(PyObject *obj)
   }
 }
 #endif
+
+static int audit_hook_callback(const char *event, PyObject *args, void *userdata)
+{
+  std::string sec_level = Settings::Settings::pythonSecurityLevel.value();
+  if (sec_level == "grant") return 0;
+  std::ostringstream stream;
+  // Dangerous module imports
+  if (strcmp(event, "import") == 0) {
+    // TODO for sys its not triggered!
+    const char *module_name = PyUnicode_AsUTF8(PyTuple_GetItem(args, 0));
+    static const char *blocked_modules[] = {// TODO block os after startup
+                                            "os",     "subprocess", "shutil",          "sys",
+                                            "socket", "ctypes",     "importlib",       "pickle",
+                                            "shelve", "dbm",        "multiprocessing", "threading",
+                                            "pty",    "tempfile",   "webbrowser",      nullptr};
+
+    for (const char **mod = blocked_modules; *mod; mod++) {
+      if (strcmp(module_name, *mod) == 0 && !python_trusted) {
+        if (strcmp(*mod, "os") == 0 && *&pythonInitDict == nullptr)
+          continue;  // os is needed during startup
+        stream << "Module " << module_name
+               << " is not allowed in PythonSCAD for security reasons.\n"
+                  "Use 'Trust this file' option if you trust the source.";
+      }
+    }
+  }
+
+  // File operations
+  if (strcmp(event, "open") == 0 && !python_trusted) {
+    const char *filename = PyUnicode_AsUTF8(PyTuple_GetItem(args, 0));
+    const char *mode = PyUnicode_AsUTF8(PyTuple_GetItem(args, 1));
+    if (filename != nullptr && mode != nullptr) {
+      // Block write operations
+      if (strchr(mode, 'w') || strchr(mode, 'a') || strchr(mode, '+')) {
+        stream << "Write access to " << filename
+               << " is not allowed in PythonSCAD.\n"
+                  "Use 'Trust this file' option if you trust the source.";
+      }
+    }
+  }
+
+  // Subprocess execution
+  if (strcmp(event, "subprocess.Popen") == 0 && !python_trusted) {
+    stream << "Subprocess execution is not allowed in PythonSCAD.\n"
+              "Use 'Trust this file' option if you trust the source.";
+  }
+  std::string concern = stream.str();
+  if (concern.empty()) return 0;
+  if (sec_level == "block") {
+    PyErr_Format(PyExc_PermissionError, concern.c_str());
+    return -1;  // Block the import
+
+    PyErr_SetString(PyExc_TypeError, concern.c_str());
+    return -1;
+  }
+
+  //  QT not available within python
+  //  QMessageBox msgBox;
+  //  msgBox.setText(concern.c_str());
+  //  msgBox.setInformativeText("Do you permit this command?");
+  //  msgBox.setStandardButtons(QMessageBox::OK | QMessageBox::Cancel);
+  //  msgBox.setDefaultButton(QMessageBox::Cancel);
+  //  int ret = msgBox.exec();
+  PyErr_Format(PyExc_PermissionError, concern.c_str());
+  return -1;  // Forbid operation
+}
+
 void initPython(const std::string& binDir, const std::string& scriptpath, double time)
 {
   static bool alreadyTried = false;
@@ -835,6 +904,8 @@ void initPython(const std::string& binDir, const std::string& scriptpath, double
     if (!binDir.empty()) {
       PyConfig_SetBytesString(&config, &config.executable, (binDir + "/python").c_str());
     }
+
+    PySys_AddAuditHook(audit_hook_callback, nullptr);  // install audits
 
     PyStatus status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {

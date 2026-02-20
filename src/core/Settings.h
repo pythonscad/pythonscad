@@ -420,6 +420,8 @@ public:
   static SettingsEntryString octoPrintSlicerProfile;
   static SettingsEntryString octoPrintSlicerProfileDesc;
 
+  static SettingsEntryString pythonNetworkImportList;
+  static SettingsEntryString pythonSecurityLevel;
   static SettingsEntryString localAppExecutable;
   static SettingsEntryString localAppTempDir;
   static SettingsEntryList<LocalAppParameter> localAppParameterList;
