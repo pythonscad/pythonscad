@@ -106,7 +106,10 @@ const int SettingsEntryInt::decode(const std::string& encoded) const
   }
 }
 
-std::string SettingsEntryDouble::encode() const { return STR(_value); }
+std::string SettingsEntryDouble::encode() const
+{
+  return STR(_value);
+}
 
 const double SettingsEntryDouble::decode(const std::string& encoded) const
 {

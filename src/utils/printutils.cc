@@ -61,7 +61,10 @@ bool would_have_thrown()
   return would_throw;
 }
 
-void print_messages_push() { print_messages_stack.emplace_back(); }
+void print_messages_push()
+{
+  print_messages_stack.emplace_back();
+}
 
 void print_messages_pop()
 {

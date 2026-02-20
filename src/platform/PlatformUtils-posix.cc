@@ -67,7 +67,10 @@ static std::string getXdgUserDir(const std::string& dir)
   return "";
 }
 
-std::string PlatformUtils::pathSeparatorChar() { return ":"; }
+std::string PlatformUtils::pathSeparatorChar()
+{
+  return ":";
+}
 
 std::string PlatformUtils::userDocumentsPath()
 {

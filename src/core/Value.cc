@@ -317,9 +317,15 @@ bool Value::toBool() const
 // Convert the value to a double with an integer value, for use in bitwise operations.
 // Since there are several possible ways to do this (floor, ceil, round, trunc) this function
 // centralizes the choice for consistency.
-double Value::toInteger() const { return trunc(this->toDouble()); }
+double Value::toInteger() const
+{
+  return trunc(this->toDouble());
+}
 
-int64_t Value::toInt64() const { return this->toInteger(); }
+int64_t Value::toInt64() const
+{
+  return this->toInteger();
+}
 
 double Value::toDouble() const
 {
@@ -535,9 +541,15 @@ std::string Value::toEchoStringNoThrow() const
   return ret;
 }
 
-const UndefType& Value::toUndef() const { return std::get<UndefType>(this->value); }
+const UndefType& Value::toUndef() const
+{
+  return std::get<UndefType>(this->value);
+}
 
-std::string Value::toUndefString() const { return std::get<UndefType>(this->value).toString(); }
+std::string Value::toUndefString() const
+{
+  return std::get<UndefType>(this->value).toString();
+}
 
 class chr_visitor
 {
@@ -587,7 +599,10 @@ public:
   std::string operator()(const PythonClassPtr& v) const { return "pythonclass"; }
 };
 
-std::string Value::chrString() const { return std::visit(chr_visitor(), this->value); }
+std::string Value::chrString() const
+{
+  return std::visit(chr_visitor(), this->value);
+}
 
 VectorType::VectorType(EvaluationSession *session)
   : ptr(std::shared_ptr<VectorObject>(new VectorObject(), VectorObjectDeleter()))
@@ -690,7 +705,10 @@ const VectorType& Value::toVector() const
   return v ? *v : empty;
 }
 
-VectorType& Value::toVectorNonConst() { return std::get<VectorType>(this->value); }
+VectorType& Value::toVectorNonConst()
+{
+  return std::get<VectorType>(this->value);
+}
 
 const ObjectType& Value::toObject() const
 {
@@ -767,7 +785,10 @@ const PythonClassType& Value::toPythonClass() const
   return **val;
 }
 
-const FunctionType& Value::toFunction() const { return *std::get<FunctionPtr>(this->value); }
+const FunctionType& Value::toFunction() const
+{
+  return *std::get<FunctionPtr>(this->value);
+}
 
 bool Value::isUncheckedUndef() const
 {
@@ -1009,7 +1030,10 @@ Value Value::operator!=(const Value& v) const
   return std::visit(notequal_visitor(), this->value, v.value);
 }
 
-Value Value::operator<(const Value& v) const { return std::visit(less_visitor(), this->value, v.value); }
+Value Value::operator<(const Value& v) const
+{
+  return std::visit(less_visitor(), this->value, v.value);
+}
 
 Value Value::operator>=(const Value& v) const
 {
@@ -1057,7 +1081,10 @@ public:
   }
 };
 
-Value Value::operator+(const Value& v) const { return std::visit(plus_visitor(), this->value, v.value); }
+Value Value::operator+(const Value& v) const
+{
+  return std::visit(plus_visitor(), this->value, v.value);
+}
 
 class minus_visitor
 {

@@ -170,7 +170,10 @@ std::string PlatformUtils::userPythonLibraryPath()
   return pythonUserPath("libraries");
 }
 
-std::string PlatformUtils::userExamplesPath() { return userPath("examples"); }
+std::string PlatformUtils::userExamplesPath()
+{
+  return userPath("examples");
+}
 
 std::string PlatformUtils::backupPath()
 {

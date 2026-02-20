@@ -918,7 +918,9 @@ void Let::print_python(std::ostream& stream, std::ostream& stream_def, const std
   stream << "let(" << this->arguments << ") " << *expr;
 }
 
-ListComprehension::ListComprehension(const Location& loc) : Expression(loc) {}
+ListComprehension::ListComprehension(const Location& loc) : Expression(loc)
+{
+}
 
 LcIf::LcIf(Expression *cond, Expression *ifexpr, Expression *elseexpr, const Location& loc)
   : ListComprehension(loc), cond(cond), ifexpr(ifexpr), elseexpr(elseexpr)

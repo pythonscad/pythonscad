@@ -98,7 +98,10 @@ void CGALNefGeometry::resize(const Vector3d& newsize, const Eigen::Matrix<bool, 
                                               autosize));
 }
 
-std::string CGALNefGeometry::dump() const { return OpenSCAD::dump_svg(*this->p3); }
+std::string CGALNefGeometry::dump() const
+{
+  return OpenSCAD::dump_svg(*this->p3);
+}
 
 void CGALNefGeometry::transform(const Transform3d& matrix)
 {

@@ -23,7 +23,10 @@
 
 #include "version.h"
 
-std::string PlatformUtils::pathSeparatorChar() { return ";"; }
+std::string PlatformUtils::pathSeparatorChar()
+{
+  return ";";
+}
 
 // convert from windows api w_char strings (usually utf16) to utf8 std::string
 // C++ does not currently have a fully-endorsed way to translate UTF-16 wchar_t to UTF-8
@@ -83,7 +86,10 @@ static const std::string getFolderPath(int nFolder)
   return "";
 }
 
-std::string PlatformUtils::userDocumentsPath() { return documentsPath(); }
+std::string PlatformUtils::userDocumentsPath()
+{
+  return documentsPath();
+}
 
 // retrieve the path to 'My Documents' for the current user under windows
 // In XP this is 'c:\documents and settings\username\my documents'
@@ -108,7 +114,10 @@ std::string PlatformUtils::userConfigPath()
   return retval + std::string("/") + PlatformUtils::OPENSCAD_FOLDER_NAME;
 }
 
-unsigned long PlatformUtils::stackLimit() { return STACK_LIMIT_DEFAULT; }
+unsigned long PlatformUtils::stackLimit()
+{
+  return STACK_LIMIT_DEFAULT;
+}
 
 // NOLINTNEXTLINE(modernize-use-using)
 typedef BOOL(WINAPI *LPFN_ISWOW64PROCESS)(HANDLE, PBOOL);
