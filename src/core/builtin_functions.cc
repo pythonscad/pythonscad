@@ -24,7 +24,18 @@
  *
  */
 
-#include "core/function.h"
+#include <algorithm>
+#include <boost/format.hpp>
+#include <cmath>
+#include <cstdint>
+#include <ctime>
+#include <limits>
+#include <memory>
+#include <random>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "core/AST.h"
 #include "core/Arguments.h"
@@ -35,24 +46,13 @@
 #include "core/FreetypeRenderer.h"
 #include "core/Parameters.h"
 #include "core/UserModule.h"
-#include "utils/printutils.h"
-#include "utils/degree_trig.h"
-#include "io/import.h"
+#include "core/function.h"
 #include "io/fileutils.h"
-
-#include <utility>
-#include <cstdint>
-#include <memory>
-#include <cmath>
-#include <sstream>
-#include <ctime>
-#include <limits>
-#include <algorithm>
-#include <random>
-#include <vector>
-
+#include "io/import.h"
 #include "utils/boost-utils.h"
-#include <boost/format.hpp>
+#include "utils/degree_trig.h"
+#include "utils/printutils.h"
+#include "version.h"
 // hash double
 #include "geometry/linalg.h"
 
@@ -832,9 +832,6 @@ Value builtin_search(Arguments arguments, const Location& loc)
   }
   return std::move(returnvec);
 }
-
-#define QUOTE(x__) #x__
-#define QUOTED(x__) QUOTE(x__)
 
 Value builtin_version(Arguments arguments, const Location& /*loc*/)
 {

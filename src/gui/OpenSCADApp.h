@@ -1,9 +1,11 @@
 #pragma once
 
+#include <QApplication>
 #include <QEvent>
 #include <QObject>
 #include <QString>
-#include <QApplication>
+
+#include "glview/RenderSettings.h"
 #include "gui/WindowManager.h"
 
 class QProgressDialog;
@@ -27,12 +29,15 @@ public slots:
   void showFontCacheDialog();
   void hideFontCacheDialog();
   void setApplicationFont(const QString& family, uint size);
+  void setGuiTheme(const QString& preference);
+  void setRenderBackend3D(RenderBackend3D backend);
 
 public:
   WindowManager windowManager;
 
 private:
   QProgressDialog *fontCacheDialog{nullptr};
+  QString platformStyleName;
 };
 
 #define scadApp (static_cast<OpenSCADApp *>(QCoreApplication::instance()))

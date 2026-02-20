@@ -1,10 +1,9 @@
 #include "Feature.h"
 
-#include <string>
-#include <utility>
-
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <string>
+#include <utility>
 
 #include "utils/exceptions.h"
 #include "utils/printutils.h"
@@ -43,11 +42,22 @@ const Feature Feature::ExperimentalPredictibleOutput(
   "predictible-output",
   "Attempt to produce predictible, diffable outputs (e.g. sorting the STL, or remeshing in a determined "
   "order)");
-
 const Feature Feature::ExperimentalWrapPolygon("wrap-polygon",
                                                "New Wrap feature which can wrap shapes around polygon");
 const Feature Feature::ExperimentalVectorSwizzle(
   "vector-swizzle", "Enable vector swizzling (e.g. <code>vec4.zyx</code> to reverse a 3D vector).");
+const Feature Feature::ExperimentalDiscretizationByError(
+  "discretization-by-error",
+  "Specify the maximum error in $fe and shapes will be segmented appropriately.");
+
+#ifdef ENABLE_PYTHON
+const Feature Feature::ExperimentalPythonEngine(
+  "python-engine", "Enable experimental Python Engine (implies risk of malicious scripts downloaded).");
+const Feature Feature::ExperimentalAddParameterPureFunction(
+  "add-parameter-pure-function",
+  "Make <code>add_parameter()</code> a pure function that only returns the value without creating a "
+  "global variable.");
+#endif
 
 Feature::Feature(const std::string& name, std::string description, bool hidden)
   : name(name), description(std::move(description))
@@ -56,9 +66,15 @@ Feature::Feature(const std::string& name, std::string description, bool hidden)
   if (!hidden) feature_list.push_back(this);
 }
 
-const std::string& Feature::get_name() const { return name; }
+const std::string& Feature::get_name() const
+{
+  return name;
+}
 
-const std::string& Feature::get_description() const { return description; }
+const std::string& Feature::get_description() const
+{
+  return description;
+}
 
 bool Feature::is_enabled() const
 {
@@ -69,7 +85,10 @@ bool Feature::is_enabled() const
 #endif
 }
 
-void Feature::enable(bool status) { enabled = status; }
+void Feature::enable(bool status)
+{
+  enabled = status;
+}
 
 // Note, features are also accessed by iterator with begin/end.
 void Feature::enable_feature(const std::string& feature_name, bool status)
@@ -89,9 +108,15 @@ void Feature::enable_all(bool status)
   }
 }
 
-Feature::iterator Feature::begin() { return feature_list.begin(); }
+Feature::iterator Feature::begin()
+{
+  return feature_list.begin();
+}
 
-Feature::iterator Feature::end() { return feature_list.end(); }
+Feature::iterator Feature::end()
+{
+  return feature_list.end();
+}
 
 std::string Feature::features()
 {

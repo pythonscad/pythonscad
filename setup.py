@@ -1,24 +1,11 @@
-from distutils.core import setup, Extension
-from setuptools.command.build import build
+from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext
 import subprocess
-import sys
 import os
 import shutil
 
-class BuildWithLexYacc(build):
-    """Custom build_py command to run lex/yacc before building Python modules."""
-
-    def run(self):
-        print(">>> Running lex/yacc...")
-
-from setuptools import setup
-from setuptools.command.build import build
-import subprocess
-import os
-import time
-
-class BuildWithLexYacc(build):
-    """Nur Flex/Bison ausführen, wenn Quell- oder Ausgabedateien neuer/älter sind."""
+class BuildExtWithLexYacc(build_ext):
+    """Custom build_ext command to run lex/yacc before building extension modules."""
 
     def run(self):
 
@@ -58,13 +45,13 @@ def main():
     root =  [
               "src/Feature.cc",
               "src/FontCache.cc",
-              "src/version.cc",
               "src/handle_dep.cc"
             ]
 
     python =[
               "src/genlang/genlang.cc",
               "src/python/pyfunctions.cc",
+              "src/python/pyconversion.cc",
               "src/python/pydata.cc",
               "src/python/pyopenscad.cc",
               "src/python/pymod.cc",
@@ -73,6 +60,8 @@ def main():
     geometry = [
               "src/geometry/GeometryEvaluator.cc",
               "src/geometry/rotate_extrude.cc",
+              "src/geometry/roof_ss.cc",
+              "src/geometry/roof_vd.cc",
               "src/geometry/skin.cc",
               "src/geometry/linear_extrude.cc",
               "src/geometry/cgal/CGALCache.cc",
@@ -174,6 +163,7 @@ def main():
               "src/core/function.cc"
             ]
     core = [
+              "src/core/CurveDiscretizer.cc",
               "src/core/FreetypeRenderer.cc",
               "src/core/DrawingCallback.cc",
               "src/core/customizer/Annotation.cc",
@@ -194,6 +184,7 @@ def main():
               "src/io/export_off.cc",
               "src/io/export_pov.cc",
               "src/io/export_svg.cc",
+              "src/io/export_gcode.cc",
               "src/io/export_foldable.cc",
               "src/io/export_3mf_dummy.cc",
               "src/io/export_ps.cc",
@@ -256,6 +247,8 @@ def main():
               "submodules/manifold/src/sdf.cpp",
               "submodules/manifold/src/polygon.cpp",
               "submodules/manifold/src/tree2d.cpp",
+              "submodules/manifold/src/lazy_collider.cpp",
+              "submodules/manifold/src/minkowski.cpp",
               "submodules/manifold/src/impl.cpp" ]
     clipper = [
               "submodules/Clipper2/CPP/Clipper2Lib/src/clipper.engine.cpp",
@@ -266,6 +259,7 @@ def main():
               "src/utils/degree_trig.cc",
               "src/utils/hash.cc",
               "src/utils/svg.cc",
+              "src/utils/vector_math.cc",
               "src/utils/calc.cc" ]
     platform = [
               "src/platform/PlatformUtils.cc",
@@ -307,7 +301,6 @@ def main():
                   "/usr/lib/x86_64-linux-gnu/glib-2.0/include"
                 ],libraries=[
                   "freetype",
-                  "jpeg",
                   "xml2",
                   "fontconfig",
                   "double-conversion",
@@ -341,7 +334,7 @@ def main():
           classifiers=[
             "Programming Language :: Python :: 3",
             "Programming Language :: Python :: 3.11" ],
-          cmdclass={"build": BuildWithLexYacc},
+          cmdclass={"build_ext": BuildExtWithLexYacc},
           ext_modules=[ pythonscad_ext ]
           )
 

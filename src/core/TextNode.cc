@@ -26,19 +26,18 @@
 
 #include "core/TextNode.h"
 
-#include <utility>
 #include <memory>
+#include <utility>
 #include <vector>
 
+#include "core/Builtins.h"
 #include "core/Children.h"
 #include "core/EvaluationSession.h"
-#include "core/module.h"
+#include "core/FreetypeRenderer.h"
 #include "core/ModuleInstantiation.h"
 #include "core/Parameters.h"
+#include "core/module.h"
 #include "utils/printutils.h"
-#include "core/Builtins.h"
-
-#include "core/FreetypeRenderer.h"
 
 static std::shared_ptr<AbstractNode> builtin_text(const ModuleInstantiation *inst, Arguments arguments)
 {
@@ -63,13 +62,16 @@ std::vector<std::shared_ptr<const Polygon2d>> TextNode::createPolygonList() cons
   return renderer.render(params);
 }
 
-std::string TextNode::toString() const { return STR(name(), "(", this->params, ")"); }
+std::string TextNode::toString() const
+{
+  return STR(name(), "(", this->params, ")");
+}
 
 void register_builtin_text()
 {
   Builtins::init(
     "text", new BuiltinModule(builtin_text),
     {
-      R"(text(text = "", size = 10, font = "", halign = "left", valign = "baseline", spacing = 1, direction = "ltr", language = "en", script = "latin"[, $fn]))",
+      R"(text(text = "", size = 10, font = "", direction = "ltr", language = "en", script = "latin", halign = "left", valign = "baseline", spacing = 1 [, $fn]))",
     });
 }

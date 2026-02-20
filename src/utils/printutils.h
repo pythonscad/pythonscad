@@ -1,18 +1,18 @@
 #pragma once
 
-#include <cstddef>
+#include <libintl.h>
+
 #include <clocale>
+#include <cstddef>
 #include <initializer_list>
 #include <iostream>
 #include <list>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
-#include <optional>
-
-#include <libintl.h>
 // Undefine some defines from libintl.h to presolve
 // some collisions in boost headers later
 #if defined snprintf
@@ -31,7 +31,10 @@
 // Not wanting to risk breaking translations by changing every usage of this,
 // I've opted to just disable the check in this case. - Hans L
 // NOLINTBEGIN(bugprone-reserved-identifier)
-inline char *_(const char *msgid) { return gettext(msgid); }
+inline char *_(const char *msgid)
+{
+  return gettext(msgid);
+}
 inline const char *_(const char *msgid, const char *msgctxt)
 {
   /* The separator between msgctxt and msgid in a .mo file.  */
@@ -55,6 +58,7 @@ enum class message_group {
   NONE,
   Error,
   Warning,
+  HtmlLink,  // Slow! Allows HTML links. Suppressed on command line.
   UI_Warning,
   Font_Warning,
   Export_Warning,
@@ -86,7 +90,9 @@ struct Message {
 
   [[nodiscard]] std::string str() const
   {
-    const auto g = group == message_group::NONE ? "" : getGroupName(group) + ": ";
+    const auto g = (group == message_group::NONE || group == message_group::HtmlLink)
+                     ? ""
+                     : getGroupName(group) + ": ";
     const auto l = loc.isNone() ? "" : " " + loc.toRelativeString(docPath);
     return g + msg + l;
   }
@@ -184,6 +190,12 @@ public:
     return *this;
   }
 };
+
+// Undefine any STR macro that might have been defined elsewhere (e.g., in manifold's utils.h)
+// to avoid conflicts with our STR template functions below
+#ifdef STR
+#undef STR
+#endif
 
 inline std::string STR(std::ostringstream& oss)
 {

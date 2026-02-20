@@ -37,12 +37,14 @@
 #include <mpfr.h>
 #endif
 
+#include "utils/printutils.h"
 #include "glview/system-gl.h"
 #include "core/Selection.h"
 #include "geometry/cgal/cgalutils.h"
 #include "geometry/Geometry.h"
 #include "geometry/linalg.h"
 #include "geometry/PolySet.h"
+#include "geometry/Barcode1d.h"
 #include "geometry/PolySetUtils.h"
 #include "glview/ColorMap.h"
 #include "glview/VBORenderer.h"
@@ -95,6 +97,9 @@ void PolySetRenderer::addGeometry(const std::shared_ptr<const Geometry>& geom)
       }
     }
 #endif
+  } else if (const auto barcode = std::dynamic_pointer_cast<const Barcode1d>(geom)) {
+    auto poly = barcode->to2d();
+    this->polygons_.emplace_back(poly, std::shared_ptr<const PolySet>(poly->tessellate(true)));
   } else {
     const auto& geom_ref = *geom.get();
     LOG("Unsupported geom '%1$s' in PolySetRenderer", typeid(geom_ref).name());
@@ -354,7 +359,7 @@ std::shared_ptr<SelectedObject> PolySetRenderer::findModelObject(const Vector3d&
 
   if (!isnan(dist_nearest)) {
     // We found an acceptable line segment.
-    const SelectedObject obj = {.type = SelectionType::SELECTION_SEGMENT,
+    const SelectedObject obj = {.type = SelectionType::SELECTION_LINE,
                                 .pt = {pt1_nearest, pt2_nearest}};
     return std::make_shared<SelectedObject>(obj);
   }

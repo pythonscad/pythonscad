@@ -25,18 +25,20 @@
  */
 
 #include "geometry/PolySet.h"
+
+#include <Eigen/LU>
+#include <algorithm>
+#include <cstddef>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #include "geometry/Geometry.h"
+#include "geometry/Grid.h"
 #include "geometry/PolySetUtils.h"
 #include "geometry/linalg.h"
 #include "utils/printutils.h"
-#include "geometry/Grid.h"
-#include <algorithm>
-#include <sstream>
-#include <memory>
-#include <Eigen/LU>
-#include <cstddef>
-#include <string>
-#include <vector>
 
 /*! /class PolySet
 
@@ -52,9 +54,14 @@
 
  */
 
-PolySet::PolySet(unsigned int dim, boost::tribool convex) : dim_(dim), convex_(convex) {}
+PolySet::PolySet(unsigned int dim, boost::tribool convex) : dim_(dim), convex_(convex)
+{
+}
 
-std::unique_ptr<Geometry> PolySet::copy() const { return std::make_unique<PolySet>(*this); }
+std::unique_ptr<Geometry> PolySet::copy() const
+{
+  return std::make_unique<PolySet>(*this);
+}
 
 std::string PolySet::dump() const
 {
@@ -160,4 +167,30 @@ void PolySet::quantizeVertices(std::vector<Vector3d> *pPointsOut)
       i++;
     }
   }
+}
+
+bool PolySet::point_inside(const Vector3d& pt) const
+{
+  Vector3d dir(0.9, 0.1234, 0.4);
+  auto ps_tess = PolySetUtils::tessellate_faces(*this);
+  int count = 0;
+  for (const auto& ind : ps_tess->indices) {
+    Vector3d e1 = ps_tess->vertices[ind[1]] - ps_tess->vertices[ind[0]];
+    Vector3d e2 = ps_tess->vertices[ind[2]] - ps_tess->vertices[ind[0]];
+    Vector3d h = dir.cross(e2);
+    double a = e1.dot(h);
+    if (fabs(a) < 1e-6) continue;  // is parallel
+    double f = 1.0 / a;
+    Vector3d s = pt - ps_tess->vertices[ind[0]];
+    double u = f * s.dot(h);
+    if (u < 0.0 || u >= 1) continue;
+    Vector3d q = s.cross(e1);
+    double v = f * dir.dot(q);
+    if (v < 0.0 || u + v > 1.0) continue;
+    double t = f * e2.dot(q);
+    if (t < 1e-6) continue;
+    if (a > 0) count++;
+    else count--;
+  }
+  return count == 0 ? false : true;
 }

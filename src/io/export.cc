@@ -44,14 +44,14 @@
 #include <vector>
 
 #ifdef _WIN32
-#include <io.h>
 #include <fcntl.h>
+#include <io.h>
 #endif
 
 #include "geometry/Geometry.h"
 #include "geometry/GeometryUtils.h"
-#include "geometry/linalg.h"
 #include "geometry/PolySet.h"
+#include "geometry/linalg.h"
 #include "glview/Camera.h"
 #include "glview/ColorMap.h"
 #include "glview/RenderSettings.h"
@@ -93,7 +93,7 @@ Containers& containers()
     add_item(*containers, {FileFormat::PARAM, "param", "param", "param"});
     add_item(*containers, {FileFormat::AST, "ast", "ast", "AST"});
     add_item(*containers, {FileFormat::STEP, "step", "stp", "STEP"});
-    add_item(*containers, {FileFormat::STEP, "step", "step", "STEP"});
+    add_item(*containers, {FileFormat::GCODE, "gcode", "gcode", "GCDODE"});
     add_item(*containers, {FileFormat::TERM, "term", "term", "term"});
     add_item(*containers, {FileFormat::ECHO, "echo", "echo", "echo"});
     add_item(*containers, {FileFormat::PNG, "png", "png", "PNG"});
@@ -142,7 +142,10 @@ std::vector<FileFormat> all3D()
   return all3DFormats;
 }
 
-const FileFormatInfo& info(FileFormat fileFormat) { return containers().fileFormatToInfo[fileFormat]; }
+const FileFormatInfo& info(FileFormat fileFormat)
+{
+  return containers().fileFormatToInfo[fileFormat];
+}
 
 bool fromIdentifier(const std::string& identifier, FileFormat& format)
 {
@@ -152,7 +155,10 @@ bool fromIdentifier(const std::string& identifier, FileFormat& format)
   return true;
 }
 
-const std::string& toSuffix(FileFormat format) { return containers().fileFormatToInfo[format].suffix; }
+const std::string& toSuffix(FileFormat format)
+{
+  return containers().fileFormatToInfo[format].suffix;
+}
 
 bool canPreview(FileFormat format)
 {
@@ -171,7 +177,7 @@ bool is3D(FileFormat format)
 
 bool is2D(FileFormat format)
 {
-  return format == FileFormat::DXF || format == FileFormat::SVG || format == FileFormat::PDF;
+  return format == FileFormat::DXF || format == FileFormat::SVG || format == FileFormat::PDF || format == FileFormat::GCODE;
 }
 
 }  // namespace fileformat
@@ -223,6 +229,7 @@ static void exportFile(const std::shared_ptr<const Geometry>& root_geom, std::os
   case FileFormat::PDF:  export_pdf(root_geom, output, exportInfo); break;
   case FileFormat::POV:  export_pov(root_geom, output, exportInfo); break;
   case FileFormat::STEP: export_step(root_geom, output, exportInfo); break;
+  case FileFormat::GCODE: export_gcode(root_geom, output, exportInfo); break;
 #ifdef ENABLE_CGAL
   case FileFormat::NEFDBG: export_nefdbg(root_geom, output); break;
   case FileFormat::NEF3:   export_nef3(root_geom, output); break;
@@ -276,7 +283,10 @@ bool exportFileByName(const std::shared_ptr<const Geometry>& root_geom, const st
 
 namespace {
 
-double remove_negative_zero(double x) { return x == -0 ? 0 : x; }
+double remove_negative_zero(double x)
+{
+  return x == -0 ? 0 : x;
+}
 
 Vector3d remove_negative_zero(const Vector3d& pt)
 {

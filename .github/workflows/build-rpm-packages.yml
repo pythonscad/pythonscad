@@ -1,0 +1,531 @@
+name: Build RPM packages
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      upload_to_release:
+        description: 'Release tag to upload to (leave empty for test build)'
+        required: false
+        default: ''
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
+
+concurrency:
+  group: publish-yum-repo
+  cancel-in-progress: false
+
+jobs:
+  prepare-matrix:
+    name: Prepare build matrix from supported distributions
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate and prepare matrix
+        id: set-matrix
+        run: |
+          # Validate JSON syntax
+          python3 -c "import json; json.load(open('supported-distributions.json'))"
+
+          # Extract matrix for Fedora/EL only, expand to distro x arch combinations
+          python3 - <<'EOF'
+          from datetime import datetime
+          import json
+          import os
+
+          with open('supported-distributions.json') as f:
+            config = json.load(f)
+
+          today = datetime.utcnow().strftime('%Y-%m')
+          matrix_include = []
+
+          for dist in config['distributions']:
+            if dist['family'] not in ['fedora', 'el']:
+              continue
+
+            if dist.get('eol_date') and dist['eol_date'] < today:
+              continue
+
+            for arch in dist['architectures']:
+              matrix_include.append({
+                'distro': dist['family'],
+                'distro_name': dist['name'],
+                'version': dist['version'],
+                'arch': arch,
+                'runner': dist['runner'] if dist['runner'] else 'ubuntu-24.04',
+                'container': dist['docker_image'],
+                'qemu': arch == 'arm64'
+              })
+
+          matrix = {
+            'include': matrix_include
+          }
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output_file:
+            output_file.write(f"matrix={json.dumps(matrix)}\n")
+          EOF
+
+  build-rpm:
+    name: Build .rpm (${{ matrix.distro }} ${{ matrix.version }} ${{ matrix.arch }})
+    needs: prepare-matrix
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+
+    # Note: Don't use container field for ARM64 - it pulls amd64 images
+    # ARM64 builds use explicit docker run with --platform flag
+    container: ${{ matrix.arch == 'amd64' && matrix.container || null }}
+
+    steps:
+      - name: Install git and basic tools (amd64 container)
+        if: matrix.arch == 'amd64'
+        run: |
+          if [ -f /etc/fedora-release ]; then
+            dnf install -y git tar gzip
+          else
+            dnf install -y git tar gzip epel-release
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Fetch tags for version detection
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE" || true
+          git fetch --unshallow --tags 2>/dev/null || git fetch --tags
+          git describe --tags --always --dirty || echo "No tags found"
+
+      - name: Setup (detached) tmate session if enabled
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 5
+        with:
+          detached: true
+          limit-access-to-actor: true
+
+      - name: Set up QEMU for ARM64
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Install build dependencies (amd64)
+        if: matrix.arch == 'amd64'
+        run: |
+          # Install RPM build tools
+          if [ -f /etc/fedora-release ]; then
+            dnf install -y \
+              rpm-build \
+              rpmdevtools \
+              rpmlint \
+              dnf-plugins-core
+          else
+            # RHEL/Rocky/Alma
+            dnf install -y \
+              rpm-build \
+              rpmdevtools \
+              rpmlint \
+              dnf-plugins-core \
+              'dnf-command(config-manager)'
+            dnf config-manager --set-enabled crb || true
+          fi
+
+          # Set VERSION environment variable for spec file parsing
+          export VERSION=$(cat VERSION.txt | tr -d '\n' | tr -d '\r')
+          export CHANGELOG_DATE=$(date "+%a %b %d %Y")
+
+          # Install build dependencies from spec file
+          dnf builddep -y pythonscad.spec
+
+      - name: Build RPM package (amd64)
+        if: matrix.arch == 'amd64'
+        env:
+          OUTPUT_DIR: /tmp/rpms
+          FEDORA_RELEASE: ${{ matrix.version }}
+          DISTRO_TYPE: ${{ matrix.distro }}
+        run: |
+          ./scripts/build-rpm-package.sh
+
+      - name: Sign RPM packages (amd64)
+        if: matrix.arch == 'amd64' && (github.event_name == 'release' || github.event.inputs.upload_to_release != '')
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -e  # Exit on error
+
+          # Install GPG and rpm-sign if not already installed
+          if [ -f /etc/fedora-release ]; then
+            dnf install -y gnupg2 rpm-sign
+          else
+            dnf install -y gnupg2 rpm-sign
+          fi
+
+          # Detect RPM major version (4.x vs 6.x have different signing approaches)
+          RPM_VERSION=$(rpm --version | grep -oP '\d+' | head -1)
+          echo "Detected RPM major version: $RPM_VERSION"
+
+          # Set up GNUPGHOME for this step
+          export GNUPGHOME="${GNUPGHOME:-$HOME/.gnupg}"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+
+          # Configure gpg-agent for loopback pinentry and preset passphrase
+          cat > "$GNUPGHOME/gpg-agent.conf" << 'AGENTCONF'
+          allow-loopback-pinentry
+          allow-preset-passphrase
+          AGENTCONF
+
+          # Kill any existing agent to pick up new config
+          gpgconf --kill gpg-agent 2>/dev/null || true
+
+          # Import GPG key
+          echo "${{ secrets.DEB_SIGNING_KEY }}" | gpg --batch --import
+
+          # List imported keys for verification
+          echo "Imported GPG keys:"
+          gpg --list-secret-keys
+
+          # Set GPG_TTY to empty to avoid TTY-related warnings in CI
+          export GPG_TTY=""
+
+          if [ "$RPM_VERSION" -ge 6 ]; then
+            # RPM 6.x: Custom %__gpg_sign_cmd no longer works (parametric macros)
+            # Use gpg-preset-passphrase to cache the passphrase in gpg-agent
+            echo "Using RPM 6.x signing approach (gpg-preset-passphrase)"
+
+            # Start gpg-agent if not running
+            gpg-connect-agent /bye 2>/dev/null || gpg-agent --daemon
+
+            # Get the keygrip for the signing key (sec = primary signing key)
+            # GPG output format: "sec   rsa3072..." followed by "      Keygrip = XXXX"
+            echo "GPG key details with keygrip:"
+            gpg --list-secret-keys --with-keygrip "${{ secrets.GPG_KEY_ID }}"
+            KEYGRIP=$(gpg --list-secret-keys --with-keygrip "${{ secrets.GPG_KEY_ID }}" | awk '/^sec/{found=1} found && /Keygrip/{print $3; exit}')
+            echo "Extracted keygrip: $KEYGRIP"
+
+            if [ -z "$KEYGRIP" ]; then
+              echo "Error: Could not determine keygrip for signing key"
+              exit 1
+            fi
+
+            # Preset the passphrase in gpg-agent
+            echo "$GPG_PASSPHRASE" | /usr/libexec/gpg-preset-passphrase --preset "$KEYGRIP"
+
+            # Configure RPM signing macros for RPM 6.x
+            cat > ~/.rpmmacros << MACROS
+          %_signature gpg
+          %_openpgp_sign_id ${{ secrets.GPG_KEY_ID }}
+          MACROS
+
+          else
+            # RPM 4.x: Use custom %__gpg_sign_cmd with passphrase file
+            echo "Using RPM 4.x signing approach (custom __gpg_sign_cmd)"
+
+            # Create passphrase file safely using printf (no trailing newline)
+            PASSPHRASE_FILE=$(mktemp)
+            printf '%s' "$GPG_PASSPHRASE" > "$PASSPHRASE_FILE"
+            chmod 600 "$PASSPHRASE_FILE"
+
+            # Configure RPM signing macros with passphrase file and loopback pinentry
+            cat > ~/.rpmmacros << MACROS
+          %_signature gpg
+          %_gpg_name ${{ secrets.GPG_KEY_ID }}
+          %__gpg_sign_cmd %{__gpg} --batch --pinentry-mode loopback --passphrase-file $PASSPHRASE_FILE --no-verbose --no-armor --no-secmem-warning -u "%{_gpg_name}" -sbo %{__signature_filename} %{__plaintext_filename}
+          MACROS
+          fi
+
+          # Sign all RPM packages
+          echo "Signing RPM packages..."
+          for rpm in /tmp/rpms/*.rpm; do
+            echo "Signing: $(basename "$rpm")"
+            rpmsign --addsign "$rpm"
+          done
+
+          # Clean up passphrase file if it exists (RPM 4.x path)
+          [ -n "${PASSPHRASE_FILE:-}" ] && rm -f "$PASSPHRASE_FILE" || true
+
+          # Import public key into RPM keyring for verification
+          gpg --export -a "${{ secrets.GPG_KEY_ID }}" > /tmp/pubkey.asc
+          rpm --import /tmp/pubkey.asc
+
+          # Verify signatures
+          echo "Verifying RPM signatures:"
+          for rpm in /tmp/rpms/*.rpm; do
+            echo "Checking: $(basename "$rpm")"
+            rpm --checksig "$rpm"
+          done
+
+      - name: Build RPM package (arm64) in Docker
+        if: matrix.arch == 'arm64'
+        env:
+          GPG_SIGNING_KEY: ${{ secrets.DEB_SIGNING_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+          DO_SIGN: ${{ (github.event_name == 'release' || github.event.inputs.upload_to_release != '') && 'true' || 'false' }}
+        run: |
+          # Run the entire build inside a Docker container with proper ARM64 emulation
+          docker run --rm \
+            --platform linux/arm64 \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            -e OUTPUT_DIR=/tmp/rpms \
+            -e FEDORA_RELEASE=${{ matrix.version }} \
+            -e DISTRO_TYPE=${{ matrix.distro }} \
+            -e ARCH=aarch64 \
+            -e GPG_SIGNING_KEY="$GPG_SIGNING_KEY" \
+            -e GPG_PASSPHRASE="$GPG_PASSPHRASE" \
+            -e GPG_KEY_ID="$GPG_KEY_ID" \
+            -e DO_SIGN="$DO_SIGN" \
+            ${{ matrix.container }} \
+            bash -c '
+              set -e
+
+              # Install git and basic tools
+              if [ -f /etc/fedora-release ]; then
+                dnf install -y git tar gzip rpm-build rpmdevtools rpmlint dnf-plugins-core gnupg2 rpm-sign
+              else
+                dnf install -y git tar gzip epel-release rpm-build rpmdevtools rpmlint dnf-plugins-core '\''dnf-command(config-manager)'\'' gnupg2 rpm-sign
+                dnf config-manager --set-enabled crb || true
+              fi
+
+              # Set VERSION environment variable for spec file parsing
+              export VERSION=$(cat VERSION.txt | tr -d '\''\n'\'' | tr -d '\''\r'\'')
+              export CHANGELOG_DATE=$(date "+%a %b %d %Y")
+
+              # Install build dependencies from spec file
+              dnf builddep -y pythonscad.spec
+
+              # Build package
+              ./scripts/build-rpm-package.sh
+
+              # Sign packages if building for release
+              if [ "$DO_SIGN" = "true" ]; then
+                # Detect RPM major version (4.x vs 6.x have different signing approaches)
+                RPM_VERSION=$(rpm --version | grep -oP '\''\d+'\'' | head -1)
+                echo "Detected RPM major version: $RPM_VERSION"
+
+                # Set up GNUPGHOME
+                export GNUPGHOME="${GNUPGHOME:-$HOME/.gnupg}"
+                mkdir -p "$GNUPGHOME"
+                chmod 700 "$GNUPGHOME"
+
+                # Configure gpg-agent for loopback pinentry and preset passphrase
+                cat > "$GNUPGHOME/gpg-agent.conf" << AGENTCONF
+                allow-loopback-pinentry
+                allow-preset-passphrase
+          AGENTCONF
+                gpgconf --kill gpg-agent 2>/dev/null || true
+
+                # Import GPG key
+                echo "$GPG_SIGNING_KEY" | gpg --batch --import
+                gpg --list-secret-keys
+
+                export GPG_TTY=""
+
+                if [ "$RPM_VERSION" -ge 6 ]; then
+                  # RPM 6.x: Custom %__gpg_sign_cmd no longer works (parametric macros)
+                  # Use gpg-preset-passphrase to cache the passphrase in gpg-agent
+                  echo "Using RPM 6.x signing approach (gpg-preset-passphrase)"
+
+                  # Start gpg-agent if not running
+                  gpg-connect-agent /bye 2>/dev/null || gpg-agent --daemon
+
+                  # Get the keygrip for the signing key (sec = primary signing key)
+                  # GPG output format: "sec   rsa3072..." followed by "      Keygrip = XXXX"
+                  echo "GPG key details with keygrip:"
+                  gpg --list-secret-keys --with-keygrip "$GPG_KEY_ID"
+                  KEYGRIP=$(gpg --list-secret-keys --with-keygrip "$GPG_KEY_ID" | awk '\''/^sec/{found=1} found && /Keygrip/{print $3; exit}'\'')
+                  echo "Extracted keygrip: $KEYGRIP"
+
+                  if [ -z "$KEYGRIP" ]; then
+                    echo "Error: Could not determine keygrip for signing key"
+                    exit 1
+                  fi
+
+                  # Preset the passphrase in gpg-agent
+                  echo "$GPG_PASSPHRASE" | /usr/libexec/gpg-preset-passphrase --preset "$KEYGRIP"
+
+                  # Configure RPM signing macros for RPM 6.x
+                  cat > ~/.rpmmacros << MACROS
+          %_signature gpg
+          %_openpgp_sign_id $GPG_KEY_ID
+          MACROS
+
+                else
+                  # RPM 4.x: Use custom %__gpg_sign_cmd with passphrase file
+                  echo "Using RPM 4.x signing approach (custom __gpg_sign_cmd)"
+
+                  # Create passphrase file safely using printf (no trailing newline)
+                  PASSPHRASE_FILE=$(mktemp)
+                  printf "%s" "$GPG_PASSPHRASE" > "$PASSPHRASE_FILE"
+                  chmod 600 "$PASSPHRASE_FILE"
+
+                  # Configure RPM signing macros with passphrase file
+                  cat > ~/.rpmmacros << MACROS
+          %_signature gpg
+          %_gpg_name $GPG_KEY_ID
+          %__gpg_sign_cmd %{__gpg} --batch --pinentry-mode loopback --passphrase-file $PASSPHRASE_FILE --no-verbose --no-armor --no-secmem-warning -u "%{_gpg_name}" -sbo %{__signature_filename} %{__plaintext_filename}
+          MACROS
+                fi
+
+                # Sign all RPM packages
+                echo "Signing RPM packages..."
+                for rpm in /tmp/rpms/*.rpm; do
+                  echo "Signing: $(basename "$rpm")"
+                  rpmsign --addsign "$rpm"
+                done
+
+                # Clean up passphrase file if it exists (RPM 4.x path)
+                [ -n "${PASSPHRASE_FILE:-}" ] && rm -f "$PASSPHRASE_FILE" || true
+
+                # Import public key into RPM keyring for verification
+                gpg --export -a "$GPG_KEY_ID" > /tmp/pubkey.asc
+                rpm --import /tmp/pubkey.asc
+
+                # Verify signatures
+                echo "Verifying RPM signatures:"
+                for rpm in /tmp/rpms/*.rpm; do
+                  echo "Checking: $(basename "$rpm")"
+                  rpm --checksig "$rpm"
+                done
+              fi
+            '
+
+          # Copy built packages from Docker to host
+          sudo cp -r /tmp/rpms /tmp/rpms-host || true
+          sudo mv /tmp/rpms-host /tmp/rpms || true
+
+      - name: Test package installation (amd64 only)
+        if: matrix.arch == 'amd64'
+        run: |
+          # Install the package to verify it works
+          dnf install -y /tmp/rpms/pythonscad-*.rpm
+
+          # Verify binary exists and shows version
+          command -v pythonscad
+          pythonscad --version || echo "Version check skipped (may require display)"
+
+          # Verify library dependencies
+          ldd /usr/bin/pythonscad | head -20 || true
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pythonscad-${{ matrix.distro }}${{ matrix.version }}-${{ matrix.arch }}-rpm
+          path: /tmp/rpms/*
+          retention-days: 30
+
+      - name: Upload to GitHub Release
+        if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          files: /tmp/rpms/*
+          tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-yum-repo:
+    name: Publish YUM repository to SFTP
+    needs: build-rpm
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
+
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+
+      - name: Download all RPM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/rpms
+          pattern: pythonscad-*-rpm
+
+      - name: Merge packages
+        run: |
+          mkdir -p /tmp/rpms/all
+          find /tmp/rpms -name "*.rpm" -exec cp {} /tmp/rpms/all/ \;
+          ls -lh /tmp/rpms/all/
+
+      - name: Install createrepo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y createrepo-c
+
+      - name: Import GPG signing key
+        run: |
+          # Set up GNUPGHOME
+          export GNUPGHOME="${GNUPGHOME:-$HOME/.gnupg}"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+
+          # Configure gpg-agent for loopback pinentry (required for non-TTY)
+          echo "allow-loopback-pinentry" > "$GNUPGHOME/gpg-agent.conf"
+          gpgconf --kill gpg-agent 2>/dev/null || true
+
+          # Import GPG key
+          echo "${{ secrets.DEB_SIGNING_KEY }}" | gpg --batch --import
+          gpg --list-secret-keys
+
+      - name: Setup SSH key for SFTP
+        run: |
+          if [ -z "${{ secrets.REPO_SFTP_HOST }}" ] || [ -z "${{ secrets.REPO_SFTP_SSH_KEY }}" ]; then
+            echo "::error::Required secrets REPO_SFTP_HOST and REPO_SFTP_SSH_KEY must be set in repository settings."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          echo "${{ secrets.REPO_SFTP_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.REPO_SFTP_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Download existing repository from SFTP
+        run: |
+          # Download existing repo to preserve old versions
+          mkdir -p /tmp/yum-repo-existing
+          mkdir -p /tmp/yum-repo
+
+          # Download existing repo (ignore errors if doesn't exist yet)
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ${{ secrets.REPO_SFTP_USER }}@${{ secrets.REPO_SFTP_HOST }}:${{ secrets.REPO_SFTP_BASE_PATH }}/yum/ \
+            /tmp/yum-repo-existing/ || echo "No existing repository found (first run)"
+
+          # Copy existing packages to new repo location
+          if [ -d /tmp/yum-repo-existing/packages ]; then
+            cp -r /tmp/yum-repo-existing/packages /tmp/yum-repo/ || true
+          fi
+
+      - name: Build YUM repository structure
+        env:
+          REPO_DIR: /tmp/yum-repo
+          GPG_KEY: ${{ secrets.GPG_KEY_ID }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          KEEP_VERSIONS: ${{ vars.REPO_KEEP_VERSIONS || '3' }}
+          REPO_BASE_URL: ${{ secrets.REPO_BASE_URL }}
+        run: |
+          # Repository now contains both old and new packages
+          # update-yum-repo.sh will clean up old versions based on KEEP_VERSIONS
+          chmod +x ./scripts/update-yum-repo.sh
+          ./scripts/update-yum-repo.sh /tmp/rpms/all
+
+      - name: Upload to SFTP server
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            /tmp/yum-repo/ \
+            ${{ secrets.REPO_SFTP_USER }}@${{ secrets.REPO_SFTP_HOST }}:${{ secrets.REPO_SFTP_BASE_PATH }}/yum/
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

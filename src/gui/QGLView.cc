@@ -25,8 +25,11 @@
  */
 
 #include "gui/QGLView.h"
+#include <cmath>
+#include <memory>
 #include <QtCore/qpoint.h>
 
+#include "core/Selection.h"
 #include "geometry/linalg.h"
 #include "gui/qtgettext.h"
 #include "gui/Preferences.h"
@@ -74,7 +77,10 @@
 #include "gui/qt-obsolete.h"
 #include "gui/Measurement.h"
 
-QGLView::QGLView(QWidget *parent) : QOpenGLWidget(parent) { init(); }
+QGLView::QGLView(QWidget *parent) : QOpenGLWidget(parent)
+{
+  init();
+}
 
 QGLView::~QGLView()
 {
@@ -93,7 +99,10 @@ void QGLView::init()
   mouseDraggedSel = nullptr;
 }
 
-void QGLView::resetView() { cam.resetView(); }
+void QGLView::resetView()
+{
+  cam.resetView();
+}
 
 void QGLView::viewAll()
 {
@@ -130,6 +139,8 @@ void QGLView::initializeGL()
   GLView::initializeGL();
 
   this->selector = std::make_unique<MouseSelector>(this);
+
+  emit initialized();
 }
 
 std::string QGLView::getRendererInfo() const
@@ -207,7 +218,7 @@ void QGLView::paintGL()
         status = QString("Point %4(%1/%2/%3)").arg(p1[0]).arg(p1[1]).arg(p1[2]).arg(shown_obj->ind);
         statusLabel->setText(status);
         break;
-      case SelectionType::SELECTION_SEGMENT:
+      case SelectionType::SELECTION_LINE:
         if (shown_obj->pt.size() < 2) break;
         p1 = shown_obj->pt[0];
         p2 = shown_obj->pt[1];
@@ -359,7 +370,7 @@ void QGLView::mouseMoveEvent(QMouseEvent *event)
 #else
   auto this_mouse = event->globalPos();
 #endif
-  if (measure_state != MEASURE_IDLE) {
+  if (measure_state != Measurement::MEASURE_IDLE) {
     QPoint pt = event->pos();
     this->shown_obj = findObject(pt.x(), pt.y());
     update();
@@ -505,7 +516,10 @@ const QImage& QGLView::grabFrame()
   return this->frame;
 }
 
-bool QGLView::save(const char *filename) const { return this->frame.save(filename, "PNG"); }
+bool QGLView::save(const char *filename) const
+{
+  return this->frame.save(filename, "PNG");
+}
 
 void QGLView::wheelEvent(QWheelEvent *event)
 {
@@ -520,9 +534,15 @@ void QGLView::wheelEvent(QWheelEvent *event)
   }
 }
 
-void QGLView::ZoomIn() { zoom(120, true); }
+void QGLView::ZoomIn()
+{
+  zoom(120, true);
+}
 
-void QGLView::ZoomOut() { zoom(-120, true); }
+void QGLView::ZoomOut()
+{
+  zoom(-120, true);
+}
 
 void QGLView::zoom(double v, bool relative)
 {

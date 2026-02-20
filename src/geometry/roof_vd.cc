@@ -3,22 +3,23 @@
 
 #include "geometry/roof_vd.h"
 
-#include <ostream>
-#include <cstdint>
-#include <memory>
+#include <algorithm>
+#include <boost/polygon/voronoi.hpp>
 #include <cmath>
 #include <cstddef>
-#include <algorithm>
+#include <cstdint>
 #include <map>
-#include <boost/polygon/voronoi.hpp>
+#include <memory>
+#include <ostream>
 #include <vector>
-#include "geometry/linalg.h"
-#include "geometry/Polygon2d.h"
-#include "geometry/PolySetBuilder.h"
 
-#include "geometry/GeometryUtils.h"
-#include "geometry/ClipperUtils.h"
+#include "core/CurveDiscretizer.h"
 #include "core/RoofNode.h"
+#include "geometry/ClipperUtils.h"
+#include "geometry/GeometryUtils.h"
+#include "geometry/PolySetBuilder.h"
+#include "geometry/Polygon2d.h"
+#include "geometry/linalg.h"
 
 #define RAISE_ROOF_EXCEPTION(message) \
   throw RoofNode::roof_exception(     \
@@ -93,9 +94,15 @@ struct segment_traits<roof_vd::Segment> {
 
 namespace roof_vd {
 
-bool operator==(const Point& lhs, const Point& rhs) { return lhs.a == rhs.a && lhs.b == rhs.b; }
+bool operator==(const Point& lhs, const Point& rhs)
+{
+  return lhs.a == rhs.a && lhs.b == rhs.b;
+}
 
-bool operator==(const Segment& lhs, const Segment& rhs) { return lhs.p0 == rhs.p0 && lhs.p1 == rhs.p1; }
+bool operator==(const Segment& lhs, const Segment& rhs)
+{
+  return lhs.p0 == rhs.p0 && lhs.p1 == rhs.p1;
+}
 
 bool segment_has_endpoint(const Segment& segment, const Point& point)
 {

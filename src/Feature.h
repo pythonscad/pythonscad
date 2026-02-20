@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "utils/exceptions.h"
@@ -23,6 +23,11 @@ public:
   static const Feature ExperimentalPredictibleOutput;
   static const Feature ExperimentalWrapPolygon;
   static const Feature ExperimentalVectorSwizzle;
+  static const Feature ExperimentalDiscretizationByError;
+#ifdef ENABLE_PYTHON
+  static const Feature ExperimentalPythonEngine;
+  static const Feature ExperimentalAddParameterPureFunction;
+#endif
 
 #ifdef ENABLE_GUI_TESTS
   static constexpr bool HasGuiTesting{true};

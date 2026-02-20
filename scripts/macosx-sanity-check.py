@@ -24,25 +24,38 @@ import sys
 import os
 import subprocess
 import re
+import argparse
 
 DEBUG = False
 
 cxxlib = None
 
-macos_version_min = '11.0'
+# PythonSCAD targets macOS 15.0 (Sequoia) as the minimum supported version.
+# Only currently Apple-supported macOS versions are targeted.
+macos_version_min = '15.0'
+
+# Global flag to skip architecture validation (for single-arch test builds)
+skip_arch_check = False
 
 def usage():
-    print("Usage: " + sys.argv[0] + " <executable>", sys.stderr)
+    print("Usage: " + sys.argv[0] + " [--skip-arch-check] <executable>", sys.stderr)
     sys.exit(1)
 
 # Try to find the given library by searching in the typical locations
 # Returns the full path to the library or None if the library is not found.
-def lookup_library(file):
+def lookup_library(file, loader=None):
     found = None
     if re.search("@rpath", file):
         file = re.sub("^@rpath", lc_rpath, file)
         if os.path.exists(file): found = file
         if DEBUG: print("@rpath resolved: " + str(file))
+    if not found and re.search("@loader_path", file):
+        # Resolve @loader_path relative to the directory of the loading library
+        if loader:
+            loader_dir = os.path.dirname(loader)
+            abs = re.sub("^@loader_path", loader_dir, file)
+            if os.path.exists(abs): found = abs
+            if DEBUG: print("@loader_path resolved: " + str(abs) + " (loader: " + loader + ")")
     if not found:
         if re.search(r"\.app/", file):
             found = file
@@ -69,7 +82,7 @@ def find_dependencies(file):
     if DEBUG: print("Executing " + " ".join(args))
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     output,err = p.communicate()
-    if p.returncode != 0: 
+    if p.returncode != 0:
         print("Failed with return code " + str(p.returncode) + ":")
         print(err)
         return None
@@ -116,42 +129,42 @@ def validate_lib(lib):
         print("Error: Unsupported deployment target " + m.group(2) + " found: " + lib)
         return False
 
-    # This is a check for a weak symbols from a build made on 10.12 or newer sneaking into a build for an
-    # earlier deployment target. The 'mkostemp' symbol tends to be introduced by fontconfig.
-    p  = subprocess.Popen(["nm", "-g", lib], stdout=subprocess.PIPE, universal_newlines=True)
-    output = p.communicate()[0]
-    if p.returncode != 0: return False
-    match = re.search("mkostemp", output)
-    if match:
-        print("Error: Reference to mkostemp() found - only supported on macOS 10.12->")
-        return None
+    # Check that both x86_64 and arm64 architectures exist (unless skipped)
+    if not skip_arch_check:
+        p = subprocess.Popen(["lipo", lib, "-verify_arch", "x86_64"], stdout=subprocess.PIPE, universal_newlines=True)
+        p.communicate()[0]
+        if p.returncode != 0:
+            print("Error: x86_64 architecture not found in " + lib)
+            return False
 
-    # Check that both x86_64 and arm64 architectures exist
-    p = subprocess.Popen(["lipo", lib, "-verify_arch", "x86_64"], stdout=subprocess.PIPE, universal_newlines=True)
-    p.communicate()[0]
-    if p.returncode != 0:
-        print("Error: x86_64 architecture not found in " + lib)
-        return False
-
-    p  = subprocess.Popen(["lipo", lib, "-verify_arch", "arm64"], stdout=subprocess.PIPE, universal_newlines=True)
-    p.communicate()[0]
-    if p.returncode != 0:
-        print("Error: arm64 architecture not found in " + lib)
-        return False
+        p  = subprocess.Popen(["lipo", lib, "-verify_arch", "arm64"], stdout=subprocess.PIPE, universal_newlines=True)
+        p.communicate()[0]
+        if p.returncode != 0:
+            print("Error: arm64 architecture not found in " + lib)
+            return False
 
     return True
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Verify macOS executable dependencies and deployment targets')
+    parser.add_argument('executable', help='Path to the executable to check')
+    parser.add_argument('--skip-arch-check', action='store_true',
+                        help='Skip universal binary (x86_64/arm64) architecture validation')
+    parser.add_argument('--allow-homebrew-deps', action='store_true',
+                        help='Allow external dependencies from Homebrew (/usr/local/opt/) for test builds')
+    args = parser.parse_args()
+
+    skip_arch_check = args.skip_arch_check
     error = False
-    if len(sys.argv) != 2: usage()
-    executable = sys.argv[1]
+    executable = args.executable
     if DEBUG: print("Processing " + executable)
     executable_path = os.path.dirname(executable)
 
     # Find the Runpath search path (LC_RPATH)
     p  = subprocess.Popen(["otool", "-l", executable], stdout=subprocess.PIPE, universal_newlines=True)
     output = p.communicate()[0]
-    if p.returncode != 0: 
+    if p.returncode != 0:
         print('Error otool -l failed on main executable')
         sys.exit(1)
     # Check deployment target
@@ -170,18 +183,24 @@ if __name__ == '__main__':
 #        if DEBUG: print("Deps: " + ' '.join(deps))
         assert(deps)
         for d in deps:
-            absfile = lookup_library(d)
+            absfile = lookup_library(d, loader=dep)
             if absfile is None:
                 print("Not found: " + d)
                 print("  ..required by " + str(processed[dep]))
                 error = True
                 continue
-            if not re.match(executable_path, absfile):
+            # Allow Homebrew dependencies in test builds if flag is set
+            is_homebrew_dep = absfile.startswith('/usr/local/opt/') or absfile.startswith('/opt/homebrew/')
+            if not absfile.startswith(executable_path) and not (args.allow_homebrew_deps and is_homebrew_dep):
                 print("Error: External dependency " + d)
                 sys.exit(1)
+            # Skip validation of external Homebrew dependencies (they're not bundled)
+            if args.allow_homebrew_deps and is_homebrew_dep:
+                if DEBUG: print("Skipping validation of Homebrew dependency: " + absfile)
+                continue
             if absfile in processed:
                 processed[absfile].append(dep)
-            else: 
+            else:
                 processed[absfile] = [dep]
                 if DEBUG: print("Pending: " + absfile)
                 pending.append(absfile)

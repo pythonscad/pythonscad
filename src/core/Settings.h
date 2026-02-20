@@ -1,14 +1,15 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <sstream>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
-#include <array>
-#include <sstream>
-#include <tuple>
 
+#include "core/SettingsGuiEnums.h"
 #include "io/export_enums.h"
 
 namespace Settings {
@@ -28,6 +29,8 @@ constexpr inline auto SECTION_PYTHON = "python";
 constexpr inline auto SECTION_EXPORT_PDF = "export-pdf";
 constexpr inline auto SECTION_EXPORT_3MF = "export-3mf";
 constexpr inline auto SECTION_EXPORT_SVG = "export-svg";
+constexpr inline auto SECTION_EXPORT_GCODE = "export-gcode";
+constexpr inline auto SECTION_COLOR_LIST = "color-list";
 
 class SettingsEntryBase
 {
@@ -615,6 +618,31 @@ public:
   static constexpr std::array<const SettingsEntryBase *, 5> cmdline{
     &exportSvgFill, &exportSvgFillColor, &exportSvgStroke, &exportSvgStrokeColor, &exportSvgStrokeWidth,
   };
+};
+
+class SettingsExportGcode
+{
+public:
+  static SettingsEntryBool exportGcodeAlwaysShowDialog;
+  static SettingsEntryDouble exportGcodeFeedRate;
+  static SettingsEntryDouble exportGcodeLaserPower;
+  static SettingsEntryInt exportGcodeLaserMode;
+  static SettingsEntryString exportGcodeInitCode;
+  static SettingsEntryString exportGcodeExitCode;
+
+  static constexpr std::array<const SettingsEntryBase *, 3> cmdline{
+    &exportGcodeFeedRate, &exportGcodeLaserPower, &exportGcodeLaserMode,
+  };
+};
+
+class SettingsColorList
+{
+public:
+  static SettingsEntryBool colorListWebColors;
+  static SettingsEntryBool colorListXkcdColors;
+  static SettingsEntryBool colorListSortAscending;
+  static SettingsEntryEnum<ColorListFilterType> colorListFilterType;
+  static SettingsEntryEnum<ColorListSortType> colorListSortType;
 };
 
 class SettingsVisitor

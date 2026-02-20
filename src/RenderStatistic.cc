@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <array>
+#include <boost/range/algorithm/find.hpp>
 #include <cassert>
 #include <chrono>
 #include <fstream>
@@ -35,21 +36,20 @@
 #include <string>
 #include <vector>
 
-#include <boost/range/algorithm/find.hpp>
-
-#include "json/json.hpp"
-
 #include "geometry/Geometry.h"
 #include "geometry/GeometryCache.h"
 #include "geometry/linalg.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/Barcode1d.h"
 #include "geometry/PolySet.h"
+#include "geometry/Polygon2d.h"
+#include "geometry/linalg.h"
 #include "glview/Camera.h"
+#include "json/json.hpp"
 #include "utils/printutils.h"
 #ifdef ENABLE_CGAL
-#include "geometry/cgal/CGALNefGeometry.h"
 #include "geometry/cgal/CGALCache.h"
+#include "geometry/cgal/CGALNefGeometry.h"
 #endif  // ENABLE_CGAL
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/ManifoldGeometry.h"
@@ -175,9 +175,14 @@ static nlohmann::json getCache(C cache)
 
 }  // namespace
 
-RenderStatistic::RenderStatistic() : begin(std::chrono::steady_clock::now()) {}
+RenderStatistic::RenderStatistic() : begin(std::chrono::steady_clock::now())
+{
+}
 
-void RenderStatistic::start() { begin = std::chrono::steady_clock::now(); }
+void RenderStatistic::start()
+{
+  begin = std::chrono::steady_clock::now();
+}
 
 std::chrono::milliseconds RenderStatistic::ms()
 {
@@ -268,7 +273,10 @@ void LogVisitor::visit(const Polygon2d& poly)
   }
 }
 
-void LogVisitor::visit(const Barcode1d& poly) { LOG("Top level object is a 1D object:"); }
+void LogVisitor::visit(const Barcode1d& poly)
+{
+  LOG("Top level object is a 1D object:");
+}
 
 void LogVisitor::printBoundingBox3(const BoundingBox& bb)
 {
@@ -365,9 +373,13 @@ void LogVisitor::printRenderingTime(const std::chrono::milliseconds ms)
       (ms.count() / 1000 / 60 % 60), (ms.count() / 1000 % 60), (ms.count() % 1000));
 }
 
-void LogVisitor::finish() {}
+void LogVisitor::finish()
+{
+}
 
-void StreamVisitor::visit(const GeometryList& geomlist) {}
+void StreamVisitor::visit(const GeometryList& geomlist)
+{
+}
 
 void StreamVisitor::visit(const Polygon2d& poly)
 {
@@ -488,4 +500,7 @@ void StreamVisitor::printRenderingTime(const std::chrono::milliseconds ms)
   }
 }
 
-void StreamVisitor::finish() { stream << json; }
+void StreamVisitor::finish()
+{
+  stream << json;
+}

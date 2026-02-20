@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - cicd-pipeline-tests
   workflow_dispatch:
 
 jobs:
@@ -25,19 +24,24 @@ jobs:
     - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
+    - name: Fetch tags for version detection
+      run: |
+        git fetch --unshallow --tags || git fetch --tags
+        git describe --tags --always --dirty
     - name: Install dependencies
       env:
         DEBIAN_FRONTEND: noninteractive
         TZ: Etc/UTC
       run: |
         which sudo || ( apt update && apt install -y sudo )
-        sudo -E ./scripts/uni-get-dependencies.py --yes --profile pythonscad-qt5
+        sudo -E ./scripts/get-dependencies.py --yes --profile pythonscad-qt5
     - name: Run CMake
       run: >
         cmake -S . -B build -GNinja \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
           -DHEADLESS=${{ matrix.headless }} \
           -DENABLE_MANIFOLD=${{ matrix.enable_manifold }} \
-          -DENABLE_TESTS=${{ matrix.enable_tests }}
+          -DENABLE_TESTS=${{ matrix.enable_tests }} \
+          -DENABLE_LIBFIVE=ON
     - name: Build OpenSCAD
       run: cmake --build build

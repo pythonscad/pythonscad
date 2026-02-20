@@ -26,29 +26,30 @@
 
 #include "gui/UIUtils.h"
 
-#include <filesystem>
-#include <QString>
-#include <QStringList>
-#include <QWidget>
-#include <exception>
+#include <QColor>
+#include <QDesktopServices>
 #include <QDir>
-#include <QList>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QFileInfoList>
-#include <QUrl>
-#include <QFileDialog>
-#include <QDesktopServices>
-#include <QRegularExpression>
-#include <QJsonObject>
 #include <QJsonDocument>
-
-#include "version.h"
-#include "platform/PlatformUtils.h"
-#include "gui/QSettingsCached.h"
-
+#include <QJsonObject>
+#include <QList>
+#include <QRegularExpression>
+#include <QString>
+#include <QStringList>
+#include <QUrl>
+#include <QWidget>
+#include <algorithm>
 #include <cstdlib>
+#include <exception>
 #include <filesystem>
 #include <string>
+#include <utility>
+
+#include "gui/QSettingsCached.h"
+#include "platform/PlatformUtils.h"
+#include "version.h"
 
 namespace {
 
@@ -202,7 +203,10 @@ QStringList UIUtils::recentFiles()
   return files;
 }
 
-const QList<UIUtils::ExampleCategory>& UIUtils::exampleCategories() { return readExamples(); }
+const QList<UIUtils::ExampleCategory>& UIUtils::exampleCategories()
+{
+  return readExamples();
+}
 
 QFileInfoList UIUtils::exampleFiles(const QString& category)
 {
@@ -216,9 +220,15 @@ QFileInfoList UIUtils::exampleFiles(const QString& category)
   return examples;
 }
 
-void UIUtils::openURL(const QString& url) { QDesktopServices::openUrl(QUrl(url)); }
+void UIUtils::openURL(const QString& url)
+{
+  QDesktopServices::openUrl(QUrl(url));
+}
 
-void UIUtils::openHomepageURL() { QDesktopServices::openUrl(QUrl("https://www.openscad.org/")); }
+void UIUtils::openHomepageURL()
+{
+  QDesktopServices::openUrl(QUrl("https://www.openscad.org/"));
+}
 
 static void openVersionedURL(const QString& url)
 {
@@ -265,7 +275,10 @@ void UIUtils::openCheatSheetURL()
 #endif
 }
 
-void UIUtils::openPythonCheatSheetURL() { openURL("https://pythonscad.org/pythonscadhelper.html"); }
+void UIUtils::openPythonCheatSheetURL()
+{
+  openURL("https://pythonscad.org/cheatsheet/");
+}
 
 fs::path UIUtils::returnOfflineCheatSheetPath()
 {
