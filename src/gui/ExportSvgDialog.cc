@@ -1,25 +1,36 @@
 #include "ExportSvgDialog.h"
+
 #include <QColorDialog>
+#include <QPalette>
 #include <QPushButton>
 
 ExportSvgDialog::ExportSvgDialog()
 {
   setupUi(this);
-  fillColor = QColor(Qt::white);
-  strokeColor = QColor(Qt::black);
-  doubleSpinBoxStrokeWidth->setValue(defaultStrokeWidth);
+  this->checkBoxEnableFill->setChecked (Settings::SettingsExportSvg::exportSvgFill.value());
+  this->checkBoxEnableStroke->setChecked(Settings::SettingsExportSvg::exportSvgStroke.value());
+  QColor color;
+
+  auto colorName = Settings::SettingsExportSvg::exportSvgFillColor.value();
+  fillColor.setNamedColor(colorName.c_str());  
+
+  colorName = Settings::SettingsExportSvg::exportSvgStrokeColor.value();
+  strokeColor.setNamedColor(colorName.c_str());  
+  doubleSpinBoxStrokeWidth->setValue(Settings::SettingsExportSvg::exportSvgStrokeWidth.value());
   updateFillColor(fillColor);
   updateStrokeColor(strokeColor);
   updateFillControlsEnabled();
   updateStrokeControlsEnabled();
-
-  connect(pushButtonOk, &QPushButton::clicked, this, &ExportSvgDialog::accept);
-  connect(pushButtonCancel, &QPushButton::clicked, this, &ExportSvgDialog::reject);
 }
 
 int ExportSvgDialog::exec()
 {
-  return QDialog::exec();
+  bool showDialog = Settings::SettingsExportSvg::exportSvgAlwaysShowDialog.value();
+  if ((QApplication::keyboardModifiers() & Qt::ShiftModifier) != 0) {
+    showDialog = true;
+  }
+   return showDialog ? QDialog::exec() : QDialog::Accepted;
+	
 }
 
 QColor ExportSvgDialog::getFillColor() const
@@ -47,7 +58,7 @@ double ExportSvgDialog::getStrokeWidth() const
   return doubleSpinBoxStrokeWidth->value();
 }
 
-ExportSvgOptions ExportSvgDialog::getOptions() const
+ExportSvgOptions ExportSvgDialog::getOptions()
 {
   ExportSvgOptions opts;
   opts.fill = isFillEnabled();
@@ -55,6 +66,15 @@ ExportSvgOptions ExportSvgDialog::getOptions() const
   opts.stroke = isStrokeEnabled();
   opts.strokeColor = getStrokeColor().name(QColor::HexRgb).toStdString();
   opts.strokeWidth = getStrokeWidth();
+
+  Settings::SettingsExportSvg::exportSvgFill.setValue(opts.fill);
+  Settings::SettingsExportSvg::exportSvgFillColor.setValue(opts.fillColor);
+  Settings::SettingsExportSvg::exportSvgStroke.setValue(opts.stroke);
+  Settings::SettingsExportSvg::exportSvgStrokeColor.setValue(opts.strokeColor);
+  Settings::SettingsExportSvg::exportSvgStrokeWidth.setValue(opts.strokeWidth);
+
+  writeSettings();
+
   return opts;
 }
 
@@ -97,6 +117,16 @@ void ExportSvgDialog::on_checkBoxEnableStroke_toggled(bool checked)
 void ExportSvgDialog::on_toolButtonStrokeWidthReset_clicked()
 {
   doubleSpinBoxStrokeWidth->setValue(defaultStrokeWidth);
+}
+
+void ExportSvgDialog::on_pushButtonOk_clicked()
+{
+  accept();
+}
+
+void ExportSvgDialog::on_pushButtonCancel_clicked()
+{
+  reject();
 }
 
 void ExportSvgDialog::updateFillColor(const QColor& color)

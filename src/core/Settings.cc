@@ -1,25 +1,24 @@
 #include "core/Settings.h"
 
-#include "core/MouseConfig.h"
-
-#include <ostream>
+#include <algorithm>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/range/adaptors.hpp>
 #include <cassert>
 #include <cstddef>
 #include <istream>
 #include <iterator>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/range/adaptors.hpp>
 
+#include "core/MouseConfig.h"
 #include "core/SettingsGuiEnums.h"
-#include "io/export_enums.h"
 #include "io/export.h"
-#include "utils/printutils.h"
-
+#include "io/export_enums.h"
 #include "json/json.hpp"
+#include "utils/printutils.h"
 
 using json = nlohmann::json;
 
@@ -230,7 +229,6 @@ SettingsEntryEnum<std::string> Settings::octoPrintFileFormat(
 
 SettingsEntryString Settings::localAppExecutable("printing", "localAppExecutable", "");
 SettingsEntryString Settings::localAppTempDir("printing", "localAppTempDir", "");
-
 SettingsEntryEnum<std::string> Settings::localAppFileFormat(
   "printing", "localAppFileFormat", createFileFormatItems(fileformat::all3D()),
   fileformat::info(FileFormat::ASCII_STL).description);
@@ -493,6 +491,13 @@ SettingsEntryBool SettingsExportSvg::exportSvgStroke(SECTION_EXPORT_SVG, "stroke
 SettingsEntryString SettingsExportSvg::exportSvgStrokeColor(SECTION_EXPORT_SVG, "stroke-color", "black");
 SettingsEntryDouble SettingsExportSvg::exportSvgStrokeWidth(SECTION_EXPORT_SVG, "stroke-width", 0, 0.01,
                                                             999, 0.35);
+
+SettingsEntryDouble SettingsExportGcode::exportGcodeFeedRate(SECTION_EXPORT_GCODE, "feed rate", 0, 0.01, 2000, 1000);
+SettingsEntryDouble SettingsExportGcode::exportGcodeLaserPower(SECTION_EXPORT_GCODE, "laser power", 0, 0.01, 2000, 1000);
+SettingsEntryInt SettingsExportGcode::exportGcodeLaserMode(SECTION_EXPORT_GCODE, "laser mode", 0,1,0);
+SettingsEntryBool SettingsExportGcode::exportGcodeAlwaysShowDialog(SECTION_EXPORT_GCODE, "always-show-dialog", true);
+SettingsEntryString SettingsExportGcode::exportGcodeInitCode("gcode", "initCode", "G90");
+SettingsEntryString SettingsExportGcode::exportGcodeExitCode("gcode", "exitCode", "");
 
 SettingsEntryEnum<ColorListFilterType> SettingsColorList::colorListFilterType(
   SECTION_COLOR_LIST, "filter-type",

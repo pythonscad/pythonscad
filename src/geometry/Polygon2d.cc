@@ -1,26 +1,22 @@
 #include "geometry/Polygon2d.h"
 
-#include <sstream>
-#include <utility>
 #include <cstddef>
-#include <string>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <utility>
 
 #include "geometry/Geometry.h"
 #include "geometry/linalg.h"
 #include "utils/printutils.h"
-#include "Feature.h"
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/manifoldutils.h"
 #endif
-#include "geometry/cgal/cgalutils.h"
 #include "Feature.h"
 #include "geometry/PolySet.h"
+#include "geometry/cgal/cgalutils.h"
 #include "glview/RenderSettings.h"
-#include "utils/hash.h"
 #include "clipper2/clipper.h"
-#include <clipper2/clipper.engine.h>
-#include <locale.h>
 
 Polygon2d::Polygon2d(Outline2d outline) : sanitized(true)
 {
@@ -453,12 +449,12 @@ bool Polygon2d::point_inside(const Vector2d& pt) const
     for (int i = 0; i < n; i++) {
       Vector2d p1 = o.vertices[i];
       Vector2d p2 = o.vertices[(i + 1) % n];
-      if (fabs(p1[1] - p2[1]) > 1e-9) {
-        if (pt[1] < p1[1] && pt[1] > p2[1]) {
+      if (fabs(p1[1] - p2[1]) > 1e-9) { // not horizotal
+        if (pt[1] <= p1[1] && pt[1] > p2[1]) { // p2 ... pt .. p1
           double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
           if (x > pt[0]) cuts++;
         }
-        if (pt[1] < p2[1] && pt[1] > p1[1]) {
+        if (pt[1] < p2[1] && pt[1] >= p1[1]) { // p1 .. pt .. p2
           double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
           if (x > pt[0]) cuts++;
         }
