@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.1](https://github.com/pythonscad/pythonscad/compare/v0.15.0...v0.15.1) (2026-02-19)
+
+
+### Bug Fixes
+
+* laser tests ([59b0fc7](https://github.com/pythonscad/pythonscad/commit/59b0fc75cd99022279133883466e0ee24251a002))
+* prevent segfault when returning Py_None, Py_True and Py_False ([0518066](https://github.com/pythonscad/pythonscad/commit/0518066434f99f75becbcdeed9b9dc5cc916b1a0))
+
 ## [0.15.0](https://github.com/pythonscad/pythonscad/compare/v0.14.2...v0.15.0) (2026-02-16)
 
 
