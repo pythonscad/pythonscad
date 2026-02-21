@@ -56,24 +56,49 @@ void output_gcode_pars(std::ostream& output, int gnum, double x, double y, doubl
   feed_cached = feed;
   power_cached = power;
 }
+
+static double color_to_parm(const Color4f color, const double max, const int pos, const int dynamic)
+{
+  float r,g,b,a;
+  double parm;
+
+  color.getRgba(r,g,b,a);
+  switch (pos) {
+    case 0: // (red) power
+      parm = (r > 0.0) ? r*max : max;
+      break;
+    case 1: // (green) feed/speed
+      parm = (g > 0.0) ? g*max : max;
+      break;
+   case 2: // (blue) unused at the moment, but stubed in
+      parm = (b > 0.0) ? b*max : max;
+      break;
+    case 3: // (alpha) unused at the moment, but stubed in
+      parm = (a > 0.0) ? a*max : max;
+      break;
+    default:
+      fprintf(stderr, "Internal Error: invalid colar param position.\n");
+      return -1;
+  }
+
+  return (parm);
+}
+
 static void append_gcode(const Polygon2d& poly, std::ostream& output, const ExportInfo& exportInfo)
 {
   auto  options = exportInfo.optionsGcode;
-  gnum_cached=-1;
-  x_cached=NAN;
-  y_cached=NAN;
-  feed_cached=NAN;
-  power_cached=NAN;
 
-  double feed=500;  
   for (const auto& o : poly.outlines()) {
     const Eigen::Vector2d& p0 = o.vertices[0];
+    const double laserpower = color_to_parm(o.color, options->laserpower, 0, -1.0);
+    const double feedrate   = color_to_parm(o.color, options->feedrate, 1, -1.0);
+
     output_gcode_pars(output, 0, p0.x(), p0.y(), NAN, NAN);
-    output_gcode_pars(output, -1, NAN, NAN, NAN, options->laserpower);
+    output_gcode_pars(output, -1, NAN, NAN, NAN, laserpower);
     int n=o.vertices.size();
     for (unsigned int idx = 1; idx <=  n; ++idx) {
       const Eigen::Vector2d& p = o.vertices[idx%n];
-      output_gcode_pars(output, 1, p.x(), p.y(), options->feedrate, options->laserpower);
+      output_gcode_pars(output, 1, p.x(), p.y(), feedrate, laserpower);
     }
     output_gcode_pars(output, -1, NAN, NAN, NAN, 0);
   }
@@ -100,8 +125,6 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
 {
   setlocale(LC_NUMERIC, "C");  // Ensure radix is . (not ,) in output
   BoundingBox bbox = geom->getBoundingBox();
-
-
 
   auto  options = exportInfo.optionsGcode;
   output << options->initCode << "\r\n";

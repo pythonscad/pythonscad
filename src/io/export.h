@@ -294,6 +294,7 @@ struct ExportGcodeOptions {
   int lasermode;
   std::string initCode;
   std::string exitCode;
+  std::string configFile;
 };
 
 struct ExportInfo {

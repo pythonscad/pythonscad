@@ -10,10 +10,12 @@ ExportGcodeDialog::ExportGcodeDialog()
   this->laserMode =Settings::SettingsExportGcode::exportGcodeLaserMode.value();
   this->initCode =QString(Settings::SettingsExportGcode::exportGcodeInitCode.value().c_str());
   this->exitCode =QString(Settings::SettingsExportGcode::exportGcodeExitCode.value().c_str());
+  this->configFile =QString(Settings::SettingsExportGcode::exportGcodeConfigFile.value().c_str());
   valueLaserSpeed->setText(QString::number(this->laserSpeed));
   valueLaserPower->setText(QString::number(this->laserPower));
   valueInitCode->setText(this->initCode);
   valueExitCode->setText(this->exitCode);
+  valueConfigFile->setText(this->configFile);
   valueLaserMode->setCurrentIndex(this->laserMode);
 
 }
@@ -52,6 +54,11 @@ QString ExportGcodeDialog::getExitCode()  const
   return exitCode;
 }
 
+QString ExportGcodeDialog::getConfigFile()  const
+{
+  return configFile;
+}
+
 ExportGcodeOptions ExportGcodeDialog::getOptions()
 {
   ExportGcodeOptions opts;
@@ -60,11 +67,13 @@ ExportGcodeOptions ExportGcodeDialog::getOptions()
   opts.lasermode = getLaserMode();
   opts.initCode = getInitCode().toStdString();
   opts.exitCode = getExitCode().toStdString();
+  opts.configFile = getConfigFile().toStdString();
   Settings::SettingsExportGcode::exportGcodeFeedRate.setValue(opts.feedrate);
   Settings::SettingsExportGcode::exportGcodeLaserPower.setValue(opts.laserpower);
   Settings::SettingsExportGcode::exportGcodeLaserMode.setValue(opts.lasermode);
   Settings::SettingsExportGcode::exportGcodeInitCode.setValue(opts.initCode);
   Settings::SettingsExportGcode::exportGcodeExitCode.setValue(opts.exitCode);
+  Settings::SettingsExportGcode::exportGcodeConfigFile.setValue(opts.configFile);
   writeSettings();
   return opts;
 }
@@ -94,6 +103,12 @@ void ExportGcodeDialog::on_valueInitCode_textChanged(void)
 void ExportGcodeDialog::on_valueExitCode_textChanged(void)
 {
   this->exitCode = valueExitCode->toPlainText();	
+}
+
+
+void ExportGcodeDialog::on_valueConfigFile_textChanged(void)
+{
+  this->configFile = valueConfigFile->toPlainText();	
 }
 
 
