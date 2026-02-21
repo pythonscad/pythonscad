@@ -36,45 +36,62 @@
 #include "geometry/Polygon2d.h"
 #include "geometry/PolySet.h"
 
-int gnum_cached=-1;
-double x_cached=NAN;
-double y_cached=NAN;
-double feed_cached=NAN;
-double power_cached=NAN;
-
 void output_gcode_pars(std::ostream& output, int gnum, double x, double y, double feed, double power) {
-  if(gnum != -1 && gnum != gnum_cached) { output << "G" << gnum; }
-  if(!std::isnan(x) && x != x_cached) output << "X" << x;
-  if(!std::isnan(y) && y != y_cached) output << "Y" << y;
-  if(!std::isnan(feed) && feed != feed_cached) output << "F" << feed;
-  if(!std::isnan(power) && power != power_cached) output << "S" << power;
-  output << "\r\n";
+  static int gnum_cached=-1;
+  static double x_cached=NAN;
+  static double y_cached=NAN;
+  static double feed_cached=NAN;
+  static double power_cached=NAN;
 
-  gnum_cached = gnum;
-  x_cached = x;
-  y_cached = y;
-  feed_cached = feed;
-  power_cached = power;
+  if(gnum == -2) {
+    // reinitialize the cache
+    gnum_cached=-1;
+    x_cached=NAN;
+    y_cached=NAN;
+    feed_cached=NAN;
+    power_cached=NAN;
+
+    return;
+  }
+
+  if(gnum != -1 && gnum != gnum_cached) {
+    output << "G" << gnum;
+    gnum_cached = gnum;
+  }
+  if(!std::isnan(x) && x != x_cached) {
+    output << "X" << x;
+    x_cached = x;
+  }
+  if(!std::isnan(y) && y != y_cached) {
+    output << "Y" << y;
+    y_cached = y;
+  }
+  if(!std::isnan(feed) && feed != feed_cached) {
+    output << "F" << feed;
+    feed_cached = feed;
+  }
+  if(!std::isnan(power) && power != power_cached) {
+    output << "S" << power;
+    power_cached = power;
+  }
+
+  output << "\r\n";
 }
 
 static double color_to_parm(const Color4f color, const double max, const int pos, const int dynamic)
 {
-  float r,g,b,a;
+  int r,g,b,a;
   double parm;
 
   color.getRgba(r,g,b,a);
+  double power = double(uint(r)) * 4.0;
+  double feed  = double(uint(g)<<8) + double(b);
   switch (pos) {
-    case 0: // (red) power
-      parm = (r > 0.0) ? r*max : max;
+    case 0: // power
+      parm = (power <= max) ? power : max;
       break;
-    case 1: // (green) feed/speed
-      parm = (g > 0.0) ? g*max : max;
-      break;
-   case 2: // (blue) unused at the moment, but stubed in
-      parm = (b > 0.0) ? b*max : max;
-      break;
-    case 3: // (alpha) unused at the moment, but stubed in
-      parm = (a > 0.0) ? a*max : max;
+    case 1: // feed/speed
+      parm = (feed <= max) ? feed : max;
       break;
     default:
       fprintf(stderr, "Internal Error: invalid colar param position.\n");
@@ -125,6 +142,9 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
 {
   setlocale(LC_NUMERIC, "C");  // Ensure radix is . (not ,) in output
   BoundingBox bbox = geom->getBoundingBox();
+
+  // reset the cached parameters
+  output_gcode_pars(output, -2, NAN, NAN, NAN, NAN);
 
   auto  options = exportInfo.optionsGcode;
   output << options->initCode << "\r\n";
