@@ -1,7 +1,6 @@
 import os
 import json
 
-
 """
 MachineConfig class which can be used to read lasercutter and 3D
 printer machine and material configurations.  The config file is
@@ -20,164 +19,136 @@ class MachineConfig:
         except:
             print("Warning: config file non existant or not read.")
             print("   Generating default.")
-            self._config = self.gen_tst_config()
-        self._working = self.gen_working(label="default")
+            self.gen_tst_config()
+            self.gen_color_table()
+        self.gen_working(label="default")
         return
 
+    def register(self, label, itype, iproperty):
+        item = {"type":itype,"property":iproperty}
+        self._config[label] = item
+
     def gen_color_table(self):
-        color_table = [
-            {"label":"L00","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x000000}},
-            {"label":"L01","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x0000FF}},
-            {"label":"L02","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xFF0000}},
-            {"label":"L03","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x00E000}},
-            {"label":"L04","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xD0D000}},
-            {"label":"L05","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xFF8000}},
-            {"label":"L06","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x00E0E0}},
-            {"label":"L07","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xFF00FF}},
-            {"label":"L08","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xB4B4B4}},
-            {"label":"L09","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x0000A0}},
-            {"label":"L10","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xA00000}},
-            {"label":"L11","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x00A000}},
-            {"label":"L12","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xA0A000}},
-            {"label":"L13","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xC08000}},
-            {"label":"L14","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x00A0FF}},
-            {"label":"L15","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xA000A0}},
-            {"label":"L16","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x808080}},
-            {"label":"L17","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x7D87B9}},
-            {"label":"L18","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xBB7784}},
-            {"label":"L19","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x4A6FE3}},
-            {"label":"L20","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xD33F6A}},
-            {"label":"L21","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x8CD78C}},
-            {"label":"L22","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xF0B98D}},
-            {"label":"L23","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xF6C4E1}},
-            {"label":"L24","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xFA9ED4}},
-            {"label":"L25","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x500A78}},
-            {"label":"L26","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xB45A00}},
-            {"label":"L27","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x004754}},
-            {"label":"L28","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x86FA88}},
-            {"label":"L29","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xFFDB66}},
-            {"label":"T1","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0xF36926}},
-            {"label":"T2","type":"ColorTable",
-             "property":{"power":1.0,"feed":1.0,"color":0x0C96D9}},
-        ]
-        return color_table
+        self.register("L00","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x000000})
+        self.register("L01","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x0000FF})
+        self.register("L02","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xFF0000})
+        self.register("L03","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x00E000})
+        self.register("L04","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xD0D000})
+        self.register("L05","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xFF8000})
+        self.register("L06","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x00E0E0})
+        self.register("L07","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xFF00FF})
+        self.register("L08","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xB4B4B4})
+        self.register("L09","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x0000A0})
+        self.register("L10","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xA00000})
+        self.register("L11","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x00A000})
+        self.register("L12","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xA0A000})
+        self.register("L13","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xC08000})
+        self.register("L14","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x00A0FF})
+        self.register("L15","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xA000A0})
+        self.register("L16","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x808080})
+        self.register("L17","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x7D87B9})
+        self.register("L18","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xBB7784})
+        self.register("L19","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x4A6FE3})
+        self.register("L20","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xD33F6A})
+        self.register("L21","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x8CD78C})
+        self.register("L22","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xF0B98D})
+        self.register("L23","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xF6C4E1})
+        self.register("L24","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xFA9ED4})
+        self.register("L25","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x500A78})
+        self.register("L26","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xB45A00})
+        self.register("L27","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x004754})
+        self.register("L28","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x86FA88})
+        self.register("L29","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xFFDB66})
+        self.register("T1","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0xF36926})
+        self.register("T2","ColorTable",
+                      {"power":1.0,"feed":1.0,"color":0x0C96D9})
 
     def gen_tst_config(self):
         # FIXME: this is just an expeerimental hack to get started.
 
-        # FIXME:
-        cfg = [
-            # what is the default configuration?
-            {"label":"default",
-             "type":"default",
-             "property":{"machine":"Creality-Falcon2",
-                         "head":"LED-40",
-                         "material":"3mm_ply_LED-40"
-                         }
-             },
-            # different machine configurations
-            {"label":"Creality-Falcon2",
-             "type":"machine",
-             "property":{"max_feed":25000, #(mm/min)
-                         "max_width":400, #(mm)
-                         "max_len":415, #(mm)
-                         "has_camera":False
-                         }
-             },
-            {"label":"XTool-S1",
-             "type":"machine",
-             "property":{"max_feed":36000, #(mm/min)
-                         "max_width":319, #(mm)
-                         "max_len":498, #(mm)
-                         "has_camera":False
-                         }
-             },
-            # different heads which can be independent of a given
-            # machine
-            {"label":"LED-40",
-             "type":"head",
-             "property":{"max_power":40.0, # (W)
-                         "wavelength":455, #(nm)
-                         "has_air":True,
-                         "kerf": 0.075
-                         },
-             },
-            {"label":"LED-20",
-             "type":"head",
-             "property":{"max_power":20.0, # (W)
-                         "wavelength":455, #(nm)
-                         "has_air":True,
-                         "kerf": 0.075
-                         },
-             },
-            # materials which are dependent on the head
-            # characteristics. The machines assume units in mm and
-            # minutes.
-            {"label":"3mm_ply_LED-40",
-             "type":"material",
-             "property":{"thickness":3.0, # (mm)
-                         "cut_power":1000, # (0.1%)
-                         "cut_feed":400, # (mm/min)
-                         "engrave_power":300, # (0.1%)
-                         "engrave_feed":6000 # (mm/min)
-                         },
-             },
+        # The default configuration
+        self.register("default","default",
+                         {"machine":"Creality-Falcon2",
+                          "head":"LED-40",
+                          "material":"3mm_ply_LED-40"})
 
-            {"label":"0.25in_ply_LED-40",
-             "type":"material",
-             "property":{"thickness":6.35,
-                         "cut_power":1000,
-                         "cut_feed":200,
-                         "engrave_power":300,
-                         "engrave_feed":6000
-                         },
-             },
-            {"label":"0.75in_pine_LED-40",
-             "type":"material",
-             "property":{"thickness":19.05,
-                         "cut_power":1000,
-                         "cut_feed":200,
-                         "engrave_power":300,
-                         "engrave_feed":6000
-                         },
-             },
-        ]
+        # different machine configurations
+        self.register("Creality-Falcon2","machine",
+                         {"max_feed":25000, #(mm/min)
+                          "max_width":400, #(mm)
+                          "max_len":415, #(mm)
+                          "has_camera":False})
+        self.register("XTool-S1","machine",
+                         {"max_feed":36000, #(mm/min)
+                          "max_width":319, #(mm)
+                          "max_len":498, #(mm)
+                          "has_camera":False})
 
-        for c in self.gen_color_table():
-            cfg.append(c)
+        # different heads which can be independent of a given
+        # machine
+        self.register("LED-40","head",
+                         {"max_power":40.0,
+                          "wavelength":455,
+                          "has_air":True,
+                          "kerf": 0.075})
+        self.register("LED-20","head",
+                         {"max_power":20.0,
+                          "wavelength":455,
+                          "has_air":True,
+                          "kerf": 0.075})
 
-        return cfg
+        # materials which are dependent on the head
+        # characteristics. The machines assume units in mm and
+        # minutes.
+        self.register("3mm_ply_LED-40","material",
+                         {"thickness":3.0,
+                          "cut_power":1000,
+                          "cut_feed":400,
+                          "engrave_power":300,
+                          "engrave_feed":6000})
+        self.register("0.25in_ply_LED-40","material",
+                         {"thickness":6.35,
+                          "cut_power":1000,
+                          "cut_feed":200,
+                          "engrave_power":300,
+                          "engrave_feed":6000})
+        self.register("0.75in_pine_LED-40","material",
+                         {"thickness":19.05,
+                          "cut_power":1000,
+                          "cut_feed":200,
+                          "engrave_power":300,
+                          "engrave_feed":6000})
 
     def read(self, name="PythonSCAD.json"):
         name = self.configfile(name)
@@ -222,50 +193,45 @@ class MachineConfig:
         return
 
     def get_types(self):
-        types = set([x["type"] for x in self._config])
-        return types
+        try:
+            types = set([self._config[x]["type"] for x in self._config])
+            return types
+        except ValueError as e:
+            print(f"An error occurred: {e}")
+            return None
     
     def get_label_by_type(self, label):
-        values = set([x["label"] for x in self._config if x["type"]==label])
-        return values
+        try:
+            values = set([x for x in self._config
+                          if self._config[x]["type"]==label])
+            return values
+        except ValueError as e:
+            print(f"An error occurred: {e}")
+            return None
     
-    def get_value_by_label(self, label1, label2):
-        dicts = [x for x in self._config if x["label"]==label1]
-        values = [x[label2] for x in dicts]
-        return values
-
-    def get_sublabel(self, label, value):
-        dicts = [x for x in self._config if x["type"]==label]
-        values = [x[value] for x in dicts]
-        return values
+    def get_property(self, label):
+        try:
+            return self._config[label]["property"]
+        except ValueError as e:
+            print(f"An error occurred: {e}")
+            return None
 
     def working_config(self):
         return self._working
     
     def gen_working(self, label="default"):
-        ncfg = {}
+        """
+        Create a flat representation of all variables associated with
+        the default (or user named) configuration
+        """
+        self._working = {}
+        dcfg = self._config[label]["property"]
 
-        dcfg = self.get_sublabel(label,"property")[0]
-
-        lbls = dcfg.keys()
-
-        for l in lbls:
+        for l in dcfg.keys():
             k = dcfg[l]
-            tcfg = self.get_value_by_label(k,"property")
-            for i in range(len(tcfg)):
-                for tk in tcfg[i].keys():
-                    ncfg[tk] = tcfg[i][tk]
-
-        return ncfg
-
-    def modify_working_config(self, label="default"):
-        dcfg = self.get_value_by_label(label, "property")
-
-        for d in dcfg:
-            for l in d.keys():
-                self._working[l] = d[l]
-        
-        return self._working
+            tcfg = self._config[k]["property"]
+            for tk in tcfg.keys():
+                self._working[tk] = tcfg[tk]
 
     def configfile(self, name="PythonSCAD.json"):
         name = os.path.expanduser(name)
@@ -285,40 +251,18 @@ class MachineConfig:
         return name
 
     def get_property_value(self, label, tag):
-        dicts = [x for x in self._config if x["label"]==label]
-        values = [x["property"][tag] for x in dicts]
-        return values
-
-    def get_subproperty_value(self, label, tag1, tag2):
-        dicts = [x for x in self._config if x["label"]==label]
-        values = [x["property"][tag1][tag2] for x in dicts]
-        return values
+        try:
+            return self._config[label]["property"][tag]
+        except ValueError as e:
+            print(f"An error occurred: {e}")
+            return None
 
     def set_property_value(self, label, tag, value):
-        modified = []
-        for d in self._config:
-            m = d
-            if m["label"]==label:
-                if tag in m["property"]:
-                    m["property"][tag] = value
-            modified.append(m)
-
-        self._config = modified
-
-        return
-
-    def set_subproperty_value(self, label, tag1, tag2, value):
-        modified = []
-        for d in self._config:
-            m = d
-            if m["label"]==label:
-                if tag1 in m["property"]:
-                    m["property"][tag1][tag2] = value
-            modified.append(m)
-
-        self._config = modified
-
-        return
+        try:
+            self._config[label]["property"][tag] = value
+        except ValueError as e:
+            print(f"An error occurred: {e}")
+            return
 
     # The followng functions are for manipulating the color table
 
@@ -329,13 +273,7 @@ class MachineConfig:
         default color table is compatible with LightBurn's
 
         """
-        ct = self.gen_color_table()
-
-        for d in ct:
-            self.set_property_value(d["label"], "feed",  d["property"]["feed"])
-            self.set_property_value(d["label"], "power", d["property"]["power"])
-            self.set_property_value(d["label"], "color", d["property"]["color"])
-
+        self.gen_color_table()
 
     def scale_value(self, label1, label2, cfg=None):
         if cfg is None:
@@ -344,7 +282,7 @@ class MachineConfig:
         return val
 
     def color(self, tag):
-        return self.get_property_value(tag, "color")[0]
+        return self.get_property_value(tag, "color")
 
     # color2str - return the working labled color as an OpenSCAD
     #   compatible string representation of the hex value starting with a
@@ -354,11 +292,11 @@ class MachineConfig:
 
     # powermap - return the working labled power
     def power(self, tag):
-        return self.get_property_value(tag, "power")[0]
+        return self.get_property_value(tag, "power")
 
     # feedmap - return the working labled feed
     def feed(self, tag):
-        return self.get_property_value(tag, "feed")[0]
+        return self.get_property_value(tag, "feed")
 
     # setpower - overwrite the working labeled power
     def set_power(self, tag, val):
