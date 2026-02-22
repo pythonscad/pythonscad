@@ -371,6 +371,8 @@ void add_menuitem_trampoline(const char *menuname, const char *itemname, const c
 std::string MainWindow::loadInitFile(void)
 {
   std::string path = lookup_file(".pythonscadrc", ".", "");
+  // FIXME: testing...
+  std::cout << "****** init file (FIXME: try using other method): " << path << std::endl;
   if (path.size() == 0) return "";
   std::ifstream fh(path);
 

@@ -147,10 +147,17 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
   output_gcode_pars(output, -2, NAN, NAN, NAN, NAN);
 
   auto  options = exportInfo.optionsGcode;
+
+  // read in the configuration file
+  auto  configfile = options->configfile;
+  std::cout << "***** ConfigFile: " << configfile << std::endl;
+
   output << options->initCode << "\r\n";
-  if(options->lasermode == 1) output	<< "M4 S0\r\n";
-	  else output	<< "M3 S0\r\n";
-	  output << "S0\r\n" ;
+  if(options->lasermode == 1) {
+    output	<< "M4 S0\r\n";
+  } else {
+    output	<< "M3 S0\r\n";
+  }
   append_gcode(geom, output, exportInfo);
   output	<< "M5 S0\r\n";
   output << options->exitCode;
