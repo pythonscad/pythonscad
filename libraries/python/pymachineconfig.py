@@ -242,7 +242,7 @@ class MachineConfig:
     #   compatible string representation of the hex value starting with a
     #   '#'
     def color2str(self, tag):
-        return "#{:X}".format(self.color(tag))
+        return "#{:06X}".format(self.color(tag))
 
     # powermap - return the working labled power
     def power(self, tag):
@@ -281,9 +281,9 @@ class MachineConfig:
 
     def gen_color2str(self, power=-1,feed=-1):
         color = self.gen_color(power,feed)
-        return f"#{color:08X}"
+        return f"#{color:06X}"
 
     def gen_color2hex(self, power=-1,feed=-1):
         color = self.gen_color(power,feed)
-        return f"0x{color:08X}"
+        return f"0x{color:06X}"
 
