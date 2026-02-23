@@ -6187,6 +6187,53 @@ PyObject *python_memberfunction(PyObject *self, PyObject *args, PyObject *kwargs
   Py_RETURN_NONE;
 }
 
+PyObject *python_machineconfig(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
+{
+  char *kwlist[] = {"config",NULL};
+  PyObject *config;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist,&config)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing machineconfig");
+    return NULL;
+  }
+  if (!PyDict_Check(config)){
+    PyErr_SetString(PyExc_TypeError, "Config must be a dictionary");
+    return NULL;
+  }
+  PyObject *key, *value;
+  Py_ssize_t pos = 0;
+  while (PyDict_Next(config, &pos, &key, &value)) {
+    PyObject *key1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
+    std::string key_str = PyBytes_AS_STRING(key1);
+    std::cout << "key: " << key_str << std::endl;
+    if(key_str == "power") {
+      double power;
+      if (python_numberval(value, &power, nullptr, 0)) {
+        PyErr_SetString(PyExc_TypeError, "Power must be a number");
+        return NULL;
+      }
+      printf("power read:%g \n", power);
+
+    }
+    if(key_str == "name") {
+      PyObject *value1 = PyUnicode_AsEncodedString(value, "utf-8", "~");
+      std::string value_str = PyBytes_AS_STRING(value1);
+      printf("name %s\n", value_str.c_str());
+    }
+    if(key_str == "subconfig") {
+      if (!PyList_Check(value)){
+        PyErr_SetString(PyExc_TypeError, "subconfig must be a list");
+        return NULL;
+      }
+      int len=PyList_Size(value);
+      for(int i=0;i<len;i++) {
+        PyObject *sub = PyList_GetItem(value, i);       // use it here
+      }
+    }
+  }
+  Py_RETURN_NONE;
+}
+
 PyMethodDef PyOpenSCADFunctions[] = {
   {"edge", (PyCFunction)python_edge, METH_VARARGS | METH_KEYWORDS, "Create Edge."},
   {"square", (PyCFunction)python_square, METH_VARARGS | METH_KEYWORDS, "Create Square."},
@@ -6310,6 +6357,7 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"norm", (PyCFunction)python_norm, METH_VARARGS | METH_KEYWORDS, "Calculate vector size."},
   {"dot", (PyCFunction)python_dot, METH_VARARGS | METH_KEYWORDS, "Calculate dot product."},
   {"cross", (PyCFunction)python_cross, METH_VARARGS | METH_KEYWORDS, "Calculate cross product."},
+  {"machineconfig", (PyCFunction)python_machineconfig, METH_VARARGS | METH_KEYWORDS,"set Machineconfig"},
   {NULL, NULL, 0, NULL}};
 
 #define OO_METHOD_ENTRY(name, desc) \
