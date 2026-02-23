@@ -201,6 +201,11 @@ void print_tree(const boost::property_tree::ptree& pt) {
   std::cout << std::endl;
 }
 
+// global cached version of the machine config that is used by
+// export_gcode for colormapping power and feed.  Initialize to an
+// empty python dictionary.
+std::string _machineconfig_cache_ = R"({})";
+
 void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                 const ExportInfo& exportInfo)
 {
@@ -212,25 +217,13 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
 
   auto  options = exportInfo.optionsGcode;
 
-  // read in the configuration file
-  // FIXME: figure out how to find the one in the default place...
-  auto  configfile = options->configfile;
-  boost::trim(configfile);
-  //std::cout << "***** ConfigFile: '" << configfile << "'" << std::endl;
-
-  // read in the color table and the machine config.
   boost::property_tree::ptree pt;
-  try {
-    boost::property_tree::read_json(configfile, pt);
-  } catch (const boost::property_tree::json_parser::json_parser_error &e) {
-    std::cerr << "JSON parsing error in file: " << e.filename() 
-	      << " : " << e.what() << std::endl;
-    return;
-  } catch (const std::exception &e) {
-    std::cerr << "Other error: " << e.what() << std::endl;
-    return;
-  }
 
+  // parse the cached JSON _machineconfig_cache_
+  std::istringstream iss(_machineconfig_cache_);
+  boost::property_tree::read_json(iss, pt);
+
+  // begin converting the geometry into gcode
   output << options->initCode << "\r\n";
   if(options->lasermode == 1) {
     output	<< "M4 S0\r\n";
