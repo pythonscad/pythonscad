@@ -1,5 +1,6 @@
 import os
 import json
+from openscad import *
 
 """
 MachineConfig class which can be used to read lasercutter and 3D
@@ -26,11 +27,13 @@ class MachineConfig:
                            "material":None})
 
         self.gen_working(label="default")
+        self.write_to_cache()
         return
 
     def register(self, label, itype, iproperty):
         item = {"type":itype,"property":iproperty}
         self._config[label] = item
+        self.write_to_cache()
 
     def gen_color_table(self):
         self.register("L00","ColorTable",
@@ -122,8 +125,16 @@ class MachineConfig:
         
         return
 
+    def write_to_cache(self, config=None):
+        if config is None:
+            config = self._config
+        cache = json.dumps(config)
+        # FIXME: should return None probably...
+        mc = machineconfig({"cache":cache})
+        
     def set_config(self, config):
         self._config = config
+        self.write_to_cache()
         return
 
     def dict(self):
@@ -217,6 +228,7 @@ class MachineConfig:
         except ValueError as e:
             print(f"An error occurred: {e}")
             return
+        self.write_to_cache()
 
     # The followng functions are for manipulating the color table
 
@@ -228,6 +240,7 @@ class MachineConfig:
 
         """
         self.gen_color_table()
+        self.write_to_cache()
 
     def scale_value(self, label1, label2, cfg=None):
         if cfg is None:
@@ -254,15 +267,21 @@ class MachineConfig:
 
     # setpower - overwrite the working labeled power
     def set_power(self, tag, val):
-        return self.set_property_value(tag, "power", val)
+        val = self.set_property_value(tag, "power", val)
+        self.write_to_cache()
+        return val
 
     # setfeed - overwrite the working labeled feed
     def set_feed(self, tag, val):
-        return self.set_property_value(tag, "feed", val)
+        val = self.set_property_value(tag, "feed", val)
+        self.write_to_cache()
+        return val
 
     # setcolor - overwrite the working labeled color
     def set_color(self, tag, val):
-        return self.set_property_value(tag, "color", val)
+        val = self.set_property_value(tag, "color", val)
+        self.write_to_cache()
+        return val
 
     def gen_color(self, power=-1,feed=-1):
         color = 0
