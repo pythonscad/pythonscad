@@ -6187,6 +6187,13 @@ PyObject *python_memberfunction(PyObject *self, PyObject *args, PyObject *kwargs
   Py_RETURN_NONE;
 }
 
+// global cached version of the machine config that is used by
+// export_gcode for colormapping power and feed
+extern std::string _machineconfig_cache_;
+
+// FIXME: I ended up passing in a python dictionary with
+// {"cache":json_string} because I could not figure out how to just
+// parse the string.  This should be able to be simplified.
 PyObject *python_machineconfig(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
 {
   char *kwlist[] = {"config",NULL};
@@ -6196,6 +6203,7 @@ PyObject *python_machineconfig(PyObject *self, PyObject *args, PyObject *kwargs,
     PyErr_SetString(PyExc_TypeError, "Error during parsing machineconfig");
     return NULL;
   }
+
   if (!PyDict_Check(config)){
     PyErr_SetString(PyExc_TypeError, "Config must be a dictionary");
     return NULL;
@@ -6205,31 +6213,10 @@ PyObject *python_machineconfig(PyObject *self, PyObject *args, PyObject *kwargs,
   while (PyDict_Next(config, &pos, &key, &value)) {
     PyObject *key1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
     std::string key_str = PyBytes_AS_STRING(key1);
-    std::cout << "key: " << key_str << std::endl;
-    if(key_str == "power") {
-      double power;
-      if (python_numberval(value, &power, nullptr, 0)) {
-        PyErr_SetString(PyExc_TypeError, "Power must be a number");
-        return NULL;
-      }
-      printf("power read:%g \n", power);
 
-    }
-    if(key_str == "name") {
-      PyObject *value1 = PyUnicode_AsEncodedString(value, "utf-8", "~");
-      std::string value_str = PyBytes_AS_STRING(value1);
-      printf("name %s\n", value_str.c_str());
-    }
-    if(key_str == "subconfig") {
-      if (!PyList_Check(value)){
-        PyErr_SetString(PyExc_TypeError, "subconfig must be a list");
-        return NULL;
-      }
-      int len=PyList_Size(value);
-      for(int i=0;i<len;i++) {
-        PyObject *sub = PyList_GetItem(value, i);       // use it here
-      }
-    }
+    PyObject *value1 = PyUnicode_AsEncodedString(value, "utf-8", "~");
+    std::string value_str = PyBytes_AS_STRING(value1);
+    _machineconfig_cache_ = value_str;
   }
   Py_RETURN_NONE;
 }
