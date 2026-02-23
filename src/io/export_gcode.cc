@@ -37,13 +37,15 @@
 #include "geometry/Polygon2d.h"
 #include "geometry/PolySet.h"
 
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/foreach.hpp>
 
 
 void find_colormap_from_value(const boost::property_tree::ptree& pt, const int color, std::string& label, int& power, int&feed)
 {
+  // set the default return value for not found pass through.
+  power = feed = -1;
+
   if (pt.empty()) {
     std::cout << "In find_colormap_from_value: ";
     std::cout << "\"" << pt.data() << "\"" << std::endl;
@@ -118,7 +120,7 @@ static double color_to_parm(const boost::property_tree::ptree& pt, const Color4f
   color.getRgba(r,g,b,a);
   uint color_val = (r<<16)+(g<<8)+(b<<0); // ignore a for now.
   std::string label;
-  int ipower=-1, ifeed=-1;
+  int ipower, ifeed;
 
   switch (pos) {
     case 0: // power
@@ -222,7 +224,7 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
     boost::property_tree::read_json(configfile, pt);
   } catch (const boost::property_tree::json_parser::json_parser_error &e) {
     std::cerr << "JSON parsing error in file: " << e.filename() 
-	      << ", line " << e.line() << ": " << e.what() << std::endl;
+	      << " : " << e.what() << std::endl;
     return;
   } catch (const std::exception &e) {
     std::cerr << "Other error: " << e.what() << std::endl;
