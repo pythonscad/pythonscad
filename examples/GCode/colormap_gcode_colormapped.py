@@ -1,6 +1,9 @@
 from openscad import *
 from pymachineconfig import *
 
+# FIXME: overwrite the machine config file with the default for testing
+import define_machine
+
 # read in the machine configuration file.
 # Note: if one does not exist, it creates default structures
 #   to work from, but does not save the file.  The end user
@@ -76,3 +79,8 @@ plate_3.show()
 
 print("cut color (%s): %s"%("L02",cut_color))
 print("engrave color (%s): %s"%("L01",engrave_color))
+
+# FIXME: for now you have to save the file to have the changes read
+#   in by ExportGCode
+mc.write()
+
