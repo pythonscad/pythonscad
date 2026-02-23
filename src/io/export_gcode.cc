@@ -221,7 +221,7 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
   try {
     boost::property_tree::read_json(configfile, pt);
   } catch (const boost::property_tree::json_parser::json_parser_error &e) {
-    std::cerr << "JSON parsing error in file: " << e.filename()
+    std::cerr << "JSON parsing error in file: " << e.filename() 
 	      << ", line " << e.line() << ": " << e.what() << std::endl;
     return;
   } catch (const std::exception &e) {
