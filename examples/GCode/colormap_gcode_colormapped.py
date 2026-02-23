@@ -80,7 +80,7 @@ plate_3.show()
 print("cut color (%s): %s"%("L02",cut_color))
 print("engrave color (%s): %s"%("L01",engrave_color))
 
-# FIXME: for now you have to save the file to have the changes read
-#   in by ExportGCode
-mc.write()
-
+# Note: the working machine's config is cached and sent to
+#   export_gcode so that any unszaved colormap modifications are
+#   avialable at runtime.  Also, the actual saved colormap does not
+#   require modification for each use.
