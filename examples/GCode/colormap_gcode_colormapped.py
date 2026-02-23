@@ -8,7 +8,7 @@ from pymachineconfig import *
 mc = MachineConfig()
 print("\nConfigfile:",mc.configfile())
 
-# desplay the working parameters that are read in or created
+# display the working parameters that are read in or created
 print("\n############")
 working = mc.working_config()
 print("The default machine set to:")
@@ -42,27 +42,29 @@ engraved_object = plate - positioned_text
 # Render in 3D (commented out to test ExportGCode
 #engraved_object.show()
 
+#############################
 # Since the GCode generated for the laser cutter does not utilize
 # depth (z), offset the engraved portions so that it is not masked by
 # the cut parts, but it will be rendered flat on the plane.
-
-#############################
-# Use the color-table power/feed method.
 #
-# modify the color-table entries for cut and engrave
-#  cut:
+# Use the color-table power/feed method.  First modify the parameters
+#
+# for cut:
 mc.set_power("L02",900)
 mc.set_feed("L02",4000)
-#  engrave
+# for engrave:
 mc.set_power("L01",350)
 mc.set_feed("L01",6000)
+# Note: the default colors named L01 and L02 are Blue and Red
+#   respectively.  The color Red is often associated with cutting,
+#   and Blue with engraving.
 
 # engrave the second part
 engrave_color = mc.color2str("L01")
 text_3d_3 = text_3d
 text_3d_3 = text_3d_3.projection(cut=True)
 text_3d_3 = text_3d_3.color(engrave_color)
-text_3d_3 = text_3d_3.translate([38,80,10])
+text_3d_3 = text_3d_3.translate([38,10,10])
 text_3d_3.show()
 
 # cut the second part
@@ -70,7 +72,6 @@ cut_color = mc.color2str("L02")
 plate_3 = plate
 plate_3 = plate_3.projection(cut=True)
 plate_3 = plate_3.color(cut_color)
-plate_3 = plate_3.translate([0,70,0])
 plate_3.show()
 
 print("cut color (%s): %s"%("L02",cut_color))
