@@ -14,13 +14,17 @@ class MachineConfig:
     def __init__(self, name="PythonSCAD.json"):
         try:
             self._config = self.read(name)
-            #cfg = self.gen_tst_config()
-            #self.write(config=cfg)
         except:
-            print("Warning: config file non existant or not read.")
-            print("   Generating default.")
-            self.gen_tst_config()
+            if name is not None:
+                print("Warning: config file non existant or not read.")
+                print("   Generating default.")
+
             self.gen_color_table()
+            self.register("default","default",
+                          {"machine":None,
+                           "head":None,
+                           "material":None})
+
         self.gen_working(label="default")
         return
 
@@ -94,70 +98,18 @@ class MachineConfig:
         self.register("T2","ColorTable",
                       {"power":1.0,"feed":1.0,"color":0x0C96D9})
 
-    def gen_tst_config(self):
-        # FIXME: this is just an expeerimental hack to get started.
-
-        # The default configuration
-        self.register("default","default",
-                         {"machine":"Creality-Falcon2",
-                          "head":"LED-40",
-                          "material":"3mm_ply_LED-40"})
-
-        # different machine configurations
-        self.register("Creality-Falcon2","machine",
-                         {"max_feed":25000, #(mm/min)
-                          "max_width":400, #(mm)
-                          "max_len":415, #(mm)
-                          "has_camera":False})
-        self.register("XTool-S1","machine",
-                         {"max_feed":36000, #(mm/min)
-                          "max_width":319, #(mm)
-                          "max_len":498, #(mm)
-                          "has_camera":False})
-
-        # different heads which can be independent of a given
-        # machine
-        self.register("LED-40","head",
-                         {"max_power":40.0,
-                          "wavelength":455,
-                          "has_air":True,
-                          "kerf": 0.075})
-        self.register("LED-20","head",
-                         {"max_power":20.0,
-                          "wavelength":455,
-                          "has_air":True,
-                          "kerf": 0.075})
-
-        # materials which are dependent on the head
-        # characteristics. The machines assume units in mm and
-        # minutes.
-        self.register("3mm_ply_LED-40","material",
-                         {"thickness":3.0,
-                          "cut_power":1000,
-                          "cut_feed":400,
-                          "engrave_power":300,
-                          "engrave_feed":6000})
-        self.register("0.25in_ply_LED-40","material",
-                         {"thickness":6.35,
-                          "cut_power":1000,
-                          "cut_feed":200,
-                          "engrave_power":300,
-                          "engrave_feed":6000})
-        self.register("0.75in_pine_LED-40","material",
-                         {"thickness":19.05,
-                          "cut_power":1000,
-                          "cut_feed":200,
-                          "engrave_power":300,
-                          "engrave_feed":6000})
-
     def read(self, name="PythonSCAD.json"):
         name = self.configfile(name)
         with open(name, 'r', encoding='utf-8') as f:
             cfg = json.loads(f.read())
             return cfg
         
-    def write(self, config=None, name="PythonSCAD.json"):
+    def write(self, config=None, name="PythonSCAD.json", backup=None):
         name = self.configfile(name)
+
+        if backup is not None:
+            import shutil
+            shutil.copyfile(name, backup)
 
         if config is None:
             config = self._config
@@ -181,7 +133,6 @@ class MachineConfig:
         default = self._config["default"]
         machine = default["machine"]
         head = default["head"]
-        print("*** FIXME: default:",default)
 
         if label is None:
             return default
@@ -227,11 +178,14 @@ class MachineConfig:
         self._working = {}
         dcfg = self._config[label]["property"]
 
-        for l in dcfg.keys():
-            k = dcfg[l]
-            tcfg = self._config[k]["property"]
-            for tk in tcfg.keys():
-                self._working[tk] = tcfg[tk]
+        try:
+            for l in dcfg.keys():
+                k = dcfg[l]
+                tcfg = self._config[k]["property"]
+                for tk in tcfg.keys():
+                    self._working[tk] = tcfg[tk]
+        except:
+            pass
 
     def configfile(self, name="PythonSCAD.json"):
         name = os.path.expanduser(name)
