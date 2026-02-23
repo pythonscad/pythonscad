@@ -34,69 +34,69 @@ class MachineConfig:
 
     def gen_color_table(self):
         self.register("L00","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x000000})
+                      {"power":1,"feed":1,"color":0x000000})
         self.register("L01","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x0000FF})
+                      {"power":1,"feed":1,"color":0x0000FF})
         self.register("L02","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xFF0000})
+                      {"power":1,"feed":1,"color":0xFF0000})
         self.register("L03","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x00E000})
+                      {"power":1,"feed":1,"color":0x00E000})
         self.register("L04","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xD0D000})
+                      {"power":1,"feed":1,"color":0xD0D000})
         self.register("L05","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xFF8000})
+                      {"power":1,"feed":1,"color":0xFF8000})
         self.register("L06","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x00E0E0})
+                      {"power":1,"feed":1,"color":0x00E0E0})
         self.register("L07","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xFF00FF})
+                      {"power":1,"feed":1,"color":0xFF00FF})
         self.register("L08","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xB4B4B4})
+                      {"power":1,"feed":1,"color":0xB4B4B4})
         self.register("L09","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x0000A0})
+                      {"power":1,"feed":1,"color":0x0000A0})
         self.register("L10","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xA00000})
+                      {"power":1,"feed":1,"color":0xA00000})
         self.register("L11","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x00A000})
+                      {"power":1,"feed":1,"color":0x00A000})
         self.register("L12","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xA0A000})
+                      {"power":1,"feed":1,"color":0xA0A000})
         self.register("L13","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xC08000})
+                      {"power":1,"feed":1,"color":0xC08000})
         self.register("L14","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x00A0FF})
+                      {"power":1,"feed":1,"color":0x00A0FF})
         self.register("L15","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xA000A0})
+                      {"power":1,"feed":1,"color":0xA000A0})
         self.register("L16","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x808080})
+                      {"power":1,"feed":1,"color":0x808080})
         self.register("L17","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x7D87B9})
+                      {"power":1,"feed":1,"color":0x7D87B9})
         self.register("L18","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xBB7784})
+                      {"power":1,"feed":1,"color":0xBB7784})
         self.register("L19","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x4A6FE3})
+                      {"power":1,"feed":1,"color":0x4A6FE3})
         self.register("L20","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xD33F6A})
+                      {"power":1,"feed":1,"color":0xD33F6A})
         self.register("L21","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x8CD78C})
+                      {"power":1,"feed":1,"color":0x8CD78C})
         self.register("L22","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xF0B98D})
+                      {"power":1,"feed":1,"color":0xF0B98D})
         self.register("L23","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xF6C4E1})
+                      {"power":1,"feed":1,"color":0xF6C4E1})
         self.register("L24","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xFA9ED4})
+                      {"power":1,"feed":1,"color":0xFA9ED4})
         self.register("L25","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x500A78})
+                      {"power":1,"feed":1,"color":0x500A78})
         self.register("L26","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xB45A00})
+                      {"power":1,"feed":1,"color":0xB45A00})
         self.register("L27","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x004754})
+                      {"power":1,"feed":1,"color":0x004754})
         self.register("L28","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x86FA88})
+                      {"power":1,"feed":1,"color":0x86FA88})
         self.register("L29","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xFFDB66})
+                      {"power":1,"feed":1,"color":0xFFDB66})
         self.register("T1","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0xF36926})
+                      {"power":1,"feed":1,"color":0xF36926})
         self.register("T2","ColorTable",
-                      {"power":1.0,"feed":1.0,"color":0x0C96D9})
+                      {"power":1,"feed":1,"color":0x0C96D9})
 
     def read(self, name="PythonSCAD.json"):
         name = self.configfile(name)
@@ -213,7 +213,7 @@ class MachineConfig:
 
     def set_property_value(self, label, tag, value):
         try:
-            self._config[label]["property"][tag] = value
+            self._config[label]["property"][tag] = int(value)
         except ValueError as e:
             print(f"An error occurred: {e}")
             return
