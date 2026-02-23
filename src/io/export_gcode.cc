@@ -24,6 +24,7 @@
  *
  */
 #include "io/export.h"
+#include "io/import.h"
 
 #include <cassert>
 #include <clocale>
@@ -35,6 +36,37 @@
 #include "geometry/linalg.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/PolySet.h"
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/foreach.hpp>
+
+
+void find_colormap_from_value(const boost::property_tree::ptree& pt, const int color, std::string& label, int& power, int&feed)
+{
+  if (pt.empty()) {
+    std::cout << "In find_colormap_from_value: ";
+    std::cout << "\"" << pt.data() << "\"" << std::endl;
+    return;
+  }
+
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& v, pt) {
+    try {
+      const int ref_color = pt.get<int>(v.first+".property.color");
+      if (ref_color == color) {
+	label = v.first;
+
+	power = pt.get<int>(v.first+".property.power");
+	feed = pt.get<int>(v.first+".property.feed");
+	return;
+      }
+    } catch (const boost::property_tree::ptree_error &e) {
+      // intintionally ignore the error -- not all parameters have an
+      // associated color.
+      // std::cerr << "Error accessing property tree: " << e.what() << std::endl;
+    }
+  }
+}
 
 void output_gcode_pars(std::ostream& output, int gnum, double x, double y, double feed, double power) {
   static int gnum_cached=-1;
@@ -78,37 +110,51 @@ void output_gcode_pars(std::ostream& output, int gnum, double x, double y, doubl
   output << "\r\n";
 }
 
-static double color_to_parm(const Color4f color, const double max, const int pos, const int dynamic)
+static double color_to_parm(const boost::property_tree::ptree& pt, const Color4f color, const double max, const int pos, const int dynamic)
 {
   int r,g,b,a;
   double parm;
 
   color.getRgba(r,g,b,a);
-  double power = double(uint(r)) * 4.0;
-  double feed  = double(uint(g)<<8) + double(b);
+  uint color_val = (r<<16)+(g<<8)+(b<<0); // ignore a for now.
+  std::string label;
+  int ipower=-1, ifeed=-1;
+
   switch (pos) {
     case 0: // power
-      parm = (power <= max) ? power : max;
+      if (dynamic == 1) {
+	double dpower = double(uint(r)) * 4.0;
+	parm = (dpower <= max) ? dpower : max;
+      } else {
+	find_colormap_from_value(pt, color_val, label, ipower, ifeed);
+	parm = double((ipower <= max) ? ipower : max);
+      }
       break;
     case 1: // feed/speed
-      parm = (feed <= max) ? feed : max;
+      if (dynamic == 1) {
+	double feed  = double(uint(g)<<8) + double(b);
+	parm = (feed <= max) ? feed : max;
+      } else {
+	find_colormap_from_value(pt, color_val, label, ipower, ifeed);
+	parm = double((ifeed <= max) ? ifeed : max);
+      }
       break;
     default:
       fprintf(stderr, "Internal Error: invalid colar param position.\n");
       return -1;
-  }
+    }
 
-  return (parm);
+    return (parm);
 }
 
-static void append_gcode(const Polygon2d& poly, std::ostream& output, const ExportInfo& exportInfo)
+static void append_gcode(boost::property_tree::ptree pt, const Polygon2d& poly, std::ostream& output, const ExportInfo& exportInfo)
 {
   auto  options = exportInfo.optionsGcode;
 
   for (const auto& o : poly.outlines()) {
     const Eigen::Vector2d& p0 = o.vertices[0];
-    const double laserpower = color_to_parm(o.color, options->laserpower, 0, -1.0);
-    const double feedrate   = color_to_parm(o.color, options->feedrate, 1, -1.0);
+    const double laserpower = color_to_parm(pt, o.color, options->laserpower, 0, options->lasermode);
+    const double feedrate   = color_to_parm(pt, o.color, options->feedrate, 1, options->lasermode);
 
     output_gcode_pars(output, 0, p0.x(), p0.y(), NAN, NAN);
     output_gcode_pars(output, -1, NAN, NAN, NAN, laserpower);
@@ -121,20 +167,36 @@ static void append_gcode(const Polygon2d& poly, std::ostream& output, const Expo
   }
 }
 
-static void append_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
+static void append_gcode(boost::property_tree::ptree pt, const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                        const ExportInfo& exportInfo)
 {
   if (const auto geomlist = std::dynamic_pointer_cast<const GeometryList>(geom)) {
     for (const auto& item : geomlist->getChildren()) {
-      append_gcode(item.second, output, exportInfo);
+      append_gcode(pt, item.second, output, exportInfo);
     }
   } else if (const auto poly = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
-    append_gcode(*poly, output, exportInfo);
+    append_gcode(pt, *poly, output, exportInfo);
   } else if (std::dynamic_pointer_cast<const PolySet>(geom)) {  // NOLINT(bugprone-branch-clone)
     assert(false && "Unsupported file format");
   } else {  // NOLINT(bugprone-branch-clone)
     assert(false && "Export as SVG for this geometry type is not supported");
   }
+}
+
+
+// Function to recursively print tree (to aid with debugging - remove when no longer needed)
+void print_tree(const boost::property_tree::ptree& pt) {
+  if (pt.empty()) {
+    std::cout << "\"" << pt.data() << "\"" << std::endl;
+    return;
+  }
+
+  std::cout << std::endl;
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& v, pt) {
+    std::cout << v.first << ": ";
+    print_tree(v.second);
+  }
+  std::cout << std::endl;
 }
 
 void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
@@ -149,8 +211,23 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
   auto  options = exportInfo.optionsGcode;
 
   // read in the configuration file
+  // FIXME: figure out how to find the one in the default place...
   auto  configfile = options->configfile;
-  std::cout << "***** ConfigFile: " << configfile << std::endl;
+  boost::trim(configfile);
+  //std::cout << "***** ConfigFile: '" << configfile << "'" << std::endl;
+
+  // read in the color table and the machine config.
+  boost::property_tree::ptree pt;
+  try {
+    boost::property_tree::read_json(configfile, pt);
+  } catch (const boost::property_tree::json_parser::json_parser_error &e) {
+    std::cerr << "JSON parsing error in file: " << e.filename()
+	      << ", line " << e.line() << ": " << e.what() << std::endl;
+    return;
+  } catch (const std::exception &e) {
+    std::cerr << "Other error: " << e.what() << std::endl;
+    return;
+  }
 
   output << options->initCode << "\r\n";
   if(options->lasermode == 1) {
@@ -158,7 +235,7 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
   } else {
     output	<< "M3 S0\r\n";
   }
-  append_gcode(geom, output, exportInfo);
+  append_gcode(pt, geom, output, exportInfo);
   output	<< "M5 S0\r\n";
   output << options->exitCode;
   setlocale(LC_NUMERIC, "");  // Set default locale
