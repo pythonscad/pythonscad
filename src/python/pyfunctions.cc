@@ -2081,9 +2081,10 @@ PyObject *python_export_core(PyObject *obj, char *file)
   Export3mfOptions options3mf;
   options3mf.decimalPrecision = 6;
   options3mf.color = "#f9d72c";
-  ExportInfo exportInfo = {.format = exportFileFormat,
-                           .sourceFilePath = file,
-                           .options3mf = std::make_shared<Export3mfOptions>(options3mf)};
+  Camera camera;
+  camera.viewall = true;
+  camera.autocenter = true;
+  ExportInfo exportInfo = createExportInfo(exportFileFormat,fileformat::info(exportFileFormat), file, &camera, {});
 
   if (exportFileFormat == FileFormat::_3MF) {
     std::ofstream fstream(file, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -5942,6 +5943,68 @@ PyObject *python_oo_dict(PyObject *self, PyObject *args, PyObject *kwargs)
   return dict;
 }
 
+PyObject *python_oo__repr_mimebundle_(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  PyObject* include = NULL;
+  PyObject* exclude = NULL;
+
+  char* kwlist[] = {"include", "exclude", NULL};
+
+  if (!PyArg_ParseTupleAndKeywords(
+            args, kwargs,
+            "|OO",
+            kwlist,
+            &include,
+            &exclude))
+  {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing _repr_mimebundle_");
+    return nullptr;
+  }	
+
+
+  // fallback text
+  PyObject* text = PyUnicode_FromString("<PythonSCAD shape>");
+
+  // jetzt dein Python viewer aufrufen
+  PyObject* viewer_module = PyImport_ImportModule("libraries.python.jupyterdisplay");
+  if(!viewer_module) {
+    PyErr_SetString(PyExc_TypeError, "jupyterdisplay module not found");
+    return nullptr;
+  }
+
+  PyObject* func = PyObject_GetAttrString(viewer_module, "build_widget");
+  if(!func) {
+    Py_DECREF(viewer_module);
+    PyErr_SetString(PyExc_TypeError, "build_widget method not found");
+    return nullptr;	  
+  }
+
+  PyObject* widget = PyObject_CallFunctionObjArgs(func, self, NULL);
+  Py_DECREF(func);
+  Py_DECREF(viewer_module);
+
+  if(!widget) {
+    PyErr_SetString(PyExc_TypeError, "error during execution of build_widget");
+    return nullptr;	  
+  }
+
+      // jetzt den Formatter des Widgets verwenden
+  PyObject* method = PyObject_GetAttrString(widget, "_repr_mimebundle_");
+  if (!method)
+  {
+    Py_DECREF(widget);
+    PyErr_SetString(PyExc_TypeError, "error during execution of repr");
+    return nullptr;
+  }
+
+  PyObject* bundle = PyObject_Call(method, args, kwargs);
+
+  Py_DECREF(method);
+  Py_DECREF(widget);
+
+  return bundle;
+}
+
 int PyDict_SetDefaultRef(PyObject *d, PyObject *key, PyObject *default_value, PyObject **result)
 {
   PyDict_SetDefault(d, key, default_value);
@@ -6362,6 +6425,7 @@ PyMethodDef PyOpenSCADMethods[] = {
                                                   OO_METHOD_ENTRY(hasattr, "Check if an attribute exists") 
                                                   OO_METHOD_ENTRY(setattr, "Sets an attribute on a solid") 
                                                   OO_METHOD_ENTRY(getattr, "Gets an attribute from a solid") 
+                                                  OO_METHOD_ENTRY(_repr_mimebundle_, "Jupyter display hook") 
 						  OO_METHOD_ENTRY(
                                                     dict, "return all dictionary"){NULL, NULL, 0, NULL}};
 
