@@ -2,7 +2,7 @@ import numpy as np
 import pythreejs as pjs
 from ipywidgets import *
 
-def jupyterdisplay(self):
+def build_widget_sub(self):
     vertices_, faces_ = self.mesh(True)
 
     faces = np.array(faces_)
@@ -58,6 +58,16 @@ def jupyterdisplay(self):
         controls=[pjs.OrbitControls(controlling=camera), click_picker],
         width=640,
         height=480)
+    return renderer_obj
 
-    display(VBox([HTML(), renderer_obj, Output()]))
+_widget_cache = {}
+def build_widget(self):
+    key = id(self)
+    if key in _widget_cache:
+        w = _widget_cache[key]
+    else:
+        w =build_widget_sub(self)
+        _widget_cache[key] = w
+    return VBox([HTML(), w, Output()])
+
 
