@@ -42,6 +42,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "platform/PlatformUtils.h"
+#include <boost/dll/runtime_symbol_info.hpp>
+
 
 #ifdef _WIN32
 #include <fcntl.h>
@@ -186,6 +189,10 @@ ExportInfo createExportInfo(const FileFormat& format, const FileFormatInfo& info
                             const std::string& filepath, const Camera *camera,
                             const CmdLineExportOptions& cmdLineOptions)
 {
+  // make sure that applicationPath is initialized
+  const auto applicationPath = boost::dll::fs::current_path();
+  PlatformUtils::registerApplicationPath(applicationPath);
+ 	
   const auto colorScheme = ColorMap::inst()->findColorScheme(RenderSettings::inst()->colorscheme);
   auto exportInfo = ExportInfo{
     .format = format,
