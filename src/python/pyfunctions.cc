@@ -5967,7 +5967,7 @@ PyObject *python_oo__repr_mimebundle_(PyObject *self, PyObject *args, PyObject *
   PyObject* text = PyUnicode_FromString("<PythonSCAD shape>");
 
   // jetzt dein Python viewer aufrufen
-  PyObject* viewer_module = PyImport_ImportModule("jupyterdisplay");
+  PyObject* viewer_module = PyImport_ImportModule("libraries.python.jupyterdisplay");
   if(!viewer_module) {
     PyErr_SetString(PyExc_TypeError, "jupyterdisplay module not found");
     return nullptr;
