@@ -190,7 +190,7 @@ ExportInfo createExportInfo(const FileFormat& format, const FileFormatInfo& info
                             const CmdLineExportOptions& cmdLineOptions)
 {
   // make sure that applicationPath is initialized
-  std::string applicationPath = boost::dll::fs::current_path();
+  std::string applicationPath = boost::dll::fs::current_path().string();
   PlatformUtils::registerApplicationPath(applicationPath);
  	
   const auto colorScheme = ColorMap::inst()->findColorScheme(RenderSettings::inst()->colorscheme);
