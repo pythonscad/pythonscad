@@ -1,6 +1,9 @@
 import numpy as np
-def jupyter_display(self):
-    vertices_, faces_ = self.mesh()
+import pythreejs as pjs
+from ipywidgets import *
+
+def jupyterdisplay(self):
+    vertices_, faces_ = self.mesh(True)
 
     faces = np.array(faces_)
     vertices = np.array(vertices_)
