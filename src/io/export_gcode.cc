@@ -118,7 +118,7 @@ static double color_to_parm(const boost::property_tree::ptree& pt, const Color4f
   double parm;
 
   color.getRgba(r,g,b,a);
-  uint color_val = (r<<16)+(g<<8)+(b<<0); // ignore a for now.
+  uint color_val = (r<<16)+(g<<8)+(b<<0);
   std::string label;
   int ipower, ifeed;
 
