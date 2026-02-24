@@ -84,3 +84,8 @@ print("engrave color (%s): %s"%("L01",engrave_color))
 #   export_gcode so that any unszaved colormap modifications are
 #   avialable at runtime.  Also, the actual saved colormap does not
 #   require modification for each use.
+
+model = text_3d_3 | plate_3
+model.show()
+model.export("colormap_gcode_colormapped.gcode")
+
