@@ -30,6 +30,13 @@ class MachineConfig:
         self.write_to_cache()
         return
 
+    def _check_lasermode(self, value):
+        try:
+            if self._config["default"]["property"]["lasermode"] != value:
+                print("Error: lasermode masmatch.  Ignoring overwrite.")
+        except:
+            self._config["default"]["property"]["lasermode"] = value
+
     def register(self, label, itype, iproperty):
         item = {"type":itype,"property":iproperty}
         self._config[label] = item
@@ -224,7 +231,7 @@ class MachineConfig:
 
     def set_property_value(self, label, tag, value):
         try:
-            self._config[label]["property"][tag] = int(value)
+            self._config[label]["property"][tag] = value
         except ValueError as e:
             print(f"An error occurred: {e}")
             return
@@ -249,13 +256,8 @@ class MachineConfig:
         return val
 
     def color(self, tag):
+        self._check_lasermode(1)
         return self.get_property_value(tag, "color")
-
-    # color2str - return the working labled color as an OpenSCAD
-    #   compatible string representation of the hex value starting with a
-    #   '#'
-    def color2str(self, tag):
-        return "#{:06X}".format(self.color(tag))
 
     # powermap - return the working labled power
     def power(self, tag):
@@ -284,19 +286,45 @@ class MachineConfig:
         return val
 
     def gen_color(self, power=-1,feed=-1):
+        self._check_lasermode(0)
         color = 0
         power = int(power)
         feed  = int(feed)
         if power > 1000:
-            print("Error: cannot represent a power factor greater than 100.0%")
-        if feed > 65535:
-            print("Error: cannot represent a feed rate greater than 65535mm/min")
+            print("\nError: cannot represent a power factor greater than 100.0%\n")
+            return color
 
-        power = int(power/4)
-        if power != -1: color |= (power << 24)
-        if feed  != -1: color |= (feed << 8)
+        # FIXME: check the bit-shifts in export_gcode.cc and see if I
+        #   can include alpha.
+        #
+        # FIXME: there is an issue with the alpha channel. Use an
+        #  8-bit power for now.
+        if True:
+            power = int(power/4)
+            if power != -1: color |= (power << 24)
+            if feed  != -1: color |= (feed << 8)
+        else:
+            # power is 10-bits, but has a max of 1000.
+            if power != -1: color |= (power << 22)
+            #print(f"  -- power color: 0x{color:06X}")
+
+            # make sure that feed is clipped to size
+            cfeed = feed & 0x3FFFFF
+            a = (~(cfeed >> 16)) & 0xFF
+            gb = (cfeed & 0xFFFF) << 8
+
+            if feed  != -1: color |= (gb | a)
+            #print(f"*****     a:0x{a:06X}  gb:0x{gb:06X}")
+            #print("*****     power:",power,"  feed:",feed)
+            #print(f"***** new color: 0x{color:06X}")
 
         return color
+
+    # color2str - return the working labled color as an OpenSCAD
+    #   compatible string representation of the hex value starting with a
+    #   '#'
+    def color2str(self, tag):
+        return "#{:06X}".format(self.color(tag))
 
     def gen_color2str(self, power=-1,feed=-1):
         color = self.gen_color(power,feed)
