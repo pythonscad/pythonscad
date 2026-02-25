@@ -41,7 +41,7 @@
 #include <boost/foreach.hpp>
 
 
-void find_colormap_from_value(const boost::property_tree::ptree& pt, const int color, std::string& label, int& power, int&feed)
+void find_colormap_from_value(const boost::property_tree::ptree& pt, const uint color, std::string& label, int& power, int&feed)
 {
   // set the default return value for not found pass through.
   power = feed = -1;
@@ -54,7 +54,7 @@ void find_colormap_from_value(const boost::property_tree::ptree& pt, const int c
 
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& v, pt) {
     try {
-      const int ref_color = pt.get<int>(v.first+".property.color");
+      const uint ref_color = pt.get<uint>(v.first+".property.color");
       if (ref_color == color) {
 	label = v.first;
 
@@ -118,25 +118,15 @@ static double color_to_parm(const boost::property_tree::ptree& pt, const Color4f
 
   color.getRgba(r,g,b,a);
   uint color_val;
-  if (true) {
-    color_val = (r<<16)+(g<<8)+(b<<0);
-  } else {
-    std::cout <<std::endl;
-    std::cout << "R="<<r<<" G="<<g<<" B="<<b<<" A="<<a<<std::endl;
-    color_val = (uint(r)<<24)|(uint(g)<<16)|(uint(b)<<8)|(uint(a) & 0xFF);
-    std::cout << "   color_val="<< std::hex << color_val<<std::endl;
-  }
+  color_val = (uint(r)<<24)|(uint(g)<<16)|(uint(b)<<8)|(uint(a) & 0xFF);
+
   std::string label;
   int ipower, ifeed;
 
   switch (pos) {
     case 0: // power
       if (dynamic == 1) {
-	if (true) {
-	  parm = double(uint(r)) * 4.0;
-	} else {
-	  parm = double(color_val >> 22);
-	}
+	parm = double(color_val >> 22);
       } else {
 	find_colormap_from_value(pt, color_val, label, ipower, ifeed);
 	parm = double(ipower);
@@ -144,11 +134,7 @@ static double color_to_parm(const boost::property_tree::ptree& pt, const Color4f
       break;
     case 1: // feed/speed
       if (dynamic == 1) {
-	if (true) {
-	  parm = double((uint(g)<<8) | uint(b));
-	} else {
-	  parm = double(((color_val & 0x3FFFFF) >> 8) | (((~uint(a))&0xFF) << 16));
-	}
+	parm = double(((color_val & 0x3FFFFF) >> 8) | (((~uint(a))&0xFF) << 16));
       } else {
 	find_colormap_from_value(pt, color_val, label, ipower, ifeed);
 	parm = double(ifeed);
