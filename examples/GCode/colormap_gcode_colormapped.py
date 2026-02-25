@@ -11,6 +11,10 @@ import define_machine
 mc = MachineConfig()
 print("\nConfigfile:",mc.configfile())
 
+# overwrite the init-/exit-Codes (with comments)
+mc.set_property_value("default", "initCode", "; Testing initCode\r\nG90\r\n")
+mc.set_property_value("default", "exitCode", "; Testing exitCode\r\nG0 X0 Y0 Z0\r\n")
+
 # display the working parameters that are read in or created
 print("\n############")
 working = mc.working_config()
@@ -85,7 +89,6 @@ print("engrave color (%s): %s"%("L01",engrave_color))
 #   avialable at runtime.  Also, the actual saved colormap does not
 #   require modification for each use.
 
-#model = text_3d_3 | plate_3
-#model.show()
-#model.export("colormap_gcode_colormapped.gcode")
-
+model = text_3d_3 | plate_3
+model.show()
+model.export("colormap_gcode_colormapped.gcode")
