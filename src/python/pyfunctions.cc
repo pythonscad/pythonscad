@@ -2382,7 +2382,8 @@ PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha)
     const auto color = OpenSCAD::parse_color(colorname);
     if (color) {
       node->color = *color;
-      node->color.setAlpha(alpha);
+      if (1.0 != alpha)
+	node->color.setAlpha(alpha);
     } else {
       PyErr_SetString(PyExc_TypeError, "Cannot parse color");
       return NULL;
