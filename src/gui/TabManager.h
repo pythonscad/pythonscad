@@ -49,6 +49,11 @@ public:
   bool restoreSession(const QString& path);
   static QString getSessionFilePath();
 
+  // Session file schema version. Increment when the format changes and add a
+  // migration step in migrateSession().  Old files without a version field are
+  // treated as version 1.
+  static constexpr int SESSION_VERSION = 1;
+
 public:
   static constexpr const int FIND_HIDDEN = 0;
   static constexpr const int FIND_VISIBLE = 1;
@@ -79,6 +84,7 @@ private:
   void setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
                          bool contentModified, bool parameterModified,
                          const QByteArray& customizerState = QByteArray());
+  static bool migrateSession(QJsonObject& root, int fromVersion);
 
   QTabBar::ButtonPosition getClosingButtonPosition();
   void zoomIn();
