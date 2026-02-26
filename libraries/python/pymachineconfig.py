@@ -256,7 +256,7 @@ class MachineConfig:
         return val
 
     def color(self, tag):
-        self._check_lasermode(1)
+        self._check_lasermode(0)
         return self.get_property_value(tag, "color")
 
     # powermap - return the working labled power
@@ -286,7 +286,7 @@ class MachineConfig:
         return val
 
     def gen_color(self, power=-1,feed=-1):
-        self._check_lasermode(0)
+        self._check_lasermode(1)
         color = 0
         power = int(power)
         feed  = int(feed)
