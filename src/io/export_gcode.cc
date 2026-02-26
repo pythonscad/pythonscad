@@ -37,7 +37,7 @@
 #include "geometry/Polygon2d.h"
 #include "geometry/PolySet.h"
 
-#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <boost/foreach.hpp>
 
 
@@ -183,10 +183,9 @@ static void append_gcode(boost::property_tree::ptree pt, const std::shared_ptr<c
   }
 }
 
-// global cached version of the machine config that is used by
-// export_gcode for colormapping power and feed.  Initialize to an
-// empty python dictionary.
-std::string _machineconfig_cache_ = R"({})";
+// global accessible version of the machine config settings that are
+// used by export_gcode for colormapping power and feed.
+boost::property_tree::ptree _machineconfig_settings_;
 
 void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                 const ExportInfo& exportInfo)
@@ -196,15 +195,10 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
 
   auto  options = exportInfo.optionsGcode;
 
-  // parse the cached JSON _machineconfig_cache_
-  boost::property_tree::ptree pt;
-  std::istringstream iss(_machineconfig_cache_);
-  boost::property_tree::read_json(iss, pt);
-
   // check to see if MachineConfig overwrites the lasermode
   int lasermode;
   try {
-    lasermode = pt.get<int>("default.property.lasermode");
+    lasermode = _machineconfig_settings_.get<int>("default.property.lasermode");
     // if pt.get succeeds, then lasermode is set by MachineConfig
 
     // handle cases where MachineConfig sets an invalid lasermode
@@ -221,13 +215,13 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
   // ditto for initCode and exitCode
   std::string initCode, exitCode;
   try {
-    initCode = pt.get<std::string>("default.property.initCode");
+    initCode = _machineconfig_settings_.get<std::string>("default.property.initCode");
   }  catch (const boost::property_tree::ptree_error &e) {
     initCode = options->initCode;
   }
 
   try {
-    exitCode = pt.get<std::string>("default.property.exitCode");
+    exitCode = _machineconfig_settings_.get<std::string>("default.property.exitCode");
   }  catch (const boost::property_tree::ptree_error &e) {
     exitCode = options->exitCode;
   }
@@ -242,7 +236,7 @@ void export_gcode(const std::shared_ptr<const Geometry>& geom, std::ostream& out
   } else {
     output	<< "M3 S0\r\n";
   }
-  append_gcode(pt, geom, output, exportInfo, lasermode);
+  append_gcode(_machineconfig_settings_, geom, output, exportInfo, lasermode);
   output	<< "M5 S0\r\n";
   output << exitCode;
   setlocale(LC_NUMERIC, "");  // Set default locale
