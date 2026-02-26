@@ -294,9 +294,8 @@ struct ExportGcodeOptions {
   int lasermode;
   std::string initCode;
   std::string exitCode;
-<<<<<<< HEAD
-  std::string configFile;
-=======
+  std::string configfile;
+
   static std::shared_ptr<const ExportGcodeOptions> withOptions(const CmdLineExportOptions& cmdLineOptions)
   {
     return std::make_shared<const ExportGcodeOptions>(ExportGcodeOptions{
@@ -313,8 +312,6 @@ struct ExportGcodeOptions {
     });
     return nullptr;
   }
-
->>>>>>> upstream/master
 };
 
 struct ExportInfo {

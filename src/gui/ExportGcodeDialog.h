@@ -41,6 +41,6 @@ private:
   int laserMode;
   QString initCode;
   QString exitCode;
-  QString configFile;
+  QString configfile;
 
 };
