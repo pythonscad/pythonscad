@@ -754,7 +754,7 @@ void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath
     edt->parameterWidget->setSessionState(customizerState);
   }
   edt->recomputeLanguageActive();
-  par->onLanguageActiveChanged(edt->language);
+  parent->onLanguageActiveChanged(edt->language);
   auto [fname, fpath] = getEditorTabNameWithModifier(edt);
   setEditorTabName(fname, fpath, edt);
   updateTabIcon(edt);
@@ -801,6 +801,10 @@ bool TabManager::restoreSession(const QString& path)
   if (tabs.isEmpty()) return false;
   const int savedCurrentIndex = doc.object().value(QStringLiteral("currentIndex")).toInt(0);
 
+  // Block signals during restore to prevent tab-switch signals from triggering
+  // compile/preview (which calls initPython) before the constructor is finished.
+  const bool oldBlocked = tabWidget->blockSignals(true);
+
   for (int i = 0; i < tabs.size(); ++i) {
     const QJsonObject obj = tabs[i].toObject();
     const QString filepath = obj.value(QStringLiteral("filepath")).toString();
@@ -835,8 +839,14 @@ bool TabManager::restoreSession(const QString& path)
   }
   const int currentIndex = std::max(0, std::min(savedCurrentIndex, tabWidget->count() - 1));
   tabWidget->setCurrentIndex(currentIndex);
-  par->setWindowTitle(tabWidget->tabText(tabWidget->currentIndex()).replace("&&", "&"));
-  par->updateRecentFileActions();
+
+  tabWidget->blockSignals(oldBlocked);
+
+  // Manually trigger the tab-switched handler now that construction is far enough along.
+  tabSwitched(currentIndex);
+
+  parent->setWindowTitle(tabWidget->tabText(tabWidget->currentIndex()).replace("&&", "&"));
+  parent->updateRecentFileActions();
   return true;
 }
 
@@ -916,10 +926,11 @@ bool TabManager::saveAs(EditorInterface *edt)
 #ifdef ENABLE_PYTHON
   QString selectedFilter;
   QString pythonFilter = _("PythonSCAD Designs (*.py)");
-  auto filename = QFileDialog::getSaveFileName(parent, _("Save File"), dir, QString("%1").arg(pythonFilter),
-                                               &selectedFilter);
+  auto filename = QFileDialog::getSaveFileName(parent, _("Save File"), dir,
+                                               QString("%1").arg(pythonFilter), &selectedFilter);
 #else
-  auto filename = QFileDialog::getSaveFileName(parent, _("Save File"), dir, _("OpenSCAD Designs (*.scad)"));
+  auto filename =
+    QFileDialog::getSaveFileName(parent, _("Save File"), dir, _("OpenSCAD Designs (*.scad)"));
 #endif
   if (filename.isEmpty()) {
     return false;

@@ -231,7 +231,6 @@ int curl_download(const std::string& url, const std::string& path)
 }
 #endif  // ifdef ENABLE_PYTHON
 
-
 // Global application state
 unsigned int GuiLocker::guiLocked = 0;
 
@@ -3932,9 +3931,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
     delete this->tempFile;
     this->tempFile = nullptr;
   }
-  for (auto dock : findChildren<Dock *>()) {
-    dock->disableSettingsUpdate();
-  }
   event->accept();
 }
 
@@ -4190,7 +4186,6 @@ void MainWindow::setupConsole()
   this->console->setConsoleFont(
     GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
     GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
-
 
   const QString version =
     QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(std::string(openscad_versionnumber)));
@@ -4663,9 +4658,12 @@ void MainWindow::openRemainingFiles(const QStringList& filenames)
 {
   for (int i = 1; i < filenames.size(); ++i) tabManager->createTab(filenames[i]);
   if (filenames.size() == 1 && filenames[0] == QStringLiteral(":session:")) {
-    if (tabManager->restoreSession(TabManager::getSessionFilePath())) {
-      parseTopLevelDocument();  // populate customizer parameters so they show without F5
-    }
+    tabManager->restoreSession(TabManager::getSessionFilePath());
+    // Note: do NOT call parseTopLevelDocument() here.
+    // restoreSession() -> tabSwitched() -> onTabManagerEditorChanged() already
+    // triggers actionRenderPreview() which compiles the document and initializes
+    // Python. Calling parseTopLevelDocument() again would re-enter initPython()
+    // after the CSG worker has released the GIL, causing a crash.
   }
 
   activeEditor->setFocus();
