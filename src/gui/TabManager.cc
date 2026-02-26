@@ -777,6 +777,7 @@ void TabManager::saveSession(const QString& path)
     tabs.append(obj);
   }
   QJsonObject root;
+  root.insert(QStringLiteral("version"), SESSION_VERSION);
   root.insert(QStringLiteral("tabs"), tabs);
   root.insert(QStringLiteral("currentIndex"), tabWidget->currentIndex());
   const QFileInfo pathInfo(path);
@@ -790,6 +791,30 @@ void TabManager::saveSession(const QString& path)
   file.close();
 }
 
+/*!
+ * Migrate a session JSON object from \a fromVersion to SESSION_VERSION.
+ * Add a case for each version transition when the schema changes.
+ * Returns true on success, false if migration is not possible.
+ */
+bool TabManager::migrateSession(QJsonObject& root, int fromVersion)
+{
+  // Apply migrations sequentially: v1->v2, v2->v3, etc.
+  for (int v = fromVersion; v < SESSION_VERSION; ++v) {
+    switch (v) {
+    // Example for future migration:
+    // case 1:
+    //   // migrate v1 -> v2: e.g. rename a field, add a new default
+    //   root.insert(QStringLiteral("newField"), QStringLiteral("defaultValue"));
+    //   break;
+    default:
+      // No known migration path from this version
+      return false;
+    }
+  }
+  root.insert(QStringLiteral("version"), SESSION_VERSION);
+  return true;
+}
+
 bool TabManager::restoreSession(const QString& path)
 {
   QFile file(path);
@@ -797,9 +822,39 @@ bool TabManager::restoreSession(const QString& path)
   const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
   file.close();
   if (!doc.isObject()) return false;
-  const QJsonArray tabs = doc.object().value(QStringLiteral("tabs")).toArray();
+
+  QJsonObject root = doc.object();
+
+  // Files without a "version" field are treated as version 1 (the original format).
+  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
+
+  if (fileVersion > SESSION_VERSION) {
+    QMessageBox::critical(
+      parent, QObject::tr("Session Restore"),
+      QObject::tr("The session file was created by a newer version of PythonSCAD "
+                  "(session version %1, but this build only supports up to version %2).\n\n"
+                  "Please upgrade PythonSCAD or delete the session file:\n%3")
+        .arg(fileVersion)
+        .arg(SESSION_VERSION)
+        .arg(path));
+    return false;
+  }
+
+  if (fileVersion < SESSION_VERSION) {
+    if (!migrateSession(root, fileVersion)) {
+      QMessageBox::warning(
+        parent, QObject::tr("Session Restore"),
+        QObject::tr("The session file uses an old format (version %1) that cannot be "
+                    "migrated to the current format (version %2). Starting with a fresh session.")
+          .arg(fileVersion)
+          .arg(SESSION_VERSION));
+      return false;
+    }
+  }
+
+  const QJsonArray tabs = root.value(QStringLiteral("tabs")).toArray();
   if (tabs.isEmpty()) return false;
-  const int savedCurrentIndex = doc.object().value(QStringLiteral("currentIndex")).toInt(0);
+  const int savedCurrentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
 
   // Block signals during restore to prevent tab-switch signals from triggering
   // compile/preview (which calls initPython) before the constructor is finished.
