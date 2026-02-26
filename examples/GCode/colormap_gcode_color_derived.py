@@ -87,5 +87,4 @@ plate_2.show()
 
 model = text_3d_2 | plate_2
 model.show()
-mc.set_property_value("default", "lasermode", 1)
 model.export("colormap_gcode_color_derived.gcode")
