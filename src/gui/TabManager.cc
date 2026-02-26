@@ -818,10 +818,25 @@ bool TabManager::migrateSession(QJsonObject& root, int fromVersion)
 bool TabManager::restoreSession(const QString& path)
 {
   QFile file(path);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
-  const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QMessageBox::warning(parent, QObject::tr("Session Restore"),
+                         QObject::tr("Could not open the session file for reading:\n%1\n\n"
+                                     "Starting with a fresh session.")
+                           .arg(path));
+    return false;
+  }
+  const QByteArray rawData = file.readAll();
   file.close();
-  if (!doc.isObject()) return false;
+
+  const QJsonDocument doc = QJsonDocument::fromJson(rawData);
+  if (!doc.isObject()) {
+    QMessageBox::warning(parent, QObject::tr("Session Restore"),
+                         QObject::tr("The session file is corrupt or unreadable:\n%1\n\n"
+                                     "The file has not been deleted — you may inspect it manually.\n"
+                                     "Starting with a fresh session.")
+                           .arg(path));
+    return false;
+  }
 
   QJsonObject root = doc.object();
 
