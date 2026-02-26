@@ -1419,6 +1419,16 @@ void MainWindow::on_fileActionOpenWindow_triggered()
   }
 }
 
+void MainWindow::quitApplication()
+{
+  const QString sessionPath = TabManager::getSessionFilePath();
+  TabManager::saveGlobalSession(sessionPath);
+  for (auto *win : scadApp->windowManager.getWindows()) {
+    win->isSessionQuitting = true;
+  }
+  scadApp->quit();
+}
+
 void MainWindow::actionOpenRecent()
 {
   auto guard = scopedSetCurrentOutput();
@@ -3922,7 +3932,16 @@ void MainWindow::closeEvent(QCloseEvent *event)
   progress_report_fin();
   hideCurrentOutput();
 
-  tabManager->saveSession(TabManager::getSessionFilePath());
+  if (!isSessionQuitting) {
+    if (!tabManager->shouldClose()) {
+      isClosing = false;
+      event->ignore();
+      return;
+    }
+    if (scadApp->windowManager.getWindows().size() == 1) {
+      TabManager::removeSessionFile();
+    }
+  }
 
   QSettingsCached settings;
   settings.setValue("window/geometry", saveGeometry());
@@ -4453,7 +4472,9 @@ void MainWindow::setupMenusAndActions()
 #endif
 
 
-  connect(this->fileActionQuit, &QAction::triggered, scadApp, &OpenSCADApp::quit, Qt::QueuedConnection);
+  connect(this->fileActionCloseWindow, &QAction::triggered, this, &MainWindow::close);
+  connect(this->fileActionQuit, &QAction::triggered, this, &MainWindow::quitApplication,
+          Qt::QueuedConnection);
 
 #ifdef ENABLE_PYTHON
 #else
@@ -4657,8 +4678,18 @@ void MainWindow::restoreWindowState()
 void MainWindow::openRemainingFiles(const QStringList& filenames)
 {
   for (int i = 1; i < filenames.size(); ++i) tabManager->createTab(filenames[i]);
-  if (filenames.size() == 1 && filenames[0] == QStringLiteral(":session:")) {
-    tabManager->restoreSession(TabManager::getSessionFilePath());
+  if (filenames.size() == 1 && filenames[0].startsWith(QStringLiteral(":session:"))) {
+    int windowIndex = 0;
+    const QString token = filenames[0];
+    if (token != QStringLiteral(":session:")) {
+      QString trimmed = token;
+      if (trimmed.endsWith(QStringLiteral(":"))) trimmed.chop(1);
+      const QString indexStr = trimmed.mid(QStringLiteral(":session:").size());
+      bool ok = false;
+      const int parsedIndex = indexStr.toInt(&ok);
+      if (ok) windowIndex = parsedIndex;
+    }
+    tabManager->restoreSession(TabManager::getSessionFilePath(), windowIndex);
     // Note: do NOT call parseTopLevelDocument() here.
     // restoreSession() -> tabSwitched() -> onTabManagerEditorChanged() already
     // triggers actionRenderPreview() which compiles the document and initializes

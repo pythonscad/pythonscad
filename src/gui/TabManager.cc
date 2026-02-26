@@ -39,6 +39,7 @@
 #include "gui/Editor.h"
 #include "gui/ImportUtils.h"
 #include "gui/MainWindow.h"
+#include "gui/OpenSCADApp.h"
 #include "gui/Preferences.h"
 #include "gui/ScintillaEditor.h"
 #include "utils/printutils.h"
@@ -776,10 +777,62 @@ void TabManager::saveSession(const QString& path)
     }
     tabs.append(obj);
   }
+  QJsonObject win;
+  win.insert(QStringLiteral("tabs"), tabs);
+  win.insert(QStringLiteral("currentIndex"), tabWidget->currentIndex());
+
+  QJsonArray windows;
+  windows.append(win);
+
   QJsonObject root;
   root.insert(QStringLiteral("version"), SESSION_VERSION);
-  root.insert(QStringLiteral("tabs"), tabs);
-  root.insert(QStringLiteral("currentIndex"), tabWidget->currentIndex());
+  root.insert(QStringLiteral("windows"), windows);
+  const QFileInfo pathInfo(path);
+  const QDir dir = pathInfo.absoluteDir();
+  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) return;
+  QSaveFile file(path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
+  const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
+  if (file.write(json) != json.size()) {
+    file.cancelWriting();
+    return;
+  }
+  file.commit();
+}
+
+/*!
+ * Save session state from ALL open windows into a single session file.
+ * Called by the "Quit" action so every window is persisted.
+ */
+void TabManager::saveGlobalSession(const QString& path)
+{
+  QJsonArray windows;
+  for (auto *mainWin : scadApp->windowManager.getWindows()) {
+    auto *tm = mainWin->tabManager;
+    QJsonArray tabs;
+    for (int i = 0; i < tm->tabWidget->count(); ++i) {
+      auto *edt = static_cast<EditorInterface *>(tm->tabWidget->widget(i));
+      QJsonObject obj;
+      obj.insert(QStringLiteral("filepath"), edt->filepath);
+      obj.insert(QStringLiteral("content"), edt->toPlainText());
+      obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
+      obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
+      const QByteArray customizerState = edt->parameterWidget->getSessionState();
+      if (!customizerState.isEmpty()) {
+        obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
+      }
+      tabs.append(obj);
+    }
+    QJsonObject win;
+    win.insert(QStringLiteral("tabs"), tabs);
+    win.insert(QStringLiteral("currentIndex"), tm->tabWidget->currentIndex());
+    windows.append(win);
+  }
+
+  QJsonObject root;
+  root.insert(QStringLiteral("version"), SESSION_VERSION);
+  root.insert(QStringLiteral("windows"), windows);
+
   const QFileInfo pathInfo(path);
   const QDir dir = pathInfo.absoluteDir();
   if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) return;
@@ -803,11 +856,18 @@ bool TabManager::migrateSession(QJsonObject& root, int fromVersion)
   // Apply migrations sequentially: v1->v2, v2->v3, etc.
   for (int v = fromVersion; v < SESSION_VERSION; ++v) {
     switch (v) {
-    // Example for future migration:
-    // case 1:
-    //   // migrate v1 -> v2: e.g. rename a field, add a new default
-    //   root.insert(QStringLiteral("newField"), QStringLiteral("defaultValue"));
-    //   break;
+    case 1: {
+      // Migrate v1 -> v2: wrap flat tabs/currentIndex into a "windows" array.
+      QJsonArray windows;
+      QJsonObject win;
+      win.insert(QStringLiteral("tabs"), root.value(QStringLiteral("tabs")));
+      win.insert(QStringLiteral("currentIndex"), root.value(QStringLiteral("currentIndex")));
+      windows.append(win);
+      root.remove(QStringLiteral("tabs"));
+      root.remove(QStringLiteral("currentIndex"));
+      root.insert(QStringLiteral("windows"), windows);
+      break;
+    }
     default:
       // No known migration path from this version
       return false;
@@ -817,7 +877,7 @@ bool TabManager::migrateSession(QJsonObject& root, int fromVersion)
   return true;
 }
 
-bool TabManager::restoreSession(const QString& path)
+bool TabManager::restoreSession(const QString& path, int windowIndex)
 {
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -869,9 +929,13 @@ bool TabManager::restoreSession(const QString& path)
     }
   }
 
-  const QJsonArray tabs = root.value(QStringLiteral("tabs")).toArray();
+  const QJsonArray windows = root.value(QStringLiteral("windows")).toArray();
+  if (windowIndex < 0 || windowIndex >= windows.size()) return false;
+
+  const QJsonObject win = windows[windowIndex].toObject();
+  const QJsonArray tabs = win.value(QStringLiteral("tabs")).toArray();
   if (tabs.isEmpty()) return false;
-  const int savedCurrentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
+  const int savedCurrentIndex = win.value(QStringLiteral("currentIndex")).toInt(0);
 
   // Block signals during restore to prevent tab-switch signals from triggering
   // compile/preview (which calls initPython) before the constructor is finished.
@@ -920,6 +984,40 @@ bool TabManager::restoreSession(const QString& path)
   parent->setWindowTitle(tabWidget->tabText(tabWidget->currentIndex()).replace("&&", "&"));
   parent->updateRecentFileActions();
   return true;
+}
+
+/*!
+ * Returns the number of windows stored in the session file, or 0 on error.
+ * Performs lightweight parsing + optional migration without creating any GUI.
+ */
+int TabManager::sessionWindowCount(const QString& path)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return 0;
+  const QByteArray rawData = file.readAll();
+  file.close();
+
+  const QJsonDocument doc = QJsonDocument::fromJson(rawData);
+  if (!doc.isObject()) return 0;
+
+  QJsonObject root = doc.object();
+  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
+  if (fileVersion > SESSION_VERSION) return 0;
+  if (fileVersion < SESSION_VERSION) {
+    if (!migrateSession(root, fileVersion)) return 0;
+  }
+
+  return root.value(QStringLiteral("windows")).toArray().size();
+}
+
+/*!
+ * Remove the session file so the next launch starts with a fresh session.
+ * Called when the user explicitly closes all windows (as opposed to Quit).
+ */
+void TabManager::removeSessionFile()
+{
+  const QString path = getSessionFilePath();
+  QFile::remove(path);
 }
 
 void TabManager::saveError(const QIODevice& file, const std::string& msg, const QString& filepath)

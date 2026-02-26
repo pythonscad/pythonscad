@@ -38,6 +38,7 @@
 #include <QPalette>
 #include <QStringList>
 #include <QStyleHints>
+#include <QVector>
 #include <Qt>
 #include <QtConcurrentRun>
 #include <QtGlobal>
@@ -247,37 +248,51 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     inputFilesList.append(assemblePath(original_path, infile));
   }
 
+  QVector<QStringList> windowsToOpen;
+
   // When no files given, restore session if it exists (skip launcher)
   if (inputFilesList.size() == 1 && inputFilesList[0].isEmpty()) {
     const QString sessionPath = TabManager::getSessionFilePath();
     if (QFileInfo(sessionPath).exists()) {
-      inputFilesList[0] = QStringLiteral(":session:");
-    }
-  }
-
-  // Show launcher only when no files and no session to restore
-  if (noInputFiles && inputFilesList.size() == 1 && inputFilesList[0].isEmpty()) {
-    auto showOnStartup = settings.value("launcher/showOnStartup");
-    if (showOnStartup.isNull() || showOnStartup.toBool()) {
-      LaunchingScreen launcher;
-      if (launcher.exec() == QDialog::Accepted) {
-        if (launcher.isForceShowEditor()) {
-          settings.setValue("view/hideEditor", false);
-        }
-        const QStringList files = launcher.selectedFiles();
-        if (!files.empty()) {
-          inputFilesList.clear();
-          for (const auto& f : files) {
-            inputFilesList.append(assemblePath(original_path, f.toStdString()));
-          }
+      const int windowCount = TabManager::sessionWindowCount(sessionPath);
+      if (windowCount > 0) {
+        for (int i = 0; i < windowCount; ++i) {
+          windowsToOpen.append(QStringList(QStringLiteral(":session:%1:").arg(i)));
         }
       } else {
-        return 0;
+        windowsToOpen.append(QStringList(QStringLiteral(":session:")));
       }
     }
   }
 
-  new MainWindow(inputFilesList);
+  if (windowsToOpen.isEmpty()) {
+    // Show launcher only when no files and no session to restore
+    if (noInputFiles && inputFilesList.size() == 1 && inputFilesList[0].isEmpty()) {
+      auto showOnStartup = settings.value("launcher/showOnStartup");
+      if (showOnStartup.isNull() || showOnStartup.toBool()) {
+        LaunchingScreen launcher;
+        if (launcher.exec() == QDialog::Accepted) {
+          if (launcher.isForceShowEditor()) {
+            settings.setValue("view/hideEditor", false);
+          }
+          const QStringList files = launcher.selectedFiles();
+          if (!files.empty()) {
+            inputFilesList.clear();
+            for (const auto& f : files) {
+              inputFilesList.append(assemblePath(original_path, f.toStdString()));
+            }
+          }
+        } else {
+          return 0;
+        }
+      }
+    }
+    windowsToOpen.append(inputFilesList);
+  }
+
+  for (const auto& files : windowsToOpen) {
+    new MainWindow(files);
+  }
   QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
     QSettingsCached{}.release();
 #ifdef Q_OS_MACOS

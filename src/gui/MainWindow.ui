@@ -276,6 +276,7 @@
     <addaction name="separator"/>
     <addaction name="fileShowLibraryFolder"/>
     <addaction name="separator"/>
+    <addaction name="fileActionCloseWindow"/>
     <addaction name="fileActionQuit"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
@@ -794,6 +795,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="fileActionCloseWindow">
+   <property name="text">
+    <string>Close &amp;Window</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+F4</string>
    </property>
   </action>
   <action name="fileActionQuit">

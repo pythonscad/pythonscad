@@ -137,6 +137,7 @@ private:
   std::vector<std::pair<Dock *, QString>> docks;
 
   volatile bool isClosing = false;
+  bool isSessionQuitting = false;
   bool isBeingDestroyed = false;  // Set in destructor to guard eventFilter
   void consoleOutputRaw(const QString& msg);
   void clearAllSelectionIndicators();
@@ -166,6 +167,7 @@ protected:
   void closeEvent(QCloseEvent *event) override;
 
 private slots:
+  void quitApplication();
   void updateUndockMode(bool undockMode);
   void updateReorderMode(bool reorderMode);
   void setFont(const QString& family, uint size);
