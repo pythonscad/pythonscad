@@ -783,12 +783,14 @@ void TabManager::saveSession(const QString& path)
   const QFileInfo pathInfo(path);
   const QDir dir = pathInfo.absoluteDir();
   if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) return;
-  QFile file(path);
+  QSaveFile file(path);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
   const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
-  if (file.write(json) != json.size()) return;
-  file.flush();
-  file.close();
+  if (file.write(json) != json.size()) {
+    file.cancelWriting();
+    return;
+  }
+  file.commit();
 }
 
 /*!
