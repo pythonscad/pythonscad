@@ -312,11 +312,7 @@ struct ExportGcodeOptions {
     });
     return nullptr;
   }
-<<<<<<< HEAD
-=======
 
->>>>>>> upstream/master
->>>>>>> 28d9fec73554ecadda88d70d39adb7434bd002fa
 };
 
 struct ExportInfo {
