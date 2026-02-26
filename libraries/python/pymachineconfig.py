@@ -27,8 +27,7 @@ class MachineConfig:
                            "material":None})
 
         self.gen_working(label="default")
-        self.write_to_cache()
-        return
+        self.write_settings()
 
     def _check_lasermode(self, value):
         try:
@@ -36,11 +35,12 @@ class MachineConfig:
                 print("Error: lasermode masmatch.  Ignoring overwrite.")
         except:
             self._config["default"]["property"]["lasermode"] = value
+            self.write_settings()
 
     def register(self, label, itype, iproperty):
         item = {"type":itype,"property":iproperty}
         self._config[label] = item
-        self.write_to_cache()
+        self.write_settings()
 
     def gen_color_table(self):
         self.register("L00","ColorTable",
@@ -132,17 +132,15 @@ class MachineConfig:
         
         return
 
-    def write_to_cache(self, config=None):
+    def write_settings(self, config=None):
         if config is None:
             config = self._config
-        cache = json.dumps(config)
-        # FIXME: should return None probably...
-        mc = machineconfig({"cache":cache})
+
+        mc = machineconfig(config)
         
     def set_config(self, config):
         self._config = config
-        self.write_to_cache()
-        return
+        self.write_settings()
 
     def dict(self):
         return self._config
@@ -235,7 +233,7 @@ class MachineConfig:
         except ValueError as e:
             print(f"An error occurred: {e}")
             return
-        self.write_to_cache()
+        self.write_settings()
 
     # The followng functions are for manipulating the color table
 
@@ -247,7 +245,7 @@ class MachineConfig:
 
         """
         self.gen_color_table()
-        self.write_to_cache()
+        self.write_settings()
 
     def scale_value(self, label1, label2, cfg=None):
         if cfg is None:
@@ -270,19 +268,19 @@ class MachineConfig:
     # setpower - overwrite the working labeled power
     def set_power(self, tag, val):
         val = self.set_property_value(tag, "power", val)
-        self.write_to_cache()
+        self.write_settings()
         return val
 
     # setfeed - overwrite the working labeled feed
     def set_feed(self, tag, val):
         val = self.set_property_value(tag, "feed", val)
-        self.write_to_cache()
+        self.write_settings()
         return val
 
     # setcolor - overwrite the working labeled color
     def set_color(self, tag, val):
         val = self.set_property_value(tag, "color", val)
-        self.write_to_cache()
+        self.write_settings()
         return val
 
     def gen_color(self, power=-1,feed=-1):
