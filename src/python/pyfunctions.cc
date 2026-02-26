@@ -104,8 +104,6 @@
 extern bool parse(SourceFile *& file, const std::string& text, const std::string& filename,
                   const std::string& mainFile, int debug);
 
-// using namespace boost::assign; // bring 'operator+=()' into scope
-
 // Colors extracted from https://drafts.csswg.org/css-color/ on 2015-08-02
 // CSS Color Module Level 4 - Editor’s Draft, 29 May 2015
 extern std::unordered_map<std::string, Color4f> webcolors;
@@ -6249,13 +6247,48 @@ PyObject *python_memberfunction(PyObject *self, PyObject *args, PyObject *kwargs
   Py_RETURN_NONE;
 }
 
-// global cached version of the machine config that is used by
-// export_gcode for colormapping power and feed
-extern std::string _machineconfig_cache_;
+// global accessible version of the machine config settings that are
+// used by export_gcode for colormapping power and feed.
+extern boost::property_tree::ptree _machineconfig_settings_;
 
-// FIXME: I ended up passing in a python dictionary with
-// {"cache":json_string} because I could not figure out how to just
-// parse the string.  This should be able to be simplified.
+// convert a python dictionary directly to a property tree
+boost::property_tree::ptree pyToPtree(PyObject* obj)
+{
+  boost::property_tree::ptree pt;
+
+  if (PyDict_Check(obj)) {
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+
+    while (PyDict_Next(obj, &pos, &key, &value)) {
+      std::string keyStr = PyUnicode_AsUTF8(key);
+      pt.add_child(keyStr, pyToPtree(value));
+    }
+  } else if (PyList_Check(obj)) {
+    Py_ssize_t size = PyList_Size(obj);
+    for (Py_ssize_t i = 0; i < size; ++i) {
+      PyObject* item = PyList_GetItem(obj, i); // borrowed reference
+      pt.push_back(std::make_pair("", pyToPtree(item)));
+     }
+  } else if (PyBool_Check(obj)) {
+    // important: Check Bool BEFORE Long.
+    bool value = (obj == Py_True);
+    pt.put("", value);
+  } else if (PyLong_Check(obj)) {
+    pt.put("", PyLong_AsLongLong(obj));
+  } else if (PyFloat_Check(obj)) {
+    pt.put("", PyFloat_AsDouble(obj));
+  } else if (PyUnicode_Check(obj)) {
+    pt.put("", PyUnicode_AsUTF8(obj));
+  } else if (obj == Py_None) {
+    // property_tree does not support a true 'null', so set it to an
+    // empty node.
+    pt.put("", "");
+  }
+
+  return pt;
+}
+
 PyObject *python_machineconfig(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
 {
   char *kwlist[] = {"config",NULL};
@@ -6270,16 +6303,10 @@ PyObject *python_machineconfig(PyObject *self, PyObject *args, PyObject *kwargs,
     PyErr_SetString(PyExc_TypeError, "Config must be a dictionary");
     return NULL;
   }
-  PyObject *key, *value;
-  Py_ssize_t pos = 0;
-  while (PyDict_Next(config, &pos, &key, &value)) {
-    PyObject *key1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-    std::string key_str = PyBytes_AS_STRING(key1);
 
-    PyObject *value1 = PyUnicode_AsEncodedString(value, "utf-8", "~");
-    std::string value_str = PyBytes_AS_STRING(value1);
-    _machineconfig_cache_ = value_str;
-  }
+  // parse the python dictionary directly into a property tree
+  _machineconfig_settings_ = pyToPtree(config);
+
   Py_RETURN_NONE;
 }
 
