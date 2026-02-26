@@ -57,11 +57,11 @@ engraved_object = plate - positioned_text
 #
 # Use the direct power/feed method.
 #
-# for cut (power=100% and feed=400mm/min):
+# for cut (power=100% and feed=401mm/min):
 cut_color = mc.gen_color2str(power=1000,feed=401)
 print("cut color:",cut_color)
-# for engrave (power=50% and feed=100% max)
-engrave_color = mc.gen_color2str(power=310,feed=6000)
+# for engrave (power=55.0% and feed=6000mm/min)
+engrave_color = mc.gen_color2str(power=550,feed=6000)
 print("engrave color:",engrave_color)
 # Note: the colors are specifically generated to encode the power and
 #   feed into the RGB representation.  Since LaserGRBL and LightBurn
