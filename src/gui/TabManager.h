@@ -46,13 +46,16 @@ public:
   size_t count();
 
   void saveSession(const QString& path);
-  bool restoreSession(const QString& path);
+  bool restoreSession(const QString& path, int windowIndex = 0);
+  static void saveGlobalSession(const QString& path);
+  static int sessionWindowCount(const QString& path);
+  static void removeSessionFile();
   static QString getSessionFilePath();
 
   // Session file schema version. Increment when the format changes and add a
   // migration step in migrateSession().  Old files without a version field are
   // treated as version 1.
-  static constexpr int SESSION_VERSION = 1;
+  static constexpr int SESSION_VERSION = 2;
 
 public:
   static constexpr const int FIND_HIDDEN = 0;
