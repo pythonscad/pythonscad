@@ -31,6 +31,7 @@
 #include <QTabBar>
 #include <QTextStream>
 #include <QWidget>
+#include <QFileInfo>
 #include <cassert>
 #include <cstddef>
 #include <exception>
@@ -46,6 +47,10 @@
 #include <genlang/genlang.h>
 
 #include <algorithm>
+
+namespace {
+uint64_t sessionDirtyGenerationValue = 0;
+}
 
 TabManager::TabManager(MainWindow *o, const QString& filename)
 {
@@ -536,6 +541,7 @@ void TabManager::updateFindState()
 
 void TabManager::onTabModified(EditorInterface *edt)
 {
+  bumpSessionDirtyGeneration();
   // Get the name of the editor and its filepath with the status modifier
   auto [fname, fpath] = getEditorTabNameWithModifier(edt);
 
@@ -741,6 +747,33 @@ QString TabManager::getSessionFilePath()
            QStringLiteral("/session.json");
   }
   return QFileInfo(configFile).absolutePath() + QStringLiteral("/session.json");
+}
+
+QString TabManager::getAutosaveFilePath()
+{
+  const QString sessionPath = getSessionFilePath();
+  return QFileInfo(sessionPath).absolutePath() + QStringLiteral("/session.autosave.json");
+}
+
+bool TabManager::hasDirtyTabs()
+{
+  for (auto *mainWin : scadApp->windowManager.getWindows()) {
+    auto *tm = mainWin->tabManager;
+    for (auto *edt : tm->editorList) {
+      if (edt->isContentModified() || edt->parameterWidget->isModified()) return true;
+    }
+  }
+  return false;
+}
+
+void TabManager::bumpSessionDirtyGeneration()
+{
+  ++sessionDirtyGenerationValue;
+}
+
+uint64_t TabManager::sessionDirtyGeneration()
+{
+  return sessionDirtyGenerationValue;
 }
 
 void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,

@@ -193,6 +193,8 @@ void Preferences::init()
   this->defaultmap["advanced/enableParameterCheck"] = true;
   this->defaultmap["advanced/enableParameterRangeCheck"] = false;
   this->defaultmap["dialogs/singleInstanceOpenMode"] = "new-window";
+  this->defaultmap["dialogs/autosaveSessionEnabled"] = true;
+  this->defaultmap["dialogs/autosaveSessionIntervalSeconds"] = 60;
   this->defaultmap["view/hideEditor"] = false;
   this->defaultmap["view/hideConsole"] = false;
   this->defaultmap["view/hideErrorLog"] = true;
@@ -282,6 +284,11 @@ void Preferences::init()
   initComboBox(this->comboBoxToolbarExport3D, Settings::Settings::toolbarExport3D);
   initComboBox(this->comboBoxToolbarExport2D, Settings::Settings::toolbarExport2D);
   initComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
+
+  this->comboBoxAutosaveSessionInterval->clear();
+  this->comboBoxAutosaveSessionInterval->addItem(_("30 seconds"), 30);
+  this->comboBoxAutosaveSessionInterval->addItem(_("60 seconds"), 60);
+  this->comboBoxAutosaveSessionInterval->addItem(_("120 seconds"), 120);
 
   initListBox(this->listWidgetLocalAppParams, Settings::Settings::localAppParameterList);
   connect(this->listWidgetLocalAppParams->model(), &QAbstractItemModel::dataChanged, this,
@@ -748,6 +755,20 @@ void Preferences::on_checkBoxEnableNumberScrollWheel_toggled(bool val)
   Settings::Settings::enableNumberScrollWheel.setValue(val);
   comboBoxModifierNumberScrollWheel->setDisabled(!val);
   writeSettings();
+}
+
+void Preferences::on_checkBoxAutosaveSessionEnabled_toggled(bool state)
+{
+  QSettingsCached settings;
+  settings.setValue("dialogs/autosaveSessionEnabled", state);
+  this->comboBoxAutosaveSessionInterval->setEnabled(state);
+}
+
+void Preferences::on_comboBoxAutosaveSessionInterval_activated(int)
+{
+  const int seconds = this->comboBoxAutosaveSessionInterval->currentData().toInt();
+  QSettingsCached settings;
+  settings.setValue("dialogs/autosaveSessionIntervalSeconds", seconds);
 }
 
 void Preferences::on_enableSoundOnRenderCompleteCheckBox_toggled(bool state)
@@ -1480,6 +1501,16 @@ void Preferences::updateGUI()
   updateComboBox(this->comboBoxToolbarExport3D, Settings::Settings::toolbarExport3D);
   updateComboBox(this->comboBoxToolbarExport2D, Settings::Settings::toolbarExport2D);
   updateComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
+  BlockSignals<QCheckBox *>(this->checkBoxAutosaveSessionEnabled)
+    ->setChecked(getValue("dialogs/autosaveSessionEnabled").toBool());
+  const int autosaveSeconds = getValue("dialogs/autosaveSessionIntervalSeconds").toInt();
+  for (int i = 0; i < this->comboBoxAutosaveSessionInterval->count(); ++i) {
+    if (this->comboBoxAutosaveSessionInterval->itemData(i).toInt() == autosaveSeconds) {
+      BlockSignals<QComboBox *>(this->comboBoxAutosaveSessionInterval)->setCurrentIndex(i);
+      break;
+    }
+  }
+  this->comboBoxAutosaveSessionInterval->setEnabled(this->checkBoxAutosaveSessionEnabled->isChecked());
 
   BlockSignals<QCheckBox *>(this->checkBoxSummaryCamera)
     ->setChecked(Settings::Settings::summaryCamera.value());
