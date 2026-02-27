@@ -94,6 +94,10 @@ bool writeSessionFile(const QJsonObject& root, const QString& path, QString *err
     if (error) *error = file.errorString();
     return false;
   }
+  if (!QFile::setPermissions(path, QFileDevice::ReadOwner | QFileDevice::WriteOwner)) {
+    LOG(message_group::UI_Warning, "Failed to set session file permissions: %1$s",
+        path.toLocal8Bit().constData());
+  }
   return true;
 }
 }  // namespace
