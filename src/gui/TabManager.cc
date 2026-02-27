@@ -44,6 +44,7 @@
 #include "gui/OpenSCADApp.h"
 #include "gui/Preferences.h"
 #include "gui/ScintillaEditor.h"
+#include "gui/UnsavedChangesDialog.h"
 #include "utils/printutils.h"
 #include <genlang/genlang.h>
 
@@ -242,6 +243,15 @@ void TabManager::prevTab()
 {
   assert(tabWidget != nullptr);
   tabWidget->setCurrentIndex((tabWidget->currentIndex() + tabWidget->count() - 1) % tabWidget->count());
+}
+
+void TabManager::switchToEditor(EditorInterface *targetEditor)
+{
+  assert(tabWidget != nullptr);
+  int index = tabWidget->indexOf(targetEditor);
+  if (index >= 0) {
+    tabWidget->setCurrentIndex(index);
+  }
 }
 
 void TabManager::actionNew()
@@ -786,32 +796,27 @@ bool TabManager::maybeSave(int x)
  */
 bool TabManager::shouldClose()
 {
+  bool hasUnsavedChanges = false;
   foreach (EditorInterface *edt, editorList) {
-    if (!(edt->isContentModified() || edt->parameterWidget->isModified())) continue;
-
-    QMessageBox box(parent);
-    box.setText(_("Some tabs have unsaved changes."));
-    box.setInformativeText(_("Do you want to save all your changes?"));
-    box.setStandardButtons(QMessageBox::SaveAll | QMessageBox::Discard | QMessageBox::Cancel);
-    box.setDefaultButton(QMessageBox::SaveAll);
-    box.setIcon(QMessageBox::Warning);
-    box.setWindowModality(Qt::ApplicationModal);
-#ifdef Q_OS_MACOS
-    // Cmd-D is the standard shortcut for this button on Mac
-    box.button(QMessageBox::Discard)->setShortcut(QKeySequence("Ctrl+D"));
-    box.button(QMessageBox::Discard)->setShortcutEnabled(true);
-#endif
-    auto ret = (QMessageBox::StandardButton)box.exec();
-
-    if (ret == QMessageBox::Cancel) {
-      return false;
-    } else if (ret == QMessageBox::Discard) {
-      return true;
-    } else if (ret == QMessageBox::SaveAll) {
-      return saveAll();
+    if (edt->isContentModified() || edt->parameterWidget->isModified()) {
+      hasUnsavedChanges = true;
+      break;
     }
   }
-  return true;
+
+  if (!hasUnsavedChanges) {
+    return true;
+  }
+
+  UnsavedChangesDialog dialog(this, parent, parent);
+  dialog.exec();
+
+  switch (dialog.result()) {
+  case UnsavedChangesDialog::AllSaved:   return true;
+  case UnsavedChangesDialog::DiscardAll: return true;
+  case UnsavedChangesDialog::Cancel:
+  default:                               return false;
+  }
 }
 
 QString TabManager::getSessionFilePath()
