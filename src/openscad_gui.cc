@@ -634,6 +634,8 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   }
 
   QVector<QStringList> windowsToOpen;
+  QStringList filesToAppend;
+  bool restoreSessionForExplicitFiles = false;
 
   if (noInputFiles) {
     const QString sessionPath = TabManager::getSessionFilePath();
@@ -657,19 +659,25 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     }
   }
 
-  // When no files given, restore session if it exists (skip launcher)
-  if (inputFilesList.size() == 1 && inputFilesList[0].isEmpty()) {
+  const bool hasExplicitFiles = !(inputFilesList.size() == 1 && inputFilesList[0].isEmpty());
+
+  // Restore session when no files given, or when explicit files should be appended to the session.
+  {
     const QString sessionPath = TabManager::getSessionFilePath();
-    if (QFileInfo(sessionPath).exists()) {
-      if (!TabManager::sessionHasOnlyEmptyTab(sessionPath)) {
-        const int windowCount = TabManager::sessionWindowCount(sessionPath);
-        if (windowCount > 0) {
-          for (int i = 0; i < windowCount; ++i) {
-            windowsToOpen.append(QStringList(QStringLiteral(":session:%1:").arg(i)));
-          }
-        } else {
-          windowsToOpen.append(QStringList(QStringLiteral(":session:")));
+    const bool sessionExists = QFileInfo(sessionPath).exists();
+    const bool shouldRestore = sessionExists && !TabManager::sessionHasOnlyEmptyTab(sessionPath);
+    if (shouldRestore) {
+      const int windowCount = TabManager::sessionWindowCount(sessionPath);
+      if (windowCount > 0) {
+        for (int i = 0; i < windowCount; ++i) {
+          windowsToOpen.append(QStringList(QStringLiteral(":session:%1:").arg(i)));
         }
+      } else {
+        windowsToOpen.append(QStringList(QStringLiteral(":session:")));
+      }
+      if (hasExplicitFiles) {
+        restoreSessionForExplicitFiles = true;
+        filesToAppend = inputFilesList;
       }
     }
   }
@@ -701,6 +709,20 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 
   for (const auto& files : windowsToOpen) {
     new MainWindow(files);
+  }
+
+  if (restoreSessionForExplicitFiles && !filesToAppend.isEmpty()) {
+    MainWindow *target = scadApp->windowManager.getLastActive();
+    if (!target) {
+      new MainWindow(filesToAppend);
+    } else {
+      for (const auto& file : filesToAppend) {
+        if (!file.isEmpty()) {
+          target->tabManager->open(file);
+        }
+      }
+      focusWindow(target);
+    }
   }
 
   setupAutosaveTimer(&app);
