@@ -3613,6 +3613,12 @@ void MainWindow::editorContentChanged()
 
 void MainWindow::refreshParametersFromEditor()
 {
+  if (isClosing || isBeingDestroyed) return;
+  if (GuiLocker::isLocked()) {
+    if (parameterRefreshTimer) parameterRefreshTimer->start();
+    return;
+  }
+  if (!activeEditor) return;
   parseTopLevelDocument();
 }
 
