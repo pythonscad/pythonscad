@@ -2349,6 +2349,70 @@
                  </item>
                 </layout>
                </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayoutSingleInstance">
+                 <item>
+                  <widget class="QLabel" name="labelSingleInstanceOpenMode">
+                   <property name="text">
+                    <string>When launching another instance with files:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="comboBoxSingleInstanceOpenMode"/>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacerSingleInstance">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="checkBoxAutosaveSessionEnabled">
+                 <property name="text">
+                  <string>Autosave session in background for crash recovery</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayoutAutosaveInterval">
+                 <property name="leftMargin">
+                  <number>40</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="labelAutosaveSessionInterval">
+                   <property name="text">
+                    <string>Autosave interval:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="comboBoxAutosaveSessionInterval"/>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacerAutosaveInterval">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
               </layout>
              </widget>
             </item>
@@ -2990,58 +3054,6 @@
           </layout>
          </widget>
         </item>
-        <item>
-         <widget class="QGroupBox" name="groupBoxSingleInstance">
-          <property name="title">
-           <string>Single-instance</string>
-          </property>
-          <layout class="QFormLayout" name="formLayoutSingleInstance">
-           <item row="0" column="0">
-            <widget class="QLabel" name="labelSingleInstanceOpenMode">
-             <property name="text">
-              <string>When launching another instance with files:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QComboBox" name="comboBoxSingleInstanceOpenMode"/>
-           </item>
-          </layout>
-         </widget>
-        </item>
-             <item>
-            <widget class="QGroupBox" name="groupBoxAutosaveSession">
-             <property name="title">
-              <string>Crash recovery</string>
-             </property>
-             <layout class="QFormLayout" name="formLayoutAutosaveSession">
-              <item row="0" column="0">
-               <widget class="QLabel" name="labelAutosaveSessionEnabled">
-              <property name="text">
-               <string>Autosave session in background:</string>
-              </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QCheckBox" name="checkBoxAutosaveSessionEnabled">
-              <property name="text">
-               <string>Enabled</string>
-              </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="labelAutosaveSessionInterval">
-              <property name="text">
-               <string>Autosave interval:</string>
-              </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QComboBox" name="comboBoxAutosaveSessionInterval"/>
-              </item>
-             </layout>
-            </widget>
-             </item>
        </layout>
       </widget>
      </widget>
