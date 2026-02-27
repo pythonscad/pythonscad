@@ -279,6 +279,7 @@ private slots:
   void on_fileActionOpenWindow_triggered();
   void actionOpenRecent();
   void actionOpenExample();
+  void on_fileActionWelcome_triggered();
   void on_fileActionClearRecent_triggered();
   void on_fileActionSave_triggered();
   void on_fileActionSaveAs_triggered();
