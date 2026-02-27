@@ -46,6 +46,7 @@
 #include <QDropEvent>
 #include <QElapsedTimer>
 #include <QEvent>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFont>
@@ -3962,13 +3963,16 @@ void MainWindow::closeEvent(QCloseEvent *event)
   hideCurrentOutput();
 
   if (!isSessionQuitting) {
+    if (scadApp->windowManager.getWindows().size() == 1) {
+      isClosing = false;
+      event->ignore();
+      quitApplication();
+      return;
+    }
     if (!tabManager->shouldClose()) {
       isClosing = false;
       event->ignore();
       return;
-    }
-    if (scadApp->windowManager.getWindows().size() == 1) {
-      TabManager::removeSessionFile();
     }
   }
 
