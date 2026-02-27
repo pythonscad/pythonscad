@@ -208,12 +208,12 @@ SettingsEntryEnum<std::string> Settings::printServiceFileFormat(
   "printing", "printServiceFileFormat", createFileFormatItems(fileformat::all3D()),
   fileformat::info(FileFormat::ASCII_STL).description);
 SettingsEntryEnum<std::string> Settings::singleInstanceOpenMode(
-  "dialogs", "singleInstanceOpenMode",
+  "advanced", "singleInstanceOpenMode",
   {{"new-window", "new-window", _("Open in new window")},
    {"active-window", "active-window", _("Reuse active window")}},
   "new-window");
-SettingsEntryBool Settings::autosaveSessionEnabled("dialogs", "autosaveSessionEnabled", true);
-SettingsEntryInt Settings::autosaveSessionIntervalSeconds("dialogs", "autosaveSessionIntervalSeconds",
+SettingsEntryBool Settings::autosaveSessionEnabled("advanced", "autosaveSessionEnabled", true);
+SettingsEntryInt Settings::autosaveSessionIntervalSeconds("advanced", "autosaveSessionIntervalSeconds",
                                                           10, 600, 60);
 
 SettingsEntryString Settings::octoPrintUrl("printing", "octoPrintUrl", "");

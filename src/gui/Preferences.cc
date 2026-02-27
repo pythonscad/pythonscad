@@ -192,9 +192,9 @@ void Preferences::init()
   this->defaultmap["advanced/enableTraceUsermoduleParameters"] = true;
   this->defaultmap["advanced/enableParameterCheck"] = true;
   this->defaultmap["advanced/enableParameterRangeCheck"] = false;
-  this->defaultmap["dialogs/singleInstanceOpenMode"] = "new-window";
-  this->defaultmap["dialogs/autosaveSessionEnabled"] = true;
-  this->defaultmap["dialogs/autosaveSessionIntervalSeconds"] = 60;
+  this->defaultmap["advanced/singleInstanceOpenMode"] = "new-window";
+  this->defaultmap["advanced/autosaveSessionEnabled"] = true;
+  this->defaultmap["advanced/autosaveSessionIntervalSeconds"] = 60;
   this->defaultmap["view/hideEditor"] = false;
   this->defaultmap["view/hideConsole"] = false;
   this->defaultmap["view/hideErrorLog"] = true;
@@ -760,7 +760,7 @@ void Preferences::on_checkBoxEnableNumberScrollWheel_toggled(bool val)
 void Preferences::on_checkBoxAutosaveSessionEnabled_toggled(bool state)
 {
   QSettingsCached settings;
-  settings.setValue("dialogs/autosaveSessionEnabled", state);
+  settings.setValue("advanced/autosaveSessionEnabled", state);
   this->comboBoxAutosaveSessionInterval->setEnabled(state);
 }
 
@@ -768,7 +768,7 @@ void Preferences::on_comboBoxAutosaveSessionInterval_activated(int)
 {
   const int seconds = this->comboBoxAutosaveSessionInterval->currentData().toInt();
   QSettingsCached settings;
-  settings.setValue("dialogs/autosaveSessionIntervalSeconds", seconds);
+  settings.setValue("advanced/autosaveSessionIntervalSeconds", seconds);
 }
 
 void Preferences::on_enableSoundOnRenderCompleteCheckBox_toggled(bool state)
@@ -1502,8 +1502,8 @@ void Preferences::updateGUI()
   updateComboBox(this->comboBoxToolbarExport2D, Settings::Settings::toolbarExport2D);
   updateComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
   BlockSignals<QCheckBox *>(this->checkBoxAutosaveSessionEnabled)
-    ->setChecked(getValue("dialogs/autosaveSessionEnabled").toBool());
-  const int autosaveSeconds = getValue("dialogs/autosaveSessionIntervalSeconds").toInt();
+    ->setChecked(getValue("advanced/autosaveSessionEnabled").toBool());
+  const int autosaveSeconds = getValue("advanced/autosaveSessionIntervalSeconds").toInt();
   for (int i = 0; i < this->comboBoxAutosaveSessionInterval->count(); ++i) {
     if (this->comboBoxAutosaveSessionInterval->itemData(i).toInt() == autosaveSeconds) {
       BlockSignals<QComboBox *>(this->comboBoxAutosaveSessionInterval)->setCurrentIndex(i);
