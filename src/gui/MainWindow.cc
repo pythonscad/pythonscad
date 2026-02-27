@@ -3858,6 +3858,7 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   // If there is no renderedEditor we request for a new preview if the
   // auto-reload is enabled.
   if (renderedEditor == nullptr && designActionAutoReload->isChecked() && !MainWindow::isEmpty()) {
+    fileChangedOnDisk();  // prime autoReloadId to avoid a false-positive auto-reload on first timer tick
     actionRenderPreview();
   }
 }
