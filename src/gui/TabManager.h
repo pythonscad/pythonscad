@@ -44,6 +44,7 @@ public:
   bool saveACopy(EditorInterface *edt);
   void open(const QString& filename);
   size_t count();
+  void switchToEditor(EditorInterface *editor);
 
   void saveSession(const QString& path);
   bool restoreSession(const QString& path, int windowIndex = 0);
