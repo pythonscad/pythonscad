@@ -427,11 +427,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   setupStatusBar();
   setupViewportControl();
   setupAnimate();
-  // Must be initialized before setupEditor(), because creating a tab triggers
-  // tabSwitched -> onLanguageActiveChanged -> updateLanguageLabel() which
-  // dereferences these pointers.
-  this->versionLabel = nullptr;
-  this->languageLabel = nullptr;
 
   setupEditor(filenames);
   setupCustomizer();
@@ -2781,7 +2776,7 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
     if (versionLabel == nullptr) {
       versionLabel =
         new QLabel("PythonSCAD " + QString::fromStdString(std::string(openscad_displayversionnumber)));
-      sb->addPermanentWidget(this->versionLabel);
+      sb->insertPermanentWidget(0, this->versionLabel);
     }
   } else {
     if (this->versionLabel != nullptr) {
@@ -2789,7 +2784,7 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
       delete this->versionLabel;
       this->versionLabel = nullptr;
     }
-    sb->addPermanentWidget(progressWidget);
+    sb->insertPermanentWidget(0, progressWidget);
   }
 }
 
@@ -2802,6 +2797,16 @@ void MainWindow::updateLanguageLabel()
     languageLabel->setCursor(Qt::PointingHandCursor);
     languageLabel->installEventFilter(this);
     languageLabel->setToolTip(_("Click to change language"));
+    languageLabel->setStyleSheet(
+      "QLabel {"
+      "  border: 1px solid palette(mid);"
+      "  border-radius: 3px;"
+      "  padding: 1px 6px;"
+      "}"
+      "QLabel:hover {"
+      "  background-color: palette(midlight);"
+      "  border-color: palette(dark);"
+      "}");
     sb->addPermanentWidget(this->languageLabel);
   }
 
@@ -2814,7 +2819,7 @@ void MainWindow::updateLanguageLabel()
   default:          languageText = "Unknown"; break;
   }
 
-  languageLabel->setText(languageText);
+  languageLabel->setText(languageText + " \u25BE");
 }
 
 void MainWindow::showLanguageMenu()
@@ -4283,8 +4288,11 @@ void MainWindow::setupPreferences()
  */
 void MainWindow::setupStatusBar()
 {
-  this->versionLabel = nullptr;  // must be initialized before calling updateStatusBar()
-  updateStatusBar(nullptr);
+  // Must be initialized before setupEditor(), because creating a tab triggers
+  // tabSwitched -> onLanguageActiveChanged -> updateLanguageLabel() which
+  // dereferences these pointers.
+  this->versionLabel = nullptr;
+  this->languageLabel = nullptr;
 }
 
 /**
