@@ -51,6 +51,7 @@
 namespace {
 uint64_t sessionDirtyGenerationValue = 0;
 bool sessionSaveWarningShown = false;
+bool skipSessionSaveOnQuit = false;
 
 void warnSessionSaveFailure(const QString& path, const QString& error)
 {
@@ -65,6 +66,35 @@ void warnSessionSaveFailure(const QString& path, const QString& error)
     parent, QObject::tr("Session Save"),
     QObject::tr("Could not write session file:\n%1\n\n%2\n\nSession changes may be lost.")
       .arg(path, error));
+}
+
+bool writeSessionFile(const QJsonObject& root, const QString& path, QString *error)
+{
+  const QFileInfo pathInfo(path);
+  const QDir dir = pathInfo.absoluteDir();
+  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) {
+    if (error) *error = QObject::tr("Unable to create the session directory.");
+    return false;
+  }
+
+  QSaveFile file(path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (error) *error = file.errorString();
+    return false;
+  }
+
+  const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
+  if (file.write(json) != json.size()) {
+    file.cancelWriting();
+    if (error) *error = file.errorString();
+    return false;
+  }
+
+  if (!file.commit()) {
+    if (error) *error = file.errorString();
+    return false;
+  }
+  return true;
 }
 }  // namespace
 
@@ -798,6 +828,16 @@ uint64_t TabManager::sessionDirtyGeneration()
   return sessionDirtyGenerationValue;
 }
 
+void TabManager::setSkipSessionSave(bool skip)
+{
+  skipSessionSaveOnQuit = skip;
+}
+
+bool TabManager::shouldSkipSessionSave()
+{
+  return skipSessionSaveOnQuit;
+}
+
 void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
                                    bool contentModified, bool parameterModified,
                                    const QByteArray& customizerState)
@@ -842,25 +882,9 @@ void TabManager::saveSession(const QString& path)
   QJsonObject root;
   root.insert(QStringLiteral("version"), SESSION_VERSION);
   root.insert(QStringLiteral("windows"), windows);
-  const QFileInfo pathInfo(path);
-  const QDir dir = pathInfo.absoluteDir();
-  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) {
-    warnSessionSaveFailure(path, QObject::tr("Unable to create the session directory."));
-    return;
-  }
-  QSaveFile file(path);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-    warnSessionSaveFailure(path, file.errorString());
-    return;
-  }
-  const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
-  if (file.write(json) != json.size()) {
-    file.cancelWriting();
-    warnSessionSaveFailure(path, file.errorString());
-    return;
-  }
-  if (!file.commit()) {
-    warnSessionSaveFailure(path, file.errorString());
+  QString error;
+  if (!writeSessionFile(root, path, &error)) {
+    warnSessionSaveFailure(path, error);
   }
 }
 
@@ -868,7 +892,7 @@ void TabManager::saveSession(const QString& path)
  * Save session state from ALL open windows into a single session file.
  * Called by the "Quit" action so every window is persisted.
  */
-void TabManager::saveGlobalSession(const QString& path)
+bool TabManager::saveGlobalSession(const QString& path, QString *error, bool showWarning)
 {
   QJsonArray windows;
   for (auto *mainWin : scadApp->windowManager.getWindows()) {
@@ -897,26 +921,13 @@ void TabManager::saveGlobalSession(const QString& path)
   root.insert(QStringLiteral("version"), SESSION_VERSION);
   root.insert(QStringLiteral("windows"), windows);
 
-  const QFileInfo pathInfo(path);
-  const QDir dir = pathInfo.absoluteDir();
-  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) {
-    warnSessionSaveFailure(path, QObject::tr("Unable to create the session directory."));
-    return;
+  QString localError;
+  QString *targetError = error ? error : &localError;
+  const bool ok = writeSessionFile(root, path, targetError);
+  if (!ok && showWarning) {
+    warnSessionSaveFailure(path, *targetError);
   }
-  QSaveFile file(path);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-    warnSessionSaveFailure(path, file.errorString());
-    return;
-  }
-  const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
-  if (file.write(json) != json.size()) {
-    file.cancelWriting();
-    warnSessionSaveFailure(path, file.errorString());
-    return;
-  }
-  if (!file.commit()) {
-    warnSessionSaveFailure(path, file.errorString());
-  }
+  return ok;
 }
 
 /*!
