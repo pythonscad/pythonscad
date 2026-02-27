@@ -1427,13 +1427,11 @@ void MainWindow::quitApplication()
     QMessageBox box(this);
     box.setIcon(QMessageBox::Warning);
     box.setWindowTitle(_("Session Save"));
-    box.setText(_("Could not write session file."));
-    box.setInformativeText(QObject::tr("%1\n\n%2\n\nRetry to attempt saving again, Ignore to quit "
-                                       "without saving, or Cancel to keep the application open.")
-                             .arg(sessionPath, error));
-    auto *retryButton = box.addButton(QObject::tr("Retry"), QMessageBox::AcceptRole);
-    auto *ignoreButton = box.addButton(QObject::tr("Ignore"), QMessageBox::DestructiveRole);
-    box.addButton(QObject::tr("Cancel"), QMessageBox::RejectRole);
+    box.setText(_("Could not save the session."));
+    box.setInformativeText(QObject::tr("%1\n\n%2").arg(sessionPath, error));
+    auto *retryButton = box.addButton(QObject::tr("Try Again"), QMessageBox::AcceptRole);
+    auto *ignoreButton = box.addButton(QObject::tr("Quit Without Saving"), QMessageBox::DestructiveRole);
+    box.addButton(QObject::tr("Keep Open"), QMessageBox::RejectRole);
     box.setDefaultButton(retryButton);
     box.exec();
     if (box.clickedButton() == retryButton) {
