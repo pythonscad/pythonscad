@@ -47,7 +47,7 @@ public:
 
   void saveSession(const QString& path);
   bool restoreSession(const QString& path, int windowIndex = 0);
-  static void saveGlobalSession(const QString& path);
+  static bool saveGlobalSession(const QString& path, QString *error = nullptr, bool showWarning = true);
   static int sessionWindowCount(const QString& path);
   static void removeSessionFile();
   static QString getSessionFilePath();
@@ -55,6 +55,8 @@ public:
   static bool hasDirtyTabs();
   static void bumpSessionDirtyGeneration();
   static uint64_t sessionDirtyGeneration();
+  static void setSkipSessionSave(bool skip);
+  static bool shouldSkipSessionSave();
 
   // Session file schema version. Increment when the format changes and add a
   // migration step in migrateSession().  Old files without a version field are

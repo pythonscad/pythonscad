@@ -1422,7 +1422,29 @@ void MainWindow::on_fileActionOpenWindow_triggered()
 void MainWindow::quitApplication()
 {
   const QString sessionPath = TabManager::getSessionFilePath();
-  TabManager::saveGlobalSession(sessionPath);
+  QString error;
+  while (!TabManager::saveGlobalSession(sessionPath, &error, false)) {
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle(_("Session Save"));
+    box.setText(_("Could not write session file."));
+    box.setInformativeText(QObject::tr("%1\n\n%2\n\nRetry to attempt saving again, Ignore to quit "
+                                       "without saving, or Cancel to keep the application open.")
+                             .arg(sessionPath, error));
+    auto *retryButton = box.addButton(QObject::tr("Retry"), QMessageBox::AcceptRole);
+    auto *ignoreButton = box.addButton(QObject::tr("Ignore"), QMessageBox::DestructiveRole);
+    box.addButton(QObject::tr("Cancel"), QMessageBox::RejectRole);
+    box.setDefaultButton(retryButton);
+    box.exec();
+    if (box.clickedButton() == retryButton) {
+      continue;
+    }
+    if (box.clickedButton() == ignoreButton) {
+      TabManager::setSkipSessionSave(true);
+      break;
+    }
+    return;
+  }
   for (auto *win : scadApp->windowManager.getWindows()) {
     win->isSessionQuitting = true;
   }
