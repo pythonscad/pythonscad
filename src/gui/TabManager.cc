@@ -1150,6 +1150,42 @@ int TabManager::sessionWindowCount(const QString& path)
   return root.value(QStringLiteral("windows")).toArray().size();
 }
 
+bool TabManager::sessionHasOnlyEmptyTab(const QString& path)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
+  const QByteArray rawData = file.readAll();
+  file.close();
+
+  const QJsonDocument doc = QJsonDocument::fromJson(rawData);
+  if (!doc.isObject()) return false;
+
+  QJsonObject root = doc.object();
+  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
+  if (fileVersion > SESSION_VERSION) return false;
+  if (fileVersion < SESSION_VERSION) {
+    if (!migrateSession(root, fileVersion)) return false;
+  }
+
+  const QJsonArray windows = root.value(QStringLiteral("windows")).toArray();
+  if (windows.size() != 1) return false;
+
+  const QJsonObject win = windows[0].toObject();
+  const QJsonArray tabs = win.value(QStringLiteral("tabs")).toArray();
+  if (tabs.size() != 1) return false;
+
+  const QJsonObject tab = tabs[0].toObject();
+  const QString filepath = tab.value(QStringLiteral("filepath")).toString();
+  const QString content = tab.value(QStringLiteral("content")).toString();
+  const bool contentModified = tab.value(QStringLiteral("contentModified")).toBool();
+  const bool parameterModified = tab.value(QStringLiteral("parameterModified")).toBool();
+  const QString customizerState = tab.value(QStringLiteral("customizerState")).toString();
+
+  const bool emptyContent = content.trimmed().isEmpty();
+  const bool emptyCustomizer = customizerState.trimmed().isEmpty();
+  return filepath.isEmpty() && emptyContent && !contentModified && !parameterModified && emptyCustomizer;
+}
+
 /*!
  * Remove the session file so the next launch starts with a fresh session.
  * Called when the user explicitly closes all windows (as opposed to Quit).
