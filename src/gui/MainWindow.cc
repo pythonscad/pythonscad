@@ -2166,7 +2166,8 @@ bool MainWindow::checkEditorModified()
 {
   if (activeEditor->isContentModified()) {
     auto ret = QMessageBox::warning(this, _("Application"),
-                                    _("The document has been modified.\n"
+                                    _("The file has changed on disk, but this tab has unsaved edits.\n"
+                                      "Reloading will discard your changes.\n\n"
                                       "Do you really want to reload the file?"),
                                     QMessageBox::Yes | QMessageBox::No);
     if (ret != QMessageBox::Yes) {
