@@ -661,13 +661,15 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   if (inputFilesList.size() == 1 && inputFilesList[0].isEmpty()) {
     const QString sessionPath = TabManager::getSessionFilePath();
     if (QFileInfo(sessionPath).exists()) {
-      const int windowCount = TabManager::sessionWindowCount(sessionPath);
-      if (windowCount > 0) {
-        for (int i = 0; i < windowCount; ++i) {
-          windowsToOpen.append(QStringList(QStringLiteral(":session:%1:").arg(i)));
+      if (!TabManager::sessionHasOnlyEmptyTab(sessionPath)) {
+        const int windowCount = TabManager::sessionWindowCount(sessionPath);
+        if (windowCount > 0) {
+          for (int i = 0; i < windowCount; ++i) {
+            windowsToOpen.append(QStringList(QStringLiteral(":session:%1:").arg(i)));
+          }
+        } else {
+          windowsToOpen.append(QStringList(QStringLiteral(":session:")));
         }
-      } else {
-        windowsToOpen.append(QStringList(QStringLiteral(":session:")));
       }
     }
   }

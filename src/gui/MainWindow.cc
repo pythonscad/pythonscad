@@ -131,6 +131,7 @@
 #include "gui/ExportSvgDialog.h"
 #include "gui/ExternalToolInterface.h"
 #include "gui/ImportUtils.h"
+#include "gui/LaunchingScreen.h"
 #include "gui/LibraryInfoDialog.h"
 #include "gui/Measurement.h"
 #include "gui/OpenSCADApp.h"
@@ -1417,6 +1418,26 @@ void MainWindow::on_fileActionOpenWindow_triggered()
       return;
     }
     new MainWindow(QStringList(i.filePath()));
+  }
+}
+
+void MainWindow::on_fileActionWelcome_triggered()
+{
+  LaunchingScreen launcher(this);
+  if (launcher.exec() != QDialog::Accepted) {
+    return;
+  }
+
+  if (launcher.isForceShowEditor()) {
+    QSettingsCached settings;
+    settings.setValue("view/hideEditor", false);
+  }
+
+  const QStringList files = launcher.selectedFiles();
+  for (const auto& file : files) {
+    if (!file.isEmpty()) {
+      tabManager->open(file);
+    }
   }
 }
 
