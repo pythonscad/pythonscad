@@ -1420,6 +1420,11 @@ void MainWindow::quitApplication()
   scadApp->quit();
 }
 
+void MainWindow::markSessionQuitting()
+{
+  isSessionQuitting = true;
+}
+
 void MainWindow::actionOpenRecent()
 {
   auto guard = scopedSetCurrentOutput();

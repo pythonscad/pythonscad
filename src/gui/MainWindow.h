@@ -208,6 +208,8 @@ public:
   static void noOutputConsole(const Message&, void *) {}   // /dev/null
   static void noOutputErrorLog(const Message&, void *) {}  // /dev/null
 
+  void markSessionQuitting();
+
   bool fileChangedOnDisk();
 
   // Parse the document contained in the editor, update the editors's parameters and returns a SourceFile

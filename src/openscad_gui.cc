@@ -45,6 +45,8 @@
 #include <QMessageBox>
 #include <QObject>
 #include <QPalette>
+#include <QSessionManager>
+#include <QSocketNotifier>
 #include <QStandardPaths>
 #include <QStringList>
 #include <QStyleHints>
@@ -53,10 +55,17 @@
 #include <QtConcurrentRun>
 #include <QtGlobal>
 #include <array>
+#include <cstring>
 #include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
+
+#ifdef Q_OS_UNIX
+#include <fcntl.h>
+#include <signal.h>
+#include <unistd.h>
+#endif
 
 #include "Feature.h"
 #include "FontCache.h"
@@ -100,6 +109,19 @@ Q_DECLARE_METATYPE(std::shared_ptr<const Geometry>);
 extern std::string arg_colorscheme;
 
 namespace {
+
+bool saveSessionForShutdown()
+{
+  const auto& windows = scadApp->windowManager.getWindows();
+  if (windows.isEmpty()) {
+    return false;
+  }
+  for (auto *win : windows) {
+    win->markSessionQuitting();
+  }
+  TabManager::saveGlobalSession(TabManager::getSessionFilePath());
+  return true;
+}
 
 constexpr int kIpcTimeoutMs = 1500;
 
@@ -270,6 +292,45 @@ void startIpcServer(QLocalServer *server)
     }
   }
 }
+
+#ifdef Q_OS_UNIX
+int shutdownSignalPipe[2] = {-1, -1};
+
+void shutdownSignalHandler(int)
+{
+  const char signalByte = 1;
+  if (shutdownSignalPipe[1] != -1) {
+    (void)::write(shutdownSignalPipe[1], &signalByte, sizeof(signalByte));
+  }
+}
+
+void setupUnixSignalHandlers(OpenSCADApp *app)
+{
+  if (::pipe(shutdownSignalPipe) != 0) return;
+  const int flags = fcntl(shutdownSignalPipe[1], F_GETFL, 0);
+  if (flags != -1) {
+    fcntl(shutdownSignalPipe[1], F_SETFL, flags | O_NONBLOCK);
+  }
+
+  auto *notifier = new QSocketNotifier(shutdownSignalPipe[0], QSocketNotifier::Read, app);
+  QObject::connect(notifier, &QSocketNotifier::activated, app, [notifier](int) {
+    notifier->setEnabled(false);
+    char buffer[32];
+    while (::read(shutdownSignalPipe[0], buffer, sizeof(buffer)) > 0) {
+    }
+    saveSessionForShutdown();
+    QCoreApplication::quit();
+    notifier->setEnabled(true);
+  });
+
+  struct sigaction action;
+  memset(&action, 0, sizeof(action));
+  action.sa_handler = shutdownSignalHandler;
+  sigaction(SIGTERM, &action, nullptr);
+  sigaction(SIGINT, &action, nullptr);
+  sigaction(SIGHUP, &action, nullptr);
+}
+#endif
 
 // Only if "fileName" is not absolute, prepend the "absoluteBase".
 QString assemblePath(const std::filesystem::path& absoluteBaseDir, const std::string& fileName)
@@ -520,11 +581,21 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     new MainWindow(files);
   }
   QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
+    saveSessionForShutdown();
     QSettingsCached{}.release();
 #ifdef Q_OS_MACOS
     CocoaUtils::endApplication();
 #endif
   });
+
+  QObject::connect(&app, &QGuiApplication::commitDataRequest, &app,
+                   [](QSessionManager&) { saveSessionForShutdown(); });
+  QObject::connect(&app, &QGuiApplication::saveStateRequest, &app,
+                   [](QSessionManager&) { saveSessionForShutdown(); });
+
+#ifdef Q_OS_UNIX
+  setupUnixSignalHandlers(&app);
+#endif
 
 #ifdef ENABLE_HIDAPI
   if (Settings::Settings::inputEnableDriverHIDAPI.value()) {
