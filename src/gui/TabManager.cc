@@ -26,6 +26,7 @@
 #include <QMessageBox>
 #include <QPoint>
 #include <QSaveFile>
+#include <QSignalBlocker>
 #include <QShortcut>
 #include <QStringList>
 #include <QTabBar>
@@ -52,6 +53,25 @@ namespace {
 uint64_t sessionDirtyGenerationValue = 0;
 bool sessionSaveWarningShown = false;
 bool skipSessionSaveOnQuit = false;
+
+QJsonArray vec3ToJson(const Eigen::Vector3d& vec)
+{
+  QJsonArray arr;
+  arr.append(vec.x());
+  arr.append(vec.y());
+  arr.append(vec.z());
+  return arr;
+}
+
+bool jsonToVec3(const QJsonValue& value, double *x, double *y, double *z)
+{
+  const QJsonArray arr = value.toArray();
+  if (arr.size() != 3 || !x || !y || !z) return false;
+  *x = arr[0].toDouble();
+  *y = arr[1].toDouble();
+  *z = arr[2].toDouble();
+  return true;
+}
 
 void warnSessionSaveFailure(const QString& path, const QString& error)
 {
@@ -876,6 +896,7 @@ void TabManager::saveSession(const QString& path)
     obj.insert(QStringLiteral("cursorLine"), cursorLine);
     obj.insert(QStringLiteral("cursorColumn"), cursorColumn);
     obj.insert(QStringLiteral("firstVisibleLine"), edt->firstVisibleLine());
+    obj.insert(QStringLiteral("findState"), edt->findState);
     const QByteArray customizerState = edt->parameterWidget->getSessionState();
     if (!customizerState.isEmpty()) {
       obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
@@ -885,6 +906,23 @@ void TabManager::saveSession(const QString& path)
   QJsonObject win;
   win.insert(QStringLiteral("tabs"), tabs);
   win.insert(QStringLiteral("currentIndex"), tabWidget->currentIndex());
+  if (parent && parent->qglview) {
+    QJsonObject view;
+    view.insert(QStringLiteral("vpt"), vec3ToJson(parent->qglview->cam.getVpt()));
+    view.insert(QStringLiteral("vpr"), vec3ToJson(parent->qglview->cam.getVpr()));
+    view.insert(QStringLiteral("vpd"), parent->qglview->cam.zoomValue());
+    view.insert(QStringLiteral("vpf"), parent->qglview->cam.fovValue());
+    view.insert(QStringLiteral("projection"), parent->qglview->orthoMode()
+                                                ? QStringLiteral("orthogonal")
+                                                : QStringLiteral("perspective"));
+    win.insert(QStringLiteral("viewState"), view);
+  }
+  if (parent) {
+    QJsonObject findPanel;
+    findPanel.insert(QStringLiteral("text"), parent->findInputField->text());
+    findPanel.insert(QStringLiteral("replaceText"), parent->replaceInputField->text());
+    win.insert(QStringLiteral("findPanel"), findPanel);
+  }
 
   QJsonArray windows;
   windows.append(win);
@@ -921,6 +959,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       obj.insert(QStringLiteral("cursorLine"), cursorLine);
       obj.insert(QStringLiteral("cursorColumn"), cursorColumn);
       obj.insert(QStringLiteral("firstVisibleLine"), edt->firstVisibleLine());
+      obj.insert(QStringLiteral("findState"), edt->findState);
       const QByteArray customizerState = edt->parameterWidget->getSessionState();
       if (!customizerState.isEmpty()) {
         obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
@@ -930,6 +969,23 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
     QJsonObject win;
     win.insert(QStringLiteral("tabs"), tabs);
     win.insert(QStringLiteral("currentIndex"), tm->tabWidget->currentIndex());
+    if (mainWin && mainWin->qglview) {
+      QJsonObject view;
+      view.insert(QStringLiteral("vpt"), vec3ToJson(mainWin->qglview->cam.getVpt()));
+      view.insert(QStringLiteral("vpr"), vec3ToJson(mainWin->qglview->cam.getVpr()));
+      view.insert(QStringLiteral("vpd"), mainWin->qglview->cam.zoomValue());
+      view.insert(QStringLiteral("vpf"), mainWin->qglview->cam.fovValue());
+      view.insert(QStringLiteral("projection"), mainWin->qglview->orthoMode()
+                                                  ? QStringLiteral("orthogonal")
+                                                  : QStringLiteral("perspective"));
+      win.insert(QStringLiteral("viewState"), view);
+    }
+    if (mainWin) {
+      QJsonObject findPanel;
+      findPanel.insert(QStringLiteral("text"), mainWin->findInputField->text());
+      findPanel.insert(QStringLiteral("replaceText"), mainWin->replaceInputField->text());
+      win.insert(QStringLiteral("findPanel"), findPanel);
+    }
     windows.append(win);
   }
 
@@ -1033,6 +1089,8 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
   if (windowIndex < 0 || windowIndex >= windows.size()) return false;
 
   const QJsonObject win = windows[windowIndex].toObject();
+  const QJsonObject viewState = win.value(QStringLiteral("viewState")).toObject();
+  const QJsonObject findPanel = win.value(QStringLiteral("findPanel")).toObject();
   const QJsonArray tabs = win.value(QStringLiteral("tabs")).toArray();
   if (tabs.isEmpty()) return false;
   const int savedCurrentIndex = win.value(QStringLiteral("currentIndex")).toInt(0);
@@ -1052,6 +1110,7 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     const int cursorLine = obj.value(QStringLiteral("cursorLine")).toInt(-1);
     const int cursorColumn = obj.value(QStringLiteral("cursorColumn")).toInt(-1);
     const int firstVisibleLine = obj.value(QStringLiteral("firstVisibleLine")).toInt(-1);
+    int findState = obj.value(QStringLiteral("findState")).toInt(TabManager::FIND_HIDDEN);
     const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
 
     const QFileInfo fileInfo(filepath);
@@ -1088,6 +1147,10 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
       edt = editor;
     }
     setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState);
+    if (findState < TabManager::FIND_HIDDEN || findState > TabManager::FIND_REPLACE_VISIBLE) {
+      findState = TabManager::FIND_HIDDEN;
+    }
+    edt->findState = findState;
     if (cursorLine >= 0 && cursorColumn >= 0) {
       edt->setCursorPosition(cursorLine, cursorColumn);
     }
@@ -1102,6 +1165,38 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
 
   // Manually trigger the tab-switched handler now that construction is far enough along.
   tabSwitched(currentIndex);
+
+  if (!findPanel.isEmpty()) {
+    const QSignalBlocker findBlocker(parent->findInputField);
+    const QSignalBlocker replaceBlocker(parent->replaceInputField);
+    parent->findInputField->setText(findPanel.value(QStringLiteral("text")).toString());
+    parent->replaceInputField->setText(findPanel.value(QStringLiteral("replaceText")).toString());
+  }
+
+  updateFindState();
+
+  if (!viewState.isEmpty() && parent && parent->qglview) {
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    if (jsonToVec3(viewState.value(QStringLiteral("vpt")), &x, &y, &z)) {
+      parent->qglview->cam.setVpt(x, y, z);
+    }
+    if (jsonToVec3(viewState.value(QStringLiteral("vpr")), &x, &y, &z)) {
+      parent->qglview->cam.setVpr(x, y, z);
+    }
+    const double vpd = viewState.value(QStringLiteral("vpd")).toDouble(-1.0);
+    if (vpd > 0.0) parent->qglview->cam.setVpd(vpd);
+    const double vpf = viewState.value(QStringLiteral("vpf")).toDouble(-1.0);
+    if (vpf > 0.0) parent->qglview->cam.setVpf(vpf);
+    const QString projection = viewState.value(QStringLiteral("projection")).toString();
+    const bool isOrthogonal = projection == QStringLiteral("orthogonal");
+    parent->qglview->setOrthoMode(isOrthogonal);
+    parent->viewActionOrthogonal->setChecked(isOrthogonal);
+    parent->viewActionPerspective->setChecked(!isOrthogonal);
+    parent->qglview->update();
+    parent->viewportControlWidget->cameraChanged();
+  }
 
   if (missingCount > 0) {
     QMessageBox box(parent);
