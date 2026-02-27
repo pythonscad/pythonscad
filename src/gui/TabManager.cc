@@ -551,6 +551,8 @@ void TabManager::onTabModified(EditorInterface *edt)
 
 void TabManager::openTabFile(const QString& filename)
 {
+  const bool isUntitledPlaceholder =
+    (filename == QStringLiteral("Untitled.py") || filename == QStringLiteral("Untitled.scad"));
 #ifdef ENABLE_PYTHON
   if (boost::algorithm::ends_with(filename, ".py")) {
     std::string templ = "from openscad import *\n";
@@ -573,9 +575,13 @@ void TabManager::openTabFile(const QString& filename)
 
   const auto cmd = Importer::knownFileExtensions[suffix];
   if (cmd.isEmpty()) {
-    editor->filepath = fileinfo.absoluteFilePath();
-    editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
-    parent->updateRecentFiles(filename);
+    if (isUntitledPlaceholder) {
+      editor->filepath = "";
+    } else {
+      editor->filepath = fileinfo.absoluteFilePath();
+      editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
+      parent->updateRecentFiles(filename);
+    }
   } else {
     editor->filepath = "";
     editor->setPlainText(cmd.arg(filename));
@@ -969,6 +975,8 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
   const QJsonArray tabs = win.value(QStringLiteral("tabs")).toArray();
   if (tabs.isEmpty()) return false;
   const int savedCurrentIndex = win.value(QStringLiteral("currentIndex")).toInt(0);
+  int firstMissingIndex = -1;
+  int missingCount = 0;
 
   // Block signals during restore to prevent tab-switch signals from triggering
   // compile/preview (which calls initPython) before the constructor is finished.
@@ -981,6 +989,17 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     const bool contentModified = obj.value(QStringLiteral("contentModified")).toBool();
     const bool parameterModified = obj.value(QStringLiteral("parameterModified")).toBool();
     const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
+
+    const QFileInfo fileInfo(filepath);
+    const QString fileName = fileInfo.fileName();
+    const bool isUntitledPlaceholder =
+      (fileName == QStringLiteral("Untitled.py") || fileName == QStringLiteral("Untitled.scad"));
+    if (!filepath.isEmpty() && fileInfo.isAbsolute() && !fileInfo.exists() && !isUntitledPlaceholder) {
+      if (firstMissingIndex < 0) {
+        firstMissingIndex = i;
+      }
+      ++missingCount;
+    }
 
     // If tab had no unsaved changes, reload from disk (match behavior when app is running).
     if (!filepath.isEmpty() && !contentModified) {
@@ -1013,6 +1032,24 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
 
   // Manually trigger the tab-switched handler now that construction is far enough along.
   tabSwitched(currentIndex);
+
+  if (missingCount > 0) {
+    QMessageBox box(parent);
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle(QObject::tr("Session Restore"));
+    box.setText(QObject::tr("%1 file(s) could not be found on disk.").arg(missingCount));
+    box.setInformativeText(
+      QObject::tr("The session contents were restored, but the file paths are stale.\n"
+                  "Use Save As to pick a new location."));
+    auto *saveAsButton = box.addButton(QObject::tr("Save As..."), QMessageBox::AcceptRole);
+    box.addButton(QObject::tr("Dismiss"), QMessageBox::RejectRole);
+    box.setDefaultButton(saveAsButton);
+    box.exec();
+    if (box.clickedButton() == saveAsButton && firstMissingIndex >= 0) {
+      tabWidget->setCurrentIndex(firstMissingIndex);
+      QMetaObject::invokeMethod(parent, "on_fileActionSaveAs_triggered", Qt::QueuedConnection);
+    }
+  }
 
   parent->setWindowTitle(tabWidget->tabText(tabWidget->currentIndex()).replace("&&", "&"));
   parent->updateRecentFileActions();
