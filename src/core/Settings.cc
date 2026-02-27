@@ -212,6 +212,9 @@ SettingsEntryEnum<std::string> Settings::singleInstanceOpenMode(
   {{"new-window", "new-window", _("Open in new window")},
    {"active-window", "active-window", _("Reuse active window")}},
   "new-window");
+SettingsEntryBool Settings::autosaveSessionEnabled("dialogs", "autosaveSessionEnabled", true);
+SettingsEntryInt Settings::autosaveSessionIntervalSeconds("dialogs", "autosaveSessionIntervalSeconds",
+                                                          10, 600, 60);
 
 SettingsEntryString Settings::octoPrintUrl("printing", "octoPrintUrl", "");
 SettingsEntryString Settings::octoPrintApiKey("printing", "octoPrintApiKey", "");

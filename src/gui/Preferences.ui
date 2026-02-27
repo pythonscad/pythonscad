@@ -3009,6 +3009,39 @@
           </layout>
          </widget>
         </item>
+             <item>
+            <widget class="QGroupBox" name="groupBoxAutosaveSession">
+             <property name="title">
+              <string>Crash recovery</string>
+             </property>
+             <layout class="QFormLayout" name="formLayoutAutosaveSession">
+              <item row="0" column="0">
+               <widget class="QLabel" name="labelAutosaveSessionEnabled">
+              <property name="text">
+               <string>Autosave session in background:</string>
+              </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QCheckBox" name="checkBoxAutosaveSessionEnabled">
+              <property name="text">
+               <string>Enabled</string>
+              </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="labelAutosaveSessionInterval">
+              <property name="text">
+               <string>Autosave interval:</string>
+              </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="comboBoxAutosaveSessionInterval"/>
+              </item>
+             </layout>
+            </widget>
+             </item>
        </layout>
       </widget>
      </widget>
