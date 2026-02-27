@@ -51,6 +51,10 @@ public:
   static int sessionWindowCount(const QString& path);
   static void removeSessionFile();
   static QString getSessionFilePath();
+  static QString getAutosaveFilePath();
+  static bool hasDirtyTabs();
+  static void bumpSessionDirtyGeneration();
+  static uint64_t sessionDirtyGeneration();
 
   // Session file schema version. Increment when the format changes and add a
   // migration step in migrateSession().  Old files without a version field are

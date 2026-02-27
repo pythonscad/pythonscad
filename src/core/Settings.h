@@ -411,6 +411,8 @@ public:
   static SettingsEntryString printServiceName;
   static SettingsEntryEnum<std::string> printServiceFileFormat;
   static SettingsEntryEnum<std::string> singleInstanceOpenMode;
+  static SettingsEntryBool autosaveSessionEnabled;
+  static SettingsEntryInt autosaveSessionIntervalSeconds;
 
   static SettingsEntryString octoPrintUrl;
   static SettingsEntryString octoPrintApiKey;

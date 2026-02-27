@@ -45,10 +45,14 @@
 #include <QMessageBox>
 #include <QObject>
 #include <QPalette>
+#include <QDesktopServices>
+#include <QFile>
 #include <QSessionManager>
+#include <QSaveFile>
 #include <QSocketNotifier>
 #include <QStandardPaths>
 #include <QStringList>
+#include <QTimer>
 #include <QStyleHints>
 #include <QVector>
 #include <Qt>
@@ -60,6 +64,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <QFile>
 
 #ifdef Q_OS_UNIX
 #include <fcntl.h>
@@ -110,6 +115,94 @@ extern std::string arg_colorscheme;
 
 namespace {
 
+constexpr int kAutosaveIntervalMs = 60000;
+
+bool shouldOfferAutosaveRestore(const QString& autosavePath, const QString& sessionPath)
+{
+  const QFileInfo autosaveInfo(autosavePath);
+  if (!autosaveInfo.exists()) return false;
+
+  const QFileInfo sessionInfo(sessionPath);
+  if (!sessionInfo.exists()) return true;
+
+  return autosaveInfo.lastModified() > sessionInfo.lastModified();
+}
+
+bool promptAutosaveRestore(const QString& autosavePath)
+{
+  while (true) {
+    QMessageBox box;
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle(QStringLiteral("PythonSCAD"));
+    box.setText(_("Recovered session data was found."));
+    box.setInformativeText(_("Restore the autosaved session?"));
+    auto *restoreButton = box.addButton(_("Restore"), QMessageBox::AcceptRole);
+    auto *discardButton = box.addButton(_("Discard"), QMessageBox::RejectRole);
+    auto *showButton = box.addButton(_("Show File"), QMessageBox::ActionRole);
+    box.setDefaultButton(restoreButton);
+    box.exec();
+
+    if (box.clickedButton() == showButton) {
+      const QString dirPath = QFileInfo(autosavePath).absolutePath();
+      QDesktopServices::openUrl(QUrl::fromLocalFile(dirPath));
+      continue;
+    }
+
+    if (box.clickedButton() == restoreButton) {
+      return true;
+    }
+
+    return false;
+  }
+}
+
+void setupAutosaveTimer(OpenSCADApp *app)
+{
+  auto *timer = new QTimer(app);
+  timer->setInterval(kAutosaveIntervalMs);
+
+  auto *state = new uint64_t(0);
+  auto *performed = new bool(false);
+
+  QObject::connect(timer, &QTimer::timeout, app, [state, performed, timer]() {
+    const int intervalSeconds = Settings::Settings::autosaveSessionIntervalSeconds.value();
+    const int intervalMs = std::max(10, intervalSeconds) * 1000;
+    if (timer->interval() != intervalMs) {
+      timer->setInterval(intervalMs);
+    }
+
+    const bool enabled = Settings::Settings::autosaveSessionEnabled.value();
+
+    if (!enabled) {
+      if (*performed) {
+        QFile::remove(TabManager::getAutosaveFilePath());
+        *performed = false;
+        *state = 0;
+      }
+      return;
+    }
+
+    const bool dirty = TabManager::hasDirtyTabs();
+    if (!dirty) {
+      if (*performed) {
+        QFile::remove(TabManager::getAutosaveFilePath());
+        *performed = false;
+        *state = 0;
+      }
+      return;
+    }
+
+    const uint64_t generation = TabManager::sessionDirtyGeneration();
+    if (!*performed || generation != *state) {
+      TabManager::saveGlobalSession(TabManager::getAutosaveFilePath());
+      *state = generation;
+      *performed = true;
+    }
+  });
+
+  timer->start();
+}
+
 bool saveSessionForShutdown()
 {
   const auto& windows = scadApp->windowManager.getWindows();
@@ -120,6 +213,7 @@ bool saveSessionForShutdown()
     win->markSessionQuitting();
   }
   TabManager::saveGlobalSession(TabManager::getSessionFilePath());
+  QFile::remove(TabManager::getAutosaveFilePath());
   return true;
 }
 
@@ -537,6 +631,28 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 
   QVector<QStringList> windowsToOpen;
 
+  if (noInputFiles) {
+    const QString sessionPath = TabManager::getSessionFilePath();
+    const QString autosavePath = TabManager::getAutosaveFilePath();
+    if (shouldOfferAutosaveRestore(autosavePath, sessionPath)) {
+      if (promptAutosaveRestore(autosavePath)) {
+        QFile in(autosavePath);
+        QSaveFile out(sessionPath);
+        if (in.open(QIODevice::ReadOnly) && out.open(QIODevice::WriteOnly)) {
+          out.write(in.readAll());
+          const bool committed = out.commit();
+          if (committed) {
+            QFile::remove(autosavePath);
+          }
+        } else {
+          out.cancelWriting();
+        }
+      } else {
+        QFile::remove(autosavePath);
+      }
+    }
+  }
+
   // When no files given, restore session if it exists (skip launcher)
   if (inputFilesList.size() == 1 && inputFilesList[0].isEmpty()) {
     const QString sessionPath = TabManager::getSessionFilePath();
@@ -580,6 +696,9 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   for (const auto& files : windowsToOpen) {
     new MainWindow(files);
   }
+
+  setupAutosaveTimer(&app);
+
   QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
     saveSessionForShutdown();
     QSettingsCached{}.release();
