@@ -50,7 +50,23 @@
 
 namespace {
 uint64_t sessionDirtyGenerationValue = 0;
+bool sessionSaveWarningShown = false;
+
+void warnSessionSaveFailure(const QString& path, const QString& error)
+{
+  if (sessionSaveWarningShown) return;
+  sessionSaveWarningShown = true;
+
+  QWidget *parent = nullptr;
+  if (scadApp && !scadApp->windowManager.getWindows().isEmpty()) {
+    parent = *scadApp->windowManager.getWindows().begin();
+  }
+  QMessageBox::warning(
+    parent, QObject::tr("Session Save"),
+    QObject::tr("Could not write session file:\n%1\n\n%2\n\nSession changes may be lost.")
+      .arg(path, error));
 }
+}  // namespace
 
 TabManager::TabManager(MainWindow *o, const QString& filename)
 {
@@ -828,15 +844,24 @@ void TabManager::saveSession(const QString& path)
   root.insert(QStringLiteral("windows"), windows);
   const QFileInfo pathInfo(path);
   const QDir dir = pathInfo.absoluteDir();
-  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) return;
+  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) {
+    warnSessionSaveFailure(path, QObject::tr("Unable to create the session directory."));
+    return;
+  }
   QSaveFile file(path);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    warnSessionSaveFailure(path, file.errorString());
+    return;
+  }
   const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
   if (file.write(json) != json.size()) {
     file.cancelWriting();
+    warnSessionSaveFailure(path, file.errorString());
     return;
   }
-  file.commit();
+  if (!file.commit()) {
+    warnSessionSaveFailure(path, file.errorString());
+  }
 }
 
 /*!
@@ -874,15 +899,24 @@ void TabManager::saveGlobalSession(const QString& path)
 
   const QFileInfo pathInfo(path);
   const QDir dir = pathInfo.absoluteDir();
-  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) return;
+  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) {
+    warnSessionSaveFailure(path, QObject::tr("Unable to create the session directory."));
+    return;
+  }
   QSaveFile file(path);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    warnSessionSaveFailure(path, file.errorString());
+    return;
+  }
   const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
   if (file.write(json) != json.size()) {
     file.cancelWriting();
+    warnSessionSaveFailure(path, file.errorString());
     return;
   }
-  file.commit();
+  if (!file.commit()) {
+    warnSessionSaveFailure(path, file.errorString());
+  }
 }
 
 /*!
