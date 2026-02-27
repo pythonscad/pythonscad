@@ -257,6 +257,7 @@
     </widget>
     <addaction name="fileActionNew"/>
     <addaction name="fileActionOpen"/>
+    <addaction name="fileActionWelcome"/>
     <addaction name="menuOpenRecent"/>
     <addaction name="menuExamples"/>
     <addaction name="fileActionReload"/>
@@ -408,6 +409,11 @@
    <addaction name="menuWindow"/>
    <addaction name="menuHelp"/>
   </widget>
+  <action name="fileActionWelcome">
+   <property name="text">
+    <string>Welcome...</string>
+   </property>
+  </action>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="Dock" name="editorDock">
    <attribute name="dockWidgetArea">
