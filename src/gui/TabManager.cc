@@ -866,6 +866,12 @@ void TabManager::saveSession(const QString& path)
     obj.insert(QStringLiteral("content"), edt->toPlainText());
     obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
     obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
+    int cursorLine = 0;
+    int cursorColumn = 0;
+    edt->getCursorPosition(&cursorLine, &cursorColumn);
+    obj.insert(QStringLiteral("cursorLine"), cursorLine);
+    obj.insert(QStringLiteral("cursorColumn"), cursorColumn);
+    obj.insert(QStringLiteral("firstVisibleLine"), edt->firstVisibleLine());
     const QByteArray customizerState = edt->parameterWidget->getSessionState();
     if (!customizerState.isEmpty()) {
       obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
@@ -905,6 +911,12 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       obj.insert(QStringLiteral("content"), edt->toPlainText());
       obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
       obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
+      int cursorLine = 0;
+      int cursorColumn = 0;
+      edt->getCursorPosition(&cursorLine, &cursorColumn);
+      obj.insert(QStringLiteral("cursorLine"), cursorLine);
+      obj.insert(QStringLiteral("cursorColumn"), cursorColumn);
+      obj.insert(QStringLiteral("firstVisibleLine"), edt->firstVisibleLine());
       const QByteArray customizerState = edt->parameterWidget->getSessionState();
       if (!customizerState.isEmpty()) {
         obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
@@ -1033,6 +1045,9 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     QString content = obj.value(QStringLiteral("content")).toString();
     const bool contentModified = obj.value(QStringLiteral("contentModified")).toBool();
     const bool parameterModified = obj.value(QStringLiteral("parameterModified")).toBool();
+    const int cursorLine = obj.value(QStringLiteral("cursorLine")).toInt(-1);
+    const int cursorColumn = obj.value(QStringLiteral("cursorColumn")).toInt(-1);
+    const int firstVisibleLine = obj.value(QStringLiteral("firstVisibleLine")).toInt(-1);
     const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
 
     const QFileInfo fileInfo(filepath);
@@ -1069,6 +1084,12 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
       edt = editor;
     }
     setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState);
+    if (cursorLine >= 0 && cursorColumn >= 0) {
+      edt->setCursorPosition(cursorLine, cursorColumn);
+    }
+    if (firstVisibleLine >= 0) {
+      edt->setFirstVisibleLine(firstVisibleLine);
+    }
   }
   const int currentIndex = std::max(0, std::min(savedCurrentIndex, tabWidget->count() - 1));
   tabWidget->setCurrentIndex(currentIndex);
