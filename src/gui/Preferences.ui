@@ -2990,6 +2990,25 @@
           </layout>
          </widget>
         </item>
+        <item>
+         <widget class="QGroupBox" name="groupBoxSingleInstance">
+          <property name="title">
+           <string>Single-instance</string>
+          </property>
+          <layout class="QFormLayout" name="formLayoutSingleInstance">
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelSingleInstanceOpenMode">
+             <property name="text">
+              <string>When launching another instance with files:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="comboBoxSingleInstanceOpenMode"/>
+           </item>
+          </layout>
+         </widget>
+        </item>
        </layout>
       </widget>
      </widget>

@@ -122,6 +122,11 @@ Preferences::Preferences(QWidget *parent) : QMainWindow(parent)
   updateGUI();
 }
 
+void Preferences::on_comboBoxSingleInstanceOpenMode_activated(int)
+{
+  updateComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
+}
+
 void Preferences::init()
 {
   // Editor pane
@@ -187,6 +192,7 @@ void Preferences::init()
   this->defaultmap["advanced/enableTraceUsermoduleParameters"] = true;
   this->defaultmap["advanced/enableParameterCheck"] = true;
   this->defaultmap["advanced/enableParameterRangeCheck"] = false;
+  this->defaultmap["dialogs/singleInstanceOpenMode"] = "new-window";
   this->defaultmap["view/hideEditor"] = false;
   this->defaultmap["view/hideConsole"] = false;
   this->defaultmap["view/hideErrorLog"] = true;
@@ -275,6 +281,7 @@ void Preferences::init()
   initComboBox(this->comboBoxRenderBackend3D, Settings::Settings::renderBackend3D);
   initComboBox(this->comboBoxToolbarExport3D, Settings::Settings::toolbarExport3D);
   initComboBox(this->comboBoxToolbarExport2D, Settings::Settings::toolbarExport2D);
+  initComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
 
   initListBox(this->listWidgetLocalAppParams, Settings::Settings::localAppParameterList);
   connect(this->listWidgetLocalAppParams->model(), &QAbstractItemModel::dataChanged, this,
@@ -780,9 +787,9 @@ void Preferences::fireApplicationFontChanged() const
 static QString guiThemeValueFromIndex(int index)
 {
   switch (index) {
-  case 0: return "light";
-  case 1: return "dark";
-  case 2: return "auto";
+  case 0:  return "light";
+  case 1:  return "dark";
+  case 2:  return "auto";
   default: return "auto";
   }
 }
@@ -1472,6 +1479,7 @@ void Preferences::updateGUI()
     ->setChecked(getValue("advanced/enableParameterRangeCheck").toBool());
   updateComboBox(this->comboBoxToolbarExport3D, Settings::Settings::toolbarExport3D);
   updateComboBox(this->comboBoxToolbarExport2D, Settings::Settings::toolbarExport2D);
+  updateComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
 
   BlockSignals<QCheckBox *>(this->checkBoxSummaryCamera)
     ->setChecked(Settings::Settings::summaryCamera.value());

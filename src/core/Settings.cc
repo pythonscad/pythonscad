@@ -207,6 +207,11 @@ SettingsEntryString Settings::printServiceName("printing", "printServiceName", "
 SettingsEntryEnum<std::string> Settings::printServiceFileFormat(
   "printing", "printServiceFileFormat", createFileFormatItems(fileformat::all3D()),
   fileformat::info(FileFormat::ASCII_STL).description);
+SettingsEntryEnum<std::string> Settings::singleInstanceOpenMode(
+  "dialogs", "singleInstanceOpenMode",
+  {{"new-window", "new-window", _("Open in new window")},
+   {"active-window", "active-window", _("Reuse active window")}},
+  "new-window");
 
 SettingsEntryString Settings::octoPrintUrl("printing", "octoPrintUrl", "");
 SettingsEntryString Settings::octoPrintApiKey("printing", "octoPrintApiKey", "");

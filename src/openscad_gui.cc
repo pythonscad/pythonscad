@@ -28,14 +28,24 @@
 
 #include <QtCore/qstringliteral.h>
 
+#include <QByteArray>
+#include <QCryptographicHash>
 #include <QDialog>
 #include <QDir>
 #include <QFileInfo>
 #include <QFutureWatcher>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QLockFile>
+#include <QMessageBox>
 #include <QObject>
 #include <QPalette>
+#include <QStandardPaths>
 #include <QStringList>
 #include <QStyleHints>
 #include <QVector>
@@ -90,6 +100,176 @@ Q_DECLARE_METATYPE(std::shared_ptr<const Geometry>);
 extern std::string arg_colorscheme;
 
 namespace {
+
+constexpr int kIpcTimeoutMs = 1500;
+
+QString lockFilePath()
+{
+  const QString baseDir = TabManager::getSessionFilePath();
+  return QFileInfo(baseDir).absolutePath() + QStringLiteral("/pythonscad.lock");
+}
+
+QString serverNameFromPath(const QString& path)
+{
+  const QByteArray hash = QCryptographicHash::hash(path.toUtf8(), QCryptographicHash::Sha1).toHex();
+  return QStringLiteral("pythonscad.instance.") + QString::fromUtf8(hash);
+}
+
+QString serverName()
+{
+  return serverNameFromPath(lockFilePath());
+}
+
+QString resolveOpenMode(const std::string& overrideMode)
+{
+  if (overrideMode == "new-window" || overrideMode == "active-window") {
+    return QString::fromStdString(overrideMode);
+  }
+  return QString::fromStdString(Settings::Settings::singleInstanceOpenMode.value());
+}
+
+void focusWindow(MainWindow *window)
+{
+  if (!window) return;
+  window->show();
+  window->raise();
+  window->activateWindow();
+}
+
+void openFilesInWindow(MainWindow *window, const QStringList& files)
+{
+  if (!window) return;
+  for (const auto& file : files) {
+    if (file.isEmpty()) continue;
+    window->tabManager->open(file);
+  }
+  focusWindow(window);
+}
+
+MainWindow *getOrCreateActiveWindow()
+{
+  auto *active = scadApp->windowManager.getLastActive();
+  if (active) return active;
+  if (!scadApp->windowManager.getWindows().isEmpty()) {
+    return *scadApp->windowManager.getWindows().begin();
+  }
+  return nullptr;
+}
+
+QJsonObject buildIpcMessage(const QString& action, const QStringList& files, const QString& openMode,
+                            const QString& cwd)
+{
+  QJsonObject obj;
+  obj.insert(QStringLiteral("action"), action);
+  obj.insert(QStringLiteral("openMode"), openMode);
+  obj.insert(QStringLiteral("cwd"), cwd);
+  QJsonArray fileArray;
+  for (const auto& file : files) fileArray.append(file);
+  obj.insert(QStringLiteral("files"), fileArray);
+  return obj;
+}
+
+bool sendIpcMessage(const QJsonObject& message)
+{
+  QLocalSocket socket;
+  socket.connectToServer(serverName());
+  if (!socket.waitForConnected(kIpcTimeoutMs)) {
+    return false;
+  }
+
+  const QByteArray payload = QJsonDocument(message).toJson(QJsonDocument::Compact);
+  socket.write(payload);
+  if (!socket.waitForBytesWritten(kIpcTimeoutMs)) {
+    return false;
+  }
+  socket.flush();
+  if (!socket.waitForReadyRead(kIpcTimeoutMs)) {
+    return false;
+  }
+  const QByteArray ack = socket.readAll();
+  socket.disconnectFromServer();
+  return ack.startsWith("ok");
+}
+
+void startIpcServer(QLocalServer *server)
+{
+  QObject::connect(server, &QLocalServer::newConnection, [server]() {
+    while (auto *socket = server->nextPendingConnection()) {
+      QObject::connect(socket, &QLocalSocket::readyRead, [socket]() {
+        const QByteArray data = socket->readAll();
+        const auto doc = QJsonDocument::fromJson(data);
+        bool ok = doc.isObject();
+        if (!doc.isObject()) {
+          socket->write("error");
+          socket->flush();
+          socket->disconnectFromServer();
+          return;
+        }
+        const auto obj = doc.object();
+        const auto action = obj.value(QStringLiteral("action")).toString();
+        const auto openMode = obj.value(QStringLiteral("openMode")).toString();
+        const auto filesValue = obj.value(QStringLiteral("files"));
+
+        if (action == QStringLiteral("focus")) {
+          focusWindow(getOrCreateActiveWindow());
+          socket->write("ok");
+          socket->flush();
+          socket->disconnectFromServer();
+          return;
+        }
+
+        if (action != QStringLiteral("open") || !filesValue.isArray()) {
+          ok = false;
+          socket->write("error");
+          socket->flush();
+          socket->disconnectFromServer();
+          return;
+        }
+
+        QStringList files;
+        for (const auto& entry : filesValue.toArray()) {
+          const auto path = entry.toString();
+          if (!path.isEmpty()) files.append(path);
+        }
+
+        if (files.isEmpty()) {
+          focusWindow(getOrCreateActiveWindow());
+          socket->write("ok");
+          socket->flush();
+          socket->disconnectFromServer();
+          return;
+        }
+
+        if (openMode == QStringLiteral("active-window")) {
+          auto *active = getOrCreateActiveWindow();
+          if (active) {
+            openFilesInWindow(active, files);
+          } else {
+            new MainWindow(files);
+          }
+          socket->write("ok");
+          socket->flush();
+          socket->disconnectFromServer();
+          return;
+        }
+
+        for (const auto& file : files) {
+          new MainWindow(QStringList(file));
+        }
+        socket->write(ok ? "ok" : "error");
+        socket->flush();
+        socket->disconnectFromServer();
+      });
+    }
+  });
+
+  if (!server->listen(serverName())) {
+    if (server->serverError() == QAbstractSocket::AddressInUseError) {
+      QLocalServer::removeServer(serverName());
+      server->listen(serverName());
+    }
+  }
+}
 
 // Only if "fileName" is not absolute, prepend the "absoluteBase".
 QString assemblePath(const std::filesystem::path& absoluteBaseDir, const std::string& fileName)
@@ -153,7 +333,8 @@ void registerDefaultIcon(const QString&)
 #endif
 
 int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& original_path, int argc,
-        char **argv, const std::string& gui_test, const bool reset_window_settings)
+        char **argv, const std::string& gui_test, const bool reset_window_settings,
+        const std::string& open_in_override)
 {
   OpenSCADApp app(argc, argv);
 
@@ -181,6 +362,51 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   FontCache::registerProgressHandler(dialogInitHandler);
 
   parser_init();
+
+  const QString openMode = resolveOpenMode(open_in_override);
+  const QString cwd = QString::fromStdString(original_path.generic_string());
+
+  QLockFile lock(lockFilePath());
+  lock.setStaleLockTime(0);
+  if (!lock.tryLock()) {
+    lock.removeStaleLockFile();
+    if (!lock.tryLock()) {
+      const QStringList ipcFiles = [&]() {
+        QStringList files;
+        for (const auto& infile : inputFiles) {
+          if (!infile.empty()) {
+            files.append(assemblePath(original_path, infile));
+          }
+        }
+        return files;
+      }();
+
+      const QString action = ipcFiles.isEmpty() ? QStringLiteral("focus") : QStringLiteral("open");
+      const QJsonObject message = buildIpcMessage(action, ipcFiles, openMode, cwd);
+
+      while (true) {
+        if (sendIpcMessage(message)) {
+          return 0;
+        }
+
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle(QStringLiteral("PythonSCAD"));
+        box.setText(_("PythonSCAD is already running but is not responding."));
+        box.setInformativeText(_("Retry to send the request, or exit."));
+        const auto retryButton = box.addButton(_("Retry"), QMessageBox::AcceptRole);
+        const auto exitButton = box.addButton(_("Exit"), QMessageBox::RejectRole);
+        box.setDefaultButton(retryButton);
+        box.exec();
+        if (box.clickedButton() == exitButton) {
+          return 1;
+        }
+      }
+    }
+  }
+
+  QLocalServer ipcServer;
+  startIpcServer(&ipcServer);
 
   QSettingsCached settings;
   if (settings.value("advanced/localization", true).toBool()) {
