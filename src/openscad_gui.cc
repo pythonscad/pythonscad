@@ -247,6 +247,10 @@ bool saveSessionForShutdown()
   if (windows.isEmpty()) {
     return false;
   }
+  if (TabManager::shouldSkipSessionSave()) {
+    QFile::remove(TabManager::getAutosaveFilePath());
+    return false;
+  }
   for (auto *win : windows) {
     win->markSessionQuitting();
   }
