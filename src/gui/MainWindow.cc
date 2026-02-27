@@ -2767,6 +2767,13 @@ void MainWindow::setLastFocus(QWidget *widget)
 void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
 {
   auto sb = this->statusBar();
+
+  // Temporarily remove the language label so we can re-add it last,
+  // ensuring it stays as the rightmost permanent widget.
+  if (languageLabel != nullptr) {
+    sb->removeWidget(languageLabel);
+  }
+
   if (progressWidget == nullptr) {
     if (this->progresswidget != nullptr) {
       sb->removeWidget(this->progresswidget);
@@ -2776,7 +2783,7 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
     if (versionLabel == nullptr) {
       versionLabel =
         new QLabel("PythonSCAD " + QString::fromStdString(std::string(openscad_displayversionnumber)));
-      sb->insertPermanentWidget(0, this->versionLabel);
+      sb->addPermanentWidget(this->versionLabel);
     }
   } else {
     if (this->versionLabel != nullptr) {
@@ -2784,7 +2791,13 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
       delete this->versionLabel;
       this->versionLabel = nullptr;
     }
-    sb->insertPermanentWidget(0, progressWidget);
+    sb->addPermanentWidget(progressWidget);
+  }
+
+  // Re-add language label so it's always rightmost.
+  if (languageLabel != nullptr) {
+    sb->addPermanentWidget(languageLabel);
+    languageLabel->show();
   }
 }
 
