@@ -1848,6 +1848,9 @@ void MainWindow::findBufferChanged()
 
 bool MainWindow::event(QEvent *event)
 {
+  if (event->type() == QEvent::WindowActivate) {
+    scadApp->windowManager.setLastActive(this);
+  }
   if (event->type() == InputEvent::eventType) {
     auto *inputEvent = dynamic_cast<InputEvent *>(event);
     if (inputEvent) {
