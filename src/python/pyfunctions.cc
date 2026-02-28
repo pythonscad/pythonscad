@@ -3904,6 +3904,11 @@ PyObject *python_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, OpenS
                         "Error during parsing union. arguments must be solids or arrays.");
         return nullptr;
         break;
+      case OpenSCADOperator::CONCAT:
+        PyErr_SetString(PyExc_TypeError,
+                        "Error during parsing concat. arguments must be solids or arrays.");
+        return nullptr;
+        break;
       case OpenSCADOperator::DIFFERENCE:
         PyErr_SetString(PyExc_TypeError,
                         "Error during parsing difference. arguments must be solids or arrays.");
@@ -4005,6 +4010,10 @@ PyObject *python_oo_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, Op
     } else {
       switch (mode) {
       case OpenSCADOperator::UNION:
+        PyErr_SetString(PyExc_TypeError,
+                        "Error during parsing union. arguments must be solids or arrays.");
+        break;
+      case OpenSCADOperator::CONCAT:
         PyErr_SetString(PyExc_TypeError,
                         "Error during parsing union. arguments must be solids or arrays.");
         break;
