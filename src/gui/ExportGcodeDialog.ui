@@ -123,22 +123,6 @@
        </layout>
       </item>
 
-      <item>
-       <layout class="QHBoxLayout" name="horizontalConfigFile">
-        <item>
-         <widget class="QLabel" name="labelConfigFile">
-          <property name="text">
-           <string>Config File:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QTextEdit" name="valueConfigFile">
-         </widget>
-        </item>
-       </layout>
-      </item>
-
      </layout>
     </widget>
    </item>
@@ -193,4 +177,4 @@
    <slot>reject()</slot>
   </connection>
  </connections>
-</ui> 
+</ui>
