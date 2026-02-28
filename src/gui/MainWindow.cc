@@ -231,7 +231,6 @@ int curl_download(const std::string& url, const std::string& path)
 }
 #endif  // ifdef ENABLE_PYTHON
 
-
 // Global application state
 unsigned int GuiLocker::guiLocked = 0;
 
@@ -2456,7 +2455,13 @@ void MainWindow::rightClick(QPoint position)
       if (step->name() == "root") {
         continue;
       }
+      if (!step->modinst) {
+        continue;
+      }
       auto location = step->modinst->location();
+      if (location.isNone()) {
+        continue;
+      }
       ss.str("");
 
       // Remove the "module" prefix if any as it induce confusion between the module declaration and
@@ -4149,7 +4154,6 @@ void MainWindow::setupConsole()
   this->console->setConsoleFont(
     GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
     GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
-
 
   const QString version =
     QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(std::string(openscad_versionnumber)));
