@@ -28,24 +28,49 @@
 
 #include <QtCore/qstringliteral.h>
 
+#include <QByteArray>
+#include <QCryptographicHash>
 #include <QDialog>
 #include <QDir>
 #include <QFileInfo>
 #include <QFutureWatcher>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QLockFile>
+#include <QMessageBox>
 #include <QObject>
 #include <QPalette>
+#include <QDesktopServices>
+#include <QFile>
+#include <QSessionManager>
+#include <QSaveFile>
+#include <QSocketNotifier>
+#include <QStandardPaths>
 #include <QStringList>
+#include <QTimer>
 #include <QStyleHints>
+#include <QVector>
 #include <Qt>
 #include <QtConcurrentRun>
 #include <QtGlobal>
 #include <array>
+#include <cstring>
 #include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
+#include <QFile>
+
+#ifdef Q_OS_UNIX
+#include <fcntl.h>
+#include <signal.h>
+#include <unistd.h>
+#endif
 
 #include "Feature.h"
 #include "FontCache.h"
@@ -89,6 +114,321 @@ Q_DECLARE_METATYPE(std::shared_ptr<const Geometry>);
 extern std::string arg_colorscheme;
 
 namespace {
+
+constexpr int kAutosaveIntervalMs = 60000;
+
+bool shouldOfferAutosaveRestore(const QString& autosavePath, const QString& sessionPath)
+{
+  const QFileInfo autosaveInfo(autosavePath);
+  if (!autosaveInfo.exists()) return false;
+
+  const QFileInfo sessionInfo(sessionPath);
+  if (!sessionInfo.exists()) return true;
+
+  return autosaveInfo.lastModified() > sessionInfo.lastModified();
+}
+
+bool promptAutosaveRestore(const QString& autosavePath)
+{
+  while (true) {
+    QMessageBox box;
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle(QStringLiteral("PythonSCAD"));
+    box.setText(_("Recovered session data was found."));
+    box.setInformativeText(_("Restore the autosaved session?"));
+    auto *restoreButton = box.addButton(_("Restore"), QMessageBox::AcceptRole);
+    auto *discardButton = box.addButton(_("Discard"), QMessageBox::RejectRole);
+    auto *showButton = box.addButton(_("Show File"), QMessageBox::ActionRole);
+    box.setDefaultButton(restoreButton);
+    box.exec();
+
+    if (box.clickedButton() == showButton) {
+      const QString dirPath = QFileInfo(autosavePath).absolutePath();
+      QDesktopServices::openUrl(QUrl::fromLocalFile(dirPath));
+      continue;
+    }
+
+    if (box.clickedButton() == restoreButton) {
+      return true;
+    }
+
+    return false;
+  }
+}
+
+void setupAutosaveTimer(OpenSCADApp *app)
+{
+  auto *timer = new QTimer(app);
+  timer->setInterval(kAutosaveIntervalMs);
+
+  auto *state = new uint64_t(0);
+  auto *performed = new bool(false);
+
+  QObject::connect(timer, &QTimer::timeout, app, [state, performed, timer]() {
+    const int intervalSeconds = Settings::Settings::autosaveSessionIntervalSeconds.value();
+    const int intervalMs = std::max(10, intervalSeconds) * 1000;
+    if (timer->interval() != intervalMs) {
+      timer->setInterval(intervalMs);
+    }
+
+    const bool enabled = Settings::Settings::autosaveSessionEnabled.value();
+
+    if (!enabled) {
+      if (*performed) {
+        QFile::remove(TabManager::getAutosaveFilePath());
+        *performed = false;
+        *state = 0;
+      }
+      return;
+    }
+
+    const bool dirty = TabManager::hasDirtyTabs();
+    if (!dirty) {
+      if (*performed) {
+        QFile::remove(TabManager::getAutosaveFilePath());
+        *performed = false;
+        *state = 0;
+      }
+      return;
+    }
+
+    const uint64_t generation = TabManager::sessionDirtyGeneration();
+    if (!*performed || generation != *state) {
+      TabManager::saveGlobalSession(TabManager::getAutosaveFilePath());
+      *state = generation;
+      *performed = true;
+    }
+  });
+
+  timer->start();
+}
+
+bool saveSessionForShutdown()
+{
+  const auto& windows = scadApp->windowManager.getWindows();
+  if (windows.isEmpty()) {
+    return false;
+  }
+  if (TabManager::shouldSkipSessionSave()) {
+    QFile::remove(TabManager::getAutosaveFilePath());
+    return false;
+  }
+  for (auto *win : windows) {
+    win->markSessionQuitting();
+  }
+  TabManager::saveGlobalSession(TabManager::getSessionFilePath());
+  QFile::remove(TabManager::getAutosaveFilePath());
+  return true;
+}
+
+constexpr int kIpcTimeoutMs = 1500;
+
+QString lockFilePath()
+{
+  const QString baseDir = TabManager::getSessionFilePath();
+  return QFileInfo(baseDir).absolutePath() + QStringLiteral("/pythonscad.lock");
+}
+
+QString serverNameFromPath(const QString& path)
+{
+  const QByteArray hash = QCryptographicHash::hash(path.toUtf8(), QCryptographicHash::Sha1).toHex();
+  return QStringLiteral("pythonscad.instance.") + QString::fromUtf8(hash);
+}
+
+QString serverName()
+{
+  return serverNameFromPath(lockFilePath());
+}
+
+QString resolveOpenMode(const std::string& overrideMode)
+{
+  if (overrideMode == "new-window" || overrideMode == "active-window") {
+    return QString::fromStdString(overrideMode);
+  }
+  return QString::fromStdString(Settings::Settings::singleInstanceOpenMode.value());
+}
+
+void focusWindow(MainWindow *window)
+{
+  if (!window) return;
+  window->show();
+  window->raise();
+  window->activateWindow();
+}
+
+void openFilesInWindow(MainWindow *window, const QStringList& files)
+{
+  if (!window) return;
+  for (const auto& file : files) {
+    if (file.isEmpty()) continue;
+    window->tabManager->open(file);
+  }
+  focusWindow(window);
+}
+
+MainWindow *getOrCreateActiveWindow()
+{
+  auto *active = scadApp->windowManager.getLastActive();
+  if (active) return active;
+  if (!scadApp->windowManager.getWindows().isEmpty()) {
+    return *scadApp->windowManager.getWindows().begin();
+  }
+  return nullptr;
+}
+
+QJsonObject buildIpcMessage(const QString& action, const QStringList& files, const QString& openMode,
+                            const QString& cwd)
+{
+  QJsonObject obj;
+  obj.insert(QStringLiteral("action"), action);
+  obj.insert(QStringLiteral("openMode"), openMode);
+  obj.insert(QStringLiteral("cwd"), cwd);
+  QJsonArray fileArray;
+  for (const auto& file : files) fileArray.append(file);
+  obj.insert(QStringLiteral("files"), fileArray);
+  return obj;
+}
+
+bool sendIpcMessage(const QJsonObject& message)
+{
+  QLocalSocket socket;
+  socket.connectToServer(serverName());
+  if (!socket.waitForConnected(kIpcTimeoutMs)) {
+    return false;
+  }
+
+  const QByteArray payload = QJsonDocument(message).toJson(QJsonDocument::Compact);
+  socket.write(payload);
+  if (!socket.waitForBytesWritten(kIpcTimeoutMs)) {
+    return false;
+  }
+  socket.flush();
+  if (!socket.waitForReadyRead(kIpcTimeoutMs)) {
+    return false;
+  }
+  const QByteArray ack = socket.readAll();
+  socket.disconnectFromServer();
+  return ack.startsWith("ok");
+}
+
+void startIpcServer(QLocalServer *server)
+{
+  QObject::connect(server, &QLocalServer::newConnection, [server]() {
+    while (auto *socket = server->nextPendingConnection()) {
+      QObject::connect(socket, &QLocalSocket::readyRead, [socket]() {
+        const QByteArray data = socket->readAll();
+        const auto doc = QJsonDocument::fromJson(data);
+        bool ok = doc.isObject();
+        if (!doc.isObject()) {
+          socket->write("error");
+          socket->flush();
+          socket->disconnectFromServer();
+          return;
+        }
+        const auto obj = doc.object();
+        const auto action = obj.value(QStringLiteral("action")).toString();
+        const auto openMode = obj.value(QStringLiteral("openMode")).toString();
+        const auto filesValue = obj.value(QStringLiteral("files"));
+
+        if (action == QStringLiteral("focus")) {
+          focusWindow(getOrCreateActiveWindow());
+          socket->write("ok");
+          socket->flush();
+          socket->disconnectFromServer();
+          return;
+        }
+
+        if (action != QStringLiteral("open") || !filesValue.isArray()) {
+          ok = false;
+          socket->write("error");
+          socket->flush();
+          socket->disconnectFromServer();
+          return;
+        }
+
+        QStringList files;
+        for (const auto& entry : filesValue.toArray()) {
+          const auto path = entry.toString();
+          if (!path.isEmpty()) files.append(path);
+        }
+
+        if (files.isEmpty()) {
+          focusWindow(getOrCreateActiveWindow());
+          socket->write("ok");
+          socket->flush();
+          socket->disconnectFromServer();
+          return;
+        }
+
+        if (openMode == QStringLiteral("active-window")) {
+          auto *active = getOrCreateActiveWindow();
+          if (active) {
+            openFilesInWindow(active, files);
+          } else {
+            new MainWindow(files);
+          }
+          socket->write("ok");
+          socket->flush();
+          socket->disconnectFromServer();
+          return;
+        }
+
+        for (const auto& file : files) {
+          new MainWindow(QStringList(file));
+        }
+        socket->write(ok ? "ok" : "error");
+        socket->flush();
+        socket->disconnectFromServer();
+      });
+    }
+  });
+
+  if (!server->listen(serverName())) {
+    if (server->serverError() == QAbstractSocket::AddressInUseError) {
+      QLocalServer::removeServer(serverName());
+      server->listen(serverName());
+    }
+  }
+}
+
+#ifdef Q_OS_UNIX
+int shutdownSignalPipe[2] = {-1, -1};
+
+void shutdownSignalHandler(int)
+{
+  const char signalByte = 1;
+  if (shutdownSignalPipe[1] != -1) {
+    (void)::write(shutdownSignalPipe[1], &signalByte, sizeof(signalByte));
+  }
+}
+
+void setupUnixSignalHandlers(OpenSCADApp *app)
+{
+  if (::pipe(shutdownSignalPipe) != 0) return;
+  const int flags = fcntl(shutdownSignalPipe[1], F_GETFL, 0);
+  if (flags != -1) {
+    fcntl(shutdownSignalPipe[1], F_SETFL, flags | O_NONBLOCK);
+  }
+
+  auto *notifier = new QSocketNotifier(shutdownSignalPipe[0], QSocketNotifier::Read, app);
+  QObject::connect(notifier, &QSocketNotifier::activated, app, [notifier](int) {
+    notifier->setEnabled(false);
+    char buffer[32];
+    while (::read(shutdownSignalPipe[0], buffer, sizeof(buffer)) > 0) {
+    }
+    saveSessionForShutdown();
+    QCoreApplication::quit();
+    notifier->setEnabled(true);
+  });
+
+  struct sigaction action;
+  memset(&action, 0, sizeof(action));
+  action.sa_handler = shutdownSignalHandler;
+  sigaction(SIGTERM, &action, nullptr);
+  sigaction(SIGINT, &action, nullptr);
+  sigaction(SIGHUP, &action, nullptr);
+}
+#endif
 
 // Only if "fileName" is not absolute, prepend the "absoluteBase".
 QString assemblePath(const std::filesystem::path& absoluteBaseDir, const std::string& fileName)
@@ -152,7 +492,8 @@ void registerDefaultIcon(const QString&)
 #endif
 
 int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& original_path, int argc,
-        char **argv, const std::string& gui_test, const bool reset_window_settings)
+        char **argv, const std::string& gui_test, const bool reset_window_settings,
+        const std::string& open_in_override)
 {
   OpenSCADApp app(argc, argv);
 
@@ -180,6 +521,51 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   FontCache::registerProgressHandler(dialogInitHandler);
 
   parser_init();
+
+  const QString openMode = resolveOpenMode(open_in_override);
+  const QString cwd = QString::fromStdString(original_path.generic_string());
+
+  QLockFile lock(lockFilePath());
+  lock.setStaleLockTime(0);
+  if (!lock.tryLock()) {
+    lock.removeStaleLockFile();
+    if (!lock.tryLock()) {
+      const QStringList ipcFiles = [&]() {
+        QStringList files;
+        for (const auto& infile : inputFiles) {
+          if (!infile.empty()) {
+            files.append(assemblePath(original_path, infile));
+          }
+        }
+        return files;
+      }();
+
+      const QString action = ipcFiles.isEmpty() ? QStringLiteral("focus") : QStringLiteral("open");
+      const QJsonObject message = buildIpcMessage(action, ipcFiles, openMode, cwd);
+
+      while (true) {
+        if (sendIpcMessage(message)) {
+          return 0;
+        }
+
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle(QStringLiteral("PythonSCAD"));
+        box.setText(_("PythonSCAD is already running but is not responding."));
+        box.setInformativeText(_("Retry to send the request, or exit."));
+        const auto retryButton = box.addButton(_("Retry"), QMessageBox::AcceptRole);
+        const auto exitButton = box.addButton(_("Exit"), QMessageBox::RejectRole);
+        box.setDefaultButton(retryButton);
+        box.exec();
+        if (box.clickedButton() == exitButton) {
+          return 1;
+        }
+      }
+    }
+  }
+
+  QLocalServer ipcServer;
+  startIpcServer(&ipcServer);
 
   QSettingsCached settings;
   if (settings.value("advanced/localization", true).toBool()) {
@@ -242,45 +628,121 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     inputFiles.emplace_back("");
   }
 
-  auto showOnStartup = settings.value("launcher/showOnStartup");
-  bool showLauncher = noInputFiles && (showOnStartup.isNull() || showOnStartup.toBool());
-#ifdef ENABLE_GUI_TESTS
-  if (gui_test != "none") {
-    showLauncher = false;
-  }
-#endif
-
-  if (showLauncher) {
-    LaunchingScreen launcher;
-    if (launcher.exec() == QDialog::Accepted) {
-      if (launcher.isForceShowEditor()) {
-        settings.setValue("view/hideEditor", false);
-      }
-      const QStringList files = launcher.selectedFiles();
-      // If nothing is selected in the launching screen, leave
-      // the "" dummy in inputFiles to open an empty MainWindow.
-      if (!files.empty()) {
-        inputFiles.clear();
-        for (const auto& f : files) {
-          inputFiles.push_back(f.toStdString());
-        }
-      }
-    } else {
-      return 0;
-    }
-  }
-
   QStringList inputFilesList;
   for (const auto& infile : inputFiles) {
     inputFilesList.append(assemblePath(original_path, infile));
   }
-  new MainWindow(inputFilesList);
+
+  QVector<QStringList> windowsToOpen;
+  QStringList filesToAppend;
+  bool restoreSessionForExplicitFiles = false;
+
+  if (noInputFiles) {
+    const QString sessionPath = TabManager::getSessionFilePath();
+    const QString autosavePath = TabManager::getAutosaveFilePath();
+    if (shouldOfferAutosaveRestore(autosavePath, sessionPath)) {
+      if (promptAutosaveRestore(autosavePath)) {
+        QFile in(autosavePath);
+        QSaveFile out(sessionPath);
+        if (in.open(QIODevice::ReadOnly) && out.open(QIODevice::WriteOnly)) {
+          out.write(in.readAll());
+          const bool committed = out.commit();
+          if (committed) {
+            QFile::remove(autosavePath);
+          }
+        } else {
+          out.cancelWriting();
+        }
+      } else {
+        QFile::remove(autosavePath);
+      }
+    }
+  }
+
+  const bool hasExplicitFiles = !(inputFilesList.size() == 1 && inputFilesList[0].isEmpty());
+
+  // Restore session when no files given, or when explicit files should be appended to the session.
+  {
+    const QString sessionPath = TabManager::getSessionFilePath();
+    const bool sessionExists = QFileInfo(sessionPath).exists();
+    const bool shouldRestore = sessionExists && !TabManager::sessionHasOnlyEmptyTab(sessionPath);
+    if (shouldRestore) {
+      const int windowCount = TabManager::sessionWindowCount(sessionPath);
+      if (windowCount > 0) {
+        for (int i = 0; i < windowCount; ++i) {
+          windowsToOpen.append(QStringList(QStringLiteral(":session:%1:").arg(i)));
+        }
+      } else {
+        windowsToOpen.append(QStringList(QStringLiteral(":session:")));
+      }
+      if (hasExplicitFiles) {
+        restoreSessionForExplicitFiles = true;
+        filesToAppend = inputFilesList;
+      }
+    }
+  }
+
+  if (windowsToOpen.isEmpty()) {
+    // Show launcher only when no files and no session to restore
+    if (noInputFiles && inputFilesList.size() == 1 && inputFilesList[0].isEmpty()) {
+      auto showOnStartup = settings.value("launcher/showOnStartup");
+      if (showOnStartup.isNull() || showOnStartup.toBool()) {
+        LaunchingScreen launcher;
+        if (launcher.exec() == QDialog::Accepted) {
+          if (launcher.isForceShowEditor()) {
+            settings.setValue("view/hideEditor", false);
+          }
+          const QStringList files = launcher.selectedFiles();
+          if (!files.empty()) {
+            inputFilesList.clear();
+            for (const auto& f : files) {
+              inputFilesList.append(assemblePath(original_path, f.toStdString()));
+            }
+          }
+        } else {
+          return 0;
+        }
+      }
+    }
+    windowsToOpen.append(inputFilesList);
+  }
+
+  for (const auto& files : windowsToOpen) {
+    new MainWindow(files);
+  }
+
+  if (restoreSessionForExplicitFiles && !filesToAppend.isEmpty()) {
+    MainWindow *target = scadApp->windowManager.getLastActive();
+    if (!target) {
+      new MainWindow(filesToAppend);
+    } else {
+      for (const auto& file : filesToAppend) {
+        if (!file.isEmpty()) {
+          target->tabManager->open(file);
+        }
+      }
+      focusWindow(target);
+    }
+  }
+
+  setupAutosaveTimer(&app);
+
   QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
+    saveSessionForShutdown();
     QSettingsCached{}.release();
 #ifdef Q_OS_MACOS
     CocoaUtils::endApplication();
 #endif
   });
+
+  QObject::connect(&app, &QGuiApplication::commitDataRequest, &app,
+                   [](QSessionManager&) { saveSessionForShutdown(); });
+  QObject::connect(&app, &QGuiApplication::saveStateRequest, &app,
+                   [](QSessionManager&) { saveSessionForShutdown(); });
+
+#ifdef Q_OS_UNIX
+  setupUnixSignalHandlers(&app);
+#endif
 
 #ifdef ENABLE_HIDAPI
   if (Settings::Settings::inputEnableDriverHIDAPI.value()) {

@@ -410,6 +410,9 @@ public:
   static SettingsEntryBool printServiceAlwaysShowDialog;
   static SettingsEntryString printServiceName;
   static SettingsEntryEnum<std::string> printServiceFileFormat;
+  static SettingsEntryEnum<std::string> singleInstanceOpenMode;
+  static SettingsEntryBool autosaveSessionEnabled;
+  static SettingsEntryInt autosaveSessionIntervalSeconds;
 
   static SettingsEntryString octoPrintUrl;
   static SettingsEntryString octoPrintApiKey;
@@ -630,7 +633,9 @@ public:
   static SettingsEntryString exportGcodeConfigFile;
 
   static constexpr std::array<const SettingsEntryBase *, 3> cmdline{
-    &exportGcodeFeedRate, &exportGcodeLaserPower, &exportGcodeLaserMode,
+    &exportGcodeFeedRate,
+    &exportGcodeLaserPower,
+    &exportGcodeLaserMode,
   };
 };
 

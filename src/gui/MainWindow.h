@@ -88,6 +88,7 @@ public:
 
   QTimer *autoReloadTimer;
   QTimer *waitAfterReloadTimer;
+  QTimer *parameterRefreshTimer;
   RenderStatistic renderStatistic;
 
   std::shared_ptr<SourceFile> rootFile;            // Result of parsing
@@ -136,6 +137,7 @@ private:
   std::vector<std::pair<Dock *, QString>> docks;
 
   volatile bool isClosing = false;
+  bool isSessionQuitting = false;
   bool isBeingDestroyed = false;  // Set in destructor to guard eventFilter
   void consoleOutputRaw(const QString& msg);
   void clearAllSelectionIndicators();
@@ -165,6 +167,7 @@ protected:
   void closeEvent(QCloseEvent *event) override;
 
 private slots:
+  void quitApplication();
   void updateUndockMode(bool undockMode);
   void updateReorderMode(bool reorderMode);
   void setFont(const QString& family, uint size);
@@ -204,6 +207,8 @@ public:
   static void errorLogOutput(const Message& log_msg, void *userdata);
   static void noOutputConsole(const Message&, void *) {}   // /dev/null
   static void noOutputErrorLog(const Message&, void *) {}  // /dev/null
+
+  void markSessionQuitting();
 
   bool fileChangedOnDisk();
 
@@ -274,6 +279,7 @@ private slots:
   void on_fileActionOpenWindow_triggered();
   void actionOpenRecent();
   void actionOpenExample();
+  void on_fileActionWelcome_triggered();
   void on_fileActionClearRecent_triggered();
   void on_fileActionSave_triggered();
   void on_fileActionSaveAs_triggered();
@@ -446,6 +452,7 @@ public slots:
   void on_viewActionResetView_triggered();
   void on_viewActionViewAll_triggered();
   void editorContentChanged();
+  void refreshParametersFromEditor();
   void leftClick(QPoint coordinate);
   void rightClick(QPoint coordinate);
   void dragEnterEvent(QDragEnterEvent *event) override;

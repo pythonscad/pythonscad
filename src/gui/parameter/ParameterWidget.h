@@ -25,6 +25,7 @@
  */
 #pragma once
 
+#include <QByteArray>
 #include <QString>
 #include <QTimer>
 #include <QWidget>
@@ -51,6 +52,7 @@ private:
   QString invalidJsonFile;  // set if a json file was read that could not be parsed
   QTimer autoPreviewTimer;
   bool modified = false;
+  QByteArray pendingSessionState;  // customizer state to apply on next setParameters()
 
 public:
   ParameterWidget(QWidget *parent = nullptr);
@@ -58,6 +60,8 @@ public:
   void saveFile(const QString& scadFile);
   void saveBackupFile(const QString& scadFile);
   void setParameters(const SourceFile *sourceFile, const std::string& source);
+  QByteArray getSessionState();
+  void setSessionState(const QByteArray& state);
   void applyParameters(SourceFile *sourceFile);
   bool childHasFocus();
   bool isModified() const { return modified; }

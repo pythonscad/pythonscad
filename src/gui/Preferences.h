@@ -160,6 +160,9 @@ public slots:
   void on_checkBoxAlwaysShowExportGcodeDialog_toggled(bool);
   void on_checkBoxAlwaysShowPrintServiceDialog_toggled(bool);
   void on_checkBoxGlobalTrustPython_toggled(bool);
+  void on_comboBoxSingleInstanceOpenMode_activated(int);
+  void on_checkBoxAutosaveSessionEnabled_toggled(bool);
+  void on_comboBoxAutosaveSessionInterval_activated(int);
 
 signals:
   void requestRedraw() const;

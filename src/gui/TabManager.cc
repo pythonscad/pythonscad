@@ -6,7 +6,13 @@
 #include <tuple>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QKeyCombination>
+#include <QStringConverter>
 #endif
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QSettings>
+#include <QStandardPaths>
 #include <Qsci/qscicommand.h>
 #include <Qsci/qscicommandset.h>
 
@@ -20,11 +26,13 @@
 #include <QMessageBox>
 #include <QPoint>
 #include <QSaveFile>
+#include <QSignalBlocker>
 #include <QShortcut>
 #include <QStringList>
 #include <QTabBar>
 #include <QTextStream>
 #include <QWidget>
+#include <QFileInfo>
 #include <cassert>
 #include <cstddef>
 #include <exception>
@@ -33,10 +41,87 @@
 #include "gui/Editor.h"
 #include "gui/ImportUtils.h"
 #include "gui/MainWindow.h"
+#include "gui/OpenSCADApp.h"
 #include "gui/Preferences.h"
 #include "gui/ScintillaEditor.h"
+#include "gui/UnsavedChangesDialog.h"
 #include "utils/printutils.h"
 #include <genlang/genlang.h>
+
+#include <algorithm>
+
+namespace {
+uint64_t sessionDirtyGenerationValue = 0;
+bool sessionSaveWarningShown = false;
+bool skipSessionSaveOnQuit = false;
+
+QJsonArray vec3ToJson(const Eigen::Vector3d& vec)
+{
+  QJsonArray arr;
+  arr.append(vec.x());
+  arr.append(vec.y());
+  arr.append(vec.z());
+  return arr;
+}
+
+bool jsonToVec3(const QJsonValue& value, double *x, double *y, double *z)
+{
+  const QJsonArray arr = value.toArray();
+  if (arr.size() != 3 || !x || !y || !z) return false;
+  *x = arr[0].toDouble();
+  *y = arr[1].toDouble();
+  *z = arr[2].toDouble();
+  return true;
+}
+
+void warnSessionSaveFailure(const QString& path, const QString& error)
+{
+  if (sessionSaveWarningShown) return;
+  sessionSaveWarningShown = true;
+
+  QWidget *parent = nullptr;
+  if (scadApp && !scadApp->windowManager.getWindows().isEmpty()) {
+    parent = *scadApp->windowManager.getWindows().begin();
+  }
+  QMessageBox::warning(
+    parent, QObject::tr("Session Save"),
+    QObject::tr("Could not write session file:\n%1\n\n%2\n\nSession changes may be lost.")
+      .arg(path, error));
+}
+
+bool writeSessionFile(const QJsonObject& root, const QString& path, QString *error)
+{
+  const QFileInfo pathInfo(path);
+  const QDir dir = pathInfo.absoluteDir();
+  if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) {
+    if (error) *error = QObject::tr("Unable to create the session directory.");
+    return false;
+  }
+
+  QSaveFile file(path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (error) *error = file.errorString();
+    return false;
+  }
+
+  const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
+  if (file.write(json) != json.size()) {
+    file.cancelWriting();
+    if (error) *error = file.errorString();
+    return false;
+  }
+
+  if (!file.commit()) {
+    if (error) *error = file.errorString();
+    return false;
+  }
+  if (!QFile::setPermissions(path, QFileDevice::ReadOwner | QFileDevice::WriteOwner)) {
+    LOG(message_group::UI_Warning, "Failed to set session file permissions: %1$s",
+        path.toLocal8Bit().constData());
+  }
+  return true;
+}
+}  // namespace
 
 TabManager::TabManager(MainWindow *o, const QString& filename)
 {
@@ -158,6 +243,15 @@ void TabManager::prevTab()
 {
   assert(tabWidget != nullptr);
   tabWidget->setCurrentIndex((tabWidget->currentIndex() + tabWidget->count() - 1) % tabWidget->count());
+}
+
+void TabManager::switchToEditor(EditorInterface *targetEditor)
+{
+  assert(tabWidget != nullptr);
+  int index = tabWidget->indexOf(targetEditor);
+  if (index >= 0) {
+    tabWidget->setCurrentIndex(index);
+  }
 }
 
 void TabManager::actionNew()
@@ -527,6 +621,7 @@ void TabManager::updateFindState()
 
 void TabManager::onTabModified(EditorInterface *edt)
 {
+  bumpSessionDirtyGeneration();
   // Get the name of the editor and its filepath with the status modifier
   auto [fname, fpath] = getEditorTabNameWithModifier(edt);
 
@@ -536,6 +631,8 @@ void TabManager::onTabModified(EditorInterface *edt)
 
 void TabManager::openTabFile(const QString& filename)
 {
+  const bool isUntitledPlaceholder =
+    (filename == QStringLiteral("Untitled.py") || filename == QStringLiteral("Untitled.scad"));
 #ifdef ENABLE_PYTHON
   if (boost::algorithm::ends_with(filename, ".py")) {
     std::string templ = "from openscad import *\n";
@@ -558,9 +655,13 @@ void TabManager::openTabFile(const QString& filename)
 
   const auto cmd = Importer::knownFileExtensions[suffix];
   if (cmd.isEmpty()) {
-    editor->filepath = fileinfo.absoluteFilePath();
-    editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
-    parent->updateRecentFiles(filename);
+    if (isUntitledPlaceholder) {
+      editor->filepath = "";
+    } else {
+      editor->filepath = fileinfo.absoluteFilePath();
+      editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
+      parent->updateRecentFiles(filename);
+    }
   } else {
     editor->filepath = "";
     editor->setPlainText(cmd.arg(filename));
@@ -664,13 +765,15 @@ bool TabManager::maybeSave(int x)
 {
   auto *edt = (EditorInterface *)tabWidget->widget(x);
   if (edt->isContentModified() || edt->parameterWidget->isModified()) {
+    auto [fname, fpath] = getEditorTabName(edt);
     QMessageBox box(parent);
-    box.setText(_("The document has been modified."));
-    box.setInformativeText(_("Do you want to save your changes?"));
+    box.setText(QString(_("Do you want to save the changes you made to %1?")).arg(fname));
+    box.setInformativeText(_("Your changes will be lost if you don't save them."));
     box.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
     box.setDefaultButton(QMessageBox::Save);
     box.setIcon(QMessageBox::Warning);
     box.setWindowModality(Qt::ApplicationModal);
+    box.button(QMessageBox::Discard)->setText(_("Don't save"));
 #ifdef Q_OS_MACOS
     // Cmd-D is the standard shortcut for this button on Mac
     box.button(QMessageBox::Discard)->setShortcut(QKeySequence("Ctrl+D"));
@@ -693,32 +796,504 @@ bool TabManager::maybeSave(int x)
  */
 bool TabManager::shouldClose()
 {
+  bool hasUnsavedChanges = false;
   foreach (EditorInterface *edt, editorList) {
-    if (!(edt->isContentModified() || edt->parameterWidget->isModified())) continue;
-
-    QMessageBox box(parent);
-    box.setText(_("Some tabs have unsaved changes."));
-    box.setInformativeText(_("Do you want to save all your changes?"));
-    box.setStandardButtons(QMessageBox::SaveAll | QMessageBox::Discard | QMessageBox::Cancel);
-    box.setDefaultButton(QMessageBox::SaveAll);
-    box.setIcon(QMessageBox::Warning);
-    box.setWindowModality(Qt::ApplicationModal);
-#ifdef Q_OS_MACOS
-    // Cmd-D is the standard shortcut for this button on Mac
-    box.button(QMessageBox::Discard)->setShortcut(QKeySequence("Ctrl+D"));
-    box.button(QMessageBox::Discard)->setShortcutEnabled(true);
-#endif
-    auto ret = (QMessageBox::StandardButton)box.exec();
-
-    if (ret == QMessageBox::Cancel) {
-      return false;
-    } else if (ret == QMessageBox::Discard) {
-      return true;
-    } else if (ret == QMessageBox::SaveAll) {
-      return saveAll();
+    if (edt->isContentModified() || edt->parameterWidget->isModified()) {
+      hasUnsavedChanges = true;
+      break;
     }
   }
+
+  if (!hasUnsavedChanges) {
+    return true;
+  }
+
+  UnsavedChangesDialog dialog(this, parent, parent);
+  dialog.exec();
+
+  switch (dialog.result()) {
+  case UnsavedChangesDialog::AllSaved:   return true;
+  case UnsavedChangesDialog::DiscardAll: return true;
+  case UnsavedChangesDialog::Cancel:
+  default:                               return false;
+  }
+}
+
+QString TabManager::getSessionFilePath()
+{
+  QSettings s;
+  const QString configFile = s.fileName();
+  if (configFile.isEmpty()) {
+    return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) +
+           QStringLiteral("/session.json");
+  }
+  return QFileInfo(configFile).absolutePath() + QStringLiteral("/session.json");
+}
+
+QString TabManager::getAutosaveFilePath()
+{
+  const QString sessionPath = getSessionFilePath();
+  return QFileInfo(sessionPath).absolutePath() + QStringLiteral("/session.autosave.json");
+}
+
+bool TabManager::hasDirtyTabs()
+{
+  for (auto *mainWin : scadApp->windowManager.getWindows()) {
+    auto *tm = mainWin->tabManager;
+    for (auto *edt : tm->editorList) {
+      if (edt->isContentModified() || edt->parameterWidget->isModified()) return true;
+    }
+  }
+  return false;
+}
+
+void TabManager::bumpSessionDirtyGeneration()
+{
+  ++sessionDirtyGenerationValue;
+}
+
+uint64_t TabManager::sessionDirtyGeneration()
+{
+  return sessionDirtyGenerationValue;
+}
+
+void TabManager::setSkipSessionSave(bool skip)
+{
+  skipSessionSaveOnQuit = skip;
+}
+
+bool TabManager::shouldSkipSessionSave()
+{
+  return skipSessionSaveOnQuit;
+}
+
+void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
+                                   bool contentModified, bool parameterModified,
+                                   const QByteArray& customizerState)
+{
+  edt->filepath = filepath;
+  edt->setPlainText(content);
+  edt->setContentModified(contentModified);
+  edt->parameterWidget->setModified(parameterModified);
+  if (!customizerState.isEmpty()) {
+    edt->parameterWidget->setSessionState(customizerState);
+  }
+  edt->recomputeLanguageActive();
+  parent->onLanguageActiveChanged(edt->language);
+  auto [fname, fpath] = getEditorTabNameWithModifier(edt);
+  setEditorTabName(fname, fpath, edt);
+  updateTabIcon(edt);
+}
+
+void TabManager::saveSession(const QString& path)
+{
+  QJsonArray tabs;
+  for (int i = 0; i < tabWidget->count(); ++i) {
+    auto *edt = static_cast<EditorInterface *>(tabWidget->widget(i));
+    QJsonObject obj;
+    obj.insert(QStringLiteral("filepath"), edt->filepath);
+    obj.insert(QStringLiteral("content"), edt->toPlainText());
+    obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
+    obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
+    int cursorLine = 0;
+    int cursorColumn = 0;
+    edt->getCursorPosition(&cursorLine, &cursorColumn);
+    obj.insert(QStringLiteral("cursorLine"), cursorLine);
+    obj.insert(QStringLiteral("cursorColumn"), cursorColumn);
+    obj.insert(QStringLiteral("firstVisibleLine"), edt->firstVisibleLine());
+    obj.insert(QStringLiteral("findState"), edt->findState);
+    const QByteArray customizerState = edt->parameterWidget->getSessionState();
+    if (!customizerState.isEmpty()) {
+      obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
+    }
+    tabs.append(obj);
+  }
+  QJsonObject win;
+  win.insert(QStringLiteral("tabs"), tabs);
+  win.insert(QStringLiteral("currentIndex"), tabWidget->currentIndex());
+  if (parent && parent->qglview) {
+    QJsonObject view;
+    view.insert(QStringLiteral("vpt"), vec3ToJson(parent->qglview->cam.getVpt()));
+    view.insert(QStringLiteral("vpr"), vec3ToJson(parent->qglview->cam.getVpr()));
+    view.insert(QStringLiteral("vpd"), parent->qglview->cam.zoomValue());
+    view.insert(QStringLiteral("vpf"), parent->qglview->cam.fovValue());
+    view.insert(QStringLiteral("projection"), parent->qglview->orthoMode()
+                                                ? QStringLiteral("orthogonal")
+                                                : QStringLiteral("perspective"));
+    win.insert(QStringLiteral("viewState"), view);
+  }
+  if (parent) {
+    QJsonObject findPanel;
+    findPanel.insert(QStringLiteral("text"), parent->findInputField->text());
+    findPanel.insert(QStringLiteral("replaceText"), parent->replaceInputField->text());
+    win.insert(QStringLiteral("findPanel"), findPanel);
+  }
+
+  QJsonArray windows;
+  windows.append(win);
+
+  QJsonObject root;
+  root.insert(QStringLiteral("version"), SESSION_VERSION);
+  root.insert(QStringLiteral("windows"), windows);
+  QString error;
+  if (!writeSessionFile(root, path, &error)) {
+    warnSessionSaveFailure(path, error);
+  }
+}
+
+/*!
+ * Save session state from ALL open windows into a single session file.
+ * Called by the "Quit" action so every window is persisted.
+ */
+bool TabManager::saveGlobalSession(const QString& path, QString *error, bool showWarning)
+{
+  QJsonArray windows;
+  for (auto *mainWin : scadApp->windowManager.getWindows()) {
+    auto *tm = mainWin->tabManager;
+    QJsonArray tabs;
+    for (int i = 0; i < tm->tabWidget->count(); ++i) {
+      auto *edt = static_cast<EditorInterface *>(tm->tabWidget->widget(i));
+      QJsonObject obj;
+      obj.insert(QStringLiteral("filepath"), edt->filepath);
+      obj.insert(QStringLiteral("content"), edt->toPlainText());
+      obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
+      obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
+      int cursorLine = 0;
+      int cursorColumn = 0;
+      edt->getCursorPosition(&cursorLine, &cursorColumn);
+      obj.insert(QStringLiteral("cursorLine"), cursorLine);
+      obj.insert(QStringLiteral("cursorColumn"), cursorColumn);
+      obj.insert(QStringLiteral("firstVisibleLine"), edt->firstVisibleLine());
+      obj.insert(QStringLiteral("findState"), edt->findState);
+      const QByteArray customizerState = edt->parameterWidget->getSessionState();
+      if (!customizerState.isEmpty()) {
+        obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
+      }
+      tabs.append(obj);
+    }
+    QJsonObject win;
+    win.insert(QStringLiteral("tabs"), tabs);
+    win.insert(QStringLiteral("currentIndex"), tm->tabWidget->currentIndex());
+    if (mainWin && mainWin->qglview) {
+      QJsonObject view;
+      view.insert(QStringLiteral("vpt"), vec3ToJson(mainWin->qglview->cam.getVpt()));
+      view.insert(QStringLiteral("vpr"), vec3ToJson(mainWin->qglview->cam.getVpr()));
+      view.insert(QStringLiteral("vpd"), mainWin->qglview->cam.zoomValue());
+      view.insert(QStringLiteral("vpf"), mainWin->qglview->cam.fovValue());
+      view.insert(QStringLiteral("projection"), mainWin->qglview->orthoMode()
+                                                  ? QStringLiteral("orthogonal")
+                                                  : QStringLiteral("perspective"));
+      win.insert(QStringLiteral("viewState"), view);
+    }
+    if (mainWin) {
+      QJsonObject findPanel;
+      findPanel.insert(QStringLiteral("text"), mainWin->findInputField->text());
+      findPanel.insert(QStringLiteral("replaceText"), mainWin->replaceInputField->text());
+      win.insert(QStringLiteral("findPanel"), findPanel);
+    }
+    windows.append(win);
+  }
+
+  QJsonObject root;
+  root.insert(QStringLiteral("version"), SESSION_VERSION);
+  root.insert(QStringLiteral("windows"), windows);
+
+  QString localError;
+  QString *targetError = error ? error : &localError;
+  const bool ok = writeSessionFile(root, path, targetError);
+  if (!ok && showWarning) {
+    warnSessionSaveFailure(path, *targetError);
+  }
+  return ok;
+}
+
+/*!
+ * Migrate a session JSON object from \a fromVersion to SESSION_VERSION.
+ * Add a case for each version transition when the schema changes.
+ * Returns true on success, false if migration is not possible.
+ */
+bool TabManager::migrateSession(QJsonObject& root, int fromVersion)
+{
+  // Apply migrations sequentially: v1->v2, v2->v3, etc.
+  for (int v = fromVersion; v < SESSION_VERSION; ++v) {
+    switch (v) {
+    case 1: {
+      // Migrate v1 -> v2: wrap flat tabs/currentIndex into a "windows" array.
+      QJsonArray windows;
+      QJsonObject win;
+      win.insert(QStringLiteral("tabs"), root.value(QStringLiteral("tabs")));
+      win.insert(QStringLiteral("currentIndex"), root.value(QStringLiteral("currentIndex")));
+      windows.append(win);
+      root.remove(QStringLiteral("tabs"));
+      root.remove(QStringLiteral("currentIndex"));
+      root.insert(QStringLiteral("windows"), windows);
+      break;
+    }
+    default:
+      // No known migration path from this version
+      return false;
+    }
+  }
+  root.insert(QStringLiteral("version"), SESSION_VERSION);
   return true;
+}
+
+bool TabManager::restoreSession(const QString& path, int windowIndex)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QMessageBox::warning(parent, QObject::tr("Session Restore"),
+                         QObject::tr("Could not open the session file for reading:\n%1\n\n"
+                                     "Starting with a fresh session.")
+                           .arg(path));
+    return false;
+  }
+  const QByteArray rawData = file.readAll();
+  file.close();
+
+  const QJsonDocument doc = QJsonDocument::fromJson(rawData);
+  if (!doc.isObject()) {
+    QMessageBox::warning(parent, QObject::tr("Session Restore"),
+                         QObject::tr("The session file is corrupt or unreadable:\n%1\n\n"
+                                     "The file has not been deleted — you may inspect it manually.\n"
+                                     "Starting with a fresh session.")
+                           .arg(path));
+    return false;
+  }
+
+  QJsonObject root = doc.object();
+
+  // Files without a "version" field are treated as version 1 (the original format).
+  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
+
+  if (fileVersion > SESSION_VERSION) {
+    QMessageBox::critical(
+      parent, QObject::tr("Session Restore"),
+      QObject::tr("The session file was created by a newer version of PythonSCAD "
+                  "(session version %1, but this build only supports up to version %2).\n\n"
+                  "Please upgrade PythonSCAD or delete the session file:\n%3")
+        .arg(fileVersion)
+        .arg(SESSION_VERSION)
+        .arg(path));
+    return false;
+  }
+
+  if (fileVersion < SESSION_VERSION) {
+    if (!migrateSession(root, fileVersion)) {
+      QMessageBox::warning(
+        parent, QObject::tr("Session Restore"),
+        QObject::tr("The session file uses an old format (version %1) that cannot be "
+                    "migrated to the current format (version %2). Starting with a fresh session.")
+          .arg(fileVersion)
+          .arg(SESSION_VERSION));
+      return false;
+    }
+  }
+
+  const QJsonArray windows = root.value(QStringLiteral("windows")).toArray();
+  if (windowIndex < 0 || windowIndex >= windows.size()) return false;
+
+  const QJsonObject win = windows[windowIndex].toObject();
+  const QJsonObject viewState = win.value(QStringLiteral("viewState")).toObject();
+  const QJsonObject findPanel = win.value(QStringLiteral("findPanel")).toObject();
+  const QJsonArray tabs = win.value(QStringLiteral("tabs")).toArray();
+  if (tabs.isEmpty()) return false;
+  const int savedCurrentIndex = win.value(QStringLiteral("currentIndex")).toInt(0);
+  int firstMissingIndex = -1;
+  int missingCount = 0;
+
+  // Block signals during restore to prevent tab-switch signals from triggering
+  // compile/preview (which calls initPython) before the constructor is finished.
+  const bool oldBlocked = tabWidget->blockSignals(true);
+
+  for (int i = 0; i < tabs.size(); ++i) {
+    const QJsonObject obj = tabs[i].toObject();
+    const QString filepath = obj.value(QStringLiteral("filepath")).toString();
+    QString content = obj.value(QStringLiteral("content")).toString();
+    const bool contentModified = obj.value(QStringLiteral("contentModified")).toBool();
+    const bool parameterModified = obj.value(QStringLiteral("parameterModified")).toBool();
+    const int cursorLine = obj.value(QStringLiteral("cursorLine")).toInt(-1);
+    const int cursorColumn = obj.value(QStringLiteral("cursorColumn")).toInt(-1);
+    const int firstVisibleLine = obj.value(QStringLiteral("firstVisibleLine")).toInt(-1);
+    int findState = obj.value(QStringLiteral("findState")).toInt(TabManager::FIND_HIDDEN);
+    const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
+
+    const QFileInfo fileInfo(filepath);
+    const QString fileName = fileInfo.fileName();
+    const bool isUntitledPlaceholder =
+      (fileName == QStringLiteral("Untitled.py") || fileName == QStringLiteral("Untitled.scad"));
+    if (!filepath.isEmpty() && fileInfo.isAbsolute() && !fileInfo.exists() && !isUntitledPlaceholder) {
+      if (firstMissingIndex < 0) {
+        firstMissingIndex = i;
+      }
+      ++missingCount;
+    }
+
+    // If tab had no unsaved changes, reload from disk (match behavior when app is running).
+    if (!filepath.isEmpty() && !contentModified) {
+      QFile diskFile(filepath);
+      if (diskFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&diskFile);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        in.setEncoding(QStringConverter::Utf8);
+#else
+        in.setCodec("UTF-8");
+#endif
+        content = in.readAll();
+        diskFile.close();
+      }
+    }
+
+    EditorInterface *edt;
+    if (i == 0) {
+      edt = static_cast<EditorInterface *>(tabWidget->widget(0));
+    } else {
+      createTab(QString());
+      edt = editor;
+    }
+    setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState);
+    if (findState < TabManager::FIND_HIDDEN || findState > TabManager::FIND_REPLACE_VISIBLE) {
+      findState = TabManager::FIND_HIDDEN;
+    }
+    edt->findState = findState;
+    if (cursorLine >= 0 && cursorColumn >= 0) {
+      edt->setCursorPosition(cursorLine, cursorColumn);
+    }
+    if (firstVisibleLine >= 0) {
+      edt->setFirstVisibleLine(firstVisibleLine);
+    }
+  }
+  const int currentIndex = std::max(0, std::min(savedCurrentIndex, tabWidget->count() - 1));
+  tabWidget->setCurrentIndex(currentIndex);
+
+  tabWidget->blockSignals(oldBlocked);
+
+  // Manually trigger the tab-switched handler now that construction is far enough along.
+  tabSwitched(currentIndex);
+
+  if (!findPanel.isEmpty()) {
+    const QSignalBlocker findBlocker(parent->findInputField);
+    const QSignalBlocker replaceBlocker(parent->replaceInputField);
+    parent->findInputField->setText(findPanel.value(QStringLiteral("text")).toString());
+    parent->replaceInputField->setText(findPanel.value(QStringLiteral("replaceText")).toString());
+  }
+
+  updateFindState();
+
+  if (!viewState.isEmpty() && parent && parent->qglview) {
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    if (jsonToVec3(viewState.value(QStringLiteral("vpt")), &x, &y, &z)) {
+      parent->qglview->cam.setVpt(x, y, z);
+    }
+    if (jsonToVec3(viewState.value(QStringLiteral("vpr")), &x, &y, &z)) {
+      parent->qglview->cam.setVpr(x, y, z);
+    }
+    const double vpd = viewState.value(QStringLiteral("vpd")).toDouble(-1.0);
+    if (vpd > 0.0) parent->qglview->cam.setVpd(vpd);
+    const double vpf = viewState.value(QStringLiteral("vpf")).toDouble(-1.0);
+    if (vpf > 0.0) parent->qglview->cam.setVpf(vpf);
+    const QString projection = viewState.value(QStringLiteral("projection")).toString();
+    const bool isOrthogonal = projection == QStringLiteral("orthogonal");
+    parent->qglview->setOrthoMode(isOrthogonal);
+    parent->viewActionOrthogonal->setChecked(isOrthogonal);
+    parent->viewActionPerspective->setChecked(!isOrthogonal);
+    parent->qglview->update();
+    parent->viewportControlWidget->cameraChanged();
+  }
+
+  if (missingCount > 0) {
+    QMessageBox box(parent);
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle(QObject::tr("Session Restore"));
+    box.setText(QObject::tr("%1 file(s) could not be found on disk.").arg(missingCount));
+    box.setInformativeText(
+      QObject::tr("The session contents were restored, but the file paths are stale.\n"
+                  "Use Save As to pick a new location."));
+    auto *saveAsButton = box.addButton(QObject::tr("Save As..."), QMessageBox::AcceptRole);
+    box.addButton(QObject::tr("Dismiss"), QMessageBox::RejectRole);
+    box.setDefaultButton(saveAsButton);
+    box.exec();
+    if (box.clickedButton() == saveAsButton && firstMissingIndex >= 0) {
+      tabWidget->setCurrentIndex(firstMissingIndex);
+      QMetaObject::invokeMethod(parent, "on_fileActionSaveAs_triggered", Qt::QueuedConnection);
+    }
+  }
+
+  parent->setWindowTitle(tabWidget->tabText(tabWidget->currentIndex()).replace("&&", "&"));
+  parent->updateRecentFileActions();
+  return true;
+}
+
+/*!
+ * Returns the number of windows stored in the session file, or 0 on error.
+ * Performs lightweight parsing + optional migration without creating any GUI.
+ */
+int TabManager::sessionWindowCount(const QString& path)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return 0;
+  const QByteArray rawData = file.readAll();
+  file.close();
+
+  const QJsonDocument doc = QJsonDocument::fromJson(rawData);
+  if (!doc.isObject()) return 0;
+
+  QJsonObject root = doc.object();
+  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
+  if (fileVersion > SESSION_VERSION) return 0;
+  if (fileVersion < SESSION_VERSION) {
+    if (!migrateSession(root, fileVersion)) return 0;
+  }
+
+  return root.value(QStringLiteral("windows")).toArray().size();
+}
+
+bool TabManager::sessionHasOnlyEmptyTab(const QString& path)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
+  const QByteArray rawData = file.readAll();
+  file.close();
+
+  const QJsonDocument doc = QJsonDocument::fromJson(rawData);
+  if (!doc.isObject()) return false;
+
+  QJsonObject root = doc.object();
+  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
+  if (fileVersion > SESSION_VERSION) return false;
+  if (fileVersion < SESSION_VERSION) {
+    if (!migrateSession(root, fileVersion)) return false;
+  }
+
+  const QJsonArray windows = root.value(QStringLiteral("windows")).toArray();
+  if (windows.size() != 1) return false;
+
+  const QJsonObject win = windows[0].toObject();
+  const QJsonArray tabs = win.value(QStringLiteral("tabs")).toArray();
+  if (tabs.size() != 1) return false;
+
+  const QJsonObject tab = tabs[0].toObject();
+  const QString filepath = tab.value(QStringLiteral("filepath")).toString();
+  const QString content = tab.value(QStringLiteral("content")).toString();
+  const bool contentModified = tab.value(QStringLiteral("contentModified")).toBool();
+  const bool parameterModified = tab.value(QStringLiteral("parameterModified")).toBool();
+  const QString customizerState = tab.value(QStringLiteral("customizerState")).toString();
+
+  const bool emptyContent = content.trimmed().isEmpty();
+  const bool emptyCustomizer = customizerState.trimmed().isEmpty();
+  return filepath.isEmpty() && emptyContent && !contentModified && !parameterModified && emptyCustomizer;
+}
+
+/*!
+ * Remove the session file so the next launch starts with a fresh session.
+ * Called when the user explicitly closes all windows (as opposed to Quit).
+ */
+void TabManager::removeSessionFile()
+{
+  const QString path = getSessionFilePath();
+  QFile::remove(path);
 }
 
 void TabManager::saveError(const QIODevice& file, const std::string& msg, const QString& filepath)
@@ -797,10 +1372,11 @@ bool TabManager::saveAs(EditorInterface *edt)
 #ifdef ENABLE_PYTHON
   QString selectedFilter;
   QString pythonFilter = _("PythonSCAD Designs (*.py)");
-  auto filename = QFileDialog::getSaveFileName(parent, _("Save File"), dir, QString("%1").arg(pythonFilter),
-                                               &selectedFilter);
+  auto filename = QFileDialog::getSaveFileName(parent, _("Save File"), dir,
+                                               QString("%1").arg(pythonFilter), &selectedFilter);
 #else
-  auto filename = QFileDialog::getSaveFileName(parent, _("Save File"), dir, _("OpenSCAD Designs (*.scad)"));
+  auto filename =
+    QFileDialog::getSaveFileName(parent, _("Save File"), dir, _("OpenSCAD Designs (*.scad)"));
 #endif
   if (filename.isEmpty()) {
     return false;
