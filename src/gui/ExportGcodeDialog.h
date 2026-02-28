@@ -30,6 +30,7 @@ private slots:
   void on_valueLaserPower_textChanged(const QString&);
   void on_valueInitCode_textChanged(void);
   void on_valueExitCode_textChanged(void);
+  void on_valueConfigFile_textChanged(void);
   void on_valueLaserMode_activated(int);
   void on_pushButtonCancel_clicked();
 

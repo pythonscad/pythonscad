@@ -14,6 +14,7 @@ ExportGcodeDialog::ExportGcodeDialog()
   valueLaserPower->setText(QString::number(this->laserPower));
   valueInitCode->setText(this->initCode);
   valueExitCode->setText(this->exitCode);
+  valueConfigFile->setText(this->configfile);
   valueLaserMode->setCurrentIndex(this->laserMode);
 }
 
@@ -50,6 +51,11 @@ QString ExportGcodeDialog::getExitCode() const
   return exitCode;
 }
 
+QString ExportGcodeDialog::getConfigFile() const
+{
+  return configfile;
+}
+
 ExportGcodeOptions ExportGcodeDialog::getOptions()
 {
   ExportGcodeOptions opts;
@@ -58,11 +64,13 @@ ExportGcodeOptions ExportGcodeDialog::getOptions()
   opts.lasermode = getLaserMode();
   opts.initCode = getInitCode().toStdString();
   opts.exitCode = getExitCode().toStdString();
+  opts.configfile = getConfigFile().toStdString();
   Settings::SettingsExportGcode::exportGcodeFeedRate.setValue(opts.feedrate);
   Settings::SettingsExportGcode::exportGcodeLaserPower.setValue(opts.laserpower);
   Settings::SettingsExportGcode::exportGcodeLaserMode.setValue(opts.lasermode);
   Settings::SettingsExportGcode::exportGcodeInitCode.setValue(opts.initCode);
   Settings::SettingsExportGcode::exportGcodeExitCode.setValue(opts.exitCode);
+  Settings::SettingsExportGcode::exportGcodeConfigFile.setValue(opts.configfile);
   writeSettings();
   return opts;
 }
