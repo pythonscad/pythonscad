@@ -60,7 +60,6 @@
 #include "core/RepairNode.h"
 #include "core/FilletNode.h"
 #include "core/SkinNode.h"
-#include "core/ConcatNode.h"
 #include "core/CgalAdvNode.h"
 #include "Expression.h"
 #include "core/RoofNode.h"
@@ -3704,7 +3703,7 @@ PyObject *python_concat(PyObject *self, PyObject *args, PyObject *kwargs)
   DECLARE_INSTANCE();
   int i;
 
-  auto node = std::make_shared<ConcatNode>(instance);
+  auto node = std::make_shared<CsgOpNode>(instance, OpenSCADOperator::CONCAT);
   PyObject *obj;
   PyObject *obj1;
   PyObject *child_dict = nullptr;
