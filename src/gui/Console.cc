@@ -205,7 +205,11 @@ void Console::contextMenuEvent(QContextMenuEvent *event)
   menu->insertAction(menu->actions().at(0), this->actionClear);
   menu->addSeparator();
   menu->addAction(this->actionSaveAs);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  menu->exec(event->globalPosition().toPoint());
+#else
   menu->exec(event->globalPos());
+#endif
   delete menu;
 }
 
