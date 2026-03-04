@@ -179,10 +179,10 @@ static void append_gcode(boost::property_tree::ptree pt, const std::shared_ptr<c
     }
   } else if (const auto poly = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
     append_gcode(pt, *poly, output, exportInfo, lasermode);
-  } else if (std::dynamic_pointer_cast<const PolySet>(geom)) {  // NOLINT(bugprone-branch-clone)
-    assert(false && "Unsupported file format");
-  } else {  // NOLINT(bugprone-branch-clone)
-    assert(false && "Export as SVG for this geometry type is not supported");
+  } else if (std::dynamic_pointer_cast<const PolySet>(geom)) {
+    std::cerr << std::endl << "ERROR(append_gcode): export_gcode cannot process 3D objects" << std::endl << std::flush;
+  } else {
+    std::cerr << std::endl << "ERROR(append_gcode): export_gcode cannot export this geometry type"<< std::endl << std::flush;
   }
 }
 
