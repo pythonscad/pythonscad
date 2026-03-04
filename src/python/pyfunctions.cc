@@ -665,7 +665,6 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
 PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE();
-  unsigned int i, j, pointIndex;
   auto node = std::make_shared<PolyhedronNode>(instance);
 
   char *kwlist[] = {"points", "faces", "convexity", "triangles", "colors", NULL};
@@ -691,7 +690,7 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
       PyErr_SetString(PyExc_TypeError, "There must at least be one point in the polyhedron");
       return NULL;
     }
-    for (i = 0; i < PyList_Size(points); i++) {
+    for (Py_ssize_t i = 0; i < PyList_Size(points); i++) {
       element = PyList_GetItem(points, i);
       if (PyList_Check(element) && PyList_Size(element) == 3) {
         point[0] = PyFloat_AsDouble(PyList_GetItem(element, 0));
@@ -719,13 +718,13 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
       PyErr_SetString(PyExc_TypeError, "must specify at least 1 face");
       return NULL;
     }
-    for (i = 0; i < PyList_Size(faces); i++) {
+    for (Py_ssize_t i = 0; i < PyList_Size(faces); i++) {
       element = PyList_GetItem(faces, i);
       if (PyList_Check(element)) {
         IndexedFace face;
-        for (j = 0; j < PyList_Size(element); j++) {
-          pointIndex = PyLong_AsLong(PyList_GetItem(element, j));
-          if (pointIndex < 0 || pointIndex >= node->points.size()) {
+        for (Py_ssize_t j = 0; j < PyList_Size(element); j++) {
+          long pointIndex = PyLong_AsLong(PyList_GetItem(element, j));
+          if (pointIndex < 0 || pointIndex >= static_cast<long>(node->points.size())) {
             PyErr_SetString(PyExc_TypeError, "Polyhedron Point Index out of range");
             return NULL;
           }
@@ -753,11 +752,11 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
       PyErr_SetString(PyExc_TypeError, "when specified must match number of faces");
       return NULL;
     }
-    for (i = 0; i < PyList_Size(colors); i++) {
+    for (Py_ssize_t i = 0; i < PyList_Size(colors); i++) {
       element = PyList_GetItem(colors, i);
       if (PyList_Check(element) && PyList_Size(element) == 3) {
         Vector4f color(0, 0, 0, 1.0);
-        for (j = 0; j < 3; j++) {
+        for (int j = 0; j < 3; j++) {
           color[j] = PyFloat_AsDouble(PyList_GetItem(element, j));
         }
         int colind = -1;
@@ -1386,12 +1385,12 @@ PyObject *python_translate_sub(PyObject *obj, Vector3d translatevec, int dragfla
   std::shared_ptr<AbstractNode> child;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
-  node->setPyName(child->getPyName());
-  node->dragflags = dragflags;
   if (child == NULL) {
     PyErr_SetString(PyExc_TypeError, "Invalid type for Object in translate");
     return NULL;
   }
+  node->setPyName(child->getPyName());
+  node->dragflags = dragflags;
   node->matrix.translate(translatevec);
 
   node->children.push_back(child);
@@ -6261,20 +6260,20 @@ PyMethodDef PyOpenSCADMethods[] = {
     OO_METHOD_ENTRY(front, "Front Object") OO_METHOD_ENTRY(up, "Up Object") OO_METHOD_ENTRY(
       down, "Lower Object")
 
-      OO_METHOD_ENTRY(union, "Union Object") OO_METHOD_ENTRY(
-        difference, "Difference Object") OO_METHOD_ENTRY(intersection, "Intersection Object")
+      OO_METHOD_ENTRY(union, "Union Object") OO_METHOD_ENTRY(difference, "Difference Object")
+        OO_METHOD_ENTRY(intersection, "Intersection Object")
 
-        OO_METHOD_ENTRY(rotx, "Rotx Object") OO_METHOD_ENTRY(roty, "Roty Object") OO_METHOD_ENTRY(
-          rotz, "Rotz Object")
+          OO_METHOD_ENTRY(rotx, "Rotx Object") OO_METHOD_ENTRY(roty, "Roty Object") OO_METHOD_ENTRY(
+            rotz, "Rotz Object")
 
-          OO_METHOD_ENTRY(scale, "Scale Object") OO_METHOD_ENTRY(mirror, "Mirror Object")
-            OO_METHOD_ENTRY(multmatrix, "Multmatrix Object") OO_METHOD_ENTRY(
-              divmatrix, "Divmatrix Object") OO_METHOD_ENTRY(offset, "Offset Object")
+            OO_METHOD_ENTRY(scale, "Scale Object") OO_METHOD_ENTRY(mirror, "Mirror Object")
+              OO_METHOD_ENTRY(multmatrix, "Multmatrix Object") OO_METHOD_ENTRY(
+                divmatrix, "Divmatrix Object") OO_METHOD_ENTRY(offset, "Offset Object")
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
-              OO_METHOD_ENTRY(roof, "Roof Object")
+                OO_METHOD_ENTRY(roof, "Roof Object")
 #endif
-                OO_METHOD_ENTRY(color, "Color Object") OO_METHOD_ENTRY(
-                  separate, "Split into separate Objects") OO_METHOD_ENTRY(export, "Export Object")
+                  OO_METHOD_ENTRY(color, "Color Object") OO_METHOD_ENTRY(
+                    separate, "Split into separate Objects") OO_METHOD_ENTRY(export, "Export Object")
 
                     OO_METHOD_ENTRY(linear_extrude, "Linear_extrude Object")
                       OO_METHOD_ENTRY(rotate_extrude, "Rotate_extrude Object") OO_METHOD_ENTRY(
