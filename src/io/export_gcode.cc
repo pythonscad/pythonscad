@@ -128,7 +128,7 @@ static double color_to_parm(const boost::property_tree::ptree& pt, const Color4f
 
   switch (pos) {
   case 0:  // power
-    if (dynamic == 1) {
+    if (options.lasermode == 1) {
       parm = double(color_val >> 22);
     } else {
       find_colormap_from_value(pt, options, color_val, label, ipower, ifeed);
@@ -136,7 +136,7 @@ static double color_to_parm(const boost::property_tree::ptree& pt, const Color4f
     }
     break;
   case 1:  // feed/speed
-    if (dynamic == 1) {
+    if (options.lasermode == 1) {
       parm = double(((color_val & 0x3FFFFF) >> 8) | (((~(unsigned int)(a)) & 0xFF) << 16));
     } else {
       find_colormap_from_value(pt, options, color_val, label, ipower, ifeed);
