@@ -490,7 +490,7 @@ std::unique_ptr<const Geometry> sphereCreateFuncGeometry(void *funcptr, double f
 
             tri_[(j + 1) % 3] = tri_oth[(pos_o + 2) % 3];
             for (int k = 0; k < 3; k++)
-              if (tri_oth[k] == i1) tri_oth_[k] = tri[(j + 2) % 3];
+              if (tri_oth[k] == vi1) tri_oth_[k] = tri[(j + 2) % 3];
             // reorganize
 
             Vector3d norm_ = calcTriangleNormal(ps->vertices, tri_).head<3>();
