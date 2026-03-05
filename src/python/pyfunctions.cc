@@ -464,14 +464,14 @@ std::unique_ptr<const Geometry> sphereCreateFuncGeometry(void *funcptr, double f
       auto& tri = ps->indices[i];
       if (tri[0] == tri[1] || tri[0] == tri[2] || tri[1] == tri[2]) continue;
       for (int j = 0; j < 3; j++) {
-        int i1 = tri[j];
-        int i2 = tri[(j + 1) % 3];
-        double l1 = (ps->vertices[i1] - ps->vertices[i2]).norm();
+        int vi1 = tri[j];
+        int vi2 = tri[(j + 1) % 3];
+        double l1 = (ps->vertices[vi1] - ps->vertices[vi2]).norm();
         EdgeKey ek(tri[j], tri[(j + 1) % 3]);
         if (edge_db.count(ek) != 0) {
           auto ev = edge_db.at(ek);
           int face_o, pos_o;
-          if (i2 > i1) {
+          if (vi2 > vi1) {
             face_o = ev.faceb;
             pos_o = ev.posb;
           } else {
@@ -1175,19 +1175,19 @@ PyObject *python_rotate_sub(PyObject *obj, Vector3d vec3, double angle, PyObject
     node->children.push_back(child);
     pyresult = PyOpenSCADObjectFromNode(type, node);
   } else {
-    Vector3d vec3;
-    python_vectorval(ref, 1, 3, &(vec3[0]), &(vec3[1]), &(vec3[2]), nullptr, &dragflags);
+    Vector3d ref_point;
+    python_vectorval(ref, 1, 3, &(ref_point[0]), &(ref_point[1]), &(ref_point[2]), nullptr, &dragflags);
 
     std::shared_ptr<TransformNode> prenode, postnode;
     {
       DECLARE_INSTANCE();
       prenode = std::make_shared<TransformNode>(instance, "translate");
-      prenode->matrix.translate(-vec3);
+      prenode->matrix.translate(-ref_point);
     }
     {
       DECLARE_INSTANCE();
       postnode = std::make_shared<TransformNode>(instance, "translate");
-      postnode->matrix.translate(vec3);
+      postnode->matrix.translate(ref_point);
     }
     prenode->children.push_back(child);
     node->children.push_back(prenode);
@@ -2039,15 +2039,15 @@ PyObject *python_export_core(PyObject *obj, char *file)
       PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
       const char *value_str = PyBytes_AS_STRING(value1);
       if (value_str == nullptr) continue;
-      std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(value, &child_dict);
-      if (child == nullptr) continue;
+      std::shared_ptr<AbstractNode> dict_child = PyOpenSCADObjectToNodeMulti(value, &child_dict);
+      if (dict_child == nullptr) continue;
 
       void *prop = nullptr;
       if (child_dict != nullptr && PyDict_Check(child_dict)) {
-        PyObject *key = PyUnicode_FromStringAndSize("props_3mf", 9);
-        prop = PyDict_GetItem(child_dict, key);
+        PyObject *props_key = PyUnicode_FromStringAndSize("props_3mf", 9);
+        prop = PyDict_GetItem(child_dict, props_key);
       }
-      Tree tree(child, "parent");
+      Tree tree(dict_child, "parent");
       GeometryEvaluator geomevaluator(tree);
       Export3mfPartInfo info(geomevaluator.evaluateGeometry(*tree.root(), false), value_str, prop);
       export3mfPartInfos.push_back(info);
@@ -2257,9 +2257,9 @@ PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha)
   } else if (PyUnicode_Check(color)) {
     PyObject *value = PyUnicode_AsEncodedString(color, "utf-8", "~");
     char *colorname = PyBytes_AS_STRING(value);
-    const auto color = OpenSCAD::parse_color(colorname);
-    if (color) {
-      node->color = *color;
+    const auto parsed_color = OpenSCAD::parse_color(colorname);
+    if (parsed_color) {
+      node->color = *parsed_color;
       if (1.0 != alpha) node->color.setAlpha(alpha);
     } else {
       PyErr_SetString(PyExc_TypeError, "Cannot parse color");
@@ -3143,9 +3143,9 @@ PyObject *python_repair_core(PyObject *obj, PyObject *color)
     } else if (PyUnicode_Check(color)) {
       PyObject *value = PyUnicode_AsEncodedString(color, "utf-8", "~");
       char *colorname = PyBytes_AS_STRING(value);
-      const auto color = OpenSCAD::parse_color(colorname);
-      if (color) {
-        node->color = *color;
+      const auto parsed_color = OpenSCAD::parse_color(colorname);
+      if (parsed_color) {
+        node->color = *parsed_color;
         node->color.setAlpha(1.0);
       } else {
         PyErr_SetString(PyExc_TypeError, "Cannot parse color");

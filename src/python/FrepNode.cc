@@ -244,14 +244,14 @@ int generateProgram(intList& table, std::vector<CutProgram>& program, std::vecto
   cp.d = edgeFaces[edgebest].d;
 
   // split into positive and negative branch
-  for (int i = 0; i < validFaces.size(); i++) {
-    switch (table[edgebest * facesLen + validFaces[i]]) {
-    case 1: posFaces.push_back(validFaces[i]); break;
+  for (size_t fi = 0; fi < validFaces.size(); fi++) {
+    switch (table[edgebest * facesLen + validFaces[fi]]) {
+    case 1: posFaces.push_back(validFaces[fi]); break;
     case 0:
-      posFaces.push_back(validFaces[i]);
-      negFaces.push_back(validFaces[i]);
+      posFaces.push_back(validFaces[fi]);
+      negFaces.push_back(validFaces[fi]);
       break;
-    case -1: negFaces.push_back(validFaces[i]); break;
+    case -1: negFaces.push_back(validFaces[fi]); break;
     }
   }
 
