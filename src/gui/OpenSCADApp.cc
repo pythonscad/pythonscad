@@ -12,6 +12,7 @@
 #endif
 #include <QApplication>
 #include <QEvent>
+#include <QFont>
 #include <QObject>
 #include <QProgressDialog>
 #include <QString>
@@ -116,9 +117,9 @@ static bool isSystemDarkTheme()
   // Qt5: no colorScheme() API. Use palette heuristic from the application's
   // current palette (reflects platform theme on Linux; on Windows/macOS may
   // often be light). Fallback to light if unclear.
-  const QPalette &pal = scadApp->palette();
-  const auto &text = pal.color(QPalette::WindowText);
-  const auto &window = pal.color(QPalette::Window);
+  const QPalette& pal = scadApp->palette();
+  const auto& text = pal.color(QPalette::WindowText);
+  const auto& window = pal.color(QPalette::Window);
   return text.lightness() > window.lightness();
 #endif
 }
@@ -132,8 +133,9 @@ void OpenSCADApp::setGuiTheme(const QString& preference)
     return isSystemDarkTheme();
   }();
 
+  QStyle *fusion = QStyleFactory::create("Fusion");
+
   if (useDark) {
-    QStyle *fusion = QStyleFactory::create("Fusion");
     if (fusion) scadApp->setStyle(fusion);
     QPalette darkPalette;
     darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
@@ -148,17 +150,36 @@ void OpenSCADApp::setGuiTheme(const QString& preference)
     darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
     darkPalette.setColor(QPalette::HighlightedText, Qt::black);
     scadApp->setPalette(darkPalette);
+  } else if (preference == "light") {
+    // Explicit "light": platform theme plugins (e.g. QGnomePlatform) can
+    // inject dark system colors into even Fusion's standardPalette(), so
+    // we must set every role explicitly — same approach as dark mode.
+    if (fusion) scadApp->setStyle(fusion);
+    QPalette lightPalette;
+    lightPalette.setColor(QPalette::Window, QColor(239, 239, 239));
+    lightPalette.setColor(QPalette::WindowText, Qt::black);
+    lightPalette.setColor(QPalette::Base, Qt::white);
+    lightPalette.setColor(QPalette::AlternateBase, QColor(239, 239, 239));
+    lightPalette.setColor(QPalette::ToolTipBase, QColor(255, 255, 220));
+    lightPalette.setColor(QPalette::ToolTipText, Qt::black);
+    lightPalette.setColor(QPalette::Text, Qt::black);
+    lightPalette.setColor(QPalette::Button, QColor(239, 239, 239));
+    lightPalette.setColor(QPalette::ButtonText, Qt::black);
+    lightPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+    lightPalette.setColor(QPalette::HighlightedText, Qt::white);
+    lightPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+    lightPalette.setColor(QPalette::LinkVisited, QColor(100, 74, 155));
+    scadApp->setPalette(lightPalette);
   } else {
-    // Use platform default style for a native look (Windows, macOS, Linux DE)
+    // "auto" detected as light: use platform default style for a native look
     QStyle *native = QStyleFactory::create(scadApp->platformStyleName);
-    if (!native) native = QStyleFactory::create("Fusion");
+    if (!native) native = fusion;
     if (native) scadApp->setStyle(native);
     scadApp->setPalette(scadApp->style()->standardPalette());
   }
 
   QIcon::setThemeName(useDark ? "chokusen-dark" : "chokusen");
 
-  // Re-apply application font (stylesheet is replaced when changing style/palette)
   const auto family = GlobalPreferences::inst()->getValue("advanced/applicationFontFamily").toString();
   const auto size = GlobalPreferences::inst()->getValue("advanced/applicationFontSize").toUInt();
   setApplicationFont(family, size);
@@ -166,19 +187,13 @@ void OpenSCADApp::setGuiTheme(const QString& preference)
 
 void OpenSCADApp::setApplicationFont(const QString& family, uint size)
 {
-  // Trigger style sheet refresh to update the application font
-  // (hopefully) everywhere. Also remove ugly frames in the QStatusBar
-  // when using additional widgets
-  const auto stylesheet = QString(R"(
-    * {
-        font-family: '%1';
-        font-size: %2pt;
-    }
-    QStatusBar::item {
-        border: 0px solid black;
-    }
-  )");
-  scadApp->setStyleSheet(stylesheet.arg(family, QString::number(size)));
+  QFont font(family, size);
+  scadApp->setFont(font);
+
+  // Remove ugly frames in the QStatusBar when using additional widgets.
+  // Keep this stylesheet narrow to avoid interfering with native palette
+  // rendering (a global `*` selector breaks menu colors on Windows).
+  scadApp->setStyleSheet(QStringLiteral("QStatusBar::item { border: 0px solid black; }"));
 }
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
