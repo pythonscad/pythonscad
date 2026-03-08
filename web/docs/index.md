@@ -48,6 +48,7 @@ OpenSCAD will never merge.
 
 Check out the [Getting Started tutorial](tutorial/getting_started.md) for a
 walkthrough with exercises.
+
 William F. Adams has created a nice
 [PythonSCAD wiki](http://old.reddit.com/r/openpythonscad/wiki/index).
 [Python stub files](https://raw.githubusercontent.com/pythonscad/pythonscad/refs/heads/master/libraries/python/stubs/openscad/__init__.pyi)
