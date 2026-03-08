@@ -35,7 +35,7 @@ it merged into mainline OpenSCAD.
 The argument is Python will introduce a massive security hole into the sharing
 culture. So the proposed solution is to put the Python capability behind an
 option, which I have done. Additionally PythonSCAD asks you, if you trust to a
-new Python Script and it will saves this decsion for you in an SHA256 hash. Now
+new Python Script and it will saves this decision for you in an SHA256 hash. Now
 I hope it's just a matter of time until things are merged.
 
 **Update Feb 2025:**
