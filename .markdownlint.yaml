@@ -1,25 +1,4 @@
 # Relax line length for documentation (default 80 is strict)
 MD013:
-  line_length: 200
-  code_block_line_length: 200
-
-# Allow inline HTML (used extensively in cheatsheet and tutorial pages)
-MD033: false
-
-# Allow multiple consecutive blank lines (used for visual separation)
-MD012: false
-
-# Allow mixed code block styles (indented and fenced coexist in tutorials)
-MD046: false
-
-# Allow headings without surrounding blank lines
-MD022: false
-
-# Allow fenced code blocks without surrounding blank lines
-MD031: false
-
-# Allow multiple spaces after heading hash
-MD019: false
-
-# Allow flexible table column spacing
-MD060: false
+  line_length: 120
+  code_block_line_length: 120

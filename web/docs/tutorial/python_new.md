@@ -372,7 +372,7 @@ rendervars(vpd=150, vpr=[55, 0, 25], vpt=[0, 0, 5])
 | `vpr` | [x, y, z] | Viewport rotation in degrees |
 | `vpt` | [x, y, z] | Viewport translation – the point the camera looks at |
 
-All parameters are optional and keyword-only. Only the parameters you provide
+All parameters are optional. Only the parameters you provide
 will be changed; the rest keep their current values.
 
 ## concat
