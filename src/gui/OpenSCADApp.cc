@@ -22,7 +22,7 @@
 #include <cassert>
 #include <exception>
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && defined(ENABLE_DBUS)
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusVariant>
@@ -35,9 +35,6 @@ OpenSCADApp::OpenSCADApp(int& argc, char **argv) : QApplication(argc, argv)
 #ifdef Q_OS_MACOS
   this->installEventFilter(new SCADEventFilter(this));
 #endif
-
-  // Remember platform default style so we can restore it for light/native theme
-  platformStyleName = style()->objectName();
 
   // Note: It may be tempting to add more initialization code here, but keep in mind that this is run as
   // part of QApplication initialization, so it's usually better to that in the main gui() function after
@@ -112,7 +109,7 @@ void OpenSCADApp::setRenderBackend3D(RenderBackend3D backend)
 
 static bool isSystemDarkTheme()
 {
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && defined(ENABLE_DBUS)
   // On Linux, neither Qt's colorScheme() API (Qt 6.5+) nor the palette
   // heuristic are reliable: GNOME's Qt platform plugin can read the
   // gtk-theme name (e.g. "Adwaita-dark") instead of the actual dark-style

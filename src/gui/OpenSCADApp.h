@@ -38,7 +38,6 @@ public:
 
 private:
   QProgressDialog *fontCacheDialog{nullptr};
-  QString platformStyleName;
   QPalette themePalette;
 };
 
