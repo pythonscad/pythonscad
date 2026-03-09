@@ -1514,27 +1514,36 @@ void MainWindow::on_fileActionWelcome_triggered()
 
 void MainWindow::quitApplication()
 {
-  const QString sessionPath = TabManager::getSessionFilePath();
-  QString error;
-  while (!TabManager::saveGlobalSession(sessionPath, &error, false)) {
-    QMessageBox box(this);
-    box.setIcon(QMessageBox::Warning);
-    box.setWindowTitle(_("Session Save"));
-    box.setText(_("Could not save the session."));
-    box.setInformativeText(QObject::tr("%1\n\n%2").arg(sessionPath, error));
-    auto *retryButton = box.addButton(QObject::tr("Try Again"), QMessageBox::AcceptRole);
-    auto *ignoreButton = box.addButton(QObject::tr("Quit Without Saving"), QMessageBox::DestructiveRole);
-    box.addButton(QObject::tr("Keep Open"), QMessageBox::RejectRole);
-    box.setDefaultButton(retryButton);
-    box.exec();
-    if (box.clickedButton() == retryButton) {
-      continue;
+  if (Settings::Settings::sessionManagementEnabled.value()) {
+    const QString sessionPath = TabManager::getSessionFilePath();
+    QString error;
+    while (!TabManager::saveGlobalSession(sessionPath, &error, false)) {
+      QMessageBox box(this);
+      box.setIcon(QMessageBox::Warning);
+      box.setWindowTitle(_("Session Save"));
+      box.setText(_("Could not save the session."));
+      box.setInformativeText(QObject::tr("%1\n\n%2").arg(sessionPath, error));
+      auto *retryButton = box.addButton(QObject::tr("Try Again"), QMessageBox::AcceptRole);
+      auto *ignoreButton =
+        box.addButton(QObject::tr("Quit Without Saving"), QMessageBox::DestructiveRole);
+      box.addButton(QObject::tr("Keep Open"), QMessageBox::RejectRole);
+      box.setDefaultButton(retryButton);
+      box.exec();
+      if (box.clickedButton() == retryButton) {
+        continue;
+      }
+      if (box.clickedButton() == ignoreButton) {
+        TabManager::setSkipSessionSave(true);
+        break;
+      }
+      return;
     }
-    if (box.clickedButton() == ignoreButton) {
-      TabManager::setSkipSessionSave(true);
-      break;
+  } else {
+    for (auto *win : scadApp->windowManager.getWindows()) {
+      if (!win->tabManager->shouldClose()) {
+        return;
+      }
     }
-    return;
   }
   for (auto *win : scadApp->windowManager.getWindows()) {
     win->isSessionQuitting = true;
