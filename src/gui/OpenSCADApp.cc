@@ -46,10 +46,45 @@ OpenSCADApp::~OpenSCADApp()
   delete this->fontCacheDialog;
 }
 
+#include <QDialog>
 #include <QMessageBox>
 
 bool OpenSCADApp::notify(QObject *object, QEvent *event)
 {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+  // Qt5 + Fusion style: QMessageBox::resizeEvent() calls updateSize() which
+  // calls resize() when sizeHint() differs from the current size.  With
+  // word-wrapped text the hint depends on the current width, so sizeHint()
+  // can alternate between two values causing visible flicker.  Break the
+  // cycle by suppressing the re-entrant resize event.
+  if (event->type() == QEvent::Resize) {
+    if (auto *dialog = qobject_cast<QDialog *>(object)) {
+      static QDialog *resizingDialog = nullptr;
+      if (resizingDialog == dialog) {
+        return true;
+      }
+      resizingDialog = dialog;
+      QString msg;
+      try {
+        bool result = QApplication::notify(object, event);
+        resizingDialog = nullptr;
+        return result;
+      } catch (const std::exception& e) {
+        resizingDialog = nullptr;
+        msg = e.what();
+      } catch (...) {
+        resizingDialog = nullptr;
+        msg = _("Unknown error");
+      }
+      QMessageBox::critical(
+        nullptr, QString(_("Critical Error")),
+        QString(_("A critical error was caught. The application may have become unstable:\n%1"))
+          .arg(QString(msg)));
+      return false;
+    }
+  }
+#endif
+
   QString msg;
   try {
     return QApplication::notify(object, event);
@@ -58,7 +93,6 @@ bool OpenSCADApp::notify(QObject *object, QEvent *event)
   } catch (...) {
     msg = _("Unknown error");
   }
-  // This happens when an uncaught exception is thrown in a Qt event handler
   QMessageBox::critical(
     nullptr, QString(_("Critical Error")),
     QString(_("A critical error was caught. The application may have become unstable:\n%1"))
