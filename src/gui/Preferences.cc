@@ -193,6 +193,7 @@ void Preferences::init()
   this->defaultmap["advanced/enableParameterCheck"] = true;
   this->defaultmap["advanced/enableParameterRangeCheck"] = false;
   this->defaultmap["advanced/singleInstanceOpenMode"] = "new-window";
+  this->defaultmap["advanced/sessionManagementEnabled"] = false;
   this->defaultmap["advanced/autosaveSessionEnabled"] = true;
   this->defaultmap["advanced/autosaveSessionIntervalSeconds"] = 60;
   this->defaultmap["view/hideEditor"] = false;
@@ -757,11 +758,19 @@ void Preferences::on_checkBoxEnableNumberScrollWheel_toggled(bool val)
   writeSettings();
 }
 
+void Preferences::on_checkBoxSessionManagementEnabled_toggled(bool state)
+{
+  Settings::Settings::sessionManagementEnabled.setValue(state);
+  writeSettings();
+  updateSessionManagementWidgets();
+}
+
 void Preferences::on_checkBoxAutosaveSessionEnabled_toggled(bool state)
 {
   QSettingsCached settings;
   settings.setValue("advanced/autosaveSessionEnabled", state);
-  this->comboBoxAutosaveSessionInterval->setEnabled(state);
+  const bool sessionEnabled = this->checkBoxSessionManagementEnabled->isChecked();
+  this->comboBoxAutosaveSessionInterval->setEnabled(sessionEnabled && state);
 }
 
 void Preferences::on_comboBoxAutosaveSessionInterval_activated(int)
@@ -1351,6 +1360,15 @@ void Preferences::on_checkBoxGlobalTrustPython_toggled(bool state)
   writeSettings();
 }
 
+void Preferences::updateSessionManagementWidgets()
+{
+  const bool enabled = this->checkBoxSessionManagementEnabled->isChecked();
+  this->checkBoxAutosaveSessionEnabled->setEnabled(enabled);
+  this->labelAutosaveSessionInterval->setEnabled(enabled);
+  this->comboBoxAutosaveSessionInterval->setEnabled(enabled &&
+                                                    this->checkBoxAutosaveSessionEnabled->isChecked());
+}
+
 void Preferences::writeSettings()
 {
   Settings::Settings::visit(SettingsWriter());
@@ -1509,6 +1527,8 @@ void Preferences::updateGUI()
   updateComboBox(this->comboBoxToolbarExport3D, Settings::Settings::toolbarExport3D);
   updateComboBox(this->comboBoxToolbarExport2D, Settings::Settings::toolbarExport2D);
   updateComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
+  initUpdateCheckBox(this->checkBoxSessionManagementEnabled,
+                     Settings::Settings::sessionManagementEnabled);
   BlockSignals<QCheckBox *>(this->checkBoxAutosaveSessionEnabled)
     ->setChecked(getValue("advanced/autosaveSessionEnabled").toBool());
   const int autosaveSeconds = getValue("advanced/autosaveSessionIntervalSeconds").toInt();
@@ -1518,7 +1538,8 @@ void Preferences::updateGUI()
       break;
     }
   }
-  this->comboBoxAutosaveSessionInterval->setEnabled(this->checkBoxAutosaveSessionEnabled->isChecked());
+  updateSessionManagementWidgets();
+  // ^ must run after the session management checkbox and autosave checkbox are set
 
   BlockSignals<QCheckBox *>(this->checkBoxSummaryCamera)
     ->setChecked(Settings::Settings::summaryCamera.value());
