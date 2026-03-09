@@ -64,7 +64,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <QFile>
 
 #ifdef Q_OS_UNIX
 #include <fcntl.h>
