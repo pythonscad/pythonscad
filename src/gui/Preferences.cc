@@ -767,8 +767,8 @@ void Preferences::on_checkBoxSessionManagementEnabled_toggled(bool state)
 
 void Preferences::on_checkBoxAutosaveSessionEnabled_toggled(bool state)
 {
-  QSettingsCached settings;
-  settings.setValue("advanced/autosaveSessionEnabled", state);
+  Settings::Settings::autosaveSessionEnabled.setValue(state);
+  writeSettings();
   const bool sessionEnabled = this->checkBoxSessionManagementEnabled->isChecked();
   this->comboBoxAutosaveSessionInterval->setEnabled(sessionEnabled && state);
 }
@@ -776,8 +776,8 @@ void Preferences::on_checkBoxAutosaveSessionEnabled_toggled(bool state)
 void Preferences::on_comboBoxAutosaveSessionInterval_activated(int)
 {
   const int seconds = this->comboBoxAutosaveSessionInterval->currentData().toInt();
-  QSettingsCached settings;
-  settings.setValue("advanced/autosaveSessionIntervalSeconds", seconds);
+  Settings::Settings::autosaveSessionIntervalSeconds.setValue(seconds);
+  writeSettings();
 }
 
 void Preferences::on_enableSoundOnRenderCompleteCheckBox_toggled(bool state)

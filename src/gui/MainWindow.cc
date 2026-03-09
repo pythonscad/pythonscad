@@ -4022,8 +4022,6 @@ void MainWindow::on_helpActionLibraryInfo_triggered()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
   isClosing = true;
-  progress_report_fin();
-  hideCurrentOutput();
 
   if (!isSessionQuitting) {
     if (scadApp->windowManager.getWindows().size() == 1) {
@@ -4038,6 +4036,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
       return;
     }
   }
+
+  progress_report_fin();
+  hideCurrentOutput();
 
   QSettingsCached settings;
   settings.setValue("window/geometry", saveGeometry());
