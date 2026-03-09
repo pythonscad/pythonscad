@@ -339,7 +339,8 @@ bool sendIpcMessage(const QJsonObject& message)
     return false;
   }
 
-  const QByteArray payload = QJsonDocument(message).toJson(QJsonDocument::Compact);
+  QByteArray payload = QJsonDocument(message).toJson(QJsonDocument::Compact);
+  payload.append('\n');
   socket.write(payload);
   if (!socket.waitForBytesWritten(kIpcTimeoutMs)) {
     return false;
@@ -353,74 +354,85 @@ bool sendIpcMessage(const QJsonObject& message)
   return ack.startsWith("ok");
 }
 
+void handleIpcMessage(QLocalSocket *socket, const QByteArray& data)
+{
+  auto cleanup = [socket]() {
+    socket->flush();
+    socket->disconnectFromServer();
+    socket->deleteLater();
+  };
+
+  const auto doc = QJsonDocument::fromJson(data);
+  if (!doc.isObject()) {
+    socket->write("error\n");
+    cleanup();
+    return;
+  }
+  const auto obj = doc.object();
+  const auto action = obj.value(QStringLiteral("action")).toString();
+  const auto openMode = obj.value(QStringLiteral("openMode")).toString();
+  const auto filesValue = obj.value(QStringLiteral("files"));
+
+  if (action == QStringLiteral("focus")) {
+    focusWindow(getOrCreateActiveWindow());
+    socket->write("ok\n");
+    cleanup();
+    return;
+  }
+
+  if (action != QStringLiteral("open") || !filesValue.isArray()) {
+    socket->write("error\n");
+    cleanup();
+    return;
+  }
+
+  QStringList files;
+  for (const auto& entry : filesValue.toArray()) {
+    const auto path = entry.toString();
+    if (!path.isEmpty()) files.append(path);
+  }
+
+  if (files.isEmpty()) {
+    focusWindow(getOrCreateActiveWindow());
+    socket->write("ok\n");
+    cleanup();
+    return;
+  }
+
+  if (openMode == QStringLiteral("active-window")) {
+    auto *active = getOrCreateActiveWindow();
+    if (active) {
+      openFilesInWindow(active, files);
+    } else {
+      new MainWindow(files);
+    }
+    socket->write("ok\n");
+    cleanup();
+    return;
+  }
+
+  for (const auto& file : files) {
+    new MainWindow(QStringList(file));
+  }
+  socket->write("ok\n");
+  cleanup();
+}
+
 void startIpcServer(QLocalServer *server)
 {
   QObject::connect(server, &QLocalServer::newConnection, [server]() {
     while (auto *socket = server->nextPendingConnection()) {
+      socket->setProperty("_ipc_buf", QByteArray());
       QObject::connect(socket, &QLocalSocket::readyRead, [socket]() {
-        auto cleanup = [socket]() {
-          socket->flush();
-          socket->disconnectFromServer();
-          socket->deleteLater();
-        };
-
-        const QByteArray data = socket->readAll();
-        const auto doc = QJsonDocument::fromJson(data);
-        bool ok = doc.isObject();
-        if (!doc.isObject()) {
-          socket->write("error");
-          cleanup();
+        QByteArray buf = socket->property("_ipc_buf").toByteArray();
+        buf.append(socket->readAll());
+        int nlPos = buf.indexOf('\n');
+        if (nlPos < 0) {
+          socket->setProperty("_ipc_buf", buf);
           return;
         }
-        const auto obj = doc.object();
-        const auto action = obj.value(QStringLiteral("action")).toString();
-        const auto openMode = obj.value(QStringLiteral("openMode")).toString();
-        const auto filesValue = obj.value(QStringLiteral("files"));
-
-        if (action == QStringLiteral("focus")) {
-          focusWindow(getOrCreateActiveWindow());
-          socket->write("ok");
-          cleanup();
-          return;
-        }
-
-        if (action != QStringLiteral("open") || !filesValue.isArray()) {
-          ok = false;
-          socket->write("error");
-          cleanup();
-          return;
-        }
-
-        QStringList files;
-        for (const auto& entry : filesValue.toArray()) {
-          const auto path = entry.toString();
-          if (!path.isEmpty()) files.append(path);
-        }
-
-        if (files.isEmpty()) {
-          focusWindow(getOrCreateActiveWindow());
-          socket->write("ok");
-          cleanup();
-          return;
-        }
-
-        if (openMode == QStringLiteral("active-window")) {
-          auto *active = getOrCreateActiveWindow();
-          if (active) {
-            openFilesInWindow(active, files);
-          } else {
-            new MainWindow(files);
-          }
-          socket->write("ok");
-          cleanup();
-          return;
-        }
-
-        for (const auto& file : files) {
-          new MainWindow(QStringList(file));
-        }
-        socket->write(ok ? "ok" : "error");
-        cleanup();
+        const QByteArray line = buf.left(nlPos);
+        handleIpcMessage(socket, line);
       });
     }
   });
