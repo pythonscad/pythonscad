@@ -161,6 +161,7 @@ public slots:
   void on_checkBoxAlwaysShowPrintServiceDialog_toggled(bool);
   void on_checkBoxGlobalTrustPython_toggled(bool);
   void on_comboBoxSingleInstanceOpenMode_activated(int);
+  void on_checkBoxSessionManagementEnabled_toggled(bool);
   void on_checkBoxAutosaveSessionEnabled_toggled(bool);
   void on_comboBoxAutosaveSessionInterval_activated(int);
 
@@ -209,6 +210,7 @@ private:
   void updateLocalAppParams();
   void addLocalAppParameter(const Settings::LocalAppParameterType&);
   void moveListBoxRow(QListWidget *listBox, int offset);
+  void updateSessionManagementWidgets();
 
   /** Set value from combobox to settings */
   void applyComboBox(QComboBox *comboBox, int val, Settings::SettingsEntryEnum<std::string>& entry);
