@@ -189,7 +189,7 @@ Reset GUI settings for window placement and fonts.
 \fB\-\-open\-in=\fImode\fP
 When launching another instance, open files in the existing instance using
 \fImode\fP: \fBnew-window\fP or \fBactive-window\fP. Overrides the preference
-in Dialogs. If no files are given, the running instance is focused.
+in Advanced preferences. If no files are given, the running instance is focused.
 
 .SS Python-specific Options
 .TP

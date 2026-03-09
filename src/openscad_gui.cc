@@ -58,6 +58,7 @@
 #include <Qt>
 #include <QtConcurrentRun>
 #include <QtGlobal>
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <filesystem>
@@ -153,8 +154,6 @@ void configureOpenGLContext()
 #endif
 }
 
-constexpr int kAutosaveIntervalMs = 60000;
-
 bool shouldOfferAutosaveRestore(const QString& autosavePath, const QString& sessionPath)
 {
   const QFileInfo autosaveInfo(autosavePath);
@@ -197,12 +196,13 @@ bool promptAutosaveRestore(const QString& autosavePath)
 void setupAutosaveTimer(OpenSCADApp *app)
 {
   auto *timer = new QTimer(app);
-  timer->setInterval(kAutosaveIntervalMs);
+  const int initialSeconds = Settings::Settings::autosaveSessionIntervalSeconds.value();
+  timer->setInterval(std::max(10, initialSeconds) * 1000);
 
-  auto *state = new uint64_t(0);
-  auto *performed = new bool(false);
+  QObject::connect(timer, &QTimer::timeout, app, [timer]() mutable {
+    static uint64_t state = 0;
+    static bool performed = false;
 
-  QObject::connect(timer, &QTimer::timeout, app, [state, performed, timer]() {
     const int intervalSeconds = Settings::Settings::autosaveSessionIntervalSeconds.value();
     const int intervalMs = std::max(10, intervalSeconds) * 1000;
     if (timer->interval() != intervalMs) {
@@ -212,29 +212,29 @@ void setupAutosaveTimer(OpenSCADApp *app)
     const bool enabled = Settings::Settings::autosaveSessionEnabled.value();
 
     if (!enabled) {
-      if (*performed) {
+      if (performed) {
         QFile::remove(TabManager::getAutosaveFilePath());
-        *performed = false;
-        *state = 0;
+        performed = false;
+        state = 0;
       }
       return;
     }
 
     const bool dirty = TabManager::hasDirtyTabs();
     if (!dirty) {
-      if (*performed) {
+      if (performed) {
         QFile::remove(TabManager::getAutosaveFilePath());
-        *performed = false;
-        *state = 0;
+        performed = false;
+        state = 0;
       }
       return;
     }
 
     const uint64_t generation = TabManager::sessionDirtyGeneration();
-    if (!*performed || generation != *state) {
+    if (!performed || generation != state) {
       TabManager::saveGlobalSession(TabManager::getAutosaveFilePath());
-      *state = generation;
-      *performed = true;
+      state = generation;
+      performed = true;
     }
   });
 
@@ -255,9 +255,11 @@ bool saveSessionForShutdown()
   for (auto *win : windows) {
     win->markSessionQuitting();
   }
-  TabManager::saveGlobalSession(TabManager::getSessionFilePath());
-  QFile::remove(TabManager::getAutosaveFilePath());
-  return true;
+  bool success = TabManager::saveGlobalSession(TabManager::getSessionFilePath());
+  if (success) {
+    QFile::remove(TabManager::getAutosaveFilePath());
+  }
+  return success;
 }
 
 constexpr int kIpcTimeoutMs = 1500;
@@ -355,13 +357,18 @@ void startIpcServer(QLocalServer *server)
   QObject::connect(server, &QLocalServer::newConnection, [server]() {
     while (auto *socket = server->nextPendingConnection()) {
       QObject::connect(socket, &QLocalSocket::readyRead, [socket]() {
+        auto cleanup = [socket]() {
+          socket->flush();
+          socket->disconnectFromServer();
+          socket->deleteLater();
+        };
+
         const QByteArray data = socket->readAll();
         const auto doc = QJsonDocument::fromJson(data);
         bool ok = doc.isObject();
         if (!doc.isObject()) {
           socket->write("error");
-          socket->flush();
-          socket->disconnectFromServer();
+          cleanup();
           return;
         }
         const auto obj = doc.object();
@@ -372,16 +379,14 @@ void startIpcServer(QLocalServer *server)
         if (action == QStringLiteral("focus")) {
           focusWindow(getOrCreateActiveWindow());
           socket->write("ok");
-          socket->flush();
-          socket->disconnectFromServer();
+          cleanup();
           return;
         }
 
         if (action != QStringLiteral("open") || !filesValue.isArray()) {
           ok = false;
           socket->write("error");
-          socket->flush();
-          socket->disconnectFromServer();
+          cleanup();
           return;
         }
 
@@ -394,8 +399,7 @@ void startIpcServer(QLocalServer *server)
         if (files.isEmpty()) {
           focusWindow(getOrCreateActiveWindow());
           socket->write("ok");
-          socket->flush();
-          socket->disconnectFromServer();
+          cleanup();
           return;
         }
 
@@ -407,8 +411,7 @@ void startIpcServer(QLocalServer *server)
             new MainWindow(files);
           }
           socket->write("ok");
-          socket->flush();
-          socket->disconnectFromServer();
+          cleanup();
           return;
         }
 
@@ -416,8 +419,7 @@ void startIpcServer(QLocalServer *server)
           new MainWindow(QStringList(file));
         }
         socket->write(ok ? "ok" : "error");
-        socket->flush();
-        socket->disconnectFromServer();
+        cleanup();
       });
     }
   });
