@@ -177,7 +177,7 @@ void ParameterWidget::setParameters(const SourceFile *sourceFile, const std::str
       const QJsonObject root = doc.object();
       const int currentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
       const QString setsJson = root.value(QStringLiteral("setsJson")).toString();
-      std::string setsStr = setsJson.toStdString();
+      std::string setsStr = setsJson.toUtf8().constData();
       if (!setsStr.empty() && this->sets.readFromString(setsStr)) {
         comboBoxPreset->clear();
         comboBoxPreset->addItem(_("<design default>"));
@@ -207,7 +207,8 @@ QByteArray ParameterWidget::getSessionState()
   sets.writeToString(setsStr);
   QJsonObject root;
   root.insert(QStringLiteral("currentIndex"), idx);
-  root.insert(QStringLiteral("setsJson"), QString::fromStdString(setsStr));
+  root.insert(QStringLiteral("setsJson"),
+              QString::fromUtf8(setsStr.data(), static_cast<int>(setsStr.size())));
   return QJsonDocument(root).toJson(QJsonDocument::Compact);
 }
 
