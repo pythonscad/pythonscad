@@ -656,6 +656,11 @@ void TabManager::openTabFile(const QString& filename)
   if (cmd.isEmpty()) {
     if (isUntitledPlaceholder) {
       editor->filepath = "";
+#ifdef ENABLE_PYTHON
+      if (suffix == "py") {
+        editor->setLanguageManually(LANG_PYTHON);
+      }
+#endif
     } else {
       editor->filepath = fileinfo.absoluteFilePath();
 #ifdef ENABLE_PYTHON
@@ -691,8 +696,13 @@ std::tuple<QString, QString> TabManager::getEditorTabName(EditorInterface *edt)
     fname = fileinfo.fileName().replace("&", "&&");
     fpath = fileinfo.filePath();
   } else {
-    fname = "Untitled.scad";
-    fpath = "Untitled.scad";
+#ifdef ENABLE_PYTHON
+    const bool isPython = (edt->language == LANG_PYTHON);
+#else
+    const bool isPython = false;
+#endif
+    fname = isPython ? "Untitled.py" : "Untitled.scad";
+    fpath = fname;
   }
   return {fname, fpath};
 }
@@ -1372,7 +1382,8 @@ bool TabManager::saveAs(EditorInterface *edt)
 {
   assert(edt != nullptr);
 
-  const auto dir = edt->filepath.isEmpty() ? _("Untitled.scad") : edt->filepath;
+  const auto defaultName = (edt->language == LANG_PYTHON) ? _("Untitled.py") : _("Untitled.scad");
+  const auto dir = edt->filepath.isEmpty() ? defaultName : edt->filepath;
 #ifdef ENABLE_PYTHON
   QString selectedFilter;
   QString pythonFilter = _("PythonSCAD Designs (*.py)");
@@ -1421,6 +1432,9 @@ bool TabManager::saveAs(EditorInterface *edt, const QString& filepath)
 {
   bool saveOk = save(edt, filepath);
   if (saveOk) {
+    edt->resetLanguageDetection();
+    parent->onLanguageActiveChanged(edt->language);
+    updateTabIcon(edt);
     auto [fname, fpath] = getEditorTabNameWithModifier(edt);
     setEditorTabName(fname, fpath, edt);
     parent->setWindowTitle(fname);
