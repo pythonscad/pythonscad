@@ -209,7 +209,8 @@ void setupAutosaveTimer(OpenSCADApp *app)
       timer->setInterval(intervalMs);
     }
 
-    const bool enabled = Settings::Settings::autosaveSessionEnabled.value();
+    const bool sessionMgmt = Settings::Settings::sessionManagementEnabled.value();
+    const bool enabled = sessionMgmt && Settings::Settings::autosaveSessionEnabled.value();
 
     if (!enabled) {
       if (performed) {
@@ -681,11 +682,6 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   QStringList filesToAppend;
   bool restoreSessionForExplicitFiles = false;
 
-  if (!sessionMgmtEnabled) {
-    QFile::remove(TabManager::getAutosaveFilePath());
-    QFile::remove(TabManager::getSessionFilePath());
-  }
-
   if (sessionMgmtEnabled && noInputFiles) {
     const QString sessionPath = TabManager::getSessionFilePath();
     const QString autosavePath = TabManager::getAutosaveFilePath();
@@ -773,9 +769,7 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     }
   }
 
-  if (sessionMgmtEnabled) {
-    setupAutosaveTimer(&app);
-  }
+  setupAutosaveTimer(&app);
 
   QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
     saveSessionForShutdown();
