@@ -205,6 +205,7 @@ void setupAutosaveTimer(OpenSCADApp *app)
 
 bool saveSessionForShutdown()
 {
+  if (!Settings::Settings::sessionManagementEnabled.value()) return false;
   const auto& windows = scadApp->windowManager.getWindows();
   if (windows.isEmpty()) {
     return false;
@@ -623,6 +624,8 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   set_render_color_scheme(arg_colorscheme, false);
   auto noInputFiles = false;
 
+  const bool sessionMgmtEnabled = Settings::Settings::sessionManagementEnabled.value();
+
   if (!inputFiles.size()) {
     noInputFiles = true;
     inputFiles.emplace_back("");
@@ -637,7 +640,12 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   QStringList filesToAppend;
   bool restoreSessionForExplicitFiles = false;
 
-  if (noInputFiles) {
+  if (!sessionMgmtEnabled) {
+    QFile::remove(TabManager::getAutosaveFilePath());
+    QFile::remove(TabManager::getSessionFilePath());
+  }
+
+  if (sessionMgmtEnabled && noInputFiles) {
     const QString sessionPath = TabManager::getSessionFilePath();
     const QString autosavePath = TabManager::getAutosaveFilePath();
     if (shouldOfferAutosaveRestore(autosavePath, sessionPath)) {
@@ -661,8 +669,7 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 
   const bool hasExplicitFiles = !(inputFilesList.size() == 1 && inputFilesList[0].isEmpty());
 
-  // Restore session when no files given, or when explicit files should be appended to the session.
-  {
+  if (sessionMgmtEnabled) {
     const QString sessionPath = TabManager::getSessionFilePath();
     const bool sessionExists = QFileInfo(sessionPath).exists();
     const bool shouldRestore = sessionExists && !TabManager::sessionHasOnlyEmptyTab(sessionPath);
@@ -725,7 +732,9 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     }
   }
 
-  setupAutosaveTimer(&app);
+  if (sessionMgmtEnabled) {
+    setupAutosaveTimer(&app);
+  }
 
   QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
     saveSessionForShutdown();

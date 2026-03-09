@@ -2377,6 +2377,13 @@
                 </layout>
                </item>
                <item>
+                <widget class="QCheckBox" name="checkBoxSessionManagementEnabled">
+                 <property name="text">
+                  <string>Enable session management (save/restore tabs on quit, requires restart)</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QCheckBox" name="checkBoxAutosaveSessionEnabled">
                  <property name="text">
                   <string>Autosave session in background for crash recovery</string>
