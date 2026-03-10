@@ -134,7 +134,7 @@ c |= cylinder(r=1,h=8).align(c.right_side)  # Attach a cylinder to the new handl
 
 ```python
 fn, fa, fs           # define roundness of things
-time, phi            # like in openSCAD , phi = 2*PI*time
+t, phi               # like in openSCAD , phi = 2*PI*t
 ```
 
 ## 🎛️ Customizer
