@@ -412,6 +412,7 @@ def main():
               "src/io/import_amf.cc",
               "src/io/import_nef.cc",
               "src/io/import_svg.cc",
+              "src/io/import_cdr.cc",
               "src/io/import_off.cc",
               "src/io/import_stl.cc" ]
     libsvg = [

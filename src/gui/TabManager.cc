@@ -555,14 +555,13 @@ void TabManager::openTabFile(const QString& filename)
   const auto suffix = fileinfo.suffix().toLower();
   const auto knownFileType = Importer::knownFileExtensions.contains(suffix);
   if (!knownFileType) return;
-
   const auto cmd = Importer::knownFileExtensions[suffix];
   if (cmd.isEmpty()) {
     editor->filepath = fileinfo.absoluteFilePath();
     editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
     parent->updateRecentFiles(filename);
   } else {
-    editor->filepath = "";
+    editor->language = LANG_PYTHON;
     editor->setPlainText(cmd.arg(filename));
   }
   refreshDocument();

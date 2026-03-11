@@ -74,6 +74,7 @@ option(ALLOW_BUNDLED_HIDAPI "Allow usage of bundled HIDAPI library (Windows only
 option(ENABLE_PYTHON "Enable experimental Python Interpreter" ON)
 option(PYTHON_VERSION "Specify Exact Python Version" "")
 option(ENABLE_LIBFIVE "Enable libfive Library" OFF)
+option(ENABLE_CDR "Enable CorelDraw supporrt" OFF)
 option(USE_BUILTIN_LIBFIVE "Use libfive from submodule." ON)
 option(PORTABLE_BINARY "Build portable binary without -march=native (for distribution)" OFF)
 option(BUILD_SHARED_LIBS "Build shared library" OFF)
@@ -1000,6 +1001,18 @@ else()
   # OFF: explicitly disabled
   message(STATUS "HIDAPI: disabled per user request")
 endif()
+if(ENABLE_CDR)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(LIBCDR REQUIRED IMPORTED_TARGET libcdr-0.1)
+  set(IMPORT_CDR_SOURCES src/io/import_cdr.cc)
+  target_include_directories(OpenSCADLibInternal SYSTEM PUBLIC ${LIBCDR_INCLUDE_DIR} "/usr/include/librevenge-0.0")
+  target_link_libraries(OpenSCADLibInternal PUBLIC ${LIBCDR_LIBRARY})
+  target_link_libraries(OpenSCADLibInternal PUBLIC "-lcdr-0.1")
+  target_link_libraries(OpenSCADLibInternal PUBLIC "-lrevenge-0.0")
+  target_link_libraries(OpenSCADLibInternal PUBLIC "-lrevenge-stream-0.0")
+  target_compile_definitions(OpenSCADLibInternal PUBLIC ENABLE_CDR)
+  message(STATUS "LIBCDR: ${LIBCDR_VERSION_STRING}")
+endif()
 
 if(ENABLE_SPNAV STREQUAL "AUTO")
   # AUTO: try to find, fallback gracefully if not found
@@ -1641,6 +1654,7 @@ endif()
 
 set(INPUT_DRIVER_SOURCES
   ${PLATFORM_INPUT_DRIVER_SOURCES}
+  ${IMPORT_CDR_SOURCES}
   ${INPUT_DRIVER_HIDAPI_SOURCES}
   ${INPUT_DRIVER_SPNAV_SOURCES}
   ${INPUT_DRIVER_DBUS_SOURCES})
