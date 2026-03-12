@@ -36,14 +36,7 @@
 //
 // #include "core/AST.h"
 #include "core/CurveDiscretizer.h"
-// #include "geometry/ClipperUtils.h"
 #include "geometry/Polygon2d.h"
-// #include "libsvg/libsvg.h"
-// #include "libsvg/shape.h"
-// #include "libsvg/svgpage.h"
-// #include "libsvg/util.h"
-// #include "utils/printutils.h"
-// #include "src/core/ColorUtil.h"
 #include <iostream>
 #include <fstream>
 
@@ -68,19 +61,7 @@ public:
   void drawPath(const librevenge::RVNGPropertyList& propList) override
   {
     printf("path\n");
-
-    std::string path = propList["svg:d"]->getStr();
-    std::stringstream ss(path);
-
-    char cmd;
-    double x, y;
-
-    while (ss >> cmd) {
-      if (cmd == 'M' || cmd == 'L') {
-        ss >> x >> y;
-        std::cout << "Point: " << x << ", " << y << std::endl;
-      }
-    }
+    this->dumpList(0, propList);
   }
 
   void drawGraphicObject(const librevenge::RVNGPropertyList& propList) override
@@ -90,8 +71,8 @@ public:
   }
   void setDocumentMetaData(const librevenge::RVNGPropertyList&) override {}
   void defineEmbeddedFont(const librevenge::RVNGPropertyList& propList) override {}
-  void startPage(const librevenge::RVNGPropertyList& propList) override {}
-  void startMasterPage(const librevenge::RVNGPropertyList& propList) override {}
+  void startPage(const librevenge::RVNGPropertyList& propList) override { printf("c\n"); }
+  void startMasterPage(const librevenge::RVNGPropertyList& propList) override { printf("d\n"); }
   void setStyle(const librevenge::RVNGPropertyList& propList) override {}
   void startLayer(const librevenge::RVNGPropertyList& propList) override {}
   void endLayer() override {}
@@ -104,7 +85,7 @@ public:
   void drawPolygon(const librevenge::RVNGPropertyList& propList) override { printf("polygon\n"); }
   void drawPolyline(const librevenge::RVNGPropertyList& propList) override { printf("polyline\n"); }
   void drawConnector(const librevenge::RVNGPropertyList& propList) override { printf("rect\n"); }
-  void startTextObject(const librevenge::RVNGPropertyList& propList) override {}
+  void startTextObject(const librevenge::RVNGPropertyList& propList) override { printf("l\n"); }
   void endTextObject() override {}
   void startTableObject(const librevenge::RVNGPropertyList& propList) override {}
   void openTableRow(const librevenge::RVNGPropertyList& propList) override {}
@@ -132,8 +113,39 @@ public:
   void closeSpan() override {}
   void openLink(const librevenge::RVNGPropertyList& propList) override {}
   void closeLink() override {}
-  void endPage() override {}
+  void endPage() override { printf("E\n"); }
   void endMasterPage() override {}
+
+  void dumpList(int ident, const librevenge::RVNGPropertyList& propList)
+  {
+    librevenge::RVNGPropertyList::Iter it(propList);
+
+    for (it.rewind(); it.next();) {
+      if (it.child() != nullptr) {
+        for (int i = 0; i < ident; i++) std::cout << "\t";
+        std::cout << "Key: " << it.key() << std::endl;
+        const librevenge::RVNGPropertyListVector *vec = it.child();
+
+        librevenge::RVNGPropertyListVector::Iter pit(*vec);
+
+        for (pit.rewind(); pit.next();) {
+          librevenge::RVNGPropertyList sublist = pit();
+          dumpList(ident + 1, sublist);
+          printf("---\n");
+        }
+        std::cout << std::endl;
+      }
+      const librevenge::RVNGProperty *prop = it();
+      if (prop != nullptr) {
+        for (int i = 0; i < ident; i++) std::cout << "\t";
+        std::cout << "Key: " << it.key();
+        if (prop->getStr() != nullptr) std::cout << " = " << prop->getStr().cstr();
+        else if (prop->getDouble()) std::cout << " = " << prop->getDouble();
+        else if (prop->getInt()) std::cout << " = " << prop->getInt();
+      }
+      std::cout << std::endl;
+    }
+  }
 };
 
 std::unique_ptr<Polygon2d> import_cdr(CurveDiscretizer discretizer, const std::string& filename,
