@@ -231,10 +231,12 @@ std::unique_ptr<const Geometry> ImportNode::createGeometry() const
     break;
   }
 #endif
+#ifdef ENABLE_CDR
   case ImportType::CDR: {
     g = import_cdr(this->discretizer, this->filename, loc);
     break;
   }
+#endif
   case ImportType::DXF: {
     DxfData dd(this->discretizer, this->filename, this->layer.value_or(""), this->origin_x,
                this->origin_y, this->scale);
