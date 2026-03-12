@@ -23,18 +23,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-// #include "io/import.h"
-//
-// #include <clipper2/clipper.h>
-//
-// #include <Eigen/Core>
-// #include <Eigen/Geometry>
-// #include <exception>
 #include <memory>
 #include <string>
 #include <vector>
 //
-// #include "core/AST.h"
 #include "core/CurveDiscretizer.h"
 #include "geometry/Polygon2d.h"
 #include <iostream>
@@ -44,6 +36,8 @@
 #include <libcdr-0.1/libcdr/libcdr.h>
 #include <librevenge/librevenge.h>
 #include <algorithm>
+#include <charconv>
+
 class CDRReader : public librevenge::RVNGDrawingInterface
 {
 public:
@@ -102,21 +96,14 @@ public:
   void endPage() override {}
   void endMasterPage() override {}
 
-  double parseCdrFloat(std::string str)
+  double parseCdrFloat(const std::string& s)
   {
-    std::replace(str.begin(), str.end(), '.', ',');  // TODO bad
-    char *end;
-    double value = std::strtod(str.c_str(), &end);
-    std::string unit = end;
+    double value;
+    auto res = std::from_chars(s.data(), s.data() + s.size(), value);
+    if (strstr(s.c_str(), "in") != nullptr) value = value * 25.4;
+    if (strstr(s.c_str(), "cm") != nullptr) value = value * 10;
 
-    if (unit == "in") return value * 25.4;
-
-    if (unit == "mm" || unit == "") return value;
-
-    if (unit == "cm") return value * 10.0;
-
-    return value;  // fallback
-    return 0;
+    return value;
   }
   void parseProp(int ident, const librevenge::RVNGPropertyList& propList, int mode)
   {
@@ -148,7 +135,16 @@ public:
               if (outl.vertices.size() > 0) result.addOutline(outl);
               outl.vertices.clear();
             } else if (action == "C") {
-              outl.vertices.push_back(Vector2d(x, y));
+              Vector2d p0 = outl.vertices[outl.vertices.size() - 1];
+              Vector2d p1 = Vector2d(x1, y1);
+              Vector2d p2 = Vector2d(x2, y2);
+              Vector2d p3 = Vector2d(x, y);
+              for (int i = 1; i <= 10; i++) {
+                double t = i / 10.0;
+                Vector2d pt = p0 * 1 * pow(1 - t, 3) + p1 * 3 * pow(1 - t, 2) * t +
+                              p2 * 3 * (1 - t) * t * t + p3 * t * t * t;
+                outl.vertices.push_back(pt);
+              }
             } else std::cout << "Unkown action" << std::endl;
           }
           if (outl.vertices.size() > 0) result.addOutline(outl);
@@ -181,6 +177,7 @@ public:
   double x, y, x1, y1, x2, y2;
   std::string action;
   Polygon2d result;
+  locale_t c_locale;
 };
 
 std::unique_ptr<Polygon2d> import_cdr(CurveDiscretizer discretizer, const std::string& filename,
