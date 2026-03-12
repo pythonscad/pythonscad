@@ -33,7 +33,7 @@
 #include <fstream>
 #include "src/core/ColorUtil.h"
 
-#include <libcdr-0.1/libcdr/libcdr.h>
+#include <libcdr/libcdr.h>
 #include <librevenge/librevenge.h>
 #include <algorithm>
 #include <charconv>
