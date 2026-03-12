@@ -68,7 +68,19 @@ public:
   void drawPath(const librevenge::RVNGPropertyList& propList) override
   {
     printf("path\n");
-    //        std::cout << "Vector path found\n";
+
+    std::string path = propList["svg:d"]->getStr();
+    std::stringstream ss(path);
+
+    char cmd;
+    double x, y;
+
+    while (ss >> cmd) {
+      if (cmd == 'M' || cmd == 'L') {
+        ss >> x >> y;
+        std::cout << "Point: " << x << ", " << y << std::endl;
+      }
+    }
   }
 
   void drawGraphicObject(const librevenge::RVNGPropertyList& propList) override
