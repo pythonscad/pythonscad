@@ -39,40 +39,26 @@
 #include "geometry/Polygon2d.h"
 #include <iostream>
 #include <fstream>
+#include "src/core/ColorUtil.h"
 
 #include <libcdr-0.1/libcdr/libcdr.h>
 #include <librevenge/librevenge.h>
-
+#include <algorithm>
 class CDRReader : public librevenge::RVNGDrawingInterface
 {
 public:
-  void startDocument(const librevenge::RVNGPropertyList& propList) override
-  {
-    printf("start\n");
-    //        std::cout << "Start document\n";
-  }
-
-  void endDocument() override
-  {
-    printf("Emnd\n");
-    //       std::cout << "End document\n";
-  }
+  void startDocument(const librevenge::RVNGPropertyList& propList) override {}
+  void endDocument() override {}
 
   void drawPath(const librevenge::RVNGPropertyList& propList) override
   {
-    printf("path\n");
-    this->dumpList(0, propList);
+    this->parseProp(0, propList, 0);
   }
-
-  void drawGraphicObject(const librevenge::RVNGPropertyList& propList) override
-  {
-    printf("graph\n");
-    //       std::cout << "Graphic object found\n";
-  }
+  void drawGraphicObject(const librevenge::RVNGPropertyList& propList) override {}
   void setDocumentMetaData(const librevenge::RVNGPropertyList&) override {}
   void defineEmbeddedFont(const librevenge::RVNGPropertyList& propList) override {}
-  void startPage(const librevenge::RVNGPropertyList& propList) override { printf("c\n"); }
-  void startMasterPage(const librevenge::RVNGPropertyList& propList) override { printf("d\n"); }
+  void startPage(const librevenge::RVNGPropertyList& propList) override {}
+  void startMasterPage(const librevenge::RVNGPropertyList& propList) override {}
   void setStyle(const librevenge::RVNGPropertyList& propList) override {}
   void startLayer(const librevenge::RVNGPropertyList& propList) override {}
   void endLayer() override {}
@@ -80,12 +66,12 @@ public:
   void endEmbeddedGraphics() override {}
   void openGroup(const librevenge::RVNGPropertyList& propList) override {}
   void closeGroup() override {}
-  void drawRectangle(const librevenge::RVNGPropertyList& propList) override { printf("rect\n"); }
-  void drawEllipse(const librevenge::RVNGPropertyList& propList) override { printf("ellips\n"); }
-  void drawPolygon(const librevenge::RVNGPropertyList& propList) override { printf("polygon\n"); }
-  void drawPolyline(const librevenge::RVNGPropertyList& propList) override { printf("polyline\n"); }
-  void drawConnector(const librevenge::RVNGPropertyList& propList) override { printf("rect\n"); }
-  void startTextObject(const librevenge::RVNGPropertyList& propList) override { printf("l\n"); }
+  void drawRectangle(const librevenge::RVNGPropertyList& propList) override {}
+  void drawEllipse(const librevenge::RVNGPropertyList& propList) override {}
+  void drawPolygon(const librevenge::RVNGPropertyList& propList) override {}
+  void drawPolyline(const librevenge::RVNGPropertyList& propList) override {}
+  void drawConnector(const librevenge::RVNGPropertyList& propList) override {}
+  void startTextObject(const librevenge::RVNGPropertyList& propList) override {}
   void endTextObject() override {}
   void startTableObject(const librevenge::RVNGPropertyList& propList) override {}
   void openTableRow(const librevenge::RVNGPropertyList& propList) override {}
@@ -113,55 +99,100 @@ public:
   void closeSpan() override {}
   void openLink(const librevenge::RVNGPropertyList& propList) override {}
   void closeLink() override {}
-  void endPage() override { printf("E\n"); }
+  void endPage() override {}
   void endMasterPage() override {}
 
-  void dumpList(int ident, const librevenge::RVNGPropertyList& propList)
+  double parseCdrFloat(std::string str)
+  {
+    std::replace(str.begin(), str.end(), '.', ',');  // TODO bad
+    char *end;
+    double value = std::strtod(str.c_str(), &end);
+    std::string unit = end;
+
+    if (unit == "in") return value * 25.4;
+
+    if (unit == "mm" || unit == "") return value;
+
+    if (unit == "cm") return value * 10.0;
+
+    return value;  // fallback
+    return 0;
+  }
+  void parseProp(int ident, const librevenge::RVNGPropertyList& propList, int mode)
   {
     librevenge::RVNGPropertyList::Iter it(propList);
+    Outline2d outl;
+    outl.color = *OpenSCAD::parse_color("#f9d72c");
 
     for (it.rewind(); it.next();) {
       if (it.child() != nullptr) {
-        for (int i = 0; i < ident; i++) std::cout << "\t";
-        std::cout << "Key: " << it.key() << std::endl;
-        const librevenge::RVNGPropertyListVector *vec = it.child();
+        std::string key = it.key();
+        if (key == "svg:d" && ident == 0 && mode == 0) {
+          const librevenge::RVNGPropertyListVector *vec = it.child();
 
-        librevenge::RVNGPropertyListVector::Iter pit(*vec);
+          librevenge::RVNGPropertyListVector::Iter pit(*it.child());
 
-        for (pit.rewind(); pit.next();) {
-          librevenge::RVNGPropertyList sublist = pit();
-          dumpList(ident + 1, sublist);
-          printf("---\n");
+          for (pit.rewind(); pit.next();) {
+            librevenge::RVNGPropertyList sublist = pit();
+            this->parseProp(ident + 1, sublist, mode);
+            if (action == "M") {
+              if (outl.vertices.size() > 0) {
+                if (outl.vertices.size() > 0) result.addOutline(outl);
+                outl.vertices.clear();
+              }
+              outl.vertices.push_back(Vector2d(x, y));
+            } else if (action == "L") {
+              outl.vertices.push_back(Vector2d(x, y));
+            } else if (action == "Z") {
+              // close done implicitely as, PythonSCAD does not have open polygons
+              if (outl.vertices.size() > 0) result.addOutline(outl);
+              outl.vertices.clear();
+            } else if (action == "C") {
+              outl.vertices.push_back(Vector2d(x, y));
+            } else std::cout << "Unkown action" << std::endl;
+          }
+          if (outl.vertices.size() > 0) result.addOutline(outl);
         }
-        std::cout << std::endl;
       }
       const librevenge::RVNGProperty *prop = it();
       if (prop != nullptr) {
-        for (int i = 0; i < ident; i++) std::cout << "\t";
-        std::cout << "Key: " << it.key();
-        if (prop->getStr() != nullptr) std::cout << " = " << prop->getStr().cstr();
-        else if (prop->getDouble()) std::cout << " = " << prop->getDouble();
+        if (prop->getStr() != nullptr) {
+          std::string key = it.key();
+          if (key == "svg:d")
+            ;
+          else if (key == "librevenge:path-action") action = prop->getStr().cstr();
+          else if (key == "svg:x") x = parseCdrFloat(prop->getStr().cstr());
+          else if (key == "svg:x") x = parseCdrFloat(prop->getStr().cstr());
+          else if (key == "svg:y") y = parseCdrFloat(prop->getStr().cstr());
+          else if (key == "svg:x1") x1 = parseCdrFloat(prop->getStr().cstr());
+          else if (key == "svg:y1") y1 = parseCdrFloat(prop->getStr().cstr());
+          else if (key == "svg:x2") x2 = parseCdrFloat(prop->getStr().cstr());
+          else if (key == "svg:y2") y2 = parseCdrFloat(prop->getStr().cstr());
+          else {
+            std::cout << "Key: " << it.key();
+            std::cout << " = " << prop->getStr().cstr();
+            std::cout << std::endl;
+          }
+        } else if (prop->getDouble()) std::cout << " = " << prop->getDouble();
         else if (prop->getInt()) std::cout << " = " << prop->getInt();
       }
-      std::cout << std::endl;
     }
   }
+  double x, y, x1, y1, x2, y2;
+  std::string action;
+  Polygon2d result;
 };
 
 std::unique_ptr<Polygon2d> import_cdr(CurveDiscretizer discretizer, const std::string& filename,
                                       const Location& loc)
 {
-  Polygon2d result;
-  printf("import cdr\n");
-
   librevenge::RVNGFileStream input(filename.c_str());
-  CDRReader collector;
+  CDRReader reader;
 
-  if (!libcdr::CDRDocument::parse(&input, &collector)) {
+  if (!libcdr::CDRDocument::parse(&input, &reader)) {
     std::cerr << "Parse failed\n";
     return nullptr;
   }
-  printf("suicceeded\n");
 
-  return std::make_unique<Polygon2d>(result);
+  return std::make_unique<Polygon2d>(reader.result);
 }
