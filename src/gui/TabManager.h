@@ -44,6 +44,26 @@ public:
   bool saveACopy(EditorInterface *edt);
   void open(const QString& filename);
   size_t count();
+  void switchToEditor(EditorInterface *editor);
+
+  void saveSession(const QString& path);
+  bool restoreSession(const QString& path, int windowIndex = 0);
+  static bool saveGlobalSession(const QString& path, QString *error = nullptr, bool showWarning = true);
+  static int sessionWindowCount(const QString& path);
+  static bool sessionHasOnlyEmptyTab(const QString& path);
+  static void removeSessionFile();
+  static QString getSessionFilePath();
+  static QString getAutosaveFilePath();
+  static bool hasDirtyTabs();
+  static void bumpSessionDirtyGeneration();
+  static uint64_t sessionDirtyGeneration();
+  static void setSkipSessionSave(bool skip);
+  static bool shouldSkipSessionSave();
+
+  // Session file schema version. Increment when the format changes and add a
+  // migration step in migrateSession().  Old files without a version field are
+  // treated as version 1.
+  static constexpr int SESSION_VERSION = 2;
 
 public:
   static constexpr const int FIND_HIDDEN = 0;
@@ -72,6 +92,10 @@ private:
   void saveError(const QIODevice& file, const std::string& msg, const QString& filepath);
   void applyAction(QObject *object, const std::function<void(int, EditorInterface *)>& func);
   void setTabsCloseButtonVisibility(int tabIndice, bool isVisible);
+  void setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
+                         bool contentModified, bool parameterModified,
+                         const QByteArray& customizerState = QByteArray());
+  static bool migrateSession(QJsonObject& root, int fromVersion);
 
   QTabBar::ButtonPosition getClosingButtonPosition();
   void zoomIn();
