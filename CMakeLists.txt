@@ -1003,15 +1003,18 @@ else()
 endif()
 if(ENABLE_CDR)
   find_package(PkgConfig REQUIRED)
-  set(IMPORT_CDR_SOURCES src/io/import_cdr.cc)
-  target_compile_definitions(OpenSCADLibInternal PRIVATE ENABLE_CDR)
-
   pkg_check_modules(LIBCDR REQUIRED IMPORTED_TARGET libcdr-0.1)
-  target_link_libraries(OpenSCADLibInternal PRIVATE PkgConfig::LIBCDR)
-
   pkg_check_modules(LIBREVENGE REQUIRED IMPORTED_TARGET librevenge-0.0)
-  target_link_libraries(OpenSCADLibInternal PRIVATE PkgConfig::LIBREVENGE)
-  target_link_libraries(OpenSCADLibInternal PUBLIC "-lrevenge-stream-0.0")
+
+  if(LIBCDR_FOUND AND LIBREVENGE_FOUND)
+    set(IMPORT_CDR_SOURCES src/io/import_cdr.cc)
+    target_compile_definitions(OpenSCADLibInternal PRIVATE ENABLE_CDR)
+
+    target_link_libraries(OpenSCADLibInternal PRIVATE PkgConfig::LIBCDR)
+
+    target_link_libraries(OpenSCADLibInternal PRIVATE PkgConfig::LIBREVENGE)
+    target_link_libraries(OpenSCADLibInternal PUBLIC "-lrevenge-stream-0.0")
+  endif()
 endif()
 
 if(ENABLE_SPNAV STREQUAL "AUTO")
