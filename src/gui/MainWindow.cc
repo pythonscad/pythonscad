@@ -2463,7 +2463,13 @@ void MainWindow::rightClick(QPoint position)
       if (step->name() == "root") {
         continue;
       }
+      if (!step->modinst) {
+        continue;
+      }
       auto location = step->modinst->location();
+      if (location.isNone()) {
+        continue;
+      }
       ss.str("");
 
       // Remove the "module" prefix if any as it induce confusion between the module declaration and
