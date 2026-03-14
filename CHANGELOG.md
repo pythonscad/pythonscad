@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.19.0](https://github.com/pythonscad/pythonscad/compare/v0.18.0...v0.19.0) (2026-03-14)
+
+
+### Features
+
+* add polyline primitive ([c87a2a6](https://github.com/pythonscad/pythonscad/commit/c87a2a65ac3a5b7566c14059d305d8bcbe4c2cb8))
+* add polyline primitive ([9eae810](https://github.com/pythonscad/pythonscad/commit/9eae81080e86ec05d741c7563f4806e904b5a084))
+* **add:** update icons-svg-default.scad source for gc, ps, stp icons (previous effort was manually hacked using Inkscape) ([2a81464](https://github.com/pythonscad/pythonscad/commit/2a814647d8e79232a5ee79f25c2eaa60b5ff98fe))
+* **gui:** add icons for GC, PS, STP ([#501](https://github.com/pythonscad/pythonscad/issues/501)) ([2a81464](https://github.com/pythonscad/pythonscad/commit/2a814647d8e79232a5ee79f25c2eaa60b5ff98fe))
+* **gui:** add icons for GC, PS, STP (fix typo, edit filename, not extension) ([2a81464](https://github.com/pythonscad/pythonscad/commit/2a814647d8e79232a5ee79f25c2eaa60b5ff98fe))
+* **gui:** add icons for GC, PS, STP updating icons-chokusen and icons-chokusen-dark .qrc files ([2a81464](https://github.com/pythonscad/pythonscad/commit/2a814647d8e79232a5ee79f25c2eaa60b5ff98fe))
+* **gui:** update MainWindow.ui for GC, PS, and STP icons ([2a81464](https://github.com/pythonscad/pythonscad/commit/2a814647d8e79232a5ee79f25c2eaa60b5ff98fe))
+
 ## [0.18.0](https://github.com/pythonscad/pythonscad/compare/v0.17.0...v0.18.0) (2026-03-09)
 
 
