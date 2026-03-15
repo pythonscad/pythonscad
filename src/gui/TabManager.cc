@@ -562,6 +562,7 @@ void TabManager::openTabFile(const QString& filename)
     parent->updateRecentFiles(filename);
   } else {
     editor->language = LANG_PYTHON;
+    editor->languageManuallySet = true;
     editor->setPlainText(cmd.arg(filename));
   }
   refreshDocument();
