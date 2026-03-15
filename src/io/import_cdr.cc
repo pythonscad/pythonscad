@@ -153,7 +153,7 @@ public:
                               p2 * 3 * (1 - t) * t * t + p3 * t * t * t;
                 outl.vertices.push_back(pt);
               }
-            } else std::cout << "Unkown action" << std::endl;
+            } else std::cout << "Unknown action" << std::endl;
           }
           if (outl.vertices.size() > 0) result.addOutline(outl);
         }
