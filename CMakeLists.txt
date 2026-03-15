@@ -1623,7 +1623,8 @@ if(NULLGL)
     src/glview/OffscreenView.cc
     src/glview/OffscreenContextNULL.cc
     src/io/export_png.cc
-    src/io/imageutils.cc)
+    src/io/imageutils.cc
+    ${IMPORT_CDR_SOURCES})
 else()
   set(OFFSCREEN_SOURCES
     src/glview/OpenGLContext.cc
@@ -1642,6 +1643,7 @@ else()
     src/glview/preview/ThrownTogetherRenderer.cc
     src/io/export_png.cc
     src/io/imageutils.cc
+    ${IMPORT_CDR_SOURCES}
     ${GLEW_SOURCES})
   if(NOT USE_POLYSET_FOR_CGAL)
     list(APPEND OFFSCREEN_SOURCES
@@ -1657,7 +1659,6 @@ endif()
 
 set(INPUT_DRIVER_SOURCES
   ${PLATFORM_INPUT_DRIVER_SOURCES}
-  ${IMPORT_CDR_SOURCES}
   ${INPUT_DRIVER_HIDAPI_SOURCES}
   ${INPUT_DRIVER_SPNAV_SOURCES}
   ${INPUT_DRIVER_DBUS_SOURCES})
@@ -1667,6 +1668,7 @@ set(GUI_SOURCES
   src/openscad_gui.cc
   src/gui/AutoUpdater.cc
   src/gui/CGALWorker.cc
+  src/gui/CSGWorker.cc
   src/gui/CSGWorker.cc
   src/gui/ViewportControl.cc
   src/gui/Console.cc
