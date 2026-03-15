@@ -35,7 +35,6 @@ enum class FileFormat {
   _3MF,
   DXF,
   SVG,
-  CDR,
   NEFDBG,
   NEF3,
   CSG,
