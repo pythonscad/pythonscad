@@ -37,6 +37,9 @@
 #include <librevenge/librevenge.h>
 #include <algorithm>
 #include <charconv>
+#include <cstring>     // for std::strstr
+#include <cmath>       // for std::pow
+#include <system_error> // for std::errc used with std::from_chars
 
 class CDRReader : public librevenge::RVNGDrawingInterface
 {
@@ -98,10 +101,16 @@ public:
 
   double parseCdrFloat(const std::string& s)
   {
-    double value;
-    auto res = std::from_chars(s.data(), s.data() + s.size(), value);
-    if (strstr(s.c_str(), "in") != nullptr) value = value * 25.4;
-    if (strstr(s.c_str(), "cm") != nullptr) value = value * 10;
+    double value = 0.0;
+    const char *begin = s.data();
+    const char *end = begin + s.size();
+    auto res = std::from_chars(begin, end, value);
+    if (res.ec != std::errc()) {
+      std::cerr << "Warning: failed to parse float from \"" << s << "\"\n";
+      return 0.0;
+    }
+    if (std::strstr(s.c_str(), "in") != nullptr) value = value * 25.4;
+    if (std::strstr(s.c_str(), "cm") != nullptr) value = value * 10;
 
     return value;
   }
