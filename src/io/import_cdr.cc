@@ -125,7 +125,7 @@ public:
         if (key == "svg:d" && ident == 0 && mode == 0) {
           const librevenge::RVNGPropertyListVector *vec = it.child();
 
-          librevenge::RVNGPropertyListVector::Iter pit(*it.child());
+          librevenge::RVNGPropertyListVector::Iter pit(*vec);
 
           for (pit.rewind(); pit.next();) {
             librevenge::RVNGPropertyList sublist = pit();
