@@ -147,8 +147,9 @@ public:
               Vector2d p1 = Vector2d(x1, y1);
               Vector2d p2 = Vector2d(x2, y2);
               Vector2d p3 = Vector2d(x, y);
-              for (int i = 1; i <= 10; i++) {
-                double t = i / 10.0;
+              int segments = std::max(1, discretizer.getPathSegmentCount());
+              for (int i = 1; i <= segments; i++) {
+                double t = static_cast<double>(i) / static_cast<double>(segments);
                 Vector2d pt = p0 * 1 * pow(1 - t, 3) + p1 * 3 * pow(1 - t, 2) * t +
                               p2 * 3 * (1 - t) * t * t + p3 * t * t * t;
                 outl.vertices.push_back(pt);
