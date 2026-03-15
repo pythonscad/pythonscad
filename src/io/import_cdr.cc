@@ -30,7 +30,6 @@
 #include "core/CurveDiscretizer.h"
 #include "geometry/Polygon2d.h"
 #include <iostream>
-#include <fstream>
 #include "src/core/ColorUtil.h"
 
 #include <libcdr/libcdr.h>
@@ -186,7 +185,6 @@ public:
   double x, y, x1, y1, x2, y2;
   std::string action;
   Polygon2d result;
-  locale_t c_locale;
 };
 
 std::unique_ptr<Polygon2d> import_cdr(CurveDiscretizer discretizer, const std::string& filename,
