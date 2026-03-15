@@ -1670,7 +1670,6 @@ set(GUI_SOURCES
   src/gui/AutoUpdater.cc
   src/gui/CGALWorker.cc
   src/gui/CSGWorker.cc
-  src/gui/CSGWorker.cc
   src/gui/ViewportControl.cc
   src/gui/Console.cc
   src/gui/Dock.cc

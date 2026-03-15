@@ -87,6 +87,7 @@ Containers& containers()
     add_item(*containers, {FileFormat::_3MF, "3mf", "3mf", "3MF"});
     add_item(*containers, {FileFormat::DXF, "dxf", "dxf", "DXF"});
     add_item(*containers, {FileFormat::SVG, "svg", "svg", "SVG"});
+    add_item(*containers, {FileFormat::CDR, "cdr", "cdr", "CDR"});
     add_item(*containers, {FileFormat::NEFDBG, "nefdbg", "nefdbg", "nefdbg"});
     add_item(*containers, {FileFormat::NEF3, "nef3", "nef3", "nef3"});
     add_item(*containers, {FileFormat::CSG, "csg", "csg", "CSG"});

@@ -36,10 +36,10 @@
 #include <librevenge/librevenge.h>
 #include <algorithm>
 #include <charconv>
-#include <cstring>     // for std::strstr
-#include <cmath>       // for std::pow
-#include <system_error> // for std::errc used with std::from_chars
-
+#include <cstring>       // for std::strstr
+#include <cmath>         // for std::pow
+#include <system_error>  // for std::errc used with std::from_chars
+#include <utils/printutils.h>
 class CDRReader : public librevenge::RVNGDrawingInterface
 {
 public:
@@ -147,9 +147,8 @@ public:
               Vector2d p1 = Vector2d(x1, y1);
               Vector2d p2 = Vector2d(x2, y2);
               Vector2d p3 = Vector2d(x, y);
-              int segments = std::max(1, discretizer.getPathSegmentCount());
-              for (int i = 1; i <= segments; i++) {
-                double t = static_cast<double>(i) / static_cast<double>(segments);
+              for (int i = 1; i <= 10; i++) {
+                double t = i / 10.0;
                 Vector2d pt = p0 * 1 * pow(1 - t, 3) + p1 * 3 * pow(1 - t, 2) * t +
                               p2 * 3 * (1 - t) * t * t + p3 * t * t * t;
                 outl.vertices.push_back(pt);
@@ -194,7 +193,7 @@ std::unique_ptr<Polygon2d> import_cdr(CurveDiscretizer discretizer, const std::s
   CDRReader reader;
 
   if (!libcdr::CDRDocument::parse(&input, &reader)) {
-    LOG(message_group::Error, loc, "CDR import parse failed");
+    std::cerr << "Parse failed\n";
     return std::make_unique<Polygon2d>();
   }
 
