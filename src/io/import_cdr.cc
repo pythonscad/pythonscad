@@ -187,8 +187,8 @@ std::unique_ptr<Polygon2d> import_cdr(CurveDiscretizer discretizer, const std::s
   CDRReader reader;
 
   if (!libcdr::CDRDocument::parse(&input, &reader)) {
-    std::cerr << "Parse failed\n";
-    return nullptr;
+    LOG(message_group::Error, loc, "CDR import parse failed");
+    return std::make_unique<Polygon2d>();
   }
 
   return std::make_unique<Polygon2d>(reader.result);
