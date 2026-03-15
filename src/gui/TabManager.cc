@@ -561,6 +561,7 @@ void TabManager::openTabFile(const QString& filename)
     editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
     parent->updateRecentFiles(filename);
   } else {
+    editor->filepath.clear();
     editor->language = LANG_PYTHON;
     editor->languageManuallySet = true;
     editor->setPlainText(cmd.arg(filename));
