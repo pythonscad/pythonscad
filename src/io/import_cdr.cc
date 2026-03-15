@@ -43,6 +43,17 @@
 class CDRReader : public librevenge::RVNGDrawingInterface
 {
 public:
+  CDRReader()
+    : x(0.0)
+    , y(0.0)
+    , x1(0.0)
+    , y1(0.0)
+    , x2(0.0)
+    , y2(0.0)
+    , action()
+  {
+  }
+
   void startDocument(const librevenge::RVNGPropertyList& propList) override {}
   void endDocument() override {}
 
@@ -115,6 +126,15 @@ public:
   }
   void parseProp(int ident, const librevenge::RVNGPropertyList& propList, int mode)
   {
+    // Ensure per-call parsing state starts from known values.
+    x = 0.0;
+    y = 0.0;
+    x1 = 0.0;
+    y1 = 0.0;
+    x2 = 0.0;
+    y2 = 0.0;
+    action.clear();
+
     librevenge::RVNGPropertyList::Iter it(propList);
     Outline2d outl;
     outl.color = *OpenSCAD::parse_color("#f9d72c");
