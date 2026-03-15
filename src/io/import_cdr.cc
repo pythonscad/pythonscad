@@ -166,7 +166,6 @@ public:
             ;
           else if (key == "librevenge:path-action") action = prop->getStr().cstr();
           else if (key == "svg:x") x = parseCdrFloat(prop->getStr().cstr());
-          else if (key == "svg:x") x = parseCdrFloat(prop->getStr().cstr());
           else if (key == "svg:y") y = parseCdrFloat(prop->getStr().cstr());
           else if (key == "svg:x1") x1 = parseCdrFloat(prop->getStr().cstr());
           else if (key == "svg:y1") y1 = parseCdrFloat(prop->getStr().cstr());
