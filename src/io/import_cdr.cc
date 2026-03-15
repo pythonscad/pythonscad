@@ -30,7 +30,7 @@
 #include "core/CurveDiscretizer.h"
 #include "geometry/Polygon2d.h"
 #include <iostream>
-#include "src/core/ColorUtil.h"
+#include "core/ColorUtil.h"
 
 #include <libcdr/libcdr.h>
 #include <librevenge/librevenge.h>
