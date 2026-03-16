@@ -1911,6 +1911,7 @@ PyObject *python_oo_wrap(PyObject *obj, PyObject *args, PyObject *kwargs)
 PyObject *python_show_core(PyObject *obj)
 {
   if (pythonDryRun) {
+    Py_INCREF(obj);
     return obj;
   }
   python_result_obj = obj;
