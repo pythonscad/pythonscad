@@ -1736,12 +1736,6 @@ std::vector<std::shared_ptr<const Polygon2d>> GeometryEvaluator::collectChildren
     // cache could have been modified before we reach this point due to a large
     // sibling object.
     smartCacheInsert(*chnode, chgeom);
-    printf("insert cache\n");
-    const auto poly = std::dynamic_pointer_cast<const Polygon2d>(chgeom);
-    if(poly != nullptr) {
-	    printf("rr %d %d\n",poly->outlines().size(), poly->polylines().size()); 
-	    //if(poly->outlines().size() == 0) assert(0);
-    }
 
     if (chgeom) {
       if (chgeom->getDimension() == 3) {
@@ -1846,7 +1840,6 @@ Geometry::Geometries GeometryEvaluator::collectChildren3D(const AbstractNode& no
 std::unique_ptr<Polygon2d> GeometryEvaluator::applyToChildren2D(const AbstractNode& node,
                                                                 OpenSCADOperator op)
 {
-	printf("applytochildren2d\n");
   node.progress_report();
   if (op == OpenSCADOperator::MINKOWSKI) {
     return applyMinkowski2D(node);
@@ -2139,7 +2132,6 @@ Response GeometryEvaluator::visit(State& state, const LeafNode& node)
       geom = node.createGeometry();
       assert(geom);
       if (const auto polygon = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
-	      printf("polylines are %d %d\n", polygon->outlines().size(), polygon->polylines().size());
         if (!polygon->isSanitized()) {
           geom = ClipperUtils::sanitize(*polygon);
         }
