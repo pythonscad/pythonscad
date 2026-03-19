@@ -1142,7 +1142,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     startarc.push_back(p1 + off * fan);
     endarc.push_back(p2 + off * fan);
 
-    int eff_fn = discretizer.getCircularSegmentCountAlt(fabs(off), 180.0*totang/M_PI).value_or(3);
+    int eff_fn = discretizer.getCircularSegmentCountAlt(fabs(off), 180.0 * totang / M_PI).value_or(3);
 
     for (int i = 1; i < eff_fn - 1; i++) {
       Transform3d matrix = Transform3d::Identity();
@@ -1500,10 +1500,10 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
           if (ps->color_indices.size() > i) builder.endPolygon(ps->colors[ps->color_indices[i]]);
           else builder.endPolygon();
         }
-	auto geom_u = builder.build();
+        auto geom_u = builder.build();
         std::shared_ptr<const Geometry> geom_s(geom_u.release());
         return ResultObject::mutableResult(geom_s);
-      }	
+      }
     }
     break;
   }
@@ -1736,6 +1736,12 @@ std::vector<std::shared_ptr<const Polygon2d>> GeometryEvaluator::collectChildren
     // cache could have been modified before we reach this point due to a large
     // sibling object.
     smartCacheInsert(*chnode, chgeom);
+    printf("insert cache\n");
+    const auto poly = std::dynamic_pointer_cast<const Polygon2d>(chgeom);
+    if(poly != nullptr) {
+	    printf("rr %d %d\n",poly->outlines().size(), poly->polylines().size()); 
+	    //if(poly->outlines().size() == 0) assert(0);
+    }
 
     if (chgeom) {
       if (chgeom->getDimension() == 3) {
@@ -1840,6 +1846,7 @@ Geometry::Geometries GeometryEvaluator::collectChildren3D(const AbstractNode& no
 std::unique_ptr<Polygon2d> GeometryEvaluator::applyToChildren2D(const AbstractNode& node,
                                                                 OpenSCADOperator op)
 {
+	printf("applytochildren2d\n");
   node.progress_report();
   if (op == OpenSCADOperator::MINKOWSKI) {
     return applyMinkowski2D(node);
@@ -1855,14 +1862,15 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyToChildren2D(const AbstractNo
     return nullptr;
   }
   if (op == OpenSCADOperator::CONCAT) {
-    Polygon2d poly_result;	  
-    for(std::shared_ptr<const Polygon2d> &child : children) {	  
-      auto outl= child->outlines();
-      for (size_t i = 0; i < outl.size(); i++) {
-        const auto& o = outl[i];
+    Polygon2d poly_result;
+    for (std::shared_ptr<const Polygon2d>& child : children) {
+      for (const auto& o : child->outlines()) {
         poly_result.addOutline(o);
       }
-    }	  
+      for (const auto& o : child->polylines()) {
+        poly_result.addPolyline(o);
+      }
+    }
     return std::make_unique<Polygon2d>(poly_result);
   }
 
@@ -2131,6 +2139,7 @@ Response GeometryEvaluator::visit(State& state, const LeafNode& node)
       geom = node.createGeometry();
       assert(geom);
       if (const auto polygon = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
+	      printf("polylines are %d %d\n", polygon->outlines().size(), polygon->polylines().size());
         if (!polygon->isSanitized()) {
           geom = ClipperUtils::sanitize(*polygon);
         }
@@ -2594,7 +2603,6 @@ Response GeometryEvaluator::visit(State& state, const SkinNode& node)
   input: List of 2D objects arranged in 3D, each with identical outline count and vertex count
   output: 3D PolySet
  */
-
 
 /*!
    input: List of 2D objects
