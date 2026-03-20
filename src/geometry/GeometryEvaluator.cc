@@ -1594,6 +1594,7 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
     break;
   }
   }
+  return {};
 }
 
 /*!

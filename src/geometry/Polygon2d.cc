@@ -230,7 +230,7 @@ std::unique_ptr<PolySet> Polygon2d::tessellate(bool in3d) const
 void Polygon2d::transform3d(const Transform3d& mat)
 {
   // Check whether it can be a 2d transform, and avoid the 3d overhead
-  if (trans3dState == Transform3dState::NONE && mat(2, 0) == 0 && mat(2, 1) == 0 && 
+  if (trans3dState == Transform3dState::NONE && mat(2, 0) == 0 && mat(2, 1) == 0 && mat(2, 2) > 0 &&
       mat(2, 3) == 0 && mat(0, 2) == 0 && mat(1, 2) == 0 && mat(3, 2) == 0) {
     Transform2d t;
     t.matrix() << mat(0, 0), mat(0, 1), mat(0, 3), mat(1, 0), mat(1, 1), mat(1, 3), mat(3, 0), mat(3, 1),
@@ -362,7 +362,6 @@ Clipper2Lib::Paths64 fromPolygon2d(const Polygon2d& poly, int scale_bits)
   }
   return result;
 }
-
 
 double outline_area(const Outline2d o)
 {
