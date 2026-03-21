@@ -256,7 +256,13 @@ bool saveSessionForShutdown()
   for (auto *win : windows) {
     win->markSessionQuitting();
   }
-  bool success = TabManager::saveGlobalSession(TabManager::getSessionFilePath());
+  QString saveError;
+  const bool success =
+    TabManager::saveGlobalSession(TabManager::getSessionFilePath(), &saveError, false);
+  if (!success && !saveError.isEmpty()) {
+    LOG(message_group::UI_Warning, "Failed to save session on shutdown: %1$s",
+        saveError.toUtf8().constData());
+  }
   if (success) {
     QFile::remove(TabManager::getAutosaveFilePath());
   }

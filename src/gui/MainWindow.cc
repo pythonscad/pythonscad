@@ -2159,7 +2159,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
       renderVarsSet = nullptr;
     }
     if (sourceFile == nullptr) {
-      parse(sourceFile, "", fname, fname, false);
+      sourceFile = parse(sourceFile, "", fname, fname, false) ? sourceFile : nullptr;
     }
 
   } else  // python not enabled
