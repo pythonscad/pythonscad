@@ -98,7 +98,7 @@ QWidget *UnsavedChangesDialog::createItemWidget(EditorInterface *editor)
   auto *saveButton = new QToolButton(widget);
   saveButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogSaveButton));
   saveButton->setToolTip(_("Save this file"));
-  saveButton->setProperty("editor", QVariant::fromValue(static_cast<void *>(editor)));
+  saveButton->setProperty("editor", QVariant::fromValue(static_cast<QObject *>(editor)));
   connect(saveButton, &QToolButton::clicked, this, &UnsavedChangesDialog::onSaveButtonClicked);
   layout->addWidget(saveButton);
 
@@ -138,7 +138,7 @@ void UnsavedChangesDialog::onSaveButtonClicked()
   auto *button = qobject_cast<QToolButton *>(sender());
   if (!button) return;
 
-  auto *editor = static_cast<EditorInterface *>(button->property("editor").value<void *>());
+  auto *editor = qobject_cast<EditorInterface *>(button->property("editor").value<QObject *>());
   if (!editor) return;
 
   tabManager->switchToEditor(editor);
