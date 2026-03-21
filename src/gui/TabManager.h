@@ -50,6 +50,7 @@ public:
   bool restoreSession(const QString& path, int windowIndex = 0);
   static bool saveGlobalSession(const QString& path, QString *error = nullptr, bool showWarning = true);
   static int sessionWindowCount(const QString& path);
+  /// True if \a path describes exactly one window with one tab: no filepath and editor not modified.
   static bool sessionHasOnlyEmptyTab(const QString& path);
   static void removeSessionFile();
   static QString getSessionFilePath();
