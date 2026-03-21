@@ -2278,6 +2278,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
       renderVarsSet = nullptr;
     }
     if (sourceFile == nullptr) {
+      // Match non-Python path below: parse() can leave sourceFile non-null on failure.
       sourceFile = parse(sourceFile, "", fnameNative, fnameNative, false) ? sourceFile : nullptr;
     }
 
