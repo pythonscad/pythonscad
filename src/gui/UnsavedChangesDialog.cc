@@ -87,7 +87,7 @@ void UnsavedChangesDialog::populateList()
 
 QWidget *UnsavedChangesDialog::createItemWidget(EditorInterface *editor)
 {
-  auto *widget = new QWidget();
+  auto *widget = new QWidget(listWidget->viewport());
   auto *layout = new QHBoxLayout(widget);
   layout->setContentsMargins(8, 4, 8, 4);
 
