@@ -1057,9 +1057,10 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
     QMessageBox::warning(parent, QObject::tr("Session Restore"),
-                         QObject::tr("Could not open the session file for reading:\n%1\n\n"
+                         QObject::tr("Could not open the session file for reading:\n%1\n\n%2\n\n"
                                      "Starting with a fresh session.")
-                           .arg(path));
+                           .arg(path)
+                           .arg(file.errorString()));
     return false;
   }
   const QByteArray rawData = file.readAll();
