@@ -337,6 +337,14 @@ void TabManager::createTab(const QString& filename)
   connect(editor, &EditorInterface::contentsChanged, this, &TabManager::updateActionUndoState);
   connect(editor, &EditorInterface::contentsChanged, parent, &MainWindow::editorContentChanged);
   connect(editor, &EditorInterface::contentsChanged, this, &TabManager::setContentRenderState);
+  // Bump autosave generation on each edit while dirty. modificationChanged only fires when the
+  // modified flag toggles, so typing in an already-dirty tab would otherwise not advance
+  // sessionDirtyGeneration() and periodic autosave could skip indefinitely (Copilot PR #415).
+  connect(editor, &EditorInterface::contentsChanged, this, [editor]() {
+    if (editor->isContentModified()) {
+      TabManager::bumpSessionDirtyGeneration();
+    }
+  });
   connect(editor, &EditorInterface::modificationChanged, this, &TabManager::onTabModified);
   connect(editor->parameterWidget, &ParameterWidget::modificationChanged,
           [editor = this->editor, this] { onTabModified(editor); });
