@@ -360,19 +360,21 @@ bool sendIpcMessage(const QJsonObject& message)
   return ack.startsWith("ok");
 }
 
-void handleIpcMessage(QLocalSocket *socket, const QByteArray& data)
+void finishIpcClient(QLocalSocket *socket)
 {
-  auto cleanup = [socket]() {
-    socket->flush();
-    socket->disconnectFromServer();
-    socket->deleteLater();
-  };
+  socket->flush();
+  socket->disconnectFromServer();
+  socket->deleteLater();
+}
 
+// Handle one newline-delimited JSON frame. Returns false after writing "error\n" (caller closes).
+// Returns true after writing "ok\n" (caller may process more frames on the same connection).
+bool dispatchIpcLine(QLocalSocket *socket, const QByteArray& data)
+{
   const auto doc = QJsonDocument::fromJson(data);
   if (!doc.isObject()) {
     socket->write("error\n");
-    cleanup();
-    return;
+    return false;
   }
   const auto obj = doc.object();
   const auto action = obj.value(QStringLiteral("action")).toString();
@@ -382,14 +384,12 @@ void handleIpcMessage(QLocalSocket *socket, const QByteArray& data)
   if (action == QStringLiteral("focus")) {
     focusWindow(getOrCreateActiveWindow());
     socket->write("ok\n");
-    cleanup();
-    return;
+    return true;
   }
 
   if (action != QStringLiteral("open") || !filesValue.isArray()) {
     socket->write("error\n");
-    cleanup();
-    return;
+    return false;
   }
 
   QStringList files;
@@ -401,8 +401,7 @@ void handleIpcMessage(QLocalSocket *socket, const QByteArray& data)
   if (files.isEmpty()) {
     focusWindow(getOrCreateActiveWindow());
     socket->write("ok\n");
-    cleanup();
-    return;
+    return true;
   }
 
   if (openMode == QStringLiteral("active-window")) {
@@ -413,32 +412,51 @@ void handleIpcMessage(QLocalSocket *socket, const QByteArray& data)
       new MainWindow(files);
     }
     socket->write("ok\n");
-    cleanup();
-    return;
+    return true;
   }
 
   for (const auto& file : files) {
     new MainWindow(QStringList(file));
   }
   socket->write("ok\n");
-  cleanup();
+  return true;
 }
 
 void startIpcServer(QLocalServer *server)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+  // Restrict access to the same user where supported (mitigates cross-user open/focus on shared hosts).
+  server->setSocketOptions(QLocalServer::UserAccessOption);
+#endif
+
   QObject::connect(server, &QLocalServer::newConnection, [server]() {
     while (auto *socket = server->nextPendingConnection()) {
       socket->setProperty("_ipc_buf", QByteArray());
       QObject::connect(socket, &QLocalSocket::readyRead, [socket]() {
         QByteArray buf = socket->property("_ipc_buf").toByteArray();
         buf.append(socket->readAll());
-        int nlPos = buf.indexOf('\n');
-        if (nlPos < 0) {
-          socket->setProperty("_ipc_buf", buf);
-          return;
+        bool dispatchedOk = false;
+        for (;;) {
+          const int nlPos = buf.indexOf('\n');
+          if (nlPos < 0) {
+            socket->setProperty("_ipc_buf", buf);
+            if (dispatchedOk && buf.isEmpty()) {
+              finishIpcClient(socket);
+            }
+            return;
+          }
+          const QByteArray line = buf.left(nlPos);
+          buf = buf.mid(nlPos + 1);
+          if (line.isEmpty()) {
+            continue;
+          }
+          if (!dispatchIpcLine(socket, line)) {
+            socket->setProperty("_ipc_buf", QByteArray());
+            finishIpcClient(socket);
+            return;
+          }
+          dispatchedOk = true;
         }
-        const QByteArray line = buf.left(nlPos);
-        handleIpcMessage(socket, line);
       });
     }
   });

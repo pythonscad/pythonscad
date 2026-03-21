@@ -893,6 +893,8 @@ void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath
                                    bool contentModified, bool parameterModified,
                                    const QByteArray& customizerState)
 {
+  const QSignalBlocker blockEditor(edt);
+  const QSignalBlocker blockParameters(edt->parameterWidget);
   edt->filepath = filepath;
   edt->setPlainText(content);
   edt->setContentModified(contentModified);
