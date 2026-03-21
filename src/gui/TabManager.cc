@@ -1298,14 +1298,12 @@ bool TabManager::sessionHasOnlyEmptyTab(const QString& path)
 
   const QJsonObject tab = tabs[0].toObject();
   const QString filepath = tab.value(QStringLiteral("filepath")).toString();
-  const QString content = tab.value(QStringLiteral("content")).toString();
   const bool contentModified = tab.value(QStringLiteral("contentModified")).toBool();
-  const bool parameterModified = tab.value(QStringLiteral("parameterModified")).toBool();
-  const QString customizerState = tab.value(QStringLiteral("customizerState")).toString();
 
-  const bool emptyContent = content.trimmed().isEmpty();
-  const bool emptyCustomizer = customizerState.trimmed().isEmpty();
-  return filepath.isEmpty() && emptyContent && !contentModified && !parameterModified && emptyCustomizer;
+  // Trivial session: one window, one tab, nothing saved to a path, editor not dirty.
+  // Content length and customizer state are ignored — template/placeholder text and
+  // preset UI alone should not force auto-restore on startup.
+  return filepath.isEmpty() && !contentModified;
 }
 
 /*!
