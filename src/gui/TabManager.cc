@@ -969,7 +969,14 @@ void TabManager::saveSession(const QString& path)
 bool TabManager::saveGlobalSession(const QString& path, QString *error, bool showWarning)
 {
   QJsonArray windows;
+  MainWindow *const lastActive = scadApp->windowManager.getLastActive();
+  int activeWindowIndex = 0;
+  int windowSerial = 0;
   for (auto *mainWin : scadApp->windowManager.getWindows()) {
+    if (mainWin == lastActive) {
+      activeWindowIndex = windowSerial;
+    }
+    ++windowSerial;
     auto *tm = mainWin->tabManager;
     QJsonArray tabs;
     for (int i = 0; i < tm->tabWidget->count(); ++i) {
@@ -1018,6 +1025,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
   QJsonObject root;
   root.insert(QStringLiteral("version"), SESSION_VERSION);
   root.insert(QStringLiteral("windows"), windows);
+  root.insert(QStringLiteral("activeWindowIndex"), activeWindowIndex);
 
   QString localError;
   QString *targetError = error ? error : &localError;
@@ -1048,6 +1056,10 @@ bool TabManager::migrateSession(QJsonObject& root, int fromVersion)
       root.remove(QStringLiteral("tabs"));
       root.remove(QStringLiteral("currentIndex"));
       root.insert(QStringLiteral("windows"), windows);
+      break;
+    }
+    case 2: {
+      // v2 -> v3: optional root-level activeWindowIndex (default 0 when absent).
       break;
     }
     default:
@@ -1270,6 +1282,32 @@ int TabManager::sessionWindowCount(const QString& path)
   }
 
   return root.value(QStringLiteral("windows")).toArray().size();
+}
+
+int TabManager::sessionActiveWindowIndex(const QString& path)
+{
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return 0;
+  const QByteArray rawData = file.readAll();
+  file.close();
+
+  const QJsonDocument doc = QJsonDocument::fromJson(rawData);
+  if (!doc.isObject()) return 0;
+
+  QJsonObject root = doc.object();
+  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
+  if (fileVersion > SESSION_VERSION) return 0;
+  if (fileVersion < SESSION_VERSION) {
+    if (!migrateSession(root, fileVersion)) return 0;
+  }
+
+  const QJsonArray windowArray = root.value(QStringLiteral("windows")).toArray();
+  const int winCount = windowArray.size();
+  if (winCount <= 0) return 0;
+
+  int idx = root.value(QStringLiteral("activeWindowIndex")).toInt(0);
+  idx = std::max(0, std::min(idx, winCount - 1));
+  return idx;
 }
 
 bool TabManager::sessionHasOnlyEmptyTab(const QString& path)

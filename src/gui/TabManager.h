@@ -50,6 +50,8 @@ public:
   bool restoreSession(const QString& path, int windowIndex = 0);
   static bool saveGlobalSession(const QString& path, QString *error = nullptr, bool showWarning = true);
   static int sessionWindowCount(const QString& path);
+  /// Index into the session file's \c windows array of the last active main window (0 if unknown).
+  static int sessionActiveWindowIndex(const QString& path);
   /// True if \a path describes exactly one window with one tab: no filepath and editor not modified.
   static bool sessionHasOnlyEmptyTab(const QString& path);
   static void removeSessionFile();
@@ -64,7 +66,7 @@ public:
   // Session file schema version. Increment when the format changes and add a
   // migration step in migrateSession().  Old files without a version field are
   // treated as version 1.
-  static constexpr int SESSION_VERSION = 2;
+  static constexpr int SESSION_VERSION = 3;
 
 public:
   static constexpr const int FIND_HIDDEN = 0;
