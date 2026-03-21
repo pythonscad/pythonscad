@@ -177,7 +177,9 @@ void ParameterWidget::setParameters(const SourceFile *sourceFile, const std::str
       const QJsonObject root = doc.object();
       const int currentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
       const QString setsJson = root.value(QStringLiteral("setsJson")).toString();
-      std::string setsStr = setsJson.toUtf8().constData();
+      const QByteArray setsUtf8 = setsJson.toUtf8();
+      std::string setsStr(reinterpret_cast<const char *>(setsUtf8.constData()),
+                          static_cast<size_t>(setsUtf8.size()));
       if (!setsStr.empty() && this->sets.readFromString(setsStr)) {
         comboBoxPreset->clear();
         comboBoxPreset->addItem(_("<design default>"));
