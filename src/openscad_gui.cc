@@ -615,8 +615,32 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   QLockFile lock(lockFilePath());
   lock.setStaleLockTime(0);
   if (!lock.tryLock()) {
-    lock.removeStaleLockFile();
-    if (!lock.tryLock()) {
+    QMessageBox lockBox;
+    lockBox.setIcon(QMessageBox::Warning);
+    lockBox.setWindowTitle(_("PythonSCAD"));
+    lockBox.setText(_("Could not acquire the application lock."));
+    lockBox.setInformativeText(
+      _("Another instance may be running, or a stale lock can remain after a crash.\n\n"
+        "Use the running instance to open or focus files, remove the lock file to start "
+        "a new primary instance, or exit."));
+    auto *useRunningButton = lockBox.addButton(_("Use running instance"), QMessageBox::AcceptRole);
+    auto *removeLockButton = lockBox.addButton(_("Remove lock file"), QMessageBox::ActionRole);
+    auto *exitLockButton = lockBox.addButton(_("Exit"), QMessageBox::RejectRole);
+    lockBox.setDefaultButton(useRunningButton);
+    lockBox.exec();
+
+    if (lockBox.clickedButton() == exitLockButton) {
+      return 1;
+    }
+
+    bool acquiredLock = false;
+    if (lockBox.clickedButton() == removeLockButton) {
+      if (lock.removeStaleLockFile() && lock.tryLock()) {
+        acquiredLock = true;
+      }
+    }
+
+    if (!acquiredLock) {
       const QStringList ipcFiles = [&]() {
         QStringList files;
         for (const auto& infile : inputFiles) {
@@ -637,7 +661,7 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 
         QMessageBox box;
         box.setIcon(QMessageBox::Warning);
-        box.setWindowTitle(QStringLiteral("PythonSCAD"));
+        box.setWindowTitle(_("PythonSCAD"));
         box.setText(_("PythonSCAD is already running but is not responding."));
         box.setInformativeText(_("Retry to send the request, or exit."));
         const auto retryButton = box.addButton(_("Retry"), QMessageBox::AcceptRole);
