@@ -1153,10 +1153,7 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
 
     const QFileInfo fileInfo(filepath);
-    const QString fileName = fileInfo.fileName();
-    const bool isUntitledPlaceholder =
-      (fileName == QStringLiteral("Untitled.py") || fileName == QStringLiteral("Untitled.scad"));
-    if (!filepath.isEmpty() && fileInfo.isAbsolute() && !fileInfo.exists() && !isUntitledPlaceholder) {
+    if (!filepath.isEmpty() && fileInfo.isAbsolute() && !fileInfo.exists()) {
       if (firstMissingIndex < 0) {
         firstMissingIndex = i;
       }
