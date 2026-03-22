@@ -2252,15 +2252,21 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
         if (pos != -1) {
           std::string par_text = fulltext_py.substr(0, pos);
           auto error = evaluatePython(par_text, true);  // run dummy
-          if (!customizer_parameters.empty() && parse(sourceFile, "", fnameNative, fnameNative, false) &&
-              sourceFile != nullptr) {
-            sourceFile->scope->assignments = customizer_parameters;
-            CommentParser::collectParameters(fulltext_py, sourceFile, '#');
-            const QByteArray documentUtf8 = document.toUtf8();
-            editor->parameterWidget->setParameters(
-              sourceFile,
-              std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size())));
-            editor->parameterWidget->applyParameters(sourceFile);
+          if (!customizer_parameters.empty()) {
+            SourceFile *paramRoot = nullptr;
+            const bool paramParseOk = parse(paramRoot, "", fnameNative, fnameNative, false);
+            if (paramParseOk && paramRoot != nullptr) {
+              paramRoot->scope->assignments = customizer_parameters;
+              CommentParser::collectParameters(fulltext_py, paramRoot, '#');
+              const QByteArray documentUtf8 = document.toUtf8();
+              editor->parameterWidget->setParameters(
+                paramRoot,
+                std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size())));
+              editor->parameterWidget->applyParameters(paramRoot);
+              sourceFile = paramRoot;
+            } else {
+              delete paramRoot;
+            }
           }
           editor->parameterWidget->setEnabled(true);
         }
