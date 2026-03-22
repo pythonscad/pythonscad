@@ -286,6 +286,13 @@ void Preferences::init()
   initComboBox(this->comboBoxToolbarExport2D, Settings::Settings::toolbarExport2D);
   initComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
 
+  this->labelSingleInstanceOpenMode->setText(QString(_("When launching another instance with files:")));
+  this->checkBoxSessionManagementEnabled->setText(
+    QString(_("Enable session management (save/restore tabs on quit, requires restart)")));
+  this->checkBoxAutosaveSessionEnabled->setText(
+    QString(_("Autosave session in background for crash recovery")));
+  this->labelAutosaveSessionInterval->setText(QString(_("Autosave interval:")));
+
   this->comboBoxAutosaveSessionInterval->clear();
   this->comboBoxAutosaveSessionInterval->addItem(_("30 seconds"), 30);
   this->comboBoxAutosaveSessionInterval->addItem(_("60 seconds"), 60);
