@@ -2180,8 +2180,9 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
 
   auto document = editor->toPlainText();
   const QByteArray documentUtf8 = document.toUtf8();
-  auto fulltext = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size())) +
-                  "\n\x03\n" + commandline_commands;
+  std::string fulltext(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size()));
+  fulltext += "\n\x03\n";
+  fulltext += commandline_commands;
   const QByteArray pathUtf8 = editor->filepath.toUtf8();
   const QByteArray pathNative = editor->filepath.toLocal8Bit();
   const std::string trustPathId(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size()));
