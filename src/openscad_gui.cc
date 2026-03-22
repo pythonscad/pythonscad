@@ -749,6 +749,7 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   QVector<QStringList> windowsToOpen;
   QStringList filesToAppend;
   bool restoreSessionForExplicitFiles = false;
+  bool openedSessionWindows = false;
 
   if (sessionMgmtEnabled && noInputFiles) {
     const QString sessionPath = TabManager::getSessionFilePath();
@@ -779,6 +780,7 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     const bool sessionExists = QFileInfo(sessionPath).exists();
     const bool shouldRestore = sessionExists && !TabManager::sessionHasOnlyEmptyTab(sessionPath);
     if (shouldRestore) {
+      openedSessionWindows = true;
       const int windowCount = TabManager::sessionWindowCount(sessionPath);
       if (windowCount > 0) {
         for (int i = 0; i < windowCount; ++i) {
@@ -819,8 +821,19 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     windowsToOpen.append(inputFilesList);
   }
 
+  QVector<MainWindow *> openedMainWindows;
+  openedMainWindows.reserve(windowsToOpen.size());
   for (const auto& files : windowsToOpen) {
-    new MainWindow(files);
+    openedMainWindows.append(new MainWindow(files));
+  }
+
+  if (openedSessionWindows && !openedMainWindows.isEmpty()) {
+    const QString sessionPath = TabManager::getSessionFilePath();
+    const int sessionWindows = TabManager::sessionWindowCount(sessionPath);
+    if (sessionWindows > 0 && openedMainWindows.size() == sessionWindows) {
+      const int activeIdx = TabManager::sessionActiveWindowIndex(sessionPath);
+      scadApp->windowManager.setLastActive(openedMainWindows[activeIdx]);
+    }
   }
 
   if (restoreSessionForExplicitFiles && !filesToAppend.isEmpty()) {
