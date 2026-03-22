@@ -4366,6 +4366,8 @@ void MainWindow::setupWindow()
 {
   installEventFilter(this);
   setupUi(this);
+  this->fileActionWelcome->setText(QString(_("Welcome...")));
+  this->fileActionCloseWindow->setText(QString(_("Close &Window")));
   this->setAttribute(Qt::WA_DeleteOnClose);
   scadApp->windowManager.add(this);
   setAcceptDrops(true);
