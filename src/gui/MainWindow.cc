@@ -1523,11 +1523,11 @@ void MainWindow::quitApplication()
       box.setIcon(QMessageBox::Warning);
       box.setWindowTitle(_("Session Save"));
       box.setText(_("Could not save the session."));
-      box.setInformativeText(QObject::tr("%1\n\n%2").arg(sessionPath, error));
-      auto *retryButton = box.addButton(QObject::tr("Try Again"), QMessageBox::AcceptRole);
+      box.setInformativeText(QString(_("%1\n\n%2")).arg(sessionPath, error));
+      auto *retryButton = box.addButton(QString(_("Try Again")), QMessageBox::AcceptRole);
       auto *ignoreButton =
-        box.addButton(QObject::tr("Quit Without Saving"), QMessageBox::DestructiveRole);
-      box.addButton(QObject::tr("Keep Open"), QMessageBox::RejectRole);
+        box.addButton(QString(_("Quit Without Saving")), QMessageBox::DestructiveRole);
+      box.addButton(QString(_("Keep Open")), QMessageBox::RejectRole);
       box.setDefaultButton(retryButton);
       box.exec();
       if (box.clickedButton() == retryButton) {
