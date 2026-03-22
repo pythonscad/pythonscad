@@ -32,7 +32,6 @@
 #include <QTabBar>
 #include <QTextStream>
 #include <QWidget>
-#include <QFileInfo>
 #include <cassert>
 #include <cstddef>
 #include <exception>
@@ -104,8 +103,8 @@ void warnSessionSaveFailure(const QString& path, const QString& error)
     parent = *scadApp->windowManager.getWindows().begin();
   }
   QMessageBox::warning(
-    parent, QObject::tr("Session Save"),
-    QObject::tr("Could not write session file:\n%1\n\n%2\n\nSession changes may be lost.")
+    parent, QString(_("Session Save")),
+    QString(_("Could not write session file:\n%1\n\n%2\n\nSession changes may be lost."))
       .arg(path, error));
 }
 
@@ -114,7 +113,7 @@ bool writeSessionFile(const QJsonObject& root, const QString& path, QString *err
   const QFileInfo pathInfo(path);
   const QDir dir = pathInfo.absoluteDir();
   if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) {
-    if (error) *error = QObject::tr("Unable to create the session directory.");
+    if (error) *error = QString(_("Unable to create the session directory."));
     return false;
   }
 
@@ -1095,9 +1094,9 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
 {
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    QMessageBox::warning(parent, QObject::tr("Session Restore"),
-                         QObject::tr("Could not open the session file for reading:\n%1\n\n%2\n\n"
-                                     "Starting with a fresh session.")
+    QMessageBox::warning(parent, QString(_("Session Restore")),
+                         QString(_("Could not open the session file for reading:\n%1\n\n%2\n\n"
+                                   "Starting with a fresh session."))
                            .arg(path)
                            .arg(file.errorString()));
     return false;
@@ -1107,10 +1106,10 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
 
   const QJsonDocument doc = QJsonDocument::fromJson(rawData);
   if (!doc.isObject()) {
-    QMessageBox::warning(parent, QObject::tr("Session Restore"),
-                         QObject::tr("The session file is corrupt or unreadable:\n%1\n\n"
-                                     "The file has not been deleted — you may inspect it manually.\n"
-                                     "Starting with a fresh session.")
+    QMessageBox::warning(parent, QString(_("Session Restore")),
+                         QString(_("The session file is corrupt or unreadable:\n%1\n\n"
+                                   "The file has not been deleted — you may inspect it manually.\n"
+                                   "Starting with a fresh session."))
                            .arg(path));
     return false;
   }
@@ -1122,10 +1121,10 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
 
   if (fileVersion > SESSION_VERSION) {
     QMessageBox::critical(
-      parent, QObject::tr("Session Restore"),
-      QObject::tr("The session file was created by a newer version of PythonSCAD "
-                  "(session version %1, but this build only supports up to version %2).\n\n"
-                  "Please upgrade PythonSCAD or delete the session file:\n%3")
+      parent, QString(_("Session Restore")),
+      QString(_("The session file was created by a newer version of PythonSCAD "
+                "(session version %1, but this build only supports up to version %2).\n\n"
+                "Please upgrade PythonSCAD or delete the session file:\n%3"))
         .arg(fileVersion)
         .arg(SESSION_VERSION)
         .arg(path));
@@ -1135,9 +1134,9 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
   if (fileVersion < SESSION_VERSION) {
     if (!migrateSession(root, fileVersion)) {
       QMessageBox::warning(
-        parent, QObject::tr("Session Restore"),
-        QObject::tr("The session file uses an old format (version %1) that cannot be "
-                    "migrated to the current format (version %2). Starting with a fresh session.")
+        parent, QString(_("Session Restore")),
+        QString(_("The session file uses an old format (version %1) that cannot be "
+                  "migrated to the current format (version %2). Starting with a fresh session."))
           .arg(fileVersion)
           .arg(SESSION_VERSION));
       return false;
@@ -1257,13 +1256,13 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
   if (missingCount > 0) {
     QMessageBox box(parent);
     box.setIcon(QMessageBox::Warning);
-    box.setWindowTitle(QObject::tr("Session Restore"));
-    box.setText(QObject::tr("%1 file(s) could not be found on disk.").arg(missingCount));
+    box.setWindowTitle(QString(_("Session Restore")));
+    box.setText(QString(_("%1 file(s) could not be found on disk.")).arg(missingCount));
     box.setInformativeText(
-      QObject::tr("The session contents were restored, but the file paths are stale.\n"
-                  "Use Save As to pick a new location."));
-    auto *saveAsButton = box.addButton(QObject::tr("Save As..."), QMessageBox::AcceptRole);
-    box.addButton(QObject::tr("Dismiss"), QMessageBox::RejectRole);
+      QString(_("The session contents were restored, but the file paths are stale.\n"
+                "Use Save As to pick a new location.")));
+    auto *saveAsButton = box.addButton(QString(_("Save As...")), QMessageBox::AcceptRole);
+    box.addButton(QString(_("Dismiss")), QMessageBox::RejectRole);
     box.setDefaultButton(saveAsButton);
     box.exec();
     if (box.clickedButton() == saveAsButton && firstMissingIndex >= 0) {
