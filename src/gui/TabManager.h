@@ -21,7 +21,10 @@ public:
   EditorInterface *editor;
   QSet<EditorInterface *> editorList;
 
-  void createTab(const QString& filename);
+  /// When \p filename is empty and \p initializeEmptyEditor is true, apply the default new-tab
+  /// content (e.g. Python template). Session restore passes \c false so \c setTabSessionData
+  /// supplies text without an intermediate parse.
+  void createTab(const QString& filename, bool initializeEmptyEditor = true);
   void openTabFile(const QString& filename);
 
   // returns the name and tooltip of the tab for the given provided editor
