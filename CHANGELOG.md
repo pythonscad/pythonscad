@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.19.0](https://github.com/pythonscad/pythonscad/compare/v0.18.0...v0.19.0) (2026-03-22)
+
+
+### Features
+
+* add polyline primitive ([c87a2a6](https://github.com/pythonscad/pythonscad/commit/c87a2a65ac3a5b7566c14059d305d8bcbe4c2cb8))
+* add polyline primitive ([9eae810](https://github.com/pythonscad/pythonscad/commit/9eae81080e86ec05d741c7563f4806e904b5a084))
+* add support for importing corel-draw images ([#503](https://github.com/pythonscad/pythonscad/issues/503)) ([ff73f82](https://github.com/pythonscad/pythonscad/commit/ff73f8217f21a4568a8b937e561803a7f14b27eb))
+* **add:** update icons-svg-default.scad source for gc, ps, stp icons (previous effort was manually hacked using Inkscape) ([2a81464](https://github.com/pythonscad/pythonscad/commit/2a814647d8e79232a5ee79f25c2eaa60b5ff98fe))
+* **gui:** add icons for GC, PS, STP ([#501](https://github.com/pythonscad/pythonscad/issues/501)) ([2a81464](https://github.com/pythonscad/pythonscad/commit/2a814647d8e79232a5ee79f25c2eaa60b5ff98fe))
+* **gui:** add icons for GC, PS, STP (fix typo, edit filename, not extension) ([2a81464](https://github.com/pythonscad/pythonscad/commit/2a814647d8e79232a5ee79f25c2eaa60b5ff98fe))
+* **gui:** add icons for GC, PS, STP updating icons-chokusen and icons-chokusen-dark .qrc files ([2a81464](https://github.com/pythonscad/pythonscad/commit/2a814647d8e79232a5ee79f25c2eaa60b5ff98fe))
+* **gui:** update MainWindow.ui for GC, PS, and STP icons ([2a81464](https://github.com/pythonscad/pythonscad/commit/2a814647d8e79232a5ee79f25c2eaa60b5ff98fe))
+
+
+### Bug Fixes
+
+* add feedAdd property ([cc8c617](https://github.com/pythonscad/pythonscad/commit/cc8c61757362e91e75c9a54306763aede5b86e13))
+* add feedAdd property ([a25338d](https://github.com/pythonscad/pythonscad/commit/a25338ddfe5af85606e3b2a89a187db1e3ab7051))
+* crash and various and issues/bugfixes with polyline/gcode ([#513](https://github.com/pythonscad/pythonscad/issues/513)) ([863d2ed](https://github.com/pythonscad/pythonscad/commit/863d2ed0e2a4e7a86258db5cc791cd8f856bf72d))
+* **gui:** guard against null modinst and path in right-click context menu ([#6693](https://github.com/pythonscad/pythonscad/issues/6693)) ([f20a42b](https://github.com/pythonscad/pythonscad/commit/f20a42b458dba0698a540d31a06cf96106e4503a))
+* lazy collider is not used anymore ([2a9ac2b](https://github.com/pythonscad/pythonscad/commit/2a9ac2bcea98050fbc590a61874380f281d81596))
+* prevent font family prefix-matching bug in QFontComboBox ([#6708](https://github.com/pythonscad/pythonscad/issues/6708)) ([afaac53](https://github.com/pythonscad/pythonscad/commit/afaac53349187dcbbef162080f2d67aedce350f6))
+* rectified transform ([757511a](https://github.com/pythonscad/pythonscad/commit/757511a3c4bd99c05402f6f7cb2f98ecf2410b08))
+* rectified transform ([c0d5a0b](https://github.com/pythonscad/pythonscad/commit/c0d5a0b02edf016f7fd1ef4eb3717f30cb25fa8c))
+* removed debug stuff ([7c1408a](https://github.com/pythonscad/pythonscad/commit/7c1408a47b8c357df116125da3871d5735248f18))
+* small bug in pylaser which resulted in short plugs ([64b13eb](https://github.com/pythonscad/pythonscad/commit/64b13eb315f157a6e2a5ca5b8b94e49990107399))
+
 ## [0.18.0](https://github.com/pythonscad/pythonscad/compare/v0.17.0...v0.18.0) (2026-03-09)
 
 
