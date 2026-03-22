@@ -491,16 +491,22 @@ void shutdownSignalHandler(int)
 void setupUnixSignalHandlers(OpenSCADApp *app)
 {
   if (::pipe(shutdownSignalPipe) != 0) return;
-  const int flags = fcntl(shutdownSignalPipe[1], F_GETFL, 0);
-  if (flags != -1) {
-    fcntl(shutdownSignalPipe[1], F_SETFL, flags | O_NONBLOCK);
+  // Both ends non-blocking: the notifier slot drains with a read loop; a blocking read
+  // after the pipe is empty would hang the GUI thread (no EOF while the write end stays open).
+  for (int fd : {shutdownSignalPipe[0], shutdownSignalPipe[1]}) {
+    const int flags = fcntl(fd, F_GETFL, 0);
+    if (flags != -1) {
+      fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    }
   }
 
   auto *notifier = new QSocketNotifier(shutdownSignalPipe[0], QSocketNotifier::Read, app);
   QObject::connect(notifier, &QSocketNotifier::activated, app, [notifier](int) {
     notifier->setEnabled(false);
     char buffer[32];
-    while (::read(shutdownSignalPipe[0], buffer, sizeof(buffer)) > 0) {
+    for (;;) {
+      const ssize_t n = ::read(shutdownSignalPipe[0], buffer, sizeof(buffer));
+      if (n <= 0) break;
     }
     saveSessionForShutdown();
     QCoreApplication::quit();
