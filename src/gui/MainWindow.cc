@@ -39,6 +39,7 @@
 #include "gui/ExportGcodeDialog.h"
 #include "genlang/genlang.h"
 #include <QApplication>
+#include <QByteArray>
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QDialog>
@@ -2254,7 +2255,10 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
               sourceFile != nullptr) {
             sourceFile->scope->assignments = customizer_parameters;
             CommentParser::collectParameters(fulltext_py, sourceFile, '#');
-            editor->parameterWidget->setParameters(sourceFile, document.toStdString());
+            const QByteArray documentUtf8 = document.toUtf8();
+            editor->parameterWidget->setParameters(
+              sourceFile,
+              std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size())));
             editor->parameterWidget->applyParameters(sourceFile);
           }
           editor->parameterWidget->setEnabled(true);
