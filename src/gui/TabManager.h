@@ -21,7 +21,10 @@ public:
   EditorInterface *editor;
   QSet<EditorInterface *> editorList;
 
-  void createTab(const QString& filename);
+  /// When \p filename is empty and \p initializeEmptyEditor is true, apply the default new-tab
+  /// content (e.g. Python template). Session restore passes \c false so \c setTabSessionData
+  /// supplies text without an intermediate parse.
+  void createTab(const QString& filename, bool initializeEmptyEditor = true);
   void openTabFile(const QString& filename);
 
   // returns the name and tooltip of the tab for the given provided editor
@@ -44,6 +47,29 @@ public:
   bool saveACopy(EditorInterface *edt);
   void open(const QString& filename);
   size_t count();
+  void switchToEditor(EditorInterface *editor);
+
+  void saveSession(const QString& path);
+  bool restoreSession(const QString& path, int windowIndex = 0);
+  static bool saveGlobalSession(const QString& path, QString *error = nullptr, bool showWarning = true);
+  static int sessionWindowCount(const QString& path);
+  /// Index into the session file's \c windows array of the last active main window (0 if unknown).
+  static int sessionActiveWindowIndex(const QString& path);
+  /// True if \a path describes exactly one window with one tab: no filepath and editor not modified.
+  static bool sessionHasOnlyEmptyTab(const QString& path);
+  static void removeSessionFile();
+  static QString getSessionFilePath();
+  static QString getAutosaveFilePath();
+  static bool hasDirtyTabs();
+  static void bumpSessionDirtyGeneration();
+  static uint64_t sessionDirtyGeneration();
+  static void setSkipSessionSave(bool skip);
+  static bool shouldSkipSessionSave();
+
+  // Session file schema version. Increment when the format changes and add a
+  // migration step in migrateSession().  Old files without a version field are
+  // treated as version 1.
+  static constexpr int SESSION_VERSION = 3;
 
 public:
   static constexpr const int FIND_HIDDEN = 0;
@@ -72,6 +98,10 @@ private:
   void saveError(const QIODevice& file, const std::string& msg, const QString& filepath);
   void applyAction(QObject *object, const std::function<void(int, EditorInterface *)>& func);
   void setTabsCloseButtonVisibility(int tabIndice, bool isVisible);
+  void setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
+                         bool contentModified, bool parameterModified,
+                         const QByteArray& customizerState = QByteArray());
+  static bool migrateSession(QJsonObject& root, int fromVersion);
 
   QTabBar::ButtonPosition getClosingButtonPosition();
   void zoomIn();
