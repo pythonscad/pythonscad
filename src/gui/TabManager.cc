@@ -37,6 +37,8 @@
 #include <cstddef>
 #include <exception>
 #include <functional>
+#include <sstream>
+#include <vector>
 
 #include "gui/Editor.h"
 #include "gui/ImportUtils.h"
@@ -72,6 +74,24 @@ bool jsonToVec3(const QJsonValue& value, double *x, double *y, double *z)
   *y = arr[1].toDouble();
   *z = arr[2].toDouble();
   return true;
+}
+
+void initEmptyUntitledTab(EditorInterface *editor)
+{
+#ifdef ENABLE_PYTHON
+  std::string templ = "from openscad import *\n";
+  std::string libs = Settings::SettingsPython::pythonNetworkImportList.value();
+  std::stringstream ss(libs);
+  std::string word;
+  while (std::getline(ss, word, '\n')) {
+    if (word.size() == 0) continue;
+    templ += "nimport(\"" + word + "\")\n";
+  }
+  editor->setPlainText(QString::fromStdString(templ));
+  editor->setLanguageManually(LANG_PYTHON);
+#else
+  editor->setPlainText("");
+#endif
 }
 
 void warnSessionSaveFailure(const QString& path, const QString& error)
@@ -143,7 +163,7 @@ TabManager::TabManager(MainWindow *o, const QString& filename)
   connect(parent->editActionZoomTextIn, &QAction::triggered, this, &TabManager::zoomIn);
   connect(parent->editActionZoomTextOut, &QAction::triggered, this, &TabManager::zoomOut);
 
-  createTab(filename.isEmpty() ? QString("Untitled.py") : filename);
+  createTab(filename);
 
   // Disable the closing button for the first tabbar
   setTabsCloseButtonVisibility(0, false);
@@ -258,7 +278,7 @@ void TabManager::actionNew()
 {
   if (!parent->editorDock->isVisible())
     parent->editorDock->setVisible(true);  // if editor hidden, make it visible
-  createTab("Untitled.py");
+  createTab(QString());
 }
 
 void TabManager::open(const QString& filename)
@@ -291,7 +311,7 @@ void TabManager::open(const QString& filename)
   }
 }
 
-void TabManager::createTab(const QString& filename)
+void TabManager::createTab(const QString& filename, bool initializeEmptyEditor)
 {
   assert(parent != nullptr);
 
@@ -362,6 +382,10 @@ void TabManager::createTab(const QString& filename)
   // Fill the editor with the content of the file
   if (filename.isEmpty()) {
     editor->filepath = "";
+    if (initializeEmptyEditor) {
+      initEmptyUntitledTab(editor);
+      refreshDocument();
+    }
   } else {
     openTabFile(filename);
   }
@@ -639,8 +663,6 @@ void TabManager::onTabModified(EditorInterface *edt)
 
 void TabManager::openTabFile(const QString& filename)
 {
-  const bool isUntitledPlaceholder =
-    (filename == QStringLiteral("Untitled.py") || filename == QStringLiteral("Untitled.scad"));
 #ifdef ENABLE_PYTHON
   if (boost::algorithm::ends_with(filename, ".py")) {
     std::string templ = "from openscad import *\n";
@@ -662,25 +684,16 @@ void TabManager::openTabFile(const QString& filename)
   if (!knownFileType) return;
   const auto cmd = Importer::knownFileExtensions[suffix];
   if (cmd.isEmpty()) {
-    if (isUntitledPlaceholder) {
-      editor->filepath = "";
+    editor->filepath = fileinfo.absoluteFilePath();
 #ifdef ENABLE_PYTHON
-      if (suffix == "py") {
-        editor->setLanguageManually(LANG_PYTHON);
-      }
-#endif
-    } else {
-      editor->filepath = fileinfo.absoluteFilePath();
-#ifdef ENABLE_PYTHON
-      if (suffix == QStringLiteral("py")) {
-        const QByteArray pathUtf8 = editor->filepath.toUtf8();
-        parent->clearPythonUntrustStateForPath(
-          std::string(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size())));
-      }
-#endif
-      editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
-      parent->updateRecentFiles(filename);
+    if (suffix == QStringLiteral("py")) {
+      const QByteArray pathUtf8 = editor->filepath.toUtf8();
+      parent->clearPythonUntrustStateForPath(
+        std::string(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size())));
     }
+#endif
+    editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
+    parent->updateRecentFiles(filename);
   } else {
     editor->filepath.clear();
     editor->language = LANG_PYTHON;
@@ -972,10 +985,17 @@ void TabManager::saveSession(const QString& path)
 bool TabManager::saveGlobalSession(const QString& path, QString *error, bool showWarning)
 {
   QJsonArray windows;
+  std::vector<MainWindow *> windowOrder;
+  windowOrder.reserve(static_cast<size_t>(scadApp->windowManager.getWindows().size()));
+  for (auto *mainWin : scadApp->windowManager.getWindows()) {
+    windowOrder.push_back(mainWin);
+  }
+  std::sort(windowOrder.begin(), windowOrder.end());
+
   MainWindow *const lastActive = scadApp->windowManager.getLastActive();
   int activeWindowIndex = 0;
   int windowSerial = 0;
-  for (auto *mainWin : scadApp->windowManager.getWindows()) {
+  for (MainWindow *mainWin : windowOrder) {
     if (mainWin == lastActive) {
       activeWindowIndex = windowSerial;
     }
@@ -1182,7 +1202,7 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     if (i == 0) {
       edt = static_cast<EditorInterface *>(tabWidget->widget(0));
     } else {
-      createTab(QString());
+      createTab(QString(), false);
       edt = editor;
     }
     setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState);
