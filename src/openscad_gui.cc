@@ -416,9 +416,7 @@ bool dispatchIpcLine(QLocalSocket *socket, const QByteArray& data)
     return true;
   }
 
-  for (const auto& file : files) {
-    new MainWindow(QStringList(file));
-  }
+  new MainWindow(files);
   socket->write("ok\n");
   return true;
 }
