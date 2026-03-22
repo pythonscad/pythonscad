@@ -170,7 +170,7 @@ bool promptAutosaveRestore(const QString& autosavePath)
   while (true) {
     QMessageBox box;
     box.setIcon(QMessageBox::Warning);
-    box.setWindowTitle(QStringLiteral("PythonSCAD"));
+    box.setWindowTitle(_("PythonSCAD"));
     box.setText(_("Recovered session data was found."));
     box.setInformativeText(_("Restore the autosaved session?"));
     auto *restoreButton = box.addButton(_("Restore"), QMessageBox::AcceptRole);
