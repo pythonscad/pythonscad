@@ -464,7 +464,15 @@ void startIpcServer(QLocalServer *server)
   if (!server->listen(serverName())) {
     if (server->serverError() == QAbstractSocket::AddressInUseError) {
       QLocalServer::removeServer(serverName());
-      server->listen(serverName());
+      if (!server->listen(serverName())) {
+        LOG(message_group::UI_Warning,
+            "Could not start the local IPC server after reclaiming the socket name "
+            "(single-instance open/focus may not work): %1$s",
+            server->errorString().toUtf8().constData());
+      }
+    } else {
+      LOG(message_group::UI_Warning, "Could not start the local IPC server: %1$s",
+          server->errorString().toUtf8().constData());
     }
   }
 }
