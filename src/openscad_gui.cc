@@ -48,6 +48,7 @@
 #include <QSurfaceFormat>
 #include <QDesktopServices>
 #include <QFile>
+#include <QFileDevice>
 #include <QSessionManager>
 #include <QSaveFile>
 #include <QSocketNotifier>
@@ -768,6 +769,10 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
           out.write(in.readAll());
           const bool committed = out.commit();
           if (committed) {
+            if (!QFile::setPermissions(sessionPath, QFileDevice::ReadOwner | QFileDevice::WriteOwner)) {
+              LOG(message_group::UI_Warning, "Failed to set session file permissions: %1$s",
+                  sessionPath.toUtf8().constData());
+            }
             QFile::remove(autosavePath);
           }
         } else {
