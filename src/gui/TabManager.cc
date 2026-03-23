@@ -795,11 +795,24 @@ bool TabManager::refreshDocument()
   return file_opened;
 }
 
+QString TabManager::plainEditorTitleForMessages(EditorInterface *edt) const
+{
+  if (!edt->filepath.isEmpty()) {
+    return QFileInfo(edt->filepath).fileName();
+  }
+#ifdef ENABLE_PYTHON
+  return (edt->language == LANG_PYTHON) ? QStringLiteral("Untitled.py")
+                                        : QStringLiteral("Untitled.scad");
+#else
+  return QStringLiteral("Untitled.scad");
+#endif
+}
+
 bool TabManager::maybeSave(int x)
 {
   auto *edt = (EditorInterface *)tabWidget->widget(x);
   if (edt->isContentModified() || edt->parameterWidget->isModified()) {
-    auto [fname, fpath] = getEditorTabName(edt);
+    const QString fname = plainEditorTitleForMessages(edt);
     QMessageBox box(parent);
     box.setText(QString(_("Do you want to save the changes you made to %1?")).arg(fname));
     box.setInformativeText(_("Your changes will be lost if you don't save them."));
