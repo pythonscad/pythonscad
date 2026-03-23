@@ -34,6 +34,7 @@
 #include <QWidget>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <functional>
 #include <sstream>
@@ -1002,7 +1003,9 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
   for (auto *mainWin : scadApp->windowManager.getWindows()) {
     windowOrder.push_back(mainWin);
   }
-  std::sort(windowOrder.begin(), windowOrder.end());
+  std::sort(windowOrder.begin(), windowOrder.end(), [](const MainWindow *a, const MainWindow *b) {
+    return reinterpret_cast<std::uintptr_t>(a) < reinterpret_cast<std::uintptr_t>(b);
+  });
 
   MainWindow *const lastActive = scadApp->windowManager.getLastActive();
   int activeWindowIndex = 0;
