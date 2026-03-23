@@ -292,11 +292,9 @@ void Preferences::init()
   this->checkBoxAutosaveSessionEnabled->setText(
     QString(_("Autosave session in background for crash recovery")));
   this->labelAutosaveSessionInterval->setText(QString(_("Autosave interval:")));
-
-  this->comboBoxAutosaveSessionInterval->clear();
-  this->comboBoxAutosaveSessionInterval->addItem(_("30 seconds"), 30);
-  this->comboBoxAutosaveSessionInterval->addItem(_("60 seconds"), 60);
-  this->comboBoxAutosaveSessionInterval->addItem(_("120 seconds"), 120);
+  this->spinBoxAutosaveSessionInterval->setSuffix(_(" seconds"));
+  initIntSpinBox(this->spinBoxAutosaveSessionInterval,
+                 Settings::Settings::autosaveSessionIntervalSeconds);
 
   initListBox(this->listWidgetLocalAppParams, Settings::Settings::localAppParameterList);
   connect(this->listWidgetLocalAppParams->model(), &QAbstractItemModel::dataChanged, this,
@@ -777,13 +775,12 @@ void Preferences::on_checkBoxAutosaveSessionEnabled_toggled(bool state)
   Settings::Settings::autosaveSessionEnabled.setValue(state);
   writeSettings();
   const bool sessionEnabled = this->checkBoxSessionManagementEnabled->isChecked();
-  this->comboBoxAutosaveSessionInterval->setEnabled(sessionEnabled && state);
+  this->spinBoxAutosaveSessionInterval->setEnabled(sessionEnabled && state);
 }
 
-void Preferences::on_comboBoxAutosaveSessionInterval_activated(int)
+void Preferences::on_spinBoxAutosaveSessionInterval_valueChanged(int val)
 {
-  const int seconds = this->comboBoxAutosaveSessionInterval->currentData().toInt();
-  Settings::Settings::autosaveSessionIntervalSeconds.setValue(seconds);
+  Settings::Settings::autosaveSessionIntervalSeconds.setValue(val);
   writeSettings();
 }
 
@@ -1372,8 +1369,8 @@ void Preferences::updateSessionManagementWidgets()
   const bool enabled = this->checkBoxSessionManagementEnabled->isChecked();
   this->checkBoxAutosaveSessionEnabled->setEnabled(enabled);
   this->labelAutosaveSessionInterval->setEnabled(enabled);
-  this->comboBoxAutosaveSessionInterval->setEnabled(enabled &&
-                                                    this->checkBoxAutosaveSessionEnabled->isChecked());
+  this->spinBoxAutosaveSessionInterval->setEnabled(enabled &&
+                                                   this->checkBoxAutosaveSessionEnabled->isChecked());
 }
 
 void Preferences::writeSettings()
@@ -1538,13 +1535,8 @@ void Preferences::updateGUI()
                      Settings::Settings::sessionManagementEnabled);
   BlockSignals<QCheckBox *>(this->checkBoxAutosaveSessionEnabled)
     ->setChecked(getValue("advanced/autosaveSessionEnabled").toBool());
-  const int autosaveSeconds = getValue("advanced/autosaveSessionIntervalSeconds").toInt();
-  for (int i = 0; i < this->comboBoxAutosaveSessionInterval->count(); ++i) {
-    if (this->comboBoxAutosaveSessionInterval->itemData(i).toInt() == autosaveSeconds) {
-      BlockSignals<QComboBox *>(this->comboBoxAutosaveSessionInterval)->setCurrentIndex(i);
-      break;
-    }
-  }
+  updateIntSpinBox(this->spinBoxAutosaveSessionInterval,
+                   Settings::Settings::autosaveSessionIntervalSeconds);
   updateSessionManagementWidgets();
   // ^ must run after the session management checkbox and autosave checkbox are set
 

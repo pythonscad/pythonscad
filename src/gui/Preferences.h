@@ -163,7 +163,7 @@ public slots:
   void on_comboBoxSingleInstanceOpenMode_activated(int);
   void on_checkBoxSessionManagementEnabled_toggled(bool);
   void on_checkBoxAutosaveSessionEnabled_toggled(bool);
-  void on_comboBoxAutosaveSessionInterval_activated(int);
+  void on_spinBoxAutosaveSessionInterval_valueChanged(int);
 
 signals:
   void requestRedraw() const;
