@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QShortcut>
 #include <QStyle>
+#include <QTabWidget>
 #include <QToolButton>
 #include <QVariant>
 #include <QVBoxLayout>
@@ -71,7 +72,12 @@ UnsavedChangesDialog::UnsavedChangesDialog(TabManager *tabManager, MainWindow *m
 
 void UnsavedChangesDialog::populateList()
 {
-  for (EditorInterface *editor : tabManager->editorList) {
+  auto *tabs = qobject_cast<QTabWidget *>(tabManager->getTabContent());
+  if (!tabs) return;
+
+  for (int i = 0; i < tabs->count(); ++i) {
+    auto *editor = qobject_cast<EditorInterface *>(tabs->widget(i));
+    if (!editor) continue;
     if (editor->isContentModified() || editor->parameterWidget->isModified()) {
       auto *item = new QListWidgetItem(listWidget);
       item->setSizeHint(QSize(0, 36));
