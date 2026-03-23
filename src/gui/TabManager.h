@@ -94,6 +94,8 @@ private:
   bool use_gvim = false;
 
   bool maybeSave(int);
+  /// Tab title for message boxes (no `&` doubling; see getEditorTabName for QTabWidget labels).
+  QString plainEditorTitleForMessages(EditorInterface *edt) const;
   bool save(EditorInterface *edt, const QString& path);
   void saveError(const QIODevice& file, const std::string& msg, const QString& filepath);
   void applyAction(QObject *object, const std::function<void(int, EditorInterface *)>& func);
