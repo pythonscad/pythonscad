@@ -984,6 +984,10 @@ void TabManager::saveSession(const QString& path)
     if (!customizerState.isEmpty()) {
       obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
     }
+    if (!edt->filepath.isEmpty()) {
+      obj.insert(QStringLiteral("diskIdentity"),
+                 QString::fromStdString(MainWindow::autoReloadIdentityForPath(edt->filepath)));
+    }
     tabs.append(obj);
   }
   QJsonObject win;
@@ -1064,6 +1068,10 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       if (!customizerState.isEmpty()) {
         obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
       }
+      if (!edt->filepath.isEmpty()) {
+        obj.insert(QStringLiteral("diskIdentity"),
+                   QString::fromStdString(MainWindow::autoReloadIdentityForPath(edt->filepath)));
+      }
       tabs.append(obj);
     }
     QJsonObject win;
@@ -1127,6 +1135,10 @@ bool TabManager::migrateSession(QJsonObject& root, int fromVersion)
     }
     case 2: {
       // v2 -> v3: optional root-level activeWindowIndex (default 0 when absent).
+      break;
+    }
+    case 3: {
+      // v3 -> v4: optional per-tab diskIdentity (mtime+size at session save).
       break;
     }
     default:
@@ -1207,6 +1219,9 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
   // compile/preview (which calls initPython) before the constructor is finished.
   const bool oldBlocked = tabWidget->blockSignals(true);
 
+  QVector<QString> diskIdentityAtSave;
+  diskIdentityAtSave.reserve(tabs.size());
+
   for (int i = 0; i < tabs.size(); ++i) {
     const QJsonObject obj = tabs[i].toObject();
     const QString filepath = obj.value(QStringLiteral("filepath")).toString();
@@ -1265,16 +1280,35 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     if (firstVisibleLine >= 0) {
       edt->setFirstVisibleLine(firstVisibleLine);
     }
+
+    diskIdentityAtSave.append(obj.value(QStringLiteral("diskIdentity")).toString());
   }
-  // Prime autoReloadId for every restored on-disk tab so the first compile(true) from auto-reload
-  // does not treat an empty id as "file changed" and reload from disk (which could replace an
-  // unsaved buffer). Matches the state after switching to a non-active tab, where the id was
-  // already observed via the normal reload path.
+  // Prime autoReloadId so auto-reload does not treat an empty id as "file changed" and reload
+  // over an unsaved buffer. For dirty tabs, if the on-disk file changed since the session was
+  // saved (diskIdentity in JSON != current stat), keep the saved fingerprint so the next
+  // fileChangedOnDisk() still reports a change and the usual reload dialog appears.
   for (int ti = 0; ti < tabWidget->count(); ++ti) {
     auto *syncEdt = static_cast<EditorInterface *>(tabWidget->widget(ti));
-    if (!syncEdt->filepath.isEmpty()) {
-      syncEdt->autoReloadId = MainWindow::autoReloadIdentityForPath(syncEdt->filepath);
+    if (syncEdt->filepath.isEmpty()) {
+      continue;
     }
+    const std::string currentId = MainWindow::autoReloadIdentityForPath(syncEdt->filepath);
+    if (currentId.empty()) {
+      continue;
+    }
+    if (!syncEdt->isContentModified()) {
+      syncEdt->autoReloadId = currentId;
+      continue;
+    }
+    const QString savedId = ti < diskIdentityAtSave.size() ? diskIdentityAtSave[ti] : QString();
+    if (!savedId.isEmpty()) {
+      const std::string savedStd = savedId.toStdString();
+      if (savedStd != currentId) {
+        syncEdt->autoReloadId = savedStd;
+        continue;
+      }
+    }
+    syncEdt->autoReloadId = currentId;
   }
   const int currentIndex = std::max(0, std::min(savedCurrentIndex, tabWidget->count() - 1));
   tabWidget->setCurrentIndex(currentIndex);
