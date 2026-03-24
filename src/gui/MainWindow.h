@@ -211,6 +211,9 @@ public:
 
   void markSessionQuitting();
 
+  /// Mtime+size fingerprint for auto-reload (empty if path missing or stat fails).
+  static std::string autoReloadIdentityForPath(const QString& filepath);
+
   bool fileChangedOnDisk();
 
   // Parse the document contained in the editor, update the editors's parameters and returns a SourceFile
@@ -495,9 +498,10 @@ private:
   CSGWorker *csgworker;
   QMutex consolemutex;
   DragResult dragResult;
-  EditorInterface *renderedEditor;  // stores pointer to editor which has been most recently rendered
-  time_t includesMTime{0};          // latest include mod time
-  time_t depsMTime{0};              // latest dependency mod time
+  EditorInterface *renderedEditor{
+    nullptr};               // stores pointer to editor which has been most recently rendered
+  time_t includesMTime{0};  // latest include mod time
+  time_t depsMTime{0};      // latest dependency mod time
   std::unordered_map<QString, QString> exportPaths;  // for each file type, where it was exported to last
   QString exportPath(
     const QString& suffix);    // look up the last export path and generate one if not found
