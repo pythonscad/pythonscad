@@ -4213,7 +4213,25 @@ void MainWindow::closeEvent(QCloseEvent *event)
   }
 
   progress_report_fin();
-  hideCurrentOutput();
+  {
+    const auto& wins = scadApp->windowManager.getWindows();
+    MainWindow *otherWindow = nullptr;
+    for (MainWindow *w : wins) {
+      if (w != this) {
+        otherWindow = w;
+        break;
+      }
+    }
+    if (!isSessionQuitting && otherWindow != nullptr) {
+      MainWindow *outTarget = scadApp->windowManager.getLastActive();
+      if (outTarget == nullptr || outTarget == this) {
+        outTarget = otherWindow;
+      }
+      outTarget->setCurrentOutput();
+    } else {
+      hideCurrentOutput();
+    }
+  }
 
   // Log to stdout from now on
   clearCurrentOutput();
