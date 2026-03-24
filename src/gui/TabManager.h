@@ -4,6 +4,7 @@
 #include <QSet>
 #include <cstddef>
 #include <functional>
+#include <optional>
 #include <string>
 #include <tuple>
 
@@ -102,7 +103,8 @@ private:
   void setTabsCloseButtonVisibility(int tabIndice, bool isVisible);
   void setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
                          bool contentModified, bool parameterModified,
-                         const QByteArray& customizerState = QByteArray());
+                         const QByteArray& customizerState = QByteArray(),
+                         std::optional<int> sessionLanguage = std::nullopt);
   static bool migrateSession(QJsonObject& root, int fromVersion);
 
   QTabBar::ButtonPosition getClosingButtonPosition();

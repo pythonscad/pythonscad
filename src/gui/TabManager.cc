@@ -917,7 +917,7 @@ bool TabManager::shouldSkipSessionSave()
 
 void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
                                    bool contentModified, bool parameterModified,
-                                   const QByteArray& customizerState)
+                                   const QByteArray& customizerState, std::optional<int> sessionLanguage)
 {
   const QSignalBlocker blockEditor(edt);
   const QSignalBlocker blockParameters(edt->parameterWidget);
@@ -928,7 +928,31 @@ void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath
   if (!customizerState.isEmpty()) {
     edt->parameterWidget->setSessionState(customizerState);
   }
+#ifdef ENABLE_PYTHON
+  if (sessionLanguage.has_value()) {
+    const int lang = *sessionLanguage;
+    if (lang == LANG_PYTHON || lang == LANG_SCAD) {
+      edt->setLanguageManually(lang);
+    } else {
+      edt->resetLanguageDetection();
+      edt->recomputeLanguageActive();
+    }
+  } else {
+    edt->resetLanguageDetection();
+    edt->recomputeLanguageActive();
+    // Old session files had no language field; untitled Python tabs use an empty path.
+    if (filepath.isEmpty() && edt->language == LANG_SCAD) {
+      const QString trimmed = content.trimmed();
+      if (trimmed.startsWith(QStringLiteral("from openscad import"))) {
+        edt->setLanguageManually(LANG_PYTHON);
+      }
+    }
+  }
+#else
+  (void)sessionLanguage;
+  edt->resetLanguageDetection();
   edt->recomputeLanguageActive();
+#endif
   parent->onLanguageActiveChanged(edt->language);
   auto [fname, fpath] = getEditorTabNameWithModifier(edt);
   setEditorTabName(fname, fpath, edt);
@@ -945,6 +969,7 @@ void TabManager::saveSession(const QString& path)
     obj.insert(QStringLiteral("content"), edt->toPlainText());
     obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
     obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
+    obj.insert(QStringLiteral("language"), edt->language);
     int cursorLine = 0;
     int cursorColumn = 0;
     edt->getCursorPosition(&cursorLine, &cursorColumn);
@@ -1024,6 +1049,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       obj.insert(QStringLiteral("content"), edt->toPlainText());
       obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
       obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
+      obj.insert(QStringLiteral("language"), edt->language);
       int cursorLine = 0;
       int cursorColumn = 0;
       edt->getCursorPosition(&cursorLine, &cursorColumn);
@@ -1189,6 +1215,10 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     const int firstVisibleLine = obj.value(QStringLiteral("firstVisibleLine")).toInt(-1);
     int findState = obj.value(QStringLiteral("findState")).toInt(TabManager::FIND_HIDDEN);
     const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
+    std::optional<int> sessionLanguage;
+    if (obj.contains(QStringLiteral("language"))) {
+      sessionLanguage = obj.value(QStringLiteral("language")).toInt();
+    }
 
     const QFileInfo fileInfo(filepath);
     if (!filepath.isEmpty() && fileInfo.isAbsolute() && !fileInfo.exists()) {
@@ -1220,7 +1250,8 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
       createTab(QString(), false);
       edt = editor;
     }
-    setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState);
+    setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState,
+                      sessionLanguage);
     if (findState < TabManager::FIND_HIDDEN || findState > TabManager::FIND_REPLACE_VISIBLE) {
       findState = TabManager::FIND_HIDDEN;
     }
