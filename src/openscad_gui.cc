@@ -634,14 +634,22 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     lockBox.setDefaultButton(useRunningButton);
     lockBox.exec();
 
-    if (lockBox.clickedButton() == exitLockButton) {
+    auto *clicked = lockBox.clickedButton();
+    // Closing with Esc or the window chrome yields nullptr; do not fall through to IPC.
+    if (!clicked || clicked == exitLockButton) {
       return 1;
     }
 
     bool acquiredLock = false;
-    if (lockBox.clickedButton() == removeLockButton) {
+    if (clicked == removeLockButton) {
       if (lock.removeStaleLockFile() && lock.tryLock()) {
         acquiredLock = true;
+      } else {
+        QMessageBox::critical(nullptr, _("PythonSCAD"),
+                              _("Could not remove the lock file or acquire a new lock.\n"
+                                "Another instance of PythonSCAD may still be running.\n\n"
+                                "A new primary instance cannot be started."));
+        return 1;
       }
     }
 
