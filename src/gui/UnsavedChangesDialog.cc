@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QFont>
 #include <QHBoxLayout>
+#include <QKeySequence>
 #include <QShortcut>
 #include <QStyle>
 #include <QTabWidget>
@@ -38,10 +39,13 @@ UnsavedChangesDialog::UnsavedChangesDialog(TabManager *tabManager, MainWindow *m
   connect(listWidget, &QListWidget::itemClicked, this, &UnsavedChangesDialog::onItemClicked);
   layout->addWidget(listWidget);
 
-  auto *warningLabel = new QLabel(_("If you quit PythonSCAD now, these changes will be lost."), this);
+  auto *warningLabel = new QLabel(_("If you continue, these changes will be lost."), this);
   layout->addWidget(warningLabel);
 
-  auto *shortcutLabel = new QLabel(_("Press Ctrl+D to discard changes and quit."), this);
+  const QKeySequence discardKeySeq(Qt::CTRL | Qt::Key_D);
+  auto *shortcutLabel = new QLabel(QString(_("Press %1 to discard changes without saving."))
+                                     .arg(discardKeySeq.toString(QKeySequence::NativeText)),
+                                   this);
   QFont italicFont = shortcutLabel->font();
   italicFont.setItalic(true);
   italicFont.setPointSize(italicFont.pointSize() - 1);
@@ -63,7 +67,7 @@ UnsavedChangesDialog::UnsavedChangesDialog(TabManager *tabManager, MainWindow *m
 
   layout->addLayout(buttonLayout);
 
-  auto *discardShortcut = new QShortcut(QKeySequence("Ctrl+D"), this);
+  auto *discardShortcut = new QShortcut(discardKeySeq, this);
   connect(discardShortcut, &QShortcut::activated, this, &UnsavedChangesDialog::onDiscardClicked);
 
   populateList();
