@@ -301,6 +301,9 @@ void TabManager::open(const QString& filename)
 
   if (editor->filepath.isEmpty() && !editor->isContentModified() &&
       !editor->parameterWidget->isModified()) {
+    // Empty tabs from "New" may be setLanguageManually(LANG_PYTHON); clear that before loading
+    // so recomputeLanguageActive() follows the opened file's extension (.scad vs .py).
+    editor->resetLanguageDetection();
     openTabFile(filename);
     editor->recomputeLanguageActive();
     parent->onLanguageActiveChanged(editor->language);
@@ -1261,6 +1264,16 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     }
     if (firstVisibleLine >= 0) {
       edt->setFirstVisibleLine(firstVisibleLine);
+    }
+  }
+  // Prime autoReloadId for every restored on-disk tab so the first compile(true) from auto-reload
+  // does not treat an empty id as "file changed" and reload from disk (which could replace an
+  // unsaved buffer). Matches the state after switching to a non-active tab, where the id was
+  // already observed via the normal reload path.
+  for (int ti = 0; ti < tabWidget->count(); ++ti) {
+    auto *syncEdt = static_cast<EditorInterface *>(tabWidget->widget(ti));
+    if (!syncEdt->filepath.isEmpty()) {
+      syncEdt->autoReloadId = MainWindow::autoReloadIdentityForPath(syncEdt->filepath);
     }
   }
   const int currentIndex = std::max(0, std::min(savedCurrentIndex, tabWidget->count() - 1));

@@ -2083,20 +2083,24 @@ void MainWindow::setRenderVariables(ContextHandle<BuiltinContext>& context)
    Returns true if the current document is a file on disk and that file has new content.
    Returns false if a file on disk has disappeared or if we haven't yet saved.
  */
+std::string MainWindow::autoReloadIdentityForPath(const QString& filepath)
+{
+  if (filepath.isEmpty()) return {};
+  struct stat st;
+  memset(&st, 0, sizeof(struct stat));
+  if (stat(filepath.toLocal8Bit(), &st) != 0) return {};
+  return str(boost::format("%x.%x") % st.st_mtime % st.st_size);
+}
+
 bool MainWindow::fileChangedOnDisk()
 {
-  if (!activeEditor->filepath.isEmpty()) {
-    struct stat st;
-    memset(&st, 0, sizeof(struct stat));
-    const bool valid = (stat(activeEditor->filepath.toLocal8Bit(), &st) == 0);
-    // If file isn't there, just return and use current editor text
-    if (!valid) return false;
-
-    auto newid = str(boost::format("%x.%x") % st.st_mtime % st.st_size);
-    if (newid != activeEditor->autoReloadId) {
-      activeEditor->autoReloadId = newid;
-      return true;
-    }
+  if (activeEditor->filepath.isEmpty()) return false;
+  const std::string newid = autoReloadIdentityForPath(activeEditor->filepath);
+  // If file isn't there, just return and use current editor text
+  if (newid.empty()) return false;
+  if (newid != activeEditor->autoReloadId) {
+    activeEditor->autoReloadId = newid;
+    return true;
   }
   return false;
 }
@@ -4051,7 +4055,12 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   // If there is no renderedEditor we request for a new preview if the
   // auto-reload is enabled.
   if (renderedEditor == nullptr && designActionAutoReload->isChecked() && !MainWindow::isEmpty()) {
-    fileChangedOnDisk();  // prime autoReloadId to avoid a false-positive auto-reload on first timer tick
+    // Do not prime autoReloadId here for dirty on-disk tabs: session restore already syncs ids for
+    // all file-backed tabs, and priming only the *active* tab used to make the first auto-reload
+    // compile behave differently from switching to another dirty tab first (empty id → reload path).
+    if (!(newEditor->isContentModified() && !newEditor->filepath.isEmpty())) {
+      fileChangedOnDisk();  // prime autoReloadId to avoid a false-positive auto-reload on first tick
+    }
     actionRenderPreview();
   }
 }
