@@ -122,9 +122,9 @@ Preferences::Preferences(QWidget *parent) : QMainWindow(parent)
   updateGUI();
 }
 
-void Preferences::on_comboBoxSingleInstanceOpenMode_activated(int)
+void Preferences::on_comboBoxSingleInstanceOpenMode_activated(int val)
 {
-  updateComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
+  applyComboBox(this->comboBoxSingleInstanceOpenMode, val, Settings::Settings::singleInstanceOpenMode);
 }
 
 void Preferences::init()
