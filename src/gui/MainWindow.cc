@@ -1580,7 +1580,7 @@ void MainWindow::on_fileActionPythonTrustCurrent_triggered()
     QStringLiteral("python_hash/%1").arg(QString::fromUtf8(pathUtf8.toPercentEncoding()));
   settings.setValue(settingKey, QString::fromStdString(SHA256HashString(content)));
   trusted_edit_document_name = fpath;
-  QMessageBox::information(this, _("Python"), _("This file is now trusted for Python execution."));
+  QMessageBox::information(this, _("Python"), _("This document is now trusted for Python execution."));
 #endif
 }
 
