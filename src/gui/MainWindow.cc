@@ -1550,10 +1550,37 @@ void MainWindow::on_fileActionPythonRevoke_triggered()
 #ifdef ENABLE_PYTHON
   python_trusted = false;
   this->trusted_edit_document_name = "";
+  this->untrusted_edit_document_name = "";
 #endif
   settings.remove("python_hash");
   QMessageBox::information(this, _("Trusted Files"), "All trusted python files revoked",
                            QMessageBox::Ok);
+}
+
+void MainWindow::on_fileActionPythonTrustCurrent_triggered()
+{
+#ifdef ENABLE_PYTHON
+  if (activeEditor->language != LANG_PYTHON) {
+    QMessageBox::information(this, _("Python"), _("The active document is not a Python file."));
+    return;
+  }
+  if (activeEditor->filepath.isEmpty()) {
+    QMessageBox::information(
+      this, _("Python"),
+      _("Untitled buffers are already trusted. Save to a file if you need a persistent trust entry."));
+    return;
+  }
+  untrusted_edit_document_name.clear();
+  const QByteArray docUtf8 = activeEditor->toPlainText().toUtf8();
+  const std::string content(docUtf8.constData(), static_cast<size_t>(docUtf8.size()));
+  QSettingsCached settings;
+  char setting_key[256];
+  const std::string fpath = activeEditor->filepath.toStdString();
+  snprintf(setting_key, sizeof(setting_key) - 1, "python_hash/%s", fpath.c_str());
+  settings.setValue(setting_key, QString::fromStdString(SHA256HashString(content)));
+  trusted_edit_document_name = fpath;
+  QMessageBox::information(this, _("Python"), _("This file is now trusted for Python execution."));
+#endif
 }
 
 void MainWindow::on_fileActionPythonCreateVenv_triggered()
@@ -1996,6 +2023,13 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
     return false;
   }
   return false;
+}
+
+void MainWindow::clearPythonUntrustStateForPath(const std::string& path)
+{
+  if (path == untrusted_edit_document_name) {
+    untrusted_edit_document_name.clear();
+  }
 }
 #endif  // ifdef ENABLE_PYTHON
 

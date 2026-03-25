@@ -558,6 +558,11 @@ void TabManager::openTabFile(const QString& filename)
   const auto cmd = Importer::knownFileExtensions[suffix];
   if (cmd.isEmpty()) {
     editor->filepath = fileinfo.absoluteFilePath();
+#ifdef ENABLE_PYTHON
+    if (suffix == QStringLiteral("py")) {
+      parent->clearPythonUntrustStateForPath(editor->filepath.toStdString());
+    }
+#endif
     editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
     parent->updateRecentFiles(filename);
   } else {
@@ -648,10 +653,6 @@ bool TabManager::refreshDocument()
         setContentRenderState();  // since last render
         editor->recomputeLanguageActive();
       }
-#ifdef ENABLE_PYTHON
-      if (editor->language == LANG_PYTHON)
-        parent->trust_python_file(editor->filepath.toStdString(), text.toStdString());
-#endif
       file_opened = true;
     }
   }
