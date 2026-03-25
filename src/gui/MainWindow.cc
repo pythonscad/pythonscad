@@ -1574,10 +1574,11 @@ void MainWindow::on_fileActionPythonTrustCurrent_triggered()
   const QByteArray docUtf8 = activeEditor->toPlainText().toUtf8();
   const std::string content(docUtf8.constData(), static_cast<size_t>(docUtf8.size()));
   QSettingsCached settings;
-  char setting_key[256];
-  const std::string fpath = activeEditor->filepath.toStdString();
-  snprintf(setting_key, sizeof(setting_key) - 1, "python_hash/%s", fpath.c_str());
-  settings.setValue(setting_key, QString::fromStdString(SHA256HashString(content)));
+  const QByteArray pathUtf8 = activeEditor->filepath.toUtf8();
+  const std::string fpath(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size()));
+  const QString settingKey =
+    QStringLiteral("python_hash/%1").arg(QString::fromUtf8(pathUtf8.toPercentEncoding()));
+  settings.setValue(settingKey, QString::fromStdString(SHA256HashString(content)));
   trusted_edit_document_name = fpath;
   QMessageBox::information(this, _("Python"), _("This file is now trusted for Python execution."));
 #endif
@@ -1964,7 +1965,6 @@ bool MainWindow::fileChangedOnDisk()
 bool MainWindow::trust_python_file(const std::string& file, const std::string& content)
 {
   QSettingsCached settings;
-  char setting_key[256];
   if (python_trusted) return true;
   if (Settings::SettingsPython::globalTrustPython.value() == true) return true;
 
@@ -1974,13 +1974,16 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
   }
 
   std::string act_hash, ref_hash;
-  snprintf(setting_key, sizeof(setting_key) - 1, "python_hash/%s", file.c_str());
   act_hash = SHA256HashString(content);
+
+  const QByteArray pathUtf8(file.data(), static_cast<int>(file.size()));
+  const QString settingKey =
+    QStringLiteral("python_hash/%1").arg(QString::fromUtf8(pathUtf8.toPercentEncoding()));
 
   if (file == this->untrusted_edit_document_name) return false;
 
   if (file == this->trusted_edit_document_name) {
-    settings.setValue(setting_key, act_hash.c_str());
+    settings.setValue(settingKey, QString::fromStdString(act_hash));
     return true;
   }
 
@@ -1995,8 +1998,8 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
     }
   */
 
-  if (settings.contains(setting_key)) {
-    ref_hash = settings.value(setting_key).toString().toStdString();
+  if (settings.contains(settingKey)) {
+    ref_hash = settings.value(settingKey).toString().toStdString();
   }
 
   if (act_hash == ref_hash) {
@@ -2014,7 +2017,7 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
   }
   if (ret == QMessageBox::Yes) {
     this->trusted_edit_document_name = file;
-    settings.setValue(setting_key, act_hash.c_str());
+    settings.setValue(settingKey, QString::fromStdString(act_hash));
     return true;
   }
 
@@ -2041,7 +2044,8 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
   const QByteArray documentUtf8 = document.toUtf8();
   auto fulltext = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size())) +
                   "\n\x03\n" + commandline_commands;
-  auto fnameba = editor->filepath.toLocal8Bit();
+  const QByteArray pathUtf8 = editor->filepath.toUtf8();
+  const QByteArray fnameba = pathUtf8;
 
   // Use this editor's text, not lastCompiledDoc (only updated in parseTopLevelDocument()).
   auto fulltext_py = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size()));

@@ -560,7 +560,9 @@ void TabManager::openTabFile(const QString& filename)
     editor->filepath = fileinfo.absoluteFilePath();
 #ifdef ENABLE_PYTHON
     if (suffix == QStringLiteral("py")) {
-      parent->clearPythonUntrustStateForPath(editor->filepath.toStdString());
+      const QByteArray pathUtf8 = editor->filepath.toUtf8();
+      parent->clearPythonUntrustStateForPath(
+        std::string(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size())));
     }
 #endif
     editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
