@@ -199,6 +199,75 @@ std::string SHA256HashString(std::string aString)
   return digest_base64;
 }
 
+namespace {
+
+QString pythonTrustSettingKeyNew(const std::string& pathUtf8)
+{
+  const QByteArray pathUtf8Bytes(pathUtf8.data(), static_cast<int>(pathUtf8.size()));
+  return QStringLiteral("python_hash/%1").arg(QString::fromUtf8(pathUtf8Bytes.toPercentEncoding()));
+}
+
+// Legacy (pre percent-encoded key): "python_hash/<local8-bit path>" (trust file id from toLocal8Bit()).
+QString pythonTrustSettingKeyLegacyLocal(const std::string& pathUtf8)
+{
+  const QString qpath =
+    QString::fromUtf8(QByteArray(pathUtf8.data(), static_cast<int>(pathUtf8.size())));
+  return QStringLiteral("python_hash/") + QString::fromLocal8Bit(qpath.toLocal8Bit());
+}
+
+// Legacy: "python_hash/<raw UTF-8 path>" (brief use of toStdString()/snprintf before UTF-8 key change).
+QString pythonTrustSettingKeyLegacyRawUtf8(const std::string& pathUtf8)
+{
+  return QStringLiteral("python_hash/") +
+         QString::fromUtf8(QByteArray(pathUtf8.data(), static_cast<int>(pathUtf8.size())));
+}
+
+QString readPythonTrustHash(QSettingsCached& settings, const std::string& pathUtf8)
+{
+  const QString kNew = pythonTrustSettingKeyNew(pathUtf8);
+  if (settings.contains(kNew)) {
+    return settings.value(kNew).toString();
+  }
+  const QString kLegLoc = pythonTrustSettingKeyLegacyLocal(pathUtf8);
+  if (settings.contains(kLegLoc)) {
+    const QString v = settings.value(kLegLoc).toString();
+    settings.setValue(kNew, v);
+    settings.remove(kLegLoc);
+    return v;
+  }
+  const QString kLegRaw = pythonTrustSettingKeyLegacyRawUtf8(pathUtf8);
+  if (kLegRaw != kNew && settings.contains(kLegRaw)) {
+    const QString v = settings.value(kLegRaw).toString();
+    settings.setValue(kNew, v);
+    settings.remove(kLegRaw);
+    return v;
+  }
+  return {};
+}
+
+void writePythonTrustHash(QSettingsCached& settings, const std::string& pathUtf8,
+                          const std::string& hash)
+{
+  const QString kNew = pythonTrustSettingKeyNew(pathUtf8);
+  const QString v = QString::fromStdString(hash);
+  settings.setValue(kNew, v);
+  settings.remove(pythonTrustSettingKeyLegacyLocal(pathUtf8));
+  const QString kLegRaw = pythonTrustSettingKeyLegacyRawUtf8(pathUtf8);
+  if (kLegRaw != kNew) {
+    settings.remove(kLegRaw);
+  }
+}
+
+bool settingsHasPythonTrustEntry(QSettingsCached& settings, const std::string& pathUtf8)
+{
+  if (settings.contains(pythonTrustSettingKeyNew(pathUtf8))) return true;
+  if (settings.contains(pythonTrustSettingKeyLegacyLocal(pathUtf8))) return true;
+  const QString kLegRaw = pythonTrustSettingKeyLegacyRawUtf8(pathUtf8);
+  return kLegRaw != pythonTrustSettingKeyNew(pathUtf8) && settings.contains(kLegRaw);
+}
+
+}  // namespace
+
 static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   QFile *fh = (QFile *)stream;
@@ -1576,9 +1645,7 @@ void MainWindow::on_fileActionPythonTrustCurrent_triggered()
   QSettingsCached settings;
   const QByteArray pathUtf8 = activeEditor->filepath.toUtf8();
   const std::string fpath(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size()));
-  const QString settingKey =
-    QStringLiteral("python_hash/%1").arg(QString::fromUtf8(pathUtf8.toPercentEncoding()));
-  settings.setValue(settingKey, QString::fromStdString(SHA256HashString(content)));
+  writePythonTrustHash(settings, fpath, SHA256HashString(content));
   trusted_edit_document_name = fpath;
   QMessageBox::information(this, _("Python"), _("This document is now trusted for Python execution."));
 #endif
@@ -1976,14 +2043,10 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
   std::string act_hash, ref_hash;
   act_hash = SHA256HashString(content);
 
-  const QByteArray pathUtf8(file.data(), static_cast<int>(file.size()));
-  const QString settingKey =
-    QStringLiteral("python_hash/%1").arg(QString::fromUtf8(pathUtf8.toPercentEncoding()));
-
   if (file == this->untrusted_edit_document_name) return false;
 
   if (file == this->trusted_edit_document_name) {
-    settings.setValue(settingKey, QString::fromStdString(act_hash));
+    writePythonTrustHash(settings, file, act_hash);
     return true;
   }
 
@@ -1998,8 +2061,8 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
     }
   */
 
-  if (settings.contains(settingKey)) {
-    ref_hash = settings.value(settingKey).toString().toStdString();
+  if (settingsHasPythonTrustEntry(settings, file)) {
+    ref_hash = readPythonTrustHash(settings, file).toStdString();
   }
 
   if (act_hash == ref_hash) {
@@ -2017,7 +2080,7 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
   }
   if (ret == QMessageBox::Yes) {
     this->trusted_edit_document_name = file;
-    settings.setValue(settingKey, QString::fromStdString(act_hash));
+    writePythonTrustHash(settings, file, act_hash);
     return true;
   }
 
