@@ -2139,10 +2139,12 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
 
   // Use this editor's text, not lastCompiledDoc (only updated in parseTopLevelDocument()).
   auto fulltext_py = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size()));
-  SourceFile *sourceFile;
+  SourceFile *sourceFile = nullptr;
 #ifdef ENABLE_PYTHON
   if (editor->language == LANG_PYTHON && !trust_python_file(trustPathId, fulltext_py)) {
-    LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
+    LOG(message_group::Warning, Location::NONE, "", "Python file is not trusted");
+    editor->parameterWidget->setEnabled(false);
+    return {};
   } else if (editor->language == LANG_PYTHON) {
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
