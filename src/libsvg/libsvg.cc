@@ -44,6 +44,8 @@ namespace libsvg {
 #define SVG_DEBUG 0
 
 static bool in_defs = false;
+static bool in_style = false;
+static std::map<std::string, std::string> styleDefs;
 static shapes_list_t stack;
 static shapes_list_t *shape_list;
 
@@ -63,6 +65,16 @@ static std::string dump_stack()
 }
 #endif  // if SVG_DEBUG
 
+std::vector<std::string> split(std::string str, char c)
+{
+  std::stringstream ss(str);
+  std::string word;
+  std::vector<std::string> words;
+
+  while (std::getline(ss, word, c)) words.push_back(word);
+  return words;
+}
+
 attr_map_t read_attributes(xmlTextReaderPtr reader)
 {
   attr_map_t attrs;
@@ -75,7 +87,33 @@ attr_map_t read_attributes(xmlTextReaderPtr reader)
   }
   return attrs;
 }
+std::map<std::string, std::string> svgParseStyle(const std::string& input)
+{
+  std::map<std::string, std::string> styles;
+  size_t pos = 0;
+  while (true) {
+    size_t start_sel = input.find_first_not_of(" \t\n", pos);
+    if (start_sel == std::string::npos) break;
 
+    size_t open_brace = input.find('{', start_sel);
+    if (open_brace == std::string::npos) break;
+
+    size_t close_brace = input.find('}', open_brace);
+    if (close_brace == std::string::npos) break;
+
+    std::string selector = input.substr(start_sel, open_brace - start_sel);
+    std::string body = input.substr(open_brace + 1, close_brace - open_brace - 1);
+
+    // trim (optional)
+    while (!selector.empty() && isspace(selector.back())) selector.pop_back();
+
+    if (selector[0] == '.') selector = selector.substr(1);
+    styles[selector] = body;
+
+    pos = close_brace + 1;
+  }
+  return styles;
+}
 void processNode(xmlTextReaderPtr reader, shapes_defs_list_t *defs_lookup_list,
                  shapes_list_t *temp_defs_storage, void *context)
 {
@@ -95,6 +133,9 @@ void processNode(xmlTextReaderPtr reader, shapes_defs_list_t *defs_lookup_list,
       if (std::string("defs") == name) {
         in_defs = true;
       }
+      if (std::string("style") == name) {
+        in_style = true;
+      }
 
       auto s = std::shared_ptr<shape>(shape::create_from_name(name));
       if (s) {
@@ -102,6 +143,35 @@ void processNode(xmlTextReaderPtr reader, shapes_defs_list_t *defs_lookup_list,
         if (!stack.empty()) {
           stack.back()->add_child(s.get());
         }
+        // apply class
+        std::string cls = attrs["class"];
+        if (cls.size() > 0) {
+          if (styleDefs.count(cls) > 0) {
+            auto items = split(styleDefs[cls], ';');
+            for (const auto& item : items) {
+              std::vector<std::string> word = split(item, ':');
+              if (word.size() == 2) {
+                attrs[word[0]] = word[1];
+              }
+            }
+          }
+        }
+
+        // apply style
+        std::string style = attrs["style"];
+        if (style.size() > 0) {
+          auto items = split(style, ';');
+          for (const auto& item : items) {
+            std::vector<std::string> word = split(item, ':');
+            if (word.size() == 2) {
+              attrs[word[0]] = word[1];
+            }
+          }
+        }
+
+        s->fill = attrs["fill"];
+        s->stroke = attrs["stroke"];
+
         s->set_attrs(attrs, context);
         if (s->is_container()) {
           stack.push_back(s);
@@ -136,6 +206,9 @@ void processNode(xmlTextReaderPtr reader, shapes_defs_list_t *defs_lookup_list,
     if (std::string("defs") == name) {
       in_defs = false;
     }
+    if (std::string("style") == name) {
+      in_style = false;
+    }
 
     if (std::string("g") == name || std::string("svg") == name || std::string("tspan") == name ||
         std::string("text") == name) {
@@ -148,13 +221,17 @@ void processNode(xmlTextReaderPtr reader, shapes_defs_list_t *defs_lookup_list,
   } break;
   case XML_READER_TYPE_TEXT: {
     attr_map_t attrs;
-    attrs["text"] = reinterpret_cast<const char *>(value);
+    const char *txt = reinterpret_cast<const char *>(value);
+    attrs["text"] = txt;
     auto s = std::shared_ptr<shape>(shape::create_from_name("data"));
     if (!stack.empty()) {
       stack.back()->add_child(s.get());
     }
     s->set_attrs(attrs, context);
-    if (!in_defs) {
+    if (in_style) {
+      auto newStyles = svgParseStyle(txt);
+      styleDefs.insert(newStyles.begin(), newStyles.end());
+    } else if (!in_defs) {
       shape_list->push_back(s);
     } else {
       temp_defs_storage->push_back(s);
