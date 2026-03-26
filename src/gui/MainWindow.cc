@@ -2133,14 +2133,15 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
   auto fulltext = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size())) +
                   "\n\x03\n" + commandline_commands;
   const QByteArray pathUtf8 = editor->filepath.toUtf8();
-  const QByteArray fnameba = pathUtf8;
+  const QByteArray pathNative = editor->filepath.toLocal8Bit();
+  const std::string trustPathId(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size()));
+  const char *fnameNative = editor->filepath.isEmpty() ? "" : pathNative.constData();
 
   // Use this editor's text, not lastCompiledDoc (only updated in parseTopLevelDocument()).
   auto fulltext_py = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size()));
-  const char *fname = editor->filepath.isEmpty() ? "" : fnameba.constData();
   SourceFile *sourceFile;
 #ifdef ENABLE_PYTHON
-  if (editor->language == LANG_PYTHON && !trust_python_file(std::string(fname), fulltext_py)) {
+  if (editor->language == LANG_PYTHON && !trust_python_file(trustPathId, fulltext_py)) {
     LOG(message_group::Warning, Location::NONE, "", "Python is not enabled");
   } else if (editor->language == LANG_PYTHON) {
     const auto& venv = venvBinDirFromSettings();
@@ -2152,7 +2153,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
       .camera = qglview->cam,
     };
 
-    initPython(venv, fnameba.constData(), &r);
+    initPython(venv, fnameNative, &r);
     this->activeEditor->resetHighlighting();
     this->activeEditor->parameterWidget->setEnabled(false);
     do {
@@ -2196,13 +2197,13 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
       viewportControlWidget->cameraChanged();
       renderVarsSet = nullptr;
     }
-    sourceFile = parse(sourceFile, "", fname, fname, false) ? sourceFile : nullptr;
+    sourceFile = parse(sourceFile, "", fnameNative, fnameNative, false) ? sourceFile : nullptr;
 
   } else  // python not enabled
 #endif    // ifdef ENABLE_PYTHON
   {
 
-    sourceFile = parse(sourceFile, fulltext, fname, fname, false) ? sourceFile : nullptr;
+    sourceFile = parse(sourceFile, fulltext, fnameNative, fnameNative, false) ? sourceFile : nullptr;
 
     editor->resetHighlighting();
     if (sourceFile) {
