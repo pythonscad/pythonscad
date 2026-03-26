@@ -1391,10 +1391,10 @@
   </action>
   <action name="fileActionPythonTrustCurrent">
    <property name="text">
-    <string>Trust Current Document…</string>
+    <string>Trust Current Document...</string>
    </property>
    <property name="toolTip">
-    <string>Mark the active saved .py document as trusted (same as choosing Yes in the trust prompt)</string>
+    <string>Mark the active saved Python document as trusted (same as choosing Yes in the trust prompt)</string>
    </property>
   </action>
   <action name="fileActionPythonRevoke">
