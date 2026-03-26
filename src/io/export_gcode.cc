@@ -173,7 +173,7 @@ static void append_gcode(boost::property_tree::ptree pt, const Polygon2d& poly, 
   for (const auto& o : poly.outlines()) {  // Add outlines
     const double laserpower = color_to_parm(pt, o.color, 0, *options);
     const double feedrate = color_to_parm(pt, o.color, 1, *options);
-    PoweredOutline po = {o, laserpower, feedrate, outline_area(o)};
+    PoweredOutline po = {o, laserpower, feedrate, abs(outline_area(o))};
     po.o.vertices.push_back(po.o.vertices[0]);  // close Polygon
     outlines.push_back(po);
   }

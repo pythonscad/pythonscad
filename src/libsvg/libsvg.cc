@@ -35,6 +35,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <sstream>
+#include <boost/algorithm/string.hpp>
 
 #include "libsvg/shape.h"
 #include "libsvg/use.h"
@@ -107,7 +109,7 @@ std::map<std::string, std::string> svgParseStyle(const std::string& input)
     // trim (optional)
     while (!selector.empty() && isspace(selector.back())) selector.pop_back();
 
-    if (selector[0] == '.') selector = selector.substr(1);
+    if (!selector.empty() && selector[0] == '.') selector = selector.substr(1);
     styles[selector] = body;
 
     pos = close_brace + 1;
@@ -136,7 +138,6 @@ void processNode(xmlTextReaderPtr reader, shapes_defs_list_t *defs_lookup_list,
       if (std::string("style") == name) {
         in_style = true;
       }
-
       auto s = std::shared_ptr<shape>(shape::create_from_name(name));
       if (s) {
         attr_map_t attrs = read_attributes(reader);
@@ -144,14 +145,19 @@ void processNode(xmlTextReaderPtr reader, shapes_defs_list_t *defs_lookup_list,
           stack.back()->add_child(s.get());
         }
         // apply class
-        std::string cls = attrs["class"];
-        if (cls.size() > 0) {
+        std::string classes_str = attrs["class"];
+        auto classes = split(classes_str, ' ');
+        for (const auto& cls : classes) {
           if (styleDefs.count(cls) > 0) {
             auto items = split(styleDefs[cls], ';');
             for (const auto& item : items) {
               std::vector<std::string> word = split(item, ':');
               if (word.size() == 2) {
-                attrs[word[0]] = word[1];
+                std::string key = word[0];
+                std::string value = word[1];
+                boost::algorithm::trim(key);
+                boost::algorithm::trim(value);
+                attrs[key] = value;
               }
             }
           }
@@ -164,7 +170,11 @@ void processNode(xmlTextReaderPtr reader, shapes_defs_list_t *defs_lookup_list,
           for (const auto& item : items) {
             std::vector<std::string> word = split(item, ':');
             if (word.size() == 2) {
-              attrs[word[0]] = word[1];
+              std::string key = word[0];
+              std::string value = word[1];
+              boost::algorithm::trim(key);
+              boost::algorithm::trim(value);
+              attrs[key] = value;
             }
           }
         }
@@ -251,6 +261,8 @@ int streamFile(const char *filename, void *context)
   shapes_defs_list_t defs_lookup_list;
 
   in_defs = false;
+  in_style = false;
+  styleDefs.clear();
   reader = xmlNewTextReaderFilename(filename);
   xmlTextReaderSetParserProp(reader, XML_PARSER_SUBST_ENTITIES, 1);
   if (reader != nullptr) {
