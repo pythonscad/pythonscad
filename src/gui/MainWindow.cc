@@ -215,6 +215,15 @@ QString pythonTrustSettingKeyLegacyLocal(const std::string& pathUtf8)
   return QStringLiteral("python_hash/") + QString::fromLocal8Bit(qpath.toLocal8Bit());
 }
 
+// Legacy: key suffix was local 8-bit bytes from snprintf, but some builds passed char[] into
+// setValue(QString) via QString(const char*), which decodes as UTF-8 (not fromLocal8Bit).
+QString pythonTrustSettingKeyLegacyCharCtorUtf8(const std::string& pathUtf8)
+{
+  const QString qpath =
+    QString::fromUtf8(QByteArray(pathUtf8.data(), static_cast<int>(pathUtf8.size())));
+  return QStringLiteral("python_hash/") + QString::fromUtf8(qpath.toLocal8Bit());
+}
+
 // Legacy: "python_hash/<raw UTF-8 path>" (brief use of toStdString()/snprintf before UTF-8 key change).
 QString pythonTrustSettingKeyLegacyRawUtf8(const std::string& pathUtf8)
 {
@@ -235,8 +244,15 @@ QString readPythonTrustHash(QSettingsCached& settings, const std::string& pathUt
     settings.remove(kLegLoc);
     return v;
   }
+  const QString kLegCharUtf8 = pythonTrustSettingKeyLegacyCharCtorUtf8(pathUtf8);
+  if (kLegCharUtf8 != kNew && kLegCharUtf8 != kLegLoc && settings.contains(kLegCharUtf8)) {
+    const QString v = settings.value(kLegCharUtf8).toString();
+    settings.setValue(kNew, v);
+    settings.remove(kLegCharUtf8);
+    return v;
+  }
   const QString kLegRaw = pythonTrustSettingKeyLegacyRawUtf8(pathUtf8);
-  if (kLegRaw != kNew && settings.contains(kLegRaw)) {
+  if (kLegRaw != kNew && kLegRaw != kLegLoc && kLegRaw != kLegCharUtf8 && settings.contains(kLegRaw)) {
     const QString v = settings.value(kLegRaw).toString();
     settings.setValue(kNew, v);
     settings.remove(kLegRaw);
@@ -252,6 +268,10 @@ void writePythonTrustHash(QSettingsCached& settings, const std::string& pathUtf8
   const QString v = QString::fromStdString(hash);
   settings.setValue(kNew, v);
   settings.remove(pythonTrustSettingKeyLegacyLocal(pathUtf8));
+  const QString kLegCharUtf8 = pythonTrustSettingKeyLegacyCharCtorUtf8(pathUtf8);
+  if (kLegCharUtf8 != kNew && kLegCharUtf8 != pythonTrustSettingKeyLegacyLocal(pathUtf8)) {
+    settings.remove(kLegCharUtf8);
+  }
   const QString kLegRaw = pythonTrustSettingKeyLegacyRawUtf8(pathUtf8);
   if (kLegRaw != kNew) {
     settings.remove(kLegRaw);
@@ -261,7 +281,12 @@ void writePythonTrustHash(QSettingsCached& settings, const std::string& pathUtf8
 bool settingsHasPythonTrustEntry(QSettingsCached& settings, const std::string& pathUtf8)
 {
   if (settings.contains(pythonTrustSettingKeyNew(pathUtf8))) return true;
-  if (settings.contains(pythonTrustSettingKeyLegacyLocal(pathUtf8))) return true;
+  const QString kLegLoc = pythonTrustSettingKeyLegacyLocal(pathUtf8);
+  if (settings.contains(kLegLoc)) return true;
+  const QString kLegCharUtf8 = pythonTrustSettingKeyLegacyCharCtorUtf8(pathUtf8);
+  if (kLegCharUtf8 != pythonTrustSettingKeyNew(pathUtf8) && kLegCharUtf8 != kLegLoc &&
+      settings.contains(kLegCharUtf8))
+    return true;
   const QString kLegRaw = pythonTrustSettingKeyLegacyRawUtf8(pathUtf8);
   return kLegRaw != pythonTrustSettingKeyNew(pathUtf8) && settings.contains(kLegRaw);
 }
