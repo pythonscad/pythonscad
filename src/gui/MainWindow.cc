@@ -1664,12 +1664,12 @@ void MainWindow::on_fileActionPythonTrustCurrent_triggered()
       _("Untitled buffers are already trusted. Save to a file if you need a persistent trust entry."));
     return;
   }
-  untrusted_edit_document_name.clear();
   const QByteArray docUtf8 = activeEditor->toPlainText().toUtf8();
   const std::string content(docUtf8.constData(), static_cast<size_t>(docUtf8.size()));
   QSettingsCached settings;
   const QByteArray pathUtf8 = activeEditor->filepath.toUtf8();
   const std::string fpath(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size()));
+  clearPythonUntrustStateForPath(fpath);
   writePythonTrustHash(settings, fpath, SHA256HashString(content));
   trusted_edit_document_name = fpath;
   QMessageBox::information(this, _("Python"), _("This document is now trusted for Python execution."));
