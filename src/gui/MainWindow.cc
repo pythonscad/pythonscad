@@ -278,19 +278,6 @@ void writePythonTrustHash(QSettingsCached& settings, const std::string& pathUtf8
   }
 }
 
-bool settingsHasPythonTrustEntry(QSettingsCached& settings, const std::string& pathUtf8)
-{
-  if (settings.contains(pythonTrustSettingKeyNew(pathUtf8))) return true;
-  const QString kLegLoc = pythonTrustSettingKeyLegacyLocal(pathUtf8);
-  if (settings.contains(kLegLoc)) return true;
-  const QString kLegCharUtf8 = pythonTrustSettingKeyLegacyCharCtorUtf8(pathUtf8);
-  if (kLegCharUtf8 != pythonTrustSettingKeyNew(pathUtf8) && kLegCharUtf8 != kLegLoc &&
-      settings.contains(kLegCharUtf8))
-    return true;
-  const QString kLegRaw = pythonTrustSettingKeyLegacyRawUtf8(pathUtf8);
-  return kLegRaw != pythonTrustSettingKeyNew(pathUtf8) && settings.contains(kLegRaw);
-}
-
 }  // namespace
 
 static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *stream)
@@ -2086,9 +2073,7 @@ bool MainWindow::trust_python_file(const std::string& file, const std::string& c
     }
   */
 
-  if (settingsHasPythonTrustEntry(settings, file)) {
-    ref_hash = readPythonTrustHash(settings, file).toStdString();
-  }
+  ref_hash = readPythonTrustHash(settings, file).toStdString();
 
   if (act_hash == ref_hash) {
     this->trusted_edit_document_name = file;
