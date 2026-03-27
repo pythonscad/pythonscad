@@ -2128,6 +2128,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
 #ifdef ENABLE_PYTHON
   if (editor->language == LANG_PYTHON && !trust_python_file(trustPathId, fulltext_py)) {
     LOG(message_group::Warning, Location::NONE, "", "Python file is not trusted");
+    editor->resetHighlighting();
     editor->parameterWidget->setEnabled(false);
     return {};
   } else if (editor->language == LANG_PYTHON) {
