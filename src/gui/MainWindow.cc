@@ -2156,8 +2156,8 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
     };
 
     initPython(venv, fnameNative, &r);
-    this->activeEditor->resetHighlighting();
-    this->activeEditor->parameterWidget->setEnabled(false);
+    editor->resetHighlighting();
+    editor->parameterWidget->setEnabled(false);
     do {
       if (this->rootFile == nullptr) break;
       int pos = -1, pos1;
@@ -2175,11 +2175,11 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
       auto error = evaluatePython(par_text, true);  // run dummy
       this->rootFile->scope->assignments = customizer_parameters;
       CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');  // add annotations
-      this->activeEditor->parameterWidget->setParameters(this->rootFile.get(),
-                                                         "\n");                    // set widgets values
-      this->activeEditor->parameterWidget->applyParameters(this->rootFile.get());  // use widget values
-      this->activeEditor->parameterWidget->setEnabled(true);
-      this->activeEditor->setIndicator(this->rootFile->indicatorData);
+      editor->parameterWidget->setParameters(this->rootFile.get(),
+                                             "\n");                    // set widgets values
+      editor->parameterWidget->applyParameters(this->rootFile.get());  // use widget values
+      editor->parameterWidget->setEnabled(true);
+      editor->setIndicator(this->rootFile->indicatorData);
     } while (0);
 
     if (this->rootFile != nullptr) customizer_parameters_finished = this->rootFile->scope->assignments;
