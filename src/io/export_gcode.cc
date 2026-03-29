@@ -225,7 +225,6 @@ static void append_gcode(boost::property_tree::ptree pt, const Polygon2d& poly, 
           bestrev = true;
         }
       }
-      printf("swap %d - %d rev=%d\n", it1 - outlines.begin(), bestiter - outlines.begin(), bestrev);
       if (bestrev) {
         lastpos = (*bestiter).o.vertices[0];
         std::reverse((*bestiter).o.vertices.begin(), (*bestiter).o.vertices.end());
