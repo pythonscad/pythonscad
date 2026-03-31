@@ -5,7 +5,7 @@ Generate a 3D surface from a heightmap data file or image.
 **Syntax:**
 
 ```python
-surface(file, center=False, convexity=2, invert=False)
+surface(file, center=False, convexity=2, invert=False, color=False)
 ```
 
 **Parameters:**

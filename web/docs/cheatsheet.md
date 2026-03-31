@@ -439,7 +439,7 @@
 
       <div class="func"><code><a href="../reference/variables/#time">time</a> / <a href="../reference/variables/#phi">phi</a></code></div>
       <div>Animation step and phi = 2 * PI * time</div>
-      <div><code>cube(5).rotate([0, 0, phi * 360]).show()</code></div>
+      <div><code>cube(5).rotate([0, 0, time * 360]).show()</code></div>
   </div>
 </div>
 

@@ -8,7 +8,7 @@ Import geometry from a file. This is the PythonSCAD equivalent of OpenSCAD's `im
 
 ```python
 osimport(file, layer="", convexity=2, origin=None, scale=None,
-         width=0, height=0, center=False, dpi=96, id="", stroke="",
+         width=0, height=0, center=False, dpi=96, id="", stroke=False,
          fn=0, fa=0, fs=0)
 ```
 
@@ -26,8 +26,8 @@ osimport(file, layer="", convexity=2, origin=None, scale=None,
 | `center` | bool | `False` | Center the imported geometry |
 | `dpi` | float | `96` | DPI for SVG imports |
 | `id` | string | `""` | Element ID (for SVG) |
-| `stroke` | string | `""` | Stroke handling (for SVG) |
-| `fn`, `fa`, `fs` | float | `0` | Curve discretization |
+| `stroke` | bool | `False` | Include stroke paths (for SVG) |
+| `fn`, `fa`, `fs` | float | global | Curve discretization; defaults to the global `fn`/`fa`/`fs` values |
 
 **Supported formats:** STL, OFF, AMF, 3MF (3D); DXF, SVG (2D)
 

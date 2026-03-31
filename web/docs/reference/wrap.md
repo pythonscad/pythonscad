@@ -5,8 +5,8 @@ Wrap a flat object around a cylinder. This transforms a planar shape so that it 
 **Syntax:**
 
 ```python
-wrap(obj, target, r=None, d=None, fn=0, fa=0, fs=0)
-obj.wrap(target, r=None, d=None, fn=0, fa=0, fs=0)
+wrap(obj, target=None, r=None, d=None, fn=0, fa=0, fs=0)
+obj.wrap(target=None, r=None, d=None, fn=0, fa=0, fs=0)
 ```
 
 **Parameters:**
@@ -14,10 +14,10 @@ obj.wrap(target, r=None, d=None, fn=0, fa=0, fs=0)
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `obj` | solid | — | The flat object to wrap |
-| `target` | solid | — | The target cylinder to wrap around |
+| `target` | solid | `None` | The target cylinder to wrap around. Optional if `r` or `d` is given |
 | `r` | float | `None` | Cylinder radius (alternative to providing a target) |
 | `d` | float | `None` | Cylinder diameter |
-| `fn`, `fa`, `fs` | float | `0` | Curve discretization parameters |
+| `fn`, `fa`, `fs` | float | global | Curve discretization; defaults to the global `fn`/`fa`/`fs` values |
 
 **Examples:**
 

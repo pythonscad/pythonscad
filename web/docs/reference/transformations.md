@@ -272,8 +272,8 @@ Offset a 2D shape inward or outward.
 **Syntax:**
 
 ```python
-offset(obj, r=None, delta=None, chamfer=False)
-obj.offset(r=None, delta=None, chamfer=False)
+offset(obj, r=None, delta=None, chamfer=False, fn=0, fa=0, fs=0)
+obj.offset(r=None, delta=None, chamfer=False, fn=0, fa=0, fs=0)
 ```
 
 **Parameters:**
@@ -281,9 +281,12 @@ obj.offset(r=None, delta=None, chamfer=False)
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `obj` | 2D solid | — | The 2D shape to offset |
-| `r` | float | — | Offset with rounded corners (positive = outward, negative = inward) |
-| `delta` | float | — | Offset with sharp corners |
+| `r` | float | `None` | Offset with rounded corners (positive = outward, negative = inward) |
+| `delta` | float | `None` | Offset with sharp corners |
 | `chamfer` | bool | `False` | Use chamfered corners instead of sharp (only with `delta`) |
+| `fn`, `fa`, `fs` | float | global | Curve discretization; defaults to the global `fn`/`fa`/`fs` values |
+
+Exactly one of `r` or `delta` should be provided.
 
 **Examples:**
 
