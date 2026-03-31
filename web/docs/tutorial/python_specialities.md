@@ -43,6 +43,7 @@ It's possible to store arbitrary data along with solids
 
 Soids are easily iteratable.
 
+=== "Python"
     ```py
     from openscad import *
 
@@ -51,10 +52,10 @@ Soids are easily iteratable.
     for ch in u:
         # access it
         ch.show() # access it
-    
+
         #or replace it
         ch.value=cylinder(r=1,h=20)
-    
+
     ```
 
 ## Object handles
