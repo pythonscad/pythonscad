@@ -872,25 +872,23 @@ std::string PolylineNode::toString() const
 
 std::unique_ptr<const Geometry> PolylineNode::createGeometry() const
 {
-  int has_2 = 0, has_3 = 0;
+  bool is_3d = false;
   for (const auto& pt : points) {
-    if (pt.size() == 2) has_2++;
-    if (pt.size() == 3) has_3++;
+    if (pt[2] != 0) is_3d = true;
   }
-  if (has_2 && !has_3) {
+  if (!is_3d) {
     auto p = std::make_unique<Polygon2d>();
     Outline2d outline;
     std::vector<size_t> path;
     for (const auto& pt : points) outline.vertices.push_back(pt.head<2>());
     outline.color = *OpenSCAD::parse_color("#ff0000ff");
     p->addPolyline(outline);
-  } else if (has_3 && !has_2) {
+    return p;
+  } else {
     auto p = std::make_unique<PolySet>(3, /*convex*/ true);
     p->polylines.push_back(points);
     return p;
   }
-  LOG(message_group::Warning, "Polyline vertices must either have 2 or 3 points.");
-  return PolySet::createEmpty();
 }
 
 std::string SplineNode::toString() const
