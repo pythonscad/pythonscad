@@ -3576,14 +3576,18 @@ void MainWindow::setProjectionType(ProjectionType mode)
   qglview->update();
 }
 
-void MainWindow::on_viewActionPerspective_triggered()
+void MainWindow::on_viewActionPerspective_toggled(bool checked)
 {
-  setProjectionType(ProjectionType::PERSPECTIVE);
+  if (checked) {
+    setProjectionType(ProjectionType::PERSPECTIVE);
+  }
 }
 
-void MainWindow::on_viewActionOrthogonal_triggered()
+void MainWindow::on_viewActionOrthogonal_toggled(bool checked)
 {
-  setProjectionType(ProjectionType::ORTHOGONAL);
+  if (checked) {
+    setProjectionType(ProjectionType::ORTHOGONAL);
+  }
 }
 
 void MainWindow::viewTogglePerspective()
