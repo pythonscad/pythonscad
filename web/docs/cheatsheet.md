@@ -129,7 +129,7 @@
 
       <div class="func"><code><a href="../reference/align/#align">align</a>(obj, refmat, objmat, flip)</code></div>
       <div>Align object to a handle / reference matrix</div>
-      <div><code>cyl.align(c.right_side, cyl.origin).show()</code></div>
+      <div><code>cyl.align(cyl.right_center, cyl.origin).show()</code></div>
 
       <div class="func"><code><a href="../reference/roof/#roof">roof</a>(obj, method)</code></div>
       <div>Create a roof from a 2D polygon (experimental)</div>
