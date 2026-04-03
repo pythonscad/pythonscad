@@ -303,6 +303,15 @@ QString resolveOpenMode(const std::string& overrideMode)
   return QString::fromStdString(Settings::Settings::singleInstanceOpenMode.value());
 }
 
+void applyLocalizationAndGuiThemeForEarlyDialogs(OpenSCADApp& application)
+{
+  QSettingsCached s;
+  if (s.value("advanced/localization", true).toBool()) {
+    localization_init();
+  }
+  application.setGuiTheme(GlobalPreferences::inst()->getValue("advanced/guiTheme").toString());
+}
+
 bool lockHostnameLooksLocal(const QString& hostname)
 {
   if (hostname.isEmpty()) {
@@ -676,20 +685,14 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 
   parser_init();
 
+  applyLocalizationAndGuiThemeForEarlyDialogs(app);
+
   const QString openMode = resolveOpenMode(open_in_override);
   const QString cwd = QString::fromStdString(original_path.generic_string());
 
   QLockFile lock(lockFilePath());
   lock.setStaleLockTime(0);
   if (!lock.tryLock()) {
-    {
-      QSettingsCached earlySettings;
-      if (earlySettings.value("advanced/localization", true).toBool()) {
-        localization_init();
-      }
-      app.setGuiTheme(GlobalPreferences::inst()->getValue("advanced/guiTheme").toString());
-    }
-
     const QStringList ipcFiles = [&]() {
       QStringList files;
       for (const auto& infile : inputFiles) {
@@ -735,9 +738,6 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   startIpcServer(&ipcServer);
 
   QSettingsCached settings;
-  if (settings.value("advanced/localization", true).toBool()) {
-    localization_init();
-  }
   if (reset_window_settings) {
     const auto keys = std::array<std::string, 20>{
       "editor/fontfamily",
@@ -771,7 +771,6 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 #endif
 
   registerDefaultIcon(app.applicationFilePath());
-  app.setGuiTheme(GlobalPreferences::inst()->getValue("advanced/guiTheme").toString());
 
 #ifdef OPENSCAD_UPDATER
   AutoUpdater *updater = new SparkleAutoUpdater;
