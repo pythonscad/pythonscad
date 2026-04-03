@@ -35,6 +35,7 @@
 #include <QFileInfo>
 #include <QFutureWatcher>
 #include <QGuiApplication>
+#include <QHostInfo>
 #include <QIcon>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -53,6 +54,7 @@
 #include <QSaveFile>
 #include <QSocketNotifier>
 #include <QStringList>
+#include <QThread>
 #include <QTimer>
 #include <QStyleHints>
 #include <QVector>
@@ -68,9 +70,13 @@
 #include <vector>
 
 #ifdef Q_OS_UNIX
+#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
+#endif
+#ifdef Q_OS_WIN
+#include <windows.h>
 #endif
 
 #include "Feature.h"
@@ -295,6 +301,62 @@ QString resolveOpenMode(const std::string& overrideMode)
     return QString::fromStdString(overrideMode);
   }
   return QString::fromStdString(Settings::Settings::singleInstanceOpenMode.value());
+}
+
+bool lockHostnameLooksLocal(const QString& hostname)
+{
+  if (hostname.isEmpty()) {
+    return true;
+  }
+  if (hostname.compare(QStringLiteral("localhost"), Qt::CaseInsensitive) == 0) {
+    return true;
+  }
+  return hostname.compare(QHostInfo::localHostName(), Qt::CaseInsensitive) == 0;
+}
+
+bool terminateProcessIdForSingleInstance(qint64 pid)
+{
+  if (pid <= 0) {
+    return true;
+  }
+#ifdef Q_OS_UNIX
+  const auto p = static_cast<pid_t>(pid);
+  if (kill(p, 0) == -1 && errno == ESRCH) {
+    return true;
+  }
+  return kill(p, SIGTERM) == 0;
+#elif defined(Q_OS_WIN)
+  const HANDLE h = OpenProcess(PROCESS_TERMINATE, FALSE, static_cast<DWORD>(pid));
+  if (!h) {
+    return false;
+  }
+  const BOOL ok = TerminateProcess(h, 1);
+  CloseHandle(h);
+  return ok != FALSE;
+#else
+  (void)pid;
+  return false;
+#endif
+}
+
+bool tryAcquirePrimaryLockAfterCloseOtherRequest(QLockFile& lock)
+{
+  qint64 pid = 0;
+  QString hostname, appname;
+  const bool hasInfo = lock.getLockInfo(&pid, &hostname, &appname);
+  if (hasInfo && pid > 0 && lockHostnameLooksLocal(hostname)) {
+    (void)terminateProcessIdForSingleInstance(pid);
+    for (int i = 0; i < 50; ++i) {
+      QThread::msleep(100);
+      lock.removeStaleLockFile();
+      if (lock.tryLock()) {
+        return true;
+      }
+    }
+    return false;
+  }
+  lock.removeStaleLockFile();
+  return lock.tryLock();
 }
 
 void focusWindow(MainWindow *window)
@@ -620,70 +682,51 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   QLockFile lock(lockFilePath());
   lock.setStaleLockTime(0);
   if (!lock.tryLock()) {
-    QMessageBox lockBox;
-    lockBox.setIcon(QMessageBox::Warning);
-    lockBox.setWindowTitle(_("PythonSCAD"));
-    lockBox.setText(_("Could not acquire the application lock."));
-    lockBox.setInformativeText(
-      _("Another instance may be running, or a stale lock can remain after a crash.\n\n"
-        "Use the running instance to open or focus files, remove the lock file to start "
-        "a new primary instance, or exit."));
-    auto *useRunningButton = lockBox.addButton(_("Use running instance"), QMessageBox::AcceptRole);
-    auto *removeLockButton = lockBox.addButton(_("Remove lock file"), QMessageBox::ActionRole);
-    auto *exitLockButton = lockBox.addButton(_("Exit"), QMessageBox::RejectRole);
-    lockBox.setDefaultButton(useRunningButton);
-    lockBox.exec();
-
-    auto *clicked = lockBox.clickedButton();
-    // Closing with Esc or the window chrome yields nullptr; do not fall through to IPC.
-    if (!clicked || clicked == exitLockButton) {
-      return 1;
+    {
+      QSettingsCached earlySettings;
+      if (earlySettings.value("advanced/localization", true).toBool()) {
+        localization_init();
+      }
+      app.setGuiTheme(GlobalPreferences::inst()->getValue("advanced/guiTheme").toString());
     }
 
-    bool acquiredLock = false;
-    if (clicked == removeLockButton) {
-      if (lock.removeStaleLockFile() && lock.tryLock()) {
-        acquiredLock = true;
-      } else {
-        QMessageBox::critical(nullptr, _("PythonSCAD"),
-                              _("Could not remove the lock file or acquire a new lock.\n"
-                                "Another instance of PythonSCAD may still be running.\n\n"
-                                "A new primary instance cannot be started."));
+    const QStringList ipcFiles = [&]() {
+      QStringList files;
+      for (const auto& infile : inputFiles) {
+        if (!infile.empty()) {
+          files.append(assemblePath(original_path, infile));
+        }
+      }
+      return files;
+    }();
+    const QString action = ipcFiles.isEmpty() ? QStringLiteral("focus") : QStringLiteral("open");
+    const QJsonObject message = buildIpcMessage(action, ipcFiles, openMode, cwd);
+
+    if (sendIpcMessage(message)) {
+      return 0;
+    }
+
+    while (true) {
+      QMessageBox box;
+      box.setIcon(QMessageBox::Warning);
+      box.setWindowTitle(_("PythonSCAD"));
+      box.setText(
+        _("PythonSCAD is already running but is not responding. The old PythonSCAD process must be "
+          "closed to open a new window."));
+      auto *cancelBtn = box.addButton(_("Cancel"), QMessageBox::RejectRole);
+      auto *closeOtherBtn = box.addButton(_("Close PythonSCAD"), QMessageBox::ActionRole);
+      box.setDefaultButton(cancelBtn);
+      box.exec();
+
+      if (box.clickedButton() != closeOtherBtn) {
         return 1;
       }
-    }
 
-    if (!acquiredLock) {
-      const QStringList ipcFiles = [&]() {
-        QStringList files;
-        for (const auto& infile : inputFiles) {
-          if (!infile.empty()) {
-            files.append(assemblePath(original_path, infile));
-          }
-        }
-        return files;
-      }();
-
-      const QString action = ipcFiles.isEmpty() ? QStringLiteral("focus") : QStringLiteral("open");
-      const QJsonObject message = buildIpcMessage(action, ipcFiles, openMode, cwd);
-
-      while (true) {
-        if (sendIpcMessage(message)) {
-          return 0;
-        }
-
-        QMessageBox box;
-        box.setIcon(QMessageBox::Warning);
-        box.setWindowTitle(_("PythonSCAD"));
-        box.setText(_("PythonSCAD is already running but is not responding."));
-        box.setInformativeText(_("Retry to send the request, or exit."));
-        const auto retryButton = box.addButton(_("Retry"), QMessageBox::AcceptRole);
-        const auto exitButton = box.addButton(_("Exit"), QMessageBox::RejectRole);
-        box.setDefaultButton(retryButton);
-        box.exec();
-        if (box.clickedButton() == exitButton) {
-          return 1;
-        }
+      if (tryAcquirePrimaryLockAfterCloseOtherRequest(lock)) {
+        break;
+      }
+      if (sendIpcMessage(message)) {
+        return 0;
       }
     }
   }
