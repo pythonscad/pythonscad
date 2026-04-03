@@ -334,6 +334,8 @@ bool terminateProcessIdForSingleInstance(qint64 pid)
   if (kill(p, 0) == -1 && errno == ESRCH) {
     return true;
   }
+  /* A process stopped with SIGSTOP does not act on SIGTERM until SIGCONT (see signal(7)). */
+  (void)kill(p, SIGCONT);
   return kill(p, SIGTERM) == 0;
 #elif defined(Q_OS_WIN)
   const HANDLE h = OpenProcess(PROCESS_TERMINATE, FALSE, static_cast<DWORD>(pid));
@@ -363,6 +365,21 @@ bool tryAcquirePrimaryLockAfterCloseOtherRequest(QLockFile& lock)
         return true;
       }
     }
+#ifdef Q_OS_UNIX
+    /* If the instance ignores SIGTERM or is wedged, force kill so the user can start a primary. */
+    const auto p = static_cast<pid_t>(pid);
+    if (kill(p, 0) == 0) {
+      (void)kill(p, SIGCONT);
+      (void)kill(p, SIGKILL);
+      for (int j = 0; j < 40; ++j) {
+        QThread::msleep(50);
+        lock.removeStaleLockFile();
+        if (lock.tryLock()) {
+          return true;
+        }
+      }
+    }
+#endif
     return false;
   }
   lock.removeStaleLockFile();
