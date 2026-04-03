@@ -2236,7 +2236,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
             this->rootFile->scope->assignments = customizer_parameters;
             CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');  // add annotations
             editor->parameterWidget->setParameters(this->rootFile.get(),
-                                                 "\n");                    // set widgets values
+                                                   "\n");                    // set widgets values
             editor->parameterWidget->applyParameters(this->rootFile.get());  // use widget values
             editor->setIndicator(this->rootFile->indicatorData);
           }
@@ -4023,10 +4023,18 @@ void MainWindow::onTabManagerAboutToCloseEditor(EditorInterface *closingEditor)
 
 void MainWindow::onTabManagerEditorContentReloaded(EditorInterface *reloadedEditor)
 {
+  // Opening/reloading sets editor text which arms parameterRefreshTimer; that debounced
+  // parseTopLevelDocument() would call parseDocument() again (e.g. second Python trust dialog).
+  if (parameterRefreshTimer) {
+    parameterRefreshTimer->stop();
+  }
   try {
     // when a new editor is created, it is important to compile the initial geometry
     // so the customizer panels are ok.
     parseDocument(reloadedEditor);
+    if (reloadedEditor == activeEditor) {
+      lastCompiledDoc = activeEditor->toPlainText();
+    }
   } catch (const HardWarningException&) {
     exceptionCleanup();
   } catch (const std::exception& ex) {
