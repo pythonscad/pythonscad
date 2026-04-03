@@ -3134,3 +3134,7 @@ msgstr ""
 #: src/openscad_gui.cc
 msgid "Close PythonSCAD"
 msgstr ""
+
+#: src/openscad_gui.cc
+msgid "Try again if the running instance may have recovered, or close it to start a new one."
+msgstr ""

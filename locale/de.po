@@ -3291,12 +3291,20 @@ msgid ""
 "PythonSCAD is already running but is not responding. The old PythonSCAD "
 "process must be closed to open a new window."
 msgstr ""
-"PythonSCAD läuft bereits, reagiert jedoch nicht. Der alte PythonSCAD-"
-"Prozess muss beendet werden, um ein neues Fenster zu öffnen."
+"PythonSCAD läuft bereits, reagiert jedoch nicht. Der alte PythonSCAD-Prozess "
+"muss beendet werden, um ein neues Fenster zu öffnen."
 
 #: src/openscad_gui.cc
 msgid "Close PythonSCAD"
 msgstr "PythonSCAD schließen"
+
+#: src/openscad_gui.cc
+msgid ""
+"Try again if the running instance may have recovered, or close it to start a "
+"new one."
+msgstr ""
+"Wiederholen Sie den Versuch, wenn die laufende Instanz wieder reagieren "
+"könnte, oder beenden Sie sie, um eine neue zu starten."
 
 #~ msgid "&Font List"
 #~ msgstr "&Fontliste"

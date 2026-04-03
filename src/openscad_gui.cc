@@ -28,6 +28,7 @@
 
 #include <QtCore/qstringliteral.h>
 
+#include <QAbstractButton>
 #include <QByteArray>
 #include <QCryptographicHash>
 #include <QDialog>
@@ -749,13 +750,23 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
       box.setText(
         _("PythonSCAD is already running but is not responding. The old PythonSCAD process must be "
           "closed to open a new window."));
-      auto *cancelBtn = box.addButton(_("Cancel"), QMessageBox::RejectRole);
+      box.setInformativeText(
+        _("Try again if the running instance may have recovered, or close it to start a new one."));
+      auto *retryBtn = box.addButton(_("Retry"), QMessageBox::AcceptRole);
       auto *closeOtherBtn = box.addButton(_("Close PythonSCAD"), QMessageBox::ActionRole);
-      box.setDefaultButton(cancelBtn);
+      auto *cancelBtn = box.addButton(_("Cancel"), QMessageBox::RejectRole);
+      box.setDefaultButton(retryBtn);
       box.exec();
 
-      if (box.clickedButton() != closeOtherBtn) {
+      QAbstractButton *clicked = box.clickedButton();
+      if (clicked == cancelBtn || clicked == nullptr) {
         return 1;
+      }
+      if (clicked == retryBtn) {
+        if (sendIpcMessage(message)) {
+          return 0;
+        }
+        continue;
       }
 
       if (tryAcquirePrimaryLockAfterCloseOtherRequest(lock)) {
