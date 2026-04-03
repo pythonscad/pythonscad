@@ -726,6 +726,11 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     /* Re-init path: remove user-added globals. Never call PyDict_DelItem* while iterating the same
      * dict with PyDict_Next — that invalidates the iteration and can crash (e.g. second initPython
      * during GUI startup). Snapshot keys first, then delete. */
+    struct CleanupGil {
+      PyGILState_STATE s;
+      CleanupGil() : s(PyGILState_Ensure()) {}
+      ~CleanupGil() { PyGILState_Release(s); }
+    } cleanupGilScope;
     PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
     PyObject *mainKeyList = PyDict_Keys(maindict);
     if (mainKeyList != nullptr) {
@@ -958,7 +963,11 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     stream << "vpf=" << vpf << "\n";
   }
   stream << commandline_commands << "\n";
-  PyRun_String(stream.str().c_str(), Py_file_input, pythonInitDict.get(), pythonInitDict.get());
+  {
+    PyGILState_STATE runGil = PyGILState_Ensure();
+    PyRun_String(stream.str().c_str(), Py_file_input, pythonInitDict.get(), pythonInitDict.get());
+    PyGILState_Release(runGil);
+  }
   customizer_parameters_finished = customizer_parameters;
   customizer_parameters.clear();
   python_result_handle.clear();
@@ -990,6 +999,21 @@ std::string evaluatePython(const std::string& code, bool dry_run)
   modinsts_list.clear();
   pythonDryRun = dry_run;
   if (!pythonMainModuleInitialized) return "Python not initialized";
+  struct EvaluatePythonGil {
+    bool on = false;
+    PyGILState_STATE st{};
+    EvaluatePythonGil()
+    {
+      if (Py_IsInitialized()) {
+        st = PyGILState_Ensure();
+        on = true;
+      }
+    }
+    ~EvaluatePythonGil()
+    {
+      if (on) PyGILState_Release(st);
+    }
+  } gil;
 #ifndef OPENSCAD_NOGUI
   const char *python_init_code =
     "\
