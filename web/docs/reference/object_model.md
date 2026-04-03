@@ -6,6 +6,8 @@ In PythonSCAD, every 3D or 2D solid is a Python object of type `openscad.Opensca
 
 All transformation and operation functions are available as methods on solid objects, enabling a fluent coding style:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -38,11 +40,15 @@ Create a deep copy of a solid object, including its metadata dictionary.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 copy = obj.clone()
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -61,6 +67,8 @@ Return the metadata dictionary stored on the solid.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 d = obj.dict()
 ```
@@ -68,6 +76,8 @@ d = obj.dict()
 **Returns:** A Python dictionary containing all custom attributes stored on the object.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -83,6 +93,8 @@ print(c.dict())  # {'material': 'PLA', 'color': 'red'}
 ## Attribute Access
 
 Solids support both dot notation and subscript notation for storing and retrieving custom data:
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -102,6 +114,8 @@ print(c.top_middle)
 
 These methods check for, retrieve, and set attributes on solids:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -116,6 +130,8 @@ print(c.getattr("weight"))  # 42
 ## Iteration
 
 Solids are iterable. Iterating over a compound solid (e.g. a union) yields `ChildRef` objects for each child node:
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -137,6 +153,8 @@ Each iteration yields a `ChildRef` object with:
 
 ### len and indexing
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -150,6 +168,8 @@ print(u[0])     # first child
 ## Jupyter Support
 
 Solids implement `_repr_mimebundle_` for rendering in Jupyter notebooks. When a solid is the last expression in a cell, it is automatically rendered as an image.
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -165,6 +185,8 @@ Register a user-defined method that becomes available on all solid objects.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 memberfunction(name, func, docstring="")
 ```
@@ -178,6 +200,8 @@ memberfunction(name, func, docstring="")
 | `docstring` | string | Optional documentation string |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -195,6 +219,8 @@ cube(5).double().show()
 ## String Representation
 
 Solids have `__repr__` and `__str__` methods that return an ASCII tree dump of the CSG node structure:
+
+=== "Python"
 
 ```python
 from openscad import *

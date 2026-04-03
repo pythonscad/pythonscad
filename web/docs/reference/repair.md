@@ -6,6 +6,8 @@ Explode a solid outward by a vector, separating its components.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 explode(obj, v)
 obj.explode(v)
@@ -20,6 +22,8 @@ obj.explode(v)
 
 **Examples:**
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -33,6 +37,8 @@ cube(5).explode([1, 1, 1]).show()
 Subdivide mesh edges for finer geometric detail. This increases the number of triangles in the mesh.
 
 **Syntax:**
+
+=== "Python"
 
 ```python
 oversample(obj, n, round=False)
@@ -49,6 +55,8 @@ obj.oversample(n, round=False)
 
 **Examples:**
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -62,6 +70,8 @@ cube(5).oversample(2).show()
 Visualize mesh faces for debugging purposes. Colors faces to help identify geometry issues.
 
 **Syntax:**
+
+=== "Python"
 
 ```python
 debug(obj, faces=False)
@@ -77,6 +87,8 @@ obj.debug(faces=False)
 
 **Examples:**
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -91,6 +103,8 @@ Attempt to make a solid watertight (manifold). This is useful for fixing importe
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 repair(obj, color=False)
 obj.repair(color=False)
@@ -104,6 +118,8 @@ obj.repair(color=False)
 | `color` | bool | `False` | Preserve color information |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -121,6 +137,8 @@ Split a solid into its disconnected components. Returns a list of separate solid
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 separate(obj)
 obj.separate()
@@ -135,6 +153,8 @@ obj.separate()
 **Returns:** A list of separate solid objects.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

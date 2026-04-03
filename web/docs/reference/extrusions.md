@@ -8,6 +8,8 @@ Extrude a 2D shape (or Python function) along the Z axis.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 linear_extrude(obj, height=1, convexity=1, origin=None, scale=None,
                center=False, slices=1, segments=0, twist=None)
@@ -33,6 +35,8 @@ obj.linear_extrude(height=1, ...)
 
 The `obj` parameter can be a Python function that receives a height value and returns a list of 2D points defining the cross-section at that height:
 
+=== "Python"
+
 ```python
 from openscad import *
 from math import *
@@ -46,6 +50,8 @@ linear_extrude(xsection, height=10, fn=20).show()
 
 The `twist` parameter can also be a Python function:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -53,6 +59,8 @@ square(5, center=True).linear_extrude(height=20, twist=90, slices=50).show()
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -73,6 +81,8 @@ circle(5).linear_extrude(height=10, scale=[2, 0.5]).show()
 Extrude a 2D shape by rotating it around the Z axis.
 
 **Syntax:**
+
+=== "Python"
 
 ```python
 rotate_extrude(obj, convexity=1, scale=1.0, angle=360, twist=None,
@@ -99,6 +109,8 @@ obj.rotate_extrude(...)
 
 The `obj` parameter can be a Python function that receives an angle and returns a 2D cross-section:
 
+=== "Python"
+
 ```python
 from openscad import *
 from math import *
@@ -112,6 +124,8 @@ rotate_extrude(xsection, fn=50).show()
 
 The `v` parameter creates a helix by translating the profile along a vector per revolution:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -119,6 +133,8 @@ circle(3).right(10).rotate_extrude(v=[0, 0, 20], angle=600).show()
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -139,6 +155,8 @@ square([2, 3]).right(5).rotate_extrude(angle=270).show()
 Extrude a 2D shape along an arbitrary 3D path. A 4th value in each path vertex specifies the corner radius at that point.
 
 **Syntax:**
+
+=== "Python"
 
 ```python
 path_extrude(obj, path, xdir=None, convexity=1, origin=None,
@@ -162,6 +180,8 @@ obj.path_extrude(path, ...)
 
 **Examples:**
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -181,6 +201,8 @@ Create a surface that smoothly connects multiple 2D profiles placed in 3D space.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 skin(obj1, obj2, ..., convexity=1, align_angle=None, segments=None, interpolate=None)
 ```
@@ -196,6 +218,8 @@ skin(obj1, obj2, ..., convexity=1, align_angle=None, segments=None, interpolate=
 | `interpolate` | float | `None` | Interpolation factor |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

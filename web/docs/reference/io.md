@@ -6,6 +6,8 @@ Import geometry from a file. This is the PythonSCAD equivalent of OpenSCAD's `im
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 osimport(file, layer="", convexity=2, origin=None, scale=None,
          width=0, height=0, center=False, dpi=96, id="", stroke=False,
@@ -33,6 +35,8 @@ osimport(file, layer="", convexity=2, origin=None, scale=None,
 
 **Examples:**
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -53,6 +57,8 @@ Load an OpenSCAD library file, making its modules and functions available. Equiv
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 osuse(file)
 ```
@@ -64,6 +70,8 @@ osuse(file)
 | `file` | string | Path to the `.scad` file |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -79,6 +87,8 @@ Include an OpenSCAD file, executing its top-level code. Equivalent to OpenSCAD's
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 osinclude(file)
 ```
@@ -90,6 +100,8 @@ osinclude(file)
 | `file` | string | Path to the `.scad` file |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -105,6 +117,8 @@ Execute inline OpenSCAD code from within a Python script.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 scad(code)
 ```
@@ -116,6 +130,8 @@ scad(code)
 | `code` | string | OpenSCAD source code to execute |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -132,6 +148,8 @@ Import a model from a network URL. This function is only available in GUI mode.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 nimport(url)
 ```
@@ -143,6 +161,8 @@ nimport(url)
 | `url` | string | URL of the model to download and import |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

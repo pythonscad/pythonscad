@@ -10,6 +10,8 @@ For standard Python math (radians), use Python's built-in `math` module instead.
 
 Calculate the sine of an angle in degrees.
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -20,6 +22,8 @@ y = Sin(90)   # 1.0
 ### Cos
 
 Calculate the cosine of an angle in degrees.
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -32,6 +36,8 @@ y = Cos(0)    # 1.0
 
 Calculate the tangent of an angle in degrees.
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -41,6 +47,8 @@ y = Tan(45)   # 1.0
 ### Asin
 
 Calculate the arc sine, returning degrees.
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -52,6 +60,8 @@ angle = Asin(0.5)   # 30.0
 
 Calculate the arc cosine, returning degrees.
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -61,6 +71,8 @@ angle = Acos(0.5)   # 60.0
 ### Atan
 
 Calculate the arc tangent, returning degrees.
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -78,6 +90,8 @@ Calculate the Euclidean length (magnitude) of a vector.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 length = norm(vec)
 ```
@@ -89,6 +103,8 @@ length = norm(vec)
 | `vec` | list of numbers | Input vector |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -107,6 +123,8 @@ Calculate the dot product of two vectors.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 result = dot(vec1, vec2)
 ```
@@ -119,6 +137,8 @@ result = dot(vec1, vec2)
 | `vec2` | list of numbers | Second vector |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -135,6 +155,8 @@ Calculate the cross product of two 3D vectors.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 result = cross(vec1, vec2)
 ```
@@ -149,6 +171,8 @@ result = cross(vec1, vec2)
 **Returns:** A 3D vector perpendicular to both inputs.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

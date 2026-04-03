@@ -4,6 +4,8 @@ Generate a 3D surface from a Python function. This is a PythonSCAD-only function
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 sheet(func, imin, imax, jmin, jmax, fs=1.0, iclose=False, jclose=False)
 ```
@@ -22,6 +24,8 @@ sheet(func, imin, imax, jmin, jmax, fs=1.0, iclose=False, jclose=False)
 | `jclose` | bool | `False` | Close the surface along the j parameter |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

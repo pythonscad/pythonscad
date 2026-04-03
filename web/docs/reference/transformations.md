@@ -8,6 +8,8 @@ Move an object by a displacement vector.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 translate(obj, v)
 obj.translate(v)
@@ -21,6 +23,8 @@ obj.translate(v)
 | `v` | `[x, y, z]` | Displacement vector |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -40,6 +44,8 @@ Rotate an object by angles in degrees.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 rotate(obj, a, v=None, ref=None)
 obj.rotate(a, v=None, ref=None)
@@ -55,6 +61,8 @@ obj.rotate(a, v=None, ref=None)
 | `ref` | `[x, y, z]` | Reference point for rotation |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -74,6 +82,8 @@ Scale an object by factors along each axis.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 scale(obj, v)
 obj.scale(v)
@@ -87,6 +97,8 @@ obj.scale(v)
 | `v` | number or `[x, y, z]` | Scale factor(s) |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -104,6 +116,8 @@ Mirror an object across a plane defined by a normal vector passing through the o
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 mirror(obj, v)
 obj.mirror(v)
@@ -117,6 +131,8 @@ obj.mirror(v)
 | `v` | `[x, y, z]` | Normal vector of the mirror plane |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -136,6 +152,8 @@ Resize an object to fit exact dimensions.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 resize(obj, newsize, auto=False, convexity=2)
 obj.resize(newsize, auto=False, convexity=2)
@@ -151,6 +169,8 @@ obj.resize(newsize, auto=False, convexity=2)
 | `convexity` | int | `2` | Convexity for rendering |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -171,6 +191,8 @@ Apply a 4x4 transformation matrix to an object.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 multmatrix(obj, m)
 obj.multmatrix(m)
@@ -184,6 +206,8 @@ obj.multmatrix(m)
 | `m` | 4x4 list | Transformation matrix `[[a,b,c,d],[e,f,g,h],[i,j,k,l],[0,0,0,1]]` |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -202,6 +226,8 @@ Apply the inverse of a 4x4 transformation matrix. This is a PythonSCAD extension
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 divmatrix(obj, m)
 obj.divmatrix(m)
@@ -215,6 +241,8 @@ obj.divmatrix(m)
 | `m` | 4x4 list | Transformation matrix whose inverse will be applied |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -234,6 +262,8 @@ Apply a color to an object.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 color(obj, c, alpha=1.0)
 obj.color(c, alpha=1.0)
@@ -248,6 +278,8 @@ obj.color(c, alpha=1.0)
 | `alpha` | float | Opacity (0.0 = transparent, 1.0 = opaque) |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -271,6 +303,8 @@ Offset a 2D shape inward or outward.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 offset(obj, r=None, delta=None, chamfer=False, fn=0, fa=0, fs=0)
 obj.offset(r=None, delta=None, chamfer=False, fn=0, fa=0, fs=0)
@@ -289,6 +323,8 @@ obj.offset(r=None, delta=None, chamfer=False, fn=0, fa=0, fs=0)
 Exactly one of `r` or `delta` should be provided.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -312,6 +348,8 @@ PythonSCAD provides shorthand functions for single-axis translations:
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 right(obj, val)    # translate along +X
 left(obj, val)     # translate along -X
@@ -324,6 +362,8 @@ obj.right(val)     # method form
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -343,6 +383,8 @@ Single-axis rotation shortcuts:
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 rotx(obj, val)     # rotate around X axis
 roty(obj, val)     # rotate around Y axis
@@ -352,6 +394,8 @@ obj.rotx(val)      # method form
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

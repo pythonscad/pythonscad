@@ -6,6 +6,8 @@ dimensions in one specific area without scaling the entire object.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 pull(obj, src, dst)
 obj.pull(src, dst)
@@ -20,6 +22,8 @@ obj.pull(src, dst)
 | `dst` | `[x, y, z]` | Pull amount and direction |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

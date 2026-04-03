@@ -6,6 +6,8 @@ Render and display one or more objects in the PythonSCAD viewport. This is the p
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 show(obj)
 show(obj1, obj2, ...)
@@ -22,6 +24,8 @@ obj.show()
 Passing a list of solids implicitly creates a union.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -41,6 +45,8 @@ Export an object to a file. Supports STL, 3MF, OFF, AMF, and other formats based
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 export(obj, file)
 obj.export(file)
@@ -54,6 +60,8 @@ obj.export(file)
 | `file` | string | Output file path (format determined by extension) |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -74,6 +82,8 @@ Force full geometry evaluation of an object. This computes the exact geometry, w
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 render(obj, convexity=2)
 obj.render(convexity=2)
@@ -87,6 +97,8 @@ obj.render(convexity=2)
 | `convexity` | int | `2` | Maximum number of front/back faces a ray can intersect |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -104,6 +116,8 @@ Project a 3D object onto the XY plane, producing a 2D shape.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 projection(obj, cut=False, convexity=2)
 obj.projection(cut=False, convexity=2)
@@ -118,6 +132,8 @@ obj.projection(cut=False, convexity=2)
 | `convexity` | int | `2` | Convexity for rendering |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -139,6 +155,8 @@ Group objects together without performing any boolean operation. The children re
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 group(obj)
 ```
@@ -150,6 +168,8 @@ group(obj)
 | `obj` | solid | Object to group |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -166,6 +186,8 @@ Mark an object for highlighting in the preview. The object is rendered in a dist
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 highlight(obj)
 obj.highlight()
@@ -173,6 +195,8 @@ obj.highlight()
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -193,6 +217,8 @@ Render an object transparently and exclude it from CSG operations. Useful for sh
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 background(obj)
 obj.background()
@@ -200,6 +226,8 @@ obj.background()
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -220,6 +248,8 @@ Show only this object, ignoring everything else in the scene. Equivalent to the 
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 only(obj)
 obj.only()
@@ -227,6 +257,8 @@ obj.only()
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

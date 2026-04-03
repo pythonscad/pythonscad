@@ -4,6 +4,8 @@ Wrap a flat object around a cylinder. This transforms a planar shape so that it 
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 wrap(obj, target=None, r=None, d=None, fn=0, fa=0, fs=0)
 obj.wrap(target=None, r=None, d=None, fn=0, fa=0, fs=0)
@@ -20,6 +22,8 @@ obj.wrap(target=None, r=None, d=None, fn=0, fa=0, fs=0)
 | `fn`, `fa`, `fs` | float | global | Curve discretization; defaults to the global `fn`/`fa`/`fs` values |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

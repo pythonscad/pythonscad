@@ -8,6 +8,8 @@ Mesh a signed distance function (libfive expression) into a solid that PythonSCA
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 frep(exp, min, max, res)
 ```
@@ -22,6 +24,8 @@ frep(exp, min, max, res)
 | `res` | float | Resolution (higher = finer mesh) |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -43,6 +47,8 @@ Convert a mesh (solid) into a libfive implicit function (SDF tree). This is the 
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 tree = ifrep(obj)
 ```
@@ -57,6 +63,8 @@ tree = ifrep(obj)
 
 **Examples:**
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -69,6 +77,8 @@ tree = ifrep(c)
 ## libfive Module
 
 The `libfive` Python module provides low-level SDF building blocks. Import it with:
+
+=== "Python"
 
 ```python
 import libfive as lv
@@ -111,6 +121,8 @@ Libfive expressions support standard Python arithmetic operators (`+`, `-`, `*`,
 ### Higher-level helpers (pylibfive)
 
 The `pylibfive` library provides convenience functions built on top of the raw libfive module:
+
+=== "Python"
 
 ```python
 from pylibfive import *

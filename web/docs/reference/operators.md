@@ -6,6 +6,8 @@ PythonSCAD overloads Python operators on solid objects to provide concise syntax
 
 **`obj + vector`** -- Translate by displacement vector.
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -21,6 +23,8 @@ When both operands are lists/vectors, standard addition applies.
 **`obj1 - obj2`** -- Difference (subtract obj2 from obj1).
 
 **`obj - [x, y, z]`** -- Translate by the negated vector.
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -38,6 +42,8 @@ from openscad import *
 
 **`obj * [x, y, z]`** -- Scale per axis.
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -52,6 +58,8 @@ from openscad import *
 
 **`obj1 | obj2`** -- Union.
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -64,6 +72,8 @@ from openscad import *
 
 **`obj1 & obj2`** -- Intersection.
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -75,6 +85,8 @@ from openscad import *
 ## matmul
 
 **`obj @ matrix`** -- Apply a 4x4 transformation matrix (same as `multmatrix`).
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -91,6 +103,8 @@ mat = [[1,0,0,10], [0,1,0,0], [0,0,1,0], [0,0,0,1]]
 
 **`obj ^ [x, y, z]`** -- Explode with a vector.
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -104,6 +118,8 @@ from openscad import *
 **`obj1 % obj2`** -- Minkowski sum of two solids.
 
 **`obj % [x, y, z]`** -- Rotate by vector.
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -120,6 +136,8 @@ from openscad import *
 **`-obj`** -- Background (debug modifier, shown as ghost).
 
 **`~obj`** -- Only (show only this object, hide everything else).
+
+=== "Python"
 
 ```python
 from openscad import *

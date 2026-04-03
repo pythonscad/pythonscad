@@ -8,6 +8,8 @@ Handles are 4x4 transformation matrices stored as attributes on solid objects. T
 
 Every solid has a default handle called `origin`, which starts as the identity matrix. You can create new handles by transforming the origin:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -30,6 +32,8 @@ Align an object to a handle (reference matrix) on another object. This is a powe
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 align(obj, refmat, objmat=None, flip=False)
 obj.align(refmat, objmat=None, flip=False)
@@ -45,6 +49,8 @@ obj.align(refmat, objmat=None, flip=False)
 | `flip` | bool | `False` | Flip the alignment direction |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -65,6 +71,8 @@ c.show()
 ### Abutting objects
 
 Scaling a handle by -1 inverts its directions, so aligned objects will be placed abutting (next to) rather than coincident (overlapping):
+
+=== "Python"
 
 ```python
 from openscad import *

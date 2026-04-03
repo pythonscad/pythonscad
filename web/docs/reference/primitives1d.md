@@ -6,6 +6,8 @@ Create a 1D edge (line segment) with a given length. Edges are the simplest prim
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 edge(size=1, center=False)
 ```
@@ -18,6 +20,8 @@ edge(size=1, center=False)
 | `center` | bool | `False` | Center the edge on the origin |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

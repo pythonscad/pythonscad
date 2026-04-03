@@ -4,6 +4,8 @@ Generate a 3D surface from a heightmap data file or image.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 surface(file, center=False, convexity=2, invert=False, color=False)
 ```
@@ -24,6 +26,8 @@ surface(file, center=False, convexity=2, invert=False, color=False)
 - **PNG files:** Pixel brightness is mapped to height.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

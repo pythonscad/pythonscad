@@ -8,6 +8,8 @@ Combine multiple objects into one. The result contains all volume from all input
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 union(obj1, obj2, ..., r=None, fn=None)
 obj1 | obj2
@@ -25,6 +27,8 @@ obj1 | obj2
 
 Specifying `r` and `fn` adds rounded fillets to the edges created by the union:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -32,6 +36,8 @@ union(cube(10), sphere(7).right(5), r=1, fn=10).show()
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -52,6 +58,8 @@ Subtract one or more objects from the first object.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 difference(obj1, obj2, ..., r=None, fn=None)
 obj1 - obj2
@@ -67,6 +75,8 @@ obj1 - obj2
 | `fn` | int | — | Number of segments for fillet rounding (PythonSCAD extension) |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -90,6 +100,8 @@ Keep only the volume that is common to all input objects.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 intersection(obj1, obj2, ...)
 obj1 & obj2
@@ -102,6 +114,8 @@ obj1 & obj2
 | `obj1, obj2, ...` | solids | Objects to intersect |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -122,6 +136,8 @@ Create the convex hull of multiple objects. The result is the smallest convex so
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 hull(obj1, obj2, ...)
 obj1 ^ obj2
@@ -134,6 +150,8 @@ obj1 ^ obj2
 | `obj1, obj2, ...` | solids | Objects to hull |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -154,6 +172,8 @@ Fill concavities in a 2D shape, creating a convex outline.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 fill(obj1, obj2, ...)
 ```
@@ -165,6 +185,8 @@ fill(obj1, obj2, ...)
 | `obj1, obj2, ...` | 2D solids | Shapes to fill |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -180,6 +202,8 @@ Compute the Minkowski sum of two objects. Conceptually, this "traces" one object
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 minkowski(obj1, obj2, convexity=2)
 obj1 % obj2
@@ -194,6 +218,8 @@ obj1 % obj2
 | `convexity` | int | `2` | Convexity for rendering |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -215,6 +241,8 @@ Concatenate the meshes of multiple objects without performing boolean operations
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 concat(obj1, obj2, ...)
 ```
@@ -226,6 +254,8 @@ concat(obj1, obj2, ...)
 | `obj1, obj2, ...` | solids or lists | Objects to concatenate |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

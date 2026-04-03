@@ -6,6 +6,8 @@ Add a parameter that appears in the PythonSCAD Customizer GUI. Users can modify 
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 value = add_parameter(name, default, description="", group="Parameters",
                       range=None, step=None, max_length=None, options=None)
@@ -32,6 +34,8 @@ value = add_parameter(name, default, description="", group="Parameters",
 
 The parameter type is inferred from the default value:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -49,6 +53,8 @@ cube([width, width, width]).show()
 
 Use `range` to create a slider widget:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -65,6 +71,8 @@ scale = add_parameter("scale", 1.0, range=(0.1, 10.0, 0.1))
 
 Use `step` for a spinbox without a slider:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -76,6 +84,8 @@ angle = add_parameter("angle", 45.0, step=0.5)
 ### Dropdown
 
 Use `options` for a dropdown menu:
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -92,6 +102,8 @@ quality = add_parameter("quality", 10, options={10: "Low", 20: "Medium", 30: "Hi
 ### Groups
 
 Organize parameters into tabs using `group`:
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -111,6 +123,8 @@ units = add_parameter("units", "mm", group="Global")     # appears on all tabs
 
 Add help text with `description`:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -125,6 +139,8 @@ width = add_parameter("width", 10,
 
 Limit string input length:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -136,6 +152,8 @@ name = add_parameter("name", "hello", max_length=20)
 ### Vectors
 
 Vector parameters (lists) support constraints applied to all elements:
+
+=== "Python"
 
 ```python
 from openscad import *

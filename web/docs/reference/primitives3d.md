@@ -6,6 +6,8 @@ Create a box (rectangular prism) in the first octant. When `center` is true, the
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 cube(size=1, center=False)
 ```
@@ -26,6 +28,8 @@ The `center` parameter accepts a 3-character string where each character control
 - `>`, `]`, `)`, or `+`: align to positive side
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -50,6 +54,8 @@ Create a sphere centered at the origin.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 sphere(r=1)
 sphere(d=2)
@@ -70,6 +76,8 @@ sphere(func, fn=..., fa=..., fs=...)
 
 The `r` parameter can be a Python function that receives a 3D direction vector and returns a radius, creating a deformed sphere:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -81,6 +89,8 @@ sphere(rfunc, fs=0.5, fn=10).show()
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -101,6 +111,8 @@ sphere(5, fn=100).show()
 Create a cylinder or cone centered on the Z axis. The base sits on the XY plane unless `center` is true.
 
 **Syntax:**
+
+=== "Python"
 
 ```python
 cylinder(h=1, r=1, center=False)
@@ -131,6 +143,8 @@ cylinder(h=1, r=1, angle=360)
 
 The `angle` parameter creates a partial cylinder (pie/wedge shape):
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -138,6 +152,8 @@ cylinder(r=5, h=6, angle=90).show()
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -162,6 +178,8 @@ Create a 3D solid from a list of vertices and face indices.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 polyhedron(points, faces, convexity=2)
 ```
@@ -177,6 +195,8 @@ polyhedron(points, faces, convexity=2)
 | `colors` | list | — | Per-face colors |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -197,6 +217,8 @@ polyhedron(pts, faces).show()
 ```
 
 You can also reconstruct a solid from its mesh data:
+
+=== "Python"
 
 ```python
 from openscad import *

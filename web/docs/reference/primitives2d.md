@@ -8,6 +8,8 @@ Create a rectangle in the first quadrant. When `center` is true, it is centered 
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 square(dim=1, center=False)
 ```
@@ -20,6 +22,8 @@ square(dim=1, center=False)
 | `center` | bool | `False` | Center on the origin |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -40,6 +44,8 @@ square([20, 10], center=True).show()
 Create a circle at the origin.
 
 **Syntax:**
+
+=== "Python"
 
 ```python
 circle(r=1)
@@ -62,6 +68,8 @@ circle(r=1, angle=360)
 
 The `angle` parameter creates a pie/sector shape:
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -69,6 +77,8 @@ circle(r=5, angle=70).show()
 ```
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -94,6 +104,8 @@ Create a 2D polygon from a list of points.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 polygon(points, paths=None, convexity=2)
 ```
@@ -107,6 +119,8 @@ polygon(points, paths=None, convexity=2)
 | `convexity` | int | `2` | Maximum number of front/back faces a ray can intersect |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -130,6 +144,8 @@ Create an open polyline from a list of points. Unlike `polygon`, a polyline is n
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 polyline(points)
 ```
@@ -143,6 +159,8 @@ polyline(points)
 Polylines can carry color but have no area and are ignored in CSG operations.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -159,6 +177,8 @@ Create a smooth 2D curve that passes through the given control points. Similar t
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 spline(points, fn=0, fa=0, fs=0)
 ```
@@ -173,6 +193,8 @@ spline(points, fn=0, fa=0, fs=0)
 | `fs` | float | `0` | Minimum segment size |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -189,6 +211,8 @@ s.show()
 Create 2D text geometry.
 
 **Syntax:**
+
+=== "Python"
 
 ```python
 text(t, size=10, font="", spacing=1, direction="ltr",
@@ -212,6 +236,8 @@ text(t, size=10, font="", spacing=1, direction="ltr",
 
 **Examples:**
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -230,6 +256,8 @@ Get the bounding box metrics of a text string without creating geometry. Returns
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 textmetrics(t, size=10, font="", spacing=1, direction="ltr",
             language="en", script="latin", halign="left", valign="baseline")
@@ -242,6 +270,8 @@ Same parameters as [`text`](#text).
 **Returns:** A dictionary containing text metrics (bounding box dimensions, advance width, etc.).
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

@@ -8,6 +8,8 @@ Get the bounding box dimensions of an object.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 obj.size
 size(obj)
@@ -16,6 +18,8 @@ size(obj)
 **Returns:** A list `[width, height, depth]` for 3D objects or `[width, height]` for 2D objects.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -32,6 +36,8 @@ Get the minimum corner coordinates of the bounding box.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 obj.position
 position(obj)
@@ -40,6 +46,8 @@ position(obj)
 **Returns:** A list `[x, y, z]` for 3D objects or `[x, y]` for 2D objects, representing the minimum corner of the bounding box.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -56,6 +64,8 @@ Get the bounding box as a solid object.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 obj.bbox
 bbox(obj)
@@ -64,6 +74,8 @@ bbox(obj)
 **Returns:** A cube (3D) or square (2D) representing the bounding box of the object.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -81,6 +93,8 @@ Extract the mesh data (vertices and triangles) from a solid.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 obj.mesh(triangulate=True, color=False)
 mesh(obj, triangulate=True, color=False)
@@ -97,6 +111,8 @@ mesh(obj, triangulate=True, color=False)
 **Returns:** A tuple `(points, triangles)` where `points` is a list of `[x, y, z]` coordinates and `triangles` is a list of vertex index lists.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -119,6 +135,8 @@ Get a list of face solids from an object. Each face is a 2D solid with a `matrix
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 obj.faces(triangulate=False)
 faces(obj, triangulate=False)
@@ -134,6 +152,8 @@ faces(obj, triangulate=False)
 **Returns:** A list of 2D solid objects, each with a `.matrix` attribute (4x4 transformation matrix showing the face's position and orientation).
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -155,6 +175,8 @@ Get a list of edge solids from a face or 2D object.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 obj.edges()
 edges(obj)
@@ -163,6 +185,8 @@ edges(obj)
 **Returns:** A list of edge solids, each with a `.matrix` attribute.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -180,6 +204,8 @@ Check whether a given point is inside the solid.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 obj.inside(point)
 inside(obj, point)
@@ -195,6 +221,8 @@ inside(obj, point)
 **Returns:** `True` if the point is inside the solid, `False` otherwise.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -212,6 +240,8 @@ Get the child nodes of a compound solid as a tuple.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 obj.children()
 children(obj)
@@ -220,6 +250,8 @@ children(obj)
 **Returns:** A tuple of child solid objects.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -248,6 +280,8 @@ These attributes cannot only be read, but also overwriten.
 ### Custom attributes
 
 You can store arbitrary data on any solid:
+
+=== "Python"
 
 ```python
 from openscad import *

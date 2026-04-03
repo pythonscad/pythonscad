@@ -6,6 +6,8 @@ Control the camera and viewport settings from your Python script. Useful for set
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 rendervars(vpd=None, vpf=None, vpr=None, vpt=None)
 ```
@@ -23,6 +25,8 @@ All parameters are optional. Only the ones you provide will be changed.
 
 **Examples:**
 
+=== "Python"
+
 ```python
 from openscad import *
 
@@ -38,6 +42,8 @@ Add a custom menu item to the PythonSCAD GUI. This function is only available in
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 add_menuitem(menuname, itemname, callback)
 ```
@@ -51,6 +57,8 @@ add_menuitem(menuname, itemname, callback)
 | `callback` | callable | Function to call when the item is clicked |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -69,6 +77,8 @@ Return the current model object.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 m = model()
 ```
@@ -83,6 +93,8 @@ Return the absolute file path of the current script.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 path = modelpath()
 ```
@@ -90,6 +102,8 @@ path = modelpath()
 **Returns:** A string with the absolute path to the currently running script file.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -105,6 +119,8 @@ Return the PythonSCAD version as a list.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 v = version()
 ```
@@ -112,6 +128,8 @@ v = version()
 **Returns:** A list like `[year, month, day]`.
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
@@ -129,6 +147,8 @@ Return the PythonSCAD version as a single number.
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 n = version_num()
 ```
@@ -142,6 +162,8 @@ n = version_num()
 Create a marked value for use with F-Rep / libfive. This wraps a numeric value as a libfive data type.
 
 **Syntax:**
+
+=== "Python"
 
 ```python
 m = marked(value)
@@ -163,6 +185,8 @@ Set machine configuration parameters. This is used to configure machine-specific
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 machineconfig(config)
 ```
@@ -174,6 +198,8 @@ machineconfig(config)
 | `config` | dict | Dictionary of configuration key-value pairs |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *

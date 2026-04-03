@@ -4,6 +4,8 @@ Add rounded fillets or chamfers to the edges of a solid. This is a PythonSCAD-sp
 
 **Syntax:**
 
+=== "Python"
+
 ```python
 fillet(obj, r, sel=None, fn=2, minang=None)
 obj.fillet(r, sel=None, fn=2, minang=None)
@@ -20,6 +22,8 @@ obj.fillet(r, sel=None, fn=2, minang=None)
 | `minang` | float | `None` | Minimum angle for edge selection |
 
 **Examples:**
+
+=== "Python"
 
 ```python
 from openscad import *
