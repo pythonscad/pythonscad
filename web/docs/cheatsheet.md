@@ -517,7 +517,7 @@
 
       <div class="func"><code><a href="../reference/align/#align">obj.align</a>(refmat, objmat, flip)</code></div>
       <div>Align object to a handle on another object</div>
-      <div><code>cyl.align(c.right_side, cyl.origin).show()</code></div>
+      <div><code>cyl.align(c.right_center, cyl.origin).show()</code></div>
   </div>
 </div>
 
