@@ -847,9 +847,17 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     }
     PyConfig_Clear(&config);
 
-    pythonMainModule.reset(PyImport_AddModule("__main__"));
-    pythonMainModuleInitialized = pythonMainModule != nullptr;
-    pythonInitDict.reset(PyModule_GetDict(pythonMainModule.get()));
+    PyObject *mainMod = PyImport_AddModule("__main__");
+    if (mainMod == nullptr) {
+      alreadyTried = true;
+      return;
+    }
+    Py_INCREF(mainMod);
+    pythonMainModule.reset(mainMod);
+    pythonMainModuleInitialized = true;
+    PyObject *mainDict = PyModule_GetDict(pythonMainModule.get());
+    Py_INCREF(mainDict);
+    pythonInitDict.reset(mainDict);
     pythonRuntimeInitialized = pythonInitDict != nullptr;
     PyInit_PyData();
     PyRun_String("from builtins import *\n", Py_file_input, pythonInitDict.get(), pythonInitDict.get());
@@ -857,6 +865,9 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     Py_ssize_t pos = 0;
     PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
     while (PyDict_Next(maindict, &pos, &key, &value)) {
+      if (!PyUnicode_Check(key)) {
+        continue;
+      }
       PyObjectUniquePtr key1(PyUnicode_AsEncodedString(key, "utf-8", "~"), &PyObjectDeleter);
       const char *key_str = PyBytes_AsString(key1.get());
       if (key_str != nullptr) pythonInventory.push_back(key_str);
@@ -1250,10 +1261,14 @@ extern "C" PyObject *PyInit_openscad(void)
   // them here so that show(), export(), etc. work from a plain
   // "from openscad import *" session.
   if (!pythonMainModule) {
-    pythonMainModule.reset(PyImport_AddModule("__main__"));
-    pythonMainModuleInitialized = pythonMainModule != nullptr;
-    if (pythonMainModule) {
-      pythonInitDict.reset(PyModule_GetDict(pythonMainModule.get()));
+    PyObject *mainMod = PyImport_AddModule("__main__");
+    if (mainMod != nullptr) {
+      Py_INCREF(mainMod);
+      pythonMainModule.reset(mainMod);
+      pythonMainModuleInitialized = true;
+      PyObject *d = PyModule_GetDict(pythonMainModule.get());
+      Py_INCREF(d);
+      pythonInitDict.reset(d);
       pythonRuntimeInitialized = pythonInitDict != nullptr;
     }
     // Placeholder nodes used as sentinels (void / full space)
