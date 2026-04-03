@@ -26,6 +26,8 @@
 #include <Python.h>
 #include "genlang/genlang.h"
 #include <filesystem>
+#include <string>
+#include <vector>
 
 #include "pyopenscad.h"
 #include "pydata.h"
@@ -720,64 +722,127 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
   const auto name = PYTHON_EXECUTABLE_NAME;
   const auto exe = binDir + "/" + name;
   if (scriptpath.size() > 0) python_scriptpath = scriptpath;
-  if (pythonInitDict) { /* If already initialized, undo to reinitialize after */
-    PyObject *key, *value;
-    Py_ssize_t pos = 0;
+  if (pythonInitDict) {
+    /* Re-init path: remove user-added globals. Never call PyDict_DelItem* while iterating the same
+     * dict with PyDict_Next — that invalidates the iteration and can crash (e.g. second initPython
+     * during GUI startup). Snapshot keys first, then delete. */
     PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
-    while (PyDict_Next(maindict, &pos, &key, &value)) {
-      PyObjectUniquePtr key_(PyUnicode_AsEncodedString(key, "utf-8", "~"), &PyObjectDeleter);
-      if (key_ == nullptr) continue;
-      const char *key_str = PyBytes_AS_STRING(key_.get());
-      if (key_str == nullptr) continue;
-      if (std::find(std::begin(pythonInventory), std::end(pythonInventory), key_str) ==
-          std::end(pythonInventory)) {
-        if (strlen(key_str) < 4 || strncmp(key_str, "stat", 4) != 0) {
-          PyDict_DelItemString(maindict, key_str);
+    PyObject *mainKeyList = PyDict_Keys(maindict);
+    if (mainKeyList != nullptr) {
+      std::vector<std::string> mainKeysToDelete;
+      std::vector<std::string> moduleKeysToDelete;
+      PyObject *modulesMap = nullptr;
+
+      const Py_ssize_t nMain = PyList_GET_SIZE(mainKeyList);
+      for (Py_ssize_t i = 0; i < nMain; ++i) {
+        PyObject *key = PyList_GET_ITEM(mainKeyList, i);
+        if (!PyUnicode_Check(key)) {
+          continue;
         }
-      }
-      // bug in  PyDict_GetItemString, thus iterating
-      if (strcmp(key_str, "sys") == 0) {
-        PyObject *sysdict = PyModule_GetDict(value);
-        if (sysdict == nullptr) continue;
-        // get builtin_module_names
-        PyObject *key1, *value1;
-        Py_ssize_t pos1 = 0;
-        while (PyDict_Next(sysdict, &pos1, &key1, &value1)) {
-          PyObject *key1_ = PyUnicode_AsEncodedString(key1, "utf-8", "~");
-          if (key1_ == nullptr) continue;
-          const char *key1_str = PyBytes_AS_STRING(key1_);
-          if (strcmp(key1_str, "modules") == 0) {
-            PyObject *key2, *value2;
-            Py_ssize_t pos2 = 0;
-            while (PyDict_Next(value1, &pos2, &key2, &value2)) {
-              PyObject *key2_ = PyUnicode_AsEncodedString(key2, "utf-8", "~");
-              if (key2_ == nullptr) continue;
-              const char *key2_str = PyBytes_AS_STRING(key2_);
-              if (key2_str == nullptr) continue;
-              if (!PyModule_Check(value2)) continue;
-
-              PyObject *modrepr = PyObject_Repr(value2);
-              PyObject *modreprobj = PyUnicode_AsEncodedString(modrepr, "utf-8", "~");
-              const char *modreprstr = PyBytes_AS_STRING(modreprobj);
-              if (modreprstr == nullptr) continue;
-              if (strstr(modreprstr, "(frozen)") != nullptr) continue;
-              if (strstr(modreprstr, "(built-in)") != nullptr) continue;
-              if (strstr(modreprstr, "/encodings/") != nullptr) continue;
-              if (strstr(modreprstr, "_frozen_") != nullptr) continue;
-              if (strstr(modreprstr, "site-packages") != nullptr) continue;
-              if (strstr(modreprstr, "usr/lib") != nullptr) continue;
-
-              //  PyObject *mod_dict = PyModule_GetDict(value2);
-              //  PyObject *loader = PyDict_GetItemString(mod_dict,"__loader__");
-              //  PyObject *loaderrepr = PyObject_Repr(loader);
-              //  PyObject* loaderreprobj = PyUnicode_AsEncodedString(loaderrepr, "utf-8", "~");
-              //  const char *loaderreprstr = PyBytes_AS_STRING(loaderreprobj);
-              //  if(strstr(loaderreprstr, "ExtensionFileLoader") != nullptr) continue; // dont delete
-              //  extension files
-
-              PyDict_DelItem(value1, key2);
-            }
+        PyObjectUniquePtr keyUtf(PyUnicode_AsEncodedString(key, "utf-8", "~"), &PyObjectDeleter);
+        if (keyUtf.get() == nullptr) {
+          continue;
+        }
+        const char *keyStr = PyBytes_AS_STRING(keyUtf.get());
+        if (keyStr == nullptr) {
+          continue;
+        }
+        if (std::find(std::begin(pythonInventory), std::end(pythonInventory), keyStr) ==
+            std::end(pythonInventory)) {
+          if (strlen(keyStr) < 4 || strncmp(keyStr, "stat", 4) != 0) {
+            mainKeysToDelete.emplace_back(keyStr);
           }
+        }
+        if (strcmp(keyStr, "sys") != 0) {
+          continue;
+        }
+        PyObject *sysMod = PyDict_GetItem(maindict, key);
+        if (sysMod == nullptr || !PyModule_Check(sysMod)) {
+          continue;
+        }
+        PyObject *sysdict = PyModule_GetDict(sysMod);
+        if (sysdict == nullptr) {
+          continue;
+        }
+        PyObject *sysKeyList = PyDict_Keys(sysdict);
+        if (sysKeyList == nullptr) {
+          continue;
+        }
+        const Py_ssize_t nSys = PyList_GET_SIZE(sysKeyList);
+        for (Py_ssize_t j = 0; j < nSys; ++j) {
+          PyObject *k1 = PyList_GET_ITEM(sysKeyList, j);
+          if (!PyUnicode_Check(k1)) {
+            continue;
+          }
+          PyObjectUniquePtr k1Utf(PyUnicode_AsEncodedString(k1, "utf-8", "~"), &PyObjectDeleter);
+          if (k1Utf.get() == nullptr) {
+            continue;
+          }
+          const char *k1Str = PyBytes_AS_STRING(k1Utf.get());
+          if (k1Str == nullptr || strcmp(k1Str, "modules") != 0) {
+            continue;
+          }
+          PyObject *mm = PyDict_GetItem(sysdict, k1);
+          if (mm == nullptr || !PyDict_Check(mm)) {
+            continue;
+          }
+          modulesMap = mm;
+          PyObject *modKeyList = PyDict_Keys(mm);
+          if (modKeyList == nullptr) {
+            continue;
+          }
+          const Py_ssize_t nMod = PyList_GET_SIZE(modKeyList);
+          for (Py_ssize_t k = 0; k < nMod; ++k) {
+            PyObject *k2 = PyList_GET_ITEM(modKeyList, k);
+            if (!PyUnicode_Check(k2)) {
+              continue;
+            }
+            PyObjectUniquePtr k2Utf(PyUnicode_AsEncodedString(k2, "utf-8", "~"), &PyObjectDeleter);
+            if (k2Utf.get() == nullptr) {
+              continue;
+            }
+            const char *k2Str = PyBytes_AS_STRING(k2Utf.get());
+            if (k2Str == nullptr) {
+              continue;
+            }
+            PyObject *value2 = PyDict_GetItem(mm, k2);
+            if (value2 == nullptr || !PyModule_Check(value2)) {
+              continue;
+            }
+            PyObject *modrepr = PyObject_Repr(value2);
+            if (modrepr == nullptr) {
+              continue;
+            }
+            PyObjectUniquePtr modreprOwned(modrepr, &PyObjectDeleter);
+            PyObjectUniquePtr modReprUtf(PyUnicode_AsEncodedString(modrepr, "utf-8", "~"),
+                                         &PyObjectDeleter);
+            if (modReprUtf.get() == nullptr) {
+              continue;
+            }
+            const char *modreprstr = PyBytes_AS_STRING(modReprUtf.get());
+            if (modreprstr == nullptr) {
+              continue;
+            }
+            if (strstr(modreprstr, "(frozen)") != nullptr) continue;
+            if (strstr(modreprstr, "(built-in)") != nullptr) continue;
+            if (strstr(modreprstr, "/encodings/") != nullptr) continue;
+            if (strstr(modreprstr, "_frozen_") != nullptr) continue;
+            if (strstr(modreprstr, "site-packages") != nullptr) continue;
+            if (strstr(modreprstr, "usr/lib") != nullptr) continue;
+            moduleKeysToDelete.emplace_back(k2Str);
+          }
+          Py_DECREF(modKeyList);
+        }
+        Py_DECREF(sysKeyList);
+      }
+      Py_DECREF(mainKeyList);
+
+      for (const auto& s : mainKeysToDelete) {
+        PyDict_DelItemString(maindict, s.c_str());
+      }
+      if (modulesMap != nullptr) {
+        for (const auto& s : moduleKeysToDelete) {
+          PyDict_DelItemString(modulesMap, s.c_str());
         }
       }
     }
