@@ -42,6 +42,7 @@
 
 #include "gui/Editor.h"
 #include "gui/ImportUtils.h"
+#include <boost/algorithm/string/predicate.hpp>
 #include "gui/MainWindow.h"
 #include "gui/OpenSCADApp.h"
 #include "gui/Preferences.h"
@@ -666,8 +667,30 @@ void TabManager::onTabModified(EditorInterface *edt)
 
 void TabManager::openTabFile(const QString& filename)
 {
+  QFileInfo fileinfo(filename);
+  const QString absPath = fileinfo.absoluteFilePath();
+  const QString suffix = Importer::effectiveSuffixForOpen(filename);
+  if (!Importer::knownFileExtensions.contains(suffix)) {
+    editor->setPlainText("");
+    if (!fileinfo.exists() || !fileinfo.isFile()) {
+      return;
+    }
+    editor->filepath = absPath;
+    editor->resetLanguageDetection();
+    editor->parameterWidget->readFile(absPath);
+    parent->updateRecentFiles(filename);
+    refreshDocument();
+    editor->recomputeLanguageActive();
+    parent->onLanguageActiveChanged(editor->language);
+    updateTabIcon(editor);
+    auto [fname, fpath] = getEditorTabNameWithModifier(editor);
+    setEditorTabName(fname, fpath, editor);
+    parent->setWindowTitle(fname);
+    emit editorContentReloaded(editor);
+    return;
+  }
 #ifdef ENABLE_PYTHON
-  if (boost::algorithm::ends_with(filename, ".py")) {
+  if (suffix == QStringLiteral("py")) {
     std::string templ = "from openscad import *\n";
     std::string libs = Settings::SettingsPython::pythonNetworkImportList.value();
     std::stringstream ss(libs);
@@ -681,10 +704,6 @@ void TabManager::openTabFile(const QString& filename)
 #endif
     editor->setPlainText("");
 
-  QFileInfo fileinfo(filename);
-  const auto suffix = fileinfo.suffix().toLower();
-  const auto knownFileType = Importer::knownFileExtensions.contains(suffix);
-  if (!knownFileType) return;
   const auto cmd = Importer::knownFileExtensions[suffix];
   if (cmd.isEmpty()) {
     editor->filepath = fileinfo.absoluteFilePath();
