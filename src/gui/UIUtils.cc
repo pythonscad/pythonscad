@@ -491,6 +491,10 @@ static void dumpToolBarAreaLayout(QDataStream& stream, uint8_t marker)
 // Dump QMainWindow::saveState() data for debugging purposes.
 void UIUtils::dumpSaveState(const QByteArray& data)
 {
+  if (OpenSCAD::debug == "") {
+    return;
+  }
+
   QDataStream stream(data);
   stream.setByteOrder(QDataStream::BigEndian);
   stream.setVersion(QDataStream::Qt_6_0);
