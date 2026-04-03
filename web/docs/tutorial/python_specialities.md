@@ -41,7 +41,7 @@ It's possible to store arbitrary data along with solids
 
 ## Access chidren easily
 
-Soids are easily iteratable.
+Solids are easily iterable.
 
 === "Python"
     ```py
