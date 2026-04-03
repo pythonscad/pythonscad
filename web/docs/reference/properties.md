@@ -234,6 +234,7 @@ print(len(parts))  # 2
 ## Dynamic Attributes
 
 Solid objects support dynamic attribute access for node-specific data. These attributes are available through both dot notation (`obj.attr`) and subscript notation (`obj["attr"]`).
+These attributes cannot only be read, but also overwriten.
 
 ### Built-in dynamic attributes
 
