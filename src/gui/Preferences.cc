@@ -192,7 +192,7 @@ void Preferences::init()
   this->defaultmap["advanced/enableTraceUsermoduleParameters"] = true;
   this->defaultmap["advanced/enableParameterCheck"] = true;
   this->defaultmap["advanced/enableParameterRangeCheck"] = false;
-  this->defaultmap["advanced/singleInstanceOpenMode"] = "new-window";
+  this->defaultmap["advanced/singleInstanceOpenMode"] = "active-window";
   this->defaultmap["advanced/sessionManagementEnabled"] = false;
   this->defaultmap["advanced/autosaveSessionEnabled"] = true;
   this->defaultmap["advanced/autosaveSessionIntervalSeconds"] = 60;

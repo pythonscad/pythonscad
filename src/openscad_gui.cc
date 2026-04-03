@@ -34,6 +34,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QFutureWatcher>
+#include <QApplication>
 #include <QGuiApplication>
 #include <QHostInfo>
 #include <QIcon>
@@ -388,10 +389,25 @@ void openFilesInWindow(MainWindow *window, const QStringList& files)
 
 MainWindow *getOrCreateActiveWindow()
 {
-  auto *active = scadApp->windowManager.getLastActive();
-  if (active) return active;
-  if (!scadApp->windowManager.getWindows().isEmpty()) {
-    return *scadApp->windowManager.getWindows().begin();
+  const auto& wins = scadApp->windowManager.getWindows();
+  MainWindow *tracked = scadApp->windowManager.getLastActive();
+  if (tracked && wins.contains(tracked)) {
+    return tracked;
+  }
+  for (MainWindow *mw : wins) {
+    if (mw && mw->isActiveWindow()) {
+      return mw;
+    }
+  }
+  for (QWidget *w = QApplication::activeWindow(); w != nullptr; w = w->parentWidget()) {
+    if (auto *mw = qobject_cast<MainWindow *>(w)) {
+      if (wins.contains(mw)) {
+        return mw;
+      }
+    }
+  }
+  if (!wins.isEmpty()) {
+    return *wins.begin();
   }
   return nullptr;
 }
@@ -896,16 +912,16 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   }
 
   if (restoreSessionForExplicitFiles && !filesToAppend.isEmpty()) {
-    MainWindow *target = scadApp->windowManager.getLastActive();
-    if (!target) {
+    const bool openInNewWindow = Settings::Settings::singleInstanceOpenMode.value() == "new-window";
+    if (openInNewWindow) {
       new MainWindow(filesToAppend);
     } else {
-      for (const auto& file : filesToAppend) {
-        if (!file.isEmpty()) {
-          target->tabManager->open(file);
-        }
+      MainWindow *target = getOrCreateActiveWindow();
+      if (!target) {
+        new MainWindow(filesToAppend);
+      } else {
+        openFilesInWindow(target, filesToAppend);
       }
-      focusWindow(target);
     }
   }
 
