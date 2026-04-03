@@ -1,6 +1,6 @@
 # Object Model
 
-In PythonSCAD, every 3D or 2D solid is a Python object of type `openscad.Openscad`. These objects support method chaining, metadata storage, iteration over children, and operator overloading.
+In PythonSCAD, every 3D or 2D solid is a Python object of type `openscad.PyOpenSCAD`. These objects support method chaining, metadata storage, iteration over children, and operator overloading.
 
 ## Method Chaining
 
