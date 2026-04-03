@@ -4144,9 +4144,8 @@ void MainWindow::handleFileDrop(const QUrl& url)
 {
   if (url.scheme() != "file") return;
   const auto fileName = url.toLocalFile();
-  const auto fileInfo = QFileInfo{fileName};
-  const auto suffix = fileInfo.suffix().toLower();
-  const auto cmd = Importer::knownFileExtensions[suffix];
+  const auto suffix = Importer::effectiveSuffixForOpen(fileName);
+  const auto cmd = Importer::knownFileExtensions.value(suffix);
   if (cmd.isEmpty()) {
     tabManager->open(fileName);
   } else {
