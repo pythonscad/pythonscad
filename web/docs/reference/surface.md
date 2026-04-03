@@ -16,7 +16,7 @@ surface(file, center=False, convexity=2, invert=False, color=False)
 | `center` | bool | `False` | Center the surface on the origin |
 | `convexity` | int | `2` | Convexity for rendering |
 | `invert` | bool | `False` | Invert the heightmap values |
-| `color` | bool | — | Use color data from the image |
+| `color` | bool | `False` | Use color data from the image |
 
 **File formats:**
 
