@@ -4228,6 +4228,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
   }
 
   progress_report_fin();
+  MainWindow *outputSurvivor = nullptr;
   {
     const auto& wins = scadApp->windowManager.getWindows();
     MainWindow *otherWindow = nullptr;
@@ -4242,14 +4243,17 @@ void MainWindow::closeEvent(QCloseEvent *event)
       if (outTarget == nullptr || outTarget == this) {
         outTarget = otherWindow;
       }
+      outputSurvivor = outTarget;
       outTarget->setCurrentOutput();
     } else {
       hideCurrentOutput();
     }
   }
 
-  // Log to stdout from now on
-  clearCurrentOutput();
+  if (!outputSurvivor) {
+    // Log to stdout from now on (no remaining GUI console owns the handler)
+    clearCurrentOutput();
+  }
 
   QSettingsCached settings;
   settings.setValue("window/geometry", saveGeometry());
@@ -4263,7 +4267,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
   // Disable invokeMethod calls for consoleOutput during shutdown,
   // otherwise will segfault if echos are in progress.
-  hideCurrentOutput();
+  if (!outputSurvivor) {
+    hideCurrentOutput();
+  }
   event->accept();
 }
 
