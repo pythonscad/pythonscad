@@ -183,10 +183,11 @@ void UnsavedChangesDialog::removeListItem(EditorInterface *editor)
   delete widget;
 
   listWidget->takeItem(row);
-  delete item;
 
   itemToEditor.remove(item);
   editorToItem.remove(editor);
+
+  delete item;
 }
 
 void UnsavedChangesDialog::updateListItem(EditorInterface *editor)
