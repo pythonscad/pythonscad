@@ -174,16 +174,22 @@ bool shouldOfferAutosaveRestore(const QString& autosavePath, const QString& sess
   return autosaveInfo.lastModified() > sessionInfo.lastModified();
 }
 
-bool promptAutosaveRestore(const QString& autosavePath)
+enum class AutosaveRecoverChoice {
+  RestoreIntoSession,
+  DiscardAutosaveOnly,
+  StartFreshSession,
+};
+
+AutosaveRecoverChoice promptAutosaveRestore(const QString& autosavePath)
 {
   while (true) {
     QMessageBox box;
     box.setIcon(QMessageBox::Warning);
     box.setWindowTitle(_("PythonSCAD"));
     box.setText(_("Recovered session data was found."));
-    box.setInformativeText(_("Restore the autosaved session?"));
     auto *restoreButton = box.addButton(_("Restore"), QMessageBox::AcceptRole);
-    auto *discardButton = box.addButton(_("Discard"), QMessageBox::RejectRole);
+    auto *discardButton = box.addButton(_("Discard recovery only"), QMessageBox::RejectRole);
+    auto *startFreshButton = box.addButton(_("Start fresh"), QMessageBox::DestructiveRole);
     auto *showButton = box.addButton(_("Show File"), QMessageBox::ActionRole);
     box.setDefaultButton(restoreButton);
     box.exec();
@@ -195,10 +201,13 @@ bool promptAutosaveRestore(const QString& autosavePath)
     }
 
     if (box.clickedButton() == restoreButton) {
-      return true;
+      return AutosaveRecoverChoice::RestoreIntoSession;
+    }
+    if (box.clickedButton() == startFreshButton) {
+      return AutosaveRecoverChoice::StartFreshSession;
     }
 
-    return false;
+    return AutosaveRecoverChoice::DiscardAutosaveOnly;
   }
 }
 
@@ -854,7 +863,8 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
     const QString sessionPath = TabManager::getSessionFilePath();
     const QString autosavePath = TabManager::getAutosaveFilePath();
     if (shouldOfferAutosaveRestore(autosavePath, sessionPath)) {
-      if (promptAutosaveRestore(autosavePath)) {
+      switch (promptAutosaveRestore(autosavePath)) {
+      case AutosaveRecoverChoice::RestoreIntoSession: {
         QFile in(autosavePath);
         QSaveFile out(sessionPath);
         if (in.open(QIODevice::ReadOnly) && out.open(QIODevice::WriteOnly)) {
@@ -870,8 +880,12 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
         } else {
           out.cancelWriting();
         }
-      } else {
+      } break;
+      case AutosaveRecoverChoice::DiscardAutosaveOnly: QFile::remove(autosavePath); break;
+      case AutosaveRecoverChoice::StartFreshSession:
         QFile::remove(autosavePath);
+        QFile::remove(sessionPath);
+        break;
       }
     }
   }
