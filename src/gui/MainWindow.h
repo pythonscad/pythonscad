@@ -218,9 +218,10 @@ public:
 
   // Parse the document contained in the editor, update the editors's parameters and returns a SourceFile
   // object if parsing suceeded. Nullptr otherwise.
-  std::shared_ptr<SourceFile> parseDocument(EditorInterface *editor);
+  std::shared_ptr<SourceFile> parseDocument(EditorInterface *editor,
+                                            bool pythonDryRunFullScript = false);
 
-  void parseTopLevelDocument();
+  void parseTopLevelDocument(bool pythonDryRunFullScript = false);
   void exceptionCleanup();
   void setLastFocus(QWidget *widget);
   void UnknownExceptionCleanup(std::string msg = "");

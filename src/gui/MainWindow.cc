@@ -2182,7 +2182,8 @@ void MainWindow::clearPythonUntrustStateForPath(const std::string& path)
 }
 #endif  // ifdef ENABLE_PYTHON
 
-std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
+std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
+                                                      bool pythonDryRunFullScript)
 {
   resetSuppressedMessages();
 
@@ -2287,7 +2288,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
       const auto& v = Settings::SettingsPython::pythonVirtualEnv.value();
       LOG("Running %1$s in venv '%2$s'.", python_version(), v);
     }
-    auto error = evaluatePython(fulltext_py, false);  // add assignments TODO check
+    auto error = evaluatePython(fulltext_py, pythonDryRunFullScript);
     if (error.size() > 0) LOG(message_group::Error, Location::NONE, "", error.c_str());
     finishPython();
 
@@ -2322,15 +2323,23 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor)
   return std::shared_ptr<SourceFile>(sourceFile);
 }
 
-void MainWindow::parseTopLevelDocument()
+void MainWindow::parseTopLevelDocument(bool pythonDryRunFullScript)
 {
   resetSuppressedMessages();
 
-  this->lastCompiledDoc = activeEditor->toPlainText();
+  const bool skipRootUpdate =
+    pythonDryRunFullScript && activeEditor && activeEditor->language == LANG_PYTHON;
+
+  if (!skipRootUpdate) {
+    this->lastCompiledDoc = activeEditor->toPlainText();
+  }
 
   activeEditor->resetHighlighting();
-  this->rootFile = parseDocument(activeEditor);
-  this->parsedFile = this->rootFile;
+  auto newRoot = parseDocument(activeEditor, pythonDryRunFullScript);
+  if (!skipRootUpdate) {
+    this->rootFile = newRoot;
+    this->parsedFile = newRoot;
+  }
 }
 
 void MainWindow::checkAutoReload()
@@ -3662,7 +3671,7 @@ void MainWindow::refreshParametersFromEditor()
     return;
   }
   if (!activeEditor) return;
-  parseTopLevelDocument();
+  parseTopLevelDocument(true);
 }
 
 void MainWindow::on_viewActionTop_triggered()
@@ -4031,7 +4040,7 @@ void MainWindow::onTabManagerEditorContentReloaded(EditorInterface *reloadedEdit
   try {
     // when a new editor is created, it is important to compile the initial geometry
     // so the customizer panels are ok.
-    parseDocument(reloadedEditor);
+    parseDocument(reloadedEditor, true);
     if (reloadedEditor == activeEditor) {
       lastCompiledDoc = activeEditor->toPlainText();
     }

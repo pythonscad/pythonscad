@@ -979,7 +979,10 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 
 void finishPython(void)
 {
-  show_final();
+  if (!pythonDryRun) {
+    show_final();
+  }
+  pythonDryRun = false;
 }
 
 int debug_num, debug_cnt;  // Hidden debug aid
