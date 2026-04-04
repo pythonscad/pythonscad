@@ -56,6 +56,9 @@ private:
 
 public:
   ParameterWidget(QWidget *parent = nullptr);
+  /// Clears customizer state so a new disk-backed document can load safely (e.g. reusing an empty tab
+  /// after preview). Call before \c readFile when the widget may already have run \c setParameters().
+  void resetForNewDocument();
   void readFile(const QString& scadFile);
   void saveFile(const QString& scadFile);
   void saveBackupFile(const QString& scadFile);

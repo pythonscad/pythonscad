@@ -26,10 +26,12 @@
 #include "gui/parameter/ParameterWidget.h"
 
 #include <QAction>
+#include <QCoreApplication>
 #include <QInputDialog>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLayoutItem>
+#include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
 #include <QString>
@@ -85,7 +87,40 @@ ParameterWidget::ParameterWidget(QWidget *parent) : QWidget(parent)
           &ParameterWidget::setFontFamilySize);
 }
 
-// Can only be called before the initial setParameters().
+void ParameterWidget::resetForNewDocument()
+{
+  pendingSessionState.clear();
+  invalidJsonFile.clear();
+  source.clear();
+  setModified(false);
+
+  if (comboBoxPreset->isEditable() && comboBoxPreset->lineEdit()) {
+    QObject::disconnect(comboBoxPreset->lineEdit(), &QLineEdit::textEdited, this,
+                        &ParameterWidget::onSetNameChanged);
+  }
+
+  ParameterObjects oldParameters = std::move(this->parameters);
+  widgets.clear();
+  QLayout *layout = this->scrollAreaWidgetContents->layout();
+  while (layout->count() > 0) {
+    QLayoutItem *child = layout->takeAt(0);
+    if (child->widget()) {
+      child->widget()->deleteLater();
+    }
+    delete child;
+  }
+  QCoreApplication::processEvents();
+
+  sets.clear();
+
+  comboBoxPreset->clear();
+  comboBoxPreset->addItem(_("<design default>"));
+  comboBoxPreset->setCurrentIndex(0);
+  updateSetEditability();
+}
+
+// Call after resetForNewDocument() if setParameters() may have run already; otherwise only before the
+// first setParameters() (e.g. new tab from createTab).
 void ParameterWidget::readFile(const QString& scadFile)
 {
   assert(sets.empty());

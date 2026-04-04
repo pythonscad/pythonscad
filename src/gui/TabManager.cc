@@ -677,6 +677,7 @@ void TabManager::openTabFile(const QString& filename)
     }
     editor->filepath = absPath;
     editor->resetLanguageDetection();
+    editor->parameterWidget->resetForNewDocument();
     editor->parameterWidget->readFile(absPath);
     parent->updateRecentFiles(filename);
     refreshDocument();
@@ -714,6 +715,7 @@ void TabManager::openTabFile(const QString& filename)
         std::string(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size())));
     }
 #endif
+    editor->parameterWidget->resetForNewDocument();
     editor->parameterWidget->readFile(fileinfo.absoluteFilePath());
     parent->updateRecentFiles(filename);
   } else {
