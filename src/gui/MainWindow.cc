@@ -28,13 +28,11 @@
 #endif
 #include "gui/MainWindow.h"
 
-#include <sys/stat.h>
 #include "gui/CSGWorker.h"
 #include "gui/LoadShareDesignDialog.h"
 #include "gui/ShareDesignDialog.h"
 #include <QToolTip>
 #include <curl/curl.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include "gui/ExportGcodeDialog.h"
 #include "genlang/genlang.h"
@@ -2090,10 +2088,11 @@ void MainWindow::setRenderVariables(ContextHandle<BuiltinContext>& context)
 std::string MainWindow::autoReloadIdentityForPath(const QString& filepath)
 {
   if (filepath.isEmpty()) return {};
-  struct stat st;
-  memset(&st, 0, sizeof(struct stat));
-  if (stat(filepath.toLocal8Bit(), &st) != 0) return {};
-  return str(boost::format("%x.%x") % st.st_mtime % st.st_size);
+  const QFileInfo fi(filepath);
+  if (!fi.exists() || !fi.isFile()) return {};
+  const qint64 mtime = fi.lastModified().toSecsSinceEpoch();
+  const qint64 size = fi.size();
+  return str(boost::format("%x.%x") % mtime % size);
 }
 
 bool MainWindow::fileChangedOnDisk()
