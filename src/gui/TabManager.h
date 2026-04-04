@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QJsonObject>
 #include <QObject>
 #include <QSet>
 #include <cstddef>
@@ -106,6 +107,19 @@ private:
                          const QByteArray& customizerState = QByteArray(),
                          std::optional<int> sessionLanguage = std::nullopt);
   static bool migrateSession(QJsonObject& root, int fromVersion);
+
+  enum class SessionFileReadStatus {
+    Ok,
+    OpenFailed,
+    InvalidJson,
+    TooNew,
+    MigrateFailed,
+  };
+  /// Read session JSON from disk; on \c Ok, \a outRoot holds the normalized object (migrated).
+  static SessionFileReadStatus readSessionFileRoot(const QString& path, QJsonObject *outRoot,
+                                                   QString *openError = nullptr,
+                                                   int *tooNewVersion = nullptr,
+                                                   int *migrateFailedAtVersion = nullptr);
 
   QTabBar::ButtonPosition getClosingButtonPosition();
   void zoomIn();

@@ -22,7 +22,7 @@ public:
 
   enum Result { Cancel = 0, DiscardAll = 1, AllSaved = 2 };
 
-  Result result() const { return dialogResult; }
+  Result unsavedResult() const { return dialogResult; }
 
 private slots:
   void onItemClicked(QListWidgetItem *item);

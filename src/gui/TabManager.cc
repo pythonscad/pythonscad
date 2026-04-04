@@ -881,7 +881,7 @@ bool TabManager::shouldClose()
   UnsavedChangesDialog dialog(this, parent, parent);
   dialog.exec();
 
-  switch (dialog.result()) {
+  switch (dialog.unsavedResult()) {
   case UnsavedChangesDialog::AllSaved:   return true;
   case UnsavedChangesDialog::DiscardAll: return true;
   case UnsavedChangesDialog::Cancel:
@@ -1169,57 +1169,93 @@ bool TabManager::migrateSession(QJsonObject& root, int fromVersion)
   return true;
 }
 
-bool TabManager::restoreSession(const QString& path, int windowIndex)
+TabManager::SessionFileReadStatus TabManager::readSessionFileRoot(const QString& path,
+                                                                  QJsonObject *outRoot,
+                                                                  QString *openError, int *tooNewVersion,
+                                                                  int *migrateFailedAtVersion)
 {
+  if (!outRoot) {
+    return SessionFileReadStatus::InvalidJson;
+  }
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    QMessageBox::warning(parent, QString(_("Session Restore")),
-                         QString(_("Could not open the session file for reading:\n%1\n\n%2\n\n"
-                                   "Starting with a fresh session."))
-                           .arg(path)
-                           .arg(file.errorString()));
-    return false;
+    if (openError) {
+      *openError = file.errorString();
+    }
+    return SessionFileReadStatus::OpenFailed;
   }
   const QByteArray rawData = file.readAll();
   file.close();
 
   const QJsonDocument doc = QJsonDocument::fromJson(rawData);
   if (!doc.isObject()) {
+    return SessionFileReadStatus::InvalidJson;
+  }
+
+  QJsonObject root = doc.object();
+  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
+
+  if (fileVersion > SESSION_VERSION) {
+    if (tooNewVersion) {
+      *tooNewVersion = fileVersion;
+    }
+    return SessionFileReadStatus::TooNew;
+  }
+
+  if (fileVersion < SESSION_VERSION) {
+    if (!migrateSession(root, fileVersion)) {
+      if (migrateFailedAtVersion) {
+        *migrateFailedAtVersion = fileVersion;
+      }
+      return SessionFileReadStatus::MigrateFailed;
+    }
+  }
+
+  *outRoot = std::move(root);
+  return SessionFileReadStatus::Ok;
+}
+
+bool TabManager::restoreSession(const QString& path, int windowIndex)
+{
+  QJsonObject root;
+  QString openErr;
+  int tooNewVer = 0;
+  int migrateFailVer = 0;
+  const auto readSt = readSessionFileRoot(path, &root, &openErr, &tooNewVer, &migrateFailVer);
+  switch (readSt) {
+  case SessionFileReadStatus::OpenFailed:
+    QMessageBox::warning(parent, QString(_("Session Restore")),
+                         QString(_("Could not open the session file for reading:\n%1\n\n%2\n\n"
+                                   "Starting with a fresh session."))
+                           .arg(path)
+                           .arg(openErr));
+    return false;
+  case SessionFileReadStatus::InvalidJson:
     QMessageBox::warning(parent, QString(_("Session Restore")),
                          QString(_("The session file is corrupt or unreadable:\n%1\n\n"
                                    "The file has not been deleted — you may inspect it manually.\n"
                                    "Starting with a fresh session."))
                            .arg(path));
     return false;
-  }
-
-  QJsonObject root = doc.object();
-
-  // Files without a "version" field are treated as version 1 (the original format).
-  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
-
-  if (fileVersion > SESSION_VERSION) {
+  case SessionFileReadStatus::TooNew:
     QMessageBox::critical(
       parent, QString(_("Session Restore")),
       QString(_("The session file was created by a newer version of PythonSCAD "
                 "(session version %1, but this build only supports up to version %2).\n\n"
                 "Please upgrade PythonSCAD or delete the session file:\n%3"))
-        .arg(fileVersion)
+        .arg(tooNewVer)
         .arg(SESSION_VERSION)
         .arg(path));
     return false;
-  }
-
-  if (fileVersion < SESSION_VERSION) {
-    if (!migrateSession(root, fileVersion)) {
-      QMessageBox::warning(
-        parent, QString(_("Session Restore")),
-        QString(_("The session file uses an old format (version %1) that cannot be "
-                  "migrated to the current format (version %2). Starting with a fresh session."))
-          .arg(fileVersion)
-          .arg(SESSION_VERSION));
-      return false;
-    }
+  case SessionFileReadStatus::MigrateFailed:
+    QMessageBox::warning(
+      parent, QString(_("Session Restore")),
+      QString(_("The session file uses an old format (version %1) that cannot be "
+                "migrated to the current format (version %2). Starting with a fresh session."))
+        .arg(migrateFailVer)
+        .arg(SESSION_VERSION));
+    return false;
+  case SessionFileReadStatus::Ok: break;
   }
 
   const QJsonArray windows = root.value(QStringLiteral("windows")).toArray();
@@ -1398,40 +1434,15 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
  */
 int TabManager::sessionWindowCount(const QString& path)
 {
-  QFile file(path);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return 0;
-  const QByteArray rawData = file.readAll();
-  file.close();
-
-  const QJsonDocument doc = QJsonDocument::fromJson(rawData);
-  if (!doc.isObject()) return 0;
-
-  QJsonObject root = doc.object();
-  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
-  if (fileVersion > SESSION_VERSION) return 0;
-  if (fileVersion < SESSION_VERSION) {
-    if (!migrateSession(root, fileVersion)) return 0;
-  }
-
+  QJsonObject root;
+  if (readSessionFileRoot(path, &root) != SessionFileReadStatus::Ok) return 0;
   return root.value(QStringLiteral("windows")).toArray().size();
 }
 
 int TabManager::sessionActiveWindowIndex(const QString& path)
 {
-  QFile file(path);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return 0;
-  const QByteArray rawData = file.readAll();
-  file.close();
-
-  const QJsonDocument doc = QJsonDocument::fromJson(rawData);
-  if (!doc.isObject()) return 0;
-
-  QJsonObject root = doc.object();
-  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
-  if (fileVersion > SESSION_VERSION) return 0;
-  if (fileVersion < SESSION_VERSION) {
-    if (!migrateSession(root, fileVersion)) return 0;
-  }
+  QJsonObject root;
+  if (readSessionFileRoot(path, &root) != SessionFileReadStatus::Ok) return 0;
 
   const QJsonArray windowArray = root.value(QStringLiteral("windows")).toArray();
   const int winCount = windowArray.size();
@@ -1444,20 +1455,8 @@ int TabManager::sessionActiveWindowIndex(const QString& path)
 
 bool TabManager::sessionHasOnlyEmptyTab(const QString& path)
 {
-  QFile file(path);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
-  const QByteArray rawData = file.readAll();
-  file.close();
-
-  const QJsonDocument doc = QJsonDocument::fromJson(rawData);
-  if (!doc.isObject()) return false;
-
-  QJsonObject root = doc.object();
-  const int fileVersion = root.value(QStringLiteral("version")).toInt(1);
-  if (fileVersion > SESSION_VERSION) return false;
-  if (fileVersion < SESSION_VERSION) {
-    if (!migrateSession(root, fileVersion)) return false;
-  }
+  QJsonObject root;
+  if (readSessionFileRoot(path, &root) != SessionFileReadStatus::Ok) return false;
 
   const QJsonArray windows = root.value(QStringLiteral("windows")).toArray();
   if (windows.size() != 1) return false;
