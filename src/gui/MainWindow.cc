@@ -2092,7 +2092,9 @@ std::string MainWindow::autoReloadIdentityForPath(const QString& filepath)
   if (!fi.exists() || !fi.isFile()) return {};
   const qint64 mtime = fi.lastModified().toSecsSinceEpoch();
   const qint64 size = fi.size();
-  return str(boost::format("%x.%x") % mtime % size);
+  const QString identity = QString::number(static_cast<qulonglong>(mtime), 16) + "." +
+                           QString::number(static_cast<qulonglong>(size), 16);
+  return identity.toStdString();
 }
 
 bool MainWindow::fileChangedOnDisk()
