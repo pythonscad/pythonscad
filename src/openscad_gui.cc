@@ -123,6 +123,8 @@ Q_DECLARE_METATYPE(std::shared_ptr<const Geometry>);
 extern std::string arg_colorscheme;
 
 namespace {
+// File-local linkage for helpers in this translation unit (through the closing
+// brace before gui()). Review: avoid exporting symbols from openscad_gui.cc.
 
 // Check if running with light or dark theme. This should really just be used
 // to switch the icon theme globally.
@@ -178,6 +180,8 @@ enum class AutosaveRecoverChoice {
   RestoreIntoSession,
   DiscardAutosaveOnly,
   StartFreshSession,
+  /// User dismissed or chose Cancel — do not delete autosave or change session files.
+  KeepForLater,
 };
 
 AutosaveRecoverChoice promptAutosaveRestore(const QString& autosavePath)
@@ -188,26 +192,36 @@ AutosaveRecoverChoice promptAutosaveRestore(const QString& autosavePath)
     box.setWindowTitle(_("PythonSCAD"));
     box.setText(_("Recovered session data was found."));
     auto *restoreButton = box.addButton(_("Restore"), QMessageBox::AcceptRole);
-    auto *discardButton = box.addButton(_("Discard recovery only"), QMessageBox::RejectRole);
+    auto *cancelButton = box.addButton(_("Cancel"), QMessageBox::RejectRole);
+    auto *discardButton = box.addButton(_("Discard recovery only"), QMessageBox::ApplyRole);
     auto *startFreshButton = box.addButton(_("Start fresh"), QMessageBox::DestructiveRole);
     auto *showButton = box.addButton(_("Show File"), QMessageBox::ActionRole);
     box.setDefaultButton(restoreButton);
     box.exec();
 
-    if (box.clickedButton() == showButton) {
+    QAbstractButton *clicked = box.clickedButton();
+    if (!clicked || clicked == cancelButton) {
+      return AutosaveRecoverChoice::KeepForLater;
+    }
+
+    if (clicked == showButton) {
       const QString dirPath = QFileInfo(autosavePath).absolutePath();
       QDesktopServices::openUrl(QUrl::fromLocalFile(dirPath));
       continue;
     }
 
-    if (box.clickedButton() == restoreButton) {
+    if (clicked == restoreButton) {
       return AutosaveRecoverChoice::RestoreIntoSession;
     }
-    if (box.clickedButton() == startFreshButton) {
+    if (clicked == startFreshButton) {
       return AutosaveRecoverChoice::StartFreshSession;
     }
 
-    return AutosaveRecoverChoice::DiscardAutosaveOnly;
+    if (clicked == discardButton) {
+      return AutosaveRecoverChoice::DiscardAutosaveOnly;
+    }
+
+    return AutosaveRecoverChoice::KeepForLater;
   }
 }
 
@@ -217,10 +231,14 @@ void setupAutosaveTimer(OpenSCADApp *app)
   const int initialSeconds = Settings::Settings::autosaveSessionIntervalSeconds.value();
   timer->setInterval(std::max(10, initialSeconds) * 1000);
 
-  QObject::connect(timer, &QTimer::timeout, app, [timer]() mutable {
-    static uint64_t state = 0;
-    static bool performed = false;
+  struct AutosaveTimerState final : QObject {
+    explicit AutosaveTimerState(QObject *parent) : QObject(parent) {}
+    uint64_t state = 0;
+    bool performed = false;
+  };
+  auto *timerState = new AutosaveTimerState(timer);
 
+  QObject::connect(timer, &QTimer::timeout, app, [timer, timerState]() {
     const int intervalSeconds = Settings::Settings::autosaveSessionIntervalSeconds.value();
     const int intervalMs = std::max(10, intervalSeconds) * 1000;
     if (timer->interval() != intervalMs) {
@@ -231,29 +249,29 @@ void setupAutosaveTimer(OpenSCADApp *app)
     const bool enabled = sessionMgmt && Settings::Settings::autosaveSessionEnabled.value();
 
     if (!enabled) {
-      if (performed) {
+      if (timerState->performed) {
         QFile::remove(TabManager::getAutosaveFilePath());
-        performed = false;
-        state = 0;
+        timerState->performed = false;
+        timerState->state = 0;
       }
       return;
     }
 
     const bool dirty = TabManager::hasDirtyTabs();
     if (!dirty) {
-      if (performed) {
+      if (timerState->performed) {
         QFile::remove(TabManager::getAutosaveFilePath());
-        performed = false;
-        state = 0;
+        timerState->performed = false;
+        timerState->state = 0;
       }
       return;
     }
 
     const uint64_t generation = TabManager::sessionDirtyGeneration();
-    if (!performed || generation != state) {
+    if (!timerState->performed || generation != timerState->state) {
       TabManager::saveGlobalSession(TabManager::getAutosaveFilePath());
-      state = generation;
-      performed = true;
+      timerState->state = generation;
+      timerState->performed = true;
     }
   });
 
@@ -611,6 +629,10 @@ void setupUnixSignalHandlers(OpenSCADApp *app)
     if (flags != -1) {
       fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     }
+    const int fdFlags = fcntl(fd, F_GETFD, 0);
+    if (fdFlags != -1) {
+      fcntl(fd, F_SETFD, fdFlags | FD_CLOEXEC);
+    }
   }
 
   auto *notifier = new QSocketNotifier(shutdownSignalPipe[0], QSocketNotifier::Read, app);
@@ -886,6 +908,7 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
         QFile::remove(autosavePath);
         QFile::remove(sessionPath);
         break;
+      case AutosaveRecoverChoice::KeepForLater: break;
       }
     }
   }
@@ -954,7 +977,7 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   }
 
   if (restoreSessionForExplicitFiles && !filesToAppend.isEmpty()) {
-    const bool openInNewWindow = Settings::Settings::singleInstanceOpenMode.value() == "new-window";
+    const bool openInNewWindow = openMode == QStringLiteral("new-window");
     if (openInNewWindow) {
       new MainWindow(filesToAppend);
     } else {
