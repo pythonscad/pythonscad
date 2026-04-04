@@ -924,11 +924,16 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     }
     Py_INCREF(mainMod);
     pythonMainModule.reset(mainMod);
-    pythonMainModuleInitialized = true;
     PyObject *mainDict = PyModule_GetDict(pythonMainModule.get());
+    if (mainDict == nullptr) {
+      pythonMainModule.reset();
+      alreadyTried = true;
+      return;
+    }
     Py_INCREF(mainDict);
     pythonInitDict.reset(mainDict);
-    pythonRuntimeInitialized = pythonInitDict != nullptr;
+    pythonMainModuleInitialized = true;
+    pythonRuntimeInitialized = true;
     PyInit_PyData();
     PyRun_String("from builtins import *\n", Py_file_input, pythonInitDict.get(), pythonInitDict.get());
     PyObject *key, *value;
@@ -1357,11 +1362,15 @@ extern "C" PyObject *PyInit_openscad(void)
     if (mainMod != nullptr) {
       Py_INCREF(mainMod);
       pythonMainModule.reset(mainMod);
-      pythonMainModuleInitialized = true;
       PyObject *d = PyModule_GetDict(pythonMainModule.get());
-      Py_INCREF(d);
-      pythonInitDict.reset(d);
-      pythonRuntimeInitialized = pythonInitDict != nullptr;
+      if (d != nullptr) {
+        Py_INCREF(d);
+        pythonInitDict.reset(d);
+        pythonMainModuleInitialized = true;
+        pythonRuntimeInitialized = true;
+      } else {
+        pythonMainModule.reset();
+      }
     }
     // Placeholder nodes used as sentinels (void / full space)
     if (!void_node) {
