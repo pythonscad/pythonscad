@@ -25,6 +25,7 @@
  */
 #include <Python.h>
 #include "genlang/genlang.h"
+#include <atomic>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -58,11 +59,43 @@ fs::path python_scriptpath;
 
 void PyObjectDeleter(PyObject *pObject)
 {
-  Py_XDECREF(pObject);
+  if (pObject == nullptr) {
+    return;
+  }
+  // C++ static destructors can run after Py_FinalizeEx; DECREF is undefined then (Python 3.12+ aborts).
+  if (!Py_IsInitialized()) {
+    return;
+  }
+  Py_DECREF(pObject);
 };
 
 PyObjectUniquePtr pythonInitDict(nullptr, &PyObjectDeleter);
 PyObjectUniquePtr pythonMainModule(nullptr, &PyObjectDeleter);
+
+static std::atomic<bool> openscad_py_atexit_registered{false};
+
+static void openscad_release_static_py_refs(void)
+{
+  if (!Py_IsInitialized()) {
+    return;
+  }
+  const PyGILState_STATE gstate = PyGILState_Ensure();
+  PyObject *const d = pythonInitDict.release();
+  PyObject *const m = pythonMainModule.release();
+  Py_XDECREF(d);
+  Py_XDECREF(m);
+  PyGILState_Release(gstate);
+}
+
+static void register_openscad_py_atexit(void)
+{
+  if (openscad_py_atexit_registered.exchange(true)) {
+    return;
+  }
+  if (Py_AtExit(openscad_release_static_py_refs) != 0) {
+    openscad_py_atexit_registered = false;
+  }
+}
 std::list<std::string> pythonInventory;
 AssignmentList customizer_parameters;
 AssignmentList customizer_parameters_finished;
@@ -934,6 +967,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     pythonInitDict.reset(mainDict);
     pythonMainModuleInitialized = true;
     pythonRuntimeInitialized = true;
+    register_openscad_py_atexit();
     PyInit_PyData();
     PyRun_String("from builtins import *\n", Py_file_input, pythonInitDict.get(), pythonInitDict.get());
     PyObject *key, *value;
@@ -1380,6 +1414,7 @@ extern "C" PyObject *PyInit_openscad(void)
     }
   }
 
+  register_openscad_py_atexit();
   return m;
 }
 
