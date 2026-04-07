@@ -891,6 +891,25 @@ bool TabManager::shouldClose()
   }
 }
 
+namespace {
+
+QString sessionConfigDir()
+{
+  QString dir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+  if (dir.isEmpty()) {
+    dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+  }
+  if (dir.isEmpty()) {
+    dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+  }
+  if (dir.isEmpty()) {
+    dir = QDir::homePath();
+  }
+  return dir;
+}
+
+}  // namespace
+
 QString TabManager::getSessionFilePath()
 {
   // QStandardPaths::AppConfigLocation returns a real filesystem directory on
@@ -898,14 +917,14 @@ QString TabManager::getSessionFilePath()
   // Windows the default NativeFormat stores settings in the registry, so
   // fileName() returns a registry path (e.g. "\\HKEY_CURRENT_USER\\Software\\…")
   // instead of a filesystem path.
-  const QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
-  return configDir + QStringLiteral("/session.json");
+  const QString configDir = sessionConfigDir();
+  return QDir(configDir).filePath(QStringLiteral("session.json"));
 }
 
 QString TabManager::getAutosaveFilePath()
 {
   const QString sessionPath = getSessionFilePath();
-  return QFileInfo(sessionPath).absolutePath() + QStringLiteral("/session.autosave.json");
+  return QDir(QFileInfo(sessionPath).absolutePath()).filePath(QStringLiteral("session.autosave.json"));
 }
 
 bool TabManager::hasDirtyTabs()
