@@ -1,4 +1,5 @@
 /* This is a colletion of function to share among all new languages */
+#pragma once
 
 #include <memory>
 #include "core/node.h"

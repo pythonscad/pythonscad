@@ -19,6 +19,7 @@
 #include <QByteArray>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QDialog>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
@@ -50,6 +51,7 @@
 #include "gui/MainWindow.h"
 #include "gui/OpenSCADApp.h"
 #include "gui/Preferences.h"
+#include "gui/QSettingsCached.h"
 #include "gui/ScintillaEditor.h"
 #include "gui/UnsavedChangesDialog.h"
 #include "utils/printutils.h"
@@ -61,6 +63,96 @@ namespace {
 uint64_t sessionDirtyGenerationValue = 0;
 bool sessionSaveWarningShown = false;
 bool skipSessionSaveOnQuit = false;
+
+QString untitledBasenameForLanguage(int language)
+{
+#ifdef ENABLE_PYTHON
+  return (language == LANG_PYTHON) ? QStringLiteral("Untitled.py") : QStringLiteral("Untitled.scad");
+#else
+  (void)language;
+  return QStringLiteral("Untitled.scad");
+#endif
+}
+
+QString initialPathForSaveDialog(const QString& filepath, int language)
+{
+  if (!filepath.isEmpty()) {
+    return filepath;
+  }
+  QSettingsCached settings;
+  QString dir = settings.value(QStringLiteral("lastOpenDirName")).toString();
+  if (dir.isEmpty()) {
+    dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+  }
+  if (dir.isEmpty()) {
+    dir = QDir::homePath();
+  }
+  return QDir(dir).filePath(untitledBasenameForLanguage(language));
+}
+
+#ifdef ENABLE_PYTHON
+struct DesignSaveFiltersPy
+{
+  QString python;
+  QString scad;
+  QString allDesigns;
+  QString allFiles;
+  QString combined() const
+  {
+    return QStringList{python, scad, allDesigns, allFiles}.join(QStringLiteral(";;"));
+  }
+};
+
+DesignSaveFiltersPy makeDesignSaveFilters()
+{
+  return DesignSaveFiltersPy{
+    QString(_("Python script (*.py)")),
+    QString(_("OpenSCAD script (*.scad)")),
+    QString(_("All design files (*.py *.scad)")),
+    QString(_("All files (*)")),
+  };
+}
+
+void appendDesignExtensionIfNeeded(QString& filename, const QString& selectedFilter,
+                                   const DesignSaveFiltersPy& f, int editorLanguage)
+{
+  if (!QFileInfo(filename).suffix().isEmpty()) return;
+  if (selectedFilter == f.python) {
+    filename.append(QStringLiteral(".py"));
+  } else if (selectedFilter == f.scad) {
+    filename.append(QStringLiteral(".scad"));
+  } else if (selectedFilter == f.allDesigns || selectedFilter == f.allFiles) {
+    filename.append((editorLanguage == LANG_PYTHON) ? QStringLiteral(".py") : QStringLiteral(".scad"));
+  } else {
+    filename.append((editorLanguage == LANG_PYTHON) ? QStringLiteral(".py") : QStringLiteral(".scad"));
+  }
+}
+#else
+struct DesignSaveFiltersScadOnly
+{
+  QString scad;
+  QString allFiles;
+  QString combined() const
+  {
+    return QStringList{scad, allFiles}.join(QStringLiteral(";;"));
+  }
+};
+
+DesignSaveFiltersScadOnly makeDesignSaveFilters()
+{
+  return DesignSaveFiltersScadOnly{
+    QString(_("OpenSCAD script (*.scad)")),
+    QString(_("All files (*)")),
+  };
+}
+
+void appendDesignExtensionIfNeeded(QString& filename, const QString& /*selectedFilter*/,
+                                   const DesignSaveFiltersScadOnly& /*f*/, int /*editorLanguage*/)
+{
+  if (!QFileInfo(filename).suffix().isEmpty()) return;
+  filename.append(QStringLiteral(".scad"));
+}
+#endif
 
 QJsonArray vec3ToJson(const Eigen::Vector3d& vec)
 {
@@ -212,7 +304,8 @@ void TabManager::tabSwitched(int x)
     QString editorcmd = "gvim --remote-send '<esc>:sb " + QString::fromStdString(filename) +
                         "<cr>' || (gvim '" + QString::fromStdString(filename) + "' &)";
     //   LOG("1. Opening file '%1$s'",editorcmd.toUtf8().constData());
-    (void)system(editorcmd.toUtf8().constData());
+    const int gvimRc = system(editorcmd.toUtf8().constData());
+    (void)gvimRc;
     // **MCH*
   }
 
@@ -295,7 +388,8 @@ void TabManager::open(const QString& filename)
       "gvim --remote-tab-silent '" + filename.toUtf8() + "' || gvim '" + filename.toUtf8() + "' &";
     editorcmd += filename.toUtf8();
     //    LOG("2. Opening file '%1$s'",editorcmd.toUtf8().constData());
-    (void)system(editorcmd.toUtf8().constData());
+    const int gvimRc = system(editorcmd.toUtf8().constData());
+    (void)gvimRc;
   }
   for (auto edt : editorList) {
     if (filename == edt->filepath) {
@@ -1605,6 +1699,8 @@ bool TabManager::save(EditorInterface *edt, const QString& path)
     edt->parameterWidget->setModified(false);
     parent->updateRecentFiles(path);
     edt->filepath = path;
+    QSettingsCached settings;
+    settings.setValue(QStringLiteral("lastOpenDirName"), QFileInfo(path).absolutePath());
   } else {
     saveError(file, _("Error saving design"), path);
   }
@@ -1615,17 +1711,16 @@ bool TabManager::saveAs(EditorInterface *edt)
 {
   assert(edt != nullptr);
 
-  const auto defaultName = (edt->language == LANG_PYTHON) ? _("Untitled.py") : _("Untitled.scad");
-  const auto dir = edt->filepath.isEmpty() ? defaultName : edt->filepath;
-#ifdef ENABLE_PYTHON
+  const QString initialPath = initialPathForSaveDialog(edt->filepath, edt->language);
+  const auto filters = makeDesignSaveFilters();
   QString selectedFilter;
-  QString pythonFilter = _("PythonSCAD Designs (*.py)");
-  auto filename = QFileDialog::getSaveFileName(parent, _("Save File"), dir,
-                                               QString("%1").arg(pythonFilter), &selectedFilter);
+#ifdef ENABLE_PYTHON
+  selectedFilter = (edt->language == LANG_PYTHON) ? filters.python : filters.scad;
 #else
-  auto filename =
-    QFileDialog::getSaveFileName(parent, _("Save File"), dir, _("OpenSCAD Designs (*.scad)"));
+  selectedFilter = filters.scad;
 #endif
+  auto filename = QFileDialog::getSaveFileName(parent, _("Save File"), initialPath, filters.combined(),
+                                               &selectedFilter);
   if (filename.isEmpty()) {
     return false;
   }
@@ -1633,17 +1728,7 @@ bool TabManager::saveAs(EditorInterface *edt)
   auto guard = parent->scopedSetCurrentOutput();
 
   if (QFileInfo(filename).suffix().isEmpty()) {
-#ifdef ENABLE_PYTHON
-    // Check if the user selected the Python filter
-    if (selectedFilter == pythonFilter) {
-      filename.append(".py");
-    } else {
-      // For other cases, use .scad as the default extension
-      filename.append(".scad");
-    }
-#else
-    filename.append(".scad");
-#endif
+    appendDesignExtensionIfNeeded(filename, selectedFilter, filters, edt->language);
 
     // Manual overwrite check since Qt doesn't do it, when using the
     // defaultSuffix property
@@ -1687,28 +1772,49 @@ bool TabManager::saveACopy(EditorInterface *edt)
 
   const QString path = edt->filepath;
 
-  QString suffix = ".scad";
-  QDir dir(_("Untitled.scad"));
-  if (path.endsWith(".py")) {
-    suffix = ".py";
-    dir = QDir(_("Untitled.py"));
+#ifdef ENABLE_PYTHON
+  const bool usePySuffix = path.endsWith(QStringLiteral(".py")) || edt->language == LANG_PYTHON;
+#else
+  const bool usePySuffix = false;
+#endif
+  const QString suffix = usePySuffix ? QStringLiteral(".py") : QStringLiteral(".scad");
+
+  QString suggestedBasename = untitledBasenameForLanguage(edt->language);
+  if (!path.isEmpty()) {
+    const QFileInfo info(path);
+    suggestedBasename = info.baseName() + QStringLiteral("_copy") + suffix;
   }
 
-  if (!path.isEmpty()) {
-    QFileInfo info(path);
-    QString filecopy(info.absolutePath() % "/" % info.baseName() % "_copy" % suffix);
-    dir.setPath(filecopy);
+  QSettingsCached settings;
+  QString startDir = settings.value(QStringLiteral("lastOpenDirName")).toString();
+  if (startDir.isEmpty()) {
+    startDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
   }
+  if (startDir.isEmpty()) {
+    startDir = QDir::homePath();
+  }
+  if (!path.isEmpty()) {
+    const QFileInfo info(path);
+    startDir = info.absolutePath();
+  }
+
+  const auto filters = makeDesignSaveFilters();
+  QString selectedFilter;
+#ifdef ENABLE_PYTHON
+  selectedFilter = usePySuffix ? filters.python : filters.scad;
+#else
+  selectedFilter = filters.scad;
+#endif
 
   QFileDialog saveCopyDialog;
-  saveCopyDialog.setAcceptMode(QFileDialog::AcceptSave);  // Set the dialog to "Save" mode.
-  saveCopyDialog.setWindowTitle("Save A Copy");
-
-  saveCopyDialog.setNameFilter("PythonSCAD Designs (*.py, *.scad)");
-
-  saveCopyDialog.setDefaultSuffix("scad");
+  saveCopyDialog.setAcceptMode(QFileDialog::AcceptSave);
+  saveCopyDialog.setWindowTitle(_("Save A Copy"));
+  saveCopyDialog.setNameFilters(filters.combined().split(QStringLiteral(";;")));
+  saveCopyDialog.selectNameFilter(selectedFilter);
+  saveCopyDialog.setDefaultSuffix(usePySuffix ? QStringLiteral("py") : QStringLiteral("scad"));
   saveCopyDialog.setViewMode(QFileDialog::List);
-  saveCopyDialog.setDirectory(dir);
+  saveCopyDialog.setDirectory(startDir);
+  saveCopyDialog.selectFile(suggestedBasename);
 
   if (saveCopyDialog.exec() != QDialog::Accepted) return false;
 
@@ -1720,6 +1826,11 @@ bool TabManager::saveACopy(EditorInterface *edt)
   QString savefile = selectedFiles.first();
 
   if (savefile.isEmpty()) return false;
+
+  selectedFilter = saveCopyDialog.selectedNameFilter();
+  if (QFileInfo(savefile).suffix().isEmpty()) {
+    appendDesignExtensionIfNeeded(savefile, selectedFilter, filters, edt->language);
+  }
 
   QSaveFile file(savefile);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
