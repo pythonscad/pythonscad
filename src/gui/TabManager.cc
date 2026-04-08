@@ -40,6 +40,10 @@
 #include <sstream>
 #include <vector>
 
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS) && !defined(Q_OS_WASM)
+#include <unistd.h>
+#endif
+
 #include "gui/Editor.h"
 #include "gui/ImportUtils.h"
 #include <boost/algorithm/string/predicate.hpp>
@@ -893,19 +897,52 @@ bool TabManager::shouldClose()
 
 namespace {
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)
+QString sessionDirUnderRuntime()
+{
+  const QString runtime = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation);
+  if (runtime.isEmpty()) {
+    return {};
+  }
+  return QDir(runtime).filePath(QStringLiteral("PythonSCAD"));
+}
+#endif
+
+QString sessionDirUnderTempOrHomeFallback()
+{
+  QString base = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+  if (!base.isEmpty()) {
+    QString leaf = QStringLiteral("PythonSCAD");
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS) && !defined(Q_OS_WASM)
+    // Avoid a shared machine-wide directory such as /tmp/PythonSCAD on multi-user hosts.
+    leaf = QStringLiteral("PythonSCAD-%1").arg(static_cast<qulonglong>(getuid()));
+#endif
+    return QDir(base).filePath(leaf);
+  }
+  base = QDir::homePath();
+  if (base.isEmpty()) {
+    return {};
+  }
+  return QDir(base).filePath(QStringLiteral(".local/share/PythonSCAD"));
+}
+
 QString sessionConfigDir()
 {
   QString dir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
-  if (dir.isEmpty()) {
-    dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+  if (!dir.isEmpty()) {
+    return dir;
   }
-  if (dir.isEmpty()) {
-    dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+  dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+  if (!dir.isEmpty()) {
+    return dir;
   }
-  if (dir.isEmpty()) {
-    dir = QDir::homePath();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)
+  dir = sessionDirUnderRuntime();
+  if (!dir.isEmpty()) {
+    return dir;
   }
-  return dir;
+#endif
+  return sessionDirUnderTempOrHomeFallback();
 }
 
 }  // namespace
