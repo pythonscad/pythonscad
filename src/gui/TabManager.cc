@@ -212,7 +212,7 @@ void TabManager::tabSwitched(int x)
     QString editorcmd = "gvim --remote-send '<esc>:sb " + QString::fromStdString(filename) +
                         "<cr>' || (gvim '" + QString::fromStdString(filename) + "' &)";
     //   LOG("1. Opening file '%1$s'",editorcmd.toUtf8().constData());
-    system(editorcmd.toUtf8().constData());
+    (void)system(editorcmd.toUtf8().constData());
     // **MCH*
   }
 
@@ -295,7 +295,7 @@ void TabManager::open(const QString& filename)
       "gvim --remote-tab-silent '" + filename.toUtf8() + "' || gvim '" + filename.toUtf8() + "' &";
     editorcmd += filename.toUtf8();
     //    LOG("2. Opening file '%1$s'",editorcmd.toUtf8().constData());
-    system(editorcmd.toUtf8().constData());
+    (void)system(editorcmd.toUtf8().constData());
   }
   for (auto edt : editorList) {
     if (filename == edt->filepath) {
