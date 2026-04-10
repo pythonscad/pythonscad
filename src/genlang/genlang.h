@@ -1,14 +1,14 @@
 /* This is a colletion of function to share among all new languages */
 #pragma once
 
+#include "genlang/language.h"
+
 #include <memory>
 #include "core/node.h"
 #include "core/function.h"
 #include "core/ScopeContext.h"
 #include "core/UserModule.h"
 #include "core/CsgOpNode.h"
-
-enum { LANG_NONE = -1, LANG_SCAD = 0, LANG_PYTHON = 1, LANG_JS = 2, LANG_LUA = 3 };
 
 #define DECLARE_INSTANCE()                                                                              \
   std::string instance_name;                                                                            \

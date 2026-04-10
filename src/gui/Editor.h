@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "core/IndicatorData.h"
-#include "genlang/genlang.h"
+#include "genlang/language.h"
 #include "gui/parameter/ParameterWidget.h"
 
 enum class EditorSelectionIndicatorStatus { SELECTED, IMPACTED };
