@@ -1716,8 +1716,8 @@ bool TabManager::saveAs(EditorInterface *edt)
   if (QFileInfo(filename).suffix().isEmpty()) {
     appendDesignSaveExtensionIfNeeded(filename, filters);
 
-    // Manual overwrite check since Qt doesn't do it, when using the
-    // defaultSuffix property
+    // We append the suffix after getSaveFileName returns, so the path Qt validated may
+    // differ from the final path; prompt if that final file already exists.
     if (!warnOverwriteIfNeeded(parent, filename)) {
       return false;
     }
