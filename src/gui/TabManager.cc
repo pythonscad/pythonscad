@@ -96,6 +96,15 @@ inline bool isSessionLaunchTokenPath(const QString& path)
   return path.startsWith(QStringLiteral(":session:"));
 }
 
+/** Path stored in session JSON (never persist internal launch tokens). */
+QString normalizedSessionFilepathForJson(const QString& filepath)
+{
+  if (isSessionLaunchTokenPath(filepath)) {
+    return {};
+  }
+  return filepath;
+}
+
 /** Save / Save As / Save a copy: one primary format (matches editor language) plus All files. */
 struct DesignSaveFilterSet {
   QString primaryLabel;
@@ -1151,10 +1160,7 @@ void TabManager::saveSession(const QString& path)
   for (int i = 0; i < tabWidget->count(); ++i) {
     auto *edt = static_cast<EditorInterface *>(tabWidget->widget(i));
     QJsonObject obj;
-    QString sessionPath = edt->filepath;
-    if (isSessionLaunchTokenPath(sessionPath)) {
-      sessionPath.clear();
-    }
+    const QString sessionPath = normalizedSessionFilepathForJson(edt->filepath);
     obj.insert(QStringLiteral("filepath"), sessionPath);
     obj.insert(QStringLiteral("content"), edt->toPlainText());
     obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
@@ -1239,10 +1245,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
     for (int i = 0; i < tm->tabWidget->count(); ++i) {
       auto *edt = static_cast<EditorInterface *>(tm->tabWidget->widget(i));
       QJsonObject obj;
-      QString sessionPath = edt->filepath;
-      if (isSessionLaunchTokenPath(sessionPath)) {
-        sessionPath.clear();
-      }
+      const QString sessionPath = normalizedSessionFilepathForJson(edt->filepath);
       obj.insert(QStringLiteral("filepath"), sessionPath);
       obj.insert(QStringLiteral("content"), edt->toPlainText());
       obj.insert(QStringLiteral("contentModified"), edt->isContentModified());
