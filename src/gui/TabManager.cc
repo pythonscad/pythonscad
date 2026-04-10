@@ -125,8 +125,8 @@ DesignSaveFilterSet makeDesignSaveFilters(int editorLanguage)
 void appendDesignSaveExtensionIfNeeded(QString& filename, const DesignSaveFilterSet& filters)
 {
   if (!QFileInfo(filename).suffix().isEmpty()) return;
-  filename.append(filters.defaultSuffixQt == QStringLiteral("py") ? QStringLiteral(".py")
-                                                                  : QStringLiteral(".scad"));
+  filename.append(QLatin1Char('.'));
+  filename.append(filters.defaultSuffixQt);
 }
 
 void configureDesignSaveFileDialog(QFileDialog& dialog, const DesignSaveFilterSet& filters)
