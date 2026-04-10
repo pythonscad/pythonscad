@@ -285,6 +285,34 @@ bool TabManager::confirmCreateMissingDesignFile(QWidget *parent, const QString& 
   return box.exec() == QMessageBox::Yes;
 }
 
+void TabManager::prepareEditorBufferForNewDesignFile(EditorInterface *edt, const QString& absPath)
+{
+  const QString suffix = Importer::effectiveSuffixForOpen(absPath);
+#ifdef ENABLE_PYTHON
+  if (suffix == QStringLiteral("py")) {
+    std::string templ = "from openscad import *\n";
+    std::string libs = Settings::SettingsPython::pythonNetworkImportList.value();
+    std::stringstream ss(libs);
+    std::string word;
+    while (std::getline(ss, word, '\n')) {
+      if (word.size() == 0) continue;
+      templ += "nimport(\"" + word + "\")\n";
+    }
+    edt->setPlainText(QString::fromStdString(templ));
+    edt->setLanguageManually(LANG_PYTHON);
+    const QByteArray pathUtf8 = QFileInfo(absPath).absoluteFilePath().toUtf8();
+    parent->clearPythonUntrustStateForPath(
+      std::string(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size())));
+  } else
+#endif
+  {
+    edt->setPlainText("");
+    edt->setLanguageManually(LANG_SCAD);
+  }
+  edt->setContentModified(false);
+  edt->parameterWidget->setModified(false);
+}
+
 TabManager::TabManager(MainWindow *o, const QString& filename)
 {
   parent = o;
@@ -868,28 +896,29 @@ void TabManager::openTabFile(const QString& filename)
       editor->diskBacked = false;
       return;
     }
-  }
-
+    prepareEditorBufferForNewDesignFile(editor, absPath);
+  } else {
 #ifdef ENABLE_PYTHON
-  if (suffix == QStringLiteral("py")) {
-    std::string templ = "from openscad import *\n";
-    std::string libs = Settings::SettingsPython::pythonNetworkImportList.value();
-    std::stringstream ss(libs);
-    std::string word;
-    while (std::getline(ss, word, '\n')) {
-      if (word.size() == 0) continue;
-      templ += "nimport(\"" + word + "\")\n";
-    }
-    editor->setPlainText(QString::fromStdString(templ));
-  } else
+    if (suffix == QStringLiteral("py")) {
+      std::string templ = "from openscad import *\n";
+      std::string libs = Settings::SettingsPython::pythonNetworkImportList.value();
+      std::stringstream ss(libs);
+      std::string word;
+      while (std::getline(ss, word, '\n')) {
+        if (word.size() == 0) continue;
+        templ += "nimport(\"" + word + "\")\n";
+      }
+      editor->setPlainText(QString::fromStdString(templ));
+    } else
 #endif
-  {
-    editor->setPlainText("");
+    {
+      editor->setPlainText("");
+    }
   }
 
   editor->filepath = absPath;
 #ifdef ENABLE_PYTHON
-  if (suffix == QStringLiteral("py")) {
+  if (suffix == QStringLiteral("py") && !missingOnDisk) {
     const QByteArray pathUtf8 = editor->filepath.toUtf8();
     parent->clearPythonUntrustStateForPath(
       std::string(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size())));

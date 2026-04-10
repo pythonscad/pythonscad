@@ -54,6 +54,8 @@ public:
   static bool isMissingDesignDocumentPath(const QString& path);
   /// Ask whether to create a missing design file; shared by MainWindow (deferred CLI) and openTabFile.
   static bool confirmCreateMissingDesignFile(QWidget *parent, const QString& absPath);
+  /// Reset buffer and language for a new .scad/.py file at \a absPath (used before first save).
+  void prepareEditorBufferForNewDesignFile(EditorInterface *edt, const QString& absPath);
   size_t count();
   void switchToEditor(EditorInterface *editor);
 

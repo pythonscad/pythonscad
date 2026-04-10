@@ -5048,6 +5048,8 @@ void MainWindow::handleDeferredCliMissingFile()
     return;
   }
 
+  tabManager->prepareEditorBufferForNewDesignFile(activeEditor, path);
+
   if (!tabManager->save(activeEditor, path)) {
     tabManager->getTabContent()->show();
     activeEditor->setFocus();
