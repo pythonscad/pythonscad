@@ -5042,14 +5042,7 @@ void MainWindow::handleDeferredCliMissingFile()
   const QString path = deferredCliMissingFile;
   deferredCliMissingFile.clear();
 
-  QMessageBox box(this);
-  box.setIcon(QMessageBox::Question);
-  box.setWindowTitle(_("Application"));
-  box.setText(QString(_("The file \"%1\" does not exist.\n\nDo you want to create it?"))
-                .arg(QDir::toNativeSeparators(path)));
-  box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-  box.setDefaultButton(QMessageBox::Yes);
-  if (box.exec() != QMessageBox::Yes) {
+  if (!TabManager::confirmCreateMissingDesignFile(this, path)) {
     tabManager->getTabContent()->show();
     activeEditor->setFocus();
     return;

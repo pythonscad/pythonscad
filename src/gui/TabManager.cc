@@ -255,17 +255,6 @@ bool writeSessionFile(const QJsonObject& root, const QString& path, QString *err
   return true;
 }
 
-bool confirmCreateMissingDesignFile(QWidget *parent, const QString& absPath)
-{
-  QMessageBox box(parent);
-  box.setIcon(QMessageBox::Question);
-  box.setWindowTitle(_("Application"));
-  box.setText(QString(_("The file \"%1\" does not exist.\n\nDo you want to create it?"))
-                .arg(QDir::toNativeSeparators(absPath)));
-  box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-  box.setDefaultButton(QMessageBox::Yes);
-  return box.exec() == QMessageBox::Yes;
-}
 }  // namespace
 
 bool TabManager::isMissingDesignDocumentPath(const QString& path)
@@ -282,6 +271,18 @@ bool TabManager::isMissingDesignDocumentPath(const QString& path)
     return false;
   }
   return !fi.exists() || !fi.isFile();
+}
+
+bool TabManager::confirmCreateMissingDesignFile(QWidget *parent, const QString& absPath)
+{
+  QMessageBox box(parent);
+  box.setIcon(QMessageBox::Question);
+  box.setWindowTitle(_("Application"));
+  box.setText(QString(_("The file \"%1\" does not exist.\n\nDo you want to create it?"))
+                .arg(QDir::toNativeSeparators(absPath)));
+  box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+  box.setDefaultButton(QMessageBox::Yes);
+  return box.exec() == QMessageBox::Yes;
 }
 
 TabManager::TabManager(MainWindow *o, const QString& filename)
@@ -863,7 +864,7 @@ void TabManager::openTabFile(const QString& filename)
 
   const bool missingOnDisk = !fileinfo.exists() || !fileinfo.isFile();
   if (missingOnDisk) {
-    if (!confirmCreateMissingDesignFile(parent, absPath)) {
+    if (!TabManager::confirmCreateMissingDesignFile(parent, absPath)) {
       editor->diskBacked = false;
       return;
     }

@@ -52,6 +52,8 @@ public:
   void open(const QString& filename);
   /// True if \a path is a .scad/.py design path that does not exist on disk yet (CLI / open checks).
   static bool isMissingDesignDocumentPath(const QString& path);
+  /// Ask whether to create a missing design file; shared by MainWindow (deferred CLI) and openTabFile.
+  static bool confirmCreateMissingDesignFile(QWidget *parent, const QString& absPath);
   size_t count();
   void switchToEditor(EditorInterface *editor);
 
