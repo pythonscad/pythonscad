@@ -182,7 +182,11 @@ bool jsonToVec3(const QJsonValue& value, double *x, double *y, double *z)
 bool isStandardUntitledFilename(const QString& filepath)
 {
   const QString fn = QFileInfo(filepath).fileName();
-  return fn == QStringLiteral("Untitled.py") || fn == QStringLiteral("Untitled.scad");
+#ifdef ENABLE_PYTHON
+  return fn == untitledBasenameForLanguage(LANG_PYTHON) || fn == untitledBasenameForLanguage(LANG_SCAD);
+#else
+  return fn == untitledBasenameForLanguage(LANG_SCAD);
+#endif
 }
 
 void initEmptyUntitledTab(EditorInterface *editor)
