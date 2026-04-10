@@ -90,6 +90,12 @@ QString initialPathForSaveDialog(const QString& filepath, int language)
   return QDir(dir).filePath(untitledBasenameForLanguage(language));
 }
 
+/** Synthetic path prefix for session-restore window plumbing; not a filesystem path. */
+inline bool isSessionLaunchTokenPath(const QString& path)
+{
+  return path.startsWith(QStringLiteral(":session:"));
+}
+
 /** Save / Save As / Save a copy: one primary format (matches editor language) plus All files. */
 struct DesignSaveFilterSet {
   QString primaryLabel;
@@ -259,7 +265,7 @@ TabManager::TabManager(MainWindow *o, const QString& filename)
 
   // Session restore passes a synthetic path like ":session:0:"; QFileInfo treats it as absolute
   // and non-existent, which must never be opened as a file or counted as a missing disk path.
-  if (filename.startsWith(QStringLiteral(":session:"))) {
+  if (isSessionLaunchTokenPath(filename)) {
     createTab(QString(), false);
   } else {
     createTab(filename);
@@ -768,7 +774,7 @@ void TabManager::onTabModified(EditorInterface *edt)
 
 void TabManager::openTabFile(const QString& filename)
 {
-  if (filename.startsWith(QStringLiteral(":session:"))) {
+  if (isSessionLaunchTokenPath(filename)) {
     return;
   }
   QFileInfo fileinfo(filename);
@@ -1146,7 +1152,7 @@ void TabManager::saveSession(const QString& path)
     auto *edt = static_cast<EditorInterface *>(tabWidget->widget(i));
     QJsonObject obj;
     QString sessionPath = edt->filepath;
-    if (sessionPath.startsWith(QStringLiteral(":session:"))) {
+    if (isSessionLaunchTokenPath(sessionPath)) {
       sessionPath.clear();
     }
     obj.insert(QStringLiteral("filepath"), sessionPath);
@@ -1234,7 +1240,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       auto *edt = static_cast<EditorInterface *>(tm->tabWidget->widget(i));
       QJsonObject obj;
       QString sessionPath = edt->filepath;
-      if (sessionPath.startsWith(QStringLiteral(":session:"))) {
+      if (isSessionLaunchTokenPath(sessionPath)) {
         sessionPath.clear();
       }
       obj.insert(QStringLiteral("filepath"), sessionPath);
@@ -1463,8 +1469,7 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     // Never treat default untitled filenames as stale disk paths: the session may record a path
     // that was never created (e.g. missing file opened by name, or save-dialog default).
     const bool standardUntitled = isStandardUntitledFilename(filepath);
-    const bool countsAsMissing = !filepath.isEmpty() &&
-                                 !filepath.startsWith(QStringLiteral(":session:")) &&
+    const bool countsAsMissing = !filepath.isEmpty() && !isSessionLaunchTokenPath(filepath) &&
                                  fileInfo.isAbsolute() && !fileInfo.exists() && !standardUntitled;
     if (countsAsMissing) {
       if (firstMissingIndex < 0) {
