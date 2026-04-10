@@ -189,6 +189,13 @@ bool isStandardUntitledFilename(const QString& filepath)
 #endif
 }
 
+void warnDesignPathIsDirectory(QWidget *dialogParent, const QString& absPath)
+{
+  QMessageBox::warning(dialogParent, _("Application"),
+                       QString(_("Cannot open design file \"%1\": path is a directory."))
+                         .arg(QDir::toNativeSeparators(absPath)));
+}
+
 void initEmptyUntitledTab(EditorInterface *editor)
 {
 #ifdef ENABLE_PYTHON
@@ -270,6 +277,11 @@ bool TabManager::isMissingDesignDocumentPath(const QString& path)
   if (!Importer::knownFileExtensions[suffix].isEmpty()) {
     return false;
   }
+  // Permissive: only rule out a plain directory at the path; other non-files (e.g. some symlinks)
+  // fall through to existing open/save behavior.
+  if (fi.exists() && fi.isDir()) {
+    return false;
+  }
   return !fi.exists() || !fi.isFile();
 }
 
@@ -301,7 +313,7 @@ void TabManager::prepareEditorBufferForNewDesignFile(EditorInterface *edt, const
     edt->setPlainText(QString::fromStdString(templ));
     edt->setLanguageManually(LANG_PYTHON);
     const QByteArray pathUtf8 = QFileInfo(absPath).absoluteFilePath().toUtf8();
-    parent->clearPythonUntrustStateForPath(
+    this->parent->clearPythonUntrustStateForPath(
       std::string(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size())));
   } else
 #endif
@@ -887,6 +899,12 @@ void TabManager::openTabFile(const QString& filename)
     setEditorTabName(fname, fpath, editor);
     parent->setWindowTitle(fname);
     emit editorContentReloaded(editor);
+    return;
+  }
+
+  if (fileinfo.exists() && fileinfo.isDir()) {
+    warnDesignPathIsDirectory(parent, absPath);
+    editor->diskBacked = false;
     return;
   }
 
