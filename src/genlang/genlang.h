@@ -1,4 +1,4 @@
-/* This is a colletion of function to share among all new languages */
+/* This is a collection of functions to share among all new languages */
 #pragma once
 
 #include "genlang/language.h"
