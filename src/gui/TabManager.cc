@@ -1551,7 +1551,13 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
       tabDiskBacked = obj.value(QStringLiteral("diskBacked")).toBool();
     } else {
       const bool onDiskNow = fileInfo.exists() && fileInfo.isFile();
+      const QString savedDiskId = obj.value(QStringLiteral("diskIdentity")).toString();
+      const bool hadDiskSnapshot = !savedDiskId.isEmpty();
       if (onDiskNow) {
+        tabDiskBacked = true;
+      } else if (hadDiskSnapshot) {
+        // v4 session: file existed when saved (mtime+size recorded) — treat as disk-backed even if
+        // contentModified was true (unsaved edits) or the file was deleted before restore.
         tabDiskBacked = true;
       } else {
         // Pre-v5 session: infer disk backing for stale-file warning (see diskBacked in Editor).
