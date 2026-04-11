@@ -161,9 +161,9 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
     // now check which edges can be flipped
     std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> edgeDb;
     edgeDb = createEdgeDb(ps_work->indices);
-    for (const auto& edge : edgeDb) {
-      const EdgeKey& key = edge.first;
-      const EdgeVal& val = edge.second;
+    for (auto it = edgeDb.begin(); it != edgeDb.end(); it++) {
+      const EdgeKey& key = it->first;
+      const EdgeVal& val = it->second;
 
       int left = -1, right = -1, afar = -1, bfar = -1, tmp;
       for (int i = 0; i < 3; i++) {
@@ -184,7 +184,6 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
       Vector3d& pbfar = ps_work->vertices[bfar];
       double dist = (pleft - pright).norm();
       double disto = (ps_work->vertices[afar] - ps_work->vertices[bfar]).norm();
-      printf("dist=%g disto=%g\n", dist, disto);
       EdgeVal& opp1 = edgeDb[EdgeKey(left, bfar)];
       EdgeVal& opp2 = edgeDb[EdgeKey(right, afar)];
       if (disto < dist) {
@@ -211,7 +210,7 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
           if (opp1.faceb == val.faceb) opp1.faceb = val.facea;
           if (opp2.facea == val.facea) opp2.facea = val.faceb;
           if (opp2.faceb == val.facea) opp2.faceb = val.faceb;
-          edgeDb.erase(key);
+          it = edgeDb.erase(it);
 
           printf("AFTER\n");
           printf("ind1=%d ind2=%d facea=%d faceb=%d\n", key.ind1, key.ind2, val.facea, val.faceb);
