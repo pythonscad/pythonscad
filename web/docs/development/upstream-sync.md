@@ -19,7 +19,7 @@ into PythonSCAD.
 
 ---
 
-## 1. Terminology
+## 1 Terminology
 
 - **upstream**: the OpenSCAD repository remote (`https://github.com/openscad/openscad`).
 - **origin**: our fork (PythonSCAD) GitHub repository.
@@ -29,7 +29,7 @@ into PythonSCAD.
 
 ---
 
-## 2. One-time setup
+## 2 One-time setup
 
 ### 2.1 Add the upstream remote
 
@@ -49,10 +49,10 @@ git config --global rerere.enabled true
 
 ---
 
-## 3. “Last synced” convention (annotated tag)
+## 3 “Last synced” convention (annotated tag)
 
 The last synced upstream state is tracked by creating an **annotated tag** that
-points to the upstream `master` (or `main`) commit that was synced up to.
+points to the upstream `master` commit that was synced up to.
 
 ### 3.1 Tag name format
 
@@ -66,7 +66,7 @@ Example:
 
 ---
 
-## 4. Sync workflow (PR-driven, small chunks)
+## 4 Sync workflow (PR-driven, small chunks)
 
 ### Goal
 
@@ -83,20 +83,7 @@ Example:
 
 ---
 
-### 4.1 Generate a sync plan (recommended)
-
-Generate a “merge plan” using:
-
-- **PR list** from GitHub (merged PRs since the last sync), and
-- the **upstream first-parent** commit sequence from the last synced upstream
-commit to current upstream tip.
-
-This supports OpenSCAD’s **mixed merge strategies** (merge commits and squash merges):
-
-- For merge commits: the merge commit SHA is on upstream `master`.
-- For squash merges: the squash result is a single commit SHA on upstream `master`.
-
-### 4.2 Create `sync/openscad-YYYY-MM-DD` branch
+### 4.1 Create `sync/openscad-YYYY-MM-DD` branch
 
 ```bash
 git checkout -b sync/openscad-$(date +%Y-%m-%d) origin/master
@@ -104,6 +91,14 @@ git checkout -b sync/openscad-$(date +%Y-%m-%d) origin/master
 git fetch upstream master
 ```
 ---
+
+### 4.2 Generate a sync plan (recommended)
+
+Generate a “merge plan” using:
+
+```bash
+python3 scripts/plan_openscad_sync.py
+```
 
 ### 4.3 Apply the plan (merge commits one-by-one)
 
@@ -115,19 +110,15 @@ git merge --no-ff <SHA>
 # run build/tests
 ```
 
-### 4.4 Conflict ownership rule
+### 4.4 Push the branch to origin and open a PR
 
-- **Build system / packaging / CI** conflicts: handled by the build expert.
-- **Python C-API extension** conflicts: handled by the Python C-API expert.
+Push the sync branch to origin:
 
-Tip: when you hit a conflict you want the other person to resolve, push the
-sync branch and hand off.
+```bash
+git push -u origin sync/openscad-$(date +%Y-%m-%d)
+```
 
----
-
-### 4.5 Open a PR in our fork
-
-When the sync branch builds and tests pass, open a PR into `master`.
+Open a PR into `master`.
 
 ---
 
