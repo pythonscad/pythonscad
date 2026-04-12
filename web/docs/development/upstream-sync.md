@@ -78,18 +78,44 @@ Example:
 
 ### Requirements
 
-- GitHub CLI installed and authenticated: `gh auth login`
-- `upstream` remote configured
+- **GitHub CLI** (`gh`) installed and authenticated — `plan_openscad_sync.py` shells
+  out to `gh pr list`:
+
+  ```bash
+  gh auth login
+  ```
+
+- **`upstream` remote** configured (see [section 2.1](#21-add-the-upstream-remote)).
+
+- **Local sync tags** — the plan script only considers tags already in your local
+  repo matching `upstream-sync/openscad-*`; it does not fetch them. After a fresh
+  clone, or if tags are missing, fetch from PythonSCAD:
+
+  ```bash
+  git fetch --tags origin
+  ```
+
+- **First sync with no tag yet** — if no `upstream-sync/openscad-*` tag exists
+  locally (bootstrap case), `plan_openscad_sync.py` exits with an error. Either
+  fetch tags from `origin` as above if another maintainer already pushed them, or
+  complete the first upstream integration without the script, then create and push
+  the first annotated tag (see [section 3](#3-last-synced-convention-annotated-tag))
+  so later runs have a baseline.
 
 ---
 
 ### 4.1 Create `sync/openscad-YYYY-MM-DD` branch
 
+Pick one date for the whole sync cycle and reuse it for the branch name, push,
+and final tag so names stay consistent (including across midnight).
+
 ```bash
-git checkout -b sync/openscad-$(date +%Y-%m-%d) origin/master
+SYNC_DATE=$(date +%Y-%m-%d)
+git checkout -b "sync/openscad-$SYNC_DATE" origin/master
 
 git fetch upstream master
 ```
+
 ---
 
 ### 4.2 Generate a sync plan (recommended)
@@ -115,26 +141,31 @@ git merge --no-ff <SHA>
 Push the sync branch to origin:
 
 ```bash
-git push -u origin sync/openscad-$(date +%Y-%m-%d)
+git push -u origin "sync/openscad-$SYNC_DATE"
 ```
 
 Open a PR into `master`.
 
 ---
 
-### 4.5 Finish: tag the upstream tip we synced to
+### 4.5 After the sync PR merges into `master`, tag the upstream tip
+
+Create and push the sync tag **only after** the sync PR has been merged into
+`master`. Tagging earlier can imply PythonSCAD is already synced when the changes
+are still only in an open PR.
+
+Update local `master` if helpful, then use the **same** `SYNC_DATE` as the sync
+branch (set it again if your shell session is new, e.g.
+`SYNC_DATE=2026-04-12` matching `sync/openscad-2026-04-12`).
 
 ```bash
-# ensure upstream refs are current
 git fetch upstream
 
 UP_TIP=$(git rev-parse upstream/master)
 
-# create an annotated tag pointing at the upstream tip commit
-TAG="upstream-sync/openscad-$(date +%Y-%m-%d)"
+TAG="upstream-sync/openscad-$SYNC_DATE"
 git tag -a "$TAG" "$UP_TIP" -m "Synced OpenSCAD up to $UP_TIP"
 
-# push the tag to PythonSCAD
 git push origin "$TAG"
 ```
 
