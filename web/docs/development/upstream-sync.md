@@ -22,7 +22,7 @@ into PythonSCAD.
 ## 1 Terminology
 
 - **upstream**: the OpenSCAD repository remote (`https://github.com/openscad/openscad`).
-- **origin**: our fork (PythonSCAD) GitHub repository.
+- **origin**: PythonSCAD's GitHub repository.
 - **sync branch**: a temporary branch created for each sync cycle.
 - **last sync tag**: an annotated tag marking the last upstream commit we
   synced to.
@@ -71,7 +71,7 @@ Example:
 ### Goal
 
 - Identify which PRs were merged upstream since the last sync.
-- Merge upstream changes into our fork in the
+- Merge upstream changes into PythonSCAD's fork in the
   **same order upstream landed them** (first-parent order), but still keep
   PR attribution.
 - Allow domain experts to resolve conflicts where appropriate.
