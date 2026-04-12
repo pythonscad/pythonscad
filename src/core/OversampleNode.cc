@@ -44,35 +44,6 @@
 #include <boost/functional/hash.hpp>
 #include <src/utils/hash.h>
 
-class OverEdgeDb
-{
-public:
-  OverEdgeDb(int a, int b)
-  {
-    ind1 = (a < b) ? a : b;
-    ind2 = (a > b) ? a : b;
-  }
-  int ind1, ind2;
-  int operator==(const OverEdgeDb ref)
-  {
-    if (this->ind1 == ref.ind1 && this->ind2 == ref.ind2) return 1;
-    return 0;
-  }
-};
-
-unsigned int hash_value(const OverEdgeDb& r)
-{
-  unsigned int i;
-  i = r.ind1 | (r.ind2 << 16);
-  return i;
-}
-
-int operator==(const OverEdgeDb& t1, const OverEdgeDb& t2)
-{
-  if (t1.ind1 == t2.ind1 && t1.ind2 == t2.ind2) return 1;
-  return 0;
-}
-
 void ov_add_poly(PolySetBuilder& builder, Vector3d p)
 {
   builder.addVertex(builder.vertexIndex(p));
@@ -87,17 +58,20 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
   while (done) {
     done = false;
     PolySet ps_new(3);
-    std::unordered_map<OverEdgeDb, int, boost::hash<OverEdgeDb>> edges;
+    std::unordered_map<uint64_t, int> edges;
     ps_new.vertices = ps_work->vertices;
+    ps_new.vertices.reserve(ps_work->vertices.size() * 2);
+    ps_new.indices.reserve(ps_work->indices.size() * 4);
 
     // decide which vertices to split
     for (const auto& tri : ps_work->indices) {
       int ind_old = tri[2];
       for (int ind : tri) {
-        double dist = (ps_work->vertices[ind_old] - ps_work->vertices[ind]).norm();
-        if (dist > limit) {
-          OverEdgeDb key(ind, ind_old);
-          if (edges.count(key) == 0) {
+        double dist2 = (ps_work->vertices[ind_old] - ps_work->vertices[ind]).squaredNorm();
+        if (dist2 > limit * limit) {
+          uint64_t key = ((uint64_t)std::min(ind, ind_old) << 32) | std::max(ind, ind_old);
+          auto it = edges.find(key);
+          if (it == edges.end()) {
             Vector3d pmid = (ps_work->vertices[ind_old] + ps_work->vertices[ind]) / 2;
 
             int newind = ps_new.vertices.size();
@@ -115,8 +89,9 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
       int tri_mid[3];
       for (int i = 0; i < 3; i++) {
         int ind = tri[i];
-        OverEdgeDb key(ind, ind_old);
-        tri_mid[(i + 2) % 3] = (edges.count(key) > 0) ? tri_mid[(i + 2) % 3] = edges[key] : -1;
+        uint64_t key = ((uint64_t)std::min(ind, ind_old) << 32) | std::max(ind, ind_old);
+        auto it = edges.find(key);
+        tri_mid[(i + 2) % 3] = (it != edges.end()) ? it->second : -1;
         ind_old = ind;
       }
       switch (((tri_mid[0] >= 0) ? 1 : 0) | ((tri_mid[1] >= 0) ? 2 : 0) | ((tri_mid[2] >= 0) ? 4 : 0)) {
@@ -186,45 +161,24 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
       const Vector3d pver = pafar - pbfar;
 
       while (1) {
-        if (pver.norm() > phor.norm()) break;
+        if (pver.squaredNorm() > phor.squaredNorm()) break;
         EdgeKey opp1k(left, bfar);
-        if (edgeDb.find(opp1k) == edgeDb.end()) break;
+        auto it = edgeDb.find(opp1k);
+        if (it == edgeDb.end()) break;
+        EdgeVal& opp1 = it->second;
+
         EdgeKey opp2k(right, afar);
-        if (edgeDb.find(opp2k) == edgeDb.end()) break;
-        EdgeVal& opp1 = edgeDb[opp1k];
-        EdgeVal& opp2 = edgeDb[opp2k];
+        it = edgeDb.find(opp2k);
+        if (it == edgeDb.end()) break;
+        EdgeVal& opp2 = it->second;
 
         Vector3d n = pver.cross(phor);
         if (fabs(n.dot(pafar) - n.dot(pbfar)) > 1e-3) break;  // same level
 
-        //        printf("%g %g\n", ((pafar - pleft).cross(pafar - pbfar)).dot(n), ((pbfar -
-        //        pright).cross(pafar - pbfar)).dot(n) );
-        if ((pleft - pbfar).cross(pver).dot(n) <= 0) break;   // triangle flip
-        if ((pbfar - pright).cross(pver).dot(n) <= 0) break;  // triangle flip
-
-        for (auto it1 = edgeDb.begin(); it1 != edgeDb.end(); it1++) {
-          const EdgeKey key1 = it1->first;
-          const EdgeVal val1 = it1->second;
-          if (val1.facea == val1.faceb) {
-            printf("B Edges of %d %d are same after %d %d!\n", key1.ind1, key1.ind2, val1.facea,
-                   val1.faceb);
-            exit(1);
-          }
-        }
-        //        printf("BEFORE\n");
-        //        printf("ind1=%d ind2=%d facea=%d faceb=%d\n", key.ind1, key.ind2, val.facea,
-        //        val.faceb); printf("FACEA:	%d %d %d\n", ps_work->indices[val.facea][0],
-        //        ps_work->indices[val.facea][1],
-        //               ps_work->indices[val.facea][2]);
-        //        printf("FACEB:	%d %d %d\n", ps_work->indices[val.faceb][0],
-        //        ps_work->indices[val.faceb][1],
-        //               ps_work->indices[val.faceb][2]);
-        //       printf("left=%d right=%d afar=%d bfar=%d\n", left, right, afar, bfar);
-        //        printf("opp1 = %d %d\n", edgeDb[opp1k].facea, edgeDb[opp1k].faceb);
-        //        printf("opp2 = %d %d\n", edgeDb[opp2k].facea, edgeDb[opp2k].faceb);
+        if ((pleft - pbfar).cross(pver).dot(n) <= 1e-3) break;   // triangle flip
+        if ((pbfar - pright).cross(pver).dot(n) <= 1e-3) break;  // triangle flip
 
         EdgeKey keyt(bfar, afar);
-        //          edgeDb[keyt] = edgeDb[key];
 
         for (int i = 0; i < 3; i++) {
           if (ps_work->indices[val.facea][i] == right) ps_work->indices[val.facea][i] = bfar;
@@ -235,27 +189,7 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
         if (opp2.facea == val.facea) opp2.facea = val.faceb;
         if (opp2.faceb == val.facea) opp2.faceb = val.faceb;
 
-        //       printf("AFTER\n");
-        //       printf("ind1=%d ind2=%d facea=%d faceb=%d\n", key.ind1, key.ind2, val.facea, val.faceb);
-        //       printf("FACEA:	%d %d %d\n", ps_work->indices[val.facea][0],
-        //       ps_work->indices[val.facea][1],
-        //              ps_work->indices[val.facea][2]);
-        //       printf("FACEB:	%d %d %d\n", ps_work->indices[val.faceb][0],
-        //       ps_work->indices[val.faceb][1],
-        //              ps_work->indices[val.faceb][2]);
-        //       printf("left=%d right=%d afar=%d bfar=%d\n", left, right, afar, bfar);
-        //       printf("opp1 = %d %d\n", edgeDb[opp1k].facea, edgeDb[opp1k].faceb);
-        //       printf("opp2 = %d %d\n", edgeDb[opp2k].facea, edgeDb[opp2k].faceb);
         break;
-      }
-      for (auto it1 = edgeDb.begin(); it1 != edgeDb.end(); it1++) {
-        const EdgeKey key1 = it1->first;
-        const EdgeVal val1 = it1->second;
-        if (val1.facea == val1.faceb) {
-          printf("2 Edges of %d %d are same after %d %d!\n", key1.ind1, key1.ind2, val1.facea,
-                 val1.faceb);
-          exit(1);
-        }
       }
     }
   }
