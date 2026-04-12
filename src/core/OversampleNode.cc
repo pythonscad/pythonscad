@@ -24,6 +24,7 @@
  *
  */
 
+#include "SurfaceNode.h"
 #include "OversampleNode.h"
 #include "module.h"
 #include "ModuleInstantiation.h"
@@ -43,24 +44,92 @@
 #include <src/geometry/GeometryEvaluator.h>
 #include <boost/functional/hash.hpp>
 #include <src/utils/hash.h>
+#include "lodepng/lodepng.h"
 
 void ov_add_poly(PolySetBuilder& builder, Vector3d p)
 {
   builder.addVertex(builder.vertexIndex(p));
 }
 
-double tcoord(double u, double v)
+double OversampleNode::tcoord(std::shared_ptr<img_data_t> tex, double x, double y) const
 {
-  double t = 0;
-  u += 100;
-  v += 100;
-  u -= (int)u;
-  v -= (int)v;
-  if (u < 0.5) t = 1 - t;
-  if (v < 0.5) t = 1 - t;
-  return t * 0.2;
+  double u = x / texturewidth;
+  double v = y / textureheight;
+  // get texture coorindate
+  if (u > 0) u -= (int)u;
+  else {
+    u = -u - (int)(-u);
+    u = 1 - u;
+  }
+  if (v > 0) v -= (int)v;
+  else {
+    v = -v - (int)(-v);
+    v = 1 - v;
+  }
+
+  int tx = (tex->width - 1) * u;
+  int ty = (tex->height - 1) * v;
+  Vector3f pixel = (*tex)[ty * tex->width + tx];
+  double depth = (pixel[0] + pixel[1] + pixel[2]) * texturedepth / (3.0 * 256.0);
+  return depth;
 }
-std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>& ps, double limit)
+
+bool is_png(std::vector<uint8_t>& png)
+{
+  const size_t pngHeaderLength = 8;
+  const uint8_t pngHeader[pngHeaderLength] = {0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a};
+  return (png.size() >= pngHeaderLength && std::memcmp(png.data(), pngHeader, pngHeaderLength) == 0);
+}
+
+void convert_image(std::shared_ptr<img_data_t> data, std::vector<uint8_t>& img, unsigned int width,
+                   unsigned int height)
+{
+  data->width = width;
+  data->height = height;
+  data->resize((size_t)width * height);
+  for (unsigned int y = 0; y < height; ++y) {
+    for (unsigned int x = 0; x < width; ++x) {
+      long idx = 4l * (y * width + x);
+      (*data)[x + (width * (height - 1 - y))] = Vector3f(img[idx], img[idx + 1], img[idx + 2]);
+    }
+  }
+}
+
+std::shared_ptr<img_data_t> load_png(const std::string& filename)
+{
+  std::shared_ptr<img_data_t> data = std::make_shared<img_data_t>();
+  std::vector<uint8_t> png;
+  int ret_val = 0;
+  try {
+    ret_val = lodepng::load_file(png, filename);
+  } catch (std::bad_alloc& ba) {
+    LOG(message_group::Warning, "bad_alloc caught for '%1$s'.", ba.what());
+    return data;
+  }
+
+  if (ret_val == 78) {
+    LOG(message_group::Warning, "The file '%1$s' couldn't be opened.", filename);
+    return data;
+  }
+
+  if (!is_png(png)) {
+  }
+
+  unsigned int width, height;
+  std::vector<uint8_t> img;
+  auto error = lodepng::decode(img, width, height, png);
+  if (error) {
+    LOG(message_group::Warning, "Can't read PNG image '%1$s'", filename);
+    return data;
+  }
+
+  convert_image(data, img, width, height);
+
+  return data;
+}
+
+std::unique_ptr<const Geometry> OversampleNode::ov_dynamic(
+  const std::shared_ptr<const PolySet>& ps) const
 {
   auto ps_work = PolySetUtils::tessellate_faces(*ps);
 
@@ -94,7 +163,7 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
       int ind_old = tri[2];
       for (int ind : tri) {
         double dist2 = (ps_work->vertices[ind_old] - ps_work->vertices[ind]).squaredNorm();
-        if (dist2 > limit * limit) {
+        if (dist2 > n * n) {
           uint64_t key = ((uint64_t)std::min(ind, ind_old) << 32) | std::max(ind, ind_old);
           auto it = edges.find(key);
           if (it == edges.end()) {
@@ -236,29 +305,31 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
     }
   }
 
-  // create  vertex-to-triangle mapping (beta)
-  std::vector<int> vert2tri;
-  vert2tri.reserve(ps_work->vertices.size());
-  for (int i = 0; i < ps_work->vertices.size(); i++) vert2tri.push_back(0);
-  for (int i = 0; i < ps_work->indices.size(); i++) {
-    for (int j = 0; j < 3; j++) {
-      vert2tri[ps_work->indices[i][j]] = i;
+  if (texturefilename.size() > 0) {
+    std::shared_ptr<img_data_t> texture = load_png(this->texturefilename);
+    // now apply texture to all vertices
+    // create  vertex-to-triangle mapping (beta)
+    std::vector<int> vert2tri;
+    vert2tri.reserve(ps_work->vertices.size());
+    for (int i = 0; i < ps_work->vertices.size(); i++) vert2tri.push_back(0);
+    for (int i = 0; i < ps_work->indices.size(); i++) {
+      for (int j = 0; j < 3; j++) {
+        vert2tri[ps_work->indices[i][j]] = i;
+      }
     }
-  }
+    Vector3d vx(1, 0, 0);
+    Vector3d vy(0, 1, 0);
+    Vector3d vz(0, 0, 1);
+    for (int i = 0; i < ps_work->vertices.size(); i++) {
+      Vector3d& pt = ps_work->vertices[i];
+      Vector3d& n = normals[orig_id[vert2tri[i]]];
 
-  // now apply texture to all vertices
-  Vector3d vx(1, 0, 0);
-  Vector3d vy(0, 1, 0);
-  Vector3d vz(0, 0, 1);
-  for (int i = 0; i < ps_work->vertices.size(); i++) {
-    Vector3d& pt = ps_work->vertices[i];
-    Vector3d& n = normals[orig_id[vert2tri[i]]];
+      // triplanar texturing
+      pt = pt + vx * tcoord(texture, pt[1], pt[2]) * n[0] + vy * tcoord(texture, pt[0], pt[2]) * n[1] +
+           vz * tcoord(texture, pt[0], pt[1]) * n[2]
 
-    // triplanar texturing
-    pt = pt + vx * tcoord(pt[1], pt[2]) * n[0] + vy * tcoord(pt[0], pt[2]) * n[1] +
-         vz * tcoord(pt[0], pt[1]) * n[2]
-
-      ;
+        ;
+    }
   }
   return std::make_unique<PolySet>(*ps_work);
 }
@@ -316,6 +387,6 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry() const
   std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
   std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
   if (ps == nullptr) return std::unique_ptr<PolySet>();
-  if (this->method == "dynamic") return ov_dynamic(ps, this->n);
+  if (this->method == "dynamic") return ov_dynamic(ps);
   return ov_static(ps, this->n);
 }
