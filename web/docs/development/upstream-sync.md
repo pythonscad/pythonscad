@@ -122,7 +122,7 @@ Open a PR into `master`.
 
 ---
 
-### 4.6 Finish: tag the upstream tip we synced to
+### 4.5 Finish: tag the upstream tip we synced to
 
 ```bash
 # ensure upstream refs are current
