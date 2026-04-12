@@ -49,10 +49,34 @@ void ov_add_poly(PolySetBuilder& builder, Vector3d p)
   builder.addVertex(builder.vertexIndex(p));
 }
 
+double tcoord(double u, double v)
+{
+  double t = 0;
+  u += 100;
+  v += 100;
+  u -= (int)u;
+  v -= (int)v;
+  if (u < 0.5) t = 1 - t;
+  if (v < 0.5) t = 1 - t;
+  return t * 0.2;
+}
 std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>& ps, double limit)
 {
-  // one round: walk all edges and test to sploit them
   auto ps_work = PolySetUtils::tessellate_faces(*ps);
+
+  // calculate orginal norm vectors
+  std::vector<Vector3d> normals;
+  normals.reserve(ps_work->indices.size());
+  std::vector<int> orig_id;
+  orig_id.reserve(ps_work->indices.size());
+
+  for (const auto& ind : ps_work->indices) {
+    Vector3d p1 = ps->vertices[ind[0]];
+    Vector3d p2 = ps->vertices[ind[1]];
+    Vector3d p3 = ps->vertices[ind[2]];
+    normals.push_back((p2 - p1).cross(p3 - p1).normalized());
+  }
+  for (int i = 0; i < ps_work->indices.size(); i++) orig_id.push_back(i);
 
   bool done = true;
   while (done) {
@@ -62,6 +86,8 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
     ps_new.vertices = ps_work->vertices;
     ps_new.vertices.reserve(ps_work->vertices.size() * 2);
     ps_new.indices.reserve(ps_work->indices.size() * 4);
+    std::vector<int> new_id;
+    new_id.reserve(ps_work->indices.size() * 4);
 
     // decide which vertices to split
     for (const auto& tri : ps_work->indices) {
@@ -84,7 +110,8 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
       }
     }
     // build new triangles from split vertices
-    for (const auto& tri : ps_work->indices) {
+    for (int i = 0; i < ps_work->indices.size(); i++) {
+      const auto& tri = ps_work->indices[i];
       int ind_old = tri[2];
       int tri_mid[3];
       for (int i = 0; i < 3; i++) {
@@ -94,44 +121,59 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
         tri_mid[(i + 2) % 3] = (it != edges.end()) ? it->second : -1;
         ind_old = ind;
       }
+      int a = 0;
       switch (((tri_mid[0] >= 0) ? 1 : 0) | ((tri_mid[1] >= 0) ? 2 : 0) | ((tri_mid[2] >= 0) ? 4 : 0)) {
-      case 0: ps_new.indices.push_back(tri); break;
+      case 0:
+        ps_new.indices.push_back(tri);
+        a = 1;
+        break;
       case 1:
         ps_new.indices.push_back({tri[0], tri_mid[0], tri[2]});
         ps_new.indices.push_back({tri[2], tri_mid[0], tri[1]});
+        a = 2;
         break;
       case 2:
         ps_new.indices.push_back({tri[1], tri_mid[1], tri[0]});
         ps_new.indices.push_back({tri[0], tri_mid[1], tri[2]});
+        a = 2;
         break;
       case 3:
         ps_new.indices.push_back({tri[0], tri_mid[0], tri[2]});
         ps_new.indices.push_back({tri[2], tri_mid[0], tri_mid[1]});
         ps_new.indices.push_back({tri_mid[1], tri_mid[0], tri[1]});
+        a = 3;
         break;
       case 4:
         ps_new.indices.push_back({tri[2], tri_mid[2], tri[1]});
         ps_new.indices.push_back({tri[1], tri_mid[2], tri[0]});
+        a = 2;
         break;
       case 5:
         ps_new.indices.push_back({tri[2], tri_mid[2], tri[1]});
         ps_new.indices.push_back({tri[1], tri_mid[2], tri_mid[0]});
         ps_new.indices.push_back({tri_mid[0], tri_mid[2], tri[0]});
+        a = 3;
         break;
       case 6:
         ps_new.indices.push_back({tri[1], tri_mid[1], tri[0]});
         ps_new.indices.push_back({tri[0], tri_mid[1], tri_mid[2]});
         ps_new.indices.push_back({tri_mid[2], tri_mid[1], tri[2]});
+        a = 3;
         break;
       case 7:
         ps_new.indices.push_back({tri[0], tri_mid[0], tri_mid[2]});
         ps_new.indices.push_back({tri[1], tri_mid[1], tri_mid[0]});
         ps_new.indices.push_back({tri[2], tri_mid[2], tri_mid[1]});
         ps_new.indices.push_back({tri_mid[0], tri_mid[1], tri_mid[2]});
+        a = 4;
         break;
       }
+      for (int j = 0; j < a; j++) new_id.push_back(orig_id[i]);
     }
-    if (done) *ps_work = ps_new;
+    if (done) {
+      *ps_work = ps_new;
+      orig_id = new_id;
+    }
 
     // now check which edges can be flipped
     std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> edgeDb;
@@ -192,6 +234,31 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
         break;
       }
     }
+  }
+
+  // create  vertex-to-triangle mapping (beta)
+  std::vector<int> vert2tri;
+  vert2tri.reserve(ps_work->vertices.size());
+  for (int i = 0; i < ps_work->vertices.size(); i++) vert2tri.push_back(0);
+  for (int i = 0; i < ps_work->indices.size(); i++) {
+    for (int j = 0; j < 3; j++) {
+      vert2tri[ps_work->indices[i][j]] = i;
+    }
+  }
+
+  // now apply texture to all vertices
+  Vector3d vx(1, 0, 0);
+  Vector3d vy(0, 1, 0);
+  Vector3d vz(0, 0, 1);
+  for (int i = 0; i < ps_work->vertices.size(); i++) {
+    Vector3d& pt = ps_work->vertices[i];
+    Vector3d& n = normals[orig_id[vert2tri[i]]];
+
+    // triplanar texturing
+    pt = pt + vx * tcoord(pt[1], pt[2]) * n[0] + vy * tcoord(pt[0], pt[2]) * n[1] +
+         vz * tcoord(pt[0], pt[1]) * n[2]
+
+      ;
   }
   return std::make_unique<PolySet>(*ps_work);
 }
