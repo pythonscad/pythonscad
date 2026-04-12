@@ -178,58 +178,90 @@ std::unique_ptr<const Geometry> ov_dynamic(const std::shared_ptr<const PolySet>&
           bfar = ps_work->indices[val.faceb][i];
         }
       }
-      Vector3d& pleft = ps_work->vertices[left];
-      Vector3d& pright = ps_work->vertices[right];
-      Vector3d& pafar = ps_work->vertices[afar];
-      Vector3d& pbfar = ps_work->vertices[bfar];
-      double dist = (pleft - pright).norm();
-      double disto = (ps_work->vertices[afar] - ps_work->vertices[bfar]).norm();
-      EdgeVal& opp1 = edgeDb[EdgeKey(left, bfar)];
-      EdgeVal& opp2 = edgeDb[EdgeKey(right, afar)];
-      if (disto < dist) {
-        Vector3d n = (pleft - pright).cross(pleft - pafar);
-        if (fabs(n.dot(pafar) - n.dot(pbfar)) < 1e-3) {
-          printf("BEFORE\n");
-          printf("ind1=%d ind2=%d facea=%d faceb=%d\n", key.ind1, key.ind2, val.facea, val.faceb);
-          printf("FACEA:	%d %d %d\n", ps_work->indices[val.facea][0],
-                 ps_work->indices[val.facea][1], ps_work->indices[val.facea][2]);
-          printf("FACEB:	%d %d %d\n", ps_work->indices[val.faceb][0],
-                 ps_work->indices[val.faceb][1], ps_work->indices[val.faceb][2]);
-          printf("left=%d right=%d afar=%d bfar=%d\n", left, right, afar, bfar);
-          printf("opp1 = %d %d\n", opp1.facea, opp1.faceb);
-          printf("opp2 = %d %d\n", opp2.facea, opp2.faceb);
+      const Vector3d& pleft = ps_work->vertices[left];
+      const Vector3d& pright = ps_work->vertices[right];
+      const Vector3d& pafar = ps_work->vertices[afar];
+      const Vector3d& pbfar = ps_work->vertices[bfar];
+      const Vector3d phor = pright - pleft;
+      const Vector3d pver = pafar - pbfar;
 
-          EdgeKey keyt(bfar, afar);
-          edgeDb[keyt] = edgeDb[key];
+      while (1) {
+        if (pver.norm() > phor.norm()) break;
+        EdgeKey opp1k(left, bfar);
+        if (edgeDb.find(opp1k) == edgeDb.end()) break;
+        EdgeKey opp2k(right, afar);
+        if (edgeDb.find(opp2k) == edgeDb.end()) break;
+        EdgeVal& opp1 = edgeDb[opp1k];
+        EdgeVal& opp2 = edgeDb[opp2k];
 
-          for (int i = 0; i < 3; i++) {
-            if (ps_work->indices[val.facea][i] == right) ps_work->indices[val.facea][i] = bfar;
-            if (ps_work->indices[val.faceb][i] == left) ps_work->indices[val.faceb][i] = afar;
+        Vector3d n = pver.cross(phor);
+        if (fabs(n.dot(pafar) - n.dot(pbfar)) > 1e-3) break;  // same level
+
+        //        printf("%g %g\n", ((pafar - pleft).cross(pafar - pbfar)).dot(n), ((pbfar -
+        //        pright).cross(pafar - pbfar)).dot(n) );
+        if ((pleft - pbfar).cross(pver).dot(n) <= 0) break;   // triangle flip
+        if ((pbfar - pright).cross(pver).dot(n) <= 0) break;  // triangle flip
+
+        for (auto it1 = edgeDb.begin(); it1 != edgeDb.end(); it1++) {
+          const EdgeKey key1 = it1->first;
+          const EdgeVal val1 = it1->second;
+          if (val1.facea == val1.faceb) {
+            printf("B Edges of %d %d are same after %d %d!\n", key1.ind1, key1.ind2, val1.facea,
+                   val1.faceb);
+            exit(1);
           }
-          if (opp1.facea == val.faceb) opp1.facea = val.facea;
-          if (opp1.faceb == val.faceb) opp1.faceb = val.facea;
-          if (opp2.facea == val.facea) opp2.facea = val.faceb;
-          if (opp2.faceb == val.facea) opp2.faceb = val.faceb;
-          it = edgeDb.erase(it);
-
-          printf("AFTER\n");
-          printf("ind1=%d ind2=%d facea=%d faceb=%d\n", key.ind1, key.ind2, val.facea, val.faceb);
-          printf("FACEA:	%d %d %d\n", ps_work->indices[val.facea][0],
-                 ps_work->indices[val.facea][1], ps_work->indices[val.facea][2]);
-          printf("FACEB:	%d %d %d\n", ps_work->indices[val.faceb][0],
-                 ps_work->indices[val.faceb][1], ps_work->indices[val.faceb][2]);
-          printf("left=%d right=%d afar=%d bfar=%d\n", left, right, afar, bfar);
-          printf("opp1 = %d %d\n", opp1.facea, opp1.faceb);
-          printf("opp2 = %d %d\n", opp2.facea, opp2.faceb);
         }
+        //        printf("BEFORE\n");
+        //        printf("ind1=%d ind2=%d facea=%d faceb=%d\n", key.ind1, key.ind2, val.facea,
+        //        val.faceb); printf("FACEA:	%d %d %d\n", ps_work->indices[val.facea][0],
+        //        ps_work->indices[val.facea][1],
+        //               ps_work->indices[val.facea][2]);
+        //        printf("FACEB:	%d %d %d\n", ps_work->indices[val.faceb][0],
+        //        ps_work->indices[val.faceb][1],
+        //               ps_work->indices[val.faceb][2]);
+        //       printf("left=%d right=%d afar=%d bfar=%d\n", left, right, afar, bfar);
+        //        printf("opp1 = %d %d\n", edgeDb[opp1k].facea, edgeDb[opp1k].faceb);
+        //        printf("opp2 = %d %d\n", edgeDb[opp2k].facea, edgeDb[opp2k].faceb);
 
-        //	exit(1);
+        EdgeKey keyt(bfar, afar);
+        //          edgeDb[keyt] = edgeDb[key];
+
+        for (int i = 0; i < 3; i++) {
+          if (ps_work->indices[val.facea][i] == right) ps_work->indices[val.facea][i] = bfar;
+          if (ps_work->indices[val.faceb][i] == left) ps_work->indices[val.faceb][i] = afar;
+        }
+        if (opp1.facea == val.faceb) opp1.facea = val.facea;
+        if (opp1.faceb == val.faceb) opp1.faceb = val.facea;
+        if (opp2.facea == val.facea) opp2.facea = val.faceb;
+        if (opp2.faceb == val.facea) opp2.faceb = val.faceb;
+
+        //       printf("AFTER\n");
+        //       printf("ind1=%d ind2=%d facea=%d faceb=%d\n", key.ind1, key.ind2, val.facea, val.faceb);
+        //       printf("FACEA:	%d %d %d\n", ps_work->indices[val.facea][0],
+        //       ps_work->indices[val.facea][1],
+        //              ps_work->indices[val.facea][2]);
+        //       printf("FACEB:	%d %d %d\n", ps_work->indices[val.faceb][0],
+        //       ps_work->indices[val.faceb][1],
+        //              ps_work->indices[val.faceb][2]);
+        //       printf("left=%d right=%d afar=%d bfar=%d\n", left, right, afar, bfar);
+        //       printf("opp1 = %d %d\n", edgeDb[opp1k].facea, edgeDb[opp1k].faceb);
+        //       printf("opp2 = %d %d\n", edgeDb[opp2k].facea, edgeDb[opp2k].faceb);
+        break;
+      }
+      for (auto it1 = edgeDb.begin(); it1 != edgeDb.end(); it1++) {
+        const EdgeKey key1 = it1->first;
+        const EdgeVal val1 = it1->second;
+        if (val1.facea == val1.faceb) {
+          printf("2 Edges of %d %d are same after %d %d!\n", key1.ind1, key1.ind2, val1.facea,
+                 val1.faceb);
+          exit(1);
+        }
       }
     }
   }
   return std::make_unique<PolySet>(*ps_work);
 }
-
+// TODO check if triangles are changed sign
 std::unique_ptr<const Geometry> ov_static(const std::shared_ptr<const PolySet>& ps, int n)
 {
   // tesselate object
