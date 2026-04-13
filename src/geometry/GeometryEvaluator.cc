@@ -265,7 +265,7 @@ std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> createEdgeDb(
       }
       printf("\n");
     }
-    exit(1);
+    assert(0);
   }
   return edge_db;
 }

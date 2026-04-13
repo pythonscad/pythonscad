@@ -1,9 +1,8 @@
-#pragma once
-
 #include "node.h"
 #include "Value.h"
 #include <src/geometry/linalg.h>
 #include "src/geometry/PolySet.h"
+#include "utils/png_util.h"
 
 enum textureProjections {
   PROJECTION_NONE,
@@ -47,5 +46,5 @@ public:
   double texturedepth = 0.5;
 
   std::unique_ptr<const Geometry> createGeometry_sub(const std::shared_ptr<const PolySet>& ps) const;
-  double tcoord(std::shared_ptr<img_data_t> tex, double u, double v) const;
+  double tcoord(const img_data_t& tex, double u, double v) const;
 };

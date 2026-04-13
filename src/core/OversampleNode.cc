@@ -49,7 +49,7 @@
 const char *projectionNames[] = {"none",        "triplanar", "cubic",   "spherical",
                                  "cylindrical", "planarx",   "planary", "planarz"};
 
-double OversampleNode::tcoord(std::shared_ptr<img_data_t> tex, double x, double y) const
+double OversampleNode::tcoord(const img_data_t& tex, double x, double y) const
 {
   double u = x / texturewidth;
   double v = y / textureheight;
@@ -65,65 +65,11 @@ double OversampleNode::tcoord(std::shared_ptr<img_data_t> tex, double x, double 
     v = 1 - v;
   }
 
-  int tx = (tex->width - 1) * u;
-  int ty = (tex->height - 1) * v;
-  Vector3f pixel = (*tex)[ty * tex->width + tx];
+  int tx = (tex.width - 1) * u;
+  int ty = (tex.height - 1) * v;
+  Vector3f pixel = tex[ty * tex.width + tx];
   double depth = (pixel[0] + pixel[1] + pixel[2]) * texturedepth / (3.0 * 256.0);
   return depth;
-}
-
-bool is_png(std::vector<uint8_t>& png)
-{
-  const size_t pngHeaderLength = 8;
-  const uint8_t pngHeader[pngHeaderLength] = {0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a};
-  return (png.size() >= pngHeaderLength && std::memcmp(png.data(), pngHeader, pngHeaderLength) == 0);
-}
-
-void convert_image(std::shared_ptr<img_data_t> data, std::vector<uint8_t>& img, unsigned int width,
-                   unsigned int height)
-{
-  data->width = width;
-  data->height = height;
-  data->resize((size_t)width * height);
-  for (unsigned int y = 0; y < height; ++y) {
-    for (unsigned int x = 0; x < width; ++x) {
-      long idx = 4l * (y * width + x);
-      (*data)[x + (width * (height - 1 - y))] = Vector3f(img[idx], img[idx + 1], img[idx + 2]);
-    }
-  }
-}
-
-std::shared_ptr<img_data_t> load_png(const std::string& filename)
-{
-  std::shared_ptr<img_data_t> data = std::make_shared<img_data_t>();
-  std::vector<uint8_t> png;
-  int ret_val = 0;
-  try {
-    ret_val = lodepng::load_file(png, filename);
-  } catch (std::bad_alloc& ba) {
-    LOG(message_group::Warning, "bad_alloc caught for '%1$s'.", ba.what());
-    return data;
-  }
-
-  if (ret_val == 78) {
-    LOG(message_group::Warning, "The file '%1$s' couldn't be opened.", filename);
-    return data;
-  }
-
-  if (!is_png(png)) {
-  }
-
-  unsigned int width, height;
-  std::vector<uint8_t> img;
-  auto error = lodepng::decode(img, width, height, png);
-  if (error) {
-    LOG(message_group::Warning, "Can't read PNG image '%1$s'", filename);
-    return data;
-  }
-
-  convert_image(data, img, width, height);
-
-  return data;
 }
 
 std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
@@ -304,7 +250,7 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
   }
 
   if (textureprojection != PROJECTION_NONE && texturefilename.size() > 0) {
-    std::shared_ptr<img_data_t> texture = load_png(this->texturefilename);
+    img_data_t texture = read_png_or_dat(this->texturefilename);
     // now apply texture to all vertices
     // create  vertex-to-triangle mapping (beta)
     std::vector<int> vert2tri;

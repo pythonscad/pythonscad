@@ -48,6 +48,7 @@
 #include "python/FrepNode.h"
 #endif
 #include "GeometryUtils.h"
+#include "utils/png_util.h"
 #include "core/FreetypeRenderer.h"
 #include "core/TransformNode.h"
 #include "core/LinearExtrudeNode.h"
@@ -56,7 +57,6 @@
 #include "core/ImportNode.h"
 #include "core/PullNode.h"
 #include "core/WrapNode.h"
-#include "core/SurfaceNode.h"
 #include "core/OversampleNode.h"
 #include "core/DebugNode.h"
 #include "core/RepairNode.h"
@@ -66,6 +66,7 @@
 #include "Expression.h"
 #include "core/RoofNode.h"
 #include "core/RenderNode.h"
+#include "core/SurfaceNode.h"
 #include "core/SheetNode.h"
 #include "core/TextNode.h"
 #include "core/CurveDiscretizer.h"
