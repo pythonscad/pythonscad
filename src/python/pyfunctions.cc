@@ -3067,8 +3067,8 @@ PyObject *python_oo_children(PyObject *obj, PyObject *args, PyObject *kwargs)
   return python_children_core(obj);
 }
 
-PyObject *python_oversample_core(PyObject *obj, double size, const char *texture, double texturewidth,
-                                 double textureheight, double texturedepth)
+PyObject *python_oversample_core(PyObject *obj, double size, const char *texture, const char *projection,
+                                 double texturewidth, double textureheight, double texturedepth)
 {
   PyObject *dummydict;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
@@ -3084,6 +3084,18 @@ PyObject *python_oversample_core(PyObject *obj, double size, const char *texture
 
   node->size = size;
   if (texture != nullptr) node->texturefilename = texture;
+  node->textureprojection = PROJECTION_NONE;
+  if (projection != nullptr) {
+    node->textureprojection = -1;
+    for (int i = 0; i < TEXTUREPROJECTION_NUM; i++) {
+      if (strcmp(projection, projectionNames[i]) == 0) node->textureprojection = i;
+    }
+    if (node->textureprojection == -1) {
+      node->textureprojection = PROJECTION_NONE;
+      PyErr_SetString(PyExc_TypeError, "Unsupported texture projection\n");
+      return NULL;
+    }
+  }
   node->texturewidth = texturewidth;
   node->textureheight = textureheight;
   node->texturedepth = texturedepth;
@@ -3094,34 +3106,40 @@ PyObject *python_oversample_core(PyObject *obj, double size, const char *texture
 PyObject *python_oversample(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   double size = 2;
-  char *kwlist[] = {"obj", "size", "texture", "texturewidth", "textureheight", "texturedepth", NULL};
+  char *kwlist[] = {"obj",          "size",          "texture",      "projection",
+                    "texturewidth", "textureheight", "texturedepth", NULL};
   PyObject *obj = NULL;
   const char *texture = nullptr;
+  const char *projection = nullptr;
   double texture_width = 1;
   double texture_height = 1;
   double texture_depth = 1;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Od|sddd", kwlist, &obj, &size, &texture,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Od|ssddd", kwlist, &obj, &size, &texture, &projection,
                                    &texture_width, &texture_height, &texture_depth)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
-  return python_oversample_core(obj, size, texture, texture_width, texture_height, texture_depth);
+  return python_oversample_core(obj, size, texture, projection, texture_width, texture_height,
+                                texture_depth);
 }
 
 PyObject *python_oo_oversample(PyObject *obj, PyObject *args, PyObject *kwargs)
 {
   double size = 2;
-  char *kwlist[] = {"obj", "size", "texture", "texturewidth", "textureheight", "texturedepth", NULL};
+  char *kwlist[] = {"obj",          "size",          "texture",      "projection",
+                    "texturewidth", "textureheight", "texturedepth", NULL};
   const char *texture = nullptr;
+  const char *projection = nullptr;
   double texture_width = 1;
   double texture_height = 1;
   double texture_depth = 1;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "d|sddd", kwlist, &size, &texture, &texture_width,
-                                   &texture_height, &texture_depth)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "d|ssddd", kwlist, &size, &texture, &projection,
+                                   &texture_width, &texture_height, &texture_depth)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
-  return python_oversample_core(obj, size, texture, texture_width, texture_height, texture_depth);
+  return python_oversample_core(obj, size, texture, projection, texture_width, texture_height,
+                                texture_depth);
 }
 
 PyObject *python_debug_core(PyObject *obj, PyObject *faces)

@@ -5,6 +5,19 @@
 #include <src/geometry/linalg.h>
 #include "src/geometry/PolySet.h"
 
+enum textureProjections {
+  PROJECTION_NONE,
+  TRIPLANAR,
+  CUBIC,
+  SPHERICAL,
+  CYLINDRIC,
+  PLANARX,
+  PLANARY,
+  PLANARZ,
+  TEXTUREPROJECTION_NUM
+};
+extern const char *projectionNames[];
+
 class OversampleNode : public LeafNode
 {
 public:
@@ -14,8 +27,10 @@ public:
     std::ostringstream stream;
     stream << "oversample( size = " << size;
     if (texturefilename.size() > 0) {
-      stream << ", texture = " << texturefilename << ", texturewidth = " << texturewidth
-             << ", textureheight = " << textureheight << ", texturedepth = " << texturedepth;
+      stream << ", texture = " << texturefilename
+             << ", projection = " << projectionNames[textureprojection]
+             << ", texturewidth = " << texturewidth << ", textureheight = " << textureheight
+             << ", texturedepth = " << texturedepth;
     }
     stream << ")";
     return stream.str();
@@ -26,7 +41,7 @@ public:
   double size;  // how fine is the oversampling in units
 
   std::string texturefilename;
-  std::string textureprojection;
+  int textureprojection;
   double texturewidth;
   double textureheight;
   double texturedepth = 0.5;

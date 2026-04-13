@@ -46,6 +46,9 @@
 #include <src/utils/hash.h>
 #include "lodepng/lodepng.h"
 
+const char *projectionNames[] = {"none",        "triplanar", "cubic",   "spherical",
+                                 "cylindrical", "planarx",   "planary", "planarz"};
+
 double OversampleNode::tcoord(std::shared_ptr<img_data_t> tex, double x, double y) const
 {
   double u = x / texturewidth;
@@ -300,7 +303,7 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
     }
   }
 
-  if (texturefilename.size() > 0) {
+  if (textureprojection != PROJECTION_NONE && texturefilename.size() > 0) {
     std::shared_ptr<img_data_t> texture = load_png(this->texturefilename);
     // now apply texture to all vertices
     // create  vertex-to-triangle mapping (beta)
@@ -312,18 +315,26 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
         vert2tri[ps_work->indices[i][j]] = i;
       }
     }
-    Vector3d vx(1, 0, 0);
-    Vector3d vy(0, 1, 0);
-    Vector3d vz(0, 0, 1);
-    for (int i = 0; i < ps_work->vertices.size(); i++) {
-      Vector3d& pt = ps_work->vertices[i];
-      Vector3d& n = normals[orig_id[vert2tri[i]]];
+    switch (textureprojection) {
+    case PROJECTION_NONE: break;
+    case TRIPLANAR:       {
+      Vector3d vx(1, 0, 0);
+      Vector3d vy(0, 1, 0);
+      Vector3d vz(0, 0, 1);
+      for (int i = 0; i < ps_work->vertices.size(); i++) {
+        Vector3d& pt = ps_work->vertices[i];
+        Vector3d& n = normals[orig_id[vert2tri[i]]];
 
-      // triplanar texturing
-      pt = pt + vx * tcoord(texture, pt[1], pt[2]) * n[0] + vy * tcoord(texture, pt[0], pt[2]) * n[1] +
-           vz * tcoord(texture, pt[0], pt[1]) * n[2]
+        // triplanar texturing
+        pt = pt + vx * tcoord(texture, pt[1], pt[2]) * n[0] + vy * tcoord(texture, pt[0], pt[2]) * n[1] +
+             vz * tcoord(texture, pt[0], pt[1]) * n[2]
 
-        ;
+          ;
+      }
+    } break;
+    case CUBIC:     break;
+    case SPHERICAL: break;
+    case CYLINDRIC: break;
     }
   }
   return std::make_unique<PolySet>(*ps_work);
