@@ -77,7 +77,16 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
 {
   auto ps_work = PolySetUtils::tessellate_faces(*ps);
 
-  // calculate orginal norm vectors
+  // calculate min and max
+  Vector3d pmin, pmax;
+  pmin = pmax = ps_work->vertices[0];
+  for (const auto& pt : ps_work->vertices) {
+    for (int i = 0; i < 3; i++) {
+      if (pt[i] < pmin[i]) pmin[i] = pt[i];
+      if (pt[i] > pmax[i]) pmax[i] = pt[i];
+    }
+  }
+  Vector3d center = (pmin + pmax) / 2.0;
   std::vector<Vector3d> normals;
   normals.reserve(ps_work->indices.size());
   std::vector<int> orig_id;
@@ -261,26 +270,52 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
         vert2tri[ps_work->indices[i][j]] = i;
       }
     }
-    switch (textureprojection) {
-    case PROJECTION_NONE: break;
-    case TRIPLANAR:       {
-      Vector3d vx(1, 0, 0);
-      Vector3d vy(0, 1, 0);
-      Vector3d vz(0, 0, 1);
-      for (int i = 0; i < ps_work->vertices.size(); i++) {
-        Vector3d& pt = ps_work->vertices[i];
-        Vector3d& n = normals[orig_id[vert2tri[i]]];
+    for (int i = 0; i < ps_work->vertices.size(); i++) {
+      Vector3d& n = normals[orig_id[vert2tri[i]]];
+      Vector3d& pt = ps_work->vertices[i];
+      switch (textureprojection) {
+      case PROJECTION_NONE: break;
+      case TRIPLANAR:       {
+        Vector3d vx(1, 0, 0);
+        Vector3d vy(0, 1, 0);
+        Vector3d vz(0, 0, 1);
 
         // triplanar texturing
         pt = pt + vx * tcoord(texture, pt[1], pt[2]) * n[0] + vy * tcoord(texture, pt[0], pt[2]) * n[1] +
-             vz * tcoord(texture, pt[0], pt[1]) * n[2]
+             vz * tcoord(texture, pt[0], pt[1]) * n[2];
+      } break;
+      case CUBIC: {
+        double x = fabs(pt[0]);
+        double y = fabs(pt[1]);
+        double z = fabs(pt[2]);
+        if (x > y && x > z) {
+          pt = pt + Vector3d(1, 0, 0) * tcoord(texture, pt[1], pt[2]);
+        } else if (y > z) {
+          pt = pt + Vector3d(0, 1, 0) * tcoord(texture, pt[0], pt[2]);
+        } else {
+          pt = pt + Vector3d(0, 0, 1) * tcoord(texture, pt[0], pt[1]);
+        }
+      } break;
+      case SPHERICAL: {
+        Vector3d ptc = pt - center;
+        double u = 10 * (atan2(ptc[1], ptc[0]) / (2 * 3.1415926) + 0.5);
+        double v = 10 * acos(pt[2] / pt.norm()) / 3.1415926;
+        pt = pt + Vector3d(n[0], n[1], 0) * tcoord(texture, u, v);
 
-          ;
+      } break;
+      case PLANARX:   pt = pt + Vector3d(1, 0, 0) * tcoord(texture, pt[1], pt[2]); break;
+      case PLANARY:   pt = pt + Vector3d(0, 1, 0) * tcoord(texture, pt[0], pt[2]); break;
+      case PLANARZ:   pt = pt + Vector3d(0, 0, 1) * tcoord(texture, pt[0], pt[1]); break;
+      case CYLINDRIC: {
+        Vector3d ptc = pt - center;
+        double u = 10 * (atan2(ptc[1], ptc[0]) / (2 * 3.1415926) + 0.5);
+        double v = pt[2];
+        pt = pt + Vector3d(n[0], n[1], 0) * tcoord(texture, u, v);
+
       }
-    } break;
-    case CUBIC:     break;
-    case SPHERICAL: break;
-    case CYLINDRIC: break;
+
+      break;
+      }
     }
   }
   return std::make_unique<PolySet>(*ps_work);
