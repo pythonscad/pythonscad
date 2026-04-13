@@ -46,11 +46,6 @@
 #include <src/utils/hash.h>
 #include "lodepng/lodepng.h"
 
-void ov_add_poly(PolySetBuilder& builder, Vector3d p)
-{
-  builder.addVertex(builder.vertexIndex(p));
-}
-
 double OversampleNode::tcoord(std::shared_ptr<img_data_t> tex, double x, double y) const
 {
   double u = x / texturewidth;
@@ -128,7 +123,7 @@ std::shared_ptr<img_data_t> load_png(const std::string& filename)
   return data;
 }
 
-std::unique_ptr<const Geometry> OversampleNode::ov_dynamic(
+std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
   const std::shared_ptr<const PolySet>& ps) const
 {
   auto ps_work = PolySetUtils::tessellate_faces(*ps);
@@ -163,7 +158,7 @@ std::unique_ptr<const Geometry> OversampleNode::ov_dynamic(
       int ind_old = tri[2];
       for (int ind : tri) {
         double dist2 = (ps_work->vertices[ind_old] - ps_work->vertices[ind]).squaredNorm();
-        if (dist2 > n * n) {
+        if (dist2 > size * size) {
           uint64_t key = ((uint64_t)std::min(ind, ind_old) << 32) | std::max(ind, ind_old);
           auto it = edges.find(key);
           if (it == edges.end()) {
@@ -333,48 +328,6 @@ std::unique_ptr<const Geometry> OversampleNode::ov_dynamic(
   }
   return std::make_unique<PolySet>(*ps_work);
 }
-// TODO check if triangles are changed sign
-std::unique_ptr<const Geometry> ov_static(const std::shared_ptr<const PolySet>& ps, int n)
-{
-  // tesselate object
-  auto ps_tess = PolySetUtils::tessellate_faces(*ps);
-  std::vector<Vector3d> pt_dir;
-  std::unordered_map<Vector3d, int, boost::hash<Vector3d>> pointIntMap;
-  PolySetBuilder builder_ov(0, 0, 3, true);
-  for (size_t i = 0; i < ps_tess->indices.size(); i++) {
-    auto& pol = ps_tess->indices[i];
-    Vector3d p1 = ps_tess->vertices[pol[0]];
-    Vector3d p2 = ps_tess->vertices[pol[1]];
-    Vector3d p3 = ps_tess->vertices[pol[2]];
-    Vector3d p21 = (p2 - p1) / n;
-    Vector3d p31 = (p3 - p1) / n;
-    Vector3d botlast, botcur, toplast, topcur;
-    double r = 1.0;
-    Vector3d center(0, 0, 0);
-    for (int j = 0; j < n; j++) {
-      botcur = p1 + p31 * j;
-      topcur = p1 + p31 * (j + 1);
-
-      for (int k = 0; k < n - j; k++) {
-        if (k != 0) {
-          toplast = topcur;
-          topcur = topcur + p21;
-          builder_ov.beginPolygon(3);
-          ov_add_poly(builder_ov, botcur);
-          ov_add_poly(builder_ov, topcur);
-          ov_add_poly(builder_ov, toplast);
-        }
-        botlast = botcur;
-        botcur = botlast + p21;
-        builder_ov.beginPolygon(3);
-        ov_add_poly(builder_ov, botlast);
-        ov_add_poly(builder_ov, botcur);
-        ov_add_poly(builder_ov, topcur);
-      }
-    }
-  }
-  return builder_ov.build();
-}
 
 std::unique_ptr<const Geometry> OversampleNode::createGeometry() const
 {
@@ -387,6 +340,5 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry() const
   std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
   std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
   if (ps == nullptr) return std::unique_ptr<PolySet>();
-  if (this->method == "dynamic") return ov_dynamic(ps);
-  return ov_static(ps, this->n);
+  return createGeometry_sub(ps);
 }

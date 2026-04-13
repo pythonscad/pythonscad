@@ -3067,8 +3067,8 @@ PyObject *python_oo_children(PyObject *obj, PyObject *args, PyObject *kwargs)
   return python_children_core(obj);
 }
 
-PyObject *python_oversample_core(PyObject *obj, double n, const char *method, const char *texture,
-                                 double texturewidth, double textureheight, double texturedepth)
+PyObject *python_oversample_core(PyObject *obj, double size, const char *texture, double texturewidth,
+                                 double textureheight, double texturedepth)
 {
   PyObject *dummydict;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
@@ -3081,51 +3081,47 @@ PyObject *python_oversample_core(PyObject *obj, double n, const char *method, co
   DECLARE_INSTANCE();
   auto node = std::make_shared<OversampleNode>(instance);
   node->children.push_back(child);
-  node->n = n;
+
+  node->size = size;
   if (texture != nullptr) node->texturefilename = texture;
   node->texturewidth = texturewidth;
   node->textureheight = textureheight;
   node->texturedepth = texturedepth;
-  if (method != nullptr) node->method = method;
-  else node->method = "static";
 
   return PyOpenSCADObjectFromNode(type, node);
 }
 
 PyObject *python_oversample(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  double n = 2;
-  char *kwlist[] = {"obj",          "n", "method", "texture", "texturewidth", "textureheight",
-                    "texturedepth", NULL};
+  double size = 2;
+  char *kwlist[] = {"obj", "size", "texture", "texturewidth", "textureheight", "texturedepth", NULL};
   PyObject *obj = NULL;
-  const char *method = NULL;
   const char *texture = nullptr;
   double texture_width = 1;
   double texture_height = 1;
   double texture_depth = 1;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Od|ssddd", kwlist, &obj, &n, &method, &texture,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Od|sddd", kwlist, &obj, &size, &texture,
                                    &texture_width, &texture_height, &texture_depth)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
-  return python_oversample_core(obj, n, method, texture, texture_width, texture_height, texture_depth);
+  return python_oversample_core(obj, size, texture, texture_width, texture_height, texture_depth);
 }
 
 PyObject *python_oo_oversample(PyObject *obj, PyObject *args, PyObject *kwargs)
 {
-  double n = 2;
-  char *kwlist[] = {"n", "method", "texture", "texturewidth", "textureheight", "texturedepth", NULL};
-  const char *method = NULL;
+  double size = 2;
+  char *kwlist[] = {"obj", "size", "texture", "texturewidth", "textureheight", "texturedepth", NULL};
   const char *texture = nullptr;
   double texture_width = 1;
   double texture_height = 1;
   double texture_depth = 1;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "d|ssddd", kwlist, &n, &method, &texture,
-                                   &texture_width, &texture_height, &texture_depth)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "d|sddd", kwlist, &size, &texture, &texture_width,
+                                   &texture_height, &texture_depth)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");
     return NULL;
   }
-  return python_oversample_core(obj, n, method, texture, texture_width, texture_height, texture_depth);
+  return python_oversample_core(obj, size, texture, texture_width, texture_height, texture_depth);
 }
 
 PyObject *python_debug_core(PyObject *obj, PyObject *faces)
