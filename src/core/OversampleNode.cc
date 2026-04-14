@@ -49,10 +49,10 @@
 const char *projectionNames[] = {"none",        "triplanar", "cubic",   "spherical",
                                  "cylindrical", "planarx",   "planary", "planarz"};
 
-double OversampleNode::tcoord(const img_data_t& tex, double x, double y) const
+double BaseProjection::tcoord(double x, double y) const
 {
-  double u = x / texturewidth;
-  double v = y / textureheight;
+  double u = x / width;
+  double v = y / height;
   // get texture coorindate
   if (u > 0) u -= (int)u;
   else {
@@ -65,11 +65,67 @@ double OversampleNode::tcoord(const img_data_t& tex, double x, double y) const
     v = 1 - v;
   }
 
-  int tx = (tex.width - 1) * u;
-  int ty = (tex.height - 1) * v;
-  Vector3f pixel = tex[ty * tex.width + tx];
-  double depth = (pixel[0] + pixel[1] + pixel[2]) * texturedepth / (3.0 * 256.0);
-  return depth;
+  int tx = (texture.width - 1) * u;
+  int ty = (texture.height - 1) * v;
+  Vector3f pixel = texture[ty * texture.width + tx];
+  double dep = (pixel[0] + pixel[1] + pixel[2]) * depth / (3.0 * 256.0);
+  return dep;
+}
+
+Vector3d TriPlanarProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
+{
+  Vector3d vx(1, 0, 0);
+  Vector3d vy(0, 1, 0);
+  Vector3d vz(0, 0, 1);
+
+  // triplanar texturing
+  return vx * tcoord(pt[1], pt[2]) * n[0] + vy * tcoord(pt[0], pt[2]) * n[1] +
+         vz * tcoord(pt[0], pt[1]) * n[2];
+}
+
+Vector3d CubicProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
+{
+  double x = fabs(pt[0]);
+  double y = fabs(pt[1]);
+  double z = fabs(pt[2]);
+  if (x > y && x > z) {
+    return Vector3d(1, 0, 0) * tcoord(pt[1], pt[2]);
+  } else if (y > z) {
+    return Vector3d(0, 1, 0) * tcoord(pt[0], pt[2]);
+  } else {
+    return Vector3d(0, 0, 1) * tcoord(pt[0], pt[1]);
+  }
+}
+
+Vector3d SphericalProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
+{
+  Vector3d ptc = pt - center;
+  double u = 10 * (atan2(ptc[1], ptc[0]) / (2 * 3.1415926) + 0.5);
+  double v = 10 * acos(pt[2] / pt.norm()) / 3.1415926;
+  return Vector3d(n[0], n[1], 0) * tcoord(u, v);
+}
+
+Vector3d CylindricProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
+{
+  Vector3d ptc = pt - center;
+  double u = 10 * (atan2(ptc[1], ptc[0]) / (2 * 3.1415926) + 0.5);
+  double v = pt[2];
+  return Vector3d(n[0], n[1], 0) * tcoord(u, v);
+}
+
+Vector3d PlanarXProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
+{
+  return Vector3d(1, 0, 0) * tcoord(pt[1], pt[2]);
+}
+
+Vector3d PlanarYProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
+{
+  return Vector3d(0, 1, 0) * tcoord(pt[0], pt[2]);
+}
+
+Vector3d PlanarZProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
+{
+  return Vector3d(0, 0, 1) * tcoord(pt[0], pt[1]);
 }
 
 std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
@@ -87,6 +143,26 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
     }
   }
   Vector3d center = (pmin + pmax) / 2.0;
+
+  BaseProjection *proj = nullptr;
+  img_data_t texture;
+  if (textureprojection != PROJECTION_NONE) texture = read_png_or_dat(this->texturefilename);
+  switch (textureprojection) {
+  case TRIPLANAR:
+    proj = new TriPlanarProjection(texture, texturewidth, textureheight, texturedepth);
+    break;
+  case CUBIC: proj = new CubicProjection(texture, texturewidth, textureheight, texturedepth); break;
+  case SPHERICAL:
+    proj = new SphericalProjection(texture, texturewidth, textureheight, texturedepth, center);
+    break;
+  case CYLINDRIC:
+    proj = new CylindricProjection(texture, texturewidth, textureheight, texturedepth, center);
+    break;
+  case PLANARX: proj = new PlanarXProjection(texture, texturewidth, textureheight, texturedepth); break;
+  case PLANARY: proj = new PlanarYProjection(texture, texturewidth, textureheight, texturedepth); break;
+  case PLANARZ: proj = new PlanarZProjection(texture, texturewidth, textureheight, texturedepth); break;
+  }
+
   std::vector<Vector3d> normals;
   normals.reserve(ps_work->indices.size());
   std::vector<int> orig_id;
@@ -259,7 +335,6 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
   }
 
   if (textureprojection != PROJECTION_NONE && texturefilename.size() > 0) {
-    img_data_t texture = read_png_or_dat(this->texturefilename);
     // now apply texture to all vertices
     // create  vertex-to-triangle mapping (beta)
     std::vector<int> vert2tri;
@@ -273,50 +348,9 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
     for (int i = 0; i < ps_work->vertices.size(); i++) {
       Vector3d& n = normals[orig_id[vert2tri[i]]];
       Vector3d& pt = ps_work->vertices[i];
-      switch (textureprojection) {
-      case PROJECTION_NONE: break;
-      case TRIPLANAR:       {
-        Vector3d vx(1, 0, 0);
-        Vector3d vy(0, 1, 0);
-        Vector3d vz(0, 0, 1);
-
-        // triplanar texturing
-        pt = pt + vx * tcoord(texture, pt[1], pt[2]) * n[0] + vy * tcoord(texture, pt[0], pt[2]) * n[1] +
-             vz * tcoord(texture, pt[0], pt[1]) * n[2];
-      } break;
-      case CUBIC: {
-        double x = fabs(pt[0]);
-        double y = fabs(pt[1]);
-        double z = fabs(pt[2]);
-        if (x > y && x > z) {
-          pt = pt + Vector3d(1, 0, 0) * tcoord(texture, pt[1], pt[2]);
-        } else if (y > z) {
-          pt = pt + Vector3d(0, 1, 0) * tcoord(texture, pt[0], pt[2]);
-        } else {
-          pt = pt + Vector3d(0, 0, 1) * tcoord(texture, pt[0], pt[1]);
-        }
-      } break;
-      case SPHERICAL: {
-        Vector3d ptc = pt - center;
-        double u = 10 * (atan2(ptc[1], ptc[0]) / (2 * 3.1415926) + 0.5);
-        double v = 10 * acos(pt[2] / pt.norm()) / 3.1415926;
-        pt = pt + Vector3d(n[0], n[1], 0) * tcoord(texture, u, v);
-
-      } break;
-      case PLANARX:   pt = pt + Vector3d(1, 0, 0) * tcoord(texture, pt[1], pt[2]); break;
-      case PLANARY:   pt = pt + Vector3d(0, 1, 0) * tcoord(texture, pt[0], pt[2]); break;
-      case PLANARZ:   pt = pt + Vector3d(0, 0, 1) * tcoord(texture, pt[0], pt[1]); break;
-      case CYLINDRIC: {
-        Vector3d ptc = pt - center;
-        double u = 10 * (atan2(ptc[1], ptc[0]) / (2 * 3.1415926) + 0.5);
-        double v = pt[2];
-        pt = pt + Vector3d(n[0], n[1], 0) * tcoord(texture, u, v);
-
-      }
-
-      break;
-      }
+      pt = pt + proj->calcDisplacement(pt, n);
     }
+    if (proj != nullptr) delete proj;
   }
   return std::make_unique<PolySet>(*ps_work);
 }
