@@ -54,22 +54,82 @@ double BaseProjection::tcoord(double x, double y) const
   double u = x / width;
   double v = y / height;
   // get texture coorindate
-  if (u > 0) u -= (int)u;
-  else {
-    u = -u - (int)(-u);
-    u = 1 - u;
-  }
-  if (v > 0) v -= (int)v;
-  else {
-    v = -v - (int)(-v);
-    v = 1 - v;
-  }
-
+  u = u - floor(u);
+  v = v - floor(v);
   int tx = (texture.width - 1) * u;
   int ty = (texture.height - 1) * v;
   Vector3f pixel = texture[ty * texture.width + tx];
   double dep = (pixel[0] + pixel[1] + pixel[2]) * depth / (3.0 * 256.0);
   return dep;
+}
+
+Vector3d BaseProjection::calcMidpoint(const Vector3d& p1, const Vector3d& p2)
+{
+  /*
+    std::vector<Vector2d> line_start;
+    std::vector<Vector2d> line_end;
+
+    printf("CalcMidpt %g/%g/%g %g/%g/%g\n", p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
+
+    line_start.push_back(Vector2d(0.2, 0.2));
+    line_end.push_back(Vector2d(0.2, 0.8));
+
+    line_start.push_back(Vector2d(0.2, 0.8));
+    line_end.push_back(Vector2d(0.8, 0.8));
+
+    line_start.push_back(Vector2d(0.8, 0.8));
+    line_end.push_back(Vector2d(0.8, 0.2));
+
+    line_start.push_back(Vector2d(0.8, 0.2));
+    line_end.push_back(Vector2d(0.2, 0.2));
+    double u1, v1, u2, v2;
+    // convert p1 and p2 to Uv space
+    do {
+      if (convertToUv(p1, u1, v1)) break;
+      if (convertToUv(p2, u2, v2)) break;
+      Vector2d s1(u1, v1);
+      Vector2d s2(u2, v2);
+      // will project lines into range of uv
+      printf("s1 %g/%g s2 %g/%g\n", s1[0], s1[1], s2[0], s2[1]);
+      Vector2d s21 = s2 - s1;
+      double minu = std::floor(std::min(u1, u2) / width);
+      double minv = std::floor(std::min(v1, v2) / height);
+      for (int i = 0; i < line_start.size(); i++) {
+        Vector2d l1 = Vector2d((line_start[i][0] + minu) * width, (line_start[i][1] + minv) * height);
+        Vector2d l2 = Vector2d((line_end[i][0] + minu) * width, (line_end[i][1] + minv) * height);
+        printf("l1 %g/%g l2 %g/%g\n", l1[0], l1[1], l2[0], l2[1]);
+
+        Vector2d l21 = l2 - l1;
+
+        double det = s21[0] * l21[1] - s21[1] * l21[0];
+        Vector2d tmp = l1 - s1;
+        double q_pxs = tmp[0] * s21[1] - tmp[1] * s21[0];
+
+        if (det != 0) {
+          tmp = l1 - s1;
+          double t = (tmp[0] * l21[1] - tmp[1] * l21[0]) / det;
+          double u = (tmp[0] * s21[1] - tmp[1] * s21[0]) / det;
+
+          if (t >= 0.05 && t <= 0.95 && u >= 0 && u <= 1) {
+            return calcMidpoint(p1, p2, t);
+          }
+        }
+      }
+
+    } while (0);
+  */
+  Vector3d mid = (p1 + p2) / 2.0;
+  return mid;
+}
+
+int TriPlanarProjection::convertToUv(const Vector3d& pt, double& u, double& v)
+{
+  return 1;  // Uv conversion is not possible in Triplanar projection
+}
+
+Vector3d TriPlanarProjection::calcMidpoint(const Vector3d& a, const Vector3d& b, double x)
+{
+  return Vector3d(0, 0, 0);
 }
 
 Vector3d TriPlanarProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
@@ -81,6 +141,30 @@ Vector3d TriPlanarProjection::calcDisplacement(const Vector3d& pt, const Vector3
   // triplanar texturing
   return vx * tcoord(pt[1], pt[2]) * n[0] + vy * tcoord(pt[0], pt[2]) * n[1] +
          vz * tcoord(pt[0], pt[1]) * n[2];
+}
+
+// ----------------------
+
+int CubicProjection::convertToUv(const Vector3d& pt, double& u, double& v)
+{
+  double x = fabs(pt[0]);
+  double y = fabs(pt[1]);
+  double z = fabs(pt[2]);
+  if (x > y && x > z) {
+    u = pt[1];
+    v = pt[2];
+  } else if (y > z) {
+    u = pt[0];
+    v = pt[2];
+  } else {
+    u = pt[0];
+    v = pt[1];
+  }
+  return 0;
+}
+Vector3d CubicProjection::calcMidpoint(const Vector3d& a, const Vector3d& b, double x)
+{
+  return Vector3d(0, 0, 0);
 }
 
 Vector3d CubicProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
@@ -97,36 +181,130 @@ Vector3d CubicProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n
   }
 }
 
-Vector3d SphericalProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
+// ----------------------
+
+int SphericalProjection::convertToUv(const Vector3d& pt, double& u, double& v)
 {
   Vector3d ptc = pt - center;
-  double u = 10 * (atan2(ptc[1], ptc[0]) / (2 * 3.1415926) + 0.5);
-  double v = 10 * acos(pt[2] / pt.norm()) / 3.1415926;
+  u = 10 * (atan2(ptc[1], ptc[0]) / (2 * 3.1415926) + 0.5);
+  v = 10 * acos(pt[2] / pt.norm()) / 3.1415926;
+  return 0;
+}
+
+Vector3d SphericalProjection::calcMidpoint(const Vector3d& p1, const Vector3d& p2, double x)
+{
+  return p1 + (p2 - p1) * x;
+  /*
+  printf("Calcmidpopint\n");
+double u1, v1, r1, u2, v2, r2;
+convertToUv(p1, u1, v1);
+r1 = p1.norm();
+
+convertToUv(p2, u2, v2);
+r2 = p2.norm();
+
+double u = u1 + (u2 - u1) * x;
+double v = v1 + (v2 - v1) * x;
+double r = r1 + (r2 - r1) * x;
+u = (u - 0.5) * (2 * 3.1415);
+v = v * 3.1415;
+
+///  r=r*2; // TODO weg
+
+return center + Vector3d(r * cos(u) * cos(v), r * sin(u) * cos(v), r * sin(v));
+*/
+}
+
+Vector3d SphericalProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
+{
+  double u, v;
+  convertToUv(pt, u, v);
   return Vector3d(n[0], n[1], 0) * tcoord(u, v);
+}
+
+// ----------------------
+
+int CylindricProjection::convertToUv(const Vector3d& pt, double& u, double& v)
+{
+  Vector3d ptc = pt - center;
+  u = 10 * (atan2(ptc[1], ptc[0]) / (2 * 3.1415926) + 0.5);
+  v = pt[2];
+  return 0;
+}
+
+Vector3d CylindricProjection::calcMidpoint(const Vector3d& a, const Vector3d& b, double x)
+{
+  return Vector3d(0, 0, 0);
 }
 
 Vector3d CylindricProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
 {
-  Vector3d ptc = pt - center;
-  double u = 10 * (atan2(ptc[1], ptc[0]) / (2 * 3.1415926) + 0.5);
-  double v = pt[2];
+  double u, v;
+  convertToUv(pt, u, v);
   return Vector3d(n[0], n[1], 0) * tcoord(u, v);
+}
+
+// ----------------------
+
+int PlanarXProjection::convertToUv(const Vector3d& pt, double& u, double& v)
+{
+  u = pt[1];
+  v = pt[2];
+  return 0;
+}
+
+Vector3d PlanarXProjection::calcMidpoint(const Vector3d& a, const Vector3d& b, double x)
+{
+  return Vector3d(0, 0, 0);
 }
 
 Vector3d PlanarXProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
 {
-  return Vector3d(1, 0, 0) * tcoord(pt[1], pt[2]);
+  double u, v;
+  convertToUv(pt, u, v);
+  return Vector3d(1, 0, 0) * tcoord(u, v);
 }
 
+// ----------------------
+
+int PlanarYProjection::convertToUv(const Vector3d& pt, double& u, double& v)
+{
+  u = pt[0];
+  v = pt[2];
+  return 0;
+}
+Vector3d PlanarYProjection::calcMidpoint(const Vector3d& a, const Vector3d& b, double x)
+{
+  return Vector3d(0, 0, 0);
+}
 Vector3d PlanarYProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
 {
-  return Vector3d(0, 1, 0) * tcoord(pt[0], pt[2]);
+  double u, v;
+  convertToUv(pt, u, v);
+  return Vector3d(0, 1, 0) * tcoord(u, v);
+}
+
+// ----------------------
+
+int PlanarZProjection::convertToUv(const Vector3d& pt, double& u, double& v)
+{
+  u = pt[0];
+  v = pt[1];
+  return 0;
+}
+Vector3d PlanarZProjection::calcMidpoint(const Vector3d& a, const Vector3d& b, double x)
+{
+  printf("x=%g\n", x);
+  return a + (b - a) * x;
 }
 
 Vector3d PlanarZProjection::calcDisplacement(const Vector3d& pt, const Vector3d& n)
 {
-  return Vector3d(0, 0, 1) * tcoord(pt[0], pt[1]);
+  double u, v;
+  convertToUv(pt, u, v);
+  return Vector3d(0, 0, 1) * tcoord(u, v);
 }
+// ----------------------
 
 std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
   const std::shared_ptr<const PolySet>& ps) const
@@ -196,7 +374,11 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
           uint64_t key = ((uint64_t)std::min(ind, ind_old) << 32) | std::max(ind, ind_old);
           auto it = edges.find(key);
           if (it == edges.end()) {
-            Vector3d pmid = (ps_work->vertices[ind_old] + ps_work->vertices[ind]) / 2;
+            Vector3d pmid;
+            if (proj != nullptr)
+              pmid = proj->calcMidpoint(ps_work->vertices[ind_old], ps_work->vertices[ind]);
+            else pmid = (ps_work->vertices[ind_old] + ps_work->vertices[ind]) / 2;
+            //            printf("pmid is %g/%g/%g\n", pmid[0], pmid[1], pmid[2]);
 
             int newind = ps_new.vertices.size();
             ps_new.vertices.push_back(pmid);
@@ -300,8 +482,8 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
       const Vector3d phor = pright - pleft;
       const Vector3d pver = pafar - pbfar;
 
-      while (1) {
-        if (pver.squaredNorm() > phor.squaredNorm()) break;
+      do {
+        if (pver.squaredNorm() >= phor.squaredNorm() * 0.990) break;
         EdgeKey opp1k(left, bfar);
         auto it = edgeDb.find(opp1k);
         if (it == edgeDb.end()) break;
@@ -312,7 +494,7 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
         if (it == edgeDb.end()) break;
         EdgeVal& opp2 = it->second;
 
-        Vector3d n = pver.cross(phor);
+        Vector3d n = (pafar - pleft).cross(phor);
         if (fabs(n.dot(pafar) - n.dot(pbfar)) > 1e-3) break;  // same level
 
         if ((pleft - pbfar).cross(pver).dot(n) <= 1e-3) break;   // triangle flip
@@ -329,8 +511,7 @@ std::unique_ptr<const Geometry> OversampleNode::createGeometry_sub(
         if (opp2.facea == val.facea) opp2.facea = val.faceb;
         if (opp2.faceb == val.facea) opp2.faceb = val.faceb;
 
-        break;
-      }
+      } while (0);
     }
   }
 

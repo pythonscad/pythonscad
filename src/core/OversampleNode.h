@@ -30,7 +30,10 @@ public:
   img_data_t texture;
   double width, height, depth;
   double tcoord(double x, double y) const;
+  virtual int convertToUv(const Vector3d& pt, double& u, double& v) = 0;
+  virtual Vector3d calcMidpoint(const Vector3d& a, const Vector3d& b, double x) = 0;
   virtual Vector3d calcDisplacement(const Vector3d& pt, const Vector3d& n) = 0;
+  Vector3d calcMidpoint(const Vector3d& p1, const Vector3d& p2);
 };
 
 class TriPlanarProjection : public BaseProjection
@@ -40,6 +43,8 @@ public:
     : BaseProjection(tex, width, height, depth)
   {
   }
+  virtual int convertToUv(const Vector3d& pt, double& u, double& v);
+  virtual Vector3d calcMidpoint(const Vector3d& a, const Vector3d& b, double x);
   virtual Vector3d calcDisplacement(const Vector3d& pt, const Vector3d& n);
 };
 
@@ -50,6 +55,8 @@ public:
     : BaseProjection(tex, width, height, depth)
   {
   }
+  virtual int convertToUv(const Vector3d& pt, double& u, double& v);
+  virtual Vector3d calcMidpoint(const Vector3d& a, const Vector3d& b, double x);
   virtual Vector3d calcDisplacement(const Vector3d& pt, const Vector3d& n);
 };
 
@@ -61,6 +68,8 @@ public:
   {
     center = c;
   }
+  virtual int convertToUv(const Vector3d& pt, double& u, double& v);
+  virtual Vector3d calcMidpoint(const Vector3d& a, const Vector3d& b, double x);
   virtual Vector3d calcDisplacement(const Vector3d& pt, const Vector3d& n);
   Vector3d center;
 };
@@ -73,6 +82,8 @@ public:
   {
     center = c;
   }
+  virtual int convertToUv(const Vector3d& pt, double& u, double& v);
+  virtual Vector3d calcMidpoint(const Vector3d& a, const Vector3d& b, double x);
   virtual Vector3d calcDisplacement(const Vector3d& pt, const Vector3d& n);
   Vector3d center;
 };
@@ -84,6 +95,8 @@ public:
     : BaseProjection(tex, width, height, depth)
   {
   }
+  virtual int convertToUv(const Vector3d& pt, double& u, double& v);
+  virtual Vector3d calcMidpoint(const Vector3d& a, const Vector3d& b, double x);
   virtual Vector3d calcDisplacement(const Vector3d& pt, const Vector3d& n);
 };
 
@@ -94,6 +107,8 @@ public:
     : BaseProjection(tex, width, height, depth)
   {
   }
+  virtual int convertToUv(const Vector3d& pt, double& u, double& v);
+  virtual Vector3d calcMidpoint(const Vector3d& a, const Vector3d& b, double x);
   virtual Vector3d calcDisplacement(const Vector3d& pt, const Vector3d& n);
 };
 
@@ -104,6 +119,8 @@ public:
     : BaseProjection(tex, width, height, depth)
   {
   }
+  virtual int convertToUv(const Vector3d& pt, double& u, double& v);
+  virtual Vector3d calcMidpoint(const Vector3d& a, const Vector3d& b, double x);
   virtual Vector3d calcDisplacement(const Vector3d& pt, const Vector3d& n);
 };
 
