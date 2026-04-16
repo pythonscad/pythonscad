@@ -27,6 +27,7 @@ public:
     height = h;
     depth = dep;
   }
+  virtual ~BaseProjection() = default;
   img_data_t texture;
   double width, height, depth;
   double tcoord(double x, double y) const;
