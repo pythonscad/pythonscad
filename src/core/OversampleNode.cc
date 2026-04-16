@@ -51,6 +51,7 @@ const char *projectionNames[] = {"none",        "triplanar", "cubic",   "spheric
 
 double BaseProjection::tcoord(double x, double y) const
 {
+  if (texture.width == 0) return 0;
   double u = x / width;
   double v = y / height;
   // get texture coorindate
@@ -69,20 +70,6 @@ Vector3d BaseProjection::calcMidpoint(const Vector3d& p1, const Vector3d& p2)
     std::vector<Vector2d> line_start;
     std::vector<Vector2d> line_end;
 
-    printf("CalcMidpt %g/%g/%g %g/%g/%g\n", p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
-
-    line_start.push_back(Vector2d(0.2, 0.2));
-    line_end.push_back(Vector2d(0.2, 0.8));
-
-    line_start.push_back(Vector2d(0.2, 0.8));
-    line_end.push_back(Vector2d(0.8, 0.8));
-
-    line_start.push_back(Vector2d(0.8, 0.8));
-    line_end.push_back(Vector2d(0.8, 0.2));
-
-    line_start.push_back(Vector2d(0.8, 0.2));
-    line_end.push_back(Vector2d(0.2, 0.2));
-    double u1, v1, u2, v2;
     // convert p1 and p2 to Uv space
     do {
       if (convertToUv(p1, u1, v1)) break;

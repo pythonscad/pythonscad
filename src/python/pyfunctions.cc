@@ -3084,7 +3084,11 @@ PyObject *python_oversample_core(PyObject *obj, double size, const char *texture
   node->children.push_back(child);
 
   node->size = size;
-  if (texture != nullptr) node->texturefilename = texture;
+
+  auto filename = lookup_file(texture == NULL ? "" : texture, python_scriptpath.parent_path().u8string(),
+                              instance->location().filePath().parent_path().string());
+
+  node->texturefilename = filename;
   node->textureprojection = PROJECTION_NONE;
   if (projection != nullptr) {
     node->textureprojection = -1;
@@ -3127,8 +3131,8 @@ PyObject *python_oversample(PyObject *self, PyObject *args, PyObject *kwargs)
 PyObject *python_oo_oversample(PyObject *obj, PyObject *args, PyObject *kwargs)
 {
   double size = 2;
-  char *kwlist[] = {"obj",          "size",          "texture",      "projection",
-                    "texturewidth", "textureheight", "texturedepth", NULL};
+  char *kwlist[] = {"size",          "texture",      "projection", "texturewidth",
+                    "textureheight", "texturedepth", NULL};
   const char *texture = nullptr;
   const char *projection = nullptr;
   double texture_width = 1;
