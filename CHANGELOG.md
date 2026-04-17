@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.1](https://github.com/pythonscad/pythonscad/compare/v0.20.0...v0.20.1) (2026-04-16)
+
+
+### Bug Fixes
+
+* **resize:** resize resulted in inconsistent behavior ([22017dd](https://github.com/pythonscad/pythonscad/commit/22017dd241f0d603c4ff5f28af11a81919b210df))
+* **resize:** resize resulted in inconsistent behavior ([a222605](https://github.com/pythonscad/pythonscad/commit/a2226050612f1da77b8fc107e0c105689111526d))
+
 ## [0.20.0](https://github.com/pythonscad/pythonscad/compare/v0.19.1...v0.20.0) (2026-04-13)
 
 
