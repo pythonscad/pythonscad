@@ -26,6 +26,7 @@
 #include <Python.h>
 #include "genlang/genlang.h"
 #include <atomic>
+#include <cstring>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -1141,11 +1142,24 @@ stderr_bak = None\n\
 
 int python__setitem__(PyObject *dict, PyObject *key, PyObject *v);
 PyObject *python__getitem__(PyObject *dict, PyObject *key);
+PyObject *python_solid_root_color_rgba(PyObject *obj);
 
-PyObject *python__getattro__(PyObject *dict, PyObject *key)
+PyObject *python__getattro__(PyObject *obj, PyObject *key)
 {
-  PyObject *result = python__getitem__(dict, key);
-  if (result == Py_None || result == nullptr) result = PyObject_GenericGetAttr(dict, key);
+  /* Attribute "c" may legitimately be None; python__getitem__ ends with the same
+   * Py_None sentinel used for "unhandled", so tp_getattro would wrongly fall
+   * through to GenericGetAttr. Resolve "c" before that merge. */
+  PyObject *keyname = PyUnicode_AsEncodedString(key, "utf-8", "~");
+  if (keyname != nullptr) {
+    const char *ks = PyBytes_AS_STRING(keyname);
+    if (ks != nullptr && std::strcmp(ks, "c") == 0) {
+      Py_DECREF(keyname);
+      return python_solid_root_color_rgba(obj);
+    }
+    Py_DECREF(keyname);
+  }
+  PyObject *result = python__getitem__(obj, key);
+  if (result == Py_None || result == nullptr) result = PyObject_GenericGetAttr(obj, key);
   return result;
 }
 
