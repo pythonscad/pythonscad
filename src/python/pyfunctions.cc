@@ -6379,7 +6379,7 @@ PyMethodDef PyOpenSCADMethods[] = {
                                                                    "check if given point is inside")
                               OO_METHOD_ENTRY(bbox, "Evaluate Bound Box of object") OO_METHOD_ENTRY(
                                 faces, "Create Faces list")
-                                OO_METHOD_ENTRY(children, "Return Tupple from solid children")
+                                OO_METHOD_ENTRY(children, "Return Tuple from solid children")
                                   OO_METHOD_ENTRY(edges, "Create Edges list") OO_METHOD_ENTRY(
                                     oversample,
                                     "Oversample Object") OO_METHOD_ENTRY(debug, "Debug Object Faces")
