@@ -2341,6 +2341,31 @@ PyObject *python_oo_color(PyObject *obj, PyObject *args, PyObject *kwargs)
   return python_color_core(obj, color, alpha);
 }
 
+PyObject *python_oo_get_color(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "", kwlist)) {
+    PyErr_SetString(PyExc_TypeError, "get_color() takes no arguments");
+    return NULL;
+  }
+  PyObject *dummy_dict = nullptr;
+  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNodeMulti(self, &dummy_dict);
+  if (node == nullptr) {
+    PyErr_SetString(PyExc_TypeError, "get_color() requires a solid");
+    return NULL;
+  }
+  const auto color_node = std::dynamic_pointer_cast<ColorNode>(node);
+  if (!color_node) {
+    Py_RETURN_NONE;
+  }
+  const Color4f& c = color_node->color;
+  if (!c.isValid()) {
+    Py_RETURN_NONE;
+  }
+  return Py_BuildValue("(dddd)", static_cast<double>(c.r()), static_cast<double>(c.g()),
+                       static_cast<double>(c.b()), static_cast<double>(c.a()));
+}
+
 typedef std::vector<int> intList;
 
 PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
@@ -6322,56 +6347,63 @@ PyMethodDef PyOpenSCADFunctions[] = {
 PyMethodDef PyOpenSCADMethods[] = {
   OO_METHOD_ENTRY(translate, "Move Object") OO_METHOD_ENTRY(rotate, "Rotate Object") OO_METHOD_ENTRY(
     right, "Right Object") OO_METHOD_ENTRY(left, "Left Object") OO_METHOD_ENTRY(back, "Back Object")
-    OO_METHOD_ENTRY(front, "Front Object") OO_METHOD_ENTRY(up, "Up Object") OO_METHOD_ENTRY(
-      down, "Lower Object")
+    OO_METHOD_ENTRY(front, "Front Object") OO_METHOD_ENTRY(up, "Up Object")
+      OO_METHOD_ENTRY(down, "Lower Object")
 
-      OO_METHOD_ENTRY(union, "Union Object") OO_METHOD_ENTRY(difference, "Difference Object")
-        OO_METHOD_ENTRY(intersection, "Intersection Object")
+        OO_METHOD_ENTRY(union, "Union Object") OO_METHOD_ENTRY(difference, "Difference Object")
+          OO_METHOD_ENTRY(intersection, "Intersection Object")
 
-          OO_METHOD_ENTRY(rotx, "Rotx Object") OO_METHOD_ENTRY(roty, "Roty Object") OO_METHOD_ENTRY(
-            rotz, "Rotz Object")
+            OO_METHOD_ENTRY(rotx, "Rotx Object") OO_METHOD_ENTRY(roty, "Roty Object") OO_METHOD_ENTRY(
+              rotz, "Rotz Object")
 
-            OO_METHOD_ENTRY(scale, "Scale Object") OO_METHOD_ENTRY(mirror, "Mirror Object")
-              OO_METHOD_ENTRY(multmatrix, "Multmatrix Object") OO_METHOD_ENTRY(
-                divmatrix, "Divmatrix Object") OO_METHOD_ENTRY(offset, "Offset Object")
+              OO_METHOD_ENTRY(scale, "Scale Object") OO_METHOD_ENTRY(mirror, "Mirror Object")
+                OO_METHOD_ENTRY(multmatrix, "Multmatrix Object") OO_METHOD_ENTRY(
+                  divmatrix, "Divmatrix Object") OO_METHOD_ENTRY(offset, "Offset Object")
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
-                OO_METHOD_ENTRY(roof, "Roof Object")
+                  OO_METHOD_ENTRY(roof, "Roof Object")
 #endif
-                  OO_METHOD_ENTRY(color, "Color Object") OO_METHOD_ENTRY(
-                    separate, "Split into separate Objects") OO_METHOD_ENTRY(export, "Export Object")
+                    OO_METHOD_ENTRY(color, "Color Object") OO_METHOD_ENTRY(
+                      get_color,
+                      "Return RGBA of root ColorNode as (r,g,b,a) floats in [0,1], "
+                      "or None if the root is not a color() wrapper. Root-only: on "
+                      "unions, transforms, etc., use children() to reach a ColorNode.")
+                      OO_METHOD_ENTRY(separate, "Split into separate Objects") OO_METHOD_ENTRY(
+                        export, "Export Object")
 
-                    OO_METHOD_ENTRY(linear_extrude, "Linear_extrude Object")
-                      OO_METHOD_ENTRY(rotate_extrude, "Rotate_extrude Object") OO_METHOD_ENTRY(
-                        path_extrude, "Path_extrude Object") OO_METHOD_ENTRY(resize, "Resize Object")
+                        OO_METHOD_ENTRY(linear_extrude, "Linear_extrude Object")
+                          OO_METHOD_ENTRY(rotate_extrude, "Rotate_extrude Object") OO_METHOD_ENTRY(
+                            path_extrude, "Path_extrude Object") OO_METHOD_ENTRY(resize, "Resize Object")
 
-                        OO_METHOD_ENTRY(explode, "Explode a solid with a vector") OO_METHOD_ENTRY(
-                          mesh, "Mesh Object") OO_METHOD_ENTRY(inside, "check if given point is inside")
-                          OO_METHOD_ENTRY(bbox, "Evaluate Bound Box of object")
-                            OO_METHOD_ENTRY(faces, "Create Faces list")
-                              OO_METHOD_ENTRY(children, "Return Tupple from solid children")
-                                OO_METHOD_ENTRY(edges, "Create Edges list") OO_METHOD_ENTRY(
-                                  oversample, "Oversample Object") OO_METHOD_ENTRY(debug,
-                                                                                   "Debug Object Faces")
-                                  OO_METHOD_ENTRY(repair, "Make solid watertight") OO_METHOD_ENTRY(
-                                    fillet, "Fillet Object") OO_METHOD_ENTRY(align,
-                                                                             "Align Object to another")
+                            OO_METHOD_ENTRY(explode, "Explode a solid with a vector") OO_METHOD_ENTRY(
+                              mesh, "Mesh Object") OO_METHOD_ENTRY(inside,
+                                                                   "check if given point is inside")
+                              OO_METHOD_ENTRY(bbox, "Evaluate Bound Box of object") OO_METHOD_ENTRY(
+                                faces, "Create Faces list")
+                                OO_METHOD_ENTRY(children, "Return Tuple from solid children")
+                                  OO_METHOD_ENTRY(edges, "Create Edges list") OO_METHOD_ENTRY(
+                                    oversample,
+                                    "Oversample Object") OO_METHOD_ENTRY(debug, "Debug Object Faces")
+                                    OO_METHOD_ENTRY(repair, "Make solid watertight") OO_METHOD_ENTRY(
+                                      fillet, "Fillet Object") OO_METHOD_ENTRY(align,
+                                                                               "Align Object to another")
 
-                                    OO_METHOD_ENTRY(highlight, "Highlight Object")
-                                      OO_METHOD_ENTRY(background, "Background Object") OO_METHOD_ENTRY(
-                                        only, "Only Object") OO_METHOD_ENTRY(show, "Show Object")
-                                        OO_METHOD_ENTRY(projection, "Projection Object")
-                                          OO_METHOD_ENTRY(pull, "Pull Obejct apart") OO_METHOD_ENTRY(
-                                            wrap, "Wrap Object around Cylinder")
-                                            OO_METHOD_ENTRY(render, "Render Object")
-                                              OO_METHOD_ENTRY(clone, "Clone Object") OO_METHOD_ENTRY(
-                                                hasattr, "Check if an attribute exists")
-                                                OO_METHOD_ENTRY(setattr, "Sets an attribute on a solid")
-                                                  OO_METHOD_ENTRY(getattr,
-                                                                  "Gets an attribute from a solid")
-                                                    OO_METHOD_ENTRY(_repr_mimebundle_,
-                                                                    "Jupyter display hook")
-                                                      OO_METHOD_ENTRY(dict, "return all dictionary"){
-                                                        NULL, NULL, 0, NULL}};
+                                      OO_METHOD_ENTRY(highlight, "Highlight Object")
+                                        OO_METHOD_ENTRY(background, "Background Object") OO_METHOD_ENTRY(
+                                          only, "Only Object") OO_METHOD_ENTRY(show, "Show Object")
+                                          OO_METHOD_ENTRY(projection, "Projection Object")
+                                            OO_METHOD_ENTRY(pull, "Pull Object apart")
+                                              OO_METHOD_ENTRY(wrap, "Wrap Object around Cylinder")
+                                                OO_METHOD_ENTRY(render, "Render Object")
+                                                  OO_METHOD_ENTRY(clone, "Clone Object") OO_METHOD_ENTRY(
+                                                    hasattr, "Check if an attribute exists")
+                                                    OO_METHOD_ENTRY(setattr,
+                                                                    "Sets an attribute on a solid")
+                                                      OO_METHOD_ENTRY(getattr,
+                                                                      "Gets an attribute from a solid")
+                                                        OO_METHOD_ENTRY(_repr_mimebundle_,
+                                                                        "Jupyter display hook")
+                                                          OO_METHOD_ENTRY(dict, "return all dictionary"){
+                                                            NULL, NULL, 0, NULL}};
 
 PyNumberMethods PyOpenSCADNumbers = {
   python_nb_add,        // binaryfunc nb_add
