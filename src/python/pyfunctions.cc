@@ -6391,7 +6391,7 @@ PyMethodDef PyOpenSCADMethods[] = {
                                         OO_METHOD_ENTRY(background, "Background Object") OO_METHOD_ENTRY(
                                           only, "Only Object") OO_METHOD_ENTRY(show, "Show Object")
                                           OO_METHOD_ENTRY(projection, "Projection Object")
-                                            OO_METHOD_ENTRY(pull, "Pull Obejct apart")
+                                            OO_METHOD_ENTRY(pull, "Pull Object apart")
                                               OO_METHOD_ENTRY(wrap, "Wrap Object around Cylinder")
                                                 OO_METHOD_ENTRY(render, "Render Object")
                                                   OO_METHOD_ENTRY(clone, "Clone Object") OO_METHOD_ENTRY(
