@@ -11,6 +11,7 @@
 
 #include "gui/Editor.h"
 
+class QEvent;
 class MainWindow;  // for circular dependency
 
 class TabManager : public QObject
@@ -131,6 +132,7 @@ private:
   QTabBar::ButtonPosition getClosingButtonPosition();
   void zoomIn();
   void zoomOut();
+  bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
   void tabSwitched(int);
