@@ -296,6 +296,7 @@ def post_process_3mf(filename):
     xml_content = re.sub(r' xmlns:t="[^"]*"', '', xml_content)
     xml_content = re.sub(r' xmlns:v="[^"]*"', '', xml_content)
     xml_content = re.sub(r' xmlns:i="[^"]*"', '', xml_content)
+    xml_content = re.sub(r'PythonSCAD Model', 'OpenSCAD Model', xml_content)
     # add tag end whitespace for lib3mf 2.0 output files
     xml_content = re.sub('\"/>', '\" />', xml_content)
     with open(filename, 'wb') as xml_file:
@@ -309,6 +310,7 @@ def post_process_progname(filename):
     content = content.replace(b"PythonSCAD_Model\x0a\x00", b"OpenSCAD_Model\x0a\x00\x00\x00")
     content = content.replace(b"PythonSCAD_Model", b"OpenSCAD_Model")
     content = content.replace(b"PythonSCAD Model", b"OpenSCAD Model")
+    content = content.replace(b"PythonSCAD obj exporter", b"OpenSCAD obj exporter")
 
     with open(filename, "wb") as f:
         f.write(content)
@@ -504,4 +506,5 @@ if __name__ == '__main__':
     if options.suffix == "3mf": post_process_3mf(resultfile)
     if options.suffix == "svg": post_process_progname(resultfile)
     if options.suffix == "stl": post_process_progname(resultfile)
+    if options.suffix == "obj": post_process_progname(resultfile)
     if not verification or not compare_with_expected(resultfile): exit(1)
