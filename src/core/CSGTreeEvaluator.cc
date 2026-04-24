@@ -180,6 +180,7 @@ Response CSGTreeEvaluator::visit(State& state, const class ListNode& node)
   }
 }
 
+//
 // Creates a 1-unit-thick PolySet with dim==2 from a Polygon2d.
 std::shared_ptr<const PolySet> polygon2dToPolySet(Polygon2d p2d)
 {
