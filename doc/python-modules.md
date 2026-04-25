@@ -21,7 +21,7 @@ switching a script between them never requires any other code change.
 ### `_openscad` — C extension
 
 - Built from `src/python/` (registered in the embedded interpreter via
-  `PyImport_AppendInittab("_openscad", &PyInit_PyOpenSCAD)`; shipped as
+  `PyImport_AppendInittab("_openscad", &PyInit__openscad)`; shipped as
   `_openscad.so` / `_openscad.pyd` in the pip wheel).
 - Implementation detail. User scripts should import `pythonscad` or
   `openscad` instead.

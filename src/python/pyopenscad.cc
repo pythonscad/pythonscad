@@ -55,7 +55,6 @@ namespace fs = std::filesystem;
 // NOLINTBEGIN(bugprone-reserved-identifier)
 extern "C" PyObject *PyInit__openscad(void);
 // NOLINTEND(bugprone-reserved-identifier)
-PyMODINIT_FUNC PyInit_PyOpenSCAD(void);
 
 bool python_active;
 bool python_trusted;
@@ -935,7 +934,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 #ifdef HAVE_PYTHON_YIELD
     set_object_callback(openscad_object_callback);
 #endif
-    PyImport_AppendInittab("_openscad", &PyInit_PyOpenSCAD);
+    PyImport_AppendInittab("_openscad", &PyInit__openscad);
     PyImport_AppendInittab("libfive", &PyInit_data);
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
@@ -1423,11 +1422,33 @@ static PyModuleDef OpenSCADModule = {PyModuleDef_HEAD_INIT,
                                      nullptr,
                                      nullptr};
 
+// Sole init entry point for the `_openscad` extension module.  This
+// function is called both for the embedded interpreter (registered via
+// `PyImport_AppendInittab("_openscad", ...)` in `initPython`) and for
+// the pip-built shared library (dlsym'd by CPython as `PyInit__openscad`
+// matching the extension name).  It must therefore do everything needed
+// to leave `_openscad` usable from a bare `from _openscad import *`,
+// including registering the `Openscad`, `ChildRef` and `ChildIterator`
+// type objects.
 // NOLINTNEXTLINE(bugprone-reserved-identifier)
 extern "C" PyObject *PyInit__openscad(void)
 {
+  if (PyType_Ready(&PyOpenSCADType) < 0) return nullptr;
+  if (PyType_Ready(&PyOpenSCADItemRefType) < 0) return nullptr;
+  if (PyType_Ready(&PyOpenSCADObjectIterType) < 0) return nullptr;
+  if (PyType_Ready(&PyOpenSCADBoundMemberType) < 0) return nullptr;
+
   PyObject *m = PyModule_Create(&OpenSCADModule);
   if (m == nullptr) return nullptr;
+
+  Py_INCREF(&PyOpenSCADType);
+  PyModule_AddObject(m, "Openscad", reinterpret_cast<PyObject *>(&PyOpenSCADType));
+
+  Py_INCREF(&PyOpenSCADItemRefType);
+  PyModule_AddObject(m, "ChildRef", reinterpret_cast<PyObject *>(&PyOpenSCADItemRefType));
+
+  Py_INCREF(&PyOpenSCADObjectIterType);
+  PyModule_AddObject(m, "ChildIterator", reinterpret_cast<PyObject *>(&PyOpenSCADObjectIterType));
 
   // When loaded as a pip module the full runtime (initPython) is never
   // called, so the globals it normally sets up are still null.  Initialise
@@ -1457,30 +1478,6 @@ extern "C" PyObject *PyInit__openscad(void)
   }
 
   register_openscad_py_atexit();
-  return m;
-}
-
-PyMODINIT_FUNC PyInit_PyOpenSCAD(void)
-{
-  PyObject *m;
-
-  if (PyType_Ready(&PyOpenSCADType) < 0) return nullptr;
-  if (PyType_Ready(&PyOpenSCADItemRefType) < 0) return nullptr;
-  if (PyType_Ready(&PyOpenSCADObjectIterType) < 0) return nullptr;
-  if (PyType_Ready(&PyOpenSCADBoundMemberType) < 0) return NULL;
-
-  m = PyInit__openscad();
-  if (m == nullptr) return nullptr;
-
-  Py_INCREF(&PyOpenSCADType);
-  PyModule_AddObject(m, "Openscad", reinterpret_cast<PyObject *>(&PyOpenSCADType));
-
-  Py_INCREF(&PyOpenSCADItemRefType);
-  PyModule_AddObject(m, "ChildRef", reinterpret_cast<PyObject *>(&PyOpenSCADItemRefType));
-
-  Py_INCREF(&PyOpenSCADObjectIterType);
-  PyModule_AddObject(m, "ChildIterator", reinterpret_cast<PyObject *>(&PyOpenSCADObjectIterType));
-
   return m;
 }
 

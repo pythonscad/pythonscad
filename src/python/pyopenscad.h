@@ -21,15 +21,20 @@ typedef struct {
 } PyOpenSCADObject;
 
 struct PyOpenSCADBoundMemberObject {
-  PyObject_HEAD
-  PyObject *scad_self;
+  PyObject_HEAD PyObject *scad_self;
   int index;
 };
 
 void PyObjectDeleter(PyObject *pObject);
 using PyObjectUniquePtr = std::unique_ptr<PyObject, decltype(&PyObjectDeleter)>;
 
-PyMODINIT_FUNC PyInit_PyOpenSCAD(void);
+// Sole init entry point for the `_openscad` extension module.  Used
+// both when the module is embedded in the GUI/CLI (via
+// `PyImport_AppendInittab("_openscad", ...)`) and when CPython loads the
+// pip-built shared library (which dlsym's `PyInit__openscad`).
+// NOLINTBEGIN(bugprone-reserved-identifier)
+extern "C" PyObject *PyInit__openscad(void);
+// NOLINTEND(bugprone-reserved-identifier)
 
 extern PyTypeObject PyOpenSCADType;
 extern PyTypeObject PyOpenSCADBoundMemberType;
