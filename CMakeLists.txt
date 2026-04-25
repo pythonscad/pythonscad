@@ -1712,6 +1712,7 @@ set(GUI_SOURCES
   src/gui/QSettingsCached.cc
   src/gui/QWordSearchField.cc
   src/gui/ScadApi.cc
+  src/gui/PythonApi.cc
   src/gui/ScadLexer.cc
   src/gui/ScintillaEditor.cc
   src/gui/SettingsWriter.cc
@@ -1788,6 +1789,7 @@ set(GUI_HEADERS
     src/gui/QSettingsCached.h
     src/gui/QWordSearchField.h
     src/gui/ScadApi.h
+    src/gui/PythonApi.h
     src/gui/ScadLexer.h
     src/gui/ScintillaEditor.h
     src/gui/SettingsWriter.h
