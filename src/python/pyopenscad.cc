@@ -49,7 +49,12 @@
 namespace fs = std::filesystem;
 
 // #define HAVE_PYTHON_YIELD
-extern "C" PyObject *PyInit_openscad(void);
+// CPython requires the init function for the `_openscad` extension module to
+// be named `PyInit__openscad` (double underscore). The reserved-identifier
+// warning is therefore unavoidable here.
+// NOLINTBEGIN(bugprone-reserved-identifier)
+extern "C" PyObject *PyInit__openscad(void);
+// NOLINTEND(bugprone-reserved-identifier)
 PyMODINIT_FUNC PyInit_PyOpenSCAD(void);
 
 bool python_active;
@@ -875,12 +880,48 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       }
       Py_DECREF(mainKeyList);
 
+      // PyDict_DelItemString returns -1 and sets KeyError if the key is
+      // absent.  Some entries may have been removed between collection
+      // and deletion (e.g. modules that drop themselves on import
+      // failure, or the overlay names below that may never have been
+      // imported in this run).  Leaving a pending Python exception in
+      // the embedded interpreter would make later C-API calls fail in
+      // surprising ways, so we explicitly clear it.
+      auto safe_del = [](PyObject *dict, const char *name) {
+        if (PyDict_DelItemString(dict, name) < 0) {
+          PyErr_Clear();
+        }
+      };
       for (const auto& s : mainKeysToDelete) {
-        PyDict_DelItemString(maindict, s.c_str());
+        safe_del(maindict, s.c_str());
       }
       if (modulesMap != nullptr) {
+        // Defensive cleanup of the PythonSCAD module hierarchy:
+        //
+        //   _openscad  -> registered via PyImport_AppendInittab, repr contains
+        //                 "(built-in)" and is therefore filtered out above.
+        //                 We *intentionally* keep it cached because the C
+        //                 module is a singleton (its types, methods and
+        //                 internal state must not be torn down between scripts).
+        //
+        //   openscad   -> file-based pure-Python overlay
+        //                 (libraries/python/openscad/__init__.py). The filter
+        //                 above already enqueues it for deletion if it was
+        //                 imported, but we list it explicitly so the behaviour
+        //                 survives unrelated changes to the filter.  If the
+        //                 user script never imported it, safe_del swallows
+        //                 the resulting KeyError.
+        //
+        //   pythonscad -> file-based pure-Python overlay; same rationale.
+        const char *overlay_modules[] = {"openscad", "pythonscad"};
+        for (const char *mod_name : overlay_modules) {
+          if (std::find(moduleKeysToDelete.begin(), moduleKeysToDelete.end(), mod_name) ==
+              moduleKeysToDelete.end()) {
+            moduleKeysToDelete.emplace_back(mod_name);
+          }
+        }
         for (const auto& s : moduleKeysToDelete) {
-          PyDict_DelItemString(modulesMap, s.c_str());
+          safe_del(modulesMap, s.c_str());
         }
       }
     }
@@ -894,7 +935,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 #ifdef HAVE_PYTHON_YIELD
     set_object_callback(openscad_object_callback);
 #endif
-    PyImport_AppendInittab("openscad", &PyInit_PyOpenSCAD);
+    PyImport_AppendInittab("_openscad", &PyInit_PyOpenSCAD);
     PyImport_AppendInittab("libfive", &PyInit_data);
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
@@ -1373,8 +1414,8 @@ PyTypeObject PyOpenSCADType = {
 };
 
 static PyModuleDef OpenSCADModule = {PyModuleDef_HEAD_INIT,
-                                     "openscad",
-                                     "OpenSCAD Python Module",
+                                     "_openscad",
+                                     "OpenSCAD Python Module (low-level C extension)",
                                      -1,
                                      PyOpenSCADFunctions,
                                      nullptr,
@@ -1382,7 +1423,8 @@ static PyModuleDef OpenSCADModule = {PyModuleDef_HEAD_INIT,
                                      nullptr,
                                      nullptr};
 
-extern "C" PyObject *PyInit_openscad(void)
+// NOLINTNEXTLINE(bugprone-reserved-identifier)
+extern "C" PyObject *PyInit__openscad(void)
 {
   PyObject *m = PyModule_Create(&OpenSCADModule);
   if (m == nullptr) return nullptr;
@@ -1390,7 +1432,7 @@ extern "C" PyObject *PyInit_openscad(void)
   // When loaded as a pip module the full runtime (initPython) is never
   // called, so the globals it normally sets up are still null.  Initialise
   // them here so that show(), export(), etc. work from a plain
-  // "from openscad import *" session.
+  // "from _openscad import *" (or via the `openscad`/`pythonscad` overlay packages) session.
   if (!pythonMainModule) {
     PyObject *mainMod = PyImport_AddModule("__main__");
     if (mainMod != nullptr) {
@@ -1427,7 +1469,7 @@ PyMODINIT_FUNC PyInit_PyOpenSCAD(void)
   if (PyType_Ready(&PyOpenSCADObjectIterType) < 0) return nullptr;
   if (PyType_Ready(&PyOpenSCADBoundMemberType) < 0) return NULL;
 
-  m = PyInit_openscad();
+  m = PyInit__openscad();
   if (m == nullptr) return nullptr;
 
   Py_INCREF(&PyOpenSCADType);
