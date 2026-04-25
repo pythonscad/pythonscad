@@ -115,7 +115,7 @@ sudo ./scripts/get-dependencies.py --yes --profile pythonscad-qt5
 pip install pythonscad
 ```
 
-After install you can choose between two equivalent imports:
+After installing, you can choose between two equivalent imports:
 
 ```python
 # Recommended for new PythonSCAD designs
