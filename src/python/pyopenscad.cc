@@ -882,16 +882,20 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       }
       Py_DECREF(mainKeyList);
 
-      // PyDict_DelItemString returns -1 and sets KeyError if the key is
-      // absent.  Some entries may have been removed between collection
-      // and deletion (e.g. modules that drop themselves on import
-      // failure, or the overlay names below that may never have been
-      // imported in this run).  Leaving a pending Python exception in
-      // the embedded interpreter would make later C-API calls fail in
-      // surprising ways, so we explicitly clear it.
+      // Some entries may have been removed between collection and
+      // deletion (e.g. modules that drop themselves on import failure,
+      // or the overlay names below that may never have been imported in
+      // this run).  Probe with `PyMapping_HasKeyString` first so the
+      // delete only happens when the key is actually present; this
+      // matches the documented intent ("missing keys are expected") and
+      // means no Python exception is ever raised in the embedded
+      // interpreter, preventing it from poisoning later C-API calls.
+      // `PyDict_DelItemString` cannot fail on a key that was just
+      // observed by `HasKeyString`, so its return value is safe to
+      // ignore.
       auto safe_del = [](PyObject *dict, const char *name) {
-        if (PyDict_DelItemString(dict, name) < 0) {
-          PyErr_Clear();
+        if (PyMapping_HasKeyString(dict, name) > 0) {
+          PyDict_DelItemString(dict, name);
         }
       };
       for (const auto& s : mainKeysToDelete) {
@@ -911,8 +915,9 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
         //                 above already enqueues it for deletion if it was
         //                 imported, but we list it explicitly so the behaviour
         //                 survives unrelated changes to the filter.  If the
-        //                 user script never imported it, safe_del swallows
-        //                 the resulting KeyError.
+        //                 user script never imported it, safe_del's
+        //                 `PyMapping_HasKeyString` probe simply returns 0
+        //                 and the delete is skipped.
         //
         //   pythonscad -> file-based pure-Python overlay; same rationale.
         const char *overlay_modules[] = {"openscad", "pythonscad"};
