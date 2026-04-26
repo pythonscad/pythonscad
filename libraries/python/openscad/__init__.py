@@ -21,6 +21,11 @@ Switching a script between ``from openscad import *`` and
 import functools as _functools
 import warnings as _warnings
 
+# `import _openscad` (in addition to the star-import below) binds the name
+# `_openscad` at module scope so the documented per-symbol deprecation recipe
+# in `doc/python-modules.md` works as a literal copy-paste:
+#     foo = _deprecated("foo", replacement="foo")(_openscad.foo)
+import _openscad  # noqa: F401
 from _openscad import *  # noqa: F401,F403
 from _openscad import (  # noqa: F401
     ChildIterator,
