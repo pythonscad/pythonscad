@@ -1449,14 +1449,24 @@ PyMODINIT_FUNC PyInit__openscad(void)
   PyObject *m = PyModule_Create(&OpenSCADModule);
   if (m == nullptr) return nullptr;
 
-  Py_INCREF(&PyOpenSCADType);
-  PyModule_AddObject(m, "Openscad", reinterpret_cast<PyObject *>(&PyOpenSCADType));
-
-  Py_INCREF(&PyOpenSCADItemRefType);
-  PyModule_AddObject(m, "ChildRef", reinterpret_cast<PyObject *>(&PyOpenSCADItemRefType));
-
-  Py_INCREF(&PyOpenSCADObjectIterType);
-  PyModule_AddObject(m, "ChildIterator", reinterpret_cast<PyObject *>(&PyOpenSCADObjectIterType));
+  // Use `PyModule_AddObjectRef` (CPython >=3.10) instead of the legacy
+  // `Py_INCREF` + `PyModule_AddObject` pair: the legacy API only steals
+  // the reference on success, so a failure left the manual `Py_INCREF`
+  // leaking and the module half-initialised. `PyModule_AddObjectRef`
+  // never steals, making the ref counting symmetric on both paths.
+  if (PyModule_AddObjectRef(m, "Openscad", reinterpret_cast<PyObject *>(&PyOpenSCADType)) < 0) {
+    Py_DECREF(m);
+    return nullptr;
+  }
+  if (PyModule_AddObjectRef(m, "ChildRef", reinterpret_cast<PyObject *>(&PyOpenSCADItemRefType)) < 0) {
+    Py_DECREF(m);
+    return nullptr;
+  }
+  if (PyModule_AddObjectRef(m, "ChildIterator",
+                            reinterpret_cast<PyObject *>(&PyOpenSCADObjectIterType)) < 0) {
+    Py_DECREF(m);
+    return nullptr;
+  }
 
   // When loaded as a pip module the full runtime (initPython) is never
   // called, so the globals it normally sets up are still null.  Initialise
