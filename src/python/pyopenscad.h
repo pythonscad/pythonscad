@@ -32,8 +32,13 @@ using PyObjectUniquePtr = std::unique_ptr<PyObject, decltype(&PyObjectDeleter)>;
 // both when the module is embedded in the GUI/CLI (via
 // `PyImport_AppendInittab("_openscad", ...)`) and when CPython loads the
 // pip-built shared library (which dlsym's `PyInit__openscad`).
+//
+// Use `PyMODINIT_FUNC` (not bare `extern "C" PyObject *`) so that on
+// Windows the symbol gets `__declspec(dllexport)` via Py_EXPORTED_SYMBOL;
+// without it the loader cannot find `PyInit__openscad` in the `.pyd`.
+// `PyMODINIT_FUNC` already implies `extern "C"`.
 // NOLINTBEGIN(bugprone-reserved-identifier)
-extern "C" PyObject *PyInit__openscad(void);
+PyMODINIT_FUNC PyInit__openscad(void);
 // NOLINTEND(bugprone-reserved-identifier)
 
 extern PyTypeObject PyOpenSCADType;

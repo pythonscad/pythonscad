@@ -51,9 +51,12 @@ namespace fs = std::filesystem;
 // #define HAVE_PYTHON_YIELD
 // CPython requires the init function for the `_openscad` extension module to
 // be named `PyInit__openscad` (double underscore). The reserved-identifier
-// warning is therefore unavoidable here.
+// warning is therefore unavoidable here. `PyMODINIT_FUNC` (rather than a
+// bare `extern "C" PyObject *`) is required so that on Windows the symbol
+// is decorated with `__declspec(dllexport)` via Py_EXPORTED_SYMBOL and
+// CPython's loader can find it inside the `.pyd`.
 // NOLINTBEGIN(bugprone-reserved-identifier)
-extern "C" PyObject *PyInit__openscad(void);
+PyMODINIT_FUNC PyInit__openscad(void);
 // NOLINTEND(bugprone-reserved-identifier)
 
 bool python_active;
@@ -1431,7 +1434,7 @@ static PyModuleDef OpenSCADModule = {PyModuleDef_HEAD_INIT,
 // including registering the `Openscad`, `ChildRef` and `ChildIterator`
 // type objects.
 // NOLINTNEXTLINE(bugprone-reserved-identifier)
-extern "C" PyObject *PyInit__openscad(void)
+PyMODINIT_FUNC PyInit__openscad(void)
 {
   if (PyType_Ready(&PyOpenSCADType) < 0) return nullptr;
   if (PyType_Ready(&PyOpenSCADItemRefType) < 0) return nullptr;
