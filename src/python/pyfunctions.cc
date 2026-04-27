@@ -6036,6 +6036,84 @@ PyObject *python_member_trampoline(PyObject *self, PyObject *args, PyObject *kwa
   return PyObject_Call(python_member_callables[callind], newargs, kwargs);
 }
 
+// --- PyOpenSCADVector
+
+static PyObject *PyOpenSCADVector_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+  PyOpenSCADVectorObject *self;
+  self = (PyOpenSCADVectorObject *)type->tp_alloc(type, 0);
+
+  if (self) {
+    self->v[0] = 0;
+    self->v[1] = 0;
+    self->v[2] = 0;
+  }
+
+  return (PyObject *)self;
+}
+
+PyObject *python_vector(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
+{
+  char *kwlist[] = {"v", NULL};
+  PyObject *lvec = nullptr;
+  double x, y, z;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &lvec)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing vector");
+    return nullptr;
+  }
+  if (python_vectorval(lvec, 3, 3, &x, &y, &z)) {
+    PyErr_SetString(PyExc_TypeError, "Vector needs to be a python list");
+    return nullptr;
+  }
+  PyOpenSCADVectorObject *vec;
+  vec = (PyOpenSCADVectorObject *)PyOpenSCADVectorType.tp_alloc(&PyOpenSCADVectorType, 0);
+  if (vec) {
+    vec->v[0] = x;
+    vec->v[1] = y;
+    vec->v[2] = z;
+  }
+  return (PyObject *)vec;
+}
+
+static PyObject *PyOpenSCADVector_add(PyObject *a, PyObject *b)
+{
+  if (!PyObject_TypeCheck(a, &PyOpenSCADVectorType) || !PyObject_TypeCheck(b, &PyOpenSCADVectorType)) {
+    Py_RETURN_NOTIMPLEMENTED;
+  }
+
+  PyOpenSCADVectorObject *v1 = (PyOpenSCADVectorObject *)a;
+  PyOpenSCADVectorObject *v2 = (PyOpenSCADVectorObject *)b;
+
+  PyOpenSCADVectorObject *result = PyObject_New(PyOpenSCADVectorObject, &PyOpenSCADVectorType);
+  if (!result) return NULL;
+
+  for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] + v2->v[i];
+  return (PyObject *)result;
+}
+
+static PyNumberMethods PyOpenSCADVector_number_methods = {
+  .nb_add = PyOpenSCADVector_add,
+};
+
+static PyObject *PyOpenSCADVector_repr(PyOpenSCADVectorObject *self)
+{
+  std::ostringstream stream;
+  stream << "Vector(" << self->v[0] << "," << self->v[1] << "," << self->v[2] << ")";
+  return PyUnicode_FromStringAndSize(stream.str().c_str(), stream.str().size());
+}
+
+PyTypeObject PyOpenSCADVectorType = {
+  PyVarObject_HEAD_INIT(NULL, 0).tp_name = "PyOpenSCADVector",
+  .tp_basicsize = sizeof(PyOpenSCADVectorObject),
+  .tp_itemsize = 0,
+  .tp_repr = (reprfunc)PyOpenSCADVector_repr,
+  .tp_as_number = &PyOpenSCADVector_number_methods,
+  .tp_flags = Py_TPFLAGS_DEFAULT,
+  .tp_init = (initproc)python_vector,
+  .tp_new = PyOpenSCADVector_new,
+};
+
 // --- PyOpenSCADBoundMember: een callable object dat self + index inbakt ---
 
 static PyObject *PyOpenSCADBoundMemberCall(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -6174,7 +6252,7 @@ PyObject *python_rendervars(PyObject *self, PyObject *args, PyObject *kwargs, in
   PyObject *vpt = nullptr;
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ddOO", kwlist, &vpd, &vpf, &vpr, &vpt)) {
-    PyErr_SetString(PyExc_TypeError, "Error during parsing machineconfig");
+    PyErr_SetString(PyExc_TypeError, "Error during parsing rendervars");
     return NULL;
   }
   renderVarsSet = std::make_shared<RenderVariables>();
@@ -6314,6 +6392,7 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"machineconfig", (PyCFunction)python_machineconfig, METH_VARARGS | METH_KEYWORDS,
    "set Machineconfig"},
   {"rendervars", (PyCFunction)python_rendervars, METH_VARARGS | METH_KEYWORDS, "Set Rendervars"},
+  {"vector", (PyCFunction)python_vector, METH_VARARGS | METH_KEYWORDS, "Create PythonSCAD Vector"},
   {NULL, NULL, 0, NULL}};
 
 #define OO_METHOD_ENTRY(name, desc) \
