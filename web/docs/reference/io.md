@@ -53,14 +53,18 @@ drawing.linear_extrude(height=2).show()
 
 ## osuse
 
-Load an OpenSCAD library file, making its modules and functions available. Equivalent to OpenSCAD's `use <file.scad>`.
+Load an OpenSCAD library file and **return a handle object** whose attributes
+are the library's modules, functions, and top-level variables. Equivalent to
+OpenSCAD's `use <file.scad>`, but unlike OpenSCAD's `use`, the imported
+symbols are *not* injected into the global namespace — you must access them
+through the returned object.
 
 **Syntax:**
 
 === "Python"
 
 ```python
-osuse(file)
+lib = osuse(file)
 ```
 
 **Parameters:**
@@ -69,28 +73,78 @@ osuse(file)
 |-----------|------|-------------|
 | `file` | string | Path to the `.scad` file |
 
+**Returns:** an object exposing the imported library's contents:
+
+- **Modules** become methods that return geometry objects (e.g. `lib.gear(...)`).
+- **Functions** become methods that return values (e.g. `lib.calc_pitch(...)`).
+- **Top-level variables** are accessible via attribute access for plain names
+  (e.g. `lib.my_var`) and via item access for `$`-prefixed special variables
+  (e.g. `lib["$fn"]`).
+
+!!! note
+    Calling a module from the imported library produces a geometry object —
+    you still need to call `.show()` on it (or assign it to a variable that
+    you later `show()`) for it to appear in the output, just like any other
+    PythonSCAD geometry.
+
 **Examples:**
+
+Calling a module from an imported library:
 
 === "Python"
 
 ```python
 from openscad import *
 
-osuse("MCAD/gears.scad")
+mcad = osuse("MCAD/gears.scad")
+
+g = mcad.gear(
+    number_of_teeth=20,
+    circular_pitch=200,
+    pressure_angle=20,
+    clearance=0,
+    verbose=False,
+)
+g.show()
+```
+
+Calling a function and reading variables from an imported library:
+
+=== "Python"
+
+```python
+from openscad import *
+
+lib = osuse("mylib.scad")
+
+width = lib.get_width()
+radius = lib.calculate_radius(diameter=10)
+
+print(lib.my_constant)
+print(lib["$fn"])
 ```
 
 ---
 
 ## osinclude
 
-Include an OpenSCAD file, executing its top-level code. Equivalent to OpenSCAD's `include <file.scad>`.
+!!! warning "Deprecated"
+    `osinclude` is deprecated — use [`osuse`](#osuse) instead. Both functions
+    return the same handle object; `osinclude` exists only for backwards
+    compatibility with early PythonSCAD scripts and emits a deprecation
+    warning when called.
+
+Include an OpenSCAD file, executing its top-level code. Equivalent to
+OpenSCAD's `include <file.scad>`. Returns the same kind of handle object as
+[`osuse`](#osuse); see that section for how to access the imported modules,
+functions, and variables.
 
 **Syntax:**
 
 === "Python"
 
 ```python
-osinclude(file)
+lib = osinclude(file)
 ```
 
 **Parameters:**
@@ -106,7 +160,8 @@ osinclude(file)
 ```python
 from openscad import *
 
-osinclude("config.scad")
+lib = osinclude("config.scad")
+print(lib.default_radius)
 ```
 
 ---

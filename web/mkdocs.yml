@@ -84,6 +84,7 @@ nav:
   - Contact: contact.md
 
 markdown_extensions:
+  - admonition
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
