@@ -19,7 +19,11 @@
 #      contains the artifacts the fixture actually produces.
 #   3. Walks the scratch directory recursively and treats every regular
 #      file -- across any extension and any subdirectory -- as a fixture
-#      output to be checked.
+#      output to be checked. Coverage-instrumentation artifacts emitted
+#      by the binary itself (the ``.gcov/`` subtree from
+#      ``-fprofile-dir=.gcov`` plus stray ``*.gcda`` / ``*.gcno`` files)
+#      are skipped because they are runtime side-effects of
+#      ``-DPROFILE=ON`` builds, not fixture outputs.
 #   4. Applies format-aware post-processing (header progname rewrite for
 #      STL/SVG/OBJ, inner-XML extraction for 3MF; other extensions pass
 #      through untouched) keyed by each file's own extension, then
@@ -154,17 +158,43 @@ def _run_pythonscad(pythonscad, fixture, extra_args, rundir):
     return True
 
 
+# Coverage-instrumentation artifacts emitted by the running binary
+# itself when built with ``-DPROFILE=ON`` (see ``CMakeLists.txt``: the
+# project sets ``-fprofile-dir=.gcov`` so libgcov writes
+# path-mangled ``.gcda`` files into a ``.gcov/`` subdirectory of the
+# process's CWD on exit). These are runtime side-effects, not fixture
+# outputs, and must not participate in the tree-diff -- otherwise every
+# coverage build (Linux CI runs PROFILE=ON) reports the test as having
+# produced "unexpected files". The ``.gcno`` notes file is added
+# defensively in case a future build flag changes where it lands.
+_IGNORED_DIRS = frozenset({".gcov"})
+_IGNORED_SUFFIXES = frozenset({".gcda", ".gcno"})
+
+
+def _is_ignored(rel_parts: tuple, suffix: str) -> bool:
+    if suffix.lower() in _IGNORED_SUFFIXES:
+        return True
+    return any(part in _IGNORED_DIRS for part in rel_parts)
+
+
 def _discover(directory):
     """Return ``{rel_posix_path: absolute_path}`` for every file under
     ``directory``, recursing through subdirectories. Empty when
-    ``directory`` does not exist."""
+    ``directory`` does not exist. Coverage-instrumentation artifacts
+    from ``-DPROFILE=ON`` builds (``.gcov/`` subtree plus stray
+    ``*.gcda`` / ``*.gcno`` files) are skipped -- see ``_IGNORED_DIRS``
+    / ``_IGNORED_SUFFIXES`` above."""
     if not directory.is_dir():
         return {}
-    return {
-        p.relative_to(directory).as_posix(): p
-        for p in sorted(directory.rglob("*"))
-        if p.is_file()
-    }
+    out = {}
+    for p in sorted(directory.rglob("*")):
+        if not p.is_file():
+            continue
+        rel = p.relative_to(directory)
+        if _is_ignored(rel.parts, p.suffix):
+            continue
+        out[rel.as_posix()] = p
+    return out
 
 
 def _wipe_dir(directory):
