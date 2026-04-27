@@ -28,10 +28,10 @@ from openscad import (  # noqa: F401
 )
 
 import os as _os
-from typing import Any, Iterable, List, SupportsIndex, Tuple
+from typing import Any, Iterable, SupportsIndex, Tuple
 
 
-class MultiToolExporter(List[Tuple[Any, str]]):
+class MultiToolExporter(list[Tuple[Any, str]]):
     """List-based helper for exporting multi-tool / multi-color 3D models.
 
     Each item in the list is a ``(object, name)`` tuple, where ``object`` is a

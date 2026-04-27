@@ -3,7 +3,7 @@
 The `pythonscad` package is a strict superset of `openscad` (which itself
 re-exports `_openscad`). PythonSCAD-only additions are surfaced here.
 """
-from typing import Any, Iterable, List, SupportsIndex, Tuple
+from typing import Any, Iterable, SupportsIndex, Tuple
 
 from openscad import *  # noqa: F401,F403
 from openscad import (  # noqa: F401
@@ -17,7 +17,7 @@ from openscad import (  # noqa: F401
 )
 
 
-class MultiToolExporter(List[Tuple[Any, str]]):
+class MultiToolExporter(list[Tuple[Any, str]]):
     """List-based helper for exporting multi-tool / multi-color 3D models.
 
     Each item is an ``(object, name)`` 2-tuple. For each index ``i``,
