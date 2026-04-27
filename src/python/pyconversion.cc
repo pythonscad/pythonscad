@@ -156,6 +156,11 @@ int python_tomatrix(PyObject *pyt, Matrix4d& mat)
 int python_tovector(PyObject *pyt, Vector3d& vec)
 {
   if (pyt == nullptr) return 1;
+  if (pyt->ob_type == &PyOpenSCADVectorType) {
+    PyOpenSCADVectorObject *v = (PyOpenSCADVectorObject *)pyt;
+    for (int i = 0; i < 3; i++) vec[i] = v->v[i];
+    return 0;
+  }
   double val;
   if (!PyList_Check(pyt)) return 1;
   if (PyList_Size(pyt) != 3) return 1;
