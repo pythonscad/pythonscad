@@ -200,6 +200,19 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         else:
             super().__setitem__(index, self._validate_item(value))
 
+    def __iadd__(self, other):
+        """Validate each item then in-place extend (``self += other``).
+
+        Without this override, CPython's ``list.__iadd__`` calls
+        ``list_extend`` at the C level and bypasses :meth:`extend`,
+        which would let ``self += [bad_item]`` smuggle invalid entries
+        past the validation hooks. Validation is atomic: every item in
+        ``other`` is checked *before* anything is appended, so a bad
+        item in the middle leaves ``self`` unchanged.
+        """
+        validated = [self._validate_item(item) for item in other]
+        return super().__iadd__(validated)
+
     def _filename(self, i: int) -> str:
         """Return the output filename for part ``i``."""
         return f"{self.prefix}{self[i][0]}{self.suffix}"

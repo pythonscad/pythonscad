@@ -69,6 +69,13 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         """Insert a validated ``(name, object)`` tuple at ``index``."""
         ...
 
+    def __iadd__(  # type: ignore[override]
+        self,
+        other: _typing.Iterable[tuple[str, _typing.Any]],
+    ) -> "MultiToolExporter":
+        """Validate each item then in-place extend (``self += other``)."""
+        ...
+
     def parts(self) -> list[tuple[str, _typing.Any]]:
         """Return computed ``(name, geometry)`` pairs in declaration order."""
         ...

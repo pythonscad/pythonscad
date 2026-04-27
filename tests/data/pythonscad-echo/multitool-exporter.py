@@ -3,7 +3,7 @@
 Exercises:
   * constructor (positional + ``items=`` seeding) and ``len()``
   * shape and name validation in ``append`` / ``extend`` / ``insert`` /
-    ``__setitem__``
+    ``__setitem__`` / ``__iadd__`` (``+=``)
   * ``_part(last)`` returning the underlying object as-is (no degenerate
     one-child ``difference`` node)
   * duplicate-name detection at ``export()`` time
@@ -58,13 +58,18 @@ expect("extend bad item", lambda: exp.extend([("ok", red), red]), TypeError)
 expect("insert bad item", lambda: exp.insert(0, red), TypeError)
 expect("setitem bad item", lambda: exp.__setitem__(0, red), TypeError)
 expect("setitem slice bad", lambda: exp.__setitem__(slice(0, 1), [red]), TypeError)
+# `+=` goes through list.__iadd__ at the C level, which bypasses the
+# extend() override unless __iadd__ is also overridden -- exercise it.
+expect("iadd bad item", lambda: exp.__iadd__([red]), TypeError)
+expect("iadd mid-bad item", lambda: exp.__iadd__([("ok", red), red]), TypeError)
 expect(
     "constructor bad item",
     lambda: MultiToolExporter("p-", ".stl", items=[("ok", red), ("", blue)]),
     ValueError,
 )
 
-# Make sure no half-applied state was left behind by the failed extend.
+# Make sure no half-applied state was left behind by the failed extend
+# or the failed +=.
 print("len after failed extend:", len(exp))
 
 # --- 4. Duplicate-name detection at export time ------------------------

@@ -13,6 +13,8 @@ extend bad item: TypeError
 insert bad item: TypeError
 setitem bad item: TypeError
 setitem slice bad: TypeError
+iadd bad item: TypeError
+iadd mid-bad item: TypeError
 constructor bad item: ValueError
 len after failed extend: 2
 export duplicate names: ValueError
