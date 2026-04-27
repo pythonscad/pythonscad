@@ -6076,7 +6076,7 @@ PyObject *python_vector(PyObject *self, PyObject *args, PyObject *kwargs, int mo
   return (PyObject *)vec;
 }
 
-static PyObject *PyOpenSCADVector_add(PyObject *a, PyObject *b)
+PyObject *PyOpenSCADVector_sub(PyObject *a, PyObject *b, int mode)
 {
   if (!PyObject_TypeCheck(a, &PyOpenSCADVectorType) || !PyObject_TypeCheck(b, &PyOpenSCADVectorType)) {
     Py_RETURN_NOTIMPLEMENTED;
@@ -6087,13 +6087,51 @@ static PyObject *PyOpenSCADVector_add(PyObject *a, PyObject *b)
 
   PyOpenSCADVectorObject *result = PyObject_New(PyOpenSCADVectorObject, &PyOpenSCADVectorType);
   if (!result) return NULL;
-
-  for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] + v2->v[i];
+  switch (mode) {
+  case 0:
+    for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] + v2->v[i];
+    break;  // add
+  case 1:
+    for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] - v2->v[i];
+    break;  // subtract
+  case 2:
+    for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] * v2->v[i];
+    break;   // dot
+  case 3: {  // cross
+    Vector3d v1e(v1->v[0], v1->v[1], v1->v[2]);
+    Vector3d v2e(v2->v[0], v2->v[1], v2->v[2]);
+    return python_fromvector(v1e.cross(v2e));
+  } break;
+  case 4:
+    for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] + v2->v[i];
+    break;  // norm
+  }
+  if (mode == 2) {
+    return PyFloat_FromDouble(result->v[0] + result->v[1] + result->v[2]);
+  }  // dot
+  if (mode == 4) {
+    return PyFloat_FromDouble(sqrt(result->v[0] + result->v[1] + result->v[2]));
+  }  // norm
   return (PyObject *)result;
+}
+
+PyObject *PyOpenSCADVector_add(PyObject *a, PyObject *b)
+{
+  return PyOpenSCADVector_sub(a, b, 0);
+}
+PyObject *PyOpenSCADVector_subtract(PyObject *a, PyObject *b)
+{
+  return PyOpenSCADVector_sub(a, b, 1);
+}
+PyObject *PyOpenSCADVector_multiply(PyObject *a, PyObject *b)
+{
+  return PyOpenSCADVector_sub(a, b, 3);
 }
 
 static PyNumberMethods PyOpenSCADVector_number_methods = {
   .nb_add = PyOpenSCADVector_add,
+  .nb_subtract = PyOpenSCADVector_subtract,
+  .nb_multiply = PyOpenSCADVector_multiply,
 };
 
 static PyObject *PyOpenSCADVector_repr(PyOpenSCADVectorObject *self)
@@ -6103,13 +6141,65 @@ static PyObject *PyOpenSCADVector_repr(PyOpenSCADVectorObject *self)
   return PyUnicode_FromStringAndSize(stream.str().c_str(), stream.str().size());
 }
 
+PyObject *PyOpenSCADVector_dot(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"vec1", NULL};
+  PyObject *obj = nullptr;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &obj)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing dot");
+    return NULL;
+  }
+  return PyOpenSCADVector_sub(self, obj, 2);
+}
+
+PyObject *PyOpenSCADVector_norm(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return PyOpenSCADVector_sub(self, self, 4);
+}
+
+PyMethodDef PyOpenSCADVectorMethods[] = {
+  {"dot", (PyCFunction)PyOpenSCADVector_dot, METH_VARARGS | METH_KEYWORDS, "Dot Product"},
+  {"norm", (PyCFunction)PyOpenSCADVector_norm, METH_VARARGS | METH_KEYWORDS, "Length"},
+  {NULL, NULL, 0, NULL}
+
+};
+
+PyObject *PyOpenSCADVector__getitem__(PyObject *obj, PyObject *key)
+{
+  PyOpenSCADVectorObject *self = (PyOpenSCADVectorObject *)obj;
+  PyObject *result;
+  if (PyLong_Check(key)) {
+    long ind = PyLong_AsLong(key);
+    if (ind >= 0 && ind < 3) return PyFloat_FromDouble(self->v[ind]);
+  }
+
+  Py_RETURN_NONE;
+}
+
+int PyOpenSCADVector__setitem__(PyObject *obj, PyObject *key, PyObject *v)
+{
+  double result;
+  if (PyLong_Check(key) && !python_numberval(v, &result, nullptr, 0)) {
+    long ind = PyLong_AsLong(key);
+    PyOpenSCADVectorObject *self = (PyOpenSCADVectorObject *)obj;
+    if (ind >= 0 && ind < 3) {
+      self->v[ind] = result;
+    }
+  }
+  return 0;
+}
+
+PyMappingMethods PyOpenSCADVectorMapping = {0, PyOpenSCADVector__getitem__, PyOpenSCADVector__setitem__};
+
 PyTypeObject PyOpenSCADVectorType = {
   PyVarObject_HEAD_INIT(NULL, 0).tp_name = "PyOpenSCADVector",
   .tp_basicsize = sizeof(PyOpenSCADVectorObject),
   .tp_itemsize = 0,
   .tp_repr = (reprfunc)PyOpenSCADVector_repr,
   .tp_as_number = &PyOpenSCADVector_number_methods,
+  .tp_as_mapping = &PyOpenSCADVectorMapping,
   .tp_flags = Py_TPFLAGS_DEFAULT,
+  .tp_methods = PyOpenSCADVectorMethods,
   .tp_init = (initproc)python_vector,
   .tp_new = PyOpenSCADVector_new,
 };
