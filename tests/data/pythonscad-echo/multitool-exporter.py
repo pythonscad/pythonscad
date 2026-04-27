@@ -16,6 +16,9 @@ recorder so the test does not depend on a render backend, file system
 state, or output formatting of any export format.
 """
 
+import os
+import tempfile
+
 import pythonscad
 from pythonscad import MultiToolExporter, cube
 
@@ -92,7 +95,6 @@ try:
     )
     e1.export()
     # 5b. With a real directory portion, mkdir=True -- still works
-    import tempfile, os
     with tempfile.TemporaryDirectory() as tmp:
         out_prefix = os.path.join(tmp, "nested", "x-")
         e2 = MultiToolExporter(
