@@ -378,6 +378,10 @@
       <div class="func"><code><a href="../reference/display/#highlight">highlight</a> / <a href="../reference/display/#background">background</a> / <a href="../reference/display/#only">only</a></code></div>
       <div>Debug modifiers for visualization</div>
       <div><code>highlight(cube(5)).show()</code></div>
+
+      <div class="func"><code><a href="../reference/multitool/#multitoolexporter">MultiToolExporter</a>(prefix, suffix, mkdir, items)</code></div>
+      <div>Split a model into per-color/per-tool files via cumulative difference</div>
+      <div><code>MultiToolExporter("out/m-", ".stl", mkdir=True, items=[(red,"r"),(blue,"b")]).export()</code></div>
   </div>
 </div>
 
