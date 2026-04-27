@@ -29,11 +29,15 @@
 #      one-for-one, so missing or unexpected files are caught by simple
 #      set diffing.
 #
-# When TEST_GENERATE=1 is set in the environment (or -g/--generate is passed),
-# the produced files are copied into place as the new goldens instead of
-# being compared. Any stale goldens with the same suffix that the fixture no
-# longer writes are removed so the expected directory always mirrors the run
-# output.
+# When the TEST_GENERATE environment variable is set to any non-empty value
+# (or -g/--generate is passed), the produced files are copied into place as
+# the new goldens instead of being compared. Any stale goldens with the same
+# suffix that the fixture no longer writes are removed so the expected
+# directory always mirrors the run output. Note: this matches the existing
+# convention in `test_cmdline_tool.py` and `test_pretty_print.py`, which
+# also accept any non-empty value (the recommended idiom is `TEST_GENERATE=1`,
+# but `TEST_GENERATE=0` would also enable generation -- unset the variable
+# to disable instead).
 #
 # Usage:
 #   test_export_files.py
@@ -148,7 +152,9 @@ def main():
         help="Root regression directory (defaults to tests/regression).")
     parser.add_argument("-g", "--generate", action="store_true",
                         help="Generate goldens instead of comparing. Also "
-                             "honored via TEST_GENERATE=1 in the environment.")
+                             "honored when the TEST_GENERATE environment "
+                             "variable is set to any non-empty value "
+                             "(matches test_cmdline_tool.py).")
     parser.add_argument("fixture", help="Python fixture script to run.")
     parser.add_argument("extra_args", nargs=argparse.REMAINDER,
                         help="Extra arguments forwarded to pythonscad.")
