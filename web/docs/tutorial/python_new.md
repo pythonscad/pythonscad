@@ -260,10 +260,10 @@ background = cube([200, 100, 1]).color("blue")
 star       = cylinder(r=20, h=2, fn=5).translate([100, 50, -0.5]).color("red")
 
 exporter = MultiToolExporter("out/flag-", ".stl", mkdir=True)
-exporter.append((star,       "red"))   # earlier wins
-exporter.append((background, "blue"))  # blue gets background minus star
+exporter.append((background, "blue"))  # blue: rectangle minus the star area
+exporter.append((star,       "red"))   # red: the star itself (later wins)
 exporter.export()
-# writes out/flag-red.stl and out/flag-blue.stl
+# writes out/flag-blue.stl and out/flag-red.stl
 ```
 
 `exporter.show()` previews the same split inside the GUI without writing
