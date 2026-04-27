@@ -1364,9 +1364,10 @@ endif()
 #
 # Each fixture runs with a per-test scratch CWD and writes one or more
 # files via in-script export() (or helpers like MultiToolExporter); each
-# produced *.stl is auto-discovered and byte-compared to a golden under
-# tests/regression/<testname>/<basename>-<stem>-expected.stl. Use
-# TEST_GENERATE=1 to create or refresh goldens.
+# produced *.<suffix> is auto-discovered and compared against a golden
+# under tests/regression/<testname>/<basename>/<filename> (the expected
+# directory mirrors the actual one) after format-aware post-processing.
+# Use TEST_GENERATE=1 to create or refresh goldens.
 #
 add_export_files_test(multitool-export
     EXPERIMENTAL

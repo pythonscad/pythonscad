@@ -15,12 +15,19 @@
 #      already running. The dummy is not inspected.
 #   3. Auto-discovers every produced file in the scratch directory matching
 #      `*.<suffix>`.
-#   4. Compares each produced file byte-for-byte against
-#      `tests/regression/<testname>/<basename>/<filename>` (after the same
-#      header / XML normalizations test_cmdline_tool.py applies for that
-#      suffix). The expected directory mirrors the actual directory layout
-#      one-for-one, so missing or unexpected files are caught by simple set
-#      diffing.
+#   4. Applies format-aware post-processing (header progname rewrite for
+#      STL/SVG/OBJ, inner-XML extraction for 3MF), then compares each
+#      produced file against
+#      `tests/regression/<testname>/<basename>/<filename>` using
+#      `test_cmdline_tool.compare_default()` -- a normalized text
+#      comparison (line-ending normalization + unified diff), not a raw
+#      bytes-equality check. For the ASCII / text-derived formats that the
+#      post-processors normalize, this is effectively bytes-equality;
+#      true binary outputs (binary STL, AMF, ...) would need a separate
+#      bytes-equality branch added to `_post_process` / the comparison
+#      step. The expected directory mirrors the actual directory layout
+#      one-for-one, so missing or unexpected files are caught by simple
+#      set diffing.
 #
 # When TEST_GENERATE=1 is set in the environment (or -g/--generate is passed),
 # the produced files are copied into place as the new goldens instead of

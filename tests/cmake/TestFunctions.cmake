@@ -500,11 +500,15 @@ endfunction()
 # `export(geom, "foo.stl")` or `MultiToolExporter(...).export()`).
 #
 # Each fixture is run with a per-test scratch directory as CWD; every
-# produced *.<SUFFIX> file is then auto-discovered and byte-compared
-# against the matching golden under
+# produced *.<SUFFIX> file is then auto-discovered and compared against
+# the matching golden under
 #   tests/regression/<testname>/<basename>/<filename>
-# (the expected directory mirrors the actual one), after format-appropriate
-# normalization (header progname for STL/SVG/OBJ, 3MF XML extraction).
+# (the expected directory mirrors the actual one), after format-aware
+# post-processing (header progname rewrite for STL/SVG/OBJ, inner-XML
+# extraction for 3MF). The comparison is the same normalized text
+# compare (line-ending normalization + unified diff) used by
+# test_cmdline_tool.py -- not a raw bytes-equality check -- which is
+# suitable for the ASCII / text-derived formats post-processed above.
 # Missing or extra files in either side cause the test to fail. Use
 # TEST_GENERATE=1 to (re)create goldens.
 #
