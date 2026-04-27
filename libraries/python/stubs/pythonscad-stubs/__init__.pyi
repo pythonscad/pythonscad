@@ -17,14 +17,17 @@ from openscad import (  # noqa: F401
 )
 
 
-class MultiToolExporter(list[tuple[_typing.Any, str]]):
+class MultiToolExporter(list[tuple[str, _typing.Any]]):
     """List-based helper for exporting multi-tool / multi-color 3D models.
 
-    Each item is an ``(object, name)`` 2-tuple. For each index ``i``,
-    :meth:`export` writes the geometry obtained by subtracting all later
-    objects from ``self[i][0]`` into the file ``f"{prefix}{name}{suffix}"``.
-    The last entry is emitted as-is (no degenerate one-child ``difference``
-    node). Names must be unique; duplicates raise :class:`ValueError` at
+    Each item is a ``(name, object)`` 2-tuple (matching :func:`dict.items`
+    and the multi-object form of :func:`export`). For each index ``i``,
+    :meth:`export` writes the geometry obtained by subtracting every later
+    item's object from ``self[i]``'s object into the file
+    ``f"{prefix}{name}{suffix}"``. The last entry is emitted as-is (no
+    degenerate one-child ``difference`` node). Output paths must be
+    unique; collisions (raw duplicate names, path aliases, or - on
+    Windows/macOS - case-only collisions) raise :class:`ValueError` at
     export time.
     """
 
@@ -42,21 +45,21 @@ class MultiToolExporter(list[tuple[_typing.Any, str]]):
         prefix: str,
         suffix: str,
         mkdir: bool = ...,
-        items: _typing.Iterable[tuple[_typing.Any, str]] = ...,
+        items: _typing.Iterable[tuple[str, _typing.Any]] = ...,
     ) -> None:
         """Initialize the exporter, optionally seeding it with ``items``."""
         ...
 
-    def append(self, item: tuple[_typing.Any, str]) -> None:
-        """Append a validated ``(object, name)`` tuple."""
+    def append(self, item: tuple[str, _typing.Any]) -> None:
+        """Append a validated ``(name, object)`` tuple."""
         ...
 
-    def extend(self, items: _typing.Iterable[tuple[_typing.Any, str]]) -> None:
-        """Append each validated ``(object, name)`` tuple from ``items``."""
+    def extend(self, items: _typing.Iterable[tuple[str, _typing.Any]]) -> None:
+        """Append each validated ``(name, object)`` tuple from ``items``."""
         ...
 
-    def insert(self, index: _typing.SupportsIndex, item: tuple[_typing.Any, str]) -> None:
-        """Insert a validated ``(object, name)`` tuple at ``index``."""
+    def insert(self, index: _typing.SupportsIndex, item: tuple[str, _typing.Any]) -> None:
+        """Insert a validated ``(name, object)`` tuple at ``index``."""
         ...
 
     def parts(self) -> list[tuple[str, _typing.Any]]:

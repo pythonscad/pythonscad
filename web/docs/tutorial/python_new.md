@@ -247,10 +247,10 @@ export( {
 When working with multi-tool / multi-color 3D printers, a single model is
 often split into one part per filament. `MultiToolExporter` is a
 PythonSCAD-only `list` subclass that automates that split: it stores
-`(object, name)` pairs and, on export, writes each part as
-`f"{prefix}{name}{suffix}"`, where each part has all *later* objects
-subtracted from it. That cumulative-difference rule guarantees overlapping
-volume is claimed by exactly one part.
+`(name, object)` pairs (the same shape as `dict.items()`) and, on export,
+writes each part as `f"{prefix}{name}{suffix}"`, where each part has all
+*later* objects subtracted from it. That cumulative-difference rule
+guarantees overlapping volume is claimed by exactly one part.
 
 ```py
 from pythonscad import *
@@ -260,8 +260,8 @@ background = cube([200, 100, 1]).color("blue")
 star       = cylinder(r=20, h=2, fn=5).translate([100, 50, -0.5]).color("red")
 
 exporter = MultiToolExporter("out/flag-", ".stl", mkdir=True)
-exporter.append((background, "blue"))  # blue: rectangle minus the star area
-exporter.append((star,       "red"))   # red: the star itself (later wins)
+exporter.append(("blue", background))  # blue: rectangle minus the star area
+exporter.append(("red",  star))        # red: the star itself (later wins)
 exporter.export()
 # writes out/flag-blue.stl and out/flag-red.stl
 ```
