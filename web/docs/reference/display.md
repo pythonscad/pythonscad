@@ -94,9 +94,10 @@ export({"cube": c, "cylinder": cyl}, "myfile.3mf")
   recognised value remains. STL / OFF / AMF / etc. therefore still
   work for a dict that yields zero or one recognised value after
   filtering.
-* **Plain `dict` only.** A `collections.UserDict`, generic `Mapping`,
-  or any other mapping type that is not a `dict` is rejected with
-  `TypeError: Object not recognized`.
+* **`dict` only (including `dict` subclasses).** Mapping types that
+  do not subclass `dict` -- `collections.UserDict`, generic
+  `collections.abc.Mapping` implementations, ... -- are rejected
+  with `TypeError: Object not recognized`.
 * **Value conversion.** Recognised values are
   :class:`PyOpenSCADObject` instances and lists of them (the list is
   unioned). The sentinels behave specially: `None` and `False`
