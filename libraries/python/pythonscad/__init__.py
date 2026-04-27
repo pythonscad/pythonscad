@@ -113,8 +113,8 @@ class MultiToolExporter(list[Tuple[Any, str]]):
         """Return ``item`` if it is a valid ``(object, str)`` 2-tuple.
 
         Raises:
-            TypeError: If ``item`` is not a 2-element tuple/list whose second
-                element is a string.
+            TypeError: If ``item`` is not a 2-tuple whose second element is
+                a string. Lists and other sequences are rejected.
             ValueError: If the name is empty.
         """
         if not isinstance(item, tuple) or len(item) != 2:
