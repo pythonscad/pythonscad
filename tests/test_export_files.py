@@ -9,10 +9,12 @@
 #   1. Creates a per-test scratch directory (`output/<testname>/<basename>/`).
 #   2. Runs the PythonSCAD binary with the fixture as a script, with that
 #      scratch directory as CWD, so any `export("foo.stl")` call lands there.
-#      A throwaway `-o _cli_driver_dummy.echo` is supplied to force CLI /
-#      headless mode; without it, PythonSCAD treats the script as "open in
-#      GUI" and hits the single-instance lock if a desktop pythonscad is
-#      already running. The dummy is not inspected.
+#      A throwaway `-o <tmp>/_cli_driver_dummy.echo` is supplied to force
+#      CLI / headless mode; without it, PythonSCAD treats the script as
+#      "open in GUI" and hits the single-instance lock if a desktop
+#      pythonscad is already running. The dummy is written into a private
+#      `tempfile.TemporaryDirectory()` so the rundir only ever contains
+#      the artifacts the fixture actually produces.
 #   3. Auto-discovers every produced file in the scratch directory matching
 #      `*.<suffix>`.
 #   4. Applies format-aware post-processing (header progname rewrite for
@@ -56,6 +58,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -83,37 +86,39 @@ def _run_pythonscad(pythonscad, fixture, extra_args, rundir):
     A dummy ``-o`` is supplied to force CLI/headless mode; without it,
     PythonSCAD treats the script as "open this file in the GUI" and hits
     the single-instance lock if a desktop pythonscad is already running.
-    The dummy output file is not inspected; the fixture's own in-script
-    ``export()`` calls produce the artifacts we compare.
+    The dummy output is routed into a private ``TemporaryDirectory`` so
+    it never lands in ``rundir`` (which then only ever contains the
+    artifacts the fixture actually produces) and is cleaned up
+    automatically when the context manager exits.
     """
-    # Bare filename: resolves relative to pythonscad's CWD (= rundir).
-    cli_dummy_name = "_cli_driver_dummy.echo"
-    cmdline = [
-        pythonscad,
-        "--trust-python",
-        "--enable=predictible-output",
-        "--render",
-        "-o", cli_dummy_name,
-        os.path.abspath(fixture),
-    ] + list(extra_args)
-
     fontdir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "data/ttf"))
     env = os.environ.copy()
     env["OPENSCAD_FONT_PATH"] = fontdir
 
-    print("export-files run cmdline:", " ".join(cmdline))
-    print("export-files run cwd:", str(rundir))
-    sys.stdout.flush()
-    sys.stderr.flush()
+    with tempfile.TemporaryDirectory(prefix="pythonscad-cli-dummy-") as tmp:
+        cli_dummy_path = os.path.join(tmp, "_cli_driver_dummy.echo")
+        cmdline = [
+            pythonscad,
+            "--trust-python",
+            "--enable=predictible-output",
+            "--render",
+            "-o", cli_dummy_path,
+            os.path.abspath(fixture),
+        ] + list(extra_args)
 
-    proc = subprocess.run(
-        cmdline,
-        cwd=str(rundir),
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+        print("export-files run cmdline:", " ".join(cmdline))
+        print("export-files run cwd:", str(rundir))
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        proc = subprocess.run(
+            cmdline,
+            cwd=str(rundir),
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
     if proc.stdout:
         sys.stderr.write(proc.stdout.decode("utf-8", "replace"))
     if proc.stderr:
