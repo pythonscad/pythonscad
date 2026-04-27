@@ -170,7 +170,8 @@ exporter.append(("red",  star))
 export(dict(exporter.parts()), "flag.3mf")
 ```
 
-The dict-form `export()` accepts only `.3mf` for two-or-more entries;
+The dict-form `export()` accepts only `.3mf` when, after silently
+dropping any non-solid values, two or more recognised solids remain;
 see [Multi-object 3MF export](display.md#multi-object-3mf-export) for
 the full constraints (insertion order, plain-dict requirement,
 silent-skip of non-solid values).

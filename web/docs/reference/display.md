@@ -86,10 +86,12 @@ export({"cube": c, "cylinder": cyl}, "myfile.3mf")
 
 * **Keys** become part names in the 3MF metadata; **values** are the
   solids. Insertion order is preserved (CPython 3.7+ `dict` semantics).
-* **3MF only.** A dict with two or more entries combined with any
-  non-3MF extension raises `TypeError: This Format can at most export
-  one object`. A *single*-entry dict still works for STL / OFF /
-  AMF / etc. because it ends up exporting just that one solid.
+* **3MF only.** For non-3MF extensions, dict values that aren't
+  recognised as solids are skipped first; `TypeError: This Format
+  can at most export one object` is raised only when more than one
+  recognised solid remains. STL / OFF / AMF / etc. therefore still
+  work for a dict that yields zero or one recognised solid after
+  filtering.
 * **Plain `dict` only.** A `collections.UserDict`, generic `Mapping`,
   or any other mapping type that is not a `dict` is rejected with
   `TypeError: Object not recognized`.
