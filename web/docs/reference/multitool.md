@@ -170,8 +170,12 @@ exporter.append(("red",  star))
 export(dict(exporter.parts()), "flag.3mf")
 ```
 
-The dict-form `export()` accepts only `.3mf` when, after silently
-dropping any non-solid values, two or more recognised solids remain;
-see [Multi-object 3MF export](display.md#multi-object-3mf-export) for
-the full constraints (insertion order, plain-dict requirement,
-silent-skip of non-solid values).
+The dict-form `export()` accepts only `.3mf` when, after filtering,
+two or more recognised values remain. The filter is *not* a uniform
+silent drop: `None` and `False` resolve to the built-in empty object
+and `True` to the full universe (they pass through as named parts),
+while truly unrelated values like numbers or strings are dropped, and
+if nothing converts at all you get `TypeError: Object not recognized`.
+Keys must be `str` (they become 3MF part names). See
+[Multi-object 3MF export](display.md#multi-object-3mf-export) for the
+full contract.

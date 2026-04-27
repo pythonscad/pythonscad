@@ -27,6 +27,13 @@ from openscad import (  # noqa: F401
     Openscad,
 )
 
+# Convention: any module-level import that is NOT meant to be part of
+# the public `pythonscad` API must be aliased with a leading underscore
+# (e.g. ``import os as _os``). Without the underscore the name is
+# re-exported by ``from pythonscad import *``, leaks into IDE
+# auto-complete, and shows up in the public stub. The unaliased
+# re-exports above this line are deliberately public; everything below
+# is internal helper machinery.
 import os as _os
 import sys as _sys
 import typing as _typing

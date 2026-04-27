@@ -84,21 +84,28 @@ cyl = cylinder(r=4, h=4)
 export({"cube": c, "cylinder": cyl}, "myfile.3mf")
 ```
 
-* **Keys** become part names in the 3MF metadata; **values** are the
-  solids. Insertion order is preserved (CPython 3.7+ `dict` semantics).
+* **Keys** become part names in the 3MF metadata, so they must be
+  `str` / Unicode -- non-string keys are not supported and may error
+  or crash at runtime. **Values** are the solids. Insertion order is
+  preserved (CPython 3.7+ `dict` semantics).
 * **3MF only.** For non-3MF extensions, dict values that aren't
-  recognised as solids are skipped first; `TypeError: This Format
+  recognised as solids are filtered first; `TypeError: This Format
   can at most export one object` is raised only when more than one
-  recognised solid remains. STL / OFF / AMF / etc. therefore still
-  work for a dict that yields zero or one recognised solid after
+  recognised value remains. STL / OFF / AMF / etc. therefore still
+  work for a dict that yields zero or one recognised value after
   filtering.
 * **Plain `dict` only.** A `collections.UserDict`, generic `Mapping`,
   or any other mapping type that is not a `dict` is rejected with
   `TypeError: Object not recognized`.
-* **Silent skip.** Dict values that aren't recognised as solids
-  (e.g. `None`, plain numbers) are silently dropped from the output.
-  If every value is unrecognised the file is still produced but
-  empty -- pass only solids to avoid surprises.
+* **Value conversion.** Recognised values are
+  :class:`PyOpenSCADObject` instances and lists of them (the list is
+  unioned). The sentinels behave specially: `None` and `False`
+  resolve to the built-in *empty* object and `True` to the *full*
+  universe -- they are **not** dropped, they pass through as parts.
+  Other values (numbers, strings, ...) are silently filtered out.
+  If no value is recognised at all, `export()` raises
+  `TypeError: Object not recognized` rather than writing an empty
+  file.
 
 This pairs naturally with [`MultiToolExporter`](multitool.md): the
 exporter computes cumulative-difference splits and you feed them

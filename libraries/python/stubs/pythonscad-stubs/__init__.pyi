@@ -3,6 +3,13 @@
 The `pythonscad` package is a strict superset of `openscad` (which itself
 re-exports `_openscad`). PythonSCAD-only additions are surfaced here.
 """
+
+# Convention (mirrors libraries/python/pythonscad/__init__.py): any
+# import that is NOT part of the public `pythonscad` stub must be
+# aliased with a leading underscore (e.g. ``import typing as _typing``).
+# Type-checkers treat unaliased names in a stub as part of the public
+# API surface, so leaking helpers here is just as bad as leaking them
+# at runtime.
 import typing as _typing
 
 from openscad import *  # noqa: F401,F403
