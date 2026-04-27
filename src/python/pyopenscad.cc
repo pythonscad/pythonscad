@@ -1442,6 +1442,7 @@ static PyModuleDef OpenSCADModule = {PyModuleDef_HEAD_INIT,
 PyMODINIT_FUNC PyInit__openscad(void)
 {
   if (PyType_Ready(&PyOpenSCADType) < 0) return nullptr;
+  if (PyType_Ready(&PyOpenSCADVectorType) < 0) return nullptr;
   if (PyType_Ready(&PyOpenSCADItemRefType) < 0) return nullptr;
   if (PyType_Ready(&PyOpenSCADObjectIterType) < 0) return nullptr;
   if (PyType_Ready(&PyOpenSCADBoundMemberType) < 0) return nullptr;
