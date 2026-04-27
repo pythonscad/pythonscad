@@ -41,7 +41,7 @@
 #      set diffing.
 #
 # Because discovery is "every file under rundir", a single fixture can
-# legitimately mix formats (e.g. an `MultiToolExporter` writing
+# legitimately mix formats (e.g. a `MultiToolExporter` writing
 # `parts/red.stl` + `parts/blue.stl` alongside an assembly
 # `assembly.3mf`) and they all get checked together with no extra
 # wiring.
