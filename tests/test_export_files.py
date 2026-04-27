@@ -6,47 +6,57 @@
 #
 # The driver:
 #
-#   1. Creates a per-test scratch directory (`output/<testname>/<basename>/`).
+#   1. Creates a per-test scratch directory (`output/<testname>/<basename>/`),
+#      wiping any leftover content from a previous run so the comparison
+#      below can never be polluted by stale files.
 #   2. Runs the PythonSCAD binary with the fixture as a script, with that
-#      scratch directory as CWD, so any `export("foo.stl")` call lands there.
-#      A throwaway `-o <tmp>/_cli_driver_dummy.echo` is supplied to force
-#      CLI / headless mode; without it, PythonSCAD treats the script as
-#      "open in GUI" and hits the single-instance lock if a desktop
-#      pythonscad is already running. The dummy is written into a private
-#      `tempfile.TemporaryDirectory()` so the rundir only ever contains
-#      the artifacts the fixture actually produces.
-#   3. Auto-discovers every produced file in the scratch directory matching
-#      `*.<suffix>`.
+#      scratch directory as CWD, so any `export("foo.stl")` call lands
+#      there. A throwaway `-o <tmp>/_cli_driver_dummy.echo` is supplied
+#      to force CLI / headless mode; without it, PythonSCAD treats the
+#      script as "open in GUI" and hits the single-instance lock if a
+#      desktop pythonscad is already running. The dummy is written into
+#      a private `tempfile.TemporaryDirectory()` so the rundir only ever
+#      contains the artifacts the fixture actually produces.
+#   3. Walks the scratch directory recursively and treats every regular
+#      file -- across any extension and any subdirectory -- as a fixture
+#      output to be checked.
 #   4. Applies format-aware post-processing (header progname rewrite for
-#      STL/SVG/OBJ, inner-XML extraction for 3MF), then compares each
-#      produced file against
-#      `tests/regression/<testname>/<basename>/<filename>` using
+#      STL/SVG/OBJ, inner-XML extraction for 3MF; other extensions pass
+#      through untouched) keyed by each file's own extension, then
+#      compares each produced file against
+#      `tests/regression/<testname>/<basename>/<rel-path>` using
 #      `test_cmdline_tool.compare_default()` -- a normalized text
 #      comparison (line-ending normalization + unified diff), not a raw
-#      bytes-equality check. For the ASCII / text-derived formats that the
-#      post-processors normalize, this is effectively bytes-equality;
-#      true binary outputs (binary STL, AMF, ...) would need a separate
-#      bytes-equality branch added to `_post_process` / the comparison
-#      step. The expected directory mirrors the actual directory layout
-#      one-for-one, so missing or unexpected files are caught by simple
+#      bytes-equality check. For the ASCII / text-derived formats that
+#      the post-processors normalize, this is effectively
+#      bytes-equality; true binary outputs (binary STL, AMF, ...) would
+#      need a separate bytes-equality branch added to `_post_process`
+#      and the comparison step. The expected directory mirrors the
+#      actual directory layout one-for-one (relative path is the key on
+#      both sides), so missing or unexpected files are caught by simple
 #      set diffing.
 #
-# When the TEST_GENERATE environment variable is set to any non-empty value
-# (or -g/--generate is passed), the produced files are copied into place as
-# the new goldens instead of being compared. Any stale goldens with the same
-# suffix that the fixture no longer writes are removed so the expected
-# directory always mirrors the run output. Note: this matches the existing
-# convention in `test_cmdline_tool.py` and `test_pretty_print.py`, which
-# also accept any non-empty value (the recommended idiom is `TEST_GENERATE=1`,
-# but `TEST_GENERATE=0` would also enable generation -- unset the variable
-# to disable instead).
+# Because discovery is "every file under rundir", a single fixture can
+# legitimately mix formats (e.g. an `MultiToolExporter` writing
+# `parts/red.stl` + `parts/blue.stl` alongside an assembly
+# `assembly.3mf`) and they all get checked together with no extra
+# wiring.
+#
+# When the TEST_GENERATE environment variable is set to any non-empty
+# value (or -g/--generate is passed), the produced files are copied into
+# place as the new goldens instead of being compared, and any stale
+# files under `expecteddir` that the fixture no longer writes are
+# removed so the expected tree always mirrors the run output. Note:
+# this matches the existing convention in `test_cmdline_tool.py` and
+# `test_pretty_print.py`, which also accept any non-empty value (the
+# recommended idiom is `TEST_GENERATE=1`, but `TEST_GENERATE=0` would
+# also enable generation -- unset the variable to disable instead).
 #
 # Usage:
 #   test_export_files.py
 #       --pythonscad <pythonscad-binary>
 #       --testname <test-group-name>
 #       --basename <fixture-basename>
-#       --suffix <stl|3mf|svg|obj|...>
 #       [--regressiondir <dir>]
 #       [--generate]
 #       <fixture.py> [<extra-args-for-pythonscad>...]
@@ -72,12 +82,24 @@ def _setup_tct_options():
     tct.options.exclude_debug = False
 
 
-def _post_process(filename, suffix):
-    """Apply the same normalization test_cmdline_tool.py uses post-export."""
-    if suffix in ("stl", "svg", "obj"):
-        tct.post_process_progname(filename)
-    elif suffix == "3mf":
-        tct.post_process_3mf(filename)
+# Format-aware post-processors, keyed by lowercase file extension
+# (including the leading dot). Files whose extension is not listed pass
+# through untouched and are compared as-is by ``tct.compare_default``,
+# which already does line-ending-tolerant text comparison. Add a new
+# entry here if a future format requires extra normalization.
+_POST_PROCESSORS = {
+    ".stl": tct.post_process_progname,
+    ".svg": tct.post_process_progname,
+    ".obj": tct.post_process_progname,
+    ".3mf": tct.post_process_3mf,
+}
+
+
+def _post_process(path):
+    """Normalize ``path`` in place based on its extension, if known."""
+    fn = _POST_PROCESSORS.get(Path(path).suffix.lower())
+    if fn is not None:
+        fn(str(path))
 
 
 def _run_pythonscad(pythonscad, fixture, extra_args, rundir):
@@ -132,24 +154,43 @@ def _run_pythonscad(pythonscad, fixture, extra_args, rundir):
     return True
 
 
-def _discover(directory, suffix):
+def _discover(directory):
+    """Return ``{rel_posix_path: absolute_path}`` for every file under
+    ``directory``, recursing through subdirectories. Empty when
+    ``directory`` does not exist."""
     if not directory.is_dir():
-        return []
-    return sorted(p for p in directory.glob(f"*.{suffix}") if p.is_file())
+        return {}
+    return {
+        p.relative_to(directory).as_posix(): p
+        for p in sorted(directory.rglob("*"))
+        if p.is_file()
+    }
+
+
+def _wipe_dir(directory):
+    """Remove everything *inside* ``directory`` but keep the directory
+    itself; create it if it does not exist yet. Used to give each run a
+    clean rundir without churning the parent ``output/`` tree."""
+    if directory.exists():
+        for child in directory.iterdir():
+            if child.is_dir() and not child.is_symlink():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+    else:
+        directory.mkdir(parents=True, exist_ok=True)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="Run a PythonSCAD fixture that writes files via in-script "
-                    "export() and compare the produced set against goldens.")
+                    "export() and tree-diff the produced set against goldens.")
     parser.add_argument("--pythonscad", required=True,
                         help="Path to the pythonscad executable.")
     parser.add_argument("--testname", required=True,
                         help="ctest group name; also the regression subdir.")
     parser.add_argument("--basename", required=True,
                         help="Fixture basename (without extension).")
-    parser.add_argument("--suffix", required=True,
-                        help="Output suffix without leading dot, e.g. 'stl'.")
     parser.add_argument(
         "--regressiondir",
         default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -165,18 +206,10 @@ def main():
                         help="Extra arguments forwarded to pythonscad.")
     args = parser.parse_args()
 
-    suffix = args.suffix.lstrip(".")
-    if not suffix:
-        print("Error: --suffix must be non-empty", file=sys.stderr)
-        return 2
-
     generate = args.generate or bool(os.getenv("TEST_GENERATE"))
 
     rundir = Path("output") / args.testname / args.basename
-    rundir.mkdir(parents=True, exist_ok=True)
-    for stale in rundir.glob(f"*.{suffix}"):
-        if stale.is_file():
-            stale.unlink()
+    _wipe_dir(rundir)
 
     expecteddir = Path(args.regressiondir) / args.testname / args.basename
     if generate:
@@ -186,65 +219,61 @@ def main():
             args.pythonscad, args.fixture, args.extra_args, rundir):
         return 1
 
-    actual_paths = _discover(rundir, suffix)
-    actual_names = {p.name for p in actual_paths}
+    actual = _discover(rundir)
 
-    if not actual_paths:
+    if not actual:
         print(
-            f"Error: fixture produced no .{suffix} files in {rundir}",
+            f"Error: fixture produced no files in {rundir}",
             file=sys.stderr,
         )
         return 1
 
     if generate:
-        # Drop stale goldens with this suffix that the fixture no longer
-        # writes, so the expected directory always mirrors the run output.
-        for stale in _discover(expecteddir, suffix):
-            if stale.name not in actual_names:
-                print(f"removing stale golden: {stale}", file=sys.stderr)
-                stale.unlink()
-        for produced in actual_paths:
-            _post_process(str(produced), suffix)
-            dst = expecteddir / produced.name
+        # Drop stale goldens that the fixture no longer writes so the
+        # expected tree always mirrors the run output.
+        for rel, golden in _discover(expecteddir).items():
+            if rel not in actual:
+                print(f"removing stale golden: {golden}", file=sys.stderr)
+                golden.unlink()
+        for rel, produced in actual.items():
+            _post_process(produced)
+            dst = expecteddir / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(str(produced), str(dst))
             print(f"generated golden: {dst}", file=sys.stderr)
         return 0
 
-    expected_paths = _discover(expecteddir, suffix)
-    if not expected_paths:
+    expected = _discover(expecteddir)
+    if not expected:
         print(
-            f"Error: no .{suffix} goldens in {expecteddir}; regenerate with "
+            f"Error: no goldens in {expecteddir}; regenerate with "
             f"TEST_GENERATE=1.",
             file=sys.stderr,
         )
         return 1
-    expected_names = {p.name for p in expected_paths}
 
-    missing = expected_names - actual_names
-    extra = actual_names - expected_names
+    missing = sorted(expected.keys() - actual.keys())
+    extra = sorted(actual.keys() - expected.keys())
     ok = True
     if missing:
         print(
-            f"Error: fixture failed to produce expected file(s): "
-            f"{sorted(missing)}",
+            f"Error: fixture failed to produce expected file(s): {missing}",
             file=sys.stderr,
         )
         ok = False
     if extra:
         print(
             f"Error: fixture produced unexpected file(s) without goldens: "
-            f"{sorted(extra)}",
+            f"{extra}",
             file=sys.stderr,
         )
         ok = False
 
     _setup_tct_options()
-    for produced in actual_paths:
-        if produced.name not in expected_names:
-            continue
-        _post_process(str(produced), suffix)
-        expected = expecteddir / produced.name
-        tct.expectedfilename = str(expected)
+    for rel in sorted(actual.keys() & expected.keys()):
+        produced = actual[rel]
+        _post_process(produced)
+        tct.expectedfilename = str(expected[rel])
         if not tct.compare_default(str(produced)):
             ok = False
 

@@ -1363,15 +1363,16 @@ endif()
 # In-script export() tests for PythonSCAD
 #
 # Each fixture runs with a per-test scratch CWD and writes one or more
-# files via in-script export() (or helpers like MultiToolExporter); each
-# produced *.<suffix> is auto-discovered and compared against a golden
-# under tests/regression/<testname>/<basename>/<filename> (the expected
-# directory mirrors the actual one) after format-aware post-processing.
-# Use TEST_GENERATE=1 to create or refresh goldens.
+# files via in-script export() (or helpers like MultiToolExporter). The
+# scratch directory tree is then auto-discovered recursively (every
+# file, every extension, every subdirectory) and tree-diffed against
+# tests/regression/<testname>/<basename>/<rel-path>, which mirrors the
+# actual layout one-for-one, after format-aware post-processing keyed
+# by each file's own extension. A single fixture can legitimately
+# mix formats. Use TEST_GENERATE=1 to create or refresh goldens.
 #
 add_export_files_test(multitool-export
     EXPERIMENTAL
-    SUFFIX stl
     FILES ${PYTHONSCAD_MULTITOOL_EXPORT_FILES}
 )
 
