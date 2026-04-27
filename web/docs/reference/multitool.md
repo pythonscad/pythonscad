@@ -145,3 +145,32 @@ exporter.append(("red",  red))
 exporter.append(("blue", blue))
 exporter.show()
 ```
+
+### Combining with multi-object 3MF export
+
+`MultiToolExporter` writes one file per part. To combine its
+cumulative-difference split with the
+[multi-object 3MF form](display.md#multi-object-3mf-export) of
+`export()` (one 3MF file containing every part as a named object),
+run the parts through `parts()` and feed the result into a `dict`:
+
+=== "Python"
+
+```python
+from pythonscad import *
+
+background = cube([200, 100, 1]).color("blue")
+star       = cylinder(r=20, h=2, fn=5).translate([100, 50, -0.5]).color("red")
+
+exporter = MultiToolExporter("", "")  # prefix/suffix unused for this path
+exporter.append(("blue", background))
+exporter.append(("red",  star))
+
+# Cumulative-difference split, then a single 3MF with two named parts.
+export(dict(exporter.parts()), "flag.3mf")
+```
+
+The dict-form `export()` accepts only `.3mf` for two-or-more entries;
+see [Multi-object 3MF export](display.md#multi-object-3mf-export) for
+the full constraints (insertion order, plain-dict requirement,
+silent-skip of non-solid values).

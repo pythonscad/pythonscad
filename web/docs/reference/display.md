@@ -67,12 +67,41 @@ obj.export(file)
 from openscad import *
 
 cube(10).export("mycube.stl")
+```
 
-# Multi-object 3MF export
-c = cube(10)
+### Multi-object 3MF export
+
+Passing a `dict` instead of a single solid emits one 3MF part per
+entry, all packed into the output file:
+
+=== "Python"
+
+```python
+from openscad import *
+
+c   = cube(10)
 cyl = cylinder(r=4, h=4)
 export({"cube": c, "cylinder": cyl}, "myfile.3mf")
 ```
+
+* **Keys** become part names in the 3MF metadata; **values** are the
+  solids. Insertion order is preserved (CPython 3.7+ `dict` semantics).
+* **3MF only.** A dict with two or more entries combined with any
+  non-3MF extension raises `TypeError: This Format can at most export
+  one object`. A *single*-entry dict still works for STL / OFF /
+  AMF / etc. because it ends up exporting just that one solid.
+* **Plain `dict` only.** A `collections.UserDict`, generic `Mapping`,
+  or any other mapping type that is not a `dict` is rejected with
+  `TypeError: Object not recognized`.
+* **Silent skip.** Dict values that aren't recognised as solids
+  (e.g. `None`, plain numbers) are silently dropped from the output.
+  If every value is unrecognised the file is still produced but
+  empty -- pass only solids to avoid surprises.
+
+This pairs naturally with [`MultiToolExporter`](multitool.md): the
+exporter computes cumulative-difference splits and you feed them
+through the multi-object form to land everything in one 3MF file
+(see the example on the multi-tool reference page).
 
 ---
 
