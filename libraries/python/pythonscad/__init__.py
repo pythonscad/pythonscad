@@ -45,9 +45,10 @@ class MultiToolExporter(list[Tuple[Any, str]]):
     For each index ``i`` in the list, the exporter produces the geometry
     obtained by taking ``self[i][0]`` and subtracting all later objects
     ``self[i+1:][...]`` from it. Overlapping regions are therefore assigned to
-    exactly one part: earlier entries "win" over later ones, so later parts
-    only contain the volume not already claimed by earlier parts. The last
-    entry is emitted as-is (no degenerate one-child ``difference`` node).
+    exactly one part: **later entries "win" over earlier ones**, so each part
+    only keeps the volume not claimed by any subsequent part. The last entry
+    is emitted as-is (no degenerate one-child ``difference`` node) and
+    therefore "wins" everything that overlaps with it.
 
     Attributes:
         prefix: String prepended to each output filename. Typically a path

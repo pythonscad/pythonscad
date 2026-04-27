@@ -37,11 +37,12 @@ exported is
 self[i][0] − self[i+1][0] − self[i+2][0] − ... − self[-1][0]
 ```
 
-i.e. the first object's volume minus every later object's volume.
+i.e. each entry's volume minus every later entry's volume.
 This guarantees that overlapping regions are claimed by exactly one part:
-earlier entries "win", later parts only contain the volume not already
-claimed. The last entry is exported as-is (no degenerate one-child
-`difference` node).
+**later entries "win" over earlier ones**, so each part only keeps the
+volume not claimed by any subsequent part. The last entry is exported
+as-is (no degenerate one-child `difference` node) and therefore claims
+everything that overlaps with it.
 
 **Constructor:**
 
@@ -95,10 +96,10 @@ background = cube([200, 100, 1]).color("blue")
 star       = cylinder(r=20, h=2, fn=5).translate([100, 50, -0.5]).color("red")
 
 exporter = MultiToolExporter("out/flag-", ".stl", mkdir=True)
-exporter.append((star,       "red"))     # earlier wins
-exporter.append((background, "blue"))    # blue gets background minus star
+exporter.append((background, "blue"))    # blue: rectangle minus the star area
+exporter.append((star,       "red"))     # red: the star itself (later wins)
 exporter.export()
-# -> writes out/flag-red.stl and out/flag-blue.stl
+# -> writes out/flag-blue.stl and out/flag-red.stl
 ```
 
 Seeding from the constructor:
