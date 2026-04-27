@@ -28,10 +28,10 @@ from openscad import (  # noqa: F401
 )
 
 import os as _os
-from typing import Any, Iterable, SupportsIndex, Tuple
+import typing as _typing
 
 
-class MultiToolExporter(list[Tuple[Any, str]]):
+class MultiToolExporter(list[tuple[_typing.Any, str]]):
     """List-based helper for exporting multi-tool / multi-color 3D models.
 
     Each item in the list is a ``(object, name)`` tuple, where ``object`` is a
@@ -84,7 +84,7 @@ class MultiToolExporter(list[Tuple[Any, str]]):
         prefix: str,
         suffix: str,
         mkdir: bool = False,
-        items: Iterable[Tuple[Any, str]] = (),
+        items: _typing.Iterable[tuple[_typing.Any, str]] = (),
     ):
         """Initialize a (possibly empty) MultiToolExporter.
 
@@ -110,7 +110,7 @@ class MultiToolExporter(list[Tuple[Any, str]]):
             self.append(item)
 
     @staticmethod
-    def _validate_item(item: Any) -> Tuple[Any, str]:
+    def _validate_item(item: _typing.Any) -> tuple[_typing.Any, str]:
         """Return ``item`` if it is a valid ``(object, str)`` 2-tuple.
 
         Raises:
@@ -133,11 +133,11 @@ class MultiToolExporter(list[Tuple[Any, str]]):
             raise ValueError("MultiToolExporter item name must be a non-empty string")
         return item
 
-    def append(self, item: Tuple[Any, str]) -> None:
+    def append(self, item: tuple[_typing.Any, str]) -> None:
         """Append a validated ``(object, name)`` tuple."""
         super().append(self._validate_item(item))
 
-    def extend(self, items: Iterable[Tuple[Any, str]]) -> None:
+    def extend(self, items: _typing.Iterable[tuple[_typing.Any, str]]) -> None:
         """Append each ``(object, name)`` tuple from ``items``.
 
         Atomic: every item is validated *before* anything is appended, so a
@@ -146,7 +146,7 @@ class MultiToolExporter(list[Tuple[Any, str]]):
         validated = [self._validate_item(item) for item in items]
         super().extend(validated)
 
-    def insert(self, index: SupportsIndex, item: Tuple[Any, str]) -> None:
+    def insert(self, index: _typing.SupportsIndex, item: tuple[_typing.Any, str]) -> None:
         """Insert a validated ``(object, name)`` tuple at ``index``."""
         super().insert(index, self._validate_item(item))
 
