@@ -72,10 +72,11 @@ class MultiToolExporter(list[Tuple[Any, str]]):
     files written by earlier ones).
 
     Example:
+        >>> # Append base/background parts first; later entries "win" overlap.
         >>> exporter = MultiToolExporter("out/flag-", ".stl", mkdir=True)
-        >>> exporter.append((red_geometry, "red"))
-        >>> exporter.append((blue_geometry, "blue"))
-        >>> exporter.export()  # writes out/flag-red.stl and out/flag-blue.stl
+        >>> exporter.append((base_geometry, "base"))
+        >>> exporter.append((overlay_geometry, "overlay"))
+        >>> exporter.export()  # writes out/flag-base.stl and out/flag-overlay.stl
     """
 
     def __init__(
