@@ -59,6 +59,10 @@ class MultiToolExporter(list[tuple[_typing.Any, str]]):
         """Insert a validated ``(object, name)`` tuple at ``index``."""
         ...
 
+    def parts(self) -> list[tuple[str, _typing.Any]]:
+        """Return computed ``(name, geometry)`` pairs in declaration order."""
+        ...
+
     def export(self) -> None:
         """Export each part to a file via PythonSCAD."""
         ...

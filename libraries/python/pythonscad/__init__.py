@@ -225,12 +225,30 @@ class MultiToolExporter(list[tuple[_typing.Any, str]]):
                 )
             seen[key] = (name, filename)
 
+    def parts(self) -> list[tuple[str, _typing.Any]]:
+        """Return the computed ``(name, geometry)`` pairs in declaration order.
+
+        Each geometry is the cumulative-difference result identical to
+        what :meth:`export` would write or :meth:`show` would preview:
+        for index ``i``, ``self[i][0]`` minus every later object, with
+        the last entry returned as-is (no degenerate one-child
+        ``difference`` node).
+
+        This is the programmatic accessor used internally by
+        :meth:`export` and :meth:`show`. It is also the natural input
+        to the multi-object 3MF export form
+        (``export(dict(exporter.parts()), "out.3mf")``).
+
+        Returns:
+            A new list of ``(name, computed_geometry)`` tuples.
+        """
+        return [(self[i][1], self._part(i)) for i in range(len(self))]
+
     def export(self) -> None:
         """Export each part to a file via PythonSCAD.
 
-        For each index ``i``, exports the difference of ``self[i][0]`` and
-        all subsequent objects to ``f"{prefix}{name}{suffix}"``. The last
-        entry is exported as-is without a degenerate ``difference`` node.
+        For each item, exports the result of :meth:`parts` to
+        ``f"{prefix}{name}{suffix}"``.
 
         If :attr:`mkdir` is ``True``, the parent directory of each output
         file is created beforehand (filenames without a directory component
@@ -242,21 +260,20 @@ class MultiToolExporter(list[tuple[_typing.Any, str]]):
                 Windows/macOS, case-only collisions).
         """
         self._check_unique_filenames()
-        for i in range(len(self)):
-            filename = self._filename(i)
+        for name, geometry in self.parts():
+            filename = f"{self.prefix}{name}{self.suffix}"
             if self.mkdir:
                 directory = _os.path.dirname(filename)
                 if directory:
                     _os.makedirs(directory, exist_ok=True)
-            export(self._part(i), filename)  # noqa: F405
+            export(geometry, filename)  # noqa: F405
 
     def show(self) -> None:
         """Display each part in the PythonSCAD preview.
 
-        For each index ``i``, computes the difference of ``self[i][0]`` and
-        all subsequent objects and passes the result to :func:`show`,
-        producing a layered preview equivalent to what :meth:`export` would
-        write to disk.
+        Iterates :meth:`parts` and passes each computed geometry to
+        :func:`show`, producing a layered preview equivalent to what
+        :meth:`export` would write to disk.
         """
-        for i in range(len(self)):
-            show(self._part(i))  # noqa: F405
+        for _name, geometry in self.parts():
+            show(geometry)  # noqa: F405

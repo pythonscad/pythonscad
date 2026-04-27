@@ -34,6 +34,12 @@ print("filename[1]:", exp._filename(1))
 # --- 2. _part(last) returns the bare object -----------------------------
 print("part(last) is bare object:", exp._part(len(exp) - 1) is exp[-1][0])
 
+# --- 2b. parts() shape: ordered list of (name, geometry) pairs ----------
+ps = exp.parts()
+print("parts len:", len(ps))
+print("parts names:", [name for name, _g in ps])
+print("parts last is bare:", ps[-1][1] is exp[-1][0])
+
 # --- 3. Validation: every entry path -----------------------------------
 def expect(label, fn, exc):
     """Run ``fn`` and print whether it raised ``exc``."""
