@@ -114,6 +114,13 @@ int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y
     if (w != NULL) *w = *x;
     return 0;
   }
+  if (vec->ob_type == &PyOpenSCADVectorType) {
+    PyOpenSCADVectorObject *v = (PyOpenSCADVectorObject *)vec;
+    *x = v->v[0];
+    *y = v->v[1];
+    *z = v->v[2];
+    return 0;
+  }
   return 1;
 }
 
@@ -162,9 +169,11 @@ int python_tovector(PyObject *pyt, Vector3d& vec)
 
 PyObject *python_fromvector(const Vector3d vec)
 {
-  PyObject *res = PyList_New(3);
-  for (int i = 0; i < 3; i++) PyList_SetItem(res, i, PyFloat_FromDouble(vec[i]));
-  return res;
+  PyOpenSCADVectorObject *pyvec =
+    (PyOpenSCADVectorObject *)PyOpenSCADVectorType.tp_alloc(&PyOpenSCADVectorType, 0);
+  if (pyvec)
+    for (int i = 0; i < 3; i++) pyvec->v[i] = vec[i];
+  return (PyObject *)pyvec;
 }
 
 std::vector<Vector3d> python_to2dvarpointlist(PyObject *pypoints)
