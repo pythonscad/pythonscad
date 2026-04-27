@@ -28,7 +28,29 @@ from openscad import (  # noqa: F401
 )
 
 import os as _os
+import sys as _sys
 import typing as _typing
+
+
+def _normalize_filename_key(filename: str) -> str:
+    """Return a comparison key that matches what the OS uses for filenames.
+
+    * :func:`os.path.normpath` collapses ``foo/../bar`` aliases and redundant
+      separators on every OS.
+    * :func:`os.path.normcase` lowercases and unifies separators on Windows;
+      it is a no-op on POSIX.
+    * On ``darwin`` we additionally apply :meth:`str.casefold` because the
+      default macOS APFS volume is case-insensitive but :func:`os.path.normcase`
+      is identity on POSIX. The trade-off is that case-sensitive APFS users
+      see a false-positive collision rejection, which is the safer direction.
+
+    On Linux the result is just ``os.path.normpath(filename)``, so two items
+    differing only in case (``"a.stl"`` vs ``"A.stl"``) coexist as expected.
+    """
+    key = _os.path.normcase(_os.path.normpath(filename))
+    if _sys.platform == "darwin":
+        key = key.casefold()
+    return key
 
 
 class MultiToolExporter(list[tuple[_typing.Any, str]]):
@@ -67,9 +89,16 @@ class MultiToolExporter(list[tuple[_typing.Any, str]]):
     is raised if the item is not a 2-tuple of ``(object, str)``, and a
     :class:`ValueError` is raised if the name is empty.
 
-    Duplicate names are detected at :meth:`export` time and raise
-    :class:`ValueError` (rather than silently letting later entries clobber
-    files written by earlier ones).
+    Output paths must be unique per item: at :meth:`export` time, every
+    item's full ``f"{prefix}{name}{suffix}"`` filename is normalised with
+    :func:`os.path.normcase` and :func:`os.path.normpath` (plus
+    :meth:`str.casefold` on macOS) and any collision raises
+    :class:`ValueError`. This rejects raw duplicate names on every
+    platform, plus path aliases such as ``"a/../b"`` vs ``"b"``, plus
+    case-only collisions (``"a.stl"`` vs ``"A.stl"``) on Windows and
+    macOS where the destination filesystem is typically case-insensitive.
+    On Linux such pairs are accepted because the kernel treats them as
+    distinct files.
 
     Example:
         >>> # Append base/background parts first; later entries "win" overlap.
@@ -170,21 +199,31 @@ class MultiToolExporter(list[tuple[_typing.Any, str]]):
         rest = [obj for obj, _name in self[i:]]
         return rest[0] if len(rest) == 1 else difference(*rest)  # noqa: F405
 
-    def _check_unique_names(self) -> None:
-        """Raise :class:`ValueError` if any two items share the same name.
+    def _check_unique_filenames(self) -> None:
+        """Raise :class:`ValueError` if any two items resolve to the same output path.
 
-        Duplicate names would produce duplicate filenames in :meth:`export`,
-        causing later parts to overwrite earlier ones. We refuse rather than
-        silently lose data.
+        The dedup key is the full output filename
+        (``f"{prefix}{name}{suffix}"``) normalised by
+        :func:`_normalize_filename_key`, so the check rejects raw
+        duplicate names plus path aliases (``"a/../b"`` vs ``"b"``) on
+        every platform, plus case-only collisions (``"a.stl"`` vs
+        ``"A.stl"``) on Windows and macOS where the destination
+        filesystem is typically case-insensitive. On Linux such pairs
+        are accepted as distinct files.
         """
-        seen = set()
-        for _, name in self:
-            if name in seen:
+        seen: dict[str, tuple[str, str]] = {}
+        for i in range(len(self)):
+            name = self[i][1]
+            filename = self._filename(i)
+            key = _normalize_filename_key(filename)
+            if key in seen:
+                prev_name, prev_filename = seen[key]
                 raise ValueError(
-                    f"MultiToolExporter has duplicate name {name!r}; "
-                    f"each item must have a unique name to avoid overwriting files"
+                    f"MultiToolExporter items would write to the same output "
+                    f"path: {prev_name!r} -> {prev_filename!r} and "
+                    f"{name!r} -> {filename!r}"
                 )
-            seen.add(name)
+            seen[key] = (name, filename)
 
     def export(self) -> None:
         """Export each part to a file via PythonSCAD.
@@ -198,9 +237,11 @@ class MultiToolExporter(list[tuple[_typing.Any, str]]):
         are skipped silently).
 
         Raises:
-            ValueError: If two or more items share the same name.
+            ValueError: If two or more items would write to the same
+                output path (raw duplicate names, path aliases, or, on
+                Windows/macOS, case-only collisions).
         """
-        self._check_unique_names()
+        self._check_unique_filenames()
         for i in range(len(self)):
             filename = self._filename(i)
             if self.mkdir:

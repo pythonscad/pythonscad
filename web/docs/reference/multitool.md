@@ -80,8 +80,16 @@ is created and no error is raised.
 * Every inserted item must be a 2-tuple of `(object, str)`. Anything else
   raises `TypeError`.
 * The `name` must be a non-empty string. Empty names raise `ValueError`.
-* At `export()` time, duplicate names raise `ValueError` rather than letting
-  later parts silently overwrite the files written by earlier parts.
+* At `export()` time, the full output filename
+  (`f"{prefix}{name}{suffix}"`) of every item is normalised with
+  `os.path.normcase(os.path.normpath(filename))` (plus an extra
+  `.casefold()` on macOS) and any collision raises `ValueError` rather
+  than letting later parts silently overwrite earlier ones. This rejects
+  raw duplicate names everywhere, plus path aliases like `"a/../b"` vs
+  `"b"`, plus case-only collisions like `"a.stl"` vs `"A.stl"` on
+  Windows and macOS (whose default filesystems are case-insensitive).
+  Linux treats such case-only pairs as distinct files and is left
+  alone.
 
 **Examples:**
 
