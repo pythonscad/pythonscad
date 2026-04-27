@@ -363,19 +363,24 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
     int valid = 1;
     for (int i = 0; valid && i < PyList_Size(vec); i++) {
       PyObject *item = PyList_GetItem(vec, i);
-      if (!PyList_Check(item)) valid = 0;
+      if (!PyList_Check(item) && item->ob_type != &PyOpenSCADVectorType) valid = 0;
     }
     if (valid) {
       for (int j = 0; j < PyList_Size(vec); j++) {
         Vector3d result(0, 0, 0);
         PyObject *item = PyList_GetItem(vec, j);
-        if (PyList_Size(item) >= mindim && PyList_Size(item) <= maxdim) {
-          for (int i = 0; i < PyList_Size(item); i++) {
-            if (PyList_Size(item) > i) {
-              if (python_numberval(PyList_GetItem(item, i), &result[i], nullptr, 0))
-                return results;  // Error
+        if (PyList_Check(item)) {
+          if (PyList_Size(item) >= mindim && PyList_Size(item) <= maxdim) {
+            for (int i = 0; i < PyList_Size(item); i++) {
+              if (PyList_Size(item) > i) {
+                if (python_numberval(PyList_GetItem(item, i), &result[i], nullptr, 0))
+                  return results;  // Error
+              }
             }
           }
+        } else if (item->ob_type == &PyOpenSCADVectorType) {
+          PyOpenSCADVectorObject *obj = (PyOpenSCADVectorObject *)item;
+          for (int i = 0; i < 3; i++) result[i] = obj->v[i];
         }
         results.push_back(result);
       }
@@ -396,6 +401,11 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
   if (!python_numberval(vec, &result[0], nullptr, 0)) {
     result[1] = result[0];
     result[2] = result[1];
+    results.push_back(result);
+  }
+  if (vec->ob_type == &PyOpenSCADVectorType) {
+    PyOpenSCADVectorObject *obj = (PyOpenSCADVectorObject *)vec;
+    for (int i = 0; i < 3; i++) result[i] = obj->v[i];
     results.push_back(result);
   }
   return results;  // Error

@@ -6078,11 +6078,22 @@ PyObject *python_vector(PyObject *self, PyObject *args, PyObject *kwargs, int mo
 
 PyObject *PyOpenSCADVector_sub(PyObject *a, PyObject *b, int mode)
 {
-  if (!PyObject_TypeCheck(a, &PyOpenSCADVectorType) || !PyObject_TypeCheck(b, &PyOpenSCADVectorType)) {
+  if (!PyObject_TypeCheck(a, &PyOpenSCADVectorType)) {
+    Py_RETURN_NOTIMPLEMENTED;
+  }
+  PyOpenSCADVectorObject *v1 = (PyOpenSCADVectorObject *)a;
+  double scale;
+  if (!python_numberval(b, &scale, nullptr, 0)) {
+    PyOpenSCADVectorObject *result = PyObject_New(PyOpenSCADVectorObject, &PyOpenSCADVectorType);
+    if (!result) return NULL;
+    for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] * scale;
+    return (PyObject *)result;
+  }
+
+  if (!PyObject_TypeCheck(b, &PyOpenSCADVectorType)) {
     Py_RETURN_NOTIMPLEMENTED;
   }
 
-  PyOpenSCADVectorObject *v1 = (PyOpenSCADVectorObject *)a;
   PyOpenSCADVectorObject *v2 = (PyOpenSCADVectorObject *)b;
 
   PyOpenSCADVectorObject *result = PyObject_New(PyOpenSCADVectorObject, &PyOpenSCADVectorType);
