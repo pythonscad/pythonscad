@@ -478,7 +478,7 @@ function(add_cmdline_test TESTCMD_BASENAME)
     # only add test if it is not experimental or if it is and experimental option is enabled
     if (NOT TEST_IS_EXPERIMENTAL OR EXPERIMENTAL)
       # Use cmake option "--log-level DEBUG" during top level config to see this
-      message(DEBUG "${DBG_COMMAND_STR}")      
+      message(DEBUG "${DBG_COMMAND_STR}")
       add_test(NAME ${TEST_FULLNAME} CONFIGURATIONS ${CONFVAL}
         COMMAND ${Python3_EXECUTABLE} -Xutf8=1
         ${TEST_CMDLINE_TOOL_PY} ${COMPARATOR} -c ${IMAGE_COMPARE_EXE}
@@ -492,6 +492,78 @@ function(add_cmdline_test TESTCMD_BASENAME)
     endif()
   endforeach()
 endfunction()
+
+
+#
+# Adds tests for fixtures that drive PythonSCAD with --trust-python and
+# write one or more output files via in-script export() calls (e.g.
+# `export(geom, "foo.stl")` or `MultiToolExporter(...).export()`).
+#
+# Each fixture is run with a per-test scratch directory as CWD; every
+# produced *.<SUFFIX> file is then auto-discovered and byte-compared
+# against the matching golden under
+#   tests/regression/<testname>/<basename>/<filename>
+# (the expected directory mirrors the actual one), after format-appropriate
+# normalization (header progname for STL/SVG/OBJ, 3MF XML extraction).
+# Missing or extra files in either side cause the test to fail. Use
+# TEST_GENERATE=1 to (re)create goldens.
+#
+# Usage:
+#   add_export_files_test(testbasename
+#       SUFFIX <ext, no leading dot>
+#       FILES <list of .py fixtures>
+#       [ARGS <extra pythonscad args>]
+#       [EXPERIMENTAL])
+#
+# EXPERIMENTAL: If set, tag all tests as experimental.
+#
+function(add_export_files_test TESTCMD_BASENAME)
+  cmake_parse_arguments(TESTCMD "EXPERIMENTAL" "SUFFIX" "FILES;ARGS" ${ARGN})
+
+  if (NOT TESTCMD_SUFFIX)
+    message(FATAL_ERROR "add_export_files_test() requires SUFFIX")
+  endif()
+
+  foreach (FIXTURE ${TESTCMD_FILES})
+    get_filename_component(FILE_BASENAME ${FIXTURE} NAME_WE)
+    string(REPLACE " " "_" FILE_BASENAME ${FILE_BASENAME})
+    set(TEST_FULLNAME "${TESTCMD_BASENAME}_${FILE_BASENAME}")
+
+    if (TESTCMD_EXPERIMENTAL)
+      set(TEST_IS_EXPERIMENTAL true)
+    else()
+      set(TEST_IS_EXPERIMENTAL false)
+    endif()
+
+    # Handle configurations
+    get_test_config(${TEST_FULLNAME} FOUNDCONFIGS)
+    if (NOT FOUNDCONFIGS)
+      set_test_config(Default FILES ${TEST_FULLNAME})
+    endif()
+    set_test_config(All FILES ${TEST_FULLNAME})
+    list(FIND FOUNDCONFIGS Bugs FOUND)
+    if (FOUND EQUAL -1)
+      set_test_config(Good FILES ${TEST_FULLNAME})
+    endif()
+    get_test_config(${TEST_FULLNAME} CONFVAL)
+
+    if (NOT TEST_IS_EXPERIMENTAL OR EXPERIMENTAL)
+      add_test(NAME ${TEST_FULLNAME} CONFIGURATIONS ${CONFVAL}
+        COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+          ${CCSD}/test_export_files.py
+          --pythonscad ${OPENSCAD_BINPATH}
+          --testname ${TESTCMD_BASENAME}
+          --basename ${FILE_BASENAME}
+          --suffix ${TESTCMD_SUFFIX}
+          ${FIXTURE}
+          ${TESTCMD_ARGS}
+      )
+      set_property(TEST ${TEST_FULLNAME} PROPERTY ENVIRONMENT
+                   ${CTEST_ENVIRONMENT})
+    endif()
+  endforeach()
+endfunction()
+
 
 #
 function(add_failing_test TESTCMD_BASENAME)
