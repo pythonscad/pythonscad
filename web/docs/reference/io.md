@@ -54,10 +54,13 @@ drawing.linear_extrude(height=2).show()
 ## osuse
 
 Load an OpenSCAD library file and **return a handle object** whose attributes
-are the library's modules, functions, and top-level variables. Equivalent to
-OpenSCAD's `use <file.scad>`, but unlike OpenSCAD's `use`, the imported
-symbols are *not* injected into the global namespace — you must access them
-through the returned object.
+are the library's modules, functions, and top-level variables. PythonSCAD's
+analog of OpenSCAD's `use <file.scad>`, with two semantic differences:
+
+- The imported symbols are *not* injected into the global namespace — you
+  must access them through the returned handle.
+- The handle also exposes top-level variable assignments, which OpenSCAD's
+  `use` does not import.
 
 **Syntax:**
 
@@ -83,9 +86,9 @@ lib = osuse(file)
 
 !!! note
     Calling a module from the imported library produces a geometry object —
-    you still need to call `.show()` on it (or assign it to a variable that
-    you later `show()`) for it to appear in the output, just like any other
-    PythonSCAD geometry.
+    you still need to call `.show()` on it (or assign it to a variable and
+    call `.show()` on that variable later) for it to appear in the output,
+    just like any other PythonSCAD geometry.
 
 **Examples:**
 
@@ -129,15 +132,29 @@ print(lib["$fn"])
 ## osinclude
 
 !!! warning "Deprecated"
-    `osinclude` is deprecated — use [`osuse`](#osuse) instead. Both functions
-    return the same handle object; `osinclude` exists only for backwards
-    compatibility with early PythonSCAD scripts and emits a deprecation
-    warning when called.
+    `osinclude` is deprecated — use [`osuse`](#osuse) for new code. Calling
+    `osinclude` logs a deprecation message to the PythonSCAD console (it does
+    not raise a Python `DeprecationWarning`).
 
-Include an OpenSCAD file, executing its top-level code. Equivalent to
-OpenSCAD's `include <file.scad>`. Returns the same kind of handle object as
-[`osuse`](#osuse); see that section for how to access the imported modules,
-functions, and variables.
+PythonSCAD's analog of OpenSCAD's `include <file.scad>`. The returned handle
+exposes the imported modules, functions, and top-level variables exactly the
+same way as [`osuse`](#osuse) — see that section for usage examples.
+
+`osuse` and `osinclude` differ in whether they evaluate the imported
+file's top-level *module instantiations* — in OpenSCAD that category covers
+calls like `cube()`, `echo()`, and `assert()`, which are syntactically
+module calls. `osinclude` evaluates them, `osuse` suppresses them. Output
+or errors from those top-level calls therefore only surface with
+`osinclude`.
+
+Top-level *variable assignments* (e.g. `x = 10;`) are always evaluated by
+both functions — they are needed to populate the returned handle, so any
+errors in their expressions will propagate from either call.
+
+In both cases, any geometry produced by top-level module instantiations is
+discarded — neither `osuse` nor `osinclude` exposes top-level geometry on
+the returned handle. To use geometry from an OpenSCAD file, call its
+modules explicitly via the handle (e.g. `lib.my_module().show()`).
 
 **Syntax:**
 
