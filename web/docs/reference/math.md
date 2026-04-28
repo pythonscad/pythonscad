@@ -195,8 +195,8 @@ Alernatively, PythonSCAD also accepts PythonSCAD Vector objects with calculating
 ```python
 from openscad import *
 
-vec1 = vector([1,2,3])
-vec2 = vector([1,1,1])
+vec1 = vector(1,2,3)
+vec2 = vector(1,1,1)
 print(vec1 + vec2)
 
 ```
@@ -208,8 +208,8 @@ print(vec1 + vec2)
 ```python
 from openscad import *
 
-vec1 = vector([3,3,3])
-vec2 = vector([1,2,4])
+vec1 = vector(3,3,3)
+vec2 = vector(1,2,4)
 print(vec1 - vec2)
 
 ```
@@ -233,8 +233,8 @@ print(dim)
 ```python
 from openscad import *
 
-vec1 = vector([1,0,0])
-vec2 = vector([0,1,0])
+vec1 = vector(1,0,0)
+vec2 = vector(0,1,0)
 
 print(vec1 * vec2)
 
@@ -247,8 +247,8 @@ print(vec1 * vec2)
 ```python
 from openscad import *
 
-vec1 = vector([1,4,7])
-vec2 = vector([1,2,4])
+vec1 = vector(1,4,7)
+vec2 = vector(1,2,4)
 
 print(vec1.dot(1))
 
@@ -261,7 +261,7 @@ print(vec1.dot(1))
 ```python
 from openscad import *
 
-vec1 = vector([1,4,7])
+vec1 = vector(1,4,7)
 vec1[1] = -3.5
 print(vec1[0], vec1[1],vec1[2])
 

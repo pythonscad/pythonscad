@@ -6054,16 +6054,11 @@ static PyObject *PyOpenSCADVector_new(PyTypeObject *type, PyObject *args, PyObje
 
 PyObject *python_vector(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
 {
-  char *kwlist[] = {"v", NULL};
-  PyObject *lvec = nullptr;
+  char *kwlist[] = {"x", "y", "z", NULL};
   double x, y, z;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &lvec)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddd", kwlist, &x, &y, &z)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing vector");
-    return nullptr;
-  }
-  if (python_vectorval(lvec, 3, 3, &x, &y, &z)) {
-    PyErr_SetString(PyExc_TypeError, "Vector needs to be a python list");
     return nullptr;
   }
   PyOpenSCADVectorObject *vec;
@@ -6148,7 +6143,7 @@ static PyNumberMethods PyOpenSCADVector_number_methods = {
 static PyObject *PyOpenSCADVector_repr(PyOpenSCADVectorObject *self)
 {
   std::ostringstream stream;
-  stream << "Vector(" << self->v[0] << "," << self->v[1] << "," << self->v[2] << ")";
+  stream << "vector(" << self->v[0] << "," << self->v[1] << "," << self->v[2] << ")";
   return PyUnicode_FromStringAndSize(stream.str().c_str(), stream.str().size());
 }
 
