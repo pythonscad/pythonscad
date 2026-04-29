@@ -67,7 +67,6 @@
 #include "core/RoofNode.h"
 #include "core/RenderNode.h"
 #include "core/SurfaceNode.h"
-#include "core/SheetNode.h"
 #include "core/TextNode.h"
 #include "core/CurveDiscretizer.h"
 #include "core/FreetypeRenderer.h"
@@ -109,7 +108,7 @@ extern bool parse(SourceFile *& file, const std::string& text, const std::string
 // CSS Color Module Level 4 - Editor’s Draft, 29 May 2015
 extern std::unordered_map<std::string, Color4f> webcolors;
 
-PyObject *python_edge(PyObject *self, PyObject *args, PyObject *kwargs)
+/* PyObject *python_edge(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE();
   auto node = std::make_shared<EdgeNode>(instance);
@@ -1019,7 +1018,7 @@ PyObject *python_spline(PyObject *self, PyObject *args, PyObject *kwargs)
 
   python_retrieve_pyname(node);
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
-}
+} */
 
 PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
 {
@@ -4568,7 +4567,7 @@ PyObject *python_surface(PyObject *self, PyObject *args, PyObject *kwargs)
   return python_surface_core(file, center, invert, color, convexity);
 }
 
-int sheetCalcIndInt(PyObject *func, double i, double j, Vector3d& pos)
+/*int sheetCalcIndInt(PyObject *func, double i, double j, Vector3d& pos)
 {
   PyObject *args = PyTuple_Pack(2, PyFloat_FromDouble(i), PyFloat_FromDouble(j));
   PyObject *pos_p = PyObject_CallObject(func, args);
@@ -4597,7 +4596,7 @@ int sheetCalcInd(PolySetBuilder& builder, std::vector<Vector3d>& vertices, std::
   return ind;
 }
 
-std::unique_ptr<const Geometry> sheetCreateFuncGeometry(void *funcptr, double imin, double imax,
+ std::unique_ptr<const Geometry> sheetCreateFuncGeometry(void *funcptr, double imin, double imax,
                                                         double jmin, double jmax, double fs, bool ispan,
                                                         bool jspan)
 {
@@ -4851,17 +4850,17 @@ PyObject *python_sheet(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   return python_sheet_core(func, imin, imax, jmin, jmax, fs, ispan, jspan);
-}
+} */
 
-std::optional<std::string> to_optional_string(const char *ptr)
+/*std::optional<std::string> to_optional_string(const char *ptr)
 {
   if (ptr != nullptr) {
     return std::string(ptr);
   }
   return {};
-}
+}  */
 
-PyObject *python_text(PyObject *self, PyObject *args, PyObject *kwargs)
+/*PyObject *python_text(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE();
   char *kwlist[] = {"text",     "size",   "font",   "spacing", "direction",
@@ -4960,7 +4959,7 @@ PyObject *python_textmetrics(PyObject *self, PyObject *args, PyObject *kwargs)
   PyDict_SetItemString(dict, "position", position);
   PyDict_SetItemString(dict, "size", dims);
   return (PyObject *)dict;
-}
+} */
 
 PyObject *python_osversion(PyObject *self, PyObject *args, PyObject *kwargs)
 {

@@ -39,7 +39,9 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_square(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_circle(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_polygon(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_polyline(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_spline(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_sheet(PyObject *self, PyObject *args, PyObject *kwargs);
 
 #ifdef ENABLE_LIBFIVE
 PyObject *python_frep(PyObject *self, PyObject *args, PyObject *kwargs);

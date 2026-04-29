@@ -648,6 +648,7 @@ if(ENABLE_PYTHON)
     src/python/pymod.cc
     src/python/pyfunctions.cc
     src/python/py_math.cc
+    src/python/py_primitives.cc
     src/python/pyconversion.cc)
   if(ENABLE_LIBFIVE)
     list(APPEND PYTHON_SOURCES
