@@ -25,10 +25,10 @@
 #      are skipped because they are runtime side-effects of
 #      ``-DPROFILE=ON`` builds, not fixture outputs.
 #   4. Applies format-aware post-processing (header progname rewrite for
-#      STL/STLBIN/SVG/OBJ/POV, inner-XML extraction for 3MF, producer
-#      metadata rewrite for AMF; other extensions pass through
-#      untouched) keyed by each file's own extension, then compares each
-#      produced file against `tests/regression/<testname>/<basename>/<rel-path>`.
+#      STL/STLBIN/SVG/OBJ/POV, inner-XML extraction for 3MF; other
+#      extensions pass through untouched) keyed by each file's own
+#      extension, then compares each produced file against
+#      `tests/regression/<testname>/<basename>/<rel-path>`.
 #      Suffixes listed in ``_BINARY_SUFFIXES`` (currently the binary-STL
 #      fallthrough suffix ``.stlbin``) take a strict
 #      ``filecmp.cmp(shallow=False)`` bytes-equality path because
@@ -72,7 +72,6 @@
 import argparse
 import filecmp
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -90,29 +89,6 @@ def _setup_tct_options():
     tct.options.exclude_debug = False
 
 
-def post_process_amf(filename):
-    """Normalize the AMF producer line so goldens survive version bumps.
-
-    ``src/io/export_amf.cc`` writes a literal
-    ``<metadata type="producer">PythonSCAD <openscad_detailedversionnumber></metadata>``
-    where the version string can include a trailing ``(git <hash>)`` for
-    development builds, so the bytes change every commit. Rewrite the
-    producer to a fixed placeholder (and the brand to ``OpenSCAD`` for
-    parity with ``post_process_progname``) before the text compare.
-    """
-    print('post processing AMF file (normalizing producer): ', filename)
-    with open(filename, "rb") as f:
-        content = f.read()
-    text = content.decode("utf-8")
-    text = re.sub(
-        r'(<metadata type="producer">)PythonSCAD [^<]*(</metadata>)',
-        r'\1OpenSCAD VERSION\2',
-        text,
-    )
-    with open(filename, "wb") as f:
-        f.write(text.encode("utf-8"))
-
-
 # Format-aware post-processors, keyed by lowercase file extension
 # (including the leading dot). Files whose extension is not listed pass
 # through untouched and are compared as-is by ``tct.compare_default``,
@@ -127,13 +103,22 @@ def post_process_amf(filename):
 # resulting file is real binary STL whose 80-byte header carries the
 # PythonSCAD branding, so we still run ``post_process_progname`` to
 # rewrite that to ``OpenSCAD`` before the comparison.
+#
+# AMF is intentionally *not* listed here: AMF mesh tessellation
+# (vertex order + triangle indexing) is not stable across the CI
+# matrix even with --enable=predictible-output, so byte-compare is not
+# viable yet. See PR #590 / issue #586 and the corresponding note in
+# ``tests/CMakeLists.txt``. If a future change makes AMF deterministic,
+# a ``post_process_amf`` helper that normalizes the
+# ``<metadata type="producer">PythonSCAD <version></metadata>`` line
+# (currently emitted from ``src/io/export_amf.cc``) will need to be
+# reintroduced alongside the fixture.
 _POST_PROCESSORS = {
     ".stl": tct.post_process_progname,
     ".stlbin": tct.post_process_progname,
     ".svg": tct.post_process_progname,
     ".obj": tct.post_process_progname,
     ".3mf": tct.post_process_3mf,
-    ".amf": post_process_amf,
     ".pov": tct.post_process_progname,
 }
 

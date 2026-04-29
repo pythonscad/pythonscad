@@ -149,7 +149,15 @@ set(TEST_PYTHONSCAD_EXPORT_3MF_DIR     "${CCSD}/data/pythonscad-export-3mf")
 set(TEST_PYTHONSCAD_EXPORT_OBJ_DIR     "${CCSD}/data/pythonscad-export-obj")
 set(TEST_PYTHONSCAD_EXPORT_SVG_DIR     "${CCSD}/data/pythonscad-export-svg")
 set(TEST_PYTHONSCAD_EXPORT_POV_DIR     "${CCSD}/data/pythonscad-export-pov")
-set(TEST_PYTHONSCAD_EXPORT_AMF_DIR     "${CCSD}/data/pythonscad-export-amf")
+# Note: there is intentionally no `pythonscad-export-amf` group --
+# AMF mesh tessellation (vertex order + triangle indexing) is not
+# stable across the CI matrix even with --enable=predictible-output
+# (see PR #590 / issue #586). Upstream OpenSCAD also has no
+# byte-compare `export-amf` ctest for the same reason; only the
+# render-PNG `render-amf_*` tests exist. AMF is also deprecated. If
+# determinism is fixed later, add a fixture under
+# tests/data/pythonscad-export-amf/ and an `add_export_files_test()`
+# entry below.
 set(TEST_PYTHONSCAD_OVERLAY_DIR "${CCSD}/data/pythonscad-overlay")
 set(TEST_PYTHONSCAD_OVERLAY_ECHO_DIR "${CCSD}/data/pythonscad-overlay-echo")
 set(TEST_CUSTOMIZER_DIR "${CCSD}/data/scad/customizer")
@@ -286,7 +294,6 @@ file(GLOB PYTHONSCAD_EXPORT_3MF_FILES     ${TEST_PYTHONSCAD_EXPORT_3MF_DIR}/*.py
 file(GLOB PYTHONSCAD_EXPORT_OBJ_FILES     ${TEST_PYTHONSCAD_EXPORT_OBJ_DIR}/*.py)
 file(GLOB PYTHONSCAD_EXPORT_SVG_FILES     ${TEST_PYTHONSCAD_EXPORT_SVG_DIR}/*.py)
 file(GLOB PYTHONSCAD_EXPORT_POV_FILES     ${TEST_PYTHONSCAD_EXPORT_POV_DIR}/*.py)
-file(GLOB PYTHONSCAD_EXPORT_AMF_FILES     ${TEST_PYTHONSCAD_EXPORT_AMF_DIR}/*.py)
 file(GLOB PYTHONSCAD_OVERLAY_FILES ${TEST_PYTHONSCAD_OVERLAY_DIR}/*.py)
 file(GLOB PYTHONSCAD_OVERLAY_ECHO_FILES ${TEST_PYTHONSCAD_OVERLAY_ECHO_DIR}/*.py)
 file(GLOB SCAD_3D_EXPORT_FILES      ${TEST_SCAD_DIR}/3d-export/*.scad)
@@ -1438,10 +1445,6 @@ add_export_files_test(pythonscad-export-svg
 add_export_files_test(pythonscad-export-pov
     EXPERIMENTAL
     FILES ${PYTHONSCAD_EXPORT_POV_FILES}
-)
-add_export_files_test(pythonscad-export-amf
-    EXPERIMENTAL
-    FILES ${PYTHONSCAD_EXPORT_AMF_FILES}
 )
 
 #
