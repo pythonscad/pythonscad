@@ -6078,7 +6078,7 @@ PyObject *PyOpenSCADVector_sub(PyObject *a, PyObject *b, int mode)
   }
   PyOpenSCADVectorObject *v1 = (PyOpenSCADVectorObject *)a;
   double scale;
-  if (!python_numberval(b, &scale, nullptr, 0)) {
+  if (mode == 3 && !python_numberval(b, &scale, nullptr, 0)) {  // scalar multiply
     PyOpenSCADVectorObject *result = PyObject_New(PyOpenSCADVectorObject, &PyOpenSCADVectorType);
     if (!result) return NULL;
     for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] * scale;
@@ -6088,37 +6088,34 @@ PyObject *PyOpenSCADVector_sub(PyObject *a, PyObject *b, int mode)
   if (!PyObject_TypeCheck(b, &PyOpenSCADVectorType)) {
     Py_RETURN_NOTIMPLEMENTED;
   }
-
   PyOpenSCADVectorObject *v2 = (PyOpenSCADVectorObject *)b;
 
-  PyOpenSCADVectorObject *result = PyObject_New(PyOpenSCADVectorObject, &PyOpenSCADVectorType);
-  if (!result) return NULL;
-  switch (mode) {
-  case 0:
-    for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] + v2->v[i];
-    break;  // add
-  case 1:
-    for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] - v2->v[i];
-    break;  // subtract
-  case 2:
-    for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] * v2->v[i];
-    break;   // dot
-  case 3: {  // cross
+  if (mode == 3) {  // cross product
     Vector3d v1e(v1->v[0], v1->v[1], v1->v[2]);
     Vector3d v2e(v2->v[0], v2->v[1], v2->v[2]);
     return python_fromvector(v1e.cross(v2e));
-  } break;
-  case 4:
-    for (int i = 0; i < 3; i++) result->v[i] = v1->v[i] + v2->v[i];
-    break;  // norm
   }
-  if (mode == 2) {
-    return PyFloat_FromDouble(result->v[0] + result->v[1] + result->v[2]);
-  }  // dot
-  if (mode == 4) {
-    return PyFloat_FromDouble(sqrt(result->v[0] + result->v[1] + result->v[2]));
-  }  // norm
-  return (PyObject *)result;
+
+  double res[3];
+  switch (mode) {
+  case 0:  // add
+    for (int i = 0; i < 3; i++) res[i] = v1->v[i] + v2->v[i];
+    break;
+  case 1:  // subtract
+    for (int i = 0; i < 3; i++) res[i] = v1->v[i] - v2->v[i];
+    break;
+  case 2:  // dot
+  case 4:  // norm
+    for (int i = 0; i < 3; i++) res[i] = v1->v[i] * v2->v[i];
+    if (mode == 4) return PyFloat_FromDouble(sqrt(res[0] + res[1] + res[2]));
+    return PyFloat_FromDouble(res[0] + res[1] + res[2]);
+    break;
+  }
+  PyOpenSCADVectorObject *result = PyObject_New(PyOpenSCADVectorObject, &PyOpenSCADVectorType);
+  if (!result) return NULL;
+  for (int i = 0; i < 3; i++) result->v[i] = res[i];
+
+  return (PyObject *)result;  // TODO copy from res
 }
 
 PyObject *PyOpenSCADVector_add(PyObject *a, PyObject *b)
@@ -6160,6 +6157,11 @@ PyObject *PyOpenSCADVector_dot(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *PyOpenSCADVector_norm(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+  char *kwlist[] = {NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "", kwlist)) {
+    PyErr_SetString(PyExc_TypeError, "norm() takes no arguments");
+    return NULL;
+  }
   return PyOpenSCADVector_sub(self, self, 4);
 }
 
@@ -6174,24 +6176,51 @@ PyObject *PyOpenSCADVector__getitem__(PyObject *obj, PyObject *key)
 {
   PyOpenSCADVectorObject *self = (PyOpenSCADVectorObject *)obj;
   PyObject *result;
-  if (PyLong_Check(key)) {
-    long ind = PyLong_AsLong(key);
-    if (ind >= 0 && ind < 3) return PyFloat_FromDouble(self->v[ind]);
+  if (!PyLong_Check(key)) {
+    PyErr_SetString(PyExc_TypeError, "vector indices must be integers");
+    return NULL;
+  }
+  long ind = PyLong_AsLong(key);
+  if (ind == -1 && PyErr_Occurred()) {
+    return NULL;
   }
 
-  Py_RETURN_NONE;
+  if (ind < 0 || ind >= 3) {
+    PyErr_SetString(PyExc_IndexError, "vector index out of range");
+    return NULL;
+  }
+
+  return PyFloat_FromDouble(self->v[ind]);
+
+  PyErr_SetString(PyExc_TypeError, "Vector subscript must be a number between 0 and 2 ");
+  return NULL;
 }
 
 int PyOpenSCADVector__setitem__(PyObject *obj, PyObject *key, PyObject *v)
 {
   double result;
-  if (PyLong_Check(key) && !python_numberval(v, &result, nullptr, 0)) {
-    long ind = PyLong_AsLong(key);
-    PyOpenSCADVectorObject *self = (PyOpenSCADVectorObject *)obj;
-    if (ind >= 0 && ind < 3) {
-      self->v[ind] = result;
+  if (!PyLong_Check(key)) {
+    PyErr_SetString(PyExc_TypeError, "vector indices must be integers");
+    return -1;
+  }
+
+  long ind = PyLong_AsLong(key);
+  if (ind == -1 && PyErr_Occurred()) {
+    return -1;
+  }
+
+  if (ind < 0 || ind >= 3) {
+    PyErr_SetString(PyExc_IndexError, "vector index out of range");
+    return -1;
+  }
+
+  if (python_numberval(v, &result, nullptr, 0)) {
+    if (!PyErr_Occurred()) {
+      PyErr_SetString(PyExc_TypeError, "vector elements must be numeric");
     }
   }
+  PyOpenSCADVectorObject *self = (PyOpenSCADVectorObject *)obj;
+  self->v[ind] = result;
   return 0;
 }
 

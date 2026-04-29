@@ -308,7 +308,8 @@ PyObject *python_from2dlong(const std::vector<IndexedFace>& intlist)
 }
 
 /*
- * converts a python obejct into an integer by all means
+ * Parses a Python object into one or more Vector3d values.
+ * Accepts Python lists or OpenSCAD vector objects within the given dimensions.
  */
 
 std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int *dragflags)

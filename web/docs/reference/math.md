@@ -177,8 +177,8 @@ result = cross(vec1, vec2)
 ```python
 from openscad import *
 
-c = cross([1, 0, 0], [0, 1, 0])   # [0, 0, 1]
-c = cross([0, 1, 0], [1, 0, 0])   # [0, 0, -1]
+c = cross([1, 0, 0], [0, 1, 0])   # vector(0, 0, 1)
+c = cross([0, 1, 0], [1, 0, 0])   # vector(0, 0, -1)
 ```
 
 ## Vector functions
@@ -250,7 +250,7 @@ from openscad import *
 vec1 = vector(1,4,7)
 vec2 = vector(1,2,4)
 
-print(vec1.dot(1))
+print(vec1.dot(vec2))
 
 ```
 
