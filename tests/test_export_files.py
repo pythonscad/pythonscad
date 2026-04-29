@@ -163,26 +163,52 @@ def _compare_bytes(expected, actual):
 
     Returns True on match, False otherwise. Used for files in
     ``_BINARY_SUFFIXES`` where the existing text-mode
-    ``tct.compare_default`` would mangle non-text bytes.
+    ``tct.compare_default`` would mangle non-text bytes. Stays silent
+    on the happy path so passing ctests do not get noisy headers; only
+    emits diagnostic lines when ``filecmp.cmp`` reports a mismatch.
     """
+    if filecmp.cmp(str(expected), str(actual), shallow=False):
+        return True
     print('binary comparison: ', file=sys.stderr)
     print(' expected file: ', expected, file=sys.stderr)
     print(' actual file:   ', actual, file=sys.stderr)
-    if filecmp.cmp(str(expected), str(actual), shallow=False):
-        return True
     expected_bytes = Path(expected).read_bytes()
     actual_bytes = Path(actual).read_bytes()
-    print(
-        f' size mismatch: expected={len(expected_bytes)} actual={len(actual_bytes)}',
-        file=sys.stderr,
-    )
-    for i, (eb, ab) in enumerate(zip(expected_bytes, actual_bytes)):
+    if len(expected_bytes) != len(actual_bytes):
+        print(
+            f' size mismatch: expected={len(expected_bytes)} '
+            f'actual={len(actual_bytes)}',
+            file=sys.stderr,
+        )
+    common_prefix = min(len(expected_bytes), len(actual_bytes))
+    first_diff = None
+    for i in range(common_prefix):
+        eb = expected_bytes[i]
+        ab = actual_bytes[i]
         if eb != ab:
-            print(
-                f' first byte diff at offset {i}: expected={eb:#04x} actual={ab:#04x}',
-                file=sys.stderr,
+            first_diff = (
+                f' first byte diff at offset {i}: '
+                f'expected={eb:#04x} actual={ab:#04x}'
             )
             break
+    # Files matched up to the shorter length but differed in size --
+    # one is a strict prefix of the other, so the first differing
+    # offset is at the boundary itself; report the truncated side as
+    # ``<eof>`` so the caller sees where divergence really is.
+    if first_diff is None and len(expected_bytes) != len(actual_bytes):
+        i = common_prefix
+        if len(expected_bytes) < len(actual_bytes):
+            first_diff = (
+                f' first byte diff at offset {i}: '
+                f'expected=<eof> actual={actual_bytes[i]:#04x}'
+            )
+        else:
+            first_diff = (
+                f' first byte diff at offset {i}: '
+                f'expected={expected_bytes[i]:#04x} actual=<eof>'
+            )
+    if first_diff is not None:
+        print(first_diff, file=sys.stderr)
     return False
 
 
