@@ -89,6 +89,59 @@ def _setup_tct_options():
     tct.options.exclude_debug = False
 
 
+# Length of the fixed-size text header at the start of a binary STL
+# file (see ``src/io/export_stl.cc``: ``char header[80] = ...``); the
+# first 4 bytes after that are the little-endian uint32 triangle count
+# and after that are per-triangle 50-byte records.
+_BINARY_STL_HEADER_LEN = 80
+
+
+def post_process_stlbin(filename):
+    """Length-preserving rewrite of the 80-byte binary STL header.
+
+    Reusing ``tct.post_process_progname`` directly on a binary STL is
+    unsafe: of its five ``bytes.replace`` substitutions, only the
+    first two (``PythonSCAD Model\\x0a\\x00`` -> ``OpenSCAD Model
+    \\x0a\\x00\\x00\\x00`` and the ``_Model`` variant) are
+    length-preserving. The remaining three (``PythonSCAD_Model`` ->
+    ``OpenSCAD_Model``, etc.) shrink by two bytes; if they ever fired
+    on a binary STL -- whether because the writer changed how it
+    terminates the model name in the 80-byte header, or because the
+    raw triangle bytes coincidentally spelled out one of those
+    patterns -- the file would lose two bytes and every subsequent
+    triangle-count / triangle-record offset would shift.
+
+    Sidestep that by only touching the fixed 80-byte header and only
+    applying the length-preserving padding-compensated substitution
+    that the binary writer's header layout actually produces. The
+    triangle data starting at byte 80 is left strictly untouched.
+    Length is asserted to never change so the rewrite cannot silently
+    desynchronize the body from the header.
+    """
+    print('post processing binary STL header: ', filename)
+    with open(filename, "rb") as f:
+        content = f.read()
+    if len(content) < _BINARY_STL_HEADER_LEN:
+        # Truncated / malformed binary STL: leave it alone so the
+        # comparison step surfaces the real problem instead of having
+        # this normalizer mask it.
+        return
+    header = content[:_BINARY_STL_HEADER_LEN]
+    body = content[_BINARY_STL_HEADER_LEN:]
+    new_header = header.replace(
+        b"PythonSCAD Model\x0a\x00",
+        b"OpenSCAD Model\x0a\x00\x00\x00",
+    )
+    if len(new_header) != _BINARY_STL_HEADER_LEN:
+        raise RuntimeError(
+            f"post_process_stlbin: header length changed from "
+            f"{_BINARY_STL_HEADER_LEN} to {len(new_header)} "
+            f"-- binary STL branding layout drifted?"
+        )
+    with open(filename, "wb") as f:
+        f.write(new_header + body)
+
+
 # Format-aware post-processors, keyed by lowercase file extension
 # (including the leading dot). Files whose extension is not listed pass
 # through untouched and are compared as-is by ``tct.compare_default``,
@@ -101,8 +154,12 @@ def _setup_tct_options():
 # ``fileformat::fromIdentifier``, so ``python_export_core`` keeps its
 # ``BINARY_STL`` default (see ``src/python/pyfunctions.cc``). The
 # resulting file is real binary STL whose 80-byte header carries the
-# PythonSCAD branding, so we still run ``post_process_progname`` to
-# rewrite that to ``OpenSCAD`` before the comparison.
+# PythonSCAD branding, so we route it through the dedicated
+# ``post_process_stlbin`` helper above (which only rewrites the fixed
+# header and never touches the triangle data) rather than reusing
+# ``tct.post_process_progname`` -- see that helper's docstring for
+# why generic, partially length-changing text replacements are not
+# safe on binary STL bytes.
 #
 # AMF is intentionally *not* listed here: AMF mesh tessellation
 # (vertex order + triangle indexing) is not stable across the CI
@@ -115,7 +172,7 @@ def _setup_tct_options():
 # reintroduced alongside the fixture.
 _POST_PROCESSORS = {
     ".stl": tct.post_process_progname,
-    ".stlbin": tct.post_process_progname,
+    ".stlbin": post_process_stlbin,
     ".svg": tct.post_process_progname,
     ".obj": tct.post_process_progname,
     ".3mf": tct.post_process_3mf,
