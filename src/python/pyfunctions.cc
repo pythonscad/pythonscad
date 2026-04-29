@@ -1584,7 +1584,7 @@ PyObject *python_oo_rotz(PyObject *self, PyObject *args, PyObject *kwargs)
   return python_oo_dir_sub(self, args, kwargs, 8);
 }
 
-PyObject *python_math_sub1(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
+/* PyObject *python_math_sub1(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
 {
   char *kwlist[] = {"value", NULL};
   double arg;
@@ -1681,7 +1681,7 @@ PyObject *python_norm(PyObject *self, PyObject *args, PyObject *kwargs)
 
   result = sqrt(vec3[0] * vec3[0] + vec3[1] * vec3[1] + vec3[2] * vec3[2]);
   return PyFloat_FromDouble(result);
-}
+} */
 
 PyObject *python_multmatrix_sub(PyObject *pyobj, PyObject *pymat, int div)
 {
