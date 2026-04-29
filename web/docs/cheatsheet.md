@@ -363,6 +363,10 @@
       <div>Export object to a file (STL, 3MF, etc.)</div>
       <div><code>cube(10).export("output.stl")</code></div>
 
+      <div class="func"><code><a href="../reference/display/#multi-object-3mf-export">export</a>({"name": solid, ...}, "out.3mf")</code></div>
+      <div>Multi-object 3MF: dict keys = part names (.3mf only)</div>
+      <div><code>export({"a": cube(5), "b": sphere(3)}, "parts.3mf")</code></div>
+
       <div class="func"><code><a href="../reference/display/#render">render</a>(obj, convexity)</code></div>
       <div>Force full geometry evaluation</div>
       <div><code>cube(10).render().show()</code></div>
@@ -378,6 +382,10 @@
       <div class="func"><code><a href="../reference/display/#highlight">highlight</a> / <a href="../reference/display/#background">background</a> / <a href="../reference/display/#only">only</a></code></div>
       <div>Debug modifiers for visualization</div>
       <div><code>highlight(cube(5)).show()</code></div>
+
+      <div class="func"><code><a href="../reference/multitool/#multitoolexporter">MultiToolExporter</a>(prefix, suffix, mkdir, items)</code></div>
+      <div>Split a model into per-color/per-tool files via cumulative difference</div>
+      <div><code>MultiToolExporter("out/m-", ".stl", mkdir=True, items=[("r",red),("b",blue)]).export()</code></div>
   </div>
 </div>
 
@@ -390,12 +398,12 @@
       <div><code>osimport("model.stl").show()</code></div>
 
       <div class="func"><code><a href="../reference/io/#osuse">osuse</a>(file)</code></div>
-      <div>Use an OpenSCAD library file (like <code>use &lt;...&gt;</code>)</div>
-      <div><code>osuse("library.scad")</code></div>
+      <div>Use an OpenSCAD library file (like <code>use &lt;...&gt;</code>); call modules/functions on the returned handle</div>
+      <div><code>lib = osuse("library.scad"); lib.my_module().show()</code></div>
 
       <div class="func"><code><a href="../reference/io/#osinclude">osinclude</a>(file)</code></div>
-      <div>Include an OpenSCAD file (like <code>include &lt;...&gt;</code>)</div>
-      <div><code>osinclude("config.scad")</code></div>
+      <div>Include an OpenSCAD file (like <code>include &lt;...&gt;</code>) — deprecated, use <code>osuse</code> instead</div>
+      <div><code>lib = osinclude("config.scad")</code></div>
 
       <div class="func"><code><a href="../reference/io/#scad">scad</a>(code)</code></div>
       <div>Execute inline OpenSCAD code from Python</div>

@@ -63,6 +63,7 @@ nav:
       - Object Properties: reference/properties.md
       - Object Model: reference/object_model.md
       - Display and Export: reference/display.md
+      - Multi-tool Export: reference/multitool.md
       - I/O and Integration: reference/io.md
       - Math Functions: reference/math.md
       - Special Variables: reference/variables.md
@@ -84,6 +85,7 @@ nav:
   - Contact: contact.md
 
 markdown_extensions:
+  - admonition
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
@@ -94,5 +96,4 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
   - attr_list
