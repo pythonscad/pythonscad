@@ -49,6 +49,8 @@ PyObject *python_ifrep(PyObject *self, PyObject *args, PyObject *kwargs);
 #endif
 
 // Transformation functions
+PyObject *python_rotate_sub(PyObject *obj, Vector3d vec3, double angle, PyObject *ref, int dragflag);
+
 PyObject *python_translate(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_translate_core(PyObject *obj, PyObject *v);
 PyObject *python_rotate(PyObject *self, PyObject *args, PyObject *kwargs);
@@ -59,6 +61,8 @@ PyObject *python_mirror(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_mirror_core(PyObject *obj, PyObject *val_v);
 PyObject *python_multmatrix(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_divmatrix(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_explode(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_oo_explode(PyObject *self, PyObject *args, PyObject *kwargs);
 
 // Directional movement functions
 PyObject *python_right(PyObject *self, PyObject *args, PyObject *kwargs);

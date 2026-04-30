@@ -1020,7 +1020,7 @@ PyObject *python_spline(PyObject *self, PyObject *args, PyObject *kwargs)
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
 } */
 
-PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
+/*PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
 {
   Matrix4d mat;
   if (!python_tomatrix(pynum, mat)) {
@@ -1582,7 +1582,7 @@ PyObject *python_oo_rotz(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   return python_oo_dir_sub(self, args, kwargs, 8);
 }
-
+*/
 /* PyObject *python_math_sub1(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
 {
   char *kwlist[] = {"value", NULL};
