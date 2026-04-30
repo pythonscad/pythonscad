@@ -67,6 +67,7 @@
 #include "core/RoofNode.h"
 #include "core/RenderNode.h"
 #include "core/SurfaceNode.h"
+
 #include "core/TextNode.h"
 #include "core/CurveDiscretizer.h"
 #include "core/FreetypeRenderer.h"
@@ -1018,9 +1019,9 @@ PyObject *python_spline(PyObject *self, PyObject *args, PyObject *kwargs)
 
   python_retrieve_pyname(node);
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
-} */
+}
 
-/*PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
+PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
 {
   Matrix4d mat;
   if (!python_tomatrix(pynum, mat)) {
@@ -1582,8 +1583,8 @@ PyObject *python_oo_rotz(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   return python_oo_dir_sub(self, args, kwargs, 8);
 }
-*/
-/* PyObject *python_math_sub1(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
+
+PyObject *python_math_sub1(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
 {
   char *kwlist[] = {"value", NULL};
   double arg;
@@ -1784,7 +1785,7 @@ PyObject *python_oo_divmatrix(PyObject *obj, PyObject *args, PyObject *kwargs)
   return python_multmatrix_sub(obj, mat, 1);
 }
 
-PyObject *python_pull_core(PyObject *obj, PyObject *anchor, PyObject *dir)
+/* PyObject *python_pull_core(PyObject *obj, PyObject *anchor, PyObject *dir)
 {
   DECLARE_INSTANCE();
   auto node = std::make_shared<PullNode>(instance);
@@ -2137,7 +2138,7 @@ PyObject *python_oo_export(PyObject *obj, PyObject *args, PyObject *kwargs)
     return NULL;
   }
   return python_export_core(obj, file);
-}
+} */
 
 PyObject *python__getsetitem_hier(std::shared_ptr<AbstractNode> node, const std::string& keystr,
                                   PyObject *v, int hier)
@@ -2270,7 +2271,7 @@ int python__setitem__(PyObject *obj, PyObject *key, PyObject *v)
   return 0;
 }
 
-PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha)
+/*PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha)
 {
   PyObject *child_dict;
   std::shared_ptr<AbstractNode> child;
@@ -2341,7 +2342,8 @@ PyObject *python_oo_color(PyObject *obj, PyObject *args, PyObject *kwargs)
 }
 
 typedef std::vector<int> intList;
-/*UPyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
+
+PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
 {
   PyObject *dummydict;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
@@ -3065,7 +3067,6 @@ PyObject *python_oo_children(PyObject *obj, PyObject *args, PyObject *kwargs)
   }
   return python_children_core(obj);
 }
-*/
 
 PyObject *python_oversample_core(PyObject *obj, double size, const char *texture, const char *projection,
                                  double texturewidth, double textureheight, double texturedepth)
@@ -3301,11 +3302,10 @@ PyObject *python_oo_fillet(PyObject *obj, PyObject *args, PyObject *kwargs)
     return NULL;
   }
   return python_fillet_core(obj, r, fn, sel, minang);
-}
+} */
 
-PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double angle, PyObject *twist,
-                              PyObject *origin, PyObject *offset, PyObject *vp, char *method,
-                              CurveDiscretizer&& discretizer)
+/* PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double angle, PyObject
+*twist, PyObject *origin, PyObject *offset, PyObject *vp, char *method, CurveDiscretizer&& discretizer)
 {
   DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
@@ -3791,7 +3791,7 @@ PyObject *python_oo_path_extrude(PyObject *obj, PyObject *args, PyObject *kwargs
 
   return path_extrude_core(obj, path, xdir, convexity, origin, scale, twist, closed, allow_intersect, fn,
                            fa, fs);
-}
+} */
 
 /* PyObject *python_csg_core(std::shared_ptr<CsgOpNode>& node,
                           const std::vector<std::shared_ptr<AbstractNode>>& childs)
@@ -4411,7 +4411,7 @@ PyObject *python_oo_resize(PyObject *obj, PyObject *args, PyObject *kwargs)
   }
   return python_resize_core(obj, newsize, autosize, convexity);
 }
-*/
+
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
 PyObject *python_roof_core(PyObject *obj, const char *method, int convexity,
                            CurveDiscretizer&& discretizer)
@@ -4567,7 +4567,7 @@ PyObject *python_surface(PyObject *self, PyObject *args, PyObject *kwargs)
   return python_surface_core(file, center, invert, color, convexity);
 }
 
-/*int sheetCalcIndInt(PyObject *func, double i, double j, Vector3d& pos)
+int sheetCalcIndInt(PyObject *func, double i, double j, Vector3d& pos)
 {
   PyObject *args = PyTuple_Pack(2, PyFloat_FromDouble(i), PyFloat_FromDouble(j));
   PyObject *pos_p = PyObject_CallObject(func, args);
@@ -4850,17 +4850,17 @@ PyObject *python_sheet(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   return python_sheet_core(func, imin, imax, jmin, jmax, fs, ispan, jspan);
-} */
+}
 
-/*std::optional<std::string> to_optional_string(const char *ptr)
+std::optional<std::string> to_optional_string(const char *ptr)
 {
   if (ptr != nullptr) {
     return std::string(ptr);
   }
   return {};
-}  */
+}
 
-/*PyObject *python_text(PyObject *self, PyObject *args, PyObject *kwargs)
+PyObject *python_text(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE();
   char *kwlist[] = {"text",     "size",   "font",   "spacing", "direction",
@@ -5058,7 +5058,7 @@ PyObject *python_oo_offset(PyObject *obj, PyObject *args, PyObject *kwargs)
   return python_offset_core(obj, r, delta, chamfer, std::move(discretizer));
 }
 
-PyObject *python_projection_core(PyObject *obj, PyObject *cut, int convexity)
+/* PyObject *python_projection_core(PyObject *obj, PyObject *cut, int convexity)
 {
   DECLARE_INSTANCE();
   auto node = std::make_shared<ProjectionNode>(instance);
@@ -5200,7 +5200,7 @@ PyObject *python_oo_align(PyObject *obj, PyObject *args, PyObject *kwargs)
     return NULL;
   }
   return python_align_core(obj, pyrefmat, pyobjmat, flip);
-}
+} */
 
 PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, ImportType type)
 {
@@ -5355,7 +5355,7 @@ PyObject *python_oo_setattr(PyObject *self, PyObject *args, PyObject *kwargs)
   Py_RETURN_NONE;
 }
 
-PyObject *python_import(PyObject *self, PyObject *args, PyObject *kwargs)
+/* PyObject *python_import(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   return do_import_python(self, args, kwargs, ImportType::UNKNOWN);
 }
@@ -5893,7 +5893,7 @@ PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs, int mod
   }
   if (genlang_result_node == nullptr) Py_RETURN_NONE;
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, genlang_result_node);
-}
+} */
 
 PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
 {
