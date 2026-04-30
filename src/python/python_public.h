@@ -12,6 +12,8 @@
 extern bool python_active;
 extern bool python_trusted;
 extern bool python_runipython;
+extern bool python_runrepl;
+extern std::vector<std::string> python_replargs;
 extern AssignmentList customizer_parameters;
 extern AssignmentList customizer_parameters_finished;
 extern std::shared_ptr<RenderVariables> renderVarsSet;
@@ -23,7 +25,16 @@ std::string evaluatePython(const std::string& code, bool dry_run = false);
 void finishPython();
 void python_lock(void);
 void python_unlock(void);
-void ipython(void);
+// Launch the real IPython interactive shell. `args` is forwarded as the
+// IPython argv (so `pythonscad --ipython script.py arg1` runs `script.py`
+// inside IPython with `arg1` available). If IPython cannot be imported
+// (most commonly because it is not installed), prints a one-line
+// diagnostic to stderr and falls back to repl().
+void ipython(const std::vector<std::string>& args);
+// Open the basic embedded CPython REPL (no IPython, no readline magic).
+// Used as the explicit `--repl` entry point and as the fallback when
+// IPython is unavailable.
+void repl(void);
 
 std::shared_ptr<AbstractNode> python_modulefunc(const ModuleInstantiation *op_module,
                                                 const std::shared_ptr<const Context>& cxt,

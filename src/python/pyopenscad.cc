@@ -25,7 +25,9 @@
  */
 #include <Python.h>
 #include "genlang/genlang.h"
+#include <array>
 #include <atomic>
+#include <cstdio>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -110,6 +112,8 @@ bool pythonDryRun = false;
 PyObject *python_result_obj = nullptr;
 std::vector<SelectedObject> python_result_handle;
 bool python_runipython = false;
+bool python_runrepl = false;
+std::vector<std::string> python_replargs;
 bool pythonMainModuleInitialized = false;
 bool pythonRuntimeInitialized = false;
 
@@ -967,6 +971,38 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     pythonRuntimeInitialized = true;
     register_openscad_py_atexit();
     PyInit_PyData();
+    // Append (NOT prepend) bundle-supplied Python packages to sys.path so a
+    // user-installed copy (e.g. `pip install --user ipython`) always wins
+    // over the bundled fallback that ships inside an AppImage / .app /
+    // Windows installer. The directories are intentionally outside
+    // `libraries/python/` (which holds PythonSCAD-owned overlays that
+    // *should* take priority).
+    {
+      const std::array<std::string, 2> bundledFallbackPaths = {
+        "../lib/pythonscad-bundled-py",         // AppImage / Linux / Windows MSYS2
+        "../Frameworks/pythonscad-bundled-py",  // macOS .app
+      };
+      PyObject *sysModule = PyImport_ImportModule("sys");
+      if (sysModule != nullptr) {
+        PyObject *sysPath = PyObject_GetAttrString(sysModule, "path");
+        if (sysPath != nullptr) {
+          for (const auto& relPath : bundledFallbackPaths) {
+            const auto p =
+              fs::path(PlatformUtils::applicationPath() + fs::path::preferred_separator + relPath);
+            if (fs::is_directory(p)) {
+              const auto abs = fs::absolute(p).generic_string();
+              PyObject *pathStr = PyUnicode_FromString(abs.c_str());
+              if (pathStr != nullptr) {
+                PyList_Append(sysPath, pathStr);
+                Py_DECREF(pathStr);
+              }
+            }
+          }
+          Py_DECREF(sysPath);
+        }
+        Py_DECREF(sysModule);
+      }
+    }
     PyRun_String("from builtins import *\n", Py_file_input, pythonInitDict.get(), pythonInitDict.get());
     PyObject *key, *value;
     Py_ssize_t pos = 0;
@@ -1450,17 +1486,18 @@ PyMODINIT_FUNC PyInit__openscad(void)
   return m;
 }
 
-/* Write an exitcode into *exitcode and return 1 if we have to exit Python.
-   Return 0 otherwise. */
-static int pymain_run_interactive_hook_ipython(int *exitcode)
+// Run sys.__interactivehook__ to enable readline / tab completion / history
+// in the basic embedded REPL. Returns 0 on success (i.e. carry on running
+// the REPL) and is best-effort -- a missing hook is not an error.
+static int pymain_run_interactive_hook(void)
 {
-  PyObject *sys, *hook, *result;
-  sys = PyImport_ImportModule("sys");
+  PyObject *sys = PyImport_ImportModule("sys");
   if (sys == nullptr) {
-    goto error;
+    PySys_WriteStderr("Failed importing sys for sys.__interactivehook__\n");
+    return 0;
   }
 
-  hook = PyObject_GetAttrString(sys, "__interactivehook__");
+  PyObject *hook = PyObject_GetAttrString(sys, "__interactivehook__");
   Py_DECREF(sys);
   if (hook == nullptr) {
     PyErr_Clear();
@@ -1468,71 +1505,84 @@ static int pymain_run_interactive_hook_ipython(int *exitcode)
   }
 
   if (PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {
-    goto error;
+    PySys_WriteStderr("Failed auditing sys.__interactivehook__\n");
+    Py_DECREF(hook);
+    return 0;
   }
-  result = PyObject_CallNoArgs(hook);
+  PyObject *result = PyObject_CallNoArgs(hook);
   Py_DECREF(hook);
   if (result == nullptr) {
-    goto error;
+    PySys_WriteStderr("Failed calling sys.__interactivehook__\n");
+    return 0;
   }
   Py_DECREF(result);
   return 0;
-
-error:
-  PySys_WriteStderr("Failed calling sys.__interactivehook__\n");
-  //    return pymain_err_print(exitcode);
-  return 0;
 }
 
-static void pymain_repl_ipython(int *exitcode)
+// Drop into the basic embedded CPython REPL on stdin. This is the
+// historical `--ipython` behaviour (which never actually launched
+// IPython); it is still reachable explicitly via `--repl` and as the
+// fallback path of `ipython()` when IPython is not installed.
+void repl(void)
 {
-  if (pymain_run_interactive_hook_ipython(exitcode)) {
-    return;
-  }
+  initPython(PlatformUtils::applicationPath(), "", nullptr);
+  pymain_run_interactive_hook();
   PyCompilerFlags cf = _PyCompilerFlags_INIT;
-
   PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
 }
 
-static void pymain_run_python_ipython(int *exitcode)
-{
-  PyObject *main_importer_path = nullptr;
-  //    PyInterpreterState *interp = PyInterpreterState_Get();
-
-  pymain_repl_ipython(exitcode);
-  goto done;
-
-  //    *exitcode = pymain_exit_err_print();
-
-done:
-  //    _PyInterpreterState_SetNotRunningMain(interp);
-  Py_XDECREF(main_importer_path);
-}
-
-int Py_RunMain_ipython(void)
-{
-  int exitcode = 0;
-
-  pymain_run_python_ipython(&exitcode);
-
-  if (Py_FinalizeEx() < 0) {
-    exitcode = 120;
-  }
-
-  //    pymain_free();
-
-  //    if (_PyRuntime.signals.unhandled_keyboard_interrupt) {
-  //        exitcode = exit_sigint();
-  //    }
-
-  return exitcode;
-}
-
-void ipython(void)
+// Launch the real IPython interactive shell. Forwards `args` as IPython's
+// argv (so `pythonscad --ipython script.py arg1` runs the script with the
+// IPython kernel) and preloads `from pythonscad import *` into the user
+// namespace. If IPython is not importable, prints a one-line diagnostic
+// to stderr and falls back to the basic REPL so the user still gets an
+// interactive prompt instead of a hard error.
+void ipython(const std::vector<std::string>& args)
 {
   initPython(PlatformUtils::applicationPath(), "", nullptr);
-  Py_RunMain_ipython();
-  return;
+
+  // Detect IPython availability up-front in C++ so the fallback to the
+  // basic REPL happens cleanly without a half-initialised IPython on
+  // sys.modules.
+  PyObject *ipython_mod = PyImport_ImportModule("IPython");
+  if (ipython_mod == nullptr) {
+    PyErr_Clear();
+    fprintf(stderr,
+            "PythonSCAD: IPython is not installed; falling back to the basic Python prompt.\n"
+            "            Run `pip install ipython` for a richer REPL, or pass --repl to skip "
+            "this notice.\n");
+    pymain_run_interactive_hook();
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
+    return;
+  }
+  Py_DECREF(ipython_mod);
+
+  // Stash the requested IPython argv into __main__ as a private name so
+  // the bootstrap snippet can pop it back out after running.
+  PyObject *argv_list = PyList_New(static_cast<Py_ssize_t>(args.size()));
+  for (Py_ssize_t i = 0; i < static_cast<Py_ssize_t>(args.size()); ++i) {
+    PyList_SetItem(argv_list, i, PyUnicode_FromString(args[i].c_str()));
+  }
+  PyObject *main_module = PyImport_AddModule("__main__");
+  PyObject *main_dict = PyModule_GetDict(main_module);
+  PyDict_SetItemString(main_dict, "__pythonscad_ipython_argv__", argv_list);
+  Py_DECREF(argv_list);
+
+  static const char *boot =
+    "import sys as _sys\n"
+    "try:\n"
+    "    from pythonscad import *  # noqa: F401,F403\n"
+    "except Exception as _e:\n"
+    "    _sys.stderr.write(\n"
+    "        f'PythonSCAD: warning, could not preload pythonscad module: {_e}\\n')\n"
+    "from IPython import start_ipython as _pythonscad_start_ipython\n"
+    "_pythonscad_start_ipython(argv=__pythonscad_ipython_argv__, user_ns=globals())\n"
+    "del __pythonscad_ipython_argv__, _pythonscad_start_ipython, _sys\n";
+
+  if (PyRun_SimpleString(boot) != 0) {
+    PyErr_Clear();
+  }
 }
 // -------------------------
 

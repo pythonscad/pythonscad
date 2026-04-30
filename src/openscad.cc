@@ -653,7 +653,6 @@ int cmdline(const CommandLine& cmd)
 
   root_file->handleDependencies();
 
-
   if (cmd.animate.frames == 0) {
     render_variables.time = 0;
     return do_export(cmd, render_variables, export_format, root_file);
@@ -942,8 +941,15 @@ int openscad_main(int argc, char **argv)
     ("debug", po::value<std::string>(),
       "special debug info - specify 'all' or a set of source file names")
 #ifdef ENABLE_PYTHON
-          ("trust-python", "Trust python")("ipython", "Run ipython Interpreter")(
-            "python-module", po::value<std::string>(), "=module Call pip python module")
+    ("trust-python", "Trust python")
+    ("ipython",
+      "start an IPython shell with `pythonscad` preloaded; remaining positional "
+      "args are forwarded as IPython argv (e.g. `--ipython script.py arg1`)."
+      " Falls back to the basic Python REPL if IPython is not installed.")
+    ("repl",
+      "open the basic embedded Python REPL with `pythonscad` preloaded "
+      "(no IPython dependency).")
+    ("python-module", po::value<std::string>(), "=module Call pip python module")
 #endif
     ;
   // clang-format on
@@ -992,9 +998,25 @@ int openscad_main(int argc, char **argv)
     LOG("Python Code globally trusted", OpenSCAD::debug);
     python_trusted = true;
   }
+  if (vm.count("ipython") && vm.count("repl")) {
+    LOG(message_group::Error, "--ipython and --repl are mutually exclusive.");
+    return 1;
+  }
   if (vm.count("ipython")) {
-    LOG("Running ipython interpreter", OpenSCAD::debug);
+    LOG("Running IPython interpreter", OpenSCAD::debug);
     python_runipython = true;
+    // When `--ipython` is given, any positional args (parsed by boost as the
+    // `input-file` positional collector) are forwarded as IPython argv. This
+    // mirrors `ipython script.py arg1 arg2`. Dashed options for IPython itself
+    // are not supported via this wrapper -- use IPYTHONDIR or
+    // ~/.ipython/profile_default/ instead.
+    if (vm.count("input-file")) {
+      python_replargs = vm["input-file"].as<std::vector<std::string>>();
+    }
+  }
+  if (vm.count("repl")) {
+    LOG("Running basic Python REPL", OpenSCAD::debug);
+    python_runrepl = true;
   }
   const auto pymod = "python-module";
   if (vm.count(pymod)) {
@@ -1161,7 +1183,11 @@ int openscad_main(int argc, char **argv)
   PRINTDB("Application location detected as %s", applicationPath);
 #ifdef ENABLE_PYTHON
   if (python_runipython) {
-    ipython();
+    ipython(python_replargs);
+    exit(0);
+  }
+  if (python_runrepl) {
+    repl();
     exit(0);
   }
 #endif
