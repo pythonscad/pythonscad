@@ -1495,6 +1495,42 @@ add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-test
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT nef3)
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT nefdbg)
 
+###################################################
+# Python REPL / IPython smoke tests (issue ipython)
+#
+# These exercise the `--ipython` and `--repl` CLI flags by piping a
+# tiny script into the binary on stdin. They are intentionally *not*
+# golden-file regression tests: an interactive REPL has no
+# deterministic output to diff. Instead the harness scripts assert on
+# exit code, presence of an `OK` sentinel marker, and a few
+# fingerprint checks (e.g. IPython `In [` prompt vs. fallback
+# diagnostic).
+#
+# Skipped when ENABLE_PYTHON is OFF.
+###################################################
+if(ENABLE_PYTHON)
+  add_test(NAME ipython-smoke CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_ipython_cli.py
+      ${OPENSCAD_BINPATH}
+  )
+  set_property(TEST ipython-smoke PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+
+  add_test(NAME ipython-fallback CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_ipython_fallback.py
+      ${OPENSCAD_BINPATH}
+  )
+  set_property(TEST ipython-fallback PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+
+  add_test(NAME repl-smoke CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_repl_cli.py
+      ${OPENSCAD_BINPATH}
+  )
+  set_property(TEST repl-smoke PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+endif()
+
 if(NOT ENABLE_LIBFIVE)
   message(STATUS "LIBFIVE is not enabled. Skipping related tests.")
   disable_tests_safe(
