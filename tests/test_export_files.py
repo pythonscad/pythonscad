@@ -118,7 +118,6 @@ def post_process_stlbin(filename):
     Length is asserted to never change so the rewrite cannot silently
     desynchronize the body from the header.
     """
-    print('post processing binary STL header: ', filename)
     with open(filename, "rb") as f:
         content = f.read()
     if len(content) < _BINARY_STL_HEADER_LEN:
