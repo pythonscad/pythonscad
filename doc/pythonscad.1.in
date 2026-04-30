@@ -212,8 +212,8 @@ inside IPython with
 .I arg1
 visible). If IPython is not installed (i.e.
 .B "import IPython"
-fails), prints a one-line diagnostic to stderr and falls back to the
-basic embedded Python REPL exposed by
+fails), prints a diagnostic to stderr and falls back to the basic
+embedded Python REPL exposed by
 .B \-\-repl
 so you still get an interactive prompt. Install IPython with
 .B "pip install ipython"
