@@ -1183,12 +1183,13 @@ int openscad_main(int argc, char **argv)
   PRINTDB("Application location detected as %s", applicationPath);
 #ifdef ENABLE_PYTHON
   if (python_runipython) {
-    ipython(python_replargs);
-    exit(0);
+    // ipython()/repl() return a process exit code -- propagate it to
+    // the OS instead of always reporting success, so init failures
+    // (e.g. embedded Python could not start) are not silently masked.
+    return ipython(python_replargs);
   }
   if (python_runrepl) {
-    repl();
-    exit(0);
+    return repl();
   }
 #endif
 

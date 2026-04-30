@@ -29,12 +29,16 @@ void python_unlock(void);
 // IPython argv (so `pythonscad --ipython script.py arg1` runs `script.py`
 // inside IPython with `arg1` available). If IPython cannot be imported
 // (most commonly because it is not installed), prints a diagnostic to
-// stderr and falls back to repl().
-void ipython(const std::vector<std::string>& args);
+// stderr and falls back to repl(). Returns an exit code suitable for
+// the caller to propagate to the OS: 0 on a clean shell exit, non-zero
+// if the embedded interpreter could not be initialised.
+int ipython(const std::vector<std::string>& args);
 // Open the basic embedded CPython REPL with `from pythonscad import *`
 // preloaded into __main__. Used as the explicit `--repl` entry point
-// and as the fallback when IPython is unavailable.
-void repl(void);
+// and as the fallback when IPython is unavailable. Returns an exit code
+// suitable for the caller to propagate (0 on clean exit, non-zero on
+// init failure).
+int repl(void);
 
 std::shared_ptr<AbstractNode> python_modulefunc(const ModuleInstantiation *op_module,
                                                 const std::shared_ptr<const Context>& cxt,
