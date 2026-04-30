@@ -30,6 +30,14 @@ classifiers = [
     "Topic :: Multimedia :: Graphics :: 3D Modeling",
     "Topic :: Scientific/Engineering",
 ]
+# Keep in sync with requirements/runtime.txt. The pip wheel
+# automatically resolves these transitively, so we never have to vendor
+# the source. Bundle-producing scripts (AppImage, macOS .app, Windows
+# installer) consume requirements/runtime.txt directly via
+# `pip install --target=...`.
+dependencies = [
+    "ipython>=8,<10",
+]
 
 [project.urls]
 Homepage = "https://pythonscad.org"

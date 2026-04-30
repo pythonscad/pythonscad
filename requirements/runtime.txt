@@ -1,0 +1,24 @@
+# Runtime Python dependencies bundled / declared by PythonSCAD.
+#
+# Only place packages here that are needed at runtime by the embedded
+# CPython interpreter (i.e. that the user's Python code can `import`).
+# Build-time-only tools belong elsewhere.
+#
+# Pinning policy: pin to the major version range. Patch and minor
+# upgrades are picked up automatically by Renovate / Dependabot, which
+# re-runs CI to catch any regressions.
+#
+# This file is consumed by:
+#   * pyproject.toml [project.dependencies] (the published pip wheel)
+#   * scripts/create_appimage.sh             (AppImage bundle)
+#   * scripts/mac-release / macosx-build-homebrew.sh (macOS .app bundle)
+#   * scripts/build-windows-native.* path    (Windows installer)
+#
+# Distribution-native packages (.deb, .rpm) deliberately do NOT consume
+# this file; they declare a `Recommends:` on `python3-ipython` instead
+# so the distro packagers stay in control of the dependency.
+
+# IPython provides the rich interactive shell launched by
+# `pythonscad --ipython`. The basic embedded REPL launched by
+# `pythonscad --repl` works without any optional packages.
+ipython>=8,<10
