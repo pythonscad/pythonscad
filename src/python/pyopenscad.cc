@@ -982,25 +982,41 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
         "../lib/pythonscad-bundled-py",         // AppImage / Linux / Windows MSYS2
         "../Frameworks/pythonscad-bundled-py",  // macOS .app
       };
+      // Defensive: this runs during initPython, so any pending Python
+      // exception left here would poison every subsequent C-API call.
+      // PyErr_Clear() on every error path keeps the sys-path append
+      // strictly best-effort: a missing `sys.path` entry never aborts
+      // initialisation, but it never bleeds an exception either.
       PyObject *sysModule = PyImport_ImportModule("sys");
-      if (sysModule != nullptr) {
+      if (sysModule == nullptr) {
+        PyErr_Clear();
+      } else {
         PyObject *sysPath = PyObject_GetAttrString(sysModule, "path");
-        if (sysPath != nullptr) {
-          const fs::path appPath = fs::path(PlatformUtils::applicationPath());
-          for (const auto *relPath : bundledFallbackPaths) {
-            // Use fs::path's operator/ rather than string concatenation:
-            // `fs::path::preferred_separator` is `wchar_t` on Windows, which
-            // does not compose with `std::string` and breaks the MSYS2 build.
-            const fs::path p = appPath / relPath;
-            if (fs::is_directory(p)) {
+        if (sysPath == nullptr) {
+          PyErr_Clear();
+        } else {
+          if (PyList_Check(sysPath)) {
+            const fs::path appPath = fs::path(PlatformUtils::applicationPath());
+            for (const auto *relPath : bundledFallbackPaths) {
+              // Use fs::path's operator/ rather than string concatenation:
+              // `fs::path::preferred_separator` is `wchar_t` on Windows, which
+              // does not compose with `std::string` and breaks the MSYS2 build.
+              const fs::path p = appPath / relPath;
+              if (!fs::is_directory(p)) continue;
               const auto abs = fs::absolute(p).generic_string();
               PyObject *pathStr = PyUnicode_FromString(abs.c_str());
-              if (pathStr != nullptr) {
-                PyList_Append(sysPath, pathStr);
-                Py_DECREF(pathStr);
+              if (pathStr == nullptr) {
+                PyErr_Clear();
+                continue;
               }
+              if (PyList_Append(sysPath, pathStr) != 0) {
+                PyErr_Clear();
+              }
+              Py_DECREF(pathStr);
             }
           }
+          // Else: hostile sys.path replacement (user code replaced it
+          // with a non-list); skip silently rather than risk exception.
           Py_DECREF(sysPath);
         }
         Py_DECREF(sysModule);
@@ -1551,17 +1567,64 @@ static void run_basic_python_repl(void)
 // pre-imported. This is the historical `--ipython` behaviour (which
 // never actually launched IPython); it is now reachable explicitly via
 // `--repl` and as the fallback path of `ipython()` when IPython is not
-// installed.
-void repl(void)
+// installed. Returns 0 on clean exit, 1 on init failure.
+int repl(void)
 {
   initPython(PlatformUtils::applicationPath(), "", nullptr);
   if (!Py_IsInitialized()) {
     fprintf(stderr,
             "PythonSCAD: embedded Python interpreter could not be initialised; "
             "--repl is unavailable.\n");
-    return;
+    return 1;
   }
   run_basic_python_repl();
+  return 0;
+}
+
+// Distinguish "IPython is not installed" from "IPython is broken". Both
+// surface as `PyImport_ImportModule("IPython") == NULL`, but for the
+// "not installed" case we want a friendly diagnostic, while for the
+// broken case we want the actual Python traceback so the user can see
+// what dependency is missing or what the syntax error was.
+//
+// The active Python exception is fetched and either printed via
+// PyErr_Print() (broken IPython) or cleared (genuinely missing). The
+// `out_truly_missing` parameter is set to true for the missing-package
+// case.
+static void diagnose_failed_ipython_import(bool *out_truly_missing)
+{
+  *out_truly_missing = false;
+  PyObject *exc_type = nullptr;
+  PyObject *exc_value = nullptr;
+  PyObject *exc_tb = nullptr;
+  PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+  PyErr_NormalizeException(&exc_type, &exc_value, &exc_tb);
+
+  if (exc_type != nullptr && PyErr_GivenExceptionMatches(exc_type, PyExc_ModuleNotFoundError)) {
+    PyObject *missing_name = exc_value != nullptr ? PyObject_GetAttrString(exc_value, "name") : nullptr;
+    if (missing_name != nullptr && PyUnicode_Check(missing_name)) {
+      const char *missing_name_utf8 = PyUnicode_AsUTF8(missing_name);
+      if (missing_name_utf8 != nullptr && std::string(missing_name_utf8) == "IPython") {
+        *out_truly_missing = true;
+      }
+    }
+    Py_XDECREF(missing_name);
+  }
+
+  if (*out_truly_missing) {
+    // The user just doesn't have IPython installed -- no traceback
+    // needed, the friendly hint is enough.
+    Py_XDECREF(exc_type);
+    Py_XDECREF(exc_value);
+    Py_XDECREF(exc_tb);
+  } else {
+    // IPython is technically importable but raised something we don't
+    // recognise as "not installed" (broken transitive dependency,
+    // SyntaxError on bad install, ...). Print the actual exception so
+    // the user can fix it.
+    PyErr_Restore(exc_type, exc_value, exc_tb);
+    PyErr_Print();
+  }
 }
 
 // Launch the real IPython interactive shell. Forwards `args` as
@@ -1570,14 +1633,15 @@ void repl(void)
 // import *` into the user namespace. If IPython is not importable,
 // prints a diagnostic to stderr and falls back to the basic REPL so
 // the user still gets an interactive prompt instead of a hard error.
-void ipython(const std::vector<std::string>& args)
+// Returns 0 on clean exit, 1 on init failure.
+int ipython(const std::vector<std::string>& args)
 {
   initPython(PlatformUtils::applicationPath(), "", nullptr);
   if (!Py_IsInitialized()) {
     fprintf(stderr,
             "PythonSCAD: embedded Python interpreter could not be initialised; "
             "--ipython is unavailable.\n");
-    return;
+    return 1;
   }
 
   // Detect IPython availability up-front in C++ so the fallback to the
@@ -1585,13 +1649,20 @@ void ipython(const std::vector<std::string>& args)
   // sys.modules.
   PyObject *ipython_mod = PyImport_ImportModule("IPython");
   if (ipython_mod == nullptr) {
-    PyErr_Clear();
-    fprintf(stderr,
-            "PythonSCAD: IPython is not installed; falling back to the basic Python prompt.\n"
-            "            Run `pip install ipython` for a richer REPL, or pass --repl to skip "
-            "this notice.\n");
+    bool truly_missing = false;
+    diagnose_failed_ipython_import(&truly_missing);
+    if (truly_missing) {
+      fprintf(stderr,
+              "PythonSCAD: IPython is not installed; falling back to the basic Python prompt.\n"
+              "            Run `pip install ipython` for a richer REPL, or pass --repl to "
+              "skip this notice.\n");
+    } else {
+      fprintf(stderr,
+              "PythonSCAD: IPython could not be imported (see traceback above); falling "
+              "back to the basic Python prompt.\n");
+    }
     run_basic_python_repl();
-    return;
+    return 0;
   }
   Py_DECREF(ipython_mod);
 
@@ -1607,7 +1678,7 @@ void ipython(const std::vector<std::string>& args)
             "PythonSCAD: could not allocate IPython argv; falling back to the basic "
             "Python prompt.\n");
     run_basic_python_repl();
-    return;
+    return 0;
   }
   for (Py_ssize_t i = 0; i < static_cast<Py_ssize_t>(args.size()); ++i) {
     PyObject *arg =
@@ -1618,7 +1689,7 @@ void ipython(const std::vector<std::string>& args)
       fprintf(stderr,
               "PythonSCAD: could not decode argv[%zd]; falling back to the basic Python prompt.\n", i);
       run_basic_python_repl();
-      return;
+      return 0;
     }
     if (PyList_SetItem(argv_list, i, arg) != 0) {
       // PyList_SetItem only steals the reference on success.
@@ -1629,7 +1700,7 @@ void ipython(const std::vector<std::string>& args)
               "PythonSCAD: could not assemble IPython argv; falling back to the basic "
               "Python prompt.\n");
       run_basic_python_repl();
-      return;
+      return 0;
     }
   }
   PyObject *main_module = PyImport_AddModule("__main__");
@@ -1642,7 +1713,7 @@ void ipython(const std::vector<std::string>& args)
             "PythonSCAD: could not install IPython argv into __main__; falling back to "
             "the basic Python prompt.\n");
     run_basic_python_repl();
-    return;
+    return 0;
   }
   Py_DECREF(argv_list);
 
@@ -1650,7 +1721,8 @@ void ipython(const std::vector<std::string>& args)
   // private helper names to the user namespace. Some IPython exit paths
   // (e.g. EOF after the "Do you really want to exit" confirmation) clear
   // entries from that dict before returning, so the cleanup `del` must
-  // tolerate missing names.
+  // tolerate missing names. `_e` is included because it leaks out of the
+  // `except Exception as _e:` block when the pythonscad preload fails.
   static const char *boot =
     "import sys as _sys\n"
     "try:\n"
@@ -1660,7 +1732,8 @@ void ipython(const std::vector<std::string>& args)
     "        f'PythonSCAD: warning, could not preload pythonscad module: {_e}\\n')\n"
     "from IPython import start_ipython as _pythonscad_start_ipython\n"
     "_pythonscad_start_ipython(argv=__pythonscad_ipython_argv__, user_ns=globals())\n"
-    "for _name in ('__pythonscad_ipython_argv__', '_pythonscad_start_ipython', '_sys', '_name'):\n"
+    "for _name in ('__pythonscad_ipython_argv__', '_pythonscad_start_ipython',\n"
+    "              '_sys', '_name', '_e'):\n"
     "    globals().pop(_name, None)\n";
 
   if (PyRun_SimpleString(boot) != 0) {
@@ -1670,6 +1743,7 @@ void ipython(const std::vector<std::string>& args)
     fprintf(stderr, "PythonSCAD: IPython startup failed; falling back to the basic Python prompt.\n");
     run_basic_python_repl();
   }
+  return 0;
 }
 // -------------------------
 
