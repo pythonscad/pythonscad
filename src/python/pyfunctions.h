@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 
+typedef std::vector<int> intList;
 // Forward declarations
 class AbstractNode;
 class Tree;
@@ -50,6 +51,10 @@ PyObject *python_ifrep(PyObject *self, PyObject *args, PyObject *kwargs);
 
 // Transformation functions
 PyObject *python_rotate_sub(PyObject *obj, Vector3d vec3, double angle, PyObject *ref, int dragflag);
+PyObject *python_nb_remainder(PyObject *arg1, PyObject *arg2);
+PyObject *python_nb_mul(PyObject *arg1, PyObject *arg2);
+PyObject *python_nb_matmult(PyObject *arg1, PyObject *arg2);
+PyObject *python_number_trans(PyObject *pynum, Vector3d transvec, int vecs);
 
 PyObject *python_translate(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_translate_core(PyObject *obj, PyObject *v);
@@ -323,6 +328,12 @@ PyObject *python_dir_sub_core(PyObject *obj, double arg, int mode);
 // Math helper functions
 PyObject *python_math_sub1(PyObject *self, PyObject *args, PyObject *kwargs, int mode);
 PyObject *python_math_sub2(PyObject *self, PyObject *args, PyObject *kwargs, int mode);
+
+// Analysis
+PyObject *python_inside(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_oo_inside(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_children(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_oo_children(PyObject *self, PyObject *args, PyObject *kwargs);
 
 // Sphere creation helpers
 int sphereCalcIndInt(PyObject *func, Vector3d& dir);

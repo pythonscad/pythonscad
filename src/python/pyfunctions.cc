@@ -2341,8 +2341,7 @@ PyObject *python_oo_color(PyObject *obj, PyObject *args, PyObject *kwargs)
 }
 
 typedef std::vector<int> intList;
-
-PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
+/*UPyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
 {
   PyObject *dummydict;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
@@ -3066,6 +3065,7 @@ PyObject *python_oo_children(PyObject *obj, PyObject *args, PyObject *kwargs)
   }
   return python_children_core(obj);
 }
+*/
 
 PyObject *python_oversample_core(PyObject *obj, double size, const char *texture, const char *projection,
                                  double texturewidth, double textureheight, double texturedepth)
@@ -3793,7 +3793,7 @@ PyObject *python_oo_path_extrude(PyObject *obj, PyObject *args, PyObject *kwargs
                            fa, fs);
 }
 
-PyObject *python_csg_core(std::shared_ptr<CsgOpNode>& node,
+/* PyObject *python_csg_core(std::shared_ptr<CsgOpNode>& node,
                           const std::vector<std::shared_ptr<AbstractNode>>& childs)
 {
   PyTypeObject *type = &PyOpenSCADType;
@@ -4411,7 +4411,7 @@ PyObject *python_oo_resize(PyObject *obj, PyObject *args, PyObject *kwargs)
   }
   return python_resize_core(obj, newsize, autosize, convexity);
 }
-
+*/
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
 PyObject *python_roof_core(PyObject *obj, const char *method, int convexity,
                            CurveDiscretizer&& discretizer)
