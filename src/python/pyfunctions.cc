@@ -2245,6 +2245,8 @@ PyObject *python__getitem__(PyObject *obj, PyObject *key)
     return python_position_core(obj);
   } else if (keystr == "bbox") {
     return python_bbox_core(obj);
+  } else if (keystr == "c") {
+    return python_solid_root_color_rgba(obj);
   }
   return result;
 }
@@ -2510,6 +2512,26 @@ PyObject *python_oo_inside(PyObject *obj, PyObject *args, PyObject *kwargs)
     return NULL;
   }
   return python_inside_core(obj, pypoint);
+}
+
+PyObject *python_solid_root_color_rgba(PyObject *obj)
+{
+  PyObject *dummy_dict = nullptr;
+  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNodeMulti(obj, &dummy_dict);
+  if (node == nullptr) {
+    PyErr_SetString(PyExc_TypeError, "invalid solid for attribute c");
+    return nullptr;
+  }
+  const auto color_node = std::dynamic_pointer_cast<ColorNode>(node);
+  if (!color_node) {
+    Py_RETURN_NONE;
+  }
+  const Color4f& col = color_node->color;
+  if (!col.isValid()) {
+    Py_RETURN_NONE;
+  }
+  return Py_BuildValue("(dddd)", static_cast<double>(col.r()), static_cast<double>(col.g()),
+                       static_cast<double>(col.b()), static_cast<double>(col.a()));
 }
 
 PyObject *python_bbox_core(PyObject *obj)
