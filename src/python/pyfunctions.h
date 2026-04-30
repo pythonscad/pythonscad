@@ -107,6 +107,7 @@ PyObject *python_atan(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_dot(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_cross(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_norm(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_vector(PyObject *self, PyObject *args, PyObject *kwargs);
 
 // CSG operations
 PyObject *python_union(PyObject *self, PyObject *args, PyObject *kwargs);
@@ -161,6 +162,7 @@ PyObject *python_only(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_oo_highlight(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_oo_background(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_oo_only(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_rendervars(PyObject *self, PyObject *args, PyObject *kwargs);
 
 // Analysis functions
 PyObject *python_mesh(PyObject *self, PyObject *args, PyObject *kwargs);
@@ -195,6 +197,7 @@ PyObject *python_fillet(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_oo_fillet(PyObject *obj, PyObject *args, PyObject *kwargs);
 
 // Import/Export functions
+PyObject *python_machineconfig(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_export(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_export_core(PyObject *obj, char *file);
 PyObject *python_oo_export(PyObject *obj, PyObject *args, PyObject *kwargs);

@@ -40,12 +40,75 @@
 #include <SurfaceNode.h>
 #include <RenderNode.h>
 #include <ProjectionNode.h>
+#include <OffsetNode.h>
 #include <TransformNode.h>
 #include <ColorUtil.h>
 #include "pyfunctions.h"
 
 // std::string lookup_file(const std::string& filename, const std::string& path,
 //                         const std::string& fallbackpath);
+
+PyObject *python_offset_core(PyObject *obj, double r, double delta, PyObject *chamfer,
+                             CurveDiscretizer&& discretizer)
+{
+  DECLARE_INSTANCE();
+  auto node = std::make_shared<OffsetNode>(instance, discretizer);
+
+  PyObject *dummydict;
+  PyTypeObject *type = PyOpenSCADObjectType(obj);
+  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
+  if (child == NULL) {
+    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in offset");
+    return NULL;
+  }
+
+  node->delta = 1;
+  node->chamfer = false;
+  node->join_type = Clipper2Lib::JoinType::Round;
+  if (!isnan(r)) {
+    node->delta = r;
+  } else if (!isnan(delta)) {
+    node->delta = delta;
+    node->join_type = Clipper2Lib::JoinType::Miter;
+    if (chamfer == Py_True) {
+      node->chamfer = true;
+      node->join_type = Clipper2Lib::JoinType::Square;
+    } else if (chamfer == Py_False || chamfer == NULL) node->chamfer = 0;
+    else {
+      PyErr_SetString(PyExc_TypeError, "Unknown Value for chamfer parameter");
+      return NULL;
+    }
+  }
+  node->children.push_back(child);
+  return PyOpenSCADObjectFromNode(type, node);
+}
+
+PyObject *python_offset(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"obj", "r", "delta", "chamfer", NULL};
+  PyObject *obj = NULL;
+  double r = NAN, delta = NAN;
+  PyObject *chamfer = NULL;
+  auto discretizer = CreateCurveDiscretizer(kwargs);
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|ddO", kwlist, &obj, &r, &delta, &chamfer)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing offset(object,r,delta)");
+    return NULL;
+  }
+  return python_offset_core(obj, r, delta, chamfer, std::move(discretizer));
+}
+
+PyObject *python_oo_offset(PyObject *obj, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"r", "delta", "chamfer", NULL};
+  double r = NAN, delta = NAN;
+  PyObject *chamfer = NULL;
+  auto discretizer = CreateCurveDiscretizer(kwargs);
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ddO", kwlist, &r, &delta, &chamfer)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing offset(object,r,delta)");
+    return NULL;
+  }
+  return python_offset_core(obj, r, delta, chamfer, std::move(discretizer));
+}
 
 PyObject *python_pull_core(PyObject *obj, PyObject *anchor, PyObject *dir)
 {
@@ -774,6 +837,30 @@ PyObject *python_oo_align(PyObject *obj, PyObject *args, PyObject *kwargs)
     return NULL;
   }
   return python_align_core(obj, pyrefmat, pyobjmat, flip);
+}
+
+PyObject *python_oo_clone(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  PyObject *dict;
+  PyObject *obj = NULL;
+  char *kwlist[] = {"obj", NULL};
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &obj)) {
+    PyErr_SetString(PyExc_TypeError, "Error during clone");
+    return NULL;
+  }
+  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNodeMulti(obj, &dict);
+  if (node.use_count() > 1) ((PyOpenSCADObject *)self)->node = node->clone();
+  else ((PyOpenSCADObject *)self)->node = node;
+
+  if (dict != nullptr) {
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+      PyDict_SetItem(((PyOpenSCADObject *)self)->dict, key, value);
+    }
+  }
+  Py_RETURN_NONE;
 }
 
 PyObject *python_debug_modifier(PyObject *arg, int mode)

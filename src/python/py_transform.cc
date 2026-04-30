@@ -461,6 +461,108 @@ PyObject *python_oo_translate(PyObject *obj, PyObject *args, PyObject *kwargs)
   return python_translate_core(obj, v);
 }
 
+PyObject *python_multmatrix_sub(PyObject *pyobj, PyObject *pymat, int div)
+{
+  Matrix4d mat;
+  if (!python_tomatrix(pymat, mat)) {
+    double w = mat(3, 3);
+    if (w != 1.0) mat = mat / w;
+  } else {
+    PyErr_SetString(PyExc_TypeError, "Matrix vector should be 4x4 array");
+    return NULL;
+  }
+  if (div) {
+    auto tmp = mat.inverse().eval();
+    mat = tmp;
+  }
+
+  Matrix4d objmat;
+  if (!python_tomatrix(pyobj, objmat)) {
+    objmat = objmat * mat;
+    return python_frommatrix(objmat);
+  }
+
+  Vector3d objvec;
+  if (!python_tovector(pyobj, objvec)) {
+    Vector4d objvec4(objvec[0], objvec[1], objvec[2], 1);
+    objvec4 = mat * objvec4;
+    return python_fromvector(objvec4.head<3>());
+  }
+  DECLARE_INSTANCE();
+  auto node = std::make_shared<TransformNode>(instance, "multmatrix");
+  std::shared_ptr<AbstractNode> child;
+  PyObject *child_dict;
+  PyTypeObject *type = PyOpenSCADObjectType(pyobj);
+  child = PyOpenSCADObjectToNodeMulti(pyobj, &child_dict);
+  if (!child) {
+    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in multmatrix");
+    return NULL;
+  }
+  node->setPyName(child->getPyName());
+
+  node->matrix = mat;
+  node->children.push_back(child);
+  PyObject *pyresult = PyOpenSCADObjectFromNode(type, node);
+  if (child_dict != nullptr) {
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(child_dict, &pos, &key, &value)) {
+      Matrix4d raw;
+      if (python_tomatrix(value, raw)) return nullptr;
+      PyObject *value1 = python_frommatrix(node->matrix * raw);
+      if (value1 != nullptr) PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value1);
+      else PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    }
+  }
+  return pyresult;
+}
+
+PyObject *python_multmatrix(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"obj", "m", NULL};
+  PyObject *obj = NULL;
+  PyObject *mat = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO!", kwlist, &obj, &PyList_Type, &mat)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing multmatrix(object, vec16)");
+    return NULL;
+  }
+  return python_multmatrix_sub(obj, mat, 0);
+}
+
+PyObject *python_oo_multmatrix(PyObject *obj, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"m", NULL};
+  PyObject *mat = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", kwlist, &PyList_Type, &mat)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing multmatrix(object, vec16)");
+    return NULL;
+  }
+  return python_multmatrix_sub(obj, mat, 0);
+}
+
+PyObject *python_divmatrix(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"obj", "m", NULL};
+  PyObject *obj = NULL;
+  PyObject *mat = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO!", kwlist, &obj, &PyList_Type, &mat)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing divmatrix(object, vec16)");
+    return NULL;
+  }
+  return python_multmatrix_sub(obj, mat, 1);
+}
+
+PyObject *python_oo_divmatrix(PyObject *obj, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"m", NULL};
+  PyObject *mat = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", kwlist, &PyList_Type, &mat)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing divmatrix(object, vec16)");
+    return NULL;
+  }
+  return python_multmatrix_sub(obj, mat, 1);
+}
+
 PyObject *python_dir_sub_core(PyObject *obj, double arg, int mode)
 {
   if (mode < 6) {

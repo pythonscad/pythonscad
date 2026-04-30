@@ -35,6 +35,7 @@
 #include <io/fileutils.h>
 #include <GeometryEvaluator.h>
 #include <platform/PlatformUtils.h>
+#include <handle_dep.h>
 #include <Expression.h>
 #include "BuiltinContext.h"
 #include <primitives.h>
@@ -272,6 +273,85 @@ PyObject *python_oo_export(PyObject *obj, PyObject *args, PyObject *kwargs)
     return NULL;
   }
   return python_export_core(obj, file);
+}
+
+PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, ImportType type)
+{
+  DECLARE_INSTANCE();
+  char *kwlist[] = {"file", "layer", "convexity", "origin", "scale", "width", "height", "center",
+                    "dpi",  "id",    "stroke",    "fn",     "fa",    "fs",    NULL};
+  double fn = NAN, fa = NAN, fs = NAN;
+  PyObject *stroke = nullptr;
+
+  std::string filename;
+  const char *v = NULL, *layer = NULL, *id = NULL;
+  PyObject *center = NULL;
+  int convexity = 2;
+  double scale = 1.0, width = 1, height = 1, dpi = 1.0;
+  PyObject *origin = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|siO!dddOdsOddd", kwlist, &v, &layer, &convexity,
+                                   &PyList_Type, &origin, &scale, &width, &height, &center, &dpi, &id,
+                                   &stroke, &fn, &fa, &fs
+
+                                   )) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing osimport(filename)");
+    return NULL;
+  }
+  filename = lookup_file(v == NULL ? "" : v, python_scriptpath.parent_path().u8string(),
+                         instance->location().filePath().parent_path().string());
+  if (!filename.empty()) handle_dep(filename);
+  ImportType actualtype = type;
+  if (actualtype == ImportType::UNKNOWN) {
+    std::string extraw = fs::path(filename).extension().generic_string();
+    std::string ext = boost::algorithm::to_lower_copy(extraw);
+    if (ext == ".stl") actualtype = ImportType::STL;
+    else if (ext == ".off") actualtype = ImportType::OFF;
+    else if (ext == ".obj") actualtype = ImportType::OBJ;
+    else if (ext == ".dxf") actualtype = ImportType::DXF;
+    else if (ext == ".nef3") actualtype = ImportType::NEF3;
+    else if (ext == ".3mf") actualtype = ImportType::_3MF;
+    else if (ext == ".amf") actualtype = ImportType::AMF;
+    else if (ext == ".svg") actualtype = ImportType::SVG;
+    else if (ext == ".cdr") actualtype = ImportType::CDR;
+    else if (ext == ".stp") actualtype = ImportType::STEP;
+    else if (ext == ".step") actualtype = ImportType::STEP;
+  }
+
+  auto node = std::make_shared<ImportNode>(instance, actualtype, CreateCurveDiscretizer(kwargs));
+
+  node->filename = filename;
+
+  if (layer != NULL) node->layer = layer;
+  if (id != NULL) node->id = id;
+  node->convexity = convexity;
+  if (node->convexity <= 0) node->convexity = 1;
+
+  if (origin != NULL && PyList_Check(origin) && PyList_Size(origin) == 2) {
+    node->origin_x = PyFloat_AsDouble(PyList_GetItem(origin, 0));
+    node->origin_y = PyFloat_AsDouble(PyList_GetItem(origin, 1));
+  }
+
+  node->center = 0;
+  if (center == Py_True) node->center = 1;
+
+  node->stroke = true;
+  if (stroke == Py_False) node->stroke = false;
+
+  node->scale = scale;
+  if (node->scale <= 0) node->scale = 1;
+
+  node->dpi = ImportNode::SVG_DEFAULT_DPI;
+  double val = dpi;
+  if (val < 0.001) {
+    PyErr_SetString(PyExc_TypeError, "Invalid dpi value giving");
+    return NULL;
+  } else {
+    node->dpi = val;
+  }
+
+  node->width = width;
+  node->height = height;
+  return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
 }
 
 PyObject *python_import(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -730,4 +810,92 @@ PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs, int mod
   }
   if (genlang_result_node == nullptr) Py_RETURN_NONE;
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, genlang_result_node);
+}
+
+// global accessible version of the machine config settings that are
+// used by export_gcode for colormapping power and feed.
+extern boost::property_tree::ptree _machineconfig_settings_;
+
+// convert a python dictionary directly to a property tree
+boost::property_tree::ptree pyToPtree(PyObject *obj)
+{
+  boost::property_tree::ptree pt;
+
+  if (PyDict_Check(obj)) {
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+
+    while (PyDict_Next(obj, &pos, &key, &value)) {
+      std::string keyStr = PyUnicode_AsUTF8(key);
+      pt.add_child(keyStr, pyToPtree(value));
+    }
+  } else if (PyList_Check(obj)) {
+    Py_ssize_t size = PyList_Size(obj);
+    for (Py_ssize_t i = 0; i < size; ++i) {
+      PyObject *item = PyList_GetItem(obj, i);  // borrowed reference
+      pt.push_back(std::make_pair("", pyToPtree(item)));
+    }
+  } else if (PyBool_Check(obj)) {
+    // important: Check Bool BEFORE Long.
+    bool value = (obj == Py_True);
+    pt.put("", value);
+  } else if (PyLong_Check(obj)) {
+    pt.put("", PyLong_AsLongLong(obj));
+  } else if (PyFloat_Check(obj)) {
+    pt.put("", PyFloat_AsDouble(obj));
+  } else if (PyUnicode_Check(obj)) {
+    pt.put("", PyUnicode_AsUTF8(obj));
+  } else if (obj == Py_None) {
+    // property_tree does not support a true 'null', so set it to an
+    // empty node.
+    pt.put("", "");
+  }
+
+  return pt;
+}
+
+PyObject *python_machineconfig(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"config", NULL};
+  PyObject *config;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &config)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing machineconfig");
+    return NULL;
+  }
+
+  if (!PyDict_Check(config)) {
+    PyErr_SetString(PyExc_TypeError, "Config must be a dictionary");
+    return NULL;
+  }
+
+  // parse the python dictionary directly into a property tree
+  _machineconfig_settings_ = pyToPtree(config);
+
+  Py_RETURN_NONE;
+}
+
+PyObject *python_rendervars(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"vpd", "vpf", "vpr", "vpt", NULL};
+  double x, y, z;
+  double vpd = NAN;
+  double vpf = NAN;
+  PyObject *vpr = nullptr;
+  PyObject *vpt = nullptr;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ddOO", kwlist, &vpd, &vpf, &vpr, &vpt)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing rendervars");
+    return NULL;
+  }
+  renderVarsSet = std::make_shared<RenderVariables>();
+
+  if (!isnan(vpd)) renderVarsSet->camera.viewer_distance = vpd;
+  if (!isnan(vpf)) renderVarsSet->camera.fov = vpf;
+  if (vpt != nullptr && !python_vectorval(vpt, 3, 3, &x, &y, &z))
+    renderVarsSet->camera.object_trans = Vector3d(x, y, z);
+  if (vpr != nullptr && !python_vectorval(vpr, 3, 3, &x, &y, &z))
+    renderVarsSet->camera.object_rot = Vector3d(x, y, z);
+
+  Py_RETURN_NONE;
 }
