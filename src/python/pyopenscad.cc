@@ -1491,11 +1491,14 @@ PyMODINIT_FUNC PyInit__openscad(void)
 
 // Run sys.__interactivehook__ to enable readline / tab completion / history
 // in the basic embedded REPL. Returns 0 on success (i.e. carry on running
-// the REPL) and is best-effort -- a missing hook is not an error.
+// the REPL) and is best-effort -- a missing hook is not an error. Each
+// error path explicitly clears the Python exception state so subsequent
+// C-API calls (PyRun_AnyFileFlags etc.) cannot inherit a stale exception.
 static int pymain_run_interactive_hook(void)
 {
   PyObject *sys = PyImport_ImportModule("sys");
   if (sys == nullptr) {
+    PyErr_Clear();
     PySys_WriteStderr("Failed importing sys for sys.__interactivehook__\n");
     return 0;
   }
@@ -1508,6 +1511,7 @@ static int pymain_run_interactive_hook(void)
   }
 
   if (PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {
+    PyErr_Clear();
     PySys_WriteStderr("Failed auditing sys.__interactivehook__\n");
     Py_DECREF(hook);
     return 0;
@@ -1515,6 +1519,7 @@ static int pymain_run_interactive_hook(void)
   PyObject *result = PyObject_CallNoArgs(hook);
   Py_DECREF(hook);
   if (result == nullptr) {
+    PyErr_Clear();
     PySys_WriteStderr("Failed calling sys.__interactivehook__\n");
     return 0;
   }
@@ -1522,27 +1527,58 @@ static int pymain_run_interactive_hook(void)
   return 0;
 }
 
-// Drop into the basic embedded CPython REPL on stdin. This is the
-// historical `--ipython` behaviour (which never actually launched
-// IPython); it is still reachable explicitly via `--repl` and as the
-// fallback path of `ipython()` when IPython is not installed.
-void repl(void)
+// Drop into the basic embedded CPython REPL on stdin, with `pythonscad`
+// preloaded into __main__ so the user sees the same `cube`/`show`/...
+// names that the IPython path provides. Used by the explicit `--repl`
+// flag and as the fallback when `--ipython` cannot launch IPython.
+//
+// This helper assumes Py_IsInitialized() is already true; callers must
+// gate it behind that check.
+static void run_basic_python_repl(void)
 {
-  initPython(PlatformUtils::applicationPath(), "", nullptr);
+  // Best-effort preload: if `pythonscad` is unavailable for some reason
+  // (broken install, partially failed initPython), the REPL still
+  // launches without the convenience namespace.
+  if (PyRun_SimpleString("from pythonscad import *  # noqa: F401,F403\n") != 0) {
+    PyErr_Clear();
+  }
   pymain_run_interactive_hook();
   PyCompilerFlags cf = _PyCompilerFlags_INIT;
   PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
 }
 
-// Launch the real IPython interactive shell. Forwards `args` as IPython's
-// argv (so `pythonscad --ipython script.py arg1` runs the script with the
-// IPython kernel) and preloads `from pythonscad import *` into the user
-// namespace. If IPython is not importable, prints a one-line diagnostic
-// to stderr and falls back to the basic REPL so the user still gets an
-// interactive prompt instead of a hard error.
+// Open the basic embedded CPython REPL with the `pythonscad` module
+// pre-imported. This is the historical `--ipython` behaviour (which
+// never actually launched IPython); it is now reachable explicitly via
+// `--repl` and as the fallback path of `ipython()` when IPython is not
+// installed.
+void repl(void)
+{
+  initPython(PlatformUtils::applicationPath(), "", nullptr);
+  if (!Py_IsInitialized()) {
+    fprintf(stderr,
+            "PythonSCAD: embedded Python interpreter could not be initialised; "
+            "--repl is unavailable.\n");
+    return;
+  }
+  run_basic_python_repl();
+}
+
+// Launch the real IPython interactive shell. Forwards `args` as
+// IPython's argv (so `pythonscad --ipython script.py arg1` runs the
+// script under the IPython kernel) and preloads `from pythonscad
+// import *` into the user namespace. If IPython is not importable,
+// prints a diagnostic to stderr and falls back to the basic REPL so
+// the user still gets an interactive prompt instead of a hard error.
 void ipython(const std::vector<std::string>& args)
 {
   initPython(PlatformUtils::applicationPath(), "", nullptr);
+  if (!Py_IsInitialized()) {
+    fprintf(stderr,
+            "PythonSCAD: embedded Python interpreter could not be initialised; "
+            "--ipython is unavailable.\n");
+    return;
+  }
 
   // Detect IPython availability up-front in C++ so the fallback to the
   // basic REPL happens cleanly without a half-initialised IPython on
@@ -1554,24 +1590,67 @@ void ipython(const std::vector<std::string>& args)
             "PythonSCAD: IPython is not installed; falling back to the basic Python prompt.\n"
             "            Run `pip install ipython` for a richer REPL, or pass --repl to skip "
             "this notice.\n");
-    pymain_run_interactive_hook();
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
+    run_basic_python_repl();
     return;
   }
   Py_DECREF(ipython_mod);
 
-  // Stash the requested IPython argv into __main__ as a private name so
-  // the bootstrap snippet can pop it back out after running.
+  // Build the IPython argv list. PyUnicode_DecodeFSDefaultAndSize is the
+  // right primitive for argv strings since they may carry non-UTF-8
+  // bytes on Linux/macOS or non-ASCII filenames on Windows. Any failure
+  // (allocation, decoding, dict insertion) cleanly tears down what we
+  // built so far and falls back to the basic REPL instead of crashing.
   PyObject *argv_list = PyList_New(static_cast<Py_ssize_t>(args.size()));
+  if (argv_list == nullptr) {
+    PyErr_Clear();
+    fprintf(stderr,
+            "PythonSCAD: could not allocate IPython argv; falling back to the basic "
+            "Python prompt.\n");
+    run_basic_python_repl();
+    return;
+  }
   for (Py_ssize_t i = 0; i < static_cast<Py_ssize_t>(args.size()); ++i) {
-    PyList_SetItem(argv_list, i, PyUnicode_FromString(args[i].c_str()));
+    PyObject *arg =
+      PyUnicode_DecodeFSDefaultAndSize(args[i].data(), static_cast<Py_ssize_t>(args[i].size()));
+    if (arg == nullptr) {
+      PyErr_Clear();
+      Py_DECREF(argv_list);
+      fprintf(stderr,
+              "PythonSCAD: could not decode argv[%zd]; falling back to the basic Python prompt.\n", i);
+      run_basic_python_repl();
+      return;
+    }
+    if (PyList_SetItem(argv_list, i, arg) != 0) {
+      // PyList_SetItem only steals the reference on success.
+      PyErr_Clear();
+      Py_DECREF(arg);
+      Py_DECREF(argv_list);
+      fprintf(stderr,
+              "PythonSCAD: could not assemble IPython argv; falling back to the basic "
+              "Python prompt.\n");
+      run_basic_python_repl();
+      return;
+    }
   }
   PyObject *main_module = PyImport_AddModule("__main__");
-  PyObject *main_dict = PyModule_GetDict(main_module);
-  PyDict_SetItemString(main_dict, "__pythonscad_ipython_argv__", argv_list);
+  PyObject *main_dict = main_module != nullptr ? PyModule_GetDict(main_module) : nullptr;
+  if (main_dict == nullptr ||
+      PyDict_SetItemString(main_dict, "__pythonscad_ipython_argv__", argv_list) != 0) {
+    PyErr_Clear();
+    Py_DECREF(argv_list);
+    fprintf(stderr,
+            "PythonSCAD: could not install IPython argv into __main__; falling back to "
+            "the basic Python prompt.\n");
+    run_basic_python_repl();
+    return;
+  }
   Py_DECREF(argv_list);
 
+  // IPython's `start_ipython(user_ns=globals())` exposes the bootstrap's
+  // private helper names to the user namespace. Some IPython exit paths
+  // (e.g. EOF after the "Do you really want to exit" confirmation) clear
+  // entries from that dict before returning, so the cleanup `del` must
+  // tolerate missing names.
   static const char *boot =
     "import sys as _sys\n"
     "try:\n"
@@ -1581,10 +1660,15 @@ void ipython(const std::vector<std::string>& args)
     "        f'PythonSCAD: warning, could not preload pythonscad module: {_e}\\n')\n"
     "from IPython import start_ipython as _pythonscad_start_ipython\n"
     "_pythonscad_start_ipython(argv=__pythonscad_ipython_argv__, user_ns=globals())\n"
-    "del __pythonscad_ipython_argv__, _pythonscad_start_ipython, _sys\n";
+    "for _name in ('__pythonscad_ipython_argv__', '_pythonscad_start_ipython', '_sys', '_name'):\n"
+    "    globals().pop(_name, None)\n";
 
   if (PyRun_SimpleString(boot) != 0) {
-    PyErr_Clear();
+    // Surface the actual Python exception so failures are diagnosable
+    // instead of silently dropping the user into the fallback REPL.
+    PyErr_Print();
+    fprintf(stderr, "PythonSCAD: IPython startup failed; falling back to the basic Python prompt.\n");
+    run_basic_python_repl();
   }
 }
 // -------------------------
