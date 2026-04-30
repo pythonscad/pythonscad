@@ -18,8 +18,11 @@ import subprocess
 import sys
 
 
+# --repl preloads `from pythonscad import *` into __main__, so this
+# script intentionally relies on `cube` being available without an
+# explicit import. If the preload regresses, the script will raise
+# NameError and the smoke test will fail.
 SCRIPT = (
-    "from pythonscad import cube\n"
     "c = cube([1, 1, 1])\n"
     "print('OK', type(c).__name__)\n"
 )

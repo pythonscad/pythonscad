@@ -22,11 +22,14 @@ import subprocess
 import sys
 
 
+# NB: no trailing `exit` line. Both the basic REPL and IPython exit
+# cleanly when stdin reaches EOF, and an explicit `exit` (without parens)
+# would either no-op or trip IPython's "Use exit()..." advisory message,
+# both of which make the test less deterministic.
 SCRIPT = (
     "from pythonscad import cube\n"
     "c = cube([1, 1, 1])\n"
     "print('OK', type(c).__name__)\n"
-    "exit\n"
 )
 
 TIMEOUT_SECONDS = 60
