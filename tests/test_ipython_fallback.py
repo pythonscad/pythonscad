@@ -2,8 +2,8 @@
 """Verify `--ipython` falls back to the basic REPL when IPython is missing.
 
 This is the Layer-3 test from the PR plan: the goal is to assert that a
-missing IPython is handled gracefully (one-line diagnostic + drop into
-the basic Python REPL), not as a hard error.
+missing IPython is handled gracefully (a friendly diagnostic on stderr
+plus a drop into the basic Python REPL), not as a hard error.
 
 The trick is to *force* the embedded interpreter to fail importing
 IPython even on a CI worker that has IPython globally installed. The
@@ -28,10 +28,9 @@ import subprocess
 import sys
 
 
-SCRIPT = (
-    "print('FALLBACK_OK')\n"
-    "exit()\n"
-)
+# Rely on EOF to terminate the basic REPL; an explicit `exit()` is
+# unnecessary and would hide unrelated EOF-handling regressions.
+SCRIPT = "print('FALLBACK_OK')\n"
 
 TIMEOUT_SECONDS = 60
 
