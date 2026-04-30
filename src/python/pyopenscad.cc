@@ -978,7 +978,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     // `libraries/python/` (which holds PythonSCAD-owned overlays that
     // *should* take priority).
     {
-      const std::array<std::string, 2> bundledFallbackPaths = {
+      const std::array<const char *, 2> bundledFallbackPaths = {
         "../lib/pythonscad-bundled-py",         // AppImage / Linux / Windows MSYS2
         "../Frameworks/pythonscad-bundled-py",  // macOS .app
       };
@@ -986,9 +986,12 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       if (sysModule != nullptr) {
         PyObject *sysPath = PyObject_GetAttrString(sysModule, "path");
         if (sysPath != nullptr) {
-          for (const auto& relPath : bundledFallbackPaths) {
-            const auto p =
-              fs::path(PlatformUtils::applicationPath() + fs::path::preferred_separator + relPath);
+          const fs::path appPath = fs::path(PlatformUtils::applicationPath());
+          for (const auto *relPath : bundledFallbackPaths) {
+            // Use fs::path's operator/ rather than string concatenation:
+            // `fs::path::preferred_separator` is `wchar_t` on Windows, which
+            // does not compose with `std::string` and breaks the MSYS2 build.
+            const fs::path p = appPath / relPath;
             if (fs::is_directory(p)) {
               const auto abs = fs::absolute(p).generic_string();
               PyObject *pathStr = PyUnicode_FromString(abs.c_str());
