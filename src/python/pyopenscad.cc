@@ -1609,6 +1609,12 @@ static void diagnose_failed_ipython_import(bool *out_truly_missing)
       }
     }
     Py_XDECREF(missing_name);
+    // Probing exc_value.name (PyObject_GetAttrString / PyUnicode_AsUTF8)
+    // can set a new exception on failure. We're about to either restore the
+    // original ImportError for PyErr_Print() or drop it entirely, so any
+    // leaked probing exception must be cleared first; otherwise it would
+    // poison subsequent C-API calls in the fallback REPL.
+    PyErr_Clear();
   }
 
   if (*out_truly_missing) {
