@@ -5,18 +5,21 @@ This is the Layer-3 test from the PR plan: the goal is to assert that a
 missing IPython is handled gracefully (a friendly diagnostic on stderr
 plus a drop into the basic Python REPL), not as a hard error.
 
-The trick is to *force* the embedded interpreter to fail importing
-IPython even on a CI worker that has IPython globally installed. The
-cleanest way is to constrain `PYTHONPATH` to a directory that hides
-IPython but still exposes PythonSCAD's own `pythonscad`/`openscad`
-overlays plus the standard library, *and* set `PYTHONNOUSERSITE=1`
-so the user-site directory is ignored.
+The test tries to *force* the embedded interpreter to fail importing
+IPython even on a CI worker that has IPython installed by scrubbing
+the environment that most commonly makes third-party packages visible:
+`PYTHONPATH` is cleared, `PYTHONNOUSERSITE=1` disables the user-site
+directory, and `IPYTHONDIR` is removed. The embedded interpreter still
+sees the standard library and the in-tree `libraries/python/...`
+overlays because those are wired up in C++ via `sys.path` regardless
+of `PYTHONPATH`.
 
-If the test environment somehow still imports IPython (e.g. because
-IPython was installed straight into the system stdlib path which is
-unusual), the test treats that as inconclusive and skips with a clear
-INFO message instead of failing -- the Layer-1 smoke covers the happy
-path and we do not want false negatives on exotic CI workers.
+If the test environment somehow still imports IPython (for example
+because it is available from system-level paths outside user-site or
+`PYTHONPATH`), the result is treated as inconclusive and the test
+skips with a clear INFO message instead of failing -- the Layer-1
+smoke covers the happy path and we do not want false negatives on
+exotic CI workers.
 
 Usage:
     test_ipython_fallback.py <path-to-pythonscad>
