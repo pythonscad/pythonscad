@@ -32,6 +32,39 @@ typedef struct {
 void PyObjectDeleter(PyObject *pObject);
 using PyObjectUniquePtr = std::unique_ptr<PyObject, decltype(&PyObjectDeleter)>;
 
+// Encode a Python str object as a UTF-8 std::string and store it in
+// ``out``. Returns ``true`` on success.
+//
+// On failure returns ``false`` with a Python exception set, and the
+// caller is expected to propagate it (return ``nullptr`` / ``-1`` /
+// etc., or use ``PyErr_ExceptionMatches`` to choose between
+// best-effort skipping and propagation):
+//
+//   * If ``obj`` is not a ``str`` (or is null), raises a ``TypeError``
+//     whose message includes ``context`` and the offending type
+//     (e.g. ``"export(): expected str, got int"``).
+//   * If ``PyUnicode_AsEncodedString`` raises a ``UnicodeError`` (the
+//     helper uses the ``"strict"`` error handler so lone surrogates
+//     and other unencodable code points reliably error rather than
+//     silently substitute U+FFFD), the helper clears it and re-raises
+//     as a ``TypeError`` for consistency with the non-str branch.
+//   * If a custom utf-8 codec misbehaves and returns a non-``bytes``
+//     object (which would make ``PyBytes_AS_STRING`` UB), raises a
+//     ``TypeError`` with ``context`` mentioning the codec.
+//   * Any other exception from ``PyUnicode_AsEncodedString``
+//     (notably ``MemoryError`` or ``KeyboardInterrupt`` from a custom
+//     codec hook) is propagated *verbatim* -- the helper does not
+//     downgrade it to a ``TypeError``. Callers in ``void`` contexts
+//     that cannot propagate must therefore call ``PyErr_Clear()``
+//     themselves, or be restructured to return a status.
+//
+// On success ``out`` holds the UTF-8 bytes and the intermediate
+// bytes object is released, so this is a leak-free replacement for
+// the broken ``PyUnicode_AsEncodedString`` + ``PyBytes_AS_STRING`` +
+// check-the-wrong-pointer idiom that used to be sprinkled across
+// pyfunctions.cc (see issue #587).
+bool python_pyobject_to_utf8(PyObject *obj, std::string& out, const char *context);
+
 // Sole init entry point for the `_openscad` extension module.  Used
 // both when the module is embedded in the GUI/CLI (via
 // `PyImport_AppendInittab("_openscad", ...)`) and when CPython loads the
@@ -81,7 +114,26 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
 int python_numberval(PyObject *number, double *result, int *flags = nullptr, int flagor = 0);
 void get_fnas(double& fn, double& fa, double& fs);
 void python_retrieve_pyname(const std::shared_ptr<AbstractNode>& node);
-void python_build_hashmap(const std::shared_ptr<AbstractNode>& node, int level);
+// Walk ``node`` (and its subtree, up to a fixed recursion depth) and
+// register triples in the global ``mapping_*`` arrays for every
+// Python global that points at this node:
+//   - ``mapping_name``  -- the ``__main__`` dict key (UTF-8)
+//   - ``mapping_code``  -- a stringified node-tree dump (currently
+//                          empty: the ``python_hierdump`` call is
+//                          commented out)
+//   - ``mapping_level`` -- the ``PyDict_Next`` iteration position at
+//                          which the binding was found, *not* the
+//                          recursion depth. The variable is
+//                          historically misnamed; see issue tracker
+//                          for the rename.
+// Best-effort -- non-str ``__main__`` keys are silently skipped.
+//
+// Returns ``true`` on success. Returns ``false`` with a Python
+// exception set if the helper raises something we cannot reasonably
+// downgrade to "skip this entry" (notably ``MemoryError`` or
+// ``KeyboardInterrupt``). Callers must check the return value and
+// propagate if false.
+bool python_build_hashmap(const std::shared_ptr<AbstractNode>& node, int level);
 PyObject *python_fromopenscad(const Value& val);
 
 extern SourceFile *osinclude_source;

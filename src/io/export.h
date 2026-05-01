@@ -335,12 +335,23 @@ class Export3mfPartInfo
 public:
   std::shared_ptr<const Geometry> geom;
   std::string name;
+  // ``props`` was originally a borrowed ``PyObject *`` (a Python dict
+  // returned by ``PyDict_GetItem(child_dict, "props_3mf")``) and the
+  // 3MF write loop iterated it directly via the CPython C-API. That
+  // is unsafe inside the lib3mf callback (it cannot abort the
+  // in-flight write on a non-str key or a MemoryError), so the
+  // Python-aware code now pre-encodes the dict into the typed
+  // ``propsFloat`` / ``propsLong`` / ``propsString`` vectors below
+  // before constructing the part info, and ``writeProps`` walks
+  // those instead. ``props`` is kept for ABI-ish compatibility with
+  // the dummy/non-Python build but is otherwise unused.
   void *props;
+  std::vector<std::pair<std::string, double>> propsFloat;
+  std::vector<std::pair<std::string, long>> propsLong;
+  std::vector<std::pair<std::string, std::string>> propsString;
   Export3mfPartInfo(std::shared_ptr<const Geometry> geom, std::string name, void *props)
+    : geom(std::move(geom)), name(std::move(name)), props(props)
   {
-    this->geom = geom;
-    this->name = name;
-    this->props = props;
   }
   void writeProps(void *obj) const;
   void writePropsFloat(void *obj, const char *name, float f) const;

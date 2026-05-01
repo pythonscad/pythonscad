@@ -454,24 +454,23 @@ PyObject *python_skin(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
-      PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-      const char *value_str = PyBytes_AS_STRING(value1);
-      double tmp;
-      if (value_str == nullptr) {
-        PyErr_SetString(PyExc_TypeError, "Unkown parameter name in CSG.");
+      std::string keystr;
+      if (!python_pyobject_to_utf8(key, keystr, "skin() keyword argument")) {
         return nullptr;
-      } else if (strcmp(value_str, "convexity") == 0) {
+      }
+      double tmp;
+      if (keystr == "convexity") {
         python_numberval(value, &tmp, nullptr, 0);
         node->convexity = (int)tmp;
-      } else if (strcmp(value_str, "align_angle") == 0) {
+      } else if (keystr == "align_angle") {
         python_numberval(value, &tmp, nullptr, 0);
         node->align_angle = tmp;
         node->has_align_angle = true;
-      } else if (strcmp(value_str, "segments") == 0) {
+      } else if (keystr == "segments") {
         python_numberval(value, &tmp, nullptr, 0);
         node->has_segments = true;
         node->segments = (int)tmp;
-      } else if (strcmp(value_str, "interpolate") == 0) {
+      } else if (keystr == "interpolate") {
         python_numberval(value, &tmp, nullptr, 0);
         node->has_interpolate = true;
         node->interpolate = tmp;

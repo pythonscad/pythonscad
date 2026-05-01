@@ -67,14 +67,13 @@ PyObject *python_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, OpenS
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
-      PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-      const char *value_str = PyBytes_AS_STRING(value1);
-      if (value_str == nullptr) {
-        PyErr_SetString(PyExc_TypeError, "Unkown parameter name in CSG.");
+      std::string keystr;
+      if (!python_pyobject_to_utf8(key, keystr, "CSG keyword argument")) {
         return nullptr;
-      } else if (strcmp(value_str, "r") == 0) {
+      }
+      if (keystr == "r") {
         python_numberval(value, &(node->r), nullptr, 0);
-      } else if (strcmp(value_str, "fn") == 0) {
+      } else if (keystr == "fn") {
         double fn;
         python_numberval(value, &fn, nullptr);
         node->fn = (int)fn;
@@ -180,14 +179,13 @@ PyObject *python_oo_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, Op
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
-      PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-      const char *value_str = PyBytes_AS_STRING(value1);
-      if (value_str == nullptr) {
-        PyErr_SetString(PyExc_TypeError, "Unkown parameter name in CSG.");
+      std::string keystr;
+      if (!python_pyobject_to_utf8(key, keystr, "CSG keyword argument")) {
         return nullptr;
-      } else if (strcmp(value_str, "r") == 0) {
+      }
+      if (keystr == "r") {
         python_numberval(value, &(node->r), nullptr, 0);
-      } else if (strcmp(value_str, "fn") == 0) {
+      } else if (keystr == "fn") {
         double fn;
         python_numberval(value, &fn, nullptr, 0);
         node->fn = (int)fn;
@@ -301,14 +299,39 @@ PyObject *python_nb_sub(PyObject *arg1, PyObject *arg2, OpenSCADOperator mode)
       PyObject *key, *value;
       Py_ssize_t pos = 0;
       while (PyDict_Next(child_dict[i], &pos, &key, &value)) {
+        PyObject *insert_key = key;
+        PyObjectUniquePtr key_mod(nullptr, &PyObjectDeleter);
         if (name.size() > 0) {
-          PyObject *key1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-          const char *key_str = PyBytes_AS_STRING(key1);
-          std::string handle_name = name + "_" + key_str;
-          PyObject *key_mod =
-            PyUnicode_FromStringAndSize(handle_name.c_str(), strlen(handle_name.c_str()));
-          PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key_mod, value);
-        } else PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+          std::string key_str;
+          if (python_pyobject_to_utf8(key, key_str, "operator handle name")) {
+            std::string handle_name = name + "_" + key_str;
+            key_mod.reset(PyUnicode_FromStringAndSize(handle_name.c_str(), handle_name.size()));
+            if (key_mod.get() == nullptr) {
+              /* OOM while building the handle name -- propagate the
+               * MemoryError rather than silently fall back to the
+               * original key (which would diverge from the documented
+               * naming scheme). */
+              return nullptr;
+            }
+            insert_key = key_mod.get();
+          } else {
+            /* Non-str key, or some other non-fatal helper failure --
+             * the rename is best-effort, so fall back to inserting
+             * under the original key. Clear the helper's TypeError so
+             * the next C-API call doesn't trip over a stale exception,
+             * but propagate any non-Unicode exception (e.g.
+             * MemoryError) up to the caller. */
+            if (PyErr_Occurred() != nullptr && !PyErr_ExceptionMatches(PyExc_TypeError)) {
+              return nullptr;
+            }
+            PyErr_Clear();
+          }
+        }
+        if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, insert_key, value) < 0) {
+          /* PyDict_SetItem only fails on OOM or hash() raising; either
+           * way the exception is set, so just propagate it. */
+          return nullptr;
+        }
       }
     }
   }
