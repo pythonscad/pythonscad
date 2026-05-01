@@ -107,20 +107,51 @@ info "  destination:  ${DEST}"
 info "  interpreter:  ${PYTHON_BIN} ($("${PYTHON_BIN}" --version 2>&1))"
 info "  requirements: ${REQUIREMENTS}"
 
-mkdir -p "${DEST}"
-
-# Step 1: install the runtime requirements into the destination.
+# Step 1: install the runtime requirements into a fresh staging dir,
+# then swap that staging dir into place at ${DEST}.
 #
 # `--target` lays the wheels out flat (no venv structure) which is what
 # the embedded interpreter expects when this directory is added to
-# sys.path. `--upgrade` handles re-runs cleanly.
-info "Running pip install --target=${DEST} -r ${REQUIREMENTS}"
+# sys.path.
+#
+# We MUST install into a clean directory rather than re-using ${DEST}
+# from a previous run: `pip install --target ... --upgrade` only
+# add/upgrades packages, it does NOT prune packages that used to be in
+# requirements/runtime.txt but are not anymore. Re-running into ${DEST}
+# in place would leave stale wheels and stale `*.dist-info/` metadata
+# behind, which would silently leak into the bundle AND into the
+# pip-licenses-generated THIRD_PARTY_LICENSES.txt below.
+#
+# The atomic swap pattern (install into a sibling staging dir, then
+# `rm -rf ${DEST}` + `mv staging ${DEST}`) keeps the rebuild
+# idempotent: the contents of ${DEST} after a successful run are
+# exactly the requirements set, with no carry-over from prior runs.
+DEST_PARENT="$(dirname "${DEST}")"
+DEST_NAME="$(basename "${DEST}")"
+mkdir -p "${DEST_PARENT}"
+STAGING_DEST="$(mktemp -d "${DEST_PARENT}/${DEST_NAME}.tmp.XXXXXX")"
+
+cleanup_staging() {
+    # On any error path before the final mv, drop the staging dir so
+    # we don't leave garbage next to the real destination.
+    [[ -d "${STAGING_DEST}" ]] && rm -rf "${STAGING_DEST}"
+}
+trap cleanup_staging EXIT
+
+info "Running pip install --target=${STAGING_DEST} -r ${REQUIREMENTS}"
 "${PYTHON_BIN}" -m pip install \
-    --target "${DEST}" \
+    --target "${STAGING_DEST}" \
     --upgrade \
     --no-compile \
     -r "${REQUIREMENTS}" \
-    || die "pip install into ${DEST} failed"
+    || die "pip install into ${STAGING_DEST} failed"
+
+# Atomically replace any existing destination with the freshly
+# populated staging dir. `mv` is atomic for same-filesystem renames,
+# which is guaranteed here because STAGING_DEST is a sibling of DEST.
+rm -rf "${DEST}"
+mv "${STAGING_DEST}" "${DEST}"
+trap - EXIT
 
 # Step 2: emit THIRD_PARTY_LICENSES.txt next to the bundled wheels.
 #
