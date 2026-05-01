@@ -314,6 +314,27 @@ if [ ! -f "${APPDIR}/usr/lib/${PYTHON_SO}"* ]; then
     find /usr/lib -name "${PYTHON_SO}*" -exec cp -P {} "${APPDIR}/usr/lib/" \; 2>/dev/null || true
 fi
 
+# Bundle runtime Python deps (currently: IPython) for --ipython.
+# The destination matches `bundledFallbackPaths` in src/python/pyopenscad.cc,
+# which expects ../lib/pythonscad-bundled-py relative to the executable.
+# The user's system-installed IPython (if any) still wins because the
+# bundled directory is *appended* to sys.path inside initPython.
+if [ "${BUNDLE_RUNTIME_PYTHON:-yes}" = "yes" ]; then
+    info "Bundling runtime Python dependencies (IPython, ...)"
+    BUNDLE_DEST="${APPDIR}/usr/lib/pythonscad-bundled-py"
+    # Auto-install pip-licenses inside CI so the THIRD_PARTY_LICENSES.txt
+    # step doesn't fail with exit code 2 on a fresh runner. Running this
+    # locally without pip-licenses already installed is uncommon, so the
+    # auto-install is gated on an env var to keep the local default
+    # quiet.
+    BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES="${BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES:-1}" \
+        "${SCRIPT_DIR}/bundle-runtime-python.sh" "${BUNDLE_DEST}" \
+        --python python3 \
+        || die "Failed to bundle runtime Python dependencies"
+else
+    info "Skipping runtime Python dep bundling (BUNDLE_RUNTIME_PYTHON=${BUNDLE_RUNTIME_PYTHON})"
+fi
+
 # Set up proper AppDir structure for appimagetool
 info "Setting up AppDir structure..."
 
