@@ -73,8 +73,11 @@ def main() -> int:
         # CTest treats stdout-only "SKIP" as a pass with the
         # `SKIP_REGULAR_EXPRESSION` test property, so we just print the
         # marker and return 0 here. The CMakeLists entry sets the
-        # property accordingly.
-        print("SKIP: PTY-based test is POSIX-only; pexpect is not available on win32")
+        # property accordingly. The wording deliberately blames the
+        # test design (POSIX-only) rather than `pexpect`'s availability
+        # because `pexpect` may well be installed on a Windows runner
+        # and the skip is still correct.
+        print("SKIP: PTY-based test is POSIX-only and is not supported on win32")
         return 0
 
     if pexpect is None:

@@ -322,11 +322,14 @@ fi
 if [ "${BUNDLE_RUNTIME_PYTHON:-yes}" = "yes" ]; then
     info "Bundling runtime Python dependencies (IPython, ...)"
     BUNDLE_DEST="${APPDIR}/usr/lib/pythonscad-bundled-py"
-    # Auto-install pip-licenses inside CI so the THIRD_PARTY_LICENSES.txt
-    # step doesn't fail with exit code 2 on a fresh runner. Running this
-    # locally without pip-licenses already installed is uncommon, so the
-    # auto-install is gated on an env var to keep the local default
-    # quiet.
+    # `create_appimage.sh` is a release-pipeline tool: it's invoked
+    # by the AppImage CI workflow and by maintainers cutting a build
+    # locally, both of whom expect the bundling step to "just work".
+    # We therefore default BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES to 1
+    # (auto-install pip-licenses if missing) and only let the caller
+    # opt out by setting the env var to 0 explicitly. This keeps the
+    # AppImage build self-contained and matches the CI workflows for
+    # macOS / Windows which set the same flag.
     BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES="${BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES:-1}" \
         "${SCRIPT_DIR}/bundle-runtime-python.sh" "${BUNDLE_DEST}" \
         --python python3 \
