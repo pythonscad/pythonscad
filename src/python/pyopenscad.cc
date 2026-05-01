@@ -1003,8 +1003,29 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
               // does not compose with `std::string` and breaks the MSYS2 build.
               const fs::path p = appPath / relPath;
               if (!fs::is_directory(p)) continue;
-              const auto abs = fs::absolute(p).generic_string();
-              PyObject *pathStr = PyUnicode_FromString(abs.c_str());
+              const fs::path absPath = fs::absolute(p);
+
+              // Cross-platform Python-string construction:
+              // * Windows native paths are wide (UTF-16) and may contain
+              //   characters that have no valid UTF-8 round-trip via
+              //   `PyUnicode_FromString` on a build where the runtime
+              //   encoding isn't UTF-8. `PyUnicode_FromWideChar` is the
+              //   canonical CPython entry point for that case.
+              // * POSIX paths are bytes whose interpretation depends on
+              //   the filesystem locale; `PyUnicode_DecodeFSDefaultAndSize`
+              //   uses CPython's filesystem decoder (matches what
+              //   `os.fsdecode` does in Python land), which is the right
+              //   thing for a `sys.path` entry that user-side `import`
+              //   logic will resolve through `os.path.*` operations.
+              PyObject *pathStr = nullptr;
+#ifdef _WIN32
+              const std::wstring abs = absPath.wstring();
+              pathStr = PyUnicode_FromWideChar(abs.c_str(), static_cast<Py_ssize_t>(abs.size()));
+#else
+              const std::string abs = absPath.native();
+              pathStr =
+                PyUnicode_DecodeFSDefaultAndSize(abs.c_str(), static_cast<Py_ssize_t>(abs.size()));
+#endif
               if (pathStr == nullptr) {
                 PyErr_Clear();
                 continue;

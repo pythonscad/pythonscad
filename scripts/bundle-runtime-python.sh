@@ -180,16 +180,31 @@ if [[ "${WITH_LICENSES}" -eq 1 ]]; then
 
     info "Reporting on ${#BUNDLED_PACKAGES[@]} bundled package(s): ${BUNDLED_PACKAGES[*]}"
 
-    PIP_LICENSES_WRAPPER="$(mktemp --suffix=.py)"
+    # `mktemp --suffix=.py` is a GNU extension; macOS ships BSD
+    # mktemp which doesn't accept --suffix. Use a portable template
+    # under $TMPDIR (or /tmp) and rename to add the .py extension
+    # so Python recognises the file as a script.
+    PIP_LICENSES_WRAPPER_BASE="$(mktemp "${TMPDIR:-/tmp}/bundle-py-piplic-XXXXXXXX")"
+    PIP_LICENSES_WRAPPER="${PIP_LICENSES_WRAPPER_BASE}.py"
+    mv "${PIP_LICENSES_WRAPPER_BASE}" "${PIP_LICENSES_WRAPPER}"
+
     cat > "${PIP_LICENSES_WRAPPER}" <<'WRAPPER_EOF'
 """Run pip-licenses scoped to a single sys.path target directory.
 
 Argument vector layout:
     sys.argv = [<this file>, <target_dir>, <pip-licenses args...>]
 
-The wrapper monkey-patches importlib.metadata.distributions to yield
-only distributions whose installed files live under <target_dir>,
-then hands off to piplicenses.main() with the remaining argv.
+The wrapper:
+  1. Inserts <target_dir> at sys.path[0] so pip-licenses imports
+     (and reads METADATA / LICENSE files from) the bundled wheels
+     in preference to any older host copies of the same name. This
+     replaces a previous `PYTHONPATH=...` shell-side approach which
+     was non-portable across `:`-separator (POSIX) and `;`-separator
+     (Windows native Python) hosts.
+  2. Monkey-patches importlib.metadata.distributions to yield only
+     distributions whose installed files live under <target_dir>,
+     so the host's site-packages don't leak into the report.
+  3. Hands off to piplicenses.main() with the remaining argv.
 """
 import os
 import sys
@@ -198,6 +213,12 @@ import importlib.metadata as md
 target_dir = os.path.realpath(sys.argv[1])
 sys.argv[1:] = sys.argv[2:]
 
+# Step (1): make the bundle preferred for any imports pip-licenses
+# does on its own (e.g. reading wheel metadata via importlib).
+if target_dir not in sys.path:
+    sys.path.insert(0, target_dir)
+
+# Step (2): scope distribution enumeration to the bundle.
 _real_distributions = md.distributions
 
 
@@ -220,11 +241,7 @@ from piplicenses import main as piplicenses_main  # noqa: E402
 sys.exit(piplicenses_main() or 0)
 WRAPPER_EOF
 
-    # PYTHONPATH=${DEST} ensures the bundled wheels are
-    # importable so that pip-licenses can read their METADATA /
-    # LICENSE files directly from the bundle (preferred over any
-    # older host copy of the same name).
-    PYTHONPATH="${DEST}:${PYTHONPATH:-}" "${PYTHON_BIN}" \
+    "${PYTHON_BIN}" \
         "${PIP_LICENSES_WRAPPER}" \
         "${DEST}" \
         --from=mixed \
@@ -264,9 +281,16 @@ HEADER_EOF
 fi
 
 # Sanity-check: the bundle must at least be importable as `IPython`.
+#
+# We pass the bundle directory in via argv and have the smoke probe
+# insert it into sys.path itself rather than relying on PYTHONPATH.
+# PYTHONPATH uses `:` as the separator on POSIX and `;` on Windows
+# native Python; doing the path-mutation in Python makes the call
+# site cross-platform without any per-host quoting tricks.
 info "Smoke-checking bundle (import IPython)"
-PYTHONPATH="${DEST}" "${PYTHON_BIN}" - <<'PY' || die "bundle smoke check failed"
+"${PYTHON_BIN}" - "${DEST}" <<'PY' || die "bundle smoke check failed"
 import sys
+sys.path.insert(0, sys.argv[1])
 import IPython
 print("[bundle-py] bundled IPython:", IPython.__version__, "from", IPython.__file__)
 PY
