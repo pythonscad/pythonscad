@@ -196,12 +196,24 @@ if [[ "${WITH_LICENSES}" -eq 1 ]]; then
     #      bounded.
     BUNDLED_PACKAGES=()
     while IFS= read -r -d '' dist_info; do
-        # `package-1.2.3.dist-info` -> `package`. Pip canonicalizes
-        # names with `-` separators and lowercase, but pip-licenses
-        # accepts the original PEP 503-normalized form fine.
-        pkg_name="$(basename "${dist_info}")"
-        pkg_name="${pkg_name%.dist-info}"
-        pkg_name="${pkg_name%-*}"
+        # Read the canonical distribution name from the dist-info's
+        # METADATA `Name:` field rather than parsing it out of the
+        # directory name. The `${pkg_name%-*}` form works for the
+        # PEP 440 happy path (versions without `-`), but PEP 566 says
+        # the METADATA `Name:` field is the authoritative source, and
+        # the parsing approach silently mis-extracts the name on
+        # legacy version strings such as `setuptools-58.0-rc1` (which
+        # would yield `setuptools-58.0` instead of `setuptools`).
+        # Reading METADATA is robust against any weirdly-formed
+        # version, build tag, or local-version-segment scheme.
+        metadata_file="${dist_info}/METADATA"
+        [[ -f "${metadata_file}" ]] \
+            || die "missing METADATA in ${dist_info}; cannot determine distribution name for license report"
+
+        pkg_name="$(sed -n 's/^Name:[[:space:]]*//p' "${metadata_file}" | head -n 1)"
+        [[ -n "${pkg_name}" ]] \
+            || die "missing Name field in ${metadata_file}; cannot determine distribution name for license report"
+
         BUNDLED_PACKAGES+=("${pkg_name}")
     done < <(find "${DEST}" -maxdepth 2 -name "*.dist-info" -type d -print0 2>/dev/null)
 
