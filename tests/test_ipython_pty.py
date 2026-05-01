@@ -25,9 +25,12 @@ When IPython is not installed in the test environment, the binary
 falls back to the basic REPL. This test then checks the fallback path
 instead (``>>>`` prompt + correct expression evaluation).
 
-This test is automatically skipped when ``pexpect`` is unavailable. CI
-must install ``pexpect`` ahead of time (typical CI image already has
-it as part of stdlib-friendly Python tooling).
+This test is automatically skipped when ``pexpect`` is unavailable.
+``pexpect`` is a third-party PyPI package, NOT part of the Python
+standard library, and is frequently absent on minimal runners. CI
+must install it ahead of time (e.g. ``pip install pexpect``) to
+enable PTY coverage; otherwise the test self-skips with an INFO
+diagnostic and Layer-1 / Layer-3 still cover the non-PTY paths.
 
 Usage:
     test_ipython_pty.py <path-to-pythonscad>
