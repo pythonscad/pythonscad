@@ -1516,12 +1516,13 @@ if(ENABLE_PYTHON)
   )
   set_property(TEST ipython-smoke PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 
-  # `ipython-fallback` self-skips with a "SKIP-INCONCLUSIVE" marker
+  # `ipython-fallback` self-skips by printing a single "SKIP" line
   # when it cannot force the missing-IPython scenario (e.g. when
   # IPython was installed straight into the system stdlib path,
   # which is unusual but does happen on some CI workers). Wire up
-  # SKIP_REGULAR_EXPRESSION so ctest reports the inconclusive
-  # outcome explicitly rather than masquerading as a green PASS.
+  # SKIP_REGULAR_EXPRESSION (matching `^SKIP`) so ctest reports
+  # the inconclusive outcome explicitly rather than masquerading
+  # as a green PASS.
   add_test(NAME ipython-fallback CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_ipython_fallback.py
