@@ -1786,6 +1786,24 @@ int ipython(const std::vector<std::string>& args)
     // Surface the actual Python exception so failures are diagnosable
     // instead of silently dropping the user into the fallback REPL.
     PyErr_Print();
+    // Bootstrap may have failed BEFORE reaching its own cleanup loop
+    // (e.g. `from IPython import start_ipython as ...` raises) so the
+    // helper names we (or the bootstrap) injected into `__main__` would
+    // otherwise leak into the fallback REPL session, where the user is
+    // already busy debugging a startup failure. Scrub them defensively
+    // here. `PyDict_DelItemString` reports a KeyError-equivalent for
+    // missing keys, which is fine -- we just clear and move on so the
+    // post-cleanup state is the same regardless of which step failed.
+    if (main_dict != nullptr) {
+      static const char *const helper_names[] = {
+        "__pythonscad_ipython_argv__", "_pythonscad_start_ipython", "_sys", "_name", "_e",
+      };
+      for (const char *helper_name : helper_names) {
+        if (PyDict_DelItemString(main_dict, helper_name) != 0) {
+          PyErr_Clear();
+        }
+      }
+    }
     fprintf(stderr, "PythonSCAD: IPython startup failed; falling back to the basic Python prompt.\n");
     run_basic_python_repl();
   }
