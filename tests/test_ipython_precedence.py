@@ -72,11 +72,16 @@ def _has_ipython(d):
     except OSError:
         return False
     for name in entries:
-        # `IPython-9.13.0.dist-info` is the canonical pip layout;
-        # case-sensitive on the project name (PEP 503 normalization
-        # would also accept `ipython-`, but in practice IPython's
-        # wheel metadata always preserves the capital `IPython`).
-        if name.startswith("IPython-") and name.endswith(".dist-info"):
+        # The wheel metadata directory is the authoritative pip-install
+        # marker. PEP 503 distribution-name normalization is
+        # lower-case, so modern pip lays it out as
+        # `ipython-9.13.0.dist-info` even though the importable
+        # package keeps the capital `IPython`. Some layouts (older
+        # pip, hand-built wheels, distro repacks) preserve the
+        # capital form `IPython-9.13.0.dist-info`. Match both by
+        # comparing case-insensitively on the project-name prefix.
+        lower = name.lower()
+        if lower.startswith("ipython-") and lower.endswith(".dist-info"):
             return True
     return False
 
