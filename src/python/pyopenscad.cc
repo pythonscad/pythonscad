@@ -978,9 +978,28 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     // `libraries/python/` (which holds PythonSCAD-owned overlays that
     // *should* take priority).
     {
-      const std::array<const char *, 2> bundledFallbackPaths = {
-        "../lib/pythonscad-bundled-py",         // AppImage / Linux / Windows MSYS2
+      // The bundled-fallback search path is platform-specific because
+      // the binary distributions stage the IPython wheels at different
+      // locations relative to the executable:
+      //
+      //   * AppImage / source `make install` (Linux): pythonscad lives
+      //     in <prefix>/bin, so `../lib/pythonscad-bundled-py` resolves
+      //     to <prefix>/lib/pythonscad-bundled-py.
+      //   * macOS .app: pythonscad lives in <App>.app/Contents/MacOS,
+      //     so `../Frameworks/...` resolves to
+      //     <App>.app/Contents/Frameworks/pythonscad-bundled-py.
+      //   * Windows native installer: CMake's `WIN32` branch sets
+      //     `OPENSCAD_BINDIR = "."`, i.e. pythonscad.exe lives at the
+      //     install prefix root. `../lib/...` would point OUTSIDE the
+      //     installed tree (a sibling directory of the prefix), so we
+      //     also try the no-prefix `lib/pythonscad-bundled-py` form.
+      //     Listing both keeps the Linux entry working without a
+      //     #ifdef _WIN32 split: `fs::is_directory(p)` returns false
+      //     for whichever entry doesn't match on a given OS.
+      const std::array<const char *, 3> bundledFallbackPaths = {
+        "../lib/pythonscad-bundled-py",         // AppImage / Linux source install
         "../Frameworks/pythonscad-bundled-py",  // macOS .app
+        "lib/pythonscad-bundled-py",            // Windows native installer
       };
       // Defensive: this runs during initPython, so any pending Python
       // exception left here would poison every subsequent C-API call.
