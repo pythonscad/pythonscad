@@ -171,12 +171,11 @@ def main() -> int:
         child.expect(r"'PyOpenSCAD'", timeout=COMMAND_TIMEOUT)
         child.sendline("exit()")
     elif used_fallback_prompt:
-        # Basic REPL: no Out[] echo, but expression evaluation still
-        # prints the value. The --repl path preloads pythonscad, but
-        # the --ipython fallback REPL does NOT (the bootstrap snippet
-        # only runs on the IPython side). So we import explicitly.
-        child.sendline("from pythonscad import cube")
-        child.expect(r">>> ", timeout=COMMAND_TIMEOUT)
+        # Basic REPL: no `Out[N]:` echo, but expression evaluation still
+        # prints the value. `run_basic_python_repl()` preloads
+        # `from pythonscad import *` for both `--repl` and the
+        # `--ipython` fallback path, so `cube` is already in scope --
+        # rely on that here instead of importing explicitly.
         child.sendline("print(type(cube([1, 1, 1])).__name__)")
         child.expect(r"PyOpenSCAD", timeout=COMMAND_TIMEOUT)
         child.sendline("exit()")
