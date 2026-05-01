@@ -314,6 +314,30 @@ if [ ! -f "${APPDIR}/usr/lib/${PYTHON_SO}"* ]; then
     find /usr/lib -name "${PYTHON_SO}*" -exec cp -P {} "${APPDIR}/usr/lib/" \; 2>/dev/null || true
 fi
 
+# Bundle runtime Python deps (currently: IPython) for --ipython.
+# The destination matches `bundledFallbackPaths` in src/python/pyopenscad.cc,
+# which expects ../lib/pythonscad-bundled-py relative to the executable.
+# The user's system-installed IPython (if any) still wins because the
+# bundled directory is *appended* to sys.path inside initPython.
+if [ "${BUNDLE_RUNTIME_PYTHON:-yes}" = "yes" ]; then
+    info "Bundling runtime Python dependencies (IPython, ...)"
+    BUNDLE_DEST="${APPDIR}/usr/lib/pythonscad-bundled-py"
+    # `create_appimage.sh` is a release-pipeline tool: it's invoked
+    # by the AppImage CI workflow and by maintainers cutting a build
+    # locally, both of whom expect the bundling step to "just work".
+    # We therefore default BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES to 1
+    # (auto-install pip-licenses if missing) and only let the caller
+    # opt out by setting the env var to 0 explicitly. This keeps the
+    # AppImage build self-contained and matches the CI workflows for
+    # macOS / Windows which set the same flag.
+    BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES="${BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES:-1}" \
+        "${SCRIPT_DIR}/bundle-runtime-python.sh" "${BUNDLE_DEST}" \
+        --python python3 \
+        || die "Failed to bundle runtime Python dependencies"
+else
+    info "Skipping runtime Python dep bundling (BUNDLE_RUNTIME_PYTHON=${BUNDLE_RUNTIME_PYTHON})"
+fi
+
 # Set up proper AppDir structure for appimagetool
 info "Setting up AppDir structure..."
 

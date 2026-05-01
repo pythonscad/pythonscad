@@ -196,8 +196,38 @@ in Advanced preferences. If no files are given, the running instance is focused.
 \fB\-\-trust\-python\fP
 Trust Python scripts (disable security prompts).
 .TP
-\fB\-\-ipython\fP
-Run IPython interpreter.
+\fB\-\-ipython\fP [\fIscript.py\fP [\fIargs...\fP]]
+Start an
+.B IPython
+interactive shell with the
+.B pythonscad
+module preloaded into the user namespace. Any positional arguments are
+forwarded as IPython's
+.B argv
+(so
+.B "pythonscad \-\-ipython script.py arg1"
+runs
+.I script.py
+inside IPython with
+.I arg1
+visible). If IPython is not installed (i.e.
+.B "import IPython"
+fails), prints a diagnostic to stderr and falls back to the basic
+embedded Python REPL exposed by
+.B \-\-repl
+so you still get an interactive prompt. Install IPython with
+.B "pip install ipython"
+(or via your distribution's
+.B python3-ipython
+package) for the richer experience.
+.TP
+\fB\-\-repl\fP
+Open the basic embedded Python REPL with
+.B pythonscad
+preloaded. This is the legacy interactive prompt (no IPython
+dependency, no tab completion, no syntax highlighting). Use this when
+IPython is unavailable or when you explicitly want a stripped-down
+prompt suitable for scripting.
 .TP
 \fB\-\-python\-module\fP \fImodule\fP
 Call pip Python module.
@@ -241,6 +271,23 @@ parts of the shape. Export to a .dxf file.
 Run a Python script:
 .PP
 .B pythonscad -o output.stl model.py
+.PP
+Open an IPython shell with the
+.B pythonscad
+module preloaded:
+.PP
+.B pythonscad --ipython
+.PP
+Run a Python script inside IPython (drops to the IPython prompt afterwards
+on
+.B exit
+), passing one positional argument to the script:
+.PP
+.B pythonscad --ipython model.py arg1
+.PP
+Open the basic embedded Python REPL (no IPython dependency):
+.PP
+.B pythonscad --repl
 
 .SH AUTHOR
 PythonSCAD was forked from OpenSCAD by Guenther Sohler and others.

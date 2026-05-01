@@ -118,6 +118,17 @@ jobs:
           cd build
           cmake --install . --prefix=staging
 
+      - name: Bundle runtime Python deps (IPython) into staging
+        run: |
+          # Destination must match `bundledFallbackPaths` in
+          # src/python/pyopenscad.cc: ../lib/pythonscad-bundled-py
+          # relative to the executable, which CPack ZIP/NSIS layouts
+          # place at the staging root.
+          BUNDLE_DEST="build/staging/lib/pythonscad-bundled-py"
+          chmod +x ./scripts/bundle-runtime-python.sh
+          BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES=1 \
+            ./scripts/bundle-runtime-python.sh "${BUNDLE_DEST}" --python python
+
       - name: List installed files
         run: |
           cd build/staging
