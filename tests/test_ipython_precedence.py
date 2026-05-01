@@ -46,16 +46,39 @@ PROBE = r"""
 import json, os, sys
 
 def _has_ipython(d):
-    # We treat "this directory provides IPython" as "any of these
-    # canonical layouts is present". Both source-checkouts and
-    # installed wheels match. We deliberately do NOT actually import
-    # IPython here - that would have side effects we'd rather avoid.
-    return any(
-        os.path.isdir(os.path.join(d, "IPython")) or
-        os.path.isfile(os.path.join(d, "IPython", "__init__.py")) or
-        os.path.isfile(os.path.join(d, "IPython.py"))
-        for _ in (None,)
-    )
+    # We treat "this directory provides an IMPORTABLE IPython" as
+    # "any of these canonical Python-import layouts is present".
+    # We deliberately do NOT actually import IPython here - that
+    # would have side effects we'd rather avoid in a precedence test.
+    #
+    # The `os.path.isdir(...)` check on its own is a false positive:
+    # an empty directory named `IPython/` (e.g. a stray namespace
+    # package or a packaging artifact) would wrongly mark a sys.path
+    # entry as an IPython provider, which can flip the precedence
+    # comparison. We require a real package marker:
+    #
+    #   * `IPython/__init__.py` -- regular installed package, source
+    #     checkout, or pip --target=DIR layout.
+    #   * `IPython.py` -- single-file install (rare but legal).
+    #   * `IPython-*.dist-info/` -- pip-installed wheel with
+    #     `__init__.py` reachable; the dist-info is the
+    #     authoritative marker even on namespace-package layouts.
+    if os.path.isfile(os.path.join(d, "IPython", "__init__.py")):
+        return True
+    if os.path.isfile(os.path.join(d, "IPython.py")):
+        return True
+    try:
+        entries = os.listdir(d)
+    except OSError:
+        return False
+    for name in entries:
+        # `IPython-9.13.0.dist-info` is the canonical pip layout;
+        # case-sensitive on the project name (PEP 503 normalization
+        # would also accept `ipython-`, but in practice IPython's
+        # wheel metadata always preserves the capital `IPython`).
+        if name.startswith("IPython-") and name.endswith(".dist-info"):
+            return True
+    return False
 
 bundled = []
 ipython_providers = []

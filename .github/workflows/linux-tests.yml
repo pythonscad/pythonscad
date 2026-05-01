@@ -42,12 +42,12 @@ jobs:
       run: python -m pip install -U gcovr
     - name: Install Python test dependencies (IPython + pexpect for --ipython tests)
       run: |
-        # Use --break-system-packages on Ubuntu 24.04 (PEP 668), but
-        # gracefully fall back for older runners. We deliberately
-        # install ipython + pexpect at *system* level so the embedded
-        # interpreter (which uses the system python3) can find them.
-        python3 -m pip install --user --upgrade ipython pexpect \
-          || python3 -m pip install --break-system-packages --upgrade ipython pexpect \
+        # ipython and pexpect must be importable by the *system*
+        # python3 because that is what the embedded interpreter
+        # resolves at runtime. `--break-system-packages` is the
+        # standard PEP 668 escape hatch on Ubuntu 24.04+; pre-PEP-668
+        # runners just ignore it and install normally.
+        python3 -m pip install --break-system-packages --upgrade ipython pexpect \
           || python3 -m pip install --upgrade ipython pexpect
     - name: Build and test
       run: ./scripts/github-ci.sh experimental enable_python enable_libfive ${{ matrix.qt }} build test coverage

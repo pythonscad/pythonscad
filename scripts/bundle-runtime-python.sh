@@ -62,14 +62,30 @@ WITH_LICENSES=1
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --python)        PYTHON_BIN="$2"; shift 2 ;;
-        --requirements)  REQUIREMENTS="$2"; shift 2 ;;
-        --no-licenses)   WITH_LICENSES=0; shift ;;
+        --python)
+            # `set -u` would otherwise turn a missing value into a
+            # cryptic "unbound variable" error; the explicit check
+            # gives the user a clear usage message instead.
+            [[ $# -ge 2 ]] || die "missing value for --python"
+            PYTHON_BIN="$2"
+            shift 2
+            ;;
+        --requirements)
+            [[ $# -ge 2 ]] || die "missing value for --requirements"
+            REQUIREMENTS="$2"
+            shift 2
+            ;;
+        --no-licenses)
+            WITH_LICENSES=0
+            shift
+            ;;
         -h|--help)
             sed -n '2,40p' "$0"
             exit 0
             ;;
-        --*)             die "unknown option: $1" ;;
+        --*)
+            die "unknown option: $1"
+            ;;
         *)
             if [[ -z "${DEST}" ]]; then
                 DEST="$1"
@@ -133,19 +149,94 @@ if [[ "${WITH_LICENSES}" -eq 1 ]]; then
     LICENSES_OUT="${DEST}/THIRD_PARTY_LICENSES.txt"
     info "Generating ${LICENSES_OUT}"
 
-    # We invoke pip-licenses with PYTHONPATH pointed *into the bundle*
-    # so it sees only the wheels we just installed. Without this, it
-    # enumerates the build host's site-packages and we'd ship a license
-    # file that lies about what's in the bundle.
-    PYTHONPATH="${DEST}" "${PYTHON_BIN}" -m piplicenses \
+    # Restrict pip-licenses to *only* the packages we installed under
+    # ${DEST}. Two filters are in play:
+    #
+    #   1. We monkey-patch `importlib.metadata.distributions` so it
+    #      yields only distributions whose on-disk location lives
+    #      under ${DEST}. Without this, pip-licenses uses the build
+    #      host's site-packages too (since `python -m piplicenses`
+    #      runs with site.py initialized) and we'd ship a license
+    #      report that conflates bundled and host wheels - making
+    #      the "drift detector" intent unreliable.
+    #   2. We *also* pass `--packages` enumerated from the bundle's
+    #      `*.dist-info` directories. This is belt-and-suspenders:
+    #      if (1) ever regresses, (2) still keeps the package list
+    #      bounded.
+    BUNDLED_PACKAGES=()
+    while IFS= read -r -d '' dist_info; do
+        # `package-1.2.3.dist-info` -> `package`. Pip canonicalizes
+        # names with `-` separators and lowercase, but pip-licenses
+        # accepts the original PEP 503-normalized form fine.
+        pkg_name="$(basename "${dist_info}")"
+        pkg_name="${pkg_name%.dist-info}"
+        pkg_name="${pkg_name%-*}"
+        BUNDLED_PACKAGES+=("${pkg_name}")
+    done < <(find "${DEST}" -maxdepth 2 -name "*.dist-info" -type d -print0 2>/dev/null)
+
+    if [[ ${#BUNDLED_PACKAGES[@]} -eq 0 ]]; then
+        die "no .dist-info directories found under ${DEST}; cannot generate license report"
+    fi
+
+    info "Reporting on ${#BUNDLED_PACKAGES[@]} bundled package(s): ${BUNDLED_PACKAGES[*]}"
+
+    PIP_LICENSES_WRAPPER="$(mktemp --suffix=.py)"
+    cat > "${PIP_LICENSES_WRAPPER}" <<'WRAPPER_EOF'
+"""Run pip-licenses scoped to a single sys.path target directory.
+
+Argument vector layout:
+    sys.argv = [<this file>, <target_dir>, <pip-licenses args...>]
+
+The wrapper monkey-patches importlib.metadata.distributions to yield
+only distributions whose installed files live under <target_dir>,
+then hands off to piplicenses.main() with the remaining argv.
+"""
+import os
+import sys
+import importlib.metadata as md
+
+target_dir = os.path.realpath(sys.argv[1])
+sys.argv[1:] = sys.argv[2:]
+
+_real_distributions = md.distributions
+
+
+def _scoped_distributions(*args, **kwargs):
+    for dist in _real_distributions(*args, **kwargs):
+        loc = dist.locate_file("")
+        try:
+            loc_str = os.path.realpath(str(loc))
+        except (TypeError, ValueError):
+            continue
+        if loc_str.startswith(target_dir + os.sep) or loc_str == target_dir:
+            yield dist
+
+
+md.distributions = _scoped_distributions
+
+# pip-licenses 4.x and 5.x both expose `main` at module top-level.
+from piplicenses import main as piplicenses_main  # noqa: E402
+
+sys.exit(piplicenses_main() or 0)
+WRAPPER_EOF
+
+    # PYTHONPATH=${DEST} ensures the bundled wheels are
+    # importable so that pip-licenses can read their METADATA /
+    # LICENSE files directly from the bundle (preferred over any
+    # older host copy of the same name).
+    PYTHONPATH="${DEST}:${PYTHONPATH:-}" "${PYTHON_BIN}" \
+        "${PIP_LICENSES_WRAPPER}" \
+        "${DEST}" \
         --from=mixed \
         --format=plain-vertical \
         --with-license-file \
         --with-urls \
         --with-authors \
         --no-license-path \
+        --packages "${BUNDLED_PACKAGES[@]}" \
         --output-file "${LICENSES_OUT}" \
-        || die "pip-licenses failed to generate ${LICENSES_OUT}"
+        || { rm -f "${PIP_LICENSES_WRAPPER}"; die "pip-licenses failed to generate ${LICENSES_OUT}"; }
+    rm -f "${PIP_LICENSES_WRAPPER}"
 
     # Prepend a header that pins down what the file is. pip-licenses
     # itself only emits raw entries; consumers reading
