@@ -258,7 +258,12 @@ WRAPPER_EOF
     # Prepend a header that pins down what the file is. pip-licenses
     # itself only emits raw entries; consumers reading
     # THIRD_PARTY_LICENSES.txt deserve a one-paragraph explanation.
-    HEADER_FILE="$(mktemp)"
+    #
+    # Use a portable mktemp template: bare `mktemp` works on GNU but
+    # fails on BSD/macOS (which require an explicit template). The
+    # macOS release workflow runs this script, so we have to support
+    # both. Same shape as the pip-licenses wrapper-file mktemp above.
+    HEADER_FILE="$(mktemp "${TMPDIR:-/tmp}/bundle-py-header-XXXXXXXX")"
     cat > "${HEADER_FILE}" <<'HEADER_EOF'
 THIRD-PARTY LICENSES
 ====================
