@@ -143,17 +143,19 @@ PyObject *python__getitem__(PyObject *obj, PyObject *key)
 
 int python__setitem__(PyObject *obj, PyObject *key, PyObject *v)
 {
-  // PyUnicode_AsEncodedString returns a NEW reference; without
-  // py_owned() this leaks one bytes object per __setitem__ call.
-  // The keystr std::string copy below outlives keyname, so we can
-  // release the bytes immediately after building keystr.
-  auto keyname = py_owned(PyUnicode_AsEncodedString(key, "utf-8", "~"));
   // mp_ass_subscript convention: 0 == success, -1 == failure with
-  // exception set. Encoding failure already left an exception
-  // pending (e.g. on a non-text key); surface it by returning -1
-  // instead of silently reporting success to the caller.
-  if (keyname.get() == nullptr) return -1;
-  std::string keystr = PyBytes_AS_STRING(keyname.get());
+  // exception set. The helper raises a clean TypeError on non-str
+  // keys (and on str keys that the strict utf-8 handler refuses to
+  // encode, e.g. lone surrogates) and is leak-free on every path,
+  // so we just propagate its result. Returning -1 with the helper's
+  // exception set is the contract CPython expects for
+  // ``c[non_str] = v`` -- without it the C-API surfaces a confusing
+  // ``SystemError: <built-in function ...> returned a result with
+  // an exception set`` from a wrong frame.
+  std::string keystr;
+  if (!python_pyobject_to_utf8(key, keystr, "obj[key]")) {
+    return -1;
+  }
 
   PyOpenSCADObject *self = (PyOpenSCADObject *)obj;
 
