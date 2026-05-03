@@ -1,5 +1,47 @@
 # Changelog
 
+## [1.0.0](https://github.com/pythonscad/pythonscad/compare/v0.20.0...v1.0.0) (2026-05-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **python:** "from openscad import *" now resolves to the pure-Python overlay added in the next commit, not to this C extension directly. Python code that imported the C extension by its old name must switch to "import _openscad".
+
+### Features
+
+* **gui:** display abosolute filepath in the title bar ([#576](https://github.com/pythonscad/pythonscad/issues/576)) ([41c6552](https://github.com/pythonscad/pythonscad/commit/41c6552d2a658a7be824864623a7f4e3a23d1a6a))
+* native vector operations for addition, subtraction, scaling, dot and cross product ([#588](https://github.com/pythonscad/pythonscad/issues/588)) ([267c753](https://github.com/pythonscad/pythonscad/commit/267c7535f6daccbf76a3499c8442738983d7ae71))
+* **polyline:** polylines work work difference and intersection now ([#572](https://github.com/pythonscad/pythonscad/issues/572)) ([6f0ee76](https://github.com/pythonscad/pythonscad/commit/6f0ee76f29ca90151cfecea36b1dcd9306bbc51a))
+* **python:** add MultiToolExporter helper to pythonscad module ([#585](https://github.com/pythonscad/pythonscad/issues/585)) ([e15e0cf](https://github.com/pythonscad/pythonscad/commit/e15e0cfd5542572c9fef52720e5b04d602d718db))
+* **python:** introduce _openscad / openscad / pythonscad three-module layout ([#579](https://github.com/pythonscad/pythonscad/issues/579)) ([542c89e](https://github.com/pythonscad/pythonscad/commit/542c89eaac1e9bdcac3115e3a9f1370076be1234))
+
+
+### Bug Fixes
+
+* **3mf:** scope per-mesh material IDs to append_polyset (lib3mf v1) ([#592](https://github.com/pythonscad/pythonscad/issues/592)) ([823a572](https://github.com/pythonscad/pythonscad/commit/823a572abc12e29e5f8bf72d1e487e32f30f9067)), closes [#591](https://github.com/pythonscad/pythonscad/issues/591)
+* **chore:** improved GUI performance ([be2c045](https://github.com/pythonscad/pythonscad/commit/be2c045b3e63f46b323f640fdfbd17bcd0a96ba5))
+* **chore:** make it compilable ([#605](https://github.com/pythonscad/pythonscad/issues/605)) ([0534499](https://github.com/pythonscad/pythonscad/commit/0534499aa0de6d0e4774da2a564cdb1b1d9571fa))
+* **ci:** use PAT when promoting release so PyPI workflow gets triggered ([#582](https://github.com/pythonscad/pythonscad/issues/582)) ([05c1508](https://github.com/pythonscad/pythonscad/commit/05c1508a67bd29d4746a57a0a6e44e5d838bf291))
+* **gui:** don't mark windows as quitting on session-manager checkpoint ([#581](https://github.com/pythonscad/pythonscad/issues/581)) ([7da0c96](https://github.com/pythonscad/pythonscad/commit/7da0c967265a2433ed3f014dc9329ad8970b8668)), closes [#580](https://github.com/pythonscad/pythonscad/issues/580)
+* **laser:** improved link function ([ecaa0dc](https://github.com/pythonscad/pythonscad/commit/ecaa0dcb636c73c5cce353a41705da7376529056))
+* **python:** finish python__setitem__ migration to python_pyobject_to_utf8 ([#611](https://github.com/pythonscad/pythonscad/issues/611)) ([4a16fa0](https://github.com/pythonscad/pythonscad/commit/4a16fa0a8584a06dde5e926de8de838ad137ac47))
+* **python:** guard PyDict_SetDefaultRef polyfill behind PY_VERSION_HEX ([#602](https://github.com/pythonscad/pythonscad/issues/602)) ([5e21b27](https://github.com/pythonscad/pythonscad/commit/5e21b279aa1967049234c5dbfd702da183244600)), closes [#601](https://github.com/pythonscad/pythonscad/issues/601)
+* **python:** handle multiline add_parameter in customizer prescan ([#567](https://github.com/pythonscad/pythonscad/issues/567)) ([af73762](https://github.com/pythonscad/pythonscad/commit/af73762868bc493212276504a21cb4bb1c67a79f)), closes [#566](https://github.com/pythonscad/pythonscad/issues/566)
+* **python:** make python_numberval() reject non-parseable str inputs ([#610](https://github.com/pythonscad/pythonscad/issues/610)) ([d54ccfd](https://github.com/pythonscad/pythonscad/commit/d54ccfd0a0956422ea1f8b9737bcf585978fef5b))
+* **python:** plug PyOpenSCADObjectToNodeMulti dict leak ([#596](https://github.com/pythonscad/pythonscad/issues/596)) ([#603](https://github.com/pythonscad/pythonscad/issues/603)) ([ad76ba9](https://github.com/pythonscad/pythonscad/commit/ad76ba9ef5bd668aa6a46c714370dd1a1e9ceb20))
+* **python:** raise TypeError on non-str dict keys in export() and similar APIs ([#595](https://github.com/pythonscad/pythonscad/issues/595)) ([cbbac27](https://github.com/pythonscad/pythonscad/commit/cbbac27397045af8fd37a777e34c022bf50bfd42))
+* **python:** sweep PyBytes_AS_STRING(NULL) UB out of pyopenscad/pyconversion ([#608](https://github.com/pythonscad/pythonscad/issues/608)) ([2b46704](https://github.com/pythonscad/pythonscad/commit/2b46704751a74123aea558c2c541008973a44946))
+* **resize:** resize resulted in inconsistent behavior ([22017dd](https://github.com/pythonscad/pythonscad/commit/22017dd241f0d603c4ff5f28af11a81919b210df))
+* **resize:** resize resulted in inconsistent behavior ([a222605](https://github.com/pythonscad/pythonscad/commit/a2226050612f1da77b8fc107e0c105689111526d))
+* **svg:** fix function of osimport:stroke parameter ([#577](https://github.com/pythonscad/pythonscad/issues/577)) ([9c95792](https://github.com/pythonscad/pythonscad/commit/9c9579216bfebcf29f634bd3c3e6caab097bbbaf))
+* **svg:** improved svg output ([ead58fc](https://github.com/pythonscad/pythonscad/commit/ead58fce63658da992f83b94b18781b9fc5385c4))
+
+
+### Documentation
+
+* clarify osuse/osinclude usage and deprecation ([#589](https://github.com/pythonscad/pythonscad/issues/589)) ([4d65aa6](https://github.com/pythonscad/pythonscad/commit/4d65aa6619e9229aa45a5643bced911a85e98d7a))
+* use slices instead of fn for linear_extrude with python function ([#593](https://github.com/pythonscad/pythonscad/issues/593)) ([2bdb5c2](https://github.com/pythonscad/pythonscad/commit/2bdb5c2d44528e50eea9de12b026d7c3451f57bd)), closes [#578](https://github.com/pythonscad/pythonscad/issues/578)
+
 ## [0.20.0](https://github.com/pythonscad/pythonscad/compare/v0.19.1...v0.20.0) (2026-04-13)
 
 
