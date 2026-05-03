@@ -28,6 +28,8 @@ jobs:
       - name: Wait for build workflows
         id: wait
         uses: actions/github-script@v9
+        env:
+          INPUT_RELEASE_TAG: ${{ github.event.inputs.release_tag }}
         with:
           script: |
             const BUILD_WORKFLOWS = [
@@ -47,7 +49,7 @@ jobs:
             let releaseTag;
 
             if (context.eventName === 'workflow_dispatch') {
-              const inputTag = '${{ github.event.inputs.release_tag }}';
+              const inputTag = process.env.INPUT_RELEASE_TAG;
 
               if (inputTag) {
                 try {
@@ -199,8 +201,9 @@ jobs:
       - name: Download release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEEDS_WAIT_FOR_BUILDS_OUTPUTS_RELEASE_TAG: ${{ needs.wait-for-builds.outputs.release_tag }}
         run: |
-          TAG="${{ needs.wait-for-builds.outputs.release_tag }}"
+          TAG="${NEEDS_WAIT_FOR_BUILDS_OUTPUTS_RELEASE_TAG}"
           mkdir -p release-assets
           cd release-assets
           gh release download "$TAG" -R "${{ github.repository }}"
@@ -209,9 +212,10 @@ jobs:
       - name: Compute and upload checksums
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEEDS_WAIT_FOR_BUILDS_OUTPUTS_RELEASE_TAG: ${{ needs.wait-for-builds.outputs.release_tag }}
         run: |
           set -e
-          TAG="${{ needs.wait-for-builds.outputs.release_tag }}"
+          TAG="${NEEDS_WAIT_FOR_BUILDS_OUTPUTS_RELEASE_TAG}"
           cd release-assets
 
           skip_suffixes='.sha256 .sha512 .asc'

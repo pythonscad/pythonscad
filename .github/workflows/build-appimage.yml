@@ -111,9 +111,10 @@ jobs:
         DEB_SIGNING_KEY: ${{ secrets.DEB_SIGNING_KEY }}
         GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
         GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        STEPS_APPIMAGE_OUTPUTS_FILEPATH: ${{ steps.appimage.outputs.filepath }}
       run: |
         set -e
-        APPIMAGE_FILE="${{ steps.appimage.outputs.filepath }}"
+        APPIMAGE_FILE="${STEPS_APPIMAGE_OUTPUTS_FILEPATH}"
         if [ ! -f "$APPIMAGE_FILE" ]; then
           echo "AppImage not found: $APPIMAGE_FILE"
           exit 1
