@@ -55,28 +55,33 @@ jobs:
       - name: Setup SSH key for SFTP
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.WEB_SFTP_SSH_KEY }}" > ~/.ssh/deploy_key
+          # `printf` (not `echo`) so backslash escapes / option-looking
+          # leading bytes in the key material are written byte-faithfully.
+          printf '%s' "$WEB_SFTP_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
           # Setup SSH known_hosts
-          PORT="${{ vars.WEB_SFTP_PORT || '22' }}"
+          PORT="${WEB_SFTP_PORT:-22}"
           if [ "$PORT" = "22" ]; then
-            ssh-keyscan -H ${VARS_WEB_SFTP_HOST} >> ~/.ssh/known_hosts
+            ssh-keyscan -H "$VARS_WEB_SFTP_HOST" >> ~/.ssh/known_hosts
           else
-            ssh-keyscan -p $PORT -H ${VARS_WEB_SFTP_HOST} >> ~/.ssh/known_hosts
+            ssh-keyscan -p "$PORT" -H "$VARS_WEB_SFTP_HOST" >> ~/.ssh/known_hosts
           fi
         env:
+          WEB_SFTP_SSH_KEY: ${{ secrets.WEB_SFTP_SSH_KEY }}
+          WEB_SFTP_PORT: ${{ vars.WEB_SFTP_PORT }}
           VARS_WEB_SFTP_HOST: ${{ vars.WEB_SFTP_HOST }}
 
       - name: Deploy to SFTP server
         run: |
-          PORT="${{ vars.WEB_SFTP_PORT || '22' }}"
+          PORT="${WEB_SFTP_PORT:-22}"
 
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=no" \
             web/site/ \
-            ${VARS_WEB_SFTP_USER}@${VARS_WEB_SFTP_HOST}:${VARS_WEB_SFTP_PATH}/
+            "${VARS_WEB_SFTP_USER}@${VARS_WEB_SFTP_HOST}:${VARS_WEB_SFTP_PATH}/"
         env:
+          WEB_SFTP_PORT: ${{ vars.WEB_SFTP_PORT }}
           VARS_WEB_SFTP_USER: ${{ vars.WEB_SFTP_USER }}
           VARS_WEB_SFTP_HOST: ${{ vars.WEB_SFTP_HOST }}
           VARS_WEB_SFTP_PATH: ${{ vars.WEB_SFTP_PATH }}
