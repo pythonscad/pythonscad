@@ -27,6 +27,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: 'recursive'
+          persist-credentials: false
 
       - name: Fetch tags for version detection
         run: |
@@ -160,6 +161,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: 'recursive'
+          persist-credentials: false
 
       - name: Fetch tags for version detection
         run: |
@@ -292,6 +294,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
         # No submodules needed, only for scripts
 
       - name: Fetch tags for version detection
