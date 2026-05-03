@@ -74,3 +74,25 @@ repos:
             name: check-mkdocs
             args: ["--config", "web/mkdocs.yml"]
             files: ^web/
+    - repo: https://github.com/rhysd/actionlint
+      rev: v1.7.12
+      hooks:
+          # Lints GitHub Actions workflow files: schema validation,
+          # expression syntax, shellcheck on `run:` blocks (when
+          # available), pinned-action checks, etc.
+          - id: actionlint
+    - repo: https://github.com/zizmorcore/zizmor-pre-commit
+      rev: v1.24.1
+      hooks:
+          # Security audits for GitHub Actions workflows and composite
+          # actions. Catches template/expression injection from
+          # attacker-controlled contexts (PR titles, issue bodies, ...),
+          # over-broad permissions, dangerous triggers, etc.
+          #
+          # Gated at --min-severity=high so the local hook only fails
+          # on hard errors. Warnings/informational findings still show
+          # up in `zizmor` output (and in the dedicated CI pass when
+          # added) but don't block commits while the long-tail
+          # cleanup tracked in #613 is in progress.
+          - id: zizmor
+            args: ["--no-progress", "--min-severity=high"]
