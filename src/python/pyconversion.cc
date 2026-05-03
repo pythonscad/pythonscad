@@ -57,9 +57,20 @@ int python_numberval(PyObject *number, double *result, int *flags, int flagor)
     return 0;
   }
   if (PyUnicode_Check(number) && flags != nullptr) {
-    PyObjectUniquePtr str(PyUnicode_AsEncodedString(number, "utf-8", "~"), &PyObjectDeleter);
-    const char *str1 = PyBytes_AS_STRING(str.get());
-    sscanf(str1, "%lf", result);
+    /* python_numberval() is a best-effort coercion that returns
+     * 0/1 and does not propagate Python exceptions to the caller.
+     * The helper can fail with a TypeError on unencodable str
+     * contents (lone surrogates under the "strict" handler) or on
+     * a misbehaving custom utf-8 codec, and can propagate
+     * MemoryError / KeyboardInterrupt verbatim. We have no way to
+     * surface any of those cleanly here, so clear the indicator
+     * and report "not coercible" to the caller. */
+    std::string str_utf8;
+    if (!python_pyobject_to_utf8(number, str_utf8, "python_numberval()")) {
+      PyErr_Clear();
+      return 1;
+    }
+    sscanf(str_utf8.c_str(), "%lf", result);
     *flags |= flagor;
     return 0;
   }
