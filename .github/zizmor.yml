@@ -1,0 +1,35 @@
+# zizmor (https://github.com/zizmorcore/zizmor) configuration.
+#
+# Tracks any project-specific deviations from zizmor's defaults.
+# Each deviation explains *why* it exists, so a future audit can
+# re-evaluate whether the relaxation is still warranted.
+#
+# Long-tail cleanup of the items listed here is tracked in #613.
+
+rules:
+  unpinned-uses:
+    config:
+      # zizmor's default since v1.20.0 is to require SHA-pinning for
+      # *every* `uses:` clause. Applied verbatim that produces 75
+      # errors against this repo (every `actions/checkout@v6`, every
+      # `actions/upload-artifact@v7`, etc.).
+      #
+      # As an interim policy we only require *symbolic* pinning (tag
+      # or branch), which still rules out fully-unpinned `uses:`
+      # clauses. Hash-pinning the third-party actions in particular
+      # (mxschmitt/action-tmate, msys2/setup-msys2, ssciwr/setup-mesa-
+      # dist-win, softprops/action-gh-release, docker/setup-qemu-
+      # action, nanzm/get-time-action, takanome-dev/assign-issue-
+      # action, pypa/gh-action-pypi-publish) is tracked in #613.
+      policies:
+        "*": ref-pin
+
+  excessive-permissions:
+    ignore:
+      # publish-release.yml declares `contents: write` at the workflow
+      # level. Several of its jobs do legitimately need that scope
+      # (creating release assets, attaching artifacts), but a few
+      # don't and could be tightened. Per-job scoping of the
+      # GITHUB_TOKEN permissions across all workflows is tracked in
+      # #613 as a single coordinated cleanup.
+      - publish-release.yml:14
