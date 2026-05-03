@@ -1,0 +1,14 @@
+cube str in size: TypeError
+cube empty str in size: TypeError
+cube whitespace str in size: TypeError
+cube partial-match str: OK
+cube scientific-notation str: OK
+cube numeric str: OK
+color str in vector: TypeError
+color numeric str in vector: TypeError
+translate str in vector: TypeError
+scale str in vector: TypeError
+color named str: OK
+sphere non-numeric r: OK
+done
+

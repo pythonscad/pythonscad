@@ -25,6 +25,7 @@
  */
 
 #include <Python.h>
+#include <cstdio>
 #include "geometry/linalg.h"
 #include "geometry/GeometryUtils.h"
 #include "pyconversion.h"
@@ -70,7 +71,18 @@ int python_numberval(PyObject *number, double *result, int *flags, int flagor)
       PyErr_Clear();
       return 1;
     }
-    sscanf(str_utf8.c_str(), "%lf", result);
+    /* sscanf returns the number of input items successfully matched
+     * (1 here on a parsed double, 0 on no match, EOF on empty input).
+     * Writing into a local first means we never touch *result on the
+     * not-a-number path -- the caller's variable keeps whatever it
+     * was initialised to, so a non-numeric str surfaces as "not
+     * coercible" instead of silently propagating *result's prior
+     * (possibly uninitialised) value while still flipping flagor. */
+    double parsed;
+    if (std::sscanf(str_utf8.c_str(), "%lf", &parsed) != 1) {
+      return 1;
+    }
+    *result = parsed;
     *flags |= flagor;
     return 0;
   }
