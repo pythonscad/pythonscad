@@ -57,13 +57,11 @@ PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double
     auto dummy_node = std::make_shared<SquareNode>(instance);
     node->children.push_back(dummy_node);
   } else {
-    PyObject *dummydict;
+    PyObject *dummydict = nullptr;
     type = PyOpenSCADObjectType(obj);
     child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-    if (child == NULL) {
-      PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in rotate_extrude\n");
-      return NULL;
-    }
+    auto dummydict_owner = py_owned(dummydict);
+    if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in rotate_extrude\n");
     node->children.push_back(child);
   }
 
@@ -161,13 +159,11 @@ PyObject *linear_extrude_core(PyObject *obj, PyObject *height, int convexity, Py
     auto dummy_node = std::make_shared<SquareNode>(instance);
     node->children.push_back(dummy_node);
   } else {
-    PyObject *dummydict;
+    PyObject *dummydict = nullptr;
     type = PyOpenSCADObjectType(obj);
     child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-    if (child == NULL) {
-      PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in linear_extrude\n");
-      return NULL;
-    }
+    auto dummydict_owner = py_owned(dummydict);
+    if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in linear_extrude\n");
     node->children.push_back(child);
   }
 
@@ -287,13 +283,11 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
     auto dummy_node = std::make_shared<SquareNode>(instance);
     node->children.push_back(dummy_node);
   } else {
-    PyObject *dummydict;
+    PyObject *dummydict = nullptr;
     type = PyOpenSCADObjectType(obj);
     child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-    if (child == NULL) {
-      PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in path_extrude\n");
-      return NULL;
-    }
+    auto dummydict_owner = py_owned(dummydict);
+    if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in path_extrude\n");
     node->children.push_back(child);
   }
   if (path != NULL && PyList_Check(path)) {
@@ -447,8 +441,17 @@ PyObject *python_skin(PyObject *self, PyObject *args, PyObject *kwargs)
   auto node = std::make_shared<SkinNode>(instance);
   PyTypeObject *type = &PyOpenSCADType;
   PyObject *obj;
-  PyObject *child_dict = nullptr;
-  PyObject *dummy_dict = nullptr;
+  // child_dict holds the strong ref returned by the FIRST positional
+  // arg's PyOpenSCADObjectToNodeMulti call. Declared up here so any
+  // early `return nullptr` from later iterations still releases it
+  // via RAII (previously it was stored in a raw `child_dict_raw` and
+  // only wrapped in py_owned() AFTER the loop, so a failure on arg 2
+  // leaked the dict from arg 1).
+  auto child_dict = py_owned();
+  // dummy_dict_owner reset()s on every iter to release the previous
+  // strong ref before installing the next; final value (last arg) is
+  // released at end-of-scope.
+  auto dummy_dict_owner = py_owned();
   std::shared_ptr<AbstractNode> child;
   if (kwargs != nullptr) {
     PyObject *key, *value;
@@ -475,7 +478,7 @@ PyObject *python_skin(PyObject *self, PyObject *args, PyObject *kwargs)
         node->has_interpolate = true;
         node->interpolate = tmp;
       } else {
-        PyErr_SetString(PyExc_TypeError, "Unkown parameter name in skin.");
+        PyErr_SetString(PyExc_TypeError, "Unknown parameter name in skin.");
         return nullptr;
       }
     }
@@ -484,22 +487,38 @@ PyObject *python_skin(PyObject *self, PyObject *args, PyObject *kwargs)
     obj = PyTuple_GetItem(args, i);
     if (i == 0) {
       type = PyOpenSCADObjectType(obj);
-      child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
-    } else child = PyOpenSCADObjectToNodeMulti(obj, &dummy_dict);
+      PyObject *first_dict_raw = nullptr;
+      child = PyOpenSCADObjectToNodeMulti(obj, &first_dict_raw);
+      child_dict.reset(first_dict_raw);
+    } else {
+      PyObject *dummy_dict_raw = nullptr;
+      child = PyOpenSCADObjectToNodeMulti(obj, &dummy_dict_raw);
+      dummy_dict_owner.reset(dummy_dict_raw);
+    }
     if (child != NULL) {
       node->children.push_back(child);
     } else {
+      // See py_csg.cc python_csg_sub: propagate any pre-set Python
+      // exception from PyOpenSCADObjectToNodeMulti instead of
+      // overwriting it with a generic TypeError.
+      if (PyErr_Occurred()) return nullptr;
       PyErr_SetString(PyExc_TypeError, "Error during skin. arguments must be solids or arrays.");
       return nullptr;
     }
   }
 
   PyObject *pyresult = PyOpenSCADObjectFromNode(type, node);
-  if (child_dict != nullptr) {
+  if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(child_dict, &pos, &key, &value)) {
-      PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
+      // Same propagation rule as the merge loops in py_csg.cc /
+      // py_ops.cc: a PyDict_SetItem failure leaves an exception
+      // pending, so propagate it instead of returning pyresult.
+      if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value) < 0) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
     }
   }
   return pyresult;

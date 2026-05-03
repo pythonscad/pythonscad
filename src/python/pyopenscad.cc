@@ -233,21 +233,29 @@ void python_unlock(void)
  *  extracts Absrtract Node from PyOpenSCAD Object
  */
 
+// `*dict` ownership contract (post-fix):
+//
+// On every return path (success or failure, every input shape) `*dict`
+// is set to either `nullptr` or a NEW STRONG REFERENCE that the caller
+// owns and MUST `Py_XDECREF` (or hand to a `PyObjectUniquePtr`) when
+// done. The borrow-vs-own asymmetry that historically existed -- a
+// borrowed ref to `obj->dict` for instance inputs but a freshly-
+// allocated dict for list inputs -- silently leaked one dict per
+// list-input call (see issue #596). Standardising on "always strong"
+// makes the contract uniform; the per-input-shape leak goes away
+// automatically once every call site decrefs.
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNode(PyObject *obj, PyObject **dict)
 {
-  // Check for special Python objects BEFORE casting to PyOpenSCADObject
+  *dict = nullptr;
+
   if (obj == Py_None || obj == Py_False) {
-    *dict = nullptr;
     return void_node;
   }
   if (obj == Py_True) {
-    *dict = nullptr;
     return full_node;
   }
 
-  // Verify obj is actually a PyOpenSCADType before casting
   if (!PyObject_IsInstance(obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
-    *dict = nullptr;
     return void_node;
   }
 
@@ -256,7 +264,9 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNode(PyObject *obj, PyObject **d
     if (result.use_count() > 2 && result != void_node && result != full_node) {
       result = result->clone();
     }
-    *dict = (reinterpret_cast<PyOpenSCADObject *>(obj))->dict;
+    PyObject *instance_dict = (reinterpret_cast<PyOpenSCADObject *>(obj))->dict;
+    Py_XINCREF(instance_dict);
+    *dict = instance_dict;
   } else {
     result = nullptr;
   }
@@ -294,65 +304,91 @@ PyTypeObject *PyOpenSCADObjectType(PyObject *objs)
  * same as  python_more_obj but always returns only one AbstractNode by creating an UNION operation
  */
 
+// `*dict` ownership contract: same as PyOpenSCADObjectToNode -- always
+// `nullptr` or a NEW STRONG REFERENCE the caller must `Py_XDECREF`.
+// See the comment on PyOpenSCADObjectToNode above for the rationale
+// and the pre-fix leak behavior (issue #596).
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs, PyObject **dict)
 {
+  *dict = nullptr;
   std::shared_ptr<AbstractNode> result = nullptr;
   if (PyObject_IsInstance(objs, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
     result = (reinterpret_cast<PyOpenSCADObject *>(objs))->node;
     if (result.use_count() > 2 && result != void_node && result != full_node) {
       result = result->clone();
     }
-    *dict = (reinterpret_cast<PyOpenSCADObject *>(objs))->dict;
+    PyObject *instance_dict = (reinterpret_cast<PyOpenSCADObject *>(objs))->dict;
+    Py_XINCREF(instance_dict);
+    *dict = instance_dict;
   } else if (PyList_Check(objs)) {
     DECLARE_INSTANCE();
     auto node = std::make_shared<CsgOpNode>(instance, OpenSCADOperator::UNION);
 
     int n = PyList_Size(objs);
-    std::vector<PyObject *> child_dict;
-    PyObject *subdict;
+    // Each entry is a STRONG ref returned by PyOpenSCADObjectToNode;
+    // we must Py_XDECREF every entry on every exit path. Wrapping in
+    // PyObjectUniquePtr so this is impossible to forget regardless of
+    // which return path is taken (early `return nullptr` on a
+    // non-PyOpenSCAD list element, or the merge fall-through below).
+    std::vector<PyObjectUniquePtr> child_dict;
+    child_dict.reserve(n);
     for (int i = 0; i < n; i++) {
       PyObject *obj = PyList_GetItem(objs, i);
       if (PyObject_IsInstance(obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
+        PyObject *subdict = nullptr;
         std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNode(obj, &subdict);
+        auto owned_subdict = py_owned(subdict);
         if (child == nullptr) continue;
         node->children.push_back(child);
-        child_dict.push_back(subdict);
-      } else return nullptr;
+        child_dict.push_back(std::move(owned_subdict));
+      } else {
+        // Early return: child_dict's destructor decrements every
+        // strong ref accumulated so far, so no leak on this path.
+        return nullptr;
+      }
     }
     result = node;
 
-    *dict = PyDict_New();
-    if (*dict == nullptr) {
-      /* PyDict_New sets MemoryError on failure. Bail out before we
-       * dereference a null *dict in PyDict_SetItem below (UB / SIGSEGV).
-       * Returning nullptr also signals to the caller that the merge
-       * failed and lets it propagate the pending exception. */
+    PyObject *merged = PyDict_New();
+    if (merged == nullptr) {
+      // PyDict_New sets a Python exception (typically MemoryError) on
+      // failure. Returning a valid node here would leave the exception
+      // pending and surface as a SystemError later. Returning nullptr
+      // -- with *dict already nullptr -- propagates the exception
+      // cleanly; child_dict cleans up its accumulated strong refs on
+      // scope exit.
       return nullptr;
     }
-    for (int i = child_dict.size() - 1; i >= 0; i--)  // merge from back  to give 1st child most priority
-    {
-      auto& subsubdict = child_dict[i];
+    // Reverse-iterate: 1st child wins (later writes overwrite earlier
+    // ones). Use the `i-- > 0` pattern with size_t to avoid the
+    // implementation-defined size_t-to-int conversion that the prior
+    // `int i = child_dict.size() - 1` formulation triggered when
+    // child_dict was empty.
+    for (size_t i = child_dict.size(); i-- > 0;) {
+      PyObject *subsubdict = child_dict[i].get();
       if (subsubdict == nullptr) continue;
       PyObject *key, *value;
       Py_ssize_t pos = 0;
       while (PyDict_Next(subsubdict, &pos, &key, &value)) {
-        if (PyDict_SetItem(*dict, key, value) < 0) {
-          /* OOM (or the rare hashing-side error). Drop the
-           * partial merged dict so we don't leak it and let
-           * the caller surface the pending MemoryError. */
-          Py_DECREF(*dict);
-          *dict = nullptr;
+        if (PyDict_SetItem(merged, key, value) < 0) {
+          // Propagate the pending exception (typically MemoryError, or
+          // the rare hashing-side error). PyDict_New's strong ref is
+          // dropped via py_owned() so we don't leak `merged`, and
+          // *dict stays nullptr so the caller never sees a partially
+          // merged dict.
+          auto owned_merged = py_owned(merged);
           return nullptr;
         }
       }
     }
+    *dict = merged;
   } else if (objs == Py_None || objs == Py_False) {
     result = void_node;
-    *dict = nullptr;  // TODO improve
   } else if (objs == Py_True) {
     result = full_node;
-    *dict = nullptr;  // TODO improve
-  } else result = nullptr;
+  } else {
+    result = nullptr;
+  }
   return result;
 }
 
@@ -679,7 +715,6 @@ std::shared_ptr<AbstractNode> python_modulefunc(const ModuleInstantiation *op_mo
                                                 const std::shared_ptr<const Context>& cxt,
                                                 std::string& error)  // null & error: error, else: None
 {
-  PyObject *dummydict;
   std::shared_ptr<AbstractNode> result = nullptr;
   std::string errorstr = "";
   {
@@ -693,8 +728,11 @@ std::shared_ptr<AbstractNode> python_modulefunc(const ModuleInstantiation *op_mo
       return nullptr;
     }
 
-    if (PyObject_IsInstance(funcresult, reinterpret_cast<PyObject *>(&PyOpenSCADType)))
-      result = PyOpenSCADObjectToNode(funcresult, &dummydict);
+    if (PyObject_IsInstance(funcresult, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
+      PyObject *raw_dummydict = nullptr;
+      result = PyOpenSCADObjectToNode(funcresult, &raw_dummydict);
+      auto dummydict = py_owned(raw_dummydict);
+    }
     Py_XDECREF(funcresult);
   }
   return result;
@@ -1244,10 +1282,10 @@ static void PyOpenSCADItemRef_dealloc(PyOpenSCADItemRef *self)
 
 PyObject *PyOpenSCADItemRef_get_value(PyOpenSCADItemRef *self, void *closure)
 {
-  PyObject *dummydict;
-
+  PyObject *dummydict_raw = nullptr;
   std::shared_ptr<AbstractNode> parnode =
-    PyOpenSCADObjectToNode(reinterpret_cast<PyObject *>(self->parent), &dummydict);
+    PyOpenSCADObjectToNode(reinterpret_cast<PyObject *>(self->parent), &dummydict_raw);
+  auto dummydict = py_owned(dummydict_raw);
   if (self->index >= parnode->children.size()) {
     PyErr_SetString(PyExc_IndexError, "child index out of range");
     return NULL;
@@ -1257,14 +1295,17 @@ PyObject *PyOpenSCADItemRef_get_value(PyOpenSCADItemRef *self, void *closure)
 
 int PyOpenSCADItemRef_set_value(PyOpenSCADItemRef *self, PyObject *value, void *closure)
 {
-  PyObject *dummydict;
+  PyObject *parent_dict_raw = nullptr;
   std::shared_ptr<AbstractNode> parnode =
-    PyOpenSCADObjectToNode(reinterpret_cast<PyObject *>(self->parent), &dummydict);
+    PyOpenSCADObjectToNode(reinterpret_cast<PyObject *>(self->parent), &parent_dict_raw);
+  auto parent_dict = py_owned(parent_dict_raw);
   if (self->index >= parnode->children.size()) {
     PyErr_SetString(PyExc_IndexError, "child index out of range");
     return -1;
   }
-  std::shared_ptr<AbstractNode> childnode = PyOpenSCADObjectToNode(value, &dummydict);
+  PyObject *value_dict_raw = nullptr;
+  std::shared_ptr<AbstractNode> childnode = PyOpenSCADObjectToNode(value, &value_dict_raw);
+  auto value_dict = py_owned(value_dict_raw);
   if (!childnode) {
     PyErr_SetString(PyExc_TypeError, "invalid OpenSCAD object");
     return -1;
@@ -1380,9 +1421,10 @@ PyTypeObject PyOpenSCADObjectIterType = {
 
 PyObject *PyOpenSCAD_sq_item(PyOpenSCADObject *self, Py_ssize_t i)
 {
-  PyObject *dummydict;
+  PyObject *dummydict_raw = nullptr;
   std::shared_ptr<AbstractNode> node =
-    PyOpenSCADObjectToNode(reinterpret_cast<PyObject *>(self), &dummydict);
+    PyOpenSCADObjectToNode(reinterpret_cast<PyObject *>(self), &dummydict_raw);
+  auto dummydict = py_owned(dummydict_raw);
   if (i < 0 || i >= node->children.size()) {
     PyErr_SetString(PyExc_IndexError, "index out of range");
     return nullptr;
@@ -1392,9 +1434,10 @@ PyObject *PyOpenSCAD_sq_item(PyOpenSCADObject *self, Py_ssize_t i)
 
 Py_ssize_t PyOpenSCAD_sq_length(PyOpenSCADObject *self)
 {
-  PyObject *dummydict;
+  PyObject *dummydict_raw = nullptr;
   std::shared_ptr<AbstractNode> node =
-    PyOpenSCADObjectToNode(reinterpret_cast<PyObject *>(self), &dummydict);
+    PyOpenSCADObjectToNode(reinterpret_cast<PyObject *>(self), &dummydict_raw);
+  auto dummydict = py_owned(dummydict_raw);
   return node->children.size();
 }
 

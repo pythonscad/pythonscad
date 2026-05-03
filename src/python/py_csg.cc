@@ -61,7 +61,10 @@ PyObject *python_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, OpenS
   node->r = 0;
   node->fn = 1;
   PyObject *obj;
-  std::vector<PyObject *> child_dict;
+  // child_dict owns one strong dict ref per accepted arg; destructor
+  // releases all of them on every exit path (including the early
+  // `return nullptr` on parsing errors below).
+  std::vector<PyObjectUniquePtr> child_dict;
   std::shared_ptr<AbstractNode> child;
   if (kwargs != nullptr) {
     PyObject *key, *value;
@@ -78,7 +81,7 @@ PyObject *python_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, OpenS
         python_numberval(value, &fn, nullptr);
         node->fn = (int)fn;
       } else {
-        PyErr_SetString(PyExc_TypeError, "Unkown parameter name in CSG.");
+        PyErr_SetString(PyExc_TypeError, "Unknown parameter name in CSG.");
         return nullptr;
       }
     }
@@ -88,12 +91,16 @@ PyObject *python_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, OpenS
     obj = PyTuple_GetItem(args, i);
     PyObject *dict = nullptr;
     child = PyOpenSCADObjectToNodeMulti(obj, &dict);
-    if (dict != nullptr) {
-      child_dict.push_back(dict);
-    }
+    auto owned_dict = py_owned(dict);
     if (child != NULL) {
       child_solid.push_back(child);
+      if (dict != nullptr) child_dict.push_back(std::move(owned_dict));
     } else {
+      // Since round 1 of #596, PyOpenSCADObjectToNodeMulti can return
+      // nullptr with a Python exception already set (e.g. MemoryError
+      // from the dict-merge path). Synthesizing a new TypeError here
+      // would overwrite the original; propagate it instead.
+      if (PyErr_Occurred()) return nullptr;
       switch (mode) {
       case OpenSCADOperator::UNION:
         PyErr_SetString(PyExc_TypeError,
@@ -126,14 +133,24 @@ PyObject *python_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, OpenS
   }
   PyObject *pyresult = python_csg_core(node, child_solid);
 
-  for (int i = child_dict.size() - 1; i >= 0; i--)  // merge from back  to give 1st child most priority
-  {
-    auto& dict = child_dict[i];
+  // Reverse-iterate so the 1st child wins on conflicting keys (later
+  // writes overwrite earlier ones). Use the `i-- > 0` pattern so the
+  // loop is well-defined when child_dict is empty -- python_csg_sub
+  // can be called with zero variadic args (e.g. union()).
+  for (size_t i = child_dict.size(); i-- > 0;) {
+    PyObject *dict = child_dict[i].get();
     if (dict == nullptr) continue;
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(dict, &pos, &key, &value)) {
-      PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+      // PyDict_SetItem can fail (e.g. MemoryError on dict resize);
+      // ignoring the return would leave a pending Python exception
+      // while we hand `pyresult` back to the caller, which the
+      // C-API contract forbids. Drop our reference and propagate.
+      if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value) < 0) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
     }
   }
   return pyresult;
@@ -164,15 +181,19 @@ PyObject *python_oo_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, Op
   node->fn = 1;
 
   PyObject *obj;
-  std::vector<PyObject *> child_dict;
+  // Owns one strong dict ref per accepted arg (self plus tuple args).
+  // Destructor releases everything on early returns and at end-of-scope.
+  std::vector<PyObjectUniquePtr> child_dict;
   std::shared_ptr<AbstractNode> child;
-  PyObject *dict;
+  PyObject *dict = nullptr;
 
-  dict = nullptr;
   child = PyOpenSCADObjectToNodeMulti(self, &dict);
-  if (child != NULL) {
-    node->children.push_back(child);
-    child_dict.push_back(dict);
+  {
+    auto owned_self_dict = py_owned(dict);
+    if (child != NULL) {
+      node->children.push_back(child);
+      child_dict.push_back(std::move(owned_self_dict));
+    }
   }
 
   if (kwargs != nullptr) {
@@ -190,7 +211,7 @@ PyObject *python_oo_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, Op
         python_numberval(value, &fn, nullptr, 0);
         node->fn = (int)fn;
       } else {
-        PyErr_SetString(PyExc_TypeError, "Unkown parameter name in CSG.");
+        PyErr_SetString(PyExc_TypeError, "Unknown parameter name in CSG.");
         return nullptr;
       }
     }
@@ -199,10 +220,15 @@ PyObject *python_oo_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, Op
   for (i = 0; i < PyTuple_Size(args); i++) {
     obj = PyTuple_GetItem(args, i);
     child = PyOpenSCADObjectToNodeMulti(obj, &dict);
-    child_dict.push_back(dict);
+    auto owned_arg_dict = py_owned(dict);
     if (child != NULL) {
       child_solid.push_back(child);
+      child_dict.push_back(std::move(owned_arg_dict));
     } else {
+      // See python_csg_sub above: propagate any pending exception
+      // from PyOpenSCADObjectToNodeMulti rather than overwriting it
+      // with a generic TypeError.
+      if (PyErr_Occurred()) return nullptr;
       switch (mode) {
       case OpenSCADOperator::UNION:
         PyErr_SetString(PyExc_TypeError,
@@ -231,14 +257,23 @@ PyObject *python_oo_csg_sub(PyObject *self, PyObject *args, PyObject *kwargs, Op
   }
 
   PyObject *pyresult = python_csg_core(node, child_solid);
-  for (int i = child_dict.size() - 1; i >= 0; i--)  // merge from back  to give 1st child most priority
-  {
-    auto& dict = child_dict[i];
-    if (dict == nullptr) continue;
+  // See python_csg_sub above for the rationale: 1st-child-wins reverse
+  // merge with a size_t / `i-- > 0` loop so an empty child_dict (0-arg
+  // method call) does not trigger implementation-defined size_t-to-int
+  // conversion.
+  for (size_t i = child_dict.size(); i-- > 0;) {
+    PyObject *dict_item = child_dict[i].get();
+    if (dict_item == nullptr) continue;
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(dict, &pos, &key, &value)) {
-      PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    while (PyDict_Next(dict_item, &pos, &key, &value)) {
+      // Same propagation rule as in python_csg_sub: a PyDict_SetItem
+      // failure leaves an exception pending, so propagate it instead
+      // of returning pyresult while one is in flight.
+      if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value) < 0) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
     }
   }
   return pyresult;
@@ -263,7 +298,7 @@ PyObject *python_nb_sub(PyObject *arg1, PyObject *arg2, OpenSCADOperator mode)
 {
   DECLARE_INSTANCE();
   std::vector<std::shared_ptr<AbstractNode>> child;
-  std::vector<PyObject *> child_dict;
+  std::vector<PyObjectUniquePtr> child_dict;
 
   if (arg1 == Py_None && mode == OpenSCADOperator::UNION) {
     Py_INCREF(arg2);
@@ -279,10 +314,9 @@ PyObject *python_nb_sub(PyObject *arg1, PyObject *arg2, OpenSCADOperator mode)
   }
 
   for (int i = 0; i < 2; i++) {
-    PyObject *dict;
-    dict = nullptr;
+    PyObject *dict = nullptr;
     auto solid = PyOpenSCADObjectToNodeMulti(i == 1 ? arg2 : arg1, &dict);
-    child_dict.push_back(dict);
+    child_dict.push_back(py_owned(dict));
     if (solid != nullptr) child.push_back(solid);
     else {
       PyErr_SetString(PyExc_TypeError, "invalid argument left to operator");
@@ -294,11 +328,12 @@ PyObject *python_nb_sub(PyObject *arg1, PyObject *arg2, OpenSCADOperator mode)
 
   python_retrieve_pyname(node);
   for (int i = 1; i >= 0; i--) {
-    if (child_dict[i] != nullptr) {
+    PyObject *dict_item = child_dict[i].get();
+    if (dict_item != nullptr) {
       std::string name = child[i]->getPyName();
       PyObject *key, *value;
       Py_ssize_t pos = 0;
-      while (PyDict_Next(child_dict[i], &pos, &key, &value)) {
+      while (PyDict_Next(dict_item, &pos, &key, &value)) {
         PyObject *insert_key = key;
         PyObjectUniquePtr key_mod(nullptr, &PyObjectDeleter);
         if (name.size() > 0) {
@@ -310,7 +345,9 @@ PyObject *python_nb_sub(PyObject *arg1, PyObject *arg2, OpenSCADOperator mode)
               /* OOM while building the handle name -- propagate the
                * MemoryError rather than silently fall back to the
                * original key (which would diverge from the documented
-               * naming scheme). */
+               * naming scheme). Drop our strong ref to pyresult on the
+               * way out so we don't leak it. */
+              Py_DECREF(pyresult);
               return nullptr;
             }
             insert_key = key_mod.get();
@@ -322,6 +359,7 @@ PyObject *python_nb_sub(PyObject *arg1, PyObject *arg2, OpenSCADOperator mode)
              * but propagate any non-Unicode exception (e.g.
              * MemoryError) up to the caller. */
             if (PyErr_Occurred() != nullptr && !PyErr_ExceptionMatches(PyExc_TypeError)) {
+              Py_DECREF(pyresult);
               return nullptr;
             }
             PyErr_Clear();
@@ -329,7 +367,9 @@ PyObject *python_nb_sub(PyObject *arg1, PyObject *arg2, OpenSCADOperator mode)
         }
         if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, insert_key, value) < 0) {
           /* PyDict_SetItem only fails on OOM or hash() raising; either
-           * way the exception is set, so just propagate it. */
+           * way the exception is set, so just propagate it. Drop our
+           * strong ref to pyresult on the way out so we don't leak it. */
+          Py_DECREF(pyresult);
           return nullptr;
         }
       }
@@ -343,11 +383,23 @@ PyObject *python_nb_sub_vec3(PyObject *arg1, PyObject *arg2,
 {
   DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
-  PyObject *child_dict;
+  PyObject *child_dict_raw = nullptr;
 
   PyTypeObject *type = PyOpenSCADObjectType(arg1);
-  child = PyOpenSCADObjectToNodeMulti(arg1, &child_dict);
-  if (arg2 == nullptr) return PyOpenSCADObjectFromNode(type, child);
+  child = PyOpenSCADObjectToNodeMulti(arg1, &child_dict_raw);
+  auto child_dict = py_owned(child_dict_raw);
+  if (child == nullptr && PyErr_Occurred()) return NULL;
+  if (arg2 == nullptr) {
+    // arg2 == nullptr means "wrap arg1 in a fresh PyOpenSCADObject"
+    // (used by the unary fall-through callers in pyfunctions.cc).
+    // PyOpenSCADObjectFromNode dereferences `child`, so a soft-fail
+    // null here would build a broken object; raise a clear TypeError
+    // instead. The matrix-arithmetic branch further down explicitly
+    // tolerates a null `child` (it operates on `arg1` directly via
+    // python_number_trans), so don't gate it on `child` here.
+    if (child == nullptr) return propagate_or_typeerror("Invalid type for Object in translate/scale");
+    return PyOpenSCADObjectFromNode(type, child);
+  }
   std::vector<Vector3d> vecs;
   int dragflags = 0;
   if (mode == 3) {
@@ -417,13 +469,29 @@ PyObject *python_nb_sub_vec3(PyObject *arg1, PyObject *arg2,
     if (nodes.size() == 1) {
       nodes[0]->dragflags = dragflags;
       PyObject *pyresult = PyOpenSCADObjectFromNode(type, nodes[0]);
-      if (child_dict != nullptr) {
+      if (child_dict.get() != nullptr) {
         PyObject *key, *value;
         Py_ssize_t pos = 0;
-        while (PyDict_Next(child_dict, &pos, &key, &value)) {
-          PyObject *value1 = python_number_trans(value, vecs[0], 4);
-          if (value1 != nullptr) PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value1);
-          else PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+        while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
+          // Same pattern as the python_*_sub merge loops in
+          // py_transform.cc: python_number_trans returns a NEW
+          // reference, so wrap it in py_owned() to avoid leaking
+          // one object per dict entry, and propagate any
+          // PyDict_SetItem failure to the caller. python_number_trans
+          // returning nullptr can mean either "value is not numeric,
+          // fall back" (no exception) or "hard failure" (exception
+          // set, e.g. allocation failure inside python_fromvector);
+          // disambiguate via PyErr_Occurred().
+          auto value1 = py_owned(python_number_trans(value, vecs[0], 4));
+          if (value1.get() == nullptr && PyErr_Occurred()) {
+            Py_DECREF(pyresult);
+            return nullptr;
+          }
+          PyObject *to_insert = value1.get() != nullptr ? value1.get() : value;
+          if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, to_insert) < 0) {
+            Py_DECREF(pyresult);
+            return nullptr;
+          }
         }
       }
       return pyresult;
@@ -445,10 +513,13 @@ PyObject *python_nb_add(PyObject *arg1, PyObject *arg2)
 
 PyObject *python_nb_xor(PyObject *arg1, PyObject *arg2)
 {
-  PyObject *dummy_dict;
   if (PyObject_IsInstance(arg2, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
-    auto node1 = PyOpenSCADObjectToNode(arg1, &dummy_dict);
-    auto node2 = PyOpenSCADObjectToNode(arg2, &dummy_dict);
+    PyObject *dict1_raw = nullptr;
+    PyObject *dict2_raw = nullptr;
+    auto node1 = PyOpenSCADObjectToNode(arg1, &dict1_raw);
+    auto node2 = PyOpenSCADObjectToNode(arg2, &dict2_raw);
+    auto dict1 = py_owned(dict1_raw);
+    auto dict2 = py_owned(dict2_raw);
     if (node1 == nullptr || node2 == nullptr) {
       PyErr_SetString(PyExc_TypeError, "Error during parsing hull. arguments must be solids.");
       return nullptr;
@@ -465,9 +536,12 @@ PyObject *python_nb_xor(PyObject *arg1, PyObject *arg2)
 PyObject *python_nb_remainder(PyObject *arg1, PyObject *arg2)
 {
   if (PyObject_IsInstance(arg2, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
-    PyObject *dummy_dict;
-    auto node1 = PyOpenSCADObjectToNode(arg1, &dummy_dict);
-    auto node2 = PyOpenSCADObjectToNode(arg2, &dummy_dict);
+    PyObject *dict1_raw = nullptr;
+    PyObject *dict2_raw = nullptr;
+    auto node1 = PyOpenSCADObjectToNode(arg1, &dict1_raw);
+    auto node2 = PyOpenSCADObjectToNode(arg2, &dict2_raw);
+    auto dict1 = py_owned(dict1_raw);
+    auto dict2 = py_owned(dict2_raw);
     if (node1 == nullptr || node2 == nullptr) {
       PyErr_SetString(PyExc_TypeError, "Error during parsing hull. arguments must be solids.");
       return nullptr;
@@ -525,17 +599,22 @@ PyObject *python_csg_adv_sub(PyObject *self, PyObject *args, PyObject *kwargs, C
   std::shared_ptr<AbstractNode> child;
   PyTypeObject *type = &PyOpenSCADType;
   int i;
-  PyObject *dummydict;
 
   auto node = std::make_shared<CgalAdvNode>(instance, mode);
   PyObject *obj;
   for (i = 0; i < PyTuple_Size(args); i++) {
     obj = PyTuple_GetItem(args, i);
     type = PyOpenSCADObjectType(obj);
-    child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
+    PyObject *dummydict_raw = nullptr;
+    child = PyOpenSCADObjectToNodeMulti(obj, &dummydict_raw);
+    auto dummydict = py_owned(dummydict_raw);
     if (child != NULL) {
       node->children.push_back(child);
     } else {
+      // See python_csg_sub for rationale: propagate any pre-set
+      // exception from PyOpenSCADObjectToNodeMulti instead of
+      // overwriting it with a synthesized TypeError.
+      if (PyErr_Occurred()) return NULL;
       switch (mode) {
       case CgalAdvType::HULL:
         PyErr_SetString(PyExc_TypeError,
@@ -564,17 +643,26 @@ PyObject *python_minkowski(PyObject *self, PyObject *args, PyObject *kwargs)
   auto node = std::make_shared<CgalAdvNode>(instance, CgalAdvType::MINKOWSKI);
   char *kwlist[] = {"obj1", "obj2", "convexity", NULL};
   PyObject *obj1, *obj2;
-  PyObject *dummydict;
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|i", kwlist, &obj1, &obj2, &convexity)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing minkowski(object1, object2[, convexity])");
     return NULL;
   }
   PyTypeObject *type = PyOpenSCADObjectType(obj1);
-  child = PyOpenSCADObjectToNodeMulti(obj1, &dummydict);
+  PyObject *dict1_raw = nullptr;
+  PyObject *dict2_raw = nullptr;
+  // Validate both conversions before pushing into node->children:
+  // PyOpenSCADObjectToNodeMulti can return nullptr with a Python
+  // exception already set, and pushing a null shared_ptr would
+  // build an invalid node and crash later in evaluation.
+  child = PyOpenSCADObjectToNodeMulti(obj1, &dict1_raw);
+  auto dict1 = py_owned(dict1_raw);
+  if (child == nullptr) return propagate_or_typeerror("Invalid type for first object in minkowski");
   node->children.push_back(child);
 
-  child = PyOpenSCADObjectToNodeMulti(obj2, &dummydict);
+  child = PyOpenSCADObjectToNodeMulti(obj2, &dict2_raw);
+  auto dict2 = py_owned(dict2_raw);
+  if (child == nullptr) return propagate_or_typeerror("Invalid type for second object in minkowski");
   node->children.push_back(child);
 
   node->convexity = convexity;
@@ -598,13 +686,11 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
   std::shared_ptr<AbstractNode> child;
 
   auto node = std::make_shared<CgalAdvNode>(instance, CgalAdvType::RESIZE);
-  PyObject *child_dict;
+  PyObject *child_dict_raw = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
-  child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in resize");
-    return NULL;
-  }
+  child = PyOpenSCADObjectToNodeMulti(obj, &child_dict_raw);
+  auto child_dict = py_owned(child_dict_raw);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in resize");
 
   node->autosize << false, false, false;
   if (newsize != NULL) {
@@ -633,11 +719,18 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
   node->convexity = convexity;
 
   auto pyresult = PyOpenSCADObjectFromNode(type, node);
-  if (child_dict != nullptr) {
+  if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(child_dict, &pos, &key, &value)) {
-      PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
+      // Same propagation rule as python_csg_sub et al.: a
+      // PyDict_SetItem failure leaves an exception pending, so
+      // surface it instead of returning pyresult with a stale
+      // exception in flight.
+      if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value) < 0) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
     }
   }
   return pyresult;

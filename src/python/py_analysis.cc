@@ -36,12 +36,10 @@
 
 PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in mesh \n");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in mesh \n");
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
   std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
@@ -134,9 +132,10 @@ PyObject *python_oo_mesh(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_inside_core(PyObject *pyobj, PyObject *pypoint)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   Vector3d vec3;
   std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(pyobj, &dummydict);
+  auto dummydict_owner = py_owned(dummydict);
   if (node == nullptr) {
     PyErr_SetString(PyExc_TypeError, "Object must be a solid\n");
     return nullptr;
@@ -274,9 +273,11 @@ PyObject *python_oo_bbox(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_size_core(PyObject *obj)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
+  auto dummydict_owner = py_owned(dummydict);
   if (child == NULL) {
+    if (PyErr_Occurred()) return NULL;
     Py_RETURN_NONE;
   }
   Tree tree(child, "");
@@ -316,9 +317,11 @@ PyObject *python_size_core(PyObject *obj)
 
 PyObject *python_position_core(PyObject *obj)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
+  auto dummydict_owner = py_owned(dummydict);
   if (child == NULL) {
+    if (PyErr_Occurred()) return NULL;
     Py_RETURN_NONE;
   }
   Tree tree(child, "");
@@ -375,13 +378,11 @@ PyObject *python_position(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_separate_core(PyObject *obj)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in separate \n");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in separate \n");
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
   std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
@@ -480,13 +481,11 @@ PyObject *python_oo_separate(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_edges_core(PyObject *obj)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in faces \n");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in faces \n");
 
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
@@ -564,13 +563,11 @@ PyObject *python_oo_edges(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_faces_core(PyObject *obj, bool tessellate)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in faces \n");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in faces \n");
 
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
@@ -723,8 +720,9 @@ PyObject *python_oo_faces(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_children_core(PyObject *obj)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   auto solid = PyOpenSCADObjectToNode(obj, &dummydict);
+  auto dummydict_owner = py_owned(dummydict);
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   if (solid == nullptr) {
     PyErr_SetString(PyExc_TypeError, "not a solid\n");

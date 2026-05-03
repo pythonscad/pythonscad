@@ -65,24 +65,29 @@ PyObject *python_scale_sub(PyObject *obj, Vector3d scalevec)
   DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
   auto node = std::make_shared<TransformNode>(instance, "scale");
-  PyObject *child_dict;
+  PyObject *child_dict_raw = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
-  child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in scale");
-    return NULL;
-  }
+  child = PyOpenSCADObjectToNodeMulti(obj, &child_dict_raw);
+  auto child_dict = py_owned(child_dict_raw);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in scale");
   node->matrix.scale(scalevec);
   node->setPyName(child->getPyName());
   node->children.push_back(child);
   PyObject *pyresult = PyOpenSCADObjectFromNode(type, node);
-  if (child_dict != nullptr) {
+  if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(child_dict, &pos, &key, &value)) {
-      PyObject *value1 = python_number_scale(value, scalevec, 4);
-      if (value1 != nullptr) PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value1);
-      else PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
+      auto value1 = py_owned(python_number_scale(value, scalevec, 4));
+      if (value1.get() == nullptr && PyErr_Occurred()) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
+      PyObject *to_insert = value1.get() != nullptr ? value1.get() : value;
+      if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, to_insert) < 0) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
     }
   }
   return pyresult;
@@ -200,13 +205,11 @@ PyObject *python_rotate_sub(PyObject *obj, Vector3d vec3, double angle, PyObject
   auto node = std::make_shared<TransformNode>(instance, "rotate");
   node->dragflags = dragflags;
 
-  PyObject *child_dict;
-  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
+  PyObject *child_dict_raw = nullptr;
+  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict_raw);
+  auto child_dict = py_owned(child_dict_raw);
   PyTypeObject *type = PyOpenSCADObjectType(obj);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in rotate");
-    return NULL;
-  }
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in rotate");
   node->matrix.rotate(M);
   node->setPyName(child->getPyName());
 
@@ -234,13 +237,20 @@ PyObject *python_rotate_sub(PyObject *obj, Vector3d vec3, double angle, PyObject
     postnode->children.push_back(node);
     pyresult = PyOpenSCADObjectFromNode(type, postnode);
   }
-  if (child_dict != nullptr) {
+  if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(child_dict, &pos, &key, &value)) {
-      PyObject *value1 = python_number_rot(value, M, 4);
-      if (value1 != nullptr) PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value1);
-      else PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
+      auto value1 = py_owned(python_number_rot(value, M, 4));
+      if (value1.get() == nullptr && PyErr_Occurred()) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
+      PyObject *to_insert = value1.get() != nullptr ? value1.get() : value;
+      if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, to_insert) < 0) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
     }
   }
   return pyresult;
@@ -313,23 +323,28 @@ PyObject *python_mirror_sub(PyObject *obj, Matrix4d& m)
   DECLARE_INSTANCE();
   auto node = std::make_shared<TransformNode>(instance, "mirror");
   node->matrix = m;
-  PyObject *child_dict;
+  PyObject *child_dict_raw = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
-  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in mirror");
-    return NULL;
-  }
+  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict_raw);
+  auto child_dict = py_owned(child_dict_raw);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in mirror");
   node->children.push_back(child);
   node->setPyName(child->getPyName());
   PyObject *pyresult = PyOpenSCADObjectFromNode(type, node);
-  if (child_dict != nullptr) {
+  if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(child_dict, &pos, &key, &value)) {
-      PyObject *value1 = python_number_mirror(value, m, 4);
-      if (value1 != nullptr) PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value1);
-      else PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
+      auto value1 = py_owned(python_number_mirror(value, m, 4));
+      if (value1.get() == nullptr && PyErr_Occurred()) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
+      PyObject *to_insert = value1.get() != nullptr ? value1.get() : value;
+      if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, to_insert) < 0) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
     }
   }
   return pyresult;
@@ -402,7 +417,7 @@ PyObject *python_number_trans(PyObject *pynum, Vector3d transvec, int vecs)
 
 PyObject *python_translate_sub(PyObject *obj, Vector3d translatevec, int dragflags)
 {
-  PyObject *child_dict;
+  PyObject *child_dict_raw = nullptr;
   PyObject *mat = python_number_trans(obj, translatevec, 4);
   if (mat != nullptr) return mat;
 
@@ -410,24 +425,29 @@ PyObject *python_translate_sub(PyObject *obj, Vector3d translatevec, int dragfla
   auto node = std::make_shared<TransformNode>(instance, "translate");
   std::shared_ptr<AbstractNode> child;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
-  child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in translate");
-    return NULL;
-  }
+  child = PyOpenSCADObjectToNodeMulti(obj, &child_dict_raw);
+  auto child_dict = py_owned(child_dict_raw);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in translate");
   node->setPyName(child->getPyName());
   node->dragflags = dragflags;
   node->matrix.translate(translatevec);
 
   node->children.push_back(child);
   PyObject *pyresult = PyOpenSCADObjectFromNode(type, node);
-  if (child_dict != nullptr) {  // TODO dies ueberall
+  if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(child_dict, &pos, &key, &value)) {
-      PyObject *value1 = python_number_trans(value, translatevec, 4);
-      if (value1 != nullptr) PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value1);
-      else PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
+      auto value1 = py_owned(python_number_trans(value, translatevec, 4));
+      if (value1.get() == nullptr && PyErr_Occurred()) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
+      PyObject *to_insert = value1.get() != nullptr ? value1.get() : value;
+      if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, to_insert) < 0) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
     }
   }
   return pyresult;
@@ -491,22 +511,20 @@ PyObject *python_multmatrix_sub(PyObject *pyobj, PyObject *pymat, int div)
   DECLARE_INSTANCE();
   auto node = std::make_shared<TransformNode>(instance, "multmatrix");
   std::shared_ptr<AbstractNode> child;
-  PyObject *child_dict;
+  PyObject *child_dict_raw = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(pyobj);
-  child = PyOpenSCADObjectToNodeMulti(pyobj, &child_dict);
-  if (!child) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in multmatrix");
-    return NULL;
-  }
+  child = PyOpenSCADObjectToNodeMulti(pyobj, &child_dict_raw);
+  auto child_dict = py_owned(child_dict_raw);
+  if (!child) return propagate_or_typeerror("Invalid type for Object in multmatrix");
   node->setPyName(child->getPyName());
 
   node->matrix = mat;
   node->children.push_back(child);
   PyObject *pyresult = PyOpenSCADObjectFromNode(type, node);
-  if (child_dict != nullptr) {
+  if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(child_dict, &pos, &key, &value)) {
+    while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
       Matrix4d raw;
       if (python_tomatrix(value, raw)) return nullptr;
       PyObject *value1 = python_frommatrix(node->matrix * raw);

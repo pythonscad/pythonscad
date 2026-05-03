@@ -753,7 +753,7 @@ PyObject *python_ifrep(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE();
   PyObject *object = NULL;
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
 
   char *kwlist[] = {"obj", nullptr};
   std::shared_ptr<AbstractNode> child;
@@ -761,7 +761,26 @@ PyObject *python_ifrep(PyObject *self, PyObject *args, PyObject *kwargs)
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", kwlist, &PyOpenSCADType, &object)) return NULL;
 
   child = PyOpenSCADObjectToNodeMulti(object, &dummydict);
-  LeafNode *node = (LeafNode *)child.get();
+  auto dummydict_owner = py_owned(dummydict);
+  // Two failure modes the original C-style cast quietly missed:
+  //   1) child == nullptr (PyOpenSCADObjectToNodeMulti failed,
+  //      possibly with a Python exception already set);
+  //   2) child is non-null but not actually a LeafNode -- e.g. the
+  //      caller passed a CSG operation like `union(a, b)` whose
+  //      runtime type is CsgOpNode. The C-style cast would happily
+  //      pretend the bytes are a LeafNode and the subsequent
+  //      `createGeometry()` call would walk uninitialized vtable
+  //      slots, i.e. undefined behaviour.
+  // Validate both with a dynamic_cast (AbstractNode is polymorphic
+  // via BaseVisitable) and surface a Python-visible error instead.
+  if (child == nullptr) return propagate_or_typeerror("Invalid type for Object in ifrep");
+  LeafNode *node = dynamic_cast<LeafNode *>(child.get());
+  if (node == nullptr) {
+    PyErr_SetString(PyExc_TypeError,
+                    "ifrep() expects a primitive object (cube, sphere, polyhedron, ...); "
+                    "for CSG combinations use frep() with an explicit expression");
+    return nullptr;
+  }
   const std::shared_ptr<const Geometry> geom = node->createGeometry();
   const std::shared_ptr<const PolySet> ps = std::dynamic_pointer_cast<const PolySet>(geom);
 
