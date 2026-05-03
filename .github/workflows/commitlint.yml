@@ -29,6 +29,10 @@ jobs:
 
       - name: Validate PR title
         run: |
-          echo "${GITHUB_EVENT_PULL_REQUEST_TITLE}" | npx commitlint --verbose
+          # `printf '%s\n'` rather than `echo` so that titles containing
+          # `-n` / `-e` / backslash sequences are passed to commitlint
+          # byte-for-byte instead of being interpreted by the shell
+          # builtin.
+          printf '%s\n' "$GITHUB_EVENT_PULL_REQUEST_TITLE" | npx commitlint --verbose
         env:
           GITHUB_EVENT_PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
