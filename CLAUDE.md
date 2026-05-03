@@ -126,6 +126,32 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit
 
 Both `--hook-type` flags are required to validate both code and commit messages.
 
+### PR Iteration Workflow
+
+When iterating on a PR (force-pushing fixes in response to review feedback or
+CI failures), always cancel the currently-running workflows for that PR
+*before* pushing. The push itself triggers a fresh set of pipeline runs, so
+letting the old run finish only burns CI minutes / GitHub Actions concurrency
+slots without any benefit.
+
+The cancel-then-push pattern, using `gh`:
+
+```bash
+# 1. Cancel any in-progress runs on this PR's branch
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+gh run list --branch "$BRANCH" --status in_progress --json databaseId \
+  --jq '.[].databaseId' | xargs -r -n1 gh run cancel
+gh run list --branch "$BRANCH" --status queued --json databaseId \
+  --jq '.[].databaseId' | xargs -r -n1 gh run cancel
+
+# 2. Now push
+git push --force-with-lease
+```
+
+This applies whether the push is a force-push (amend) or a fast-forward (new
+commit). The new push will start fresh runs of every required check, so the
+previous in-flight ones add no signal.
+
 ## Architecture Overview
 
 ### Core Components

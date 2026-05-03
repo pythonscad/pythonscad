@@ -559,8 +559,14 @@ PyObject *PyDataObject_call_module(PyObject *self, PyObject *args, PyObject *kwa
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
-      PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-      std::string value_str = PyBytes_AS_STRING(value1);
+      std::string value_str;
+      if (!python_pyobject_to_utf8(key, value_str, "module keyword argument")) {
+        /* Propagate the helper's TypeError. Returning Py_None with a
+         * pending exception would violate the C-API contract and
+         * surface as ``SystemError: ... returned a result with an
+         * exception set`` in the next frame. */
+        return nullptr;
+      }
       if (value_str == "fn") value_str = "$fn";
       if (value_str == "fa") value_str = "$fa";
       if (value_str == "fs") value_str = "$fs";
@@ -623,8 +629,11 @@ PyObject *PyDataObject_call_function(PyObject *self, PyObject *args, PyObject *k
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
-      PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-      std::string value_str = PyBytes_AS_STRING(value1);
+      std::string value_str;
+      if (!python_pyobject_to_utf8(key, value_str, "function keyword argument")) {
+        /* Propagate the helper's TypeError -- see PyDataObject_call_module. */
+        return nullptr;
+      }
       Value val = python_convertresult(value, error);
       std::shared_ptr<Literal> lit = std::make_shared<Literal>(std::move(val), Location::NONE);
       std::shared_ptr<Assignment> ass = std::make_shared<Assignment>(value_str, lit);

@@ -163,7 +163,7 @@ void handle_triangle_color(const std::shared_ptr<const PolySet>& ps, ExportConte
  * PolySet must be triangulated.
  */
 //=======
-bool append_polyset(const std::shared_ptr<const PolySet>& ps, const Export3mfPartInfo info,
+bool append_polyset(const std::shared_ptr<const PolySet>& ps, const Export3mfPartInfo& info,
                     ExportContext& ctx)
 {
   try {
@@ -263,7 +263,7 @@ bool append_nef(const CGALNefGeometry& root_N, const Export3mfPartInfo& info, Ex
 }
 #endif  // ifdef ENABLE_CGAL
 
-bool append_3mf(const std::shared_ptr<const Geometry>& geom, const Export3mfPartInfo info,
+bool append_3mf(const std::shared_ptr<const Geometry>& geom, const Export3mfPartInfo& info,
                 ExportContext& ctx)
 {
   if (const auto geomlist = std::dynamic_pointer_cast<const GeometryList>(geom)) {

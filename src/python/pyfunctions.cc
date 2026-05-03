@@ -103,9 +103,10 @@ PyObject *python__getitem__(PyObject *obj, PyObject *key)
       return result;
     }
   }
-  PyObject *keyname = PyUnicode_AsEncodedString(key, "utf-8", "~");
-  if (keyname == nullptr) return nullptr;
-  std::string keystr = PyBytes_AS_STRING(keyname);
+  std::string keystr;
+  if (!python_pyobject_to_utf8(key, keystr, "obj[key]")) {
+    return nullptr;
+  }
 
   // member function lookup
 

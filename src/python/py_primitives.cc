@@ -116,13 +116,11 @@ PyObject *python_cube(PyObject *self, PyObject *args, PyObject *kwargs)
   else if (center == Py_True) {
     for (int i = 0; i < 3; i++) node->center[i] = 0;
   } else if (PyUnicode_Check(center)) {
-    PyObject *centerval = PyUnicode_AsEncodedString(center, "utf-8", "~");
-    const char *centerstr = PyBytes_AS_STRING(centerval);
-    if (centerstr == nullptr) {
-      PyErr_SetString(PyExc_TypeError, "Cannot parse center code");
+    std::string centerstr;
+    if (!python_pyobject_to_utf8(center, centerstr, "cube() center")) {
       return NULL;
     }
-    if (strlen(centerstr) != 3) {
+    if (centerstr.size() != 3) {
       PyErr_SetString(PyExc_TypeError, "Center code must be exactly 3 characters");
       return NULL;
     }

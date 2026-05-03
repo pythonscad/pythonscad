@@ -1,0 +1,13 @@
+export int key: TypeError
+export tuple key: TypeError
+export None key: TypeError
+export bytes key: TypeError
+export frozenset key: TypeError
+export non-str key STL: TypeError
+props_3mf int key: TypeError
+props_3mf tuple key: TypeError
+props_3mf int key STL ignored: OK
+export surrogate key: TypeError
+leftover: ['stl_part.stl']
+show ok
+

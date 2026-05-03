@@ -79,6 +79,56 @@ void PyObjectDeleter(PyObject *pObject)
 PyObjectUniquePtr pythonInitDict(nullptr, &PyObjectDeleter);
 PyObjectUniquePtr pythonMainModule(nullptr, &PyObjectDeleter);
 
+bool python_pyobject_to_utf8(PyObject *obj, std::string& out, const char *context)
+{
+  if (obj == nullptr || !PyUnicode_Check(obj)) {
+    /* PyUnicode_Check is exception-free, so don't pre-clear: a stale
+     * exception (if any) is a caller bug we shouldn't mask. ``%S`` on
+     * the type would print ``<class 'int'>``; ``tp_name`` gives the
+     * cleaner ``int`` form. ``PyErr_Format`` overwrites whatever the
+     * current exception was, so we don't have to chain manually. */
+    PyObject *type = obj == nullptr ? nullptr : (PyObject *)Py_TYPE(obj);
+    PyErr_Format(PyExc_TypeError, "%s: expected str, got %s", context,
+                 type == nullptr ? "NULL" : ((PyTypeObject *)type)->tp_name);
+    return false;
+  }
+  /* Use ``"strict"`` so unencodable code points (e.g. lone surrogates
+   * in a "str" produced by surrogateescape decoding) reliably raise a
+   * UnicodeEncodeError that we can convert into the documented
+   * TypeError. The ``"replace"`` handler would silently substitute
+   * U+FFFD instead, which is dangerous for dict keys: two distinct
+   * surrogate-bearing keys would both become "?...?" and collide on
+   * lookup, and the user-visible part name in a 3MF or the OBJ
+   * attribute would be a corrupted approximation of what they passed.
+   * The pre-existing call sites this helper replaces all used ``"~"``,
+   * which is not a registered error handler at all -- so on surrogate
+   * input they were already raising ``LookupError`` by accident, just
+   * by luck never on a dict key in the wild. */
+  PyObjectUniquePtr bytes(PyUnicode_AsEncodedString(obj, "utf-8", "strict"), &PyObjectDeleter);
+  if (bytes.get() == nullptr) {
+    if (PyErr_Occurred() != nullptr && !PyErr_ExceptionMatches(PyExc_UnicodeError)) {
+      /* MemoryError, KeyboardInterrupt, ImportError from a custom
+       * codec hook, ... -- propagate verbatim. */
+      return false;
+    }
+    PyErr_Clear();
+    PyErr_Format(PyExc_TypeError, "%s: str cannot be UTF-8 encoded", context);
+    return false;
+  }
+  /* ``PyBytes_AS_STRING`` and ``PyBytes_GET_SIZE`` are unchecked
+   * macros that assume a real ``bytes`` instance; if a custom utf-8
+   * codec misbehaves and returns a non-``bytes`` (or ``bytearray``,
+   * or some other buffer type), the macros would interpret the
+   * object's memory as ``PyBytesObject`` and we'd be reading garbage
+   * (or segfaulting). Guard explicitly. */
+  if (!PyBytes_Check(bytes.get())) {
+    PyErr_Format(PyExc_TypeError, "%s: utf-8 codec returned non-bytes", context);
+    return false;
+  }
+  out.assign(PyBytes_AS_STRING(bytes.get()), PyBytes_GET_SIZE(bytes.get()));
+  return true;
+}
+
 static std::atomic<bool> openscad_py_atexit_registered{false};
 
 static void openscad_release_static_py_refs(void)
@@ -272,6 +322,13 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs, PyObje
     result = node;
 
     *dict = PyDict_New();
+    if (*dict == nullptr) {
+      /* PyDict_New sets MemoryError on failure. Bail out before we
+       * dereference a null *dict in PyDict_SetItem below (UB / SIGSEGV).
+       * Returning nullptr also signals to the caller that the merge
+       * failed and lets it propagate the pending exception. */
+      return nullptr;
+    }
     for (int i = child_dict.size() - 1; i >= 0; i--)  // merge from back  to give 1st child most priority
     {
       auto& subsubdict = child_dict[i];
@@ -279,7 +336,14 @@ std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs, PyObje
       PyObject *key, *value;
       Py_ssize_t pos = 0;
       while (PyDict_Next(subsubdict, &pos, &key, &value)) {
-        PyDict_SetItem(*dict, key, value);
+        if (PyDict_SetItem(*dict, key, value) < 0) {
+          /* OOM (or the rare hashing-side error). Drop the
+           * partial merged dict so we don't leak it and let
+           * the caller surface the pending MemoryError. */
+          Py_DECREF(*dict);
+          *dict = nullptr;
+          return nullptr;
+        }
       }
     }
   } else if (objs == Py_None || objs == Py_False) {
@@ -305,7 +369,7 @@ void python_hierdump(std::ostringstream& stream, const std::shared_ptr<AbstractN
     stream << " }";
   }
 }
-void python_build_hashmap(const std::shared_ptr<AbstractNode>& node, int level)
+bool python_build_hashmap(const std::shared_ptr<AbstractNode>& node, int level)
 {
   PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
   PyObject *key, *value;
@@ -317,19 +381,30 @@ void python_build_hashmap(const std::shared_ptr<AbstractNode>& node, int level)
     if (!PyObject_IsInstance(value, reinterpret_cast<PyObject *>(&PyOpenSCADType))) continue;
     std::shared_ptr<AbstractNode> testnode = (reinterpret_cast<PyOpenSCADObject *>(value))->node;
     if (testnode != node) continue;
-    PyObject *key1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-    if (key1 == nullptr) continue;
-    const char *key_str = PyBytes_AS_STRING(key1);
-    if (key_str == nullptr) continue;
+    std::string key_str;
+    if (!python_pyobject_to_utf8(key, key_str, "__main__ key")) {
+      /* The hashmap is a best-effort lookup table for selection
+       * handles; non-str keys in __main__ (rare but legal) just
+       * shouldn't appear in it. Skip those (clear the helper's
+       * TypeError). Anything else (MemoryError, KeyboardInterrupt
+       * from a custom codec hook, ...) we propagate by leaving the
+       * exception set and returning ``false`` -- the caller
+       * (python_show_core et al.) is expected to bubble out via
+       * ``return nullptr``. */
+      if (!PyErr_ExceptionMatches(PyExc_TypeError)) return false;
+      PyErr_Clear();
+      continue;
+    }
     mapping_name.push_back(key_str);
     mapping_code.push_back(code);
     mapping_level.push_back(pos);
   }
   if (level < 5) {  // no  many level are unclear and error prone(overwrites memory)
     for (const auto& child : node->getChildren()) {
-      python_build_hashmap(child, level + 1);
+      if (!python_build_hashmap(child, level + 1)) return false;
     }
   }
+  return true;
 }
 
 void python_retrieve_pyname(const std::shared_ptr<AbstractNode>& node)

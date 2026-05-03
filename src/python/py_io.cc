@@ -53,6 +53,22 @@ PyObject *python_show_core(PyObject *obj)
   python_result_obj = obj;
   PyObject *child_dict = nullptr;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
+  /* PyOpenSCADObjectToNodeMulti returns ``*dict`` as a borrowed ref
+   * for PyOpenSCADType inputs but a freshly-allocated owned ref
+   * (``PyDict_New`` + per-child merge) for list inputs. Wrap in a
+   * conditional unique_ptr so ``show([a, b])`` does not leak one
+   * dict per call. See also issue #596 for the broader sweep of the
+   * other ~22 call sites. */
+  PyObjectUniquePtr child_dict_owner(nullptr, &PyObjectDeleter);
+  if (PyList_Check(obj)) {
+    child_dict_owner.reset(child_dict);
+  }
+  /* The list-path merge inside ``PyOpenSCADObjectToNodeMulti`` does
+   * unchecked ``PyDict_New`` / ``PyDict_SetItem`` calls and can
+   * leave a ``MemoryError`` set even on an apparent success.
+   * Propagate rather than returning a non-null PyObject* with a
+   * pending exception. */
+  if (PyErr_Occurred() != nullptr) return NULL;
   if (child == NULL) {
     PyErr_SetString(PyExc_TypeError, "Invalid type for Object in show");
     return NULL;
@@ -68,14 +84,29 @@ PyObject *python_show_core(PyObject *obj)
 
   PyObject *key, *value;
   Py_ssize_t pos = 0;
-  python_build_hashmap(child, 0);
+  if (!python_build_hashmap(child, 0)) {
+    /* Helper hit a non-TypeError exception (MemoryError, ...) while
+     * iterating __main__ -- propagate to the Python caller rather
+     * than silently returning a half-populated selection table. */
+    return NULL;
+  }
   std::string varname = child->getPyName();
   if (child_dict != nullptr) {
     while (PyDict_Next(child_dict, &pos, &key, &value)) {
       Matrix4d raw;
       if (python_tomatrix(value, raw)) continue;
-      PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-      const char *value_str = PyBytes_AS_STRING(value1);
+      /* Selection handles are best-effort metadata for the GUI. If a
+       * caller stuffed a non-str key into the object's dict, skip it
+       * (and clear the helper's pending TypeError) rather than crash
+       * the whole show() call. Non-TypeError failures (MemoryError,
+       * KeyboardInterrupt, ...) must propagate -- this function returns
+       * a PyObject* so we can do that cleanly with ``return NULL``. */
+      std::string key_str;
+      if (!python_pyobject_to_utf8(key, key_str, "show() attribute keys")) {
+        if (!PyErr_ExceptionMatches(PyExc_TypeError)) return NULL;
+        PyErr_Clear();
+        continue;
+      }
       SelectedObject sel;
       sel.pt.clear();
       sel.pt.push_back(Vector3d(raw(0, 3), raw(1, 3), raw(2, 3)));
@@ -83,7 +114,7 @@ PyObject *python_show_core(PyObject *obj)
       sel.pt.push_back(Vector3d(raw(0, 1), raw(1, 1), raw(2, 1)));
       sel.pt.push_back(Vector3d(raw(0, 2), raw(1, 2), raw(2, 2)));
       sel.type = SelectionType::SELECTION_HANDLE;
-      sel.name = varname + "." + value_str;
+      sel.name = varname + "." + key_str;
       python_result_handle.push_back(sel);
     }
   }
@@ -123,52 +154,110 @@ PyObject *python_output(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 void Export3mfPartInfo::writeProps(void *obj) const
 {
-  if (this->props == nullptr) return;
-  PyObject *prop = (PyObject *)this->props;
-  if (!PyDict_Check(prop)) return;
-  PyObject *key, *value;
-  Py_ssize_t pos = 0;
-  while (PyDict_Next(prop, &pos, &key, &value)) {
-    PyObject *key1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-    const char *key_str = PyBytes_AS_STRING(key1);
-    if (key_str == nullptr) continue;
-    if (PyFloat_Check(value)) {
-      writePropsFloat(obj, key_str, PyFloat_AsDouble(value));
-    }
-    if (PyLong_Check(value)) {
-      writePropsLong(obj, key_str, PyLong_AsLong(value));
-    }
-    if (PyUnicode_Check(value)) {
-      PyObject *val1 = PyUnicode_AsEncodedString(value, "utf-8", "~");
-      const char *val_str = PyBytes_AS_STRING(val1);
-      writePropsString(obj, key_str, val_str);
-    }
+  /* No Python dict iteration here -- ``python_export_core`` has
+   * already converted the user's ``props_3mf`` mapping into the
+   * typed vectors below. That pre-encode step is the only place a
+   * ``TypeError`` (non-str key, encoding failure) or ``MemoryError``
+   * can fire, and it does so on the main thread where it can cleanly
+   * abort the export. By the time we reach this callback, which runs
+   * deep inside lib3mf where we couldn't propagate a Python
+   * exception even if we wanted to, every key/value is a plain C++
+   * string/number. */
+  for (const auto& [key, val] : this->propsFloat) {
+    writePropsFloat(obj, key.c_str(), val);
+  }
+  for (const auto& [key, val] : this->propsLong) {
+    writePropsLong(obj, key.c_str(), val);
+  }
+  for (const auto& [key, val] : this->propsString) {
+    writePropsString(obj, key.c_str(), val.c_str());
   }
 }
 
+/* The ``# key = value`` header block emitted by ``export_obj``.
+ * Pre-rendered in ``python_export_core`` while the GIL is held and
+ * the dict is still walkable, so that the actual writer
+ * (``python_export_obj_att``) is a Python-free pure-C++ ``output <<``
+ * call -- which is important because it is invoked from
+ * ``src/io/export_obj.cc::export_obj`` which has no PyErr-aware
+ * caller and so could not propagate an exception leaked from this
+ * function.
+ *
+ * The block is single-shot: ``python_export_obj_att`` clears it
+ * after writing so that a subsequent OBJ export triggered through a
+ * non-Python path (GUI ``File -> Export``, CLI ``--export-format``,
+ * etc.) does not inherit the previous Python ``export()`` call's
+ * attributes. ``python_export_obj_att_pre_encode`` re-populates it
+ * for each Python-driven OBJ export. */
+static std::string python_obj_att_block;
+
 void python_export_obj_att(std::ostream& output)
 {
+  output << python_obj_att_block;
+  python_obj_att_block.clear();
+}
+
+/* Walk the attribute dict of ``python_result_obj`` and pre-render
+ * the ``# key = value`` lines into ``python_obj_att_block``. Returns
+ * ``true`` on success; on failure leaves a Python exception set and
+ * returns ``false`` so ``python_export_core`` can abort cleanly
+ * before opening the output file. Non-str keys raise ``TypeError``;
+ * an unrecognised value type for an otherwise-valid str key is
+ * silently skipped, matching the pre-refactor behaviour. */
+static bool python_export_obj_att_pre_encode()
+{
+  python_obj_att_block.clear();
   PyObject *child_dict = nullptr;
-  if (python_result_obj == nullptr) return;
+  if (python_result_obj == nullptr) return true;
   PyOpenSCADObjectToNodeMulti(python_result_obj, &child_dict);
-  if (child_dict == nullptr) return;
-  if (!PyDict_Check(child_dict)) return;
+  /* PyOpenSCADObjectToNodeMulti returns ``*dict`` as a *borrowed*
+   * reference for the PyOpenSCADType path, but ``PyDict_New()``s a
+   * fresh owned reference for the list path (and merges per-child
+   * dicts into it). We must Py_DECREF the latter here to avoid
+   * leaking one dict per ``export([...], "...")`` call. ``nullptr``
+   * is safe to wrap since PyObjectDeleter handles it. */
+  PyObjectUniquePtr child_dict_owner(nullptr, &PyObjectDeleter);
+  if (PyList_Check(python_result_obj)) {
+    child_dict_owner.reset(child_dict);
+  }
+  /* The list path can leave a ``MemoryError`` set if ``PyDict_New``
+   * or ``PyDict_SetItem`` failed during the merge. Surface it
+   * cleanly instead of returning success-with-pending-exception. */
+  if (PyErr_Occurred() != nullptr) return false;
+  if (child_dict == nullptr || !PyDict_Check(child_dict)) return true;
+  std::ostringstream buf;
   PyObject *key, *value;
   Py_ssize_t pos = 0;
   while (PyDict_Next(child_dict, &pos, &key, &value)) {
-    PyObject *key1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-    const char *key_str = PyBytes_AS_STRING(key1);
-    if (key_str == nullptr) continue;
-
-    if (PyLong_Check(value)) output << "# " << key_str << " = " << PyLong_AsLong(value) << "\n";
-
-    if (PyFloat_Check(value)) output << "# " << key_str << " = " << PyFloat_AsDouble(value) << "\n";
-
-    if (PyUnicode_Check(value)) {
-      auto valuestr = std::string(PyUnicode_AsUTF8(value));
-      output << "# " << key_str << " = \"" << valuestr << "\"\n";
+    std::string key_str;
+    if (!python_pyobject_to_utf8(key, key_str, "object attribute keys")) {
+      return false;
+    }
+    if (PyLong_Check(value)) {
+      long lval = PyLong_AsLong(value);
+      if (lval == -1 && PyErr_Occurred() != nullptr) {
+        /* OverflowError on ints > LONG_MAX. Surface cleanly to the
+         * Python caller before the export starts rather than letting
+         * the pending exception leak across the void writer. */
+        return false;
+      }
+      buf << "# " << key_str << " = " << lval << "\n";
+    } else if (PyFloat_Check(value)) {
+      double dval = PyFloat_AsDouble(value);
+      if (dval == -1.0 && PyErr_Occurred() != nullptr) {
+        return false;
+      }
+      buf << "# " << key_str << " = " << dval << "\n";
+    } else if (PyUnicode_Check(value)) {
+      std::string val_str;
+      if (!python_pyobject_to_utf8(value, val_str, "object attribute values")) {
+        return false;
+      }
+      buf << "# " << key_str << " = \"" << val_str << "\"\n";
     }
   }
+  python_obj_att_block = buf.str();
+  return true;
 }
 
 PyObject *python_export_core(PyObject *obj, char *file)
@@ -190,10 +279,56 @@ PyObject *python_export_core(PyObject *obj, char *file)
     LOG("Invalid suffix %1$s. Defaulting to binary STL.", suffix);
   }
 
+  /* Pre-render the OBJ attribute block now (while we hold the GIL
+   * and can cleanly raise to the Python caller) so the OBJ-side
+   * writer (``python_export_obj_att`` -> ``output <<`` in
+   * ``src/io/export_obj.cc``) is Python-free. Only do this for OBJ
+   * exports -- the pre-encode walks ``python_result_obj``'s
+   * attribute dict and any malformed key/value (non-str,
+   * OverflowError, ...) would otherwise spuriously fail unrelated
+   * STL/3MF/etc. exports that never consume the block.
+   *
+   * The RAII guard below clears the block on *every* exit path
+   * (success, exception, early return, ``exportFileByName`` failure)
+   * so a stale block can never leak into a subsequent non-Python
+   * OBJ export through the GUI/CLI. ``python_export_obj_att`` also
+   * clears after writing, so the guard's clear is idempotent on the
+   * happy path. */
+  struct ObjAttBlockResetOnExit {
+    ~ObjAttBlockResetOnExit() { python_obj_att_block.clear(); }
+  } obj_att_guard;
+  if (exportFileFormat == FileFormat::OBJ) {
+    if (!python_export_obj_att_pre_encode()) {
+      return nullptr;
+    }
+  }
+
   std::vector<Export3mfPartInfo> export3mfPartInfos;
 
-  PyObject *child_dict;
+  /* Initialise to nullptr because ``PyOpenSCADObjectToNodeMulti``
+   * has an early ``return nullptr;`` (line 308 of pyopenscad.cc) for
+   * lists that contain a non-PyOpenSCAD element which leaves
+   * ``*dict`` untouched. Reading the indeterminate value below would
+   * be UB. */
+  PyObject *child_dict = nullptr;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
+  /* Same ownership-handling rule as the per-part loop below: list
+   * inputs cause ``PyOpenSCADObjectToNodeMulti`` to allocate a fresh
+   * merged dict that we own and must release. PyOpenSCADType inputs
+   * yield a borrowed reference. The single-object 3MF path doesn't
+   * actually consult ``child_dict`` (no per-part props_3mf), but we
+   * still need to release it to avoid leaking on
+   * ``export([a, b], "out.3mf")``. */
+  PyObjectUniquePtr top_child_dict_owner(nullptr, &PyObjectDeleter);
+  if (PyList_Check(obj)) {
+    top_child_dict_owner.reset(child_dict);
+  }
+  /* The list path's per-child merge inside
+   * ``PyOpenSCADObjectToNodeMulti`` calls ``PyDict_New`` and
+   * ``PyDict_SetItem`` without checking either return value, so it
+   * can leave a ``MemoryError`` set even on an apparent success.
+   * Surface it instead of silently dropping it on the floor. */
+  if (PyErr_Occurred() != nullptr) return nullptr;
   if (child != nullptr) {
     Tree tree(child, "parent");
     GeometryEvaluator geomevaluator(tree);
@@ -204,21 +339,115 @@ PyObject *python_export_core(PyObject *obj, char *file)
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(obj, &pos, &key, &value)) {
-      PyObject *value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
-      const char *value_str = PyBytes_AS_STRING(value1);
-      if (value_str == nullptr) continue;
-      std::shared_ptr<AbstractNode> dict_child = PyOpenSCADObjectToNodeMulti(value, &child_dict);
-      if (dict_child == nullptr) continue;
-
-      void *prop = nullptr;
-      if (child_dict != nullptr && PyDict_Check(child_dict)) {
-        PyObject *props_key = PyUnicode_FromStringAndSize("props_3mf", 9);
-        prop = PyDict_GetItem(child_dict, props_key);
+      std::string part_name;
+      if (!python_pyobject_to_utf8(key, part_name, "export() dict keys")) {
+        return nullptr;
       }
+      child_dict = nullptr;
+      std::shared_ptr<AbstractNode> dict_child = PyOpenSCADObjectToNodeMulti(value, &child_dict);
+      if (dict_child == nullptr) {
+        /* Two distinct causes of nullptr return: (1) an OOM in the
+         * helper's list-path merge (PyDict_New / PyDict_SetItem) leaves
+         * a MemoryError set -- propagate it; (2) a bogus value type
+         * (non-PyOpenSCAD, non-list) leaves no exception set -- skip
+         * that part and keep iterating other dict entries, matching
+         * the pre-fix behaviour. */
+        if (PyErr_Occurred() != nullptr) return nullptr;
+        continue;
+      }
+      /* When ``value`` is a list, ``PyOpenSCADObjectToNodeMulti``
+       * returns a freshly-allocated merged dict (``PyDict_New`` +
+       * per-child merge). Take ownership in that case so we don't
+       * leak one dict per ``export({"name": [..]}, ...)`` part.
+       * Borrowed-ref path (``PyOpenSCADType``) leaves the unique_ptr
+       * empty. The dict is consumed by the props_3mf scan that
+       * follows and freed when the unique_ptr goes out of scope at
+       * the end of this iteration. */
+      PyObjectUniquePtr value_dict_owner(nullptr, &PyObjectDeleter);
+      if (PyList_Check(value)) {
+        value_dict_owner.reset(child_dict);
+      }
+
+      /* Pre-encode props_3mf into typed C++ vectors *before* we
+       * evaluate geometry. Walking the dict is cheap; evaluating
+       * geometry is potentially very expensive, so failing here
+       * (TypeError on a non-str key, MemoryError on encode, OverflowError
+       * on a too-big long, etc.) lets us abort the whole export without
+       * having computed any meshes. ``writeProps`` is later called
+       * from inside lib3mf and walks these vectors only -- it never
+       * touches Python and so cannot fail.
+       *
+       * Skip the whole walk when the target format is not 3MF:
+       * ``props_3mf`` is only consumed by ``Export3mfPartInfo::writeProps``
+       * which only runs from inside ``export_3mf``. Validating it for
+       * STL / OBJ / OFF / ... would spuriously fail an export whose
+       * exporter would have ignored the field anyway, regressing the
+       * pre-refactor behaviour. */
+      std::vector<std::pair<std::string, double>> propsFloat;
+      std::vector<std::pair<std::string, long>> propsLong;
+      std::vector<std::pair<std::string, std::string>> propsString;
+      if (exportFileFormat == FileFormat::_3MF && child_dict != nullptr && PyDict_Check(child_dict)) {
+        PyObjectUniquePtr props_key(PyUnicode_FromStringAndSize("props_3mf", 9), &PyObjectDeleter);
+        if (props_key.get() == nullptr) {
+          /* Out of memory while interning the literal "props_3mf" --
+           * propagate MemoryError rather than feeding a null key into
+           * PyDict_GetItem (which is UB). */
+          return nullptr;
+        }
+        PyObject *prop_obj = PyDict_GetItem(child_dict, props_key.get());
+        if (prop_obj != nullptr && PyDict_Check(prop_obj)) {
+          PyObject *pk, *pv;
+          Py_ssize_t ppos = 0;
+          while (PyDict_Next(prop_obj, &ppos, &pk, &pv)) {
+            std::string key_str;
+            if (!python_pyobject_to_utf8(pk, key_str, "export() props_3mf keys")) {
+              return nullptr;
+            }
+            if (PyFloat_Check(pv)) {
+              double dval = PyFloat_AsDouble(pv);
+              if (dval == -1.0 && PyErr_Occurred() != nullptr) {
+                /* PyFloat_AsDouble can raise on subclasses with a
+                 * pathological __float__; propagate. */
+                return nullptr;
+              }
+              propsFloat.emplace_back(std::move(key_str), dval);
+            } else if (PyLong_Check(pv)) {
+              long lval = PyLong_AsLong(pv);
+              if (lval == -1 && PyErr_Occurred() != nullptr) {
+                /* OverflowError on ints > LONG_MAX (e.g. 2**100). The
+                 * pre-refactor writeProps loop silently propagated -1
+                 * with the exception still pending; here we surface
+                 * a clean OverflowError to the Python caller before
+                 * the export starts. */
+                return nullptr;
+              }
+              propsLong.emplace_back(std::move(key_str), lval);
+            } else if (PyUnicode_Check(pv)) {
+              std::string val_str;
+              if (!python_pyobject_to_utf8(pv, val_str, "export() props_3mf values")) {
+                return nullptr;
+              }
+              propsString.emplace_back(std::move(key_str), std::move(val_str));
+            }
+            /* Other value types are silently ignored, matching the
+             * pre-refactor behaviour of writeProps. */
+          }
+        }
+      }
+
+      /* All Python-side validation done. Evaluating the geometry below
+       * is the expensive part and cannot fail with a Python exception.
+       * ``part_name`` is moved into the constructor; it isn't read
+       * again in this iteration, and a typical export of N named parts
+       * would otherwise pay one ``std::string`` copy per part. */
       Tree tree(dict_child, "parent");
       GeometryEvaluator geomevaluator(tree);
-      Export3mfPartInfo info(geomevaluator.evaluateGeometry(*tree.root(), false), value_str, prop);
-      export3mfPartInfos.push_back(info);
+      Export3mfPartInfo info(geomevaluator.evaluateGeometry(*tree.root(), false), std::move(part_name),
+                             nullptr);
+      info.propsFloat = std::move(propsFloat);
+      info.propsLong = std::move(propsLong);
+      info.propsString = std::move(propsString);
+      export3mfPartInfos.push_back(std::move(info));
     }
   }
   if (export3mfPartInfos.size() == 0) {
@@ -536,10 +765,10 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs,
     default_expr = std::make_shared<Literal>(PyLong_AsLong(value) * 1.0, Location::NONE);
     found = true;
   } else if (is_string) {
-    PyObject *value1 = PyUnicode_AsEncodedString(value, "utf-8", "~");
-    const char *value_str = PyBytes_AS_STRING(value1);
-    std::string value_string(value_str);
-    Py_DECREF(value1);
+    std::string value_string;
+    if (!python_pyobject_to_utf8(value, value_string, "add_parameter() default")) {
+      return NULL;
+    }
     default_expr = std::make_shared<Literal>(value_string, Location::NONE);
     found = true;
   } else if (is_list) {
@@ -578,9 +807,10 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs,
         for (Py_ssize_t i = 0; i < size; i++) {
           PyObject *item = PyList_GetItem(options, i);
           if (PyUnicode_Check(item)) {
-            PyObject *encoded = PyUnicode_AsEncodedString(item, "utf-8", "~");
-            std::string item_string(PyBytes_AS_STRING(encoded));
-            Py_DECREF(encoded);
+            std::string item_string;
+            if (!python_pyobject_to_utf8(item, item_string, "add_parameter() options item")) {
+              return NULL;
+            }
             vec->emplace_back(new Literal(item_string, Location::NONE));
           } else if (PyFloat_Check(item)) {
             vec->emplace_back(new Literal(PyFloat_AsDouble(item), Location::NONE));
@@ -600,16 +830,18 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs,
           } else if (PyLong_Check(key)) {
             item_vec->emplace_back(new Literal(PyLong_AsDouble(key), Location::NONE));
           } else if (PyUnicode_Check(key)) {
-            PyObject *encoded = PyUnicode_AsEncodedString(key, "utf-8", "~");
-            std::string key_string(PyBytes_AS_STRING(encoded));
-            Py_DECREF(encoded);
+            std::string key_string;
+            if (!python_pyobject_to_utf8(key, key_string, "add_parameter() options key")) {
+              return NULL;
+            }
             item_vec->emplace_back(new Literal(key_string, Location::NONE));
           }
           // Label
           if (PyUnicode_Check(label)) {
-            PyObject *encoded = PyUnicode_AsEncodedString(label, "utf-8", "~");
-            std::string label_string(PyBytes_AS_STRING(encoded));
-            Py_DECREF(encoded);
+            std::string label_string;
+            if (!python_pyobject_to_utf8(label, label_string, "add_parameter() options label")) {
+              return NULL;
+            }
             item_vec->emplace_back(new Literal(label_string, Location::NONE));
           }
           vec->emplace_back(item_vec);
