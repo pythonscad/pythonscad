@@ -1425,7 +1425,15 @@ PyObject *PyOpenSCAD_sq_item(PyOpenSCADObject *self, Py_ssize_t i)
   std::shared_ptr<AbstractNode> node =
     PyOpenSCADObjectToNode(reinterpret_cast<PyObject *>(self), &dummydict_raw);
   auto dummydict = py_owned(dummydict_raw);
-  if (i < 0 || i >= node->children.size()) {
+  /* `PyOpenSCADObjectToNode` returns nullptr for a user-constructed
+   * `PyOpenSCADType` instance whose `tp_init` did not populate
+   * `self->node` (e.g. ``Openscad()`` then ``obj[0]``). Dereferencing
+   * `node->children` in that case would segfault. Surface a clean
+   * `TypeError` instead. `propagate_or_typeerror` preserves any
+   * pre-existing pending exception (e.g. MemoryError from the
+   * dict-merge path) verbatim. */
+  if (node == nullptr) return propagate_or_typeerror("PyOpenSCAD object has no node");
+  if (i < 0 || i >= (Py_ssize_t)node->children.size()) {
     PyErr_SetString(PyExc_IndexError, "index out of range");
     return nullptr;
   }
@@ -1438,6 +1446,14 @@ Py_ssize_t PyOpenSCAD_sq_length(PyOpenSCADObject *self)
   std::shared_ptr<AbstractNode> node =
     PyOpenSCADObjectToNode(reinterpret_cast<PyObject *>(self), &dummydict_raw);
   auto dummydict = py_owned(dummydict_raw);
+  /* See PyOpenSCAD_sq_item above for the null-`node` motivation.
+   * `sq_length` returns Py_ssize_t -- the C-API convention for an
+   * exceptional case is to return -1 with a Python exception set,
+   * which CPython will then surface to the caller of `len(obj)`. */
+  if (node == nullptr) {
+    propagate_or_typeerror("PyOpenSCAD object has no node");
+    return -1;
+  }
   return node->children.size();
 }
 
