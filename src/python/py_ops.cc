@@ -620,6 +620,13 @@ PyObject *python_render_core(PyObject *obj, int convexity)
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNode(obj, &dummydict);
   auto dummydict_owner = py_owned(dummydict);
+  /* PyOpenSCADObjectToNode can return nullptr for a user-constructed
+   * PyOpenSCADType whose `tp_init` did not populate `self->node`, or
+   * with an exception already set (e.g. MemoryError from the
+   * dict-merge path). Pushing a null shared_ptr into
+   * `node->children` would build an invalid graph that crashes
+   * during geometry evaluation; surface a clean TypeError now. */
+  if (child == nullptr) return propagate_or_typeerror("Invalid type for Object in render");
   node->convexity = convexity;
   node->children.push_back(child);
   return PyOpenSCADObjectFromNode(type, node);
@@ -769,6 +776,11 @@ PyObject *python_group(PyObject *self, PyObject *args, PyObject *kwargs)
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   child = PyOpenSCADObjectToNode(obj, &dummydict);
   auto dummydict_owner = py_owned(dummydict);
+  /* See `python_render_core` above: a null `child` from
+   * PyOpenSCADObjectToNode would build an invalid GroupNode that
+   * crashes during evaluation. Propagate any pending exception or
+   * raise a clean TypeError. */
+  if (child == nullptr) return propagate_or_typeerror("Invalid type for Object in group");
 
   node->children.push_back(child);
   return PyOpenSCADObjectFromNode(type, node);
@@ -885,6 +897,11 @@ PyObject *python_debug_modifier(PyObject *arg, int mode)
   PyTypeObject *type = PyOpenSCADObjectType(arg);
   auto child = PyOpenSCADObjectToNode(arg, &dummydict);
   auto dummydict_owner = py_owned(dummydict);
+  /* See `python_render_core` / `python_group` above: a null `child`
+   * would build a CsgOpNode with a null child that crashes during
+   * geometry evaluation. Surface a clean TypeError (or propagate an
+   * already-pending exception) before constructing the node. */
+  if (child == nullptr) return propagate_or_typeerror("Invalid type for Object in modifier");
   switch (mode) {
   case 0: instance->tag_highlight = true; break;   // #
   case 1: instance->tag_background = true; break;  // %
