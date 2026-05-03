@@ -621,10 +621,24 @@ void python_catch_error(std::string& errorstr)
 
   if (pyExcValue != nullptr) {
     PyObjectUniquePtr str_exc_value(PyObject_Repr(pyExcValue), &PyObjectDeleter);
-    PyObjectUniquePtr pyExcValueStr(PyUnicode_AsEncodedString(str_exc_value.get(), "utf-8", "~"),
-                                    PyObjectDeleter);
-    char *suberror = PyBytes_AS_STRING(pyExcValueStr.get());
-    if (suberror != nullptr) errorstr += suberror;
+    /* Best-effort: this is a void error-formatter, so we cannot
+     * propagate a helper failure to a caller. Clear any exception
+     * the helper sets (e.g. TypeError from a repr() containing lone
+     * surrogates) and degrade silently to no-append.
+     *
+     * Same treatment for a NULL repr -- PyObject_Repr() also leaves
+     * an exception set on failure, and we don't want to poison the
+     * next unrelated C-API call from the GUI. */
+    if (str_exc_value.get() != nullptr) {
+      std::string suberror;
+      if (python_pyobject_to_utf8(str_exc_value.get(), suberror, "python_catch_error()")) {
+        errorstr += suberror;
+      } else {
+        PyErr_Clear();
+      }
+    } else {
+      PyErr_Clear();
+    }
     Py_XDECREF(pyExcValue);
   }
   if (pyExcTraceback != nullptr) {
@@ -847,17 +861,18 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
         if (!PyUnicode_Check(key)) {
           continue;
         }
-        PyObjectUniquePtr keyUtf(PyUnicode_AsEncodedString(key, "utf-8", "~"), &PyObjectDeleter);
-        if (keyUtf.get() == nullptr) {
+        /* Best-effort cleanup walk: a key we can't UTF-8 encode is
+         * a key we can't compare against the inventory anyway, so
+         * skip it (and clear the helper's exception). */
+        std::string keyStrStr;
+        if (!python_pyobject_to_utf8(key, keyStrStr, "initPython() __main__ key")) {
+          PyErr_Clear();
           continue;
         }
-        const char *keyStr = PyBytes_AS_STRING(keyUtf.get());
-        if (keyStr == nullptr) {
-          continue;
-        }
+        const char *keyStr = keyStrStr.c_str();
         if (std::find(std::begin(pythonInventory), std::end(pythonInventory), keyStr) ==
             std::end(pythonInventory)) {
-          if (strlen(keyStr) < 4 || strncmp(keyStr, "stat", 4) != 0) {
+          if (keyStrStr.size() < 4 || strncmp(keyStr, "stat", 4) != 0) {
             mainKeysToDelete.emplace_back(keyStr);
           }
         }
@@ -882,12 +897,12 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
           if (!PyUnicode_Check(k1)) {
             continue;
           }
-          PyObjectUniquePtr k1Utf(PyUnicode_AsEncodedString(k1, "utf-8", "~"), &PyObjectDeleter);
-          if (k1Utf.get() == nullptr) {
+          std::string k1StrStr;
+          if (!python_pyobject_to_utf8(k1, k1StrStr, "initPython() sys.<attr> key")) {
+            PyErr_Clear();
             continue;
           }
-          const char *k1Str = PyBytes_AS_STRING(k1Utf.get());
-          if (k1Str == nullptr || strcmp(k1Str, "modules") != 0) {
+          if (k1StrStr != "modules") {
             continue;
           }
           PyObject *mm = PyDict_GetItem(sysdict, k1);
@@ -905,32 +920,33 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
             if (!PyUnicode_Check(k2)) {
               continue;
             }
-            PyObjectUniquePtr k2Utf(PyUnicode_AsEncodedString(k2, "utf-8", "~"), &PyObjectDeleter);
-            if (k2Utf.get() == nullptr) {
+            std::string k2StrStr;
+            if (!python_pyobject_to_utf8(k2, k2StrStr, "initPython() sys.modules key")) {
+              PyErr_Clear();
               continue;
             }
-            const char *k2Str = PyBytes_AS_STRING(k2Utf.get());
-            if (k2Str == nullptr) {
-              continue;
-            }
+            const char *k2Str = k2StrStr.c_str();
             PyObject *value2 = PyDict_GetItem(mm, k2);
             if (value2 == nullptr || !PyModule_Check(value2)) {
               continue;
             }
             PyObject *modrepr = PyObject_Repr(value2);
             if (modrepr == nullptr) {
+              /* Same exception-hygiene treatment as the catcher /
+               * catch_error sites: PyObject_Repr() leaves a
+               * TypeError / MemoryError / etc. set on failure;
+               * clear it so we do not poison the next iteration's
+               * C-API calls. */
+              PyErr_Clear();
               continue;
             }
             PyObjectUniquePtr modreprOwned(modrepr, &PyObjectDeleter);
-            PyObjectUniquePtr modReprUtf(PyUnicode_AsEncodedString(modrepr, "utf-8", "~"),
-                                         &PyObjectDeleter);
-            if (modReprUtf.get() == nullptr) {
+            std::string modReprStr;
+            if (!python_pyobject_to_utf8(modrepr, modReprStr, "initPython() repr(module)")) {
+              PyErr_Clear();
               continue;
             }
-            const char *modreprstr = PyBytes_AS_STRING(modReprUtf.get());
-            if (modreprstr == nullptr) {
-              continue;
-            }
+            const char *modreprstr = modReprStr.c_str();
             if (strstr(modreprstr, "(frozen)") != nullptr) continue;
             if (strstr(modreprstr, "(built-in)") != nullptr) continue;
             if (strstr(modreprstr, "/encodings/") != nullptr) continue;
@@ -1088,9 +1104,15 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       if (!PyUnicode_Check(key)) {
         continue;
       }
-      PyObjectUniquePtr key1(PyUnicode_AsEncodedString(key, "utf-8", "~"), &PyObjectDeleter);
-      const char *key_str = PyBytes_AsString(key1.get());
-      if (key_str != nullptr) pythonInventory.push_back(key_str);
+      /* Best-effort inventory snapshot of __main__ at initPython() time.
+       * Skip (and clear) keys we can't UTF-8 encode -- they couldn't be
+       * compared against on the cleanup walk above either. */
+      std::string key_str;
+      if (!python_pyobject_to_utf8(key, key_str, "initPython() inventory key")) {
+        PyErr_Clear();
+        continue;
+      }
+      pythonInventory.push_back(key_str);
     }
   }
   std::ostringstream stream;
@@ -1229,16 +1251,37 @@ stderr_bak = None\n\
     PyObjectUniquePtr catcher(nullptr, &PyObjectDeleter);
     catcher.reset(
       PyObject_GetAttrString(pythonMainModule.get(), i == 1 ? "catcher_err" : "catcher_out"));
-    if (catcher == nullptr) continue;
+    if (catcher == nullptr) {
+      /* The catcher_out / catcher_err globals are installed by
+       * python_init_code above, but a user script could `del` them
+       * (or replace them with something that raises on attribute
+       * access). PyObject_GetAttrString sets AttributeError /
+       * MemoryError / etc. on failure -- clear it so we don't
+       * poison the next unrelated C-API call. */
+      PyErr_Clear();
+      continue;
+    }
     PyObjectUniquePtr command_output(nullptr, &PyObjectDeleter);
     command_output.reset(PyObject_GetAttrString(catcher.get(), "data"));
+    if (command_output.get() == nullptr) {
+      PyErr_Clear();
+      continue;
+    }
 
-    PyObjectUniquePtr command_output_value(nullptr, &PyObjectDeleter);
-    command_output_value.reset(PyUnicode_AsEncodedString(command_output.get(), "utf-8", "~"));
-    const char *command_output_bytes = PyBytes_AS_STRING(command_output_value.get());
-    if (command_output_bytes != nullptr && *command_output_bytes != '\0') {
-      if (i == 1) error += command_output_bytes; /* output to console */
-      else LOG(command_output_bytes);            /* error to LOG */
+    /* Best-effort capture of the catcher's accumulated stdout/stderr.
+     * The helper can fail if `data` is somehow not a str (a
+     * misbehaving catcher reimplementation), or if the str contains
+     * lone surrogates that the strict utf-8 handler refuses to
+     * encode. Drop the chunk in either case rather than crashing or
+     * appending garbage to the user-visible error string. */
+    std::string command_output_str;
+    if (!python_pyobject_to_utf8(command_output.get(), command_output_str, "captured Python output")) {
+      PyErr_Clear();
+      continue;
+    }
+    if (!command_output_str.empty()) {
+      if (i == 1) error += command_output_str; /* output to console */
+      else LOG(command_output_str.c_str());    /* error to LOG */
     }
   }
   PyRun_SimpleString(python_exit_code);
