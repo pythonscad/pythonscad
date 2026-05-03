@@ -54,13 +54,11 @@ PyObject *python_offset_core(PyObject *obj, double r, double delta, PyObject *ch
   DECLARE_INSTANCE();
   auto node = std::make_shared<OffsetNode>(instance, discretizer);
 
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in offset");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in offset");
 
   node->delta = 1;
   node->chamfer = false;
@@ -114,13 +112,11 @@ PyObject *python_pull_core(PyObject *obj, PyObject *anchor, PyObject *dir)
 {
   DECLARE_INSTANCE();
   auto node = std::make_shared<PullNode>(instance);
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in translate\n");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in pull");
 
   double x = 0, y = 0, z = 0;
   if (python_vectorval(anchor, 3, 3, &x, &y, &z)) {
@@ -170,13 +166,11 @@ PyObject *python_wrap_core(PyObject *obj, PyObject *target, double r, double d, 
   DECLARE_INSTANCE();
   auto node = std::make_shared<WrapNode>(instance);
 
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in Wrap\n");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in Wrap\n");
 
   if (!python_numberval(target, &node->r, nullptr, 0)) {
     node->shape = nullptr;
@@ -236,14 +230,12 @@ PyObject *python_oo_wrap(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha)
 {
-  PyObject *child_dict;
+  PyObject *child_dict_raw = nullptr;
   std::shared_ptr<AbstractNode> child;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
-  child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in color");
-    return NULL;
-  }
+  child = PyOpenSCADObjectToNodeMulti(obj, &child_dict_raw);
+  auto child_dict = py_owned(child_dict_raw);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in color");
   DECLARE_INSTANCE();
   auto node = std::make_shared<ColorNode>(instance);
 
@@ -251,8 +243,9 @@ PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha)
   if (!python_vectorval(color, 3, 4, &col[0], &col[1], &col[2], &col[3])) {
     node->color.setRgba(float(col[0]), float(col[1]), float(col[2]), float(col[3]));
   } else if (PyUnicode_Check(color)) {
-    PyObject *value = PyUnicode_AsEncodedString(color, "utf-8", "~");
-    char *colorname = PyBytes_AS_STRING(value);
+    auto value = py_owned(PyUnicode_AsEncodedString(color, "utf-8", "~"));
+    if (value.get() == nullptr) return NULL;
+    char *colorname = PyBytes_AS_STRING(value.get());
     const auto parsed_color = OpenSCAD::parse_color(colorname);
     if (parsed_color) {
       node->color = *parsed_color;
@@ -269,11 +262,18 @@ PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha)
   node->children.push_back(child);
 
   PyObject *pyresult = PyOpenSCADObjectFromNode(type, node);
-  if (child_dict != nullptr) {
+  if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(child_dict, &pos, &key, &value)) {
-      PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+    while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
+      // PyDict_SetItem can fail (MemoryError, unhashable key, ...);
+      // ignoring the return would leave a pending exception while
+      // we hand `pyresult` back to the caller, which the C-API
+      // contract forbids. Drop our reference and propagate.
+      if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value) < 0) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
     }
   }
   return pyresult;
@@ -307,13 +307,11 @@ PyObject *python_oo_color(PyObject *obj, PyObject *args, PyObject *kwargs)
 PyObject *python_oversample_core(PyObject *obj, double size, const char *texture, const char *projection,
                                  double texturewidth, double textureheight, double texturedepth)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in oversample \n");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in oversample \n");
 
   DECLARE_INSTANCE();
   auto node = std::make_shared<OversampleNode>(instance);
@@ -385,13 +383,11 @@ PyObject *python_oo_oversample(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_debug_core(PyObject *obj, PyObject *faces)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in debug \n");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in debug \n");
 
   DECLARE_INSTANCE();
   auto node = std::make_shared<DebugNode>(instance);
@@ -428,13 +424,11 @@ PyObject *python_oo_debug(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_repair_core(PyObject *obj, PyObject *color)
 {
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNode(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in repair \n");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in repair \n");
 
   DECLARE_INSTANCE();
   auto node = std::make_shared<RepairNode>(instance);
@@ -444,8 +438,9 @@ PyObject *python_repair_core(PyObject *obj, PyObject *color)
     if (!python_vectorval(color, 3, 4, &col[0], &col[1], &col[2], &col[3])) {
       node->color.setRgba(float(col[0]), float(col[1]), float(col[2]), float(col[3]));
     } else if (PyUnicode_Check(color)) {
-      PyObject *value = PyUnicode_AsEncodedString(color, "utf-8", "~");
-      char *colorname = PyBytes_AS_STRING(value);
+      auto value = py_owned(PyUnicode_AsEncodedString(color, "utf-8", "~"));
+      if (value.get() == nullptr) return nullptr;
+      const char *colorname = PyBytes_AS_STRING(value.get());
       const auto parsed_color = OpenSCAD::parse_color(colorname);
       if (parsed_color) {
         node->color = *parsed_color;
@@ -487,16 +482,25 @@ PyObject *python_oo_repair(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_fillet_core(PyObject *obj, double r, int fn, PyObject *sel, double minang)
 {
-  PyObject *dummydict;
   DECLARE_INSTANCE();
   auto node = std::make_shared<FilletNode>(instance);
   PyTypeObject *type = &PyOpenSCADType;
   node->r = r;
   node->fn = fn;
   node->minang = minang;
+  PyObject *obj_dict_raw = nullptr;
+  PyObject *sel_dict_raw = nullptr;
   if (obj != nullptr) {
     type = PyOpenSCADObjectType(obj);
-    node->children.push_back(PyOpenSCADObjectToNodeMulti(obj, &dummydict));
+    auto child = PyOpenSCADObjectToNodeMulti(obj, &obj_dict_raw);
+    auto obj_dict = py_owned(obj_dict_raw);
+    // Check the conversion before pushing a potentially-null child
+    // into the node tree. Now that PyOpenSCADObjectToNodeMulti can
+    // return nullptr with a Python exception already set (see round 1
+    // of #596), propagate that exception; only synthesize a TypeError
+    // when no exception is pending.
+    if (child == nullptr) return propagate_or_typeerror("Invalid type for Object in fillet");
+    node->children.push_back(child);
   } else {
     PyErr_SetString(PyExc_TypeError, "Invalid type for  Object in fillet \n");
     return NULL;
@@ -504,8 +508,15 @@ PyObject *python_fillet_core(PyObject *obj, double r, int fn, PyObject *sel, dou
 
   if (sel != nullptr) {
     type = PyOpenSCADObjectType(sel);
-    auto child = PyOpenSCADObjectToNodeMulti(sel, &dummydict);
-    if (child != nullptr) node->children.push_back(child);
+    auto child = PyOpenSCADObjectToNodeMulti(sel, &sel_dict_raw);
+    auto sel_dict = py_owned(sel_dict_raw);
+    if (child == nullptr) {
+      // Same reasoning as above for the optional `sel` argument.
+      if (PyErr_Occurred()) return NULL;
+      // Non-exceptional: just skip pushing a missing/invalid sel.
+    } else {
+      node->children.push_back(child);
+    }
   }
 
   return PyOpenSCADObjectFromNode(type, node);
@@ -547,13 +558,11 @@ PyObject *python_roof_core(PyObject *obj, const char *method, int convexity,
   DECLARE_INSTANCE();
   std::shared_ptr<AbstractNode> child;
   auto node = std::make_shared<RoofNode>(instance, discretizer);
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in roof");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in roof");
 
   if (method == NULL) {
     node->method = "voronoi";
@@ -607,9 +616,17 @@ PyObject *python_render_core(PyObject *obj, int convexity)
   DECLARE_INSTANCE();
   auto node = std::make_shared<RenderNode>(instance);
 
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNode(obj, &dummydict);
+  auto dummydict_owner = py_owned(dummydict);
+  /* PyOpenSCADObjectToNode can return nullptr for a user-constructed
+   * PyOpenSCADType whose `tp_init` did not populate `self->node`, or
+   * with an exception already set (e.g. MemoryError from the
+   * dict-merge path). Pushing a null shared_ptr into
+   * `node->children` would build an invalid graph that crashes
+   * during geometry evaluation; surface a clean TypeError now. */
+  if (child == nullptr) return propagate_or_typeerror("Invalid type for Object in render");
   node->convexity = convexity;
   node->children.push_back(child);
   return PyOpenSCADObjectFromNode(type, node);
@@ -699,13 +716,11 @@ PyObject *python_projection_core(PyObject *obj, PyObject *cut, int convexity)
 {
   DECLARE_INSTANCE();
   auto node = std::make_shared<ProjectionNode>(instance);
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &dummydict);
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in projection");
-    return NULL;
-  }
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in projection");
   node->convexity = convexity;
   node->cut_mode = 0;
   if (cut == Py_True) node->cut_mode = 1;
@@ -753,13 +768,19 @@ PyObject *python_group(PyObject *self, PyObject *args, PyObject *kwargs)
 
   char *kwlist[] = {"obj", NULL};
   PyObject *obj = NULL;
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!", kwlist, &PyOpenSCADType, &obj)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing group(group)");
     return NULL;
   }
   PyTypeObject *type = PyOpenSCADObjectType(obj);
   child = PyOpenSCADObjectToNode(obj, &dummydict);
+  auto dummydict_owner = py_owned(dummydict);
+  /* See `python_render_core` above: a null `child` from
+   * PyOpenSCADObjectToNode would build an invalid GroupNode that
+   * crashes during evaluation. Propagate any pending exception or
+   * raise a clean TypeError. */
+  if (child == nullptr) return propagate_or_typeerror("Invalid type for Object in group");
 
   node->children.push_back(child);
   return PyOpenSCADObjectFromNode(type, node);
@@ -771,13 +792,11 @@ PyObject *python_align_core(PyObject *obj, PyObject *pyrefmat, PyObject *pydstma
     PyErr_SetString(PyExc_TypeError, "Must specify Object as 1st parameter");
     return nullptr;
   }
-  PyObject *child_dict = nullptr;
+  PyObject *child_dict_raw = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
-  std::shared_ptr<AbstractNode> dstnode = PyOpenSCADObjectToNode(obj, &child_dict);
-  if (dstnode == nullptr) {
-    PyErr_SetString(PyExc_TypeError, "Invalid align object");
-    Py_RETURN_NONE;
-  }
+  std::shared_ptr<AbstractNode> dstnode = PyOpenSCADObjectToNode(obj, &child_dict_raw);
+  auto child_dict = py_owned(child_dict_raw);
+  if (dstnode == nullptr) return propagate_or_typeerror("Invalid align object");
   DECLARE_INSTANCE();
   auto multmatnode = std::make_shared<TransformNode>(instance, "align");
   multmatnode->children.push_back(dstnode);
@@ -797,10 +816,10 @@ PyObject *python_align_core(PyObject *obj, PyObject *pyrefmat, PyObject *pydstma
   multmatnode->setPyName(dstnode->getPyName());
 
   PyObject *pyresult = PyOpenSCADObjectFromNode(type, multmatnode);
-  if (child_dict != nullptr) {
+  if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(child_dict, &pos, &key, &value)) {
+    while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
       //       PyObject* value1 = PyUnicode_AsEncodedString(key, "utf-8", "~");
       //       const char *value_str =  PyBytes_AS_STRING(value1);
       if (!python_tomatrix(value, mat)) {
@@ -841,7 +860,7 @@ PyObject *python_oo_align(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_oo_clone(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  PyObject *dict;
+  PyObject *dict_raw = nullptr;
   PyObject *obj = NULL;
   char *kwlist[] = {"obj", NULL};
 
@@ -849,15 +868,23 @@ PyObject *python_oo_clone(PyObject *self, PyObject *args, PyObject *kwargs)
     PyErr_SetString(PyExc_TypeError, "Error during clone");
     return NULL;
   }
-  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNodeMulti(obj, &dict);
+  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNodeMulti(obj, &dict_raw);
+  auto dict = py_owned(dict_raw);
+  if (node == nullptr) return propagate_or_typeerror("Invalid type for Object in clone");
   if (node.use_count() > 1) ((PyOpenSCADObject *)self)->node = node->clone();
   else ((PyOpenSCADObject *)self)->node = node;
 
-  if (dict != nullptr) {
+  if (dict_raw != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(dict, &pos, &key, &value)) {
-      PyDict_SetItem(((PyOpenSCADObject *)self)->dict, key, value);
+    while (PyDict_Next(dict_raw, &pos, &key, &value)) {
+      // Same propagation rule as in python_color_core et al.: a
+      // PyDict_SetItem failure leaves an exception pending, so let
+      // it surface instead of returning None. self->dict is owned
+      // by `self` (the caller), so no extra DECREF needed here.
+      if (PyDict_SetItem(((PyOpenSCADObject *)self)->dict, key, value) < 0) {
+        return nullptr;
+      }
     }
   }
   Py_RETURN_NONE;
@@ -866,9 +893,15 @@ PyObject *python_oo_clone(PyObject *self, PyObject *args, PyObject *kwargs)
 PyObject *python_debug_modifier(PyObject *arg, int mode)
 {
   DECLARE_INSTANCE();
-  PyObject *dummydict;
+  PyObject *dummydict = nullptr;
   PyTypeObject *type = PyOpenSCADObjectType(arg);
   auto child = PyOpenSCADObjectToNode(arg, &dummydict);
+  auto dummydict_owner = py_owned(dummydict);
+  /* See `python_render_core` / `python_group` above: a null `child`
+   * would build a CsgOpNode with a null child that crashes during
+   * geometry evaluation. Surface a clean TypeError (or propagate an
+   * already-pending exception) before constructing the node. */
+  if (child == nullptr) return propagate_or_typeerror("Invalid type for Object in modifier");
   switch (mode) {
   case 0: instance->tag_highlight = true; break;   // #
   case 1: instance->tag_background = true; break;  // %

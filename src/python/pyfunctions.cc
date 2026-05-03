@@ -122,8 +122,9 @@ PyObject *python__getitem__(PyObject *obj, PyObject *key)
     return (PyObject *)bm;
   }
 
-  PyObject *dummy_dict;
-  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(obj, &dummy_dict);
+  PyObject *dummy_dict_raw = nullptr;
+  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(obj, &dummy_dict_raw);
+  auto dummy_dict = py_owned(dummy_dict_raw);
   if (node != nullptr) {
     result = python__getsetitem_hier(node, keystr, nullptr, 0);
     if (result != nullptr) return result;
@@ -142,23 +143,45 @@ PyObject *python__getitem__(PyObject *obj, PyObject *key)
 
 int python__setitem__(PyObject *obj, PyObject *key, PyObject *v)
 {
-  PyObject *keyname = PyUnicode_AsEncodedString(key, "utf-8", "~");
-  if (keyname == nullptr) return 0;
-  std::string keystr = PyBytes_AS_STRING(keyname);
+  // PyUnicode_AsEncodedString returns a NEW reference; without
+  // py_owned() this leaks one bytes object per __setitem__ call.
+  // The keystr std::string copy below outlives keyname, so we can
+  // release the bytes immediately after building keystr.
+  auto keyname = py_owned(PyUnicode_AsEncodedString(key, "utf-8", "~"));
+  // mp_ass_subscript convention: 0 == success, -1 == failure with
+  // exception set. Encoding failure already left an exception
+  // pending (e.g. on a non-text key); surface it by returning -1
+  // instead of silently reporting success to the caller.
+  if (keyname.get() == nullptr) return -1;
+  std::string keystr = PyBytes_AS_STRING(keyname.get());
 
   PyOpenSCADObject *self = (PyOpenSCADObject *)obj;
 
-  PyObject *dummy_dict;
-  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(obj, &dummy_dict);
-  if (node != nullptr) {
+  PyObject *dummy_dict_raw = nullptr;
+  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(obj, &dummy_dict_raw);
+  auto dummy_dict = py_owned(dummy_dict_raw);
+  // mp_ass_subscript reuses this slot for `del obj[key]`, in which
+  // case CPython passes v == NULL. The hier setter only makes sense
+  // for assignment, so skip it on deletion.
+  if (node != nullptr && v != nullptr) {
     python__getsetitem_hier(node, keystr, v, 2);
   }
 
   if (self->dict == NULL) {
     return 0;
   }
-  Py_INCREF(v);
-  PyDict_SetItem(self->dict, key, v);
+  // Route the deletion case through PyDict_DelItem; without this guard
+  // the Py_INCREF / PyDict_SetItem path below would crash on a NULL v.
+  if (v == nullptr) {
+    if (PyDict_DelItem(self->dict, key) < 0) return -1;
+    return 0;
+  }
+  // PyDict_SetItem already increments the value's refcount on success
+  // and leaves it untouched on failure, so no manual Py_INCREF is
+  // required. The previous unconditional incref leaked one reference
+  // per __setitem__ call (and also doubled the leak when SetItem
+  // failed, since the dict never absorbed the extra ref).
+  if (PyDict_SetItem(self->dict, key, v) < 0) return -1;
   return 0;
 }
 
@@ -199,7 +222,6 @@ PyObject *python_osversion_num(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_oo_hasattr(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  PyObject *dict;
   char *keyword = NULL;
   char *kwlist[] = {"keyword", NULL};
 
@@ -207,15 +229,36 @@ PyObject *python_oo_hasattr(PyObject *self, PyObject *args, PyObject *kwargs)
     PyErr_SetString(PyExc_TypeError, "Error during hasattr");
     return NULL;
   }
-  PyObject *pykeyword = PyUnicode_FromString(keyword);
-  PyOpenSCADObjectToNodeMulti(self, &dict);
-  if (PyDict_Contains(dict, pykeyword)) Py_RETURN_TRUE;
-  else Py_RETURN_FALSE;
+  auto pykeyword = py_owned(PyUnicode_FromString(keyword));
+  // PyUnicode_FromString already raised the relevant exception (typically
+  // MemoryError or UnicodeDecodeError) on failure; just propagate it.
+  if (pykeyword.get() == nullptr) return NULL;
+
+  PyObject *dict_raw = nullptr;
+  PyOpenSCADObjectToNodeMulti(self, &dict_raw);
+  auto dict = py_owned(dict_raw);
+  if (dict_raw == nullptr) {
+    // PyOpenSCADObjectToNodeMulti can fail with a Python exception
+    // already set (e.g. MemoryError from the dict-merge path); the
+    // C-API contract forbids returning a value while an exception is
+    // pending. Surface the error; only treat the no-dict case as
+    // "not present" when no exception is in flight.
+    if (PyErr_Occurred()) return NULL;
+    Py_RETURN_FALSE;
+  }
+
+  // PyDict_Contains returns -1 with an exception set on error. Treating
+  // that as truthy and returning Py_True would silently swallow the
+  // error AND hand the caller a return value while an exception is
+  // pending, which the C API contract forbids.
+  int contains = PyDict_Contains(dict_raw, pykeyword.get());
+  if (contains < 0) return NULL;
+  if (contains) Py_RETURN_TRUE;
+  Py_RETURN_FALSE;
 }
 
 PyObject *python_oo_getattr(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  PyObject *dict;
   char *keyword = NULL;
   char *kwlist[] = {"keyword", NULL};
 
@@ -223,16 +266,35 @@ PyObject *python_oo_getattr(PyObject *self, PyObject *args, PyObject *kwargs)
     PyErr_SetString(PyExc_TypeError, "Error during getattr");
     return NULL;
   }
-  PyObject *pykeyword = PyUnicode_FromString(keyword);
-  PyOpenSCADObjectToNodeMulti(self, &dict);
-  PyObject *prop = PyDict_GetItem(dict, pykeyword);
+  auto pykeyword = py_owned(PyUnicode_FromString(keyword));
+  if (pykeyword.get() == nullptr) return NULL;
+
+  PyObject *dict_raw = nullptr;
+  PyOpenSCADObjectToNodeMulti(self, &dict_raw);
+  auto dict = py_owned(dict_raw);
+  if (dict_raw == nullptr) {
+    // Same propagation rule as in python_oo_hasattr: a pending
+    // exception from PyOpenSCADObjectToNodeMulti must surface
+    // through to Python; only the non-exceptional "no dict for
+    // this input" case should resolve to None.
+    if (PyErr_Occurred()) return NULL;
+    Py_RETURN_NONE;
+  }
+
+  // PyDict_GetItem returns NULL for "missing key" WITHOUT setting an
+  // exception, so we cannot distinguish that from a hard error by the
+  // return value alone. Returning NULL to Python in the missing-key
+  // case is incorrect (Python would surface a SystemError because no
+  // exception is set). Surface the missing-key case as Py_None to
+  // match the most common "attribute lookup with default" idiom.
+  PyObject *prop = PyDict_GetItem(dict_raw, pykeyword.get());
+  if (prop == nullptr) Py_RETURN_NONE;
   Py_INCREF(prop);
   return prop;
 }
 
 PyObject *python_oo_setattr(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  PyObject *dict;
   char *keyword = NULL;
   PyObject *setvalue;
   char *kwlist[] = {"keyword", "setvalue", NULL};
@@ -241,9 +303,25 @@ PyObject *python_oo_setattr(PyObject *self, PyObject *args, PyObject *kwargs)
     PyErr_SetString(PyExc_TypeError, "Error during setattr");
     return NULL;
   }
-  PyObject *pykeyword = PyUnicode_FromString(keyword);
-  PyOpenSCADObjectToNodeMulti(self, &dict);
-  PyDict_SetItem(dict, pykeyword, setvalue);
+  auto pykeyword = py_owned(PyUnicode_FromString(keyword));
+  if (pykeyword.get() == nullptr) return NULL;
+
+  PyObject *dict_raw = nullptr;
+  PyOpenSCADObjectToNodeMulti(self, &dict_raw);
+  auto dict = py_owned(dict_raw);
+  if (dict_raw == nullptr) {
+    // Same propagation rule as in python_oo_hasattr/getattr: a
+    // pending exception from PyOpenSCADObjectToNodeMulti must
+    // surface through to Python; only the non-exceptional "no
+    // dict for this input" case should resolve to None.
+    if (PyErr_Occurred()) return NULL;
+    Py_RETURN_NONE;
+  }
+
+  // PyDict_SetItem returns -1 with an exception set on failure (e.g.
+  // unhashable key, MemoryError on resize). Propagate that instead of
+  // silently swallowing it.
+  if (PyDict_SetItem(dict_raw, pykeyword.get(), setvalue) < 0) return NULL;
   Py_RETURN_NONE;
 }
 

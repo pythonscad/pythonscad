@@ -65,6 +65,29 @@ using PyObjectUniquePtr = std::unique_ptr<PyObject, decltype(&PyObjectDeleter)>;
 // pyfunctions.cc (see issue #587).
 bool python_pyobject_to_utf8(PyObject *obj, std::string& out, const char *context);
 
+// Convenience factory: build a PyObjectUniquePtr without having to
+// repeat `&PyObjectDeleter` at every call site. Mostly used to wrap
+// `*dict` out-parameters from PyOpenSCADObjectToNode[Multi] (see the
+// ownership note on those functions below).
+inline PyObjectUniquePtr py_owned(PyObject *p = nullptr)
+{
+  return PyObjectUniquePtr(p, &PyObjectDeleter);
+}
+
+// Helper for the `child == nullptr` failure branch of
+// PyOpenSCADObjectToNode[Multi] callers. Since that function may now
+// return nullptr with a Python exception ALREADY SET (e.g.
+// MemoryError from the dict-merge path -- see #596), unconditionally
+// calling PyErr_SetString in the failure path would clobber the
+// original exception. This helper preserves any pending exception
+// and only synthesizes a fresh TypeError when none is set. Always
+// returns NULL so callers can `return propagate_or_typeerror(msg);`.
+inline PyObject *propagate_or_typeerror(const char *msg)
+{
+  if (!PyErr_Occurred()) PyErr_SetString(PyExc_TypeError, msg);
+  return NULL;
+}
+
 // Sole init entry point for the `_openscad` extension module.  Used
 // both when the module is embedded in the GUI/CLI (via
 // `PyImport_AppendInittab("_openscad", ...)`) and when CPython loads the
@@ -95,6 +118,14 @@ extern std::vector<PyObject *> python_member_callables;
 extern std::vector<std::string> python_member_names;
 bool trust_python_file(const std::string& file, const std::string& content);
 PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<AbstractNode>& node);
+
+// Both PyOpenSCADObjectToNode and PyOpenSCADObjectToNodeMulti set
+// `*dict` to either nullptr or a NEW STRONG REFERENCE that the caller
+// must Py_XDECREF (or hand to a PyObjectUniquePtr) when done with it.
+// Callers that don't need the dict must still Py_XDECREF the
+// out-parameter to avoid a per-call leak; using a PyObjectUniquePtr
+// is the recommended pattern. See issue #596 for the historical
+// borrow-vs-own asymmetry that this contract replaces.
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNode(PyObject *obj, PyObject **dict);
 std::shared_ptr<AbstractNode> PyOpenSCADObjectToNodeMulti(PyObject *objs, PyObject **dict);
 PyTypeObject *PyOpenSCADObjectType(PyObject *objs);

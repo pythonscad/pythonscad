@@ -51,28 +51,14 @@ PyObject *python_show_core(PyObject *obj)
     return obj;
   }
   python_result_obj = obj;
-  PyObject *child_dict = nullptr;
-  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
-  /* PyOpenSCADObjectToNodeMulti returns ``*dict`` as a borrowed ref
-   * for PyOpenSCADType inputs but a freshly-allocated owned ref
-   * (``PyDict_New`` + per-child merge) for list inputs. Wrap in a
-   * conditional unique_ptr so ``show([a, b])`` does not leak one
-   * dict per call. See also issue #596 for the broader sweep of the
-   * other ~22 call sites. */
-  PyObjectUniquePtr child_dict_owner(nullptr, &PyObjectDeleter);
-  if (PyList_Check(obj)) {
-    child_dict_owner.reset(child_dict);
-  }
-  /* The list-path merge inside ``PyOpenSCADObjectToNodeMulti`` does
-   * unchecked ``PyDict_New`` / ``PyDict_SetItem`` calls and can
-   * leave a ``MemoryError`` set even on an apparent success.
-   * Propagate rather than returning a non-null PyObject* with a
-   * pending exception. */
-  if (PyErr_Occurred() != nullptr) return NULL;
-  if (child == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Invalid type for Object in show");
-    return NULL;
-  }
+  PyObject *child_dict_raw = nullptr;
+  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict_raw);
+  /* PyOpenSCADObjectToNodeMulti now always hands back either nullptr
+   * or a fresh strong reference (see issue #596 for the historical
+   * borrow-vs-own asymmetry); wrap it so the dict from a list input
+   * (``show([a, b])``) is released at end of scope. */
+  auto child_dict = py_owned(child_dict_raw);
+  if (child == NULL) return propagate_or_typeerror("Invalid type for Object in show");
   if (child == void_node) {
     Py_RETURN_NONE;
   }
@@ -91,8 +77,8 @@ PyObject *python_show_core(PyObject *obj)
     return NULL;
   }
   std::string varname = child->getPyName();
-  if (child_dict != nullptr) {
-    while (PyDict_Next(child_dict, &pos, &key, &value)) {
+  if (child_dict.get() != nullptr) {
+    while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
       Matrix4d raw;
       if (python_tomatrix(value, raw)) continue;
       /* Selection handles are best-effort metadata for the GUI. If a
@@ -207,28 +193,23 @@ void python_export_obj_att(std::ostream& output)
 static bool python_export_obj_att_pre_encode()
 {
   python_obj_att_block.clear();
-  PyObject *child_dict = nullptr;
   if (python_result_obj == nullptr) return true;
-  PyOpenSCADObjectToNodeMulti(python_result_obj, &child_dict);
-  /* PyOpenSCADObjectToNodeMulti returns ``*dict`` as a *borrowed*
-   * reference for the PyOpenSCADType path, but ``PyDict_New()``s a
-   * fresh owned reference for the list path (and merges per-child
-   * dicts into it). We must Py_DECREF the latter here to avoid
-   * leaking one dict per ``export([...], "...")`` call. ``nullptr``
-   * is safe to wrap since PyObjectDeleter handles it. */
-  PyObjectUniquePtr child_dict_owner(nullptr, &PyObjectDeleter);
-  if (PyList_Check(python_result_obj)) {
-    child_dict_owner.reset(child_dict);
-  }
-  /* The list path can leave a ``MemoryError`` set if ``PyDict_New``
-   * or ``PyDict_SetItem`` failed during the merge. Surface it
-   * cleanly instead of returning success-with-pending-exception. */
+  PyObject *child_dict_raw = nullptr;
+  PyOpenSCADObjectToNodeMulti(python_result_obj, &child_dict_raw);
+  /* PyOpenSCADObjectToNodeMulti now always hands back either nullptr
+   * or a fresh strong reference (see issue #596); wrap so the dict
+   * from a list input is released at end of scope. */
+  auto child_dict = py_owned(child_dict_raw);
+  /* The list path's per-child merge inside
+   * ``PyOpenSCADObjectToNodeMulti`` can now propagate a MemoryError
+   * via PyDict_New / PyDict_SetItem failure (round 1 of #596).
+   * Surface it instead of silently dropping it on the floor. */
   if (PyErr_Occurred() != nullptr) return false;
-  if (child_dict == nullptr || !PyDict_Check(child_dict)) return true;
+  if (child_dict.get() == nullptr || !PyDict_Check(child_dict.get())) return true;
   std::ostringstream buf;
   PyObject *key, *value;
   Py_ssize_t pos = 0;
-  while (PyDict_Next(child_dict, &pos, &key, &value)) {
+  while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
     std::string key_str;
     if (!python_pyobject_to_utf8(key, key_str, "object attribute keys")) {
       return false;
@@ -305,30 +286,21 @@ PyObject *python_export_core(PyObject *obj, char *file)
 
   std::vector<Export3mfPartInfo> export3mfPartInfos;
 
-  /* Initialise to nullptr because ``PyOpenSCADObjectToNodeMulti``
-   * has an early ``return nullptr;`` (line 308 of pyopenscad.cc) for
-   * lists that contain a non-PyOpenSCAD element which leaves
-   * ``*dict`` untouched. Reading the indeterminate value below would
-   * be UB. */
-  PyObject *child_dict = nullptr;
-  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict);
-  /* Same ownership-handling rule as the per-part loop below: list
-   * inputs cause ``PyOpenSCADObjectToNodeMulti`` to allocate a fresh
-   * merged dict that we own and must release. PyOpenSCADType inputs
-   * yield a borrowed reference. The single-object 3MF path doesn't
-   * actually consult ``child_dict`` (no per-part props_3mf), but we
-   * still need to release it to avoid leaking on
-   * ``export([a, b], "out.3mf")``. */
-  PyObjectUniquePtr top_child_dict_owner(nullptr, &PyObjectDeleter);
-  if (PyList_Check(obj)) {
-    top_child_dict_owner.reset(child_dict);
-  }
-  /* The list path's per-child merge inside
-   * ``PyOpenSCADObjectToNodeMulti`` calls ``PyDict_New`` and
-   * ``PyDict_SetItem`` without checking either return value, so it
-   * can leave a ``MemoryError`` set even on an apparent success.
-   * Surface it instead of silently dropping it on the floor. */
+  /* PyOpenSCADObjectToNodeMulti now always hands back either nullptr
+   * or a fresh strong reference (issue #596 contract). Wrap the
+   * outer dict in a PyObjectUniquePtr so it is released at end of
+   * scope; ``child_dict.reset()`` below will release it before
+   * installing each per-part dict. */
+  PyObject *child_dict_raw = nullptr;
+  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict_raw);
+  auto child_dict = py_owned(child_dict_raw);
+  /* The list path's per-child merge inside PyOpenSCADObjectToNodeMulti
+   * can propagate a MemoryError via PyDict_New / PyDict_SetItem failure
+   * (round 1 of #596). Surface it directly instead of letting it fall
+   * through into the "Object not recognized" TypeError below, which
+   * would overwrite the original exception. */
   if (PyErr_Occurred() != nullptr) return nullptr;
+
   if (child != nullptr) {
     Tree tree(child, "parent");
     GeometryEvaluator geomevaluator(tree);
@@ -343,8 +315,15 @@ PyObject *python_export_core(PyObject *obj, char *file)
       if (!python_pyobject_to_utf8(key, part_name, "export() dict keys")) {
         return nullptr;
       }
-      child_dict = nullptr;
-      std::shared_ptr<AbstractNode> dict_child = PyOpenSCADObjectToNodeMulti(value, &child_dict);
+      /* Per-iteration dict from PyOpenSCADObjectToNodeMulti -- it
+       * is now always a strong reference (or nullptr), so reset()
+       * the outer unique_ptr to release the previous part's dict
+       * before installing the new one. The dict is consumed by the
+       * props_3mf scan below and freed when reset() runs in the next
+       * iteration (or at end of scope on the final iteration). */
+      PyObject *iter_dict_raw = nullptr;
+      std::shared_ptr<AbstractNode> dict_child = PyOpenSCADObjectToNodeMulti(value, &iter_dict_raw);
+      child_dict.reset(iter_dict_raw);
       if (dict_child == nullptr) {
         /* Two distinct causes of nullptr return: (1) an OOM in the
          * helper's list-path merge (PyDict_New / PyDict_SetItem) leaves
@@ -354,18 +333,6 @@ PyObject *python_export_core(PyObject *obj, char *file)
          * the pre-fix behaviour. */
         if (PyErr_Occurred() != nullptr) return nullptr;
         continue;
-      }
-      /* When ``value`` is a list, ``PyOpenSCADObjectToNodeMulti``
-       * returns a freshly-allocated merged dict (``PyDict_New`` +
-       * per-child merge). Take ownership in that case so we don't
-       * leak one dict per ``export({"name": [..]}, ...)`` part.
-       * Borrowed-ref path (``PyOpenSCADType``) leaves the unique_ptr
-       * empty. The dict is consumed by the props_3mf scan that
-       * follows and freed when the unique_ptr goes out of scope at
-       * the end of this iteration. */
-      PyObjectUniquePtr value_dict_owner(nullptr, &PyObjectDeleter);
-      if (PyList_Check(value)) {
-        value_dict_owner.reset(child_dict);
       }
 
       /* Pre-encode props_3mf into typed C++ vectors *before* we
@@ -386,7 +353,8 @@ PyObject *python_export_core(PyObject *obj, char *file)
       std::vector<std::pair<std::string, double>> propsFloat;
       std::vector<std::pair<std::string, long>> propsLong;
       std::vector<std::pair<std::string, std::string>> propsString;
-      if (exportFileFormat == FileFormat::_3MF && child_dict != nullptr && PyDict_Check(child_dict)) {
+      if (exportFileFormat == FileFormat::_3MF && child_dict.get() != nullptr &&
+          PyDict_Check(child_dict.get())) {
         PyObjectUniquePtr props_key(PyUnicode_FromStringAndSize("props_3mf", 9), &PyObjectDeleter);
         if (props_key.get() == nullptr) {
           /* Out of memory while interning the literal "props_3mf" --
@@ -394,7 +362,7 @@ PyObject *python_export_core(PyObject *obj, char *file)
            * PyDict_GetItem (which is UB). */
           return nullptr;
         }
-        PyObject *prop_obj = PyDict_GetItem(child_dict, props_key.get());
+        PyObject *prop_obj = PyDict_GetItem(child_dict.get(), props_key.get());
         if (prop_obj != nullptr && PyDict_Check(prop_obj)) {
           PyObject *pk, *pv;
           Py_ssize_t ppos = 0;
@@ -651,8 +619,9 @@ void python_str_sub(std::ostringstream& stream, const std::shared_ptr<AbstractNo
 PyObject *python_str(PyObject *self)
 {
   std::ostringstream stream;
-  PyObject *dummydict;
-  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(self, &dummydict);
+  PyObject *dummydict_raw = nullptr;
+  std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(self, &dummydict_raw);
+  auto dummydict = py_owned(dummydict_raw);
   if (node != nullptr) python_str_sub(stream, node, 0);
   else stream << "Invalid OpenSCAD Object";
 
@@ -832,6 +801,10 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs,
           } else if (PyUnicode_Check(key)) {
             std::string key_string;
             if (!python_pyobject_to_utf8(key, key_string, "add_parameter() options key")) {
+              /* item_vec is a raw `new` allocation; clean up before
+               * propagating the helper's TypeError so we don't leak
+               * one Vector per malformed enum-options entry. */
+              delete item_vec;
               return NULL;
             }
             item_vec->emplace_back(new Literal(key_string, Location::NONE));
@@ -840,6 +813,9 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs,
           if (PyUnicode_Check(label)) {
             std::string label_string;
             if (!python_pyobject_to_utf8(label, label_string, "add_parameter() options label")) {
+              /* Same leak as the key branch above: clean up the raw
+               * Vector allocation before propagating the TypeError. */
+              delete item_vec;
               return NULL;
             }
             item_vec->emplace_back(new Literal(label_string, Location::NONE));
