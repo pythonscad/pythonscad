@@ -1,0 +1,16 @@
+setitem int key: TypeError
+setitem None key: TypeError
+setitem bool key: TypeError
+setitem tuple key: TypeError
+setitem bytes key: TypeError
+setitem frozenset key: TypeError
+setitem surrogate key: TypeError
+delitem int key: TypeError
+delitem None key: TypeError
+get meta: ok
+delitem str key: OK
+get meta after del: None
+get after: still-ok
+get colour: red
+done
+
