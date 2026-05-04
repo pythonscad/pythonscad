@@ -106,10 +106,12 @@ repos:
           # attacker-controlled contexts (PR titles, issue bodies, ...),
           # over-broad permissions, dangerous triggers, etc.
           #
-          # Gated at --min-severity=high so the local hook only fails
-          # on hard errors. Warnings/informational findings still show
-          # up in `zizmor` output (and in the dedicated CI pass when
-          # added) but don't block commits while the long-tail
-          # cleanup tracked in #613 is in progress.
+          # Gated at --min-severity=high so the hook only fails on
+          # hard errors. The PR-scoped CI runner (pre-commit.yml)
+          # runs this same hook with the same threshold, so
+          # warning/info-level findings (template injection from
+          # `matrix.*`, hash-pinning of third-party actions,
+          # `superfluous-actions`, etc.) don't block merges either.
+          # Long-tail cleanup is tracked in #613.
           - id: zizmor
             args: ["--no-progress", "--min-severity=high"]
