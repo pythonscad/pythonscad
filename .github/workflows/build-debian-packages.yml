@@ -348,7 +348,7 @@ jobs:
           cd /tmp/debs
 
           # Determine release tag
-          if [ "${{ github.event_name }}" = "release" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
             TAG="${GITHUB_EVENT_RELEASE_TAG_NAME}"
           else
             TAG="${GITHUB_EVENT_INPUTS_UPLOAD_TO_RELEASE}"
@@ -358,13 +358,27 @@ jobs:
 
           # Use GitHub CLI to download all .deb files from release
           gh release download "$TAG" \
-            -R "${{ github.repository }}" \
+            -R "$GITHUB_REPOSITORY" \
             -p "pythonscad_*_*.deb" \
             --dir /tmp/debs
 
           ls -lh /tmp/debs/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Route every `${{ github.* }}` value through `env:` for
+          # shell consumption rather than interpolating it directly
+          # into the `run:` block. `github.event_name` and
+          # `github.repository` are not user-controlled today, so
+          # the immediate template-injection risk is nil; routing
+          # them anyway keeps the workflow consistent with the
+          # hardened pattern used elsewhere in the repo (e.g.
+          # `commitlint.yml`, `deploy-website.yml`) so reviewers
+          # don't have to re-classify each `${{ }}` site as
+          # "trusted context, fine" vs. "attacker-controlled,
+          # exploit". `GITHUB_REPOSITORY` is always set by the
+          # runner so we don't even need to declare it; included
+          # here for symmetry with `GITHUB_EVENT_NAME`.
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_EVENT_RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
           GITHUB_EVENT_INPUTS_UPLOAD_TO_RELEASE: ${{ github.event.inputs.upload_to_release }}
 
