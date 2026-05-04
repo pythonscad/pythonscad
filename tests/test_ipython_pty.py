@@ -136,6 +136,11 @@ def _drive_pty(child, pythonscad: str) -> int:
     "expect / sendline / expect" flow readable. Any control-flow
     `return` from this function still triggers the sandbox cleanup
     via the caller's `with` block exit.
+
+    `pythonscad` is woven into every FAIL diagnostic so a CI matrix
+    failure log identifies which binary's interactive contract
+    regressed at a glance, instead of "the PTY test failed
+    somewhere".
     """
     try:
         # First, decide whether we got the real IPython or the fallback.
@@ -160,8 +165,8 @@ def _drive_pty(child, pythonscad: str) -> int:
         )
     except pexpect.TIMEOUT:
         print(
-            "FAIL: timed out waiting for either IPython banner, fallback "
-            "prompt, or fallback diagnostic on the PTY.",
+            f"FAIL: {pythonscad}: timed out waiting for either IPython "
+            "banner, fallback prompt, or fallback diagnostic on the PTY.",
             file=sys.stderr,
         )
         try:
@@ -181,8 +186,8 @@ def _drive_pty(child, pythonscad: str) -> int:
             used_fallback_prompt = True
         except pexpect.TIMEOUT:
             print(
-                "FAIL: saw 'IPython is not installed' diagnostic but the "
-                "fallback REPL prompt never appeared.",
+                f"FAIL: {pythonscad}: saw 'IPython is not installed' "
+                "diagnostic but the fallback REPL prompt never appeared.",
                 file=sys.stderr,
             )
             child.close(force=True)
@@ -216,7 +221,8 @@ def _drive_pty(child, pythonscad: str) -> int:
         child.sendline("exit()")
     else:  # pragma: no cover - defensive
         print(
-            "FAIL: internal logic error: no prompt path was taken.",
+            f"FAIL: {pythonscad}: internal logic error: no prompt "
+            "path was taken.",
             file=sys.stderr,
         )
         child.close(force=True)
@@ -230,14 +236,15 @@ def _drive_pty(child, pythonscad: str) -> int:
 
     if child.exitstatus is None:
         print(
-            "FAIL: child exited via signal "
+            f"FAIL: {pythonscad}: child exited via signal "
             f"{child.signalstatus}, expected normal exit.",
             file=sys.stderr,
         )
         return 1
     if child.exitstatus != 0:
         print(
-            f"FAIL: child exit status {child.exitstatus}, expected 0.",
+            f"FAIL: {pythonscad}: child exit status "
+            f"{child.exitstatus}, expected 0.",
             file=sys.stderr,
         )
         return 1
