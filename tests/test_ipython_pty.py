@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 
 
 # pexpect is the standard way to drive a child process through a PTY
@@ -90,21 +91,52 @@ def main() -> int:
         )
         return 0
 
-    # Spawn the binary attached to a fresh PTY. encoding='utf-8'
-    # matches our `-Xutf8=1` invocation pattern elsewhere.
-    child = pexpect.spawn(
-        pythonscad,
-        args=["--ipython"],
-        encoding="utf-8",
-        timeout=STARTUP_TIMEOUT,
-        # Disable the readline/echo that would otherwise pollute the
-        # captured transcript with our own typed bytes.
-        echo=False,
-    )
-    # Tee the PTY transcript to stderr so a CI failure shows what
-    # IPython actually produced on the way to the timeout/mismatch.
-    child.logfile_read = sys.stderr
+    # Hermeticity: pin IPython config / history at a fresh empty
+    # directory so a developer machine's `~/.ipython/profile_default/
+    # ipython_config.py` cannot influence the `In [1]:` /
+    # `In [2]:` prompt indices we match on, banner visibility, or
+    # input transformers. Without this the test would fail outside
+    # CI on any machine whose user IPython config advances the
+    # prompt counter (startup files), disables the banner, etc.
+    # (Copilot review, PR #600 thread on tests/test_ipython_pty.py:103.)
+    # HOME is overridden to the same directory so auxiliary user
+    # config IPython or its deps happen to read also stays in the
+    # sandbox. The `with` block scope spans the whole interaction
+    # so the sandbox dir is cleaned up only after the child has
+    # exited and we've validated its output.
+    with tempfile.TemporaryDirectory(prefix="pythonscad-ipython-pty-") as sandbox:
+        env = os.environ.copy()
+        env["IPYTHONDIR"] = sandbox
+        env["HOME"] = sandbox
 
+        # Spawn the binary attached to a fresh PTY. encoding='utf-8'
+        # matches our `-Xutf8=1` invocation pattern elsewhere.
+        child = pexpect.spawn(
+            pythonscad,
+            args=["--ipython"],
+            encoding="utf-8",
+            timeout=STARTUP_TIMEOUT,
+            # Disable the readline/echo that would otherwise pollute the
+            # captured transcript with our own typed bytes.
+            echo=False,
+            env=env,
+        )
+        # Tee the PTY transcript to stderr so a CI failure shows what
+        # IPython actually produced on the way to the timeout/mismatch.
+        child.logfile_read = sys.stderr
+
+        return _drive_pty(child, pythonscad)
+
+
+def _drive_pty(child, pythonscad: str) -> int:
+    """Run the interactive scenario; returns the exit code for ctest.
+
+    Split out so that the `tempfile.TemporaryDirectory` context manager
+    cleanly wraps spawn + drive + close while keeping the linear
+    "expect / sendline / expect" flow readable. Any control-flow
+    `return` from this function still triggers the sandbox cleanup
+    via the caller's `with` block exit.
+    """
     try:
         # First, decide whether we got the real IPython or the fallback.
         # Both diagnostics are deterministic strings emitted shortly

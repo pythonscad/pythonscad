@@ -20,16 +20,32 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import tempfile
 
 
 # NB: no trailing `exit` line. Both the basic REPL and IPython exit
 # cleanly when stdin reaches EOF, and an explicit `exit` (without parens)
 # would either no-op or trip IPython's "Use exit()..." advisory message,
 # both of which make the test less deterministic.
+#
+# The trailing `import IPython; print('IPYTHON_VERSION ...')` line is
+# the deterministic IPython fingerprint we assert on below. Earlier
+# revisions of this test relied on IPython's auto-banner / `In [N]:`
+# prompt to leak onto stdout, but IPython 8.x suppresses both of
+# those when stdin is a pipe (only IPython 9.x emitted the version
+# banner unconditionally), and any user `ipython_config.py` setting
+# `display_banner = False` would tip the test over too. Probing
+# `IPython.__version__` from inside the user namespace runs in BOTH
+# IPython 8 and 9 with piped stdin, is unaffected by config, and
+# fails loudly (ImportError) if we somehow ended up in the basic
+# REPL fallback - in which case the existing fallback diagnostic on
+# stderr still drives us down the SKIP-fingerprint branch instead.
 SCRIPT = (
     "from pythonscad import cube\n"
     "c = cube([1, 1, 1])\n"
     "print('OK', type(c).__name__)\n"
+    "import IPython\n"
+    "print('IPYTHON_VERSION', IPython.__version__)\n"
 )
 
 TIMEOUT_SECONDS = 60
@@ -45,13 +61,29 @@ def main() -> int:
         print(f"binary not found: {pythonscad}", file=sys.stderr)
         return 2
 
-    proc = subprocess.run(
-        [pythonscad, "--ipython"],
-        input=SCRIPT,
-        capture_output=True,
-        text=True,
-        timeout=TIMEOUT_SECONDS,
-    )
+    # Hermeticity: pin IPython config / history at a fresh empty
+    # directory so a developer machine's `~/.ipython/profile_default/
+    # ipython_config.py` (e.g. `display_banner = False`, custom
+    # startup files that advance the prompt counter, alternative
+    # input transformers, ...) cannot influence the prompt
+    # fingerprints we assert on below. (Copilot review, PR #600
+    # thread on tests/test_ipython_cli.py:54.) HOME is overridden to
+    # the same directory so any auxiliary user config IPython or
+    # its deps happen to read (`$HOME/.matplotlib`, ...) also stays
+    # inside the sandbox.
+    with tempfile.TemporaryDirectory(prefix="pythonscad-ipython-cli-") as sandbox:
+        env = os.environ.copy()
+        env["IPYTHONDIR"] = sandbox
+        env["HOME"] = sandbox
+
+        proc = subprocess.run(
+            [pythonscad, "--ipython"],
+            input=SCRIPT,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT_SECONDS,
+        )
 
     print("===== stdout =====")
     print(proc.stdout)
@@ -84,12 +116,14 @@ def main() -> int:
             file=sys.stderr,
         )
     else:
-        if "In [" not in proc.stdout and "IPython" not in proc.stdout:
+        if "IPYTHON_VERSION " not in proc.stdout:
             print(
-                "FAIL: real IPython appears to be installed but no IPython "
-                "fingerprint (`In [`, `IPython`) was found on stdout. Either "
-                "IPython failed to launch silently, or the bootstrap "
-                "snippet regressed.",
+                "FAIL: real IPython appears to be installed but the "
+                "deterministic `IPYTHON_VERSION` fingerprint was not "
+                "found on stdout. Either IPython failed to launch "
+                "silently, the bootstrap snippet regressed, or the "
+                "embedded interpreter is shadowing `import IPython` "
+                "with something else.",
                 file=sys.stderr,
             )
             return 1
