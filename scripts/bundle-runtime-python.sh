@@ -102,6 +102,29 @@ done
 command -v "${PYTHON_BIN}" >/dev/null 2>&1 \
     || die "python interpreter not found: ${PYTHON_BIN}"
 
+# Defense-in-depth for the `rm -rf "${DEST}"` we do at the end of
+# Step 1: refuse obviously dangerous destinations *before* touching
+# the filesystem. The `[[ -n "${DEST}" ]]` check above already
+# rejects empty/missing, but a caller passing literal `/`, `//`,
+# `.`, or `..` would slip through and eat the parent directory on
+# the swap. Resolve the path with `readlink -m` (no-op for
+# absolute paths, normalises `.` / `..`, does NOT require the
+# target to exist yet — `realpath -m` is the GNU equivalent but is
+# not on macOS by default) and reject the few literals that have
+# no legitimate use as a bundle destination.
+case "${DEST}" in
+    /|//|.|..|/..|../|"./..") die "refusing to use \"${DEST}\" as bundle destination" ;;
+esac
+RESOLVED_DEST="$("${PYTHON_BIN}" -c '
+import os, sys
+print(os.path.normpath(os.path.abspath(sys.argv[1])))
+' "${DEST}")"
+case "${RESOLVED_DEST}" in
+    /|/usr|/usr/local|/opt|/etc|/var|"${HOME}"|/home|/root)
+        die "refusing to use \"${RESOLVED_DEST}\" as bundle destination (resolved from \"${DEST}\")"
+        ;;
+esac
+
 info "Bundling runtime Python deps:"
 info "  destination:  ${DEST}"
 info "  interpreter:  ${PYTHON_BIN} ($("${PYTHON_BIN}" --version 2>&1))"
@@ -134,7 +157,10 @@ STAGING_DEST="$(mktemp -d "${DEST_PARENT}/${DEST_NAME}.tmp.XXXXXX")"
 cleanup_staging() {
     # On any error path before the final mv, drop the staging dir so
     # we don't leave garbage next to the real destination.
-    [[ -d "${STAGING_DEST}" ]] && rm -rf "${STAGING_DEST}"
+    # `${STAGING_DEST:?}` makes `rm -rf` abort loudly if STAGING_DEST
+    # ever ends up empty/unset (e.g. mktemp was bypassed) instead of
+    # silently expanding to `rm -rf` (no-op) or worse.
+    [[ -d "${STAGING_DEST}" ]] && rm -rf "${STAGING_DEST:?}"
 }
 trap cleanup_staging EXIT
 
@@ -149,7 +175,11 @@ info "Running pip install --target=${STAGING_DEST} -r ${REQUIREMENTS}"
 # Atomically replace any existing destination with the freshly
 # populated staging dir. `mv` is atomic for same-filesystem renames,
 # which is guaranteed here because STAGING_DEST is a sibling of DEST.
-rm -rf "${DEST}"
+# `${DEST:?}` is paranoia in depth on top of the upfront validation
+# block above: even if someone slips an unset DEST past the guards,
+# bash will abort `rm` with a clear "DEST: parameter null or not set"
+# instead of expanding to a bare `rm -rf`.
+rm -rf "${DEST:?}"
 mv "${STAGING_DEST}" "${DEST}"
 trap - EXIT
 
