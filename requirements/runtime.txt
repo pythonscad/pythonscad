@@ -5,8 +5,8 @@
 # Build-time-only tools belong elsewhere.
 #
 # Pinning policy: pin to the major version range. Patch and minor
-# upgrades are picked up automatically by Renovate / Dependabot, which
-# re-runs CI to catch any regressions.
+# upgrades are picked up automatically by Dependabot (configured in
+# .github/dependabot.yaml), which re-runs CI to catch any regressions.
 #
 # This file is consumed by:
 #   * pyproject.toml [project.dependencies] (the published pip wheel)
