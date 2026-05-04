@@ -219,40 +219,62 @@ jobs:
             USE_QT6="ON"
           fi
 
-          # Run the entire build inside a Docker container with proper ARM64 emulation
-          docker run --rm \
+          # Run the entire build inside a Docker container with proper ARM64 emulation.
+          #
+          # `DEB_SIGNING_KEY` is intentionally *not* passed via `-e`:
+          # exporting it for the whole container would expose the
+          # secret to every command run inside (`apt-get`,
+          # `get-dependencies.py`, `build-debian-package.sh`, etc.),
+          # including manual non-release builds where no signing
+          # happens. Instead, the key is streamed in over stdin and
+          # only ever lives in memory inside the `gpg --import` pipe.
+          # `bash -s` on the inner container shell consumes whatever
+          # comes after the `--` and leaves stdin available to the
+          # script itself.
+          if [ "$GITHUB_EVENT_NAME" = 'release' ] || [ -n "$UPLOAD_TO_RELEASE" ]; then
+            KEY_INPUT="$DEB_SIGNING_KEY"
+          else
+            KEY_INPUT=""
+          fi
+          printf '%s' "$KEY_INPUT" | docker run --rm -i \
             --platform linux/arm64 \
             -v "$PWD:/workspace" \
             -w /workspace \
             -e OUTPUT_DIR=/tmp/debs \
             -e DEBIAN_DISTRO="$MATRIX_DISTRO" \
+            -e QT_PROFILE="$QT_PROFILE" \
             -e USE_QT6="$USE_QT6" \
             -e DEBIAN_FRONTEND=noninteractive \
             -e TZ=Etc/UTC \
             -e GITHUB_EVENT_NAME \
             -e UPLOAD_TO_RELEASE \
-            -e DEB_SIGNING_KEY \
             "$MATRIX_DOCKER_IMAGE" \
-            bash -c "
+            bash -c '
               set -e
               apt-get update
               apt-get install -y git python3 gnupg
 
-              # Install build dependencies
-              ./scripts/get-dependencies.py --yes --profile \"$QT_PROFILE\"
-              apt-get install -y debhelper devscripts lintian dpkg-dev fakeroot libboost-all-dev
-
-              # Import GPG signing key if building for release
-              if [ \"\$GITHUB_EVENT_NAME\" = 'release' ] || [ -n \"\$UPLOAD_TO_RELEASE\" ]; then
-                printf '%s' \"\$DEB_SIGNING_KEY\" | gpg --batch --import
+              # Import GPG signing key if building for release.
+              # The key arrives on stdin (see the host-side `printf`
+              # piped into `docker run -i`), so it never lives in an
+              # env var inside the container.
+              if [ "$GITHUB_EVENT_NAME" = "release" ] || [ -n "$UPLOAD_TO_RELEASE" ]; then
+                gpg --batch --import
                 gpg --list-secret-keys
+              else
+                # Drain stdin so the upstream pipe closes cleanly.
+                cat > /dev/null
               fi
 
+              # Install build dependencies
+              ./scripts/get-dependencies.py --yes --profile "$QT_PROFILE"
+              apt-get install -y debhelper devscripts lintian dpkg-dev fakeroot libboost-all-dev
+
               # Build package
-              mkdir -p \"\$OUTPUT_DIR\"
+              mkdir -p "$OUTPUT_DIR"
               chmod +x ./scripts/build-debian-package.sh
               ./scripts/build-debian-package.sh
-            "
+            '
 
           # Copy built packages from Docker to host
           sudo cp -r /tmp/debs /tmp/debs-host || true
