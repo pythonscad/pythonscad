@@ -1802,31 +1802,33 @@ static int pymain_run_interactive_hook(void)
   return 0;
 }
 
-// Drop into the basic embedded CPython REPL on stdin, with `pythonscad`
-// preloaded into __main__ so the user sees the same `cube`/`show`/...
-// names that the IPython path provides. Used by the explicit `--repl`
-// flag and as the fallback when `--ipython` cannot launch IPython.
+// Drop into the basic embedded CPython REPL on stdin. Used by the
+// explicit `--repl` flag and as the fallback when `--ipython` cannot
+// launch IPython.
+//
+// The user namespace (`__main__`) starts empty -- we deliberately do
+// NOT auto-import any PythonSCAD names. Users opt in with whichever of
+// `from pythonscad import *`, `from openscad import *`, or
+// `import pythonscad` matches their preferred style; auto-importing
+// would silently break the third form (`pythonscad.cube(10)`) and
+// pollute `dir()` with a couple hundred names regardless of what the
+// user actually intended to use.
 //
 // This helper assumes Py_IsInitialized() is already true; callers must
 // gate it behind that check.
 static void run_basic_python_repl(void)
 {
-  // Best-effort preload: if `pythonscad` is unavailable for some reason
-  // (broken install, partially failed initPython), the REPL still
-  // launches without the convenience namespace.
-  if (PyRun_SimpleString("from pythonscad import *  # noqa: F401,F403\n") != 0) {
-    PyErr_Clear();
-  }
   pymain_run_interactive_hook();
   PyCompilerFlags cf = _PyCompilerFlags_INIT;
   PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
 }
 
-// Open the basic embedded CPython REPL with the `pythonscad` module
-// pre-imported. This is the historical `--ipython` behaviour (which
-// never actually launched IPython); it is now reachable explicitly via
-// `--repl` and as the fallback path of `ipython()` when IPython is not
-// installed. Returns 0 on clean exit, 1 on init failure.
+// Open the basic embedded CPython REPL on stdin. Reachable explicitly
+// via `--repl` and as the fallback path of `ipython()` when IPython is
+// not installed. The user namespace is empty on entry; the user is
+// responsible for any imports they need (e.g. `from pythonscad import
+// *`, `from openscad import *`, or `import pythonscad`). Returns 0 on
+// clean exit, 1 on init failure.
 int repl(void)
 {
   initPython(PlatformUtils::applicationPath(), "", nullptr);
@@ -1894,11 +1896,12 @@ static void diagnose_failed_ipython_import(bool *out_truly_missing)
 
 // Launch the real IPython interactive shell. Forwards `args` as
 // IPython's argv (so `pythonscad --ipython script.py arg1` runs the
-// script under the IPython kernel) and preloads `from pythonscad
-// import *` into the user namespace. If IPython is not importable,
-// prints a diagnostic to stderr and falls back to the basic REPL so
-// the user still gets an interactive prompt instead of a hard error.
-// Returns 0 on clean exit, 1 on init failure.
+// script under the IPython kernel). The user namespace starts empty;
+// the user is responsible for any imports they need (`from pythonscad
+// import *`, `from openscad import *`, or `import pythonscad`). If
+// IPython is not importable, prints a diagnostic to stderr and falls
+// back to the basic REPL so the user still gets an interactive prompt
+// instead of a hard error. Returns 0 on clean exit, 1 on init failure.
 int ipython(const std::vector<std::string>& args)
 {
   initPython(PlatformUtils::applicationPath(), "", nullptr);
@@ -1985,20 +1988,13 @@ int ipython(const std::vector<std::string>& args)
   // IPython's `start_ipython(user_ns=globals())` exposes the bootstrap's
   // private helper names to the user namespace. Some IPython exit paths
   // (e.g. EOF after the "Do you really want to exit" confirmation) clear
-  // entries from that dict before returning, so the cleanup `del` must
-  // tolerate missing names. `_e` is included because it leaks out of the
-  // `except Exception as _e:` block when the pythonscad preload fails.
+  // entries from that dict before returning, so the cleanup loop must
+  // tolerate missing names.
   static const char *boot =
-    "import sys as _sys\n"
-    "try:\n"
-    "    from pythonscad import *  # noqa: F401,F403\n"
-    "except Exception as _e:\n"
-    "    _sys.stderr.write(\n"
-    "        f'PythonSCAD: warning, could not preload pythonscad module: {_e}\\n')\n"
     "from IPython import start_ipython as _pythonscad_start_ipython\n"
     "_pythonscad_start_ipython(argv=__pythonscad_ipython_argv__, user_ns=globals())\n"
     "for _name in ('__pythonscad_ipython_argv__', '_pythonscad_start_ipython',\n"
-    "              '_sys', '_name', '_e'):\n"
+    "              '_name'):\n"
     "    globals().pop(_name, None)\n";
 
   if (PyRun_SimpleString(boot) != 0) {
@@ -2015,7 +2011,9 @@ int ipython(const std::vector<std::string>& args)
     // post-cleanup state is the same regardless of which step failed.
     if (main_dict != nullptr) {
       static const char *const helper_names[] = {
-        "__pythonscad_ipython_argv__", "_pythonscad_start_ipython", "_sys", "_name", "_e",
+        "__pythonscad_ipython_argv__",
+        "_pythonscad_start_ipython",
+        "_name",
       };
       for (const char *helper_name : helper_names) {
         if (PyDict_DelItemString(main_dict, helper_name) != 0) {

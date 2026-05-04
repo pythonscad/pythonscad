@@ -18,11 +18,14 @@ import subprocess
 import sys
 
 
-# --repl preloads `from pythonscad import *` into __main__, so this
-# script intentionally relies on `cube` being available without an
-# explicit import. If the preload regresses, the script will raise
-# NameError and the smoke test will fail.
+# --repl drops the user into an empty `__main__` namespace; the user
+# is responsible for importing whatever they need. The explicit
+# `from pythonscad import cube` line below is the contract under test
+# (i.e. the basic REPL must successfully import the embedded
+# `pythonscad` module). If the import regresses, the script raises
+# ImportError / ModuleNotFoundError and the smoke test fails.
 SCRIPT = (
+    "from pythonscad import cube\n"
     "c = cube([1, 1, 1])\n"
     "print('OK', type(c).__name__)\n"
 )

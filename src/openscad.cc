@@ -943,12 +943,14 @@ int openscad_main(int argc, char **argv)
 #ifdef ENABLE_PYTHON
     ("trust-python", "Trust python")
     ("ipython",
-      "start an IPython shell with `pythonscad` preloaded; remaining positional "
-      "args are forwarded as IPython argv (e.g. `--ipython script.py arg1`)."
-      " Falls back to the basic Python REPL if IPython is not installed.")
+      "start an IPython shell on stdin; remaining positional args are forwarded as "
+      "IPython argv (e.g. `--ipython script.py arg1`). The user namespace starts "
+      "empty -- run `from pythonscad import *` (or `import pythonscad`) yourself. "
+      "Falls back to the basic Python REPL if IPython is not installed.")
     ("repl",
-      "open the basic embedded Python REPL with `pythonscad` preloaded "
-      "(no IPython dependency).")
+      "open the basic embedded Python REPL on stdin (no IPython dependency). "
+      "The user namespace starts empty -- run `from pythonscad import *` (or "
+      "`import pythonscad`) yourself.")
     ("python-module", po::value<std::string>(), "=module Call pip python module")
 #endif
     ;

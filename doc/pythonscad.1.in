@@ -199,10 +199,15 @@ Trust Python scripts (disable security prompts).
 \fB\-\-ipython\fP [\fIscript.py\fP [\fIargs...\fP]]
 Start an
 .B IPython
-interactive shell with the
-.B pythonscad
-module preloaded into the user namespace. Any positional arguments are
-forwarded as IPython's
+interactive shell on stdin. The user namespace starts empty; run
+.B "from pythonscad import *"
+(or
+.B "import pythonscad"
+if you prefer the qualified form) yourself to bring
+.B cube
+,
+.B cylinder
+, etc. into scope. Any positional arguments are forwarded as IPython's
 .B argv
 (so
 .B "pythonscad \-\-ipython script.py arg1"
@@ -222,12 +227,16 @@ so you still get an interactive prompt. Install IPython with
 package) for the richer experience.
 .TP
 \fB\-\-repl\fP
-Open the basic embedded Python REPL with
-.B pythonscad
-preloaded. This is the legacy interactive prompt (no IPython
-dependency, no tab completion, no syntax highlighting). Use this when
-IPython is unavailable or when you explicitly want a stripped-down
-prompt suitable for scripting.
+Open the basic embedded Python REPL on stdin. This is the legacy
+interactive prompt (no IPython dependency, no tab completion, no
+syntax highlighting). Like
+.B \-\-ipython
+, the user namespace starts empty; run
+.B "from pythonscad import *"
+(or
+.B "import pythonscad"
+) yourself. Use this when IPython is unavailable or when you
+explicitly want a stripped-down prompt suitable for scripting.
 .TP
 \fB\-\-python\-module\fP \fImodule\fP
 Call pip Python module.
@@ -272,11 +281,13 @@ Run a Python script:
 .PP
 .B pythonscad -o output.stl model.py
 .PP
-Open an IPython shell with the
+Open an IPython shell, then bring the
 .B pythonscad
-module preloaded:
+names into scope at the first prompt:
 .PP
 .B pythonscad --ipython
+.br
+.B "    In [1]: from pythonscad import *"
 .PP
 Run a Python script inside IPython (drops to the IPython prompt afterwards
 on
@@ -285,9 +296,12 @@ on
 .PP
 .B pythonscad --ipython model.py arg1
 .PP
-Open the basic embedded Python REPL (no IPython dependency):
+Open the basic embedded Python REPL (no IPython dependency); again,
+import explicitly at the prompt:
 .PP
 .B pythonscad --repl
+.br
+.B "    >>> from pythonscad import *"
 
 .SH AUTHOR
 PythonSCAD was forked from OpenSCAD by Guenther Sohler and others.
