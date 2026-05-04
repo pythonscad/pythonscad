@@ -12,9 +12,17 @@ on:
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
+# No top-level write permissions: we authenticate via the bot account
+# PAT (`secrets.RELEASE_TOKEN`) instead of `GITHUB_TOKEN`, so we don't
+# need to expand the default `GITHUB_TOKEN` scope. The PAT is required
+# because pushes/PRs created with `GITHUB_TOKEN` cannot trigger other
+# workflows (this is GitHub's documented anti-recursion behaviour),
+# which would mean the autoupdate PR opens with no commitlint /
+# pre-commit / build runs and silently merges. The same `RELEASE_TOKEN`
+# is already used by `release-please.yml` and `publish-release.yml`
+# for exactly this reason.
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   autoupdate:
@@ -29,12 +37,13 @@ jobs:
           # this pin, a manual run from a feature branch would carry
           # that branch's unrelated commits into the autoupdate PR.
           ref: ${{ github.event.repository.default_branch }}
-          # We need GITHUB_TOKEN persisted on the local clone so the
-          # subsequent `git push` can authenticate. zizmor's `artipacked`
-          # audit flags this; the suppression below is appropriate
-          # here because the token never leaves the runner — it's only
-          # used to push the autoupdate branch back. Tracked in #613.
-          token: ${{ secrets.GITHUB_TOKEN }} # zizmor: ignore[artipacked] tracked in #613
+          # Bot account PAT, not GITHUB_TOKEN — see the workflow-level
+          # comment above for the rationale. zizmor's `artipacked` audit
+          # flags any persisted credentials here; the suppression is
+          # appropriate because the token never leaves the runner —
+          # it's only used to push the autoupdate branch and open the
+          # PR. Tracked in #613.
+          token: ${{ secrets.RELEASE_TOKEN }} # zizmor: ignore[artipacked] tracked in #613
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -49,7 +58,7 @@ jobs:
 
       - name: Open PR if anything changed
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
           if git diff --quiet .pre-commit-config.yaml; then
             echo "No hook updates available."
