@@ -1,0 +1,65 @@
+name: pre-commit autoupdate
+
+# Dependabot does not natively support .pre-commit-config.yaml
+# (dependabot-core#1524), so we use a scheduled workflow instead. It
+# runs `pre-commit autoupdate` weekly and opens a PR if any hook
+# revisions changed. The PR goes through the normal CI pipeline
+# (commitlint, pre-commit, builds), so any breaking autoupdate is
+# caught before merge.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  autoupdate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          # We need GITHUB_TOKEN persisted on the local clone so the
+          # subsequent `git push` can authenticate. zizmor's `artipacked`
+          # audit flags this; the suppression below is appropriate
+          # here because the token never leaves the runner — it's only
+          # used to push the autoupdate branch back. Tracked in #613.
+          token: ${{ secrets.GITHUB_TOKEN }} # zizmor: ignore[artipacked] tracked in #613
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit autoupdate
+        run: pre-commit autoupdate
+
+      - name: Open PR if anything changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet .pre-commit-config.yaml; then
+            echo "No hook updates available."
+            exit 0
+          fi
+
+          BRANCH="ci/pre-commit-autoupdate-$(date -u +%Y%m%d)"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b "$BRANCH"
+          git add .pre-commit-config.yaml
+          git commit -m "build(deps): pre-commit autoupdate"
+          git push origin "$BRANCH"
+
+          # shellcheck disable=SC2016 # backticks below are literal markdown, not command substitution
+          gh pr create \
+            --title 'build(deps): pre-commit autoupdate' \
+            --body  'Automated weekly bump of pre-commit hook revs via `pre-commit autoupdate`. Review the diff and merge if CI is green.' \
+            --label 'dependencies'
