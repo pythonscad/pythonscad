@@ -76,8 +76,16 @@ jobs:
         run: |
           PORT="${WEB_SFTP_PORT:-22}"
 
+          # Don't pass `StrictHostKeyChecking=no` here: the previous
+          # step populated `~/.ssh/known_hosts` with the live host
+          # key via `ssh-keyscan`, and ssh's default behaviour
+          # (`StrictHostKeyChecking=accept-new`/`yes` depending on
+          # version) honours that pin. Disabling strict checking
+          # would silently accept any key that happens to answer on
+          # the deploy host's address — i.e. the very MITM the
+          # ssh-keyscan + known_hosts dance is meant to prevent.
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p $PORT -o StrictHostKeyChecking=no" \
+            -e "ssh -i ~/.ssh/deploy_key -p $PORT" \
             web/site/ \
             "${VARS_WEB_SFTP_USER}@${VARS_WEB_SFTP_HOST}:${VARS_WEB_SFTP_PATH}/"
         env:
