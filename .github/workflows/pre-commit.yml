@@ -45,5 +45,39 @@ jobs:
           # `master` but never in this PR. Use the merge-base so the
           # diff is exactly the PR's contribution.
           MERGE_BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          echo "MERGE_BASE=$MERGE_BASE" >> "$GITHUB_ENV"
           pre-commit run --from-ref "$MERGE_BASE" --to-ref "$HEAD_SHA" \
                          --show-diff-on-failure --color always
+
+      - name: Re-run file-scoped hooks against full target set
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # `pre-commit run --from-ref/--to-ref` only runs hooks
+          # against files in the PR diff. That has a known gap: a PR
+          # whose only change is `.pre-commit-config.yaml` (e.g. the
+          # weekly autoupdate PRs from pre-commit-autoupdate.yml) has
+          # an empty target file set for every file-scoped hook, so
+          # rev/arg bumps for `actionlint`, `zizmor`, etc. would
+          # never be exercised in CI.
+          #
+          # When the config file is in the diff, additionally run
+          # the hooks that are known to be clean across the full
+          # codebase against `--all-files`, so a breaking rev bump
+          # is caught at PR time.
+          #
+          # The list is intentionally small for now — `actionlint`
+          # and `zizmor` only target `.github/workflows/**`, which
+          # this PR cleaned up. Other file-scoped hooks
+          # (`shellcheck`, `clang-format`, `markdownlint-cli2`,
+          # `trailing-whitespace`, ...) have a pre-existing legacy
+          # backlog tracked in #613; once cleared, they should be
+          # added here too.
+          if ! git diff --name-only "$MERGE_BASE" "$HEAD_SHA" \
+               | grep -qx '.pre-commit-config.yaml'; then
+            echo "No .pre-commit-config.yaml change; skipping cross-config validation."
+            exit 0
+          fi
+          echo ".pre-commit-config.yaml is in the diff — running file-scoped hooks against --all-files."
+          pre-commit run actionlint --all-files --color always
+          pre-commit run zizmor     --all-files --color always
