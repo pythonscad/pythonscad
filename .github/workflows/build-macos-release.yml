@@ -138,10 +138,13 @@ jobs:
       - name: Bundle runtime Python deps (IPython) into .app
         run: |
           # Destination must match `bundledFallbackPaths` in
-          # src/python/pyopenscad.cc: ../Frameworks/pythonscad-bundled-py
+          # src/python/pyopenscad.cc: ../Resources/pythonscad-bundled-py
           # relative to the executable inside Contents/MacOS.
+          # NOT Contents/Frameworks/: macOS `codesign` treats every
+          # subdirectory there as a sub-bundle and chokes on pip's
+          # `*.dist-info` metadata directories.
           APP_BUNDLE="${{ steps.appname.outputs.app_bundle }}"
-          BUNDLE_DEST="${APP_BUNDLE}/Contents/Frameworks/pythonscad-bundled-py"
+          BUNDLE_DEST="${APP_BUNDLE}/Contents/Resources/pythonscad-bundled-py"
           chmod +x ./scripts/bundle-runtime-python.sh
           BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES=1 \
             ./scripts/bundle-runtime-python.sh "${BUNDLE_DEST}" --python python3
@@ -285,10 +288,13 @@ jobs:
       - name: Bundle runtime Python deps (IPython) into .app
         run: |
           # Destination must match `bundledFallbackPaths` in
-          # src/python/pyopenscad.cc: ../Frameworks/pythonscad-bundled-py
+          # src/python/pyopenscad.cc: ../Resources/pythonscad-bundled-py
           # relative to the executable inside Contents/MacOS.
+          # NOT Contents/Frameworks/: macOS `codesign` treats every
+          # subdirectory there as a sub-bundle and chokes on pip's
+          # `*.dist-info` metadata directories.
           APP_BUNDLE="${{ steps.appname.outputs.app_bundle }}"
-          BUNDLE_DEST="${APP_BUNDLE}/Contents/Frameworks/pythonscad-bundled-py"
+          BUNDLE_DEST="${APP_BUNDLE}/Contents/Resources/pythonscad-bundled-py"
           chmod +x ./scripts/bundle-runtime-python.sh
           BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES=1 \
             ./scripts/bundle-runtime-python.sh "${BUNDLE_DEST}" --python python3
@@ -749,7 +755,7 @@ jobs:
           # trying to lipo per-arch bundles together. Anything previously
           # installed by the per-arch jobs gets overwritten by --upgrade.
           APP_BUNDLE="${{ steps.merge.outputs.app_bundle }}"
-          BUNDLE_DEST="${APP_BUNDLE}/Contents/Frameworks/pythonscad-bundled-py"
+          BUNDLE_DEST="${APP_BUNDLE}/Contents/Resources/pythonscad-bundled-py"
           chmod +x ./scripts/bundle-runtime-python.sh
           BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES=1 \
             ./scripts/bundle-runtime-python.sh "${BUNDLE_DEST}" --python python3

@@ -9,7 +9,7 @@
 # the directories pythonscad's `initPython` searches at startup:
 #
 #   * AppImage   -> ${APPDIR}/usr/lib/pythonscad-bundled-py
-#   * macOS .app -> <App>.app/Contents/Frameworks/pythonscad-bundled-py
+#   * macOS .app -> <App>.app/Contents/Resources/pythonscad-bundled-py
 #   * Windows    -> <staging>/lib/pythonscad-bundled-py
 #
 # The bundled directory is *appended* to sys.path inside `initPython`,

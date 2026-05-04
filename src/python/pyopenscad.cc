@@ -1115,8 +1115,13 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       //     in <prefix>/bin, so `../lib/pythonscad-bundled-py` resolves
       //     to <prefix>/lib/pythonscad-bundled-py.
       //   * macOS .app: pythonscad lives in <App>.app/Contents/MacOS,
-      //     so `../Frameworks/...` resolves to
-      //     <App>.app/Contents/Frameworks/pythonscad-bundled-py.
+      //     so `../Resources/...` resolves to
+      //     <App>.app/Contents/Resources/pythonscad-bundled-py.
+      //     (Note: NOT `../Frameworks/...`. macOS `codesign` treats
+      //     `Contents/Frameworks/` as a place where every subdirectory
+      //     is a sub-bundle, and chokes on pip's `*.dist-info`
+      //     directories with `bundle format unrecognized`. `Resources/`
+      //     is the conventional home for arbitrary data assets.)
       //   * Windows native installer: CMake's `WIN32` branch sets
       //     `OPENSCAD_BINDIR = "."`, i.e. pythonscad.exe lives at the
       //     install prefix root. `../lib/...` would point OUTSIDE the
@@ -1126,9 +1131,9 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       //     #ifdef _WIN32 split: `fs::is_directory(p)` returns false
       //     for whichever entry doesn't match on a given OS.
       const std::array<const char *, 3> bundledFallbackPaths = {
-        "../lib/pythonscad-bundled-py",         // AppImage / Linux source install
-        "../Frameworks/pythonscad-bundled-py",  // macOS .app
-        "lib/pythonscad-bundled-py",            // Windows native installer
+        "../lib/pythonscad-bundled-py",        // AppImage / Linux source install
+        "../Resources/pythonscad-bundled-py",  // macOS .app
+        "lib/pythonscad-bundled-py",           // Windows native installer
       };
       // Defensive: this runs during initPython, so any pending Python
       // exception left here would poison every subsequent C-API call.
