@@ -21,4 +21,16 @@
 # IPython provides the rich interactive shell launched by
 # `pythonscad --ipython`. The basic embedded REPL launched by
 # `pythonscad --repl` works without any optional packages.
-ipython>=8,<10
+#
+# Capped at <9 deliberately: IPython 9.x added a hard runtime
+# dependency on `psutil>=7`, and there is no prebuilt psutil wheel
+# for the MSYS2/UCRT64 ABI tag (`mingw_x86_64_ucrt_gnu-cpython-3xx`)
+# that the Windows native build uses. pip then falls back to building
+# psutil from source, where psutil's bundled `ntextapi.h` collides
+# with MSYS2 UCRT64's `winternl.h` (`MaximumWaitReason` /
+# `KWAIT_REASON` redefinition) and the build aborts. IPython 8.x has
+# no psutil dependency, covers every PythonSCAD `--ipython` use case
+# (rich `In [N]:` prompt, history, tab completion), and produces a
+# smaller bundle. Revisit when IPython 10 ships or when MSYS2 has a
+# usable psutil wheel for the build's Python version.
+ipython>=8,<9
