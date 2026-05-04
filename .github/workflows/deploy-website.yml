@@ -34,6 +34,48 @@ jobs:
           detached: true
           limit-access-to-actor: true
 
+      - name: Validate deploy configuration
+        # Verify every secret/variable the deploy step needs is
+        # populated before doing the (relatively expensive) mkdocs
+        # build. Without this pre-flight, a missing
+        # `WEB_SFTP_SSH_KEY` would write an empty `deploy_key` and
+        # only fail during `rsync` with a confusing
+        # `Permission denied (publickey)` — well after the site
+        # build has already run. Same logic for the host/user/path
+        # variables: any of them missing would let the workflow
+        # fall through to a broken `rsync URL`. Failing fast here
+        # turns those into a clear "this repo isn't configured for
+        # deploys" message that points the maintainer straight at
+        # the Settings page.
+        env:
+          WEB_SFTP_SSH_KEY: ${{ secrets.WEB_SFTP_SSH_KEY }}
+          WEB_SFTP_HOST_KEY: ${{ vars.WEB_SFTP_HOST_KEY }}
+          WEB_SFTP_HOST: ${{ vars.WEB_SFTP_HOST }}
+          WEB_SFTP_USER: ${{ vars.WEB_SFTP_USER }}
+          WEB_SFTP_PATH: ${{ vars.WEB_SFTP_PATH }}
+        run: |
+          missing=""
+          for var in WEB_SFTP_SSH_KEY WEB_SFTP_HOST_KEY \
+                     WEB_SFTP_HOST WEB_SFTP_USER WEB_SFTP_PATH; do
+            if [ -z "${!var}" ]; then
+              missing="${missing} ${var}"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            {
+              echo "Error: required deploy configuration is missing:${missing}"
+              echo
+              echo "Populate them under Settings → Secrets and variables → Actions:"
+              echo "  - WEB_SFTP_SSH_KEY:  Secret  (private SSH key for the deploy account)"
+              echo "  - WEB_SFTP_HOST_KEY: Variable (output of \`ssh-keyscan -p <PORT> <HOST>\`)"
+              echo "  - WEB_SFTP_HOST:     Variable (deploy server hostname)"
+              echo "  - WEB_SFTP_USER:     Variable (SFTP username)"
+              echo "  - WEB_SFTP_PATH:     Variable (target path on the deploy server)"
+              echo "  - WEB_SFTP_PORT:     Variable (optional; defaults to 22)"
+            } >&2
+            exit 1
+          fi
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
