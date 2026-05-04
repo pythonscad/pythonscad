@@ -12,6 +12,17 @@ on:
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
+# Serialize autoupdate runs across triggers. Because the workflow
+# force-pushes a single shared branch (`ci/pre-commit-autoupdate`),
+# overlapping runs from `schedule` + `workflow_dispatch` could race
+# at the push step and leave the open PR pointing at stale revs.
+# Queue rather than cancel so each manual dispatch still produces a
+# refresh attempt instead of silently being dropped in favour of the
+# scheduled run.
+concurrency:
+  group: pre-commit-autoupdate
+  cancel-in-progress: false
+
 # No top-level write permissions: we authenticate via the bot account
 # PAT (`secrets.RELEASE_TOKEN`) instead of `GITHUB_TOKEN`, so we don't
 # need to expand the default `GITHUB_TOKEN` scope. The PAT is required
