@@ -75,6 +75,42 @@ jobs:
       - name: Run pre-commit autoupdate
         run: pre-commit autoupdate
 
+      - name: Capture full --all-files snapshot for the PR description
+        # CI's `pre-commit.yml` safety net runs with a `SKIP=`
+        # deny-list (`shellcheck`, `clang-format`,
+        # `markdownlint-cli2`, `trailing-whitespace`,
+        # `end-of-file-fixer`) because those hooks have an
+        # inherited-OpenSCAD `--all-files` backlog tracked in #613.
+        # That means an autoupdate PR which bumps one of those
+        # hooks in a breaking way wouldn't fail any CI gate — the
+        # diff-scoped step has no targets (it's a config-only
+        # change) and the safety-net step skips it.
+        #
+        # Capture the *full* `--all-files` output here (no `SKIP`,
+        # `|| true` so a failure doesn't abort the workflow) while
+        # we still know which hook revs `autoupdate` just picked,
+        # and embed it in the PR body below. A maintainer reviewing
+        # the autoupdate diff then has a concrete snapshot of what
+        # the new revs produce against the whole tree, and can
+        # compare it against the equivalent run on master to spot
+        # regressions the CI gate can't catch.
+        run: |
+          if git diff --quiet .pre-commit-config.yaml; then
+            echo "no autoupdate diff; nothing to snapshot" \
+              > /tmp/precommit-snapshot.md
+            exit 0
+          fi
+          {
+            echo "<details>"
+            echo "<summary><strong>Full <code>pre-commit run --all-files</code> snapshot under the new hook revs</strong> (no <code>SKIP</code> deny-list applied)</summary>"
+            echo
+            echo '```'
+            pre-commit run --all-files --color=never 2>&1 || true
+            echo '```'
+            echo
+            echo "</details>"
+          } > /tmp/precommit-snapshot.md
+
       - name: Open PR if anything changed
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
@@ -98,19 +134,38 @@ jobs:
           git commit -m "build(deps): pre-commit autoupdate"
           git push --force origin "$BRANCH"
 
+          # Build the PR body in a tmp file so we can pipe a
+          # multi-paragraph markdown blurb plus the captured
+          # `--all-files` snapshot through `gh pr create
+          # --body-file` (avoids quoting headaches with multi-line
+          # markdown in `--body`).
+          {
+            # shellcheck disable=SC2016 # backticks below are literal markdown, not command substitution
+            cat <<'EOF'
+          Automated weekly bump of pre-commit hook revs via `pre-commit autoupdate`. Review the diff and merge if CI is green.
+
+          ## Coverage note
+
+          `pre-commit.yml`'s safety net runs with a `SKIP=` deny-list for hooks that have an inherited-OpenSCAD `--all-files` backlog (`shellcheck`, `clang-format`, `markdownlint-cli2`, `trailing-whitespace`, `end-of-file-fixer`; tracked in #613). The snapshot below was produced *without* that deny-list applied, so a breaking autoupdate to one of the deferred hooks shows up here even though it wouldn't show up as a CI failure on this PR.
+
+          EOF
+            cat /tmp/precommit-snapshot.md
+          } > /tmp/pr-body.md
+
           # If a PR is already open against this branch, the force-
-          # push above already updated its head; just leave a comment
-          # so the maintainers can see the rerun timestamp. Otherwise
-          # open a fresh PR.
+          # push above already updated its head; refresh the body
+          # with the new snapshot and leave a comment so the
+          # maintainers can see the rerun timestamp. Otherwise open
+          # a fresh PR.
           existing=$(gh pr list --head "$BRANCH" --state open \
                        --json number --jq '.[0].number // ""')
           if [ -n "$existing" ]; then
+            gh pr edit "$existing" --body-file /tmp/pr-body.md
             gh pr comment "$existing" --body \
-              "Refreshed branch from a new \`pre-commit autoupdate\` run on $(date -u +%Y-%m-%d)."
+              "Refreshed branch and PR body from a new \`pre-commit autoupdate\` run on $(date -u +%Y-%m-%d)."
           else
-            # shellcheck disable=SC2016 # backticks below are literal markdown, not command substitution
             gh pr create \
               --title 'build(deps): pre-commit autoupdate' \
-              --body  'Automated weekly bump of pre-commit hook revs via `pre-commit autoupdate`. Review the diff and merge if CI is green.' \
+              --body-file /tmp/pr-body.md \
               --label 'dependencies'
           fi
