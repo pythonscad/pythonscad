@@ -167,7 +167,18 @@ if [[ "${WITH_LICENSES}" -eq 1 ]]; then
         # CI does this in the workflow step that calls us.
         if [[ "${BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES:-0}" = "1" ]]; then
             warn "pip-licenses missing; auto-installing because BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES=1"
-            "${PYTHON_BIN}" -m pip install --quiet pip-licenses \
+            # PEP 668 hosts (Homebrew Python on macOS, Debian/Ubuntu
+            # system Python, MSYS2 ucrt64) refuse `pip install` into
+            # their site-packages without `--break-system-packages`.
+            # Try the modern flag first; fall back to plain pip for
+            # older pip releases (<23.0.1) that don't recognise it
+            # AND aren't PEP 668-managed in the first place. A final
+            # plain attempt without `--quiet` runs only if both prior
+            # attempts fail, so the user sees the real error message
+            # before we `die`.
+            "${PYTHON_BIN}" -m pip install --quiet --break-system-packages pip-licenses 2>/dev/null \
+                || "${PYTHON_BIN}" -m pip install --quiet pip-licenses 2>/dev/null \
+                || "${PYTHON_BIN}" -m pip install --break-system-packages pip-licenses \
                 || die "auto-install of pip-licenses failed"
         else
             error "pip-licenses is not installed in ${PYTHON_BIN}."
