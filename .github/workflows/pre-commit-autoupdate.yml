@@ -23,6 +23,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
+          # Pin the checkout to the repository's default branch.
+          # `schedule` events always run on the default branch, but
+          # `workflow_dispatch` can be triggered from any ref — without
+          # this pin, a manual run from a feature branch would carry
+          # that branch's unrelated commits into the autoupdate PR.
+          ref: ${{ github.event.repository.default_branch }}
           # We need GITHUB_TOKEN persisted on the local clone so the
           # subsequent `git push` can authenticate. zizmor's `artipacked`
           # audit flags this; the suppression below is appropriate
@@ -50,16 +56,33 @@ jobs:
             exit 0
           fi
 
-          BRANCH="ci/pre-commit-autoupdate-$(date -u +%Y%m%d)"
+          # Stable branch name (no date) so any same-day rerun
+          # (manual rerun, retry after failure, or a still-open
+          # previous autoupdate PR getting refreshed) just updates
+          # the existing branch instead of failing with
+          # `non-fast-forward` / `branch already exists`. The PR
+          # title/body advertise the autoupdate as of "today".
+          BRANCH="ci/pre-commit-autoupdate"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git checkout -b "$BRANCH"
+          git checkout -B "$BRANCH"
           git add .pre-commit-config.yaml
           git commit -m "build(deps): pre-commit autoupdate"
-          git push origin "$BRANCH"
+          git push --force origin "$BRANCH"
 
-          # shellcheck disable=SC2016 # backticks below are literal markdown, not command substitution
-          gh pr create \
-            --title 'build(deps): pre-commit autoupdate' \
-            --body  'Automated weekly bump of pre-commit hook revs via `pre-commit autoupdate`. Review the diff and merge if CI is green.' \
-            --label 'dependencies'
+          # If a PR is already open against this branch, the force-
+          # push above already updated its head; just leave a comment
+          # so the maintainers can see the rerun timestamp. Otherwise
+          # open a fresh PR.
+          existing=$(gh pr list --head "$BRANCH" --state open \
+                       --json number --jq '.[0].number // ""')
+          if [ -n "$existing" ]; then
+            gh pr comment "$existing" --body \
+              "Refreshed branch from a new \`pre-commit autoupdate\` run on $(date -u +%Y-%m-%d)."
+          else
+            # shellcheck disable=SC2016 # backticks below are literal markdown, not command substitution
+            gh pr create \
+              --title 'build(deps): pre-commit autoupdate' \
+              --body  'Automated weekly bump of pre-commit hook revs via `pre-commit autoupdate`. Review the diff and merge if CI is green.' \
+              --label 'dependencies'
+          fi
