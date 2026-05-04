@@ -15,8 +15,18 @@ rules:
       # `actions/upload-artifact@v7`, etc.).
       #
       # Policy:
-      #   - The @actions namespace ref-pins (immutable major-tag
-      #     pointers, GitHub-owned, ecosystem standard).
+      #   - The @actions namespace ref-pins. Note that `@v6`-style
+      #     refs are *mutable tags* (the publisher can rewrite them
+      #     to point at a different commit at any time), not
+      #     immutable SHAs — so this is a trust-the-publisher pin
+      #     rather than a cryptographic one. Acceptable for
+      #     `@actions/*` because (a) those are first-party
+      #     GitHub-owned actions, (b) hash-pinning every
+      #     `actions/*` `uses:` clause is high-friction with no
+      #     concrete threat reduction beyond the supply-chain
+      #     controls GitHub already enforces on its own org. Hash
+      #     pin (`@<sha>`) anything where the publisher isn't on
+      #     that footing.
       #   - The currently-used third-party actions explicitly
       #     ref-pin for now; hash-pinning each one is tracked in
       #     #613. The explicit enumeration is deliberate: if a new
