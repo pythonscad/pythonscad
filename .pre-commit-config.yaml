@@ -81,6 +81,23 @@ repos:
           # expression syntax, shellcheck on `run:` blocks (when
           # available), pinned-action checks, etc.
           - id: actionlint
+    - repo: https://github.com/shellcheck-py/shellcheck-py
+      rev: v0.11.0.1
+      hooks:
+          # Lints shell scripts (anything with a shell shebang or `*.sh`)
+          # for correctness, portability, and security pitfalls. Bundles
+          # the shellcheck binary as a Python wheel so contributors don't
+          # need a system install.
+          #
+          # `--severity=warning` keeps real issues (SC2086 unquoted
+          # expansion, SC2155 mask-return-value, etc.) and skips the
+          # long-tail style nags we'd otherwise have to triage one by
+          # one. Submodules are upstream code we don't own; tests/data
+          # has intentionally-weird shell test fixtures (cascade*.sh
+          # etc.) that exist to exercise edge cases.
+          - id: shellcheck
+            args: ["--severity=warning"]
+            exclude: ^(submodules|tests/data)/
     - repo: https://github.com/zizmorcore/zizmor-pre-commit
       rev: v1.24.1
       hooks:
