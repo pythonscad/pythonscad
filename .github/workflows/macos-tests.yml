@@ -57,8 +57,15 @@ jobs:
         # to plain pip for older runner images. ipython and pexpect
         # need to be importable by the *system* python3 because that
         # is what the embedded interpreter resolves at runtime.
-        python3 -m pip install --break-system-packages --upgrade ipython pexpect \
-          || python3 -m pip install --upgrade ipython pexpect
+        #
+        # `ipython<9` matches the cap in `requirements/runtime.txt`
+        # and `pyproject.toml`. We deliberately exercise the same
+        # major version that binary bundles (AppImage / .app /
+        # Windows installer) and the published pip wheel ship, so
+        # CI catches regressions in the version users actually run.
+        # See requirements/runtime.txt for the rationale on why <9.
+        python3 -m pip install --break-system-packages --upgrade 'ipython<9' pexpect \
+          || python3 -m pip install --upgrade 'ipython<9' pexpect
     - name: Build OpenSCAD
       run: |
         mkdir build
