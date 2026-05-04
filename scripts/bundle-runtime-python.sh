@@ -107,20 +107,37 @@ command -v "${PYTHON_BIN}" >/dev/null 2>&1 \
 # the filesystem. The `[[ -n "${DEST}" ]]` check above already
 # rejects empty/missing, but a caller passing literal `/`, `//`,
 # `.`, or `..` would slip through and eat the parent directory on
-# the swap. Resolve the path with `readlink -m` (no-op for
-# absolute paths, normalises `.` / `..`, does NOT require the
-# target to exist yet — `realpath -m` is the GNU equivalent but is
-# not on macOS by default) and reject the few literals that have
-# no legitimate use as a bundle destination.
+# the swap.
+#
+# Layer 1 - literal blocklist (cheapest path; trips before any
+# subprocess work). Catches the plain text forms that have no
+# legitimate use as a bundle destination.
 case "${DEST}" in
     /|//|.|..|/..|../|"./..") die "refusing to use \"${DEST}\" as bundle destination" ;;
 esac
+#
+# Layer 2 - resolved blocklist. Normalise the path with
+# `os.path.realpath(os.path.abspath(...))`:
+#   * `abspath` makes relative inputs absolute relative to CWD.
+#   * `realpath` resolves symlinks too, so `DEST=/tmp/symlink`
+#     pointing at `/usr` is rejected as `/usr`, not accepted as
+#     `/tmp/symlink`. (Copilot review, PR #600 thread on
+#     scripts/bundle-runtime-python.sh:123.)
+# Both are pure-Python pathlib operations that work uniformly on
+# Linux / macOS / MSYS2/UCRT64 without depending on the
+# differently-flavoured `realpath -m` of GNU vs BSD coreutils.
 RESOLVED_DEST="$("${PYTHON_BIN}" -c '
 import os, sys
-print(os.path.normpath(os.path.abspath(sys.argv[1])))
+print(os.path.realpath(os.path.abspath(sys.argv[1])))
 ' "${DEST}")"
+# `${HOME:-/__pythonscad_home_unset__}` keeps the case pattern
+# valid under `set -u` even when HOME is not exported (e.g. some
+# minimal-env CI containers, systemd unit shells, packaging
+# chroots). The sentinel path is intentionally implausible as a
+# real `RESOLVED_DEST` so an unset HOME degrades to "no HOME
+# match" rather than "HOME: unbound variable" abort.
 case "${RESOLVED_DEST}" in
-    /|/usr|/usr/local|/opt|/etc|/var|"${HOME}"|/home|/root)
+    /|/usr|/usr/local|/opt|/etc|/var|"${HOME:-/__pythonscad_home_unset__}"|/home|/root)
         die "refusing to use \"${RESOLVED_DEST}\" as bundle destination (resolved from \"${DEST}\")"
         ;;
 esac
