@@ -9,10 +9,14 @@
 # .github/dependabot.yaml), which re-runs CI to catch any regressions.
 #
 # This file is consumed by:
-#   * pyproject.toml [project.dependencies] (the published pip wheel)
-#   * scripts/create_appimage.sh             (AppImage bundle)
-#   * scripts/mac-release / macosx-build-homebrew.sh (macOS .app bundle)
-#   * scripts/build-windows-native.* path    (Windows installer)
+#   * pyproject.toml [project.dependencies]     (published pip wheel,
+#                                                kept in sync manually)
+#   * scripts/bundle-runtime-python.sh          (canonical bundle helper,
+#                                                called by every binary pipeline)
+#   * .github/workflows/build-appimage.yml      (via scripts/create_appimage.sh)
+#   * .github/workflows/build-macos-release.yml (per-arch + universal .app)
+#   * .github/workflows/build-windows-native.yml (CPack staging dir)
+#   * .github/dependabot.yaml                   (auto-bump watcher)
 #
 # Distribution-native packages (.deb, .rpm) deliberately do NOT consume
 # this file; they declare a `Recommends:` on `python3-ipython` instead
