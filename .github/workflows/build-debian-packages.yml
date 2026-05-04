@@ -375,9 +375,9 @@ jobs:
           # `commitlint.yml`, `deploy-website.yml`) so reviewers
           # don't have to re-classify each `${{ }}` site as
           # "trusted context, fine" vs. "attacker-controlled,
-          # exploit". `GITHUB_REPOSITORY` is always set by the
-          # runner so we don't even need to declare it; included
-          # here for symmetry with `GITHUB_EVENT_NAME`.
+          # exploit". `$GITHUB_REPOSITORY` (used in the `run:`
+          # block above) is provided automatically by the runner
+          # and so doesn't need to be re-declared here.
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_EVENT_RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
           GITHUB_EVENT_INPUTS_UPLOAD_TO_RELEASE: ${{ github.event.inputs.upload_to_release }}
