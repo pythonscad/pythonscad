@@ -226,11 +226,11 @@ jobs:
           # secret to every command run inside (`apt-get`,
           # `get-dependencies.py`, `build-debian-package.sh`, etc.),
           # including manual non-release builds where no signing
-          # happens. Instead, the key is streamed in over stdin and
-          # only ever lives in memory inside the `gpg --import` pipe.
-          # `bash -s` on the inner container shell consumes whatever
-          # comes after the `--` and leaves stdin available to the
-          # script itself.
+          # happens. Instead, the key is streamed in over stdin
+          # (`docker run -i` keeps stdin attached, and the inner
+          # `bash -c` inherits that fd), and the inline script reads
+          # it directly into `gpg --batch --import`. The secret only
+          # ever lives in memory inside that pipe.
           if [ "$GITHUB_EVENT_NAME" = 'release' ] || [ -n "$UPLOAD_TO_RELEASE" ]; then
             KEY_INPUT="$DEB_SIGNING_KEY"
           else
