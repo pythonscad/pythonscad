@@ -28,7 +28,6 @@ rules:
         actions/*: ref-pin
         # Third-party — tracked for hash-pinning in #613:
         docker/setup-qemu-action: ref-pin
-        github/codeql-action/*: ref-pin
         googleapis/release-please-action: ref-pin
         msys2/setup-msys2: ref-pin
         mxschmitt/action-tmate: ref-pin
