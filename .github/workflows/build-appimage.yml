@@ -125,7 +125,11 @@ jobs:
         chmod 700 "$GNUPGHOME"
         printf 'allow-loopback-pinentry\n' > "$GNUPGHOME/gpg-agent.conf"
         gpgconf --kill gpg-agent 2>/dev/null || true
-        echo "$DEB_SIGNING_KEY" | gpg --batch --import
+        # `printf '%s'` rather than `echo` so that signing keys
+        # containing `-n` / `-e` / backslash sequences are passed to
+        # `gpg --import` byte-for-byte instead of being interpreted
+        # by the shell builtin.
+        printf '%s' "$DEB_SIGNING_KEY" | gpg --batch --import
         printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
           -u "$GPG_KEY_ID" --detach-sign --armor "$APPIMAGE_FILE"
         echo "Signed: ${APPIMAGE_FILE}.asc"
