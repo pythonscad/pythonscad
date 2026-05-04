@@ -67,8 +67,13 @@ def main() -> int:
     print("===== stderr =====", file=sys.stderr)
     print(proc.stderr, file=sys.stderr)
 
+    # Check BOTH streams: on Windows the `pythonscad.com` console shim
+    # merges stderr into stdout, so a `proc.stderr`-only check would
+    # always take the SKIP branch on Windows runners and silently
+    # bypass the Layer-3 assertion.
     fallback_msg = "IPython is not installed"
-    if fallback_msg not in proc.stderr:
+    saw_fallback = fallback_msg in proc.stderr or fallback_msg in proc.stdout
+    if not saw_fallback:
         print(
             "INFO: could not force the embedded interpreter into the "
             "fallback path (IPython is reachable even with PYTHONPATH "

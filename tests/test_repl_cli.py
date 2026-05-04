@@ -70,7 +70,12 @@ def main() -> int:
         )
         return 1
 
-    if "IPython is not installed" in proc.stderr:
+    # Check BOTH streams: on Windows the `pythonscad.com` console shim
+    # merges stderr into stdout, so a `proc.stderr`-only check would
+    # silently miss a regression where --repl started advertising the
+    # IPython fallback path on Windows.
+    fallback_msg = "IPython is not installed"
+    if fallback_msg in proc.stderr or fallback_msg in proc.stdout:
         print(
             "FAIL: --repl emitted the IPython fallback diagnostic; the "
             "explicit --repl path must never advertise IPython.",
