@@ -44,8 +44,15 @@ SCRIPT = (
     "from pythonscad import cube\n"
     "c = cube([1, 1, 1])\n"
     "print('OK', type(c).__name__)\n"
-    "import IPython\n"
-    "print('IPYTHON_VERSION', IPython.__version__)\n"
+    # One-liner so it works in both real IPython (multi-line block
+    # detection) and the basic Python REPL (multi-line blocks need a
+    # blank line to close, which would force a fragile "blank line
+    # consumed by IPython's auto-magic" workaround). On hosts without
+    # IPython this falls into the `except` branch and prints nothing,
+    # leaving stdout free of a ModuleNotFoundError traceback that
+    # would otherwise pollute CI logs in the fallback path.
+    "try: import IPython; print('IPYTHON_VERSION', IPython.__version__)\n"
+    "except ModuleNotFoundError: pass\n"
 )
 
 TIMEOUT_SECONDS = 60
@@ -104,8 +111,12 @@ def main() -> int:
         )
         return 1
 
+    # Look for the fallback diagnostic in BOTH streams: on Windows the
+    # `pythonscad.com` console shim merges stderr into stdout, so a
+    # `proc.stderr`-only check misses the diagnostic and the test
+    # would falsely conclude that real IPython is in scope.
     fallback_msg = "IPython is not installed"
-    is_fallback = fallback_msg in proc.stderr
+    is_fallback = fallback_msg in proc.stderr or fallback_msg in proc.stdout
 
     if is_fallback:
         print(
