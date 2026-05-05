@@ -2159,6 +2159,27 @@ if(NOT APPLE OR APPLE_UNIX)
     else()
       install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/pythonscad-python DESTINATION "${OPENSCAD_BINDIR}")
     endif()
+
+    # On Windows, the runtime Python deps (currently: IPython 8.x and its
+    # transitive deps) are populated into ${CMAKE_BINARY_DIR}/pythonscad-bundled-py
+    # by scripts/bundle-runtime-python.sh, invoked from the Windows build
+    # workflow ahead of `cmake --install`. CPack then picks the directory
+    # up via this install rule and packages it into the ZIP / NSIS
+    # installer at the path that `bundledFallbackPaths` in
+    # src/python/pyopenscad.cc searches at runtime. OPTIONAL keeps source
+    # builds (and any CI flow that hasn't run the bundle script) green --
+    # the directory's absence at install time is not a hard error, just
+    # means the user falls back to whatever IPython is on their sys.path.
+    #
+    # AppImage and macOS use a different layout (build-{appimage,macos}-*.yml
+    # write the bundle directly into the .AppImage / .app at packaging
+    # time via scripts/create_appimage.sh / inline bundle steps, outside
+    # `cmake --install`'s view). This rule is therefore Windows-only.
+    if(WIN32)
+      install(DIRECTORY "${CMAKE_BINARY_DIR}/pythonscad-bundled-py/"
+              DESTINATION "lib/pythonscad-bundled-py"
+              OPTIONAL)
+    endif()
   endif()
   if(WIN32)
     if(ENABLE_PYTHON)
