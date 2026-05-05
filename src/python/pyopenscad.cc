@@ -31,6 +31,22 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#ifdef _WIN32
+// AttachConsole / GetStdHandle / _wfreopen for the --repl/--ipython
+// console reattach dance (see windows_reattach_console_for_repl below).
+// NOGDI suppresses windows.h's GDI Polygon() function declaration, which
+// would otherwise collide with the project's `using Polygon = std::vector<...>`
+// alias from src/geometry/GeometryUtils.h. (OpenSCADLibInternal sets NOGDI
+// at the target level; OpenSCADPy doesn't, so we define it locally here.)
+// WIN32_LEAN_AND_MEAN trims a large chunk of unrelated win32 surface area.
+#ifndef NOGDI
+#define NOGDI
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
 
 #include "pyopenscad.h"
 #include "pydata.h"
@@ -1802,6 +1818,58 @@ static int pymain_run_interactive_hook(void)
   return 0;
 }
 
+#ifdef _WIN32
+// Wire stdin/stdout/stderr up to the launching console.
+//
+// pythonscad.exe is built as IMAGE_SUBSYSTEM_WINDOWS_GUI so it can pop a
+// graphical window when launched without arguments. A side effect is that
+// when the *parent* shell is PowerShell (and stdio has not been explicitly
+// redirected by the parent), the child inherits NULL handles for
+// STD_INPUT_HANDLE / STD_OUTPUT_HANDLE / STD_ERROR_HANDLE -- PowerShell
+// does not share its console with GUI children the way cmd.exe does. The
+// embedded Python interpreter therefore sees `stdin == NULL` (fd == -2),
+// PyRun_AnyFileFlags hits immediate EOF, and `--repl` exits silently
+// without ever drawing a `>>>` prompt. IPython's prompt_toolkit dies the
+// same way one step earlier. This is the symptom reported in pythonscad
+// #620 and #621.
+//
+// Fix: AttachConsole(ATTACH_PARENT_PROCESS) borrows the parent shell's
+// console, then _wfreopen(CONIN$ / CONOUT$) gives the C runtime real
+// terminal-backed FILE* streams that fd-mapping and isatty() recognise.
+// After this Python's interactive loop runs the way it does on any
+// console-subsystem build.
+//
+// Best-effort: missing parent console (genuinely detached process,
+// already attached, redirected stdin via `<`) is fine -- we leave the
+// existing streams alone in those cases.
+static void windows_reattach_console_for_repl(void)
+{
+  // Best-effort attach to the parent's console. Returns 0 with
+  // ERROR_ACCESS_DENIED if a console is already attached (the typical
+  // path when launched via pythonscad.com, which IS console-subsystem and
+  // thus already has its console inherited by the GUI child) -- that's
+  // exactly the state we want, so the failure is benign.
+  AttachConsole(ATTACH_PARENT_PROCESS);
+
+  // Reopen any standard stream whose CRT file descriptor is unbound
+  // (fd == -2). For GUI-subsystem children the MSVC runtime skips lazy
+  // fd binding for stdin even when STD_INPUT_HANDLE is a perfectly good
+  // console handle; PyRun_AnyFileFlags then sees fd=-2, hits immediate
+  // EOF and exits without ever drawing a `>>>` prompt. _wfreopen on
+  // CONIN$ / CONOUT$ goes through the CRT's open-by-name path, which
+  // *does* allocate an fd, and the resulting streams are isatty-true
+  // and line-buffered -- the contract Python's interactive loop expects.
+  //
+  // The fd==-2 guard means we never clobber an explicit redirect. If
+  // the user ran `pythonscad --repl < script.py`, the parent shell set
+  // up stdin as a pipe/file with a real fd; Python will then take the
+  // PyRun_SimpleFile path on that fd, which is what we want.
+  if (_fileno(stdin) == -2) (void)_wfreopen(L"CONIN$", L"r", stdin);
+  if (_fileno(stdout) == -2) (void)_wfreopen(L"CONOUT$", L"w", stdout);
+  if (_fileno(stderr) == -2) (void)_wfreopen(L"CONOUT$", L"w", stderr);
+}
+#endif  // _WIN32
+
 // Drop into the basic embedded CPython REPL on stdin. Used by the
 // explicit `--repl` flag and as the fallback when `--ipython` cannot
 // launch IPython.
@@ -1831,6 +1899,12 @@ static void run_basic_python_repl(void)
 // clean exit, 1 on init failure.
 int repl(void)
 {
+#ifdef _WIN32
+  // Borrow the parent shell's console BEFORE Py_Initialize so the embedded
+  // interpreter wraps real terminal-backed FILE* streams instead of the
+  // CRT-orphaned ones GUI-subsystem children get on Windows.
+  windows_reattach_console_for_repl();
+#endif
   initPython(PlatformUtils::applicationPath(), "", nullptr);
   if (!Py_IsInitialized()) {
     fprintf(stderr,
@@ -1904,6 +1978,12 @@ static void diagnose_failed_ipython_import(bool *out_truly_missing)
 // instead of a hard error. Returns 0 on clean exit, 1 on init failure.
 int ipython(const std::vector<std::string>& args)
 {
+#ifdef _WIN32
+  // Same console-reattach dance as repl() -- needed so IPython's
+  // prompt_toolkit sees real terminal-backed stdio, and so the basic-REPL
+  // fallback below inherits a working console when IPython is missing.
+  windows_reattach_console_for_repl();
+#endif
   initPython(PlatformUtils::applicationPath(), "", nullptr);
   if (!Py_IsInitialized()) {
     fprintf(stderr,
