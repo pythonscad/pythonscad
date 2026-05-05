@@ -126,10 +126,27 @@ esac
 # Both are pure-Python pathlib operations that work uniformly on
 # Linux / macOS / MSYS2/UCRT64 without depending on the
 # differently-flavoured `realpath -m` of GNU vs BSD coreutils.
+#
+# Filesystem-root rejection is delegated to Python (`os.path.dirname(p)
+# == p`) instead of being case-pattern-matched here because (a) it is
+# platform-native -- works for POSIX `/`, Windows `C:\`, and UNC
+# `\\server\share` without extra glob arms -- and (b) the bash case
+# below is restricted to the named POSIX directory blocklist where
+# Windows drive-letter syntax (`C:\Users`) is irrelevant. Without the
+# Python-side check, a Windows caller passing literal `C:\` would
+# slip past the case statement and hit `rm -rf "${DEST:?}"`.
+# (Copilot review, PR #600 thread on
+# scripts/bundle-runtime-python.sh:143.)
 RESOLVED_DEST="$("${PYTHON_BIN}" -c '
 import os, sys
-print(os.path.realpath(os.path.abspath(sys.argv[1])))
-' "${DEST}")"
+p = os.path.realpath(os.path.abspath(sys.argv[1]))
+if os.path.dirname(p) == p:
+    sys.stderr.write(
+        f"refusing to use \"{p}\" as bundle destination "
+        f"(resolved from \"{sys.argv[1]}\"): path is a filesystem root\n")
+    sys.exit(2)
+print(p)
+' "${DEST}")" || die "destination path validation failed for \"${DEST}\""
 # `${HOME:-/__pythonscad_home_unset__}` keeps the case pattern
 # valid under `set -u` even when HOME is not exported (e.g. some
 # minimal-env CI containers, systemd unit shells, packaging
@@ -137,7 +154,7 @@ print(os.path.realpath(os.path.abspath(sys.argv[1])))
 # real `RESOLVED_DEST` so an unset HOME degrades to "no HOME
 # match" rather than "HOME: unbound variable" abort.
 case "${RESOLVED_DEST}" in
-    /|/usr|/usr/local|/opt|/etc|/var|"${HOME:-/__pythonscad_home_unset__}"|/home|/root)
+    /usr|/usr/local|/opt|/etc|/var|"${HOME:-/__pythonscad_home_unset__}"|/home|/root)
         die "refusing to use \"${RESOLVED_DEST}\" as bundle destination (resolved from \"${DEST}\")"
         ;;
 esac
