@@ -173,6 +173,19 @@ jobs:
           echo "Generated packages:"
           ls -la *.zip *.exe
 
+      - name: Show NSIS log on CPack failure
+        if: always() && steps.cpack.outcome == 'failure'
+        run: |
+          NSIS_DIR="build/_CPack_Packages/windows-x86-64/NSIS"
+          echo "=== Listing ${NSIS_DIR} ==="
+          ls -la "${NSIS_DIR}" 2>/dev/null || true
+          if [ -f "${NSIS_DIR}/NSISOutput.log" ]; then
+            echo "=== ${NSIS_DIR}/NSISOutput.log ==="
+            cat "${NSIS_DIR}/NSISOutput.log"
+          else
+            echo "NSISOutput.log not found under ${NSIS_DIR}"
+          fi
+
       - name: Sanity test - verify executable runs
         run: |
           cd build/staging
