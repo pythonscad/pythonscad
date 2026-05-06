@@ -165,7 +165,8 @@ int main(int argc, char *argv[])
     if (interactive_python) {
       // No pipe / watchdog -- the child writes directly to the parent's
       // stderr, so Python sees a real console handle on every fd and can
-      // run an interactive prompt the same way `python.exe --repl` does.
+      // run an interactive prompt the same way a regular `python.exe`
+      // session does on Windows.
       info.startupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
       info.hRead = NULL;
     } else {
