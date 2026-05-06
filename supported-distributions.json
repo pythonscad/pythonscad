@@ -110,6 +110,19 @@
       ]
     },
     {
+      "family": "fedora",
+      "name": "Fedora",
+      "version": "44",
+      "codename": "44",
+      "lts": false,
+      "eol_date": "2027-06",
+      "runner": "ubuntu-24.04",
+      "docker_image": "fedora:44",
+      "architectures": [
+        "amd64"
+      ]
+    },
+    {
       "family": "el",
       "name": "Rocky Linux",
       "version": "9",
