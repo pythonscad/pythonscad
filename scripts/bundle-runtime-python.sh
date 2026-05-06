@@ -206,6 +206,36 @@ info "Running pip install --target=${STAGING_DEST} -r ${REQUIREMENTS}"
     -r "${REQUIREMENTS}" \
     || die "pip install into ${STAGING_DEST} failed"
 
+# Prune jedi's bundled third-party type stubs.
+#
+# IPython depends on jedi for autocompletion. jedi's wheel ships a
+# `jedi/third_party/` directory with type stubs for popular Python
+# frameworks (django, flask, requests, attrs, ...). Two reasons to drop
+# these from the PythonSCAD bundle:
+#
+#   1. Path-length blowup on Windows: NSIS's makensis.exe uses the
+#      Win32 ANSI file APIs and is therefore subject to the legacy
+#      MAX_PATH (260 chars) limit. The deepest django-stubs paths --
+#      `jedi/third_party/django-stubs/django-stubs/contrib/contenttypes/
+#      management/commands/remove_stale_contenttypes.pyi` -- combined
+#      with CPack's already-long `_CPack_Packages/<arch>/NSIS/<long
+#      versioned installer name>/` staging prefix push past 260 chars
+#      and abort installer generation (pythonscad/pythonscad#600 review
+#      flow). Pruning the third-party tree shortens the deepest path
+#      well below the limit.
+#   2. Dead weight: PythonSCAD users are not authoring django/flask/...
+#      code in the embedded IPython prompt, so the stubs provide no
+#      autocompletion value and just inflate the bundle by ~7 MB.
+#
+# Applied universally (Linux/macOS/Windows) for consistency: the macOS
+# .app and the AppImage also benefit from the size reduction, and a
+# uniform layout is easier to reason about than a Windows-only patch.
+JEDI_THIRD_PARTY="${STAGING_DEST}/jedi/third_party"
+if [[ -d "${JEDI_THIRD_PARTY}" ]]; then
+    info "Pruning ${JEDI_THIRD_PARTY} ($(du -sh "${JEDI_THIRD_PARTY}" 2>/dev/null | awk '{print $1}'))"
+    rm -rf "${JEDI_THIRD_PARTY:?}"
+fi
+
 # Atomically replace any existing destination with the freshly
 # populated staging dir. `mv` is atomic for same-filesystem renames,
 # which is guaranteed here because STAGING_DEST is a sibling of DEST.
