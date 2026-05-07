@@ -115,15 +115,20 @@ def main() -> int:
     # `pythonscad.com` console shim merges stderr into stdout, so a
     # `proc.stderr`-only check misses the diagnostic and the test
     # would falsely conclude that real IPython is in scope.
-    fallback_msg = "IPython is not installed"
+    # Match the common suffix shared by every fallback code path
+    # ("IPython is not installed", "IPython could not be imported",
+    # "IPython startup failed", argv-decode failure, ...) rather than
+    # locking onto a single diagnostic message so broken-but-present
+    # IPython installs are not misclassified as "real IPython running".
+    fallback_msg = "falling back to the basic Python prompt"
     is_fallback = fallback_msg in proc.stderr or fallback_msg in proc.stdout
 
     if is_fallback:
         print(
-            "INFO: IPython not installed in this environment; the fallback "
+            "INFO: IPython not available or startup failed; the fallback "
             "REPL handled the script. This is acceptable for the smoke "
             "test, but Layer-1 coverage of the real IPython prompt requires "
-            "IPython to be available.",
+            "a working IPython installation.",
             file=sys.stderr,
         )
     else:

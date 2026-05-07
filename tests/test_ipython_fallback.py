@@ -71,7 +71,11 @@ def main() -> int:
     # merges stderr into stdout, so a `proc.stderr`-only check would
     # always take the SKIP branch on Windows runners and silently
     # bypass the Layer-3 assertion.
-    fallback_msg = "IPython is not installed"
+    # Match the common suffix shared by every fallback code path so that
+    # a broken-but-present IPython install (which emits a different
+    # diagnostic than "IPython is not installed") still registers as a
+    # fallback and exercises the REPL assertions below.
+    fallback_msg = "falling back to the basic Python prompt"
     saw_fallback = fallback_msg in proc.stderr or fallback_msg in proc.stdout
     if not saw_fallback:
         print(
