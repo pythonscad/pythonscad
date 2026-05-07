@@ -16,9 +16,13 @@
   ModuleInstantiation *instance = new ModuleInstantiation(instance_name, inst_asslist, Location::NONE); \
   modinsts_list.push_back(instance);
 
-extern std::vector<std::string> mapping_name;
-extern std::vector<std::string> mapping_code;
-extern std::vector<int> mapping_level;
+typedef struct {
+  std::string name;
+  std::string code;
+  int level;
+} PythonName;
+extern std::vector<PythonName> pythonName;
+extern std::vector<PythonName> pythonNameReady;
 
 void show_final(void);  // this is called when the new language terminates
 extern std::vector<std::shared_ptr<AbstractNode>> shows;
