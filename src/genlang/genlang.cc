@@ -9,7 +9,6 @@ bool python_build_hashmap(const std::shared_ptr<AbstractNode>& node, int level);
 
 void show_final(void)
 {
-  printf("show_final\n");
   pythonNameReady = pythonName;
   pythonName.clear();
   if (shows.size() == 1) genlang_result_node = shows[0];

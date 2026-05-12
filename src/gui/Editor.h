@@ -66,6 +66,9 @@ public:
   void recomputeLanguageActive(void);
   void setLanguageManually(int lang);
   void resetLanguageDetection();
+  bool trust_python_file(void);
+  void clearPythonUntrustState(void);
+  void trustCurrent(void);
 
 signals:
   void contentsChanged();
@@ -114,6 +117,8 @@ public:
   QString filepath;
   /// True after loading from an existing file on disk or a successful save to this path.
   bool diskBacked = false;
+  bool trusted = false;
+  bool untrusted = false;
   std::string autoReloadId;
   std::vector<IndicatorData> indicatorData;
   ParameterWidget *parameterWidget;
