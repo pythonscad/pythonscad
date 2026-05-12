@@ -411,7 +411,7 @@ bool python_build_hashmap(const std::shared_ptr<AbstractNode>& node, int level)
   PyObject *key, *value;
   Py_ssize_t pos = 0;
   std::ostringstream stream;
-  python_hierdump(stream, node);
+  //  python_hierdump(stream, node);
   std::string code = stream.str();
   while (PyDict_Next(maindict, &pos, &key, &value)) {
     if (!PyObject_IsInstance(value, reinterpret_cast<PyObject *>(&PyOpenSCADType))) continue;
@@ -431,40 +431,36 @@ bool python_build_hashmap(const std::shared_ptr<AbstractNode>& node, int level)
       PyErr_Clear();
       continue;
     }
-    PythonName pn;
-    pn.name = key_str;
-    pn.code = code;
-    pn.level = pos;
-    pythonName.push_back(pn);
+    mapping_name.push_back(key_str);
+    mapping_code.push_back(code);
+    mapping_level.push_back(pos);
   }
   if (level < 5) {  // no  many level are unclear and error prone(overwrites memory)
     for (const auto& child : node->getChildren()) {
       if (!python_build_hashmap(child, level + 1)) return false;
     }
   }
-  printf("build_hashmap got %d entries\n", pythonName.size());
   return true;
 }
 
 void python_retrieve_pyname(const std::shared_ptr<AbstractNode>& node)
 {
+  /*
   std::string name;
-  int level = -1;
+  int level=-1;
   std::ostringstream stream;
   python_hierdump(stream, node);
   std::string my_code = stream.str();
-  printf("mapping_size  is  %d\n", pythonNameReady.size());
-
-  for (const auto& pn : pythonNameReady) {
-    if (pn.code == my_code) {
-      if (level == -1 || level > pn.level) {
-        name = pn.name;
-        level = pn.level;
+  for(unsigned int i=0;i<mapping_code.size();i++) {
+    if(mapping_code[i] == my_code) {
+      if(level == -1 || level > mapping_level[i]) {
+        name=mapping_name[i];
+        level=mapping_level[i];
       }
     }
   }
   node->setPyName(name);
-  printf("python_retrieve_pyname %s\n", name.c_str());
+  */
 }
 /**
  * Create a CurveDiscretizer by extracting parameters from __main__ and kwargs

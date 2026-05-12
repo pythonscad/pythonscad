@@ -69,6 +69,7 @@ public:
   bool trust_python_file(void);
   void clearPythonUntrustState(void);
   void trustCurrent(void);
+  void revokeTrust(void);
 
 signals:
   void contentsChanged();

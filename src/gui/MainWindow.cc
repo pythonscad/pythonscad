@@ -1713,11 +1713,10 @@ void MainWindow::on_fileActionPythonRevoke_triggered()
 {
   QSettingsCached settings;
 #ifdef ENABLE_PYTHON
-/*
   python_trusted = false;
-  this->trusted_edit_document_name = "";
-  this->untrusted_edit_document_name = "";
-*/
+  for (auto *edt : tabManager->editorList) {
+    edt->revokeTrust();
+  }
 #endif
   settings.remove("python_hash");
   QMessageBox::information(this, _("Trusted Files"), "All trusted python files revoked",

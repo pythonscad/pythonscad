@@ -248,5 +248,10 @@ void EditorInterface::trustCurrent(void)
   QMessageBox::information(this, _("Python"), _("This document is now trusted for Python execution."));
 #endif
 }
+void EditorInterface::revokeTrust(void)
+{
+  trusted = false;
+  untrusted = false;
+}
 
 #endif

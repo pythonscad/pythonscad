@@ -70,6 +70,12 @@ PyObject *python_show_core(PyObject *obj)
 
   PyObject *key, *value;
   Py_ssize_t pos = 0;
+  if (!python_build_hashmap(child, 0)) {
+    /* Helper hit a non-TypeError exception (MemoryError, ...) while
+     * iterating __main__ -- propagate to the Python caller rather
+     * than silently returning a half-populated selection table. */
+    return NULL;
+  }
   std::string varname = child->getPyName();
   if (child_dict.get() != nullptr) {
     while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
