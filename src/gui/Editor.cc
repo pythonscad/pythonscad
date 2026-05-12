@@ -182,17 +182,16 @@ bool EditorInterface::trust_python_file(void)
     trusted = true;
     return true;
   }
-  // Disabled: PythonSCAD relies on a hash-based trust store (see
-  // readPythonTrustHash / writePythonTrustHash) instead of a content
-  // sniff.  Kept for historical reference; if anyone re-enables this
-  // shortcut, the prefix check must accept all three module names that
-  // a PythonSCAD script can legally start with.
-  if (content.rfind("from openscad import", 0) == 0 || content.rfind("from pythonscad import", 0) == 0 ||
-      content.rfind("from _openscad import", 0) == 0) {
-    trusted = true;
-    return true;
-  }
-
+  /*
+    // Disabled: PythonSCAD relies on a hash-based trust store (see
+    // readPythonTrustHash / writePythonTrustHash) instead of a content
+    // sniff.  Kept for historical reference; if anyone re-enables this
+    // shortcut, the prefix check must accept all three module names that
+    // a PythonSCAD script can legally start with.
+    if (content.rfind("from openscad import", 0) == 0 || content.rfind("from pythonscad import", 0) == 0
+    || content.rfind("from _openscad import", 0) == 0) { trusted = true; return true;
+    }
+  */
   ref_hash = readPythonTrustHash(settings, filepath.toStdString()).toStdString();
 
   if (act_hash == ref_hash) {
