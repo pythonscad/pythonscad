@@ -1725,7 +1725,9 @@ void MainWindow::on_fileActionPythonRevoke_triggered()
 
 void MainWindow::on_fileActionPythonTrustCurrent_triggered()
 {
+#ifdef ENABLE_PYTHON
   activeEditor->trustCurrent();
+#endif
 }
 
 void MainWindow::on_fileActionPythonCreateVenv_triggered()
@@ -2135,7 +2137,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
   auto fulltext_py = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size()));
   SourceFile *sourceFile = nullptr;
 #ifdef ENABLE_PYTHON
-  if (editor->language == LANG_PYTHON && !activeEditor->trust_python_file()) {
+  if (editor->language == LANG_PYTHON && !editor->trust_python_file()) {
     LOG(message_group::Warning, Location::NONE, "", "Python file is not trusted");
     editor->resetHighlighting();
     editor->parameterWidget->setEnabled(false);

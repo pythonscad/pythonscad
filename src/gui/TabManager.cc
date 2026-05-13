@@ -312,8 +312,7 @@ void TabManager::prepareEditorBufferForNewDesignFile(EditorInterface *edt, const
     }
     edt->setPlainText(QString::fromStdString(templ));
     edt->setLanguageManually(LANG_PYTHON);
-    const QByteArray pathUtf8 = QFileInfo(absPath).absoluteFilePath().toUtf8();
-    edt->clearPythonUntrustState();
+    edt->revokeTrust();
   } else
 #endif
   {
@@ -936,8 +935,7 @@ void TabManager::openTabFile(const QString& filename)
   editor->filepath = absPath;
 #ifdef ENABLE_PYTHON
   if (suffix == QStringLiteral("py") && !missingOnDisk) {
-    const QByteArray pathUtf8 = editor->filepath.toUtf8();
-    editor->clearPythonUntrustState();
+    editor->revokeTrust();
   }
 #endif
   editor->parameterWidget->resetForNewDocument();

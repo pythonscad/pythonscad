@@ -66,10 +66,12 @@ public:
   void recomputeLanguageActive(void);
   void setLanguageManually(int lang);
   void resetLanguageDetection();
+#ifdef ENABLE_PYTHON
   bool trust_python_file(void);
   void clearPythonUntrustState(void);
   void trustCurrent(void);
   void revokeTrust(void);
+#endif
 
 signals:
   void contentsChanged();

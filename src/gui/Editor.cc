@@ -168,17 +168,17 @@ bool EditorInterface::trust_python_file(void)
   }
 
   std::string act_hash, ref_hash;
-  auto content = toPlainText().toStdString();
+  auto content = toPlainText().toUtf8().constData();
   act_hash = SHA256HashString(content);
 
   if (untrusted) return false;
 
   if (trusted) {
-    writePythonTrustHash(settings, filepath.toStdString(), act_hash);
+    writePythonTrustHash(settings, filepath.toUtf8().constData(), act_hash);
     return true;
   }
 
-  if (content.size() <= 1) {  // 1st character already typed
+  if (strlen(content) <= 1) {  // 1st character already typed
     trusted = true;
     return true;
   }
@@ -192,7 +192,7 @@ bool EditorInterface::trust_python_file(void)
     || content.rfind("from _openscad import", 0) == 0) { trusted = true; return true;
     }
   */
-  ref_hash = readPythonTrustHash(settings, filepath.toStdString()).toStdString();
+  ref_hash = readPythonTrustHash(settings, filepath.toUtf8().constData()).toStdString();
 
   if (act_hash == ref_hash) {
     trusted = true;
@@ -209,7 +209,7 @@ bool EditorInterface::trust_python_file(void)
   }
   if (ret == QMessageBox::Yes) {
     trusted = true;
-    writePythonTrustHash(settings, filepath.toStdString(), act_hash);
+    writePythonTrustHash(settings, filepath.toUtf8().constData(), act_hash);
     return true;
   }
 
