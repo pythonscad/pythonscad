@@ -5004,8 +5004,16 @@ void MainWindow::openRemainingFiles(const QStringList& filenames)
     // populates the customizer once.
     QTimer::singleShot(0, this, [this]() {
       if (activeEditor && !GuiLocker::isLocked()) {
-        auto guard = scopedSetCurrentOutput();
-        parseTopLevelDocument(true);
+        try {
+          auto guard = scopedSetCurrentOutput();
+          parseTopLevelDocument(true);
+        } catch (const HardWarningException&) {
+          exceptionCleanup();
+        } catch (const std::exception& ex) {
+          UnknownExceptionCleanup(ex.what());
+        } catch (...) {
+          UnknownExceptionCleanup();
+        }
       }
     });
   }
