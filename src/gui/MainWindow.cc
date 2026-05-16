@@ -3603,7 +3603,7 @@ void MainWindow::refreshParametersFromEditor()
     return;
   }
   if (!activeEditor) return;
-  setCurrentOutput();
+  auto guard = scopedSetCurrentOutput();
   parseTopLevelDocument(true);
 }
 
