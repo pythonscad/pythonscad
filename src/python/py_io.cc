@@ -959,6 +959,21 @@ PyObject *python_osuse_include(int mode, PyObject *self, PyObject *args, PyObjec
     return NULL;
   }
   const std::string includedfile = lookup_file(file, python_scriptpath.parent_path().u8string(), ".");
+  if (includedfile.empty()) {
+    PyErr_SetString(PyExc_ValueError, "osuse(): filename must not be empty");
+    return NULL;
+  }
+  {
+    const fs::path fpath = fs::u8path(includedfile);
+    if (!fs::exists(fpath)) {
+      PyErr_Format(PyExc_FileNotFoundError, "osuse(): file not found: '%s'", includedfile.c_str());
+      return NULL;
+    }
+    if (!fs::is_regular_file(fpath)) {
+      PyErr_Format(PyExc_OSError, "osuse(): path is not a regular file: '%s'", includedfile.c_str());
+      return NULL;
+    }
+  }
   stream << "include <" << includedfile << ">\n";
 
   // Pass the Python script path as the "source" file doing the including
