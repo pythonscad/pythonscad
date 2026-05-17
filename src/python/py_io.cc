@@ -440,12 +440,19 @@ PyObject *python_export_core(PyObject *obj, char *file)
       return nullptr;
     }
     export_3mf(export3mfPartInfos, fstream, exportInfo);
+    if (fstream.fail()) {
+      PyErr_Format(PyExc_OSError, "export(): write error for file '%s' (disk full?)", file);
+      return nullptr;
+    }
   } else {
     if (export3mfPartInfos.size() > 1) {
       PyErr_SetString(PyExc_TypeError, "This Format can at most export one object");
       return nullptr;
     }
-    exportFileByName(export3mfPartInfos[0].geom, file, exportInfo);
+    if (!exportFileByName(export3mfPartInfos[0].geom, file, exportInfo)) {
+      PyErr_Format(PyExc_OSError, "export(): failed to write file '%s'", file);
+      return nullptr;
+    }
   }
   Py_RETURN_NONE;
 }
@@ -497,7 +504,22 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   }
   filename = lookup_file(v == NULL ? "" : v, python_scriptpath.parent_path().u8string(),
                          instance->location().filePath().parent_path().string());
-  if (!filename.empty()) handle_dep(filename);
+  if (filename.empty()) {
+    PyErr_SetString(PyExc_ValueError, "osimport(): filename must not be empty");
+    return NULL;
+  }
+  {
+    const fs::path fpath = fs::u8path(filename);
+    if (!fs::exists(fpath)) {
+      PyErr_Format(PyExc_FileNotFoundError, "osimport(): file not found: '%s'", filename.c_str());
+      return NULL;
+    }
+    if (!fs::is_regular_file(fpath)) {
+      PyErr_Format(PyExc_OSError, "osimport(): path is not a regular file: '%s'", filename.c_str());
+      return NULL;
+    }
+  }
+  handle_dep(filename);
   ImportType actualtype = type;
   if (actualtype == ImportType::UNKNOWN) {
     std::string extraw = fs::path(filename).extension().generic_string();
