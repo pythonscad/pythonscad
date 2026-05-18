@@ -518,6 +518,10 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
       PyErr_Format(PyExc_OSError, "osimport(): path is not a regular file: '%s'", v);
       return NULL;
     }
+    if (!std::ifstream(filename).good()) {
+      PyErr_Format(PyExc_PermissionError, "osimport(): permission denied: '%s'", v);
+      return NULL;
+    }
   }
   handle_dep(filename);
   ImportType actualtype = type;
@@ -971,6 +975,10 @@ PyObject *python_osuse_include(int mode, PyObject *self, PyObject *args, PyObjec
     }
     if (!fs::is_regular_file(fpath)) {
       PyErr_Format(PyExc_OSError, "osuse(): path is not a regular file: '%s'", file);
+      return NULL;
+    }
+    if (!std::ifstream(includedfile).good()) {
+      PyErr_Format(PyExc_PermissionError, "osuse(): permission denied: '%s'", file);
       return NULL;
     }
   }
