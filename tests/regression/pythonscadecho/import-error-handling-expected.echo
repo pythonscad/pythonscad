@@ -1,9 +1,7 @@
 osimport empty filename: ValueError
 osimport nonexistent file: FileNotFoundError
 osimport directory path: OSError
-osimport unreadable file: PermissionError
 osuse empty filename: ValueError
 osuse nonexistent file: FileNotFoundError
 osuse directory path: OSError
-osuse unreadable file: PermissionError
 

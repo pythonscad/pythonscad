@@ -1,27 +1,17 @@
-"""Echo test for osimport() and osuse() error handling.
-
-Verifies that osimport() and osuse() raise proper Python exceptions immediately
-at the call site rather than silently returning a valid object or producing a
-cryptic message during geometry evaluation.
+"""Echo test for osimport() and osuse() error handling (cross-platform cases).
 
 Scenarios covered:
 - osimport(): empty filename       -> ValueError
 - osimport(): nonexistent file     -> FileNotFoundError
 - osimport(): path is a directory  -> OSError
-- osimport(): unreadable file      -> PermissionError
 - osuse():    empty filename       -> ValueError
 - osuse():    nonexistent file     -> FileNotFoundError
 - osuse():    path is a directory  -> OSError
-- osuse():    unreadable file      -> PermissionError
 
-Scenarios NOT covered here (unavoidable deferred errors):
-- Corrupt/invalid file contents: these are detected during geometry evaluation
-  after osimport() returns, so they still surface via LOG() rather than as
-  Python exceptions.
+Permission-denied cases are in import-error-handling-permission.py,
+which is excluded on Windows (chmod semantics differ).
 """
 
-import os
-import stat
 import tempfile
 
 from openscad import osimport, osuse
@@ -47,14 +37,6 @@ expect(
 )
 with tempfile.TemporaryDirectory() as tmp:
     expect("osimport directory path", lambda: osimport(tmp), OSError)
-with tempfile.NamedTemporaryFile(suffix=".stl", delete=False) as f:
-    nrf = f.name
-try:
-    os.chmod(nrf, 0o000)
-    expect("osimport unreadable file", lambda: osimport(nrf), PermissionError)
-finally:
-    os.chmod(nrf, stat.S_IRUSR | stat.S_IWUSR)
-    os.unlink(nrf)
 
 # --- osuse() ---
 expect("osuse empty filename", lambda: osuse(""), ValueError)
@@ -65,11 +47,3 @@ expect(
 )
 with tempfile.TemporaryDirectory() as tmp:
     expect("osuse directory path", lambda: osuse(tmp), OSError)
-with tempfile.NamedTemporaryFile(suffix=".scad", delete=False) as f:
-    nrf = f.name
-try:
-    os.chmod(nrf, 0o000)
-    expect("osuse unreadable file", lambda: osuse(nrf), PermissionError)
-finally:
-    os.chmod(nrf, stat.S_IRUSR | stat.S_IWUSR)
-    os.unlink(nrf)
