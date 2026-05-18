@@ -1391,9 +1391,9 @@ stderr_bak = None\n\
 
 #ifndef OPENSCAD_NOGUI
   if (result == nullptr) {
-    PyErr_Print();
     error = "";
     python_catch_error(error);
+    PyErr_Print();
   }
   for (int i = 0; i < 2; i++) {
     PyObjectUniquePtr catcher(nullptr, &PyObjectDeleter);
