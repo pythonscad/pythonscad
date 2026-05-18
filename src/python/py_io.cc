@@ -502,20 +502,20 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     PyErr_SetString(PyExc_TypeError, "Error during parsing osimport(filename)");
     return NULL;
   }
-  filename = lookup_file(v == NULL ? "" : v, python_scriptpath.parent_path().u8string(),
-                         instance->location().filePath().parent_path().string());
-  if (filename.empty()) {
+  if (v == NULL || v[0] == '\0') {
     PyErr_SetString(PyExc_ValueError, "osimport(): filename must not be empty");
     return NULL;
   }
+  filename = lookup_file(v, python_scriptpath.parent_path().u8string(),
+                         instance->location().filePath().parent_path().string());
   {
     const fs::path fpath = fs::u8path(filename);
     if (!fs::exists(fpath)) {
-      PyErr_Format(PyExc_FileNotFoundError, "osimport(): file not found: '%s'", filename.c_str());
+      PyErr_Format(PyExc_FileNotFoundError, "osimport(): file not found: '%s'", v);
       return NULL;
     }
     if (!fs::is_regular_file(fpath)) {
-      PyErr_Format(PyExc_OSError, "osimport(): path is not a regular file: '%s'", filename.c_str());
+      PyErr_Format(PyExc_OSError, "osimport(): path is not a regular file: '%s'", v);
       return NULL;
     }
   }
@@ -958,19 +958,19 @@ PyObject *python_osuse_include(int mode, PyObject *self, PyObject *args, PyObjec
     else PyErr_SetString(PyExc_TypeError, "Error during parsing osuse(path)");
     return NULL;
   }
-  const std::string includedfile = lookup_file(file, python_scriptpath.parent_path().u8string(), ".");
-  if (includedfile.empty()) {
+  if (file == NULL || file[0] == '\0') {
     PyErr_SetString(PyExc_ValueError, "osuse(): filename must not be empty");
     return NULL;
   }
+  const std::string includedfile = lookup_file(file, python_scriptpath.parent_path().u8string(), ".");
   {
     const fs::path fpath = fs::u8path(includedfile);
     if (!fs::exists(fpath)) {
-      PyErr_Format(PyExc_FileNotFoundError, "osuse(): file not found: '%s'", includedfile.c_str());
+      PyErr_Format(PyExc_FileNotFoundError, "osuse(): file not found: '%s'", file);
       return NULL;
     }
     if (!fs::is_regular_file(fpath)) {
-      PyErr_Format(PyExc_OSError, "osuse(): path is not a regular file: '%s'", includedfile.c_str());
+      PyErr_Format(PyExc_OSError, "osuse(): path is not a regular file: '%s'", file);
       return NULL;
     }
   }
