@@ -263,15 +263,84 @@ print(len(parts))  # 2
 
 ---
 
+## c
+
+Read or write the RGBA color of the root `color()` wrapper on a solid.
+
+**Syntax:**
+
+=== "Python"
+
+```python
+obj.c          # read
+obj["c"]       # read (mapping protocol)
+obj.c = [r, g, b, a]    # write
+obj["c"] = [r, g, b]    # write (alpha defaults to 1.0)
+```
+
+**Returns:** `(r, g, b, a)` as a tuple of floats in `[0, 1]` when the outermost node is a
+`color()` wrapper, `None` otherwise.
+
+**Parameters (write):**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| value | 3- or 4-element list | RGB or RGBA floats |
+
+**Examples:**
+
+=== "Python"
+
+```python
+from openscad import *
+
+c = cube(10).color("Red")
+print(c.c)          # (1.0, 0.0, 0.0, 1.0)
+print(c["c"])       # (1.0, 0.0, 0.0, 1.0)  — mapping protocol
+
+print(cube(10).c)   # None — no color wrapper
+
+c.c = [0.0, 1.0, 0.0, 1.0]   # change to green in-place
+c.show()
+```
+
+**Aliasing / mutation semantics:**
+
+`solid.c = [...]` mutates the `ColorNode` **in place**. Because PythonSCAD solids
+share node trees by reference, any other variable that refers to the same node will
+see the change immediately:
+
+=== "Python"
+
+```python
+from pythonscad import *
+
+c = cube(10).color("Green")
+show(c)              # green cube — captured before mutation below
+c.c = [1, 0, 1, 1]  # mutates the shared ColorNode
+show(c.right(15))    # ALSO purple — c and c.right(15) share the same node
+
+# To avoid aliasing, start from a fresh expression each time:
+show(cube(10).color([0, 1, 0, 1]))           # green
+show(cube(10).color([1, 0, 1, 1]).right(15)) # purple
+```
+
+If you need independent copies, construct separate solids rather than mutating a shared one.
+
+**See also:** [`color()`](transformations.md#color)
+
+---
+
 ## Dynamic Attributes
 
 Solid objects support dynamic attribute access for node-specific data. These attributes are available through both dot notation (`obj.attr`) and subscript notation (`obj["attr"]`).
-These attributes cannot only be read, but also overwriten.
+These attributes cannot only be read, but also overwritten.
 
 ### Built-in dynamic attributes
 
 | Attribute | Available on | Description |
 |-----------|-------------|-------------|
+| `c` | `color()` nodes | Read/write RGBA tuple `(r,g,b,a)` in `[0,1]`, or `None` |
 | `points` | `polygon` nodes | Read/write access to polygon vertex coordinates |
 | `paths` | `polygon` nodes | Read/write access to polygon paths |
 | `faces` | `polyhedron` nodes | Read access to face indices |
