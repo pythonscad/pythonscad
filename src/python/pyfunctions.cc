@@ -82,19 +82,6 @@ PyObject *python__getsetitem_hier(std::shared_ptr<AbstractNode> node, const std:
     }
   }
 
-  if (keystr == "c" && v != nullptr) {
-    auto color_node = std::dynamic_pointer_cast<ColorNode>(node);
-    if (color_node != nullptr) {
-      Vector4d col(0, 0, 0, 1);
-      if (python_vectorval(v, 3, 4, &col[0], &col[1], &col[2], &col[3]) != 0) {
-        PyErr_SetString(PyExc_TypeError, "solid.c requires a 3- or 4-element float list");
-        return nullptr;
-      }
-      color_node->color.setRgba(float(col[0]), float(col[1]), float(col[2]), float(col[3]));
-      Py_RETURN_NONE;
-    }
-  }
-
   if (result != nullptr) return result;
 
   if (hier > 0) {
@@ -183,6 +170,20 @@ int python__setitem__(PyObject *obj, PyObject *key, PyObject *v)
   // case CPython passes v == NULL. The hier setter only makes sense
   // for assignment, so skip it on deletion.
   if (node != nullptr && v != nullptr) {
+    if (keystr == "c") {
+      auto color_node = std::dynamic_pointer_cast<ColorNode>(node);
+      if (color_node == nullptr) {
+        PyErr_SetString(PyExc_TypeError, "solid.c: root node is not a color() wrapper");
+        return -1;
+      }
+      Vector4d col(0, 0, 0, 1);
+      if (python_vectorval(v, 3, 4, &col[0], &col[1], &col[2], &col[3]) != 0) {
+        PyErr_SetString(PyExc_TypeError, "solid.c requires a 3- or 4-element float list");
+        return -1;
+      }
+      color_node->color.setRgba(float(col[0]), float(col[1]), float(col[2]), float(col[3]));
+      return 0;
+    }
     PyObject *hier_result = python__getsetitem_hier(node, keystr, v, 2);
     if (hier_result == nullptr && PyErr_Occurred()) return -1;
     if (hier_result != nullptr) {

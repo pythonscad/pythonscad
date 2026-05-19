@@ -287,6 +287,8 @@ obj["c"] = [r, g, b]    # write (alpha defaults to 1.0)
 |-----------|------|-------------|
 | value | 3- or 4-element list | RGB or RGBA floats |
 
+> **Note:** Write is root-only, matching read semantics. Assigning to `obj.c` when the root node is not a `color()` wrapper raises `TypeError` — it does not descend into children.
+
 **Examples:**
 
 === "Python"
@@ -323,6 +325,11 @@ show(c.right(15))    # ALSO purple — c and c.right(15) share the same node
 # To avoid aliasing, start from a fresh expression each time:
 show(cube(10).color([0, 1, 0, 1]))           # green
 show(cube(10).color([1, 0, 1, 1]).right(15)) # purple
+
+# Writing c on a non-color root raises TypeError:
+u = cube(1).color("Red") | sphere(2).color("Blue")
+print(u.c)    # None — union is the root, not a ColorNode
+u.c = [0, 1, 0, 1]  # TypeError: root node is not a color() wrapper
 ```
 
 If you need independent copies, construct separate solids rather than mutating a shared one.
