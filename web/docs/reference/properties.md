@@ -265,29 +265,19 @@ print(len(parts))  # 2
 
 ## c
 
-Read or write the RGBA color of the root `color()` wrapper on a solid.
+Read the RGBA color of the root `color()` wrapper on a solid.
 
 **Syntax:**
 
 === "Python"
 
 ```python
-obj.c          # read
-obj["c"]       # read (mapping protocol)
-obj.c = [r, g, b, a]    # write
-obj["c"] = [r, g, b]    # write (alpha defaults to 1.0)
+obj.c      # attribute access
+obj["c"]   # mapping protocol
 ```
 
 **Returns:** `(r, g, b, a)` as a tuple of floats in `[0, 1]` when the outermost node is a
 `color()` wrapper, `None` otherwise.
-
-**Parameters (write):**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| value | 3- or 4-element list | RGB or RGBA floats |
-
-> **Note:** Write is root-only, matching read semantics. Assigning to `obj.c` when the root node is not a `color()` wrapper raises `TypeError` — it does not descend into children.
 
 **Examples:**
 
@@ -302,37 +292,13 @@ print(c["c"])       # (1.0, 0.0, 0.0, 1.0)  — mapping protocol
 
 print(cube(10).c)   # None — no color wrapper
 
-c.c = [0.0, 1.0, 0.0, 1.0]   # change to green in-place
-c.show()
-```
-
-**Aliasing / mutation semantics:**
-
-`solid.c = [...]` mutates the `ColorNode` **in place**. Because PythonSCAD solids
-share node trees by reference, any other variable that refers to the same node will
-see the change immediately:
-
-=== "Python"
-
-```python
-from pythonscad import *
-
-c = cube(10).color("Green")
-show(c)              # green cube — captured before mutation below
-c.c = [1, 0, 1, 1]  # mutates the shared ColorNode
-show(c.right(15))    # ALSO purple — c and c.right(15) share the same node
-
-# To avoid aliasing, start from a fresh expression each time:
-show(cube(10).color([0, 1, 0, 1]))           # green
-show(cube(10).color([1, 0, 1, 1]).right(15)) # purple
-
-# Writing c on a non-color root raises TypeError:
 u = cube(1).color("Red") | sphere(2).color("Blue")
-print(u.c)    # None — union is the root, not a ColorNode
-u.c = [0, 1, 0, 1]  # TypeError: root node is not a color() wrapper
+print(u.c)            # None — union is the root, not a ColorNode
+print(u.children()[0].c)  # (1.0, 0.0, 0.0, 1.0)
+print(u.children()[1].c)  # (0.0, 0.0, 1.0, 1.0)
 ```
 
-If you need independent copies, construct separate solids rather than mutating a shared one.
+To set or change a color, use [`color()`](transformations.md#color).
 
 **See also:** [`color()`](transformations.md#color)
 
@@ -347,7 +313,6 @@ These attributes cannot only be read, but also overwritten.
 
 | Attribute | Available on | Description |
 |-----------|-------------|-------------|
-| `c` | `color()` nodes | Read/write RGBA tuple `(r,g,b,a)` in `[0,1]`, or `None` |
 | `points` | `polygon` nodes | Read/write access to polygon vertex coordinates |
 | `paths` | `polygon` nodes | Read/write access to polygon paths |
 | `faces` | `polyhedron` nodes | Read access to face indices |
