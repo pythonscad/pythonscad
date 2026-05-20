@@ -105,9 +105,9 @@ jobs:
     - name: Get AppImage filename
       id: appimage
       run: |
-        APPIMAGE_FILE=$(ls dist/PythonSCAD-*.AppImage | head -1)
-        echo "filename=$(basename ${APPIMAGE_FILE})" >> $GITHUB_OUTPUT
-        echo "filepath=${APPIMAGE_FILE}" >> $GITHUB_OUTPUT
+        APPIMAGE_FILE=$(find dist -maxdepth 1 -name 'PythonSCAD-*.AppImage' | head -1)
+        echo "filename=$(basename "${APPIMAGE_FILE}")" >> "$GITHUB_OUTPUT"
+        echo "filepath=${APPIMAGE_FILE}" >> "$GITHUB_OUTPUT"
 
     - name: Sign AppImage (release only)
       id: sign
@@ -124,7 +124,8 @@ jobs:
           echo "AppImage not found: $APPIMAGE_FILE"
           exit 1
         fi
-        sudo apt-get update -qq && sudo apt-get install -y -qq gnupg 2>/dev/null || true
+        if ! sudo apt-get update -qq; then true; fi
+        sudo apt-get install -y -qq gnupg 2>/dev/null || true
         export GNUPGHOME="${HOME}/.gnupg"
         mkdir -p "$GNUPGHOME"
         chmod 700 "$GNUPGHOME"
@@ -139,7 +140,7 @@ jobs:
           -u "$GPG_KEY_ID" --detach-sign --armor "$APPIMAGE_FILE"
         echo "Signed: ${APPIMAGE_FILE}.asc"
         gpg --verify "${APPIMAGE_FILE}.asc" "$APPIMAGE_FILE"
-        echo "asc_path=${APPIMAGE_FILE}.asc" >> $GITHUB_OUTPUT
+        echo "asc_path=${APPIMAGE_FILE}.asc" >> "$GITHUB_OUTPUT"
 
     - name: Upload AppImage as artifact
       uses: actions/upload-artifact@v7
