@@ -52,7 +52,7 @@ inputs:
   sign-timestamp-url:
     description: 'RFC 3161 timestamp server URL used when signing'
     required: false
-    default: 'http://timestamp.digicert.com'
+    default: 'https://timestamp.digicert.com'
 
 outputs:
   msix-path:
@@ -198,7 +198,7 @@ runs:
           Write-Error "Executable not found at '$exePath'. Check staging-dir and executable-name inputs."
           exit 1
         }
-        & $env:MAKEAPPX_PATH pack /d "$stagingDir" /p "$env:OUTPUT_MSIX" /nv
+        & $env:MAKEAPPX_PATH pack /d "$stagingDir" /p "$env:OUTPUT_MSIX"
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         $fullPath = Resolve-Path $env:OUTPUT_MSIX
         Write-Host "Packed MSIX: $fullPath"
