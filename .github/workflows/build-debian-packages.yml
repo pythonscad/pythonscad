@@ -288,8 +288,8 @@ jobs:
       - name: Get version for release upload
         id: version
         run: |
-          VERSION=$(cat VERSION.txt | tr -d '\n' | tr -d '\r')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          VERSION=$(tr -d '\n\r' < VERSION.txt)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Rename package for GitHub Release (family + distro + arch)
         env:
@@ -298,7 +298,7 @@ jobs:
           MATRIX_DISTRO: ${{ matrix.distro }}
           MATRIX_ARCH: ${{ matrix.arch }}
         run: |
-          DEB_FILE=$(ls /tmp/debs/pythonscad_*.deb | head -1)
+          DEB_FILE=$(find /tmp/debs -maxdepth 1 -name 'pythonscad_*.deb' | head -1)
           if [ -z "$DEB_FILE" ]; then
             echo "Error: No .deb file found"
             exit 1
