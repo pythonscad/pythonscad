@@ -108,7 +108,7 @@ jobs:
             > /etc/apt/sources.list.d/github-cli.list
           apt-get update
           apt-get install -y gh
-          git config --global --add safe.directory '*'
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Checkout code
         uses: actions/checkout@v6
