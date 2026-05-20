@@ -296,7 +296,7 @@ jobs:
         run: |
           # Extract the version string from the CPack ZIP so the MSIX filename
           # matches exactly (e.g. PythonSCAD-0.20.0-windows-x86-64.msix).
-          ZIP=$(ls build/PythonSCAD-*.zip 2>/dev/null | grep -v Installer | head -1)
+          ZIP=$(ls build/PythonSCAD-*.zip 2>/dev/null | grep -v Installer | head -1 || true)
           if [ -n "$ZIP" ]; then
             BASE=$(basename "$ZIP" .zip)      # PythonSCAD-0.20.0-windows-x86-64
           else
