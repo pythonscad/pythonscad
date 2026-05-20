@@ -79,9 +79,9 @@ repos:
       hooks:
           # Lints GitHub Actions workflow files: schema validation,
           # expression syntax, pinned-action checks, etc. When
-          # shellcheck is on PATH (it is on CI via shellcheck-py
-          # below), actionlint also checks workflow run: blocks for
-          # SC2086, SC2012, SC2162, etc.
+          # shellcheck is on PATH (GitHub-hosted runners ship it in
+          # the base image), actionlint also checks workflow run:
+          # blocks for SC2086, SC2012, SC2162, etc.
           - id: actionlint
     - repo: https://github.com/shellcheck-py/shellcheck-py
       rev: v0.11.0.1

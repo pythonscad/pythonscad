@@ -157,7 +157,8 @@ jobs:
         STEPS_APPIMAGE_OUTPUTS_FILEPATH: ${{ steps.appimage.outputs.filepath }}
         STEPS_SIGN_OUTPUTS_ASC_PATH: ${{ steps.sign.outputs.asc_path }}
       run: |
-        gh release upload "$RELEASE_TAG" \
-          "$STEPS_APPIMAGE_OUTPUTS_FILEPATH" \
-          ${STEPS_SIGN_OUTPUTS_ASC_PATH:+"$STEPS_SIGN_OUTPUTS_ASC_PATH"} \
-          --clobber
+        UPLOAD_ARGS=("$STEPS_APPIMAGE_OUTPUTS_FILEPATH")
+        if [ -n "$STEPS_SIGN_OUTPUTS_ASC_PATH" ]; then
+          UPLOAD_ARGS+=("$STEPS_SIGN_OUTPUTS_ASC_PATH")
+        fi
+        gh release upload "$RELEASE_TAG" "${UPLOAD_ARGS[@]}" --clobber

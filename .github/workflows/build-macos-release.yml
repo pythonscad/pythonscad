@@ -535,7 +535,7 @@ jobs:
             # Qt frameworks have binary at: QtCore.framework/Versions/A/QtCore
             # Find the actual version directory (usually 'A') instead of using 'Current' symlink
             if [ -d "$x86_framework/Versions" ]; then
-              ACTUAL_VERSION=$(find "$x86_framework/Versions/" -maxdepth 1 -mindepth 1 -type d ! -name "Current" 2>/dev/null | head -1 | xargs -I{} basename {})
+              ACTUAL_VERSION=$(find "$x86_framework/Versions/" -maxdepth 1 -mindepth 1 -type d ! -name "Current" -exec basename {} \; 2>/dev/null | head -1)
               if [ -n "$ACTUAL_VERSION" ]; then
                 framework_binary="Versions/$ACTUAL_VERSION/$framework_name"
                 if [ -f "$x86_framework/$framework_binary" ]; then
