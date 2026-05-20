@@ -973,7 +973,7 @@ jobs:
           set -e
           echo "$SPCTL_OUTPUT"
 
-          if [ $SPCTL_EXIT -ne 0 ]; then
+          if [ "$SPCTL_EXIT" -ne 0 ]; then
             if echo "$SPCTL_OUTPUT" | grep -q "source=Unnotarized Developer ID"; then
               echo "⚠ App is signed but not yet notarized (expected at this stage)"
               echo "✓ Notarization will happen when creating the DMG"
