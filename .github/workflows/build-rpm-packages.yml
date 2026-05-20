@@ -151,8 +151,10 @@ jobs:
           fi
 
           # Set VERSION environment variable for spec file parsing
-          export VERSION=$(cat VERSION.txt | tr -d '\n' | tr -d '\r')
-          export CHANGELOG_DATE=$(date "+%a %b %d %Y")
+          VERSION=$(tr -d '\n\r' < VERSION.txt)
+          export VERSION
+          CHANGELOG_DATE=$(date "+%a %b %d %Y")
+          export CHANGELOG_DATE
 
           # Install build dependencies from spec file
           dnf builddep -y pythonscad.spec
@@ -262,7 +264,7 @@ jobs:
           done
 
           # Clean up passphrase file if it exists (RPM 4.x path)
-          [ -n "${PASSPHRASE_FILE:-}" ] && rm -f "$PASSPHRASE_FILE" || true
+          if [ -n "${PASSPHRASE_FILE:-}" ]; then rm -f "$PASSPHRASE_FILE"; fi
 
           # Import public key into RPM keyring for verification
           gpg --export -a "${{ secrets.GPG_KEY_ID }}" > /tmp/pubkey.asc
