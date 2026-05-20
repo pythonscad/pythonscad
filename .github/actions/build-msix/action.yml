@@ -66,7 +66,8 @@ runs:
       id: locate-makeappx
       shell: powershell
       run: |
-        $tool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\makeappx.exe" |
+        $tool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\makeappx.exe" `
+          -ErrorAction SilentlyContinue |
           Sort-Object FullName -Descending |
           Select-Object -First 1
         if (-not $tool) {
@@ -234,7 +235,8 @@ runs:
         $pfxPath = Join-Path $env:RUNNER_TEMP "sign.pfx"
         [System.IO.File]::WriteAllBytes($pfxPath, [System.Convert]::FromBase64String($env:CERT_BASE64))
         try {
-          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" |
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" `
+            -ErrorAction SilentlyContinue |
             Sort-Object FullName -Descending | Select-Object -First 1
           if (-not $signtool) { Write-Error "signtool.exe not found"; exit 1 }
           & $signtool.FullName sign `
@@ -243,7 +245,7 @@ runs:
             /f $pfxPath `
             /tr $env:TIMESTAMP_URL `
             /td SHA256 `
-            $env:OUTPUT_MSIX
+            "$env:OUTPUT_MSIX"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Write-Host "Signed $env:OUTPUT_MSIX"
         } finally {
