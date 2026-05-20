@@ -85,7 +85,7 @@ jobs:
 
     # Note: Don't use container field for ARM64 - it pulls amd64 images
     # ARM64 builds use explicit docker run with --platform flag
-    container: ${{ matrix.arch == 'amd64' && matrix.container || null }}
+    container: ${{ matrix.arch == 'amd64' && matrix.container || null }} # zizmor: ignore[unpinned-images]
 
     steps:
       - name: Install git and basic tools (amd64 container)
