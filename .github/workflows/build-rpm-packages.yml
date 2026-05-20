@@ -96,15 +96,16 @@ jobs:
       - name: Install git, basic tools, and gh CLI (amd64 container)
         if: matrix.arch == 'amd64'
         run: |
+          # Use curl to drop the repo file directly — avoids DNF4 vs DNF5
+          # config-manager syntax differences (Fedora 41+ ships DNF5).
           if [ -f /etc/fedora-release ]; then
-            dnf install -y git tar gzip 'dnf-command(config-manager)'
-            dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-            dnf install -y gh
+            dnf install -y git tar gzip curl
           else
-            dnf install -y git tar gzip epel-release 'dnf-command(config-manager)'
-            dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-            dnf install -y gh
+            dnf install -y git tar gzip curl epel-release
           fi
+          curl -fsSL https://cli.github.com/packages/rpm/gh-cli.repo \
+            > /etc/yum.repos.d/gh-cli.repo
+          dnf install -y gh
 
       - name: Checkout code
         uses: actions/checkout@v6
