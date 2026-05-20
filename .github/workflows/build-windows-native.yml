@@ -291,6 +291,21 @@ jobs:
       # To enable code signing add secrets WINDOWS_SIGN_CERTIFICATE (base64 PFX) and
       # WINDOWS_SIGN_CERTIFICATE_PASSWORD to the repository, then uncomment the
       # sign-certificate-base64 / sign-certificate-password inputs below.
+      - name: Derive MSIX filename (match CPack ZIP naming)
+        id: msix-filename
+        run: |
+          # Extract the version string from the CPack ZIP so the MSIX filename
+          # matches exactly (e.g. PythonSCAD-0.20.0-windows-x86-64.msix).
+          ZIP=$(ls build/PythonSCAD-*.zip 2>/dev/null | grep -v Installer | head -1)
+          if [ -n "$ZIP" ]; then
+            BASE=$(basename "$ZIP" .zip)      # PythonSCAD-0.20.0-windows-x86-64
+          else
+            BASE="PythonSCAD-snapshot-windows-x86-64"
+          fi
+          MSIX_NAME="${BASE}.msix"
+          echo "msix_name=$MSIX_NAME" >> "$GITHUB_OUTPUT"
+          echo "Using MSIX filename: $MSIX_NAME"
+
       - name: Build MSIX package
         id: msix
         uses: ./.github/actions/build-msix
@@ -300,15 +315,15 @@ jobs:
           package-version: ${{ steps.msix-version.outputs.version }}
           publisher-cn: 'CN=PythonSCAD, OID.2.25.311729368913984317654407730594956997722=1'
           icon-source: resources/icons/pythonscad.png
-          output-msix: PythonSCAD.msix
+          output-msix: ${{ steps.msix-filename.outputs.msix_name }}
           # sign-certificate-base64: ${{ secrets.WINDOWS_SIGN_CERTIFICATE }}
           # sign-certificate-password: ${{ secrets.WINDOWS_SIGN_CERTIFICATE_PASSWORD }}
 
       - name: Upload MSIX artifact
         uses: actions/upload-artifact@v7
         with:
-          name: PythonSCAD-MSIX
-          path: PythonSCAD.msix
+          name: ${{ steps.msix-filename.outputs.msix_name }}
+          path: ${{ steps.msix-filename.outputs.msix_name }}
           retention-days: 30
 
       - name: Upload artifacts to release
@@ -318,7 +333,7 @@ jobs:
           files: |
             artifacts/*.zip
             artifacts/*.exe
-            PythonSCAD.msix
+            ${{ steps.msix-filename.outputs.msix_name }}
           tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
