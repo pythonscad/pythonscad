@@ -20,9 +20,13 @@ inputs:
       the semantic version (0.20.0) to this form before passing it in.
     required: true
   publisher-cn:
-    description: 'Publisher field in AppxManifest Identity (CN=...)'
+    description: >
+      Publisher field in AppxManifest Identity. For unsigned packages this must
+      include the special unsigned-namespace OID suffix:
+      "CN=PythonSCAD, OID.2.25.311729368913984317654407730594956997722=1"
+      Signed packages use a normal CN= matching the code-signing certificate.
     required: true
-    default: 'CN=PythonSCAD'
+    default: 'CN=PythonSCAD, OID.2.25.311729368913984317654407730594956997722=1'
   icon-source:
     description: 'Path to the source PNG icon (relative to repo root)'
     required: true

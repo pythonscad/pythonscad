@@ -298,7 +298,7 @@ jobs:
           staging-dir: build/staging
           executable-name: pythonscad.exe
           package-version: ${{ steps.msix-version.outputs.version }}
-          publisher-cn: CN=PythonSCAD
+          publisher-cn: 'CN=PythonSCAD, OID.2.25.311729368913984317654407730594956997722=1'
           icon-source: resources/icons/pythonscad.png
           output-msix: PythonSCAD.msix
           # sign-certificate-base64: ${{ secrets.WINDOWS_SIGN_CERTIFICATE }}
