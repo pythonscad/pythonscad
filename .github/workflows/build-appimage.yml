@@ -106,6 +106,10 @@ jobs:
       id: appimage
       run: |
         APPIMAGE_FILE=$(find dist -maxdepth 1 -name 'PythonSCAD-*.AppImage' | head -1)
+        if [ -z "$APPIMAGE_FILE" ] || [ ! -f "$APPIMAGE_FILE" ]; then
+          echo "ERROR: No AppImage found in dist/" >&2
+          exit 1
+        fi
         echo "filename=$(basename "${APPIMAGE_FILE}")" >> "$GITHUB_OUTPUT"
         echo "filepath=${APPIMAGE_FILE}" >> "$GITHUB_OUTPUT"
 

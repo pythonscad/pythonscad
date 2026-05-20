@@ -967,10 +967,11 @@ jobs:
           # This is the critical validation that checks if macOS will allow the app to run
           # At this stage, "Unnotarized Developer ID" is acceptable (notarization happens later with DMG)
           # But we want to catch issues like "invalid destination for symbolic link"
-          SPCTL_OUTPUT=$(spctl --assess --type execute --verbose=4 "$APP_BUNDLE" 2>&1) || true
+          SPCTL_OUTPUT=$(spctl --assess --type execute --verbose=4 "$APP_BUNDLE" 2>&1)
+          SPCTL_EXIT=$?
           echo "$SPCTL_OUTPUT"
 
-          if echo "$SPCTL_OUTPUT" | grep -q "rejected"; then
+          if [ $SPCTL_EXIT -ne 0 ]; then
             if echo "$SPCTL_OUTPUT" | grep -q "source=Unnotarized Developer ID"; then
               echo "⚠ App is signed but not yet notarized (expected at this stage)"
               echo "✓ Notarization will happen when creating the DMG"
