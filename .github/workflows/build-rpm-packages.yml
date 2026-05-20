@@ -277,6 +277,9 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
           DO_SIGN: ${{ (github.event_name == 'release' || github.event.inputs.upload_to_release != '') && 'true' || 'false' }}
+          MATRIX_VERSION: ${{ matrix.version }}
+          MATRIX_DISTRO: ${{ matrix.distro }}
+          MATRIX_CONTAINER: ${{ matrix.container }}
         run: |
           # Run the entire build inside a Docker container with proper ARM64 emulation
           mkdir -p /tmp/rpms
@@ -286,14 +289,14 @@ jobs:
             -v /tmp/rpms:/tmp/rpms \
             -w /workspace \
             -e OUTPUT_DIR=/tmp/rpms \
-            -e FEDORA_RELEASE=${{ matrix.version }} \
-            -e DISTRO_TYPE=${{ matrix.distro }} \
+            -e FEDORA_RELEASE="$MATRIX_VERSION" \
+            -e DISTRO_TYPE="$MATRIX_DISTRO" \
             -e ARCH=aarch64 \
             -e GPG_SIGNING_KEY="$GPG_SIGNING_KEY" \
             -e GPG_PASSPHRASE="$GPG_PASSPHRASE" \
             -e GPG_KEY_ID="$GPG_KEY_ID" \
             -e DO_SIGN="$DO_SIGN" \
-            ${{ matrix.container }} \
+            "$MATRIX_CONTAINER" \
             bash -c '
               set -e
 
