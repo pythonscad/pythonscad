@@ -1304,12 +1304,10 @@ jobs:
 
       - name: Upload artifacts to release
         if: (github.event_name == 'release' || github.event.inputs.upload_to_release != '') && steps.validation.outcome == 'success'
-        uses: softprops/action-gh-release@v3
-        with:
-          files: /tmp/out/*.dmg
-          tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
+        run: gh release upload "$RELEASE_TAG" /tmp/out/*.dmg --clobber
 
       - name: Fail workflow if validation failed
         if: always()

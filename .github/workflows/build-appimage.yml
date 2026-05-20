@@ -150,11 +150,13 @@ jobs:
 
     - name: Upload AppImage to release
       if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
-      uses: softprops/action-gh-release@v3
-      with:
-        files: |
-          ${{ steps.appimage.outputs.filepath }}
-          ${{ steps.sign.outputs.asc_path }}
-        tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TAG: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
+        STEPS_APPIMAGE_OUTPUTS_FILEPATH: ${{ steps.appimage.outputs.filepath }}
+        STEPS_SIGN_OUTPUTS_ASC_PATH: ${{ steps.sign.outputs.asc_path }}
+      run: |
+        gh release upload "$RELEASE_TAG" \
+          "$STEPS_APPIMAGE_OUTPUTS_FILEPATH" \
+          ${STEPS_SIGN_OUTPUTS_ASC_PATH:+"$STEPS_SIGN_OUTPUTS_ASC_PATH"} \
+          --clobber

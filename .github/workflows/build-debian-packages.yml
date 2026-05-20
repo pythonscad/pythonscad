@@ -333,12 +333,10 @@ jobs:
 
       - name: Upload to GitHub Release
         if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
-        uses: softprops/action-gh-release@v3
-        with:
-          files: /tmp/debs/pythonscad_*.deb
-          tag_name: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || github.event.inputs.upload_to_release }}
+        run: gh release upload "$RELEASE_TAG" /tmp/debs/pythonscad_*.deb --clobber
 
   publish-apt-repo:
     name: Publish APT repository to SFTP
