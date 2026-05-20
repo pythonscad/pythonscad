@@ -47,6 +47,7 @@ rules:
         msys2/setup-msys2: ref-pin
         mxschmitt/action-tmate: ref-pin
         nanzm/get-time-action: ref-pin
+        # pypa/gh-action-pypi-publish is hash-pinned (id-token: write); omitted here.
         ssciwr/setup-mesa-dist-win: ref-pin
         takanome-dev/assign-issue-action: ref-pin
         # Anything not listed above must be hash-pinned.
