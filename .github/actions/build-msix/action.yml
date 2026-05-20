@@ -179,7 +179,7 @@ runs:
         $assetsDir = Join-Path $env:MSIX_STAGING_DIR "Assets"
         New-Item -ItemType Directory -Path $assetsDir -Force | Out-Null
         # Copy icon with a fixed name so the manifest reference (Assets\logo.png) always matches.
-        Copy-Item $env:ICON_SOURCE (Join-Path $assetsDir "logo.png")
+        Copy-Item $env:ICON_SOURCE (Join-Path $assetsDir "logo.png") -Force
         Write-Host "Staged assets to $assetsDir"
 
     - name: Pack MSIX
@@ -188,16 +188,34 @@ runs:
       env:
         MAKEAPPX_PATH: ${{ steps.locate-makeappx.outputs.path }}
         MSIX_STAGING_DIR: ${{ inputs.staging-dir }}
+        MSIX_EXECUTABLE: ${{ inputs.executable-name }}
         OUTPUT_MSIX: ${{ inputs.output-msix }}
       run: |
         $stagingDir = Resolve-Path $env:MSIX_STAGING_DIR
+        $exePath = Join-Path $stagingDir $env:MSIX_EXECUTABLE
+        if (-not (Test-Path $exePath)) {
+          Write-Error "Executable not found at '$exePath'. Check staging-dir and executable-name inputs."
+          exit 1
+        }
         & $env:MAKEAPPX_PATH pack /d "$stagingDir" /p "$env:OUTPUT_MSIX" /nv
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         $fullPath = Resolve-Path $env:OUTPUT_MSIX
         Write-Host "Packed MSIX: $fullPath"
         "msix-path=$fullPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
-    # Code signing — only runs when a certificate secret is provided.
+    - name: Validate signing inputs
+      if: ${{ inputs.sign-certificate-base64 != '' || inputs.sign-certificate-password != '' }}
+      shell: powershell
+      env:
+        CERT_BASE64: ${{ inputs.sign-certificate-base64 }}
+        CERT_PASSWORD: ${{ inputs.sign-certificate-password }}
+      run: |
+        if (-not $env:CERT_BASE64 -or -not $env:CERT_PASSWORD) {
+          Write-Error "Both sign-certificate-base64 and sign-certificate-password must be set to enable signing. Only one was provided."
+          exit 1
+        }
+
+    # Code signing — only runs when both certificate secrets are provided.
     # To enable: set repository secrets WINDOWS_SIGN_CERTIFICATE (base64 PFX)
     # and WINDOWS_SIGN_CERTIFICATE_PASSWORD, then pass them as inputs.
     - name: Sign MSIX (optional)
