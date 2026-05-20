@@ -59,7 +59,7 @@ jobs:
           TAG="${RELEASE_TAG_NAME:-$UPLOAD_TO_RELEASE}"
           # Strip leading 'v' for CMake (e.g. v0.6.0 -> 0.6.0)
           OPENSCAD_VERSION="${TAG#v}"
-          echo "OPENSCAD_VERSION=$OPENSCAD_VERSION" >> $GITHUB_ENV
+          echo "OPENSCAD_VERSION=$OPENSCAD_VERSION" >> "$GITHUB_ENV"
           echo "Using release version for package name: $OPENSCAD_VERSION"
 
       - name: Setup (detached) tmate session if enabled
