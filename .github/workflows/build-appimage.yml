@@ -15,10 +15,15 @@ on:
         required: false
         default: false
 
+permissions:
+  contents: read
+
 jobs:
   build-appimage:
     name: Build AppImage (Qt${{ matrix.qt_version }} / ${{ matrix.arch }})
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:

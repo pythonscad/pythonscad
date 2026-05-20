@@ -15,9 +15,14 @@ on:
         required: false
         default: false
 
+permissions:
+  contents: read
+
 jobs:
   build-package:
     runs-on: windows-latest
+    permissions:
+      contents: write
     name: Windows Native Package (Qt6)
     defaults:
       run:

@@ -19,6 +19,9 @@ concurrency:
   group: publish-apt-repo
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   prepare-matrix:
     name: Prepare build matrix from supported distributions
@@ -80,6 +83,8 @@ jobs:
     name: Build .deb (${{ matrix.family }} / ${{ matrix.distro }} / ${{ matrix.arch }})
     needs: prepare-matrix
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
