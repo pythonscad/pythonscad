@@ -93,13 +93,17 @@ jobs:
     container: ${{ matrix.arch == 'amd64' && matrix.container || null }} # zizmor: ignore[unpinned-images]
 
     steps:
-      - name: Install git and basic tools (amd64 container)
+      - name: Install git, basic tools, and gh CLI (amd64 container)
         if: matrix.arch == 'amd64'
         run: |
           if [ -f /etc/fedora-release ]; then
-            dnf install -y git tar gzip
+            dnf install -y git tar gzip 'dnf-command(config-manager)'
+            dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+            dnf install -y gh
           else
-            dnf install -y git tar gzip epel-release
+            dnf install -y git tar gzip epel-release 'dnf-command(config-manager)'
+            dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+            dnf install -y gh
           fi
 
       - name: Checkout code
