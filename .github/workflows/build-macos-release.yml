@@ -136,6 +136,8 @@ jobs:
           echo "Found app bundle: $APP_BUNDLE"
 
       - name: Bundle runtime Python deps (IPython) into .app
+        env:
+          STEPS_APPNAME_OUTPUTS_APP_BUNDLE: ${{ steps.appname.outputs.app_bundle }}
         run: |
           # Destination must match `bundledFallbackPaths` in
           # src/python/pyopenscad.cc: ../Resources/pythonscad-bundled-py
@@ -143,7 +145,7 @@ jobs:
           # NOT Contents/Frameworks/: macOS `codesign` treats every
           # subdirectory there as a sub-bundle and chokes on pip's
           # `*.dist-info` metadata directories.
-          APP_BUNDLE="${{ steps.appname.outputs.app_bundle }}"
+          APP_BUNDLE="${STEPS_APPNAME_OUTPUTS_APP_BUNDLE}"
           BUNDLE_DEST="${APP_BUNDLE}/Contents/Resources/pythonscad-bundled-py"
           chmod +x ./scripts/bundle-runtime-python.sh
           BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES=1 \
@@ -286,6 +288,8 @@ jobs:
           echo "Found app bundle: $APP_BUNDLE"
 
       - name: Bundle runtime Python deps (IPython) into .app
+        env:
+          STEPS_APPNAME_OUTPUTS_APP_BUNDLE: ${{ steps.appname.outputs.app_bundle }}
         run: |
           # Destination must match `bundledFallbackPaths` in
           # src/python/pyopenscad.cc: ../Resources/pythonscad-bundled-py
@@ -293,7 +297,7 @@ jobs:
           # NOT Contents/Frameworks/: macOS `codesign` treats every
           # subdirectory there as a sub-bundle and chokes on pip's
           # `*.dist-info` metadata directories.
-          APP_BUNDLE="${{ steps.appname.outputs.app_bundle }}"
+          APP_BUNDLE="${STEPS_APPNAME_OUTPUTS_APP_BUNDLE}"
           BUNDLE_DEST="${APP_BUNDLE}/Contents/Resources/pythonscad-bundled-py"
           chmod +x ./scripts/bundle-runtime-python.sh
           BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES=1 \
@@ -749,12 +753,14 @@ jobs:
           otool -L "$FRAMEWORKS_DIR/QtCore.framework/Versions/A/QtCore" | grep -E "icu|brotli" || echo "No ICU or brotli references found"
 
       - name: Bundle runtime Python deps (IPython) into merged .app
+        env:
+          STEPS_MERGE_OUTPUTS_APP_BUNDLE: ${{ steps.merge.outputs.app_bundle }}
         run: |
           # Pure-Python wheels are architecture-independent, so we just
           # re-run the bundler on the merged universal .app rather than
           # trying to lipo per-arch bundles together. Anything previously
           # installed by the per-arch jobs gets overwritten by --upgrade.
-          APP_BUNDLE="${{ steps.merge.outputs.app_bundle }}"
+          APP_BUNDLE="${STEPS_MERGE_OUTPUTS_APP_BUNDLE}"
           BUNDLE_DEST="${APP_BUNDLE}/Contents/Resources/pythonscad-bundled-py"
           chmod +x ./scripts/bundle-runtime-python.sh
           BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES=1 \
