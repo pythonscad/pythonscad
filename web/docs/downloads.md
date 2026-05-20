@@ -11,7 +11,7 @@
 
     function getPlatform(assetName) {
         const n = assetName.toLowerCase();
-        if (n.endsWith(".exe") || /windows|win-|win_|-win\.|-win_/.test(n)) return "windows";
+        if (n.endsWith(".exe") || n.endsWith(".msix") || /windows|win-|win_|-win\.|-win_/.test(n)) return "windows";
         if (n.endsWith(".dmg") || /macos|darwin|osx|-mac\.|-mac_/.test(n)) return "macos";
         if (n.endsWith(".appimage") || /appimage/.test(n)) return "linux-appimage";
         if (n.endsWith(".deb") || /debian|ubuntu|apt/.test(n)) return "linux-debian";
