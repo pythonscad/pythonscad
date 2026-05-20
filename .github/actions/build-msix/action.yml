@@ -89,9 +89,7 @@ runs:
         # column-0 constraints that break YAML literal block scalars.
         $ns       = "http://schemas.microsoft.com/appx/manifest/foundation/windows10"
         $nsUap    = "http://schemas.microsoft.com/appx/manifest/uap/windows10"
-        $nsUap10  = "http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
         $nsRescap = "http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-        $nsBuild  = "http://schemas.microsoft.com/developer/appx/2015/build"
 
         $doc = New-Object System.Xml.XmlDocument
         $decl = $doc.CreateXmlDeclaration("1.0", "utf-8", $null)
@@ -99,10 +97,8 @@ runs:
 
         $pkg = $doc.CreateElement("Package", $ns)
         $pkg.SetAttribute("xmlns:uap", $nsUap)
-        $pkg.SetAttribute("xmlns:uap10", $nsUap10)
         $pkg.SetAttribute("xmlns:rescap", $nsRescap)
-        $pkg.SetAttribute("xmlns:build", $nsBuild)
-        $pkg.SetAttribute("IgnorableNamespaces", "uap uap10 rescap build")
+        $pkg.SetAttribute("IgnorableNamespaces", "uap rescap")
         $doc.AppendChild($pkg) | Out-Null
 
         $id = $doc.CreateElement("Identity", $ns)
@@ -120,11 +116,6 @@ runs:
           $el = $doc.CreateElement($pair[0], $ns); $el.InnerText = $pair[1]
           $props.AppendChild($el) | Out-Null
         }
-        # Required for Add-AppxPackage -AllowUnsigned to work without a code-signing cert.
-        # See https://learn.microsoft.com/windows/msix/package/unsigned-package
-        $allowExt = $doc.CreateElement("AllowExternalContent", $nsUap10)
-        $allowExt.InnerText = "true"
-        $props.AppendChild($allowExt) | Out-Null
         $pkg.AppendChild($props) | Out-Null
 
         $res = $doc.CreateElement("Resources", $ns)
