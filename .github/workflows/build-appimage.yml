@@ -124,7 +124,7 @@ jobs:
           echo "AppImage not found: $APPIMAGE_FILE"
           exit 1
         fi
-        if ! sudo apt-get update -qq; then true; fi
+        sudo apt-get update -qq || true
         sudo apt-get install -y -qq gnupg 2>/dev/null || true
         export GNUPGHOME="${HOME}/.gnupg"
         mkdir -p "$GNUPGHOME"

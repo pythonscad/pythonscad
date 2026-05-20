@@ -103,7 +103,7 @@ jobs:
           fi
           # Write the gh CLI repo file inline — avoids DNF4 vs DNF5
           # config-manager syntax differences and curl-minimal conflicts on EL9.
-          printf '[gh-cli]\nname=packages for the GitHub CLI\nbaseurl=https://cli.github.com/packages/rpm\nenabled=1\ngpgcheck=1\ngpgkey=https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x23F3D4EA75716059\n' \
+          printf '[gh-cli]\nname=packages for the GitHub CLI\nbaseurl=https://cli.github.com/packages/rpm\nenabled=1\ngpgcheck=1\ngpgkey=https://cli.github.com/packages/githubcli-archive-keyring.gpg\n' \
             > /etc/yum.repos.d/gh-cli.repo
           dnf install -y gh
 
