@@ -68,7 +68,7 @@ runs:
       run: |
         $tool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\makeappx.exe" `
           -ErrorAction SilentlyContinue |
-          Sort-Object FullName -Descending |
+          Sort-Object { $_.VersionInfo.FileVersionRaw } -Descending |
           Select-Object -First 1
         if (-not $tool) {
           Write-Error "makeappx.exe not found under Windows Kits. Ensure the Windows SDK is installed."
@@ -237,7 +237,8 @@ runs:
         try {
           $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" `
             -ErrorAction SilentlyContinue |
-            Sort-Object FullName -Descending | Select-Object -First 1
+            Sort-Object { $_.VersionInfo.FileVersionRaw } -Descending |
+            Select-Object -First 1
           if (-not $signtool) { Write-Error "signtool.exe not found"; exit 1 }
           & $signtool.FullName sign `
             /fd SHA256 `
