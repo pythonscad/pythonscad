@@ -55,9 +55,9 @@ inputs:
     default: 'https://timestamp.digicert.com'
 
 outputs:
-  msix-path:
+  msix_path:
     description: 'Path to the generated (and optionally signed) .msix file'
-    value: ${{ steps.pack.outputs.msix-path }}
+    value: ${{ steps.pack.outputs.msix_path }}
 
 runs:
   using: composite
@@ -183,6 +183,10 @@ runs:
         MSIX_EXECUTABLE: ${{ inputs.executable-name }}
         OUTPUT_MSIX: ${{ inputs.output-msix }}
       run: |
+        if (-not (Test-Path $env:MSIX_STAGING_DIR)) {
+          Write-Error "staging-dir '$env:MSIX_STAGING_DIR' does not exist. Ensure cmake --install ran successfully."
+          exit 1
+        }
         $stagingDir = Resolve-Path $env:MSIX_STAGING_DIR
         $exePath = Join-Path $stagingDir $env:MSIX_EXECUTABLE
         if (-not (Test-Path $exePath)) {
@@ -193,7 +197,7 @@ runs:
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         $fullPath = Resolve-Path $env:OUTPUT_MSIX
         Write-Host "Packed MSIX: $fullPath"
-        "msix-path=$fullPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        "msix_path=$fullPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
     - name: Validate signing inputs
       if: ${{ inputs.sign-certificate-base64 != '' || inputs.sign-certificate-password != '' }}
