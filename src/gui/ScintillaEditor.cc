@@ -1637,7 +1637,7 @@ void ScintillaEditor::changeEvent(QEvent *event)
 {
   EditorInterface::changeEvent(event);
 #ifdef ENABLE_PYTHON
-  if (event->type() == QEvent::PaletteChange) {
+  if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
     updateTrustBarPalette();
   }
 #endif

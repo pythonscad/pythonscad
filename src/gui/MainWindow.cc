@@ -2150,8 +2150,6 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
   auto fulltext_py = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size()));
   SourceFile *sourceFile = nullptr;
 #ifdef ENABLE_PYTHON
-  if (editor->language == LANG_PYTHON) {
-  }
   if (editor->language == LANG_PYTHON && !editor->trust_python_file()) {
     LOG(message_group::Warning, Location::NONE, "", "Python design is not trusted");
     editor->resetHighlighting();
