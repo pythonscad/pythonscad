@@ -190,14 +190,16 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
   pythonTrustBar->setObjectName("pythonTrustBar");
   pythonTrustBar->setFrameShape(QFrame::NoFrame);
   {
-    // Blend the theme's Highlight colour (15%) into the Window background so the bar
-    // is visually distinct in both light and dark mode without any hardcoded colour.
+    // Blend the theme's Highlight colour into the Window background.
+    // Use a stronger blend in dark themes (where the accent needs more presence)
+    // and a lighter one in light themes (where even a small shift is visible).
     QPalette pal = pythonTrustBar->palette();
     const QColor base = pal.color(QPalette::Window);
     const QColor accent = pal.color(QPalette::Highlight);
-    const QColor bg(base.red() + (accent.red() - base.red()) * 15 / 100,
-                    base.green() + (accent.green() - base.green()) * 15 / 100,
-                    base.blue() + (accent.blue() - base.blue()) * 15 / 100);
+    const int blendPct = (base.lightness() < 128) ? 35 : 15;
+    const QColor bg(base.red() + (accent.red() - base.red()) * blendPct / 100,
+                    base.green() + (accent.green() - base.green()) * blendPct / 100,
+                    base.blue() + (accent.blue() - base.blue()) * blendPct / 100);
     pal.setColor(QPalette::Window, bg);
     pythonTrustBar->setPalette(pal);
     pythonTrustBar->setAutoFillBackground(true);
