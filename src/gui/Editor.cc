@@ -167,34 +167,20 @@ bool EditorInterface::trust_python_file(void)
     return true;
   }
 
-  std::string act_hash, ref_hash;
+  if (trusted) return true;
+
   const QByteArray contentBytes = toPlainText().toUtf8();
   const char *content = contentBytes.constData();
-  act_hash = SHA256HashString(content);
-
-  if (untrusted) return false;
-
-  if (trusted) {
-    writePythonTrustHash(settings, filepath.toUtf8().constData(), act_hash);
-    return true;
-  }
+  const std::string act_hash = SHA256HashString(content);
 
   if (strlen(content) <= 1) {  // 1st character already typed
     trusted = true;
     emit trustStateChanged();
     return true;
   }
-  /*
-    // Disabled: PythonSCAD relies on a hash-based trust store (see
-    // readPythonTrustHash / writePythonTrustHash) instead of a content
-    // sniff.  Kept for historical reference; if anyone re-enables this
-    // shortcut, the prefix check must accept all three module names that
-    // a PythonSCAD script can legally start with.
-    if (content.rfind("from openscad import", 0) == 0 || content.rfind("from pythonscad import", 0) == 0
-    || content.rfind("from _openscad import", 0) == 0) { trusted = true; return true;
-    }
-  */
-  ref_hash = readPythonTrustHash(settings, filepath.toUtf8().constData()).toStdString();
+
+  const std::string ref_hash =
+    readPythonTrustHash(settings, filepath.toUtf8().constData()).toStdString();
 
   if (act_hash == ref_hash) {
     trusted = true;
@@ -202,13 +188,9 @@ bool EditorInterface::trust_python_file(void)
     return true;
   }
 
-  untrusted = true;
+  trusted = false;
   emit trustStateChanged();
   return false;
-}
-void EditorInterface::clearPythonUntrustState(void)
-{
-  untrusted = false;
 }
 
 void EditorInterface::trustCurrent(void)
@@ -229,7 +211,6 @@ void EditorInterface::trustCurrent(void)
   QSettingsCached settings;
   const QByteArray pathUtf8 = filepath.toUtf8();
   const std::string fpath(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size()));
-  clearPythonUntrustState();
   writePythonTrustHash(settings, fpath, SHA256HashString(content));
   trusted = true;
   emit trustStateChanged();
@@ -238,10 +219,6 @@ void EditorInterface::trustCurrent(void)
 void EditorInterface::revokeTrust(void)
 {
   trusted = false;
-  // Mark as explicitly untrusted so the trust bar appears immediately and
-  // compile() is blocked until the user clicks "Trust Design" again.
-  // Only applies to disk-backed files; unsaved buffers are always trusted.
-  untrusted = !filepath.isEmpty() && (language == LANG_PYTHON);
   emit trustStateChanged();
 }
 

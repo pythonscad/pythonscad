@@ -1614,7 +1614,7 @@ void ScintillaEditor::onLanguageChanged(int lang)
 void ScintillaEditor::updateTrustBar()
 {
   const bool globalTrust = python_trusted || Settings::SettingsPython::globalTrustPython.value();
-  const bool showBar = (language == LANG_PYTHON) && !filepath.isEmpty() && untrusted && !globalTrust;
+  const bool showBar = (language == LANG_PYTHON) && !filepath.isEmpty() && !trusted && !globalTrust;
   pythonTrustBar->setVisible(showBar);
 }
 

@@ -1125,17 +1125,6 @@ void MainWindow::compile(bool reload, bool forcedone)
     // reload picking up where it left off, thwarting the stop, so we turn off exceptions in PRINT.
     no_exceptions_for_warnings();
     if (shouldcompiletoplevel) {
-#ifdef ENABLE_PYTHON
-      if (activeEditor->language == LANG_PYTHON && !activeEditor->filepath.isEmpty() &&
-          !python_trusted && !Settings::SettingsPython::globalTrustPython.value()) {
-        activeEditor->trust_python_file();  // updates trusted/untrusted flags + emits trustStateChanged
-        if (activeEditor->untrusted) {
-          updatePythonTrustActions();
-          compileDone(false);  // release GuiLocker and restore timers/output routing
-          return;
-        }
-      }
-#endif
       initialize_rng();
       this->errorLogWidget->clearModel();
       if (GlobalPreferences::inst()->getValue("advanced/consoleAutoClear").toBool()) {
@@ -1725,7 +1714,7 @@ void MainWindow::on_fileActionSaveAs_triggered()
 void MainWindow::updatePythonTrustActions()
 {
   const bool isUntrustedPython = activeEditor && activeEditor->language == LANG_PYTHON &&
-                                 !activeEditor->filepath.isEmpty() && activeEditor->untrusted &&
+                                 !activeEditor->filepath.isEmpty() && !activeEditor->trusted &&
                                  !python_trusted && !Settings::SettingsPython::globalTrustPython.value();
   designActionPreview->setEnabled(!isUntrustedPython);
   designActionRender->setEnabled(!isUntrustedPython);
@@ -2162,21 +2151,6 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
   SourceFile *sourceFile = nullptr;
 #ifdef ENABLE_PYTHON
   if (editor->language == LANG_PYTHON) {
-    // For a dry-run (session restore / customizer populate) never call trust_python_file():
-    // doing so would silently promote an untrusted file to trusted via hash-match and would
-    // execute Python code before the user has had a chance to review the trust bar.
-    // Instead, only proceed if the editor is already known-trusted.
-    const bool alreadyTrusted = editor->trusted || python_trusted ||
-                                Settings::SettingsPython::globalTrustPython.value() ||
-                                editor->filepath.isEmpty();
-    if (pythonDryRunFullScript && !alreadyTrusted) {
-      editor->parameterWidget->setEnabled(false);
-      // Mark untrusted so the trust bar appears immediately on open without
-      // requiring the user to trigger a compile first.
-      editor->untrusted = true;
-      emit editor->trustStateChanged();
-      return {};
-    }
   }
   if (editor->language == LANG_PYTHON && !editor->trust_python_file()) {
     LOG(message_group::Warning, Location::NONE, "", "Python design is not trusted");
@@ -4029,7 +4003,10 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   updatePythonTrustActions();
   disconnect(editorTrustConnection);
   editorTrustConnection = connect(newEditor, &EditorInterface::trustStateChanged, this, [this]() {
-    if (activeEditor) updatePythonTrustActions();
+    if (!activeEditor) return;
+    updatePythonTrustActions();
+    // When a design becomes trusted, run a dry-run immediately to populate the customizer.
+    if (activeEditor->trusted) parseTopLevelDocument(true);
   });
 #endif
 

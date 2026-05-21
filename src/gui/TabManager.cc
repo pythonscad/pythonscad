@@ -1042,11 +1042,20 @@ bool TabManager::refreshDocument()
         setContentRenderState();  // since last render
         editor->recomputeLanguageActive();
 #ifdef ENABLE_PYTHON
-        // Disk content changed — reset trust so the hash is re-checked on next
-        // compile and the trust bar appears if the new content isn't trusted.
-        editor->trusted = false;
-        editor->untrusted = false;
-        emit editor->trustStateChanged();
+        if (editor->language == LANG_PYTHON) {
+          if (editor->trusted) {
+            // File changed externally while already trusted (e.g. external editor workflow).
+            // Re-trust and update the stored hash so future opens also auto-trust.
+            editor->trustCurrent();
+          } else {
+            // Fresh open or previously untrusted — run hash check eagerly so the
+            // trust bar appears immediately without requiring a compile first.
+            editor->trust_python_file();
+          }
+        } else {
+          editor->trusted = false;
+          emit editor->trustStateChanged();
+        }
 #endif
       }
       editor->diskBacked = true;
