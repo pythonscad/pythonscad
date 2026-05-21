@@ -3986,15 +3986,13 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
 
 #ifdef ENABLE_PYTHON
   fileActionPythonTrustCurrent->setEnabled(newEditor->language == LANG_PYTHON && !newEditor->trusted);
-  connect(
-    newEditor, &EditorInterface::trustStateChanged, this,
-    [this]() {
-      if (activeEditor) {
-        fileActionPythonTrustCurrent->setEnabled(activeEditor->language == LANG_PYTHON &&
-                                                 !activeEditor->trusted);
-      }
-    },
-    Qt::UniqueConnection);
+  disconnect(editorTrustConnection);
+  editorTrustConnection = connect(newEditor, &EditorInterface::trustStateChanged, this, [this]() {
+    if (activeEditor) {
+      fileActionPythonTrustCurrent->setEnabled(activeEditor->language == LANG_PYTHON &&
+                                               !activeEditor->trusted);
+    }
+  });
 #endif
 
   parameterDock->setWidget(newEditor->parameterWidget);

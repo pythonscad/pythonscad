@@ -510,6 +510,9 @@ private:
   ExportPdfPaperOrientation orientationsString2Enum(const QString& current);
 
   QMenu *navigationMenu{nullptr};
+#ifdef ENABLE_PYTHON
+  QMetaObject::Connection editorTrustConnection;
+#endif
   QSoundEffect *renderCompleteSoundEffect;
   std::vector<std::unique_ptr<QTemporaryFile>> allTempFiles;
 

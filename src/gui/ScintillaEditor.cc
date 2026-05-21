@@ -43,6 +43,7 @@
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
+#include <QPalette>
 #include <QPushButton>
 #include <QSizePolicy>
 #include "python/python_public.h"
@@ -186,8 +187,14 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
 #ifdef ENABLE_PYTHON
   pythonTrustBar = new QFrame(this);
   pythonTrustBar->setObjectName("pythonTrustBar");
-  pythonTrustBar->setStyleSheet(
-    "QFrame#pythonTrustBar { background-color: #fffacd; border-bottom: 1px solid #e0c000; }");
+  pythonTrustBar->setFrameShape(QFrame::NoFrame);
+  {
+    QPalette pal = pythonTrustBar->palette();
+    pal.setColor(QPalette::Window, pal.color(QPalette::ToolTipBase));
+    pal.setColor(QPalette::WindowText, pal.color(QPalette::ToolTipText));
+    pythonTrustBar->setPalette(pal);
+    pythonTrustBar->setAutoFillBackground(true);
+  }
   auto *barLayout = new QHBoxLayout(pythonTrustBar);
   barLayout->setContentsMargins(8, 4, 8, 4);
 

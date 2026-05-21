@@ -180,6 +180,7 @@ bool EditorInterface::trust_python_file(void)
 
   if (strlen(content) <= 1) {  // 1st character already typed
     trusted = true;
+    emit trustStateChanged();
     return true;
   }
   /*
@@ -196,6 +197,7 @@ bool EditorInterface::trust_python_file(void)
 
   if (act_hash == ref_hash) {
     trusted = true;
+    emit trustStateChanged();
     return true;
   }
 
@@ -212,7 +214,7 @@ void EditorInterface::trustCurrent(void)
 {
 #ifdef ENABLE_PYTHON
   if (language != LANG_PYTHON) {
-    QMessageBox::information(this, _("Python"), _("The active design is not a Python file."));
+    QMessageBox::information(this, _("Python"), _("The active design is not a Python design."));
     return;
   }
   if (filepath.isEmpty()) {
@@ -230,7 +232,6 @@ void EditorInterface::trustCurrent(void)
   writePythonTrustHash(settings, fpath, SHA256HashString(content));
   trusted = true;
   emit trustStateChanged();
-  QMessageBox::information(this, _("Python"), _("This design is now trusted for Python execution."));
 #endif
 }
 void EditorInterface::revokeTrust(void)
