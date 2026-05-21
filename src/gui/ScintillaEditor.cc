@@ -39,6 +39,15 @@
 #include "platform/PlatformUtils.h"
 #include "utils/printutils.h"
 
+#ifdef ENABLE_PYTHON
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QLabel>
+#include <QPushButton>
+#include <QSizePolicy>
+#include "python/python_public.h"
+#endif
+
 namespace fs = std::filesystem;
 
 const QString ScintillaEditor::cursorPlaceHolder = "^~^";
@@ -173,6 +182,34 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
 
   scintillaLayout->setContentsMargins(0, 0, 0, 0);
   scintillaLayout->addWidget(qsci);
+
+#ifdef ENABLE_PYTHON
+  pythonTrustBar = new QFrame(this);
+  pythonTrustBar->setObjectName("pythonTrustBar");
+  pythonTrustBar->setStyleSheet(
+    "QFrame#pythonTrustBar { background-color: #fffacd; border-bottom: 1px solid #e0c000; }");
+  auto *barLayout = new QHBoxLayout(pythonTrustBar);
+  barLayout->setContentsMargins(8, 4, 8, 4);
+
+  auto *warningIconLabel = new QLabel(pythonTrustBar);
+  warningIconLabel->setPixmap(
+    QIcon::fromTheme("dialog-warning", QIcon(":/icons/information-icons-warning.png")).pixmap(16, 16));
+  barLayout->addWidget(warningIconLabel);
+
+  auto *msgLabel =
+    new QLabel(tr("This Python design is not trusted. Execution is disabled."), pythonTrustBar);
+  msgLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  barLayout->addWidget(msgLabel);
+
+  auto *trustButton = new QPushButton(tr("Trust Design"), pythonTrustBar);
+  barLayout->addWidget(trustButton);
+  connect(trustButton, &QPushButton::clicked, this, [this]() { trustCurrent(); });
+
+  scintillaLayout->insertWidget(0, pythonTrustBar);
+  pythonTrustBar->hide();
+
+  connect(this, &EditorInterface::trustStateChanged, this, &ScintillaEditor::updateTrustBar);
+#endif
 
   qsci->setUtf8(true);
   qsci->setFolding(QsciScintilla::BoxedTreeFoldStyle, 4);
@@ -1562,7 +1599,19 @@ void ScintillaEditor::onLanguageChanged(int lang)
   this->qsci->update();
   // This is needed otherwise the sidebar with line numbers has the wrong size and bg color
   this->setHighlightScheme(GlobalPreferences::inst()->getValue("editor/syntaxhighlight").toString());
+#ifdef ENABLE_PYTHON
+  updateTrustBar();
+#endif
 }
+
+#ifdef ENABLE_PYTHON
+void ScintillaEditor::updateTrustBar()
+{
+  const bool globalTrust = python_trusted || Settings::SettingsPython::globalTrustPython.value();
+  const bool showBar = (language == LANG_PYTHON) && !filepath.isEmpty() && !trusted && !globalTrust;
+  pythonTrustBar->setVisible(showBar);
+}
+#endif
 
 void ScintillaEditor::setCursorPosition(int line, int col)
 {

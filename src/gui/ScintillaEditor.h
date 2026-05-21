@@ -2,6 +2,7 @@
 
 #include <Qsci/qsciscintilla.h>
 
+#include <QFrame>
 #include <QMap>
 #include <QObject>
 #include <QString>
@@ -160,6 +161,11 @@ private:
     14;  // Represents the impacted selected area text 14-15-16
 
   bool indicatorsActive = false;
+
+#ifdef ENABLE_PYTHON
+  QFrame *pythonTrustBar;
+  void updateTrustBar();
+#endif
 
 #if ENABLE_LEXERTL
   ScadLexer2 *lexer;

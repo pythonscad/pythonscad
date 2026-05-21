@@ -1720,7 +1720,7 @@ void MainWindow::on_fileActionPythonRevoke_triggered()
   }
 #endif
   settings.remove("python_hash");
-  QMessageBox::information(this, _("Trusted Files"), "All trusted python files revoked",
+  QMessageBox::information(this, _("Trusted Designs"), _("All trusted Python designs revoked."),
                            QMessageBox::Ok);
 }
 
@@ -3983,6 +3983,19 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   activeEditor = newEditor;
 
   if (newEditor == nullptr) return;
+
+#ifdef ENABLE_PYTHON
+  fileActionPythonTrustCurrent->setEnabled(newEditor->language == LANG_PYTHON && !newEditor->trusted);
+  connect(
+    newEditor, &EditorInterface::trustStateChanged, this,
+    [this]() {
+      if (activeEditor) {
+        fileActionPythonTrustCurrent->setEnabled(activeEditor->language == LANG_PYTHON &&
+                                                 !activeEditor->trusted);
+      }
+    },
+    Qt::UniqueConnection);
+#endif
 
   parameterDock->setWidget(newEditor->parameterWidget);
   editActionUndo->setEnabled(newEditor->canUndo());

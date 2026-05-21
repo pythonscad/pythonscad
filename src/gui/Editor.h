@@ -79,6 +79,9 @@ signals:
   void showContextMenuEvent(const QPoint& pos);
   void focusIn();
   void escapePressed();
+#ifdef ENABLE_PYTHON
+  void trustStateChanged();
+#endif
 
 public slots:
   virtual void zoomIn() = 0;

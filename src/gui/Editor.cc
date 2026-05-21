@@ -199,24 +199,8 @@ bool EditorInterface::trust_python_file(void)
     return true;
   }
 
-  auto ret = QMessageBox::warning(this, "Application",
-                                  _("Python files can potentially contain harmful stuff.\n"
-                                    "Do you trust this file ?\n"),
-                                  QMessageBox::Yes | QMessageBox::YesAll | QMessageBox::No);
-  if (ret == QMessageBox::YesAll) {
-    python_trusted = true;
-    return true;
-  }
-  if (ret == QMessageBox::Yes) {
-    trusted = true;
-    writePythonTrustHash(settings, filepath.toUtf8().constData(), act_hash);
-    return true;
-  }
-
-  if (ret == QMessageBox::No) {
-    untrusted = true;
-    return false;
-  }
+  untrusted = true;
+  emit trustStateChanged();
   return false;
 }
 void EditorInterface::clearPythonUntrustState(void)
@@ -228,7 +212,7 @@ void EditorInterface::trustCurrent(void)
 {
 #ifdef ENABLE_PYTHON
   if (language != LANG_PYTHON) {
-    QMessageBox::information(this, _("Python"), _("The active document is not a Python file."));
+    QMessageBox::information(this, _("Python"), _("The active design is not a Python file."));
     return;
   }
   if (filepath.isEmpty()) {
@@ -245,13 +229,15 @@ void EditorInterface::trustCurrent(void)
   clearPythonUntrustState();
   writePythonTrustHash(settings, fpath, SHA256HashString(content));
   trusted = true;
-  QMessageBox::information(this, _("Python"), _("This document is now trusted for Python execution."));
+  emit trustStateChanged();
+  QMessageBox::information(this, _("Python"), _("This design is now trusted for Python execution."));
 #endif
 }
 void EditorInterface::revokeTrust(void)
 {
   trusted = false;
   untrusted = false;
+  emit trustStateChanged();
 }
 
 #endif
