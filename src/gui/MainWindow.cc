@@ -1131,6 +1131,7 @@ void MainWindow::compile(bool reload, bool forcedone)
         activeEditor->trust_python_file();  // updates trusted/untrusted flags + emits trustStateChanged
         if (activeEditor->untrusted) {
           updatePythonTrustActions();
+          compileDone(false);  // release GuiLocker and restore timers/output routing
           return;
         }
       }
