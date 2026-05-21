@@ -158,7 +158,6 @@ void EditorInterface::resetLanguageDetection()
 extern bool python_trusted;
 bool EditorInterface::trust_python_file(void)
 {
-  QSettingsCached settings;
   if (python_trusted || Settings::SettingsPython::globalTrustPython.value() ||
       filepath.toStdString().empty()) {
     // Global trust, CLI flag, or unsaved buffer — mark trusted so disabling global trust
@@ -182,6 +181,7 @@ bool EditorInterface::trust_python_file(void)
     return true;
   }
 
+  QSettingsCached settings;
   const std::string ref_hash =
     readPythonTrustHash(settings, filepath.toUtf8().constData()).toStdString();
 

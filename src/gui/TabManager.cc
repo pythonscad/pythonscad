@@ -56,6 +56,9 @@
 #include "gui/UnsavedChangesDialog.h"
 #include "utils/printutils.h"
 #include <genlang/genlang.h>
+#ifdef ENABLE_PYTHON
+#include "python/python_public.h"
+#endif
 
 #include <algorithm>
 
@@ -1043,9 +1046,11 @@ bool TabManager::refreshDocument()
         editor->recomputeLanguageActive();
 #ifdef ENABLE_PYTHON
         if (editor->language == LANG_PYTHON) {
-          if (editor->trusted) {
-            // File changed externally while already trusted (e.g. external editor workflow).
+          if (editor->trusted && !python_trusted &&
+              !Settings::SettingsPython::globalTrustPython.value()) {
+            // File changed externally while per-file trusted (e.g. external editor workflow).
             // Re-trust and update the stored hash so future opens also auto-trust.
+            // Skip under global/CLI trust to avoid creating spurious per-file hash entries.
             editor->trustCurrent();
           } else {
             // Fresh open or previously untrusted — run hash check eagerly so the
