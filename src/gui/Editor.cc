@@ -159,11 +159,14 @@ extern bool python_trusted;
 bool EditorInterface::trust_python_file(void)
 {
   QSettingsCached settings;
-  if (python_trusted) return true;
-  if (Settings::SettingsPython::globalTrustPython.value() == true) return true;
-
-  // Trust unsaved files (empty filepath) - they're created by the user, not loaded from disk
-  if (filepath.toStdString().empty()) {
+  if (python_trusted || Settings::SettingsPython::globalTrustPython.value() ||
+      filepath.toStdString().empty()) {
+    // Global trust, CLI flag, or unsaved buffer — mark trusted so disabling global trust
+    // later doesn't incorrectly show the bar.
+    if (!trusted) {
+      trusted = true;
+      emit trustStateChanged();
+    }
     return true;
   }
 
