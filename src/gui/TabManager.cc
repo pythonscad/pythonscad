@@ -1053,8 +1053,7 @@ bool TabManager::refreshDocument()
             editor->trust_python_file();
           }
         } else {
-          editor->trusted = false;
-          emit editor->trustStateChanged();
+          editor->revokeTrust();
         }
 #endif
       }
