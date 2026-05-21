@@ -237,7 +237,10 @@ void EditorInterface::trustCurrent(void)
 void EditorInterface::revokeTrust(void)
 {
   trusted = false;
-  untrusted = false;
+  // Mark as explicitly untrusted so the trust bar appears immediately and
+  // compile() is blocked until the user clicks "Trust Design" again.
+  // Only applies to disk-backed files; unsaved buffers are always trusted.
+  untrusted = !filepath.isEmpty() && (language == LANG_PYTHON);
   emit trustStateChanged();
 }
 

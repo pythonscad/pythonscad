@@ -77,6 +77,7 @@ private:
                    const QColor& defaultColor);
 
   bool eventFilter(QObject *obj, QEvent *event) override;
+  void changeEvent(QEvent *event) override;
   bool handleKeyEventNavigateNumber(QKeyEvent *);
   bool handleWheelEventNavigateNumber(QWheelEvent *);
   bool handleKeyEventBlockCopy(QKeyEvent *);
@@ -165,6 +166,7 @@ private:
 #ifdef ENABLE_PYTHON
   QFrame *pythonTrustBar;
   void updateTrustBar();
+  void updateTrustBarPalette();
 #endif
 
 #if ENABLE_LEXERTL

@@ -1414,10 +1414,10 @@
   </action>
   <action name="fileActionPythonRevoke">
    <property name="text">
-    <string>&amp;Revoke Trusted Python Designs</string>
+    <string>&amp;Revoke Trust for All Python Designs</string>
    </property>
    <property name="toolTip">
-    <string>Revoke all trusted Python designs and clear the trust store</string>
+    <string>Revoke trust for all Python designs and clear the trust store</string>
    </property>
   </action>
   <action name="fileActionClose">

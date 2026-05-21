@@ -3,6 +3,7 @@
 #include <QColor>
 #include <QCursor>
 #include <QEvent>
+#include <QApplication>
 #include <QGuiApplication>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QKeyCombination>
@@ -189,21 +190,7 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
   pythonTrustBar = new QFrame(this);
   pythonTrustBar->setObjectName("pythonTrustBar");
   pythonTrustBar->setFrameShape(QFrame::NoFrame);
-  {
-    // Blend the theme's Highlight colour into the Window background.
-    // Use a stronger blend in dark themes (where the accent needs more presence)
-    // and a lighter one in light themes (where even a small shift is visible).
-    QPalette pal = pythonTrustBar->palette();
-    const QColor base = pal.color(QPalette::Window);
-    const QColor accent = pal.color(QPalette::Highlight);
-    const int blendPct = (base.lightness() < 128) ? 35 : 15;
-    const QColor bg(base.red() + (accent.red() - base.red()) * blendPct / 100,
-                    base.green() + (accent.green() - base.green()) * blendPct / 100,
-                    base.blue() + (accent.blue() - base.blue()) * blendPct / 100);
-    pal.setColor(QPalette::Window, bg);
-    pythonTrustBar->setPalette(pal);
-    pythonTrustBar->setAutoFillBackground(true);
-  }
+  updateTrustBarPalette();
   auto *barLayout = new QHBoxLayout(pythonTrustBar);
   barLayout->setContentsMargins(8, 4, 8, 4);
 
@@ -1627,10 +1614,34 @@ void ScintillaEditor::onLanguageChanged(int lang)
 void ScintillaEditor::updateTrustBar()
 {
   const bool globalTrust = python_trusted || Settings::SettingsPython::globalTrustPython.value();
-  const bool showBar = (language == LANG_PYTHON) && !filepath.isEmpty() && !trusted && !globalTrust;
+  const bool showBar = (language == LANG_PYTHON) && !filepath.isEmpty() && untrusted && !globalTrust;
   pythonTrustBar->setVisible(showBar);
 }
+
+void ScintillaEditor::updateTrustBarPalette()
+{
+  const QPalette appPal = QApplication::palette();
+  const bool isDark = appPal.color(QPalette::WindowText).lightness() > 165;
+  const QColor bg = isDark ? QColor(120, 90, 0) : QColor(255, 220, 80);
+  const QColor fg = isDark ? QColor(255, 245, 220) : QColor(40, 30, 0);
+  // Use a stylesheet rather than QPalette so the colour update is guaranteed to
+  // repaint immediately and is not suppressed by palette-inheritance caching.
+  pythonTrustBar->setStyleSheet(QString("QFrame#pythonTrustBar { background-color: %1; color: %2; }"
+                                        "QFrame#pythonTrustBar QLabel { color: %2; }"
+                                        "QFrame#pythonTrustBar QPushButton { color: %2; }")
+                                  .arg(bg.name(), fg.name()));
+}
 #endif
+
+void ScintillaEditor::changeEvent(QEvent *event)
+{
+  EditorInterface::changeEvent(event);
+#ifdef ENABLE_PYTHON
+  if (event->type() == QEvent::PaletteChange) {
+    updateTrustBarPalette();
+  }
+#endif
+}
 
 void ScintillaEditor::setCursorPosition(int line, int col)
 {

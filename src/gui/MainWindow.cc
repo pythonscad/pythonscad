@@ -1125,6 +1125,16 @@ void MainWindow::compile(bool reload, bool forcedone)
     // reload picking up where it left off, thwarting the stop, so we turn off exceptions in PRINT.
     no_exceptions_for_warnings();
     if (shouldcompiletoplevel) {
+#ifdef ENABLE_PYTHON
+      if (activeEditor->language == LANG_PYTHON && !activeEditor->filepath.isEmpty() &&
+          !python_trusted && !Settings::SettingsPython::globalTrustPython.value()) {
+        activeEditor->trust_python_file();  // updates trusted/untrusted flags + emits trustStateChanged
+        if (activeEditor->untrusted) {
+          updatePythonTrustActions();
+          return;
+        }
+      }
+#endif
       initialize_rng();
       this->errorLogWidget->clearModel();
       if (GlobalPreferences::inst()->getValue("advanced/consoleAutoClear").toBool()) {
@@ -1714,7 +1724,7 @@ void MainWindow::on_fileActionSaveAs_triggered()
 void MainWindow::updatePythonTrustActions()
 {
   const bool isUntrustedPython = activeEditor && activeEditor->language == LANG_PYTHON &&
-                                 !activeEditor->filepath.isEmpty() && !activeEditor->trusted &&
+                                 !activeEditor->filepath.isEmpty() && activeEditor->untrusted &&
                                  !python_trusted && !Settings::SettingsPython::globalTrustPython.value();
   designActionPreview->setEnabled(!isUntrustedPython);
   designActionRender->setEnabled(!isUntrustedPython);
