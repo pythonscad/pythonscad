@@ -158,8 +158,7 @@ void EditorInterface::resetLanguageDetection()
 extern bool python_trusted;
 bool EditorInterface::trust_python_file(void)
 {
-  if (python_trusted || Settings::SettingsPython::globalTrustPython.value() ||
-      filepath.toStdString().empty()) {
+  if (python_trusted || Settings::SettingsPython::globalTrustPython.value() || filepath.isEmpty()) {
     // Global trust, CLI flag, or unsaved buffer — mark trusted so disabling global trust
     // later doesn't incorrectly show the bar.
     if (!trusted) {
