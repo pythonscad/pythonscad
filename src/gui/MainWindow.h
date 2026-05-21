@@ -257,6 +257,9 @@ private:
   void addKeyboardShortCut(const QList<QAction *>& actions);
   void updateStatusBar(ProgressWidget *progressWidget);
   void updateLanguageLabel();
+#ifdef ENABLE_PYTHON
+  void updatePythonTrustActions();
+#endif
   void showLanguageMenu();
   void activateDock(Dock *);
   Dock *findVisibleDockToActivate(int offset) const;

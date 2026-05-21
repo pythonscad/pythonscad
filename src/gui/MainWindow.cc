@@ -1710,6 +1710,18 @@ void MainWindow::on_fileActionSaveAs_triggered()
   tabManager->saveAs(activeEditor);
 }
 
+#ifdef ENABLE_PYTHON
+void MainWindow::updatePythonTrustActions()
+{
+  const bool isUntrustedPython = activeEditor && activeEditor->language == LANG_PYTHON &&
+                                 !activeEditor->filepath.isEmpty() && !activeEditor->trusted &&
+                                 !python_trusted && !Settings::SettingsPython::globalTrustPython.value();
+  designActionPreview->setEnabled(!isUntrustedPython);
+  designActionRender->setEnabled(!isUntrustedPython);
+  fileActionPythonTrustCurrent->setEnabled(isUntrustedPython);
+}
+#endif
+
 void MainWindow::on_fileActionPythonRevoke_triggered()
 {
   QSettingsCached settings;
@@ -2138,10 +2150,24 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
   auto fulltext_py = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size()));
   SourceFile *sourceFile = nullptr;
 #ifdef ENABLE_PYTHON
+  if (editor->language == LANG_PYTHON) {
+    // For a dry-run (session restore / customizer populate) never call trust_python_file():
+    // doing so would silently promote an untrusted file to trusted via hash-match and would
+    // execute Python code before the user has had a chance to review the trust bar.
+    // Instead, only proceed if the editor is already known-trusted.
+    const bool alreadyTrusted = editor->trusted || python_trusted ||
+                                Settings::SettingsPython::globalTrustPython.value() ||
+                                editor->filepath.isEmpty();
+    if (pythonDryRunFullScript && !alreadyTrusted) {
+      editor->parameterWidget->setEnabled(false);
+      return {};
+    }
+  }
   if (editor->language == LANG_PYTHON && !editor->trust_python_file()) {
-    LOG(message_group::Warning, Location::NONE, "", "Python file is not trusted");
+    LOG(message_group::Warning, Location::NONE, "", "Python design is not trusted");
     editor->resetHighlighting();
     editor->parameterWidget->setEnabled(false);
+    updatePythonTrustActions();
     return {};
   } else if (editor->language == LANG_PYTHON) {
     const auto& venv = venvBinDirFromSettings();
@@ -3985,13 +4011,10 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   if (newEditor == nullptr) return;
 
 #ifdef ENABLE_PYTHON
-  fileActionPythonTrustCurrent->setEnabled(newEditor->language == LANG_PYTHON && !newEditor->trusted);
+  updatePythonTrustActions();
   disconnect(editorTrustConnection);
   editorTrustConnection = connect(newEditor, &EditorInterface::trustStateChanged, this, [this]() {
-    if (activeEditor) {
-      fileActionPythonTrustCurrent->setEnabled(activeEditor->language == LANG_PYTHON &&
-                                               !activeEditor->trusted);
-    }
+    if (activeEditor) updatePythonTrustActions();
   });
 #endif
 
@@ -4406,6 +4429,10 @@ void MainWindow::setupPreferences()
           &MainWindow::setColorScheme);
   connect(GlobalPreferences::inst(), &Preferences::toolbarExportChanged, this,
           &MainWindow::updateExportActions);
+#ifdef ENABLE_PYTHON
+  connect(GlobalPreferences::inst(), &Preferences::editorConfigChanged, this,
+          [this]() { updatePythonTrustActions(); });
+#endif
 
   connect(GlobalPreferences::inst(), &Preferences::requestRedraw, this->qglview,
           QOverload<>::of(&QGLView::update));

@@ -36,6 +36,7 @@
 #include "core/Settings.h"
 #include "gui/Preferences.h"
 #include "gui/ScadLexer.h"
+#include "gui/qtgettext.h"
 #include "platform/PlatformUtils.h"
 #include "utils/printutils.h"
 
@@ -189,9 +190,15 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
   pythonTrustBar->setObjectName("pythonTrustBar");
   pythonTrustBar->setFrameShape(QFrame::NoFrame);
   {
+    // Blend the theme's Highlight colour (15%) into the Window background so the bar
+    // is visually distinct in both light and dark mode without any hardcoded colour.
     QPalette pal = pythonTrustBar->palette();
-    pal.setColor(QPalette::Window, pal.color(QPalette::ToolTipBase));
-    pal.setColor(QPalette::WindowText, pal.color(QPalette::ToolTipText));
+    const QColor base = pal.color(QPalette::Window);
+    const QColor accent = pal.color(QPalette::Highlight);
+    const QColor bg(base.red() + (accent.red() - base.red()) * 15 / 100,
+                    base.green() + (accent.green() - base.green()) * 15 / 100,
+                    base.blue() + (accent.blue() - base.blue()) * 15 / 100);
+    pal.setColor(QPalette::Window, bg);
     pythonTrustBar->setPalette(pal);
     pythonTrustBar->setAutoFillBackground(true);
   }
@@ -204,11 +211,11 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
   barLayout->addWidget(warningIconLabel);
 
   auto *msgLabel =
-    new QLabel(tr("This Python design is not trusted. Execution is disabled."), pythonTrustBar);
+    new QLabel(q_("This Python design is not trusted. Execution is disabled.", nullptr), pythonTrustBar);
   msgLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   barLayout->addWidget(msgLabel);
 
-  auto *trustButton = new QPushButton(tr("Trust Design"), pythonTrustBar);
+  auto *trustButton = new QPushButton(q_("Trust Design", nullptr), pythonTrustBar);
   barLayout->addWidget(trustButton);
   connect(trustButton, &QPushButton::clicked, this, [this]() { trustCurrent(); });
 
@@ -378,6 +385,9 @@ void ScintillaEditor::applySettings()
   onTextChanged();
 
   setupAutoComplete(false);
+#ifdef ENABLE_PYTHON
+  updateTrustBar();
+#endif
 }
 
 void ScintillaEditor::setupAutoComplete(const bool forceOff)
