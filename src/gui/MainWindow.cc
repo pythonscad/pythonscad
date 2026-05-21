@@ -2170,6 +2170,10 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
                                 editor->filepath.isEmpty();
     if (pythonDryRunFullScript && !alreadyTrusted) {
       editor->parameterWidget->setEnabled(false);
+      // Mark untrusted so the trust bar appears immediately on open without
+      // requiring the user to trigger a compile first.
+      editor->untrusted = true;
+      emit editor->trustStateChanged();
       return {};
     }
   }

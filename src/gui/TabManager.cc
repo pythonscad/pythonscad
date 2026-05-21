@@ -1041,6 +1041,13 @@ bool TabManager::refreshDocument()
         editor->setPlainText(text);
         setContentRenderState();  // since last render
         editor->recomputeLanguageActive();
+#ifdef ENABLE_PYTHON
+        // Disk content changed — reset trust so the hash is re-checked on next
+        // compile and the trust bar appears if the new content isn't trusted.
+        editor->trusted = false;
+        editor->untrusted = false;
+        emit editor->trustStateChanged();
+#endif
       }
       editor->diskBacked = true;
       file_opened = true;

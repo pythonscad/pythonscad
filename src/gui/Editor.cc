@@ -168,7 +168,8 @@ bool EditorInterface::trust_python_file(void)
   }
 
   std::string act_hash, ref_hash;
-  auto content = toPlainText().toUtf8().constData();
+  const QByteArray contentBytes = toPlainText().toUtf8();
+  const char *content = contentBytes.constData();
   act_hash = SHA256HashString(content);
 
   if (untrusted) return false;
