@@ -171,14 +171,8 @@ bool EditorInterface::trust_python_file(void)
   if (trusted) return true;
 
   const QByteArray contentBytes = toPlainText().toUtf8();
-  const char *content = contentBytes.constData();
-  const std::string act_hash = SHA256HashString(content);
-
-  if (strlen(content) <= 1) {  // 1st character already typed
-    trusted = true;
-    emit trustStateChanged();
-    return true;
-  }
+  const std::string act_hash =
+    SHA256HashString(std::string(contentBytes.constData(), static_cast<size_t>(contentBytes.size())));
 
   QSettingsCached settings;
   const std::string ref_hash =
