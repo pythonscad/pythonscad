@@ -422,7 +422,6 @@ std::unique_ptr<ExternalToolInterface> createExternalToolService(print_service_t
 
 void MainWindow::addMenuItemCB(QString callback)
 {
- printf("callback %s\n",callback.toStdString().c_str());
 #ifdef ENABLE_PYTHON
   std::string content = loadInitFile();
   if (content.size() == 0) return;
@@ -439,32 +438,23 @@ void MainWindow::addMenuItemCB(QString callback)
 void MainWindow::addMenuItem(const char *menuname, const char *itemname, const char *callback)
 {
   // Find or create menu
-  printf("a1 \n");
   QMenu *menu_found = nullptr;
   foreach (QAction *menu, menubar->actions()) {
-    printf("menu is %p\n", menu);	  
     if (menu->menu()) {
       const char *menutext = qUtf8Printable(menu->text());
-       printf("menutext is %s\n", menutext);
-      if (strstr(menutext, menuname) != nullptr) {
-menu_found = (QMenu *)menu;
-printf("menu found\n");
-}
+      if (strstr(menutext, menuname) != nullptr) menu_found = (QMenu *)menu->menu();
     }
   }
 
-  printf("a2\n");
   if (menu_found == nullptr) {
     menu_found = new QMenu(menubar);
     menu_found->setObjectName(QString(menuname));
     menu_found->setTitle(q_(menuname, nullptr));
     menu_found->show();
     menubar->addAction(menu_found->menuAction());
-    //	menubar->addMenu(menu_found);
+    menubar->addMenu(menu_found);
   }
-  printf("a3\n");
 
-  menu_found = menu_File;
 
   // Create Menu Item
   QAction *my_menu_item = new QAction(this);
@@ -472,9 +462,7 @@ printf("menu found\n");
   my_menu_item->setText(q_(itemname, nullptr));
   connect(my_menu_item, SIGNAL(triggered()), addmenu_mapper, SLOT(map()));
   addmenu_mapper->setMapping(my_menu_item, callback);
-printf("mapping of %p\n", addmenu_mapper);
   menu_found->addAction(my_menu_item);
-  printf("a4\n");
 
   //  menubar->show();
 }
@@ -510,7 +498,7 @@ void MainWindow::customSetup(void)
   if (content == "") return;
 
   this->addmenu_mapper = new QSignalMapper(this);
-  connect(this->addmenu_mapper, SIGNAL(mapped(QString)), this, SLOT(addMenuItemCB(QString)));
+  connect(    this->addmenu_mapper,    &QSignalMapper::mappedString,    this,    &MainWindow::addMenuItemCB);
   const auto& venv = venvBinDirFromSettings();
   const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
   initPython(binDir, "", nullptr);
@@ -2728,7 +2716,6 @@ void MainWindow::rightClick(QPoint position)
 
 void MainWindow::measureFinished()
 {
-printf("triggered\n");
   this->qglview->handle_mode = false;
   auto didSomething = meas.stopMeasure();
   if (didSomething) resetMeasurementsState(true, "Click to start measuring");

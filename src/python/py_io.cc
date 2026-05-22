@@ -1042,7 +1042,6 @@ PyObject *python_osinclude(PyObject *self, PyObject *args, PyObject *kwargs)
 extern void add_menuitem_trampoline(const char *menuname, const char *itemname, const char *callback);
 PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
 {
-	printf("a\n");
   char *kwlist[] = {"menuname", "itemname", "callback", NULL};
   const char *menuname = nullptr, *itemname = nullptr, *callback = nullptr;
 
@@ -1050,7 +1049,6 @@ PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs, 
     PyErr_SetString(PyExc_TypeError, "Error during parsing add_menuitem");
     return NULL;
   }
-  printf("%s %s %s\n", menuname, itemname, callback);
   add_menuitem_trampoline(menuname, itemname, callback);
   Py_RETURN_NONE;
 }
