@@ -1040,7 +1040,7 @@ PyObject *python_osinclude(PyObject *self, PyObject *args, PyObject *kwargs)
 
 #ifndef OPENSCAD_NOGUI
 extern void add_menuitem_trampoline(const char *menuname, const char *itemname, const char *callback);
-PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
+PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   char *kwlist[] = {"menuname", "itemname", "callback", NULL};
   const char *menuname = nullptr, *itemname = nullptr, *callback = nullptr;
@@ -1054,7 +1054,7 @@ PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs, 
 }
 #endif
 
-PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
+PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   char *kwlist[] = {NULL};
 

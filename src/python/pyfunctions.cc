@@ -335,7 +335,7 @@ PyObject *python_oo_setattr(PyObject *self, PyObject *args, PyObject *kwargs)
   Py_RETURN_NONE;
 }
 
-PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
+PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   char *kwlist[] = {NULL};
 

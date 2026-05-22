@@ -428,8 +428,8 @@ void MainWindow::addMenuItemCB(QString callback)
   const auto& venv = venvBinDirFromSettings();
   const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
   initPython(binDir, "", nullptr);
-  evaluatePython(content);
-  evaluatePython(callback.toStdString());
+  std::cout << evaluatePython(content);
+  std::cout << evaluatePython(callback.toStdString());
   finishPython();
 #endif
 }
@@ -502,9 +502,9 @@ void MainWindow::customSetup(void)
   const auto& venv = venvBinDirFromSettings();
   const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
   initPython(binDir, "", nullptr);
-  evaluatePython(content);
+  std::cout << evaluatePython(content);
   addmenuitem_this = this;
-  evaluatePython("setup()");
+  std::cout << evaluatePython("setup()");
   addmenuitem_this = nullptr;
   finishPython();
 }
