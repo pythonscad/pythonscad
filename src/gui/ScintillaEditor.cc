@@ -375,6 +375,12 @@ void ScintillaEditor::applySettings()
 
   setupAutoComplete(false);
 #ifdef ENABLE_PYTHON
+  // Re-evaluate trust from the hash store when preferences change (e.g. global trust toggled).
+  // For disk-backed Python files this ensures trusted reflects the current settings, so F5/F6
+  // are correctly enabled/disabled without requiring a manual "Trust Design" click.
+  if (language == LANG_PYTHON && !filepath.isEmpty()) {
+    trust_python_file();
+  }
   updateTrustBar();
 #endif
 }
