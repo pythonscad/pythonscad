@@ -156,6 +156,13 @@ void EditorInterface::resetLanguageDetection()
 
 #ifdef ENABLE_PYTHON
 extern bool python_trusted;
+bool EditorInterface::hasPythonTrustHash(void) const
+{
+  if (filepath.isEmpty()) return false;
+  QSettingsCached settings;
+  return !readPythonTrustHash(settings, filepath.toUtf8().constData()).isEmpty();
+}
+
 bool EditorInterface::trust_python_file(void)
 {
   if (python_trusted || Settings::SettingsPython::globalTrustPython.value() || filepath.isEmpty()) {

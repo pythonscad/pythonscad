@@ -68,6 +68,7 @@ public:
   void resetLanguageDetection();
 #ifdef ENABLE_PYTHON
   bool trust_python_file(void);
+  bool hasPythonTrustHash(void) const;
   void trustCurrent(void);
   void revokeTrust(void);
 #endif
