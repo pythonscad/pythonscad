@@ -2280,8 +2280,13 @@ void MainWindow::checkAutoReload()
 {
   if (!activeEditor->filepath.isEmpty()) {
 #ifdef ENABLE_PYTHON
+    // For untrusted Python files: still reload the buffer from disk and re-evaluate trust
+    // (so external edits are visible and a matching hash auto-trusts), but skip the compile.
     if (activeEditor->language == LANG_PYTHON && !activeEditor->trusted && !python_trusted &&
         !Settings::SettingsPython::globalTrustPython.value()) {
+      if (fileChangedOnDisk() && checkEditorModified()) {
+        tabManager->refreshDocument();
+      }
       return;
     }
 #endif

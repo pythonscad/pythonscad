@@ -1040,7 +1040,8 @@ bool TabManager::refreshDocument()
 #endif
       auto text = reader.readAll();
       LOG("Loaded design '%1$s'.", editor->filepath.toStdString());
-      if (editor->toPlainText() != text) {
+      const bool contentChanged = editor->toPlainText() != text;
+      if (contentChanged) {
         editor->setPlainText(text);
         setContentRenderState();  // since last render
         editor->recomputeLanguageActive();
@@ -1049,14 +1050,15 @@ bool TabManager::refreshDocument()
       // Run trust check unconditionally — text may match (session restore) but trusted
       // is still at its default (false) and needs to be resolved from the hash store.
       if (editor->language == LANG_PYTHON) {
-        if (editor->trusted && !python_trusted && !Settings::SettingsPython::globalTrustPython.value()) {
+        if (editor->trusted && contentChanged && !python_trusted &&
+            !Settings::SettingsPython::globalTrustPython.value()) {
           // File changed externally while per-file trusted (e.g. external editor workflow).
           // Re-trust and update the stored hash so future opens also auto-trust.
           // Skip under global/CLI trust to avoid creating spurious per-file hash entries.
           editor->trustCurrent();
         } else {
-          // Fresh open or previously untrusted — run hash check eagerly so the
-          // trust bar appears immediately without requiring a compile first.
+          // Fresh open, previously untrusted, or content unchanged — run hash check
+          // eagerly so the trust bar appears immediately without requiring a compile first.
           editor->trust_python_file();
         }
       } else {
