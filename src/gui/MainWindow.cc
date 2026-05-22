@@ -2279,6 +2279,12 @@ void MainWindow::parseTopLevelDocument(bool pythonDryRunFullScript)
 void MainWindow::checkAutoReload()
 {
   if (!activeEditor->filepath.isEmpty()) {
+#ifdef ENABLE_PYTHON
+    if (activeEditor->language == LANG_PYTHON && !activeEditor->trusted && !python_trusted &&
+        !Settings::SettingsPython::globalTrustPython.value()) {
+      return;
+    }
+#endif
     actionReloadRenderPreview();
   }
 }
@@ -2329,7 +2335,11 @@ void MainWindow::actionReloadRenderPreview()
 
 void MainWindow::csgReloadRender()
 {
-  if (this->rootNode) compileCSG();
+  if (this->rootNode) {
+    compileCSG();
+  } else {
+    compileEnded();
+  }
 }
 
 void MainWindow::prepareCompile(const char *afterCompileSlot, bool procevents, bool preview)
@@ -2375,7 +2385,11 @@ void MainWindow::actionRenderPreview()
 
 void MainWindow::csgRender()
 {
-  if (this->rootNode) compileCSG();
+  if (this->rootNode) {
+    compileCSG();
+  } else {
+    compileEnded();
+  }
 }
 
 void MainWindow::csgRenderFinished()
@@ -3972,8 +3986,12 @@ void MainWindow::onTabManagerEditorContentReloaded(EditorInterface *reloadedEdit
   setCurrentOutput();
   try {
     // when a new editor is created, it is important to compile the initial geometry
-    // so the customizer panels are ok.
-    parseDocument(reloadedEditor, true);
+    // so the customizer panels are ok. Skip for untrusted Python files — the trust
+    // bar will trigger a dry-run once the user clicks "Trust Design".
+    const bool canParse = reloadedEditor->language != LANG_PYTHON || reloadedEditor->trusted ||
+                          python_trusted || Settings::SettingsPython::globalTrustPython.value() ||
+                          reloadedEditor->filepath.isEmpty();
+    if (canParse) parseDocument(reloadedEditor, true);
     if (reloadedEditor == activeEditor) {
       lastCompiledDoc = activeEditor->toPlainText();
     }
@@ -4003,8 +4021,18 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   editorTrustConnection = connect(newEditor, &EditorInterface::trustStateChanged, this, [this]() {
     if (!activeEditor) return;
     updatePythonTrustActions();
-    // When a design becomes trusted, run a dry-run immediately to populate the customizer.
-    if (activeEditor->trusted) parseTopLevelDocument(true);
+    if (activeEditor->trusted) {
+      // Populate the customizer via dry-run. If GuiLocker is held (e.g. a compile was
+      // already running when trust was granted), defer until the event loop is free so
+      // we don't re-enter initPython() while the CSG worker holds the GIL.
+      if (GuiLocker::isLocked()) {
+        QTimer::singleShot(0, this, [this]() {
+          if (activeEditor && activeEditor->trusted) parseTopLevelDocument(true);
+        });
+      } else {
+        parseTopLevelDocument(true);
+      }
+    }
   });
 #endif
 
@@ -4023,7 +4051,11 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
 
   // If there is no renderedEditor we request for a new preview if the
   // auto-reload is enabled.
-  if (renderedEditor == nullptr && designActionAutoReload->isChecked() && !MainWindow::isEmpty()) {
+  const bool editorTrusted = newEditor->trusted || python_trusted ||
+                             Settings::SettingsPython::globalTrustPython.value() ||
+                             newEditor->filepath.isEmpty() || newEditor->language != LANG_PYTHON;
+  if (renderedEditor == nullptr && designActionAutoReload->isChecked() && !MainWindow::isEmpty() &&
+      editorTrusted) {
     // Do not prime autoReloadId here for dirty on-disk tabs: session restore already syncs ids for
     // all file-backed tabs, and priming only the *active* tab used to make the first auto-reload
     // compile behave differently from switching to another dirty tab first (empty id → reload path).
