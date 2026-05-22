@@ -1713,12 +1713,15 @@ void MainWindow::on_fileActionSaveAs_triggered()
 #ifdef ENABLE_PYTHON
 void MainWindow::updatePythonTrustActions()
 {
-  const bool isUntrustedPython = activeEditor && activeEditor->language == LANG_PYTHON &&
-                                 !activeEditor->filepath.isEmpty() && !activeEditor->trusted &&
-                                 !python_trusted && !Settings::SettingsPython::globalTrustPython.value();
+  const bool isPythonWithPath =
+    activeEditor && activeEditor->language == LANG_PYTHON && !activeEditor->filepath.isEmpty();
+  const bool isUntrustedPython = isPythonWithPath && !activeEditor->trusted && !python_trusted &&
+                                 !Settings::SettingsPython::globalTrustPython.value();
   designActionPreview->setEnabled(!isUntrustedPython);
   designActionRender->setEnabled(!isUntrustedPython);
-  fileActionPythonTrustCurrent->setEnabled(isUntrustedPython);
+  // Checkable action: enabled for any saved Python design, checked when trusted.
+  fileActionPythonTrustCurrentDesign->setEnabled(isPythonWithPath);
+  fileActionPythonTrustCurrentDesign->setChecked(isPythonWithPath && activeEditor->trusted);
   // Only disable the parameter widget here; re-enabling is left to parseDocument() so
   // we don't override its intentional disable (e.g. no parameters, parse failure).
   if (isUntrustedPython && activeEditor) activeEditor->parameterWidget->setEnabled(false);
@@ -1727,6 +1730,12 @@ void MainWindow::updatePythonTrustActions()
 
 void MainWindow::on_fileActionPythonRevoke_triggered()
 {
+  const auto ret =
+    QMessageBox::question(this, _("Revoke All Trusted Designs"),
+                          _("This will revoke trust for all Python designs.\n\nAre you sure?"),
+                          QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+  if (ret != QMessageBox::Yes) return;
+
   QSettingsCached settings;
 #ifdef ENABLE_PYTHON
   python_trusted = false;
@@ -1735,14 +1744,22 @@ void MainWindow::on_fileActionPythonRevoke_triggered()
   }
 #endif
   settings.remove("python_hash");
-  QMessageBox::information(this, _("Trusted Designs"), _("All trusted Python designs revoked."),
-                           QMessageBox::Ok);
 }
 
-void MainWindow::on_fileActionPythonTrustCurrent_triggered()
+void MainWindow::on_fileActionPythonTrustCurrentDesign_triggered()
 {
 #ifdef ENABLE_PYTHON
-  activeEditor->trustCurrent();
+  if (!activeEditor || activeEditor->language != LANG_PYTHON || activeEditor->filepath.isEmpty()) return;
+  if (activeEditor->trusted) {
+    // Revoke trust for this design only — remove its hash entry and clear trusted flag.
+    const QByteArray pathUtf8 = activeEditor->filepath.toUtf8();
+    QSettingsCached settings;
+    settings.remove(
+      QStringLiteral("python_hash/%1").arg(QString::fromUtf8(pathUtf8.toPercentEncoding())));
+    activeEditor->revokeTrust();
+  } else {
+    activeEditor->trustCurrent();
+  }
 #endif
 }
 
@@ -2271,6 +2288,17 @@ void MainWindow::parseTopLevelDocument(bool pythonDryRunFullScript)
 
   const bool skipRootUpdate =
     pythonDryRunFullScript && activeEditor && activeEditor->language == LANG_PYTHON;
+
+#ifdef ENABLE_PYTHON
+  // Skip dry-run entirely for untrusted Python files: the trust bar is the gate,
+  // and parseDocument would only log a WARNING and return null anyway.
+  if (pythonDryRunFullScript && activeEditor && activeEditor->language == LANG_PYTHON) {
+    const bool effectivelyTrusted = activeEditor->trusted || python_trusted ||
+                                    Settings::SettingsPython::globalTrustPython.value() ||
+                                    activeEditor->filepath.isEmpty();
+    if (!effectivelyTrusted) return;
+  }
+#endif
 
   if (!skipRootUpdate) {
     this->lastCompiledDoc = activeEditor->toPlainText();

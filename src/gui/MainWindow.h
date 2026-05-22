@@ -290,7 +290,7 @@ private slots:
   void on_fileActionSave_triggered();
   void on_fileActionSaveAs_triggered();
   void on_fileActionPythonRevoke_triggered();
-  void on_fileActionPythonTrustCurrent_triggered();
+  void on_fileActionPythonTrustCurrentDesign_triggered();
   void on_fileActionPythonCreateVenv_triggered();
   void on_fileActionPythonSelectVenv_triggered();
   void on_fileActionSaveACopy_triggered();
