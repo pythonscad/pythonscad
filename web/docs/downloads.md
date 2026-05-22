@@ -67,6 +67,10 @@
                     other: "Other"
                 };
                 const sectionBlurbs = {
+                    windows:
+                        "Windows binaries are not yet code-signed. See the "
+                        + "<a href=\"../installation/#windows\">Windows installation instructions</a> "
+                        + "for workarounds.",
                     "linux-debian":
                         "The <a href=\"https://repos.pythonscad.org/apt/\">APT repository</a> is the "
                         + "preferred way to install PythonSCAD on Debian and Ubuntu.",
