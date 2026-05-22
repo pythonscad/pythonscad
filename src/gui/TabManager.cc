@@ -582,6 +582,12 @@ void TabManager::createTab(const QString& filename, bool initializeEmptyEditor)
     }
   } else {
     openTabFile(filename);
+    // Prime autoReloadId directly so the first auto-reload tick doesn't treat the fresh
+    // file as "changed on disk". We can't rely on fileChangedOnDisk() here because
+    // activeEditor still points at the previous tab at this point.
+    if (!editor->filepath.isEmpty()) {
+      editor->autoReloadId = MainWindow::autoReloadIdentityForPath(editor->filepath);
+    }
   }
   parent->activeEditor = editor;
   editorList.insert(editor);
@@ -1065,7 +1071,7 @@ bool TabManager::refreshDocument()
           // check is not short-circuited if global trust is later disabled.
           if (contentChanged &&
               (python_trusted || Settings::SettingsPython::globalTrustPython.value())) {
-            editor->trusted = false;
+            editor->revokeTrust();
           }
           editor->trust_python_file();
         }
