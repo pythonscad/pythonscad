@@ -1893,6 +1893,9 @@ bool TabManager::save(EditorInterface *edt, const QString& path)
   // this condition.
   // FIXME jeff hayes - i have recently seen a better way to handle this, when i have found that note
   // again i will revist this
+#ifdef ENABLE_PYTHON
+  const bool wasUntitled = !edt->diskBacked || edt->filepath.isEmpty();
+#endif
   QSaveFile file(path);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
     saveError(file, _("Failed to open file for writing"), path);
@@ -1922,11 +1925,16 @@ bool TabManager::save(EditorInterface *edt, const QString& path)
     QSettingsCached settings;
     settings.setValue(QStringLiteral("lastOpenDirName"), QFileInfo(path).absolutePath());
 #ifdef ENABLE_PYTHON
-    // Update the stored hash when saving a trusted Python design so the hash
-    // matches the new on-disk content and trust persists across restarts.
-    if (edt->language == LANG_PYTHON && edt->trusted && !python_trusted &&
+    if (edt->language == LANG_PYTHON && !python_trusted &&
         !Settings::SettingsPython::globalTrustPython.value()) {
-      edt->trustCurrent();
+      // First save of a user-authored buffer: the design was trusted as untitled
+      // (filepath was empty) but has no per-file hash yet. Trust it immediately so
+      // Preview/Render remain enabled and a persistent hash entry is written.
+      // For subsequent saves of already-trusted designs, update the hash to match
+      // the new on-disk content so trust persists across restarts.
+      if (wasUntitled || edt->trusted) {
+        edt->trustCurrent();
+      }
     }
 #endif
   } else {
