@@ -1921,6 +1921,14 @@ bool TabManager::save(EditorInterface *edt, const QString& path)
     edt->diskBacked = true;
     QSettingsCached settings;
     settings.setValue(QStringLiteral("lastOpenDirName"), QFileInfo(path).absolutePath());
+#ifdef ENABLE_PYTHON
+    // Update the stored hash when saving a trusted Python design so the hash
+    // matches the new on-disk content and trust persists across restarts.
+    if (edt->language == LANG_PYTHON && edt->trusted && !python_trusted &&
+        !Settings::SettingsPython::globalTrustPython.value()) {
+      edt->trustCurrent();
+    }
+#endif
   } else {
     saveError(file, _("Error saving design"), path);
   }
