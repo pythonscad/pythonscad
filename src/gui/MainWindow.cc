@@ -1719,6 +1719,7 @@ void MainWindow::updatePythonTrustActions()
   designActionPreview->setEnabled(!isUntrustedPython);
   designActionRender->setEnabled(!isUntrustedPython);
   fileActionPythonTrustCurrent->setEnabled(isUntrustedPython);
+  if (activeEditor) activeEditor->parameterWidget->setEnabled(!isUntrustedPython);
 }
 #endif
 
