@@ -164,7 +164,7 @@ private:
   bool indicatorsActive = false;
 
 #ifdef ENABLE_PYTHON
-  QFrame *pythonTrustBar;
+  QFrame *pythonTrustBar = nullptr;
   void updateTrustBar();
   void updateTrustBarPalette();
 #endif
