@@ -19,3 +19,10 @@ void CocoaUtils::setAppearance(bool dark)
     [NSAppearance appearanceNamed:dark ? NSAppearanceNameDarkAqua : NSAppearanceNameAqua];
   [NSApp setAppearance:appearance];
 }
+
+void CocoaUtils::resetAppearance()
+{
+  // Passing nil lets macOS manage the app appearance based on the system
+  // setting, which is required for colorSchemeChanged to fire at runtime.
+  [NSApp setAppearance:nil];
+}

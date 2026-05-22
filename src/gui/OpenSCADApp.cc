@@ -233,10 +233,15 @@ void OpenSCADApp::setGuiTheme(const QString& preference)
   scadApp->setPalette(themePalette);
 
 #ifdef Q_OS_MACOS
-  // Force the native macOS appearance to match PythonSCAD's theme so that
-  // Cocoa-rendered elements (e.g. scroll area viewports) use the right colors
-  // even when the app theme differs from the system-wide dark/light setting.
-  CocoaUtils::setAppearance(useDark);
+  // For explicit dark/light, lock NSApp appearance so Cocoa widgets match.
+  // For "auto", pass nil so macOS manages it — this keeps colorSchemeChanged
+  // firing on OS-level changes, which would otherwise be silenced once the
+  // app appearance is locked.
+  if (preference == "auto") {
+    CocoaUtils::resetAppearance();
+  } else {
+    CocoaUtils::setAppearance(useDark);
+  }
 #endif
 
   QIcon::setThemeName(useDark ? "chokusen-dark" : "chokusen");
