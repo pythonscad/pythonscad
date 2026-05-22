@@ -2170,7 +2170,12 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
     initPython(venv, fnameNative, &r);
     editor->resetHighlighting();
     editor->parameterWidget->setEnabled(false);
-    if (this->rootFile != nullptr) {
+    // Only reuse rootFile if it belongs to this editor's design; otherwise it may be a
+    // previously-compiled SCAD file and injecting Python parameters into it corrupts state.
+    const bool rootFileMatchesEditor =
+      this->rootFile != nullptr &&
+      this->rootFile->getFilename() == editor->filepath.toLocal8Bit().constData();
+    if (rootFileMatchesEditor) {
       const size_t evalEnd = findLastAddParameterEvaluationEnd(fulltext_py);
       if (evalEnd != std::string::npos) {
         std::string par_text = fulltext_py.substr(0, evalEnd);

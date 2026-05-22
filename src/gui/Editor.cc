@@ -159,8 +159,8 @@ extern bool python_trusted;
 bool EditorInterface::hasPythonTrustHash(void) const
 {
   if (filepath.isEmpty()) return false;
-  const std::string pathUtf8(filepath.toUtf8().constData(),
-                             static_cast<size_t>(filepath.toUtf8().size()));
+  const QByteArray pathBytes = filepath.toUtf8();
+  const std::string pathUtf8(pathBytes.constData(), static_cast<size_t>(pathBytes.size()));
   QSettingsCached settings;
   // Pure presence check — no migration side-effects. Check all key variants.
   return settings.contains(pythonTrustSettingKeyNew(pathUtf8)) ||
