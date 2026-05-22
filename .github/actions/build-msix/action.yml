@@ -155,6 +155,10 @@ runs:
         $caps.AppendChild($dc) | Out-Null
         $pkg.AppendChild($caps) | Out-Null
 
+        if (-not (Test-Path $env:MSIX_STAGING_DIR)) {
+          Write-Error "staging-dir '$env:MSIX_STAGING_DIR' does not exist. Ensure cmake --install ran successfully."
+          exit 1
+        }
         $manifestPath = Join-Path $env:MSIX_STAGING_DIR "AppxManifest.xml"
         $settings = New-Object System.Xml.XmlWriterSettings
         $settings.Indent = $true
@@ -235,7 +239,13 @@ runs:
         $b64 = ($env:CERT_BASE64 -split "`n" |
           Where-Object { $_ -notmatch '^\s*-----' -and $_.Trim() -ne '' } |
           ForEach-Object { $_.Trim() }) -join ''
-        [System.IO.File]::WriteAllBytes($pfxPath, [System.Convert]::FromBase64String($b64))
+        try {
+          $certBytes = [System.Convert]::FromBase64String($b64)
+        } catch {
+          Write-Error "sign-certificate-base64 is not valid Base64. Check that the secret was pasted correctly and is not truncated."
+          exit 1
+        }
+        [System.IO.File]::WriteAllBytes($pfxPath, $certBytes)
         try {
           $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" `
             -ErrorAction SilentlyContinue |
