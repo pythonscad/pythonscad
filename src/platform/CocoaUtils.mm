@@ -4,7 +4,7 @@
 
 void CocoaUtils::endApplication()
 {
-  [[NSNotificationCenter defaultCenter] postNotificationName:@"NSApplicationWillTerminateNotification"
+  [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillTerminateNotification
                                                       object:nil];
 }
 
