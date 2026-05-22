@@ -172,12 +172,9 @@ bool EditorInterface::hasPythonTrustHash(void) const
 bool EditorInterface::trust_python_file(void)
 {
   if (python_trusted || Settings::SettingsPython::globalTrustPython.value() || filepath.isEmpty()) {
-    // Global trust, CLI flag, or unsaved buffer — mark trusted so disabling global trust
-    // later doesn't incorrectly show the bar.
-    if (!trusted) {
-      trusted = true;
-      emit trustStateChanged();
-    }
+    // Global/CLI trust or unsaved buffer: effective trust without a per-file hash.
+    // Do NOT set trusted=true here — trusted is reserved for hash-verified per-file trust.
+    // Callers check effective trust as: trusted || python_trusted || globalTrustPython.
     return true;
   }
 
