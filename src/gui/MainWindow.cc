@@ -1719,7 +1719,9 @@ void MainWindow::updatePythonTrustActions()
   designActionPreview->setEnabled(!isUntrustedPython);
   designActionRender->setEnabled(!isUntrustedPython);
   fileActionPythonTrustCurrent->setEnabled(isUntrustedPython);
-  if (activeEditor) activeEditor->parameterWidget->setEnabled(!isUntrustedPython);
+  // Only disable the parameter widget here; re-enabling is left to parseDocument() so
+  // we don't override its intentional disable (e.g. no parameters, parse failure).
+  if (isUntrustedPython && activeEditor) activeEditor->parameterWidget->setEnabled(false);
 }
 #endif
 
