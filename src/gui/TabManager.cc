@@ -1294,6 +1294,13 @@ void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath
   auto [fname, fpath] = getEditorTabNameWithModifier(edt);
   setEditorTabName(fname, fpath, edt);
   updateTabIcon(edt);
+#ifdef ENABLE_PYTHON
+  // Eagerly initialize trust state for disk-backed Python tabs so the trust bar
+  // and Preview/Render actions are correct as soon as the session is restored.
+  if (edt->language == LANG_PYTHON && !filepath.isEmpty()) {
+    edt->trust_python_file();
+  }
+#endif
 }
 
 void TabManager::saveSession(const QString& path)
