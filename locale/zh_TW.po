@@ -1727,7 +1727,7 @@ msgstr "刷新快取(&F)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1468
 msgid "&PythonSCAD Homepage"
-msgstr "PythonSCAD首頁(&O)"
+msgstr "PythonSCAD首頁(&P)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1469
 msgid "&Automatic Reload and Preview"
