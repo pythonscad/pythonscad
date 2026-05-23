@@ -2702,7 +2702,7 @@ msgstr ""
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2406
 msgid "Enable tracing of HIDAPI events (requires restart of PythonSCAD)"
-msgstr ""
+msgstr "Увімкнути локалізацію інтерфейсу (потребує перезапуску PythonSCAD)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2407
 msgid "Dialog visibility"
