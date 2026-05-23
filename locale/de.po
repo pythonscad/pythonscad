@@ -231,7 +231,7 @@ msgstr "Achseneinstellung:"
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:893
 msgid "<b>Driver selection:</b> <i>(changes require restarting PythonSCAD)</i>"
 msgstr ""
-"<b>Treiber Auswahl:</b> <i>Änderungen erfordern einen Neustart von "
+"<b>Treiber Auswahl:</b> <i>(Änderungen erfordern einen Neustart von "
 "PythonSCAD)</i>"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:894
