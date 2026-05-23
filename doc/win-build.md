@@ -34,6 +34,7 @@ Follow these steps to build PythonSCAD with Microsoft Visual Studio:
   scripts\win-msvc-build.bat in it:
 
   ```powershell
+  cd d:\
   git clone https://github.com/pythonscad/pythonscad.git
   cd pythonscad
   .\scripts\win-msvc-build.bat
