@@ -225,7 +225,6 @@ msgid "Axis Setup:"
 msgstr "Definição de Eixo:"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:893
-#, fuzzy
 msgid "<b>Driver selection:</b> <i>(changes require restarting PythonSCAD)</i>"
 msgstr ""
 "<b>Seleção de driver:</b> <i>(alterações exigem a reinicialização do "
