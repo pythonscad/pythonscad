@@ -45,35 +45,42 @@ the **public certificate** (PEM format) for the CI workflow.
 Download and install **proCertum CardManager** from the Certum website. This
 provides the PKCS#11 module that jsign uses to communicate with SimplySign.
 
-### 2.2 Export the certificate as PEM
+### 2.2 Export the certificate as DER
 
-On Windows, open a PowerShell prompt and run:
+The CI action expects **base64-encoded DER** (the raw binary certificate format),
+not a PEM text file. Export the DER bytes from your system certificate store:
+
+On Windows (PowerShell):
 
 ```powershell
-# List certificates on your SimplySign account
+# List certificates — find your Certum cert by thumbprint or issuer
 certutil -scinfo
 
-# Export the certificate to PEM (replace CERT_THUMBPRINT with your cert's thumbprint)
+# Export raw DER bytes (replace CERT_THUMBPRINT with your cert's thumbprint)
 $cert = Get-ChildItem Cert:\CurrentUser\My | Where-Object { $_.Thumbprint -eq 'CERT_THUMBPRINT' }
-$pemContent = "-----BEGIN CERTIFICATE-----`n" +
-  [Convert]::ToBase64String($cert.RawData, 'InsertLineBreaks') +
-  "`n-----END CERTIFICATE-----"
-$pemContent | Out-File -FilePath certum.pem -Encoding ascii
+[IO.File]::WriteAllBytes("certum.cer", $cert.RawData)
 ```
 
-Alternatively, use OpenSSL once the certificate appears in your system store:
+On Linux/macOS (if the cert was already downloaded as `.pem`):
 
 ```bash
-openssl x509 -in certum.cer -inform DER -out certum.pem
+openssl x509 -in certum.pem -outform DER -out certum.cer
 ```
 
-### 2.3 Base64-encode the PEM for GitHub
+### 2.3 Base64-encode the DER for GitHub
 
 ```bash
-base64 -w 0 certum.pem
+# Linux/macOS
+base64 -w0 certum.cer
+
+# PowerShell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("certum.cer"))
 ```
 
-Copy the entire output — you will paste it into a GitHub secret.
+Copy the entire single-line output — you will paste it into a GitHub secret.
+
+**Important:** the secret must be base64 of the raw DER bytes, not base64 of a
+PEM text file. The two look similar but are not interchangeable.
 
 ### 2.4 Find your certificate's CN
 

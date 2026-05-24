@@ -276,11 +276,12 @@ jobs:
       # When signing is active the SimplySign Android/iOS app will show a push
       # notification for each signed file — approve it to unblock the workflow.
       - name: Sign artifacts (Certum SimplySign)
+        if: steps.artifacts.outputs.exe_path != ''
         uses: ./.github/actions/sign-windows
         with:
           certum-certificate-base64: ${{ secrets.CERTUM_CERTIFICATE_BASE64 }}
           certum-card-pin: ${{ secrets.CERTUM_CARD_PIN }}
-          files: artifacts/*.exe
+          files: ${{ steps.artifacts.outputs.exe_path }}
 
       - name: Upload ZIP package
         if: steps.artifacts.outputs.zip_path != ''

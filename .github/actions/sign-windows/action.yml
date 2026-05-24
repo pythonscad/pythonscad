@@ -9,9 +9,11 @@ description: >
 inputs:
   certum-certificate-base64:
     description: >
-      Base64-encoded PEM certificate exported from Certum (public cert only —
-      the private key stays on the SimplySign HSM). Store in a GitHub Actions
-      secret (e.g. CERTUM_CERTIFICATE_BASE64).
+      Base64-encoded DER certificate exported from Certum (public cert only —
+      the private key stays on the SimplySign HSM). Obtain the DER bytes with
+      `openssl x509 -in certum.pem -outform DER -out certum.cer`, then
+      `base64 -w0 certum.cer`. Store the result in a GitHub Actions secret
+      (e.g. CERTUM_CERTIFICATE_BASE64).
     required: false
     default: ''
   certum-card-pin:
@@ -25,7 +27,7 @@ inputs:
   timestamp-url:
     description: 'RFC 3161 timestamp server URL'
     required: false
-    default: 'http://time.certum.pl'
+    default: 'https://time.certum.pl'
   files:
     description: >
       Space-separated list of files (or glob patterns) to sign.
@@ -62,9 +64,18 @@ runs:
       shell: powershell
       run: |
         $version = "7.1"
+        $expectedSha256 = "cfb48b07fdd2ee199bfc9e71d8dccdde67a799c4793602e446c7a101be62b3c4"
         $url = "https://github.com/ebourg/jsign/releases/download/$version/jsign-$version.jar"
-        Write-Host "Downloading jsign $version from $url"
-        Invoke-WebRequest $url -OutFile "$env:RUNNER_TEMP\jsign.jar"
+        $dest = "$env:RUNNER_TEMP\jsign.jar"
+        Write-Host "Downloading jsign $version"
+        Invoke-WebRequest $url -OutFile $dest
+        $actual = (Get-FileHash $dest -Algorithm SHA256).Hash.ToLower()
+        if ($actual -ne $expectedSha256) {
+          Write-Error "jsign SHA-256 mismatch: expected $expectedSha256 got $actual"
+          Remove-Item $dest -Force
+          exit 1
+        }
+        Write-Host "jsign SHA-256 verified."
 
     - name: Decode certificate
       if: steps.check.outputs.enabled == 'true'
@@ -72,19 +83,16 @@ runs:
       env:
         CERTUM_CERT_BASE64: ${{ inputs.certum-certificate-base64 }}
       run: |
-        # Strip PEM header/footer lines and whitespace if present
-        $b64 = ($env:CERTUM_CERT_BASE64 -split "`n" |
-          Where-Object { $_ -notmatch '^\s*-----' -and $_.Trim() -ne '' } |
-          ForEach-Object { $_.Trim() }) -join ''
+        # The secret is base64(DER). Decode to raw DER bytes and write a PEM
+        # file so jsign's --certfile argument can parse it.
         try {
-          $certBytes = [Convert]::FromBase64String($b64)
+          $derBytes = [Convert]::FromBase64String($env:CERTUM_CERT_BASE64.Trim())
         } catch {
           Write-Error "certum-certificate-base64 is not valid Base64."
           exit 1
         }
         $certPath = Join-Path $env:RUNNER_TEMP "certum.pem"
-        # Write back as PEM so jsign can parse it
-        $pemBody = [Convert]::ToBase64String($certBytes, 'InsertLineBreaks')
+        $pemBody = [Convert]::ToBase64String($derBytes, 'InsertLineBreaks')
         "-----BEGIN CERTIFICATE-----`n$pemBody`n-----END CERTIFICATE-----" |
           Out-File -FilePath $certPath -Encoding ascii
         Write-Host "Certificate decoded to $certPath"
