@@ -129,6 +129,25 @@ When `CERTUM_CERTIFICATE_CN` is also set, the MSIX `publisher-cn` is
 automatically switched from the unsigned-namespace OID placeholder to your real
 certificate subject, which is required for a validly signed MSIX.
 
+### Runner prerequisite: proCertum CardManager
+
+`jsign --storetype CRYPTOCERTUM` communicates with the SimplySign cloud HSM
+via the **proCertum CardManager PKCS#11 driver** (`sc30pkcs11.dll`).
+GitHub-hosted `windows-latest` runners do not include this software.
+
+The sign-windows action checks for the DLL at startup and fails fast with a
+clear error if it is missing. Before enabling signing in production you must
+add a silent-install step to `.github/actions/sign-windows/action.yml`:
+
+```powershell
+Invoke-WebRequest <pinned-url> -OutFile cardmanager.exe
+if ((Get-FileHash cardmanager.exe -Algorithm SHA256).Hash.ToLower() -ne '<sha256>') { exit 1 }
+Start-Process cardmanager.exe -ArgumentList '/S' -Wait
+```
+
+Download the installer from the Certum website, pin both the URL and SHA-256,
+and replace the placeholder comment in the action before your first signed release.
+
 ### Mobile app interaction
 
 Each file signing operation contacts the SimplySign cloud HSM. If your account

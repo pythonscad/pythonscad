@@ -3,7 +3,7 @@ description: >
   Signs Windows PE files (.exe, .dll, .msix) using jsign with a Certum
   SimplySign cloud HSM certificate. The private key never leaves Certum's
   HSM; only the public certificate is stored in CI secrets.
-  When either CERTUM_CARD_PIN or certum-certificate-base64 is not set
+  When either certum-card-pin or certum-certificate-base64 is not set
   the step is skipped silently so unsigned test builds still work.
 
 inputs:
@@ -61,30 +61,32 @@ runs:
         java-version: '21'
 
     # jsign --storetype CRYPTOCERTUM communicates with the Certum SimplySign
-    # cloud HSM via the proCertum CardManager PKCS#11 driver. That driver must
-    # be installed on the runner; GitHub-hosted windows-latest runners do not
-    # include it. Install it here using the official silent installer.
-    # The installer URL and SHA-256 should be updated when Certum releases a
-    # new version. The current version is 3.3.8.
-    - name: Install proCertum CardManager (SimplySign PKCS#11 driver)
+    # cloud HSM via the proCertum CardManager PKCS#11 driver. GitHub-hosted
+    # windows-latest runners do not include this software. Check for the DLL
+    # and fail fast with a clear error rather than letting jsign produce a
+    # cryptic PKCS#11 module-not-found message.
+    #
+    # To install the driver, replace this step with a pinned silent-install:
+    #   Invoke-WebRequest <url> -OutFile cardmanager.exe
+    #   if ((Get-FileHash cardmanager.exe -Algorithm SHA256).Hash -ne '<sha256>') { exit 1 }
+    #   Start-Process cardmanager.exe -ArgumentList '/S' -Wait
+    # Download the installer from https://www.certum.eu/en/cert_guide/
+    # and pin both the URL and SHA-256 before enabling this in production.
+    - name: Check proCertum CardManager (SimplySign PKCS#11 driver)
       if: steps.check.outputs.enabled == 'true'
       shell: powershell
       run: |
-        $url = "https://www.certum.eu/en/software/procertum-cardmanager-download/"
-        Write-Warning @"
-        proCertum CardManager must be installed for Certum SimplySign signing.
-        GitHub-hosted runners do not include this software.
-        Please download the installer from:
-          $url
-        Pin its SHA-256 and installer URL in this action, then replace this
-        warning block with a silent install step such as:
-          Invoke-WebRequest <pinned-url> -OutFile cardmanager.exe
-          if ((Get-FileHash cardmanager.exe -Algorithm SHA256).Hash.ToLower() -ne '<expected>') { exit 1 }
-          Start-Process cardmanager.exe -ArgumentList '/S' -Wait
-        Until then, signing will fail with a PKCS#11 module not found error.
-        "@
-        # Do not exit 1 here — let jsign fail with its own error so the message
-        # above is visible in the log alongside the actual failure.
+        $dll = "C:\Windows\System32\sc30pkcs11.dll"
+        if (-not (Test-Path $dll)) {
+          $msg = "proCertum CardManager PKCS#11 driver not found at $dll. " +
+            "jsign --storetype CRYPTOCERTUM requires this driver to communicate " +
+            "with the Certum SimplySign cloud HSM. GitHub-hosted runners do not include it. " +
+            "To fix: add a silent-install step for proCertum CardManager before this action runs. " +
+            "See doc/windows-code-signing.md for details."
+          Write-Error $msg
+          exit 1
+        }
+        Write-Host "proCertum CardManager PKCS#11 driver found at $dll"
 
     - name: Download jsign
       if: steps.check.outputs.enabled == 'true'
