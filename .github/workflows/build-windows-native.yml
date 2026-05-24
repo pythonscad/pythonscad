@@ -314,25 +314,34 @@ jobs:
           echo "msix_name=$MSIX_NAME" >> "$GITHUB_OUTPUT"
           echo "Using MSIX filename: $MSIX_NAME"
 
-      # Build MSIX. The composite action handles: locating makeappx,
-      # generating AppxManifest.xml, staging assets, and packing.
-      # Signing is done in a separate step below using Certum SimplySign
-      # so the publisher-cn can be the real certificate CN when secrets
-      # are present, or the unsigned-namespace OID otherwise.
-      - name: Derive MSIX publisher CN
-        id: msix-publisher
+      # Single prerequisite check for MSIX signing. Emits:
+      #   signing_enabled — true only when all three secrets are present
+      #   publisher_dn    — real Subject DN when signing, OID placeholder otherwise
+      # actionlint does not allow secrets.* in if: expressions, so secrets
+      # are exposed as env vars and evaluated in shell.
+      - name: Check MSIX signing prerequisites
+        id: msix-sign-check
         shell: bash
         env:
           CERTUM_CERT: ${{ secrets.CERTUM_CERTIFICATE_BASE64 }}
           CERTUM_PIN: ${{ secrets.CERTUM_CARD_PIN }}
-          CERTUM_CN: ${{ secrets.CERTUM_CERTIFICATE_CN }}
+          CERTUM_DN: ${{ secrets.CERTUM_CERTIFICATE_CN }}
         run: |
-          if [ -n "$CERTUM_CERT" ] && [ -n "$CERTUM_PIN" ] && [ -n "$CERTUM_CN" ]; then
-            echo "publisher_cn=$CERTUM_CN" >> "$GITHUB_OUTPUT"
+          if [ -n "$CERTUM_CERT" ] && [ -n "$CERTUM_PIN" ] && [ -n "$CERTUM_DN" ]; then
+            echo "signing_enabled=true" >> "$GITHUB_OUTPUT"
+            echo "publisher_dn=$CERTUM_DN" >> "$GITHUB_OUTPUT"
           else
-            echo "publisher_cn=CN=PythonSCAD, OID.2.25.311729368913984317654407730594956997722=1" >> "$GITHUB_OUTPUT"
+            echo "signing_enabled=false" >> "$GITHUB_OUTPUT"
+            echo "publisher_dn=CN=PythonSCAD, OID.2.25.311729368913984317654407730594956997722=1" >> "$GITHUB_OUTPUT"
+            echo "Signing disabled: one or more of CERTUM_CERTIFICATE_BASE64, CERTUM_CARD_PIN, CERTUM_CERTIFICATE_CN is not set."
+            echo "Without all three secrets the MSIX publisher Subject DN would not match the signing certificate."
           fi
 
+      # Build MSIX. The composite action handles: locating makeappx,
+      # generating AppxManifest.xml, staging assets, and packing.
+      # Signing is handled separately below so the publisher Subject DN
+      # can be set to the real certificate DN when secrets are present,
+      # or the unsigned-namespace OID placeholder otherwise.
       - name: Build MSIX package
         id: msix
         uses: ./.github/actions/build-msix
@@ -340,34 +349,15 @@ jobs:
           staging-dir: build/staging
           executable-name: pythonscad.exe
           package-version: ${{ steps.msix-version.outputs.version }}
-          publisher-cn: ${{ steps.msix-publisher.outputs.publisher_cn }}
+          publisher-cn: ${{ steps.msix-sign-check.outputs.publisher_dn }}
           icon-source: resources/icons/pythonscad.png
           output-msix: ${{ steps.msix-filename.outputs.msix_name }}
 
-      # Check whether all three MSIX signing secrets are set.
-      # actionlint does not allow secrets.* in if: expressions, so we
-      # expose them as env vars and emit an output from a shell step.
-      - name: Check MSIX signing prerequisites
-        id: msix-sign-check
-        shell: bash
-        env:
-          CERTUM_CERT: ${{ secrets.CERTUM_CERTIFICATE_BASE64 }}
-          CERTUM_PIN: ${{ secrets.CERTUM_CARD_PIN }}
-          CERTUM_CN: ${{ secrets.CERTUM_CERTIFICATE_CN }}
-        run: |
-          if [ -n "$CERTUM_CERT" ] && [ -n "$CERTUM_PIN" ] && [ -n "$CERTUM_CN" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping MSIX signing: one or more of CERTUM_CERTIFICATE_BASE64, CERTUM_CARD_PIN, CERTUM_CERTIFICATE_CN is not set."
-            echo "Without CERTUM_CERTIFICATE_CN the publisher-cn would not match the signing certificate Subject DN."
-          fi
-
-      # Gate MSIX signing on all three secrets. Without CERTUM_CERTIFICATE_CN
-      # the publisher-cn stays on the unsigned-namespace OID placeholder, which
-      # would not match the signing certificate Subject DN and produce an invalid MSIX.
+      # Gate MSIX signing on all three secrets (checked above). Without the
+      # real Subject DN the MSIX Identity Publisher would not match the signing
+      # certificate and makeappx/signtool would produce an invalid package.
       - name: Sign MSIX (Certum SimplySign)
-        if: steps.msix-sign-check.outputs.enabled == 'true'
+        if: steps.msix-sign-check.outputs.signing_enabled == 'true'
         uses: ./.github/actions/sign-windows
         with:
           certum-certificate-base64: ${{ secrets.CERTUM_CERTIFICATE_BASE64 }}
