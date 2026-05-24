@@ -344,7 +344,30 @@ jobs:
           icon-source: resources/icons/pythonscad.png
           output-msix: ${{ steps.msix-filename.outputs.msix_name }}
 
+      # Determine whether all three MSIX signing secrets are present.
+      # secrets context is not available in if: expressions, so we
+      # expose them as env vars and check in a shell step instead.
+      - name: Check MSIX signing prerequisites
+        id: msix-sign-check
+        shell: bash
+        env:
+          CERTUM_CERT: ${{ secrets.CERTUM_CERTIFICATE_BASE64 }}
+          CERTUM_PIN: ${{ secrets.CERTUM_CARD_PIN }}
+          CERTUM_CN: ${{ secrets.CERTUM_CERTIFICATE_CN }}
+        run: |
+          if [ -n "$CERTUM_CERT" ] && [ -n "$CERTUM_PIN" ] && [ -n "$CERTUM_CN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping MSIX signing: one or more of CERTUM_CERTIFICATE_BASE64, CERTUM_CARD_PIN, CERTUM_CERTIFICATE_CN is not set."
+            echo "Without CERTUM_CERTIFICATE_CN the publisher-cn would not match the signing certificate subject."
+          fi
+
+      # Gate MSIX signing on all three secrets. Without CERTUM_CERTIFICATE_CN
+      # the publisher-cn stays on the unsigned-namespace OID placeholder, which
+      # would not match the signing certificate subject and produce an invalid MSIX.
       - name: Sign MSIX (Certum SimplySign)
+        if: steps.msix-sign-check.outputs.enabled == 'true'
         uses: ./.github/actions/sign-windows
         with:
           certum-certificate-base64: ${{ secrets.CERTUM_CERTIFICATE_BASE64 }}

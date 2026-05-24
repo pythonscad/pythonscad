@@ -70,10 +70,13 @@ openssl x509 -in certum.pem -outform DER -out certum.cer
 ### 2.3 Base64-encode the DER for GitHub
 
 ```bash
-# Linux/macOS
+# Linux (GNU coreutils)
 base64 -w0 certum.cer
 
-# PowerShell
+# macOS (BSD base64 — does not support -w)
+base64 certum.cer | tr -d '\n'
+
+# PowerShell (Windows)
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("certum.cer"))
 ```
 

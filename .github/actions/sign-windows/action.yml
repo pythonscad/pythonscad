@@ -12,7 +12,8 @@ inputs:
       Base64-encoded DER certificate exported from Certum (public cert only —
       the private key stays on the SimplySign HSM). Obtain the DER bytes with
       `openssl x509 -in certum.pem -outform DER -out certum.cer`, then
-      `base64 -w0 certum.cer`. Store the result in a GitHub Actions secret
+      `base64 -w0 certum.cer` (Linux) or `base64 certum.cer | tr -d '\n'`
+      (macOS). Store the result in a GitHub Actions secret
       (e.g. CERTUM_CERTIFICATE_BASE64).
     required: false
     default: ''
