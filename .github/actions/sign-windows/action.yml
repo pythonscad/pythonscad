@@ -1,10 +1,11 @@
 name: Sign Windows Artifacts (Certum SimplySign)
 description: >
-  Signs Windows PE files (.exe, .dll, .msix) using jsign with a Certum
-  SimplySign cloud HSM certificate. The private key never leaves Certum's
-  HSM; only the public certificate is stored in CI secrets.
-  When either certum-card-pin or certum-certificate-base64 is not set
-  the step is skipped silently so unsigned test builds still work.
+  Signs Windows Authenticode-signable artifacts (.exe, .dll, .msix) using
+  jsign with a Certum SimplySign cloud HSM certificate. The private key
+  never leaves Certum's HSM; only the public certificate is stored in CI
+  secrets. When either certum-card-pin or certum-certificate-base64 is not
+  set the signing steps are skipped (a log line is emitted) so unsigned
+  test builds still work.
 
 inputs:
   certum-certificate-base64:
