@@ -1,0 +1,148 @@
+name: Sign Windows Artifacts (Certum SimplySign)
+description: >
+  Signs Windows PE files (.exe, .dll, .msix) using jsign with a Certum
+  SimplySign cloud HSM certificate. The private key never leaves Certum's
+  HSM; only the public certificate is stored in CI secrets.
+  When CERTUM_CARD_PIN is not set the step is skipped silently so
+  unsigned test builds still work.
+
+inputs:
+  certum-certificate-base64:
+    description: >
+      Base64-encoded PEM certificate exported from Certum (public cert only —
+      the private key stays on the SimplySign HSM). Store in a GitHub Actions
+      secret (e.g. CERTUM_CERTIFICATE_BASE64).
+    required: false
+    default: ''
+  certum-card-pin:
+    description: >
+      PIN for the SimplySign card/account. Store in a GitHub Actions secret
+      (e.g. CERTUM_CARD_PIN). When the SimplySign Android/iOS app is
+      configured for push-notification authorization, approving the prompt
+      in the app unblocks this step.
+    required: false
+    default: ''
+  timestamp-url:
+    description: 'RFC 3161 timestamp server URL'
+    required: false
+    default: 'http://time.certum.pl'
+  files:
+    description: >
+      Space-separated list of files (or glob patterns) to sign.
+      Example: "artifacts/*.exe artifacts/*.msix build/staging/*.dll"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Check signing inputs
+      id: check
+      shell: powershell
+      env:
+        CERTUM_PIN: ${{ inputs.certum-card-pin }}
+        CERTUM_CERT: ${{ inputs.certum-certificate-base64 }}
+      run: |
+        if (-not $env:CERTUM_PIN -or -not $env:CERTUM_CERT) {
+          Write-Host "Certum signing secrets not set — skipping code signing."
+          "enabled=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        } else {
+          Write-Host "Certum signing secrets present — signing will proceed."
+          "enabled=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        }
+
+    - name: Set up Java (required by jsign)
+      if: steps.check.outputs.enabled == 'true'
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '21'
+
+    - name: Download jsign
+      if: steps.check.outputs.enabled == 'true'
+      shell: powershell
+      run: |
+        $version = "7.1"
+        $url = "https://github.com/ebourg/jsign/releases/download/$version/jsign-$version.jar"
+        Write-Host "Downloading jsign $version from $url"
+        Invoke-WebRequest $url -OutFile "$env:RUNNER_TEMP\jsign.jar"
+
+    - name: Decode certificate
+      if: steps.check.outputs.enabled == 'true'
+      shell: powershell
+      env:
+        CERTUM_CERT_BASE64: ${{ inputs.certum-certificate-base64 }}
+      run: |
+        # Strip PEM header/footer lines and whitespace if present
+        $b64 = ($env:CERTUM_CERT_BASE64 -split "`n" |
+          Where-Object { $_ -notmatch '^\s*-----' -and $_.Trim() -ne '' } |
+          ForEach-Object { $_.Trim() }) -join ''
+        try {
+          $certBytes = [Convert]::FromBase64String($b64)
+        } catch {
+          Write-Error "certum-certificate-base64 is not valid Base64."
+          exit 1
+        }
+        $certPath = Join-Path $env:RUNNER_TEMP "certum.pem"
+        # Write back as PEM so jsign can parse it
+        $pemBody = [Convert]::ToBase64String($certBytes, 'InsertLineBreaks')
+        "-----BEGIN CERTIFICATE-----`n$pemBody`n-----END CERTIFICATE-----" |
+          Out-File -FilePath $certPath -Encoding ascii
+        Write-Host "Certificate decoded to $certPath"
+
+    - name: Sign files
+      if: steps.check.outputs.enabled == 'true'
+      shell: powershell
+      env:
+        CERTUM_PIN: ${{ inputs.certum-card-pin }}
+        TIMESTAMP_URL: ${{ inputs.timestamp-url }}
+        FILES_GLOB: ${{ inputs.files }}
+        JSIGN_JAR: ${{ runner.temp }}\jsign.jar
+      run: |
+        # Use the fixed well-known path written by the previous step
+        $certPath = Join-Path $env:RUNNER_TEMP "certum.pem"
+
+        # Expand glob patterns / space-separated paths to a concrete file list
+        $targets = @()
+        foreach ($pattern in $env:FILES_GLOB -split '\s+') {
+          $expanded = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue
+          if ($expanded) {
+            $targets += $expanded
+          } else {
+            Write-Warning "No files matched: $pattern"
+          }
+        }
+
+        if ($targets.Count -eq 0) {
+          Write-Error "No files found to sign. Check the 'files' input."
+          exit 1
+        }
+
+        Write-Host "Signing $($targets.Count) file(s):"
+        $targets | ForEach-Object { Write-Host "  $_" }
+
+        $failed = @()
+        foreach ($file in $targets) {
+          Write-Host "`nSigning: $($file.FullName)"
+          # jsign with CRYPTOCERTUM storetype talks directly to the
+          # SimplySign PKCS#11 module. The mobile app push notification
+          # fires here; approve it in the SimplySign app to unblock.
+          java -jar $env:JSIGN_JAR `
+            --storetype CRYPTOCERTUM `
+            --storepass $env:CERTUM_PIN `
+            --certfile $certPath `
+            --tsaurl $env:TIMESTAMP_URL `
+            --tsmode RFC3161 `
+            $file.FullName
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Failed to sign: $($file.FullName)"
+            $failed += $file.FullName
+          }
+        }
+
+        Remove-Item $certPath -Force -ErrorAction SilentlyContinue
+
+        if ($failed.Count -gt 0) {
+          Write-Error "Signing failed for $($failed.Count) file(s):`n$($failed -join "`n")"
+          exit 1
+        }
+        Write-Host "`nAll files signed successfully."

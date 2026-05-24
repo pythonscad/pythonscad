@@ -269,6 +269,19 @@ jobs:
             echo "exe_name=$(basename "$EXE_FILE" .exe)" >> $GITHUB_OUTPUT
           fi
 
+      # Sign the NSIS installer EXE with Certum SimplySign.
+      # Requires repository secrets CERTUM_CERTIFICATE_BASE64 and CERTUM_CARD_PIN.
+      # If either secret is absent the step is skipped and an unsigned artifact
+      # is produced (suitable for test/snapshot builds).
+      # When signing is active the SimplySign Android/iOS app will show a push
+      # notification for each signed file — approve it to unblock the workflow.
+      - name: Sign artifacts (Certum SimplySign)
+        uses: ./.github/actions/sign-windows
+        with:
+          certum-certificate-base64: ${{ secrets.CERTUM_CERTIFICATE_BASE64 }}
+          certum-card-pin: ${{ secrets.CERTUM_CARD_PIN }}
+          files: artifacts/*.exe
+
       - name: Upload ZIP package
         if: steps.artifacts.outputs.zip_path != ''
         uses: actions/upload-artifact@v7
@@ -285,12 +298,6 @@ jobs:
           path: ${{ steps.artifacts.outputs.exe_path }}
           retention-days: 30
 
-      # Build MSIX before the release upload so it can be included in the release assets.
-      # The composite action handles: locating makeappx, generating AppxManifest.xml,
-      # staging assets, packing, and optional code signing.
-      # To enable code signing add secrets WINDOWS_SIGN_CERTIFICATE (base64 PFX) and
-      # WINDOWS_SIGN_CERTIFICATE_PASSWORD to the repository, then uncomment the
-      # sign-certificate-base64 / sign-certificate-password inputs below.
       - name: Derive MSIX filename (match CPack ZIP naming)
         id: msix-filename
         run: |
@@ -306,6 +313,24 @@ jobs:
           echo "msix_name=$MSIX_NAME" >> "$GITHUB_OUTPUT"
           echo "Using MSIX filename: $MSIX_NAME"
 
+      # Build MSIX. The composite action handles: locating makeappx,
+      # generating AppxManifest.xml, staging assets, and packing.
+      # Signing is done in a separate step below using Certum SimplySign
+      # so the publisher-cn can be the real certificate CN when secrets
+      # are present, or the unsigned-namespace OID otherwise.
+      - name: Derive MSIX publisher CN
+        id: msix-publisher
+        shell: bash
+        env:
+          CERTUM_CERT: ${{ secrets.CERTUM_CERTIFICATE_BASE64 }}
+          CERTUM_CN: ${{ secrets.CERTUM_CERTIFICATE_CN }}
+        run: |
+          if [ -n "$CERTUM_CERT" ] && [ -n "$CERTUM_CN" ]; then
+            echo "publisher_cn=$CERTUM_CN" >> "$GITHUB_OUTPUT"
+          else
+            echo "publisher_cn=CN=PythonSCAD, OID.2.25.311729368913984317654407730594956997722=1" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build MSIX package
         id: msix
         uses: ./.github/actions/build-msix
@@ -313,11 +338,16 @@ jobs:
           staging-dir: build/staging
           executable-name: pythonscad.exe
           package-version: ${{ steps.msix-version.outputs.version }}
-          publisher-cn: 'CN=PythonSCAD, OID.2.25.311729368913984317654407730594956997722=1'
+          publisher-cn: ${{ steps.msix-publisher.outputs.publisher_cn }}
           icon-source: resources/icons/pythonscad.png
           output-msix: ${{ steps.msix-filename.outputs.msix_name }}
-          # sign-certificate-base64: ${{ secrets.WINDOWS_SIGN_CERTIFICATE }}
-          # sign-certificate-password: ${{ secrets.WINDOWS_SIGN_CERTIFICATE_PASSWORD }}
+
+      - name: Sign MSIX (Certum SimplySign)
+        uses: ./.github/actions/sign-windows
+        with:
+          certum-certificate-base64: ${{ secrets.CERTUM_CERTIFICATE_BASE64 }}
+          certum-card-pin: ${{ secrets.CERTUM_CARD_PIN }}
+          files: ${{ steps.msix-filename.outputs.msix_name }}
 
       - name: Upload MSIX artifact
         uses: actions/upload-artifact@v7
