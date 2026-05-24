@@ -85,18 +85,18 @@ Copy the entire single-line output — you will paste it into a GitHub secret.
 **Important:** the secret must be base64 of the raw DER bytes, not base64 of a
 PEM text file. The two look similar but are not interchangeable.
 
-### 2.4 Find your certificate's CN
+### 2.4 Find your certificate's full Subject DN
 
-The MSIX `publisher-cn` field must exactly match the Subject CN of your
-certificate. Find it with:
+The MSIX `publisher-cn` field must exactly match the full **Subject Distinguished
+Name (DN)** of your certificate — not just the CN component. Find it with:
 
 ```powershell
 $cert = Get-ChildItem Cert:\CurrentUser\My | Where-Object { $_.Thumbprint -eq 'CERT_THUMBPRINT' }
 $cert.Subject
 ```
 
-It will look something like `CN=Your Name, O=Open Source Developer, ...`.
-You need the full Subject string in exactly this format.
+It will look something like `CN=Your Name, O=Open Source Developer, C=PL`.
+Copy the **entire string** exactly as printed — all components, in the same order.
 
 ---
 
@@ -108,7 +108,7 @@ In your repository: **Settings → Secrets and variables → Actions**, add:
 | --- | --- |
 | `CERTUM_CERTIFICATE_BASE64` | Full base64 output of your `certum.cer` DER file (from step 2.3) |
 | `CERTUM_CARD_PIN` | Your SimplySign card PIN |
-| `CERTUM_CERTIFICATE_CN` | Full Subject string of your certificate (from step 2.4), used as MSIX `publisher-cn` |
+| `CERTUM_CERTIFICATE_CN` | Full Subject DN of your certificate (from step 2.4), used as MSIX `publisher-cn` |
 
 The workflow skips signing silently when `CERTUM_CERTIFICATE_BASE64` or
 `CERTUM_CARD_PIN` are absent, so unsigned test builds continue to work without
