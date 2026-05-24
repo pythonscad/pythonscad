@@ -24,7 +24,6 @@ msgid "About PythonSCAD"
 msgstr "PythonSCAD Hakkında"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:104
-#, fuzzy
 msgid ""
 "<html><head/><body>\n"
 "<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
@@ -1208,7 +1207,6 @@ msgid "Open Example"
 msgstr "Örneği Aç"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:304
-#, fuzzy
 msgid ""
 "<html><head/><body>\n"
 "\t\t<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"

@@ -25,7 +25,6 @@ msgid "About PythonSCAD"
 msgstr "關於 PythonSCAD"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:104
-#, fuzzy
 msgid ""
 "<html><head/><body>\n"
 "<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
@@ -41,7 +40,7 @@ msgstr ""
 "<html><head/><body>\n"
 "<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
 "weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span "
-"style=\"color: green;\">Open</span>SCAD</p>\n"
+"style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
 "<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
 "weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: "
 "2em;\">程式設計師的3D實體建模器</p>\n"
@@ -1212,7 +1211,6 @@ msgid "Open Example"
 msgstr "開啟範例"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:304
-#, fuzzy
 msgid ""
 "<html><head/><body>\n"
 "\t\t<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
@@ -1228,7 +1226,7 @@ msgstr ""
 "<html><head/><body>\n"
 "<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
 "weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span "
-"style=\"color: green;\">Open</span>SCAD</p>\n"
+"style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
 "<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
 "weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: "
 "2em;\">程式設計師的3D實體建模器</p>\n"
