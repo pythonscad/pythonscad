@@ -3,8 +3,8 @@ description: >
   Signs Windows PE files (.exe, .dll, .msix) using jsign with a Certum
   SimplySign cloud HSM certificate. The private key never leaves Certum's
   HSM; only the public certificate is stored in CI secrets.
-  When CERTUM_CARD_PIN is not set the step is skipped silently so
-  unsigned test builds still work.
+  When either CERTUM_CARD_PIN or certum-certificate-base64 is not set
+  the step is skipped silently so unsigned test builds still work.
 
 inputs:
   certum-certificate-base64:

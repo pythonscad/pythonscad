@@ -324,9 +324,10 @@ jobs:
         shell: bash
         env:
           CERTUM_CERT: ${{ secrets.CERTUM_CERTIFICATE_BASE64 }}
+          CERTUM_PIN: ${{ secrets.CERTUM_CARD_PIN }}
           CERTUM_CN: ${{ secrets.CERTUM_CERTIFICATE_CN }}
         run: |
-          if [ -n "$CERTUM_CERT" ] && [ -n "$CERTUM_CN" ]; then
+          if [ -n "$CERTUM_CERT" ] && [ -n "$CERTUM_PIN" ] && [ -n "$CERTUM_CN" ]; then
             echo "publisher_cn=$CERTUM_CN" >> "$GITHUB_OUTPUT"
           else
             echo "publisher_cn=CN=PythonSCAD, OID.2.25.311729368913984317654407730594956997722=1" >> "$GITHUB_OUTPUT"

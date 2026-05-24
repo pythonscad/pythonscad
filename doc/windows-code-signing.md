@@ -38,7 +38,7 @@ During the purchase/onboarding process Certum will:
 ## Part 2: Export your public certificate
 
 The private key stays on Certum's HSM and cannot be exported. You only need
-the **public certificate** (PEM format) for the CI workflow.
+the **public certificate in DER format** (base64-encoded) for the CI workflow.
 
 ### 2.1 Install proCertum CardManager
 
@@ -103,7 +103,7 @@ In your repository: **Settings → Secrets and variables → Actions**, add:
 
 | Secret name | Description |
 | --- | --- |
-| `CERTUM_CERTIFICATE_BASE64` | Full base64 output of your `certum.pem` file (from step 2.3) |
+| `CERTUM_CERTIFICATE_BASE64` | Full base64 output of your `certum.cer` DER file (from step 2.3) |
 | `CERTUM_CARD_PIN` | Your SimplySign card PIN |
 | `CERTUM_CERTIFICATE_CN` | Full Subject string of your certificate (from step 2.4), used as MSIX `publisher-cn` |
 
@@ -173,8 +173,8 @@ osslsigncode verify -in PythonSCAD-*-Installer.exe
 
 1. Purchase Certum Open Source Code Signing on SimplySign.
 2. Install SimplySign app on Android or iOS and link it to your account.
-3. Install proCertum CardManager; export your public certificate as PEM.
-4. Base64-encode the PEM and add it as `CERTUM_CERTIFICATE_BASE64` secret.
+3. Install proCertum CardManager; export your public certificate as DER (`certum.cer`).
+4. Base64-encode the DER file and add it as `CERTUM_CERTIFICATE_BASE64` secret.
 5. Add your SimplySign PIN as `CERTUM_CARD_PIN` secret.
 6. Add your certificate Subject string as `CERTUM_CERTIFICATE_CN` secret.
 7. Trigger the Windows package build; approve the SimplySign notification(s).
