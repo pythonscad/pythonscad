@@ -109,10 +109,12 @@ runs:
         # Use the fixed well-known path written by the previous step
         $certPath = Join-Path $env:RUNNER_TEMP "certum.pem"
 
-        # Expand glob patterns / space-separated paths to a concrete file list
+        # Expand glob patterns / space-separated paths to a concrete file list.
+        # Trim and skip empty tokens to avoid Get-ChildItem enumerating the
+        # current directory when the input has leading/trailing whitespace.
         $targets = @()
-        foreach ($pattern in $env:FILES_GLOB -split '\s+') {
-          $expanded = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue
+        foreach ($pattern in ($env:FILES_GLOB -split '\s+' | Where-Object { $_.Trim() -ne '' })) {
+          $expanded = Get-ChildItem -Path $pattern -File -ErrorAction SilentlyContinue
           if ($expanded) {
             $targets += $expanded
           } else {
