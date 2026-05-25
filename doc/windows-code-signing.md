@@ -110,8 +110,8 @@ In your repository: **Settings → Secrets and variables → Actions**, add:
 | `CERTUM_CARD_PIN` | Your SimplySign card PIN |
 | `CERTUM_CERTIFICATE_CN` | Full Subject DN of your certificate (from step 2.4), used as MSIX `publisher-cn` |
 
-The workflow skips signing silently when `CERTUM_CERTIFICATE_BASE64` or
-`CERTUM_CARD_PIN` are absent, so unsigned test builds continue to work without
+The workflow logs a skip message and produces unsigned artifacts when any of
+the required secrets are absent, so test builds continue to work without
 any changes.
 
 ---
@@ -122,12 +122,14 @@ The `Build Windows Native Package` workflow
 (`.github/workflows/build-windows-native.yml`) calls the reusable composite
 action `.github/actions/sign-windows/action.yml` twice:
 
-1. **After NSIS packaging** — signs `artifacts/*.exe` (the installer)
+1. **After NSIS packaging** — signs the resolved installer path
 2. **After MSIX packaging** — signs the `.msix` file
 
-When `CERTUM_CERTIFICATE_CN` is also set, the MSIX `publisher-cn` is
-automatically switched from the unsigned-namespace OID placeholder to your real
-certificate subject, which is required for a validly signed MSIX.
+When all three secrets (`CERTUM_CERTIFICATE_BASE64`, `CERTUM_CARD_PIN`, and
+`CERTUM_CERTIFICATE_CN`) are present, the MSIX `Identity Publisher` field is
+automatically set to your real certificate Subject DN. Otherwise the
+unsigned-namespace OID placeholder is used, which is required for a validly
+signed MSIX — the DN must match the signing certificate exactly.
 
 ### Runner prerequisite: proCertum CardManager
 
