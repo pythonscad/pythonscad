@@ -327,9 +327,12 @@ jobs:
           CERTUM_PIN: ${{ secrets.CERTUM_CARD_PIN }}
           CERTUM_DN: ${{ secrets.CERTUM_CERTIFICATE_CN }}
         run: |
-          if [ -n "$CERTUM_CERT" ] && [ -n "$CERTUM_PIN" ] && [ -n "$CERTUM_DN" ]; then
+          # Strip CR/LF so a DN pasted from PowerShell doesn't produce a
+          # multi-line GITHUB_OUTPUT entry that breaks downstream parsing.
+          CERTUM_DN_CLEAN="$(printf '%s' "$CERTUM_DN" | tr -d '\r\n')"
+          if [ -n "$CERTUM_CERT" ] && [ -n "$CERTUM_PIN" ] && [ -n "$CERTUM_DN_CLEAN" ]; then
             echo "signing_enabled=true" >> "$GITHUB_OUTPUT"
-            echo "publisher_dn=$CERTUM_DN" >> "$GITHUB_OUTPUT"
+            echo "publisher_dn=$CERTUM_DN_CLEAN" >> "$GITHUB_OUTPUT"
           else
             echo "signing_enabled=false" >> "$GITHUB_OUTPUT"
             echo "publisher_dn=CN=PythonSCAD, OID.2.25.311729368913984317654407730594956997722=1" >> "$GITHUB_OUTPUT"
