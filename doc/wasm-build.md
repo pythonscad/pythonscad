@@ -21,10 +21,10 @@ absent from the WASM sysroot.
 
 ### Build variants
 
-| Variant | Filesystem | Use case |
-|---------|-----------|---------|
-| `node`  | NODERAWFS (real FS) | Smoke testing, headless rendering |
-| `web`   | MEMFS + preloaded `.data` | Browser distribution |
+| Variant | Filesystem                   | Use case                          |
+| ------- | ---------------------------- | --------------------------------- |
+| `node`  | NODERAWFS (real FS)          | Smoke testing, headless rendering |
+| `web`   | MEMFS + preloaded `.data`    | Browser distribution              |
 
 ## Prerequisites
 
@@ -73,11 +73,11 @@ not present, then layers a ccache image on top for fast incremental builds.
 
 The web build produces three files:
 
-| File | Size (approx) | Purpose |
-|------|--------------|---------|
-| `pythonscad.js` | 210 KB | ES6 module loader |
-| `pythonscad.wasm` | 18 MB | Binary (geometry engine + CPython) |
-| `pythonscad.data` | 17 MB | Preloaded Python stdlib + PythonSCAD libraries |
+| File              | Size (approx) | Purpose                                        |
+| ----------------- | ------------- | ---------------------------------------------- |
+| `pythonscad.js`   | 210 KB        | ES6 module loader                              |
+| `pythonscad.wasm` | 18 MB         | Binary (geometry engine + CPython)             |
+| `pythonscad.data` | 17 MB         | Preloaded Python stdlib + PythonSCAD libraries |
 
 ## Smoke testing
 
@@ -146,11 +146,11 @@ Key points:
 
 ## CMake variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `WASM_BUILD_TYPE` | `node` | `node` or `web` |
+| Variable              | Default         | Description                                          |
+| --------------------- | --------------- | ---------------------------------------------------- |
+| `WASM_BUILD_TYPE`     | `node`          | `node` or `web`                                      |
 | `CPYTHON_WASM_PREFIX` | `/cpython-wasm` | Path to CPython WASM install inside the Docker image |
-| `CPYTHON_WASM_PYVER` | `3.12` | Python version string |
+| `CPYTHON_WASM_PYVER`  | `3.12`          | Python version string                                |
 
 ## Known gotchas
 

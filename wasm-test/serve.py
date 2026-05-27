@@ -30,7 +30,8 @@ class WasmHandler(http.server.SimpleHTTPRequestHandler):
 if __name__ == '__main__':
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
     directory = sys.argv[2] if len(sys.argv) > 2 else '.'
-    os.chdir(directory)
-    print(f'Serving {os.path.abspath(directory)} on http://localhost:{port}/')
+    abs_directory = os.path.abspath(directory)
+    os.chdir(abs_directory)
+    print(f'Serving {abs_directory} on http://localhost:{port}/')
     print('Open http://localhost:{}/test.html in your browser.'.format(port))
     http.server.test(HandlerClass=WasmHandler, port=port, bind='localhost')
