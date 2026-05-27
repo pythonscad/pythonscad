@@ -51,6 +51,14 @@ std::string venvBinDirFromSettings()
   return "";
 }
 
+#ifdef __EMSCRIPTEN__
+// These functions manage Python runtime lifecycle for CLI / AppImage use cases.
+// They are never called in WASM builds but must exist to satisfy the linker.
+int pythonRunArgs(int, char **) { return 1; }
+int pythonCreateVenv(const std::string&) { return 1; }
+int pythonRunModule(const std::string&, const std::string&, const std::vector<std::string>&) { return 1; }
+#else
+
 int pythonRunArgs(int argc, char **argv)
 {
   PyStatus status;
@@ -180,3 +188,5 @@ done:
   PyConfig_Clear(&config);
   return status.exitcode;
 }
+
+#endif // !__EMSCRIPTEN__
