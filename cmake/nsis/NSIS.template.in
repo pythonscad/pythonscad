@@ -47,7 +47,6 @@
   ; Paths use ../../../ because CPack runs NSIS from _CPack_Packages/<sys>/NSIS/.
   !addplugindir "..\..\..\Plugins\x86-unicode"
   !include "FileFunc.nsh"
-  !insertmacro GetSize
   !include "..\..\..\nsis-UAC.nsh"
   !include "..\..\..\nsis-mingw-file-association.nsh"
   !include "nsDialogs.nsh"

@@ -10,15 +10,6 @@ ${Else}
   WriteRegStr HKCU "${ARP}" "InstallMode" "CurrentUser"
 ${EndIf}
 
-; Calculate and store installed size in the appropriate registry hive
-${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
-IntFmt $0 "0x%08X" $0
-${If} $MultiUser.InstallMode = 1
-  WriteRegDWORD HKLM "${ARP}" "EstimatedSize" "$0"
-${Else}
-  WriteRegDWORD HKCU "${ARP}" "EstimatedSize" "$0"
-${EndIf}
-
 ; Register file associations scope-aware:
 ; - All-users installs use HKCR (via ${RegisterExtension}) which requires admin
 ;   rights that are already granted at this point.
