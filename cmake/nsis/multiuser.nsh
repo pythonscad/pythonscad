@@ -119,18 +119,21 @@ Function MultiUser.InstallModePage_Leave
 FunctionEnd
 
 ; --- Uninstaller: read stored install mode and set shell context ---
-; Reads from HKLM first (all-users install), falls back to HKCU (per-user install).
-; This ensures uninstall works correctly even when launched by a different user account.
+; InstallMode is stored under the ARP uninstall key in the appropriate hive
+; (HKLM for all-users, HKCU for per-user). Reading from both hives in the
+; right order ensures correct scope even when called from a different user account.
+!define ARP_UN "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD"
+
 Function un.MultiUser.Init
-  ; Try HKLM first — set for all-users installs and readable by any account
-  ReadRegStr $0 HKLM "Software\PythonSCAD" "InstallMode"
+  ; Try HKLM first — written only for all-users installs, readable by any account
+  ReadRegStr $0 HKLM "${ARP_UN}" "InstallMode"
   ${If} $0 == "AllUsers"
     StrCpy $MultiUser.InstallMode 1
     SetShellVarContext all
     Return
   ${EndIf}
   ; Fall back to HKCU for per-user installs
-  ReadRegStr $0 HKCU "Software\PythonSCAD" "InstallMode"
+  ReadRegStr $0 HKCU "${ARP_UN}" "InstallMode"
   ${If} $0 == "CurrentUser"
     StrCpy $MultiUser.InstallMode 0
     SetShellVarContext current

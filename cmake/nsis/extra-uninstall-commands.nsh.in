@@ -1,4 +1,6 @@
-; Unregister file associations (SHCTX = HKLM or HKCU based on SetShellVarContext set in un.MultiUser.Init)
+; Unregister file associations.
+; Note: mingw-file-association.nsh uses HKCR directly (not SHCTX), so
+; associations are always removed machine-wide regardless of install mode.
 ${UnRegisterExtension} ".scad" "PythonSCAD_File"
 ; Legacy cleanup: remove OpenSCAD_File association left by older PythonSCAD installers
 ${UnRegisterExtension} ".scad" "OpenSCAD_File"
@@ -8,12 +10,5 @@ ${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
 ; The MUI_PAGE_STARTMENU shortcuts under $STARTMENU_FOLDER are removed by the
 ; CPack template's own uninstall section, so we only clean up our additions here.
 Delete "$SMPROGRAMS\PythonSCAD.lnk"
-
-; Remove install mode registry key
-${If} $MultiUser.InstallMode = 1
-  DeleteRegKey HKLM "Software\PythonSCAD"
-${Else}
-  DeleteRegKey HKCU "Software\PythonSCAD"
-${EndIf}
 
 ${RefreshShellIcons}

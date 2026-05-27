@@ -1,12 +1,13 @@
 !define ARP "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@"
 
-; Persist install mode so the uninstaller knows whether to elevate.
-; All-users: write to HKLM so any account can read it during uninstall.
-; Per-user: write to HKCU.
+; Persist install mode under the ARP uninstall key in the appropriate hive.
+; Storing it there (rather than a separate Software\PythonSCAD key) ensures
+; it lives in the same hive as the uninstall entry and cannot conflict between
+; a per-user and an all-users install on the same machine.
 ${If} $MultiUser.InstallMode = 1
-  WriteRegStr HKLM "Software\PythonSCAD" "InstallMode" "AllUsers"
+  WriteRegStr HKLM "${ARP}" "InstallMode" "AllUsers"
 ${Else}
-  WriteRegStr HKCU "Software\PythonSCAD" "InstallMode" "CurrentUser"
+  WriteRegStr HKCU "${ARP}" "InstallMode" "CurrentUser"
 ${EndIf}
 
 ; Calculate and store installed size in the appropriate registry hive
@@ -18,7 +19,9 @@ ${Else}
   WriteRegDWORD HKCU "${ARP}" "EstimatedSize" "$0"
 ${EndIf}
 
-; Register file associations (SHCTX = HKLM or HKCU depending on SetShellVarContext)
+; Register file associations.
+; Note: mingw-file-association.nsh uses HKCR directly (not SHCTX), so
+; associations are always machine-wide regardless of install mode.
 ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
 ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".py" "PythonSCAD_Python_File"
 

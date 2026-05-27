@@ -6,6 +6,8 @@ InstallDir ""
 ; Add cmake/nsis to the include path so bare filenames resolve correctly.
 ; Run makensis from the repo root or pass -NOCD and set include paths manually.
 !addincludedir "..\cmake\nsis"
+; Add the bundled UAC plugin directory so UAC.dll is found without a global install.
+!addplugindir "..\cmake\nsis\Plugins\x86-unicode"
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
 !include "nsDialogs.nsh"
@@ -20,8 +22,10 @@ OutFile "pythonscad_setup.exe"
 !define MUI_CUSTOMFUNCTION_GUIINIT GuiInit
 RequestExecutionLevel user
 
+; Declare variables defined in multiuser.nsh (AllUsersRadio) and the
+; InstallMode variable used across the installer.
+; Note: MultiUser.AllUsersRadio is declared inside multiuser.nsh itself.
 Var MultiUser.InstallMode
-Var MultiUser.AllUsersRadio
 
 ; installer_arch.nsi must define Function .onInit and set architecture-specific
 ; registry view. See installer32.nsi / installer64.nsi.
@@ -41,6 +45,8 @@ Function GuiInit
   !insertmacro UAC_PageElevation_OnGuiInit
 FunctionEnd
 
+!define ARP_INS "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD"
+
 DirText "Choose a directory to install PythonSCAD"
 
 Section "install"
@@ -59,13 +65,19 @@ CreateDirectory "$SMPROGRAMS\PythonSCAD"
 CreateShortCut "$SMPROGRAMS\PythonSCAD\PythonSCAD.lnk" "$INSTDIR\pythonscad.exe"
 CreateShortCut "$SMPROGRAMS\PythonSCAD.lnk" "$INSTDIR\pythonscad.exe"
 WriteUninstaller "$INSTDIR\Uninstall.exe"
-WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD" "DisplayName" "PythonSCAD (remove only)"
-WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD" "DisplayVersion" "${VERSION}"
-WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD" "Publisher" "The PythonSCAD Developers"
-WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD" "URLInfoAbout" "https://pythonscad.org/"
-WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD" "URLUpdateInfo" "https://pythonscad.org/downloads.html"
-WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD" "HelpLink" "https://pythonscad.org/"
-WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\""
+WriteRegStr SHCTX "${ARP_INS}" "DisplayName" "PythonSCAD (remove only)"
+WriteRegStr SHCTX "${ARP_INS}" "DisplayVersion" "${VERSION}"
+WriteRegStr SHCTX "${ARP_INS}" "Publisher" "The PythonSCAD Developers"
+WriteRegStr SHCTX "${ARP_INS}" "URLInfoAbout" "https://pythonscad.org/"
+WriteRegStr SHCTX "${ARP_INS}" "URLUpdateInfo" "https://pythonscad.org/downloads.html"
+WriteRegStr SHCTX "${ARP_INS}" "HelpLink" "https://pythonscad.org/"
+WriteRegStr SHCTX "${ARP_INS}" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\""
+; Store install mode so the uninstaller can determine scope and elevate if needed
+${If} $MultiUser.InstallMode = 1
+  WriteRegStr HKLM "${ARP_INS}" "InstallMode" "AllUsers"
+${Else}
+  WriteRegStr HKCU "${ARP_INS}" "InstallMode" "CurrentUser"
+${EndIf}
 SectionEnd
 
 Section "Uninstall"

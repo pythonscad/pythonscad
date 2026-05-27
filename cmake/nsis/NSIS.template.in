@@ -1,4 +1,4 @@
-﻿; CPack install script designed for a nmake build
+; CPack install script designed for a nmake build
 
 ;--------------------------------
 ; You must define these values
@@ -164,7 +164,7 @@ Var AR_RegFlags
 ; based upon a script of "Written by KiCHiK 2003-01-18 05:57:02"
 ;----------------------------------------
 !verbose 3
-!include "WinMessages.NSH"
+!include "WinMessages.nsh"
 !verbose 4
 ;====================================================
 ; get_NT_environment
