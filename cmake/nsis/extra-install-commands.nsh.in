@@ -1,9 +1,10 @@
 !define ARP "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@"
 
-; Persist install mode so the uninstaller knows whether to elevate
+; Persist install mode so the uninstaller knows whether to elevate.
+; All-users: write to HKLM so any account can read it during uninstall.
+; Per-user: write to HKCU.
 ${If} $MultiUser.InstallMode = 1
   WriteRegStr HKLM "Software\PythonSCAD" "InstallMode" "AllUsers"
-  WriteRegStr HKCU "Software\PythonSCAD" "InstallMode" "AllUsers"
 ${Else}
   WriteRegStr HKCU "Software\PythonSCAD" "InstallMode" "CurrentUser"
 ${EndIf}

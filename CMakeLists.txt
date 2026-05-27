@@ -2443,6 +2443,8 @@ if(WIN32)
                  "${CMAKE_BINARY_DIR}/nsis-UAC.nsh" COPYONLY)
   configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/multiuser.nsh"
                  "${CMAKE_BINARY_DIR}/nsis-multiuser.nsh" COPYONLY)
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Plugins/x86-unicode")
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Plugins/x86-ansi")
   configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/Plugins/x86-unicode/UAC.dll"
                  "${CMAKE_BINARY_DIR}/Plugins/x86-unicode/UAC.dll" COPYONLY)
   configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/Plugins/x86-ansi/UAC.dll"

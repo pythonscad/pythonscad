@@ -5,6 +5,8 @@
 ; (Var MultiUser.InstallMode is declared in CMakeLists.txt CPACK_NSIS_DEFINES
 ;  so it appears at the top level before this file is included.)
 
+!include "WinMessages.nsh"
+
 !ifndef BCM_SETSHIELD
 !define BCM_SETSHIELD 0x0000160C
 !endif
@@ -17,7 +19,11 @@
   !define MULTIUSER_INSTALLDIR_ALLUSERS "$ProgramFiles64\PythonSCAD"
 !endif
 
-; --- Apply shell context and default InstDir based on current mode ---
+; Dedicated variable for the "all users" radio button HWND, avoiding
+; cross-function stack passing which is fragile and error-prone.
+Var MultiUser.AllUsersRadio
+
+; --- Apply shell context based on current mode ---
 ; Called at the start of the install Section (via CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS)
 ; and from the install-type page Leave function.
 Function MultiUser.SetContext
@@ -61,24 +67,19 @@ Function MultiUser.InstallModePage_Create
   nsDialogs::SetUserData $0 0
   ${IfThen} $MultiUser.InstallMode = 0 ${|} SendMessage $0 ${BM_CLICK} 0 0 ${|}
 
-  ; "For all users" radio button (hwnd stored in $2 for Leave to read)
+  ; "For all users" radio button — store HWND in dedicated variable
   ${NSD_CreateRadioButton} 10u 58u 90% 15u "For all users on this computer (requires administrator rights)"
-  Pop $2
-  nsDialogs::OnClick $2 $8
-  nsDialogs::SetUserData $2 1
-  ${IfThen} $MultiUser.InstallMode = 1 ${|} SendMessage $2 ${BM_CLICK} 0 0 ${|}
+  Pop $MultiUser.AllUsersRadio
+  nsDialogs::OnClick $MultiUser.AllUsersRadio $8
+  nsDialogs::SetUserData $MultiUser.AllUsersRadio 1
+  ${IfThen} $MultiUser.InstallMode = 1 ${|} SendMessage $MultiUser.AllUsersRadio ${BM_CLICK} 0 0 ${|}
 
-  Push $2   ; keep "all users" hwnd on stack for Leave
   nsDialogs::Show
-  Pop $2
 FunctionEnd
 
 ; --- Leave callback: set mode, update InstDir, and elevate if needed ---
 Function MultiUser.InstallModePage_Leave
-  ; Stack top has the "all users" radio hwnd (pushed at end of _Create)
-  Pop $0
-  Push $0
-  ${NSD_GetState} $0 $9
+  ${NSD_GetState} $MultiUser.AllUsersRadio $9
 
   ${If} $9 = 0
     ; Just for me
@@ -118,14 +119,24 @@ Function MultiUser.InstallModePage_Leave
 FunctionEnd
 
 ; --- Uninstaller: read stored install mode and set shell context ---
-; Called from un.onInit via CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
+; Reads from HKLM first (all-users install), falls back to HKCU (per-user install).
+; This ensures uninstall works correctly even when launched by a different user account.
 Function un.MultiUser.Init
-  ReadRegStr $0 HKCU "Software\PythonSCAD" "InstallMode"
+  ; Try HKLM first — set for all-users installs and readable by any account
+  ReadRegStr $0 HKLM "Software\PythonSCAD" "InstallMode"
   ${If} $0 == "AllUsers"
     StrCpy $MultiUser.InstallMode 1
     SetShellVarContext all
-  ${Else}
+    Return
+  ${EndIf}
+  ; Fall back to HKCU for per-user installs
+  ReadRegStr $0 HKCU "Software\PythonSCAD" "InstallMode"
+  ${If} $0 == "CurrentUser"
     StrCpy $MultiUser.InstallMode 0
     SetShellVarContext current
+    Return
   ${EndIf}
+  ; Default to current user if no key found
+  StrCpy $MultiUser.InstallMode 0
+  SetShellVarContext current
 FunctionEnd
