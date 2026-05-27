@@ -12,6 +12,10 @@ InstallDir ""
 !addincludedir "..\cmake\nsis"
 ; Add the bundled UAC plugin directory so UAC.dll is found without a global install.
 !addplugindir "..\cmake\nsis\Plugins\x86-unicode"
+
+; MUI_CUSTOMFUNCTION_GUIINIT must be defined before !include MUI2.nsh
+!define MUI_CUSTOMFUNCTION_GUIINIT GuiInit
+
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
 !include "nsDialogs.nsh"
@@ -19,10 +23,6 @@ InstallDir ""
 !include "UAC.nsh"
 !include "mingw-file-association.nsh"
 !include "x64.nsh"
-
-; Hook UAC GUI init before MUI2.nsh (already included above via !include)
-!define MUI_CUSTOMFUNCTION_GUIINIT GuiInit
-
 !include "multiuser.nsh"
 
 Name "PythonSCAD"
@@ -94,8 +94,31 @@ ${Else}
 ${EndIf}
 SectionEnd
 
+Function un.onInit
+  Call un.MultiUser.Init
+  ; Elevate for all-users uninstall if not already admin
+  ${If} $MultiUser.InstallMode = 1
+  ${AndIfNot} ${UAC_IsAdmin}
+    !insertmacro UAC_RunElevated
+    ${Switch} $0
+    ${Case} 0
+      ${IfThen} $1 = 1 ${|} Quit ${|}   ; outer instance, inner did the work
+      ${IfThen} $3 <> 0 ${|} ${Break} ${|}  ; we are admin, continue
+      MessageBox MB_ICONSTOP|MB_TOPMOST "Administrator privileges are required to uninstall for all users."
+      Quit
+    ${Case} 1223
+      Quit   ; User cancelled UAC
+    ${Case} 1062
+      MessageBox MB_ICONSTOP|MB_TOPMOST "Logon service not running, cannot elevate."
+      Quit
+    ${Default}
+      MessageBox MB_ICONSTOP|MB_TOPMOST "Unable to elevate, error $0"
+      Quit
+    ${EndSwitch}
+  ${EndIf}
+FunctionEnd
+
 Section "Uninstall"
-Call un.MultiUser.Init
 ${UnRegisterExtension} ".scad" "PythonSCAD_File"
 ${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
 Delete "$INSTDIR\Uninstall.exe"

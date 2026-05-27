@@ -93,11 +93,11 @@ Function MultiUser.InstallModePage_Leave
     Call MultiUser.SetContext
     ${IfNot} ${UAC_IsAdmin}
       GetDlgItem $9 $HWNDParent 1
-      System::Call user32::GetFocus()i.s
+      System::Call 'user32::GetFocus()i.s'
       EnableWindow $9 0
       !insertmacro UAC_PageElevation_RunElevated
       EnableWindow $9 1
-      System::Call user32::SetFocus(is)
+      System::Call 'user32::SetFocus(is)'
       ${If} $2 = 0x666666
         MessageBox MB_ICONEXCLAMATION "Administrator privileges are required to install for all users.$\nPlease select 'Just for me' or log in with an administrator account."
         Abort
