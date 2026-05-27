@@ -19,11 +19,24 @@ ${Else}
   WriteRegDWORD HKCU "${ARP}" "EstimatedSize" "$0"
 ${EndIf}
 
-; Register file associations.
-; Note: mingw-file-association.nsh writes via HKCR (not SHCTX) and does not
-; explicitly honor the selected install scope.
-${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
-${RegisterExtension} "$INSTDIR\pythonscad.exe" ".py" "PythonSCAD_Python_File"
+; Register file associations scope-aware:
+; - All-users installs use HKCR (via ${RegisterExtension}) which requires admin
+;   rights that are already granted at this point.
+; - Per-user installs write to HKCU\Software\Classes which takes precedence over
+;   HKCR for the current user on Vista+ without requiring elevation.
+${If} $MultiUser.InstallMode = 1
+  ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
+  ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".py" "PythonSCAD_Python_File"
+${Else}
+  WriteRegStr HKCU "Software\Classes\.scad" "" "PythonSCAD_File"
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_File" "" "PythonSCAD_File"
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_File\DefaultIcon" "" "$INSTDIR\pythonscad.exe,0"
+  WriteRegStr HKCU "Software\Classes\.py" "" "PythonSCAD_Python_File"
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File" "" "PythonSCAD_Python_File"
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File\DefaultIcon" "" "$INSTDIR\pythonscad.exe,0"
+${EndIf}
 
 ; Add an extra shortcut directly in the Start Menu root for discoverability.
 ; The CPack template's MUI_PAGE_STARTMENU already creates the main shortcut

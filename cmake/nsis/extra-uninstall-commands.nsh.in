@@ -1,10 +1,22 @@
-; Unregister file associations.
-; Note: mingw-file-association.nsh operates on HKCR (not SHCTX) and does not
-; explicitly honor the selected install scope during cleanup.
-${UnRegisterExtension} ".scad" "PythonSCAD_File"
-; Legacy cleanup: remove OpenSCAD_File association left by older PythonSCAD installers
-${UnRegisterExtension} ".scad" "OpenSCAD_File"
-${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
+; Unregister file associations scope-aware, mirroring the install logic.
+${If} $MultiUser.InstallMode = 1
+  ; All-users install: ${UnRegisterExtension} operates on HKCR.
+  ${UnRegisterExtension} ".scad" "PythonSCAD_File"
+  ; Legacy cleanup: remove OpenSCAD_File association left by older PythonSCAD installers
+  ${UnRegisterExtension} ".scad" "OpenSCAD_File"
+  ${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
+${Else}
+  ; Per-user install: remove the HKCU\Software\Classes entries written at install time.
+  DeleteRegKey HKCU "Software\Classes\PythonSCAD_File"
+  DeleteRegKey HKCU "Software\Classes\PythonSCAD_Python_File"
+  ; Only remove the extension mapping if it still points to our handler.
+  ReadRegStr $0 HKCU "Software\Classes\.scad" ""
+  StrCmp $0 "PythonSCAD_File" 0 +2
+    DeleteRegKey HKCU "Software\Classes\.scad"
+  ReadRegStr $0 HKCU "Software\Classes\.py" ""
+  StrCmp $0 "PythonSCAD_Python_File" 0 +2
+    DeleteRegKey HKCU "Software\Classes\.py"
+${EndIf}
 
 ; Remove the root Start Menu shortcut added by extra-install-commands.
 ; The MUI_PAGE_STARTMENU shortcuts under $STARTMENU_FOLDER are removed by the

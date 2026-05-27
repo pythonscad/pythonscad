@@ -50,6 +50,12 @@
   !include "..\..\..\nsis-UAC.nsh"
   !include "..\..\..\nsis-mingw-file-association.nsh"
   !include "nsDialogs.nsh"
+  ; $PROGRAMFILES resolves to Program Files (x86) on x64 Windows for a 32-bit NSIS
+  ; process. Use $PROGRAMFILES64 for x64 installers so the all-users default lands
+  ; in the native Program Files directory.
+  !if "@CPACK_SYSTEM_NAME@" == "windows-x86-64"
+    !define MULTIUSER_INSTALLDIR_ALLUSERS "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+  !endif
   !include "..\..\..\nsis-multiuser.nsh"
 
 @CPACK_NSIS_DEFINES@
@@ -1008,12 +1014,18 @@ multiuser_init:
   StrCpy $MultiUser.InstallMode 0
   ${IfThen} ${UAC_IsAdmin} ${|} StrCpy $MultiUser.InstallMode 1 ${|}
 
-  ; Set default InstDir based on install mode
+  ; Set default InstDir based on install mode.
+  ; Use $PROGRAMFILES64 for x64 builds: $PROGRAMFILES maps to Program Files (x86)
+  ; for a 32-bit NSIS process on x64 Windows, so x64 installers must use the
+  ; explicit 64-bit constant.
   ${If} $MultiUser.InstallMode = 0
     StrCpy $INSTDIR "$LocalAppData\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
     SetShellVarContext current
   ${Else}
-    StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" 0 +2
+      StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2 0
+      StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
     SetShellVarContext all
   ${EndIf}
 

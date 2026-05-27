@@ -15,9 +15,11 @@
 !ifndef MULTIUSER_INSTALLDIR_USER
   !define MULTIUSER_INSTALLDIR_USER "$LocalAppData\PythonSCAD"
 !endif
-; Use $PROGRAMFILES (not $PROGRAMFILES64) so Windows selects the correct
-; Program Files directory for the installer's bitness automatically.
-; Override this from CMakeLists.txt via CPACK_NSIS_DEFINES if needed.
+; Default all-users install dir. Must be defined BEFORE !include "multiuser.nsh"
+; to override (e.g. installer64.nsi defines it to use $PROGRAMFILES64).
+; $PROGRAMFILES resolves to Program Files (x86) on x64 Windows when the NSIS
+; process is 32-bit, so x64 builds must define MULTIUSER_INSTALLDIR_ALLUSERS
+; to $PROGRAMFILES64\PythonSCAD before including this file.
 !ifndef MULTIUSER_INSTALLDIR_ALLUSERS
   !define MULTIUSER_INSTALLDIR_ALLUSERS "$PROGRAMFILES\PythonSCAD"
 !endif
@@ -125,9 +127,11 @@ Function MultiUser.InstallModePage_Leave
 FunctionEnd
 
 ; --- Uninstaller: read stored install mode and set shell context ---
-; InstallMode is stored under the ARP uninstall key in the appropriate hive
-; (HKLM for all-users, HKCU for per-user). Reading from both hives in the
-; right order ensures correct scope even when called from a different user account.
+; Scope is determined by matching the running uninstaller path ($EXEPATH) against
+; the UninstallString stored in HKLM (all-users) and HKCU (per-user). This
+; correctly disambiguates scope when both install types exist on the same machine.
+; Note: HKCU is the current user's hive only — per-user installs for other accounts
+; are not visible and cannot be uninstalled by this uninstaller.
 !define ARP_UN "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD"
 
 Function un.MultiUser.Init

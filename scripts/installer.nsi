@@ -23,6 +23,14 @@ InstallDir ""
 !include "UAC.nsh"
 !include "mingw-file-association.nsh"
 !include "x64.nsh"
+; Set architecture-appropriate all-users install dir before including multiuser.nsh.
+; $PROGRAMFILES is 32-bit Program Files (x86) on x64 Windows for a 32-bit NSIS process;
+; $PROGRAMFILES64 is always the native 64-bit Program Files directory.
+!ifdef ARCH
+  !if "${ARCH}" == "x64"
+    !define MULTIUSER_INSTALLDIR_ALLUSERS "$PROGRAMFILES64\PythonSCAD"
+  !endif
+!endif
 !include "multiuser.nsh"
 
 Name "PythonSCAD"
@@ -73,8 +81,19 @@ File /r /x mingw-cross-env locale
 File /r /x mingw-cross-env color-schemes
 File /r /x mingw-cross-env shaders
 File /r /x mingw-cross-env templates
-${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
-${RegisterExtension} "$INSTDIR\pythonscad.exe" ".py" "PythonSCAD_Python_File"
+${If} $MultiUser.InstallMode = 1
+  ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
+  ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".py" "PythonSCAD_Python_File"
+${Else}
+  WriteRegStr HKCU "Software\Classes\.scad" "" "PythonSCAD_File"
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_File" "" "PythonSCAD_File"
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_File\DefaultIcon" "" "$INSTDIR\pythonscad.exe,0"
+  WriteRegStr HKCU "Software\Classes\.py" "" "PythonSCAD_Python_File"
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File" "" "PythonSCAD_Python_File"
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File\DefaultIcon" "" "$INSTDIR\pythonscad.exe,0"
+${EndIf}
 CreateDirectory "$SMPROGRAMS\PythonSCAD"
 CreateShortCut "$SMPROGRAMS\PythonSCAD\PythonSCAD.lnk" "$INSTDIR\pythonscad.exe"
 CreateShortCut "$SMPROGRAMS\PythonSCAD.lnk" "$INSTDIR\pythonscad.exe"
@@ -127,8 +146,19 @@ Function un.onInit
 FunctionEnd
 
 Section "Uninstall"
-${UnRegisterExtension} ".scad" "PythonSCAD_File"
-${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
+${If} $MultiUser.InstallMode = 1
+  ${UnRegisterExtension} ".scad" "PythonSCAD_File"
+  ${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
+${Else}
+  DeleteRegKey HKCU "Software\Classes\PythonSCAD_File"
+  DeleteRegKey HKCU "Software\Classes\PythonSCAD_Python_File"
+  ReadRegStr $0 HKCU "Software\Classes\.scad" ""
+  StrCmp $0 "PythonSCAD_File" 0 +2
+    DeleteRegKey HKCU "Software\Classes\.scad"
+  ReadRegStr $0 HKCU "Software\Classes\.py" ""
+  StrCmp $0 "PythonSCAD_Python_File" 0 +2
+    DeleteRegKey HKCU "Software\Classes\.py"
+${EndIf}
 Delete "$INSTDIR\Uninstall.exe"
 Delete "$INSTDIR\pythonscad.exe"
 Delete "$INSTDIR\pythonscad.com"
