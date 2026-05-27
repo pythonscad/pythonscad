@@ -971,10 +971,13 @@ Function .onInit
 
   StrCmp "@CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL@" "ON" 0 multiuser_init
 
-  ; Check both HKLM (all-users) and HKCU (per-user) for an existing installation
-  ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
-  StrCmp $0 "" 0 found_existing
+  ; Check for an existing installation. Check HKCU first so a per-user reinstall
+  ; is detected before the HKLM entry, which a non-admin user cannot uninstall.
+  ; Only fall through to check HKLM if no HKCU entry exists and we are admin.
   ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
+  StrCmp $0 "" check_hklm found_existing
+  check_hklm:
+  ${IfThen} ${UAC_IsAdmin} ${|} ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString" ${|}
   StrCmp $0 "" multiuser_init found_existing
 
 found_existing:

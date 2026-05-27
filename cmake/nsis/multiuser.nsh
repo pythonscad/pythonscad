@@ -2,8 +2,10 @@
 ; Based on the NSIS UAC plugin DualMode example (zlib license)
 ;
 ; $MultiUser.InstallMode: 0 = current user only, 1 = all users
-; (Var MultiUser.InstallMode is declared in CMakeLists.txt CPACK_NSIS_DEFINES
-;  so it appears at the top level before this file is included.)
+; Callers must declare "Var MultiUser.InstallMode" BEFORE !include-ing this file
+; so that functions defined here can reference the variable during compilation.
+; For CPack builds: declared in cmake/nsis/NSIS.template.in before the include.
+; For legacy direct builds: declared in scripts/installer.nsi before the include.
 
 !include "WinMessages.nsh"
 
