@@ -146,10 +146,14 @@ Function un.MultiUser.Init
   ; HKLM-first ambiguity that would misclassify a per-user uninstall.
   ReadRegStr $0 HKLM "${ARP_UN}" "UninstallString"
   ${If} $0 != ""
-    ; Strip surrounding quotes if present
+    ; Strip surrounding quotes if present (leading then trailing, independently).
     StrCpy $1 $0 1 0
     ${If} $1 == "$\""
-      StrCpy $0 $0 -1 1
+      StrCpy $0 $0 "" 1   ; remove leading quote
+    ${EndIf}
+    StrCpy $1 $0 1 -1
+    ${If} $1 == "$\""
+      StrCpy $0 $0 -1     ; remove trailing quote
     ${EndIf}
     ${If} $0 == "$EXEPATH"
       StrCpy $MultiUser.InstallMode 1
@@ -160,10 +164,14 @@ Function un.MultiUser.Init
   ; Check HKCU for per-user install
   ReadRegStr $0 HKCU "${ARP_UN}" "UninstallString"
   ${If} $0 != ""
-    ; Strip surrounding quotes if present
+    ; Strip surrounding quotes if present (leading then trailing, independently).
     StrCpy $1 $0 1 0
     ${If} $1 == "$\""
-      StrCpy $0 $0 -1 1
+      StrCpy $0 $0 "" 1   ; remove leading quote
+    ${EndIf}
+    StrCpy $1 $0 1 -1
+    ${If} $1 == "$\""
+      StrCpy $0 $0 -1     ; remove trailing quote
     ${EndIf}
     ${If} $0 == "$EXEPATH"
       StrCpy $MultiUser.InstallMode 0
