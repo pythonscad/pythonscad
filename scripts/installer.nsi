@@ -3,6 +3,9 @@
 ; This script is kept as a reference for direct NSIS builds outside of CMake.
 
 InstallDir ""
+; Add cmake/nsis to the include path so bare filenames resolve correctly.
+; Run makensis from the repo root or pass -NOCD and set include paths manually.
+!addincludedir "..\cmake\nsis"
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
 !include "nsDialogs.nsh"

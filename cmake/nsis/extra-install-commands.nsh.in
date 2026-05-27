@@ -22,10 +22,9 @@ ${EndIf}
 ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
 ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".py" "PythonSCAD_Python_File"
 
-; Create start menu shortcuts in the appropriate scope (set by SetShellVarContext in MultiUser.SetContext)
-CreateDirectory "$SMPROGRAMS\PythonSCAD"
-CreateShortCut "$SMPROGRAMS\PythonSCAD\PythonSCAD.lnk" "$INSTDIR\pythonscad.exe" "" "$INSTDIR\pythonscad.exe" 0
-CreateShortCut "$SMPROGRAMS\PythonSCAD\Uninstall PythonSCAD.lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0
+; Add an extra shortcut directly in the Start Menu root for discoverability.
+; The CPack template's MUI_PAGE_STARTMENU already creates the main shortcut
+; under $SMPROGRAMS\$STARTMENU_FOLDER, so we only add the root-level alias here.
 CreateShortCut "$SMPROGRAMS\PythonSCAD.lnk" "$INSTDIR\pythonscad.exe" "" "$INSTDIR\pythonscad.exe" 0
 
 ${RefreshShellIcons}

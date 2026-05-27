@@ -4,16 +4,16 @@ ${UnRegisterExtension} ".scad" "PythonSCAD_File"
 ${UnRegisterExtension} ".scad" "OpenSCAD_File"
 ${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
 
-; Remove start menu shortcuts from the appropriate scope
-Delete "$SMPROGRAMS\PythonSCAD\PythonSCAD.lnk"
-Delete "$SMPROGRAMS\PythonSCAD\Uninstall PythonSCAD.lnk"
-RMDir "$SMPROGRAMS\PythonSCAD"
+; Remove the root Start Menu shortcut added by extra-install-commands.
+; The MUI_PAGE_STARTMENU shortcuts under $STARTMENU_FOLDER are removed by the
+; CPack template's own uninstall section, so we only clean up our additions here.
 Delete "$SMPROGRAMS\PythonSCAD.lnk"
 
 ; Remove install mode registry key
-DeleteRegKey HKCU "Software\PythonSCAD"
 ${If} $MultiUser.InstallMode = 1
   DeleteRegKey HKLM "Software\PythonSCAD"
+${Else}
+  DeleteRegKey HKCU "Software\PythonSCAD"
 ${EndIf}
 
 ${RefreshShellIcons}
