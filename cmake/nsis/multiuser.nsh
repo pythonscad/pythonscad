@@ -94,7 +94,10 @@ Function MultiUser.InstallModePage_Leave
     StrCpy $MultiUser.InstallMode 1
     StrCpy $INSTDIR "${MULTIUSER_INSTALLDIR_ALLUSERS}"
     Call MultiUser.SetContext
-    ${IfNot} ${UAC_IsAdmin}
+    ${If} ${UAC_IsAdmin}
+      ; Already elevated: clear the shield from the Next button since no UAC is needed.
+      Call MultiUser.RemoveShield
+    ${Else}
       GetDlgItem $9 $HWNDParent 1
       System::Call 'user32::GetFocus()i.r8'
       EnableWindow $9 0
