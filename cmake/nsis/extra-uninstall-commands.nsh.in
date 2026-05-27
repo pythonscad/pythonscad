@@ -1,6 +1,6 @@
 ; Unregister file associations.
-; Note: mingw-file-association.nsh uses HKCR directly (not SHCTX), so
-; associations are always removed machine-wide regardless of install mode.
+; Note: mingw-file-association.nsh operates on HKCR (not SHCTX) and does not
+; explicitly honor the selected install scope during cleanup.
 ${UnRegisterExtension} ".scad" "PythonSCAD_File"
 ; Legacy cleanup: remove OpenSCAD_File association left by older PythonSCAD installers
 ${UnRegisterExtension} ".scad" "OpenSCAD_File"

@@ -20,8 +20,8 @@ ${Else}
 ${EndIf}
 
 ; Register file associations.
-; Note: mingw-file-association.nsh uses HKCR directly (not SHCTX), so
-; associations are always machine-wide regardless of install mode.
+; Note: mingw-file-association.nsh writes via HKCR (not SHCTX) and does not
+; explicitly honor the selected install scope.
 ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
 ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".py" "PythonSCAD_Python_File"
 
