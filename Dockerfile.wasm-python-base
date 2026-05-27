@@ -1,0 +1,78 @@
+# Extends openscad/wasm-base with CPython compiled for wasm32-emscripten.
+#
+# The resulting image provides:
+#   /cpython-wasm/lib/libpython3.12.a       — static library for linking
+#   /cpython-wasm/include/python3.12/        — C headers
+#   /cpython-wasm/lib/python3.12/            — stdlib (preloaded into MEMFS at cmake time)
+#
+# Build:
+#   docker build -f Dockerfile.wasm-python-base -t pythonscad/wasm-python-base:local .
+#
+FROM openscad/wasm-base:latest
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    zlib1g-dev \
+    wget \
+    xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV CPYTHON_VERSION=3.12.10
+ENV CPYTHON_PREFIX=/cpython-wasm
+
+WORKDIR /build
+
+# Download CPython source
+RUN wget -q "https://www.python.org/ftp/python/${CPYTHON_VERSION}/Python-${CPYTHON_VERSION}.tar.xz" \
+    && tar -xf Python-${CPYTHON_VERSION}.tar.xz \
+    && rm Python-${CPYTHON_VERSION}.tar.xz
+
+# Build a native Python to use as the cross-compile host interpreter.
+# CPython's cross-compilation requires a matching-version host python.
+RUN cd Python-${CPYTHON_VERSION} \
+    && ./configure --prefix=/usr/local/cpython-native --quiet \
+    && make -j$(nproc) \
+    && make install
+
+# Cross-compile CPython for Emscripten (wasm32-unknown-emscripten).
+#
+# We build only libpython3.12.a (the core interpreter static library), not the
+# standalone python.js binary. The standalone binary links ALL extension modules
+# (sha2, _decimal, etc.) which need C libraries not available in the WASM sysroot.
+# libpython3.12.a itself contains only the interpreter core, not those modules.
+#
+# After building the library we manually install headers and the stdlib .py files.
+# No make install or pyc compilation needed.
+RUN cd Python-${CPYTHON_VERSION} \
+    && CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten \
+       emconfigure ./configure \
+         --prefix=${CPYTHON_PREFIX} \
+         --build=x86_64-linux-gnu \
+         --host=wasm32-unknown-emscripten \
+         --with-build-python=/usr/local/cpython-native/bin/python3 \
+         --disable-shared \
+         --without-ensurepip \
+         "CFLAGS=-fexceptions -O2" \
+         "LDFLAGS=-fexceptions" \
+    && printf '*disabled*\n_decimal\n_bz2\n_sha2\n_elementtree\npyexpat\n_ctypes\n_sqlite3\n' > Modules/Setup.local \
+    && emmake make -j$(nproc) libpython3.12.a \
+    && install -d ${CPYTHON_PREFIX}/lib \
+                  ${CPYTHON_PREFIX}/lib/python3.12 \
+                  ${CPYTHON_PREFIX}/include/python3.12 \
+    && cp libpython3.12.a ${CPYTHON_PREFIX}/lib/ \
+    && cp -r Include/. ${CPYTHON_PREFIX}/include/python3.12/ \
+    && cp pyconfig.h ${CPYTHON_PREFIX}/include/python3.12/ \
+    && cp -a Lib/. ${CPYTHON_PREFIX}/lib/python3.12/
+
+# Remove bulky stdlib subdirectories not needed at runtime in a WASM geometry engine.
+RUN rm -rf \
+    ${CPYTHON_PREFIX}/lib/python3.12/test \
+    ${CPYTHON_PREFIX}/lib/python3.12/tkinter \
+    ${CPYTHON_PREFIX}/lib/python3.12/lib2to3 \
+    ${CPYTHON_PREFIX}/lib/python3.12/distutils \
+    ${CPYTHON_PREFIX}/lib/python3.12/idlelib \
+    ${CPYTHON_PREFIX}/lib/python3.12/turtledemo
+
+WORKDIR /
