@@ -2388,7 +2388,7 @@ endif()
 # Packaging: CPACK_* settings should be configured before `include(CPack)`
 include(InstallRequiredSystemLibraries)
 set(CPACK_PACKAGE_NAME "PythonSCAD")
-set(CPACK_PACKAGE_VENDOR "The OpenSCAD and PythonSCAD Developers")
+set(CPACK_PACKAGE_VENDOR "The PythonSCAD Developers")
 set(CPACK_PACKAGE_VERSION "${OPENSCAD_VERSION}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The Programmer's Solid 3D CAD Modeler")
 
@@ -2451,10 +2451,11 @@ if(WIN32)
                  "${CMAKE_BINARY_DIR}/Plugins/x86-ansi/UAC.dll" COPYONLY)
 
   # CPACK_NSIS_DEFINES is emitted at the top level of the generated .nsi file.
-  # The includes and !addplugindir are in our custom NSIS.template.in directly
-  # to avoid CMake quoting issues. Only the Var declaration goes here.
+  # Includes, !addplugindir, and Var MultiUser.InstallMode are all in our custom
+  # NSIS.template.in (before nsis-multiuser.nsh is included) to avoid CMake
+  # quoting issues and to ensure correct declaration order.
   # RequestExecutionLevel is set to 'user' in our custom NSIS template.
-  set(CPACK_NSIS_DEFINES "Var MultiUser.InstallMode")
+  set(CPACK_NSIS_DEFINES "")
 
   # Inject the install-type page right after Welcome (using the license page slot).
   # Shows "Just for me / For all users" with UAC shield on Next when all-users chosen.

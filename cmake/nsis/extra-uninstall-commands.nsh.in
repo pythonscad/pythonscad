@@ -6,16 +6,27 @@ ${If} $MultiUser.InstallMode = 1
   ${UnRegisterExtension} ".scad" "OpenSCAD_File"
   ${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
 ${Else}
-  ; Per-user install: remove the HKCU\Software\Classes entries written at install time.
+  ; Per-user install: remove handler keys and restore any backed-up extension defaults.
   DeleteRegKey HKCU "Software\Classes\PythonSCAD_File"
   DeleteRegKey HKCU "Software\Classes\PythonSCAD_Python_File"
-  ; Only remove the extension mapping if it still points to our handler.
   ReadRegStr $0 HKCU "Software\Classes\.scad" ""
-  StrCmp $0 "PythonSCAD_File" 0 +2
-    DeleteRegKey HKCU "Software\Classes\.scad"
+  StrCmp $0 "PythonSCAD_File" 0 scad_not_ours
+    ReadRegStr $1 HKCU "Software\Classes\.scad" "backup_val"
+    StrCmp $1 "" 0 +3
+      DeleteRegKey HKCU "Software\Classes\.scad"
+      Goto scad_not_ours
+    WriteRegStr HKCU "Software\Classes\.scad" "" $1
+    DeleteRegValue HKCU "Software\Classes\.scad" "backup_val"
+  scad_not_ours:
   ReadRegStr $0 HKCU "Software\Classes\.py" ""
-  StrCmp $0 "PythonSCAD_Python_File" 0 +2
-    DeleteRegKey HKCU "Software\Classes\.py"
+  StrCmp $0 "PythonSCAD_Python_File" 0 py_not_ours
+    ReadRegStr $1 HKCU "Software\Classes\.py" "backup_val"
+    StrCmp $1 "" 0 +3
+      DeleteRegKey HKCU "Software\Classes\.py"
+      Goto py_not_ours
+    WriteRegStr HKCU "Software\Classes\.py" "" $1
+    DeleteRegValue HKCU "Software\Classes\.py" "backup_val"
+  py_not_ours:
 ${EndIf}
 
 ; Remove the root Start Menu shortcut added by extra-install-commands.

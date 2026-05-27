@@ -31,14 +31,13 @@ InstallDir ""
     !define MULTIUSER_INSTALLDIR_ALLUSERS "$PROGRAMFILES64\PythonSCAD"
   !endif
 !endif
+; Declare before including multiuser.nsh so functions in that file can reference it.
+Var MultiUser.InstallMode
 !include "multiuser.nsh"
 
 Name "PythonSCAD"
 OutFile "pythonscad_setup.exe"
 RequestExecutionLevel user
-
-; $MultiUser.InstallMode declared here; MultiUser.AllUsersRadio is in multiuser.nsh
-Var MultiUser.InstallMode
 
 ; Include architecture-specific .onInit (provides SetRegView and UAC init).
 ; Pass /DARCH=x64 or /DARCH=x86 to makensis to select the right file.
@@ -85,10 +84,18 @@ ${If} $MultiUser.InstallMode = 1
   ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
   ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".py" "PythonSCAD_Python_File"
 ${Else}
+  ReadRegStr $0 HKCU "Software\Classes\.scad" ""
+  StrCmp "$0" "" +2
+  StrCmp "$0" "PythonSCAD_File" +2
+    WriteRegStr HKCU "Software\Classes\.scad" "backup_val" "$0"
   WriteRegStr HKCU "Software\Classes\.scad" "" "PythonSCAD_File"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_File" "" "PythonSCAD_File"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
   WriteRegStr HKCU "Software\Classes\PythonSCAD_File\DefaultIcon" "" "$INSTDIR\pythonscad.exe,0"
+  ReadRegStr $0 HKCU "Software\Classes\.py" ""
+  StrCmp "$0" "" +2
+  StrCmp "$0" "PythonSCAD_Python_File" +2
+    WriteRegStr HKCU "Software\Classes\.py" "backup_val" "$0"
   WriteRegStr HKCU "Software\Classes\.py" "" "PythonSCAD_Python_File"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File" "" "PythonSCAD_Python_File"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
@@ -153,11 +160,23 @@ ${Else}
   DeleteRegKey HKCU "Software\Classes\PythonSCAD_File"
   DeleteRegKey HKCU "Software\Classes\PythonSCAD_Python_File"
   ReadRegStr $0 HKCU "Software\Classes\.scad" ""
-  StrCmp $0 "PythonSCAD_File" 0 +2
-    DeleteRegKey HKCU "Software\Classes\.scad"
+  StrCmp $0 "PythonSCAD_File" 0 scad_not_ours
+    ReadRegStr $1 HKCU "Software\Classes\.scad" "backup_val"
+    StrCmp $1 "" 0 +3
+      DeleteRegKey HKCU "Software\Classes\.scad"
+      Goto scad_not_ours
+    WriteRegStr HKCU "Software\Classes\.scad" "" $1
+    DeleteRegValue HKCU "Software\Classes\.scad" "backup_val"
+  scad_not_ours:
   ReadRegStr $0 HKCU "Software\Classes\.py" ""
-  StrCmp $0 "PythonSCAD_Python_File" 0 +2
-    DeleteRegKey HKCU "Software\Classes\.py"
+  StrCmp $0 "PythonSCAD_Python_File" 0 py_not_ours
+    ReadRegStr $1 HKCU "Software\Classes\.py" "backup_val"
+    StrCmp $1 "" 0 +3
+      DeleteRegKey HKCU "Software\Classes\.py"
+      Goto py_not_ours
+    WriteRegStr HKCU "Software\Classes\.py" "" $1
+    DeleteRegValue HKCU "Software\Classes\.py" "backup_val"
+  py_not_ours:
 ${EndIf}
 Delete "$INSTDIR\Uninstall.exe"
 Delete "$INSTDIR\pythonscad.exe"

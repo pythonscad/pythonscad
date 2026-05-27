@@ -40,10 +40,15 @@ Function MultiUser.SetContext
 FunctionEnd
 
 ; --- Radio button click callback: update UAC shield on Next button ---
+; Show shield only when "For all users" is selected AND we are not already admin.
 Function MultiUser.InstallModePage_OnClick
   Pop $1
   nsDialogs::GetUserData $1
   Pop $1
+  ; If already elevated, never show the shield — no further UAC prompt will occur.
+  ${If} ${UAC_IsAdmin}
+    StrCpy $1 0
+  ${EndIf}
   GetDlgItem $0 $HWNDParent 1
   SendMessage $0 ${BCM_SETSHIELD} 0 $1
 FunctionEnd
