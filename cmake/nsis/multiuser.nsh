@@ -15,8 +15,11 @@
 !ifndef MULTIUSER_INSTALLDIR_USER
   !define MULTIUSER_INSTALLDIR_USER "$LocalAppData\PythonSCAD"
 !endif
+; Use $PROGRAMFILES (not $PROGRAMFILES64) so Windows selects the correct
+; Program Files directory for the installer's bitness automatically.
+; Override this from CMakeLists.txt via CPACK_NSIS_DEFINES if needed.
 !ifndef MULTIUSER_INSTALLDIR_ALLUSERS
-  !define MULTIUSER_INSTALLDIR_ALLUSERS "$ProgramFiles64\PythonSCAD"
+  !define MULTIUSER_INSTALLDIR_ALLUSERS "$PROGRAMFILES\PythonSCAD"
 !endif
 
 ; Dedicated variable for the "all users" radio button HWND, avoiding

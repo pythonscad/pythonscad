@@ -927,7 +927,9 @@ Function .onInit
   ; Quits with an error if this is an elevated inner instance that lacks admin.
   !insertmacro UAC_PageElevation_OnInit
 
-  ; If the elevated inner instance is running, skip straight to install.
+  ; If this is the UAC inner instance but elevation failed (user chose a
+  ; non-admin account in the UAC dialog), signal the outer instance via
+  ; a special exit code and quit so the outer instance can show an error.
   ${If} ${UAC_IsInnerInstance}
   ${AndIfNot} ${UAC_IsAdmin}
     SetErrorLevel 0x666666
@@ -988,7 +990,7 @@ multiuser_init:
     StrCpy $INSTDIR "$LocalAppData\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
     SetShellVarContext current
   ${Else}
-    StrCpy $INSTDIR "$ProgramFiles64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
     SetShellVarContext all
   ${EndIf}
 
