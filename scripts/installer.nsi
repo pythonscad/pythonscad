@@ -96,9 +96,13 @@ SectionEnd
 
 Function un.onInit
   ; Match the 64-bit registry view used at install time so uninstall keys are found.
-  ${If} ${RunningX64}
+  ; Gate on the compile-time ARCH flag, not runtime OS detection, so a 32-bit
+  ; installer running on a 64-bit OS does not mistakenly read the 64-bit registry.
+  !ifdef ARCH
+  !if "${ARCH}" == "x64"
     SetRegView 64
-  ${EndIf}
+  !endif
+  !endif
   Call un.MultiUser.Init
   ; Elevate for all-users uninstall if not already admin
   ${If} $MultiUser.InstallMode = 1
