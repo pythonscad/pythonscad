@@ -2426,31 +2426,61 @@ if(WIN32)
   set(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_NAME}")
   set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_NAME}")
 
-  # Enable per-user installation option (no admin required)
-  # This allows installing to user's local AppData instead of Program Files
   set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
 
   # Add "Run PythonSCAD" checkbox on finish page
   set(CPACK_NSIS_MUI_FINISHPAGE_RUN "pythonscad.exe")
 
-  # Copy NSIS helper files to build directory so they're accessible with simple paths
+  # Use our customized NSIS template which integrates UAC plugin hooks into
+  # .onInit and un.onInit (CPack's default template has these hardcoded).
+  set(CPACK_NSIS_TEMPLATE "${CMAKE_SOURCE_DIR}/cmake/nsis/NSIS.template.in")
+
+  # Copy NSIS helper files to build directory.
+  # CPack runs NSIS from build/_CPack_Packages/<system>/NSIS/ so paths use ../../../
   configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh"
                  "${CMAKE_BINARY_DIR}/nsis-mingw-file-association.nsh" COPYONLY)
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/UAC.nsh"
+                 "${CMAKE_BINARY_DIR}/nsis-UAC.nsh" COPYONLY)
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/multiuser.nsh"
+                 "${CMAKE_BINARY_DIR}/nsis-multiuser.nsh" COPYONLY)
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/Plugins/x86-unicode/UAC.dll"
+                 "${CMAKE_BINARY_DIR}/Plugins/x86-unicode/UAC.dll" COPYONLY)
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/Plugins/x86-ansi/UAC.dll"
+                 "${CMAKE_BINARY_DIR}/Plugins/x86-ansi/UAC.dll" COPYONLY)
 
-  # Pre-install includes for file association and utility macros
-  # CPack runs NSIS from build/_CPack_Packages/<system>/NSIS/
-  # Use relative path back to build directory: ../../../
-  set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "\
+  # CPACK_NSIS_DEFINES is emitted at the top level of the generated .nsi file.
+  # Used here to include headers and declare variables needed by our custom
+  # functions (which are defined in multiuser.nsh, included here).
+  # RequestExecutionLevel is set to 'user' in our custom NSIS template.
+  set(CPACK_NSIS_DEFINES "\
+    !addplugindir \\\"..\\\\..\\\\..\\\\Plugins\\\"\n\
     !include \\\"FileFunc.nsh\\\"\n\
-    !include \\\"..\\\\..\\\\..\\\\nsis-mingw-file-association.nsh\\\"\
+    !include \\\"..\\\\..\\\\..\\\\nsis-UAC.nsh\\\"\n\
+    !include \\\"..\\\\..\\\\..\\\\nsis-mingw-file-association.nsh\\\"\n\
+    !include \\\"nsDialogs.nsh\\\"\n\
+    !include \\\"..\\\\..\\\\..\\\\nsis-multiuser.nsh\\\"\n\
+    \n\
+    Var MultiUser.InstallMode\
   ")
 
-  # Extra install commands - includes file association and compatibility shortcut
+  # Inject the install-type page right after Welcome (using the license page slot).
+  # Shows "Just for me / For all users" with UAC shield on Next when all-users chosen.
+  set(CPACK_NSIS_LICENSE_PAGE "\
+    Page custom MultiUser.InstallModePage_Create MultiUser.InstallModePage_Leave\
+  ")
+
+  # CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS runs inside the install Section (after
+  # .onInit). Re-apply shell context in case the elevated inner instance needs it.
+  set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "\
+    Call MultiUser.SetContext\
+  ")
+
+  # Extra install commands — conditional per-user/all-users registry and shortcuts
   set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "\
-    !include \\\"..\\\\..\\\\..\\\\nsis-extra-install-commands.nsh\\\"\n\
-    CreateShortCut $INSTDIR\\\\openscad.lnk $INSTDIR\\\\pythonscad.exe\
+    !include \\\"..\\\\..\\\\..\\\\nsis-extra-install-commands.nsh\\\"\
   ")
 
+  # Extra uninstall commands — conditional cleanup based on stored install mode
   set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "\
     !include \\\"..\\\\..\\\\..\\\\nsis-extra-uninstall-commands.nsh\\\"\
   ")
