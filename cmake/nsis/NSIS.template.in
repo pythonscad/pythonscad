@@ -736,6 +736,12 @@ Section "-Core installation"
   !insertmacro MUI_INSTALLOPTIONS_READ $ADD_TO_PATH_ALL_USERS "NSIS.InstallOptions.ini" "Field 3" "State"
   !insertmacro MUI_INSTALLOPTIONS_READ $ADD_TO_PATH_CURRENT_USER "NSIS.InstallOptions.ini" "Field 4" "State"
 
+  ; Clamp the all-users PATH flag for per-user installs before persisting it to
+  ; ARP, so the uninstaller reads the same value that was actually applied.
+  ${If} $MultiUser.InstallMode = 0
+    StrCpy $ADD_TO_PATH_ALL_USERS 0
+  ${EndIf}
+
   ; Write special uninstall registry entries
   Push "StartMenu"
   Push "$STARTMENU_FOLDER"
@@ -763,11 +769,6 @@ Section "-Add to path"
   Push $INSTDIR\bin
   StrCmp "@CPACK_NSIS_MODIFY_PATH@" "ON" 0 doNotAddToPath
   StrCmp $DO_NOT_ADD_TO_PATH "1" doNotAddToPath 0
-  ; For per-user installs, disallow the "all users" PATH option: writing to the
-  ; system PATH (HKLM) requires elevation that has not been granted in this mode.
-  ${If} $MultiUser.InstallMode = 0
-    StrCpy $ADD_TO_PATH_ALL_USERS 0
-  ${EndIf}
     Call AddToPath
   doNotAddToPath:
 SectionEnd
