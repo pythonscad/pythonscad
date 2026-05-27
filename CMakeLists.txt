@@ -2451,19 +2451,10 @@ if(WIN32)
                  "${CMAKE_BINARY_DIR}/Plugins/x86-ansi/UAC.dll" COPYONLY)
 
   # CPACK_NSIS_DEFINES is emitted at the top level of the generated .nsi file.
-  # Used here to include headers and declare variables needed by our custom
-  # functions (which are defined in multiuser.nsh, included here).
+  # The includes and !addplugindir are in our custom NSIS.template.in directly
+  # to avoid CMake quoting issues. Only the Var declaration goes here.
   # RequestExecutionLevel is set to 'user' in our custom NSIS template.
-  set(CPACK_NSIS_DEFINES "\
-    !addplugindir \\\"..\\\\..\\\\..\\\\Plugins\\\\x86-unicode\\\"\n\
-    !include \\\"FileFunc.nsh\\\"\n\
-    !include \\\"..\\\\..\\\\..\\\\nsis-UAC.nsh\\\"\n\
-    !include \\\"..\\\\..\\\\..\\\\nsis-mingw-file-association.nsh\\\"\n\
-    !include \\\"nsDialogs.nsh\\\"\n\
-    !include \\\"..\\\\..\\\\..\\\\nsis-multiuser.nsh\\\"\n\
-    \n\
-    Var MultiUser.InstallMode\
-  ")
+  set(CPACK_NSIS_DEFINES "Var MultiUser.InstallMode")
 
   # Inject the install-type page right after Welcome (using the license page slot).
   # Shows "Just for me / For all users" with UAC shield on Next when all-users chosen.

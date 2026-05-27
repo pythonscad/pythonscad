@@ -43,6 +43,15 @@
   ; Run as current user — UAC elevation happens on demand via the install-type page.
   RequestExecutionLevel user
 
+  ; UAC plugin and multiuser support — loaded from files copied to the build root.
+  ; Paths use ../../../ because CPack runs NSIS from _CPack_Packages/<sys>/NSIS/.
+  !addplugindir "..\..\..\Plugins\x86-unicode"
+  !include "FileFunc.nsh"
+  !include "..\..\..\nsis-UAC.nsh"
+  !include "..\..\..\nsis-mingw-file-association.nsh"
+  !include "nsDialogs.nsh"
+  !include "..\..\..\nsis-multiuser.nsh"
+
 @CPACK_NSIS_DEFINES@
 @CPACK_NSIS_MANIFEST_DPI_AWARE_CODE@
 @CPACK_NSIS_BRANDING_TEXT_CODE@
