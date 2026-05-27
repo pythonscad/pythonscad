@@ -95,6 +95,10 @@ ${EndIf}
 SectionEnd
 
 Function un.onInit
+  ; Match the 64-bit registry view used at install time so uninstall keys are found.
+  ${If} ${RunningX64}
+    SetRegView 64
+  ${EndIf}
   Call un.MultiUser.Init
   ; Elevate for all-users uninstall if not already admin
   ${If} $MultiUser.InstallMode = 1

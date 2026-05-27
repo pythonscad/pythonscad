@@ -128,21 +128,38 @@ FunctionEnd
 !define ARP_UN "Software\Microsoft\Windows\CurrentVersion\Uninstall\PythonSCAD"
 
 Function un.MultiUser.Init
-  ; Try HKLM first — written only for all-users installs, readable by any account
-  ReadRegStr $0 HKLM "${ARP_UN}" "InstallMode"
-  ${If} $0 == "AllUsers"
-    StrCpy $MultiUser.InstallMode 1
-    SetShellVarContext all
-    Return
+  ; Determine install scope by matching the running uninstaller path against the
+  ; UninstallString stored in each hive. This correctly handles the case where
+  ; both a per-user and an all-users install exist simultaneously, avoiding the
+  ; HKLM-first ambiguity that would misclassify a per-user uninstall.
+  ReadRegStr $0 HKLM "${ARP_UN}" "UninstallString"
+  ${If} $0 != ""
+    ; Strip surrounding quotes if present
+    StrCpy $1 $0 1 0
+    ${If} $1 == "$\""
+      StrCpy $0 $0 -1 1
+    ${EndIf}
+    ${If} $0 == "$EXEPATH"
+      StrCpy $MultiUser.InstallMode 1
+      SetShellVarContext all
+      Return
+    ${EndIf}
   ${EndIf}
-  ; Fall back to HKCU for per-user installs
-  ReadRegStr $0 HKCU "${ARP_UN}" "InstallMode"
-  ${If} $0 == "CurrentUser"
-    StrCpy $MultiUser.InstallMode 0
-    SetShellVarContext current
-    Return
+  ; Check HKCU for per-user install
+  ReadRegStr $0 HKCU "${ARP_UN}" "UninstallString"
+  ${If} $0 != ""
+    ; Strip surrounding quotes if present
+    StrCpy $1 $0 1 0
+    ${If} $1 == "$\""
+      StrCpy $0 $0 -1 1
+    ${EndIf}
+    ${If} $0 == "$EXEPATH"
+      StrCpy $MultiUser.InstallMode 0
+      SetShellVarContext current
+      Return
+    ${EndIf}
   ${EndIf}
-  ; Default to current user if no key found
+  ; Default to current user if no matching key found
   StrCpy $MultiUser.InstallMode 0
   SetShellVarContext current
 FunctionEnd

@@ -772,6 +772,10 @@ FunctionEnd
 ;--------------------------------
 ; Multiuser uninstall init: read stored install mode and elevate if needed
 Function un.onInit
+  ; Match the registry view used during install so uninstall keys are found correctly.
+  StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" 0 +2
+    SetRegView 64
+
   Call un.MultiUser.Init
 
   ; If all-users install, ensure we have elevation
@@ -932,6 +936,11 @@ SectionEnd
 ; "Program Files" for AllUsers, "My Documents" for JustMe...
 
 Function .onInit
+  ; Use 64-bit registry view on x64 installers so registry reads/writes land
+  ; in the native hive rather than Wow6432Node.
+  StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" 0 +2
+    SetRegView 64
+
   ; Required by UAC plugin for page-based elevation pattern.
   ; Quits with an error if this is an elevated inner instance that lacks admin.
   !insertmacro UAC_PageElevation_OnInit
