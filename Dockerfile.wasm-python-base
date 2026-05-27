@@ -6,7 +6,7 @@
 #   /cpython-wasm/lib/python3.12/            — stdlib (preloaded into MEMFS at cmake time)
 #
 # Build:
-#   docker build -f Dockerfile.wasm-python-base -t pythonscad/wasm-python-base:local .
+#   docker build -f Dockerfile.wasm-python-base -t pythonscad-wasm-python-base:local .
 #
 FROM openscad/wasm-base:latest
 

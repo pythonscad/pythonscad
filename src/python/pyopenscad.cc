@@ -1084,18 +1084,18 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     char sepchar = ':';
     const auto pythonXY =
       "python" + std::to_string(PY_MAJOR_VERSION) + "." + std::to_string(PY_MINOR_VERSION);
-  #ifdef WASM_NODE_BUILD
+#ifdef WASM_NODE_BUILD
     // Node build: NODERAWFS exposes the real container filesystem.
     // stdlib lives at /cpython-wasm/lib/python3.12 on disk; home points there directly.
     PyConfig_SetBytesString(&config, &config.home, "/cpython-wasm");
-  #else
+#else
     // Web build: stdlib preloaded into MEMFS via --preload-file at /usr/lib/python3.12.
     stream << "/usr/lib/" << pythonXY;
     stream << sepchar << "/usr/lib/pythonscad/libraries/python";
     stream << sepchar << fs::path(python_scriptpath).parent_path().string();
     PyConfig_SetBytesString(&config, &config.home, "/usr");
     PyConfig_SetBytesString(&config, &config.executable, "/usr/bin/python3");
-  #endif
+#endif
 #elif defined(_WIN32)
     char sepchar = ';';
     sep = sepchar;
@@ -1162,11 +1162,16 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       PyObject *syspath = PySys_GetObject("path");
       if (syspath && PyList_Check(syspath)) {
         PyObject *p = PyUnicode_FromString(libpath);
-        if (p) { PyList_Insert(syspath, 0, p); Py_DECREF(p); }
+        if (p) {
+          PyList_Insert(syspath, 0, p);
+          Py_DECREF(p);
+        }
         if (!python_scriptpath.empty()) {
-          PyObject *s = PyUnicode_FromString(
-            fs::path(python_scriptpath).parent_path().string().c_str());
-          if (s) { PyList_Append(syspath, s); Py_DECREF(s); }
+          PyObject *s = PyUnicode_FromString(fs::path(python_scriptpath).parent_path().string().c_str());
+          if (s) {
+            PyList_Append(syspath, s);
+            Py_DECREF(s);
+          }
         }
       }
     }
