@@ -1,10 +1,14 @@
 ; Legacy manual NSIS installer script (not used by the CPack-based build).
 ; The CPack build uses cmake/nsis/NSIS.template.in and CMakeLists.txt instead.
 ; This script is kept as a reference for direct NSIS builds outside of CMake.
+;
+; To build for 64-bit, run:
+;   makensis /DARCH=x64 /I..\cmake\nsis scripts\installer.nsi
+; To build for 32-bit, run:
+;   makensis /DARCH=x86 /I..\cmake\nsis scripts\installer.nsi
 
 InstallDir ""
 ; Add cmake/nsis to the include path so bare filenames resolve correctly.
-; Run makensis from the repo root or pass -NOCD and set include paths manually.
 !addincludedir "..\cmake\nsis"
 ; Add the bundled UAC plugin directory so UAC.dll is found without a global install.
 !addplugindir "..\cmake\nsis\Plugins\x86-unicode"
@@ -15,21 +19,31 @@ InstallDir ""
 !include "UAC.nsh"
 !include "mingw-file-association.nsh"
 !include "x64.nsh"
+
+; Hook UAC GUI init before MUI2.nsh (already included above via !include)
+!define MUI_CUSTOMFUNCTION_GUIINIT GuiInit
+
 !include "multiuser.nsh"
 
 Name "PythonSCAD"
 OutFile "pythonscad_setup.exe"
-!define MUI_CUSTOMFUNCTION_GUIINIT GuiInit
 RequestExecutionLevel user
 
-; Declare variables defined in multiuser.nsh (AllUsersRadio) and the
-; InstallMode variable used across the installer.
-; Note: MultiUser.AllUsersRadio is declared inside multiuser.nsh itself.
+; $MultiUser.InstallMode declared here; MultiUser.AllUsersRadio is in multiuser.nsh
 Var MultiUser.InstallMode
 
-; installer_arch.nsi must define Function .onInit and set architecture-specific
-; registry view. See installer32.nsi / installer64.nsi.
-!include "installer_arch.nsi"
+; Include architecture-specific .onInit (provides SetRegView and UAC init).
+; Pass /DARCH=x64 or /DARCH=x86 to makensis to select the right file.
+!ifdef ARCH
+  !if "${ARCH}" == "x64"
+    !include "installer64.nsi"
+  !else
+    !include "installer32.nsi"
+  !endif
+!else
+  !warning "No /DARCH flag specified; defaulting to 32-bit init. Pass /DARCH=x64 for 64-bit."
+  !include "installer32.nsi"
+!endif
 
 !insertmacro MUI_PAGE_WELCOME
 Page custom MultiUser.InstallModePage_Create MultiUser.InstallModePage_Leave
@@ -41,7 +55,6 @@ Page custom MultiUser.InstallModePage_Create MultiUser.InstallModePage_Leave
 !insertmacro MUI_LANGUAGE "English"
 
 Function GuiInit
-  ; Required by UAC plugin for page-based elevation
   !insertmacro UAC_PageElevation_OnGuiInit
 FunctionEnd
 
@@ -52,6 +65,7 @@ DirText "Choose a directory to install PythonSCAD"
 Section "install"
 SetOutPath $INSTDIR
 File pythonscad.exe
+File pythonscad.com
 File /r /x mingw-cross-env examples
 File /r /x mingw-cross-env libraries
 File /r /x mingw-cross-env fonts
@@ -86,6 +100,7 @@ ${UnRegisterExtension} ".scad" "PythonSCAD_File"
 ${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
 Delete "$INSTDIR\Uninstall.exe"
 Delete "$INSTDIR\pythonscad.exe"
+Delete "$INSTDIR\pythonscad.com"
 Delete "$SMPROGRAMS\PythonSCAD\PythonSCAD.lnk"
 RMDir "$SMPROGRAMS\PythonSCAD"
 Delete "$SMPROGRAMS\PythonSCAD.lnk"

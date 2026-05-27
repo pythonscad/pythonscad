@@ -2455,7 +2455,7 @@ if(WIN32)
   # functions (which are defined in multiuser.nsh, included here).
   # RequestExecutionLevel is set to 'user' in our custom NSIS template.
   set(CPACK_NSIS_DEFINES "\
-    !addplugindir \\\"..\\\\..\\\\..\\\\Plugins\\\"\n\
+    !addplugindir \\\"..\\\\..\\\\..\\\\Plugins\\\\x86-unicode\\\"\n\
     !include \\\"FileFunc.nsh\\\"\n\
     !include \\\"..\\\\..\\\\..\\\\nsis-UAC.nsh\\\"\n\
     !include \\\"..\\\\..\\\\..\\\\nsis-mingw-file-association.nsh\\\"\n\

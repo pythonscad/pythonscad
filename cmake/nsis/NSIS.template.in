@@ -22,6 +22,9 @@
 ;--------------------------------
 ;Include Modern UI
 
+  ; Hook UAC_PageElevation_OnGuiInit into MUI's GUI init callback.
+  ; Must be defined before MUI.nsh is included.
+  !define MUI_CUSTOMFUNCTION_GUIINIT PythonSCAD_GuiInit
   !include "MUI.nsh"
 
   ;Default installation folder
@@ -993,4 +996,10 @@ multiuser_init:
     !insertmacro MUI_INSTALLOPTIONS_EXTRACT "NSIS.InstallOptions.ini"
 
   noOptionsPage:
+FunctionEnd
+
+; Required by UAC plugin page-based elevation pattern.
+; Called by MUI after the installer window is created.
+Function PythonSCAD_GuiInit
+  !insertmacro UAC_PageElevation_OnGuiInit
 FunctionEnd
