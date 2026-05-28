@@ -3,8 +3,10 @@
 ${If} $InstallMode = 1
   ; All-users install: ${UnRegisterExtension} operates on HKCR.
   ${UnRegisterExtension} ".scad" "PythonSCAD_File"
-  ; Legacy cleanup: remove OpenSCAD_File association left by older PythonSCAD installers
-  ${UnRegisterExtension} ".scad" "OpenSCAD_File"
+  ; Legacy cleanup: delete the stale OpenSCAD_File ProgID key left by older PythonSCAD
+  ; installers, but do NOT call ${UnRegisterExtension} which would also touch the .scad
+  ; default value (possibly re-removing what PythonSCAD_File just restored).
+  DeleteRegKey HKCR "OpenSCAD_File"
   ${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
 ${Else}
   ; Per-user install: remove handler keys and restore any backed-up extension defaults.
