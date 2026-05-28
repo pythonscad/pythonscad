@@ -37,17 +37,21 @@
   ;Set compression
   SetCompressor @CPACK_NSIS_COMPRESSOR@
 
-  ; Multiuser configuration: built-in MultiUser.nsh handles per-user vs all-users.
-  ; MULTIUSER_EXECUTIONLEVEL Highest sets RequestExecutionLevel highest, so Windows
-  ; auto-elevates when an admin user accepts the all-users default. Standard users
-  ; install per-user with no UAC prompt. This replaces the deprecated UAC plugin
-  ; which does not work with NSIS 3.12 in MSYS2 ucrt64.
-  !define MULTIUSER_EXECUTIONLEVEL Highest
-  !define MULTIUSER_MUI
-  !define MULTIUSER_INSTALLMODE_DEFAULT_CURRENTUSER
-  !define MULTIUSER_INSTALLMODE_INSTDIR "@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+  ; Run as current user — installer opens without UAC.
+  ; UAC is only triggered on demand when the user picks "All users" on the
+  ; install-mode page (via ShellExecuteEx runas re-launch).
+  RequestExecutionLevel user
 
-  !include MultiUser.nsh
+  !include "nsDialogs.nsh"
+  !include "WinMessages.nsh"
+  !include "FileFunc.nsh"
+  !insertmacro GetOptions
+  !define BCM_SETSHIELD 0x0000160C
+
+  ; $InstallMode: 0 = current user, 1 = all users
+  Var InstallMode
+  Var AllUsersRadio
+
   !include "..\..\..\nsis-mingw-file-association.nsh"
 
 @CPACK_NSIS_DEFINES@
@@ -174,7 +178,6 @@ Var AR_RegFlags
 ; based upon a script of "Written by KiCHiK 2003-01-18 05:57:02"
 ;----------------------------------------
 !verbose 3
-!include "WinMessages.nsh"
 !verbose 4
 ;====================================================
 ; get_NT_environment
@@ -550,7 +553,8 @@ FunctionEnd
   @CPACK_NSIS_INSTALLER_WELCOME_TITLE_3LINES_CODE@
   !insertmacro MUI_PAGE_WELCOME
 
-  @CPACK_NSIS_LICENSE_PAGE@
+  !insertmacro MUI_PAGE_LICENSE "@CPACK_RESOURCE_FILE_LICENSE@"
+  Page custom InstallModePage_Create InstallModePage_Leave
   Page custom InstallOptionsPage
   !insertmacro MUI_PAGE_DIRECTORY
 
@@ -718,7 +722,7 @@ Section "-Core installation"
   ;   Field 1: label
   ;   Field 2: "Add to PATH" checkbox (1 = add, 0 = skip)
   ;   Field 3: "Create Desktop Icon" checkbox
-  ; PATH scope is derived from $MultiUser.InstallMode, so the user is not asked
+  ; PATH scope is derived from $InstallMode, so the user is not asked
   ; about all-users vs current-user PATH separately.
   !insertmacro MUI_INSTALLOPTIONS_READ $ADD_TO_PATH_CURRENT_USER "NSIS.InstallOptions.ini" "Field 2" "State"
   !insertmacro MUI_INSTALLOPTIONS_READ $INSTALL_DESKTOP "NSIS.InstallOptions.ini" "Field 3" "State"
@@ -729,7 +733,7 @@ Section "-Core installation"
     StrCpy $DO_NOT_ADD_TO_PATH 1
     StrCpy $ADD_TO_PATH_ALL_USERS 0
     StrCpy $ADD_TO_PATH_CURRENT_USER 0
-  ${ElseIf} $MultiUser.InstallMode == "AllUsers"
+  ${ElseIf} $InstallMode = 1
     StrCpy $DO_NOT_ADD_TO_PATH 0
     StrCpy $ADD_TO_PATH_ALL_USERS 1
     StrCpy $ADD_TO_PATH_CURRENT_USER 0
@@ -785,6 +789,86 @@ Section "-Add to path"
 SectionEnd
 
 ;--------------------------------
+; Install-mode page: "Just for me" vs "For all users"
+; The "For all users" path re-launches the installer elevated via ShellExecuteEx
+; with the runas verb, then quits the non-elevated instance.
+
+Function InstallModePage_OnClick
+  Pop $1
+  nsDialogs::GetUserData $1
+  Pop $1
+  ; Show UAC shield on Next only when "All users" is selected
+  GetDlgItem $0 $HWNDParent 1
+  SendMessage $0 ${BCM_SETSHIELD} 0 $1
+FunctionEnd
+
+Function InstallModePage_Create
+  ; If this is a re-launched elevated instance (detected by /elevated flag in
+  ; .onInit), skip the install-mode page entirely — the mode is already set.
+  ${GetOptions} $CMDLINE "/elevated" $R0
+  ${IfNot} ${Errors}
+    Abort
+  ${EndIf}
+
+  !insertmacro MUI_HEADER_TEXT "Installation Type" "Choose how @CPACK_NSIS_PACKAGE_NAME@ should be installed."
+  GetFunctionAddress $8 InstallModePage_OnClick
+  nsDialogs::Create /NOUNLOAD 1018
+  Pop $9
+
+  ${NSD_CreateLabel} 0 10u 100% 20u "Select whether to install @CPACK_NSIS_PACKAGE_NAME@ for yourself only or for all users on this computer."
+  Pop $0
+
+  ${NSD_CreateRadioButton} 10u 38u 90% 15u "Just for me (no administrator rights required)"
+  Pop $0
+  nsDialogs::OnClick $0 $8
+  nsDialogs::SetUserData $0 0
+  ${IfThen} $InstallMode = 0 ${|} SendMessage $0 ${BM_CLICK} 0 0 ${|}
+
+  ${NSD_CreateRadioButton} 10u 58u 90% 15u "For all users on this computer (requires administrator rights)"
+  Pop $AllUsersRadio
+  nsDialogs::OnClick $AllUsersRadio $8
+  nsDialogs::SetUserData $AllUsersRadio 1
+  ${IfThen} $InstallMode = 1 ${|} SendMessage $AllUsersRadio ${BM_CLICK} 0 0 ${|}
+
+  nsDialogs::Show
+FunctionEnd
+
+Function InstallModePage_Leave
+  ${NSD_GetState} $AllUsersRadio $9
+  ${If} $9 = 0
+    ; Just for me
+    StrCpy $InstallMode 0
+    StrCpy $INSTDIR "$LOCALAPPDATA\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    SetShellVarContext current
+    ; Clear the shield from the Next button
+    GetDlgItem $0 $HWNDParent 1
+    SendMessage $0 ${BCM_SETSHIELD} 0 0
+  ${Else}
+    ; All users — re-launch elevated if not already admin
+    UserInfo::GetAccountType
+    Pop $0
+    ${If} $0 == "Admin"
+      ; Already elevated: just update mode and continue
+      StrCpy $InstallMode 1
+      StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+      StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
+        StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+      SetShellVarContext all
+    ${Else}
+      ; Re-launch elevated via ShellExecuteEx runas, then quit this instance
+      System::Call 'shell32::ShellExecuteW(i $HWNDPARENT, w "runas", w "$EXEPATH", w "/elevated", i 0, i 1) i.r0'
+      ${If} $0 > 32
+        Quit
+      ${Else}
+        ; User cancelled UAC or launch failed — stay on the page
+        MessageBox MB_ICONEXCLAMATION "Administrator privileges are required to install for all users.$\nPlease select 'Just for me' or provide administrator credentials."
+        Abort
+      ${EndIf}
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
+
+;--------------------------------
 ; Create custom pages
 Function InstallOptionsPage
   !insertmacro MUI_HEADER_TEXT "Install Options" "Choose options for installing @CPACK_NSIS_PACKAGE_NAME@"
@@ -793,15 +877,50 @@ Function InstallOptionsPage
 FunctionEnd
 
 ;--------------------------------
-; Multiuser uninstall init: read stored install mode from registry.
-; RequestExecutionLevel highest (set by MultiUser.nsh) means Windows already
-; elevated the uninstaller if the user is an admin.
+; Uninstall init: determine install scope by matching $EXEPATH against the
+; UninstallString stored in HKLM (all-users) and HKCU (per-user).
 Function un.onInit
-  ; Match the registry view used during install so uninstall keys are found correctly.
   StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" 0 +2
     SetRegView 64
 
-  !insertmacro MULTIUSER_UNINIT
+  ; Check HKLM first for all-users uninstall
+  ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
+  ${If} $0 != ""
+    ; Strip surrounding quotes
+    StrCpy $1 $0 1 0
+    ${If} $1 == "$\""
+      StrCpy $0 $0 "" 1
+    ${EndIf}
+    StrCpy $1 $0 1 -1
+    ${If} $1 == "$\""
+      StrCpy $0 $0 -1
+    ${EndIf}
+    ${If} $0 == "$EXEPATH"
+      StrCpy $InstallMode 1
+      SetShellVarContext all
+      Return
+    ${EndIf}
+  ${EndIf}
+  ; Fall back to HKCU for per-user uninstall
+  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
+  ${If} $0 != ""
+    StrCpy $1 $0 1 0
+    ${If} $1 == "$\""
+      StrCpy $0 $0 "" 1
+    ${EndIf}
+    StrCpy $1 $0 1 -1
+    ${If} $1 == "$\""
+      StrCpy $0 $0 -1
+    ${EndIf}
+    ${If} $0 == "$EXEPATH"
+      StrCpy $InstallMode 0
+      SetShellVarContext current
+      Return
+    ${EndIf}
+  ${EndIf}
+  ; Default to current user
+  StrCpy $InstallMode 0
+  SetShellVarContext current
 FunctionEnd
 
 ;--- Add/Remove callback functions: ---
@@ -934,14 +1053,7 @@ Section "Uninstall"
 SectionEnd
 
 ;--------------------------------
-; determine admin versus local install
-; Is install for "AllUsers" or "JustMe"?
-; Default to "JustMe" - set to "AllUsers" if admin or on Win9x
-; This function is used for the very first "custom page" of the installer.
-; This custom page does not show up visibly, but it executes prior to the
-; first visible page and sets up $INSTDIR properly...
-; Choose different default installation folder based on SV_ALLUSERS...
-; "Program Files" for AllUsers, "My Documents" for JustMe...
+; Initialize install mode and INSTDIR before any pages are shown.
 
 Function .onInit
   ; Use 64-bit registry view on x64 installers so registry reads/writes land
@@ -949,17 +1061,43 @@ Function .onInit
   StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" 0 +2
     SetRegView 64
 
-  ; MultiUser.nsh initialization: detects privileges, picks default install mode
-  ; (all-users if admin, else current-user), and sets $INSTDIR + shell context.
-  ; RequestExecutionLevel highest -- set by MultiUser.nsh -- means Windows already
-  ; prompted for elevation if the user is an admin.
-  !insertmacro MULTIUSER_INIT
+  ; Default to per-user install. The install-mode page lets the user switch to
+  ; all-users, which re-launches this installer elevated via ShellExecuteEx runas
+  ; with the /elevated flag. Detect that flag here to pre-select "All users" and
+  ; skip straight to all-users mode (the install-mode page is skipped via Abort
+  ; in InstallModePage_Create when $InstallMode is already 1 and we are elevated).
+  ${GetOptions} $CMDLINE "/elevated" $R0
+  ${IfNot} ${Errors}
+    ; Re-launched elevated instance: go straight to all-users mode.
+    StrCpy $InstallMode 1
+    StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
+      StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    SetShellVarContext all
+    Goto done_init_mode
+  ${EndIf}
+
+  UserInfo::GetAccountType
+  Pop $0
+  ${If} $0 == "Admin"
+    ; Already admin (e.g. running as built-in Administrator): default to all-users.
+    StrCpy $InstallMode 1
+    StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
+      StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    SetShellVarContext all
+  ${Else}
+    StrCpy $InstallMode 0
+    StrCpy $INSTDIR "$LOCALAPPDATA\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    SetShellVarContext current
+  ${EndIf}
+
+  done_init_mode:
 
   StrCmp "@CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL@" "ON" 0 done_uninst_check
 
   ; Check for an existing installation. Check HKCU first so a per-user reinstall
   ; is detected before HKLM, which a non-admin user cannot uninstall.
-  ; $R0 tracks which hive matched so DisplayName is read from the same hive.
   ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
   StrCmp $0 "" check_hklm found_existing_hkcu
   check_hklm:

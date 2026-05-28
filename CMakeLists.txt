@@ -2442,24 +2442,18 @@ if(WIN32)
 
   # Copy mingw-file-association.nsh to build dir. CPack runs NSIS from
   # build/_CPack_Packages/<system>/NSIS/ so the template's !include path is ../../../
-  # MultiUser.nsh is included from NSIS's standard Include/ directory (built-in).
   configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh"
                  "${CMAKE_BINARY_DIR}/nsis-mingw-file-association.nsh" COPYONLY)
 
   # CPACK_NSIS_DEFINES is emitted at the top level of the generated .nsi file.
-  # MultiUser configuration and includes live in our custom NSIS.template.in to
-  # avoid CMake quoting issues. RequestExecutionLevel is set by MultiUser.nsh.
   set(CPACK_NSIS_DEFINES "")
 
-  # Inject the install-type page right after Welcome (using the license page slot).
-  # Built-in MULTIUSER_PAGE_INSTALLMODE shows "All users / Current user only" and
-  # is only displayed if the user has admin or power-user privileges -- otherwise
-  # MultiUser.nsh skips it and installs per-user.
-  set(CPACK_NSIS_LICENSE_PAGE "!insertmacro MULTIUSER_PAGE_INSTALLMODE")
+  # The license page and install-type page are now hardcoded in the NSIS template
+  # (MUI_PAGE_LICENSE + custom InstallModePage), so this slot is unused.
+  set(CPACK_NSIS_LICENSE_PAGE "")
 
   # CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS runs inside the install Section.
-  # MultiUser.nsh already sets the shell context via .onInit and the install-mode
-  # page, so no extra setup is needed here.
+  # Shell context and INSTDIR are set by .onInit / InstallModePage_Leave.
   set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "")
 
   # Extra install commands — conditional per-user/all-users registry and shortcuts

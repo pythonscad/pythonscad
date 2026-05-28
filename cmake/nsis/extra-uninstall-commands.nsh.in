@@ -1,6 +1,6 @@
 ; Unregister file associations scope-aware, mirroring the install logic.
-; $MultiUser.InstallMode is "AllUsers" or "CurrentUser" (set by built-in MultiUser.nsh).
-${If} $MultiUser.InstallMode == "AllUsers"
+; $InstallMode: 1 = all users (HKLM), 0 = current user (HKCU).
+${If} $InstallMode = 1
   ; All-users install: ${UnRegisterExtension} operates on HKCR.
   ${UnRegisterExtension} ".scad" "PythonSCAD_File"
   ; Legacy cleanup: remove OpenSCAD_File association left by older PythonSCAD installers
@@ -32,7 +32,7 @@ ${EndIf}
 
 ; Remove the App Paths registry entries written at install time.
 !define APPPATHS_UN "Software\Microsoft\Windows\CurrentVersion\App Paths\pythonscad.exe"
-${If} $MultiUser.InstallMode == "AllUsers"
+${If} $InstallMode = 1
   DeleteRegKey HKLM "${APPPATHS_UN}"
 ${Else}
   DeleteRegKey HKCU "${APPPATHS_UN}"

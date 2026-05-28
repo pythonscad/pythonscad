@@ -4,8 +4,8 @@
 ; Storing it there (rather than a separate Software\PythonSCAD key) ensures
 ; it lives in the same hive as the uninstall entry and cannot conflict between
 ; a per-user and an all-users install on the same machine.
-; $MultiUser.InstallMode is "AllUsers" or "CurrentUser" (set by built-in MultiUser.nsh).
-${If} $MultiUser.InstallMode == "AllUsers"
+; $InstallMode: 1 = all users (HKLM), 0 = current user (HKCU).
+${If} $InstallMode = 1
   WriteRegStr HKLM "${ARP}" "InstallMode" "AllUsers"
 ${Else}
   WriteRegStr HKCU "${ARP}" "InstallMode" "CurrentUser"
@@ -16,7 +16,7 @@ ${EndIf}
 ;   rights that are already granted at this point.
 ; - Per-user installs write to HKCU\Software\Classes which takes precedence over
 ;   HKCR for the current user on Vista+ without requiring elevation.
-${If} $MultiUser.InstallMode == "AllUsers"
+${If} $InstallMode = 1
   ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
   ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".py" "PythonSCAD_Python_File"
 ${Else}
@@ -44,7 +44,7 @@ ${EndIf}
 ; launchers can find pythonscad.exe by basename even when PATH is not set.
 ; Scoped to match the install: HKLM for all-users, HKCU for per-user.
 !define APPPATHS "Software\Microsoft\Windows\CurrentVersion\App Paths\pythonscad.exe"
-${If} $MultiUser.InstallMode == "AllUsers"
+${If} $InstallMode = 1
   WriteRegStr HKLM "${APPPATHS}" "" "$INSTDIR\pythonscad.exe"
   WriteRegStr HKLM "${APPPATHS}" "Path" "$INSTDIR"
 ${Else}
