@@ -22,18 +22,21 @@ ${If} $InstallMode = 1
 ${Else}
   ; Back up any existing user extension defaults before overwriting, mirroring
   ; the backup_val pattern in mingw-file-association.nsh, so uninstall can restore them.
+  ; Use explicit labels to avoid relative-jump miscounts.
   ReadRegStr $0 HKCU "Software\Classes\.scad" ""
-  StrCmp "$0" "" +2
-  StrCmp "$0" "PythonSCAD_File" +2
-    WriteRegStr HKCU "Software\Classes\.scad" "backup_val" "$0"
+  StrCmp $0 "" scad_no_backup
+  StrCmp $0 "PythonSCAD_File" scad_no_backup
+    WriteRegStr HKCU "Software\Classes\.scad" "backup_val" $0
+  scad_no_backup:
   WriteRegStr HKCU "Software\Classes\.scad" "" "PythonSCAD_File"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_File" "" "PythonSCAD_File"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
   WriteRegStr HKCU "Software\Classes\PythonSCAD_File\DefaultIcon" "" "$INSTDIR\pythonscad.exe,0"
   ReadRegStr $0 HKCU "Software\Classes\.py" ""
-  StrCmp "$0" "" +2
-  StrCmp "$0" "PythonSCAD_Python_File" +2
-    WriteRegStr HKCU "Software\Classes\.py" "backup_val" "$0"
+  StrCmp $0 "" py_no_backup
+  StrCmp $0 "PythonSCAD_Python_File" py_no_backup
+    WriteRegStr HKCU "Software\Classes\.py" "backup_val" $0
+  py_no_backup:
   WriteRegStr HKCU "Software\Classes\.py" "" "PythonSCAD_Python_File"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File" "" "PythonSCAD_Python_File"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'

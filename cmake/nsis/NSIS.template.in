@@ -53,6 +53,26 @@
   Var InstallMode
   Var AllUsersRadio
 
+; IsElevated macro: sets the output variable to 1 if the current process token
+; has TokenElevation (i.e. the process is actually elevated via UAC), 0 otherwise.
+; Uses advapi32 GetTokenInformation with TokenElevation (class 20).
+; Result variable is passed by name (e.g. !insertmacro IsElevated $R0).
+!macro IsElevated _OutVar
+  System::Call 'kernel32::GetCurrentProcess() i.s'
+  System::Call 'advapi32::OpenProcessToken(i s, i 0x0008, *i .s) i.r0' ; TOKEN_QUERY=8
+  ${If} $0 != 0
+    System::Call 'advapi32::GetTokenInformation(i s, i 20, *i .r0, i 4, *i .r1) i.r2' ; TokenElevation=20
+    System::Call 'kernel32::CloseHandle(i s)'
+    ${If} $2 != 0
+      StrCpy ${_OutVar} $0
+    ${Else}
+      StrCpy ${_OutVar} 0
+    ${EndIf}
+  ${Else}
+    StrCpy ${_OutVar} 0
+  ${EndIf}
+!macroend
+
   !include "..\..\..\nsis-mingw-file-association.nsh"
 
 @CPACK_NSIS_DEFINES@
@@ -845,10 +865,9 @@ Function InstallModePage_Leave
     GetDlgItem $0 $HWNDParent 1
     SendMessage $0 ${BCM_SETSHIELD} 0 0
   ${Else}
-    ; All users — re-launch elevated if not already admin
-    UserInfo::GetAccountType
-    Pop $0
-    ${If} $0 == "Admin"
+    ; All users — re-launch elevated if not already running with an elevated token.
+    !insertmacro IsElevated $0
+    ${If} $0 = 1
       ; Already elevated: just update mode and continue
       StrCpy $InstallMode 1
       StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
@@ -899,14 +918,13 @@ Function un.onInit
     ${If} $0 == "$EXEPATH"
       StrCpy $InstallMode 1
       SetShellVarContext all
-      ; All-users install requires admin rights. Re-launch elevated if needed,
+      ; All-users install requires an elevated token. Re-launch elevated if needed,
       ; passing the original command line so silent-mode flags (/S _?=...) are
       ; preserved. Use ShellExecuteEx with SEE_MASK_NOCLOSEPROCESS so we can
       ; wait for the elevated process to finish before this instance quits,
       ; preventing the installer from continuing before cleanup is complete.
-      UserInfo::GetAccountType
-      Pop $2
-      ${If} $2 != "Admin"
+      !insertmacro IsElevated $2
+      ${If} $2 = 0
         ; SHELLEXECUTEINFO struct: cbSize, fMask, hwnd, lpVerb, lpFile,
         ;   lpParameters, lpDirectory, nShow, hInstApp, [reserved], hProcess
         ; fMask = SEE_MASK_NOCLOSEPROCESS(0x40) | SEE_MASK_NO_CONSOLE(0x8000) = 0x8040
@@ -1097,12 +1115,10 @@ Function .onInit
   ; in InstallModePage_Create when $InstallMode is already 1 and we are elevated).
   ${GetOptions} $CMDLINE "/elevated" $R0
   ${IfNot} ${Errors}
-    ; Re-launched elevated instance — but verify we actually have admin rights
-    ; before accepting the flag, so a user cannot bypass to all-users mode by
-    ; manually passing /elevated without real elevation.
-    UserInfo::GetAccountType
-    Pop $R1
-    ${If} $R1 == "Admin"
+    ; Re-launched elevated instance — verify the process token is actually elevated
+    ; so a user cannot bypass to all-users mode by manually passing /elevated.
+    !insertmacro IsElevated $R1
+    ${If} $R1 = 1
       StrCpy $InstallMode 1
       StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
       StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
@@ -1113,10 +1129,9 @@ Function .onInit
     ; Not actually elevated — fall through to normal mode detection below.
   ${EndIf}
 
-  UserInfo::GetAccountType
-  Pop $0
-  ${If} $0 == "Admin"
-    ; Already admin (e.g. running as built-in Administrator): default to all-users.
+  !insertmacro IsElevated $0
+  ${If} $0 = 1
+    ; Process is elevated (e.g. running as built-in Administrator): default to all-users.
     StrCpy $InstallMode 1
     StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
     StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
