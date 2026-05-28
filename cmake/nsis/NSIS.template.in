@@ -768,6 +768,11 @@ Section "-Core installation"
 
 @CPACK_NSIS_EXTRA_INSTALL_COMMANDS@
 
+  ; Create desktop shortcut if requested
+  StrCmp $INSTALL_DESKTOP "1" 0 skip_desktop_install
+    CreateShortCut "$DESKTOP\@CPACK_NSIS_PACKAGE_NAME@.lnk" "$INSTDIR\@CPACK_NSIS_INSTALLED_ICON_NAME@"
+  skip_desktop_install:
+
 SectionEnd
 
 Section "-Add to path"
@@ -851,7 +856,11 @@ Section "Uninstall"
   ;MessageBox MB_OK "Add to path: $DO_NOT_ADD_TO_PATH all users: $ADD_TO_PATH_ALL_USERS"
   ReadRegStr $INSTALL_DESKTOP SHCTX \
     "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallToDesktop"
-  ;MessageBox MB_OK "Install to desktop: $INSTALL_DESKTOP "
+
+  ; Remove desktop shortcut if it was installed
+  StrCmp $INSTALL_DESKTOP "1" 0 skip_desktop_uninstall
+    Delete "$DESKTOP\@CPACK_NSIS_PACKAGE_NAME@.lnk"
+  skip_desktop_uninstall:
 
 @CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS@
 
