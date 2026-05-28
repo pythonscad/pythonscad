@@ -8,13 +8,16 @@ ${If} $InstallMode = 1
   ${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
 ${Else}
   ; Per-user install: remove handler keys and restore any backed-up extension defaults.
+  ; Only remove the values we wrote — never DeleteRegKey the extension key, as it may
+  ; contain subkeys (e.g. OpenWithProgids) or values written by other programs.
   DeleteRegKey HKCU "Software\Classes\PythonSCAD_File"
   DeleteRegKey HKCU "Software\Classes\PythonSCAD_Python_File"
   ReadRegStr $0 HKCU "Software\Classes\.scad" ""
   StrCmp $0 "PythonSCAD_File" 0 scad_not_ours
     ReadRegStr $1 HKCU "Software\Classes\.scad" "backup_val"
     StrCmp $1 "" 0 +3
-      DeleteRegKey HKCU "Software\Classes\.scad"
+      ; No backup — remove just the default value we set, not the whole key.
+      DeleteRegValue HKCU "Software\Classes\.scad" ""
       Goto scad_not_ours
     WriteRegStr HKCU "Software\Classes\.scad" "" $1
     DeleteRegValue HKCU "Software\Classes\.scad" "backup_val"
@@ -23,7 +26,8 @@ ${Else}
   StrCmp $0 "PythonSCAD_Python_File" 0 py_not_ours
     ReadRegStr $1 HKCU "Software\Classes\.py" "backup_val"
     StrCmp $1 "" 0 +3
-      DeleteRegKey HKCU "Software\Classes\.py"
+      ; No backup — remove just the default value we set, not the whole key.
+      DeleteRegValue HKCU "Software\Classes\.py" ""
       Goto py_not_ours
     WriteRegStr HKCU "Software\Classes\.py" "" $1
     DeleteRegValue HKCU "Software\Classes\.py" "backup_val"

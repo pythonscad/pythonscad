@@ -899,6 +899,18 @@ Function un.onInit
     ${If} $0 == "$EXEPATH"
       StrCpy $InstallMode 1
       SetShellVarContext all
+      ; All-users install requires admin rights. Re-launch elevated if needed.
+      UserInfo::GetAccountType
+      Pop $2
+      ${If} $2 != "Admin"
+        System::Call 'shell32::ShellExecuteW(i $HWNDPARENT, w "runas", w "$EXEPATH", w "", i 0, i 1) i.r2'
+        ${If} $2 > 32
+          Quit
+        ${Else}
+          MessageBox MB_ICONSTOP "Administrator privileges are required to uninstall the system-wide installation."
+          Abort
+        ${EndIf}
+      ${EndIf}
       Return
     ${EndIf}
   ${EndIf}
