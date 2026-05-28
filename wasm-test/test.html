@@ -84,7 +84,7 @@ show(difference(cube([20, 20, 20], center=True), cylinder(h=25, r=5, center=True
           const url  = URL.createObjectURL(blob);
           dlLink.href     = url;
           dlLink.download = 'output.stl';
-          dlLink.style.display = '';
+          dlLink.style.display = 'inline';
           dlLink.textContent   = `↓ Download STL (${stl.length} bytes)`;
           log(`✓ Success — ${stl.length} bytes\n\n${allOutput}`, 'ok');
         } else {
