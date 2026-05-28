@@ -115,7 +115,7 @@ Var AR_RegFlags
 
   ClearErrors
   ;Reading component status from registry
-  ReadRegDWORD $AR_RegFlags HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@\Components\${SecName}" "Installed"
+  ReadRegDWORD $AR_RegFlags SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@\Components\${SecName}" "Installed"
   IfErrors "default_${SecName}"
     ;Status will stay default if registry value not found
     ;(component was never installed)
@@ -148,13 +148,13 @@ Var AR_RegFlags
     ;Section is not selected:
     ;Calling Section uninstall macro and writing zero installed flag
     !insertmacro "Remove_${${SecName}}"
-    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@\Components\${SecName}" \
+    WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@\Components\${SecName}" \
   "Installed" 0
     Goto "exit_${SecName}"
 
  "leave_${SecName}:"
     ;Section is selected:
-    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@\Components\${SecName}" \
+    WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@\Components\${SecName}" \
   "Installed" 1
 
  "exit_${SecName}:"
@@ -1137,10 +1137,12 @@ Function .onInit
   ; The shell-context/INSTDIR set here is only a UI default — InstallModePage_Leave
   ; re-checks actual token elevation (IsElevated) before any HKLM/Program Files
   ; writes and re-launches via runas if needed. For silent installs (/S), which
-  ; skip the mode page, InstallModePage_Leave is also skipped, so an unelevated
-  ; admin doing a silent all-users install will fail to write to Program Files;
-  ; silent all-users installs should use the /elevated re-launch path or run
-  ; the installer as an elevated process explicitly.
+  ; skip the mode page, InstallModePage_Leave is also skipped, so:
+  ;   - Non-admin users running /S always get a per-user install (safe default).
+  ;   - Admin users running /S get all-users mode pre-selected but are not yet
+  ;     elevated; writes to Program Files / HKLM will fail silently. For a
+  ;     reliable silent all-users install, either run the installer as an
+  ;     elevated process (runas / sudo) or use the /elevated re-launch path.
   UserInfo::GetAccountType
   Pop $0
   ${If} $0 == "Admin"

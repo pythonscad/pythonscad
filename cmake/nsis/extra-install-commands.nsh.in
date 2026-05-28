@@ -1,4 +1,4 @@
-!define ARP "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@"
+!define /ifndef ARP "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@"
 
 ; Persist install mode under the ARP uninstall key in the appropriate hive.
 ; Storing it there (rather than a separate Software\PythonSCAD key) ensures
@@ -11,6 +11,15 @@ ${If} $InstallMode = 1
 ${Else}
   WriteRegStr HKCU "${ARP}" "InstallMode" "CurrentUser"
   WriteRegStr HKCU "${ARP}" "InstallLocation" "$INSTDIR"
+${EndIf}
+
+; Write the installed size into the ARP key so "Apps & features" shows it.
+${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
+IntFmt $0 "0x%08X" $0
+${If} $InstallMode = 1
+  WriteRegDWORD HKLM "${ARP}" "EstimatedSize" "$0"
+${Else}
+  WriteRegDWORD HKCU "${ARP}" "EstimatedSize" "$0"
 ${EndIf}
 
 ; Register file associations scope-aware:
@@ -48,7 +57,7 @@ ${EndIf}
 ; App Paths registry entries so 'Start > Run' (Win+R) and ShellExecute-based
 ; launchers can find pythonscad.exe by basename even when PATH is not set.
 ; Scoped to match the install: HKLM for all-users, HKCU for per-user.
-!define APPPATHS "Software\Microsoft\Windows\CurrentVersion\App Paths\pythonscad.exe"
+!define /ifndef APPPATHS "Software\Microsoft\Windows\CurrentVersion\App Paths\pythonscad.exe"
 ${If} $InstallMode = 1
   WriteRegStr HKLM "${APPPATHS}" "" "$INSTDIR\pythonscad.exe"
   WriteRegStr HKLM "${APPPATHS}" "Path" "$INSTDIR"
@@ -57,9 +66,13 @@ ${Else}
   WriteRegStr HKCU "${APPPATHS}" "Path" "$INSTDIR"
 ${EndIf}
 
+; Compatibility symlink: older scripts and IDE integrations may launch openscad
+; by name. This shim ensures they keep working after switching to PythonSCAD.
+CreateShortCut "$INSTDIR\openscad.lnk" "$INSTDIR\pythonscad.exe"
+
 ; Add an extra shortcut directly in the Start Menu root for discoverability.
 ; The CPack template's MUI_PAGE_STARTMENU already creates the main shortcut
 ; under $SMPROGRAMS\$STARTMENU_FOLDER, so we only add the root-level alias here.
-CreateShortCut "$SMPROGRAMS\PythonSCAD.lnk" "$INSTDIR\pythonscad.exe" "" "$INSTDIR\pythonscad.exe" 0
+CreateShortCut "$SMPROGRAMS\@CPACK_PACKAGE_NAME@.lnk" "$INSTDIR\pythonscad.exe" "" "$INSTDIR\pythonscad.exe" 0
 
 ${RefreshShellIcons}
