@@ -950,16 +950,19 @@ Function .onInit
 
   ; Check for an existing installation. Check HKCU first so a per-user reinstall
   ; is detected before HKLM, which a non-admin user cannot uninstall.
+  ; $R0 tracks which hive matched so DisplayName is read from the same hive.
   ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
-  StrCmp $0 "" check_hklm found_existing
+  StrCmp $0 "" check_hklm found_existing_hkcu
   check_hklm:
   ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
-  StrCmp $0 "" done_uninst_check found_existing
+  StrCmp $0 "" done_uninst_check found_existing_hklm
 
-found_existing:
+found_existing_hkcu:
+  ReadRegStr $1 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "DisplayName"
+  Goto found_existing
+found_existing_hklm:
   ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "DisplayName"
-  StrCmp $1 "" 0 +2
-    ReadRegStr $1 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "DisplayName"
+found_existing:
   MessageBox MB_YESNOCANCEL|MB_ICONEXCLAMATION \
   "$1 is already installed. $\n$\nDo you want to uninstall the old version before installing the new one?" \
   /SD IDYES IDYES uninst IDNO done_uninst_check
