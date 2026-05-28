@@ -911,7 +911,17 @@ Function un.onInit
   StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" 0 +2
     SetRegView 64
 
-  ; Check HKLM ARP key for an all-users install record
+  ; Check HKCU first so a per-user uninstall is detected when both a per-user
+  ; and an all-users install coexist. A per-user uninstaller should never
+  ; uninstall the machine-wide copy.
+  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
+  ${If} $0 == "CurrentUser"
+    StrCpy $InstallMode 0
+    SetShellVarContext current
+    Return
+  ${EndIf}
+
+  ; Check HKLM for an all-users install record
   ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
   ${If} $0 == "AllUsers"
     StrCpy $InstallMode 1
@@ -923,16 +933,19 @@ Function un.onInit
     ; preventing the installer from continuing before cleanup is complete.
     !insertmacro IsElevated $2
     ${If} $2 = 0
-      ; SHELLEXECUTEINFO struct: cbSize, fMask, hwnd, lpVerb, lpFile,
-      ;   lpParameters, lpDirectory, nShow, hInstApp, [reserved], hProcess
+      ; SHELLEXECUTEINFO struct layout (60 bytes for 32-bit NSIS):
+      ;   cbSize(i), fMask(i), hwnd(i), lpVerb(w), lpFile(w), lpParameters(w),
+      ;   lpDirectory(w), nShow(i), hInstApp(i), lpIDList(i), lpClass(w),
+      ;   hkeyClass(i), dwHotKey(i), hIcon/hMonitor(i), hProcess(i)
       ; fMask = SEE_MASK_NOCLOSEPROCESS(0x40) | SEE_MASK_NO_CONSOLE(0x8000) = 0x8040
       System::Alloc 60
       Pop $3
       System::Call "*$3(i 60, i 0x8040, i $HWNDPARENT, w 'runas', w '$EXEPATH', \
-        w '$CMDLINE', w '', i 1, i 0, i 0, i 0, i 0, i 0, i 0, i 0)"
+        w '$CMDLINE', w '', i 1, i 0, i 0, w '', i 0, i 0, i 0, i 0)"
       System::Call 'shell32::ShellExecuteExW(i r3) i.r2'
       ${If} $2 != 0
-        System::Call "*$3(i, i, i, w, w, w, w, i, i, i, i, i, i, i, i hProcess.r4)"
+        ; Read hProcess from offset 56 (last field at offset 14*4=56)
+        System::Call "*$3(i, i, i, w, w, w, w, i, i, i, w, i, i, i, i.r4)"
         System::Call 'kernel32::WaitForSingleObject(i r4, i 0xFFFFFFFF)'
         System::Call 'kernel32::CloseHandle(i r4)'
         System::Free $3
@@ -943,14 +956,6 @@ Function un.onInit
         Abort
       ${EndIf}
     ${EndIf}
-    Return
-  ${EndIf}
-
-  ; Check HKCU for a per-user install record
-  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
-  ${If} $0 == "CurrentUser"
-    StrCpy $InstallMode 0
-    SetShellVarContext current
     Return
   ${EndIf}
 
