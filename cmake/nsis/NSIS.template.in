@@ -899,14 +899,30 @@ Function un.onInit
     ${If} $0 == "$EXEPATH"
       StrCpy $InstallMode 1
       SetShellVarContext all
-      ; All-users install requires admin rights. Re-launch elevated if needed.
+      ; All-users install requires admin rights. Re-launch elevated if needed,
+      ; passing the original command line so silent-mode flags (/S _?=...) are
+      ; preserved. Use ShellExecuteEx with SEE_MASK_NOCLOSEPROCESS so we can
+      ; wait for the elevated process to finish before this instance quits,
+      ; preventing the installer from continuing before cleanup is complete.
       UserInfo::GetAccountType
       Pop $2
       ${If} $2 != "Admin"
-        System::Call 'shell32::ShellExecuteW(i $HWNDPARENT, w "runas", w "$EXEPATH", w "", i 0, i 1) i.r2'
-        ${If} $2 > 32
+        ; SHELLEXECUTEINFO struct: cbSize, fMask, hwnd, lpVerb, lpFile,
+        ;   lpParameters, lpDirectory, nShow, hInstApp, [reserved], hProcess
+        ; fMask = SEE_MASK_NOCLOSEPROCESS(0x40) | SEE_MASK_NO_CONSOLE(0x8000) = 0x8040
+        System::Alloc 60
+        Pop $3
+        System::Call "*$3(i 60, i 0x8040, i $HWNDPARENT, w 'runas', w '$EXEPATH', \
+          w '$CMDLINE', w '', i 1, i 0, i 0, i 0, i 0, i 0, i 0, i 0)"
+        System::Call 'shell32::ShellExecuteExW(i r3) i.r2'
+        ${If} $2 != 0
+          System::Call "*$3(i, i, i, w, w, w, w, i, i, i, i, i, i, i, i hProcess.r4)"
+          System::Call 'kernel32::WaitForSingleObject(i r4, i 0xFFFFFFFF)'
+          System::Call 'kernel32::CloseHandle(i r4)'
+          System::Free $3
           Quit
         ${Else}
+          System::Free $3
           MessageBox MB_ICONSTOP "Administrator privileges are required to uninstall the system-wide installation."
           Abort
         ${EndIf}
