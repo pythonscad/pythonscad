@@ -879,8 +879,11 @@ Function InstallModePage_Leave
         StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
       SetShellVarContext all
     ${Else}
-      ; Re-launch elevated via ShellExecuteEx runas, then quit this instance
-      System::Call 'shell32::ShellExecuteW(i $HWNDPARENT, w "runas", w "$EXEPATH", w "/elevated", i 0, i 1) i.r0'
+      ; Re-launch elevated via ShellExecuteEx runas, preserving the original
+      ; command line (e.g. /D=<dir>) and appending /elevated so the elevated
+      ; instance knows to skip the mode page and go straight to all-users.
+      StrCpy $R0 '$CMDLINE /elevated'
+      System::Call 'shell32::ShellExecuteW(i $HWNDPARENT, w "runas", w "$EXEPATH", w "$R0", i 0, i 1) i.r0'
       ${If} $0 > 32
         Quit
       ${Else}
@@ -901,75 +904,57 @@ Function InstallOptionsPage
 FunctionEnd
 
 ;--------------------------------
-; Uninstall init: determine install scope by matching $EXEPATH against the
-; UninstallString stored in HKLM (all-users) and HKCU (per-user).
+; Uninstall init: read the InstallMode value written to the ARP key at install
+; time to determine scope. Path-matching $EXEPATH is unreliable because NSIS
+; copies the uninstaller to a temp location for normal (non-_?=) launches.
 Function un.onInit
   StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" 0 +2
     SetRegView 64
 
-  ; Check HKLM first for all-users uninstall
-  ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
-  ${If} $0 != ""
-    ; Strip surrounding quotes
-    StrCpy $1 $0 1 0
-    ${If} $1 == "$\""
-      StrCpy $0 $0 "" 1
-    ${EndIf}
-    StrCpy $1 $0 1 -1
-    ${If} $1 == "$\""
-      StrCpy $0 $0 -1
-    ${EndIf}
-    ${If} $0 == "$EXEPATH"
-      StrCpy $InstallMode 1
-      SetShellVarContext all
-      ; All-users install requires an elevated token. Re-launch elevated if needed,
-      ; passing the original command line so silent-mode flags (/S _?=...) are
-      ; preserved. Use ShellExecuteEx with SEE_MASK_NOCLOSEPROCESS so we can
-      ; wait for the elevated process to finish before this instance quits,
-      ; preventing the installer from continuing before cleanup is complete.
-      !insertmacro IsElevated $2
-      ${If} $2 = 0
-        ; SHELLEXECUTEINFO struct: cbSize, fMask, hwnd, lpVerb, lpFile,
-        ;   lpParameters, lpDirectory, nShow, hInstApp, [reserved], hProcess
-        ; fMask = SEE_MASK_NOCLOSEPROCESS(0x40) | SEE_MASK_NO_CONSOLE(0x8000) = 0x8040
-        System::Alloc 60
-        Pop $3
-        System::Call "*$3(i 60, i 0x8040, i $HWNDPARENT, w 'runas', w '$EXEPATH', \
-          w '$CMDLINE', w '', i 1, i 0, i 0, i 0, i 0, i 0, i 0, i 0)"
-        System::Call 'shell32::ShellExecuteExW(i r3) i.r2'
-        ${If} $2 != 0
-          System::Call "*$3(i, i, i, w, w, w, w, i, i, i, i, i, i, i, i hProcess.r4)"
-          System::Call 'kernel32::WaitForSingleObject(i r4, i 0xFFFFFFFF)'
-          System::Call 'kernel32::CloseHandle(i r4)'
-          System::Free $3
-          Quit
-        ${Else}
-          System::Free $3
-          MessageBox MB_ICONSTOP "Administrator privileges are required to uninstall the system-wide installation."
-          Abort
-        ${EndIf}
+  ; Check HKLM ARP key for an all-users install record
+  ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
+  ${If} $0 == "AllUsers"
+    StrCpy $InstallMode 1
+    SetShellVarContext all
+    ; All-users install requires an elevated token. Re-launch elevated if needed,
+    ; passing the original command line so silent-mode flags (/S _?=...) are
+    ; preserved. Use ShellExecuteEx with SEE_MASK_NOCLOSEPROCESS so we can
+    ; wait for the elevated process to finish before this instance quits,
+    ; preventing the installer from continuing before cleanup is complete.
+    !insertmacro IsElevated $2
+    ${If} $2 = 0
+      ; SHELLEXECUTEINFO struct: cbSize, fMask, hwnd, lpVerb, lpFile,
+      ;   lpParameters, lpDirectory, nShow, hInstApp, [reserved], hProcess
+      ; fMask = SEE_MASK_NOCLOSEPROCESS(0x40) | SEE_MASK_NO_CONSOLE(0x8000) = 0x8040
+      System::Alloc 60
+      Pop $3
+      System::Call "*$3(i 60, i 0x8040, i $HWNDPARENT, w 'runas', w '$EXEPATH', \
+        w '$CMDLINE', w '', i 1, i 0, i 0, i 0, i 0, i 0, i 0, i 0)"
+      System::Call 'shell32::ShellExecuteExW(i r3) i.r2'
+      ${If} $2 != 0
+        System::Call "*$3(i, i, i, w, w, w, w, i, i, i, i, i, i, i, i hProcess.r4)"
+        System::Call 'kernel32::WaitForSingleObject(i r4, i 0xFFFFFFFF)'
+        System::Call 'kernel32::CloseHandle(i r4)'
+        System::Free $3
+        Quit
+      ${Else}
+        System::Free $3
+        MessageBox MB_ICONSTOP "Administrator privileges are required to uninstall the system-wide installation."
+        Abort
       ${EndIf}
-      Return
     ${EndIf}
+    Return
   ${EndIf}
-  ; Fall back to HKCU for per-user uninstall
-  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
-  ${If} $0 != ""
-    StrCpy $1 $0 1 0
-    ${If} $1 == "$\""
-      StrCpy $0 $0 "" 1
-    ${EndIf}
-    StrCpy $1 $0 1 -1
-    ${If} $1 == "$\""
-      StrCpy $0 $0 -1
-    ${EndIf}
-    ${If} $0 == "$EXEPATH"
-      StrCpy $InstallMode 0
-      SetShellVarContext current
-      Return
-    ${EndIf}
+
+  ; Check HKCU for a per-user install record
+  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
+  ${If} $0 == "CurrentUser"
+    StrCpy $InstallMode 0
+    SetShellVarContext current
+    Return
   ${EndIf}
-  ; Default to current user
+
+  ; Fallback: default to current user
   StrCpy $InstallMode 0
   SetShellVarContext current
 FunctionEnd
@@ -1133,30 +1118,23 @@ Function .onInit
     ; Not actually elevated — fall through to normal mode detection below.
   ${EndIf}
 
-  ; Use group membership to pre-select the install mode so admins (even unelevated,
+  ; Use group membership to pre-select the install mode. Admins (even unelevated,
   ; as is normal under UAC) see "For all users" pre-selected on the mode page.
-  ; The actual elevation check (IsElevated / TokenElevation) happens in
-  ; InstallModePage_Leave before any HKLM/Program Files writes.
-  ; For silent installs (/S), the mode page is skipped, so we must also check
-  ; actual token elevation here: downgrade to per-user if not elevated so a
-  ; silent install by an unelevated admin doesn't attempt to write to Program Files.
+  ; The shell-context/INSTDIR set here is only a UI default — InstallModePage_Leave
+  ; re-checks actual token elevation (IsElevated) before any HKLM/Program Files
+  ; writes and re-launches via runas if needed. For silent installs (/S), which
+  ; skip the mode page, InstallModePage_Leave is also skipped, so an unelevated
+  ; admin doing a silent all-users install will fail to write to Program Files;
+  ; silent all-users installs should use the /elevated re-launch path or run
+  ; the installer as an elevated process explicitly.
   UserInfo::GetAccountType
   Pop $0
   ${If} $0 == "Admin"
-    !insertmacro IsElevated $R0
-    ${If} $R0 = 1
-      StrCpy $InstallMode 1
-      StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
-      StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
-        StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
-      SetShellVarContext all
-    ${Else}
-      ; Admin group but not elevated (standard UAC user): default to per-user.
-      ; The install-mode page will let them choose all-users and trigger UAC.
-      StrCpy $InstallMode 0
-      StrCpy $INSTDIR "$LOCALAPPDATA\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
-      SetShellVarContext current
-    ${EndIf}
+    StrCpy $InstallMode 1
+    StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
+      StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+    SetShellVarContext all
   ${Else}
     StrCpy $InstallMode 0
     StrCpy $INSTDIR "$LOCALAPPDATA\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
