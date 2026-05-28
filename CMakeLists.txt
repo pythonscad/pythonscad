@@ -2433,41 +2433,34 @@ if(WIN32)
 
   # Use our customized NSIS template which integrates UAC plugin hooks into
   # .onInit and un.onInit (CPack's default template has these hardcoded).
-  set(CPACK_NSIS_TEMPLATE "${CMAKE_SOURCE_DIR}/cmake/nsis/NSIS.template.in")
+  # CPack's NSIS generator locates the template via cmCPackGenerator::FindTemplate,
+  # which searches CMAKE_MODULE_PATH (propagated to CPack as CPACK_MODULE_PATH)
+  # before falling back to CMake's bundled <CMakeRoot>/Modules/Internal/CPack/.
+  # There is no CPACK_NSIS_TEMPLATE variable -- adding cmake/nsis to the module
+  # path is the only way to override the default template.
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/nsis")
 
-  # Copy NSIS helper files to build directory.
-  # CPack runs NSIS from build/_CPack_Packages/<system>/NSIS/ so paths use ../../../
+  # Copy mingw-file-association.nsh to build dir. CPack runs NSIS from
+  # build/_CPack_Packages/<system>/NSIS/ so the template's !include path is ../../../
+  # MultiUser.nsh is included from NSIS's standard Include/ directory (built-in).
   configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh"
                  "${CMAKE_BINARY_DIR}/nsis-mingw-file-association.nsh" COPYONLY)
-  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/UAC.nsh"
-                 "${CMAKE_BINARY_DIR}/nsis-UAC.nsh" COPYONLY)
-  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/multiuser.nsh"
-                 "${CMAKE_BINARY_DIR}/nsis-multiuser.nsh" COPYONLY)
-  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Plugins/x86-unicode")
-  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Plugins/x86-ansi")
-  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/Plugins/x86-unicode/UAC.dll"
-                 "${CMAKE_BINARY_DIR}/Plugins/x86-unicode/UAC.dll" COPYONLY)
-  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/Plugins/x86-ansi/UAC.dll"
-                 "${CMAKE_BINARY_DIR}/Plugins/x86-ansi/UAC.dll" COPYONLY)
 
   # CPACK_NSIS_DEFINES is emitted at the top level of the generated .nsi file.
-  # Includes, !addplugindir, and Var MultiUser.InstallMode are all in our custom
-  # NSIS.template.in (before nsis-multiuser.nsh is included) to avoid CMake
-  # quoting issues and to ensure correct declaration order.
-  # RequestExecutionLevel is set to 'user' in our custom NSIS template.
+  # MultiUser configuration and includes live in our custom NSIS.template.in to
+  # avoid CMake quoting issues. RequestExecutionLevel is set by MultiUser.nsh.
   set(CPACK_NSIS_DEFINES "")
 
   # Inject the install-type page right after Welcome (using the license page slot).
-  # Shows "Just for me / For all users" with UAC shield on Next when all-users chosen.
-  set(CPACK_NSIS_LICENSE_PAGE "\
-    Page custom MultiUser.InstallModePage_Create MultiUser.InstallModePage_Leave\
-  ")
+  # Built-in MULTIUSER_PAGE_INSTALLMODE shows "All users / Current user only" and
+  # is only displayed if the user has admin or power-user privileges -- otherwise
+  # MultiUser.nsh skips it and installs per-user.
+  set(CPACK_NSIS_LICENSE_PAGE "!insertmacro MULTIUSER_PAGE_INSTALLMODE")
 
-  # CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS runs inside the install Section (after
-  # .onInit). Re-apply shell context in case the elevated inner instance needs it.
-  set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "\
-    Call MultiUser.SetContext\
-  ")
+  # CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS runs inside the install Section.
+  # MultiUser.nsh already sets the shell context via .onInit and the install-mode
+  # page, so no extra setup is needed here.
+  set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "")
 
   # Extra install commands — conditional per-user/all-users registry and shortcuts
   set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "\

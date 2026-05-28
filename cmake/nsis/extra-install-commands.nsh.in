@@ -4,7 +4,8 @@
 ; Storing it there (rather than a separate Software\PythonSCAD key) ensures
 ; it lives in the same hive as the uninstall entry and cannot conflict between
 ; a per-user and an all-users install on the same machine.
-${If} $MultiUser.InstallMode = 1
+; $MultiUser.InstallMode is "AllUsers" or "CurrentUser" (set by built-in MultiUser.nsh).
+${If} $MultiUser.InstallMode == "AllUsers"
   WriteRegStr HKLM "${ARP}" "InstallMode" "AllUsers"
 ${Else}
   WriteRegStr HKCU "${ARP}" "InstallMode" "CurrentUser"
@@ -15,7 +16,7 @@ ${EndIf}
 ;   rights that are already granted at this point.
 ; - Per-user installs write to HKCU\Software\Classes which takes precedence over
 ;   HKCR for the current user on Vista+ without requiring elevation.
-${If} $MultiUser.InstallMode = 1
+${If} $MultiUser.InstallMode == "AllUsers"
   ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
   ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".py" "PythonSCAD_Python_File"
 ${Else}
@@ -37,6 +38,18 @@ ${Else}
   WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File" "" "PythonSCAD_Python_File"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
   WriteRegStr HKCU "Software\Classes\PythonSCAD_Python_File\DefaultIcon" "" "$INSTDIR\pythonscad.exe,0"
+${EndIf}
+
+; App Paths registry entries so 'Start > Run' (Win+R) and ShellExecute-based
+; launchers can find pythonscad.exe by basename even when PATH is not set.
+; Scoped to match the install: HKLM for all-users, HKCU for per-user.
+!define APPPATHS "Software\Microsoft\Windows\CurrentVersion\App Paths\pythonscad.exe"
+${If} $MultiUser.InstallMode == "AllUsers"
+  WriteRegStr HKLM "${APPPATHS}" "" "$INSTDIR\pythonscad.exe"
+  WriteRegStr HKLM "${APPPATHS}" "Path" "$INSTDIR"
+${Else}
+  WriteRegStr HKCU "${APPPATHS}" "" "$INSTDIR\pythonscad.exe"
+  WriteRegStr HKCU "${APPPATHS}" "Path" "$INSTDIR"
 ${EndIf}
 
 ; Add an extra shortcut directly in the Start Menu root for discoverability.
