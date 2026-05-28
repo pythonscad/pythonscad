@@ -879,11 +879,12 @@ Function InstallModePage_Leave
         StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
       SetShellVarContext all
     ${Else}
-      ; Re-launch elevated via ShellExecuteEx runas, preserving the original
-      ; command line (e.g. /D=<dir>) and appending /elevated so the elevated
-      ; instance knows to skip the mode page and go straight to all-users.
-      StrCpy $R0 '$CMDLINE /elevated'
-      System::Call 'shell32::ShellExecuteW(i $HWNDPARENT, w "runas", w "$EXEPATH", w "$R0", i 0, i 1) i.r0'
+      ; Re-launch elevated via ShellExecuteW runas with /elevated so the
+      ; elevated instance skips the mode page and goes straight to all-users.
+      ; Do NOT append /elevated to $CMDLINE: NSIS requires /D=<dir> to be the
+      ; very last argument, so appending anything after it breaks install-dir
+      ; handling. The elevated instance starts fresh and lets the user pick dirs.
+      System::Call 'shell32::ShellExecuteW(i $HWNDPARENT, w "runas", w "$EXEPATH", w "/elevated", i 0, i 1) i.r0'
       ${If} $0 > 32
         Quit
       ${Else}
@@ -1193,9 +1194,13 @@ uninst:
 
   StrLen $2 "\@CPACK_NSIS_UNINSTALL_NAME@.exe"
   StrCpy $3 $0 -$2 # remove "\@CPACK_NSIS_UNINSTALL_NAME@.exe" from UninstallString to get path
-  ExecWait '"$0" /S _?=$3' ;Do not copy the uninstaller to a temp file
+  ExecWait '"$0" /S _?=$3' $1 ;Do not copy the uninstaller to a temp file
 
-  IfErrors uninst_failed done_uninst_check
+  IfErrors uninst_failed
+  ${If} $1 != 0
+    Goto uninst_failed
+  ${EndIf}
+  Goto done_uninst_check
 uninst_failed:
   MessageBox MB_OK|MB_ICONSTOP "Uninstall failed."
   Abort
