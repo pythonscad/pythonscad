@@ -905,58 +905,66 @@ FunctionEnd
 
 ;--------------------------------
 ; Uninstall init: read the InstallMode value written to the ARP key at install
-; time to determine scope. Path-matching $EXEPATH is unreliable because NSIS
-; copies the uninstaller to a temp location for normal (non-_?=) launches.
+; time to determine scope. Both InstallMode and InstallLocation are read from
+; the ARP key. InstallLocation is cross-checked against $INSTDIR (the directory
+; the uninstaller was launched from) to handle the case where both a per-user and
+; an all-users install coexist — each uninstaller matches only its own ARP entry.
 Function un.onInit
   StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" 0 +2
     SetRegView 64
 
-  ; Check HKCU first so a per-user uninstall is detected when both a per-user
-  ; and an all-users install coexist. A per-user uninstaller should never
-  ; uninstall the machine-wide copy.
+  ; Check HKCU first. Verify InstallLocation matches $INSTDIR so the all-users
+  ; uninstaller doesn't accidentally match a per-user entry.
   ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
   ${If} $0 == "CurrentUser"
-    StrCpy $InstallMode 0
-    SetShellVarContext current
-    Return
+    ReadRegStr $1 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallLocation"
+    ${If} $1 == $INSTDIR
+      StrCpy $InstallMode 0
+      SetShellVarContext current
+      Return
+    ${EndIf}
   ${EndIf}
 
-  ; Check HKLM for an all-users install record
+  ; Check HKLM for an all-users install record. Verify InstallLocation matches
+  ; $INSTDIR so the per-user uninstaller doesn't match the all-users ARP entry.
   ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
   ${If} $0 == "AllUsers"
-    StrCpy $InstallMode 1
-    SetShellVarContext all
-    ; All-users install requires an elevated token. Re-launch elevated if needed,
-    ; passing the original command line so silent-mode flags (/S _?=...) are
-    ; preserved. Use ShellExecuteEx with SEE_MASK_NOCLOSEPROCESS so we can
-    ; wait for the elevated process to finish before this instance quits,
-    ; preventing the installer from continuing before cleanup is complete.
-    !insertmacro IsElevated $2
-    ${If} $2 = 0
-      ; SHELLEXECUTEINFO struct layout (60 bytes for 32-bit NSIS):
-      ;   cbSize(i), fMask(i), hwnd(i), lpVerb(w), lpFile(w), lpParameters(w),
-      ;   lpDirectory(w), nShow(i), hInstApp(i), lpIDList(i), lpClass(w),
-      ;   hkeyClass(i), dwHotKey(i), hIcon/hMonitor(i), hProcess(i)
-      ; fMask = SEE_MASK_NOCLOSEPROCESS(0x40) | SEE_MASK_NO_CONSOLE(0x8000) = 0x8040
-      System::Alloc 60
-      Pop $3
-      System::Call "*$3(i 60, i 0x8040, i $HWNDPARENT, w 'runas', w '$EXEPATH', \
-        w '$CMDLINE', w '', i 1, i 0, i 0, w '', i 0, i 0, i 0, i 0)"
-      System::Call 'shell32::ShellExecuteExW(i r3) i.r2'
-      ${If} $2 != 0
-        ; Read hProcess from offset 56 (last field at offset 14*4=56)
-        System::Call "*$3(i, i, i, w, w, w, w, i, i, i, w, i, i, i, i.r4)"
-        System::Call 'kernel32::WaitForSingleObject(i r4, i 0xFFFFFFFF)'
-        System::Call 'kernel32::CloseHandle(i r4)'
-        System::Free $3
-        Quit
-      ${Else}
-        System::Free $3
-        MessageBox MB_ICONSTOP "Administrator privileges are required to uninstall the system-wide installation."
-        Abort
+    ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallLocation"
+    ${If} $1 == $INSTDIR
+      StrCpy $InstallMode 1
+      SetShellVarContext all
+      ; All-users install requires an elevated token. Re-launch elevated if needed,
+      ; passing the original command line so silent-mode flags (/S _?=...) are
+      ; preserved. Use ShellExecuteEx with SEE_MASK_NOCLOSEPROCESS so we can
+      ; wait for the elevated process to finish before this instance quits,
+      ; preventing the installer from continuing before cleanup is complete.
+      !insertmacro IsElevated $2
+      ${If} $2 = 0
+        ; SHELLEXECUTEINFO struct layout (60 bytes for 32-bit NSIS):
+        ;   cbSize(i), fMask(i), hwnd(i), lpVerb(w), lpFile(w), lpParameters(w),
+        ;   lpDirectory(w), nShow(i), hInstApp(i), lpIDList(i), lpClass(w),
+        ;   hkeyClass(i), dwHotKey(i), hIcon/hMonitor(i), hProcess(i)
+        ; fMask = SEE_MASK_NOCLOSEPROCESS(0x40) | SEE_MASK_NO_CONSOLE(0x8000) = 0x8040
+        System::Alloc 60
+        Pop $3
+        System::Call "*$3(i 60, i 0x8040, i $HWNDPARENT, w 'runas', w '$EXEPATH', \
+          w '$CMDLINE', w '', i 1, i 0, i 0, w '', i 0, i 0, i 0, i 0)"
+        System::Call 'shell32::ShellExecuteExW(i r3) i.r2'
+        ${If} $2 != 0
+          ; Read hProcess from offset 56 (last field at offset 14*4=56)
+          System::Call "*$3(i, i, i, w, w, w, w, i, i, i, w, i, i, i, i.r4)"
+          System::Call 'kernel32::WaitForSingleObject(i r4, i 0xFFFFFFFF)'
+          System::Call 'kernel32::CloseHandle(i r4)'
+          System::Free $3
+          Quit
+        ${Else}
+          System::Free $3
+          MessageBox MB_ICONSTOP "Administrator privileges are required to uninstall the system-wide installation."
+          Abort
+        ${EndIf}
       ${EndIf}
+      Return
     ${EndIf}
-    Return
   ${EndIf}
 
   ; Fallback: default to current user
