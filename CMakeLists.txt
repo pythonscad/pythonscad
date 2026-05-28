@@ -27,6 +27,11 @@ if(POLICY CMP0167) # Since CMake 3.30
   # Use upstream's FindBoost.cmake to find Boost libraries.
   cmake_policy(SET CMP0167 NEW)
 endif()
+if(POLICY CMP0207) # Since CMake 4.3
+  # Normalize paths to forward slashes before matching filters in
+  # file(GET_RUNTIME_DEPENDENCIES) and install(RUNTIME_DEPENDENCY_SET).
+  cmake_policy(SET CMP0207 NEW)
+endif()
 
 include("cmake/Modules/openscad_version.cmake")
 configure_file(
