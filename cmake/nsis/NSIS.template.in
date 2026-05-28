@@ -42,6 +42,7 @@
   ; install-mode page (via ShellExecuteEx runas re-launch).
   RequestExecutionLevel user
 
+  !include "LogicLib.nsh"
   !include "nsDialogs.nsh"
   !include "WinMessages.nsh"
   !include "FileFunc.nsh"
@@ -1068,13 +1069,20 @@ Function .onInit
   ; in InstallModePage_Create when $InstallMode is already 1 and we are elevated).
   ${GetOptions} $CMDLINE "/elevated" $R0
   ${IfNot} ${Errors}
-    ; Re-launched elevated instance: go straight to all-users mode.
-    StrCpy $InstallMode 1
-    StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
-    StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
-      StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
-    SetShellVarContext all
-    Goto done_init_mode
+    ; Re-launched elevated instance — but verify we actually have admin rights
+    ; before accepting the flag, so a user cannot bypass to all-users mode by
+    ; manually passing /elevated without real elevation.
+    UserInfo::GetAccountType
+    Pop $R1
+    ${If} $R1 == "Admin"
+      StrCpy $InstallMode 1
+      StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+      StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
+        StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+      SetShellVarContext all
+      Goto done_init_mode
+    ${EndIf}
+    ; Not actually elevated — fall through to normal mode detection below.
   ${EndIf}
 
   UserInfo::GetAccountType

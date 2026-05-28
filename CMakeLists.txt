@@ -2431,11 +2431,11 @@ if(WIN32)
   # Add "Run PythonSCAD" checkbox on finish page
   set(CPACK_NSIS_MUI_FINISHPAGE_RUN "pythonscad.exe")
 
-  # Use our customized NSIS template which integrates UAC plugin hooks into
-  # .onInit and un.onInit (CPack's default template has these hardcoded).
-  # CPack's NSIS generator locates the template via cmCPackGenerator::FindTemplate,
-  # which searches CMAKE_MODULE_PATH (propagated to CPack as CPACK_MODULE_PATH)
-  # before falling back to CMake's bundled <CMakeRoot>/Modules/Internal/CPack/.
+  # Use our customized NSIS template which implements RequestExecutionLevel user
+  # with a custom install-mode page (nsDialogs) and on-demand UAC elevation via
+  # ShellExecuteEx runas. CPack's NSIS generator locates the template via
+  # cmCPackGenerator::FindTemplate, which searches CMAKE_MODULE_PATH (propagated
+  # to CPack as CPACK_MODULE_PATH) before falling back to CMake's bundled template.
   # There is no CPACK_NSIS_TEMPLATE variable -- adding cmake/nsis to the module
   # path is the only way to override the default template.
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/nsis")
