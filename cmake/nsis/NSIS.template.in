@@ -47,7 +47,9 @@
   !include "WinMessages.nsh"
   !include "FileFunc.nsh"
   !insertmacro GetOptions
-  !define BCM_SETSHIELD 0x0000160C
+  !ifndef BCM_SETSHIELD
+    !define BCM_SETSHIELD 0x0000160C
+  !endif
 
   ; $InstallMode: 0 = current user, 1 = all users
   Var InstallMode
