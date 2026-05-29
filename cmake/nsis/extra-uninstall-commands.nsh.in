@@ -1,41 +1,59 @@
 ; Unregister file associations scope-aware, mirroring the install logic.
-; $InstallMode: 1 = all users (HKLM), 0 = current user (HKCU).
+; $InstallMode: 1 = all users (HKCR), 0 = current user (HKCU). Both branches use
+; the same pattern: remove ONLY the values/keys we wrote. Never DeleteRegKey on
+; the extension key itself — it may contain subkeys (OpenWithProgids,
+; OpenWithList, etc.) or values written by other programs that we must not
+; touch. mingw-file-association.nsh's ${UnRegisterExtension} macro deletes the
+; whole extension key when no backup_val exists, so we open-code the same
+; backup-restore logic here for both scopes to avoid that footgun.
 ${If} $InstallMode = 1
-  ; All-users install: ${UnRegisterExtension} operates on HKCR. The macro
-  ; restores any backup_val (e.g. OpenSCAD_File) we wrote at install time, so a
-  ; pre-existing OpenSCAD association on the machine is preserved automatically.
-  ; A second UnRegisterExtension for OpenSCAD_File would be a bug: after the
-  ; first call .scad has no backup_val, so the macro's "delete the whole key"
-  ; branch would fire and wipe HKCR\.scad entirely, breaking a legitimate
-  ; OpenSCAD install whose association we just restored.
-  ${UnRegisterExtension} ".scad" "PythonSCAD_File"
-  ${UnRegisterExtension} ".py" "PythonSCAD_Python_File"
+  ; All-users install: associations live in HKCR (writes redirect to HKLM\Software\Classes).
+  DeleteRegKey HKCR "PythonSCAD_File"
+  DeleteRegKey HKCR "PythonSCAD_Python_File"
+  ReadRegStr $0 HKCR ".scad" ""
+  StrCmp $0 "PythonSCAD_File" 0 scad_not_ours
+    ReadRegStr $1 HKCR ".scad" "backup_val"
+    StrCmp $1 "" 0 +3
+      ; No backup — remove just the default value we set, not the whole key.
+      DeleteRegValue HKCR ".scad" ""
+      Goto scad_not_ours
+    WriteRegStr HKCR ".scad" "" $1
+    DeleteRegValue HKCR ".scad" "backup_val"
+  scad_not_ours:
+  ReadRegStr $0 HKCR ".py" ""
+  StrCmp $0 "PythonSCAD_Python_File" 0 py_not_ours
+    ReadRegStr $1 HKCR ".py" "backup_val"
+    StrCmp $1 "" 0 +3
+      ; No backup — remove just the default value we set, not the whole key.
+      DeleteRegValue HKCR ".py" ""
+      Goto py_not_ours
+    WriteRegStr HKCR ".py" "" $1
+    DeleteRegValue HKCR ".py" "backup_val"
+  py_not_ours:
 ${Else}
-  ; Per-user install: remove handler keys and restore any backed-up extension defaults.
-  ; Only remove the values we wrote — never DeleteRegKey the extension key, as it may
-  ; contain subkeys (e.g. OpenWithProgids) or values written by other programs.
+  ; Per-user install: associations live in HKCU\Software\Classes.
   DeleteRegKey HKCU "Software\Classes\PythonSCAD_File"
   DeleteRegKey HKCU "Software\Classes\PythonSCAD_Python_File"
   ReadRegStr $0 HKCU "Software\Classes\.scad" ""
-  StrCmp $0 "PythonSCAD_File" 0 scad_not_ours
+  StrCmp $0 "PythonSCAD_File" 0 scad_cu_not_ours
     ReadRegStr $1 HKCU "Software\Classes\.scad" "backup_val"
     StrCmp $1 "" 0 +3
       ; No backup — remove just the default value we set, not the whole key.
       DeleteRegValue HKCU "Software\Classes\.scad" ""
-      Goto scad_not_ours
+      Goto scad_cu_not_ours
     WriteRegStr HKCU "Software\Classes\.scad" "" $1
     DeleteRegValue HKCU "Software\Classes\.scad" "backup_val"
-  scad_not_ours:
+  scad_cu_not_ours:
   ReadRegStr $0 HKCU "Software\Classes\.py" ""
-  StrCmp $0 "PythonSCAD_Python_File" 0 py_not_ours
+  StrCmp $0 "PythonSCAD_Python_File" 0 py_cu_not_ours
     ReadRegStr $1 HKCU "Software\Classes\.py" "backup_val"
     StrCmp $1 "" 0 +3
       ; No backup — remove just the default value we set, not the whole key.
       DeleteRegValue HKCU "Software\Classes\.py" ""
-      Goto py_not_ours
+      Goto py_cu_not_ours
     WriteRegStr HKCU "Software\Classes\.py" "" $1
     DeleteRegValue HKCU "Software\Classes\.py" "backup_val"
-  py_not_ours:
+  py_cu_not_ours:
 ${EndIf}
 
 ; Remove the App Paths registry entries written at install time.
