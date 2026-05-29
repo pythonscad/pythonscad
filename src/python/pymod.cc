@@ -56,15 +56,15 @@ std::string venvBinDirFromSettings()
 // They are never called in WASM builds but must exist to satisfy the linker.
 int pythonRunArgs(int, char **)
 {
-  return 1;
+  __builtin_trap();
 }
 int pythonCreateVenv(const std::string&)
 {
-  return 1;
+  __builtin_trap();
 }
 int pythonRunModule(const std::string&, const std::string&, const std::vector<std::string>&)
 {
-  return 1;
+  __builtin_trap();
 }
 #else
 

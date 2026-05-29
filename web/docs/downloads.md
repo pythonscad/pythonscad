@@ -73,9 +73,12 @@
                         "Run PythonSCAD entirely in your browser — no installation required. "
                         + "The ZIP contains <code>pythonscad.js</code>, <code>pythonscad.wasm</code>, "
                         + "<code>pythonscad.data</code>, and <code>test.html</code>. "
-                        + "Serve the extracted folder with any static web server "
-                        + "(e.g. <code>python3 -m http.server 8080</code>) and open "
-                        + "<code>test.html</code>. A browser with WASM support (Chrome, Firefox, "
+                        + "Serve the extracted folder with the bundled dev server "
+                        + "(<code>python3 wasm-test/serve.py 8080 .</code>) and open "
+                        + "<code>test.html</code>. A plain <code>python3 -m http.server</code> "
+                        + "will not work — browsers require correct MIME types for "
+                        + "<code>.wasm</code> and <code>.data</code> files. "
+                        + "A browser with WASM support (Chrome, Firefox, "
                         + "Edge, Safari 16+) is required.",
                     windows:
                         "Windows binaries are not yet code-signed. See the "
