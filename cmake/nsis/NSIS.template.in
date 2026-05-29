@@ -64,23 +64,25 @@
 ; Uses advapi32 GetTokenInformation with TokenElevation (class 20).
 ; Result variable is passed by name (e.g. !insertmacro IsElevated $R0).
 ;
+; HANDLE arguments use the 'p' (pointer-sized int) type, NOT 'i'. With 'i' the
+; System plugin misinterprets HANDLE values such as the GetCurrentProcess pseudo
+; handle (-1) and OpenProcessToken silently fails (returns 0) -- empirically
+; observed in NSIS 3.12 / MSYS2 ucrt64. 'p' passes them correctly.
+;
 ; Clobbers $0, $1, $2, $3. Callers should not rely on those across this call.
-; The token handle must be kept in a register (not on the System plugin stack)
-; because GetTokenInformation consumes the stack value it reads; a subsequent
-; CloseHandle reading from the same stack would close an unrelated handle.
 !macro IsElevated _OutVar
-  System::Call 'kernel32::GetCurrentProcess() i.r3'
-  System::Call 'advapi32::OpenProcessToken(i r3, i 0x0008, *i .r3) i.r0' ; TOKEN_QUERY=8; $3 = token handle
-  ${If} $0 != 0
-    System::Call 'advapi32::GetTokenInformation(i r3, i 20, *i .r0, i 4, *i .r1) i.r2' ; TokenElevation=20
-    System::Call 'kernel32::CloseHandle(i r3)'
-    ${If} $2 != 0
-      StrCpy ${_OutVar} $0
-    ${Else}
-      StrCpy ${_OutVar} 0
-    ${EndIf}
-  ${Else}
+  System::Call 'kernel32::GetCurrentProcess() p .r3'
+  System::Call 'advapi32::OpenProcessToken(p r3, i 8, *p .r1) i .r0' ; TOKEN_QUERY=8; $1 = token handle
+  ${If} $0 = 0
     StrCpy ${_OutVar} 0
+  ${Else}
+    System::Call 'advapi32::GetTokenInformation(p r1, i 20, *i .r2, i 4, *i .r3) i .r0' ; TokenElevation=20
+    System::Call 'kernel32::CloseHandle(p r1)'
+    ${If} $0 = 0
+      StrCpy ${_OutVar} 0
+    ${Else}
+      StrCpy ${_OutVar} $2
+    ${EndIf}
   ${EndIf}
 !macroend
 
@@ -579,10 +581,17 @@ FunctionEnd
 
 ;--------------------------------
 ;Pages
+  ; Skip Welcome, License, and InstallMode pages on the /elevated re-launch
+  ; (set by InstallModePage_Leave's ShellExecuteW runas). The user already
+  ; saw and accepted these in the unelevated outer instance; re-showing them
+  ; would feel like an endless loop. Each PRE function checks the same
+  ; condition that InstallModePage_Create uses for the Abort below.
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipPagesOnElevatedReLaunch
   @CPACK_NSIS_INSTALLER_WELCOME_TITLE_CODE@
   @CPACK_NSIS_INSTALLER_WELCOME_TITLE_3LINES_CODE@
   !insertmacro MUI_PAGE_WELCOME
 
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipPagesOnElevatedReLaunch
   !insertmacro MUI_PAGE_LICENSE "@CPACK_RESOURCE_FILE_LICENSE@"
   Page custom InstallModePage_Create InstallModePage_Leave
   Page custom InstallOptionsPage
@@ -832,6 +841,27 @@ Function InstallModePage_OnClick
   SendMessage $0 ${BCM_SETSHIELD} 0 $1
 FunctionEnd
 
+; Used as MUI_PAGE_CUSTOMFUNCTION_PRE on Welcome and License to skip those
+; pages when we are the elevated re-launch and .onInit verified actual
+; elevation (so $InstallMode = 1). On the unelevated outer instance, the
+; pages display normally. Same skip predicate as InstallModePage_Create.
+Function SkipPagesOnElevatedReLaunch
+  ${GetOptions} $CMDLINE "/elevated" $R0
+  ${IfNot} ${Errors}
+    ${If} $InstallMode = 1
+      Abort
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
+
+Function InstallModePage_OnBack
+  ; Clear the UAC shield from the Next button before leaving the page, otherwise
+  ; the shield persists on the License page's "I Agree" button (Next is the same
+  ; underlying control across all pages -- only its label changes).
+  GetDlgItem $0 $HWNDPARENT 1
+  SendMessage $0 ${BCM_SETSHIELD} 0 0
+FunctionEnd
+
 Function InstallModePage_Create
   ; Skip the install-mode page when this is a verified elevated re-launch:
   ; both the /elevated flag must be present AND .onInit must have confirmed
@@ -848,6 +878,7 @@ Function InstallModePage_Create
   GetFunctionAddress $8 InstallModePage_OnClick
   nsDialogs::Create /NOUNLOAD 1018
   Pop $9
+  ${NSD_OnBack} InstallModePage_OnBack
 
   ${NSD_CreateLabel} 0 10u 100% 20u "Select whether to install @CPACK_NSIS_PACKAGE_NAME@ for yourself only or for all users on this computer."
   Pop $0
@@ -977,8 +1008,19 @@ FunctionEnd
 ; Create custom pages
 Function InstallOptionsPage
   !insertmacro MUI_HEADER_TEXT "Install Options" "Choose options for installing @CPACK_NSIS_PACKAGE_NAME@"
+  ; On the elevated re-launch, this is the first interactive page and the
+  ; preceding pages (Welcome, License, install-mode) have all been skipped
+  ; via Abort in their PRE functions. The Back button cannot lead anywhere
+  ; useful in that scenario -- every earlier page would Abort, eventually
+  ; closing the installer entirely. Hide it so the user is not surprised
+  ; by Back-quitting-the-installer behaviour.
+  ClearErrors
+  ${GetOptions} $CMDLINE "/elevated" $R0
+  ${IfNot} ${Errors}
+    GetDlgItem $0 $HWNDPARENT 3
+    ShowWindow $0 ${SW_HIDE}
+  ${EndIf}
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "NSIS.InstallOptions.ini"
-
 FunctionEnd
 
 ;--------------------------------
@@ -1228,6 +1270,7 @@ Function .onInit
   ; with the /elevated flag. Detect that flag here to pre-select "All users" and
   ; skip straight to all-users mode (the install-mode page is skipped via Abort
   ; in InstallModePage_Create when $InstallMode is already 1 and we are elevated).
+  ClearErrors
   ${GetOptions} $CMDLINE "/elevated" $R0
   ${IfNot} ${Errors}
     ; Re-launched elevated instance — verify the process token is actually elevated
