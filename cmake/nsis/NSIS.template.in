@@ -1113,6 +1113,27 @@ Function .onInit
   StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" 0 +2
     SetRegView 64
 
+  ; Plugin warmup with user feedback. Without this, the first nsDialogs::Create
+  ; (in InstallModePage_Create after the License page) freezes the UI for ~10s
+  ; while Windows AppCompat / Defender scans the freshly-extracted nsDialogs.dll.
+  ; Banner.dll is tiny (~7.5KB) so its own scan completes near-instantly, and it
+  ; runs non-blocking in a separate window — the user sees the "please wait"
+  ; message while NSIS extracts and Windows scans nsDialogs.dll in .onInit
+  ; rather than at first page transition.
+  ; Skip on the /elevated re-launch: the outer instance already triggered the
+  ; scan and the cached DLL load in the elevated child is fast.
+  ClearErrors
+  ${GetOptions} $CMDLINE "/elevated" $R0
+  ${If} ${Errors}
+    Banner::show /NOUNLOAD "Preparing setup, please wait..."
+    ; Throwaway nsDialogs::Create — fails (no parent window in .onInit) but the
+    ; DLL-load side effect is what we want. After this returns, nsDialogs.dll is
+    ; AV-scanned and cached, so the real Create in InstallModePage_Create is fast.
+    nsDialogs::Create /NOUNLOAD 1018
+    Pop $0
+    Banner::destroy
+  ${EndIf}
+
   ; Default to per-user install. The install-mode page lets the user switch to
   ; all-users, which re-launches this installer elevated via ShellExecuteEx runas
   ; with the /elevated flag. Detect that flag here to pre-select "All users" and
