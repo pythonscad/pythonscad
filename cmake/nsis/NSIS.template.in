@@ -63,12 +63,17 @@
 ; has TokenElevation (i.e. the process is actually elevated via UAC), 0 otherwise.
 ; Uses advapi32 GetTokenInformation with TokenElevation (class 20).
 ; Result variable is passed by name (e.g. !insertmacro IsElevated $R0).
+;
+; Clobbers $0, $1, $2, $3. Callers should not rely on those across this call.
+; The token handle must be kept in a register (not on the System plugin stack)
+; because GetTokenInformation consumes the stack value it reads; a subsequent
+; CloseHandle reading from the same stack would close an unrelated handle.
 !macro IsElevated _OutVar
-  System::Call 'kernel32::GetCurrentProcess() i.s'
-  System::Call 'advapi32::OpenProcessToken(i s, i 0x0008, *i .s) i.r0' ; TOKEN_QUERY=8
+  System::Call 'kernel32::GetCurrentProcess() i.r3'
+  System::Call 'advapi32::OpenProcessToken(i r3, i 0x0008, *i .r3) i.r0' ; TOKEN_QUERY=8; $3 = token handle
   ${If} $0 != 0
-    System::Call 'advapi32::GetTokenInformation(i s, i 20, *i .r0, i 4, *i .r1) i.r2' ; TokenElevation=20
-    System::Call 'kernel32::CloseHandle(i s)'
+    System::Call 'advapi32::GetTokenInformation(i r3, i 20, *i .r0, i 4, *i .r1) i.r2' ; TokenElevation=20
+    System::Call 'kernel32::CloseHandle(i r3)'
     ${If} $2 != 0
       StrCpy ${_OutVar} $0
     ${Else}
