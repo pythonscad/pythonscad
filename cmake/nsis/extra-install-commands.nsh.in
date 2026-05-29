@@ -23,7 +23,7 @@ ${Else}
 ${EndIf}
 
 ; Register file associations scope-aware:
-; - All-users installs use HKCR (via ${RegisterExtension}) which requires admin
+; - All-users installs use HKCR (HKLM\Software\Classes) which requires admin
 ;   rights that are already granted at this point.
 ; - Per-user installs write to HKCU\Software\Classes which takes precedence over
 ;   HKCR for the current user on Vista+ without requiring elevation.
@@ -33,9 +33,30 @@ ${EndIf}
 ; use IDEs like VS Code/PyCharm/IDLE for .py files and silently hijacking that
 ; association would break their setup); instead PythonSCAD is added to the
 ; "Open with..." submenu via OpenWithProgids so users can opt in per-file.
+;
+; The ProgID writes are open-coded so we can use a human-readable
+; "Edit with PythonSCAD" verb label and a friendly ProgID description like
+; "PythonSCAD File" -- the same shared pattern is used for both .scad and
+; .py (and for both HKCR and HKCU), keeping the install / uninstall logic
+; symmetric and easy to audit.
+; Each entry uses a backup_val convention so uninstall can restore any
+; pre-existing default association (e.g. an OpenSCAD .scad handler).
 ${If} $InstallMode = 1
   ; .scad: default handler in HKCR (HKLM\Software\Classes).
-  ${RegisterExtension} "$INSTDIR\pythonscad.exe" ".scad" "PythonSCAD_File"
+  ; Back up any existing default before overwriting, so uninstall can
+  ; restore it via the same backup_val convention.
+  ReadRegStr $0 HKCR ".scad" ""
+  StrCmp $0 "" scad_no_backup
+  StrCmp $0 "PythonSCAD_File" scad_no_backup
+    WriteRegStr HKCR ".scad" "backup_val" $0
+  scad_no_backup:
+  WriteRegStr HKCR ".scad" "" "PythonSCAD_File"
+  WriteRegStr HKCR "PythonSCAD_File" "" "PythonSCAD File"
+  WriteRegStr HKCR "PythonSCAD_File\shell" "" "open"
+  WriteRegStr HKCR "PythonSCAD_File\DefaultIcon" "" "$INSTDIR\pythonscad.exe,0"
+  WriteRegStr HKCR "PythonSCAD_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
+  WriteRegStr HKCR "PythonSCAD_File\shell\edit" "" "Edit with PythonSCAD"
+  WriteRegStr HKCR "PythonSCAD_File\shell\edit\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
   ; .py: install the ProgID but do NOT take over the default association.
   ; OpenWithProgids advertises PythonSCAD in the per-extension "Open with"
   ; list without changing whatever IDE/editor currently owns .py.
@@ -47,20 +68,16 @@ ${If} $InstallMode = 1
   WriteRegStr HKCR "PythonSCAD_Python_File\shell\edit\command" "" '"$INSTDIR\pythonscad.exe" "%1"'
   WriteRegStr HKCR ".py\OpenWithProgids" "PythonSCAD_Python_File" ""
 ${Else}
-  ; Back up any existing user .scad default before overwriting, mirroring
-  ; the backup_val pattern in mingw-file-association.nsh, so uninstall can restore it.
+  ; Back up any existing user .scad default before overwriting, so uninstall
+  ; can restore it via the same backup_val convention.
   ; Use explicit labels to avoid relative-jump miscounts.
-  ; The PythonSCAD_File ProgID mirrors what ${RegisterExtension} writes for the
-  ; all-users path (see mingw-file-association.nsh): default verb "open",
-  ; DefaultIcon, shell\open\command, and shell\edit\command, so right-click
-  ; behaviour is consistent between per-user and all-users installs.
   ReadRegStr $0 HKCU "Software\Classes\.scad" ""
-  StrCmp $0 "" scad_no_backup
-  StrCmp $0 "PythonSCAD_File" scad_no_backup
+  StrCmp $0 "" scad_cu_no_backup
+  StrCmp $0 "PythonSCAD_File" scad_cu_no_backup
     WriteRegStr HKCU "Software\Classes\.scad" "backup_val" $0
-  scad_no_backup:
+  scad_cu_no_backup:
   WriteRegStr HKCU "Software\Classes\.scad" "" "PythonSCAD_File"
-  WriteRegStr HKCU "Software\Classes\PythonSCAD_File" "" "PythonSCAD_File"
+  WriteRegStr HKCU "Software\Classes\PythonSCAD_File" "" "PythonSCAD File"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_File\shell" "" "open"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_File\DefaultIcon" "" "$INSTDIR\pythonscad.exe,0"
   WriteRegStr HKCU "Software\Classes\PythonSCAD_File\shell\open\command" "" '"$INSTDIR\pythonscad.exe" "%1"'

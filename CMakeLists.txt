@@ -2445,10 +2445,6 @@ if(WIN32)
   # path is the only way to override the default template.
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/nsis")
 
-  # Copy mingw-file-association.nsh to build dir. CPack runs NSIS from
-  # build/_CPack_Packages/<system>/NSIS/ so the template's !include path is ../../../
-  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh"
-                 "${CMAKE_BINARY_DIR}/nsis-mingw-file-association.nsh" COPYONLY)
 
   # CPACK_NSIS_DEFINES is emitted at the top level of the generated .nsi file.
   set(CPACK_NSIS_DEFINES "")

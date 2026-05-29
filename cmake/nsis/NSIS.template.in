@@ -84,8 +84,6 @@
   ${EndIf}
 !macroend
 
-  !include "..\..\..\nsis-mingw-file-association.nsh"
-
 @CPACK_NSIS_DEFINES@
 @CPACK_NSIS_MANIFEST_DPI_AWARE_CODE@
 @CPACK_NSIS_BRANDING_TEXT_CODE@
@@ -1000,10 +998,15 @@ Function un.onInit
   ; was launched from) and the stored InstallLocation can have different casing
   ; depending on the source -- e.g. $LOCALAPPDATA expands via SHGetFolderPath
   ; while a registry round-trip returns the stored string verbatim.
+  ; Stage $INSTDIR into $3 so System::Call can reference it via the `w r3`
+  ; register source (more explicit than the System plugin's `d` shortcut,
+  ; which is less widely recognised by reviewers even though it does map to
+  ; $INSTDIR per the plugin source).
+  StrCpy $3 $INSTDIR
   ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
   ${If} $0 == "CurrentUser"
     ReadRegStr $1 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallLocation"
-    System::Call 'kernel32::lstrcmpiW(w r1, w d) i.r2'
+    System::Call 'kernel32::lstrcmpiW(w r1, w r3) i.r2'
     ${If} $2 = 0
       StrCpy $InstallMode 0
       SetShellVarContext current
@@ -1016,7 +1019,7 @@ Function un.onInit
   ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
   ${If} $0 == "AllUsers"
     ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallLocation"
-    System::Call 'kernel32::lstrcmpiW(w r1, w d) i.r2'
+    System::Call 'kernel32::lstrcmpiW(w r1, w r3) i.r2'
     ${If} $2 = 0
       StrCpy $InstallMode 1
       SetShellVarContext all
