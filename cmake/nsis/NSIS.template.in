@@ -995,10 +995,16 @@ Function un.onInit
 
   ; Check HKCU first. Verify InstallLocation matches $INSTDIR so the all-users
   ; uninstaller doesn't accidentally match a per-user entry.
+  ; Path comparison uses lstrcmpiW because Windows paths are case-insensitive
+  ; but NSIS string comparison is not. $INSTDIR (the directory the uninstaller
+  ; was launched from) and the stored InstallLocation can have different casing
+  ; depending on the source -- e.g. $LOCALAPPDATA expands via SHGetFolderPath
+  ; while a registry round-trip returns the stored string verbatim.
   ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
   ${If} $0 == "CurrentUser"
     ReadRegStr $1 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallLocation"
-    ${If} $1 == $INSTDIR
+    System::Call 'kernel32::lstrcmpiW(w r1, w d) i.r2'
+    ${If} $2 = 0
       StrCpy $InstallMode 0
       SetShellVarContext current
       Return
@@ -1010,7 +1016,8 @@ Function un.onInit
   ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallMode"
   ${If} $0 == "AllUsers"
     ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "InstallLocation"
-    ${If} $1 == $INSTDIR
+    System::Call 'kernel32::lstrcmpiW(w r1, w d) i.r2'
+    ${If} $2 = 0
       StrCpy $InstallMode 1
       SetShellVarContext all
       ; All-users install requires an elevated token. Re-launch elevated if needed,
@@ -1020,6 +1027,8 @@ Function un.onInit
       ; preventing the installer from continuing before cleanup is complete.
       !insertmacro IsElevated $2
       ${If} $2 = 0
+        ; NSIS ships exclusively as a 32-bit PE even when run on 64-bit Windows,
+        ; so sizeof(SHELLEXECUTEINFO) is always 60 bytes here.
         ; SHELLEXECUTEINFO struct layout (60 bytes for 32-bit NSIS):
         ;   cbSize(i), fMask(i), hwnd(i), lpVerb(w), lpFile(w), lpParameters(w),
         ;   lpDirectory(w), nShow(i), hInstApp(i), lpIDList(i), lpClass(w),
@@ -1243,6 +1252,15 @@ Function .onInit
   ; whenever the token is not elevated; an interactive admin can still switch
   ; to "For all users" on the install-mode page, which triggers the UAC prompt
   ; via the runas re-launch.
+  ;
+  ; Silent install (/S) behavior matrix:
+  ;   Elevated process  -> all-users to $PROGRAMFILES64, no UAC prompt
+  ;   Non-elevated      -> per-user to $LOCALAPPDATA, no UAC prompt
+  ; Forcing per-user from an elevated context, or forcing all-users from a
+  ; non-elevated context, is not currently supported in silent mode -- both
+  ; would require additional command-line flags. Interactive installs can
+  ; switch freely via the install-mode page (the all-users case re-launches
+  ; elevated via the /elevated flag).
   !insertmacro IsElevated $0
   ${If} $0 = 1
     StrCpy $InstallMode 1

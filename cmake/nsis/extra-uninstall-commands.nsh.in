@@ -6,10 +6,15 @@
 ; touch. mingw-file-association.nsh's ${UnRegisterExtension} macro deletes the
 ; whole extension key when no backup_val exists, so we open-code the same
 ; backup-restore logic here for both scopes to avoid that footgun.
+;
+; .py treatment: install only added a ProgID and an OpenWithProgids entry; it
+; did NOT take over the .py default association, so there is no backup_val to
+; restore. We just delete the ProgID key and our OpenWithProgids entry.
 ${If} $InstallMode = 1
   ; All-users install: associations live in HKCR (writes redirect to HKLM\Software\Classes).
   DeleteRegKey HKCR "PythonSCAD_File"
   DeleteRegKey HKCR "PythonSCAD_Python_File"
+  DeleteRegValue HKCR ".py\OpenWithProgids" "PythonSCAD_Python_File"
   ReadRegStr $0 HKCR ".scad" ""
   StrCmp $0 "PythonSCAD_File" 0 scad_not_ours
     ReadRegStr $1 HKCR ".scad" "backup_val"
@@ -20,20 +25,11 @@ ${If} $InstallMode = 1
     WriteRegStr HKCR ".scad" "" $1
     DeleteRegValue HKCR ".scad" "backup_val"
   scad_not_ours:
-  ReadRegStr $0 HKCR ".py" ""
-  StrCmp $0 "PythonSCAD_Python_File" 0 py_not_ours
-    ReadRegStr $1 HKCR ".py" "backup_val"
-    StrCmp $1 "" 0 +3
-      ; No backup — remove just the default value we set, not the whole key.
-      DeleteRegValue HKCR ".py" ""
-      Goto py_not_ours
-    WriteRegStr HKCR ".py" "" $1
-    DeleteRegValue HKCR ".py" "backup_val"
-  py_not_ours:
 ${Else}
   ; Per-user install: associations live in HKCU\Software\Classes.
   DeleteRegKey HKCU "Software\Classes\PythonSCAD_File"
   DeleteRegKey HKCU "Software\Classes\PythonSCAD_Python_File"
+  DeleteRegValue HKCU "Software\Classes\.py\OpenWithProgids" "PythonSCAD_Python_File"
   ReadRegStr $0 HKCU "Software\Classes\.scad" ""
   StrCmp $0 "PythonSCAD_File" 0 scad_cu_not_ours
     ReadRegStr $1 HKCU "Software\Classes\.scad" "backup_val"
@@ -44,16 +40,6 @@ ${Else}
     WriteRegStr HKCU "Software\Classes\.scad" "" $1
     DeleteRegValue HKCU "Software\Classes\.scad" "backup_val"
   scad_cu_not_ours:
-  ReadRegStr $0 HKCU "Software\Classes\.py" ""
-  StrCmp $0 "PythonSCAD_Python_File" 0 py_cu_not_ours
-    ReadRegStr $1 HKCU "Software\Classes\.py" "backup_val"
-    StrCmp $1 "" 0 +3
-      ; No backup — remove just the default value we set, not the whole key.
-      DeleteRegValue HKCU "Software\Classes\.py" ""
-      Goto py_cu_not_ours
-    WriteRegStr HKCU "Software\Classes\.py" "" $1
-    DeleteRegValue HKCU "Software\Classes\.py" "backup_val"
-  py_cu_not_ours:
 ${EndIf}
 
 ; Remove the App Paths registry entries written at install time.
