@@ -52,7 +52,11 @@
   !endif
 
   ; $InstallMode: 0 = current user, 1 = all users
+  ; $InitialInstallMode: snapshot of $InstallMode taken at the end of .onInit,
+  ; used by InstallModePage_Leave to detect when the user switched modes after
+  ; the .onInit existing-install check ran, so we can re-check the *other* hive.
   Var InstallMode
+  Var InitialInstallMode
   Var AllUsersRadio
 
 ; IsElevated macro: sets the output variable to 1 if the current process token
@@ -870,6 +874,12 @@ Function InstallModePage_Leave
     ; Clear the shield from the Next button
     GetDlgItem $0 $HWNDParent 1
     SendMessage $0 ${BCM_SETSHIELD} 0 0
+    ; If the user switched from the default all-users mode, the .onInit
+    ; existing-install check looked only at HKLM. Re-check HKCU now so an
+    ; existing per-user install is not silently overwritten.
+    ${If} $InitialInstallMode = 1
+      Call CheckExistingInstallInteractive
+    ${EndIf}
   ${Else}
     ; All users — re-launch elevated if not already running with an elevated token.
     !insertmacro IsElevated $0
@@ -880,12 +890,19 @@ Function InstallModePage_Leave
       StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
         StrCpy $INSTDIR "$PROGRAMFILES\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
       SetShellVarContext all
+      ; If the user switched from per-user to all-users while already elevated,
+      ; .onInit only checked HKCU. Re-check HKLM now.
+      ${If} $InitialInstallMode = 0
+        Call CheckExistingInstallInteractive
+      ${EndIf}
     ${Else}
       ; Re-launch elevated via ShellExecuteW runas with /elevated so the
       ; elevated instance skips the mode page and goes straight to all-users.
       ; Do NOT append /elevated to $CMDLINE: NSIS requires /D=<dir> to be the
       ; very last argument, so appending anything after it breaks install-dir
       ; handling. The elevated instance starts fresh and lets the user pick dirs.
+      ; The elevated child's .onInit will run the existing-install check
+      ; scoped to HKLM, so no additional check is needed in this branch.
       System::Call 'shell32::ShellExecuteW(i $HWNDPARENT, w "runas", w "$EXEPATH", w "/elevated", i 0, i 1) i.r0'
       ${If} $0 > 32
         Quit
@@ -896,6 +913,61 @@ Function InstallModePage_Leave
       ${EndIf}
     ${EndIf}
   ${EndIf}
+FunctionEnd
+
+; --- CheckExistingInstallInteractive ----------------------------------------
+; Re-runs the existing-install detection from .onInit, but at install-mode-page
+; Leave time, against the hive matching the current $InstallMode. Used when the
+; user switched install mode after .onInit's initial check ran.
+;
+; Behavior matches the .onInit version: if the matching ARP entry exists, ask
+; the user whether to uninstall it first. On Yes, run the old uninstaller
+; synchronously. On No, continue. On Cancel, Abort.
+Function CheckExistingInstallInteractive
+  ${If} $InstallMode = 1
+    ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
+    ${If} $0 == ""
+      Return
+    ${EndIf}
+    ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "DisplayName"
+  ${Else}
+    ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
+    ${If} $0 == ""
+      Return
+    ${EndIf}
+    ReadRegStr $1 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "DisplayName"
+  ${EndIf}
+
+  MessageBox MB_YESNOCANCEL|MB_ICONEXCLAMATION \
+    "$1 is already installed.$\n$\nDo you want to uninstall the old version before installing the new one?" \
+    /SD IDYES IDYES interactive_uninst IDNO interactive_skip
+  Abort
+
+interactive_uninst:
+  ; Strip surrounding quotes if present (matches the .onInit logic).
+  StrCpy $2 $0 1 0
+  StrCmp $2 "$\"" 0 +2
+  StrCpy $0 $0 "" 1
+  StrCpy $2 $0 1 -1
+  StrCmp $2 "$\"" 0 +2
+  StrCpy $0 $0 -1
+
+  StrLen $2 "\@CPACK_NSIS_UNINSTALL_NAME@.exe"
+  StrCpy $3 $0 -$2
+  ClearErrors
+  ExecWait '"$0" /S _?=$3' $1
+  IfErrors interactive_uninst_failed
+  ${If} $1 != 0
+    Goto interactive_uninst_failed
+  ${EndIf}
+  Return
+
+interactive_uninst_failed:
+  MessageBox MB_OK|MB_ICONSTOP "Uninstall failed."
+  Abort
+
+interactive_skip:
+  Return
 FunctionEnd
 
 ;--------------------------------
@@ -1230,6 +1302,12 @@ uninst_failed:
   Abort
 
 done_uninst_check:
+  ; Snapshot the initial install mode so InstallModePage_Leave can detect when
+  ; the user switched modes interactively. The existing-install check above
+  ; ran with this mode; if the user changes it on the page, Leave re-runs the
+  ; check against the other hive.
+  StrCpy $InitialInstallMode $InstallMode
+
   ; Reads components status for registry
   !insertmacro SectionList "InitSection"
 
