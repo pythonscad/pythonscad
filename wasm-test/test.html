@@ -37,6 +37,7 @@ show(difference(cube([20, 20, 20], center=True), cylinder(h=25, r=5, center=True
     const outputEl  = document.getElementById('output');
     const runBtn    = document.getElementById('run');
     const dlLink    = document.getElementById('download');
+    let lastBlobUrl = null;
 
     function log(msg, cls) {
       outputEl.textContent = msg;
@@ -80,8 +81,10 @@ show(difference(cube([20, 20, 20], center=True), cylinder(h=25, r=5, center=True
         try { stl = mod.FS.readFile('/output.stl'); } catch (_) { /* no file */ }
 
         if (stl && stl.length > 0) {
+          if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
           const blob = new Blob([stl], { type: 'model/stl' });
           const url  = URL.createObjectURL(blob);
+          lastBlobUrl = url;
           dlLink.href     = url;
           dlLink.download = 'output.stl';
           dlLink.style.display = 'inline';
