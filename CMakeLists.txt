@@ -2449,10 +2449,6 @@ if(WIN32)
   # CPACK_NSIS_DEFINES is emitted at the top level of the generated .nsi file.
   set(CPACK_NSIS_DEFINES "")
 
-  # The license page and install-type page are now hardcoded in the NSIS template
-  # (MUI_PAGE_LICENSE + custom InstallModePage), so this slot is unused.
-  set(CPACK_NSIS_LICENSE_PAGE "")
-
   # CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS runs inside the install Section.
   # Shell context and INSTDIR are set by .onInit / InstallModePage_Leave.
   set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "")

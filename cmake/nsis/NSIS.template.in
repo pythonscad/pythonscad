@@ -209,7 +209,6 @@ Var AR_RegFlags
 ;----------------------------------------
 ; based upon a script of "Written by KiCHiK 2003-01-18 05:57:02"
 ;----------------------------------------
-!verbose 3
 !verbose 4
 ;====================================================
 ; get_NT_environment
@@ -858,7 +857,7 @@ Function InstallModePage_OnBack
   ; Clear the UAC shield from the Next button before leaving the page, otherwise
   ; the shield persists on the License page's "I Agree" button (Next is the same
   ; underlying control across all pages -- only its label changes).
-  GetDlgItem $0 $HWNDPARENT 1
+  GetDlgItem $0 $HWNDParent 1
   SendMessage $0 ${BCM_SETSHIELD} 0 0
 FunctionEnd
 
@@ -937,7 +936,7 @@ Function InstallModePage_Leave
       ; handling. The elevated instance starts fresh and lets the user pick dirs.
       ; The elevated child's .onInit will run the existing-install check
       ; scoped to HKLM, so no additional check is needed in this branch.
-      System::Call 'shell32::ShellExecuteW(i $HWNDPARENT, w "runas", w "$EXEPATH", w "/elevated", i 0, i 1) i.r0'
+      System::Call 'shell32::ShellExecuteW(p $HWNDParent, w "runas", w "$EXEPATH", w "/elevated", p 0, i 1) i.r0'
       ${If} $0 > 32
         Quit
       ${Else}
@@ -989,7 +988,7 @@ interactive_uninst:
   StrLen $2 "\@CPACK_NSIS_UNINSTALL_NAME@.exe"
   StrCpy $3 $0 -$2
   ClearErrors
-  ExecWait '"$0" /S _?=$3' $1
+  ExecWait '"$0" /S _?="$3"' $1
   IfErrors interactive_uninst_failed
   ${If} $1 != 0
     Goto interactive_uninst_failed
@@ -1017,7 +1016,7 @@ Function InstallOptionsPage
   ClearErrors
   ${GetOptions} $CMDLINE "/elevated" $R0
   ${IfNot} ${Errors}
-    GetDlgItem $0 $HWNDPARENT 3
+    GetDlgItem $0 $HWNDParent 3
     ShowWindow $0 ${SW_HIDE}
   ${EndIf}
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "NSIS.InstallOptions.ini"
@@ -1081,14 +1080,16 @@ Function un.onInit
         ; fMask = SEE_MASK_NOCLOSEPROCESS(0x40) | SEE_MASK_NO_CONSOLE(0x8000) = 0x8040
         System::Alloc 60
         Pop $3
-        System::Call "*$3(i 60, i 0x8040, i $HWNDPARENT, w 'runas', w '$EXEPATH', \
+        System::Call "*$3(i 60, i 0x8040, i $HWNDParent, w 'runas', w '$EXEPATH', \
           w '$CMDLINE', w '', i 1, i 0, i 0, w '', i 0, i 0, i 0, i 0)"
         System::Call 'shell32::ShellExecuteExW(i r3) i.r2'
         ${If} $2 != 0
           ; Read hProcess from offset 56 (last field at offset 14*4=56)
-          System::Call "*$3(i, i, i, w, w, w, w, i, i, i, w, i, i, i, i.r4)"
-          System::Call 'kernel32::WaitForSingleObject(i r4, i 0xFFFFFFFF)'
-          System::Call 'kernel32::CloseHandle(i r4)'
+          ; Last struct field is the hProcess HANDLE: use 'p' (pointer-sized
+          ; int), consistent with the IsElevated macro convention.
+          System::Call "*$3(i, i, i, w, w, w, w, i, i, i, w, i, i, i, p.r4)"
+          System::Call 'kernel32::WaitForSingleObject(p r4, i 0xFFFFFFFF)'
+          System::Call 'kernel32::CloseHandle(p r4)'
           System::Free $3
           Quit
         ${Else}
@@ -1359,7 +1360,7 @@ uninst:
 
   StrLen $2 "\@CPACK_NSIS_UNINSTALL_NAME@.exe"
   StrCpy $3 $0 -$2 # remove "\@CPACK_NSIS_UNINSTALL_NAME@.exe" from UninstallString to get path
-  ExecWait '"$0" /S _?=$3' $1 ;Do not copy the uninstaller to a temp file
+  ExecWait '"$0" /S _?="$3"' $1 ;Do not copy the uninstaller to a temp file
 
   IfErrors uninst_failed
   ${If} $1 != 0
