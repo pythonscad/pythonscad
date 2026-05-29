@@ -1080,7 +1080,23 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 
     std::string sep = "";
     std::ostringstream stream;
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+    char sepchar = ':';
+    const auto pythonXY =
+      "python" + std::to_string(PY_MAJOR_VERSION) + "." + std::to_string(PY_MINOR_VERSION);
+#ifdef WASM_NODE_BUILD
+    // Node build: NODERAWFS exposes the real container filesystem.
+    // stdlib lives at /cpython-wasm/lib/python3.12 on disk; home points there directly.
+    PyConfig_SetBytesString(&config, &config.home, "/cpython-wasm");
+#else
+    // Web build: stdlib preloaded into MEMFS via --preload-file at /usr/lib/python3.12.
+    stream << "/usr/lib/" << pythonXY;
+    stream << sepchar << "/usr/lib/pythonscad/libraries/python";
+    stream << sepchar << fs::path(python_scriptpath).parent_path().string();
+    PyConfig_SetBytesString(&config, &config.home, "/usr");
+    PyConfig_SetBytesString(&config, &config.executable, "/usr/bin/python3");
+#endif
+#elif defined(_WIN32)
     char sepchar = ';';
     sep = sepchar;
     stream << PlatformUtils::applicationPath() << "\\..\\libraries\\python";
@@ -1103,6 +1119,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       }
     }
 #endif
+#ifndef __EMSCRIPTEN__
     // Add resource-based libraries directory (works for development, installed, and packaged builds)
     const auto resourceLibPath = fs::path(PlatformUtils::resourceBasePath()) / "libraries" / "python";
     if (fs::is_directory(resourceLibPath)) {
@@ -1114,11 +1131,16 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     stream << sepchar << PlatformUtils::userLibraryPath();
     stream << sepchar << scriptfile.parent_path().string();
     stream << sepchar << ".";
+#endif
+#ifndef __EMSCRIPTEN__
     PyConfig_SetBytesString(&config, &config.pythonpath_env, stream.str().c_str());
+#endif
 
+#ifndef __EMSCRIPTEN__
     if (!binDir.empty()) {
       PyConfig_SetBytesString(&config, &config.executable, (binDir + "/python").c_str());
     }
+#endif
 
     PyStatus status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1128,6 +1150,34 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       return;
     }
     PyConfig_Clear(&config);
+
+#ifdef __EMSCRIPTEN__
+    // config.pythonpath_env is unreliable in cross-compiled WASM builds.
+    // Insert the PythonSCAD library overlay path directly into sys.path via C API.
+    {
+      const char *libpath =
+#ifdef WASM_NODE_BUILD
+        "/cpython-wasm/lib/pythonscad/libraries/python";
+#else
+        "/usr/lib/pythonscad/libraries/python";
+#endif
+      PyObject *syspath = PySys_GetObject("path");
+      if (syspath && PyList_Check(syspath)) {
+        PyObject *p = PyUnicode_FromString(libpath);
+        if (p) {
+          PyList_Insert(syspath, 0, p);
+          Py_DECREF(p);
+        }
+        if (!python_scriptpath.empty()) {
+          PyObject *s = PyUnicode_FromString(fs::path(python_scriptpath).parent_path().string().c_str());
+          if (s) {
+            PyList_Append(syspath, s);
+            Py_DECREF(s);
+          }
+        }
+      }
+    }
+#endif
 
     PyObject *mainMod = PyImport_AddModule("__main__");
     if (mainMod == nullptr) {
