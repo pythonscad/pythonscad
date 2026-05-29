@@ -1132,7 +1132,9 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     stream << sepchar << scriptfile.parent_path().string();
     stream << sepchar << ".";
 #endif
+#ifndef __EMSCRIPTEN__
     PyConfig_SetBytesString(&config, &config.pythonpath_env, stream.str().c_str());
+#endif
 
 #ifndef __EMSCRIPTEN__
     if (!binDir.empty()) {
