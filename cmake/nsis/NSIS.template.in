@@ -1184,20 +1184,20 @@ Function .onInit
 
   StrCmp "@CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL@" "ON" 0 done_uninst_check
 
-  ; Check for an existing installation. Check HKCU first so a per-user reinstall
-  ; is detected before HKLM, which a non-admin user cannot uninstall.
-  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
-  StrCmp $0 "" check_hklm found_existing_hkcu
-  check_hklm:
-  ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
-  StrCmp $0 "" done_uninst_check found_existing_hklm
-
-found_existing_hkcu:
-  ReadRegStr $1 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "DisplayName"
-  Goto found_existing
-found_existing_hklm:
-  ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "DisplayName"
-found_existing:
+  ; Check for an existing installation in the SAME scope we are about to install
+  ; into. The two scopes can coexist (one per-user install + one all-users
+  ; install) so we must not prompt to uninstall the per-user copy when the user
+  ; is installing all-users (or vice versa). $InstallMode is already set above
+  ; (either by /elevated re-launch or by the UserInfo::GetAccountType default).
+  ${If} $InstallMode = 1
+    ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
+    StrCmp $0 "" done_uninst_check 0
+    ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "DisplayName"
+  ${Else}
+    ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "UninstallString"
+    StrCmp $0 "" done_uninst_check 0
+    ReadRegStr $1 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "DisplayName"
+  ${EndIf}
   MessageBox MB_YESNOCANCEL|MB_ICONEXCLAMATION \
   "$1 is already installed. $\n$\nDo you want to uninstall the old version before installing the new one?" \
   /SD IDYES IDYES uninst IDNO done_uninst_check
