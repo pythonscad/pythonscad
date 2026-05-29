@@ -1155,20 +1155,19 @@ Function .onInit
     ; Not actually elevated — fall through to normal mode detection below.
   ${EndIf}
 
-  ; Use group membership to pre-select the install mode. Admins (even unelevated,
-  ; as is normal under UAC) see "For all users" pre-selected on the mode page.
-  ; The shell-context/INSTDIR set here is only a UI default — InstallModePage_Leave
-  ; re-checks actual token elevation (IsElevated) before any HKLM/Program Files
-  ; writes and re-launches via runas if needed. For silent installs (/S), which
-  ; skip the mode page, InstallModePage_Leave is also skipped, so:
-  ;   - Non-admin users running /S always get a per-user install (safe default).
-  ;   - Admin users running /S get all-users mode pre-selected but are not yet
-  ;     elevated; writes to Program Files / HKLM will fail silently. For a
-  ;     reliable silent all-users install, either run the installer as an
-  ;     elevated process (runas / sudo) or use the /elevated re-launch path.
-  UserInfo::GetAccountType
-  Pop $0
-  ${If} $0 == "Admin"
+  ; Pre-select the install mode based on whether the current process is
+  ; actually elevated, NOT just whether the user belongs to the Administrators
+  ; group. Under UAC, an admin's normal interactive shell runs with a filtered
+  ; (non-elevated) token, so UserInfo::GetAccountType == "Admin" does not mean
+  ; we can write to HKLM / Program Files. Defaulting to all-users in that case
+  ; would cause silent installs (/S) -- which skip the install-mode page and
+  ; therefore the InstallModePage_Leave elevation re-launch -- to attempt HKLM
+  ; writes without elevation and fail/install partially. Default to per-user
+  ; whenever the token is not elevated; an interactive admin can still switch
+  ; to "For all users" on the install-mode page, which triggers the UAC prompt
+  ; via the runas re-launch.
+  !insertmacro IsElevated $0
+  ${If} $0 = 1
     StrCpy $InstallMode 1
     StrCpy $INSTDIR "$PROGRAMFILES64\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
     StrCmp "@CPACK_SYSTEM_NAME@" "windows-x86-64" +2
