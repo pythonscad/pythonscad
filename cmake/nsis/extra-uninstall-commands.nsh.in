@@ -50,9 +50,6 @@ ${Else}
   DeleteRegKey HKCU "${APPPATHS_UN}"
 ${EndIf}
 
-; Remove the openscad.lnk compatibility shim created at install time.
-Delete "$INSTDIR\openscad.lnk"
-
 ; Remove the root Start Menu shortcut added by extra-install-commands.
 ; The MUI_PAGE_STARTMENU shortcuts under $STARTMENU_FOLDER are removed by the
 ; CPack template's own uninstall section, so we only clean up our additions here.

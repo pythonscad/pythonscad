@@ -106,10 +106,6 @@ ${Else}
   WriteRegStr HKCU "${APPPATHS}" "Path" "$INSTDIR"
 ${EndIf}
 
-; Compatibility symlink: older scripts and IDE integrations may launch openscad
-; by name. This shim ensures they keep working after switching to PythonSCAD.
-CreateShortCut "$INSTDIR\openscad.lnk" "$INSTDIR\pythonscad.exe"
-
 ; Add an extra shortcut directly in the Start Menu root for discoverability.
 ; The CPack template's MUI_PAGE_STARTMENU already creates the main shortcut
 ; under $SMPROGRAMS\$STARTMENU_FOLDER, so we only add the root-level alias here.
