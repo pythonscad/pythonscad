@@ -7,19 +7,50 @@ installer `.exe` and MSIX package) using a **Certum Open Source Code Signing**
 certificate on the SimplySign cloud HSM. The private key never leaves Certum's
 infrastructure.
 
-## How it fits into the release flow
+## Release flow overview
 
-1. A Release Please PR is merged → a GitHub release is created as a
-   **pre-release**.
-2. All platform build workflows run automatically and upload their artifacts to
-   the release.
-3. The `publish-release.yml` workflow waits for all builds. When they all
-   succeed it appends signing instructions to the release body and **stops**,
-   leaving the release as a pre-release.
-4. The maintainer (that's you) receives a GitHub notification, runs the local
-   signing script (see Part 3), and triggers the Publish Release workflow
-   manually.
-5. The release is published and downstream workflows (PyPI, etc.) run.
+```text
+Release Please PR merged
+        │
+        ▼
+GitHub release created as pre-release
+        │
+        ▼
+All platform build workflows run in parallel
+(AppImage, Debian, macOS, RPM, Windows)
+        │
+        ▼
+notify-signing.yml: waits for all builds → posts signing instructions
+to the release body → GitHub emails the maintainer → workflow exits
+        │
+        [release sits as pre-release; no timeout]
+        │
+        ▼  (whenever the maintainer is ready)
+Maintainer runs: .\scripts\sign-windows-release.ps1
+  → downloads NSIS installer + MSIX (if present)
+  → signs with signtool via SimplySign Desktop
+  → re-uploads signed files
+  → triggers publish-release.yml
+        │
+        ▼
+publish-release.yml: downloads all artifacts → computes SHA256/SHA512
+checksums → uploads sidecar + checksums.txt → removes pre-release flag
+        │
+        ▼
+Release published; downstream workflows fire (PyPI, etc.)
+```
+
+Key properties of this design:
+
+- **No timeout.** The release sits as a pre-release until you sign. Sign it a
+  day later, a week later — no workflow is waiting.
+- **Checksums are computed after signing.** The publish workflow runs on the
+  already-signed artifacts, so all checksums are correct by construction. The
+  signing script does not need to touch checksums at all.
+- **MSIX is optional.** Releases before 1.0.0 do not include an MSIX; the
+  script silently skips it when not present.
+
+---
 
 ## Part 1: One-time setup
 
@@ -61,17 +92,16 @@ Get-ChildItem Cert:\CurrentUser\My |
 - **Subject DN** — the full string (e.g.
   `CN=Open Source Developer Jane Smith, O=Open Source Developer, L=Vienna, S=Wien, C=AT`)
   is needed as the MSIX `publisher-cn` if you ever want to produce a signed
-  MSIX with a matching publisher identity (currently the MSIX uses an unsigned
-  placeholder).
+  MSIX with a matching publisher identity.
 
 ### 1.4 Install prerequisites
 
 - **Windows SDK** (comes with Visual Studio, or download the standalone
   [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/))
   — provides `signtool.exe`.
-- **GitHub CLI** (`gh`) — used by the signing script to download artifacts and
-  re-upload signed files. Install from <https://cli.github.com/> and run
-  `gh auth login`.
+- **GitHub CLI** (`gh`) — used by the signing script to download artifacts,
+  re-upload signed files, and trigger the publish workflow. Install from
+  <https://cli.github.com/> and run `gh auth login`.
 
 ---
 
@@ -86,8 +116,8 @@ reconnect.
 3. Open the **SimplySign mobile app** on your phone and generate a **token**.
 4. In the desktop dialog enter your **username** (your Certum/SimplySign email)
    and the **token**, then click **OK**.
-5. The tray icon should briefly show a notification confirming connection and
-   listing your card(s) and certificate(s).
+5. The tray notification confirms connection and lists your card(s) and
+   certificate(s).
 
 Once connected, your code-signing certificate is visible in the Windows
 certificate store (`Cert:\CurrentUser\My`) and `signtool` can use it.
@@ -97,9 +127,9 @@ without a PIN. Signing proceeds immediately — no PIN prompt will appear.
 
 ---
 
-## Part 3: Signing a release (the normal release workflow)
+## Part 3: Signing a release
 
-After receiving the GitHub notification that builds are complete:
+After receiving the GitHub notification email that builds are complete:
 
 ```powershell
 # 1. Make sure SimplySign Desktop is connected (Part 2 above)
@@ -107,29 +137,26 @@ After receiving the GitHub notification that builds are complete:
 # 2. Pull latest (the script lives in scripts/)
 git pull
 
-# 3. Run the signing script — it downloads, signs, verifies, and re-uploads
+# 3. Run the signing script
 .\scripts\sign-windows-release.ps1
 # Or for a specific tag:
-.\scripts\sign-windows-release.ps1 -Tag v0.20.0
+.\scripts\sign-windows-release.ps1 -Tag v1.0.0
+# Or against a fork:
+.\scripts\sign-windows-release.ps1 -Tag v1.0.0 -Repo myfork/pythonscad
 ```
 
 The script will:
 
 1. Confirm SimplySign is connected (certificate found in the Windows store).
-2. Download the NSIS installer (`.exe`) and MSIX package from the GitHub
-   release.
-3. Sign both files with `signtool` using the Certum certificate.
+2. Download the NSIS installer (`.exe`) and, if present, the MSIX package from
+   the pre-release.
+3. Sign each file with `signtool` using the Certum certificate.
 4. Verify each signature (`Get-AuthenticodeSignature` → `Status: Valid`).
 5. Re-upload the signed files to the release (overwriting the unsigned originals).
+6. Trigger the `publish-release.yml` workflow via `gh workflow run`, which
+   computes all checksums and makes the release public.
 
-**No push notification is needed** for this certificate (pinless). The signing
-happens immediately once SimplySign Desktop is connected.
-
-After the script succeeds, trigger the Publish Release workflow manually:
-
-```text
-GitHub → Actions → Publish Release → Run workflow (leave tag empty)
-```
+That's it — no further manual steps needed.
 
 ---
 
@@ -138,7 +165,7 @@ GitHub → Actions → Publish Release → Run workflow (leave tag empty)
 | Artifact | Signed | Reason |
 | --- | --- | --- |
 | NSIS installer `.exe` | **Yes** | Windows SmartScreen flags unsigned installers as from "Unknown Publisher" |
-| MSIX package `.msix` | **Yes** | Windows requires a valid Authenticode signature to install an MSIX |
+| MSIX package `.msix` | **Yes** (≥ 1.0.0) | Windows requires a valid Authenticode signature to install an MSIX |
 | ZIP distribution `.zip` | No | Archives are not Authenticode-signable in a meaningful way |
 | `pythonscad.exe` inside the ZIP | No | Optional; the installer signature is what end-users encounter |
 
@@ -168,8 +195,8 @@ osslsigncode verify -in PythonSCAD-*-Installer.exe
 ## Part 6: Automation (future)
 
 The current approach is intentionally manual — SimplySign Desktop requires an
-interactive session (username + TOTP token from the mobile app) that is
-difficult to provide on ephemeral GitHub-hosted runners.
+interactive session (username + TOTP token from the mobile app, valid ~2 hours)
+that is difficult to provide on ephemeral GitHub-hosted runners.
 
 Two automation paths have been investigated for future reference:
 
@@ -190,10 +217,10 @@ login per container restart.
 
 ## Summary checklist (per release)
 
-1. Receive GitHub notification: "Awaiting Windows code signing".
+1. Receive GitHub notification email: release body contains "Awaiting Windows code signing".
 2. Connect SimplySign Desktop (tray icon → Connect to SimplySign, username + mobile token).
 3. Run `.\scripts\sign-windows-release.ps1` in PowerShell.
-4. Trigger Publish Release workflow manually on GitHub Actions.
+4. Done — the script triggers the publish workflow automatically.
 
 Keep your SimplySign account credentials and mobile app safe. There is no
 private key to protect — it never leaves Certum's HSM.
