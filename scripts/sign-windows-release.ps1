@@ -107,6 +107,10 @@ if (-not $cert) {
 }
 Write-OK "Found: $($cert.Subject)"
 Write-OK "Valid until: $($cert.NotAfter)"
+$daysUntilExpiry = ($cert.NotAfter - (Get-Date)).Days
+if ($daysUntilExpiry -le 30) {
+    Write-Warn "Certificate expires in $daysUntilExpiry day(s) ($($cert.NotAfter.ToString('yyyy-MM-dd'))). Renew soon!"
+}
 
 # ---------------------------------------------------------------------------
 # 3. Resolve release tag
@@ -115,7 +119,8 @@ Write-Step "Resolving release tag"
 
 if (-not $Tag) {
     Write-Host "    No tag specified, fetching recent pre-releases from $Repo ..."
-    $json = gh release list --repo $Repo --json tagName,name,isDraft,isPrerelease --limit 10 2>&1
+    $json = gh release list --repo $Repo --json tagName,name,isDraft,isPrerelease --limit 10
+    if ($LASTEXITCODE -ne 0) { throw "gh release list failed (exit $LASTEXITCODE)" }
     $releases = $json | ConvertFrom-Json | Where-Object { $_.isPrerelease -or $_.isDraft }
     if (-not $releases) {
         throw "No pre-release or draft releases found in $Repo. Use -Tag to specify one explicitly."
@@ -129,7 +134,11 @@ if (-not $Tag) {
             Write-Host "      [$i] $($releases[$i].tagName)  -  $($releases[$i].name)"
         }
         $choice = Read-Host "    Enter number"
-        $Tag = $releases[[int]$choice].tagName
+        $idx = $null
+        if (-not [int]::TryParse($choice, [ref]$idx) -or $idx -lt 0 -or $idx -ge $releases.Count) {
+            throw "Invalid choice '$choice'. Enter a number between 0 and $($releases.Count - 1)."
+        }
+        $Tag = $releases[$idx].tagName
         Write-OK "Selected: $Tag"
     }
 } else {

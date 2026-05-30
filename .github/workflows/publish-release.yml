@@ -82,6 +82,37 @@ jobs:
           echo "Downloaded assets:"
           ls -lh
 
+      - name: Verify Windows artifact signatures
+        run: |
+          set -e
+          if ! command -v osslsigncode &>/dev/null; then
+            sudo apt-get install -y --no-install-recommends osslsigncode
+          fi
+          shopt -s nullglob
+          exes=(release-assets/*-Installer.exe)
+          if [ ${#exes[@]} -eq 0 ]; then
+            echo "No Windows installer found — skipping signature check."
+            exit 0
+          fi
+          failed=()
+          for f in "${exes[@]}"; do
+            echo "Verifying: $(basename "$f")"
+            if osslsigncode verify -in "$f" > /tmp/osslsigncode.out 2>&1; then
+              echo "  ✅ Valid signature"
+            else
+              cat /tmp/osslsigncode.out
+              echo "  ❌ Invalid or missing signature"
+              failed+=("$(basename "$f")")
+            fi
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            echo ""
+            echo "ERROR: Unsigned or improperly signed artifacts: ${failed[*]}"
+            echo "Run scripts/sign-windows-release.ps1 before triggering this workflow."
+            exit 1
+          fi
+          echo "All Windows installers have valid Authenticode signatures."
+
       - name: Compute and upload checksums
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

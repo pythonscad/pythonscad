@@ -100,14 +100,24 @@ jobs:
 
             // Main polling loop
             while (Date.now() - start < MAX_WAIT_MS) {
-              const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                event: 'release',
-                per_page: 100,
-              });
+              // Paginate through all release-event runs so we don't miss runs
+              // once the repo has accumulated more than 100 release events.
+              let allRuns = [];
+              let page = 1;
+              while (true) {
+                const { data: batch } = await github.rest.actions.listWorkflowRunsForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  event: 'release',
+                  per_page: 100,
+                  page,
+                });
+                allRuns = allRuns.concat(batch.workflow_runs);
+                if (batch.workflow_runs.length < 100) break;
+                page++;
+              }
 
-              const releaseRuns = runs.workflow_runs.filter(r => {
+              const releaseRuns = allRuns.filter(r => {
                 const runTag = r.head_branch;
                 return runTag === releaseTag;
               });
