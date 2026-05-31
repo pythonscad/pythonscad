@@ -15,4 +15,5 @@ public:
 
   int convexity{1};
   bool cut_mode{false};
+  bool color_mode{false};
 };

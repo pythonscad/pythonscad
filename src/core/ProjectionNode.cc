@@ -49,14 +49,20 @@ static std::shared_ptr<AbstractNode> builtin_projection(const ModuleInstantiatio
   if (parameters["cut"].type() == Value::Type::BOOL) {
     node->cut_mode = parameters["cut"].toBool();
   }
+  if (parameters["color"].type() == Value::Type::BOOL) {
+    node->color_mode = parameters["color"].toBool();
+  }
 
   return children.instantiate(node);
 }
 
 std::string ProjectionNode::toString() const
 {
-  return STR("projection(cut = ", (this->cut_mode ? "true" : "false"), ", convexity = ", this->convexity,
-             ")");
+  std::ostringstream stream;
+  stream <<  	"projection(cut = " <<  (this->cut_mode ? "true" : "false");
+  if(this->color_mode == true) stream << ", color = "<< this->color_mode;
+  stream << ", convexity = "<<this->convexity<< ")";
+  return stream.str();
 }
 
 void register_builtin_projection()
