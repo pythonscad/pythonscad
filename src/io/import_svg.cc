@@ -211,8 +211,12 @@ std::unique_ptr<Polygon2d> import_svg(CurveDiscretizer discretizer, const std::s
             outline.vertices.emplace_back(x, y);
             outline.positive = true;
           }
-          if (outline.vertices[0] == outline.vertices[outline.vertices.size() - 1] && stroke == false)
-            poly.addOutline(outline);
+          const bool is_closed = outline.vertices.size() > 0 &&
+                                 outline.vertices[0] == outline.vertices[outline.vertices.size() - 1];
+          // Closed paths are always outlines regardless of stroke mode.
+          // Open paths are polylines when stroke=true (kept as open lines),
+          // or expanded via offset_path inside libsvg when stroke=false.
+          if (is_closed) poly.addOutline(outline);
           else poly.addPolyline(outline);
         }
         if (!poly.isEmpty()) polygons.push_back(std::make_shared<const Polygon2d>(poly));
