@@ -957,6 +957,7 @@ add_cmdline_test(svgimport OPENSCAD ARGS --imgsize 600,600 --trust-python SUFFIX
   ${TEST_SCAD_DIR}/svg/extruded/box-w-holes.scad
   ${TEST_SCAD_DIR}/svg/extruded/simple-center.scad
   ${TEST_SCAD_DIR}/svg/extruded/stroke-closed-path.scad
+  ${TEST_SCAD_DIR}/svg/extruded/dpi-default.scad
 )
 
 #
