@@ -7,12 +7,11 @@
 # The script will create a file called openscad-<versionstring>.<extension> in
 # the current directory (or under ./mingw64)
 #
-# Usage: release-common.sh [-v <versionstring>] [-c <commit>] [mingw64] [shared] [snapshot]
+# Usage: release-common.sh [-v <versionstring>] [-c <commit>] [mingw64] [shared]
 #  -v       Version string (e.g. -v 2010.01)
 #           Version can be YYYY.MM[.DD][-patch][.build_id]
 #  mingw64  Cross-compile for win64 using MXE
 #  shared   Use shared libs for mingw build
-#  snapshot Build a snapshot binary (make e.g. experimental features available)
 #
 # If no version string is given, today's date will be used (YYYY.MM.DD)
 # If no make target is given, release will be used on Windows, none one Mac OS X
@@ -45,12 +44,11 @@ lf2crlf()
 
 printUsage()
 {
-  echo "Usage: $0 -v <versionstring> [mingw64] [shared] [snapshot]"
+  echo "Usage: $0 -v <versionstring> [mingw64] [shared]"
   echo
   echo "  -v <versionstring>: YYYY.MM[.DD][-patch][.build_id] format; defaults to YYYY.MM.DD"
   echo "  mingw64:   Override \$OSTYPE"
   echo "  shared:    Use shared libraries for mingw build"
-  echo "  snapshot:  Build a development snapshot (-DSNAPSHOT=ON -DEXPERIMENTAL=ON)"
   echo
   echo "  Example: $0 -v 2021.01"
 }
@@ -142,9 +140,6 @@ case $OS in
     ;;
 esac
 
-if echo "$@" | grep -q snapshot; then
-  CMAKE_CONFIG="$CMAKE_CONFIG -DSNAPSHOT=ON -DEXPERIMENTAL=ON"
-fi
 
 while getopts 'v:c:' c
 do
