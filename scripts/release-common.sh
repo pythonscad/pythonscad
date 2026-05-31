@@ -81,10 +81,10 @@ elif [[ $OSTYPE == "linux-gnu" ]]; then
   echo "Detected build-machine ARCH: $ARCH"
 fi
 
-if [ "`echo $* | grep mingw`" ]; then
+if echo "$@" | grep -q mingw; then
   OS=UNIX_CROSS_WIN
   ARCH=32
-  if [ "`echo $* | grep mingw64`" ]; then
+  if echo "$@" | grep -q mingw64; then
     ARCH=64
   fi
 fi
@@ -118,10 +118,9 @@ case $OS in
     ;;
     UNIX_CROSS_WIN)
         SHARED=
-        if [ "`echo $* | grep shared`" ]; then
+        if echo "$@" | grep -q shared; then
           SHARED=-shared
         fi
-        MINGWCONFIG=mingw-cross-env$SHARED
         . ./scripts/setenv-mingw-xbuild.sh $ARCH $SHARED qt6
         TARGET=
         ZIP="zip"
@@ -143,7 +142,7 @@ case $OS in
     ;;
 esac
 
-if [ "`echo $* | grep snapshot`" ]; then
+if echo "$@" | grep -q snapshot; then
   CMAKE_CONFIG="$CMAKE_CONFIG -DSNAPSHOT=ON -DEXPERIMENTAL=ON"
 fi
 
@@ -152,6 +151,7 @@ do
   case $c in
     v) VERSION=$OPTARG;;
     c) COMMIT=$OPTARG;;
+    *) ;;
   esac
 done
 
@@ -278,7 +278,7 @@ TEMPLATESDIR=$RESOURCEDIR/templates
 LIBRARYDIR=$RESOURCEDIR/libraries
 TRANSLATIONDIR=$RESOURCEDIR/locale
 
-if [ -n $EXAMPLESDIR ]; then
+if [ -n "$EXAMPLESDIR" ]; then
     echo $EXAMPLESDIR
     mkdir -p $EXAMPLESDIR
     rm -f examples.tar
@@ -287,7 +287,7 @@ if [ -n $EXAMPLESDIR ]; then
     rm -f examples.tar
     chmod -R 644 $EXAMPLESDIR/*/*
 fi
-if [ -n $FONTDIR ]; then
+if [ -n "$FONTDIR" ]; then
   echo $FONTDIR
   mkdir -p $FONTDIR
   cp -a fonts/10-liberation.conf $FONTDIR
@@ -302,22 +302,22 @@ if [ -n $FONTDIR ]; then
       ;;
   esac
 fi
-if [ -n $COLORSCHEMESDIR ]; then
+if [ -n "$COLORSCHEMESDIR" ]; then
   echo $COLORSCHEMESDIR
   mkdir -p $COLORSCHEMESDIR
   cp -a color-schemes/* $COLORSCHEMESDIR
 fi
-if [ -n $SHADERSDIR ]; then
+if [ -n "$SHADERSDIR" ]; then
   echo $SHADERSDIR
   mkdir -p $SHADERSDIR
   cp -a shaders/* $SHADERSDIR
 fi
-if [ -n $TEMPLATESDIR ]; then
+if [ -n "$TEMPLATESDIR" ]; then
   echo $TEMPLATESDIR
   mkdir -p $TEMPLATESDIR
   cp -a templates/* $TEMPLATESDIR
 fi
-if [ -n $LIBRARYDIR ]; then
+if [ -n "$LIBRARYDIR" ]; then
     echo $LIBRARYDIR
     mkdir -p $LIBRARYDIR
     # exclude the .git stuff from MCAD which is a git submodule.
@@ -329,7 +329,7 @@ if [ -n $LIBRARYDIR ]; then
     rm -f libraries.tar
     chmod -R u=rwx,go=r,+X $LIBRARYDIR/*
 fi
-if [ -n $TRANSLATIONDIR ]; then
+if [ -n "$TRANSLATIONDIR" ]; then
   echo $TRANSLATIONDIR
   mkdir -p $TRANSLATIONDIR
   cd locale && tar cvf $OPENSCADDIR/translations.tar */*/*.mo && cd $OPENSCADDIR
@@ -368,7 +368,7 @@ case $OS in
         fi
         ./chrpath_linux -d openscad-$VERSION/lib/openscad/openscad
 
-        QTLIBDIR=$(dirname $(ldd $DEPLOYDIR/openscad | grep Qt5Gui | head -n 1 | awk '{print $3;}'))
+        QTLIBDIR=$(dirname "$(ldd $DEPLOYDIR/openscad | grep Qt5Gui | head -n 1 | awk '{print $3;}')")
         ( ldd $DEPLOYDIR/openscad ; ldd "$QTLIBDIR"/qt5/plugins/platforms/libqxcb.so ) \
           | sed -re 's,.* => ,,; s,[\t ].*,,;' -e '/^$/d' -e '/libc\.so|libm\.so|libdl\.so|libgcc_|libpthread\.so/d' \
           | sort -u \
@@ -384,7 +384,7 @@ case $OS in
           cp -av "$DRIDRIVERDIR"/swrast_dri.so "$DRILIB"
         fi
 
-	find openscad-$VERSION/lib/openscad -type f | xargs strip
+	find openscad-$VERSION/lib/openscad -type f -exec strip {} +
         mkdir -p openscad-$VERSION/share/appdata
         #cp icons/openscad.{desktop,png,xml} openscad-$VERSION/share/appdata NOT present
         cp scripts/installer-linux.sh openscad-$VERSION/install.sh
