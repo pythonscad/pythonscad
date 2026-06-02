@@ -1,4 +1,3 @@
-from pythonscad import *
 from pymachineconfig import *
 
 # set up a machine definition from scratch.

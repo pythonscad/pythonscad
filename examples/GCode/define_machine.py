@@ -1,4 +1,3 @@
-from pythonscad import *
 from pymachineconfig import *
 
 # Create a blank machine config with only a
