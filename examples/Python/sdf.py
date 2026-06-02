@@ -1,7 +1,7 @@
 from pythonscad import *
 from pylibfive import *
 
-# Just assemble you libfive object first
+# Just assemble your libfive object first
 c = lv_coord()
 s1 = lv_sphere(lv_trans(c, [2, 2, 2]), 2)
 b1 = lv_box(c, [2, 2, 2])

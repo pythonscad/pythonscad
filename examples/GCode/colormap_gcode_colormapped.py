@@ -93,8 +93,8 @@ print("cut color (%s): %s" % ("L02", cut_color))
 print("engrave color (%s): %s" % ("L01", engrave_color))
 
 # Note: the working machine's config is cached and sent to
-#   export_gcode so that any unszaved colormap modifications are
-#   avialable at runtime.  Also, the actual saved colormap does not
+#   export_gcode so that any unsaved colormap modifications are
+#   available at runtime.  Also, the actual saved colormap does not
 #   require modification for each use.
 
 model = text_3d_3 | plate_3
