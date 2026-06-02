@@ -110,7 +110,7 @@ mc.write()
 ###############
 # verify the configuration was saved by reading in and printing
 mc2 = MachineConfig()
-working = mc.working_config()
+working = mc2.working_config()
 print("\nRead in saved config file")
 print("============")
 print("working:", working)

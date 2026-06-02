@@ -32,13 +32,13 @@ print("cut scale:", cut_scale)
 engrave_scale = mc.scale_value("engrave_feed", "max_feed")
 print("engrave scale:", engrave_scale)
 
-test_power = mc.get_property_value("Creality-Falcon2", "max_feed")
-print("max_power =", test_power)
+max_feed = mc.get_property_value("Creality-Falcon2", "max_feed")
+print("max_feed =", max_feed)
 
 mc.set_property_value("Creality-Falcon2", "max_feed", 12000)
 
-test_power = mc.get_property_value("Creality-Falcon2", "max_feed")
-print("max_power =", test_power)
+max_feed = mc.get_property_value("Creality-Falcon2", "max_feed")
+print("max_feed =", max_feed)
 
 ###############
 
