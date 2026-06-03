@@ -53,6 +53,7 @@
 #include "utils/calc.h"
 #include "utils/degree_trig.h"
 #include "utils/printutils.h"
+#include "core/ColorUtil.h"
 #ifdef ENABLE_CGAL
 #include <CGAL/Point_2.h>
 #include <CGAL/convex_hull_2.h>
@@ -3496,38 +3497,41 @@ std::shared_ptr<const Geometry> GeometryEvaluator::projectionCut(const Projectio
   }
   return geom;
 }
-std::shared_ptr<Polygon2d> createColoredProjection(const std::shared_ptr<const Geometry> &geom)
+std::shared_ptr<Polygon2d> createColoredProjection(const std::shared_ptr<const Geometry>& geom)
 {
-	auto result = std::make_shared<Polygon2d>();
-	auto ps = PolySetUtils::getGeometryAsPolySet(geom);
-	if(ps == nullptr) return result;
-        std::vector<Vector4d> normals, new_normals;
-	std::vector<int> face_parents;
+  auto result = std::make_shared<Polygon2d>();
+  auto ps = PolySetUtils::getGeometryAsPolySet(geom);
+  if (ps == nullptr) return result;
+  std::vector<Vector4d> normals, new_normals;
+  std::vector<int> face_parents;
 
-        normals = calcTriangleNormals(ps->vertices, ps->indices);
-	std::vector<IndexedColorFace> colorIndices; 
-	for(int i=0;i<ps->indices.size();i++) {
-		IndexedColorFace cind;
-		cind.face = ps->indices[i];
-		cind.color = ps->color_indices[i];
-		colorIndices.push_back(cind);
-	}
-        std::vector<IndexedColorFace> inds = mergeTriangles(colorIndices, normals, new_normals, face_parents, ps->vertices);
+  auto defcolor = *OpenSCAD::parse_color("#f9d72c");
+  normals = calcTriangleNormals(ps->vertices, ps->indices);
+  std::vector<IndexedColorFace> colorIndices;
+  for (int i = 0; i < ps->indices.size(); i++) {
+    IndexedColorFace cind;
+    cind.face = ps->indices[i];
+    if (i < ps->color_indices.size()) cind.color = ps->color_indices[i];
+    else cind.color = -1;
+    colorIndices.push_back(cind);
+  }
+  std::vector<IndexedColorFace> inds =
+    mergeTriangles(colorIndices, normals, new_normals, face_parents, ps->vertices);
 
-	for(int i=0;i<inds.size();i++) {
-          if(new_normals[i][2] > 0) { // faceing upwards
-           auto &tri = inds[i].face;
-           Outline2d outl;
-	   outl.color = ps->colors[inds[i].color];
-           for (const auto& ind : tri) {
-             outl.vertices.push_back(ps->vertices[ind].head<2>());
-           }
+  for (int i = 0; i < inds.size(); i++) {
+    if (new_normals[i][2] > 0) {  // faceing upwards
+      auto& tri = inds[i].face;
+      Outline2d outl;
+      if (inds[i].color != -1) outl.color = ps->colors[inds[i].color];
+      else outl.color = defcolor;
+      for (const auto& ind : tri) {
+        outl.vertices.push_back(ps->vertices[ind].head<2>());
+      }
 
-           result->addOutline(outl);	   
-            				      
-	  }		  
-	}
-	return result;
+      result->addOutline(outl);
+    }
+  }
+  return result;
 }
 std::shared_ptr<const Geometry> GeometryEvaluator::projectionNoCut(const ProjectionNode& node)
 {
@@ -3536,9 +3540,9 @@ std::shared_ptr<const Geometry> GeometryEvaluator::projectionNoCut(const Project
     const std::shared_ptr<const Geometry> newgeom =
       applyToChildren3D(node, OpenSCADOperator::UNION).constptr();
     if (newgeom) {
-      if(node.color_mode == true) {
-         return createColoredProjection(newgeom);	      
-        } else {	    
+      if (node.color_mode == true) {
+        return createColoredProjection(newgeom);
+      } else {
         auto manifold = ManifoldUtils::createManifoldFromGeometry(newgeom);
         if (manifold != nullptr) {
           auto poly2d = manifold->project();
