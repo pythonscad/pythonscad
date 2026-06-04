@@ -3497,7 +3497,7 @@ std::shared_ptr<const Geometry> GeometryEvaluator::projectionCut(const Projectio
   }
   return geom;
 }
-std::shared_ptr<Polygon2d> createColoredProjection(const std::shared_ptr<const Geometry>& geom)
+std::shared_ptr<Polygon2d> createDetailProjection(const std::shared_ptr<const Geometry>& geom)
 {
   auto result = std::make_shared<Polygon2d>();
   auto ps = PolySetUtils::getGeometryAsPolySet(geom);
@@ -3540,8 +3540,8 @@ std::shared_ptr<const Geometry> GeometryEvaluator::projectionNoCut(const Project
     const std::shared_ptr<const Geometry> newgeom =
       applyToChildren3D(node, OpenSCADOperator::UNION).constptr();
     if (newgeom) {
-      if (node.color_mode == true) {
-        return createColoredProjection(newgeom);
+      if (node.detail_mode == true) {
+        return createDetailProjection(newgeom);
       } else {
         auto manifold = ManifoldUtils::createManifoldFromGeometry(newgeom);
         if (manifold != nullptr) {

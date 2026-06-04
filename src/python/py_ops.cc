@@ -733,7 +733,7 @@ PyObject *python_surface(PyObject *self, PyObject *args, PyObject *kwargs)
   return python_surface_core(file, center, invert, color, convexity);
 }
 
-PyObject *python_projection_core(PyObject *obj, PyObject *cut, PyObject *color, int convexity)
+PyObject *python_projection_core(PyObject *obj, PyObject *cut, PyObject *detail, int convexity)
 {
   DECLARE_INSTANCE();
   auto node = std::make_shared<ProjectionNode>(instance);
@@ -751,11 +751,11 @@ PyObject *python_projection_core(PyObject *obj, PyObject *cut, PyObject *color, 
     return NULL;
   }
 
-  node->color_mode = 0;
-  if (color == Py_True) node->color_mode = 1;
-  else if (color == Py_False) node->color_mode = 0;
+  node->detail_mode = 0;
+  if (detail == Py_True) node->detail_mode = 1;
+  else if (detail == Py_False) node->detail_mode = 0;
   else {
-    PyErr_SetString(PyExc_TypeError, "color can be either True or false");
+    PyErr_SetString(PyExc_TypeError, "detail can be either True or false");
     return NULL;
   }
   node->children.push_back(child);
@@ -764,29 +764,30 @@ PyObject *python_projection_core(PyObject *obj, PyObject *cut, PyObject *color, 
 
 PyObject *python_projection(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = {"obj", "cut", "color", "convexity", NULL};
+  char *kwlist[] = {"obj", "cut", "detail", "convexity", NULL};
   PyObject *obj = NULL;
   PyObject *cutmode = Py_False;
-  PyObject *colormode = Py_False;
+  PyObject *detailmode = Py_False;
   long convexity = 2;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OOl", kwlist, &obj, &cutmode, &colormode, &convexity)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OOl", kwlist, &obj, &cutmode, &detailmode,
+                                   &convexity)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing projection(object)");
     return NULL;
   }
-  return python_projection_core(obj, cutmode, colormode, convexity);
+  return python_projection_core(obj, cutmode, detailmode, convexity);
 }
 
 PyObject *python_oo_projection(PyObject *obj, PyObject *args, PyObject *kwargs)
 {
-  char *kwlist[] = {"cut", "color", "convexity", NULL};
+  char *kwlist[] = {"cut", "detail", "convexity", NULL};
   PyObject *cutmode = Py_False;
-  PyObject *colormode = Py_False;
+  PyObject *detailmode = Py_False;
   long convexity = 2;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OOl", kwlist, &cutmode, &colormode, &convexity)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OOl", kwlist, &cutmode, &detailmode, &convexity)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing projection(object)");
     return NULL;
   }
-  return python_projection_core(obj, cutmode, colormode, convexity);
+  return python_projection_core(obj, cutmode, detailmode, convexity);
 }
 
 PyObject *python_group(PyObject *self, PyObject *args, PyObject *kwargs)

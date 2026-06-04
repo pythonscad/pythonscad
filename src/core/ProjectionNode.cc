@@ -49,8 +49,8 @@ static std::shared_ptr<AbstractNode> builtin_projection(const ModuleInstantiatio
   if (parameters["cut"].type() == Value::Type::BOOL) {
     node->cut_mode = parameters["cut"].toBool();
   }
-  if (parameters["color"].type() == Value::Type::BOOL) {
-    node->color_mode = parameters["color"].toBool();
+  if (parameters["detail"].type() == Value::Type::BOOL) {
+    node->detail_mode = parameters["detail"].toBool();
   }
 
   return children.instantiate(node);
@@ -59,9 +59,9 @@ static std::shared_ptr<AbstractNode> builtin_projection(const ModuleInstantiatio
 std::string ProjectionNode::toString() const
 {
   std::ostringstream stream;
-  stream <<  	"projection(cut = " <<  (this->cut_mode ? "true" : "false");
-  if(this->color_mode == true) stream << ", color = "<< this->color_mode;
-  stream << ", convexity = "<<this->convexity<< ")";
+  stream << "projection(cut = " << (this->cut_mode ? "true" : "false");
+  if (this->detail_mode == true) stream << ", detail = " << this->detail_mode;
+  stream << ", convexity = " << this->convexity << ")";
   return stream.str();
 }
 
