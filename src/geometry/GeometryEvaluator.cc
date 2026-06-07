@@ -3497,6 +3497,9 @@ std::shared_ptr<const Geometry> GeometryEvaluator::projectionCut(const Projectio
   }
   return geom;
 }
+namespace ClipperUtils {
+Polygon2d cleanUnion(const std::vector<std::shared_ptr<const Polygon2d>>& polygons);
+}
 std::shared_ptr<Polygon2d> createDetailProjection(const std::shared_ptr<const Geometry>& geom)
 {
   auto result = std::make_shared<Polygon2d>();
@@ -3518,8 +3521,23 @@ std::shared_ptr<Polygon2d> createDetailProjection(const std::shared_ptr<const Ge
   std::vector<IndexedColorFace> inds =
     mergeTriangles(colorIndices, normals, new_normals, face_parents, ps->vertices);
 
+  std::sort(inds.begin(), inds.end(), [ps](const IndexedColorFace& a, const IndexedColorFace& b) {
+    double ha = 0, hb = 0;
+    int na = a.face.size();
+    for (int i = 0; i < na; i++) ha += ps->vertices[a.face[i]][2];
+    ha /= na;
+
+    int nb = b.face.size();
+    for (int i = 0; i < nb; i++) hb += ps->vertices[b.face[i]][2];
+    hb /= nb;
+
+    return ha > hb ? 1 : 0;
+  });
+
+  std::vector<std::shared_ptr<const Polygon2d>> results;
   for (int i = 0; i < inds.size(); i++) {
-    if (new_normals[i][2] > 0) {  // faceing upwards
+    Vector4d norm = calcTriangleNormal(ps->vertices, inds[i].face);
+    if (norm[2] > 0) {  // faceing upwards
       auto& tri = inds[i].face;
       Outline2d outl;
       if (inds[i].color != -1) outl.color = ps->colors[inds[i].color];
@@ -3528,10 +3546,12 @@ std::shared_ptr<Polygon2d> createDetailProjection(const std::shared_ptr<const Ge
         outl.vertices.push_back(ps->vertices[ind].head<2>());
       }
 
-      result->addOutline(outl);
+      auto result = std::make_shared<const Polygon2d>(outl);
+      results.push_back(result);
     }
   }
-  return result;
+  auto results_clean = ClipperUtils::cleanUnion(results);
+  return std::make_shared<Polygon2d>(results_clean);
 }
 std::shared_ptr<const Geometry> GeometryEvaluator::projectionNoCut(const ProjectionNode& node)
 {
