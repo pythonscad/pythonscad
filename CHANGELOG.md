@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.1.0](https://github.com/pythonscad/pythonscad/compare/v1.0.0...v1.1.0) (2026-06-09)
+
+
+### Features
+
+* **gui:** AIDock preferences ([#6836](https://github.com/pythonscad/pythonscad/issues/6836)) ([9aed34f](https://github.com/pythonscad/pythonscad/commit/9aed34f1cbc49585d006c25be04e7ad07162792b))
+
+
+### Bug Fixes
+
+* **chore:** compiles again ([f39bd7e](https://github.com/pythonscad/pythonscad/commit/f39bd7e87db77d75a4c9d3b1a58dc637dcf8421d))
+* **chore:** customizer delevers recent values ([#720](https://github.com/pythonscad/pythonscad/issues/720)) ([8d8e09f](https://github.com/pythonscad/pythonscad/commit/8d8e09f8295849b23f416b7a93ed5d05d72693af))
+* **chore:** fixed meaning of stroke parameter ([980f545](https://github.com/pythonscad/pythonscad/commit/980f545e68f1917739e4990f0d58cd2684aebd70))
+* **chore:** get negation correct ([ed8b7a2](https://github.com/pythonscad/pythonscad/commit/ed8b7a2bfc044b40311f593737d4b336f3d97d66))
+* **chore:** merge ([a35eea8](https://github.com/pythonscad/pythonscad/commit/a35eea847b9a088dadd3c3b43bf57387746fd67d))
+* **chore:** merge it ([035ee5d](https://github.com/pythonscad/pythonscad/commit/035ee5d2001a20339892b3146e9620c991f98ebf))
+* **chore:** merging ([adeef5c](https://github.com/pythonscad/pythonscad/commit/adeef5c55125070895592b848d57e431a7a6f499))
+* **chore:** removed comment ([321c518](https://github.com/pythonscad/pythonscad/commit/321c51835a1d56a35b8cbccd4e58b8ddede06bd7))
+* clean implementation with correct formatting ([7173204](https://github.com/pythonscad/pythonscad/commit/71732048141374775fbb794d078ac6142f9b5914))
+* use Cmd instead of Ctrl in hyperlink tooltip on macOS ([4936618](https://github.com/pythonscad/pythonscad/commit/49366181fb428d8b7085738702542b293c5bd812))
+* use Cmd instead of Ctrl in tooltip on macOS ([5ab9d3b](https://github.com/pythonscad/pythonscad/commit/5ab9d3bec239c46f298008217a208dd156426e6d)), closes [#4725](https://github.com/pythonscad/pythonscad/issues/4725)
+* use Cmd instead of Ctrl in tooltip on macOS ([a474df6](https://github.com/pythonscad/pythonscad/commit/a474df698a00af87c28dc53015dacc1a52c80fec)), closes [#4725](https://github.com/pythonscad/pythonscad/issues/4725)
+
 ## [1.0.0](https://github.com/pythonscad/pythonscad/compare/v0.20.0...v1.0.0) (2026-06-02)
 
 
