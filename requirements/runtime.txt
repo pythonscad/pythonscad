@@ -37,4 +37,4 @@
 # (rich `In [N]:` prompt, history, tab completion), and produces a
 # smaller bundle. Revisit when IPython 10 ships or when MSYS2 has a
 # usable psutil wheel for the build's Python version.
-ipython>=8,<9
+ipython>=9.14.1,<10
