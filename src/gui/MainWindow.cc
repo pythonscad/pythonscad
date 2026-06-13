@@ -196,26 +196,45 @@ static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *st
 
 int curl_download(const std::string& url, const std::string& path)
 {
-  CURLcode status;
+  CURLcode status = CURLE_FAILED_INIT;
   QFile fh((path).c_str());
   if (!fh.open(QIODevice::WriteOnly)) {
     LOG(message_group::Error, "Cannot open file %1$s", path.c_str());
     return -1;
   }
   LOG(message_group::Warning, "Downloading to %1$s", path.c_str());
+  char errbuf[CURL_ERROR_SIZE] = {0};
   CURL *curl = curl_easy_init();
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &fh);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_download_write);
     curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 10L);
+    curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "PythonSCAD libcurl");
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 300L);
+#if defined(_WIN32) && defined(CURLSSLOPT_NATIVE_CA)
+    // Use the Windows certificate store for HTTPS verification. Without
+    // this, libcurl builds linked against OpenSSL/wolfSSL on Windows
+    // have no CA bundle and every HTTPS request fails with
+    // CURLE_PEER_FAILED_VERIFICATION. Harmless on Schannel builds where
+    // it is already the default behavior.
+    curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, (long)CURLSSLOPT_NATIVE_CA);
+#endif
 
     status = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
   }
   fh.close();
   if (status != CURLE_OK) {
-    LOG(message_group::Error, "Could not download!");
+    const char *detail = (errbuf[0] != '\0') ? errbuf : curl_easy_strerror(status);
+    LOG(message_group::Error, "Could not download %1$s: %2$s", url.c_str(), detail);
+    QFile::remove(path.c_str());
+    return -1;
   }
   return 0;
 }
