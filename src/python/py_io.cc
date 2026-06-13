@@ -603,11 +603,8 @@ PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
   importcode = "from " + filename.substr(0, filename.find_last_of(".")) + " import *";
 
   path = PlatformUtils::userLibraryPath() + "/" + filename;
-  bool do_download = false;
-  if (std::find(nimport_downloaded.begin(), nimport_downloaded.end(), url) == nimport_downloaded.end()) {
-    do_download = true;
-    nimport_downloaded.push_back(url);
-  }
+  bool do_download =
+    std::find(nimport_downloaded.begin(), nimport_downloaded.end(), url) == nimport_downloaded.end();
 
   std::ifstream f(path.c_str());
   if (!f.good()) {
@@ -615,7 +612,13 @@ PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   if (do_download) {
-    curl_download(url, path);
+    if (curl_download(url, path) != 0) {
+      PyErr_Format(PyExc_RuntimeError, "nimport: failed to download %s", url.c_str());
+      return NULL;
+    }
+    if (std::find(nimport_downloaded.begin(), nimport_downloaded.end(), url) == nimport_downloaded.end()) {
+      nimport_downloaded.push_back(url);
+    }
   }
 
   PyRun_SimpleString(importcode.c_str());
