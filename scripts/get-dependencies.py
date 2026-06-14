@@ -261,7 +261,9 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         for cmd in pre_cmds:
             trusted.append(cmd)
             if cmd[:2] == ["brew", "tap"] and len(cmd) >= 3:
-                trusted.append(["brew", "trust", cmd[2]])
+                # Use the last argument as the tap name so flags like
+                # --force-auto-update before the tap name are handled correctly.
+                trusted.append(["brew", "trust", cmd[-1]])
         cmds.clear()
         cmds.extend(trusted)
         cmds.append(["brew", "update"])
