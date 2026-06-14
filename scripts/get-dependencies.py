@@ -306,7 +306,7 @@ def run_commands(cmds: List[List[str]], dry_run: bool):
         if cmd[:2] == ["brew", "trust"]:
             if brew_has_trust is None:
                 brew_has_trust = subprocess.run(
-                    ["brew", "help", "trust"], capture_output=True
+                    ["brew", "help", "trust"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                 ).returncode == 0
             if not brew_has_trust:
                 print("$ # skipped (brew trust not available on this Homebrew version)")
