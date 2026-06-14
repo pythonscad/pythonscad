@@ -51,7 +51,9 @@ jobs:
     - name: Trust openscad Homebrew tap (Homebrew 6+)
       run: |
         brew tap openscad/homebrew-tap
-        brew trust openscad/homebrew-tap || true
+        if brew help trust &>/dev/null; then
+          brew trust openscad/homebrew-tap
+        fi
     - name: Install dependencies
       env:
         HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
