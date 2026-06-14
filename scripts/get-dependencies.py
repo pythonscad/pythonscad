@@ -254,20 +254,16 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         if shutil.which("brew") is None:
             raise SystemExit("Homebrew not found. Install from https://brew.sh first.")
         # Homebrew 6.0+ requires taps to be explicitly trusted before formulae
-        # from them can be installed. Detect support at runtime so this script
-        # stays compatible with older Homebrew versions.
-        brew_has_trust = subprocess.run(
-            ["brew", "help", "trust"], capture_output=True
-        ).returncode == 0
-        if brew_has_trust:
-            # Insert a `brew trust <tap>` after each `brew tap <tap>` pre-command.
-            trusted: List[List[str]] = []
-            for cmd in pre_cmds:
-                trusted.append(cmd)
-                if cmd[:2] == ["brew", "tap"] and len(cmd) >= 3:
-                    trusted.append(["brew", "trust", cmd[2]])
-            cmds.clear()
-            cmds.extend(trusted)
+        # from them can be installed. Insert `brew trust <tap>` after each
+        # `brew tap <tap>` pre-command; run_commands() skips these on older
+        # Homebrew versions where the trust subcommand doesn't exist.
+        trusted: List[List[str]] = []
+        for cmd in pre_cmds:
+            trusted.append(cmd)
+            if cmd[:2] == ["brew", "tap"] and len(cmd) >= 3:
+                trusted.append(["brew", "trust", cmd[2]])
+        cmds.clear()
+        cmds.extend(trusted)
         cmds.append(["brew", "update"])
         cmds.append(["brew", "install", *packages])
     elif mgr == "zypper":
@@ -295,10 +291,25 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
 
 
 def run_commands(cmds: List[List[str]], dry_run: bool):
+    # Lazily detected on first `brew trust` command; None = not yet checked.
+    _brew_has_trust: List[bool] = [None]  # mutable cell for nonlocal write in inner scope
+
     for cmd in cmds:
         print("$", " ".join(cmd))
         if dry_run:
             continue
+
+        # `brew trust` was introduced in Homebrew 6.0. Skip silently on older
+        # versions; fail loudly if the subcommand exists but the trust fails.
+        if cmd[:2] == ["brew", "trust"]:
+            if _brew_has_trust[0] is None:
+                _brew_has_trust[0] = subprocess.run(
+                    ["brew", "help", "trust"], capture_output=True
+                ).returncode == 0
+            if not _brew_has_trust[0]:
+                print(f"$ # skipped (brew trust not available on this Homebrew version)")
+                continue
+
         # Use subprocess.run to get better error information
         result = subprocess.run(cmd, capture_output=False, text=True)
         if result.returncode != 0:
