@@ -194,12 +194,15 @@ static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *st
   return size * nmemb;
 }
 
-int curl_download(const std::string& url, const std::string& path)
+int curl_download(const std::string& url, const std::string& path, std::string *errmsg)
 {
+  const std::string useragent =
+    std::string("PythonSCAD/") + std::string(openscad_versionnumber) + " libcurl/" LIBCURL_VERSION;
   CURLcode status = CURLE_FAILED_INIT;
   QFile fh((path).c_str());
   if (!fh.open(QIODevice::WriteOnly)) {
     LOG(message_group::Error, "Cannot open file %1$s", path.c_str());
+    if (errmsg) *errmsg = std::string("cannot open destination file: ") + path;
     return -1;
   }
   LOG(message_group::Warning, "Downloading to %1$s", path.c_str());
@@ -212,8 +215,15 @@ int curl_download(const std::string& url, const std::string& path)
     curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 10L);
+#if CURL_AT_LEAST_VERSION(7, 85, 0)
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "http,https");
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
+#else
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+#endif
     curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, "PythonSCAD libcurl");
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, useragent.c_str());
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30L);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 300L);
@@ -233,6 +243,7 @@ int curl_download(const std::string& url, const std::string& path)
   if (status != CURLE_OK) {
     const char *detail = (errbuf[0] != '\0') ? errbuf : curl_easy_strerror(status);
     LOG(message_group::Error, "Could not download %1$s: %2$s", url.c_str(), detail);
+    if (errmsg) *errmsg = detail;
     QFile::remove(path.c_str());
     return -1;
   }

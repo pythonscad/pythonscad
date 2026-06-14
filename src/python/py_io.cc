@@ -586,7 +586,7 @@ PyObject *python_import(PyObject *self, PyObject *args, PyObject *kwargs)
 #ifndef OPENSCAD_NOGUI
 std::vector<std::string> nimport_downloaded;
 
-extern int curl_download(const std::string& url, const std::string& path);
+extern int curl_download(const std::string& url, const std::string& path, std::string *errmsg);
 PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   char *kwlist[] = {"url", NULL};
@@ -603,21 +603,20 @@ PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
   importcode = "from " + filename.substr(0, filename.find_last_of(".")) + " import *";
 
   path = PlatformUtils::userLibraryPath() + "/" + filename;
-  bool do_download =
-    std::find(nimport_downloaded.begin(), nimport_downloaded.end(), url) == nimport_downloaded.end();
+  bool already_downloaded =
+    std::find(nimport_downloaded.begin(), nimport_downloaded.end(), url) != nimport_downloaded.end();
 
   std::ifstream f(path.c_str());
-  if (!f.good()) {
-    do_download = true;
-  }
+  bool do_download = !already_downloaded || !f.good();
 
   if (do_download) {
-    if (curl_download(url, path) != 0) {
-      PyErr_Format(PyExc_RuntimeError, "nimport: failed to download %s", url.c_str());
+    std::string errmsg;
+    if (curl_download(url, path, &errmsg) != 0) {
+      PyErr_Format(PyExc_RuntimeError, "nimport: failed to download %s to %s: %s", url.c_str(),
+                   path.c_str(), errmsg.c_str());
       return NULL;
     }
-    if (std::find(nimport_downloaded.begin(), nimport_downloaded.end(), url) ==
-        nimport_downloaded.end()) {
+    if (!already_downloaded) {
       nimport_downloaded.push_back(url);
     }
   }
