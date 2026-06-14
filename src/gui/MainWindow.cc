@@ -190,8 +190,9 @@
 static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   QFile *fh = (QFile *)stream;
-  fh->write(QByteArray((const char *)ptr, size * nmemb));
-  return size * nmemb;
+  qint64 written = fh->write(QByteArray((const char *)ptr, size * nmemb));
+  if (written < 0) return 0;
+  return (size_t)written;
 }
 
 int curl_download(const std::string& url, const std::string& path, std::string *errmsg)

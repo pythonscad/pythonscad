@@ -606,8 +606,7 @@ PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
   bool already_downloaded =
     std::find(nimport_downloaded.begin(), nimport_downloaded.end(), url) != nimport_downloaded.end();
 
-  std::ifstream f(path.c_str());
-  bool do_download = !already_downloaded || !f.good();
+  bool do_download = !already_downloaded || !std::ifstream(path.c_str()).good();
 
   if (do_download) {
     std::string errmsg;
