@@ -291,8 +291,8 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
 
 
 def run_commands(cmds: List[List[str]], dry_run: bool):
-    # Lazily detected on first `brew trust` command; None = not yet checked.
-    _brew_has_trust: List[bool] = [None]  # mutable cell for nonlocal write in inner scope
+    # Lazily detected on the first `brew trust` command; None = not yet checked.
+    brew_has_trust: Optional[bool] = None
 
     for cmd in cmds:
         print("$", " ".join(cmd))
@@ -302,12 +302,12 @@ def run_commands(cmds: List[List[str]], dry_run: bool):
         # `brew trust` was introduced in Homebrew 6.0. Skip silently on older
         # versions; fail loudly if the subcommand exists but the trust fails.
         if cmd[:2] == ["brew", "trust"]:
-            if _brew_has_trust[0] is None:
-                _brew_has_trust[0] = subprocess.run(
+            if brew_has_trust is None:
+                brew_has_trust = subprocess.run(
                     ["brew", "help", "trust"], capture_output=True
                 ).returncode == 0
-            if not _brew_has_trust[0]:
-                print(f"$ # skipped (brew trust not available on this Homebrew version)")
+            if not brew_has_trust:
+                print("$ # skipped (brew trust not available on this Homebrew version)")
                 continue
 
         # Use subprocess.run to get better error information
