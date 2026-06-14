@@ -253,6 +253,21 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
     elif mgr == "brew":
         if shutil.which("brew") is None:
             raise SystemExit("Homebrew not found. Install from https://brew.sh first.")
+        # Homebrew 6.0+ requires taps to be explicitly trusted before formulae
+        # from them can be installed. Detect support at runtime so this script
+        # stays compatible with older Homebrew versions.
+        brew_has_trust = subprocess.run(
+            ["brew", "help", "trust"], capture_output=True
+        ).returncode == 0
+        if brew_has_trust:
+            # Insert a `brew trust <tap>` after each `brew tap <tap>` pre-command.
+            trusted: List[List[str]] = []
+            for cmd in pre_cmds:
+                trusted.append(cmd)
+                if cmd[:2] == ["brew", "tap"] and len(cmd) >= 3:
+                    trusted.append(["brew", "trust", cmd[2]])
+            cmds.clear()
+            cmds.extend(trusted)
         cmds.append(["brew", "update"])
         cmds.append(["brew", "install", *packages])
     elif mgr == "zypper":
