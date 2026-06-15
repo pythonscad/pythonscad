@@ -324,7 +324,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     -sALLOW_MEMORY_GROWTH=1
     -sDISABLE_EXCEPTION_CATCHING=0
     -sEXIT_RUNTIME=1
-    -sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain', 'eval_python_cell', 'ccall', 'cwrap' ]
+    -sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain']
     -sMAXIMUM_MEMORY=4GB
 
     # -g produces DWARF debug info, which is quite large and may need debugger extensions.
