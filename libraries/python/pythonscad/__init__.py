@@ -341,7 +341,10 @@ def rounded_cube(
         A 3D geometric object.
 
     Raises:
-        TypeError: If neither or both of ``r`` and ``d`` are given.
+        TypeError: If neither or both of ``r`` and ``d`` are given, or if
+            ``size`` is not a number or a 3-element list.
+        ValueError: If ``r``/``d`` is not positive, or any outer dimension
+            is not greater than ``2 * radius``.
 
     Example:
         >>> rounded_cube(20, 2).show()
@@ -357,10 +360,28 @@ def rounded_cube(
         assert d is not None
         radius = d / 2
 
+    if radius <= 0:
+        raise ValueError("rounded_cube: r and d must be positive")
+
     if isinstance(size, list):
+        if len(size) != 3:
+            raise TypeError(
+                "rounded_cube: size list must have exactly 3 elements [x, y, z]"
+            )
+        if any(s <= 2 * radius for s in size):
+            raise ValueError(
+                "rounded_cube: each size dimension must be greater than 2*r"
+            )
         inner_size = [s - (2 * radius) for s in size]
-    else:
+    elif isinstance(size, (int, float)):
+        if size <= 2 * radius:
+            raise ValueError("rounded_cube: size must be greater than 2*r")
         inner_size = size - (2 * radius)
+    else:
+        raise TypeError(
+            f"rounded_cube: size must be a number or [x, y, z] list, "
+            f"got {type(size).__name__}"
+        )
 
     return minkowski(cube(inner_size), sphere(r=radius)).translate(
         [radius, radius, radius]

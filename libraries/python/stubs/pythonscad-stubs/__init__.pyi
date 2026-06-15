@@ -91,17 +91,17 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
 
 @_typing.overload
 def rounded_cube(
-    size: float | list[float],
+    size: float | Vector3,
     r: float,
 ) -> PyOpenSCAD: ...
 @_typing.overload
 def rounded_cube(
-    size: float | list[float],
+    size: float | Vector3,
     *,
     d: float,
 ) -> PyOpenSCAD: ...
 def rounded_cube(
-    size: float | list[float],
+    size: float | Vector3,
     r: float | None = ...,
     d: float | None = ...,
 ) -> PyOpenSCAD:
