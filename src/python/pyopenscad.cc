@@ -1486,6 +1486,35 @@ stderr_bak = None\n\
 #endif
   return error;
 }
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+
+extern "C" {
+
+void initPython(const std::string& binDir, const std::string& scriptpath, const RenderVariables *r)
+
+  EMSCRIPTEN_KEEPALIVE void EmsInitPython(void)
+{
+  initPython(PlatformUtils::applicationPath(), "", nullptr);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void EmsFinishPython(void)
+{
+  finishPython();
+}
+
+EMSCRIPTEN_KEEPALIVE
+const char *EmsEvaluatePython(const char *code, bool dry_run)
+{
+  static std::string result;
+  result = evaluatePython(std::string(code), dry_run);
+  return result.c_str();
+}
+}
+#endif
+
 /*
  * the magical Python Type descriptor for an OpenSCAD Object. Adding more fields makes the type more
  * powerful
