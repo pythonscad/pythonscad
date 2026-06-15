@@ -103,6 +103,7 @@ def rounded_cube(
 def rounded_cube(
     size: float | Vector3,
     r: float | None = ...,
+    *,
     d: float | None = ...,
 ) -> PyOpenSCAD:
     """Create a cube or box with uniformly rounded edges and corners.

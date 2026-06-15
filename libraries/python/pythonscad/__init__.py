@@ -324,6 +324,7 @@ def rounded_cube(
 def rounded_cube(
     size: _typing.Union[float, _typing.List[float]],
     r: _typing.Optional[float] = None,
+    *,
     d: _typing.Optional[float] = None,
 ) -> _typing.Any:
     """Create a cube or box with uniformly rounded edges and corners.
@@ -370,12 +371,12 @@ def rounded_cube(
             )
         if any(s <= 2 * radius for s in size):
             raise ValueError(
-                "rounded_cube: each size dimension must be greater than 2*r"
+                "rounded_cube: each size dimension must be greater than 2*radius"
             )
         inner_size = [s - (2 * radius) for s in size]
     elif isinstance(size, (int, float)):
         if size <= 2 * radius:
-            raise ValueError("rounded_cube: size must be greater than 2*r")
+            raise ValueError("rounded_cube: size must be greater than 2*radius")
         inner_size = size - (2 * radius)
     else:
         raise TypeError(
