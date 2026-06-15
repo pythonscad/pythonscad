@@ -1492,9 +1492,8 @@ stderr_bak = None\n\
 
 extern "C" {
 
-void initPython(const std::string& binDir, const std::string& scriptpath, const RenderVariables *r)
-
-  EMSCRIPTEN_KEEPALIVE void EmsInitPython(void)
+EMSCRIPTEN_KEEPALIVE
+void EmsInitPython(void)
 {
   initPython(PlatformUtils::applicationPath(), "", nullptr);
 }
