@@ -229,3 +229,44 @@ You can also reconstruct a solid from its mesh data:
     ```
 
 **OpenSCAD reference:** [polyhedron](https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Primitive_Solids#polyhedron)
+
+---
+
+## rounded_cube
+
+Create a cube or box with uniformly rounded edges and corners. This is a
+PythonSCAD-only helper (not part of upstream OpenSCAD).
+
+The given ``size`` is the **outer** extent of the solid, including the
+rounding. You must specify exactly one of ``r`` (radius) or ``d``
+(diameter); supplying both or neither raises ``TypeError``.
+
+**Syntax:**
+
+=== "Python"
+
+    ```python
+    rounded_cube(size, r)
+    rounded_cube(size, r=...)
+    rounded_cube(size, d=...)
+    ```
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `size` | number or `[x, y, z]` | — | Outer edge length for a cube, or outer box dimensions |
+| `r` | number | — | Rounding radius. Cannot be used with `d` |
+| `d` | number | — | Rounding diameter. Cannot be used with `r` |
+
+**Examples:**
+
+=== "Python"
+
+    ```python
+    from pythonscad import *
+
+    rounded_cube(20, r=2).show()
+
+    rounded_cube([30, 20, 10], d=4).show()
+    ```

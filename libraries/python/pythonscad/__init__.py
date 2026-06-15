@@ -1,8 +1,6 @@
 """PythonSCAD public API.
 
-Strict superset of :mod:`openscad`. Currently a 1:1 re-export; future
-PythonSCAD-only additions (new classes, helper APIs) will land here as
-either symbols in this package or as submodules.
+Strict superset of :mod:`openscad`.
 
 This package re-exports :mod:`openscad` rather than :mod:`_openscad`
 directly, so any pure-Python implementation or override added in
@@ -189,7 +187,9 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         validated = [self._validate_item(item) for item in items]
         super().extend(validated)
 
-    def insert(self, index: _typing.SupportsIndex, item: tuple[str, _typing.Any]) -> None:
+    def insert(
+        self, index: _typing.SupportsIndex, item: tuple[str, _typing.Any]
+    ) -> None:
         """Insert a validated ``(name, object)`` tuple at ``index``."""
         super().insert(index, self._validate_item(item))
 
@@ -304,3 +304,64 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         """
         for _name, geometry in self.parts():
             show(geometry)  # noqa: F405
+
+
+@_typing.overload
+def rounded_cube(
+    size: _typing.Union[float, _typing.List[float]],
+    r: float,
+) -> _typing.Any: ...
+
+
+@_typing.overload
+def rounded_cube(
+    size: _typing.Union[float, _typing.List[float]],
+    *,
+    d: float,
+) -> _typing.Any: ...
+
+
+def rounded_cube(
+    size: _typing.Union[float, _typing.List[float]],
+    r: _typing.Optional[float] = None,
+    d: _typing.Optional[float] = None,
+) -> _typing.Any:
+    """Create a cube or box with uniformly rounded edges and corners.
+
+    The outer ``size`` includes the rounding. Specify the corner radius with
+    exactly one of ``r`` (radius) or ``d`` (diameter); both or neither raise
+    :class:`TypeError`.
+
+    Args:
+        size: Edge length for a uniform cube, or ``[x, y, z]`` for a box.
+        r: Rounding radius. Must be positive. Cannot be used with ``d``.
+        d: Rounding diameter. Must be positive. Cannot be used with ``r``.
+
+    Returns:
+        A 3D geometric object.
+
+    Raises:
+        TypeError: If neither or both of ``r`` and ``d`` are given.
+
+    Example:
+        >>> rounded_cube(20, 2).show()
+        >>> rounded_cube([30, 20, 10], d=4).show()
+    """
+    if r is not None and d is not None:
+        raise TypeError("rounded_cube: specify exactly one of r or d, not both")
+    if r is None and d is None:
+        raise TypeError("rounded_cube: specify exactly one of r or d")
+    if r is not None:
+        radius = r
+    else:
+        assert d is not None
+        radius = d / 2
+
+    if isinstance(size, list):
+        inner_size = [s - (2 * radius) for s in size]
+    else:
+        inner_size = size - (2 * radius)
+
+    return minkowski(cube(inner_size), sphere(r=radius)).translate(
+        [radius, radius, radius]
+    )
