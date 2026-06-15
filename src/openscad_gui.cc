@@ -165,6 +165,7 @@ void configureOpenGLContext()
 #endif
 }
 
+}  // namespace
 bool shouldOfferAutosaveRestore(const QString& autosavePath, const QString& sessionPath)
 {
   const QFileInfo autosaveInfo(autosavePath);
@@ -693,6 +694,12 @@ void setupUnixSignalHandlers(OpenSCADApp *app)
   sigaction(SIGHUP, &action, nullptr);
 }
 #endif
+void setGlobalTheme()
+{
+  QIcon::setThemeName(isDarkMode() ? "chokusen-dark" : "chokusen");
+}
+
+namespace {
 
 // Only if "fileName" is not absolute, prepend the "absoluteBase".
 QString assemblePath(const std::filesystem::path& absoluteBaseDir, const std::string& fileName)
@@ -774,6 +781,7 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 {
   configureOpenGLContext();
   OpenSCADApp app(argc, argv);
+  setGlobalTheme();
 
   // set up groups for QSettings
   QCoreApplication::setOrganizationName("PythonSCAD");
@@ -987,7 +995,22 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
 
   if (sessionMgmtEnabled) {
     const QString sessionPath = TabManager::getSessionFilePath();
-    const bool sessionExists = QFileInfo(sessionPath).exists();
+    bool sessionExists = QFileInfo(sessionPath).exists();
+    if (sessionExists) {
+      QJsonObject root;
+      int tooNewVer = 0;
+      if (TabManager::readSessionFileRoot(sessionPath, &root, nullptr, &tooNewVer, nullptr) ==
+          TabManager::SessionFileReadStatus::TooNew) {
+        switch (TabManager::promptTooNewSession(sessionPath, tooNewVer, nullptr)) {
+        case TabManager::TooNewSessionChoice::ExitKeepSession: return 0;
+        case TabManager::TooNewSessionChoice::DiscardAndContinue:
+          TabManager::removeSessionFile();
+          QFile::remove(TabManager::getAutosaveFilePath());
+          sessionExists = false;
+          break;
+        }
+      }
+    }
     const bool shouldRestore = sessionExists && !TabManager::sessionHasOnlyEmptyTab(sessionPath);
     if (shouldRestore) {
       openedSessionWindows = true;

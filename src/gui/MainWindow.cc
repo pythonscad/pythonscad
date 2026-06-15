@@ -103,6 +103,7 @@
 #include <utility>
 #include <vector>
 
+#include "openscad_gui.h"
 #include "core/AST.h"
 #include "core/BuiltinContext.h"
 #include "core/Builtins.h"
@@ -132,6 +133,7 @@
 #include "gui/CGALWorker.h"
 #include "gui/ColorList.h"
 #include "gui/Dock.h"
+#include "gui/ai/AIDock.h"
 #include "gui/Editor.h"
 #include "gui/Export3mfDialog.h"
 #include "gui/ExportPdfDialog.h"
@@ -143,6 +145,7 @@
 #include "gui/Measurement.h"
 #include "gui/OpenSCADApp.h"
 #include "gui/Preferences.h"
+#include "Feature.h"
 #include "gui/PrintInitDialog.h"
 #include "gui/ProgressWidget.h"
 #include "gui/QGLView.h"
@@ -187,32 +190,63 @@
 static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   QFile *fh = (QFile *)stream;
-  fh->write(QByteArray((const char *)ptr, size * nmemb));
-  return size * nmemb;
+  qint64 written = fh->write(QByteArray((const char *)ptr, size * nmemb));
+  if (written < 0) return 0;
+  return (size_t)written;
 }
 
-int curl_download(const std::string& url, const std::string& path)
+int curl_download(const std::string& url, const std::string& path, std::string *errmsg)
 {
-  CURLcode status;
+  const std::string useragent =
+    std::string("PythonSCAD/") + std::string(openscad_versionnumber) + " libcurl/" LIBCURL_VERSION;
+  CURLcode status = CURLE_FAILED_INIT;
   QFile fh((path).c_str());
   if (!fh.open(QIODevice::WriteOnly)) {
     LOG(message_group::Error, "Cannot open file %1$s", path.c_str());
+    if (errmsg) *errmsg = std::string("cannot open destination file: ") + path;
     return -1;
   }
   LOG(message_group::Warning, "Downloading to %1$s", path.c_str());
+  char errbuf[CURL_ERROR_SIZE] = {0};
   CURL *curl = curl_easy_init();
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &fh);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_download_write);
     curl_easy_setopt(curl, CURLOPT_FORBID_REUSE, 1L);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 10L);
+#if CURL_AT_LEAST_VERSION(7, 85, 0)
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "http,https");
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
+#else
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+#endif
+    curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, useragent.c_str());
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 300L);
+#if defined(_WIN32) && defined(CURLSSLOPT_NATIVE_CA)
+    // Use the Windows certificate store for HTTPS verification. Without
+    // this, libcurl builds linked against OpenSSL/wolfSSL on Windows
+    // have no CA bundle and every HTTPS request fails with
+    // CURLE_PEER_FAILED_VERIFICATION. Harmless on Schannel builds where
+    // it is already the default behavior.
+    curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, (long)CURLSSLOPT_NATIVE_CA);
+#endif
 
     status = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
   }
   fh.close();
   if (status != CURLE_OK) {
-    LOG(message_group::Error, "Could not download!");
+    const char *detail = (errbuf[0] != '\0') ? errbuf : curl_easy_strerror(status);
+    LOG(message_group::Error, "Could not download %1$s: %2$s", url.c_str(), detail);
+    if (errmsg) *errmsg = detail;
+    QFile::remove(path.c_str());
+    return -1;
   }
   return 0;
 }
@@ -536,6 +570,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   setupErrorLog();
   setupFontList();
   setupColorList();
+  setupAIDock();
   setupDocks();
 
   setup3DView();
@@ -948,6 +983,7 @@ void MainWindow::updateUndockMode(bool undockMode)
     fontListDock->setFeatures(fontListDock->features() | QDockWidget::DockWidgetFloatable);
     colorListDock->setFeatures(colorListDock->features() | QDockWidget::DockWidgetFloatable);
     viewportControlDock->setFeatures(viewportControlDock->features() | QDockWidget::DockWidgetFloatable);
+    aiDock->setFeatures(aiDock->features() | QDockWidget::DockWidgetFloatable);
   } else {
     if (editorDock->isFloating()) {
       editorDock->setFloating(false);
@@ -989,6 +1025,11 @@ void MainWindow::updateUndockMode(bool undockMode)
     }
     viewportControlDock->setFeatures(viewportControlDock->features() &
                                      ~QDockWidget::DockWidgetFloatable);
+
+    if (aiDock->isFloating()) {
+      aiDock->setFloating(false);
+    }
+    aiDock->setFeatures(aiDock->features() & ~QDockWidget::DockWidgetFloatable);
   }
 }
 
@@ -1248,6 +1289,32 @@ void MainWindow::compileDone(bool didchange)
     QMetaObject::invokeMethod(this, callslot);
   } catch (const HardWarningException&) {
     exceptionCleanup();
+  }
+
+  if (didchange) {
+    const bool flagAutoCompleteIncludeVariables =
+      GlobalPreferences::inst()->getValue("editor/autoCompleteIncludeVariables").toBool();
+    const bool flagAutoCompleteIncludeModules =
+      GlobalPreferences::inst()->getValue("editor/autoCompleteIncludeModules").toBool();
+    const bool flagAutoCompleteIncludeFunctions =
+      GlobalPreferences::inst()->getValue("editor/autoCompleteIncludeFunctions").toBool();
+
+    const auto completionMode = Settings::SettingsAutoCompletion::autocompleteMode.value();
+
+    auto *scintillaEditor = dynamic_cast<ScintillaEditor *>(this->activeEditor);
+
+    if (scintillaEditor) {
+      if (completionMode == "ParsedFileMode") {
+        scintillaEditor->correctUserVarNamesForCompletionFromSourceFile(
+          parsedFile.get(), flagAutoCompleteIncludeVariables, flagAutoCompleteIncludeModules,
+          flagAutoCompleteIncludeFunctions);
+
+      } else if (completionMode == "RegexInputTextMode") {
+        scintillaEditor->correctUserVarNamesForCompletionFromInputText(flagAutoCompleteIncludeVariables,
+                                                                       flagAutoCompleteIncludeModules,
+                                                                       flagAutoCompleteIncludeFunctions);
+      }
+    }
   }
 }
 
@@ -2238,9 +2305,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
       }
     }
 
-    customizer_parameters_finished =
-      (this->rootFile != nullptr ? this->rootFile->scope->assignments
-                                 : (sourceFile ? sourceFile->scope->assignments : AssignmentList()));
+    customizer_parameters_finished = (sourceFile ? sourceFile->scope->assignments : AssignmentList());
     customizer_parameters.clear();
     if (venv.empty()) {
       LOG("Running %1$s without venv.", python_version());
@@ -3873,6 +3938,28 @@ void MainWindow::onParametersDockVisibilityChanged(bool isVisible)
   }
 }
 
+void MainWindow::onAIDockVisibilityChanged(bool isVisible)
+{
+}
+
+void MainWindow::onExperimentalChanged()
+{
+  bool aiEnabled = Feature::ExperimentalAiFeatures.is_enabled();
+  if (this->aiDock) {
+    this->aiDock->toggleViewAction()->setVisible(aiEnabled);
+    if (!aiEnabled) {
+      this->aiDock->hide();
+    }
+    if (this->navigationMenu) {
+      for (auto *action : this->navigationMenu->actions()) {
+        if (action->text() == _("&AI Chat")) {
+          action->setVisible(aiEnabled);
+        }
+      }
+    }
+  }
+}
+
 void MainWindow::onColorListColorSelected(const QString& selectedColor)
 {
   activeEditor->insertOrReplaceText(selectedColor);
@@ -4520,6 +4607,10 @@ void MainWindow::setupPreferences()
           Qt::UniqueConnection);
   connect(GlobalPreferences::inst()->AxisConfig, &AxisConfigWidget::inputGainChanged,
           InputDriverManager::instance(), &InputDriverManager::onInputGainUpdated, Qt::UniqueConnection);
+
+  connect(GlobalPreferences::inst(), &Preferences::ExperimentalChanged, this,
+          &MainWindow::onExperimentalChanged);
+  onExperimentalChanged();
 }
 
 /**
@@ -4679,6 +4770,18 @@ void MainWindow::setupViewportControl()
 }
 
 /**
+  Setup AIDock
+ */
+void MainWindow::setupAIDock()
+{
+  this->aiDock = new AIDock(this);
+  addDockWidget(Qt::RightDockWidgetArea, this->aiDock);
+  this->aiDock->hide();
+
+  QObject::connect(this->aiDock, &Dock::visibilityChanged, this, &MainWindow::onAIDockVisibilityChanged);
+}
+
+/**
   Set up resources related to the 3d View
  */
 void MainWindow::setup3DView()
@@ -4748,6 +4851,7 @@ void MainWindow::setupDocks()
     {fontListDock, _("&Font List")},
     {colorListDock, _("C&olor List")},
     {viewportControlDock, _("&Viewport-Control")},
+    {aiDock,_("&AI Chat")}
   };
   // clang-format off
 
@@ -5121,4 +5225,12 @@ void MainWindow::openRemainingFiles(const QStringList& filenames)
   }
 
   activeEditor->setFocus();
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+  if (event->type() == QEvent::ThemeChange) {
+    setGlobalTheme();
+  }
+  QMainWindow::changeEvent(event);
 }

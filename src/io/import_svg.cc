@@ -197,10 +197,10 @@ std::unique_ptr<Polygon2d> import_svg(CurveDiscretizer discretizer, const std::s
         const auto& s = *shape_ptr;
         for (const auto& p : s.get_path_list()) {
           Outline2d outline;
-          std::string fill = s.get_fill();
-          if (fill == "none") outline.color = Color4f(0, 0, 0, 0);  // transparent
+          std::string color = stroke ? s.get_stroke() : s.get_fill();
+          if (color == "none") outline.color = Color4f(0, 0, 0, 0);  // transparent
           else {
-            auto x = OpenSCAD::parse_color(fill);
+            auto x = OpenSCAD::parse_color(color);
             if (x.has_value()) {
               outline.color = *x;
             } else outline.color = *OpenSCAD::parse_color("#f9d72c");

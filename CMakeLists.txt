@@ -4,7 +4,6 @@
 # Configuration variables
 #   -DHEADLESS=<ON|OFF>
 #   -DNULLGL=<ON|OFF>
-#   -DSNAPSHOT=<ON|OFF>
 #   -DEXPERIMENTAL=<ON|OFF>
 #
 
@@ -27,6 +26,11 @@ if(POLICY CMP0167) # Since CMake 3.30
   # Use upstream's FindBoost.cmake to find Boost libraries.
   cmake_policy(SET CMP0167 NEW)
 endif()
+if(POLICY CMP0207) # Since CMake 4.3
+  # Normalize paths to forward slashes before matching filters in
+  # file(GET_RUNTIME_DEPENDENCIES) and install(RUNTIME_DEPENDENCY_SET).
+  cmake_policy(SET CMP0207 NEW)
+endif()
 
 include("cmake/Modules/openscad_version.cmake")
 configure_file(
@@ -44,7 +48,6 @@ option(USE_MANIFOLD_MINKOWSKI "Use Manifold's Minkowski instead of CGAL's" OFF)
 option(USE_BUILTIN_MANIFOLD "Use manifold from submodule" ON)
 option(USE_BUILTIN_CLIPPER2 "Use Clipper2 from submodule" ON)
 option(USE_POLYSET_FOR_CGAL "Force CGAL backend to use PolySetRenderer instead of CGALRenderer." OFF)
-option(SNAPSHOT "Create dev snapshot, uses nightly icons" OFF)
 option(HEADLESS "Build without GUI frontend" OFF)
 option(USE_QT6 "Build the GUI with Qt6" ON)
 option(ENABLE_EGL "Enable EGL support if available" ON)
@@ -1780,6 +1783,9 @@ set(GUI_SOURCES
   src/gui/parameter/ParameterVector.cc
   src/gui/parameter/ParameterVirtualWidget.cc
   src/gui/parameter/ParameterWidget.cc
+  src/gui/ai/AIDock.cc
+  src/gui/ai/ChatWidget.cc
+  src/gui/ai/ChatInputEdit.cc
   ${INPUT_DRIVER_SOURCES}
   )
 
@@ -1853,11 +1859,15 @@ set(GUI_HEADERS
     src/gui/parameter/ParameterVector.h
     src/gui/parameter/ParameterVirtualWidget.h
     src/gui/parameter/ParameterWidget.h
+    src/gui/ai/AIDock.h
+    src/gui/ai/ChatWidget.h
+    src/gui/ai/ChatInputEdit.h
 )
 
 # To be added in Source for QtCreator to show them in project tree
 set(GUI_UIS
     ${GUI_UIS}
+    src/gui/ai/ChatWidget.ui
     src/gui/AboutDialog.ui
     src/gui/Animate.ui
     src/gui/Console.ui
@@ -1978,12 +1988,7 @@ if(ENABLE_GUI_TESTS)
   target_compile_definitions(OpenSCADLibInternal PUBLIC ENABLE_GUI_TESTS)
 endif()
 
-if (SNAPSHOT)
-  set(SNAPSHOT_SUFFIX "-nightly")
-  set(SNAPSHOT_NAME_SUFFIX " (Nightly)")
-  target_compile_definitions(OpenSCADLibInternal PUBLIC OPENSCAD_SNAPSHOT)
-endif()
-set(WINDOWS_RESOURCE_PATH ${CMAKE_BINARY_DIR}/pythonscad_win32${SNAPSHOT_SUFFIX}.rc)
+set(WINDOWS_RESOURCE_PATH ${CMAKE_BINARY_DIR}/pythonscad_win32.rc)
 set(MACOSX_BUNDLE_ICON_FILE pythonscad.icns)
 
 if (APPLE)
@@ -2398,11 +2403,11 @@ if(NOT APPLE OR APPLE_UNIX)
     endif()
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications RENAME org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.xml DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages RENAME ${EXECUTABLE_NAME}.xml)
-    install(FILES ${RESOURCE_DIR}/icons/pythonscad${SNAPSHOT_SUFFIX}-48.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/48x48/apps RENAME pythonscad${SNAPSHOT_SUFFIX}.png)
-    install(FILES ${RESOURCE_DIR}/icons/pythonscad${SNAPSHOT_SUFFIX}-64.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/64x64/apps RENAME pythonscad${SNAPSHOT_SUFFIX}.png)
-    install(FILES ${RESOURCE_DIR}/icons/pythonscad${SNAPSHOT_SUFFIX}-128.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/128x128/apps RENAME pythonscad${SNAPSHOT_SUFFIX}.png)
-    install(FILES ${RESOURCE_DIR}/icons/pythonscad${SNAPSHOT_SUFFIX}-256.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps RENAME pythonscad${SNAPSHOT_SUFFIX}.png)
-    install(FILES ${RESOURCE_DIR}/icons/pythonscad${SNAPSHOT_SUFFIX}-512.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/512x512/apps RENAME pythonscad${SNAPSHOT_SUFFIX}.png)
+    install(FILES ${RESOURCE_DIR}/icons/pythonscad-48.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/48x48/apps RENAME pythonscad.png)
+    install(FILES ${RESOURCE_DIR}/icons/pythonscad-64.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/64x64/apps RENAME pythonscad.png)
+    install(FILES ${RESOURCE_DIR}/icons/pythonscad-128.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/128x128/apps RENAME pythonscad.png)
+    install(FILES ${RESOURCE_DIR}/icons/pythonscad-256.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps RENAME pythonscad.png)
+    install(FILES ${RESOURCE_DIR}/icons/pythonscad-512.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/512x512/apps RENAME pythonscad.png)
   endif()
   install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/color-schemes DESTINATION "${OPENSCAD_INSTALL_RESOURCEDIR}")
   install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/examples DESTINATION "${OPENSCAD_INSTALL_RESOURCEDIR}")
@@ -2463,31 +2468,34 @@ if(WIN32)
   set(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_NAME}")
   set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_NAME}")
 
-  # Enable per-user installation option (no admin required)
-  # This allows installing to user's local AppData instead of Program Files
   set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
 
   # Add "Run PythonSCAD" checkbox on finish page
   set(CPACK_NSIS_MUI_FINISHPAGE_RUN "pythonscad.exe")
 
-  # Copy NSIS helper files to build directory so they're accessible with simple paths
-  configure_file("${CMAKE_SOURCE_DIR}/cmake/nsis/mingw-file-association.nsh"
-                 "${CMAKE_BINARY_DIR}/nsis-mingw-file-association.nsh" COPYONLY)
+  # Use our customized NSIS template which implements RequestExecutionLevel user
+  # with a custom install-mode page (nsDialogs) and on-demand UAC elevation via
+  # ShellExecuteEx runas. CPack's NSIS generator locates the template via
+  # cmCPackGenerator::FindTemplate, which searches CMAKE_MODULE_PATH (propagated
+  # to CPack as CPACK_MODULE_PATH) before falling back to CMake's bundled template.
+  # There is no CPACK_NSIS_TEMPLATE variable -- adding cmake/nsis to the module
+  # path is the only way to override the default template.
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/nsis")
 
-  # Pre-install includes for file association and utility macros
-  # CPack runs NSIS from build/_CPack_Packages/<system>/NSIS/
-  # Use relative path back to build directory: ../../../
-  set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "\
-    !include \\\"FileFunc.nsh\\\"\n\
-    !include \\\"..\\\\..\\\\..\\\\nsis-mingw-file-association.nsh\\\"\
-  ")
 
-  # Extra install commands - includes file association and compatibility shortcut
+  # CPACK_NSIS_DEFINES is emitted at the top level of the generated .nsi file.
+  set(CPACK_NSIS_DEFINES "")
+
+  # CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS runs inside the install Section.
+  # Shell context and INSTDIR are set by .onInit / InstallModePage_Leave.
+  set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "")
+
+  # Extra install commands — conditional per-user/all-users registry and shortcuts
   set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "\
-    !include \\\"..\\\\..\\\\..\\\\nsis-extra-install-commands.nsh\\\"\n\
-    CreateShortCut $INSTDIR\\\\openscad.lnk $INSTDIR\\\\pythonscad.exe\
+    !include \\\"..\\\\..\\\\..\\\\nsis-extra-install-commands.nsh\\\"\
   ")
 
+  # Extra uninstall commands — conditional cleanup based on stored install mode
   set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "\
     !include \\\"..\\\\..\\\\..\\\\nsis-extra-uninstall-commands.nsh\\\"\
   ")
@@ -2581,8 +2589,8 @@ if(OFFLINE_DOCS)
   add_subdirectory(resources)
 endif()
 
-configure_file(${RESOURCE_DIR}/pythonscad_win32${SNAPSHOT_SUFFIX}.rc.in
-	       ${CMAKE_BINARY_DIR}/pythonscad_win32${SNAPSHOT_SUFFIX}.rc)
+configure_file(${RESOURCE_DIR}/pythonscad_win32.rc.in
+	       ${CMAKE_BINARY_DIR}/pythonscad_win32.rc)
 include(CPack)
 
 add_sanitizers(OpenSCADLibInternal)
