@@ -93,21 +93,32 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
 def rounded_cube(
     size: float | Vector3,
     r: float,
+    *,
+    fn: float | None = ...,
+    fa: float | None = ...,
+    fs: float | None = ...,
 ) -> PyOpenSCAD: ...
 @_typing.overload
 def rounded_cube(
     size: float | Vector3,
     *,
     d: float,
+    fn: float | None = ...,
+    fa: float | None = ...,
+    fs: float | None = ...,
 ) -> PyOpenSCAD: ...
 def rounded_cube(
     size: float | Vector3,
     r: float | None = ...,
     *,
     d: float | None = ...,
+    fn: float | None = ...,
+    fa: float | None = ...,
+    fs: float | None = ...,
 ) -> PyOpenSCAD:
     """Create a cube or box with uniformly rounded edges and corners.
 
-    Specify exactly one of ``r`` (radius) or ``d`` (diameter).
+    Specify exactly one of ``r`` (radius) or ``d`` (diameter). Optional
+    ``fn``, ``fa``, and ``fs`` control rounding-sphere tessellation.
     """
     ...

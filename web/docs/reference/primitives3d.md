@@ -247,8 +247,8 @@ rounding. You must specify exactly one of ``r`` (radius) or ``d``
 
     ```python
     rounded_cube(size, r)
-    rounded_cube(size, r=...)
-    rounded_cube(size, d=...)
+    rounded_cube(size, r=..., fn=..., fa=..., fs=...)
+    rounded_cube(size, d=..., fn=..., fa=..., fs=...)
     ```
 
 **Parameters:**
@@ -258,6 +258,9 @@ rounding. You must specify exactly one of ``r`` (radius) or ``d``
 | `size` | number or `[x, y, z]` | — | Outer edge length for a cube, or outer box dimensions |
 | `r` | number | — | Rounding radius. Cannot be used with `d` |
 | `d` | number | — | Rounding diameter. Cannot be used with `r` |
+| `fn` | int | — | Number of segments for the rounding sphere |
+| `fa` | float | — | Minimum angle per rounding-sphere segment |
+| `fs` | float | — | Minimum rounding-sphere segment size |
 
 **Examples:**
 
@@ -269,4 +272,6 @@ rounding. You must specify exactly one of ``r`` (radius) or ``d``
     rounded_cube(20, r=2).show()
 
     rounded_cube([30, 20, 10], d=4).show()
+
+    rounded_cube(20, r=2, fn=100).show()
     ```

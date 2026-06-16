@@ -310,6 +310,10 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
 def rounded_cube(
     size: _typing.Union[float, _typing.List[float]],
     r: float,
+    *,
+    fn: _typing.Optional[float] = None,
+    fa: _typing.Optional[float] = None,
+    fs: _typing.Optional[float] = None,
 ) -> _typing.Any: ...
 
 
@@ -318,6 +322,9 @@ def rounded_cube(
     size: _typing.Union[float, _typing.List[float]],
     *,
     d: float,
+    fn: _typing.Optional[float] = None,
+    fa: _typing.Optional[float] = None,
+    fs: _typing.Optional[float] = None,
 ) -> _typing.Any: ...
 
 
@@ -326,6 +333,9 @@ def rounded_cube(
     r: _typing.Optional[float] = None,
     *,
     d: _typing.Optional[float] = None,
+    fn: _typing.Optional[float] = None,
+    fa: _typing.Optional[float] = None,
+    fs: _typing.Optional[float] = None,
 ) -> _typing.Any:
     """Create a cube or box with uniformly rounded edges and corners.
 
@@ -337,6 +347,9 @@ def rounded_cube(
         size: Edge length for a uniform cube, or ``[x, y, z]`` for a box.
         r: Rounding radius. Must be positive. Cannot be used with ``d``.
         d: Rounding diameter. Must be positive. Cannot be used with ``r``.
+        fn: Number of fragments for the rounding sphere approximation.
+        fa: Minimum angle for each rounding-sphere fragment.
+        fs: Minimum size for each rounding-sphere fragment.
 
     Returns:
         A 3D geometric object.
@@ -350,6 +363,7 @@ def rounded_cube(
     Example:
         >>> rounded_cube(20, 2).show()
         >>> rounded_cube([30, 20, 10], d=4).show()
+        >>> rounded_cube(20, r=2, fn=100).show()
     """
     if r is not None and d is not None:
         raise TypeError("rounded_cube: specify exactly one of r or d, not both")
@@ -384,6 +398,6 @@ def rounded_cube(
             f"got {type(size).__name__}"
         )
 
-    return minkowski(cube(inner_size), sphere(r=radius)).translate(
+    return minkowski(cube(inner_size), sphere(r=radius, fn=fn, fa=fa, fs=fs)).translate(
         [radius, radius, radius]
     )
