@@ -237,9 +237,9 @@ You can also reconstruct a solid from its mesh data:
 Create a cube or box with uniformly rounded edges and corners. This is a
 PythonSCAD-only helper (not part of upstream OpenSCAD).
 
-The given ``size`` is the **outer** extent of the solid, including the
-rounding. You must specify exactly one of ``r`` (radius) or ``d``
-(diameter); supplying both or neither raises ``TypeError``.
+The given `size` is the **outer** extent of the solid, including the
+rounding. You must specify exactly one of `r` (radius) or `d`
+(diameter); supplying both or neither raises `TypeError`.
 
 **Syntax:**
 
