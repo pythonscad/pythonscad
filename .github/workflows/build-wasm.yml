@@ -114,6 +114,14 @@ jobs:
                 -Wno-dev 2>&1 | tail -10
               cmake --build build-wasm-web -j\$(nproc) 2>&1 | tail -5
             "
+      - name: Upload WASM artifacts (always, for download)
+        if: >
+          github.event_name == 'release' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_to_release != '')
+        uses: actions/upload-artifact@v4
+        with:
+          name: pythonscad-wasm-web
+          path: dist-wasm/
 
       - name: Package web artifacts
         if: >
@@ -130,6 +138,7 @@ jobs:
           cd dist-wasm
           zip -r "../pythonscad-${VERSION}-wasm.zip" .
           echo "WASM_ZIP=pythonscad-${VERSION}-wasm.zip" >> "$GITHUB_ENV"
+
 
       - name: Upload WASM artifacts to release
         if: >
