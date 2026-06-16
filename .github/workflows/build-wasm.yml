@@ -96,9 +96,17 @@ jobs:
               echo 'PASS'
             "
 
+      # ──────────────────────────────────────────────────────────────────
+      # NOTE: condition widened to also build the web variant on every
+      # push/pull_request, not just on release / workflow_dispatch with
+      # upload_to_release set. This lets you download the WASM artifacts
+      # from any PR/branch run without needing a real GitHub Release.
+      # ──────────────────────────────────────────────────────────────────
       - name: Build WASM web variant
         if: >
           github.event_name == 'release' ||
+          github.event_name == 'pull_request' ||
+          github.event_name == 'push' ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_to_release != '')
         run: |
           docker run --rm -i \
@@ -114,18 +122,12 @@ jobs:
                 -Wno-dev 2>&1 | tail -10
               cmake --build build-wasm-web -j\$(nproc) 2>&1 | tail -5
             "
-      - name: Upload WASM artifacts (always, for download)
-        if: >
-          github.event_name == 'release' ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_to_release != '')
-        uses: actions/upload-artifact@v4
-        with:
-          name: pythonscad-wasm-web
-          path: dist-wasm/
 
       - name: Package web artifacts
         if: >
           github.event_name == 'release' ||
+          github.event_name == 'pull_request' ||
+          github.event_name == 'push' ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_to_release != '')
         run: |
           VERSION=$(git describe --tags --always)
@@ -139,6 +141,21 @@ jobs:
           zip -r "../pythonscad-${VERSION}-wasm.zip" .
           echo "WASM_ZIP=pythonscad-${VERSION}-wasm.zip" >> "$GITHUB_ENV"
 
+      # ──────────────────────────────────────────────────────────────────
+      # NEW STEP: always upload the web build as a normal workflow artifact
+      # (downloadable from the run's summary page), independent of whether
+      # this run is also pushing to a GitHub Release.
+      # ──────────────────────────────────────────────────────────────────
+      - name: Upload WASM artifacts (always, for download)
+        if: >
+          github.event_name == 'release' ||
+          github.event_name == 'pull_request' ||
+          github.event_name == 'push' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_to_release != '')
+        uses: actions/upload-artifact@v4
+        with:
+          name: pythonscad-wasm-web
+          path: dist-wasm/
 
       - name: Upload WASM artifacts to release
         if: >
