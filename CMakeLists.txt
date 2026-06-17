@@ -307,6 +307,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   set(NULLGL ON CACHE BOOL "" FORCE)
   set(USE_MIMALLOC OFF CACHE BOOL "" FORCE)
   set(ENABLE_LIBFIVE OFF CACHE BOOL "" FORCE)
+  set(OPENSCAD_NOGUI OFF CACHE BOOL "TRUE" FORCE)
   set(ENV{PKG_CONFIG_PATH} "/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig")
 
   # CPython compiled for wasm32-emscripten (see Dockerfile.wasm-python-base)
