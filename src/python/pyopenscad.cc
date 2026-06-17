@@ -1162,14 +1162,26 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       if (syspath && PyList_Check(syspath)) {
         PyObject *p = PyUnicode_FromString(libpath);
         if (p) {
-          PyList_Insert(syspath, 0, p);
+          if (PyList_Insert(syspath, 0, p) < 0) {
+            PyErr_Print();
+            PyErr_Clear();
+          }
           Py_DECREF(p);
+        } else {
+          PyErr_Print();
+          PyErr_Clear();
         }
         if (!python_scriptpath.empty()) {
           PyObject *s = PyUnicode_FromString(fs::path(python_scriptpath).parent_path().string().c_str());
           if (s) {
-            PyList_Append(syspath, s);
+            if (PyList_Append(syspath, s) < 0) {
+              PyErr_Print();
+              PyErr_Clear();
+            }
             Py_DECREF(s);
+          } else {
+            PyErr_Print();
+            PyErr_Clear();
           }
         }
       }
