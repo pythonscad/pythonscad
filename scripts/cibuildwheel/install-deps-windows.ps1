@@ -4,9 +4,18 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "=== install-deps-windows.ps1: bootstrapping vcpkg ==="
 
+$ProjectRoot = if ($env:CIBW_PROJECT_DIR) {
+    $env:CIBW_PROJECT_DIR
+} elseif ($env:GITHUB_WORKSPACE) {
+    $env:GITHUB_WORKSPACE
+} else {
+    (Get-Location).Path
+}
+
 # Pin vcpkg to a release tag for reproducible builds (see vcpkg.json builtin-baseline).
 $VcpkgVersion = "2025.04.09"
-$VcpkgRoot = Join-Path $env:RUNNER_TEMP "vcpkg"
+$VcpkgParent = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { $env:LOCALAPPDATA }
+$VcpkgRoot = Join-Path $VcpkgParent "pythonscad-vcpkg"
 
 if (-not (Test-Path $VcpkgRoot)) {
     git clone --depth 1 --branch $VcpkgVersion `
@@ -18,7 +27,7 @@ if (-not (Test-Path $VcpkgExe)) {
     & (Join-Path $VcpkgRoot "bootstrap-vcpkg.bat") -disableMetrics
 }
 
-$ManifestDir = Join-Path $env:GITHUB_WORKSPACE "scripts/cibuildwheel"
+$ManifestDir = Join-Path $ProjectRoot "scripts/cibuildwheel"
 $Triplet = "x64-windows"
 
 Push-Location $ManifestDir
@@ -35,17 +44,17 @@ $Installed = Join-Path $VcpkgRoot "installed" $Triplet
 $PkgConfigDir = Join-Path $Installed "lib" "pkgconfig"
 $PkgConfExe = Join-Path $Installed "tools" "pkgconf" "pkgconf.exe"
 
-# Expose vcpkg to setup.py and lex/yacc.
-"PYTHONSCAD_VCPKG_ROOT=$VcpkgRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-"VCPKG_ROOT=$VcpkgRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-"VCPKG_DEFAULT_TRIPLET=$Triplet" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-"PKG_CONFIG_PATH=$PkgConfigDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-"PKG_CONFIG=$PkgConfExe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+# Set env vars for the remainder of this cibuildwheel build (not GITHUB_ENV).
+$env:PYTHONSCAD_VCPKG_ROOT = $VcpkgRoot
+$env:VCPKG_ROOT = $VcpkgRoot
+$env:VCPKG_DEFAULT_TRIPLET = $Triplet
+$env:PKG_CONFIG_PATH = $PkgConfigDir
+$env:PKG_CONFIG = $PkgConfExe
 
-# winflexbison installs win_bison.exe / win_flex.exe under the triplet tools tree.
-$ToolsDir = Join-Path $Installed "tools"
-if (Test-Path $ToolsDir) {
-    "PATH=$ToolsDir;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+# winflexbison installs win_bison.exe / win_flex.exe under tools/winflexbison/.
+$WinFlexDir = Join-Path $Installed "tools" "winflexbison"
+if (Test-Path $WinFlexDir) {
+    $env:PATH = "$WinFlexDir;$env:PATH"
 }
 
 Write-Host "=== install-deps-windows.ps1: done (vcpkg root: $VcpkgRoot) ==="

@@ -28,10 +28,14 @@ updates:
     groups:
       runtime-python-deps:
         patterns:
-          - "runtime.txt"
+          - "ipython"
       python-wheel-build:
         patterns:
-          - "build-pypi.txt"
+          - "build"
+          - "cibuildwheel"
+          - "auditwheel"
+          - "delocate"
+          - "delvewheel"
     labels:
       - "dependencies"
       - "python-runtime-bundle"

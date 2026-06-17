@@ -45,7 +45,9 @@ Install native build dependencies first:
 
 - **Linux:** `sudo ./scripts/get-dependencies.py --yes --profile pythonscad-pip`
 - **macOS:** same command (uses Homebrew)
-- **Windows:** MSVC + vcpkg via [`scripts/cibuildwheel/install-deps-windows.ps1`](../scripts/cibuildwheel/install-deps-windows.ps1)
+- **Windows:** MSVC + vcpkg via
+  [`scripts/cibuildwheel/install-deps-windows.ps1`](../scripts/cibuildwheel/install-deps-windows.ps1)
+  (sets `$env:VCPKG_ROOT` / `$env:PKG_CONFIG` for the cibuildwheel build session)
 
 ## Pinning and dependency updates
 

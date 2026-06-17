@@ -1,16 +1,20 @@
 # Repair a Windows wheel by bundling extension DLL dependencies.
 param(
-    [Parameter(Mandatory = $true, Position = 0)]
-    [string]$Wheel
+    [Parameter(Mandatory = $true)]
+    [string]$Wheel,
+
+    [Parameter(Mandatory = $true)]
+    [string]$DestDir
 )
 
 $ErrorActionPreference = "Stop"
 
-$DestDir = Join-Path $env:GITHUB_WORKSPACE "wheelhouse"
 New-Item -ItemType Directory -Force -Path $DestDir | Out-Null
 
+$VcpkgBin = Join-Path $env:VCPKG_ROOT "installed" $env:VCPKG_DEFAULT_TRIPLET "bin"
+
 delvewheel repair `
-    --add-path (Join-Path $env:VCPKG_ROOT "installed" $env:VCPKG_DEFAULT_TRIPLET "bin") `
+    --add-path $VcpkgBin `
     --exclude "python*.dll;vcruntime*.dll;api-ms-win*.dll;ucrtbase.dll" `
     -w $DestDir `
     $Wheel

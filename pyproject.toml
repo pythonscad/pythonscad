@@ -71,4 +71,4 @@ before-all = "bash scripts/cibuildwheel/install-deps-macos.sh"
 
 [tool.cibuildwheel.windows]
 before-all = "pwsh scripts/cibuildwheel/install-deps-windows.ps1"
-repair-wheel-command = "pwsh scripts/cibuildwheel/repair-wheel-windows.ps1 {wheel}"
+repair-wheel-command = "pwsh scripts/cibuildwheel/repair-wheel-windows.ps1 -Wheel {wheel} -DestDir {dest_dir}"
