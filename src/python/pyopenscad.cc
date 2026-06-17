@@ -1439,12 +1439,12 @@ stderr_bak = None\n\
   result.reset(PyRun_String(code.c_str(), Py_file_input, pythonInitDict.get(),
                             pythonInitDict.get())); /* actual code is run here */
 
-#ifndef OPENSCAD_NOGUI
   if (result == nullptr) {
     error = "";
     python_catch_error(error);
     PyErr_Print();
   }
+#ifndef OPENSCAD_NOGUI
   for (int i = 0; i < 2; i++) {
     PyObjectUniquePtr catcher(nullptr, &PyObjectDeleter);
     catcher.reset(
