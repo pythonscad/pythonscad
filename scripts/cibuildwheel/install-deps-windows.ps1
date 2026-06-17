@@ -20,6 +20,14 @@ $VcpkgRoot = Join-Path $VcpkgParent "pythonscad-vcpkg"
 if (-not (Test-Path $VcpkgRoot)) {
     git clone --depth 1 --branch $VcpkgVersion `
         https://github.com/microsoft/vcpkg.git $VcpkgRoot
+} else {
+    Push-Location $VcpkgRoot
+    try {
+        git fetch --depth 1 origin "refs/tags/${VcpkgVersion}:refs/tags/${VcpkgVersion}"
+        git checkout $VcpkgVersion
+    } finally {
+        Pop-Location
+    }
 }
 
 $VcpkgExe = Join-Path $VcpkgRoot "vcpkg.exe"

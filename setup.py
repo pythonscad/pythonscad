@@ -131,7 +131,6 @@ def get_library_dirs():
     vcpkg_installed = get_vcpkg_installed_dir()
     if vcpkg_installed:
         dirs.append(os.path.join(vcpkg_installed, "lib"))
-        dirs.append(os.path.join(vcpkg_installed, "debug", "lib"))
     if IS_DARWIN:
         for prefix in ("/opt/homebrew", "/usr/local"):
             libdir = os.path.join(prefix, "lib")
