@@ -1440,7 +1440,6 @@ stderr_bak = None\n\
                             pythonInitDict.get())); /* actual code is run here */
 
 #ifndef OPENSCAD_NOGUI
-#error should_not_happen
   if (result == nullptr) {
     error = "";
     python_catch_error(error);
