@@ -1078,17 +1078,16 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
 
-    std::string sep = "";
-    std::ostringstream stream;
 #ifdef __EMSCRIPTEN__
-    char sepchar = ':';
-    const auto pythonXY =
-      "python" + std::to_string(PY_MAJOR_VERSION) + "." + std::to_string(PY_MINOR_VERSION);
 #ifdef WASM_NODE_BUILD
     // Node build: NODERAWFS exposes the real container filesystem.
     // stdlib lives at /cpython-wasm/lib/python3.14 on disk; home points there directly.
     PyConfig_SetBytesString(&config, &config.home, "/cpython-wasm");
 #else
+    char sepchar = ':';
+    const auto pythonXY =
+      "python" + std::to_string(PY_MAJOR_VERSION) + "." + std::to_string(PY_MINOR_VERSION);
+    std::ostringstream stream;
     // Web build: stdlib preloaded into MEMFS via --preload-file at /usr/lib/python3.14.
     stream << "/usr/lib/" << pythonXY;
     stream << sepchar << "/usr/lib/pythonscad/libraries/python";
@@ -1096,7 +1095,10 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     PyConfig_SetBytesString(&config, &config.home, "/usr");
     PyConfig_SetBytesString(&config, &config.executable, "/usr/bin/python3");
 #endif
-#elif defined(_WIN32)
+#else
+    std::string sep = "";
+    std::ostringstream stream;
+#if defined(_WIN32)
     char sepchar = ';';
     sep = sepchar;
     stream << PlatformUtils::applicationPath() << "\\..\\libraries\\python";
@@ -1118,6 +1120,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
         sep = sepchar;
       }
     }
+#endif
 #endif
 #ifndef __EMSCRIPTEN__
     // Add resource-based libraries directory (works for development, installed, and packaged builds)
