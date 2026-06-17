@@ -3,6 +3,11 @@ from setuptools.command.build_ext import build_ext
 import subprocess
 import os
 import shutil
+import sys
+
+
+IS_WINDOWS = sys.platform == "win32"
+IS_DARWIN = sys.platform == "darwin"
 
 
 def get_version():
@@ -11,12 +16,18 @@ def get_version():
         return f.read().strip()
 
 
+def pkg_config_cmd():
+    """Return the pkg-config executable (supports vcpkg pkgconf on Windows)."""
+    return os.environ.get("PKG_CONFIG", "pkg-config")
+
+
 def pkg_config_flags(packages, flag):
     """Query pkg-config for the given flag (e.g. '--cflags-only-I', '--libs-only-l')."""
     try:
         out = subprocess.check_output(
-            ["pkg-config", flag] + packages,
+            [pkg_config_cmd(), flag] + packages,
             text=True, stderr=subprocess.DEVNULL,
+            env=os.environ,
         )
         return out.strip().split()
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -27,8 +38,9 @@ def pkg_config_exists(package):
     """Return True if pkg-config can find the given package."""
     try:
         subprocess.check_call(
-            ["pkg-config", "--exists", package],
+            [pkg_config_cmd(), "--exists", package],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            env=os.environ,
         )
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -39,12 +51,23 @@ def pkg_config_version(package):
     """Return the version string for a pkg-config package, or None."""
     try:
         out = subprocess.check_output(
-            ["pkg-config", "--modversion", package],
+            [pkg_config_cmd(), "--modversion", package],
             text=True, stderr=subprocess.DEVNULL,
+            env=os.environ,
         )
         return out.strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
+
+
+def get_vcpkg_installed_dir():
+    """Return the vcpkg installed prefix for the active triplet, if any."""
+    root = os.environ.get("VCPKG_ROOT") or os.environ.get("PYTHONSCAD_VCPKG_ROOT")
+    if not root:
+        return None
+    triplet = os.environ.get("VCPKG_DEFAULT_TRIPLET", "x64-windows")
+    installed = os.path.join(root, "installed", triplet)
+    return installed if os.path.isdir(installed) else None
 
 
 def get_pkg_config_include_dirs():
@@ -63,7 +86,23 @@ def get_pkg_config_include_dirs():
         "/usr/include/cairo",
         "/usr/lib64/glib-2.0/include",
         "/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+        "/usr/lib/aarch64-linux-gnu/glib-2.0/include",
+        "/opt/homebrew/include",
+        "/opt/homebrew/include/eigen3",
+        "/opt/homebrew/include/harfbuzz",
+        "/opt/homebrew/include/freetype2",
+        "/opt/homebrew/include/cairo",
+        "/opt/homebrew/lib/glib-2.0/include",
+        "/usr/local/include",
+        "/usr/local/include/eigen3",
+        "/usr/local/include/harfbuzz",
+        "/usr/local/include/freetype2",
+        "/usr/local/include/cairo",
+        "/usr/local/lib/glib-2.0/include",
     ]
+    vcpkg_installed = get_vcpkg_installed_dir()
+    if vcpkg_installed:
+        fallbacks.insert(0, os.path.join(vcpkg_installed, "include"))
     for fb in fallbacks:
         if fb not in dirs and os.path.isdir(fb):
             dirs.append(fb)
@@ -84,6 +123,53 @@ def get_pkg_config_libraries():
             libs.append(lib)
 
     return libs
+
+
+def get_library_dirs():
+    """Return linker search paths for the active platform."""
+    dirs = []
+    vcpkg_installed = get_vcpkg_installed_dir()
+    if vcpkg_installed:
+        dirs.append(os.path.join(vcpkg_installed, "lib"))
+        dirs.append(os.path.join(vcpkg_installed, "debug", "lib"))
+    if IS_DARWIN:
+        for prefix in ("/opt/homebrew", "/usr/local"):
+            libdir = os.path.join(prefix, "lib")
+            if os.path.isdir(libdir):
+                dirs.append(libdir)
+    return dirs
+
+
+def get_extra_compile_args():
+    """Return platform-specific compiler flags."""
+    if IS_WINDOWS:
+        return ["/bigobj", "/EHsc", "/std:c++17"]
+    args = ["-std=c++17"]
+    if IS_DARWIN:
+        args.append("-stdlib=libc++")
+    return args
+
+
+def get_platform_sources():
+    """Return platform-specific utility sources."""
+    sources = ["src/platform/PlatformUtils.cc"]
+    if IS_WINDOWS:
+        sources.append("src/platform/PlatformUtils-win.cc")
+    else:
+        sources.append("src/platform/PlatformUtils-posix.cc")
+    return sources
+
+
+def get_extra_defines():
+    """Return platform-specific preprocessor defines."""
+    defines = []
+    if IS_WINDOWS:
+        defines.extend([
+            ("NOMINMAX", None),
+            ("_USE_MATH_DEFINES", None),
+            ("CGAL_DISABLE_ROUNDING_MATH_CHECK", None),
+        ])
+    return defines
 
 
 def detect_lib3mf():
@@ -235,9 +321,12 @@ class BuildExtWithLexYacc(build_ext):
             target_time = min(os.path.getmtime(t) for t in targets)
             return src_time > target_time
 
+        bison_cmd = "win_bison" if IS_WINDOWS else "bison"
+        flex_cmd = "win_flex" if IS_WINDOWS else "flex"
+
         if needs_rebuild(yacc_src, [yacc_out, yacc_hdr]):
             print(f"Generating Yacc: {yacc_src}")
-            subprocess.run(["bison", "-d", "-p", "parser", yacc_src], check=True)
+            subprocess.run([bison_cmd, "-d", "-p", "parser", yacc_src], check=True)
             os.rename("parser.tab.c", yacc_out)
             shutil.copyfile("parser.tab.h", "src/core/parser.hxx")
             os.rename("parser.tab.h", yacc_hdr)
@@ -246,7 +335,7 @@ class BuildExtWithLexYacc(build_ext):
 
         if needs_rebuild(lex_src, [lex_out]):
             print(f"Generating Lex: {lex_src}")
-            subprocess.run(["lex", "-o", lex_out, lex_src], check=True)
+            subprocess.run([flex_cmd, "-o", lex_out, lex_src], check=True)
         else:
             print(f"{lex_src} is up to date")
 
@@ -478,10 +567,7 @@ def main():
               "src/utils/vector_math.cc",
               "src/utils/png_util.cc",
               "src/utils/calc.cc" ]
-    platform = [
-              "src/platform/PlatformUtils.cc",
-              "src/platform/PlatformUtils-posix.cc"
-            ]
+    platform = get_platform_sources()
     glview = [
               "src/glview/Camera.cc",
 #              "src/glview/PolySetRenderer.cc",
@@ -526,14 +612,16 @@ def main():
         ("OPENSCAD_YEAR", "2025"),
         ("OPENSCAD_MONTH", "2"),
         ("STACKSIZE", "524288"),
-    ] + lib3mf_defines + libfive_defines
+    ] + lib3mf_defines + libfive_defines + get_extra_defines()
 
     pythonscad_ext = Extension(
         "_openscad",
         sources=all_sources,
         include_dirs=project_include_dirs,
+        library_dirs=get_library_dirs(),
         libraries=get_pkg_config_libraries() + lib3mf_libs,
         define_macros=all_defines,
+        extra_compile_args=get_extra_compile_args(),
     )
 
     # The pure-Python overlay packages live under libraries/python/{openscad,pythonscad}

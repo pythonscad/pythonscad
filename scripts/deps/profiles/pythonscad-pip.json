@@ -1,0 +1,8 @@
+{
+  "extends": [
+    "base"
+  ],
+  "notes":
+    "Minimal build dependencies for the pip/_openscad extension (no Qt/GUI). Used by cibuildwheel macOS hooks and documented for local wheel builds.",
+  "distros": {}
+}
