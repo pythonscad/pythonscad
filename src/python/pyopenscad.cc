@@ -1084,14 +1084,8 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     // stdlib lives at /cpython-wasm/lib/python3.14 on disk; home points there directly.
     PyConfig_SetBytesString(&config, &config.home, "/cpython-wasm");
 #else
-    char sepchar = ':';
-    const auto pythonXY =
-      "python" + std::to_string(PY_MAJOR_VERSION) + "." + std::to_string(PY_MINOR_VERSION);
-    std::ostringstream stream;
     // Web build: stdlib preloaded into MEMFS via --preload-file at /usr/lib/python3.14.
-    stream << "/usr/lib/" << pythonXY;
-    stream << sepchar << "/usr/lib/pythonscad/libraries/python";
-    stream << sepchar << fs::path(python_scriptpath).parent_path().string();
+    // sys.path is populated via C API after Py_InitializeFromConfig.
     PyConfig_SetBytesString(&config, &config.home, "/usr");
     PyConfig_SetBytesString(&config, &config.executable, "/usr/bin/python3");
 #endif
