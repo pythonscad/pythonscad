@@ -13,6 +13,7 @@
     "double-conversion",
     "libxml2",
     "glib",
-    "winflexbison"
+    "winflexbison",
+    "pkgconf"
   ]
 }
