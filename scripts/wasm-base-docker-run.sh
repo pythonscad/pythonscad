@@ -47,7 +47,7 @@ echo "
   -t pythonscad-wasm-ccache:local \
   -f - .
 
-docker run --rm -it \
+docker run --rm -i \
   --platform=linux/amd64 \
   -w /src \
   -v "$PWD:/src:rw" \

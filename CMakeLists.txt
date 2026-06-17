@@ -311,7 +311,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
 
   # CPython compiled for wasm32-emscripten (see Dockerfile.wasm-python-base)
   set(CPYTHON_WASM_PREFIX "/cpython-wasm" CACHE PATH "CPython compiled for wasm32-emscripten")
-  set(CPYTHON_WASM_PYVER "3.12" CACHE STRING "Python version in CPYTHON_WASM_PREFIX")
+  set(CPYTHON_WASM_PYVER "3.14" CACHE STRING "Python version in CPYTHON_WASM_PREFIX")
   target_compile_definitions(OpenSCADLibInternal PUBLIC CGAL_DISABLE_ROUNDING_MATH_CHECK)
   target_link_libraries(OpenSCADLibInternal PUBLIC /emsdk/upstream/emscripten/cache/sysroot/lib/libz.a)
 
