@@ -39,12 +39,6 @@ $PKG_MGR install -y \
 
 # libfive fails to compile with GCC 14's stricter C++ diagnostics; use GCC 12.
 $PKG_MGR install -y gcc-toolset-12
-if [ -n "${CIBW_ENVIRONMENT_FILE:-}" ]; then
-    {
-        echo 'CC=/opt/rh/gcc-toolset-12/root/usr/bin/gcc'
-        echo 'CXX=/opt/rh/gcc-toolset-12/root/usr/bin/g++'
-        echo 'PATH="/opt/rh/gcc-toolset-12/root/usr/bin:$PATH"'
-    } >> "$CIBW_ENVIRONMENT_FILE"
-fi
+/opt/rh/gcc-toolset-12/root/usr/bin/g++ --version
 
 echo "=== install-deps-manylinux.sh: done ==="
