@@ -154,9 +154,18 @@ def get_platform_sources():
     sources = ["src/platform/PlatformUtils.cc"]
     if IS_WINDOWS:
         sources.append("src/platform/PlatformUtils-win.cc")
+    elif IS_DARWIN:
+        sources.append("src/platform/PlatformUtils-mac.mm")
     else:
         sources.append("src/platform/PlatformUtils-posix.cc")
     return sources
+
+
+def get_extra_link_args():
+    """Return platform-specific linker flags."""
+    if IS_DARWIN:
+        return ["-framework", "Foundation"]
+    return []
 
 
 def get_extra_defines():
@@ -621,6 +630,7 @@ def main():
         libraries=get_pkg_config_libraries() + lib3mf_libs,
         define_macros=all_defines,
         extra_compile_args=get_extra_compile_args(),
+        extra_link_args=get_extra_link_args(),
     )
 
     # The pure-Python overlay packages live under libraries/python/{openscad,pythonscad}
