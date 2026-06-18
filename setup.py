@@ -177,8 +177,8 @@ def get_link_libraries():
     """Return the full set of libraries to link the pip extension against."""
     libs = get_pkg_config_libraries()
 
-    # Match CMake (Boost::regex, Boost::program_options, CGAL::CGAL) so shared
-    # deps appear in DT_NEEDED and auditwheel/delocate/delvewheel can bundle them.
+    # Match CMake (Boost::regex, Boost::program_options) so shared deps appear
+    # in DT_NEEDED and auditwheel/delocate/delvewheel can bundle them.
     for lib in ("boost_regex", "boost_program_options"):
         if lib not in libs:
             libs.append(lib)
@@ -189,9 +189,16 @@ def get_link_libraries():
             if flag.startswith("-l") and flag[2:] not in libs:
                 libs.append(flag[2:])
     else:
+        # CGAL 5+ is header-only on many distros (e.g. EL8); GMP/MPFR suffice.
         for lib in ("CGAL", "CGAL_Core"):
-            if lib not in libs:
-                libs.append(lib)
+            for libdir in ("/usr/lib64", "/usr/lib"):
+                if any(
+                    os.path.isfile(os.path.join(libdir, f"lib{lib}{suffix}"))
+                    for suffix in (".so", ".a")
+                ):
+                    if lib not in libs:
+                        libs.append(lib)
+                    break
 
     return libs
 
@@ -205,6 +212,10 @@ def get_library_dirs():
     if IS_DARWIN:
         for prefix in ("/opt/homebrew", "/usr/local"):
             libdir = os.path.join(prefix, "lib")
+            if os.path.isdir(libdir):
+                dirs.append(libdir)
+    elif not IS_WINDOWS:
+        for libdir in ("/usr/lib64", "/usr/lib"):
             if os.path.isdir(libdir):
                 dirs.append(libdir)
     return dirs
