@@ -62,11 +62,14 @@ skip = ["*-musllinux*", "*-win32*", "*-win_arm64*", "cp*t-*", "pp*"]
 manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
 build-frontend = "build"
-test-requires = [
-    "ipython>=9,<10; python_version>='3.11'",
-    "ipython>=8,<9; python_version<'3.11'",
-]
+# cibuildwheel splits test-requires on ';', so PEP 508 markers must
+# use [[tool.cibuildwheel.overrides]] instead of inline markers here.
+test-requires = ["ipython>=9,<10"]
 test-command = "python {project}/scripts/smoke-test-pip.py"
+
+[[tool.cibuildwheel.overrides]]
+select = "cp310-*"
+test-requires = ["ipython>=8,<9"]
 
 [tool.cibuildwheel.linux]
 before-all = "bash scripts/cibuildwheel/install-deps-manylinux.sh"
