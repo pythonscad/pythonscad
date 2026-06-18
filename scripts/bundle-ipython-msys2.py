@@ -151,7 +151,7 @@ def main() -> None:
     except subprocess.CalledProcessError:
         raise SystemExit(
             "psutil is not importable in the build Python. "
-            "On MSYS2 UCRT64, run: pacboy -S python-psutil:p"
+            "On MSYS2 UCRT64, run: pacboy -S --noconfirm python-psutil:p"
         ) from None
 
     args.target.mkdir(parents=True, exist_ok=True)
