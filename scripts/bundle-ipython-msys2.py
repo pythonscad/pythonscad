@@ -21,8 +21,12 @@ import sys
 import tempfile
 import zipfile
 
-from packaging.markers import default_environment
-from packaging.requirements import Requirement
+try:
+    from packaging.markers import default_environment
+    from packaging.requirements import Requirement
+except ModuleNotFoundError:  # minimal/MSYS2 build Pythons may lack packaging
+    from pip._vendor.packaging.markers import default_environment
+    from pip._vendor.packaging.requirements import Requirement
 
 
 def _run(cmd: list[str]) -> None:

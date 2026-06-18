@@ -53,18 +53,17 @@ jobs:
         # runners just ignore it and install normally.
         #
         # IPython 9.x requires Python 3.11+. ubuntu-22.04 runners
-        # still ship Python 3.10, so skip the install there; the
+        # still ship Python 3.10, so skip the IPython install there; the
         # --ipython smoke tests exercise the fallback REPL on that leg.
-        #
-        # `ipython>=9,<10` matches the pin in `requirements/runtime.txt`
-        # for bundled binaries. On Python 3.11+ runners we install that
-        # same major version; ubuntu-22.04 (Python 3.10) skips below.
+        # pexpect is installed unconditionally so ipython-pty can run.
+        python3 -m pip install --upgrade pip
         if python3 -c 'import sys; sys.exit(0 if sys.version_info < (3, 11) else 1)'; then
           echo "SKIP: IPython 9.x requires Python 3.11+; this runner has $(python3 -c 'import sys; print(f\"{sys.version_info.major}.{sys.version_info.minor}\")')."
-          echo "--ipython tests will exercise the fallback REPL path."
+          echo "Installing pexpect only; --ipython tests will exercise the fallback REPL path."
+          python3 -m pip install --break-system-packages --upgrade pexpect \
+            || python3 -m pip install --upgrade pexpect
           exit 0
         fi
-        python3 -m pip install --upgrade pip
         python3 -m pip install --break-system-packages --upgrade 'ipython>=9,<10' pexpect \
           || python3 -m pip install --upgrade 'ipython>=9,<10' pexpect
     - name: Build and test
