@@ -31,33 +31,6 @@ def apply_wheel_build_env():
         os.environ["PATH"] = winflex + os.pathsep + os.environ.get("PATH", "")
 
 
-def patch_libfive_optional_include():
-    """Add missing #include <optional> for libstdc++ on EL8/manylinux."""
-    if not sys.platform.startswith("linux"):
-        return
-    if os.environ.get("CIBUILDWHEEL") != "1":
-        return
-    if not os.environ.get("AUDITWHEEL_PLAT", "").startswith("manylinux"):
-        return
-
-    tree_cpp = os.path.join(
-        "submodules", "libfive", "libfive", "src", "tree", "tree.cpp"
-    )
-    if not os.path.isfile(tree_cpp):
-        return
-    with open(tree_cpp, encoding="utf-8") as f:
-        content = f.read()
-    if "#include <optional>" in content:
-        return
-    marker = "#include <stack>"
-    if marker not in content:
-        return
-    content = content.replace(marker, marker + "\n#include <optional>", 1)
-    with open(tree_cpp, "w", encoding="utf-8") as f:
-        f.write(content)
-    print("libfive: patched tree.cpp to include <optional>")
-
-
 def get_version():
     here = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(here, "VERSION.txt")) as f:
@@ -397,8 +370,6 @@ class BuildExtWithLexYacc(build_ext):
     """Custom build_ext command to run lex/yacc before building extension modules."""
 
     def run(self):
-        patch_libfive_optional_include()
-
         yacc_src = "src/core/parser.y"
         lex_src = "src/core/lexer.l"
 
