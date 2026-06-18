@@ -166,6 +166,29 @@ def get_pkg_config_libraries():
     return libs
 
 
+def get_link_libraries():
+    """Return the full set of libraries to link the pip extension against."""
+    libs = get_pkg_config_libraries()
+
+    # Match CMake (Boost::regex, Boost::program_options, CGAL::CGAL) so shared
+    # deps appear in DT_NEEDED and auditwheel/delocate/delvewheel can bundle them.
+    for lib in ("boost_regex", "boost_program_options"):
+        if lib not in libs:
+            libs.append(lib)
+
+    cgal_raw = pkg_config_flags(["CGAL"], "--libs-only-l")
+    if cgal_raw:
+        for flag in cgal_raw:
+            if flag.startswith("-l") and flag[2:] not in libs:
+                libs.append(flag[2:])
+    else:
+        for lib in ("CGAL", "CGAL_Core"):
+            if lib not in libs:
+                libs.append(lib)
+
+    return libs
+
+
 def get_library_dirs():
     """Return linker search paths for the active platform."""
     dirs = []
@@ -672,7 +695,7 @@ def main():
         sources=all_sources,
         include_dirs=project_include_dirs,
         library_dirs=get_library_dirs(),
-        libraries=get_pkg_config_libraries() + lib3mf_libs,
+        libraries=get_link_libraries() + lib3mf_libs,
         define_macros=all_defines,
         extra_compile_args=get_extra_compile_args(),
         extra_link_args=get_extra_link_args(),
