@@ -71,7 +71,14 @@ show(difference(cube([20, 20, 20], center=True), cylinder(h=25, r=5, center=True
         mod.callMain(['-o', '/output.stl', '--trust-python', '/input.py']);
       } catch (e) {
         // Emscripten throws ExitStatus when the process calls exit()
-        exitCode = (e && typeof e.status === 'number') ? e.status : 1;
+        if (e && typeof e.status === 'number') {
+          exitCode = e.status;
+        } else {
+          exitCode = 1;
+          const detail = e?.stack || e?.message || String(e);
+          stderr.push(detail);
+          console.error('[exception]', e);
+        }
       }
 
       const allOutput = [...stdout, ...stderr].join('\n');

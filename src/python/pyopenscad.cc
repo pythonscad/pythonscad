@@ -1078,6 +1078,18 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
 
+#ifdef __EMSCRIPTEN__
+#ifdef WASM_NODE_BUILD
+    // Node build: NODERAWFS exposes the real container filesystem.
+    // stdlib lives at /cpython-wasm/lib/python3.14 on disk; home points there directly.
+    PyConfig_SetBytesString(&config, &config.home, "/cpython-wasm");
+#else
+    // Web build: stdlib preloaded into MEMFS via --preload-file at /usr/lib/python3.14.
+    // sys.path is populated via C API after Py_InitializeFromConfig.
+    PyConfig_SetBytesString(&config, &config.home, "/usr");
+    PyConfig_SetBytesString(&config, &config.executable, "/usr/bin/python3");
+#endif
+#else
     std::string sep = "";
     std::ostringstream stream;
 #ifdef __EMSCRIPTEN__
@@ -1118,6 +1130,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
         sep = sepchar;
       }
     }
+#endif
 #endif
 #ifndef __EMSCRIPTEN__
     // Add resource-based libraries directory (works for development, installed, and packaged builds)
@@ -1165,14 +1178,26 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       if (syspath && PyList_Check(syspath)) {
         PyObject *p = PyUnicode_FromString(libpath);
         if (p) {
-          PyList_Insert(syspath, 0, p);
+          if (PyList_Insert(syspath, 0, p) < 0) {
+            PyErr_Print();
+            PyErr_Clear();
+          }
           Py_DECREF(p);
+        } else {
+          PyErr_Print();
+          PyErr_Clear();
         }
         if (!python_scriptpath.empty()) {
           PyObject *s = PyUnicode_FromString(fs::path(python_scriptpath).parent_path().string().c_str());
           if (s) {
-            PyList_Append(syspath, s);
+            if (PyList_Append(syspath, s) < 0) {
+              PyErr_Print();
+              PyErr_Clear();
+            }
             Py_DECREF(s);
+          } else {
+            PyErr_Print();
+            PyErr_Clear();
           }
         }
       }

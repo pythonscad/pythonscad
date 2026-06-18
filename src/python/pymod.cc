@@ -57,14 +57,17 @@ std::string venvBinDirFromSettings()
 int pythonRunArgs(int, char **)
 {
   __builtin_trap();
+  __builtin_unreachable();
 }
 int pythonCreateVenv(const std::string&)
 {
   __builtin_trap();
+  __builtin_unreachable();
 }
 int pythonRunModule(const std::string&, const std::string&, const std::vector<std::string>&)
 {
   __builtin_trap();
+  __builtin_unreachable();
 }
 #else
 
