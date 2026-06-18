@@ -59,7 +59,8 @@ jobs:
         python3 -m pip install --break-system-packages --upgrade pip \
           || python3 -m pip install --upgrade pip
         if python3 -c 'import sys; sys.exit(0 if sys.version_info < (3, 11) else 1)'; then
-          echo "SKIP: IPython 9.x requires Python 3.11+; this runner has $(python3 -c 'import sys; print(f\"{sys.version_info.major}.{sys.version_info.minor}\")')."
+          py_ver=$(python3 -c 'import sys; print("%d.%d" % (sys.version_info.major, sys.version_info.minor))')
+          echo "SKIP: IPython 9.x requires Python 3.11+; this runner has ${py_ver}."
           echo "Installing pexpect only; --ipython tests will exercise the fallback REPL path."
           python3 -m pip install --break-system-packages --upgrade pexpect \
             || python3 -m pip install --upgrade pexpect
