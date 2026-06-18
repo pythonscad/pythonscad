@@ -25,7 +25,7 @@ def apply_wheel_build_env():
             key = key.strip()
             value = value.strip()
             if key and value:
-                os.environ.setdefault(key, value)
+                os.environ[key] = value
     winflex = os.environ.get("WINFLEXBISON_DIR")
     if winflex and os.path.isdir(winflex):
         os.environ["PATH"] = winflex + os.pathsep + os.environ.get("PATH", "")
@@ -33,6 +33,13 @@ def apply_wheel_build_env():
 
 def patch_libfive_optional_include():
     """Add missing #include <optional> for libstdc++ on EL8/manylinux."""
+    if not sys.platform.startswith("linux"):
+        return
+    if os.environ.get("CIBUILDWHEEL") != "1":
+        return
+    if not os.environ.get("AUDITWHEEL_PLAT", "").startswith("manylinux"):
+        return
+
     tree_cpp = os.path.join(
         "submodules", "libfive", "libfive", "src", "tree", "tree.cpp"
     )
