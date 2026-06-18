@@ -10,6 +10,47 @@ IS_WINDOWS = sys.platform == "win32"
 IS_DARWIN = sys.platform == "darwin"
 
 
+def apply_wheel_build_env():
+    """Load env written by cibuildwheel before-all hooks (needed on Windows)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    env_file = os.path.join(here, "scripts", "cibuildwheel", "wheel-build-env.env")
+    if not os.path.isfile(env_file):
+        return
+    with open(env_file, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip()
+            if key and value:
+                os.environ.setdefault(key, value)
+    winflex = os.environ.get("WINFLEXBISON_DIR")
+    if winflex and os.path.isdir(winflex):
+        os.environ["PATH"] = winflex + os.pathsep + os.environ.get("PATH", "")
+
+
+def patch_libfive_optional_include():
+    """Add missing #include <optional> for libstdc++ on EL8/manylinux."""
+    tree_cpp = os.path.join(
+        "submodules", "libfive", "libfive", "src", "tree", "tree.cpp"
+    )
+    if not os.path.isfile(tree_cpp):
+        return
+    with open(tree_cpp, encoding="utf-8") as f:
+        content = f.read()
+    if "#include <optional>" in content:
+        return
+    marker = "#include <stack>"
+    if marker not in content:
+        return
+    content = content.replace(marker, marker + "\n#include <optional>", 1)
+    with open(tree_cpp, "w", encoding="utf-8") as f:
+        f.write(content)
+    print("libfive: patched tree.cpp to include <optional>")
+
+
 def get_version():
     here = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(here, "VERSION.txt")) as f:
@@ -315,6 +356,8 @@ class BuildExtWithLexYacc(build_ext):
     """Custom build_ext command to run lex/yacc before building extension modules."""
 
     def run(self):
+        patch_libfive_optional_include()
+
         yacc_src = "src/core/parser.y"
         lex_src = "src/core/lexer.l"
 
@@ -351,6 +394,8 @@ class BuildExtWithLexYacc(build_ext):
 
 
 def main():
+    apply_wheel_build_env()
+
     root =  [
               "src/Feature.cc",
               "src/FontCache.cc",

@@ -14,8 +14,7 @@ $ProjectRoot = if ($env:CIBW_PROJECT_DIR) {
 
 # Pin vcpkg to a release tag for reproducible builds (see vcpkg.json builtin-baseline).
 $VcpkgVersion = "2025.04.09"
-$VcpkgParent = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { $env:LOCALAPPDATA }
-$VcpkgRoot = Join-Path $VcpkgParent "pythonscad-vcpkg"
+$VcpkgRoot = Join-Path $ProjectRoot ".wheel-vcpkg"
 
 if (-not (Test-Path $VcpkgRoot)) {
     git clone --depth 1 --branch $VcpkgVersion `
@@ -52,17 +51,20 @@ $Installed = Join-Path $VcpkgRoot "installed" $Triplet
 $PkgConfigDir = Join-Path $Installed "lib" "pkgconfig"
 $PkgConfExe = Join-Path $Installed "tools" "pkgconf" "pkgconf.exe"
 
-# Set env vars for the remainder of this cibuildwheel build (not GITHUB_ENV).
-$env:PYTHONSCAD_VCPKG_ROOT = $VcpkgRoot
-$env:VCPKG_ROOT = $VcpkgRoot
-$env:VCPKG_DEFAULT_TRIPLET = $Triplet
-$env:PKG_CONFIG_PATH = $PkgConfigDir
-$env:PKG_CONFIG = $PkgConfExe
-
 # winflexbison installs win_bison.exe / win_flex.exe under tools/winflexbison/.
 $WinFlexDir = Join-Path $Installed "tools" "winflexbison"
+
+# before-all runs in a separate process; persist env for setup.py and repair-wheel.
+$EnvFile = Join-Path $ProjectRoot "scripts/cibuildwheel/wheel-build-env.env"
+$EnvLines = @(
+    "VCPKG_ROOT=$VcpkgRoot",
+    "VCPKG_DEFAULT_TRIPLET=$Triplet",
+    "PKG_CONFIG_PATH=$PkgConfigDir",
+    "PKG_CONFIG=$PkgConfExe"
+)
 if (Test-Path $WinFlexDir) {
-    $env:PATH = "$WinFlexDir;$env:PATH"
+    $EnvLines += "WINFLEXBISON_DIR=$WinFlexDir"
 }
+$EnvLines | Set-Content -Encoding utf8 $EnvFile
 
 Write-Host "=== install-deps-windows.ps1: done (vcpkg root: $VcpkgRoot) ==="

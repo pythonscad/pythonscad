@@ -103,7 +103,7 @@ permission for a single unsigned app.
 ## Installing via Python (pip / pipx)
 
 PythonSCAD is available on [PyPI](https://pypi.org/project/pythonscad/).
-Pre-built binary wheels are published for Linux (x86_64 and arm64), macOS
+Pre-built binary wheels are published for Linux (x86_64 and aarch64), macOS
 (Intel and Apple Silicon), and Windows, covering Python 3.10 through 3.14.
 On supported platforms, installation is fast and does not require a C++
 compiler or geometry libraries on your system.

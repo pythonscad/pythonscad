@@ -41,4 +41,12 @@ $PKG_MGR install -y \
 $PKG_MGR install -y gcc-toolset-12
 /opt/rh/gcc-toolset-12/root/usr/bin/g++ --version
 
+# libfive tree.cpp uses std::optional without including <optional>; EL8 libstdc++
+# does not pull it in transitively.
+TREE_CPP="submodules/libfive/libfive/src/tree/tree.cpp"
+if [[ -f "$TREE_CPP" ]] && ! grep -q '#include <optional>' "$TREE_CPP"; then
+    sed -i '/#include <stack>/a #include <optional>' "$TREE_CPP"
+    echo "Patched libfive tree.cpp: added #include <optional>"
+fi
+
 echo "=== install-deps-manylinux.sh: done ==="

@@ -47,7 +47,9 @@ Install native build dependencies first:
 - **macOS:** same command (uses Homebrew)
 - **Windows:** MSVC + vcpkg via
   [`scripts/cibuildwheel/install-deps-windows.ps1`](../scripts/cibuildwheel/install-deps-windows.ps1)
-  (sets `$env:VCPKG_ROOT` / `$env:PKG_CONFIG` for the cibuildwheel build session)
+  (writes `scripts/cibuildwheel/wheel-build-env.env` for `setup.py` and
+  `repair-wheel-windows.ps1`; vcpkg is installed under `.wheel-vcpkg/` in the
+  project root)
 
 ## Pinning and dependency updates
 
