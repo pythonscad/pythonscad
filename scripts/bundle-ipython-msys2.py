@@ -30,9 +30,30 @@ def _run(cmd: list[str]) -> None:
     subprocess.run(cmd, check=True)
 
 
+def _parse_runtime_requirements(requirements_file: pathlib.Path) -> tuple[list[str], list[str]]:
+    """Split a requirements file into IPython specs and all other runtime deps."""
+    ipython_specs: list[str] = []
+    other_specs: list[str] = []
+    for raw_line in requirements_file.read_text(encoding="utf-8").splitlines():
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        req = Requirement(line)
+        if req.name.lower() == "ipython":
+            ipython_specs.append(line)
+        elif req.name.lower() == "psutil":
+            # Vendored from MSYS2 pacman on this code path.
+            continue
+        else:
+            other_specs.append(line)
+    return ipython_specs, other_specs
+
+
 def _download_ipython_wheel(
-    python: str, requirements_file: pathlib.Path, dest_dir: pathlib.Path
+    python: str, ipython_specs: list[str], dest_dir: pathlib.Path
 ) -> pathlib.Path:
+    if not ipython_specs:
+        raise SystemExit("requirements file contains no ipython entry")
     _run(
         [
             python,
@@ -40,8 +61,7 @@ def _download_ipython_wheel(
             "pip",
             "download",
             "--no-deps",
-            "-r",
-            str(requirements_file),
+            *ipython_specs,
             "-d",
             str(dest_dir),
         ]
@@ -71,7 +91,7 @@ def _filter_requirements(
             continue
         if req.marker is not None and not req.marker.evaluate(env):
             continue
-        selected.append(str(req).split(";")[0])
+        selected.append(str(req).split(";", 1)[0].strip())
     return selected
 
 
@@ -156,9 +176,12 @@ def main() -> None:
 
     args.target.mkdir(parents=True, exist_ok=True)
 
+    ipython_specs, other_specs = _parse_runtime_requirements(args.requirements)
+    _install_deps(args.python, args.target, other_specs)
+
     with tempfile.TemporaryDirectory(prefix="ipython-wheel.") as tmp:
         wheel_dir = pathlib.Path(tmp)
-        wheel = _download_ipython_wheel(args.python, args.requirements, wheel_dir)
+        wheel = _download_ipython_wheel(args.python, ipython_specs, wheel_dir)
         deps = _filter_requirements(_read_requires_dist(wheel), exclude_names={"psutil"})
         _install_deps(args.python, args.target, deps)
         _vend_psutil_from_system(args.target)
