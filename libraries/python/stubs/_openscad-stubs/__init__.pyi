@@ -1,6 +1,6 @@
 """ PythonSCAD Stub File for use in editors like Visual Studio Code """
 from enum import Enum
-from typing import List, Optional, Self, Union, overload
+from typing import List, Optional, Self, Sequence, Union, overload
 
 PyOpenSCADs = Union["PyOpenSCAD", list["PyOpenSCAD"]]
 """Type for functions that accept either a single OpenSCAD object or a list of objects."""
@@ -370,7 +370,7 @@ class PyOpenSCAD:
     def resize(
         self,
         newsize: Union[float, Vector1, Vector2, Vector3],
-        auto: Union[bool, list[Union[bool, int, float]]] = False,
+        auto: Union[bool, Sequence[Union[bool, int, float]]] = False,
         convexity: int = 2,
     ) -> "PyOpenSCAD":
         """Modifies the size of an object to match the given x,y, and z sizes.
@@ -1191,7 +1191,7 @@ def output(obj: PyOpenSCAD) -> None:
 def resize(
     obj: PyOpenSCADs,
     newsize: Union[float, Vector1, Vector2, Vector3],
-    auto: Union[bool, list[Union[bool, int, float]]] = False,
+    auto: Union[bool, Sequence[Union[bool, int, float]]] = False,
     convexity: int = 2,
 ) -> PyOpenSCAD:
     """Modifies the size of an object to match the given x,y, and z sizes.

@@ -165,7 +165,7 @@ Resize an object to fit exact dimensions.
 |-----------|------|---------|-------------|
 | `obj` | solid | — | The object to resize |
 | `newsize` | scalar, `[x]`, `[x, y]`, or `[x, y, z]` | — | Target dimensions. Omitted axes in a vector default to `0` (keep that axis unchanged). A scalar applies the same size to all three axes |
-| `auto` | bool or 1–3 element sequence of bools or numbers | `False` | Auto-scale axes with `0` size proportionally. Omitted axes default to `false`. Nonzero numbers count as `true` |
+| `auto` | bool or 1–3 element sequence of bools or numbers | `False` | Auto-scale axes with `0` size proportionally. Omitted axes default to `False`. Nonzero numbers count as `True` |
 | `convexity` | int | `2` | Convexity for rendering |
 
 **Examples:**
