@@ -683,6 +683,28 @@ PyObject *python_fill(PyObject *self, PyObject *args, PyObject *kwargs)
   return python_csg_adv_sub(self, args, kwargs, CgalAdvType::FILL);
 }
 
+static int python_parse_autosize(PyObject *autosize, Eigen::Matrix<bool, 3, 1>& out)
+{
+  out << false, false, false;
+  if (autosize == nullptr) return 0;
+  if (PyBool_Check(autosize)) {
+    const bool enabled = PyObject_IsTrue(autosize);
+    out << enabled, enabled, enabled;
+    return 0;
+  }
+  if (PyList_Check(autosize)) {
+    const Py_ssize_t n = PyList_Size(autosize);
+    if (n < 1 || n > 3) return 1;
+    for (Py_ssize_t i = 0; i < n; ++i) {
+      PyObject *item = PyList_GetItem(autosize, i);
+      if (!PyBool_Check(item) && !PyLong_Check(item) && !PyFloat_Check(item)) return 1;
+      out[i] = PyObject_IsTrue(item);
+    }
+    return 0;
+  }
+  return 1;
+}
+
 PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosize, int convexity)
 {
   DECLARE_INSTANCE();
@@ -695,10 +717,10 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
   auto child_dict = py_owned(child_dict_raw);
   if (child == NULL) return propagate_or_typeerror("Invalid type for Object in resize");
 
-  node->autosize << false, false, false;
+  node->newsize << 0, 0, 0;
   if (newsize != NULL) {
-    double x, y, z;
-    if (python_vectorval(newsize, 3, 3, &x, &y, &z)) {
+    double x = 0, y = 0, z = 0;
+    if (python_vectorval(newsize, 1, 3, &x, &y, &z)) {
       PyErr_SetString(PyExc_TypeError, "Invalid resize dimensions");
       return NULL;
     }
@@ -707,15 +729,9 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
     node->newsize[2] = z;
   }
 
-  if (autosize != NULL) {
-    double x, y, z;
-    if (python_vectorval(newsize, 3, 3, &x, &y, &z)) {
-      PyErr_SetString(PyExc_TypeError, "Invalid autosize dimensions");
-      return NULL;
-    }
-    node->autosize[0] = x;
-    node->autosize[1] = y;
-    node->autosize[2] = z;
+  if (python_parse_autosize(autosize, node->autosize)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid autosize dimensions");
+    return NULL;
   }
 
   node->children.push_back(child);
@@ -747,8 +763,8 @@ PyObject *python_resize(PyObject *self, PyObject *args, PyObject *kwargs)
   PyObject *autosize = NULL;
   int convexity = 2;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O!O!i", kwlist, &obj, &PyList_Type, &newsize,
-                                   &PyList_Type, &autosize, &convexity)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OOi", kwlist, &obj, &newsize, &autosize,
+                                   &convexity)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing resize(object,vec3)");
     return NULL;
   }
@@ -762,8 +778,7 @@ PyObject *python_oo_resize(PyObject *obj, PyObject *args, PyObject *kwargs)
   PyObject *autosize = NULL;
   int convexity = 2;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O!O!i", kwlist, &PyList_Type, &newsize, &PyList_Type,
-                                   &autosize, &convexity)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OOi", kwlist, &newsize, &autosize, &convexity)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing resize(object,vec3)");
     return NULL;
   }

@@ -164,7 +164,7 @@ Resize an object to fit exact dimensions.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `obj` | solid | — | The object to resize |
-| `newsize` | `[x, y, z]` | — | Target dimensions. Use `0` for an axis to keep its original size |
+| `newsize` | `[x]`, `[x, y]`, or `[x, y, z]` | — | Target dimensions. Use `0` for an axis to keep its original size |
 | `auto` | bool or `[bx, by, bz]` | `False` | Auto-scale axes with `0` size proportionally |
 | `convexity` | int | `2` | Convexity for rendering |
 
@@ -176,6 +176,9 @@ Resize an object to fit exact dimensions.
     from pythonscad import *
 
     sphere(5).resize([10, 10, 20]).show()
+
+    # 2D resize with two dimensions
+    osimport("example.svg").resize([20, 30]).show()
 
     # Auto-scale: set X to 20, scale Y and Z proportionally
     sphere(5).resize([20, 0, 0], auto=True).show()

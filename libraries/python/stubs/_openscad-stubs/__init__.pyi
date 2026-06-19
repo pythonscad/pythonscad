@@ -364,11 +364,17 @@ class PyOpenSCAD:
         """
         ...
 
-    def resize(self, newsize: Vector3, convexity: int = 2) -> "PyOpenSCAD":
-        """Modifies the size of the object to match the given x,y, and z sizes.
+    def resize(
+        self,
+        newsize: Union[float, Vector2, Vector3],
+        auto: Union[bool, list[bool]] = False,
+        convexity: int = 2,
+    ) -> "PyOpenSCAD":
+        """Modifies the size of an object to match the given x,y, and z sizes.
 
         Args:
-            newsize: New size dimensions as [x, y, z].
+            newsize: New size dimensions as [x], [x, y], or [x, y, z]. Use 0 to keep an axis unchanged.
+            auto: When True, auto-scale axes with 0 size proportionally. May also be a 1-3 element bool list.
             convexity: Convexity parameter for rendering. Defaults to 2.
 
         Returns:
@@ -1180,13 +1186,17 @@ def output(obj: PyOpenSCAD) -> None:
     """same as show"""
     ...
 def resize(
-    obj: PyOpenSCADs, newsize: Vector3, convexity: int = 2
+    obj: PyOpenSCADs,
+    newsize: Union[float, Vector2, Vector3],
+    auto: Union[bool, list[bool]] = False,
+    convexity: int = 2,
 ) -> PyOpenSCAD:
     """Modifies the size of an object to match the given x,y, and z sizes.
 
     Args:
         obj: Object to resize.
-        newsize: New size dimensions as [x, y, z].
+        newsize: New size dimensions as [x], [x, y], or [x, y, z]. Use 0 to keep an axis unchanged.
+        auto: When True, auto-scale axes with 0 size proportionally. May also be a 1-3 element bool list.
         convexity: Convexity parameter for rendering. Defaults to 2.
 
     Returns:
