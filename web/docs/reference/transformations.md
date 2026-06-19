@@ -165,7 +165,7 @@ Resize an object to fit exact dimensions.
 |-----------|------|---------|-------------|
 | `obj` | solid | — | The object to resize |
 | `newsize` | `[x]`, `[x, y]`, or `[x, y, z]` | — | Target dimensions. Use `0` for an axis to keep its original size |
-| `auto` | bool or `[bx, by, bz]` | `False` | Auto-scale axes with `0` size proportionally |
+| `auto` | bool or 1–3 element bool list | `False` | Auto-scale axes with `0` size proportionally |
 | `convexity` | int | `2` | Convexity for rendering |
 
 **Examples:**

@@ -697,9 +697,13 @@ static int python_parse_autosize(PyObject *autosize, Eigen::Matrix<bool, 3, 1>& 
     if (n < 1 || n > 3) return 1;
     for (Py_ssize_t i = 0; i < n; ++i) {
       PyObject *item = PyList_GetItem(autosize, i);
-      double val = 0;
-      if (python_numberval(item, &val, nullptr, 0)) return 1;
-      out[i] = val != 0;
+      if (PyBool_Check(item)) {
+        out[i] = PyObject_IsTrue(item);
+      } else {
+        double val = 0;
+        if (python_numberval(item, &val, nullptr, 0)) return 1;
+        out[i] = val != 0;
+      }
     }
     return 0;
   }
@@ -731,7 +735,7 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
   }
 
   if (python_parse_autosize(autosize, node->autosize)) {
-    PyErr_SetString(PyExc_TypeError, "Invalid autosize dimensions");
+    PyErr_SetString(PyExc_TypeError, "Invalid auto argument");
     return NULL;
   }
 
