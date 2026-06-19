@@ -54,6 +54,7 @@ RUN cd Python-${CPYTHON_VERSION} \
          --build=x86_64-linux-gnu \
          --host=wasm32-unknown-emscripten \
          --with-build-python=/usr/local/cpython-native/bin/python3 \
+         --without-tail-call-interp \
          --disable-shared \
          --without-ensurepip \
          "CFLAGS=-fexceptions -O2" \
