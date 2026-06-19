@@ -369,7 +369,7 @@ class PyOpenSCAD:
 
     def resize(
         self,
-        newsize: Union[float, Vector1, Vector2, Vector3],
+        newsize: Union[float, Vector1, Vector2, Vector3, Sequence[float]],
         auto: Union[bool, Sequence[Union[bool, int, float]]] = False,
         convexity: int = 2,
     ) -> "PyOpenSCAD":
@@ -1190,7 +1190,7 @@ def output(obj: PyOpenSCAD) -> None:
     ...
 def resize(
     obj: PyOpenSCADs,
-    newsize: Union[float, Vector1, Vector2, Vector3],
+    newsize: Union[float, Vector1, Vector2, Vector3, Sequence[float]],
     auto: Union[bool, Sequence[Union[bool, int, float]]] = False,
     convexity: int = 2,
 ) -> PyOpenSCAD:
@@ -1199,7 +1199,7 @@ def resize(
     Args:
         obj: Object to resize.
         newsize: New size dimensions as [x], [x, y], or [x, y, z]. Use 0 to keep an axis unchanged. A scalar applies the same size to all three axes.
-        auto: When True, auto-scale axes with 0 size proportionally. May also be a 1-3 element list of bools or numbers (nonzero = true).
+        auto: When True, auto-scale axes with 0 size proportionally. May also be a 1-3 element sequence of bools or numbers (nonzero = true).
         convexity: Convexity parameter for rendering. Defaults to 2.
 
     Returns:

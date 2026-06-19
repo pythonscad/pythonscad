@@ -683,15 +683,18 @@ PyObject *python_fill(PyObject *self, PyObject *args, PyObject *kwargs)
   return python_csg_adv_sub(self, args, kwargs, CgalAdvType::FILL);
 }
 
-static int python_resize_disambiguate_convexity(PyObject *kwargs, PyObject **autosize, int *convexity)
+static int python_resize_disambiguate_convexity(PyObject *args, PyObject *kwargs, PyObject **autosize,
+                                                int *convexity, Py_ssize_t ambiguous_positional_count)
 {
   PyObject *auto_arg = *autosize;
-  if (auto_arg == nullptr || PyBool_Check(auto_arg) || !PyLong_Check(auto_arg)) return 0;
+  if (auto_arg == nullptr || PyBool_Check(auto_arg) || !PyIndex_Check(auto_arg)) return 0;
 
   if (kwargs != nullptr) {
     if (PyDict_GetItemString(kwargs, "auto") != nullptr) return 0;
     if (PyDict_GetItemString(kwargs, "convexity") != nullptr) return 0;
   }
+
+  if (args == nullptr || PyTuple_Size(args) != ambiguous_positional_count) return 0;
 
   const long c = PyLong_AsLong(auto_arg);
   if (PyErr_Occurred()) return 1;
@@ -832,7 +835,7 @@ PyObject *python_resize(PyObject *self, PyObject *args, PyObject *kwargs)
                     "Error during parsing resize(object, newsize[, auto[, convexity]])");
     return NULL;
   }
-  if (python_resize_disambiguate_convexity(kwargs, &autosize, &convexity)) return NULL;
+  if (python_resize_disambiguate_convexity(args, kwargs, &autosize, &convexity, 3)) return NULL;
   return python_resize_core(obj, newsize, autosize, convexity);
 }
 
@@ -847,6 +850,6 @@ PyObject *python_oo_resize(PyObject *obj, PyObject *args, PyObject *kwargs)
     PyErr_SetString(PyExc_TypeError, "Error during parsing resize(newsize[, auto[, convexity]])");
     return NULL;
   }
-  if (python_resize_disambiguate_convexity(kwargs, &autosize, &convexity)) return NULL;
+  if (python_resize_disambiguate_convexity(args, kwargs, &autosize, &convexity, 2)) return NULL;
   return python_resize_core(obj, newsize, autosize, convexity);
 }
