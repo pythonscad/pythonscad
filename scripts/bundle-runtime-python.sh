@@ -199,14 +199,12 @@ cleanup_staging() {
 trap cleanup_staging EXIT
 
 is_msys2_python() {
-    # Detect MSYS2/UCRT64 CPython by platform tag, not only MSYSTEM:
-    # bundle steps may invoke python from a non-MSYS2 shell.
+    # Key off the interpreter's platform tag (mingw_* on MSYS2 builds),
+    # not MSYSTEM, so a python.org CPython invoked inside an MSYS2 shell
+    # still takes the normal pip install path.
     "${PYTHON_BIN}" -c '
-import os, sys, sysconfig
-is_msys2 = sys.platform == "win32" and (
-    bool(os.environ.get("MSYSTEM")) or "mingw" in sysconfig.get_platform()
-)
-raise SystemExit(0 if is_msys2 else 1)
+import sys, sysconfig
+raise SystemExit(0 if sys.platform == "win32" and "mingw" in sysconfig.get_platform() else 1)
 ' 2>/dev/null
 }
 
