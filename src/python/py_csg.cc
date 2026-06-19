@@ -735,7 +735,8 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
   }
 
   if (python_parse_autosize(autosize, node->autosize)) {
-    PyErr_SetString(PyExc_TypeError, "Invalid auto argument");
+    PyErr_SetString(PyExc_TypeError,
+                    "Invalid auto argument: expected bool or 1-3 element list of bools or numbers");
     return NULL;
   }
 

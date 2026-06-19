@@ -20,3 +20,7 @@ print(a.size)
 # auto list form: only Y axis auto-scales
 b = cube(10).resize([20, 0, 0], auto=[False, True, False])
 print(b.size)
+
+# 2-element auto list
+c = square(10).resize([0, 15], auto=[False, True])
+print(c.size)

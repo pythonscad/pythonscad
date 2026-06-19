@@ -8,6 +8,9 @@ PyOpenSCADs = Union["PyOpenSCAD", list["PyOpenSCAD"]]
 Color = Union[str, list[float]]
 """Color specification as either a color name string (e.g., "red") or RGB/RGBA values as [r, g, b] or [r, g, b, a]."""
 
+Vector1 = list[float]
+"""1D vector represented as [x] list."""
+
 Vector2 = list[float]
 """2D vector represented as [x, y] list."""
 
@@ -366,15 +369,15 @@ class PyOpenSCAD:
 
     def resize(
         self,
-        newsize: Union[float, Vector2, Vector3],
-        auto: Union[bool, list[bool]] = False,
+        newsize: Union[float, Vector1, Vector2, Vector3],
+        auto: Union[bool, list[Union[bool, int, float]]] = False,
         convexity: int = 2,
     ) -> "PyOpenSCAD":
         """Modifies the size of an object to match the given x,y, and z sizes.
 
         Args:
             newsize: New size dimensions as [x], [x, y], or [x, y, z]. Use 0 to keep an axis unchanged. A scalar applies the same size to all three axes.
-            auto: When True, auto-scale axes with 0 size proportionally. May also be a 1-3 element bool list.
+            auto: When True, auto-scale axes with 0 size proportionally. May also be a 1-3 element list of bools or numbers (nonzero = true).
             convexity: Convexity parameter for rendering. Defaults to 2.
 
         Returns:
@@ -1187,8 +1190,8 @@ def output(obj: PyOpenSCAD) -> None:
     ...
 def resize(
     obj: PyOpenSCADs,
-    newsize: Union[float, Vector2, Vector3],
-    auto: Union[bool, list[bool]] = False,
+    newsize: Union[float, Vector1, Vector2, Vector3],
+    auto: Union[bool, list[Union[bool, int, float]]] = False,
     convexity: int = 2,
 ) -> PyOpenSCAD:
     """Modifies the size of an object to match the given x,y, and z sizes.
@@ -1196,7 +1199,7 @@ def resize(
     Args:
         obj: Object to resize.
         newsize: New size dimensions as [x], [x, y], or [x, y, z]. Use 0 to keep an axis unchanged. A scalar applies the same size to all three axes.
-        auto: When True, auto-scale axes with 0 size proportionally. May also be a 1-3 element bool list.
+        auto: When True, auto-scale axes with 0 size proportionally. May also be a 1-3 element list of bools or numbers (nonzero = true).
         convexity: Convexity parameter for rendering. Defaults to 2.
 
     Returns:
