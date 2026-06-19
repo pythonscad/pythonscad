@@ -793,8 +793,10 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
   if (newsize != NULL) {
     double x = 0, y = 0, z = 0;
     if (python_resize_newsize(newsize, &x, &y, &z)) {
-      PyErr_SetString(PyExc_TypeError,
-                      "Invalid resize dimensions: expected scalar or 1-3 element sequence");
+      if (!PyErr_Occurred()) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Invalid resize dimensions: expected scalar or 1-3 element sequence");
+      }
       return NULL;
     }
     node->newsize[0] = x;
@@ -803,9 +805,11 @@ PyObject *python_resize_core(PyObject *obj, PyObject *newsize, PyObject *autosiz
   }
 
   if (python_parse_autosize(autosize, node->autosize)) {
-    PyErr_SetString(PyExc_TypeError,
-                    "Invalid auto argument: expected bool or 1-3 element sequence of bools or "
-                    "numbers");
+    if (!PyErr_Occurred()) {
+      PyErr_SetString(PyExc_TypeError,
+                      "Invalid auto argument: expected bool or 1-3 element sequence of bools or "
+                      "numbers");
+    }
     return NULL;
   }
 
