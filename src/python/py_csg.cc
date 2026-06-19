@@ -25,6 +25,7 @@
  */
 
 #include "genlang/genlang.h"
+#include <climits>
 #include <Python.h>
 #include "pyopenscad.h"
 #include <TransformNode.h>
@@ -696,8 +697,16 @@ static int python_resize_disambiguate_convexity(PyObject *args, PyObject *kwargs
 
   if (args == nullptr || PyTuple_Size(args) != ambiguous_positional_count) return 0;
 
-  const long c = PyLong_AsLong(auto_arg);
+  PyObject *index = PyNumber_Index(auto_arg);
+  if (index == nullptr) return 1;
+  int overflow = 0;
+  const long c = PyLong_AsLongAndOverflow(index, &overflow);
+  Py_DECREF(index);
   if (PyErr_Occurred()) return 1;
+  if (overflow != 0 || c < INT_MIN || c > INT_MAX) {
+    PyErr_SetString(PyExc_OverflowError, "convexity value out of range");
+    return 1;
+  }
   *convexity = (int)c;
   *autosize = nullptr;
   return 0;
