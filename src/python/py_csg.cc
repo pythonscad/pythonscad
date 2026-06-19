@@ -697,8 +697,9 @@ static int python_parse_autosize(PyObject *autosize, Eigen::Matrix<bool, 3, 1>& 
     if (n < 1 || n > 3) return 1;
     for (Py_ssize_t i = 0; i < n; ++i) {
       PyObject *item = PyList_GetItem(autosize, i);
-      if (!PyBool_Check(item) && !PyLong_Check(item) && !PyFloat_Check(item)) return 1;
-      out[i] = PyObject_IsTrue(item);
+      double val = 0;
+      if (python_numberval(item, &val, nullptr, 0)) return 1;
+      out[i] = val != 0;
     }
     return 0;
   }

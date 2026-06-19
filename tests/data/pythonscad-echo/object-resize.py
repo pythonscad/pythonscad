@@ -16,3 +16,7 @@ print(obj.size)
 # auto=True should propagate to all axes
 a = square(10).resize([20, 0], auto=True)
 print(a.size)
+
+# auto list form: only Y axis auto-scales
+b = cube(10).resize([20, 0, 0], auto=[False, True, False])
+print(b.size)
