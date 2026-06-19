@@ -765,7 +765,8 @@ PyObject *python_resize(PyObject *self, PyObject *args, PyObject *kwargs)
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OOi", kwlist, &obj, &newsize, &autosize,
                                    &convexity)) {
-    PyErr_SetString(PyExc_TypeError, "Error during parsing resize(object,vec3)");
+    PyErr_SetString(PyExc_TypeError,
+                    "Error during parsing resize(object, newsize[, auto[, convexity]])");
     return NULL;
   }
   return python_resize_core(obj, newsize, autosize, convexity);
@@ -779,7 +780,7 @@ PyObject *python_oo_resize(PyObject *obj, PyObject *args, PyObject *kwargs)
   int convexity = 2;
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OOi", kwlist, &newsize, &autosize, &convexity)) {
-    PyErr_SetString(PyExc_TypeError, "Error during parsing resize(object,vec3)");
+    PyErr_SetString(PyExc_TypeError, "Error during parsing resize(newsize[, auto[, convexity]])");
     return NULL;
   }
   return python_resize_core(obj, newsize, autosize, convexity);

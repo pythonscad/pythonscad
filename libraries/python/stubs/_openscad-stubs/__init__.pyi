@@ -373,7 +373,7 @@ class PyOpenSCAD:
         """Modifies the size of an object to match the given x,y, and z sizes.
 
         Args:
-            newsize: New size dimensions as [x], [x, y], or [x, y, z]. Use 0 to keep an axis unchanged.
+            newsize: New size dimensions as [x], [x, y], or [x, y, z]. Use 0 to keep an axis unchanged. A scalar applies the same size to all three axes.
             auto: When True, auto-scale axes with 0 size proportionally. May also be a 1-3 element bool list.
             convexity: Convexity parameter for rendering. Defaults to 2.
 
@@ -1195,7 +1195,7 @@ def resize(
 
     Args:
         obj: Object to resize.
-        newsize: New size dimensions as [x], [x, y], or [x, y, z]. Use 0 to keep an axis unchanged.
+        newsize: New size dimensions as [x], [x, y], or [x, y, z]. Use 0 to keep an axis unchanged. A scalar applies the same size to all three axes.
         auto: When True, auto-scale axes with 0 size proportionally. May also be a 1-3 element bool list.
         convexity: Convexity parameter for rendering. Defaults to 2.
 
