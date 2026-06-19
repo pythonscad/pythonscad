@@ -24,9 +24,11 @@ import zipfile
 try:
     from packaging.markers import default_environment
     from packaging.requirements import Requirement
+    from packaging.utils import parse_wheel_filename
 except ModuleNotFoundError:  # minimal/MSYS2 build Pythons may lack packaging
     from pip._vendor.packaging.markers import default_environment
     from pip._vendor.packaging.requirements import Requirement
+    from pip._vendor.packaging.utils import parse_wheel_filename
 
 
 def _run(cmd: list[str]) -> None:
@@ -70,10 +72,10 @@ def _download_ipython_wheel(
             str(dest_dir),
         ]
     )
-    wheels = sorted(dest_dir.glob("ipython-*.whl"), key=lambda p: p.name, reverse=True)
+    wheels = list(dest_dir.glob("ipython-*.whl"))
     if not wheels:
         raise SystemExit(f"no ipython wheel downloaded to {dest_dir}")
-    return wheels[0]
+    return max(wheels, key=lambda path: parse_wheel_filename(path.name)[1])
 
 
 def _read_requires_dist(wheel_path: pathlib.Path) -> list[Requirement]:
