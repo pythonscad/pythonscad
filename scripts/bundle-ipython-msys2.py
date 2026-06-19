@@ -15,7 +15,6 @@ import argparse
 import email
 import pathlib
 import shutil
-import site
 import subprocess
 import sys
 import tempfile
@@ -130,21 +129,17 @@ def _vend_psutil_from_system(target: pathlib.Path) -> None:
         shutil.rmtree(dest_pkg)
     shutil.copytree(src_pkg, dest_pkg)
 
-    for sp in [*site.getsitepackages(), site.getusersitepackages()]:
-        if not sp:
-            continue
-        sp_path = pathlib.Path(sp)
-        if not sp_path.is_dir():
-            continue
-        for meta in sp_path.glob("psutil-*.dist-info"):
-            dest_meta = target / meta.name
-            if dest_meta.exists():
-                shutil.rmtree(dest_meta)
-            shutil.copytree(meta, dest_meta)
-            return
+    dist = importlib.metadata.distribution("psutil")
+    dist_info = pathlib.Path(getattr(dist, "_path", ""))
+    if not dist_info.is_dir():
+        dist_info = src_pkg.parent / f"psutil-{dist.version}.dist-info"
+    if not dist_info.is_dir():
+        raise SystemExit(f"psutil dist-info not found for psutil {dist.version}")
 
-    version = importlib.metadata.version("psutil")
-    raise SystemExit(f"psutil-{version} dist-info not found in site-packages")
+    dest_meta = target / dist_info.name
+    if dest_meta.exists():
+        shutil.rmtree(dest_meta)
+    shutil.copytree(dist_info, dest_meta)
 
 
 def _install_ipython_wheel(python: str, target: pathlib.Path, wheel_path: pathlib.Path) -> None:
