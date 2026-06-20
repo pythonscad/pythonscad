@@ -90,6 +90,8 @@ bool hasOfflineCheatSheet();
 
 void openOfflineCheatSheet();
 
+void openReportIssueURL(const QString& rendererInfo = {});
+
 QString getBackgroundColorStyleSheet(const QColor& color);
 
 QString blendForBackgroundColorStyleSheet(const QColor& input, const QColor& blend,

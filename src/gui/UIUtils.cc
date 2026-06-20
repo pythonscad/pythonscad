@@ -42,12 +42,16 @@
 #include <QString>
 #include <QStringList>
 #include <QUrl>
+#include <QUrlQuery>
 #include <QWidget>
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <string>
+#include "LibraryInfo.h"
+#include "platform/PlatformUtils.h"
 #include "utils/printutils.h"
+#include "version.h"
 #include <utility>
 
 #include "gui/QSettingsCached.h"
@@ -302,6 +306,76 @@ void UIUtils::openOfflineCheatSheet()
     QString docPath = QString::fromStdString(fullPath.string());
     QDesktopServices::openUrl(QUrl(docPath));
   }
+}
+
+namespace {
+
+QString buildEnvironmentVersionInfo()
+{
+#if defined(__x86_64__) || defined(_M_X64)
+  const QString bits = QStringLiteral("64-bit");
+#elif defined(__i386) || defined(_M_IX86)
+  const QString bits = QStringLiteral("32-bit");
+#else
+  const QString bits;
+#endif
+
+  const std::string base = PlatformUtils::sysinfo(false);
+  const std::string full = PlatformUtils::sysinfo(true);
+  const QString remainder =
+    QString::fromStdString(full.size() > base.size() ? full.substr(base.size()) : std::string{})
+      .trimmed();
+
+  QString os;
+  QString system;
+
+#ifdef Q_OS_WIN
+  os = QString::fromStdString(base);
+  system = remainder.isEmpty() ? bits : remainder;
+#else
+  const QString baseQ = QString::fromStdString(base);
+  const QString machine = baseQ.section(' ', -1);
+
+  static const QRegularExpression cpuMarker(R"(\d+\s+CPUs?)");
+  const QRegularExpressionMatch match = cpuMarker.match(remainder);
+  if (match.hasMatch()) {
+    os = remainder.left(match.capturedStart()).trimmed();
+    system = machine;
+    if (!bits.isEmpty()) {
+      system += QStringLiteral(" ") + bits;
+    }
+    system += QStringLiteral(", ") + remainder.mid(match.capturedStart()).trimmed();
+  } else {
+    os = remainder.isEmpty() ? baseQ : remainder;
+    system = machine;
+    if (!bits.isEmpty()) {
+      system += QStringLiteral(" ") + bits;
+    }
+  }
+#endif
+
+  return QStringLiteral("- OS: %1\n- System: %2\n- PythonSCAD Version: %3\n")
+    .arg(os, system,
+         QString::fromUtf8(openscad_detailedversionnumber.data(),
+                           static_cast<int>(openscad_detailedversionnumber.size())));
+}
+
+QString buildLibraryGraphicsInfo(const QString& rendererInfo)
+{
+  return QString::fromStdString(LibraryInfo::info()) + rendererInfo;
+}
+
+}  // namespace
+
+void UIUtils::openReportIssueURL(const QString& rendererInfo)
+{
+  QUrl url(QStringLiteral("https://github.com/pythonscad/pythonscad/issues/new"));
+  QUrlQuery query;
+  query.addQueryItem(QStringLiteral("template"), QStringLiteral("bug_report.yml"));
+  query.addQueryItem(QStringLiteral("environment-version"), buildEnvironmentVersionInfo());
+  query.addQueryItem(QStringLiteral("library-graphics-info"), buildLibraryGraphicsInfo(rendererInfo));
+  url.setQuery(query);
+  QDesktopServices::openUrl(url);
 }
 
 QString UIUtils::getBackgroundColorStyleSheet(const QColor& color)
