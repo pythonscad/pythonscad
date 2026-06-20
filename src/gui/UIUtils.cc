@@ -55,11 +55,8 @@
 #include "platform/PlatformUtils.h"
 #include "utils/printutils.h"
 #include "version.h"
-#include <utility>
 
 #include "gui/QSettingsCached.h"
-#include "platform/PlatformUtils.h"
-#include "version.h"
 
 namespace {
 
@@ -341,19 +338,22 @@ QString buildEnvironmentVersionInfo()
 
   static const QRegularExpression cpuMarker(R"(\d+\s+CPUs?)");
   const QRegularExpressionMatch match = cpuMarker.match(remainder);
+  QString distro;
+  QString hwDetails;
   if (match.hasMatch()) {
-    os = remainder.left(match.capturedStart()).trimmed();
-    system = machine;
-    if (!bits.isEmpty()) {
-      system += QStringLiteral(" ") + bits;
-    }
-    system += QStringLiteral(", ") + remainder.mid(match.capturedStart()).trimmed();
+    distro = remainder.left(match.capturedStart()).trimmed();
+    hwDetails = remainder.mid(match.capturedStart()).trimmed();
   } else {
-    os = remainder.isEmpty() ? baseQ : remainder;
-    system = machine;
-    if (!bits.isEmpty()) {
-      system += QStringLiteral(" ") + bits;
-    }
+    distro = remainder;
+  }
+
+  os = distro.isEmpty() ? baseQ : distro;
+  system = machine;
+  if (!bits.isEmpty()) {
+    system += QStringLiteral(" ") + bits;
+  }
+  if (!hwDetails.isEmpty()) {
+    system += QStringLiteral(", ") + hwDetails;
   }
 #endif
 
@@ -385,12 +385,11 @@ void UIUtils::openReportIssueURL(const QString& rendererInfo, QWidget *parent)
   QDesktopServices::openUrl(url);
 
   if (parent != nullptr) {
-    QMessageBox::information(
-      parent, QStringLiteral("Report issue"),
-      QStringLiteral("Your browser has been opened to create a bug report.\n\n"
-                     "Environment information was added to the form automatically.\n"
-                     "Library and graphics information was copied to your clipboard — "
-                     "paste it into the \"Library & Graphics card information\" field."));
+    QMessageBox::information(parent, _("Report issue"),
+                             _("Your browser has been opened to create a bug report.\n\n"
+                               "Environment information was added to the form automatically.\n"
+                               "Library and graphics information was copied to your clipboard — "
+                               "paste it into the \"Library & Graphics card information\" field."));
   }
 }
 

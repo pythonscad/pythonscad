@@ -2185,12 +2185,8 @@ set(_CONFIGURED_SOURCE_FILES
 )
 foreach(_configured_file IN LISTS _CONFIGURED_SOURCE_FILES)
   if(EXISTS "${_configured_file}")
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E touch "${_configured_file}"
-      RESULT_VARIABLE _touch_result
-      ERROR_QUIET
-    )
-    if(_touch_result)
+    file(IS_WRITABLE "${_configured_file}" _is_writable)
+    if(NOT _is_writable)
       message(FATAL_ERROR
         "Cannot update generated file: ${_configured_file}\n"
         "This usually means the file is owned by root from a previous privileged build.\n"
