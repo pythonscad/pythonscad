@@ -718,22 +718,16 @@ static int python_resize_newsize(PyObject *newsize, double *x, double *y, double
   if (newsize == nullptr) return 0;
 
   if (PySequence_Check(newsize) && !PyBytes_Check(newsize) && !PyUnicode_Check(newsize)) {
-    PyObject *seq = PySequence_Fast(newsize, "newsize must be a sequence");
-    if (seq == nullptr) return 1;
-    const Py_ssize_t n = PySequence_Fast_GET_SIZE(seq);
-    if (n < 1 || n > 3) {
-      Py_DECREF(seq);
-      return 1;
-    }
-    PyObject **items = PySequence_Fast_ITEMS(seq);
+    const Py_ssize_t n = PySequence_Size(newsize);
+    if (n < 1 || n > 3) return 1;
     for (Py_ssize_t i = 0; i < n; ++i) {
+      PyObject *item = PySequence_GetItem(newsize, i);
+      if (item == nullptr) return 1;
       double *target = (i == 0) ? x : (i == 1) ? y : z;
-      if (python_numberval(items[i], target, nullptr, 0)) {
-        Py_DECREF(seq);
-        return 1;
-      }
+      const int err = python_numberval(item, target, nullptr, 0);
+      Py_DECREF(item);
+      if (err) return 1;
     }
-    Py_DECREF(seq);
     return 0;
   }
 
@@ -750,28 +744,23 @@ static int python_parse_autosize(PyObject *autosize, Eigen::Matrix<bool, 3, 1>& 
     return 0;
   }
   if (PySequence_Check(autosize) && !PyBytes_Check(autosize) && !PyUnicode_Check(autosize)) {
-    PyObject *seq = PySequence_Fast(autosize, "auto must be a sequence");
-    if (seq == nullptr) return 1;
-    const Py_ssize_t n = PySequence_Fast_GET_SIZE(seq);
-    if (n < 1 || n > 3) {
-      Py_DECREF(seq);
-      return 1;
-    }
-    PyObject **items = PySequence_Fast_ITEMS(seq);
+    const Py_ssize_t n = PySequence_Size(autosize);
+    if (n < 1 || n > 3) return 1;
     for (Py_ssize_t i = 0; i < n; ++i) {
-      PyObject *item = items[i];
+      PyObject *item = PySequence_GetItem(autosize, i);
+      if (item == nullptr) return 1;
       if (PyBool_Check(item)) {
         out[i] = PyObject_IsTrue(item);
       } else {
         double val = 0;
         if (python_numberval(item, &val, nullptr, 0)) {
-          Py_DECREF(seq);
+          Py_DECREF(item);
           return 1;
         }
         out[i] = val != 0;
       }
+      Py_DECREF(item);
     }
-    Py_DECREF(seq);
     return 0;
   }
   return 1;
