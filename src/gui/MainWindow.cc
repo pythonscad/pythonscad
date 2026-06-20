@@ -4317,7 +4317,7 @@ void MainWindow::on_helpActionLibraryInfo_triggered()
 
 void MainWindow::on_helpActionReportIssue_triggered()
 {
-  UIUtils::openReportIssueURL(QString::fromStdString(qglview->getRendererInfo()));
+  UIUtils::openReportIssueURL(QString::fromStdString(qglview->getRendererInfo()), this);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

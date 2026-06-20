@@ -26,6 +26,8 @@
 
 #include "gui/UIUtils.h"
 
+#include <QApplication>
+#include <QClipboard>
 #include <QColor>
 #include <QDataStream>
 #include <QDesktopServices>
@@ -36,6 +38,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QList>
+#include <QMessageBox>
 #include <QRegularExpression>
 #include <QRect>
 #include <QSize>
@@ -367,15 +370,28 @@ QString buildLibraryGraphicsInfo(const QString& rendererInfo)
 
 }  // namespace
 
-void UIUtils::openReportIssueURL(const QString& rendererInfo)
+void UIUtils::openReportIssueURL(const QString& rendererInfo, QWidget *parent)
 {
+  // Library info is several KB; browsers reject URLs that long (Chrome ~8 KiB).
+  // Pre-fill the short environment block via query params and copy library info
+  // to the clipboard for pasting into the issue form.
+  QApplication::clipboard()->setText(buildLibraryGraphicsInfo(rendererInfo));
+
   QUrl url(QStringLiteral("https://github.com/pythonscad/pythonscad/issues/new"));
   QUrlQuery query;
   query.addQueryItem(QStringLiteral("template"), QStringLiteral("bug_report.yml"));
   query.addQueryItem(QStringLiteral("environment-version"), buildEnvironmentVersionInfo());
-  query.addQueryItem(QStringLiteral("library-graphics-info"), buildLibraryGraphicsInfo(rendererInfo));
   url.setQuery(query);
   QDesktopServices::openUrl(url);
+
+  if (parent != nullptr) {
+    QMessageBox::information(
+      parent, QStringLiteral("Report issue"),
+      QStringLiteral("Your browser has been opened to create a bug report.\n\n"
+                     "Environment information was added to the form automatically.\n"
+                     "Library and graphics information was copied to your clipboard — "
+                     "paste it into the \"Library & Graphics card information\" field."));
+  }
 }
 
 QString UIUtils::getBackgroundColorStyleSheet(const QColor& color)

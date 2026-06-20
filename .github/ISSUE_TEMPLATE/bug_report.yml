@@ -65,7 +65,7 @@ body:
     id: library-graphics-info
     attributes:
       label: Library & Graphics card information
-      description: Content of Help → Library Info, or output of `pythonscad --info`.
+      description: Content of Help → Library Info, or output of `pythonscad --info`. If you used Help → Report issue..., paste from your clipboard.
 
   - type: textarea
     id: additional-context
