@@ -65,7 +65,7 @@ RUN cd Python-${CPYTHON_VERSION} \
     && cp libpython3.12.a ${CPYTHON_PREFIX}/lib/ \
     && cp -r Include/. ${CPYTHON_PREFIX}/include/python3.12/ \
     && cp pyconfig.h ${CPYTHON_PREFIX}/include/python3.12/ \
-    && cp -a Lib/. ${CPYTHON_PREFIX}/lib/python3.12/
+    && cp -a Lib/. ${CPYTHON_PREFIX}/lib/python3.12/ \
     && rm -rf \
     ${CPYTHON_PREFIX}/lib/python3.12/test \
     ${CPYTHON_PREFIX}/lib/python3.12/tkinter \
