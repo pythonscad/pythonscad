@@ -80,6 +80,7 @@ done
 if [ "$last_static_idx" -ge 0 ]; then
   unset "gif_args[$last_static_idx]"
   unset "gif_args[$((last_static_idx - 1))]"
+  unset "gif_args[$((last_static_idx - 2))]"
 fi
 
 mkdir -p "$(dirname "$OUTPUT_GIF")"

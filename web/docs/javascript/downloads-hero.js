@@ -56,7 +56,6 @@ function initHeroDownload()
       } else if (userPlatform === null) {
         html += `<a class="md-button md-button--primary hero-download-button" href="downloads/">`;
         html += `Download PythonSCAD</a>`;
-        html += ` <a class="md-button hero-download-all" href="downloads/">All downloads</a>`;
         html += `</p>`;
       } else {
         const picked = pickAssetForPlatform(byPlatform, userPlatform);
