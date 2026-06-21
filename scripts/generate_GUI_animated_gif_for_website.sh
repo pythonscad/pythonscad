@@ -1,59 +1,88 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # ==============================================================================
 # ANIMATED GIF GENERATOR WITH SMOOTH MORPH TRANSITIONS
 # ==============================================================================
-# USAGE:
-#   1. Place your source images in the same folder as this script.
-#   2. Name them sequentially (e.g., frame1.png, frame2.png ... frame10.png).
-#      Using two digits (frame01.png, frame02.png) ensures proper sorting order.
-#   3. Make the script executable: chmod +x generate.sh
-#   4. Run it: ./generate.sh
+# Builds the homepage box animation GIF used on the docs site.
 #
-# CONFIGURATION:
-#   Adjust the millisecond variables below to experiment with timing.
+# USAGE (from repo root):
+#   ./scripts/generate_GUI_animated_gif_for_website.sh [frames-dir] [output-gif]
+#
+#   frames-dir  Directory containing frame*.png keyframes (default: current dir)
+#   output-gif  Destination GIF path (default: web/docs/pictures/box_anim.gif)
+#
+# Prepare keyframes named frame01.png, frame02.png, ... in frames-dir.
+# Requires ImageMagick (convert).
 # ==============================================================================
+
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
+
+FRAMES_DIR=${1:-.}
+OUTPUT_GIF=${2:-"$REPO_ROOT/web/docs/pictures/box_anim.gif"}
 
 STATIC_MS=1500
 TRANSITION_TOTAL_MS=100
 NUM_TRANSITION_FRAMES=3
 
-# Calculate ticks (1 tick = 10ms for ImageMagick)
-DELAY_STATIC=$(( STATIC_MS / 10 ))
-DELAY_TRANS=$(( (TRANSITION_TOTAL_MS / NUM_TRANSITION_FRAMES) / 10 ))
+DELAY_STATIC=$((STATIC_MS / 10))
+DELAY_TRANS=$(((TRANSITION_TOTAL_MS / NUM_TRANSITION_FRAMES) / 10))
 
-# 1. Get a sorted list of all your frames
-FILES=$(ls frame*.png | sort -V)
-FIRST_FILE=$(echo "$FILES" | head -n 1)
+if ! command -v convert >/dev/null 2>&1; then
+  echo "$0: ImageMagick 'convert' not found in PATH" >&2
+  exit 1
+fi
 
-# 2. Generate the morphed sequence
-# FIX: We explicitly set '-delay $DELAY_TRANS' before morphing so the
-# generated frames inherit the correct timing metadata.
-convert -delay $DELAY_TRANS $FILES $FIRST_FILE -morph $NUM_TRANSITION_FRAMES morphed_%03d.png
+if [ ! -d "$FRAMES_DIR" ]; then
+  echo "$0: frames directory not found: $FRAMES_DIR" >&2
+  exit 1
+fi
 
-# 3. Build the GIF command dynamically
-cmd="convert"
+cd "$FRAMES_DIR"
+
+shopt -s nullglob
+frames=(frame*.png)
+shopt -u nullglob
+
+if [ "${#frames[@]}" -lt 2 ]; then
+  echo "$0: need at least 2 frame*.png files in $(pwd)" >&2
+  exit 1
+fi
+
+mapfile -t sorted_frames < <(printf '%s\n' "${frames[@]}" | sort -V)
+first_file="${sorted_frames[0]}"
+
+cleanup() {
+  rm -f morphed_*.png
+}
+trap cleanup EXIT
+
+convert -delay "$DELAY_TRANS" "${sorted_frames[@]}" "$first_file" \
+  -morph "$NUM_TRANSITION_FRAMES" morphed_%03d.png
+
+gif_args=(convert)
 count=0
-step=$(( NUM_TRANSITION_FRAMES + 1 ))
+step=$((NUM_TRANSITION_FRAMES + 1))
+last_static_idx=-1
 
-# Loop through the generated morph frames
 for file in morphed_*.png; do
-    # Every 'step' frame is an original keyframe stage.
-    # We explicitly override its delay to the static timing.
-    if [ $(( count % step )) -eq 0 ]; then
-        cmd="$cmd -delay $DELAY_STATIC $file"
-    else
-        # For intermediate frames, we explicitly pass the delay again to ensure override
-        cmd="$cmd -delay $DELAY_TRANS $file"
-    fi
-    count=$(( count + 1 ))
+  if [ $((count % step)) -eq 0 ]; then
+    gif_args+=(-delay "$DELAY_STATIC" "$file")
+    last_static_idx=$((${#gif_args[@]} - 1))
+  else
+    gif_args+=(-delay "$DELAY_TRANS" "$file")
+  fi
+  count=$((count + 1))
 done
 
-# 4. Finalize, remove the very last duplicated keyframe, and compile.
-cmd=$(echo "$cmd" | sed "s/-delay $DELAY_STATIC $file//")
-$cmd -loop 0 animated_stages.gif
+if [ "$last_static_idx" -ge 0 ]; then
+  unset "gif_args[$last_static_idx]"
+  unset "gif_args[$((last_static_idx - 1))]"
+fi
 
-# 5. Clean up temporary files
-rm morphed_*.png
+mkdir -p "$(dirname "$OUTPUT_GIF")"
+"${gif_args[@]}" -loop 0 "$OUTPUT_GIF"
 
-echo "Done! Generated seamless loop in animated_stages.gif"
+echo "Done! Wrote $(realpath "$OUTPUT_GIF")"
