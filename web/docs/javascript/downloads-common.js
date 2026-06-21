@@ -2,6 +2,8 @@
 'use strict';
 
 const REPO = 'pythonscad/pythonscad';
+const GITHUB_RELEASES_LATEST = `https://github.com/${REPO}/releases/latest`;
+const GITHUB_RELEASES = `https://github.com/${REPO}/releases`;
 const PLATFORM_ORDER =
   ['windows', 'linux-debian', 'linux-fedora', 'linux-appimage', 'linux', 'macos', 'wasm', 'other'];
 
@@ -157,8 +159,65 @@ function onMkDocsPageLoad(callback)
   callback();
 }
 
+function beginProgressiveLoad(container, prefix)
+{
+  const fallback = container.querySelector(`.${prefix}-fallback`);
+  const loading = container.querySelector(`.${prefix}-loading`);
+  const enhanced = container.querySelector(`.${prefix}-enhanced`);
+  if (fallback) {
+    fallback.querySelectorAll(`.${prefix}-error`).forEach(el => el.remove());
+    fallback.hidden = true;
+  }
+  if (loading) {
+    loading.hidden = false;
+  }
+  if (enhanced) {
+    enhanced.hidden = true;
+    enhanced.innerHTML = '';
+  }
+}
+
+function showProgressiveContent(container, prefix, html)
+{
+  const loading = container.querySelector(`.${prefix}-loading`);
+  const enhanced = container.querySelector(`.${prefix}-enhanced`);
+  if (loading) {
+    loading.hidden = true;
+  }
+  if (enhanced) {
+    enhanced.innerHTML = html;
+    enhanced.hidden = false;
+  }
+}
+
+function restoreProgressiveFallback(container, prefix, messageHtml)
+{
+  const fallback = container.querySelector(`.${prefix}-fallback`);
+  const loading = container.querySelector(`.${prefix}-loading`);
+  const enhanced = container.querySelector(`.${prefix}-enhanced`);
+  if (loading) {
+    loading.hidden = true;
+  }
+  if (enhanced) {
+    enhanced.hidden = true;
+    enhanced.innerHTML = '';
+  }
+  if (fallback) {
+    fallback.hidden = false;
+    fallback.querySelectorAll(`.${prefix}-error`).forEach(el => el.remove());
+    if (messageHtml) {
+      const err = document.createElement('p');
+      err.className = `${prefix}-error hero-download-error`;
+      err.innerHTML = messageHtml;
+      fallback.insertBefore(err, fallback.firstChild);
+    }
+  }
+}
+
 window.PythonSCADDownloads = {
   REPO,
+  GITHUB_RELEASES_LATEST,
+  GITHUB_RELEASES,
   PLATFORM_ORDER,
   PLATFORM_LABELS,
   getPlatform,
@@ -168,6 +227,9 @@ window.PythonSCADDownloads = {
   fetchLatestRelease,
   detectUserPlatform,
   pickAssetForPlatform,
-  onMkDocsPageLoad
+  onMkDocsPageLoad,
+  beginProgressiveLoad,
+  showProgressiveContent,
+  restoreProgressiveFallback
 };
 })();

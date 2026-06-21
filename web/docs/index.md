@@ -6,7 +6,23 @@ PythonSCAD is a script-based 3D modeling application with a full GUI. Write
 parametric, engineering-oriented models in Python, preview them live, and export
 to STL, 3MF, and other formats for 3D printing and manufacturing.
 
-<div id="hero-download">Loading latest release…</div>
+<div id="hero-download" class="hero-download">
+  <div class="hero-download-fallback">
+    <p class="hero-download-actions">
+      <a class="md-button md-button--primary hero-download-button"
+         href="https://github.com/pythonscad/pythonscad/releases/latest">
+        Download latest release
+      </a>
+      <a class="md-button hero-download-all" href="downloads/">All downloads</a>
+    </p>
+    <p class="hero-download-file">
+      Releases on
+      <a href="https://github.com/pythonscad/pythonscad/releases">GitHub</a>
+    </p>
+  </div>
+  <p class="hero-download-loading" hidden aria-live="polite">Loading latest release…</p>
+  <div class="hero-download-enhanced" hidden></div>
+</div>
 
 [Get started](get_started.md){ .md-button }
 [Tutorial](tutorial/getting_started.md){ .md-button .md-button--primary }

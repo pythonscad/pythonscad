@@ -89,3 +89,16 @@
 .hero-download-error {
     margin: 0;
 }
+
+.hero-download-loading,
+.download-links-loading {
+    margin: 0;
+    opacity: 0.85;
+    font-style: italic;
+}
+.download-links-fallback p {
+    margin: 0 0 0.75em 0;
+}
+.download-links-fallback p:last-child {
+    margin-bottom: 0;
+}

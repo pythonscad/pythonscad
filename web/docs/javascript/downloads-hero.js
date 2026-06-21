@@ -13,10 +13,13 @@ function initHeroDownload()
     groupAssetsByPlatform,
     detectUserPlatform,
     pickAssetForPlatform,
-    PLATFORM_LABELS
+    PLATFORM_LABELS,
+    beginProgressiveLoad,
+    showProgressiveContent,
+    restoreProgressiveFallback
   } = window.PythonSCADDownloads;
 
-  el.textContent = 'Loading latest release…';
+  beginProgressiveLoad(el, 'hero-download');
 
   async function renderHeroDownload()
   {
@@ -61,10 +64,10 @@ function initHeroDownload()
         }
       }
 
-      el.innerHTML = html;
+      showProgressiveContent(el, 'hero-download', html);
     } catch (e) {
-      el.innerHTML = `<p class="hero-download-error">Could not load release info. ` +
-        `<a href="downloads/">Browse downloads</a>.</p>`;
+      restoreProgressiveFallback(
+        el, 'hero-download', `Could not load release info. <a href="downloads/">Browse downloads</a>.`);
     }
   }
 

@@ -8,10 +8,17 @@ function initDownloadsPage()
     return;
   }
 
-  const {fetchLatestRelease, groupAssetsByPlatform, formatSize, PLATFORM_ORDER} =
-    window.PythonSCADDownloads;
+  const {
+    fetchLatestRelease,
+    groupAssetsByPlatform,
+    formatSize,
+    PLATFORM_ORDER,
+    beginProgressiveLoad,
+    showProgressiveContent,
+    restoreProgressiveFallback
+  } = window.PythonSCADDownloads;
 
-  el.textContent = 'Loading latest version...';
+  beginProgressiveLoad(el, 'download-links');
 
   async function renderDownloadsPage()
   {
@@ -80,9 +87,9 @@ function initDownloadsPage()
         html += '</tbody></table>';
       }
 
-      el.innerHTML = html;
+      showProgressiveContent(el, 'download-links', html);
     } catch (e) {
-      el.innerHTML = `<p>Failed to load release info: ${e.message}</p>`;
+      restoreProgressiveFallback(el, 'download-links', `Failed to load release info: ${e.message}`);
     }
   }
 
