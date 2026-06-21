@@ -2487,9 +2487,6 @@ if(NOT APPLE OR APPLE_UNIX)
         # (robust to Python minor-version upgrades and to the MSYS2
         # python package shedding/adding extension modules).
         install(CODE "
-          if(POLICY CMP0207)
-            cmake_policy(SET CMP0207 NEW)
-          endif()
           set(_msys2_bindir \"${MSYS2_BIN_DIR}\")
           set(_pyver \"${PYTHON_MINGW_VERSION}\")
           set(_lib_dynload \"\${CMAKE_INSTALL_PREFIX}/lib/python\${_pyver}/lib-dynload\")
@@ -2502,6 +2499,10 @@ if(NOT APPLE OR APPLE_UNIX)
             message(STATUS \"no .pyd files in \${_lib_dynload}; skipping dep scan\")
             return()
           endif()
+          if(POLICY CMP0207)
+            cmake_policy(PUSH)
+            cmake_policy(SET CMP0207 NEW)
+          endif()
           file(GET_RUNTIME_DEPENDENCIES
             MODULES \${_pyd_files}
             RESOLVED_DEPENDENCIES_VAR _resolved
@@ -2510,6 +2511,9 @@ if(NOT APPLE OR APPLE_UNIX)
             POST_EXCLUDE_REGEXES \".*[Ss]ystem32.*\" \".*[Ww]indows.*\"
             DIRECTORIES \"\${_msys2_bindir}\"
           )
+          if(POLICY CMP0207)
+            cmake_policy(POP)
+          endif()
           foreach(_dep IN LISTS _resolved)
             get_filename_component(_dep_name \"\${_dep}\" NAME)
             if(EXISTS \"\${CMAKE_INSTALL_PREFIX}/\${_dep_name}\")
