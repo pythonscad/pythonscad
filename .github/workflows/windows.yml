@@ -29,7 +29,7 @@ jobs:
         shell: msys2 {0}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'recursive'
           persist-credentials: false
@@ -83,6 +83,13 @@ jobs:
         run: |
           cd build
           ctest -j4
+
+      - name: Smoke test runtime Python bundle (IPython 9 + MSYS2 psutil)
+        run: |
+          pacboy -S --noconfirm --needed python-psutil:p
+          chmod +x ./scripts/bundle-runtime-python.sh
+          BUNDLE_PY_AUTO_INSTALL_PIP_LICENSES=1 \
+            ./scripts/bundle-runtime-python.sh /tmp/pythonscad-bundled-py-test --python python
 
       - name: Upload Test Result Report
         uses: actions/upload-artifact@v7

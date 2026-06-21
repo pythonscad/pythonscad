@@ -2180,6 +2180,12 @@ else()
 endif()
 
 # Configure icon-related files, for release vs nightly
+set(_CONFIGURED_SOURCE_FILES
+  ${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in2
+  ${RESOURCE_DIR}/icons/pythonscad.desktop
+  ${RESOURCE_DIR}/common.qrc
+)
+
 configure_file(doc/pythonscad.1.in doc/pythonscad.1)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in ${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in2)
 configure_file(${RESOURCE_DIR}/icons/pythonscad.desktop.in ${RESOURCE_DIR}/icons/pythonscad.desktop)
@@ -2205,7 +2211,7 @@ if(NOT APPLE OR APPLE_UNIX)
       install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/pythonscad-python DESTINATION "${OPENSCAD_BINDIR}")
     endif()
 
-    # On Windows, the runtime Python deps (currently: IPython 8.x and its
+    # On Windows, the runtime Python deps (currently: IPython 9.x and its
     # transitive deps) are populated into ${CMAKE_BINARY_DIR}/pythonscad-bundled-py
     # by scripts/bundle-runtime-python.sh, invoked from the Windows build
     # workflow ahead of `cmake --install`. CPack then picks the directory
