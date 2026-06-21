@@ -15,7 +15,7 @@
 
    Note that since node trees don't survive a recompilation, the tree cannot either.
  */
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 16
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsfinae-incomplete"
 #endif
@@ -42,6 +42,6 @@ private:
   mutable std::map<std::tuple<std::string, bool>, NodeCache> nodecachemap;
   std::string document_path;
 };
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 16
 #pragma GCC diagnostic pop
 #endif
