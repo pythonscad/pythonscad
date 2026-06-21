@@ -2178,11 +2178,64 @@ else()
 endif()
 
 # Configure icon-related files, for release vs nightly
-set(_CONFIGURED_SOURCE_FILES
+set(_CONFIGURED_SOURCE_TREE_FILES
   ${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in2
   ${RESOURCE_DIR}/icons/pythonscad.desktop
   ${RESOURCE_DIR}/common.qrc
+  ${RESOURCE_DIR}/mac.qrc
 )
+set(_UNWRITABLE_CONFIGURED_FILES "")
+set(_UNWRITABLE_CONFIGURED_RM_FILES "")
+foreach(_configured_file IN LISTS _CONFIGURED_SOURCE_TREE_FILES)
+  if(EXISTS "${_configured_file}")
+    set(_check_path "${_configured_file}")
+  else()
+    get_filename_component(_check_path "${_configured_file}" DIRECTORY)
+  endif()
+  set(_is_writable TRUE)
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.29)
+    if(NOT IS_WRITABLE "${_check_path}")
+      set(_is_writable FALSE)
+    endif()
+  elseif(UNIX)
+    execute_process(COMMAND test -w "${_check_path}" RESULT_VARIABLE _write_test ERROR_QUIET)
+    if(NOT _write_test EQUAL 0)
+      set(_is_writable FALSE)
+    endif()
+  endif()
+  if(NOT _is_writable)
+    if(EXISTS "${_configured_file}")
+      set(_detail "${_configured_file}")
+      if(UNIX)
+        execute_process(
+          COMMAND stat -c " (owner: %U)" "${_configured_file}"
+          OUTPUT_VARIABLE _owner_detail
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+          ERROR_QUIET
+        )
+        if(_owner_detail)
+          string(APPEND _detail "${_owner_detail}")
+        endif()
+      endif()
+      list(APPEND _UNWRITABLE_CONFIGURED_FILES "${_detail}")
+      list(APPEND _UNWRITABLE_CONFIGURED_RM_FILES "${_configured_file}")
+    else()
+      list(APPEND _UNWRITABLE_CONFIGURED_FILES
+        "${_configured_file} (cannot create: directory not writable: ${_check_path})")
+    endif()
+  endif()
+endforeach()
+if(_UNWRITABLE_CONFIGURED_FILES)
+  list(JOIN _UNWRITABLE_CONFIGURED_RM_FILES " " _rm_cmd)
+  list(JOIN _UNWRITABLE_CONFIGURED_FILES "\n  - " _unwritable_list)
+  message(FATAL_ERROR
+    "Cannot update generated file(s) in the source tree:\n"
+    "  - ${_unwritable_list}\n"
+    "This usually means the file(s) are owned by root from a previous privileged build.\n"
+    "Remove them and re-run cmake:\n"
+    "  rm -f ${_rm_cmd}\n"
+    "Avoid running sudo cmake or sudo make in the source tree; use a user-writable build/ directory.")
+endif()
 
 configure_file(doc/pythonscad.1.in doc/pythonscad.1)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in ${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in2)
