@@ -73,7 +73,7 @@ to STL, 3MF, and other formats for 3D printing and manufacturing.
     show(c)
     ```
 
-=== "OpenSCAD-compatible"
+=== "OpenSCAD"
 
     ```python
     from openscad import *

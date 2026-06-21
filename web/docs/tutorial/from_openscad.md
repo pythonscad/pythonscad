@@ -34,7 +34,7 @@ PythonSCAD ships two equivalent top-level modules:
 In OpenSCAD, a primitive at the top level is rendered automatically. In PythonSCAD,
 store the solid in a variable and pass it to `show()`:
 
-=== "PythonSCAD"
+=== "Python"
 
     ```python
     from pythonscad import *
