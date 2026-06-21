@@ -13,6 +13,8 @@ function initDownloadsPage()
     groupAssetsByPlatform,
     formatSize,
     PLATFORM_ORDER,
+    escapeHtml,
+    safeGitHubDownloadUrl,
     beginProgressiveLoad,
     showProgressiveContent,
     restoreProgressiveFallback
@@ -25,8 +27,9 @@ function initDownloadsPage()
     try {
       const data = await fetchLatestRelease();
       const {byName, byPlatform} = groupAssetsByPlatform(data.assets || []);
+      const tagName = escapeHtml(data.tag_name);
 
-      let html = `<h3>Latest version: ${data.tag_name}</h3>`;
+      let html = `<h3>Latest version: ${tagName}</h3>`;
 
       const titles = {
         windows: 'Windows',
@@ -49,9 +52,10 @@ function initDownloadsPage()
           '<code>.wasm</code> and <code>.data</code> files. ' +
           'A browser with WASM support (Chrome, Firefox, ' +
           'Edge, Safari 16+) is required.',
-        windows: 'Windows binaries are not yet code-signed. See the ' +
+        windows: 'NSIS installer and MSIX packages are Authenticode-signed. ZIP archives ' +
+          'are not signed. See the ' +
           '<a href="../installation/#windows">Windows installation instructions</a> ' +
-          'for workarounds.',
+          'for SmartScreen notes.',
         'linux-debian': 'The <a href="https://repos.pythonscad.org/apt/">APT repository</a> is the ' +
           'preferred way to install PythonSCAD on Debian and Ubuntu.',
         'linux-fedora':
@@ -75,13 +79,19 @@ function initDownloadsPage()
         list.forEach(asset => {
           const sha256Asset = byName[asset.name + '.sha256'];
           const sha512Asset = byName[asset.name + '.sha512'];
+          const assetUrl = safeGitHubDownloadUrl(asset.browser_download_url);
+          const assetName = escapeHtml(asset.name);
           html += '<tr>';
-          html += `<td><a href="${asset.browser_download_url}">${asset.name}</a></td>`;
+          html += `<td><a href="${assetUrl}">${assetName}</a></td>`;
           html += `<td>${formatSize(asset.size)}</td>`;
           html += `<td>${
-            sha256Asset ? `<a href="${sha256Asset.browser_download_url}">checksum</a>` : '—'}</td>`;
+            sha256Asset ?
+              `<a href="${safeGitHubDownloadUrl(sha256Asset.browser_download_url)}">checksum</a>` :
+              '—'}</td>`;
           html += `<td>${
-            sha512Asset ? `<a href="${sha512Asset.browser_download_url}">checksum</a>` : '—'}</td>`;
+            sha512Asset ?
+              `<a href="${safeGitHubDownloadUrl(sha512Asset.browser_download_url)}">checksum</a>` :
+              '—'}</td>`;
           html += '</tr>';
         });
         html += '</tbody></table>';
@@ -89,7 +99,8 @@ function initDownloadsPage()
 
       showProgressiveContent(el, 'download-links', html);
     } catch (e) {
-      restoreProgressiveFallback(el, 'download-links', `Failed to load release info: ${e.message}`);
+      restoreProgressiveFallback(
+        el, 'download-links', `Failed to load release info: ${escapeHtml(e.message)}`);
     }
   }
 

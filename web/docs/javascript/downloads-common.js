@@ -7,6 +7,29 @@ const GITHUB_RELEASES = `https://github.com/${REPO}/releases`;
 const PLATFORM_ORDER =
   ['windows', 'linux-debian', 'linux-fedora', 'linux-appimage', 'linux', 'macos', 'wasm', 'other'];
 
+function escapeHtml(text)
+{
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function safeGitHubDownloadUrl(url)
+{
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:' && parsed.hostname === 'github.com') {
+      return parsed.href;
+    }
+  } catch (e) {
+    // ignore invalid URLs
+  }
+  return '#';
+}
+
 function getPlatform(assetName)
 {
   const n = assetName.toLowerCase();
@@ -100,13 +123,16 @@ function detectUserPlatform()
     return 'macos';
   }
   if (/linux/.test(platform) || /linux/.test(ua) || /x11/.test(ua)) {
+    if (/arch|gentoo|slackware|void linux|nixos|alpine/.test(ua)) {
+      return 'linux';
+    }
     if (/fedora|rhel|centos|rocky|alma|suse|red hat/.test(ua)) {
       return 'linux-fedora';
     }
     if (/ubuntu|debian|mint|pop!_os|elementary|zorin|kubuntu|xubuntu|lubuntu/.test(ua)) {
       return 'linux-debian';
     }
-    return 'linux-debian';
+    return 'linux';
   }
   return null;
 }
@@ -130,7 +156,7 @@ function pickAssetForPlatform(byPlatform, preferredPlatform)
     'linux-debian': ['linux-debian', 'linux-appimage', 'linux'],
     'linux-fedora': ['linux-fedora', 'linux-appimage', 'linux'],
     'linux-appimage': ['linux-appimage', 'linux-debian', 'linux'],
-    linux: ['linux-debian', 'linux-appimage', 'linux'],
+    linux: ['linux-appimage', 'linux', 'linux-debian'],
     wasm: ['wasm'],
     other: PLATFORM_ORDER.filter(p => p !== 'other')
   };
@@ -220,6 +246,8 @@ window.PythonSCADDownloads = {
   GITHUB_RELEASES,
   PLATFORM_ORDER,
   PLATFORM_LABELS,
+  escapeHtml,
+  safeGitHubDownloadUrl,
   getPlatform,
   isChecksumOrMeta,
   formatSize,

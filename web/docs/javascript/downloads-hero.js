@@ -14,6 +14,8 @@ function initHeroDownload()
     detectUserPlatform,
     pickAssetForPlatform,
     PLATFORM_LABELS,
+    escapeHtml,
+    safeGitHubDownloadUrl,
     beginProgressiveLoad,
     showProgressiveContent,
     restoreProgressiveFallback
@@ -27,9 +29,9 @@ function initHeroDownload()
       const data = await fetchLatestRelease();
       const {byPlatform} = groupAssetsByPlatform(data.assets || []);
       const userPlatform = detectUserPlatform();
+      const tagName = escapeHtml(data.tag_name);
 
-      let html =
-        `<p class="hero-download-version">Latest version: <strong>${data.tag_name}</strong></p>`;
+      let html = `<p class="hero-download-version">Latest version: <strong>${tagName}</strong></p>`;
       html += `<p class="hero-download-actions">`;
 
       if (userPlatform === 'linux-debian') {
@@ -46,17 +48,24 @@ function initHeroDownload()
         html += `</p>`;
         html += `<p class="hero-download-file">Recommended: `;
         html += `<a href="https://repos.pythonscad.org/yum/">repos.pythonscad.org/yum</a></p>`;
+      } else if (userPlatform === 'linux') {
+        html += `<a class="md-button md-button--primary hero-download-button" `;
+        html += `href="installation/">Linux installation options</a>`;
+        html += ` <a class="md-button hero-download-all" href="downloads/">All downloads</a>`;
+        html += `</p>`;
       } else {
         const picked = pickAssetForPlatform(byPlatform, userPlatform);
 
         if (picked) {
-          const label = PLATFORM_LABELS[picked.platform] || picked.platform;
+          const label = escapeHtml(PLATFORM_LABELS[picked.platform] || picked.platform);
+          const url = safeGitHubDownloadUrl(picked.asset.browser_download_url);
+          const fileName = escapeHtml(picked.asset.name);
           html += `<a class="md-button md-button--primary hero-download-button" `;
-          html += `href="${picked.asset.browser_download_url}">`;
+          html += `href="${url}">`;
           html += `Download for ${label}</a>`;
           html += ` <a class="md-button hero-download-all" href="downloads/">All downloads</a>`;
           html += `</p>`;
-          html += `<p class="hero-download-file">${picked.asset.name}</p>`;
+          html += `<p class="hero-download-file">${fileName}</p>`;
         } else {
           html += `<a class="md-button md-button--primary hero-download-button" href="downloads/">`;
           html += `Download PythonSCAD</a>`;
