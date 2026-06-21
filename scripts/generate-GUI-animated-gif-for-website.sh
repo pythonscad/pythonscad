@@ -6,7 +6,7 @@
 # Builds the homepage box animation GIF used on the docs site.
 #
 # USAGE (from repo root):
-#   ./scripts/generate_GUI_animated_gif_for_website.sh [frames-dir] [output-gif]
+#   ./scripts/generate-GUI-animated-gif-for-website.sh [frames-dir] [output-gif]
 #
 #   frames-dir  Directory containing frame*.png keyframes (default: current dir)
 #   output-gif  Destination GIF path (default: web/docs/pictures/box_anim.gif)

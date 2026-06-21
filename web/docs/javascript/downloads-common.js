@@ -99,13 +99,32 @@ function groupAssetsByPlatform(assets)
   return {byName, byPlatform, mainAssets};
 }
 
+let latestReleasePromise = null;
+let latestReleaseCache = null;
+
 async function fetchLatestRelease()
 {
-  const response = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`);
-  if (!response.ok) {
-    throw new Error(`GitHub API returned ${response.status}`);
+  if (latestReleaseCache) {
+    return latestReleaseCache;
   }
-  return response.json();
+  if (!latestReleasePromise) {
+    latestReleasePromise = fetch(`https://api.github.com/repos/${REPO}/releases/latest`)
+                             .then(response => {
+                               if (!response.ok) {
+                                 throw new Error(`GitHub API returned ${response.status}`);
+                               }
+                               return response.json();
+                             })
+                             .then(data => {
+                               latestReleaseCache = data;
+                               return data;
+                             })
+                             .catch(err => {
+                               latestReleasePromise = null;
+                               throw err;
+                             });
+  }
+  return latestReleasePromise;
 }
 
 function detectUserPlatform()
@@ -118,6 +137,9 @@ function detectUserPlatform()
 
   if (/win/.test(platform) || /windows/.test(ua)) {
     return 'windows';
+  }
+  if (/iphone|ipad|ipod/.test(ua)) {
+    return null;
   }
   if (/mac/.test(platform) || /macintosh/.test(ua)) {
     return 'macos';
