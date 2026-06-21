@@ -653,7 +653,9 @@ void shutdownSignalHandler(int)
 {
   const char signalByte = 1;
   if (shutdownSignalPipe[1] != -1) {
-    (void)::write(shutdownSignalPipe[1], &signalByte, sizeof(signalByte));
+    if (::write(shutdownSignalPipe[1], &signalByte, sizeof(signalByte)) < 0) {
+      // Best-effort wake of GUI thread; pipe is non-blocking.
+    }
   }
 }
 
