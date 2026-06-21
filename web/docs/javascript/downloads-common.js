@@ -1,0 +1,173 @@
+(function() {
+'use strict';
+
+const REPO = 'pythonscad/pythonscad';
+const PLATFORM_ORDER =
+  ['windows', 'linux-debian', 'linux-fedora', 'linux-appimage', 'linux', 'macos', 'wasm', 'other'];
+
+function getPlatform(assetName)
+{
+  const n = assetName.toLowerCase();
+  if (n.endsWith('.exe') || n.endsWith('.msix') || /windows|win-|win_|-win\.|-win_/.test(n)) {
+    return 'windows';
+  }
+  if (n.endsWith('.dmg') || /macos|darwin|osx|-mac\.|-mac_/.test(n)) {
+    return 'macos';
+  }
+  if (n.endsWith('.appimage') || /appimage/.test(n)) {
+    return 'linux-appimage';
+  }
+  if (n.endsWith('.deb') || /debian|ubuntu|apt/.test(n)) {
+    return 'linux-debian';
+  }
+  if (n.endsWith('.rpm') || /fedora|redhat|rhel|centos|yum|dnf/.test(n)) {
+    return 'linux-fedora';
+  }
+  if (/linux/.test(n)) {
+    return 'linux';
+  }
+  if (n.endsWith('.zip') && /wasm|webassembly/.test(n)) {
+    return 'wasm';
+  }
+  return 'other';
+}
+
+function isChecksumOrMeta(name)
+{
+  return name.endsWith('.sha256') || name.endsWith('.sha512') || name.endsWith('.asc') ||
+    name === 'checksums.txt';
+}
+
+function formatSize(bytes)
+{
+  if (bytes >= 1024 * 1024) {
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+  if (bytes >= 1024) {
+    return (bytes / 1024).toFixed(0) + ' KB';
+  }
+  return bytes + ' B';
+}
+
+function groupAssetsByPlatform(assets)
+{
+  const byName = {};
+  assets.forEach(a => {
+    byName[a.name] = a;
+  });
+
+  const mainAssets = assets.filter(a => !isChecksumOrMeta(a.name));
+  const byPlatform = {
+    windows: [],
+    'linux-debian': [],
+    'linux-fedora': [],
+    'linux-appimage': [],
+    linux: [],
+    macos: [],
+    wasm: [],
+    other: []
+  };
+  mainAssets.forEach(a => {
+    byPlatform[getPlatform(a.name)].push(a);
+  });
+
+  return {byName, byPlatform, mainAssets};
+}
+
+async function fetchLatestRelease()
+{
+  const response = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`);
+  if (!response.ok) {
+    throw new Error(`GitHub API returned ${response.status}`);
+  }
+  return response.json();
+}
+
+function detectUserPlatform()
+{
+  const ua = navigator.userAgent.toLowerCase();
+  const platform =
+    (navigator.userAgentData && navigator.userAgentData.platform ? navigator.userAgentData.platform :
+                                                                   navigator.platform || '')
+      .toLowerCase();
+
+  if (/win/.test(platform) || /windows/.test(ua)) {
+    return 'windows';
+  }
+  if (/mac/.test(platform) || /macintosh/.test(ua)) {
+    return 'macos';
+  }
+  if (/linux/.test(platform) || /linux/.test(ua) || /x11/.test(ua)) {
+    if (/fedora|rhel|centos|rocky|alma|suse|red hat/.test(ua)) {
+      return 'linux-fedora';
+    }
+    if (/ubuntu|debian|mint|pop!_os|elementary|zorin|kubuntu|xubuntu|lubuntu/.test(ua)) {
+      return 'linux-debian';
+    }
+    return 'linux-debian';
+  }
+  return null;
+}
+
+const PLATFORM_LABELS = {
+  windows: 'Windows',
+  'linux-debian': 'Linux (Debian / Ubuntu)',
+  'linux-fedora': 'Linux (Fedora / RHEL)',
+  'linux-appimage': 'Linux (AppImage)',
+  linux: 'Linux',
+  macos: 'macOS',
+  wasm: 'WebAssembly / Browser',
+  other: 'your platform'
+};
+
+function pickAssetForPlatform(byPlatform, preferredPlatform)
+{
+  const fallbacks = {
+    windows: ['windows'],
+    macos: ['macos'],
+    'linux-debian': ['linux-debian', 'linux-appimage', 'linux'],
+    'linux-fedora': ['linux-fedora', 'linux-appimage', 'linux'],
+    'linux-appimage': ['linux-appimage', 'linux-debian', 'linux'],
+    linux: ['linux-debian', 'linux-appimage', 'linux'],
+    wasm: ['wasm'],
+    other: PLATFORM_ORDER.filter(p => p !== 'other')
+  };
+
+  const order =
+    preferredPlatform ? (fallbacks[preferredPlatform] || [preferredPlatform]) : PLATFORM_ORDER;
+  for (const platform of order) {
+    const list = byPlatform[platform];
+    if (list && list.length > 0) {
+      return {asset: list[0], platform};
+    }
+  }
+  return null;
+}
+
+function onMkDocsPageLoad(callback)
+{
+  if (typeof document$ !== 'undefined') {
+    document$.subscribe(callback);
+    return;
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback);
+    return;
+  }
+  callback();
+}
+
+window.PythonSCADDownloads = {
+  REPO,
+  PLATFORM_ORDER,
+  PLATFORM_LABELS,
+  getPlatform,
+  isChecksumOrMeta,
+  formatSize,
+  groupAssetsByPlatform,
+  fetchLatestRelease,
+  detectUserPlatform,
+  pickAssetForPlatform,
+  onMkDocsPageLoad
+};
+})();

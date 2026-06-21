@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: 'Intel One Mono';
-  src: url('/fonts/IntelOneMono/IntelOneMono-Regular.woff2') format('woff2');
+  src: url('../fonts/IntelOneMono/IntelOneMono-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -61,3 +61,31 @@
 #download-links h4 { margin-top: 1em; }
 #download-links h4:first-of-type { margin-top: 0; }
 #download-links .downloads-repo-note { margin: 0.25em 0 0.75em 0; opacity: 0.9; }
+
+/* Homepage hero download CTA */
+#hero-download {
+    margin: 1.25em 0 1.5em 0;
+    padding: 1.25em 1.5em;
+    border-radius: 0.5em;
+    background-color: var(--md-code-bg-color);
+    border: 1px solid var(--md-default-fg-color--lightest, #eee);
+}
+.hero-download-version {
+    margin: 0 0 0.75em 0;
+    opacity: 0.9;
+}
+.hero-download-actions {
+    margin: 0 0 0.5em 0;
+}
+.hero-download-button {
+    font-size: 1.05em;
+}
+.hero-download-file {
+    margin: 0;
+    font-size: 0.85em;
+    opacity: 0.75;
+    font-family: var(--md-code-font, monospace);
+}
+.hero-download-error {
+    margin: 0;
+}
