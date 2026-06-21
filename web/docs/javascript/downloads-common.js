@@ -125,7 +125,10 @@ function detectUserPlatform()
   if (/android/.test(ua)) {
     return null;
   }
-  if (/linux/.test(platform) || /linux/.test(ua) || /x11/.test(ua)) {
+  if (/freebsd|openbsd|netbsd|dragonfly/.test(ua)) {
+    return null;
+  }
+  if (/linux/.test(platform) || /linux/.test(ua)) {
     if (/arch|gentoo|slackware|void linux|nixos|alpine/.test(ua)) {
       return 'linux';
     }
