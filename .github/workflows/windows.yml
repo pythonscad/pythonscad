@@ -68,6 +68,8 @@ jobs:
           PYTHON_FULL_VERSION=$(python --version | cut -d' ' -f2)
           echo "Full Python version: $PYTHON_FULL_VERSION"
           echo "PYTHON_FULL_VERSION=$PYTHON_FULL_VERSION" >> $GITHUB_ENV
+      - name: Install bsdiff4 for libpython patch script
+        run: pip install bsdiff4
       - name: Install Mesa
         uses: ssciwr/setup-mesa-dist-win@v3
         with:

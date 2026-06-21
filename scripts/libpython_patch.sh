@@ -2,7 +2,7 @@
 
 # create tempdir
 mkdir -p tmp
-cd tmp
+cd tmp || exit
 rm -rf *
 
 # Auto-detect Python version from the library file
@@ -44,8 +44,14 @@ if [ -f "$PATCHFILE" ]; then
         bspatch ${OBJFILE} ${OBJFILE}.tmp ${PATCHFILE}
     elif command -v bspatch4 >/dev/null 2>&1; then
         bspatch4 ${OBJFILE} ${OBJFILE}.tmp ${PATCHFILE}
+    elif python -c "import bsdiff4" 2>/dev/null; then
+        python - <<PY
+from bsdiff4 import patch
+src = open("${OBJFILE}", "rb").read()
+open("${OBJFILE}.tmp", "wb").write(patch(src, open("${PATCHFILE}", "rb").read()))
+PY
     else
-        echo "Error: Neither bspatch nor bspatch4 found"
+        echo "Error: Neither bspatch, bspatch4, nor the Python bsdiff4 module found"
         exit 1
     fi
     mv ${OBJFILE}.tmp ${OBJFILE}
