@@ -2487,6 +2487,9 @@ if(NOT APPLE OR APPLE_UNIX)
         # (robust to Python minor-version upgrades and to the MSYS2
         # python package shedding/adding extension modules).
         install(CODE "
+          if(POLICY CMP0207)
+            cmake_policy(SET CMP0207 NEW)
+          endif()
           set(_msys2_bindir \"${MSYS2_BIN_DIR}\")
           set(_pyver \"${PYTHON_MINGW_VERSION}\")
           set(_lib_dynload \"\${CMAKE_INSTALL_PREFIX}/lib/python\${_pyver}/lib-dynload\")
