@@ -1,7 +1,11 @@
 # Get started
 
-New to "code CAD"? Read [this short introduction](https://learn.cadhub.xyz/blog/curated-code-cad/)
-to the idea of designing models with code.
+PythonSCAD is **script-based 3D modeling**: you write a small program, preview the
+shape live, and export for 3D printing or manufacturing. No prior experience with
+OpenSCAD or code CAD is required.
+
+New to the idea of designing with code? Read
+[this short introduction](https://learn.cadhub.xyz/blog/curated-code-cad/).
 
 ## 1. Download
 
@@ -9,14 +13,17 @@ Pick your platform on the [Downloads](downloads.md) page, or use the download bu
 [homepage](index.md). For package managers and advanced options, see
 [Installation](installation.md).
 
-## 2. Write your first model
+## 2. Your first model
 
-Create a new `.py` file and follow the [Getting Started tutorial](tutorial/getting_started.md).
-The tutorial covers imports, primitives, transforms, and exporting.
+Launch PythonSCAD — it opens with an **empty `.py` file** by default. Follow the
+[Getting Started tutorial](tutorial/getting_started.md): a few lines of Python, a live
+preview, and something you could export and print.
 
-Even if you are new to programming, the tutorial is a gentle entry point: you write a few
-lines of Python, see the model update in the preview, and can export something you could
-actually print.
+The tutorial is written for beginners. You do not need to know OpenSCAD or much Python
+to follow along.
+
+**Switching from OpenSCAD?** See [Coming from OpenSCAD](tutorial/from_openscad.md) for
+syntax differences and migration tips.
 
 ## 3. Explore
 

@@ -52,6 +52,7 @@ nav:
   - Building: building.md
   - Tutorial:
       - Getting Started: tutorial/getting_started.md
+      - Coming from OpenSCAD: tutorial/from_openscad.md
       - Combining Objects: tutorial/combining_objects.md
       - Positioning Objects: tutorial/positioning_objects.md
       - Python Specialities: tutorial/python_specialities.md
