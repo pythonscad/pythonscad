@@ -122,6 +122,9 @@ function detectUserPlatform()
   if (/mac/.test(platform) || /macintosh/.test(ua)) {
     return 'macos';
   }
+  if (/android/.test(ua)) {
+    return null;
+  }
   if (/linux/.test(platform) || /linux/.test(ua) || /x11/.test(ua)) {
     if (/arch|gentoo|slackware|void linux|nixos|alpine/.test(ua)) {
       return 'linux';
@@ -233,7 +236,7 @@ function restoreProgressiveFallback(container, prefix, messageHtml)
     fallback.querySelectorAll(`.${prefix}-error`).forEach(el => el.remove());
     if (messageHtml) {
       const err = document.createElement('p');
-      err.className = `${prefix}-error hero-download-error`;
+      err.className = `${prefix}-error`;
       err.innerHTML = messageHtml;
       fallback.insertBefore(err, fallback.firstChild);
     }

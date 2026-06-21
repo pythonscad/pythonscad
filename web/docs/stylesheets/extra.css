@@ -86,7 +86,8 @@
     opacity: 0.75;
     font-family: var(--md-code-font, monospace);
 }
-.hero-download-error {
+.hero-download-error,
+.download-links-error {
     margin: 0;
 }
 
