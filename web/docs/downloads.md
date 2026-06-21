@@ -17,6 +17,14 @@
     </p>
   </div>
   <p class="download-links-loading" hidden aria-live="polite">Loading latest version…</p>
+  <noscript>
+    <p class="download-noscript-note">
+      JavaScript is not required to use this website. If you enable it though,
+      this page builds a full list of release files for every platform, with download
+      links, file sizes, and SHA256/SHA512 checksums — updated automatically when we
+      publish a new release.
+    </p>
+  </noscript>
   <div class="download-links-enhanced" hidden></div>
 </div>
 

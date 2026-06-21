@@ -21,6 +21,14 @@ to STL, 3MF, and other formats for 3D printing and manufacturing.
     </p>
   </div>
   <p class="hero-download-loading" hidden aria-live="polite">Loading latest release…</p>
+  <noscript>
+    <p class="download-noscript-note">
+      JavaScript is not required to use this website. If you enable it though,
+      this page can detect your operating system and suggest the best download path
+      (for example APT on Debian/Ubuntu, YUM on Fedora/RHEL, etc.), show the current release version,
+      and link directly to the matching download.
+    </p>
+  </noscript>
   <div class="hero-download-enhanced" hidden></div>
 </div>
 
