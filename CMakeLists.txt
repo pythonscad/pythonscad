@@ -2189,8 +2189,10 @@ set(_UNWRITABLE_CONFIGURED_RM_FILES "")
 foreach(_configured_file IN LISTS _CONFIGURED_SOURCE_TREE_FILES)
   if(EXISTS "${_configured_file}")
     set(_check_path "${_configured_file}")
+    set(_check_is_directory FALSE)
   else()
     get_filename_component(_check_path "${_configured_file}" DIRECTORY)
+    set(_check_is_directory TRUE)
   endif()
   set(_is_writable TRUE)
   if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.29)
@@ -2198,7 +2200,11 @@ foreach(_configured_file IN LISTS _CONFIGURED_SOURCE_TREE_FILES)
       set(_is_writable FALSE)
     endif()
   elseif(UNIX)
-    execute_process(COMMAND test -w "${_check_path}" -a -x "${_check_path}" RESULT_VARIABLE _write_test ERROR_QUIET)
+    if(_check_is_directory)
+      execute_process(COMMAND test -w "${_check_path}" -a -x "${_check_path}" RESULT_VARIABLE _write_test ERROR_QUIET)
+    else()
+      execute_process(COMMAND test -w "${_check_path}" RESULT_VARIABLE _write_test ERROR_QUIET)
+    endif()
     if(NOT _write_test EQUAL 0)
       set(_is_writable FALSE)
     endif()
@@ -2242,13 +2248,21 @@ if(_UNWRITABLE_CONFIGURED_FILES)
       "  - ${_unwritable_list}\n"
       "Check file permissions or remove read-only attributes and re-run cmake.")
   else()
-    message(FATAL_ERROR
-      "Cannot update generated file(s) in the source tree:\n"
-      "  - ${_unwritable_list}\n"
-      "This usually means the file(s) are owned by root from a previous privileged build.\n"
-      "Remove them and re-run cmake:\n"
-      "  rm -f ${_rm_cmd}\n"
-      "Avoid running sudo cmake or sudo make in the source tree; use a user-writable build/ directory.")
+    if(_UNWRITABLE_CONFIGURED_RM_FILES)
+      message(FATAL_ERROR
+        "Cannot update generated file(s) in the source tree:\n"
+        "  - ${_unwritable_list}\n"
+        "This usually means the file(s) are owned by root from a previous privileged build.\n"
+        "Remove them and re-run cmake:\n"
+        "  rm -f ${_rm_cmd}\n"
+        "Avoid running sudo cmake or sudo make in the source tree; use a user-writable build/ directory.")
+    else()
+      message(FATAL_ERROR
+        "Cannot update generated file(s) in the source tree:\n"
+        "  - ${_unwritable_list}\n"
+        "Fix directory permissions for the paths listed above and re-run cmake.\n"
+        "Avoid running sudo cmake or sudo make in the source tree; use a user-writable build/ directory.")
+    endif()
   endif()
 endif()
 
