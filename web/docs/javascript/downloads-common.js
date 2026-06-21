@@ -135,7 +135,7 @@ function detectUserPlatform()
                                                                    navigator.platform || '')
       .toLowerCase();
 
-  if (/win/.test(platform) || /windows/.test(ua)) {
+  if (/^win/i.test(platform) || /windows/.test(ua)) {
     return 'windows';
   }
   if (/iphone|ipad|ipod/.test(ua)) {
