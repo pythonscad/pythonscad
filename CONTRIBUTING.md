@@ -85,7 +85,7 @@ Remove the generated files and reconfigure:
 
 ```bash
 rm -f pythonscad.appdata.xml.in2 resources/common.qrc resources/icons/pythonscad.desktop resources/mac.qrc
-cmake ..
+cmake -S . -B build
 ```
 
 To avoid this, do not run `sudo cmake` or `sudo make` in the

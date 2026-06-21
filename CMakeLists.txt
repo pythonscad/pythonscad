@@ -2198,7 +2198,7 @@ foreach(_configured_file IN LISTS _CONFIGURED_SOURCE_TREE_FILES)
       set(_is_writable FALSE)
     endif()
   elseif(UNIX)
-    execute_process(COMMAND test -w "${_check_path}" RESULT_VARIABLE _write_test ERROR_QUIET)
+    execute_process(COMMAND test -w "${_check_path}" -a -x "${_check_path}" RESULT_VARIABLE _write_test ERROR_QUIET)
     if(NOT _write_test EQUAL 0)
       set(_is_writable FALSE)
     endif()
@@ -2213,6 +2213,14 @@ foreach(_configured_file IN LISTS _CONFIGURED_SOURCE_TREE_FILES)
           OUTPUT_STRIP_TRAILING_WHITESPACE
           ERROR_QUIET
         )
+        if(NOT _owner_detail)
+          execute_process(
+            COMMAND stat -f " (owner: %Su)" "${_configured_file}"
+            OUTPUT_VARIABLE _owner_detail
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+          )
+        endif()
         if(_owner_detail)
           string(APPEND _detail "${_owner_detail}")
         endif()
@@ -2228,13 +2236,20 @@ endforeach()
 if(_UNWRITABLE_CONFIGURED_FILES)
   list(JOIN _UNWRITABLE_CONFIGURED_RM_FILES " " _rm_cmd)
   list(JOIN _UNWRITABLE_CONFIGURED_FILES "\n  - " _unwritable_list)
-  message(FATAL_ERROR
-    "Cannot update generated file(s) in the source tree:\n"
-    "  - ${_unwritable_list}\n"
-    "This usually means the file(s) are owned by root from a previous privileged build.\n"
-    "Remove them and re-run cmake:\n"
-    "  rm -f ${_rm_cmd}\n"
-    "Avoid running sudo cmake or sudo make in the source tree; use a user-writable build/ directory.")
+  if(WIN32)
+    message(FATAL_ERROR
+      "Cannot update generated file(s) in the source tree:\n"
+      "  - ${_unwritable_list}\n"
+      "Check file permissions or remove read-only attributes and re-run cmake.")
+  else()
+    message(FATAL_ERROR
+      "Cannot update generated file(s) in the source tree:\n"
+      "  - ${_unwritable_list}\n"
+      "This usually means the file(s) are owned by root from a previous privileged build.\n"
+      "Remove them and re-run cmake:\n"
+      "  rm -f ${_rm_cmd}\n"
+      "Avoid running sudo cmake or sudo make in the source tree; use a user-writable build/ directory.")
+  endif()
 endif()
 
 configure_file(doc/pythonscad.1.in doc/pythonscad.1)
