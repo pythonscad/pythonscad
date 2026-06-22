@@ -2211,14 +2211,16 @@ foreach(_configured_file IN LISTS _CONFIGURED_SOURCE_TREE_FILES)
   elseif(WIN32)
     if(_check_is_directory)
       set(_writability_probe "${_check_path}/.pythonscad_writable_probe")
-      if(EXISTS "${_writability_probe}")
-        file(REMOVE "${_writability_probe}")
-      endif()
-      file(WRITE "${_writability_probe}" "")
-      if(EXISTS "${_writability_probe}")
-        file(REMOVE "${_writability_probe}")
-      else()
+      execute_process(COMMAND ${CMAKE_COMMAND} -E remove -f "${_writability_probe}" ERROR_QUIET)
+      execute_process(
+        COMMAND ${CMAKE_COMMAND} -E touch "${_writability_probe}"
+        RESULT_VARIABLE _write_test
+        ERROR_QUIET
+      )
+      if(NOT _write_test EQUAL 0)
         set(_is_writable FALSE)
+      else()
+        execute_process(COMMAND ${CMAKE_COMMAND} -E remove -f "${_writability_probe}" ERROR_QUIET)
       endif()
     else()
       execute_process(
