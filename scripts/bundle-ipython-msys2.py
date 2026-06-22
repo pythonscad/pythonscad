@@ -12,19 +12,15 @@ system site-packages into the bundle, then installs IPython itself with
 from __future__ import annotations
 
 import argparse
-import email
 import pathlib
 import shutil
 import subprocess
 import tempfile
-import zipfile
 
 try:
-    from packaging.markers import default_environment
     from packaging.requirements import Requirement
     from packaging.utils import parse_wheel_filename
 except ModuleNotFoundError:  # minimal/MSYS2 build Pythons may lack packaging
-    from pip._vendor.packaging.markers import default_environment
     from pip._vendor.packaging.requirements import Requirement
     from pip._vendor.packaging.utils import parse_wheel_filename
 
@@ -111,29 +107,6 @@ def _download_ipython_wheel(
     if not wheels:
         raise SystemExit(f"no ipython wheel downloaded to {dest_dir}")
     return max(wheels, key=lambda path: parse_wheel_filename(path.name)[1])
-
-
-def _read_requires_dist(wheel_path: pathlib.Path) -> list[Requirement]:
-    with zipfile.ZipFile(wheel_path) as zf:
-        meta_name = next(n for n in zf.namelist() if n.endswith(".dist-info/METADATA"))
-        meta_text = zf.read(meta_name).decode("utf-8")
-    msg = email.message_from_string(meta_text)
-    return [Requirement(val) for key, val in msg.items() if key.lower() == "requires-dist"]
-
-
-def _filter_requirements(
-    requires_dist: list[Requirement], exclude_names: set[str]
-) -> list[str]:
-    env = default_environment()
-    exclude = {name.lower() for name in exclude_names}
-    selected: list[str] = []
-    for req in requires_dist:
-        if req.name.lower() in exclude:
-            continue
-        if req.marker is not None and not req.marker.evaluate(env):
-            continue
-        selected.append(str(req).split(";", 1)[0].strip())
-    return selected
 
 
 def _install_deps(python: str, target: pathlib.Path, req_strings: list[str]) -> None:
@@ -229,8 +202,6 @@ def main() -> None:
         with tempfile.TemporaryDirectory(prefix="ipython-wheel.") as tmp:
             wheel_dir = pathlib.Path(tmp)
             wheel = _download_ipython_wheel(args.python, ipython_specs, wheel_dir)
-            deps = _filter_requirements(_read_requires_dist(wheel), exclude_names={"psutil"})
-            _install_deps(args.python, args.target, deps)
             _vend_psutil_from_system(args.target)
             _install_ipython_wheel(args.python, args.target, wheel)
     finally:
