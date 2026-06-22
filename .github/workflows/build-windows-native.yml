@@ -164,7 +164,7 @@ jobs:
       - name: Install to staging directory
         run: |
           cd build
-          cmake -Wno-dev --install . --prefix=staging
+          cmake --install . --prefix=staging
 
       - name: List installed files
         run: |
