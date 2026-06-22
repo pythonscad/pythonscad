@@ -139,5 +139,7 @@ echo "Patched ${OBJFILE}: libpython${PYTHON_VERSION}.dll -> python${PYTHON_DLL_V
 
 ARCHIVE_NEW="${STUBFILE}.new"
 rm -f "${ARCHIVE_NEW}"
-find . -name '*.o' -print0 | xargs -0 ar -q "${ARCHIVE_NEW}"
+find . -name '*.o' -print0 | xargs -0 ar -rc "${ARCHIVE_NEW}"
+# Refresh the archive symbol index (ar -q quick-append omits this).
+ar s "${ARCHIVE_NEW}" 2>/dev/null || ranlib "${ARCHIVE_NEW}" 2>/dev/null || true
 mv -f "${ARCHIVE_NEW}" "${STUBFILE}"
