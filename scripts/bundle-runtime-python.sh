@@ -92,12 +92,18 @@ done
     || die "pyproject.toml not found in project root: ${PROJECT_ROOT}"
 command -v "${PYTHON_BIN}" >/dev/null 2>&1 \
     || die "python interpreter not found: ${PYTHON_BIN}"
+"${PYTHON_BIN}" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' \
+    || die "bundle group requires Python >= 3.11 (got $("${PYTHON_BIN}" --version 2>&1))"
 
 if ! command -v uv >/dev/null 2>&1; then
     if [[ "${BUNDLE_PY_AUTO_INSTALL_UV:-0}" = "1" ]]; then
         warn "uv missing; auto-installing because BUNDLE_PY_AUTO_INSTALL_UV=1"
         "${SCRIPT_DIR}/ensure-uv.sh" --install \
             || die "auto-install of uv failed"
+        UV_INSTALL_DIR="${UV_INSTALL_DIR:-${HOME:?}/.local/bin}"
+        export PATH="${UV_INSTALL_DIR}:${PATH}"
+        command -v uv >/dev/null 2>&1 \
+            || die "uv install completed but uv is still not on PATH (tried ${UV_INSTALL_DIR})"
     else
         "${SCRIPT_DIR}/ensure-uv.sh" || die "uv is required for bundling runtime Python deps"
     fi
