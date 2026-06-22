@@ -44,9 +44,7 @@ jobs:
         sudo -E ./scripts/get-dependencies.py --yes --profile pythonscad-${{ matrix.qt }}
     - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
     - name: Install gcovr
-      run: |
-        uv sync --frozen --project .github/ci/openscad-coverage
-        echo "${GITHUB_WORKSPACE}/.github/ci/openscad-coverage/.venv/bin" >> "$GITHUB_PATH"
+      run: uv sync --frozen --project .github/ci/openscad-coverage
     - name: Install Python test dependencies (IPython + pexpect for --ipython tests)
       run: |
         # ipython and pexpect must be importable by the *system*

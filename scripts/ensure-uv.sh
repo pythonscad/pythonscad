@@ -56,6 +56,13 @@ UV_INSTALL_DIR="${UV_INSTALL_DIR:-${HOME}/.local/bin}"
 export UV_INSTALL_DIR
 export PATH="${UV_INSTALL_DIR}:${PATH}"
 
+command -v curl >/dev/null 2>&1 \
+    || die "curl is required to install uv automatically"
+
+if ! mkdir -p "${UV_INSTALL_DIR}" 2>/dev/null || [[ ! -w "${UV_INSTALL_DIR}" ]]; then
+    die "cannot write uv install directory: ${UV_INSTALL_DIR}"
+fi
+
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 if ! command -v uv >/dev/null 2>&1; then

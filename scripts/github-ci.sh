@@ -77,7 +77,17 @@ do_coverage() {
 	(
 		cd "$BUILDDIR"
 		echo "Generating code coverage report..."
-		gcovr -r ../src CMakeFiles/OpenSCADLibInternal.dir $PARALLEL_GCOVR --merge-mode-functions=merge-use-line-0 --html --html-details --sort uncovered-percent -o coverage.html
+		if command -v uv >/dev/null 2>&1 \
+			&& [[ -f "${REPO_ROOT}/.github/ci/openscad-coverage/pyproject.toml" ]]; then
+			uv run --project "${REPO_ROOT}/.github/ci/openscad-coverage" gcovr \
+				-r ../src CMakeFiles/OpenSCADLibInternal.dir $PARALLEL_GCOVR \
+				--merge-mode-functions=merge-use-line-0 --html --html-details \
+				--sort uncovered-percent -o coverage.html
+		else
+			gcovr -r ../src CMakeFiles/OpenSCADLibInternal.dir $PARALLEL_GCOVR \
+				--merge-mode-functions=merge-use-line-0 --html --html-details \
+				--sort uncovered-percent -o coverage.html
+		fi
 		if [[ $? != 0 ]]; then
 			exit 1
 		fi
@@ -90,8 +100,7 @@ do_coverage() {
 	fi
 }
 
-for func in $@
-do
+for func in "$@"; do
 	"do_$func"
 done
 

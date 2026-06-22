@@ -213,13 +213,13 @@ install_bundle_deps() {
     fi
 
     info "Running uv pip install --project=${PROJECT_ROOT} --group bundle --target=${STAGING_DEST}"
+    uv lock --check --project "${PROJECT_ROOT}"
     uv pip install \
         --project "${PROJECT_ROOT}" \
         --group bundle \
         --python "${PYTHON_BIN}" \
         --target "${STAGING_DEST}" \
         --upgrade \
-        --no-compile \
         || return 1
 }
 
