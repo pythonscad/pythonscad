@@ -45,10 +45,13 @@ if [ -f "$PATCHFILE" ]; then
     elif command -v bspatch4 >/dev/null 2>&1; then
         bspatch4 ${OBJFILE} ${OBJFILE}.tmp ${PATCHFILE}
     elif python -c "import bsdiff4" 2>/dev/null; then
-        python - <<PY
+        python - "$OBJFILE" "$PATCHFILE" <<'PY'
+import sys
 from bsdiff4 import patch
-src = open("${OBJFILE}", "rb").read()
-open("${OBJFILE}.tmp", "wb").write(patch(src, open("${PATCHFILE}", "rb").read()))
+objfile, patchfile = sys.argv[1:3]
+with open(objfile, "rb") as srcf, open(patchfile, "rb") as patchf:
+    patched = patch(srcf.read(), patchf.read())
+open(objfile + ".tmp", "wb").write(patched)
 PY
     else
         echo "Error: Neither bspatch, bspatch4, nor the Python bsdiff4 module found"
