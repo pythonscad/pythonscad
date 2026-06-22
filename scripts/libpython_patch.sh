@@ -39,7 +39,8 @@
 #     strings "$o" | grep -Fq 'libpython3.XX.dll' && echo "$o"
 #   done
 #
-# Requires: ar, python or python3, find, xargs.
+# Requires: ar, python or python3, find, xargs, strings, grep, sed, basename, tr,
+#           head, and ar s or ranlib (for archive symbol index).
 
 set -e
 
@@ -140,6 +141,12 @@ echo "Patched ${OBJFILE}: libpython${PYTHON_VERSION}.dll -> python${PYTHON_DLL_V
 ARCHIVE_NEW="${STUBFILE}.new"
 rm -f "${ARCHIVE_NEW}"
 find . -name '*.o' -print0 | xargs -0 ar -rc "${ARCHIVE_NEW}"
-# Refresh the archive symbol index (ar -q quick-append omits this).
-ar s "${ARCHIVE_NEW}" 2>/dev/null || ranlib "${ARCHIVE_NEW}" 2>/dev/null || true
+if ar s "${ARCHIVE_NEW}" 2>/dev/null; then
+    :
+elif ranlib "${ARCHIVE_NEW}" 2>/dev/null; then
+    :
+else
+    echo "Error: failed to rebuild symbol index for ${ARCHIVE_NEW} (tried ar s and ranlib)" >&2
+    exit 1
+fi
 mv -f "${ARCHIVE_NEW}" "${STUBFILE}"
