@@ -38,7 +38,7 @@ uv sync --frozen --only-group build --no-install-project
 Build one wheel locally (example: Python 3.12 on Linux x86_64):
 
 ```shell
-CIBW_BUILD=cp312-manylinux_x86_64 uv run cibuildwheel --platform linux
+CIBW_BUILD=cp312-manylinux_x86_64 uv run --no-sync cibuildwheel --platform linux
 ```
 
 Install native build dependencies first:
