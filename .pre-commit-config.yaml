@@ -36,9 +36,9 @@ repos:
           # otherwise they desynchronize from the freshly-generated
           # output the tests compare against.
           - id: trailing-whitespace
-            exclude: ^(tests/regression/|scripts/libpython.*\.o\.diff$)
+            exclude: ^tests/regression/
           - id: end-of-file-fixer
-            exclude: ^(tests/regression/|scripts/libpython.*\.o\.diff$)
+            exclude: ^tests/regression/
           - id: check-yaml
           - id: detect-private-key
     - repo: https://github.com/pre-commit/mirrors-clang-format
