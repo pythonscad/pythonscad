@@ -202,6 +202,8 @@ raise SystemExit(0 if sys.platform == "win32" and "mingw" in sysconfig.get_platf
 }
 
 install_bundle_deps() {
+    uv lock --check --project "${PROJECT_ROOT}"
+
     if is_msys2_python; then
         info "MSYS2 detected; using pacman-vendored psutil path for IPython 9+"
         "${PYTHON_BIN}" "${SCRIPT_DIR}/bundle-ipython-msys2.py" \
@@ -213,7 +215,6 @@ install_bundle_deps() {
     fi
 
     info "Running uv pip install --project=${PROJECT_ROOT} --group bundle --target=${STAGING_DEST}"
-    uv lock --check --project "${PROJECT_ROOT}"
     uv pip install \
         --project "${PROJECT_ROOT}" \
         --group bundle \

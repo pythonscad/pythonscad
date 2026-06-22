@@ -64,7 +64,13 @@ jobs:
         run: uv sync --frozen --only-group build --no-install-project
 
       - name: Add build tools to PATH
-        run: echo "${{ github.workspace }}/.venv/bin" >> "$GITHUB_PATH"
+        shell: bash
+        run: |
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            echo "${{ github.workspace }}/.venv/Scripts" >> "$GITHUB_PATH"
+          else
+            echo "${{ github.workspace }}/.venv/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Build wheel
         uses: pypa/cibuildwheel@294735312765b09d24a2fbec22660ce817587d55 # v4.1.0

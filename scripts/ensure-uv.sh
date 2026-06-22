@@ -14,6 +14,11 @@
 
 set -euo pipefail
 
+die() {
+    echo "error: $*" >&2
+    exit 1
+}
+
 INSTALL=0
 if [[ "${1:-}" == "--install" ]]; then
     INSTALL=1
@@ -51,6 +56,8 @@ EOF
         exit 1
         ;;
 esac
+
+[[ -n "${HOME:-}" ]] || die "HOME is unset; export HOME or set UV_INSTALL_DIR explicitly"
 
 UV_INSTALL_DIR="${UV_INSTALL_DIR:-${HOME}/.local/bin}"
 export UV_INSTALL_DIR
