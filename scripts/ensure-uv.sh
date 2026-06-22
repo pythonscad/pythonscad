@@ -40,7 +40,7 @@ Install uv, then re-run:
   MSYS2 UCRT64: pacboy -S --noconfirm uv:p
   PyPI:         python3 -m pip install --user uv
 
-GitHub Actions should use astral-sh/setup-uv@v5 instead of this script.
+GitHub Actions should use a SHA-pinned astral-sh/setup-uv action instead of this script.
 EOF
     exit 1
 fi
