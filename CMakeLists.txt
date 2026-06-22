@@ -329,7 +329,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     "-sEXPORTED_FUNCTIONS=['_EmsInitPython','_EmsEvaluatePython', '_EmsFinishPython', '_malloc','_free','_main']"
     "-sSTACK_SIZE=8388608"    # 8 MB Stack statt default ~64KB
     "-sINITIAL_MEMORY=134217728"  # 128 MB initialer Heap (optional, falls auch Heap-Probleme)
-    -sMAXIMUM_MEMORY=4GB
+    "-sASSERTIONS=2"        # ← neu, für den Debug-Build
+-sMAXIMUM_MEMORY=4GB
 
     # -g produces DWARF debug info, which is quite large and may need debugger extensions.
     # Alternatively, can pass -gsource-map -sLOAD_SOURCE_MAP but then variable debugging isn't possible
