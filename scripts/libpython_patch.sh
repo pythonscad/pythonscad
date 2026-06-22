@@ -66,5 +66,10 @@ else
 fi
 
 #pack again
-# Use find with xargs to avoid "Argument list too long" error on Windows
-find . -name '*.o' -print0 | xargs -0 ar -rc ${STUBFILE}
+# Use find with xargs to avoid "Argument list too long" error on Windows.
+# Write to a temp archive first: rebuilding in place with ar -rc can truncate
+# the source .a on MSYS2/Windows when xargs invokes ar in multiple batches.
+ARCHIVE_NEW="${STUBFILE}.new"
+rm -f "${ARCHIVE_NEW}"
+find . -name '*.o' -print0 | xargs -0 ar -q "${ARCHIVE_NEW}"
+mv -f "${ARCHIVE_NEW}" "${STUBFILE}"
