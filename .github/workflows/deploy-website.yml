@@ -91,7 +91,7 @@ jobs:
 
       - name: Build mkdocs site
         working-directory: web
-        run: uv run --directory .. --no-sync mkdocs build --strict
+        run: uv run --project .. --no-sync mkdocs build --strict
 
       - name: Setup SSH key and known_hosts for SFTP
         run: |
