@@ -32,7 +32,7 @@ Ubuntu, Fedora, RHEL/Rocky, etc.) that meet the `manylinux_2_28` baseline.
 Install pinned build tooling:
 
 ```shell
-uv sync --frozen --only-group build
+uv sync --frozen --only-group build --no-install-project
 ```
 
 Build one wheel locally (example: Python 3.12 on Linux x86_64):
