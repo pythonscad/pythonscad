@@ -74,7 +74,7 @@ do_coverage() {
 
 	rm -rf "$GCOVRDIR"
 	mkdir "$GCOVRDIR"
-	(
+	if ! (
 		cd "$BUILDDIR"
 		echo "Generating code coverage report..."
 		if command -v uv >/dev/null 2>&1 \
@@ -88,13 +88,9 @@ do_coverage() {
 				--merge-mode-functions=merge-use-line-0 --html --html-details \
 				--sort uncovered-percent -o coverage.html
 		fi
-		if [[ $? != 0 ]]; then
-			exit 1
-		fi
 		mv coverage*.html ../"$GCOVRDIR"
 		echo "done."
-	)
-	if [[ $? != 0 ]]; then
+	); then
 		echo "Coverage failure"
 		exit 1
 	fi
