@@ -34,6 +34,43 @@ def _run(cmd: list[str]) -> None:
     subprocess.run(cmd, check=True)
 
 
+def _export_bundle_requirements(project_root: pathlib.Path) -> pathlib.Path:
+    """Materialize the bundle dependency group as a flat requirements file."""
+    if not (project_root / "pyproject.toml").is_file():
+        raise SystemExit(f"pyproject.toml not found in {project_root}")
+    tmp = tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".txt",
+        prefix="pythonscad-bundle-reqs.",
+        delete=False,
+        encoding="utf-8",
+    )
+    tmp.close()
+    req_path = pathlib.Path(tmp.name)
+    try:
+        _run(
+            [
+                "uv",
+                "export",
+                "--project",
+                str(project_root),
+                "--only-group",
+                "bundle",
+                "--format",
+                "requirements-txt",
+                "--no-header",
+                "--no-annotate",
+                "--no-hashes",
+                "-o",
+                str(req_path),
+            ]
+        )
+    except subprocess.CalledProcessError:
+        req_path.unlink(missing_ok=True)
+        raise
+    return req_path
+
+
 def _parse_runtime_requirements(requirements_file: pathlib.Path) -> tuple[list[str], list[str]]:
     """Split a requirements file into IPython specs and all other runtime deps."""
     ipython_specs: list[str] = []
@@ -162,9 +199,17 @@ def main() -> None:
     parser.add_argument("--python", required=True, help="Python interpreter to drive pip")
     parser.add_argument("--target", required=True, type=pathlib.Path, help="Bundle staging dir")
     parser.add_argument(
-        "--requirements", required=True, type=pathlib.Path, help="requirements/runtime.txt"
+        "--project",
+        required=True,
+        type=pathlib.Path,
+        help="Project root containing pyproject.toml (bundle dependency group)",
     )
     args = parser.parse_args()
+
+    if shutil.which("uv") is None:
+        raise SystemExit(
+            "uv is not on PATH. On MSYS2 UCRT64, run: pacboy -S --noconfirm uv:p"
+        )
 
     try:
         subprocess.run([args.python, "-c", "import psutil"], check=True, capture_output=True)
@@ -176,16 +221,20 @@ def main() -> None:
 
     args.target.mkdir(parents=True, exist_ok=True)
 
-    ipython_specs, other_specs = _parse_runtime_requirements(args.requirements)
-    _install_deps(args.python, args.target, other_specs)
+    requirements_file = _export_bundle_requirements(args.project.resolve())
+    try:
+        ipython_specs, other_specs = _parse_runtime_requirements(requirements_file)
+        _install_deps(args.python, args.target, other_specs)
 
-    with tempfile.TemporaryDirectory(prefix="ipython-wheel.") as tmp:
-        wheel_dir = pathlib.Path(tmp)
-        wheel = _download_ipython_wheel(args.python, ipython_specs, wheel_dir)
-        deps = _filter_requirements(_read_requires_dist(wheel), exclude_names={"psutil"})
-        _install_deps(args.python, args.target, deps)
-        _vend_psutil_from_system(args.target)
-        _install_ipython_wheel(args.python, args.target, wheel)
+        with tempfile.TemporaryDirectory(prefix="ipython-wheel.") as tmp:
+            wheel_dir = pathlib.Path(tmp)
+            wheel = _download_ipython_wheel(args.python, ipython_specs, wheel_dir)
+            deps = _filter_requirements(_read_requires_dist(wheel), exclude_names={"psutil"})
+            _install_deps(args.python, args.target, deps)
+            _vend_psutil_from_system(args.target)
+            _install_ipython_wheel(args.python, args.target, wheel)
+    finally:
+        requirements_file.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

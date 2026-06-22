@@ -51,11 +51,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+
       - name: Install build tooling
-        run: pip install -r requirements/build-pypi.txt
+        run: uv sync --frozen --only-group build --no-install-project
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@294735312765b09d24a2fbec22660ce817587d55 # v4.1.0
+        run: uv run cibuildwheel
 
       - uses: actions/upload-artifact@v7
         with:
@@ -80,11 +82,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+
       - name: Install build frontend
-        run: pip install -r requirements/build-pypi.txt
+        run: uv sync --frozen --only-group build --no-install-project
 
       - name: Build sdist
-        run: python -m build --sdist
+        run: uv run python -m build --sdist
 
       - uses: actions/upload-artifact@v7
         with:
