@@ -2476,6 +2476,7 @@ if(NOT APPLE OR APPLE_UNIX)
             "${MSYS2_BIN_DIR}"
             "${CMAKE_BINARY_DIR}"
             "${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src"
+            "${CMAKE_CURRENT_SOURCE_DIR}/python_embed"
           DESTINATION "."
         )
         message(STATUS "Native MSYS2 build: Runtime DLLs will be bundled from ${MSYS2_BIN_DIR}")
@@ -2521,7 +2522,7 @@ if(NOT APPLE OR APPLE_UNIX)
             UNRESOLVED_DEPENDENCIES_VAR _unresolved
             PRE_EXCLUDE_REGEXES \"api-ms-.*\" \"ext-ms-.*\"
             POST_EXCLUDE_REGEXES \".*[Ss]ystem32.*\" \".*[Ww]indows.*\"
-            DIRECTORIES \"\${_msys2_bindir}\"
+            DIRECTORIES \"\${_msys2_bindir}\" \"${CMAKE_CURRENT_SOURCE_DIR}/python_embed\"
           )
           if(POLICY CMP0207)
             cmake_policy(POP)
