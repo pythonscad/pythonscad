@@ -76,8 +76,8 @@ jobs:
                 -DWASM_BUILD_TYPE=node \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DEXPERIMENTAL=1 \
-                -Wno-dev 2>&1 | tail -10
-              cmake --build build-wasm-node -j\$(nproc) 2>&1 | tail -5
+                -Wno-dev 2>&1
+              cmake --build build-wasm-node -j\$(nproc) 2>&1
             "
 
       - name: Smoke test (node)
@@ -119,8 +119,8 @@ jobs:
                 -DWASM_BUILD_TYPE=web \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DEXPERIMENTAL=1 \
-                -Wno-dev 2>&1 | tail -10
-              cmake --build build-wasm-web -j\$(nproc) 2>&1 | tail -5
+                -Wno-dev 2>&1
+              cmake --build build-wasm-web -j\$(nproc) 2>&1
             "
 
       - name: Package web artifacts
