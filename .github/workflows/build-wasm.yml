@@ -56,29 +56,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Build WASM sysroot Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: docker/wasm/sysroot.dockerfile
-          target: wasm-sysroot
-          tags: pythonscad-wasm-sysroot:local
-          load: true
-          cache-from: type=gha,scope=wasm-sysroot
-          cache-to: type=gha,mode=max,scope=wasm-sysroot
-
       - name: Build wasm-python-base Docker image
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: Dockerfile.wasm-python-base
+          file: docker/wasm/sysroot.dockerfile
+          target: wasm-python-base
           tags: pythonscad-wasm-python-base:local
           load: true
-          pull: false
-          build-contexts: |
-            wasm-sysroot=docker-image://pythonscad-wasm-sysroot:local
-          cache-from: type=gha,scope=wasm-python-base
-          cache-to: type=gha,mode=max,scope=wasm-python-base
+          cache-from: type=gha,scope=wasm-docker
+          cache-to: type=gha,mode=max,scope=wasm-docker
 
       - name: Build WASM node variant
         run: |

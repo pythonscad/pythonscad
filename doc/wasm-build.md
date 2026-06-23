@@ -47,11 +47,25 @@ docker build -f docker/wasm/sysroot.dockerfile --target wasm-sysroot \
   -t pythonscad-wasm-sysroot:local .
 ```
 
-Then build the Python layer (~20 min first time for CPython cross-compile):
+Then build the Python layer (~20 min first time for CPython cross-compile), or build
+both sysroot and CPython in one step:
+
+```bash
+docker build -f docker/wasm/sysroot.dockerfile --target wasm-python-base \
+  -t pythonscad-wasm-python-base:local .
+```
+
+Sysroot only (no CPython):
+
+```bash
+docker build -f docker/wasm/sysroot.dockerfile --target wasm-sysroot \
+  -t pythonscad-wasm-sysroot:local .
+```
+
+Legacy two-step build (requires sysroot image tag first):
 
 ```bash
 docker build \
-  --build-context wasm-sysroot=docker-image://pythonscad-wasm-sysroot:local \
   -f Dockerfile.wasm-python-base \
   -t pythonscad-wasm-python-base:local .
 ```

@@ -277,3 +277,53 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bison cmake flex gettext ninja-build pkg-config \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /
+
+# CPython 3.14 cross-compile for wasm32-emscripten (layered on wasm-sysroot).
+FROM ${EMSCRIPTEN_SDK_TAG} AS cpython-builder
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential libssl-dev libffi-dev zlib1g-dev wget xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+ENV CPYTHON_VERSION=3.14.6
+ENV CPYTHON_TAR_SHA256=143b1dddefaec3bd2e21e3b839b34a2b7fb9842272883c576420d605e9f30c63
+ENV CPYTHON_PREFIX=/cpython-wasm
+WORKDIR /build
+RUN wget -q "https://www.python.org/ftp/python/${CPYTHON_VERSION}/Python-${CPYTHON_VERSION}.tar.xz" \
+    && echo "${CPYTHON_TAR_SHA256}  Python-${CPYTHON_VERSION}.tar.xz" | sha256sum -c - \
+    && tar -xf Python-${CPYTHON_VERSION}.tar.xz \
+    && rm Python-${CPYTHON_VERSION}.tar.xz
+RUN cd Python-${CPYTHON_VERSION} \
+    && ./configure --prefix=/usr/local/cpython-native --quiet \
+    && make -j$(nproc) \
+    && make install
+RUN cd Python-${CPYTHON_VERSION} \
+    && printf 'ac_cv_func_pthread_kill=no\n' >> Platforms/emscripten/config.site-wasm32-emscripten \
+    && CONFIG_SITE=./Platforms/emscripten/config.site-wasm32-emscripten \
+       emconfigure ./configure \
+         --prefix=${CPYTHON_PREFIX} \
+         --build=x86_64-linux-gnu \
+         --host=wasm32-unknown-emscripten \
+         --with-build-python=/usr/local/cpython-native/bin/python3 \
+         --disable-shared \
+         --without-ensurepip \
+         "CFLAGS=-fexceptions -O2 -fPIC" \
+         "LDFLAGS=-fexceptions" \
+    && printf '*disabled*\n_decimal\n_bz2\n_sha2\n_md5\n_sha1\n_sha3\n_blake2\n_elementtree\npyexpat\n_ctypes\n_sqlite3\n' > Modules/Setup.local \
+    && emmake make -j$(nproc) libpython3.14.a \
+    && install -d ${CPYTHON_PREFIX}/lib \
+                  ${CPYTHON_PREFIX}/lib/python3.14 \
+                  ${CPYTHON_PREFIX}/include/python3.14 \
+    && cp libpython3.14.a ${CPYTHON_PREFIX}/lib/ \
+    && cp -r Include/. ${CPYTHON_PREFIX}/include/python3.14/ \
+    && cp pyconfig.h ${CPYTHON_PREFIX}/include/python3.14/ \
+    && cp -a Lib/. ${CPYTHON_PREFIX}/lib/python3.14/ \
+    && rm -rf \
+         ${CPYTHON_PREFIX}/lib/python3.14/test \
+         ${CPYTHON_PREFIX}/lib/python3.14/tkinter \
+         ${CPYTHON_PREFIX}/lib/python3.14/lib2to3 \
+         ${CPYTHON_PREFIX}/lib/python3.14/distutils \
+         ${CPYTHON_PREFIX}/lib/python3.14/idlelib \
+         ${CPYTHON_PREFIX}/lib/python3.14/turtledemo
+
+FROM wasm-sysroot AS wasm-python-base
+COPY --from=cpython-builder /cpython-wasm /cpython-wasm
+WORKDIR /

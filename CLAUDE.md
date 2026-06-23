@@ -320,13 +320,12 @@ Docker uses two local images (no `openscad/wasm-base` dependency):
 1. **`pythonscad-wasm-sysroot:local`** — third-party WASM libraries (Boost, CGAL, …)
 2. **`pythonscad-wasm-python-base:local`** — sysroot + cross-compiled CPython 3.14
 
-`scripts/wasm-base-docker-run.sh` builds both images automatically if missing.
+`scripts/wasm-base-docker-run.sh` builds the `wasm-python-base` image automatically if missing.
 
 ```bash
-# Sysroot (~45 min first time) then Python layer (~20 min)
-docker build -f docker/wasm/sysroot.dockerfile --target wasm-sysroot \
-  -t pythonscad-wasm-sysroot:local .
-docker build -f Dockerfile.wasm-python-base -t pythonscad-wasm-python-base:local .
+# Unified build (sysroot + CPython, ~60 min first time)
+docker build -f docker/wasm/sysroot.dockerfile --target wasm-python-base \
+  -t pythonscad-wasm-python-base:local .
 
 # Node variant (fast smoke test)
 ./scripts/wasm-base-docker-run.sh emcmake cmake -B build-wasm-node \
