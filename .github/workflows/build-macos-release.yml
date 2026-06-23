@@ -802,6 +802,7 @@ jobs:
           echo "Apple code signing certificate installed."
 
       - name: Fix app bundle for macOS distribution
+        shell: bash
         env:
           SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
           STEPS_MERGE_OUTPUTS_APP_BUNDLE: ${{ steps.merge.outputs.app_bundle }}
@@ -884,17 +885,16 @@ jobs:
           BUNDLE_PY="${APP_BUNDLE}/Contents/Resources/pythonscad-bundled-py"
           if [ -d "$BUNDLE_PY" ]; then
             echo "=== Signing bundled runtime Python deps ==="
-            while IFS= read -r -d '' f; do
-              if file "$f" | grep -q Mach-O; then
-                if ! codesign_output=$(codesign --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f" 2>&1); then
-                  echo "$codesign_output"
-                  exit 1
-                fi
-                if [ -n "$codesign_output" ]; then
-                  echo "$codesign_output" | grep -v "replacing existing signature" || true
-                fi
+            while IFS= read -r f; do
+              [ -n "$f" ] || continue
+              if ! codesign_output=$(codesign --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f" 2>&1); then
+                echo "$codesign_output"
+                exit 1
               fi
-            done < <(find "$BUNDLE_PY" -type f \( -name "*.so" -o -name "*.dylib" \) -print0)
+              if [ -n "$codesign_output" ]; then
+                echo "$codesign_output" | grep -v "replacing existing signature" || true
+              fi
+            done < <(find "$BUNDLE_PY" -type f \( -name "*.so" -o -name "*.dylib" \) -print0 | xargs -0 file | sed -n 's/: Mach-O.*//p')
           fi
 
           # Step 3: Sign Qt frameworks (each framework as a bundle)
