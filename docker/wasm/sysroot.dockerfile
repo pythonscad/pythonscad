@@ -19,12 +19,16 @@ WORKDIR /ow
 RUN git clone --filter=blob:none --no-checkout https://github.com/openscad/openscad-wasm.git . \
     && git checkout ${OPENSCAD_WASM_COMMIT}
 # Tarball targets from openscad-wasm Makefile; use mirrors (gmplib.org is often unreachable).
+# SHA256 sums from upstream release pages (gmp.org, mpfr.org, boost GitHub release .txt).
 RUN mkdir -p libs \
     && wget -q https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz \
+    && echo "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898  gmp-6.3.0.tar.xz" | sha256sum -c - \
     && tar xf gmp-6.3.0.tar.xz -C libs && mv libs/gmp-6.3.0 libs/gmp && rm gmp-6.3.0.tar.xz \
     && wget -q https://www.mpfr.org/mpfr-4.2.1/mpfr-4.2.1.tar.xz \
+    && echo "277807353a6726978996945af13e52829e3abd7a9a5b7fb2793894e18f1fcbb2  mpfr-4.2.1.tar.xz" | sha256sum -c - \
     && tar xf mpfr-4.2.1.tar.xz -C libs && mv libs/mpfr-4.2.1 libs/mpfr && rm mpfr-4.2.1.tar.xz \
     && wget -q https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-b2-nodocs.tar.xz \
+    && echo "3abd7a51118a5dd74673b25e0a3f0a4ab1752d8d618f4b8cea84a603aeecc680  boost-1.87.0-b2-nodocs.tar.xz" | sha256sum -c - \
     && tar xf boost-1.87.0-b2-nodocs.tar.xz -C libs && mv libs/boost-1.87.0 libs/boost \
     && rm boost-1.87.0-b2-nodocs.tar.xz \
     && sed -i -E 's/-fwasm-exceptions/-fexceptions/g' libs/boost/tools/build/src/tools/emscripten.jam

@@ -135,7 +135,9 @@ A successful run writes a binary STL of roughly 15 KB (80 triangular facets).
 ### Web variant (browser)
 
 ```bash
-cp wasm-test/test.html wasm-test/notebook.html wasm-test/vendor/three.min.js build-wasm-web/
+cp wasm-test/test.html wasm-test/notebook.html build-wasm-web/
+mkdir -p build-wasm-web/vendor
+cp wasm-test/vendor/three.min.js build-wasm-web/vendor/
 python3 wasm-test/serve.py 8080 build-wasm-web/
 # Open http://localhost:8080/test.html or /notebook.html
 ```
