@@ -74,6 +74,9 @@ jobs:
           file: Dockerfile.wasm-python-base
           tags: pythonscad-wasm-python-base:local
           load: true
+          pull: false
+          build-contexts: |
+            wasm-sysroot=docker-image://pythonscad-wasm-sysroot:local
           cache-from: type=gha,scope=wasm-python-base
           cache-to: type=gha,mode=max,scope=wasm-python-base
 

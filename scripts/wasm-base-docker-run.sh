@@ -45,6 +45,7 @@ if ! docker image inspect pythonscad-wasm-python-base:local &>/dev/null; then
   echo "Building pythonscad-wasm-python-base:local (compiling CPython for Emscripten — first run only)..."
   docker build \
     --platform=linux/amd64 \
+    --build-context wasm-sysroot=docker-image://pythonscad-wasm-sysroot:local \
     -f Dockerfile.wasm-python-base \
     -t pythonscad-wasm-python-base:local \
     .

@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 # PythonSCAD WASM Docker image: Emscripten 6.0 sysroot + CPython 3.14.
 #
 # Requires pythonscad-wasm-sysroot:local (see docker/wasm/sysroot.dockerfile).
@@ -70,7 +71,7 @@ RUN cd Python-${CPYTHON_VERSION} \
          ${CPYTHON_PREFIX}/lib/python3.14/idlelib \
          ${CPYTHON_PREFIX}/lib/python3.14/turtledemo
 
-FROM pythonscad-wasm-sysroot:local
+FROM wasm-sysroot
 
 COPY --from=cpython-builder /cpython-wasm /cpython-wasm
 

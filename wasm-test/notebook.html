@@ -267,7 +267,7 @@ function dbg(msg, type) {
   const color = type === 'error' ? '#ff6b6b' : type === 'info' ? '#ffd166' : '#00d4aa';
   const body = document.getElementById('dbg-body');
   body.insertAdjacentHTML('beforeend',
-    '<div style="color:' + color + '">' + String(msg).replace(/</g,'&lt;') + '</div>');
+    '<div style="color:' + color + '">' + escHTML(msg) + '</div>');
   _dbgPanel.scrollTop = _dbgPanel.scrollHeight;
 }
 
