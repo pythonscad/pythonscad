@@ -1534,20 +1534,6 @@ void EmsFinishPython(void)
 EMSCRIPTEN_KEEPALIVE
 const char *EmsEvaluatePython(const char *code, bool dry_run)
 {
-  // Stack-Tiefe messen
-  volatile char stack_probe;
-  void *stack_ptr = (void *)&stack_probe;
-  // emscripten_stack_get_current() gibt aktuellen Stack-Pointer zurück
-  size_t stack_used = (char *)emscripten_stack_get_base() - (char *)stack_ptr;
-  size_t stack_free = emscripten_stack_get_free();
-  // Logge es via printErr
-  EM_ASM(
-    { console.warn('[EmsEvaluatePython] stack_free=' + $0 + ' stack_used=' + $1); }, stack_free,
-    stack_used);
-
-  if (stack_free < 65536) {  // Weniger als 64KB frei → Stack-Overflow droht
-    return "ERROR: Stack too full before evaluation";
-  }
   static std::string result;
   result = evaluatePython(std::string(code), dry_run);
   return result.c_str();
