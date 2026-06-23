@@ -486,8 +486,7 @@ function outlinesTo3D(outlines) {
     outlineIndexRanges.push([startIdx, vertices.length]);
   }
 
-  // Ear-clipping triangulation on the largest (assumed outer) outline only;
-  // additional outlines render as wireframe-only if not the outer boundary.
+  // Ear-clipping triangulation on each outline independently.
   const faces = [];
   for (const [rangeStart, rangeEnd] of outlineIndexRanges) {
     const ring = [];
