@@ -82,7 +82,7 @@ RUN cd expat && \
     ./buildconf.sh && \
     emconfigure ./configure \
         --without-docbook \
-        --host wasm32-unknown-linux \
+        --host wasm32-unknown-emscripten \
         --prefix=/emsdk/upstream/emscripten/cache/sysroot \
         --enable-shared=no \
         --disable-dependency-tracking && \
@@ -112,7 +112,7 @@ FROM builder AS libffi
 COPY --from=libs-fetch /ow/libs/libffi .
 RUN ./autogen.sh && \
     emconfigure ./configure \
-      --host wasm32-unknown-linux \
+      --host wasm32-unknown-emscripten \
       --prefix=/emsdk/upstream/emscripten/cache/sysroot \
       --enable-static \
       --disable-shared \
