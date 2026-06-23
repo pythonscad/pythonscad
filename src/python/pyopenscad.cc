@@ -1452,7 +1452,9 @@ stderr_bak = None\n\
   if (result == nullptr) {
     error = "";
     python_catch_error(error);
+#ifndef OPENSCAD_NOGUI
     PyErr_Print();
+#endif
   }
 #ifndef OPENSCAD_NOGUI
   for (int i = 0; i < 2; i++) {

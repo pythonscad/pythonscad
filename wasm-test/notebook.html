@@ -465,10 +465,8 @@ function extractGeometry(output) {
 
 // Convert a list of 2D outlines (each a list of [x,y] points) into a flat
 // {vertices, faces} mesh on the Z=0 plane, via simple ear-clipping
-// triangulation. Handles the common single-outer-outline case, and treats
-// additional outlines as holes by naive subtraction (best-effort — complex
-// multi-hole cases may not triangulate perfectly, but render correctly
-// as an outline-only shape in the worst case).
+// triangulation. Each outline is triangulated independently (holes are not
+// subtracted); multi-outline cases may not match OpenSCAD's 2D fill rules.
 function outlinesTo3D(outlines) {
   if (!outlines || outlines.length === 0) return { vertices: [], faces: [] };
 
@@ -673,12 +671,12 @@ function outputRowHTML(c) {
 
 function runCell(id) {
   const cell = cells.find(c => c.id === id);
-  if (!cell) return;
+  if (!cell) return Promise.resolve();
   const ta = document.getElementById('ed-' + id);
   if (ta) cell.code = ta.value;
 
-  if (cell.type === 'markdown') { runMarkdown(cell); return; }
-  if (!wasmReady) { alert('Kernel not ready yet.'); return; }
+  if (cell.type === 'markdown') { runMarkdown(cell); return Promise.resolve(); }
+  if (!wasmReady) { alert('Kernel not ready yet.'); return Promise.resolve(); }
 
   const outRow = document.getElementById('outrow-' + id);
   const outCtr = document.getElementById('outctr-' + id);
@@ -698,7 +696,7 @@ function runCell(id) {
 
   const t0 = Date.now();
 
-  requestAnimationFrame(() => requestAnimationFrame(() => {
+  return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => {
     let rawOutput;
     let crashed = false;
     try {
@@ -763,7 +761,8 @@ function runCell(id) {
       bodyEl.innerHTML = '<div class="output-body"><div class="output-log" style="opacity:0.5">(no output)</div></div>';
       setStatus('Done (' + elapsed + 's)');
     }
-  }));
+    resolve();
+  })));
 }
 
 function runMarkdown(cell) {
@@ -773,7 +772,9 @@ function runMarkdown(cell) {
   mdEl.innerHTML = mdToHtml(cell.code);
 }
 
-function runAllCells() { cells.forEach(c => runCell(c.id)); }
+async function runAllCells() {
+  for (const c of cells) await runCell(c.id);
+}
 
 function clearAllOutputs() {
   cells.forEach(c => {
