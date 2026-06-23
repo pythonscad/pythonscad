@@ -11,6 +11,8 @@ ARG EMSCRIPTEN_SDK_TAG=emscripten/emsdk@sha256:9eed2e47b4206928b22f99d2917013ad5
 # Pin openscad-wasm for reproducible sysroot builds; bump OPENSCAD_WASM_COMMIT when
 # intentionally syncing upstream recipe/patches.
 ARG OPENSCAD_WASM_COMMIT=ac5cf9b129bdb243fef3862883bd5d64e54fffcb
+# fontconfig 2.14.2 release tag (immutable commit; bump when syncing upstream).
+ARG FONTCONFIG_COMMIT=1c4a5773d9d29ff20129bb454ea541bdfd0a99a3
 
 FROM ${EMSCRIPTEN_SDK_TAG} AS libs-fetch
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -35,7 +37,8 @@ RUN mkdir -p libs \
     && sed -i -E 's/-fwasm-exceptions/-fexceptions/g' libs/boost/tools/build/src/tools/emscripten.jam
 RUN make libs \
     && rm -rf libs/fontconfig \
-    && git clone --depth 1 --branch 2.14.2 https://gitlab.freedesktop.org/fontconfig/fontconfig.git libs/fontconfig \
+    && git clone --filter=blob:none --no-checkout https://gitlab.freedesktop.org/fontconfig/fontconfig.git libs/fontconfig \
+    && git -C libs/fontconfig checkout ${FONTCONFIG_COMMIT} \
     && awk '/^SUBDIRS=fontconfig fc-case fc-lang src/ { print "SUBDIRS=fontconfig fc-case fc-lang src"; skip=1; next } skip && /^[[:space:]]*its po po-conf test$/ { skip=0; next } skip { next } { print }' libs/fontconfig/Makefile.am > libs/fontconfig/Makefile.am.new \
     && mv libs/fontconfig/Makefile.am.new libs/fontconfig/Makefile.am \
     && sed -i 's/  RUN_FC_CACHE_TEST=test -z "$(DESTDIR)"/  RUN_FC_CACHE_TEST=false/' libs/fontconfig/Makefile.am

@@ -876,14 +876,17 @@ function initViewerGeometry(canvas, geom) {
   if (useColors && colBuf) {
     geo.setAttribute('color', new THREE.BufferAttribute(colBuf.subarray(0, oc), 3));
   }
-  geo.computeVertexNormals();
-  geo.computeBoundingBox();
-  const center = new THREE.Vector3();
-  geo.boundingBox.getCenter(center);
-  geo.translate(-center.x, -center.y, -center.z);
-  const size = new THREE.Vector3();
-  geo.boundingBox.getSize(size);
-  const maxDim = Math.max(size.x, size.y, size.z) || 1;
+  let maxDim = 1;
+  if (o > 0) {
+    geo.computeVertexNormals();
+    geo.computeBoundingBox();
+    const center = new THREE.Vector3();
+    geo.boundingBox.getCenter(center);
+    geo.translate(-center.x, -center.y, -center.z);
+    const size = new THREE.Vector3();
+    geo.boundingBox.getSize(size);
+    maxDim = Math.max(size.x, size.y, size.z) || 1;
+  }
 
   // Crosshair / axes helper at the origin, scaled to the model's size
   const axesLen = maxDim * 0.75;

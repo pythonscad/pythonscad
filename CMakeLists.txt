@@ -309,7 +309,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   set(ENABLE_LIBFIVE OFF CACHE BOOL "" FORCE)
   set(ENV{PKG_CONFIG_PATH} "/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig")
 
-  # CPython compiled for wasm32-emscripten (see Dockerfile.wasm-python-base)
+  # CPython compiled for wasm32-emscripten (see docker/wasm/sysroot.dockerfile)
   set(CPYTHON_WASM_PREFIX "/cpython-wasm" CACHE PATH "CPython compiled for wasm32-emscripten")
   set(CPYTHON_WASM_PYVER "3.14" CACHE STRING "Python version in CPYTHON_WASM_PREFIX")
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
