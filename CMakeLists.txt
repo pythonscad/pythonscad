@@ -319,12 +319,15 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
 
   # https://emscripten.org/docs/tools_reference/emcc.html
   # https://emscripten.org/docs/tools_reference/settings_reference.html
-  target_compile_options(OpenSCADLibInternal PUBLIC -fexceptions)
+  target_compile_options(OpenSCADLibInternal PUBLIC
+  -fwasm-exceptions
+  )
   target_link_options(OpenSCADExe PUBLIC
     -fexceptions
     -sABORT_ON_WASM_EXCEPTIONS
     -sALLOW_MEMORY_GROWTH=1
     -sDISABLE_EXCEPTION_CATCHING=0
+    -fwasm-exceptions
     "-DCGAL_HAS_NO_THREADS"
     "-DCGAL_DISABLE_ROUNDING_MATH_CHECK"  # vermutlich schon drin
     -sEXIT_RUNTIME=1
