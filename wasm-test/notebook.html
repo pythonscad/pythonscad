@@ -718,7 +718,7 @@ function runCell(id) {
     // Restore the cell's own stable execution number (assigned at creation)
     ctrEl.textContent = '[' + cell.executionCount + ']';
     outCtr.textContent = '[' + cell.executionCount + ']';
-    setBadge('ready', 'PySCAD/WASM');
+    if (!crashed) setBadge('ready', 'PySCAD/WASM');
 
     const r = extractGeometry(rawOutput);
     const geometry = r.geometry, text = r.text;

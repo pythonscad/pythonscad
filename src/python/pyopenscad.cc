@@ -1521,7 +1521,7 @@ EMSCRIPTEN_KEEPALIVE
 const char *EmsEvaluatePython(const char *code, bool dry_run)
 {
   static std::string result;
-  result = evaluatePython(std::string(code), dry_run);
+  result = evaluatePython(code ? std::string(code) : std::string(), dry_run);
   return result.c_str();
 }
 }
