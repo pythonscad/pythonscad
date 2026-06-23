@@ -789,6 +789,12 @@ function clearAllOutputs() {
   cells.forEach(c => {
     const row = document.getElementById('outrow-' + c.id);
     if (row) row.style.display = 'none';
+    if (c.type === 'markdown') {
+      const outEl = document.getElementById('out-' + c.id);
+      const mdEl = document.getElementById('md-' + c.id);
+      if (outEl) outEl.classList.remove('visible');
+      if (mdEl) mdEl.innerHTML = '';
+    }
   });
   setStatus('Outputs cleared');
 }
