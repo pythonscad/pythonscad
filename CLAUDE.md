@@ -331,7 +331,7 @@ docker build -f docker/wasm/sysroot.dockerfile --target wasm-python-base \
 ./scripts/wasm-base-docker-run.sh emcmake cmake -B build-wasm-node \
   -DWASM_BUILD_TYPE=node -DCMAKE_BUILD_TYPE=Release -DEXPERIMENTAL=1
 ./scripts/wasm-base-docker-run.sh cmake --build build-wasm-node -j$(nproc)
-build-wasm-node/pythonscad.js -o out.stl --trust-python script.py
+node build-wasm-node/pythonscad.js -o out.stl --trust-python script.py
 
 # Web variant (browser distribution; MAIN_MODULE=2 for Chromium JSPI)
 ./scripts/wasm-base-docker-run.sh emcmake cmake -B build-wasm-web \
@@ -340,7 +340,7 @@ build-wasm-node/pythonscad.js -o out.stl --trust-python script.py
 
 # Test in browser (copy pages via docker if build dir is docker-owned)
 docker run --rm -v "$PWD:/src" -w /src pythonscad-wasm-python-base:local \
-  cp wasm-test/test.html wasm-test/notebook.html build-wasm-web/
+  cp wasm-test/test.html wasm-test/notebook.html wasm-test/vendor/three.min.js build-wasm-web/
 python3 wasm-test/serve.py 8080 build-wasm-web/
 # http://localhost:8080/test.html  or  /notebook.html
 ```

@@ -39,8 +39,10 @@ CPython 3.14 browser support):
    `docker/wasm/sysroot.dockerfile`. No dependency on `openscad/wasm-base`.
 2. **`pythonscad-wasm-python-base:local`** — adds CPython 3.14 on top of the sysroot.
 
-`scripts/wasm-base-docker-run.sh` builds both images automatically if missing.
-Build the sysroot once (~45 min first time):
+`scripts/wasm-base-docker-run.sh` builds `pythonscad-wasm-python-base:local`
+(sysroot + CPython in one multi-stage build) automatically if missing. It does
+not tag a separate `pythonscad-wasm-sysroot:local` image. To build or inspect
+stages individually:
 
 ```bash
 docker build -f docker/wasm/sysroot.dockerfile --target wasm-sysroot \
@@ -133,10 +135,14 @@ A successful run writes a binary STL of roughly 15 KB (80 triangular facets).
 ### Web variant (browser)
 
 ```bash
-cp wasm-test/test.html build-wasm-web/
+cp wasm-test/test.html wasm-test/notebook.html wasm-test/vendor/three.min.js build-wasm-web/
 python3 wasm-test/serve.py 8080 build-wasm-web/
-# Open http://localhost:8080/test.html in Chrome or Firefox
+# Open http://localhost:8080/test.html or /notebook.html
 ```
+
+The notebook page uses a vendored `three.min.js` (see `wasm-test/package.json`;
+run `npm ci` in `wasm-test/` after Dependabot bumps three.js). Fonts fall back to
+system UI stacks — no external CDN at runtime.
 
 The `wasm-test/serve.py` server sets `.wasm → application/wasm` and
 `.data → application/octet-stream` MIME types, which browsers require.

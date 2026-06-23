@@ -1,0 +1,11 @@
+{
+  "name": "wasm-test",
+  "private": true,
+  "description": "Local browser smoke-test pages for the WASM build (dev-only).",
+  "scripts": {
+    "postinstall": "cp node_modules/three/build/three.min.js vendor/three.min.js"
+  },
+  "dependencies": {
+    "three": "0.128.0"
+  }
+}

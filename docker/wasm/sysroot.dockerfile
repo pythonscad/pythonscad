@@ -39,12 +39,13 @@ FROM ${EMSCRIPTEN_SDK_TAG} AS builder
 ARG CMAKE_BUILD_TYPE=Release
 ARG MESON_BUILD_TYPE=release
 ARG EMSCRIPTEN_FLAGS="-fexceptions -fPIC"
+COPY docker/wasm/requirements.txt /tmp/wasm-build-requirements.txt
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    autoconf automake autopoint autotools-dev bison build-essential cmake flex gettext git \
+    autoconf automake autopoint autotools-dev bison build-essential flex gettext git \
     gperf libltdl-dev libtool ninja-build pkg-config python3 python3-pip python-is-python3 \
     texinfo unzip wget \
     && rm -rf /var/lib/apt/lists/* \
-    && pip3 install --break-system-packages meson packaging 'cmake>=3.29'
+    && pip3 install --break-system-packages -r /tmp/wasm-build-requirements.txt
 ENV CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 ENV MESON_BUILD_TYPE=${MESON_BUILD_TYPE}
 ENV CFLAGS="${EMSCRIPTEN_FLAGS}"

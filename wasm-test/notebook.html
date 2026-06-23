@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PythonSCAD Notebook</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -252,7 +251,7 @@
   <span>PythonSCAD/WASM (EmsEvaluatePython)</span>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="vendor/three.min.js"></script>
 
 <script type="module">
 const _dbgPanel = document.createElement('div');
@@ -262,6 +261,13 @@ document.body.appendChild(_dbgPanel);
 document.getElementById('dbg-clear').onclick = () => {
   document.getElementById('dbg-body').innerHTML = '';
 };
+
+function errMsg(e) {
+  if (e == null) return 'unknown error';
+  if (typeof e === 'string') return e;
+  if (e instanceof Error) return e.message || String(e);
+  try { return String(e.message ?? e); } catch (_) { return String(e); }
+}
 
 function dbg(msg, type) {
   const color = type === 'error' ? '#ff6b6b' : type === 'info' ? '#ffd166' : '#00d4aa';
@@ -382,9 +388,10 @@ async function initWasm() {  setStatus('Loading pythonscad.js…');
     setStatus('Kernel ready');
     enableUI();
   } catch(e) {
+    const msg = errMsg(e);
     setBadge('error', 'Load failed');
-    setStatus('Load error: ' + e.message);
-    dbg('initWasm ERROR: ' + e.message, 'error');
+    setStatus('Load error: ' + msg);
+    dbg('initWasm ERROR: ' + msg, 'error');
     console.error(e);
   }
 }
@@ -703,8 +710,9 @@ function runCell(id) {
       rawOutput = renderPython(cell.code);
     } catch(e) {
       crashed = true;
-      rawOutput = 'ERROR: ' + e.message;
-      dbg('runCell ' + id + ' CRASHED: ' + e.message, 'error');
+      const msg = errMsg(e);
+      rawOutput = 'ERROR: ' + msg;
+      dbg('runCell ' + id + ' CRASHED: ' + msg, 'error');
       // A WASM-level crash (e.g. "memory access out of bounds") corrupts
       // the entire WASM heap — re-calling EmsInitPython on the same module
       // instance won't help. Reload the whole module from scratch.
@@ -1179,8 +1187,9 @@ window.downloadLastModel = function(format) {
   try {
     ret = evalPython.evaluate(exportCode, false);
   } catch(e) {
-    dbg('downloadLastModel evaluate() CRASHED: ' + e.message, 'error');
-    alert('Export crashed the kernel: ' + e.message + '\nReloading WASM module…');
+    const msg = errMsg(e);
+    dbg('downloadLastModel evaluate() CRASHED: ' + msg, 'error');
+    alert('Export crashed the kernel: ' + msg + '\nReloading WASM module…');
     wasmReady = false;
     setBadge('error', 'Kernel crashed — reloading…');
     reloadWasmAfterCrash();
@@ -1198,8 +1207,9 @@ window.downloadLastModel = function(format) {
   try {
     fileBytes = mod.FS.readFile(path);
   } catch(e) {
-    dbg('downloadLastModel FS.readFile failed: ' + e.message, 'error');
-    alert('Export did not produce a file: ' + e.message);
+    const msg = errMsg(e);
+    dbg('downloadLastModel FS.readFile failed: ' + msg, 'error');
+    alert('Export did not produce a file: ' + msg);
     return;
   }
 
