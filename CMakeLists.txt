@@ -326,7 +326,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     -fexceptions
     -sABORT_ON_WASM_EXCEPTIONS
     -sALLOW_MEMORY_GROWTH=1
-    -sDISABLE_EXCEPTION_CATCHING=0
     -fwasm-exceptions
     "-DCGAL_HAS_NO_THREADS"
     "-DCGAL_DISABLE_ROUNDING_MATH_CHECK"  # vermutlich schon drin
