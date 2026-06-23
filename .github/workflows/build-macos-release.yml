@@ -884,15 +884,17 @@ jobs:
           BUNDLE_PY="${APP_BUNDLE}/Contents/Resources/pythonscad-bundled-py"
           if [ -d "$BUNDLE_PY" ]; then
             echo "=== Signing bundled runtime Python deps ==="
-            find "$BUNDLE_PY" -type f \( -name "*.so" -o -name "*.dylib" \) -print0 | while IFS= read -r -d '' f; do
+            while IFS= read -r -d '' f; do
               if file "$f" | grep -q Mach-O; then
                 if ! codesign_output=$(codesign --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f" 2>&1); then
                   echo "$codesign_output"
                   exit 1
                 fi
-                echo "$codesign_output" | grep -v "replacing existing signature" || true
+                if [ -n "$codesign_output" ]; then
+                  echo "$codesign_output" | grep -v "replacing existing signature" || true
+                fi
               fi
-            done
+            done < <(find "$BUNDLE_PY" -type f \( -name "*.so" -o -name "*.dylib" \) -print0)
           fi
 
           # Step 3: Sign Qt frameworks (each framework as a bundle)
