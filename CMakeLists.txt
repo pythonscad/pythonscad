@@ -330,11 +330,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     "-sSTACK_SIZE=8388608"    # 8 MB Stack statt default ~64KB
     "-sINITIAL_MEMORY=134217728"  # 128 MB initialer Heap (optional, falls auch Heap-Probleme)
     "-sASSERTIONS=2"        # ← neu, für den Debug-Build
--sMAXIMUM_MEMORY=4GB
+    "-sSAFE_HEAP=1"
+    -sMAXIMUM_MEMORY=4GB
 
     # -g produces DWARF debug info, which is quite large and may need debugger extensions.
     # Alternatively, can pass -gsource-map -sLOAD_SOURCE_MAP but then variable debugging isn't possible
-    $<$<CONFIG:Debug>:-g -O0>
+    $<$<CONFIG:Debug>:-gsource-map -sLOAD_SOURCE_MAP -O0>
   )
   if (WASM_BUILD_TYPE STREQUAL "web")
     target_link_options(OpenSCADExe PUBLIC
