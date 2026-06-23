@@ -814,10 +814,10 @@ function initViewerGeometry(canvas, geom) {
   dl2.position.set(-1, -1, -1);
   scene.add(dl2);
 
-  const verts = geom.vertices;
-  const faces = geom.faces;
-  const colors      = geom.colors || [];        // palette: [[r,g,b,a], ...]
-  const colorIdx    = geom.color_indices || [];  // per-face index into palette
+  const verts = Array.isArray(geom.vertices) ? geom.vertices : [];
+  const faces = Array.isArray(geom.faces) ? geom.faces : [];
+  const colors      = Array.isArray(geom.colors) ? geom.colors : [];
+  const colorIdx    = Array.isArray(geom.color_indices) ? geom.color_indices : [];
   const DEFAULT_COL = [0x6c/255, 0x63/255, 0xff/255, 1.0];  // fallback purple
 
   dbg('initViewerGeometry: verts=' + verts.length + ' faces=' + faces.length +

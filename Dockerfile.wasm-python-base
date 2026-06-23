@@ -1,15 +1,17 @@
 # PythonSCAD WASM Docker image: Emscripten 6.0 sysroot + CPython 3.14.
 #
-# This file is a thin wrapper around docker/wasm/sysroot.dockerfile for
-# backward compatibility. Prefer building the unified target directly:
-#
-#   docker build -f docker/wasm/sysroot.dockerfile --target wasm-python-base \
-#     -t pythonscad-wasm-python-base:local .
-#
-# Sysroot-only (third-party libs, no CPython):
+# Legacy two-step build: requires a pre-tagged sysroot image. Build the sysroot
+# first, then run this file:
 #
 #   docker build -f docker/wasm/sysroot.dockerfile --target wasm-sysroot \
 #     -t pythonscad-wasm-sysroot:local .
+#   docker build -f Dockerfile.wasm-python-base \
+#     -t pythonscad-wasm-python-base:local .
+#
+# Prefer the unified single-step target instead:
+#
+#   docker build -f docker/wasm/sysroot.dockerfile --target wasm-python-base \
+#     -t pythonscad-wasm-python-base:local .
 
 FROM pythonscad-wasm-sysroot:local AS wasm-sysroot
 
