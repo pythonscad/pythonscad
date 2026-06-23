@@ -31,6 +31,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <glview/RenderSettings.h>
 #ifdef _WIN32
 // AttachConsole / GetStdHandle / _wfreopen for the --repl/--ipython
 // console reattach dance (see windows_reattach_console_for_repl below).
@@ -1520,6 +1521,7 @@ extern "C" {
 EMSCRIPTEN_KEEPALIVE
 void EmsInitPython(void)
 {
+  RenderSettings::inst()->backend3D = RenderBackend3D::ManifoldBackend;  // force render settings
   initPython(PlatformUtils::applicationPath(), "", nullptr);
 }
 
