@@ -884,9 +884,13 @@ jobs:
           BUNDLE_PY="${APP_BUNDLE}/Contents/Resources/pythonscad-bundled-py"
           if [ -d "$BUNDLE_PY" ]; then
             echo "=== Signing bundled runtime Python deps ==="
-            find "$BUNDLE_PY" -type f \( -name "*.so" -o -name "*.dylib" \) 2>/dev/null | while IFS= read -r f; do
+            find "$BUNDLE_PY" -type f \( -name "*.so" -o -name "*.dylib" \) -print0 2>/dev/null | while IFS= read -r -d '' f; do
               if file "$f" | grep -q Mach-O; then
-                codesign --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f" 2>&1 | grep -v "replacing existing signature" || true
+                if ! codesign_output=$(codesign --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f" 2>&1); then
+                  echo "$codesign_output"
+                  exit 1
+                fi
+                echo "$codesign_output" | grep -v "replacing existing signature" || true
               fi
             done
           fi
