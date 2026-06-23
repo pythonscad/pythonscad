@@ -300,6 +300,7 @@ if(PROFILE)
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
+  add_compile_definitions(CGAL_USE_GMPXX=1)
   set(Boost_USE_STATIC_LIBS ON CACHE BOOL "" FORCE)
   set(Boost_USE_STATIC_RUNTIME ON CACHE BOOL "" FORCE)
   set(ENABLE_CAIRO OFF CACHE BOOL "" FORCE)
@@ -324,6 +325,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     -sABORT_ON_WASM_EXCEPTIONS
     -sALLOW_MEMORY_GROWTH=1
     -sDISABLE_EXCEPTION_CATCHING=0
+    "-DCGAL_HAS_NO_THREADS"
+    "-DCGAL_DISABLE_ROUNDING_MATH_CHECK"  # vermutlich schon drin
     -sEXIT_RUNTIME=1
     "-sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain', 'ccall', 'cwrap' ]"
     "-sEXPORTED_FUNCTIONS=['_EmsInitPython','_EmsEvaluatePython', '_EmsFinishPython', '_malloc','_free','_main']"
