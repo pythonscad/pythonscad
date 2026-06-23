@@ -1,5 +1,6 @@
 {
   "name": "wasm-test",
+  "version": "1.0.0",
   "private": true,
   "description": "Local browser smoke-test pages for the WASM build (dev-only).",
   "scripts": {
