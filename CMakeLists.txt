@@ -331,8 +331,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     "-sINITIAL_MEMORY=134217728"  # 128 MB initialer Heap (optional, falls auch Heap-Probleme)
     "-sASSERTIONS=2"        # ← neu, für den Debug-Build
     "-sSAFE_HEAP=1"
-    "-sALLOW_UNALIGNED_READS_AND_WRITES=1"
-    -sMAXIMUM_MEMORY=4GB
+-sMAXIMUM_MEMORY=4GB
 
     # -g produces DWARF debug info, which is quite large and may need debugger extensions.
     # Alternatively, can pass -gsource-map -sLOAD_SOURCE_MAP but then variable debugging isn't possible
