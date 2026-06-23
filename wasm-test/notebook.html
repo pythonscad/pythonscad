@@ -1165,7 +1165,9 @@ window.loadNotebookFromFile = function(input) {
     selectedCellId = null;
 
     nb.cells.forEach(saved => {
-      const cell = createCell(saved.type || 'code', saved.code || '');
+      const type = saved.type === 'markdown' ? 'markdown' : 'code';
+      const code = typeof saved.code === 'string' ? saved.code : String(saved.code ?? '');
+      const cell = createCell(type, code);
       cells.push(cell);
       renderCellDOM(cell);
     });
