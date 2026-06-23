@@ -41,23 +41,16 @@ CPython 3.14 browser support):
 
 `scripts/wasm-base-docker-run.sh` builds `pythonscad-wasm-python-base:local`
 (sysroot + CPython in one multi-stage build) automatically if missing. It does
-not tag a separate `pythonscad-wasm-sysroot:local` image. To build or inspect
-stages individually:
+not tag a separate `pythonscad-wasm-sysroot:local` image.
 
-```bash
-docker build -f docker/wasm/sysroot.dockerfile --target wasm-sysroot \
-  -t pythonscad-wasm-sysroot:local .
-```
-
-Then build the Python layer (~20 min first time for CPython cross-compile), or build
-both sysroot and CPython in one step:
+Build the full image (sysroot + CPython; ~60 min first time, cached afterwards):
 
 ```bash
 docker build -f docker/wasm/sysroot.dockerfile --target wasm-python-base \
   -t pythonscad-wasm-python-base:local .
 ```
 
-Sysroot only (no CPython):
+To build or tag the sysroot stage only (no CPython):
 
 ```bash
 docker build -f docker/wasm/sysroot.dockerfile --target wasm-sysroot \

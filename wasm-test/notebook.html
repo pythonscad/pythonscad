@@ -402,11 +402,13 @@ function autoShowLastLine(code) {
   while (lastIdx >= 0 && lines[lastIdx].trim() === '') lastIdx--;
   if (lastIdx < 0) return code;
 
-  const lastLine = lines[lastIdx].trim();
+  const originalLine = lines[lastIdx];
+  const indent = originalLine.match(/^(\s*)/)[1];
+  const lastLine = originalLine.trim();
   const isBareIdentifier = /^[A-Za-z_][A-Za-z0-9_]*$/.test(lastLine);
   const RESERVED = new Set(['pass','break','continue','return','else','elif','try','except','finally']);
   if (isBareIdentifier && !RESERVED.has(lastLine)) {
-    lines[lastIdx] = 'show(' + lastLine + ')';
+    lines[lastIdx] = indent + 'show(' + lastLine + ')';
     return lines.join('\n');
   }
 
@@ -419,9 +421,9 @@ function autoShowLastLine(code) {
     const receiverExpr = showCallMatch[1];
     const showArgs      = showCallMatch[2];
     lines[lastIdx] =
-      '_nb_tmp = ' + receiverExpr + '\n' +
-      '_nb_tmp.show(' + showArgs + ')\n' +
-      '_emit_geometry(_nb_tmp)';
+      indent + '_nb_tmp = ' + receiverExpr + '\n' +
+      indent + '_nb_tmp.show(' + showArgs + ')\n' +
+      indent + '_emit_geometry(_nb_tmp)';
     return lines.join('\n');
   }
   return lines.join('\n');
