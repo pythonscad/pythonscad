@@ -830,7 +830,10 @@ function initViewerGeometry(canvas, geom) {
   // Fan-triangulate each face (handles triangles, quads, n-gons alike),
   // with defensive bounds checking against malformed/out-of-range indices.
   // Each triangle also gets its face color from the palette.
-  const triCount = faces.reduce((sum, f) => sum + Math.max(0, f.length - 2), 0);
+  const triCount = faces.reduce((sum, f) => {
+    if (!Array.isArray(f) || f.length < 3) return sum;
+    return sum + f.length - 2;
+  }, 0);
   const pos    = new Float32Array(triCount * 9);
   const colBuf = useColors ? new Float32Array(triCount * 9) : null;  // RGB per vertex
   let o = 0, oc = 0;
