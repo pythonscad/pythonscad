@@ -880,6 +880,17 @@ jobs:
             fi
           fi
 
+          # Step 2b: Sign bundled runtime Python deps (e.g. psutil .so from IPython)
+          BUNDLE_PY="${APP_BUNDLE}/Contents/Resources/pythonscad-bundled-py"
+          if [ -d "$BUNDLE_PY" ]; then
+            echo "=== Signing bundled runtime Python deps ==="
+            find "$BUNDLE_PY" -type f \( -name "*.so" -o -name "*.dylib" \) 2>/dev/null | while IFS= read -r f; do
+              if file "$f" | grep -q Mach-O; then
+                codesign --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f" 2>&1 | grep -v "replacing existing signature" || true
+              fi
+            done
+          fi
+
           # Step 3: Sign Qt frameworks (each framework as a bundle)
           echo "=== Signing Qt frameworks ==="
           for fw in "$APP_BUNDLE/Contents/Frameworks"/Qt*.framework; do
