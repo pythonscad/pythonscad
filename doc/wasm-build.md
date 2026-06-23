@@ -50,7 +50,9 @@ docker build -f docker/wasm/sysroot.dockerfile --target wasm-sysroot \
 Then build the Python layer (~20 min first time for CPython cross-compile):
 
 ```bash
-docker build -f Dockerfile.wasm-python-base \
+docker build \
+  --build-context wasm-sysroot=docker-image://pythonscad-wasm-sysroot:local \
+  -f Dockerfile.wasm-python-base \
   -t pythonscad-wasm-python-base:local .
 ```
 
