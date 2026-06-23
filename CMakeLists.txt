@@ -336,7 +336,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
 
     # -g produces DWARF debug info, which is quite large and may need debugger extensions.
     # Alternatively, can pass -gsource-map -sLOAD_SOURCE_MAP but then variable debugging isn't possible
-    $<$<CONFIG:Debug>:-gsource-map -sLOAD_SOURCE_MAP -O0>
+    $<$<CONFIG:Debug>:-g -O0>
   )
   if (WASM_BUILD_TYPE STREQUAL "web")
     target_link_options(OpenSCADExe PUBLIC
