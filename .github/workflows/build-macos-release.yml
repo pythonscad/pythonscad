@@ -853,15 +853,24 @@ jobs:
           while IFS= read -r -d '' f; do
             sign_target --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f"
           done < <(find "$APP_BUNDLE/Contents/Frameworks" -name "*.dylib" -type f -print0)
-          while IFS= read -r -d '' f; do
-            sign_target --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f"
-          done < <(find "$APP_BUNDLE/Contents/PlugIns" -name "*.dylib" -type f -print0)
+          if [ -d "$APP_BUNDLE/Contents/PlugIns" ]; then
+            while IFS= read -r -d '' f; do
+              sign_target --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f"
+            done < <(find "$APP_BUNDLE/Contents/PlugIns" -name "*.dylib" -type f -print0)
+          fi
 
           # Step 2: Sign Python framework components (innermost first)
           if [ -d "$APP_BUNDLE/Contents/Frameworks/Python.framework" ]; then
             echo "=== Signing Python framework ==="
             PY_FW="$APP_BUNDLE/Contents/Frameworks/Python.framework"
-            PY_VER=$(find "$PY_FW/Versions/" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; 2>/dev/null | grep -E "^[0-9]+\.[0-9]+$" | head -1)
+            PY_VER=
+            candidate=$(find "$PY_FW/Versions" -maxdepth 1 -mindepth 1 -type d ! -name 'Current' -print -quit)
+            if [ -n "$candidate" ]; then
+              ver=$(basename "$candidate")
+              if [[ "$ver" =~ ^[0-9]+\.[0-9]+$ ]]; then
+                PY_VER=$ver
+              fi
+            fi
             if [ -n "$PY_VER" ]; then
               PY_ROOT="$PY_FW/Versions/$PY_VER"
               # Sign all .so extension modules (lib-dynload and any other Mach-O)
