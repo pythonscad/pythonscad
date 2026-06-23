@@ -849,7 +849,7 @@ jobs:
           done
 
           echo "=== Signing all binaries (inside-out approach) ==="
-          # Step 1: Sign all standalone dylibs (not in frameworks)
+          # Step 1: Sign dylibs under Contents/Frameworks (includes nested framework dylibs)
           while IFS= read -r -d '' f; do
             sign_target --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f"
           done < <(find "$APP_BUNDLE/Contents/Frameworks" -name "*.dylib" -type f -print0)
@@ -922,7 +922,11 @@ jobs:
 
             # Find the actual version directory (usually 'A')
             if [ -d "$fw/Versions" ]; then
-              ACTUAL_VERSION=$(find "$fw/Versions/" -maxdepth 1 -mindepth 1 -type d ! -name "Current" -exec basename {} \; 2>/dev/null | head -1)
+              ACTUAL_VERSION=
+              candidate=$(find "$fw/Versions" -maxdepth 1 -mindepth 1 -type d ! -name 'Current' -print -quit)
+              if [ -n "$candidate" ]; then
+                ACTUAL_VERSION=$(basename "$candidate")
+              fi
               if [ -n "$ACTUAL_VERSION" ]; then
                 # Sign any dylibs within the framework version
                 while IFS= read -r -d '' lib; do
