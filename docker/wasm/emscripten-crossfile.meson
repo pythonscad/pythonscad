@@ -4,7 +4,6 @@
 
 c = 'emcc'
 cpp = 'em++'
-ld = 'wasm-ld'
 ar = 'emar'
 ranlib = 'emranlib'
 pkg-config = ['emconfigure', 'pkg-config']
