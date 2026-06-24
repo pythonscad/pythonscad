@@ -88,11 +88,12 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
                 NodeCloneFunc(RenderNode) NodeCloneFunc(SkinNode) NodeCloneFunc(SurfaceNode)
                   NodeCloneFunc(SheetNode) NodeCloneFunc(TextNode) NodeCloneFunc(OffsetNode)
                     NodeCloneFunc(ProjectionNode) NodeCloneFunc(GroupNode) NodeCloneFunc(ImportNode)
+                      NodeCloneFunc(ListNode) NodeCloneFunc(AbstractIntersectionNode)
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
-                      NodeCloneFunc(RoofNode)
+                        NodeCloneFunc(RoofNode)
 #endif
 
-                        std::shared_ptr<AbstractNode> AbstractNode::clone(void)
+                          std::shared_ptr<AbstractNode> AbstractNode::clone(void)
 {
   std::shared_ptr<AbstractNode> clone = nullptr;
   NodeCloneUse(CubeNode) NodeCloneUse(SphereNode) NodeCloneUse(CylinderNode) NodeCloneUse(PolyhedronNode)
@@ -104,11 +105,12 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
               NodeCloneUse(CsgOpNode) NodeCloneUse(CgalAdvNode) NodeCloneUse(RenderNode)
                 NodeCloneUse(SkinNode) NodeCloneUse(SurfaceNode) NodeCloneUse(SheetNode)
                   NodeCloneUse(TextNode) NodeCloneUse(OffsetNode) NodeCloneUse(ProjectionNode)
-                    NodeCloneUse(GroupNode) NodeCloneUse(ImportNode)
+                    NodeCloneUse(GroupNode) NodeCloneUse(ImportNode) NodeCloneUse(ListNode)
+                      NodeCloneUse(AbstractIntersectionNode)
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
-                      NodeCloneUse(RoofNode)
+                        NodeCloneUse(RoofNode)
 #endif
-                        if (clone != nullptr)
+                          if (clone != nullptr)
   {
     clone->idx = idx_counter++;
     clone->children.clear();
@@ -118,7 +120,9 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
     return clone;
   }
   std::cout << "Type not defined for clone :" << typeid(this).name() << "\n\r";
-  return std::shared_ptr<AbstractNode>(this);
+  // Never wrap `this` in a new shared_ptr: the node is already owned elsewhere
+  // and a second owning shared_ptr would double-delete on teardown.
+  return shared_from_this();
 }
 
 void AbstractNode::dump_counts(int indent, int use_cnt)
