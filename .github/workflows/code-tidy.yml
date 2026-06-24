@@ -51,10 +51,10 @@ jobs:
       uses: actions/cache@v5
       with:
         path: /home/runner/.cache/clang-tidy
-        key: clang-tidy-${{ hashFiles('.clang-tidy') }}-v18
+        # Unique key per run so updated per-file results are saved; restore via stable prefix.
+        key: clang-tidy-${{ hashFiles('.clang-tidy') }}-v18-${{ github.run_id }}
         restore-keys: |
-          clang-tidy-${{ hashFiles('.clang-tidy') }}-
-          clang-tidy-
+          clang-tidy-${{ hashFiles('.clang-tidy') }}-v18-
 
     # TODO: each distinct file will store a new file (output of clang-tidy)
     # in this directory; also clang-tidy version and content of its config
