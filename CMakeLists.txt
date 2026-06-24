@@ -323,8 +323,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
    -fexceptions
     -DCGAL_HAS_NO_THREADS
     -DCGAL_DISABLE_ROUNDING_MATH_CHECK
+    -g -O1
   )
-  target_link_options(OpenSCADExe PUBLIC
+
+target_link_options(OpenSCADExe PUBLIC
     -fexceptions
     -sABORT_ON_WASM_EXCEPTIONS
     -sALLOW_MEMORY_GROWTH=1
@@ -335,10 +337,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     "-sINITIAL_MEMORY=134217728"
     "-sASSERTIONS=2"
     "-sSTACK_OVERFLOW_CHECK=2"
-    "-sDEMANGLE_SUPPORT=1"
     -sMAXIMUM_MEMORY=4GB
-    $<$<CONFIG:Debug>:-gsource-map -sLOAD_SOURCE_MAP -O0>
-  )
+    -g
+)
   if (WASM_BUILD_TYPE STREQUAL "web")
     target_link_options(OpenSCADExe PUBLIC
       -sENVIRONMENT=web,worker
