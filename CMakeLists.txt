@@ -300,6 +300,7 @@ if(PROFILE)
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
+  add_compile_definitions(CGAL_USE_GMPXX=1)
   set(Boost_USE_STATIC_LIBS ON CACHE BOOL "" FORCE)
   set(Boost_USE_STATIC_RUNTIME ON CACHE BOOL "" FORCE)
   set(ENABLE_CAIRO OFF CACHE BOOL "" FORCE)
@@ -307,30 +308,38 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   set(NULLGL ON CACHE BOOL "" FORCE)
   set(USE_MIMALLOC OFF CACHE BOOL "" FORCE)
   set(ENABLE_LIBFIVE OFF CACHE BOOL "" FORCE)
+  set(OPENSCAD_NOGUI OFF CACHE BOOL "TRUE" FORCE)
   set(ENV{PKG_CONFIG_PATH} "/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig")
 
   # CPython compiled for wasm32-emscripten (see Dockerfile.wasm-python-base)
   set(CPYTHON_WASM_PREFIX "/cpython-wasm" CACHE PATH "CPython compiled for wasm32-emscripten")
-  set(CPYTHON_WASM_PYVER "3.14" CACHE STRING "Python version in CPYTHON_WASM_PREFIX")
+  set(CPYTHON_WASM_PYVER "3.12" CACHE STRING "Python version in CPYTHON_WASM_PREFIX")
   target_compile_definitions(OpenSCADLibInternal PUBLIC CGAL_DISABLE_ROUNDING_MATH_CHECK)
   target_link_libraries(OpenSCADLibInternal PUBLIC /emsdk/upstream/emscripten/cache/sysroot/lib/libz.a)
 
   # https://emscripten.org/docs/tools_reference/emcc.html
   # https://emscripten.org/docs/tools_reference/settings_reference.html
-  target_compile_options(OpenSCADLibInternal PUBLIC -fexceptions)
-  target_link_options(OpenSCADExe PUBLIC
+  target_compile_options(OpenSCADLibInternal PUBLIC
+   -fexceptions
+    -DCGAL_HAS_NO_THREADS
+    -DCGAL_DISABLE_ROUNDING_MATH_CHECK
+    -g -O1
+  )
+
+target_link_options(OpenSCADExe PUBLIC
     -fexceptions
     -sABORT_ON_WASM_EXCEPTIONS
     -sALLOW_MEMORY_GROWTH=1
-    -sDISABLE_EXCEPTION_CATCHING=0
     -sEXIT_RUNTIME=1
-    -sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain']
+    "-sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain','ccall','cwrap']"
+    "-sEXPORTED_FUNCTIONS=['_EmsInitPython','_EmsEvaluatePython','_EmsFinishPython','_malloc','_free','_main']"
+    "-sSTACK_SIZE=8388608"
+    "-sINITIAL_MEMORY=134217728"
+    "-sASSERTIONS=2"
+    "-sSTACK_OVERFLOW_CHECK=2"
     -sMAXIMUM_MEMORY=4GB
-
-    # -g produces DWARF debug info, which is quite large and may need debugger extensions.
-    # Alternatively, can pass -gsource-map -sLOAD_SOURCE_MAP but then variable debugging isn't possible
-    $<$<CONFIG:Debug>:-g -O0>
-  )
+    -g
+)
   if (WASM_BUILD_TYPE STREQUAL "web")
     target_link_options(OpenSCADExe PUBLIC
       -sENVIRONMENT=web,worker

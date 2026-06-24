@@ -33,7 +33,14 @@ jobs:
           INPUT_RELEASE_TAG: ${{ github.event.inputs.release_tag }}
         with:
           script: |
-            const inputTag = process.env.INPUT_RELEASE_TAG;
+            const BUILD_WORKFLOWS = [
+              'Build and Upload AppImage',
+              'Build Debian packages',
+              'Build and upload macOS build',
+              'Build RPM packages',
+              'Build Windows Native Package',
+              'Build WebAssembly',
+            ];
 
             let release;
             let releaseTag;

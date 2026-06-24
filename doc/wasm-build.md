@@ -14,8 +14,8 @@ link time. This makes a single monolithic binary (CPython + geometry engine,
 linked together by Emscripten) the natural fit; Pyodide would require
 restructuring the entire geometry engine as a Pyodide wheel.
 
-CPython 3.14 has official `wasm32-emscripten` tier-3 support and cross-compiles
-cleanly. We build only `libpython3.14.a` (not the standalone `python.js`)
+CPython 3.12 has official `wasm32-emscripten` tier-3 support and cross-compiles
+cleanly. We build only `libpython3.12.a` (not the standalone `python.js`)
 to avoid extension modules (`_decimal`, `_sha2`, etc.) that need C libraries
 absent from the WASM sysroot.
 
@@ -30,11 +30,8 @@ absent from the WASM sysroot.
 
 ### Docker base image
 
-The WASM build requires a Docker image with CPython 3.14 cross-compiled for
-`wasm32-emscripten`. The Dockerfile uses a multi-stage build: CPython is
-cross-compiled with a current Emscripten SDK (3.14 needs clang `-mgc` / wasm-gc),
-then the artifacts are copied into `openscad/wasm-base` so PythonSCAD keeps that
-image's pre-populated Emscripten sysroot (Eigen, Boost, CGAL, …). Build it once:
+The WASM build requires a Docker image with CPython 3.12 cross-compiled for
+`wasm32-emscripten`. Build it once:
 
 ```bash
 docker build -f Dockerfile.wasm-python-base \
@@ -43,9 +40,9 @@ docker build -f Dockerfile.wasm-python-base \
 
 This takes approximately 30 minutes on first build. The result contains:
 
-- `/cpython-wasm/lib/libpython3.14.a` — static library
-- `/cpython-wasm/include/python3.14/` — C headers
-- `/cpython-wasm/lib/python3.14/` — stdlib (`.py` files only; heavy dirs stripped)
+- `/cpython-wasm/lib/libpython3.12.a` — static library
+- `/cpython-wasm/include/python3.12/` — C headers
+- `/cpython-wasm/lib/python3.12/` — stdlib (`.py` files only; heavy dirs stripped)
 
 `scripts/wasm-base-docker-run.sh` builds the base image automatically if it is
 not present, then layers a ccache image on top for fast incremental builds.
@@ -153,7 +150,7 @@ Key points:
 | --------------------- | --------------- | ---------------------------------------------------- |
 | `WASM_BUILD_TYPE`     | `node`          | `node` or `web`                                      |
 | `CPYTHON_WASM_PREFIX` | `/cpython-wasm` | Path to CPython WASM install inside the Docker image |
-| `CPYTHON_WASM_PYVER`  | `3.14`          | Python version string                                |
+| `CPYTHON_WASM_PYVER`  | `3.12`          | Python version string                                |
 
 ## Known gotchas
 

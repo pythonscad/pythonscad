@@ -31,6 +31,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <glview/RenderSettings.h>
 #ifdef _WIN32
 // AttachConsole / GetStdHandle / _wfreopen for the --repl/--ipython
 // console reattach dance (see windows_reattach_console_for_repl below).
@@ -1092,7 +1093,23 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 #else
     std::string sep = "";
     std::ostringstream stream;
-#if defined(_WIN32)
+#ifdef __EMSCRIPTEN__
+    char sepchar = ':';
+    const auto pythonXY =
+      "python" + std::to_string(PY_MAJOR_VERSION) + "." + std::to_string(PY_MINOR_VERSION);
+#ifdef WASM_NODE_BUILD
+    // Node build: NODERAWFS exposes the real container filesystem.
+    // stdlib lives at /cpython-wasm/lib/python3.12 on disk; home points there directly.
+    PyConfig_SetBytesString(&config, &config.home, "/cpython-wasm");
+#else
+    // Web build: stdlib preloaded into MEMFS via --preload-file at /usr/lib/python3.12.
+    stream << "/usr/lib/" << pythonXY;
+    stream << sepchar << "/usr/lib/pythonscad/libraries/python";
+    stream << sepchar << fs::path(python_scriptpath).parent_path().string();
+    PyConfig_SetBytesString(&config, &config.home, "/usr");
+    PyConfig_SetBytesString(&config, &config.executable, "/usr/bin/python3");
+#endif
+#elif defined(_WIN32)
     char sepchar = ';';
     sep = sepchar;
     stream << PlatformUtils::applicationPath() << "\\..\\libraries\\python";
@@ -1448,12 +1465,12 @@ stderr_bak = None\n\
   result.reset(PyRun_String(code.c_str(), Py_file_input, pythonInitDict.get(),
                             pythonInitDict.get())); /* actual code is run here */
 
-#ifndef OPENSCAD_NOGUI
   if (result == nullptr) {
     error = "";
     python_catch_error(error);
     PyErr_Print();
   }
+#ifndef OPENSCAD_NOGUI
   for (int i = 0; i < 2; i++) {
     PyObjectUniquePtr catcher(nullptr, &PyObjectDeleter);
     catcher.reset(
@@ -1495,6 +1512,48 @@ stderr_bak = None\n\
 #endif
   return error;
 }
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+
+// Alternativ: direkt deklarieren ohne Header
+extern "C" size_t emscripten_stack_get_free(void);
+extern "C" size_t emscripten_stack_get_base(void);
+extern "C" size_t emscripten_stack_get_current(void);
+
+extern "C" {
+
+EMSCRIPTEN_KEEPALIVE
+void EmsInitPython(void)
+{
+  RenderSettings::inst()->backend3D = RenderBackend3D::ManifoldBackend;  // force render settings
+  initPython(PlatformUtils::applicationPath(), "", nullptr);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void EmsFinishPython(void)
+{
+  finishPython();
+}
+
+EMSCRIPTEN_KEEPALIVE
+const char *EmsEvaluatePython(const char *code, bool dry_run)
+{
+  static std::string result;
+
+  // Stack-Check vor der Ausführung
+  size_t stack_free = emscripten_stack_get_free();
+  if (stack_free < 524288) {  // weniger als 512KB frei
+    result = "ERROR: Stack too low before evaluation: " + std::to_string(stack_free) + " bytes free";
+    return result.c_str();
+  }
+
+  result = evaluatePython(std::string(code), dry_run);
+  return result.c_str();
+}
+}
+#endif
+
 /*
  * the magical Python Type descriptor for an OpenSCAD Object. Adding more fields makes the type more
  * powerful
