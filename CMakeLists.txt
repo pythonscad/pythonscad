@@ -319,17 +319,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
 
   # https://emscripten.org/docs/tools_reference/emcc.html
   # https://emscripten.org/docs/tools_reference/settings_reference.html
-  target_compile_options(svg PUBLIC
-  -fwasm-exceptions
-  )
-  target_compile_options(OpenSCADLibInternal PUBLIC
-  -fwasm-exceptions
-  )
+  target_compile_options(OpenSCADLibInternal PUBLIC -fexceptions)
   target_link_options(OpenSCADExe PUBLIC
     -fexceptions
     -sABORT_ON_WASM_EXCEPTIONS
     -sALLOW_MEMORY_GROWTH=1
-    -fwasm-exceptions
     "-DCGAL_HAS_NO_THREADS"
     "-DCGAL_DISABLE_ROUNDING_MATH_CHECK"  # vermutlich schon drin
     -sEXIT_RUNTIME=1
@@ -338,6 +332,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     "-sSTACK_SIZE=8388608"    # 8 MB Stack statt default ~64KB
     "-sINITIAL_MEMORY=134217728"  # 128 MB initialer Heap (optional, falls auch Heap-Probleme)
     "-sASSERTIONS=2"        # ← neu, für den Debug-Build
+    "-sSTACK_OVERFLOW_CHECK=2"
 -sMAXIMUM_MEMORY=4GB
 
     # -g produces DWARF debug info, which is quite large and may need debugger extensions.

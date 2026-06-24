@@ -1516,6 +1516,11 @@ stderr_bak = None\n\
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 
+// Alternativ: direkt deklarieren ohne Header
+extern "C" size_t emscripten_stack_get_free(void);
+extern "C" size_t emscripten_stack_get_base(void);
+extern "C" size_t emscripten_stack_get_current(void);
+
 extern "C" {
 
 EMSCRIPTEN_KEEPALIVE
@@ -1535,6 +1540,14 @@ EMSCRIPTEN_KEEPALIVE
 const char *EmsEvaluatePython(const char *code, bool dry_run)
 {
   static std::string result;
+
+  // Stack-Check vor der Ausführung
+  size_t stack_free = emscripten_stack_get_free();
+  if (stack_free < 524288) {  // weniger als 512KB frei
+    result = "ERROR: Stack too low before evaluation: " + std::to_string(stack_free) + " bytes free";
+    return result.c_str();
+  }
+
   result = evaluatePython(std::string(code), dry_run);
   return result.c_str();
 }
