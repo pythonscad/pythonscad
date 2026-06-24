@@ -319,8 +319,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
 
   # https://emscripten.org/docs/tools_reference/emcc.html
   # https://emscripten.org/docs/tools_reference/settings_reference.html
-  add_compile_options(-fwasm-exceptions)
-  add_link_options(-fwasm-exceptions)
+  target_compile_options(svg PUBLIC
+  -fwasm-exceptions
+  )
   target_compile_options(OpenSCADLibInternal PUBLIC
   -fwasm-exceptions
   )
