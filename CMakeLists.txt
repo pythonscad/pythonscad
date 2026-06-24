@@ -319,22 +319,26 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
 
   # https://emscripten.org/docs/tools_reference/emcc.html
   # https://emscripten.org/docs/tools_reference/settings_reference.html
-  target_compile_options(OpenSCADLibInternal PUBLIC -fexceptions)
+  target_compile_options(OpenSCADLibInternal PUBLIC
+   -fexceptions
+    CGAL_HAS_NO_THREADS
+    CGAL_DISABLE_ROUNDING_MATH_CHECK
+  )
   target_link_options(OpenSCADExe PUBLIC
     -fexceptions
     -sABORT_ON_WASM_EXCEPTIONS
     -sALLOW_MEMORY_GROWTH=1
-    "-DCGAL_HAS_NO_THREADS"
-    "-DCGAL_DISABLE_ROUNDING_MATH_CHECK"  # vermutlich schon drin
     -sEXIT_RUNTIME=1
-    "-sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain', 'ccall', 'cwrap' ]"
-    "-sEXPORTED_FUNCTIONS=['_EmsInitPython','_EmsEvaluatePython', '_EmsFinishPython', '_malloc','_free','_main']"
-    "-sSTACK_SIZE=8388608"    # 8 MB Stack statt default ~64KB
-    "-sINITIAL_MEMORY=134217728"  # 128 MB initialer Heap (optional, falls auch Heap-Probleme)
-    "-sASSERTIONS=2"        # ← neu, für den Debug-Build
+    "-sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain','ccall','cwrap']"
+    "-sEXPORTED_FUNCTIONS=['_EmsInitPython','_EmsEvaluatePython','_EmsFinishPython','_malloc','_free','_main']"
+    "-sSTACK_SIZE=8388608"
+    "-sINITIAL_MEMORY=134217728"
+    "-sASSERTIONS=2"
     "-sSTACK_OVERFLOW_CHECK=2"
--sMAXIMUM_MEMORY=4GB
-
+    "-sDEMANGLE_SUPPORT=1"
+    -sMAXIMUM_MEMORY=4GB
+    $<$<CONFIG:Debug>:-gsource-map -sLOAD_SOURCE_MAP -O0>
+)
     # -g produces DWARF debug info, which is quite large and may need debugger extensions.
     # Alternatively, can pass -gsource-map -sLOAD_SOURCE_MAP but then variable debugging isn't possible
     $<$<CONFIG:Debug>:-gsource-map -sLOAD_SOURCE_MAP -O0>
