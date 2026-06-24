@@ -321,8 +321,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   # https://emscripten.org/docs/tools_reference/settings_reference.html
   target_compile_options(OpenSCADLibInternal PUBLIC
    -fexceptions
-    CGAL_HAS_NO_THREADS
-    CGAL_DISABLE_ROUNDING_MATH_CHECK
+    -DCGAL_HAS_NO_THREADS
+    -DCGAL_DISABLE_ROUNDING_MATH_CHECK
   )
   target_link_options(OpenSCADExe PUBLIC
     -fexceptions
