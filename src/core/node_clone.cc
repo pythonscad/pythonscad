@@ -61,15 +61,29 @@
 
 std::vector<ModuleInstantiation *> modinsts_list;
 
-#define NodeCloneFunc(T)                                                           \
-  std::shared_ptr<T> clone_what(const T *node)                                     \
-  {                                                                                \
-    ModuleInstantiation *inst = new ModuleInstantiation(                           \
-      node->modinst->name(), node->modinst->arguments, node->modinst->location()); \
-    modinsts_list.push_back(inst);                                                 \
-    auto clone = std::make_shared<T>(*node);                                       \
-    clone->modinst = inst;                                                         \
-    return clone;                                                                  \
+static bool is_valid_modinst(const ModuleInstantiation *ptr)
+{
+  if (ptr == nullptr) return false;
+  for (auto p : modinsts_list) {
+    if (p == ptr) return true;
+  }
+  return false;
+}
+
+#define NodeCloneFunc(T)                                                              \
+  std::shared_ptr<T> clone_what(const T *node)                                        \
+  {                                                                                   \
+    ModuleInstantiation *inst;                                                        \
+    if (is_valid_modinst(node->modinst)) {                                            \
+      inst = new ModuleInstantiation(node->modinst->name(), node->modinst->arguments, \
+                                     node->modinst->location());                      \
+    } else {                                                                          \
+      inst = new ModuleInstantiation("python", {}, Location::NONE);                   \
+    }                                                                                 \
+    modinsts_list.push_back(inst);                                                    \
+    auto clone = std::make_shared<T>(*node);                                          \
+    clone->modinst = inst;                                                            \
+    return clone;                                                                     \
   }
 
 #define NodeCloneUse(T)                              \
