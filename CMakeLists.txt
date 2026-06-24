@@ -328,6 +328,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     "-sEXPORTED_RUNTIME_METHODS=['ENV','ERRNO_CODES','FS','PATH','callMain','ccall','cwrap']"
     "-sEXPORTED_FUNCTIONS=['_EmsInitPython','_EmsEvaluatePython','_EmsFinishPython','_malloc','_free','_main']"
     -sSTACK_SIZE=${STACKSIZE}
+    -sINITIAL_MEMORY=134217728
     -sMAXIMUM_MEMORY=4GB
 
     # -g produces DWARF debug info, which is quite large and may need debugger extensions.
