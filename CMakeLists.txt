@@ -338,10 +338,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
     "-sDEMANGLE_SUPPORT=1"
     -sMAXIMUM_MEMORY=4GB
     $<$<CONFIG:Debug>:-gsource-map -sLOAD_SOURCE_MAP -O0>
-)
-    # -g produces DWARF debug info, which is quite large and may need debugger extensions.
-    # Alternatively, can pass -gsource-map -sLOAD_SOURCE_MAP but then variable debugging isn't possible
-    $<$<CONFIG:Debug>:-gsource-map -sLOAD_SOURCE_MAP -O0>
   )
   if (WASM_BUILD_TYPE STREQUAL "web")
     target_link_options(OpenSCADExe PUBLIC
