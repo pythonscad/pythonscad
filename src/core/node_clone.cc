@@ -119,7 +119,7 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
     }
     return clone;
   }
-  std::cout << "Type not defined for clone :" << typeid(this).name() << "\n\r";
+  std::cerr << "Type not defined for clone: " << typeid(*this).name() << '\n';
   // Never wrap `this` in a new shared_ptr: the node is already owned elsewhere
   // and a second owning shared_ptr would double-delete on teardown.
   return shared_from_this();
