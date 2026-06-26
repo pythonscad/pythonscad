@@ -104,6 +104,20 @@ repos:
           - id: shellcheck
             args: ["--severity=warning"]
             exclude: ^(submodules|tests/data)/
+    - repo: local
+      hooks:
+          # The AppStream <releases> block in pythonscad.appdata.xml.in is
+          # generated from CHANGELOG.md by scripts/update-appdata-releases.py.
+          # Fail if the committed file drifts from what the generator would
+          # produce (e.g. a hand-edit, or a CHANGELOG change without a
+          # regenerate). Uses only the Python stdlib, so `language: system`
+          # needs no extra dependencies.
+          - id: appdata-releases
+            name: appdata releases up to date
+            entry: python3 scripts/update-appdata-releases.py --check
+            language: system
+            files: ^(CHANGELOG\.md|pythonscad\.appdata\.xml\.in)$
+            pass_filenames: false
     - repo: https://github.com/zizmorcore/zizmor-pre-commit
       rev: v1.26.1
       hooks:
