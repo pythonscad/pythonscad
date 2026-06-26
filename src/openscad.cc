@@ -844,7 +844,8 @@ int openscad_main(int argc, char **argv)
   // just forward everything to the python main.
   const auto applicationName = fs::path(argv[0]).filename().generic_string();
   if (applicationName == "python" || applicationName == "python3" ||
-      applicationName.rfind("python3.", 0) == 0 || applicationName == "openscad-python") {
+      applicationName.rfind("python3.", 0) == 0 || applicationName == "openscad-python" ||
+      applicationName == PYTHON_EXECUTABLE_NAME) {
     return pythonRunArgs(argc, argv);
   }
 #endif
