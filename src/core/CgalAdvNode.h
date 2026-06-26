@@ -13,7 +13,7 @@ class CgalAdvNode : public AbstractNode
 public:
   VISITABLE();
   CgalAdvNode(std::shared_ptr<const ModuleInstantiation> mi, CgalAdvType type)
-    : AbstractNode(mi), type(type)
+    : AbstractNode(std::move(mi)), type(type)
   {
   }
   std::string toString() const override;

@@ -14,7 +14,7 @@ public:
   double r = 0.0;  // Radius for fillets
   int fn = 2;
   CsgOpNode(std::shared_ptr<const ModuleInstantiation> mi, OpenSCADOperator type)
-    : AbstractNode(mi), type(type)
+    : AbstractNode(std::move(mi)), type(type)
   {
   }
   std::string toString() const override;
