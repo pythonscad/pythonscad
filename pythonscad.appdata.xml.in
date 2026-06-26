@@ -43,11 +43,11 @@
           <li>chore: add pythonscad logo source</li>
           <li>ci: add MSIX packaging as reusable composite action</li>
           <li>distributions: add support for Fedora 44 and Ubuntu 26.04 LTS</li>
-          <li>gui: display abosolute filepath in the title bar</li>
+          <li>gui: display absolute filepath in the title bar</li>
           <li>gui: replace Python trust dialog with inline trust bar</li>
           <li>install: per-user Windows installer with on-demand UAC elevation</li>
           <li>native vector operations for addition, subtraction, scaling, dot and cross product</li>
-          <li>polyline: polylines work work difference and intersection now</li>
+          <li>polyline: polylines work with difference and intersection now</li>
           <li>python: add MultiToolExporter helper to pythonscad module</li>
           <li>python: expose root ColorNode RGBA as solid property <code>c</code></li>
           <li>python: introduce _openscad / openscad / pythonscad three-module layout</li>
@@ -81,13 +81,13 @@
           <li>gui: log terminal notice on single-instance IPC handoff</li>
           <li>gui: session restore, customizer params without F5, dry-run safety</li>
           <li>oversample: add dynamic method</li>
-          <li>oversmaple: more work</li>
+          <li>oversample: more work</li>
         </ul>
         <p>Bug fixes:</p>
         <ul>
           <li>chore: undo wrong files</li>
           <li>crash: right Click works better</li>
-          <li>fix typo / terminlogy in code comments</li>
+          <li>fix typo / terminology in code comments</li>
           <li>gui: align save-as path, filters, and untitled names with editor language</li>
           <li>gui: session restore and CLI prompt for missing design files</li>
           <li>gui: skip stale-path session dialog for default Untitled files</li>
@@ -261,7 +261,7 @@
         </ul>
         <p>Bug fixes:</p>
         <ul>
-          <li>udpated tests</li>
+          <li>updated tests</li>
         </ul>
       </description>
     </release>

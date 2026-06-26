@@ -53,6 +53,15 @@ SECTION_RE = re.compile(r"^### (.+?)\s*$")
 BULLET_RE = re.compile(r"^\* (.+?)\s*$")
 RELEASES_BLOCK_RE = re.compile(r"^[ \t]*<releases>.*?</releases>", re.DOTALL | re.MULTILINE)
 
+# A trailing "([text](url))" PR/commit reference group, anchored to the end.
+TRAILING_REF_RE = re.compile(r"\s*\(\[[^\]]+\]\([^)]+\)\)\s*$")
+# A trailing "closes/fixes [text](url)" issue reference, optionally wrapped in
+# parentheses (e.g. "(closes [#648](url))") and anchored to the end.
+TRAILING_CLOSES_RE = re.compile(
+    r",?\s*\(?(?:closes|fixes)\s+\[[^\]]+\]\([^)]+\)\)?\s*$", re.IGNORECASE)
+# An in-text markdown link "[text](url)" -> "text".
+MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]+\)")
+
 
 def parse_changelog(text):
     """Parse CHANGELOG.md into a list of release dicts (newest first)."""
@@ -97,12 +106,18 @@ def _xml_escape(text):
 
 def clean_bullet(text):
     """Turn a markdown changelog bullet into AppStream-safe inline text."""
-    # Drop trailing PR/commit reference groups, e.g. " ([#710](url))".
-    text = re.sub(r"\s*\(\[[^\]]+\]\([^)]+\)\)", "", text)
-    # Drop "closes #nnn" style trailers.
-    text = re.sub(r",?\s*closes\s*\[[^\]]+\]\([^)]+\)", "", text, flags=re.IGNORECASE)
-    # Flatten any remaining markdown links to their text.
-    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+    # Strip trailing reference noise (PR/commit links and "closes #nnn"
+    # trailers). Anchored to the end and applied in a loop so several stacked
+    # trailers are removed (e.g. " ([#664](url)) ([8722c7b](url))" or
+    # "..., closes [#591](url)") without touching links in the middle of a
+    # bullet, which are legitimate content.
+    previous = None
+    while previous != text:
+        previous = text
+        text = TRAILING_REF_RE.sub("", text)
+        text = TRAILING_CLOSES_RE.sub("", text)
+    # Flatten any remaining (in-text) markdown links to their visible text.
+    text = MARKDOWN_LINK_RE.sub(r"\1", text)
     # Bold markers carry no meaning once flattened (used for scopes).
     text = text.replace("**", "")
     # CHANGELOG already HTML-escapes some characters; normalise to raw first.
