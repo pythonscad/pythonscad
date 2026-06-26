@@ -1376,7 +1376,6 @@ std::string evaluatePython(const std::string& code, bool dry_run)
   PyObjectUniquePtr pyExcTraceback(nullptr, &PyObjectDeleter);
   /* special python code to catch errors from stdout and stderr and make them available in OpenSCAD
    * console */
-  modinsts_list.clear();  // shared_ptrs auto-free
   pythonDryRun = dry_run;
   if (!pythonMainModuleInitialized) return "Python not initialized";
   struct EvaluatePythonGil {

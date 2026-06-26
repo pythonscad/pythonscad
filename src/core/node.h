@@ -17,7 +17,6 @@
 extern int progress_report_count;
 extern void (*progress_report_f)(const std::shared_ptr<const AbstractNode>&, void *, int);
 extern void *progress_report_vp;
-extern std::vector<std::shared_ptr<ModuleInstantiation>> modinsts_list;
 
 void progress_report_prep(const std::shared_ptr<AbstractNode>& root,
                           void (*f)(const std::shared_ptr<const AbstractNode>& node, void *vp, int mark),
