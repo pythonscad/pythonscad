@@ -44,8 +44,14 @@ repos:
     - repo: https://github.com/pre-commit/mirrors-clang-format
       rev: "v22.1.5"
       hooks:
+          # clang-format's default file types include JavaScript, so without
+          # an exclude it reformats the vendored, pre-minified three.js bundles
+          # under wasm-test/vendor/. Beautifying minified JS that relies on
+          # ASI corrupts it (this is how an earlier vendored three.min.js got
+          # broken). These are third-party build artifacts we ship verbatim.
           - id: clang-format
             args: ["--style=file"]
+            exclude: ^wasm-test/vendor/
     - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
       rev: v9.26.0
       hooks:
@@ -104,6 +110,21 @@ repos:
           - id: shellcheck
             args: ["--severity=warning"]
             exclude: ^(submodules|tests/data)/
+    - repo: local
+      hooks:
+          # The AppStream <releases> block in pythonscad.appdata.xml.in is
+          # generated from CHANGELOG.md by scripts/update-appdata-releases.py.
+          # Fail if the committed file drifts from what the generator would
+          # produce (e.g. a hand-edit, or a CHANGELOG change without a
+          # regenerate). The script is stdlib-only; `language: python` lets
+          # pre-commit provision an interpreter consistently across platforms
+          # (notably Windows, where `python3` is often not on PATH).
+          - id: appdata-releases
+            name: appdata releases up to date
+            entry: python scripts/update-appdata-releases.py --check
+            language: python
+            files: ^(CHANGELOG\.md|pythonscad\.appdata\.xml\.in)$
+            pass_filenames: false
     - repo: https://github.com/zizmorcore/zizmor-pre-commit
       rev: v1.26.1
       hooks:
