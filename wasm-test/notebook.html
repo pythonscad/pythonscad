@@ -627,7 +627,7 @@ async function initWasm() {
     const msg = errMsg(e);
     setBadge('error', 'Load failed');
     setStatus('Load error: ' + msg);
-    setLoadProgress(0, 'Load error');
+    setLoadProgress(0);
     const wrap = document.getElementById('load-progress');
     if (wrap) wrap.classList.add('done');
     dbg('initWasm ERROR: ' + msg, 'error');
