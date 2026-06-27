@@ -44,11 +44,14 @@ void EmsInitPython(void)
 ```
 
 One-time bootstrap of the CPython runtime and PythonSCAD library path. Selects
-the Manifold geometry backend. Must be called once before any evaluation.
+the Manifold geometry backend. Call it exactly **once** per module instance,
+before any evaluation.
 
-It is **idempotent**: a second call is a no-op (it does not reset interpreter
-state). If the module heap is ever corrupted by a hard crash, reload the whole
-module rather than re-calling this.
+Do **not** call it again to "reset" a session: after a successful first init a
+second call takes the re-init path in `initPython`, which removes user-added
+globals from `__main__` and reloads the overlay modules. It therefore does not
+preserve interpreter state. To start fresh, create a new module instance
+instead.
 
 ### `EmsEvaluatePython(code, dryRun)`
 
