@@ -376,7 +376,7 @@ function dbg(msg, type) {
   const body = document.getElementById('dbg-body');
   body.insertAdjacentHTML('beforeend',
     '<div style="color:' + color + '">' + escHTML(msg) + '</div>');
-  _dbgPanel.scrollTop = _dbgPanel.scrollHeight;
+  body.scrollTop = body.scrollHeight;
 }
 
 let mod          = null;
