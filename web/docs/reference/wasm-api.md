@@ -74,7 +74,7 @@ what a notebook needs.
 
 ```javascript
 initPython();
-const err = evaluatePython('from openscad import *\nshow(cube(10))', false);
+const err = evaluatePython('from pythonscad import *\nshow(cube(10))', false);
 if (err) console.error(err);
 ```
 
@@ -106,7 +106,7 @@ For one-shot conversion (script in, file out) use the OpenSCAD command-line
 entry point via Emscripten's virtual filesystem:
 
 ```javascript
-mod.FS.writeFile('/input.py', 'from openscad import *\nshow(cube(10))');
+mod.FS.writeFile('/input.py', 'from pythonscad import *\nshow(cube(10))');
 
 let exitCode = 0;
 try {
