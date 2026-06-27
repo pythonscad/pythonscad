@@ -823,7 +823,7 @@ function buildSnippetList() {
   const el = document.getElementById('snippet-list');
   el.innerHTML = Object.entries(SNIPPETS).map(([name, code]) =>
     '<div class="snippet-item" onclick="insertSnippet(' + JSON.stringify(name).replace(/"/g,'&quot;') + ')">' +
-      '<div class="snip-title">' + name + '</div>' +
+      '<div class="snip-title">' + escHTML(name) + '</div>' +
       '<div class="snip-sub">' + escHTML(code.split('\n')[1] || code.split('\n')[0] || '') + '</div>' +
     '</div>').join('');
 }
@@ -957,7 +957,7 @@ function buildExampleList() {
   if (!el) return;
   el.innerHTML = Object.entries(EXAMPLES).map(([name, code]) =>
     '<div class="snippet-item" onclick="loadExample(' + JSON.stringify(name).replace(/"/g,'&quot;') + ')">' +
-      '<div class="snip-title">' + name + '</div>' +
+      '<div class="snip-title">' + escHTML(name) + '</div>' +
       '<div class="snip-sub">' + escHTML(snippetPreview(code)) + '</div>' +
     '</div>').join('');
 }
