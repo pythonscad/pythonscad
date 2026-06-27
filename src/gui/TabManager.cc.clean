@@ -398,17 +398,10 @@ if (use_gvim) {
   std::string filename = tabEditor->filepath.toUtf8().constData();
   if (!filename.empty()) {
     QString escapedFilename = QString::fromStdString(filename).replace("'", "'\\''");
-//    QString editorcmd =
-//      "GDK_BACKEND=x11 gvim --servername PYTHONSCAD--remote-silent --remote-send "
-//      "'<Esc>:tabedit " + escapedFilename + "<CR>:b " + escapedFilename + "<CR>' 2>/dev/null"
-//      " || GDK_BACKEND=x11 gvim --servername PYTHONSCAD --remote-silent '" + escapedFilename + "' &";
     QString editorcmd =
-    "GDK_BACKEND=x11 gvim --servername PYTHONSCAD --remote-tab-silent '" +
-    escapedFilename +
-    "' 2>/dev/null || "
-    "GDK_BACKEND=x11 gvim --servername PYTHONSCAD '" +
-    escapedFilename +
-    "' &";
+      "GDK_BACKEND=x11 gvim --servername PYTHONSCAD--remote-silent --remote-send "
+      "'<Esc>:badd " + escapedFilename + "<CR>:b " + escapedFilename + "<CR>' 2>/dev/null"
+      " || GDK_BACKEND=x11 gvim --servername PYTHONSCAD --remote-silent '" + escapedFilename + "' &";
     const int gvimRc = system(editorcmd.toUtf8().constData());
     (void)gvimRc;
   }
