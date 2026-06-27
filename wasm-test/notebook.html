@@ -493,8 +493,35 @@ async function fetchWithProgress(url, onProgress) {
     return buf;
   }
   const reader = resp.body.getReader();
-  const chunks = [];
   let loaded = 0;
+  // When the size is known, fill one preallocated buffer instead of holding
+  // every chunk and then copying into a second contiguous buffer. That avoids
+  // ~2x peak memory + an extra copy for the ~18 MB .wasm/.data (matters on
+  // mobile). A wrong Content-Length falls back to exact-size stitching below.
+  if (total > 0) {
+    const out = new Uint8Array(total);
+    let overflow = null;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (loaded + value.byteLength <= total) {
+        out.set(value, loaded);
+      } else {
+        (overflow || (overflow = [])).push(value);
+      }
+      loaded += value.byteLength;
+      onProgress(loaded, total);
+    }
+    if (!overflow && loaded === total) return out.buffer;
+    const stitched = new Uint8Array(loaded);
+    const kept = Math.min(loaded, total);
+    stitched.set(out.subarray(0, kept), 0);
+    let off = kept;
+    if (overflow) for (const c of overflow) { stitched.set(c, off); off += c.byteLength; }
+    return stitched.buffer;
+  }
+  // Unknown length: collect chunks and concatenate once at the end.
+  const chunks = [];
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
