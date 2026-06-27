@@ -500,24 +500,29 @@ async function fetchWithProgress(url, onProgress) {
   // mobile). A wrong Content-Length falls back to exact-size stitching below.
   if (total > 0) {
     const out = new Uint8Array(total);
-    let overflow = null;
+    const overflow = [];
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
-      if (loaded + value.byteLength <= total) {
-        out.set(value, loaded);
+      if (loaded < total) {
+        // Copy the part that still fits, carry only the remainder of a chunk
+        // that straddles the advertised length (so no zero-gap is left).
+        const fit = Math.min(value.byteLength, total - loaded);
+        out.set(value.subarray(0, fit), loaded);
+        if (fit < value.byteLength) overflow.push(value.subarray(fit));
       } else {
-        (overflow || (overflow = [])).push(value);
+        overflow.push(value);
       }
       loaded += value.byteLength;
       onProgress(loaded, total);
     }
-    if (!overflow && loaded === total) return out.buffer;
+    if (overflow.length === 0 && loaded === total) return out.buffer;
+    // Content-Length was wrong: stitch the exact bytes actually received.
     const stitched = new Uint8Array(loaded);
     const kept = Math.min(loaded, total);
     stitched.set(out.subarray(0, kept), 0);
     let off = kept;
-    if (overflow) for (const c of overflow) { stitched.set(c, off); off += c.byteLength; }
+    for (const c of overflow) { stitched.set(c, off); off += c.byteLength; }
     return stitched.buffer;
   }
   // Unknown length: collect chunks and concatenate once at the end.
