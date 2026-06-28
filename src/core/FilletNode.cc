@@ -170,8 +170,9 @@ bool validateFilletEdgePairs(const std::vector<IndexedFace>& indices, EdgeKey& f
       if (ind1 == ind2) continue;
 
       EdgeKey edge(ind1, ind2);
-      if (edge_db.count(edge) == 0) edge_db[edge] = empty;
-      EdgeVal& value = edge_db[edge];
+      auto [edgeIt, inserted] = edge_db.emplace(edge, empty);
+      (void)inserted;
+      EdgeVal& value = edgeIt->second;
       if (ind2 > ind1) {
         if (value.facea != -1) {
           failedEdge = edge;
