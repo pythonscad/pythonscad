@@ -216,7 +216,7 @@ int operator==(const EdgeKey& t1, const EdgeKey& t2)
 }
 
 std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> createEdgeDb(
-  const std::vector<IndexedFace>& indices)
+  const std::vector<IndexedFace>& indices, int& error)
 {
   std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> edge_db;
   EdgeKey edge;
@@ -250,23 +250,13 @@ std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> createEdgeDb(
       }
     }
   }
-  int error = 0;
+  error = 0;
   for (auto& e : edge_db) {
     if (e.second.facea == -1 || e.second.faceb == -1) {
       printf("Mismatched EdgeDB ind1=%d ind2=%d facea=%d faceb=%d\n", e.first.ind1, e.first.ind2,
              e.second.facea, e.second.faceb);
       error = 1;
     }
-  }
-  if (error) {
-    for (int i = 0; i < indices.size(); i++) {
-      printf("%d :", i);
-      for (int j = 0; j < indices[i].size(); j++) {
-        printf("%d ", indices[i][j]);
-      }
-      printf("\n");
-    }
-    assert(0);
   }
   return edge_db;
 }
@@ -1122,7 +1112,12 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
   // create edge_db
   std::unordered_map<EdgeKey, std::vector<Vector3d>, boost::hash<EdgeKey>> edge_startarc;
   std::unordered_map<EdgeKey, std::vector<Vector3d>, boost::hash<EdgeKey>> edge_endarc;
-  auto edge_db = createEdgeDb(indicesNew);
+  int error;
+  auto edge_db = createEdgeDb(indicesNew, error);
+  if (error)
+    LOG(message_group::Warning,
+        "Resulting 3D offset is not manifold anymore, further processing might be inaccurate");
+
   int abs_eff_fn = 0;
   for (auto& e : edge_db) {
     Vector3d p1 = ps->vertices[e.first.ind1];
