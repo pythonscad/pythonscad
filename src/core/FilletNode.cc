@@ -154,7 +154,7 @@ namespace {
 bool validateFilletEdgePairs(const std::vector<IndexedFace>& indices, EdgeKey& failedEdge)
 {
   std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> edge_db;
-  EdgeVal empty;
+  EdgeVal empty{};
   empty.sel = 0;
   empty.facea = -1;
   empty.faceb = -1;

@@ -1161,7 +1161,9 @@ add_cmdline_test(export-pdf-fill SCRIPT ${EXPORT_PNGTEST_PY} SUFFIX png FILES ${
 add_failing_test(stlfailedtest         SUFFIX stl  FILES ${TEST_SCAD_DIR}/misc/empty-union.scad ARGS --retval=1 --trust-python)
 add_failing_test(offfailedtest         SUFFIX off  FILES ${TEST_SCAD_DIR}/misc/empty-union.scad ARGS --retval=1 --trust-python)
 add_failing_test(parsererrors          SUFFIX stl  FILES ${FAILING_FILES} ARGS --retval=1 --trust-python)
-add_failing_test(pythonscadfailedtest  EXPERIMENTAL SUFFIX stl FILES ${PYTHONSCAD_FAILING_FILES} ARGS --retval=1 --trust-python)
+if(EXPERIMENTAL)
+  add_failing_test(pythonscadfailedtest  SUFFIX stl FILES ${PYTHONSCAD_FAILING_FILES} ARGS --retval=1 --trust-python)
+endif()
 # Hardwarning Test
 add_failing_test(hardwarnings          SUFFIX echo FILES ${TEST_SCAD_DIR}/misc/errors-warnings.scad ARGS --retval=1 --hardwarnings --trust-python)
 
