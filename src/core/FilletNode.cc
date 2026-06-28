@@ -151,15 +151,14 @@ void debug_pt(const char *msg, Vector3d pt)
 
 namespace {
 
+struct FilletEdgePair {
+  int facea = -1;
+  int faceb = -1;
+};
+
 bool validateFilletEdgePairs(const std::vector<IndexedFace>& indices, EdgeKey& failedEdge)
 {
-  std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> edge_db;
-  EdgeVal empty{};
-  empty.sel = 0;
-  empty.facea = -1;
-  empty.faceb = -1;
-  empty.posa = -1;
-  empty.posb = -1;
+  std::unordered_map<EdgeKey, FilletEdgePair, boost::hash<EdgeKey>> edge_db;
 
   for (size_t faceIndex = 0; faceIndex < indices.size(); faceIndex++) {
     const auto& face = indices[faceIndex];
@@ -170,23 +169,20 @@ bool validateFilletEdgePairs(const std::vector<IndexedFace>& indices, EdgeKey& f
       if (ind1 == ind2) continue;
 
       EdgeKey edge(ind1, ind2);
-      auto [edgeIt, inserted] = edge_db.emplace(edge, empty);
-      (void)inserted;
-      EdgeVal& value = edgeIt->second;
+      auto edgeIt = edge_db.emplace(edge, FilletEdgePair{}).first;
+      FilletEdgePair& value = edgeIt->second;
       if (ind2 > ind1) {
         if (value.facea != -1) {
           failedEdge = edge;
           return false;
         }
         value.facea = faceIndex;
-        value.posa = pos;
       } else {
         if (value.faceb != -1) {
           failedEdge = edge;
           return false;
         }
         value.faceb = faceIndex;
-        value.posb = pos;
       }
     }
   }
