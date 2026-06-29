@@ -83,7 +83,7 @@ async function OpenSCAD() {
   };
 }
 
-module.exports = OpenSCAD;
+export default OpenSCAD;
 """
 
 
