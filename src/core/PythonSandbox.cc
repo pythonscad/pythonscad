@@ -161,8 +161,12 @@ bool isPathInside(const fs::path& child, const fs::path& parent)
   const fs::path canonicalParent = fs::weakly_canonical(parent, ec);
   if (ec) return false;
   const fs::path relative = canonicalChild.lexically_relative(canonicalParent);
-  const std::string relativeString = relative.generic_string();
-  return !relative.empty() && relativeString.rfind("..", 0) != 0 && !relative.is_absolute();
+  if (relative.empty()) return canonicalChild == canonicalParent;
+  if (relative.is_absolute()) return false;
+  for (const auto& part : relative) {
+    if (part == "..") return false;
+  }
+  return true;
 }
 
 bool hasManifestControlCharacter(const std::string& value)
