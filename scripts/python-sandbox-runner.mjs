@@ -70,7 +70,7 @@ function safeRelativePath(relativePath)
   if (/[\t\r\n]/.test(relativePath)) return null;
   if (/^[A-Za-z]:/.test(relativePath) || relativePath.startsWith('\\\\')) return null;
 
-  const normalized = path.posix.normalize(relativePath.replaceAll('\\', '/'));
+  const normalized = path.posix.normalize(relativePath.replace(/\\/g, '/'));
   if (!normalized || normalized === '.' || normalized.startsWith('../') || normalized === '..')
     return null;
 
