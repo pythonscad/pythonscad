@@ -171,10 +171,10 @@ bool EditorInterface::hasPythonTrustHash(void) const
 
 bool EditorInterface::trust_python_file(void)
 {
-  if (python_trusted || Settings::SettingsPython::globalTrustPython.value() || filepath.isEmpty()) {
-    // Global/CLI trust or unsaved buffer: effective trust without a per-file hash.
+  if (python_trusted || filepath.isEmpty()) {
+    // CLI trust or unsaved buffer: effective trust without a per-file hash.
     // Do NOT set trusted=true here — trusted is reserved for hash-verified per-file trust.
-    // Callers check effective trust as: trusted || python_trusted || globalTrustPython.
+    // Old global trust settings are intentionally ignored for native execution mode.
     return true;
   }
 
@@ -207,9 +207,7 @@ void EditorInterface::trustCurrent(void)
     return;
   }
   if (filepath.isEmpty()) {
-    QMessageBox::information(
-      this, _("Python"),
-      _("Untitled buffers are already trusted. Save to a file if you need a persistent trust entry."));
+    setPythonNativeExecution(true);
     return;
   }
   const QByteArray docUtf8 = toPlainText().toUtf8();
@@ -219,12 +217,21 @@ void EditorInterface::trustCurrent(void)
   const std::string fpath(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size()));
   writePythonTrustHash(settings, fpath, SHA256HashString(content));
   trusted = true;
+  pythonNativeExecution = true;
   emit trustStateChanged();
 #endif
 }
+
+void EditorInterface::setPythonNativeExecution(bool enabled)
+{
+  pythonNativeExecution = enabled;
+  emit trustStateChanged();
+}
+
 void EditorInterface::revokeTrust(void)
 {
   trusted = false;
+  pythonNativeExecution = false;
   emit trustStateChanged();
 }
 
