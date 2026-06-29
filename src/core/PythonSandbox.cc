@@ -286,14 +286,17 @@ fs::path findSandboxRunner()
 fs::path makeTempDir()
 {
 #ifdef _WIN32
-  std::random_device random;
-  const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+  char tempPath[MAX_PATH + 1] = {};
+  const DWORD tempPathLength = GetTempPathA(MAX_PATH, tempPath);
+  if (tempPathLength == 0 || tempPathLength > MAX_PATH) {
+    throw std::runtime_error("Could not locate temporary directory.");
+  }
   for (int attempt = 0; attempt < 100; ++attempt) {
-    fs::path dir = fs::temp_directory_path() /
-                   ("pythonscad-sandbox-" + std::to_string(stamp) + "-" + std::to_string(random()));
-    std::error_code ec;
-    if (fs::create_directory(dir, ec)) return dir;
-    if (ec && ec != std::make_error_code(std::errc::file_exists)) break;
+    char tempName[MAX_PATH + 1] = {};
+    if (GetTempFileNameA(tempPath, "psc", 0, tempName) == 0) break;
+    DeleteFileA(tempName);
+    if (CreateDirectoryA(tempName, nullptr)) return fs::path(tempName);
+    if (GetLastError() != ERROR_ALREADY_EXISTS) break;
   }
   throw std::runtime_error("Could not create sandbox temporary directory.");
 #else
