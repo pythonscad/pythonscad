@@ -25,11 +25,13 @@
  */
 
 #include <Python.h>
-#include "python/pyopenscad.h"
-#include "pyfunctions.h"
+
+#include "core/ImportNode.h"
 #include "core/TransformNode.h"
 #include "core/primitives.h"
+#include "pyfunctions.h"
 #include "python/pyconversion.h"
+#include "python/pyopenscad.h"
 PyObject *python__getsetitem_hier(std::shared_ptr<AbstractNode> node, const std::string& keystr,
                                   PyObject *v, int hier)
 {
@@ -595,6 +597,28 @@ PyObject *python_memberfunction(PyObject *self, PyObject *args, PyObject *kwargs
 
 std::shared_ptr<RenderVariables> renderVarsSet = nullptr;
 
+static PyObject *python_add_parameter_callable(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return python_add_parameter(self, args, kwargs, ImportType::UNKNOWN);
+}
+
+#ifndef OPENSCAD_NOGUI
+static PyObject *python_add_menuitem_callable(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return python_add_menuitem(self, args, kwargs, 0);
+}
+#endif
+
+static PyObject *python_model_callable(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return python_model(self, args, kwargs, 0);
+}
+
+static PyObject *python_modelpath_callable(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return python_modelpath(self, args, kwargs, 0);
+}
+
 PyMethodDef PyOpenSCADFunctions[] = {
   {"edge", (PyCFunction)python_edge, METH_VARARGS | METH_KEYWORDS, "Create Edge."},
   {"square", (PyCFunction)python_square, METH_VARARGS | METH_KEYWORDS, "Create Square."},
@@ -693,17 +717,17 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"version", (PyCFunction)python_osversion, METH_VARARGS | METH_KEYWORDS, "Output openscad Version."},
   {"version_num", (PyCFunction)python_osversion_num, METH_VARARGS | METH_KEYWORDS,
    "Output openscad Version."},
-  {"add_parameter", (PyCFunction)python_add_parameter, METH_VARARGS | METH_KEYWORDS,
+  {"add_parameter", (PyCFunction)python_add_parameter_callable, METH_VARARGS | METH_KEYWORDS,
    "Add Parameter for Customizer."},
   {"scad", (PyCFunction)python_scad, METH_VARARGS | METH_KEYWORDS, "Source OpenSCAD code."},
   {"align", (PyCFunction)python_align, METH_VARARGS | METH_KEYWORDS, "Align Object to another."},
 #ifndef OPENSCAD_NOGUI
-  {"add_menuitem", (PyCFunction)python_add_menuitem, METH_VARARGS | METH_KEYWORDS,
+  {"add_menuitem", (PyCFunction)python_add_menuitem_callable, METH_VARARGS | METH_KEYWORDS,
    "Add Menuitem to the the openscad window."},
   {"nimport", (PyCFunction)python_nimport, METH_VARARGS | METH_KEYWORDS, "Import Networked Object."},
 #endif
-  {"model", (PyCFunction)python_model, METH_VARARGS | METH_KEYWORDS, "Yield Model"},
-  {"modelpath", (PyCFunction)python_modelpath, METH_VARARGS | METH_KEYWORDS,
+  {"model", (PyCFunction)python_model_callable, METH_VARARGS | METH_KEYWORDS, "Yield Model"},
+  {"modelpath", (PyCFunction)python_modelpath_callable, METH_VARARGS | METH_KEYWORDS,
    "Returns absolute Path to script"},
   {"memberfunction", (PyCFunction)python_memberfunction, METH_VARARGS | METH_KEYWORDS,
    "Registers additional openscad memberfunction functions"},
