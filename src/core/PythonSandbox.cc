@@ -61,8 +61,10 @@ std::string windowsCommandLineQuote(const std::string& value)
 
 bool hasWasmBundle(const fs::path& dir)
 {
-  return fs::is_regular_file(dir / "pythonscad.js") && fs::is_regular_file(dir / "pythonscad.wasm") &&
-         fs::is_regular_file(dir / "pythonscad.data");
+  std::error_code ec;
+  return fs::is_regular_file(dir / "pythonscad.js", ec) && !ec &&
+         fs::is_regular_file(dir / "pythonscad.wasm", ec) && !ec &&
+         fs::is_regular_file(dir / "pythonscad.data", ec) && !ec;
 }
 
 std::string processStatusMessage(int status)
@@ -204,8 +206,9 @@ fs::path findWasmBundleDir()
   const auto fromEnv = getenvString("PYTHONSCAD_WASM_DIR");
   if (!fromEnv.empty() && hasWasmBundle(fromEnv)) return fs::path(fromEnv);
 
-  const fs::path cwd = fs::current_path();
-  if (hasWasmBundle(cwd / "build-wasm-web")) return cwd / "build-wasm-web";
+  std::error_code ec;
+  const fs::path cwd = fs::current_path(ec);
+  if (!ec && hasWasmBundle(cwd / "build-wasm-web")) return cwd / "build-wasm-web";
 
   fs::path appPath = PlatformUtils::applicationPath();
   if (hasWasmBundle(appPath / "wasm")) return appPath / "wasm";
@@ -217,14 +220,18 @@ fs::path findWasmBundleDir()
 fs::path findSandboxRunner()
 {
   const auto fromEnv = getenvString("PYTHONSCAD_SANDBOX_RUNNER");
-  if (!fromEnv.empty() && fs::is_regular_file(fromEnv)) return fs::path(fromEnv);
+  std::error_code ec;
+  if (!fromEnv.empty() && fs::is_regular_file(fromEnv, ec) && !ec) return fs::path(fromEnv);
 
-  fs::path cwdRunner = fs::current_path() / "scripts" / "python-sandbox-runner.mjs";
-  if (fs::is_regular_file(cwdRunner)) return cwdRunner;
+  const fs::path cwd = fs::current_path(ec);
+  if (!ec) {
+    fs::path cwdRunner = cwd / "scripts" / "python-sandbox-runner.mjs";
+    if (fs::is_regular_file(cwdRunner, ec) && !ec) return cwdRunner;
+  }
 
   fs::path appRunner =
     fs::path(PlatformUtils::applicationPath()) / "scripts" / "python-sandbox-runner.mjs";
-  if (fs::is_regular_file(appRunner)) return appRunner;
+  if (fs::is_regular_file(appRunner, ec) && !ec) return appRunner;
 
   return {};
 }
