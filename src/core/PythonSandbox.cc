@@ -370,7 +370,8 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
 void cleanupPythonSandboxResult(const PythonSandboxResult& result)
 {
   if (!result.tempDir.empty()) {
-    fs::remove_all(result.tempDir);
+    std::error_code ec;
+    fs::remove_all(result.tempDir, ec);
   }
 }
 
