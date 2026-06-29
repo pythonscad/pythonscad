@@ -1068,12 +1068,13 @@ bool TabManager::refreshDocument()
       if (editor->language == LANG_PYTHON) {
         if (editor->trusted && contentChanged && !python_trusted && editor->hasPythonTrustHash()) {
           // File changed externally while per-file trusted (e.g. external editor workflow).
-          // Refresh the stored hash so the file can remain eligible for native mode if the
-          // user explicitly opts in again after the external edit.
+          // External edits invalidate the explicit native-mode opt-in. Refresh the stored hash
+          // only so the file can become eligible again if the user explicitly opts in.
           // Only when a per-file hash already exists — if trust came from global/CLI trust
           // (no hash entry), fall through to trust_python_file() so the file becomes
           // untrusted until explicitly trusted again.
           editor->rememberCurrentPythonTrustHash();
+          editor->setPythonNativeExecution(false);
         } else {
           // Fresh open, previously untrusted, content unchanged, or trust came from
           // global/CLI — run hash check eagerly so the trust bar appears immediately.

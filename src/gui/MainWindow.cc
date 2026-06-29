@@ -297,6 +297,25 @@ bool pythonDesignCanRun(const EditorInterface *editor)
 {
   return !currentPythonExecutionModeIsNative() || effectivePythonExecutionModeIsNative(editor);
 }
+
+bool isSafeSandboxOutputRelativePath(const QString& value)
+{
+  if (value.isEmpty() || value.contains(QChar::Null) || value.contains('\t') || value.contains('\r') ||
+      value.contains('\n')) {
+    return false;
+  }
+  if (QFileInfo(value).isAbsolute() || value.startsWith(QStringLiteral("\\\\"))) return false;
+
+  const QString cleaned = QDir::cleanPath(value);
+  if (cleaned.isEmpty() || cleaned == QStringLiteral(".") || cleaned.startsWith(QStringLiteral("../")) ||
+      cleaned == QStringLiteral("..")) {
+    return false;
+  }
+  const auto parts = cleaned.split('/', Qt::SkipEmptyParts);
+  return std::none_of(parts.begin(), parts.end(), [](const QString& part) {
+    return part == QStringLiteral(".") || part == QStringLiteral("..");
+  });
+}
 #endif
 
 struct DockFocus {
@@ -4038,6 +4057,11 @@ void MainWindow::onSandboxOutputExportAll()
 
   for (const auto& file : sandboxOutputFiles) {
     const QString relativePath = QString::fromStdString(file.relativePath);
+    if (!isSafeSandboxOutputRelativePath(relativePath)) {
+      QMessageBox::warning(this, _("Export Sandbox Outputs"),
+                           QString(_("Refusing unsafe sandbox output path: %1")).arg(relativePath));
+      return;
+    }
     const QString target = QDir(destination).filePath(relativePath);
     QDir().mkpath(QFileInfo(target).absolutePath());
     if (QFileInfo::exists(target)) {

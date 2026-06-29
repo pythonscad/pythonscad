@@ -4,6 +4,7 @@
 
 #include <cerrno>
 #include <chrono>
+#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -164,6 +165,23 @@ bool hasManifestControlCharacter(const std::string& value)
          value.find('\n') != std::string::npos || value.find('\0') != std::string::npos;
 }
 
+bool isSafeManifestRelativePath(const std::string& value)
+{
+  if (hasManifestControlCharacter(value) || value.empty() || value[0] == '/') return false;
+  if (value.size() >= 2 && std::isalpha(static_cast<unsigned char>(value[0])) && value[1] == ':') {
+    return false;
+  }
+  if (value.rfind("\\\\", 0) == 0) return false;
+
+  const fs::path normalized = fs::path(value).lexically_normal();
+  if (normalized.empty() || normalized == "." || normalized.is_absolute()) return false;
+  for (const auto& part : normalized) {
+    const std::string component = part.generic_string();
+    if (component.empty() || component == "." || component == "..") return false;
+  }
+  return true;
+}
+
 fs::path findWasmBundleDir()
 {
   const auto fromEnv = getenvString("PYTHONSCAD_WASM_DIR");
@@ -236,7 +254,7 @@ bool readManifest(const fs::path& manifestFile, const fs::path& outputRoot,
     PythonSandboxOutputFile file;
     file.relativePath = line.substr(0, firstTab);
     file.hostPath = line.substr(firstTab + 1, secondTab - firstTab - 1);
-    if (hasManifestControlCharacter(file.relativePath) || !isPathInside(file.hostPath, outputRoot)) {
+    if (!isSafeManifestRelativePath(file.relativePath) || !isPathInside(file.hostPath, outputRoot)) {
       error = "Sandboxed Python produced an invalid output manifest.";
       return false;
     }
