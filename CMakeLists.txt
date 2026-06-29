@@ -344,7 +344,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   )
   if (WASM_BUILD_TYPE STREQUAL "web")
     target_link_options(OpenSCADExe PUBLIC
-      -sENVIRONMENT=web,worker
+      -sENVIRONMENT=web,worker,node
       -sEXPORT_ES6=1
       -sEXPORT_NAME=OpenSCAD
       -sMODULARIZE=1
@@ -1477,6 +1477,7 @@ set(CORE_SOURCES
   src/core/ScopeContext.cc
   src/core/Selection.cc
   src/core/Settings.cc
+  src/core/PythonSandbox.cc
   src/core/SourceFile.cc
   src/core/SourceFileCache.cc
   src/core/StatCache.cc

@@ -92,6 +92,8 @@
 #include "core/Context.h"
 #include "core/enums.h"
 #include "core/EvaluationSession.h"
+#include "core/PythonExecution.h"
+#include "core/PythonSandbox.h"
 #include "core/RenderVariables.h"
 #include "core/ScopeContext.h"
 #include "core/Settings.h"
@@ -128,6 +130,9 @@ std::string arg_colorscheme;
 namespace {
 
 bool arg_info = false;
+#ifdef ENABLE_PYTHON
+PythonExecutionMode arg_python_execution_mode = PythonExecutionMode::Sandboxed;
+#endif
 
 }  // namespace
 
@@ -607,13 +612,26 @@ int cmdline(const CommandLine& cmd)
   python_active = false;
   if (cmd.filename.c_str() != NULL) {
     if (boost::algorithm::ends_with(cmd.filename, ".py")) {
-      if (python_trusted == true) python_active = true;
-      else LOG("Python is not enabled");
+      if (pythonExecutionModeIsNative(arg_python_execution_mode)) {
+        python_active = true;
+      }
     }
   }
 
   std::string text_py = text;
-  if (python_active) {
+  if (boost::algorithm::ends_with(cmd.filename, ".py") &&
+      !pythonExecutionModeIsNative(arg_python_execution_mode)) {
+    if (cmd.animate.frames != 0) {
+      LOG(message_group::Error, "Sandboxed Python animation export is not supported yet.");
+      return 1;
+    }
+    auto sandboxResult = evaluatePythonSandboxToCsg(commandline_commands + "\n" + text_py, cmd.filename);
+    if (!sandboxResult.ok) {
+      LOG(message_group::Error, sandboxResult.error.c_str());
+      return 1;
+    }
+    text = sandboxResult.csg;
+  } else if (python_active) {
     if (cmd.animate.frames == 0) {
       initPython("", cmd.filename, &render_variables);
       auto error = evaluatePython(commandline_commands);
@@ -950,7 +968,11 @@ int openscad_main(int argc, char **argv)
     ("debug", po::value<std::string>(),
       "special debug info - specify 'all' or a set of source file names")
 #ifdef ENABLE_PYTHON
-    ("trust-python", "Trust python")
+    ("python", po::value<std::string>(),
+      "=sandboxed|native Select Python execution mode. Sandboxed mode is the default; native "
+      "mode is unsafe for untrusted designs.")
+    ("trust-python",
+      "deprecated and ignored; use --python=native to run trusted designs with native Python")
     ("ipython",
       "start an IPython shell on stdin; remaining positional args are forwarded as "
       "IPython argv (e.g. `--ipython script.py arg1`). The user namespace starts "
@@ -1006,7 +1028,20 @@ int openscad_main(int argc, char **argv)
   }
 #ifdef ENABLE_PYTHON
   if (vm.count("trust-python")) {
-    LOG("Python Code globally trusted", OpenSCAD::debug);
+    LOG(message_group::Warning,
+        "--trust-python is deprecated and no longer changes Python execution mode. "
+        "Use --python=native only for designs you trust.");
+  }
+  arg_python_execution_mode = defaultPythonExecutionMode();
+  if (vm.count("python")) {
+    const auto mode = vm["python"].as<std::string>();
+    if (mode != PYTHON_EXECUTION_SANDBOXED && mode != PYTHON_EXECUTION_NATIVE) {
+      LOG(message_group::Error, "--python must be either 'sandboxed' or 'native'.");
+      return 1;
+    }
+    arg_python_execution_mode = pythonExecutionModeFromString(mode);
+  }
+  if (pythonExecutionModeIsNative(arg_python_execution_mode)) {
     python_trusted = true;
   }
   if (vm.count("ipython") && vm.count("repl")) {
