@@ -288,6 +288,7 @@ private:
   QSignalMapper *exportFormatMapper;
 #ifdef ENABLE_PYTHON
   Dock *sandboxOutputDock = nullptr;
+  QAction *sandboxOutputWindowAction = nullptr;
   QListWidget *sandboxOutputList = nullptr;
   QPushButton *sandboxOutputOpenButton = nullptr;
   QPushButton *sandboxOutputSaveButton = nullptr;

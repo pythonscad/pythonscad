@@ -182,7 +182,7 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
 
   const int exitCode = std::system(command.str().c_str());
   if (exitCode != 0) {
-    result.error = "Sandboxed Python process failed.";
+    result.error = "Sandboxed Python process failed with status " + std::to_string(exitCode) + ".";
     fs::remove_all(tempDir);
     return result;
   }

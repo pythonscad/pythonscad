@@ -4065,7 +4065,11 @@ void MainWindow::onSandboxOutputSaveAs()
   const QString target = QFileDialog::getSaveFileName(this, _("Save Sandbox Output"),
                                                       QString::fromStdString(file.relativePath));
   if (target.isEmpty()) return;
-  QFile::remove(target);
+  if (QFileInfo::exists(target)) {
+    QMessageBox::warning(this, _("Save Sandbox Output"),
+                         QString(_("Refusing to overwrite existing file: %1")).arg(target));
+    return;
+  }
   if (!QFile::copy(QString::fromStdString(file.hostPath), target)) {
     QMessageBox::warning(this, _("Save Sandbox Output"), _("Could not save the selected output file."));
   }
@@ -4898,6 +4902,10 @@ void MainWindow::setupSandboxOutputs()
 
   sandboxOutputDock->setWidget(contents);
   sandboxOutputDock->hide();
+  sandboxOutputWindowAction = sandboxOutputDock->toggleViewAction();
+  sandboxOutputWindowAction->setText(_("Sandbox &Outputs"));
+  sandboxOutputWindowAction->setObjectName(QStringLiteral("windowActionToggleSandboxOutputs"));
+  menuWindow->addAction(sandboxOutputWindowAction);
 
   connect(sandboxOutputDock, &Dock::visibilityChanged, this,
           &MainWindow::onSandboxOutputDockVisibilityChanged);
@@ -5133,7 +5141,13 @@ void MainWindow::setupDocks()
     QAction *toggleAction = dock->toggleViewAction();
     QString baseName = getDockBaseName(title);
     toggleAction->setObjectName("windowActionToggle" + baseName);
+#ifdef ENABLE_PYTHON
+    if (dock != sandboxOutputDock) {
+      menuWindow->addAction(toggleAction);
+    }
+#else
     menuWindow->addAction(toggleAction);
+#endif
 
     auto dockAction = navigationMenu->addAction(title);
     dockAction->setProperty("id", QVariant::fromValue(dock));
