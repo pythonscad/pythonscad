@@ -2,6 +2,7 @@
 
 #ifdef ENABLE_PYTHON
 
+#include <cerrno>
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
@@ -9,9 +10,14 @@
 #include <iterator>
 #include <sstream>
 #include <string>
+#include <vector>
 
-#ifndef _WIN32
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 #endif
 
 #include "platform/PlatformUtils.h"
@@ -26,27 +32,26 @@ std::string getenvString(const char *name)
   return value ? std::string(value) : std::string();
 }
 
-std::string commandQuote(const fs::path& path)
+std::string windowsCommandLineQuote(const std::string& value)
 {
-#ifdef _WIN32
-  std::string value = path.string();
   std::string quoted = "\"";
+  size_t backslashes = 0;
   for (const char ch : value) {
-    if (ch == '"') quoted += "\\\"";
-    else quoted += ch;
+    if (ch == '\\') {
+      ++backslashes;
+    } else if (ch == '"') {
+      quoted.append(backslashes * 2 + 1, '\\');
+      quoted += ch;
+      backslashes = 0;
+    } else {
+      quoted.append(backslashes, '\\');
+      quoted += ch;
+      backslashes = 0;
+    }
   }
+  quoted.append(backslashes * 2, '\\');
   quoted += "\"";
   return quoted;
-#else
-  std::string value = path.string();
-  std::string quoted = "'";
-  for (const char ch : value) {
-    if (ch == '\'') quoted += "'\\''";
-    else quoted += ch;
-  }
-  quoted += "'";
-  return quoted;
-#endif
 }
 
 bool hasWasmBundle(const fs::path& dir)
@@ -57,7 +62,6 @@ bool hasWasmBundle(const fs::path& dir)
 
 std::string processStatusMessage(int status)
 {
-  if (status == -1) return "could not start process";
 #ifdef _WIN32
   return "exit code " + std::to_string(status);
 #else
@@ -65,6 +69,99 @@ std::string processStatusMessage(int status)
   if (WIFSIGNALED(status)) return "signal " + std::to_string(WTERMSIG(status));
   return "status " + std::to_string(status);
 #endif
+}
+
+struct ProcessResult {
+  bool ok = false;
+  std::string error;
+};
+
+ProcessResult runProcess(const std::vector<std::string>& args)
+{
+  ProcessResult result;
+  if (args.empty()) {
+    result.error = "missing process arguments";
+    return result;
+  }
+
+#ifdef _WIN32
+  std::string commandLine;
+  for (const auto& arg : args) {
+    if (!commandLine.empty()) commandLine += " ";
+    commandLine += windowsCommandLineQuote(arg);
+  }
+
+  STARTUPINFOA startupInfo{};
+  startupInfo.cb = sizeof(startupInfo);
+  PROCESS_INFORMATION processInfo{};
+  std::vector<char> mutableCommandLine(commandLine.begin(), commandLine.end());
+  mutableCommandLine.push_back('\0');
+  if (!CreateProcessA(nullptr, mutableCommandLine.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr,
+                      &startupInfo, &processInfo)) {
+    result.error = "could not start process";
+    return result;
+  }
+
+  WaitForSingleObject(processInfo.hProcess, INFINITE);
+  DWORD exitCode = 1;
+  GetExitCodeProcess(processInfo.hProcess, &exitCode);
+  CloseHandle(processInfo.hThread);
+  CloseHandle(processInfo.hProcess);
+  if (exitCode != 0) {
+    result.error = processStatusMessage(static_cast<int>(exitCode));
+    return result;
+  }
+  result.ok = true;
+  return result;
+#else
+  const pid_t pid = fork();
+  if (pid < 0) {
+    result.error = "could not start process";
+    return result;
+  }
+  if (pid == 0) {
+    std::vector<char *> argv;
+    argv.reserve(args.size() + 1);
+    for (const auto& arg : args) {
+      argv.push_back(const_cast<char *>(arg.c_str()));
+    }
+    argv.push_back(nullptr);
+    execvp(argv[0], argv.data());
+    _exit(127);
+  }
+
+  int status = 0;
+  while (waitpid(pid, &status, 0) == -1) {
+    if (errno != EINTR) {
+      result.error = "could not wait for process";
+      return result;
+    }
+  }
+  if (status != 0) {
+    result.error = processStatusMessage(status);
+    return result;
+  }
+  result.ok = true;
+  return result;
+#endif
+}
+
+bool isPathInside(const fs::path& child, const fs::path& parent)
+{
+  std::error_code ec;
+  const fs::path canonicalChild = fs::weakly_canonical(child, ec);
+  if (ec) return false;
+  const fs::path canonicalParent = fs::weakly_canonical(parent, ec);
+  if (ec) return false;
+  const fs::path relative = canonicalChild.lexically_relative(canonicalParent);
+  const std::string relativeString = relative.generic_string();
+  return !relative.empty() && relativeString.rfind("..", 0) != 0 && !relative.is_absolute();
+}
+
+bool hasManifestControlCharacter(const std::string& value)
+{
+  return value.find('\t') != std::string::npos || value.find('\r') != std::string::npos ||
+         value.find('\n') != std::string::npos || value.find('\0') != std::string::npos;
 }
 
 fs::path findWasmBundleDir()
@@ -121,11 +218,11 @@ bool writeFile(const fs::path& path, const std::string& content)
   return stream.good();
 }
 
-std::vector<PythonSandboxOutputFile> readManifest(const fs::path& manifestFile)
+bool readManifest(const fs::path& manifestFile, const fs::path& outputRoot,
+                  std::vector<PythonSandboxOutputFile>& files, std::string& error)
 {
   std::string manifest;
-  std::vector<PythonSandboxOutputFile> files;
-  if (!readFile(manifestFile, manifest)) return files;
+  if (!readFile(manifestFile, manifest)) return true;
 
   std::istringstream stream(manifest);
   std::string line;
@@ -139,6 +236,10 @@ std::vector<PythonSandboxOutputFile> readManifest(const fs::path& manifestFile)
     PythonSandboxOutputFile file;
     file.relativePath = line.substr(0, firstTab);
     file.hostPath = line.substr(firstTab + 1, secondTab - firstTab - 1);
+    if (hasManifestControlCharacter(file.relativePath) || !isPathInside(file.hostPath, outputRoot)) {
+      error = "Sandboxed Python produced an invalid output manifest.";
+      return false;
+    }
     try {
       file.size = std::stoull(line.substr(secondTab + 1));
     } catch (const std::exception&) {
@@ -146,7 +247,7 @@ std::vector<PythonSandboxOutputFile> readManifest(const fs::path& manifestFile)
     }
     files.push_back(std::move(file));
   }
-  return files;
+  return true;
 }
 
 }  // namespace
@@ -190,15 +291,12 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
     return result;
   }
 
-  std::ostringstream command;
-  command << commandQuote(node) << " " << commandQuote(runner) << " --wasm-dir " << commandQuote(wasmDir)
-          << " --input " << commandQuote(inputFile) << " --output " << commandQuote(outputFile)
-          << " --host-output-dir " << commandQuote(outputRoot) << " --manifest "
-          << commandQuote(manifestFile);
-
-  const int exitCode = std::system(command.str().c_str());
-  if (exitCode != 0) {
-    result.error = "Sandboxed Python process failed with " + processStatusMessage(exitCode) + ".";
+  const ProcessResult processResult =
+    runProcess({node, runner.string(), "--wasm-dir", wasmDir.string(), "--input", inputFile.string(),
+                "--output", outputFile.string(), "--host-output-dir", outputRoot.string(), "--manifest",
+                manifestFile.string()});
+  if (!processResult.ok) {
+    result.error = "Sandboxed Python process failed with " + processResult.error + ".";
     fs::remove_all(tempDir);
     return result;
   }
@@ -209,7 +307,10 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
     return result;
   }
 
-  result.outputFiles = readManifest(manifestFile);
+  if (!readManifest(manifestFile, outputRoot, result.outputFiles, result.error)) {
+    fs::remove_all(tempDir);
+    return result;
+  }
   result.ok = true;
   return result;
 }
