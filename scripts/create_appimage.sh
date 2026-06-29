@@ -183,6 +183,18 @@ cmake .. \
 info "Building PythonSCAD (using ${NUM_JOBS} jobs)..."
 make -j"${NUM_JOBS}" || die "Build failed"
 
+if [ -n "${PYTHONSCAD_WASM_BUNDLE_DIR:-}" ]; then
+    info "Bundling Python sandbox WASM runtime..."
+    WASM_DEST="${BUILD_DIR}/pythonscad-wasm"
+    rm -rf "${WASM_DEST}"
+    mkdir -p "${WASM_DEST}"
+    cp "${PYTHONSCAD_WASM_BUNDLE_DIR}/pythonscad.js" \
+       "${PYTHONSCAD_WASM_BUNDLE_DIR}/pythonscad.wasm" \
+       "${PYTHONSCAD_WASM_BUNDLE_DIR}/pythonscad.data" \
+       "${WASM_DEST}/" \
+       || die "Failed to copy Python sandbox WASM runtime"
+fi
+
 # Install to AppDir
 info "Installing to AppDir..."
 make install DESTDIR="${APPDIR}" || die "Installation to AppDir failed"

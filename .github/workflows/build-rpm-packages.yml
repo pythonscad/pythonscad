@@ -21,6 +21,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   prepare-matrix:
@@ -84,6 +85,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
+      actions: read
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
@@ -130,6 +132,11 @@ jobs:
           detached: true
           limit-access-to-actor: true
 
+      - name: Download matching WASM sandbox bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/download-wasm-artifact.sh "$(git rev-parse HEAD)" wasm-bundle
+
       - name: Set up QEMU for ARM64
         if: matrix.arch == 'arm64'
         uses: docker/setup-qemu-action@v4
@@ -172,6 +179,7 @@ jobs:
           OUTPUT_DIR: /tmp/rpms
           FEDORA_RELEASE: ${{ matrix.version }}
           DISTRO_TYPE: ${{ matrix.distro }}
+          PYTHONSCAD_WASM_BUNDLE_DIR: ${{ github.workspace }}/wasm-bundle
         run: |
           ./scripts/build-rpm-package.sh
 
@@ -303,6 +311,7 @@ jobs:
             -v /tmp/rpms:/tmp/rpms \
             -w /workspace \
             -e OUTPUT_DIR=/tmp/rpms \
+            -e PYTHONSCAD_WASM_BUNDLE_DIR=/workspace/wasm-bundle \
             -e FEDORA_RELEASE="$MATRIX_VERSION" \
             -e DISTRO_TYPE="$MATRIX_DISTRO" \
             -e ARCH=aarch64 \
