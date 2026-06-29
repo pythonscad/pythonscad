@@ -277,7 +277,8 @@ bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
   }
 
   const fs::path destinationRoot = fs::path(outputDir);
-  if (!fs::is_directory(destinationRoot)) {
+  std::error_code directoryError;
+  if (!fs::is_directory(destinationRoot, directoryError) || directoryError) {
     LOG(message_group::Error, "--sandbox-output-dir is not a directory: %1$s", outputDir);
     return false;
   }
