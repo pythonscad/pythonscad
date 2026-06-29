@@ -34,6 +34,7 @@
 #include <string>
 #include <vector>
 
+#include "core/PythonExecution.h"
 #include "core/Settings.h"
 #include "gui/Preferences.h"
 #include "gui/ScadLexer.h"
@@ -199,14 +200,15 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
     QIcon::fromTheme("dialog-warning", QIcon(":/icons/information-icons-warning.png")).pixmap(16, 16));
   barLayout->addWidget(warningIconLabel);
 
-  auto *msgLabel =
-    new QLabel(q_("This Python design is not trusted. Execution is disabled.", nullptr), pythonTrustBar);
-  msgLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  barLayout->addWidget(msgLabel);
+  pythonTrustBarMessage = new QLabel(
+    q_("This Python design is running in sandboxed mode. Native mode can access your files.", nullptr),
+    pythonTrustBar);
+  pythonTrustBarMessage->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  barLayout->addWidget(pythonTrustBarMessage);
 
-  auto *trustButton = new QPushButton(q_("Trust Design", nullptr), pythonTrustBar);
-  barLayout->addWidget(trustButton);
-  connect(trustButton, &QPushButton::clicked, this, [this]() { trustCurrent(); });
+  pythonTrustBarButton = new QPushButton(q_("Run Native", nullptr), pythonTrustBar);
+  barLayout->addWidget(pythonTrustBarButton);
+  connect(pythonTrustBarButton, &QPushButton::clicked, this, [this]() { trustCurrent(); });
 
   scintillaLayout->insertWidget(0, pythonTrustBar);
   pythonTrustBar->hide();
@@ -1624,8 +1626,10 @@ void ScintillaEditor::onLanguageChanged(int lang)
 #ifdef ENABLE_PYTHON
 void ScintillaEditor::updateTrustBar()
 {
-  const bool globalTrust = python_trusted || Settings::SettingsPython::globalTrustPython.value();
-  const bool showBar = (language == LANG_PYTHON) && !filepath.isEmpty() && !trusted && !globalTrust;
+  const bool sandboxedByDefault =
+    Settings::SettingsPython::pythonExecutionMode.value() != PYTHON_EXECUTION_NATIVE;
+  const bool showBar =
+    (language == LANG_PYTHON) && sandboxedByDefault && !python_trusted && !pythonNativeExecution;
   pythonTrustBar->setVisible(showBar);
 }
 

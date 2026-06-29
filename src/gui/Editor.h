@@ -71,6 +71,7 @@ public:
   bool hasPythonTrustHash(void) const;
   void trustCurrent(void);
   void revokeTrust(void);
+  void setPythonNativeExecution(bool enabled);
 #endif
 
 signals:
@@ -124,6 +125,9 @@ public:
   /// True after loading from an existing file on disk or a successful save to this path.
   bool diskBacked = false;
   bool trusted = false;
+#ifdef ENABLE_PYTHON
+  bool pythonNativeExecution = false;
+#endif
   std::string autoReloadId;
   std::vector<IndicatorData> indicatorData;
   ParameterWidget *parameterWidget;

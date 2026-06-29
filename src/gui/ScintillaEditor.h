@@ -3,8 +3,10 @@
 #include <Qsci/qsciscintilla.h>
 
 #include <QFrame>
+#include <QLabel>
 #include <QMap>
 #include <QObject>
+#include <QPushButton>
 #include <QString>
 #include <QStringList>
 #include <QVBoxLayout>
@@ -173,6 +175,8 @@ private:
 
 #ifdef ENABLE_PYTHON
   QFrame *pythonTrustBar = nullptr;
+  QLabel *pythonTrustBarMessage = nullptr;
+  QPushButton *pythonTrustBarButton = nullptr;
   void updateTrustBar();
   void updateTrustBarPalette();
 #endif

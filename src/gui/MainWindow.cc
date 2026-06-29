@@ -111,6 +111,8 @@
 #include "core/Context.h"
 #include "core/EvaluationSession.h"
 #include "core/Expression.h"
+#include "core/PythonExecution.h"
+#include "core/PythonSandbox.h"
 #include "core/RenderVariables.h"
 #include "core/ScopeContext.h"
 #include "core/Settings.h"
@@ -270,6 +272,29 @@ const char copyrighttext[] =
   "it under the terms of the GNU General Public License as published by "
   "the Free Software Foundation; either version 2 of the License, or "
   "(at your option) any later version.<p>";
+
+#ifdef ENABLE_PYTHON
+PythonExecutionMode currentPythonExecutionMode()
+{
+  return defaultPythonExecutionMode();
+}
+
+bool currentPythonExecutionModeIsNative()
+{
+  return pythonExecutionModeIsNative(currentPythonExecutionMode());
+}
+
+bool effectivePythonExecutionModeIsNative(const EditorInterface *editor)
+{
+  return currentPythonExecutionModeIsNative() || python_trusted ||
+         (editor && editor->pythonNativeExecution);
+}
+
+bool pythonDesignCanRun(const EditorInterface *editor)
+{
+  return !currentPythonExecutionModeIsNative() || effectivePythonExecutionModeIsNative(editor);
+}
+#endif
 
 struct DockFocus {
   Dock *widget;
@@ -1782,13 +1807,13 @@ void MainWindow::updatePythonTrustActions()
 {
   const bool isPythonWithPath =
     activeEditor && activeEditor->language == LANG_PYTHON && !activeEditor->filepath.isEmpty();
-  const bool isUntrustedPython = isPythonWithPath && !activeEditor->trusted && !python_trusted &&
-                                 !Settings::SettingsPython::globalTrustPython.value();
+  const bool isUntrustedPython = isPythonWithPath && !pythonDesignCanRun(activeEditor);
   designActionPreview->setEnabled(!isUntrustedPython);
   designActionRender->setEnabled(!isUntrustedPython);
   // Checkable action: enabled for any saved Python design, checked when trusted.
   fileActionPythonTrustCurrentDesign->setEnabled(isPythonWithPath);
-  fileActionPythonTrustCurrentDesign->setChecked(isPythonWithPath && activeEditor->trusted);
+  fileActionPythonTrustCurrentDesign->setChecked(isPythonWithPath &&
+                                                 activeEditor->pythonNativeExecution);
   // Only disable the parameter widget here; re-enabling is left to parseDocument() so
   // we don't override its intentional disable (e.g. no parameters, parse failure).
   if (isUntrustedPython && activeEditor) activeEditor->parameterWidget->setEnabled(false);
@@ -1817,7 +1842,7 @@ void MainWindow::on_fileActionPythonTrustCurrentDesign_triggered()
 {
 #ifdef ENABLE_PYTHON
   if (!activeEditor || activeEditor->language != LANG_PYTHON || activeEditor->filepath.isEmpty()) return;
-  if (activeEditor->trusted) {
+  if (activeEditor->pythonNativeExecution) {
     // Revoke trust for this design only — remove its hash entry and clear trusted flag.
     const QByteArray pathUtf8 = activeEditor->filepath.toUtf8();
     QSettingsCached settings;
@@ -2238,12 +2263,22 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
   auto fulltext_py = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size()));
   SourceFile *sourceFile = nullptr;
 #ifdef ENABLE_PYTHON
-  if (editor->language == LANG_PYTHON && !editor->trust_python_file()) {
-    LOG(message_group::Warning, Location::NONE, "", "Python design is not trusted");
+  if (editor->language == LANG_PYTHON && !effectivePythonExecutionModeIsNative(editor)) {
+    auto sandboxResult = evaluatePythonSandboxToCsg(fulltext_py, fnameNative);
+    if (!sandboxResult.ok) {
+      LOG(message_group::Error, Location::NONE, "", sandboxResult.error.c_str());
+      editor->resetHighlighting();
+      editor->parameterWidget->setEnabled(false);
+      updatePythonTrustActions();
+      return {};
+    }
     editor->resetHighlighting();
     editor->parameterWidget->setEnabled(false);
-    updatePythonTrustActions();
-    return {};
+    const std::string sandboxText = sandboxResult.csg + "\n\x03\n";
+    sourceFile = parse(sourceFile, sandboxText, fnameNative, fnameNative, false) ? sourceFile : nullptr;
+    if (sourceFile) {
+      editor->setIndicator(sourceFile->indicatorData);
+    }
   } else if (editor->language == LANG_PYTHON) {
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
@@ -2359,9 +2394,7 @@ void MainWindow::parseTopLevelDocument(bool pythonDryRunFullScript)
   // Skip dry-run entirely for untrusted Python files: the trust bar is the gate,
   // and parseDocument would only log a WARNING and return null anyway.
   if (pythonDryRunFullScript && activeEditor && activeEditor->language == LANG_PYTHON) {
-    const bool effectivelyTrusted = activeEditor->trusted || python_trusted ||
-                                    Settings::SettingsPython::globalTrustPython.value() ||
-                                    activeEditor->filepath.isEmpty();
+    const bool effectivelyTrusted = pythonDesignCanRun(activeEditor) || activeEditor->filepath.isEmpty();
     if (!effectivelyTrusted) return;
   }
 #endif
@@ -2384,8 +2417,7 @@ void MainWindow::checkAutoReload()
 #ifdef ENABLE_PYTHON
     // For untrusted Python files: still reload the buffer from disk and re-evaluate trust
     // (so external edits are visible and a matching hash auto-trusts), but skip the compile.
-    if (activeEditor->language == LANG_PYTHON && !activeEditor->trusted && !python_trusted &&
-        !Settings::SettingsPython::globalTrustPython.value()) {
+    if (activeEditor->language == LANG_PYTHON && !pythonDesignCanRun(activeEditor)) {
       if (fileChangedOnDisk() && checkEditorModified()) {
         tabManager->refreshDocument();
       }
@@ -4117,9 +4149,8 @@ void MainWindow::onTabManagerEditorContentReloaded(EditorInterface *reloadedEdit
     // when a new editor is created, it is important to compile the initial geometry
     // so the customizer panels are ok. Skip for untrusted Python files — the trust
     // bar will trigger a dry-run once the user clicks "Trust Design".
-    const bool canParse = reloadedEditor->language != LANG_PYTHON || reloadedEditor->trusted ||
-                          python_trusted || Settings::SettingsPython::globalTrustPython.value() ||
-                          reloadedEditor->filepath.isEmpty();
+    const bool canParse = reloadedEditor->language != LANG_PYTHON ||
+                          pythonDesignCanRun(reloadedEditor) || reloadedEditor->filepath.isEmpty();
     if (canParse) parseDocument(reloadedEditor, true);
     if (reloadedEditor == activeEditor) {
       lastCompiledDoc = activeEditor->toPlainText();
@@ -4150,13 +4181,13 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   editorTrustConnection = connect(newEditor, &EditorInterface::trustStateChanged, this, [this]() {
     if (!activeEditor) return;
     updatePythonTrustActions();
-    if (activeEditor->trusted) {
+    if (activeEditor->pythonNativeExecution) {
       // Populate the customizer via dry-run. If GuiLocker is held (e.g. a compile was
       // already running when trust was granted), defer until the event loop is free so
       // we don't re-enter initPython() while the CSG worker holds the GIL.
       if (GuiLocker::isLocked()) {
         QTimer::singleShot(0, this, [this]() {
-          if (activeEditor && activeEditor->trusted) parseTopLevelDocument(true);
+          if (activeEditor && activeEditor->pythonNativeExecution) parseTopLevelDocument(true);
         });
       } else {
         parseTopLevelDocument(true);
@@ -4180,9 +4211,8 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
 
   // If there is no renderedEditor we request for a new preview if the
   // auto-reload is enabled.
-  const bool editorTrusted = newEditor->trusted || python_trusted ||
-                             Settings::SettingsPython::globalTrustPython.value() ||
-                             newEditor->filepath.isEmpty() || newEditor->language != LANG_PYTHON;
+  const bool editorTrusted =
+    pythonDesignCanRun(newEditor) || newEditor->filepath.isEmpty() || newEditor->language != LANG_PYTHON;
   if (renderedEditor == nullptr && designActionAutoReload->isChecked() && !MainWindow::isEmpty() &&
       editorTrusted) {
     // Do not prime autoReloadId here for dirty on-disk tabs: session restore already syncs ids for

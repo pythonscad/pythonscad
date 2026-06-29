@@ -133,7 +133,8 @@ private:
   void setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
                          bool contentModified, bool parameterModified,
                          const QByteArray& customizerState = QByteArray(),
-                         std::optional<int> sessionLanguage = std::nullopt, bool diskBacked = false);
+                         std::optional<int> sessionLanguage = std::nullopt, bool diskBacked = false,
+                         bool pythonNativeExecution = false);
   static bool migrateSession(QJsonObject& root, int fromVersion);
 
   QTabBar::ButtonPosition getClosingButtonPosition();
