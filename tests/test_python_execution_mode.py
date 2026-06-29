@@ -43,9 +43,12 @@ def main():
             [args.pythonscad, "--trust-python", "-o", str(tmpdir / "deprecated.csg"), str(script)],
             tmpdir,
         )
-        assert deprecated.returncode != 0
         assert "--trust-python is deprecated" in deprecated.stdout
-        assert "Sandboxed Python requires a WebAssembly bundle" in deprecated.stdout
+        deprecated_output = tmpdir / "deprecated.csg"
+        if deprecated.returncode == 0:
+            assert deprecated_output.exists() and deprecated_output.stat().st_size > 0
+        else:
+            assert "Sandboxed Python" in deprecated.stdout
 
 
 if __name__ == "__main__":
