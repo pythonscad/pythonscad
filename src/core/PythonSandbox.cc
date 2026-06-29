@@ -2,6 +2,8 @@
 
 #ifdef ENABLE_PYTHON
 
+#include <algorithm>
+#include <array>
 #include <cerrno>
 #include <chrono>
 #include <cctype>
@@ -9,7 +11,9 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <random>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -165,6 +169,18 @@ bool hasManifestControlCharacter(const std::string& value)
          value.find('\n') != std::string::npos || value.find('\0') != std::string::npos;
 }
 
+bool isReservedWindowsManifestPathComponent(const std::string& component)
+{
+  std::string stem = component.substr(0, component.find('.'));
+  std::transform(stem.begin(), stem.end(), stem.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  static constexpr std::array<const char *, 22> reserved = {
+    "con",  "prn",  "aux",  "nul",  "com1", "com2", "com3", "com4", "com5", "com6", "com7",
+    "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
+  };
+  return std::find(reserved.begin(), reserved.end(), stem) != reserved.end();
+}
+
 bool isSafeManifestRelativePath(const std::string& value)
 {
   if (hasManifestControlCharacter(value) || value.empty() || value[0] == '/') return false;
@@ -178,6 +194,7 @@ bool isSafeManifestRelativePath(const std::string& value)
   for (const auto& part : normalized) {
     const std::string component = part.generic_string();
     if (component.empty() || component == "." || component == "..") return false;
+    if (isReservedWindowsManifestPathComponent(component)) return false;
   }
   return true;
 }
@@ -214,10 +231,16 @@ fs::path findSandboxRunner()
 
 fs::path makeTempDir()
 {
+  std::random_device random;
   const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
-  fs::path dir = fs::temp_directory_path() / ("pythonscad-sandbox-" + std::to_string(stamp));
-  fs::create_directories(dir);
-  return dir;
+  for (int attempt = 0; attempt < 100; ++attempt) {
+    fs::path dir = fs::temp_directory_path() /
+                   ("pythonscad-sandbox-" + std::to_string(stamp) + "-" + std::to_string(random()));
+    std::error_code ec;
+    if (fs::create_directory(dir, ec)) return dir;
+    if (ec && ec != std::make_error_code(std::errc::file_exists)) break;
+  }
+  throw std::runtime_error("Could not create sandbox temporary directory.");
 }
 
 bool readFile(const fs::path& path, std::string& output)
