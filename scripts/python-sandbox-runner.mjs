@@ -48,6 +48,7 @@ const RESERVED_WINDOWS_NAMES = new Set([
 function safeRelativePath(relativePath)
 {
   if (!relativePath || relativePath.includes('\0') || relativePath.startsWith('/')) return null;
+  if (/[\t\r\n]/.test(relativePath)) return null;
   if (/^[A-Za-z]:/.test(relativePath) || relativePath.startsWith('\\\\')) return null;
 
   const normalized = path.posix.normalize(relativePath.replaceAll('\\', '/'));
