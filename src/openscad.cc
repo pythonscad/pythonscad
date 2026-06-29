@@ -262,6 +262,18 @@ bool isSafeSandboxRelativePath(const std::string& relativePath)
   return true;
 }
 
+bool isSandboxCopyTargetInsideDestination(const fs::path& targetParent, const fs::path& destinationRoot)
+{
+  std::error_code ec;
+  const fs::path canonicalParent = fs::weakly_canonical(targetParent, ec);
+  if (ec) return false;
+  const fs::path canonicalRoot = fs::weakly_canonical(destinationRoot, ec);
+  if (ec) return false;
+  const fs::path relative = canonicalParent.lexically_relative(canonicalRoot);
+  const std::string relativeString = relative.generic_string();
+  return relative.empty() || (!relative.is_absolute() && relativeString.rfind("..", 0) != 0);
+}
+
 bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
                                    const std::string& outputDir)
 {
@@ -294,6 +306,11 @@ bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
     if (ec) {
       LOG(message_group::Error, "Could not create sandbox output directory: %1$s",
           target.parent_path().generic_string());
+      return false;
+    }
+    if (!isSandboxCopyTargetInsideDestination(target.parent_path(), destinationRoot)) {
+      LOG(message_group::Error, "Refusing sandbox output path outside destination: %1$s",
+          target.generic_string());
       return false;
     }
     if (fs::exists(target, ec) || ec) {

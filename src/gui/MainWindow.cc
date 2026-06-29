@@ -316,6 +316,18 @@ bool isSafeSandboxOutputRelativePath(const QString& value)
     return part == QStringLiteral(".") || part == QStringLiteral("..");
   });
 }
+
+bool isSandboxExportTargetInsideDestination(const QString& targetParent, const QString& destination)
+{
+  const QString canonicalDestination = QFileInfo(destination).canonicalFilePath();
+  const QString canonicalParent = QFileInfo(targetParent).canonicalFilePath();
+  if (canonicalDestination.isEmpty() || canonicalParent.isEmpty()) return false;
+
+  const QString relative = QDir(canonicalDestination).relativeFilePath(canonicalParent);
+  return relative.isEmpty() || relative == QStringLiteral(".") ||
+         (!relative.startsWith(QStringLiteral("../")) && relative != QStringLiteral("..") &&
+          !QFileInfo(relative).isAbsolute());
+}
 #endif
 
 struct DockFocus {
@@ -4063,7 +4075,14 @@ void MainWindow::onSandboxOutputExportAll()
       return;
     }
     const QString target = QDir(destination).filePath(relativePath);
-    QDir().mkpath(QFileInfo(target).absolutePath());
+    const QString targetParent = QFileInfo(target).absolutePath();
+    if (!QDir().mkpath(targetParent) ||
+        !isSandboxExportTargetInsideDestination(targetParent, destination)) {
+      QMessageBox::warning(
+        this, _("Export Sandbox Outputs"),
+        QString(_("Refusing sandbox output path outside destination: %1")).arg(relativePath));
+      return;
+    }
     if (QFileInfo::exists(target)) {
       QMessageBox::warning(this, _("Export Sandbox Outputs"),
                            QString(_("Refusing to overwrite existing file: %1")).arg(target));
