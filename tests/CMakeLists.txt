@@ -170,6 +170,7 @@ set(EXPORT_PNGTEST_PY        "${CCSD}/export_pngtest.py")
 set(SHOULDFAIL_PY            "${CCSD}/shouldfail.py")
 set(TEST_CMDLINE_TOOL_PY     "${CCSD}/test_cmdline_tool.py")
 set(TEST_PYTHON_EXECUTION_MODE_PY "${CCSD}/test_python_execution_mode.py")
+set(TEST_PYTHON_SANDBOX_OUTPUTS_PY "${CCSD}/test_python_sandbox_outputs.py")
 
 ######################
 # Check Dependencies #
@@ -212,6 +213,13 @@ if(ENABLE_PYTHON)
       --pythonscad ${OPENSCAD_BINPATH}
   )
   set_property(TEST python-execution-mode-cli PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  add_test(NAME python-sandbox-outputs-cli
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${TEST_PYTHON_SANDBOX_OUTPUTS_PY}
+      --pythonscad ${OPENSCAD_BINPATH}
+      --runner ${CMAKE_SOURCE_DIR}/scripts/python-sandbox-runner.mjs
+  )
+  set_property(TEST python-sandbox-outputs-cli PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 endif()
 
 include("cmake/TestFunctions.cmake")

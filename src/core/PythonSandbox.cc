@@ -59,7 +59,7 @@ fs::path findWasmBundleDir()
   const fs::path cwd = fs::current_path();
   if (hasWasmBundle(cwd / "build-wasm-web")) return cwd / "build-wasm-web";
 
-  const fs::path appPath = PlatformUtils::applicationPath();
+  fs::path appPath = PlatformUtils::applicationPath();
   if (hasWasmBundle(appPath / "wasm")) return appPath / "wasm";
   if (hasWasmBundle(appPath)) return appPath;
 
@@ -71,10 +71,10 @@ fs::path findSandboxRunner()
   const auto fromEnv = getenvString("PYTHONSCAD_SANDBOX_RUNNER");
   if (!fromEnv.empty() && fs::is_regular_file(fromEnv)) return fs::path(fromEnv);
 
-  const fs::path cwdRunner = fs::current_path() / "scripts" / "python-sandbox-runner.mjs";
+  fs::path cwdRunner = fs::current_path() / "scripts" / "python-sandbox-runner.mjs";
   if (fs::is_regular_file(cwdRunner)) return cwdRunner;
 
-  const fs::path appRunner =
+  fs::path appRunner =
     fs::path(PlatformUtils::applicationPath()) / "scripts" / "python-sandbox-runner.mjs";
   if (fs::is_regular_file(appRunner)) return appRunner;
 
@@ -105,6 +105,34 @@ bool writeFile(const fs::path& path, const std::string& content)
   return stream.good();
 }
 
+std::vector<PythonSandboxOutputFile> readManifest(const fs::path& manifestFile)
+{
+  std::string manifest;
+  std::vector<PythonSandboxOutputFile> files;
+  if (!readFile(manifestFile, manifest)) return files;
+
+  std::istringstream stream(manifest);
+  std::string line;
+  while (std::getline(stream, line)) {
+    if (line.empty()) continue;
+    const size_t firstTab = line.find('\t');
+    const size_t secondTab =
+      firstTab == std::string::npos ? std::string::npos : line.find('\t', firstTab + 1);
+    if (firstTab == std::string::npos || secondTab == std::string::npos) continue;
+
+    PythonSandboxOutputFile file;
+    file.relativePath = line.substr(0, firstTab);
+    file.hostPath = line.substr(firstTab + 1, secondTab - firstTab - 1);
+    try {
+      file.size = std::stoull(line.substr(secondTab + 1));
+    } catch (const std::exception&) {
+      file.size = 0;
+    }
+    files.push_back(std::move(file));
+  }
+  return files;
+}
+
 }  // namespace
 
 PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const std::string& scriptpath)
@@ -130,10 +158,15 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
   const std::string node =
     getenvString("PYTHONSCAD_NODE").empty() ? "node" : getenvString("PYTHONSCAD_NODE");
   const fs::path tempDir = makeTempDir();
+  result.tempDir = tempDir.string();
   const fs::path inputFile =
     tempDir /
     (fs::path(scriptpath).filename().empty() ? fs::path("input.py") : fs::path(scriptpath).filename());
   const fs::path outputFile = tempDir / "output.csg";
+  const fs::path outputRoot = tempDir / "sandbox-outputs";
+  const fs::path manifestFile = tempDir / "outputs.tsv";
+  fs::create_directories(outputRoot);
+  result.outputRoot = outputRoot.string();
 
   if (!writeFile(inputFile, code)) {
     result.error = "Could not write sandbox input file.";
@@ -143,7 +176,9 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
 
   std::ostringstream command;
   command << commandQuote(node) << " " << commandQuote(runner) << " --wasm-dir " << commandQuote(wasmDir)
-          << " --input " << commandQuote(inputFile) << " --output " << commandQuote(outputFile);
+          << " --input " << commandQuote(inputFile) << " --output " << commandQuote(outputFile)
+          << " --host-output-dir " << commandQuote(outputRoot) << " --manifest "
+          << commandQuote(manifestFile);
 
   const int exitCode = std::system(command.str().c_str());
   if (exitCode != 0) {
@@ -158,9 +193,16 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
     return result;
   }
 
-  fs::remove_all(tempDir);
+  result.outputFiles = readManifest(manifestFile);
   result.ok = true;
   return result;
+}
+
+void cleanupPythonSandboxResult(const PythonSandboxResult& result)
+{
+  if (!result.tempDir.empty()) {
+    fs::remove_all(result.tempDir);
+  }
 }
 
 #endif  // ENABLE_PYTHON

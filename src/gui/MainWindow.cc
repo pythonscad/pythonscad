@@ -36,6 +36,7 @@
 #include <fcntl.h>
 #include "gui/ExportGcodeDialog.h"
 #include "genlang/genlang.h"
+#include <QAbstractItemView>
 #include <QApplication>
 #include <QByteArray>
 #include <QClipboard>
@@ -56,6 +57,7 @@
 #include <QKeySequence>
 #include <QLabel>
 #include <QList>
+#include <QListWidget>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -65,6 +67,7 @@
 #include <QPoint>
 #include <QProcess>
 #include <QProgressDialog>
+#include <QPushButton>
 #include <QScreen>
 #include <QSettings>  //Include QSettings for direct operations on settings arrays
 #include <QSignalMapper>
@@ -596,6 +599,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   setupFontList();
   setupColorList();
   setupAIDock();
+  setupSandboxOutputs();
   setupDocks();
 
   setup3DView();
@@ -1004,6 +1008,9 @@ void MainWindow::updateUndockMode(bool undockMode)
     consoleDock->setFeatures(consoleDock->features() | QDockWidget::DockWidgetFloatable);
     parameterDock->setFeatures(parameterDock->features() | QDockWidget::DockWidgetFloatable);
     errorLogDock->setFeatures(errorLogDock->features() | QDockWidget::DockWidgetFloatable);
+#ifdef ENABLE_PYTHON
+    sandboxOutputDock->setFeatures(sandboxOutputDock->features() | QDockWidget::DockWidgetFloatable);
+#endif
     animateDock->setFeatures(animateDock->features() | QDockWidget::DockWidgetFloatable);
     fontListDock->setFeatures(fontListDock->features() | QDockWidget::DockWidgetFloatable);
     colorListDock->setFeatures(colorListDock->features() | QDockWidget::DockWidgetFloatable);
@@ -1030,6 +1037,13 @@ void MainWindow::updateUndockMode(bool undockMode)
     }
     errorLogDock->setFeatures(errorLogDock->features() & ~QDockWidget::DockWidgetFloatable);
 
+#ifdef ENABLE_PYTHON
+    if (sandboxOutputDock->isFloating()) {
+      sandboxOutputDock->setFloating(false);
+    }
+    sandboxOutputDock->setFeatures(sandboxOutputDock->features() & ~QDockWidget::DockWidgetFloatable);
+
+#endif
     if (animateDock->isFloating()) {
       animateDock->setFloating(false);
     }
@@ -1070,6 +1084,9 @@ MainWindow::~MainWindow()
 {
   // Mark that we're being destroyed so eventFilter won't access freed members
   isBeingDestroyed = true;
+#ifdef ENABLE_PYTHON
+  clearSandboxOutputs();
+#endif
 
   delete this->cgalworker;
   scadApp->windowManager.remove(this);
@@ -2267,6 +2284,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
     auto sandboxResult = evaluatePythonSandboxToCsg(fulltext_py, fnameNative);
     if (!sandboxResult.ok) {
       LOG(message_group::Error, Location::NONE, "", sandboxResult.error.c_str());
+      clearSandboxOutputs();
       editor->resetHighlighting();
       editor->parameterWidget->setEnabled(false);
       updatePythonTrustActions();
@@ -2279,6 +2297,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
     if (sourceFile) {
       editor->setIndicator(sourceFile->indicatorData);
     }
+    updateSandboxOutputs(sandboxResult);
   } else if (editor->language == LANG_PYTHON) {
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
@@ -3929,6 +3948,112 @@ void MainWindow::onErrorLogDockVisibilityChanged(bool isVisible)
   }
 }
 
+#ifdef ENABLE_PYTHON
+void MainWindow::clearSandboxOutputs()
+{
+  for (const auto& tempDir : sandboxOutputTempDirs) {
+    PythonSandboxResult result;
+    result.tempDir = tempDir;
+    cleanupPythonSandboxResult(result);
+  }
+  sandboxOutputTempDirs.clear();
+  sandboxOutputFiles.clear();
+  if (sandboxOutputList) sandboxOutputList->clear();
+  if (sandboxOutputDock) sandboxOutputDock->hide();
+  onSandboxOutputSelectionChanged();
+}
+
+void MainWindow::updateSandboxOutputs(const PythonSandboxResult& result)
+{
+  clearSandboxOutputs();
+  if (result.outputFiles.empty()) {
+    cleanupPythonSandboxResult(result);
+    return;
+  }
+
+  sandboxOutputFiles = result.outputFiles;
+  sandboxOutputTempDirs.push_back(result.tempDir);
+  for (const auto& file : sandboxOutputFiles) {
+    const QString label =
+      QString::fromStdString(file.relativePath) + QStringLiteral(" (%1 bytes)").arg(file.size);
+    sandboxOutputList->addItem(label);
+  }
+  sandboxOutputList->setCurrentRow(0);
+  sandboxOutputDock->show();
+  sandboxOutputDock->raise();
+}
+
+void MainWindow::onSandboxOutputDockVisibilityChanged(bool isVisible)
+{
+  if (isVisible) {
+    sandboxOutputDock->raise();
+    sandboxOutputList->setFocus();
+  }
+}
+
+void MainWindow::onSandboxOutputSelectionChanged()
+{
+  const bool hasSelection =
+    sandboxOutputList && sandboxOutputList->currentRow() >= 0 &&
+    sandboxOutputList->currentRow() < static_cast<int>(sandboxOutputFiles.size());
+  if (sandboxOutputOpenButton) sandboxOutputOpenButton->setEnabled(hasSelection);
+  if (sandboxOutputSaveButton) sandboxOutputSaveButton->setEnabled(hasSelection);
+  if (sandboxOutputExportAllButton)
+    sandboxOutputExportAllButton->setEnabled(!sandboxOutputFiles.empty());
+}
+
+void MainWindow::onSandboxOutputOpen()
+{
+  const int row = sandboxOutputList->currentRow();
+  if (row < 0 || row >= static_cast<int>(sandboxOutputFiles.size())) return;
+  QDesktopServices::openUrl(
+    QUrl::fromLocalFile(QString::fromStdString(sandboxOutputFiles[row].hostPath)));
+}
+
+void MainWindow::onSandboxOutputSaveAs()
+{
+  const int row = sandboxOutputList->currentRow();
+  if (row < 0 || row >= static_cast<int>(sandboxOutputFiles.size())) return;
+
+  const auto& file = sandboxOutputFiles[row];
+  const QString target = QFileDialog::getSaveFileName(this, _("Save Sandbox Output"),
+                                                      QString::fromStdString(file.relativePath));
+  if (target.isEmpty()) return;
+  QFile::remove(target);
+  if (!QFile::copy(QString::fromStdString(file.hostPath), target)) {
+    QMessageBox::warning(this, _("Save Sandbox Output"), _("Could not save the selected output file."));
+  }
+}
+
+void MainWindow::onSandboxOutputExportAll()
+{
+  if (sandboxOutputFiles.empty()) return;
+
+  const QString destination = QFileDialog::getExistingDirectory(this, _("Export Sandbox Outputs"));
+  if (destination.isEmpty()) return;
+
+  for (const auto& file : sandboxOutputFiles) {
+    const QString relativePath = QString::fromStdString(file.relativePath);
+    const QString target = QDir(destination).filePath(relativePath);
+    QDir().mkpath(QFileInfo(target).absolutePath());
+    if (QFileInfo::exists(target)) {
+      QMessageBox::warning(this, _("Export Sandbox Outputs"),
+                           QString(_("Refusing to overwrite existing file: %1")).arg(target));
+      return;
+    }
+    if (!QFile::copy(QString::fromStdString(file.hostPath), target)) {
+      QMessageBox::warning(this, _("Export Sandbox Outputs"),
+                           QString(_("Could not export sandbox output file: %1")).arg(relativePath));
+      return;
+    }
+  }
+}
+#else
+void MainWindow::onSandboxOutputDockVisibilityChanged(bool)
+{
+}
+#endif
+
 void MainWindow::onAnimateDockVisibilityChanged(bool isVisible)
 {
   if (isVisible) {
@@ -4204,6 +4329,9 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
 
   consoleDock->setNameSuffix(name);
   errorLogDock->setNameSuffix(name);
+#ifdef ENABLE_PYTHON
+  sandboxOutputDock->setNameSuffix(name);
+#endif
   animateDock->setNameSuffix(name);
   fontListDock->setNameSuffix(name);
   colorListDock->setNameSuffix(name);
@@ -4695,6 +4823,51 @@ void MainWindow::setupErrorLog()
                    &MainWindow::onErrorLogDockVisibilityChanged);
 }
 
+#ifdef ENABLE_PYTHON
+void MainWindow::setupSandboxOutputs()
+{
+  sandboxOutputDock = new Dock(this);
+  sandboxOutputDock->setObjectName(QStringLiteral("sandboxOutputDock"));
+  sandboxOutputDock->setWindowTitle(_("Sandbox Outputs"));
+  addDockWidget(Qt::BottomDockWidgetArea, sandboxOutputDock);
+
+  auto *contents = new QWidget(sandboxOutputDock);
+  auto *layout = new QVBoxLayout(contents);
+  layout->setContentsMargins(4, 4, 4, 4);
+
+  sandboxOutputList = new QListWidget(contents);
+  sandboxOutputList->setSelectionMode(QAbstractItemView::SingleSelection);
+  layout->addWidget(sandboxOutputList);
+
+  auto *buttonLayout = new QHBoxLayout();
+  sandboxOutputOpenButton = new QPushButton(_("Open Externally"), contents);
+  sandboxOutputSaveButton = new QPushButton(_("Save As..."), contents);
+  sandboxOutputExportAllButton = new QPushButton(_("Export All..."), contents);
+  buttonLayout->addWidget(sandboxOutputOpenButton);
+  buttonLayout->addWidget(sandboxOutputSaveButton);
+  buttonLayout->addWidget(sandboxOutputExportAllButton);
+  buttonLayout->addStretch(1);
+  layout->addLayout(buttonLayout);
+
+  sandboxOutputDock->setWidget(contents);
+  sandboxOutputDock->hide();
+
+  connect(sandboxOutputDock, &Dock::visibilityChanged, this,
+          &MainWindow::onSandboxOutputDockVisibilityChanged);
+  connect(sandboxOutputList, &QListWidget::itemSelectionChanged, this,
+          &MainWindow::onSandboxOutputSelectionChanged);
+  connect(sandboxOutputOpenButton, &QPushButton::clicked, this, &MainWindow::onSandboxOutputOpen);
+  connect(sandboxOutputSaveButton, &QPushButton::clicked, this, &MainWindow::onSandboxOutputSaveAs);
+  connect(sandboxOutputExportAllButton, &QPushButton::clicked, this,
+          &MainWindow::onSandboxOutputExportAll);
+  onSandboxOutputSelectionChanged();
+}
+#else
+void MainWindow::setupSandboxOutputs()
+{
+}
+#endif
+
 /**
   Set up resources related to the Editor dock widget
  */
@@ -4882,6 +5055,9 @@ void MainWindow::setupDocks()
     {consoleDock, _("&Console")},
     {parameterDock, _("C&ustomizer")},
     {errorLogDock, _("Error-&Log")},
+#ifdef ENABLE_PYTHON
+    {sandboxOutputDock, _("Sandbox &Outputs")},
+#endif
     {animateDock, _("&Animate")},
     {fontListDock, _("&Font List")},
     {colorListDock, _("C&olor List")},

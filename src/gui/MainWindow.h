@@ -48,16 +48,21 @@ class CGALWorker;
 class CSGWorker;
 class CSGNode;
 class CSGProducts;
+class QListWidget;
 class FontListDialog;
 class LibraryInfoDialog;
 class Preferences;
 class ProgressWidget;
+class QPushButton;
 class ThrownTogetherRenderer;
 class CSGTreeEvaluator;
 class AIDock;
 
 #include "RenderStatistic.h"
 #include "core/Tree.h"
+#ifdef ENABLE_PYTHON
+#include "core/PythonSandbox.h"
+#endif
 #include "geometry/Geometry.h"
 #include "gui/Editor.h"
 #include "gui/Measurement.h"
@@ -151,6 +156,7 @@ private:
   void setupFontList();
   void setupColorList();
   void setupViewportControl();
+  void setupSandboxOutputs();
   void setupPreferences();
   void setup3DView();
   void setupInput();
@@ -263,6 +269,8 @@ private:
   void updateLanguageLabel();
 #ifdef ENABLE_PYTHON
   void updatePythonTrustActions();
+  void clearSandboxOutputs();
+  void updateSandboxOutputs(const PythonSandboxResult& result);
 #endif
   void showLanguageMenu();
   void activateDock(Dock *);
@@ -275,6 +283,15 @@ private:
   LibraryInfoDialog *libraryInfoDialog{nullptr};
   FontListDialog *fontListDialog{nullptr};
   QSignalMapper *exportFormatMapper;
+#ifdef ENABLE_PYTHON
+  Dock *sandboxOutputDock = nullptr;
+  QListWidget *sandboxOutputList = nullptr;
+  QPushButton *sandboxOutputOpenButton = nullptr;
+  QPushButton *sandboxOutputSaveButton = nullptr;
+  QPushButton *sandboxOutputExportAllButton = nullptr;
+  std::vector<PythonSandboxOutputFile> sandboxOutputFiles;
+  std::vector<std::string> sandboxOutputTempDirs;
+#endif
 
 public slots:
   void updateExportActions();
@@ -333,6 +350,7 @@ private slots:
   void onEditorDockVisibilityChanged(bool isVisible);
   void onConsoleDockVisibilityChanged(bool isVisible);
   void onErrorLogDockVisibilityChanged(bool isVisible);
+  void onSandboxOutputDockVisibilityChanged(bool isVisible);
   void onAnimateDockVisibilityChanged(bool isVisible);
   void onFontListDockVisibilityChanged(bool isVisible);
   void onColorListDockVisibilityChanged(bool isVisible);
@@ -341,6 +359,12 @@ private slots:
 
   void onAIDockVisibilityChanged(bool isVisible);
   void onExperimentalChanged();
+#ifdef ENABLE_PYTHON
+  void onSandboxOutputSelectionChanged();
+  void onSandboxOutputOpen();
+  void onSandboxOutputSaveAs();
+  void onSandboxOutputExportAll();
+#endif
 
   void onColorListColorSelected(const QString&);
 

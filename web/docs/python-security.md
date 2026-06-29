@@ -49,3 +49,20 @@ the files you choose to a destination on your computer.
 
 This extra step is intentional. It prevents a design from silently overwriting a
 file such as an existing model, document, or configuration file.
+
+Sandboxed scripts should write generated files under `out/` next to the design,
+or under `/outputs/`. In the desktop app these files appear in the
+**Sandbox Outputs** panel after preview/render. You can open one file externally,
+save one file to a chosen location, or export all files to a directory. When
+exporting all files, PythonSCAD keeps subdirectories and refuses to overwrite
+existing files.
+
+On the command line, use `--sandbox-output-dir DIR` to copy sandbox-generated
+files into `DIR`:
+
+```bash
+pythonscad --python=sandboxed --sandbox-output-dir generated -o model.csg model.py
+```
+
+Files such as `out/a.stl` and `out/parts/b.stl` are copied as `generated/a.stl`
+and `generated/parts/b.stl`. Existing files are not overwritten.

@@ -4,7 +4,9 @@ import {pathToFileURL} from 'node:url';
 
 function usage()
 {
-  console.error('Usage: node python-sandbox-runner.mjs --wasm-dir DIR --input FILE --output FILE');
+  console.error(
+    'Usage: node python-sandbox-runner.mjs --wasm-dir DIR --input FILE --output FILE ' +
+    '[--host-output-dir DIR --manifest FILE]');
 }
 
 function parseArgs(argv)
@@ -26,6 +28,8 @@ const args = parseArgs(process.argv);
 const wasmDir = args['wasm-dir'];
 const inputFile = args.input;
 const outputFile = args.output;
+const hostOutputDir = args['host-output-dir'];
+const manifestFile = args.manifest;
 
 if (!wasmDir || !inputFile || !outputFile) {
   usage();
@@ -35,6 +39,78 @@ if (!wasmDir || !inputFile || !outputFile) {
 const modulePath = path.join(wasmDir, 'pythonscad.js');
 const source = fs.readFileSync(inputFile, 'utf8');
 const {default: OpenSCAD} = await import(pathToFileURL(modulePath).href);
+
+const RESERVED_WINDOWS_NAMES = new Set([
+  'con',  'prn',  'aux',  'nul',  'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7',
+  'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9',
+]);
+
+function safeRelativePath(relativePath)
+{
+  if (!relativePath || relativePath.includes('\0') || relativePath.startsWith('/')) return null;
+  if (/^[A-Za-z]:/.test(relativePath) || relativePath.startsWith('\\\\')) return null;
+
+  const normalized = path.posix.normalize(relativePath.replaceAll('\\', '/'));
+  if (!normalized || normalized === '.' || normalized.startsWith('../') || normalized === '..')
+    return null;
+
+  const parts = normalized.split('/');
+  for (const part of parts) {
+    if (!part || part === '.' || part === '..') return null;
+    const stem = part.split('.')[0].toLowerCase();
+    if (RESERVED_WINDOWS_NAMES.has(stem)) return null;
+  }
+  return normalized;
+}
+
+function listFilesRecursive(fsApi, root)
+{
+  try {
+    const stat = fsApi.stat(root);
+    if (!fsApi.isDir(stat.mode)) return [];
+  } catch {
+    return [];
+  }
+
+  const files = [];
+  const walk = (dir, relPrefix) => {
+    for (const name of fsApi.readdir(dir)) {
+      if (name === '.' || name === '..') continue;
+      const virtualPath = path.posix.join(dir, name);
+      const relPath = relPrefix ? path.posix.join(relPrefix, name) : name;
+      const stat = fsApi.stat(virtualPath);
+      if (fsApi.isDir(stat.mode)) walk(virtualPath, relPath);
+      else if (fsApi.isFile(stat.mode)) files.push({virtualPath, relPath});
+    }
+  };
+  walk(root, '');
+  return files;
+}
+
+function collectSandboxOutputs(fsApi)
+{
+  if (!hostOutputDir || !manifestFile) return;
+
+  const roots = ['/work/out', '/outputs'];
+  const copied = new Set();
+  const manifest = [];
+
+  for (const root of roots) {
+    for (const file of listFilesRecursive(fsApi, root)) {
+      const relPath = safeRelativePath(file.relPath);
+      if (!relPath || copied.has(relPath)) continue;
+      copied.add(relPath);
+
+      const data = fsApi.readFile(file.virtualPath);
+      const hostPath = path.join(hostOutputDir, ...relPath.split('/'));
+      fs.mkdirSync(path.dirname(hostPath), {recursive: true});
+      fs.writeFileSync(hostPath, Buffer.from(data));
+      manifest.push(`${relPath}\t${hostPath}\t${data.length}`);
+    }
+  }
+
+  fs.writeFileSync(manifestFile, manifest.join('\n') + (manifest.length ? '\n' : ''));
+}
 
 const stdout = [];
 const stderr = [];
@@ -67,3 +143,4 @@ if (exitCode !== 0) {
 
 const csg = mod.FS.readFile('/work/output.csg', {encoding: 'utf8'});
 fs.writeFileSync(outputFile, csg);
+collectSandboxOutputs(mod.FS);
