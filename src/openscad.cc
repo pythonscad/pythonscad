@@ -731,8 +731,8 @@ int cmdline(const CommandLine& cmd)
     }
     if (!commandline_commands.empty()) {
       LOG(message_group::Warning,
-          "-D assignments in sandboxed Python mode are evaluated as Python code; OpenSCAD DSL "
-          "assignment syntax may fail.");
+          "-D values in sandboxed Python mode are executed as Python code inside the sandbox; treat "
+          "them as trusted input. OpenSCAD DSL assignment syntax may fail.");
     }
     auto sandboxResult = evaluatePythonSandboxToCsg(commandline_commands + "\n" + text_py, cmd.filename);
     if (!sandboxResult.ok) {
