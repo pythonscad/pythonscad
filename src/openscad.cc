@@ -271,7 +271,8 @@ bool isSandboxCopyTargetInsideDestination(const fs::path& targetParent, const fs
   if (ec) return false;
   const fs::path relative = canonicalParent.lexically_relative(canonicalRoot);
   const std::string relativeString = relative.generic_string();
-  return relative.empty() || (!relative.is_absolute() && relativeString.rfind("..", 0) != 0);
+  if (relative.empty()) return canonicalParent == canonicalRoot;
+  return !relative.is_absolute() && relativeString.rfind("..", 0) != 0;
 }
 
 bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
