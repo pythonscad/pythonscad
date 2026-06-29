@@ -199,17 +199,10 @@ bool EditorInterface::trust_python_file(void)
   return false;
 }
 
-void EditorInterface::trustCurrent(void)
+void EditorInterface::rememberCurrentPythonTrustHash(void)
 {
 #ifdef ENABLE_PYTHON
-  if (language != LANG_PYTHON) {
-    QMessageBox::information(this, _("Python"), _("The active design is not a Python design."));
-    return;
-  }
-  if (filepath.isEmpty()) {
-    setPythonNativeExecution(true);
-    return;
-  }
+  if (language != LANG_PYTHON || filepath.isEmpty()) return;
   const QByteArray docUtf8 = toPlainText().toUtf8();
   const std::string content(docUtf8.constData(), static_cast<size_t>(docUtf8.size()));
   QSettingsCached settings;
@@ -217,6 +210,18 @@ void EditorInterface::trustCurrent(void)
   const std::string fpath(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size()));
   writePythonTrustHash(settings, fpath, SHA256HashString(content));
   trusted = true;
+  emit trustStateChanged();
+#endif
+}
+
+void EditorInterface::trustCurrent(void)
+{
+#ifdef ENABLE_PYTHON
+  if (language != LANG_PYTHON) {
+    QMessageBox::information(this, _("Python"), _("The active design is not a Python design."));
+    return;
+  }
+  rememberCurrentPythonTrustHash();
   pythonNativeExecution = true;
   emit trustStateChanged();
 #endif
