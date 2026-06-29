@@ -277,25 +277,30 @@ const char copyrighttext[] =
   "(at your option) any later version.<p>";
 
 #ifdef ENABLE_PYTHON
-PythonExecutionMode currentPythonExecutionMode()
-{
-  return defaultPythonExecutionMode();
-}
-
-bool currentPythonExecutionModeIsNative()
-{
-  return pythonExecutionModeIsNative(currentPythonExecutionMode());
-}
-
 bool effectivePythonExecutionModeIsNative(const EditorInterface *editor)
 {
-  return currentPythonExecutionModeIsNative() || python_trusted ||
+  return pythonExecutionModeIsNative(defaultPythonExecutionMode()) || python_trusted ||
          (editor && editor->pythonNativeExecution && (editor->filepath.isEmpty() || editor->trusted));
 }
 
 bool pythonDesignCanRun(const EditorInterface *editor)
 {
-  return !currentPythonExecutionModeIsNative() || effectivePythonExecutionModeIsNative(editor);
+  return !pythonExecutionModeIsNative(defaultPythonExecutionMode()) ||
+         effectivePythonExecutionModeIsNative(editor);
+}
+
+bool isReservedWindowsSandboxOutputPathComponent(const QString& component)
+{
+  const QString stem = component.section('.', 0, 0).toLower();
+  static const QStringList reserved = {
+    QStringLiteral("con"),  QStringLiteral("prn"),  QStringLiteral("aux"),  QStringLiteral("nul"),
+    QStringLiteral("com1"), QStringLiteral("com2"), QStringLiteral("com3"), QStringLiteral("com4"),
+    QStringLiteral("com5"), QStringLiteral("com6"), QStringLiteral("com7"), QStringLiteral("com8"),
+    QStringLiteral("com9"), QStringLiteral("lpt1"), QStringLiteral("lpt2"), QStringLiteral("lpt3"),
+    QStringLiteral("lpt4"), QStringLiteral("lpt5"), QStringLiteral("lpt6"), QStringLiteral("lpt7"),
+    QStringLiteral("lpt8"), QStringLiteral("lpt9"),
+  };
+  return reserved.contains(stem);
 }
 
 bool isSafeSandboxOutputRelativePath(const QString& value)
@@ -313,7 +318,8 @@ bool isSafeSandboxOutputRelativePath(const QString& value)
   }
   const auto parts = cleaned.split('/', Qt::SkipEmptyParts);
   return std::none_of(parts.begin(), parts.end(), [](const QString& part) {
-    return part == QStringLiteral(".") || part == QStringLiteral("..");
+    return part == QStringLiteral(".") || part == QStringLiteral("..") ||
+           isReservedWindowsSandboxOutputPathComponent(part);
   });
 }
 
@@ -4075,17 +4081,22 @@ void MainWindow::onSandboxOutputExportAll()
       return;
     }
     const QString target = QDir(destination).filePath(relativePath);
+    if (QFileInfo::exists(target)) {
+      QMessageBox::warning(this, _("Export Sandbox Outputs"),
+                           QString(_("Refusing to overwrite existing file: %1")).arg(target));
+      return;
+    }
+  }
+
+  for (const auto& file : sandboxOutputFiles) {
+    const QString relativePath = QString::fromStdString(file.relativePath);
+    const QString target = QDir(destination).filePath(relativePath);
     const QString targetParent = QFileInfo(target).absolutePath();
     if (!QDir().mkpath(targetParent) ||
         !isSandboxExportTargetInsideDestination(targetParent, destination)) {
       QMessageBox::warning(
         this, _("Export Sandbox Outputs"),
         QString(_("Refusing sandbox output path outside destination: %1")).arg(relativePath));
-      return;
-    }
-    if (QFileInfo::exists(target)) {
-      QMessageBox::warning(this, _("Export Sandbox Outputs"),
-                           QString(_("Refusing to overwrite existing file: %1")).arg(target));
       return;
     }
     if (!QFile::copy(QString::fromStdString(file.hostPath), target)) {

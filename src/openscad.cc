@@ -729,6 +729,11 @@ int cmdline(const CommandLine& cmd)
       LOG(message_group::Error, "Sandboxed Python animation export is not supported yet.");
       return 1;
     }
+    if (!commandline_commands.empty()) {
+      LOG(message_group::Warning,
+          "-D assignments in sandboxed Python mode are evaluated as Python code; OpenSCAD DSL "
+          "assignment syntax may fail.");
+    }
     auto sandboxResult = evaluatePythonSandboxToCsg(commandline_commands + "\n" + text_py, cmd.filename);
     if (!sandboxResult.ok) {
       LOG(message_group::Error, "%1$s", sandboxResult.error.c_str());

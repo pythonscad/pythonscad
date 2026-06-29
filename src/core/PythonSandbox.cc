@@ -13,9 +13,11 @@
 #include <fstream>
 #include <iterator>
 #include <random>
+#include <signal.h>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 
 #ifdef _WIN32
@@ -84,6 +86,19 @@ struct ProcessResult {
   std::string error;
 };
 
+std::chrono::milliseconds sandboxTimeout()
+{
+  constexpr int defaultTimeoutMs = 300000;
+  const std::string fromEnv = getenvString("PYTHONSCAD_SANDBOX_TIMEOUT_MS");
+  if (fromEnv.empty()) return std::chrono::milliseconds(defaultTimeoutMs);
+  try {
+    const int timeoutMs = std::stoi(fromEnv);
+    if (timeoutMs > 0) return std::chrono::milliseconds(timeoutMs);
+  } catch (const std::exception&) {
+  }
+  return std::chrono::milliseconds(defaultTimeoutMs);
+}
+
 ProcessResult runProcess(const std::vector<std::string>& args)
 {
   ProcessResult result;
@@ -110,7 +125,22 @@ ProcessResult runProcess(const std::vector<std::string>& args)
     return result;
   }
 
-  WaitForSingleObject(processInfo.hProcess, INFINITE);
+  const DWORD waitResult =
+    WaitForSingleObject(processInfo.hProcess, static_cast<DWORD>(sandboxTimeout().count()));
+  if (waitResult == WAIT_TIMEOUT) {
+    TerminateProcess(processInfo.hProcess, 124);
+    WaitForSingleObject(processInfo.hProcess, INFINITE);
+    CloseHandle(processInfo.hThread);
+    CloseHandle(processInfo.hProcess);
+    result.error = "timeout";
+    return result;
+  }
+  if (waitResult == WAIT_FAILED) {
+    result.error = "could not wait for process, GetLastError=" + std::to_string(GetLastError());
+    CloseHandle(processInfo.hThread);
+    CloseHandle(processInfo.hProcess);
+    return result;
+  }
   DWORD exitCode = 1;
   GetExitCodeProcess(processInfo.hProcess, &exitCode);
   CloseHandle(processInfo.hThread);
@@ -139,13 +169,25 @@ ProcessResult runProcess(const std::vector<std::string>& args)
   }
 
   int status = 0;
-  while (waitpid(pid, &status, 0) == -1) {
-    if (errno != EINTR) {
+  const auto deadline = std::chrono::steady_clock::now() + sandboxTimeout();
+  while (true) {
+    const pid_t waitResult = waitpid(pid, &status, WNOHANG);
+    if (waitResult == pid) break;
+    if (waitResult == -1) {
+      if (errno == EINTR) continue;
       result.error = "could not wait for process: " + std::string(std::strerror(errno));
       return result;
     }
+    if (std::chrono::steady_clock::now() >= deadline) {
+      kill(pid, SIGKILL);
+      while (waitpid(pid, &status, 0) == -1 && errno == EINTR) {
+      }
+      result.error = "timeout";
+      return result;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-  if (status != 0) {
+  if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
     result.error = processStatusMessage(status);
     return result;
   }
@@ -243,6 +285,7 @@ fs::path findSandboxRunner()
 
 fs::path makeTempDir()
 {
+#ifdef _WIN32
   std::random_device random;
   const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
   for (int attempt = 0; attempt < 100; ++attempt) {
@@ -253,6 +296,18 @@ fs::path makeTempDir()
     if (ec && ec != std::make_error_code(std::errc::file_exists)) break;
   }
   throw std::runtime_error("Could not create sandbox temporary directory.");
+#else
+  std::error_code ec;
+  const fs::path tempRoot = fs::temp_directory_path(ec);
+  if (ec) throw std::runtime_error("Could not locate temporary directory.");
+
+  std::string templ = (tempRoot / "pythonscad-sandbox-XXXXXX").string();
+  std::vector<char> buffer(templ.begin(), templ.end());
+  buffer.push_back('\0');
+  char *dir = mkdtemp(buffer.data());
+  if (!dir) throw std::runtime_error("Could not create sandbox temporary directory.");
+  return fs::path(dir);
+#endif
 }
 
 bool readFile(const fs::path& path, std::string& output)
@@ -268,6 +323,7 @@ bool writeFile(const fs::path& path, const std::string& content)
   std::ofstream stream(path, std::ios::binary);
   if (!stream.is_open()) return false;
   stream.write(content.data(), static_cast<std::streamsize>(content.size()));
+  stream.close();
   return stream.good();
 }
 
@@ -275,6 +331,7 @@ bool readManifest(const fs::path& manifestFile, const fs::path& outputRoot,
                   std::vector<PythonSandboxOutputFile>& files, std::string& error)
 {
   std::string manifest;
+  // No manifest means the runner completed without sandbox-visible output files.
   if (!readFile(manifestFile, manifest)) return true;
 
   std::istringstream stream(manifest);
