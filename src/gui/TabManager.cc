@@ -1068,11 +1068,12 @@ bool TabManager::refreshDocument()
       if (editor->language == LANG_PYTHON) {
         if (editor->trusted && contentChanged && !python_trusted && editor->hasPythonTrustHash()) {
           // File changed externally while per-file trusted (e.g. external editor workflow).
-          // Re-trust and update the stored hash so future opens also auto-trust.
+          // Refresh the stored hash so the file can remain eligible for native mode if the
+          // user explicitly opts in again after the external edit.
           // Only when a per-file hash already exists — if trust came from global/CLI trust
           // (no hash entry), fall through to trust_python_file() so the file becomes
           // untrusted until explicitly trusted again.
-          editor->trustCurrent();
+          editor->rememberCurrentPythonTrustHash();
         } else {
           // Fresh open, previously untrusted, content unchanged, or trust came from
           // global/CLI — run hash check eagerly so the trust bar appears immediately.
@@ -2000,13 +2001,12 @@ bool TabManager::save(EditorInterface *edt, const QString& path)
     settings.setValue(QStringLiteral("lastOpenDirName"), QFileInfo(path).absolutePath());
 #ifdef ENABLE_PYTHON
     if (edt->language == LANG_PYTHON && !python_trusted) {
-      // First save of a user-authored buffer: the design was trusted as untitled
-      // (filepath was empty) but has no per-file hash yet. Trust it immediately so
-      // Preview/Render remain enabled and a persistent hash entry is written.
+      // First save of a user-authored buffer has no per-file hash yet. Store one
+      // without changing the tab's explicit native/sandboxed execution choice.
       // For subsequent saves of already-trusted designs, update the hash to match
-      // the new on-disk content so trust persists across restarts.
+      // the new on-disk content.
       if (wasUntitled || edt->trusted) {
-        edt->trustCurrent();
+        edt->rememberCurrentPythonTrustHash();
       }
     }
 #endif
