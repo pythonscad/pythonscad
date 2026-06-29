@@ -444,6 +444,9 @@ static std::shared_ptr<AbstractNode> builtin_cylinder(
   if (parameters["center"].type() == Value::Type::BOOL) {
     node->center = parameters["center"].toBool();
   }
+  if (parameters["angle"].type() == Value::Type::NUMBER) {
+    node->angle = parameters["angle"].toDouble();
+  }
 
   return node;
 }
@@ -724,6 +727,9 @@ static std::shared_ptr<AbstractNode> builtin_circle(
       LOG(message_group::Warning, inst->location(), parameters.documentRoot(), "circle(r=%1$s)",
           r.toEchoStringNoThrow());
     }
+  }
+  if (parameters["angle"].type() == Value::Type::NUMBER) {
+    node->angle = parameters["angle"].toDouble();
   }
 
   return node;
