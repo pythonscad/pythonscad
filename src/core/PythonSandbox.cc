@@ -315,7 +315,13 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
 
   const std::string node =
     getenvString("PYTHONSCAD_NODE").empty() ? "node" : getenvString("PYTHONSCAD_NODE");
-  const fs::path tempDir = makeTempDir();
+  fs::path tempDir;
+  try {
+    tempDir = makeTempDir();
+  } catch (const std::exception& e) {
+    result.error = e.what();
+    return result;
+  }
   result.tempDir = tempDir.string();
   const fs::path inputFile =
     tempDir /
@@ -323,7 +329,12 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
   const fs::path outputFile = tempDir / "output.csg";
   const fs::path outputRoot = tempDir / "sandbox-outputs";
   const fs::path manifestFile = tempDir / "outputs.tsv";
-  fs::create_directories(outputRoot);
+  std::error_code ec;
+  if (!fs::create_directories(outputRoot, ec) || ec) {
+    result.error = "Could not create sandbox output directory.";
+    fs::remove_all(tempDir);
+    return result;
+  }
   result.outputRoot = outputRoot.string();
 
   if (!writeFile(inputFile, code)) {

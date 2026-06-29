@@ -2302,7 +2302,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
   if (editor->language == LANG_PYTHON && !effectivePythonExecutionModeIsNative(editor)) {
     auto sandboxResult = evaluatePythonSandboxToCsg(fulltext_py, fnameNative);
     if (!sandboxResult.ok) {
-      LOG(message_group::Error, Location::NONE, "", sandboxResult.error.c_str());
+      LOG(message_group::Error, Location::NONE, "", "%1$s", sandboxResult.error.c_str());
       clearSandboxOutputs();
       editor->resetHighlighting();
       editor->parameterWidget->setEnabled(false);
