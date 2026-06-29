@@ -296,7 +296,7 @@ bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
           target.parent_path().generic_string());
       return false;
     }
-    if (fs::exists(target)) {
+    if (fs::exists(target, ec) || ec) {
       LOG(message_group::Error, "Refusing to overwrite sandbox output file: %1$s",
           target.generic_string());
       return false;
