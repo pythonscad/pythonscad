@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 
@@ -38,7 +39,25 @@ if (!wasmDir || !inputFile || !outputFile) {
 
 const modulePath = path.join(wasmDir, 'pythonscad.js');
 const source = fs.readFileSync(inputFile, 'utf8');
-const {default: OpenSCAD} = await import(pathToFileURL(modulePath).href);
+
+async function importOpenSCADModule()
+{
+  try {
+    return (await import(pathToFileURL(modulePath).href)).default;
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pythonscad-wasm-module-'));
+    const tempModulePath = path.join(tempDir, 'pythonscad.mjs');
+    try {
+      fs.copyFileSync(modulePath, tempModulePath);
+      return (await import(pathToFileURL(tempModulePath).href)).default;
+    } finally {
+      fs.rmSync(tempDir, {recursive: true, force: true});
+    }
+  }
+}
+
+const OpenSCAD = await importOpenSCADModule();
 
 const RESERVED_WINDOWS_NAMES = new Set([
   'con',  'prn',  'aux',  'nul',  'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7',
