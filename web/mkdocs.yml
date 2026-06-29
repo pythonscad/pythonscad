@@ -59,6 +59,7 @@ nav:
       - PythonSCAD v0.16.0: releases/PythonSCAD v0.16.0.md
   - Playground: /playground/
   - Installation: installation.md
+  - Python Security: python-security.md
   - Development:
       - Release Smoke Tests: development/release-smoke-tests.md
       - Upstream Sync: development/upstream-sync.md

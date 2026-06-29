@@ -70,7 +70,8 @@ what a notebook needs.
   geometry generation (e.g. for syntax checks).
 - **Lifetime** — the returned pointer references a `static std::string` that is
   overwritten by the next call; copy it out before calling again.
-- Unlike the CLI path, this does **not** require `--trust-python`.
+- Unlike the desktop native interpreter, this runs inside the browser's
+  WebAssembly sandbox.
 
 ```javascript
 initPython();
@@ -110,7 +111,7 @@ mod.FS.writeFile('/input.py', 'from pythonscad import *\nshow(cube(10))');
 
 let exitCode = 0;
 try {
-  mod.callMain(['-o', '/output.stl', '--trust-python', '/input.py']);
+  mod.callMain(['-o', '/output.stl', '--python=native', '/input.py']);
 } catch (e) {
   exitCode = (e && typeof e.status === 'number') ? e.status : 1;
 }
@@ -120,8 +121,8 @@ const stl = mod.FS.readFile('/output.stl');   // Uint8Array
 
 Notes:
 
-- `--trust-python` is **required** for the CLI path; without it the evaluator
-  refuses to run.
+- `--python=native` selects the CPython interpreter inside the WASM module. In
+  this build, that interpreter is still sandboxed by WebAssembly.
 - `INVOKE_RUN=0` is set, so `main()` does not run on load — call `callMain`
   explicitly.
 - The module is not re-entrant for the CLI path: create a fresh instance per
