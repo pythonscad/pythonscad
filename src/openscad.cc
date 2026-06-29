@@ -713,12 +713,9 @@ int cmdline(const CommandLine& cmd)
 
 #ifdef ENABLE_PYTHON
   python_active = false;
-  if (cmd.filename.c_str() != NULL) {
-    if (boost::algorithm::ends_with(cmd.filename, ".py")) {
-      if (pythonExecutionModeIsNative(arg_python_execution_mode)) {
-        python_active = true;
-      }
-    }
+  if (boost::algorithm::ends_with(cmd.filename, ".py") &&
+      pythonExecutionModeIsNative(arg_python_execution_mode)) {
+    python_active = true;
   }
 
   std::string text_py = text;
