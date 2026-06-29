@@ -388,6 +388,11 @@ SettingsEntryInt Settings::joystickNr("input", "joystickNr", 0, 9, 0);
 SettingsEntryString SettingsPython::pythonTrustedFiles(SECTION_PYTHON, "trusted-files", "");
 SettingsEntryString SettingsPython::pythonVirtualEnv(SECTION_PYTHON, "virtual-env", "");
 SettingsEntryString SettingsPython::pythonNetworkImportList(SECTION_PYTHON, "networkImportList", "");
+SettingsEntryEnum<std::string> SettingsPython::pythonExecutionMode(
+  SECTION_PYTHON, "default-execution-mode",
+  {{"sandboxed", "sandboxed", _("Sandboxed Python (recommended)")},
+   {"native", "native", _("Native Python (compatibility, unsafe for untrusted files)")}},
+  "sandboxed");
 SettingsEntryBool SettingsPython::globalTrustPython(SECTION_PYTHON, "global-trust-python", false);
 
 SettingsEntryBool SettingsExportPdf::exportPdfAlwaysShowDialog(SECTION_EXPORT_PDF, "always-show-dialog",
