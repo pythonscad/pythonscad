@@ -306,7 +306,7 @@ bool isReservedWindowsSandboxOutputPathComponent(const QString& component)
 bool isSafeSandboxOutputRelativePath(const QString& value)
 {
   if (value.isEmpty() || value.contains(QChar::Null) || value.contains('\t') || value.contains('\r') ||
-      value.contains('\n')) {
+      value.contains('\n') || value.contains('\\')) {
     return false;
   }
   if (QFileInfo(value).isAbsolute() || value.startsWith(QStringLiteral("\\\\"))) return false;
@@ -4088,6 +4088,7 @@ void MainWindow::onSandboxOutputExportAll()
     }
   }
 
+  int copiedFiles = 0;
   for (const auto& file : sandboxOutputFiles) {
     const QString relativePath = QString::fromStdString(file.relativePath);
     const QString target = QDir(destination).filePath(relativePath);
@@ -4101,9 +4102,13 @@ void MainWindow::onSandboxOutputExportAll()
     }
     if (!QFile::copy(QString::fromStdString(file.hostPath), target)) {
       QMessageBox::warning(this, _("Export Sandbox Outputs"),
-                           QString(_("Could not export sandbox output file: %1")).arg(relativePath));
+                           QString(_("Could not export sandbox output file: %1. %2 file(s) were "
+                                     "already exported."))
+                             .arg(relativePath)
+                             .arg(copiedFiles));
       return;
     }
+    ++copiedFiles;
   }
 }
 #else
