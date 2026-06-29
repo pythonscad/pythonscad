@@ -221,9 +221,12 @@ void EditorInterface::trustCurrent(void)
     QMessageBox::information(this, _("Python"), _("The active design is not a Python design."));
     return;
   }
-  rememberCurrentPythonTrustHash();
   pythonNativeExecution = true;
-  emit trustStateChanged();
+  if (filepath.isEmpty()) {
+    emit trustStateChanged();
+  } else {
+    rememberCurrentPythonTrustHash();
+  }
 #endif
 }
 

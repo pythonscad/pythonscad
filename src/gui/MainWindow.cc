@@ -1846,7 +1846,7 @@ void MainWindow::updatePythonTrustActions()
   const bool isUntrustedPython = isPythonWithPath && !pythonDesignCanRun(activeEditor);
   designActionPreview->setEnabled(!isUntrustedPython);
   designActionRender->setEnabled(!isUntrustedPython);
-  // Checkable action: enabled for any saved Python design, checked when trusted.
+  // Checkable action: enabled for any saved Python design, checked after native-mode opt-in.
   fileActionPythonTrustCurrentDesign->setEnabled(isPythonWithPath);
   fileActionPythonTrustCurrentDesign->setChecked(isPythonWithPath &&
                                                  activeEditor->pythonNativeExecution);
