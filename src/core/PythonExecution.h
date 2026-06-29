@@ -14,7 +14,12 @@ inline constexpr const char *PYTHON_EXECUTION_NATIVE = "native";
 
 inline PythonExecutionMode pythonExecutionModeFromString(const std::string& mode)
 {
+#ifdef __EMSCRIPTEN__
+  (void)mode;
+  return PythonExecutionMode::Native;
+#else
   return mode == PYTHON_EXECUTION_NATIVE ? PythonExecutionMode::Native : PythonExecutionMode::Sandboxed;
+#endif
 }
 
 inline const char *pythonExecutionModeToString(PythonExecutionMode mode)
