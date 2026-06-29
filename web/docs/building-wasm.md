@@ -16,10 +16,11 @@ toolchain. You need Docker and a checkout of the repository (with submodules).
 
 There are two build variants:
 
-- **`node`** — runs under Node.js with direct filesystem access; used for fast
-  smoke tests (renders an STL via the command line).
+- **`node`** — runs under Node.js with direct filesystem access; used only for
+  fast smoke tests (renders an STL via the command line).
 - **`web`** — the browser bundle (`pythonscad.js` + `pythonscad.wasm` +
-  `pythonscad.data`) loaded as an ES module.
+  `pythonscad.data`) loaded as an ES module. This is also the bundle used by
+  desktop sandboxed Python because it uses the WebAssembly virtual filesystem.
 
 ## Build
 
@@ -33,13 +34,16 @@ docker build -f docker/wasm/sysroot.dockerfile --target wasm-python-base \
 ./scripts/wasm-base-docker-run.sh emcmake cmake -B build-wasm-node \
   -DWASM_BUILD_TYPE=node -DCMAKE_BUILD_TYPE=Release -DEXPERIMENTAL=1
 ./scripts/wasm-base-docker-run.sh cmake --build build-wasm-node -j"$(nproc)"
-node build-wasm-node/pythonscad.js -o out.stl --trust-python script.py
+node build-wasm-node/pythonscad.js -o out.stl --python=native script.py
 
-# Web variant (browser bundle)
+# Web variant (browser and desktop sandbox bundle)
 ./scripts/wasm-base-docker-run.sh emcmake cmake -B build-wasm-web \
   -DWASM_BUILD_TYPE=web -DCMAKE_BUILD_TYPE=Release -DEXPERIMENTAL=1
 ./scripts/wasm-base-docker-run.sh cmake --build build-wasm-web -j"$(nproc)"
 ```
+
+For desktop sandbox testing, keep the generated files in `build-wasm-web` or set
+`PYTHONSCAD_WASM_DIR` to the directory containing them.
 
 ## Testing the web build locally
 

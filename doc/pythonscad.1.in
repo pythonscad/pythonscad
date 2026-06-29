@@ -200,8 +200,15 @@ in Advanced preferences. If no files are given, the running instance is focused.
 
 .SS Python-specific Options
 .TP
+\fB\-\-python=\fP[\fBsandboxed\fP|\fBnative\fP]
+Select how Python designs are executed. The default is \fBsandboxed\fP, which
+runs designs in the WebAssembly sandbox. Use \fBnative\fP only for designs you
+trust, because native Python can access files and other resources available to
+the PythonSCAD process.
+.TP
 \fB\-\-trust\-python\fP
-Trust Python scripts (disable security prompts).
+Deprecated. This option is accepted for compatibility but no longer changes the
+Python execution mode. Use \fB\-\-python=native\fP only for designs you trust.
 .TP
 \fB\-\-ipython\fP [\fIscript.py\fP [\fIargs...\fP]]
 Start an

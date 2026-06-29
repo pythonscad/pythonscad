@@ -68,7 +68,7 @@ show(difference(cube([20, 20, 20], center=True), cylinder(h=25, r=5, center=True
 
       let exitCode = 0;
       try {
-        mod.callMain(['-o', '/output.stl', '--trust-python', '/input.py']);
+        mod.callMain(['-o', '/output.stl', '--python=native', '/input.py']);
       } catch (e) {
         // Emscripten throws ExitStatus when the process calls exit()
         if (e && typeof e.status === 'number') {

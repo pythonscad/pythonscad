@@ -370,7 +370,7 @@ docker build -f docker/wasm/sysroot.dockerfile --target wasm-python-base \
 ./scripts/wasm-base-docker-run.sh emcmake cmake -B build-wasm-node \
   -DWASM_BUILD_TYPE=node -DCMAKE_BUILD_TYPE=Release -DEXPERIMENTAL=1
 ./scripts/wasm-base-docker-run.sh cmake --build build-wasm-node -j$(nproc)
-node build-wasm-node/pythonscad.js -o out.stl --trust-python script.py
+node build-wasm-node/pythonscad.js -o out.stl --python=native script.py
 
 # Web variant (browser distribution; MAIN_MODULE=2 for Chromium JSPI)
 ./scripts/wasm-base-docker-run.sh emcmake cmake -B build-wasm-web \

@@ -48,6 +48,7 @@ nav:
   - Downloads: downloads.md
   - Playground: https://www.pythonscad.org/playground/
   - Installation: installation.md
+  - Python Security: python-security.md
   - Development:
       - Upstream Sync: development/upstream-sync.md
   - Building: building.md

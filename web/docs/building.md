@@ -65,6 +65,24 @@ Example with custom options:
 cmake -DHEADLESS=ON -DEXPERIMENTAL=ON ..
 ```
 
+### Python Sandbox Builds
+
+PythonSCAD's sandboxed Python mode uses the WebAssembly build. Developers who
+change Python-visible behavior, such as built-in modeling functions or Python
+library code, need to rebuild the WebAssembly bundle as well as the native
+desktop application. Otherwise sandboxed Python will still run the old behavior
+from the previous bundle.
+
+See [Building for WebAssembly](building-wasm.md) for the Docker-based workflow.
+For local desktop testing, build the `web` variant and either leave it in
+`build-wasm-web` at the repository root or point `PYTHONSCAD_WASM_DIR` at a
+directory containing `pythonscad.js`, `pythonscad.wasm`, and `pythonscad.data`.
+The desktop helper runs that bundle through Node.js while keeping Python inside
+the WebAssembly virtual filesystem.
+
+Developers who are only changing desktop UI code can usually use an existing
+bundle, but the bundle must match any Python-visible behavior being tested.
+
 ---
 
 ## Windows

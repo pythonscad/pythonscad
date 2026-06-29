@@ -273,7 +273,7 @@ def _run_pythonscad(pythonscad, fixture, extra_args, rundir):
         cli_dummy_path = os.path.join(tmp, "_cli_driver_dummy.echo")
         cmdline = [
             pythonscad,
-            "--trust-python",
+            "--python=native",
             "--enable=predictible-output",
             "--render",
             "-o", cli_dummy_path,

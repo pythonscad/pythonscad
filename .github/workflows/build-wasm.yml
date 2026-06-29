@@ -98,7 +98,7 @@ jobs:
             pythonscad-wasm-python-base:local \
             bash -c "
               printf 'from openscad import *\nshow(difference(cube([20,20,20], center=True), cylinder(h=25, r=5, center=True)))\n' > /tmp/test.py
-              node pythonscad.js -o /tmp/out.stl --trust-python /tmp/test.py
+              node pythonscad.js -o /tmp/out.stl --python=native /tmp/test.py
               SIZE=\$(wc -c < /tmp/out.stl)
               echo \"STL output: \${SIZE} bytes\"
               [ \"\${SIZE}\" -gt 1000 ] || { echo 'FAIL: STL too small or missing'; exit 1; }
