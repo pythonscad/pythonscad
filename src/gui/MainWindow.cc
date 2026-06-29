@@ -290,7 +290,7 @@ bool currentPythonExecutionModeIsNative()
 bool effectivePythonExecutionModeIsNative(const EditorInterface *editor)
 {
   return currentPythonExecutionModeIsNative() || python_trusted ||
-         (editor && editor->pythonNativeExecution);
+         (editor && editor->pythonNativeExecution && (editor->filepath.isEmpty() || editor->trusted));
 }
 
 bool pythonDesignCanRun(const EditorInterface *editor)
