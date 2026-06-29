@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -83,7 +84,15 @@ jobs:
           cmake .. -G"Ninja" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DENABLE_LIBFIVE=ON -DUSE_QT6=${{ matrix.qt == 'qt6' && 'ON' || 'OFF' }}
           cmake --build . -j4
           cmake --install . --prefix=.
+      - name: Download matching WASM sandbox bundle
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: bash .github/scripts/download-wasm-artifact.sh "$TARGET_SHA" wasm-bundle
       - name: Run Test Suite
+        env:
+          PYTHONSCAD_WASM_DIR: ${{ github.workspace }}/wasm-bundle
         run: |
           cd build
           ctest -j4

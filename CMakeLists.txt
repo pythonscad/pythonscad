@@ -2355,6 +2355,15 @@ if(NOT APPLE OR APPLE_UNIX)
       install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/pythonscad-python DESTINATION "${OPENSCAD_BINDIR}")
     endif()
 
+    if(WIN32)
+      set(PYTHONSCAD_WASM_INSTALL_DIR "wasm")
+    else()
+      set(PYTHONSCAD_WASM_INSTALL_DIR "${OPENSCAD_INSTALL_RESOURCEDIR}/wasm")
+    endif()
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/pythonscad-wasm/"
+            DESTINATION "${PYTHONSCAD_WASM_INSTALL_DIR}"
+            OPTIONAL)
+
     # On Windows, the runtime Python deps (currently: IPython 9.x and its
     # transitive deps) are populated into ${CMAKE_BINARY_DIR}/pythonscad-bundled-py
     # by scripts/bundle-runtime-python.sh, invoked from the Windows build

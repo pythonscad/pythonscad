@@ -17,12 +17,14 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build-package:
     runs-on: windows-latest
     permissions:
       contents: write
+      actions: read
     name: Windows Native Package (Qt6)
     defaults:
       run:
@@ -162,6 +164,18 @@ jobs:
           chmod +x ./scripts/bundle-runtime-python.sh
           ./scripts/bundle-runtime-python.sh "${BUNDLE_DEST}" --python python
 
+      - name: Download and stage WASM sandbox bundle
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash .github/scripts/download-wasm-artifact.sh "$(git rev-parse HEAD)" wasm-bundle
+          mkdir -p build/pythonscad-wasm
+          cp wasm-bundle/pythonscad.js \
+             wasm-bundle/pythonscad.wasm \
+             wasm-bundle/pythonscad.data \
+             build/pythonscad-wasm/
+
       - name: Install to staging directory
         run: |
           cd build
@@ -236,6 +250,18 @@ jobs:
             exit 1
           fi
           echo "Bundled IPython landed at ${BUNDLE_DIR}/IPython"
+
+      - name: Sanity test - verify bundled WASM sandbox is in staging tree
+        shell: bash
+        run: |
+          BUNDLE_DIR="build/staging/wasm"
+          for file in pythonscad.js pythonscad.wasm pythonscad.data; do
+            if [ ! -f "${BUNDLE_DIR}/${file}" ]; then
+              echo "FAIL: ${BUNDLE_DIR}/${file} is missing" >&2
+              exit 1
+            fi
+          done
+          ls -lh "${BUNDLE_DIR}"
 
       - name: Prepare artifacts
         id: artifacts

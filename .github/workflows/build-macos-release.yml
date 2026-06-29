@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build-intel:
@@ -342,6 +343,7 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: write
+      actions: read
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -770,6 +772,22 @@ jobs:
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
           enable-cache: false
+
+      - name: Download and bundle WASM sandbox runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STEPS_MERGE_OUTPUTS_APP_BUNDLE: ${{ steps.merge.outputs.app_bundle }}
+        run: |
+          bash .github/scripts/download-wasm-artifact.sh "$(git rev-parse HEAD)" wasm-bundle
+          APP_BUNDLE="${STEPS_MERGE_OUTPUTS_APP_BUNDLE}"
+          WASM_DEST="${APP_BUNDLE}/Contents/Resources/wasm"
+          rm -rf "${WASM_DEST}"
+          mkdir -p "${WASM_DEST}"
+          cp wasm-bundle/pythonscad.js \
+             wasm-bundle/pythonscad.wasm \
+             wasm-bundle/pythonscad.data \
+             "${WASM_DEST}/"
+          ls -lh "${WASM_DEST}"
 
       - name: Bundle runtime Python deps (IPython) into merged .app
         env:

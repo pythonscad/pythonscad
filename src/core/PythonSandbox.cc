@@ -259,6 +259,14 @@ fs::path findWasmBundleDir()
 
   fs::path appPath = PlatformUtils::applicationPath();
   if (hasWasmBundle(appPath / "wasm")) return appPath / "wasm";
+#ifdef __APPLE__
+  if (hasWasmBundle(appPath.parent_path() / "Resources" / "wasm")) {
+    return appPath.parent_path() / "Resources" / "wasm";
+  }
+#endif
+  if (hasWasmBundle(appPath.parent_path() / "share" / "pythonscad" / "wasm")) {
+    return appPath.parent_path() / "share" / "pythonscad" / "wasm";
+  }
   if (hasWasmBundle(appPath)) return appPath;
 
   return {};

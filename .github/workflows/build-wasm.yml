@@ -146,6 +146,7 @@ jobs:
           name: pythonscad-wasm-web
           path: dist-wasm/
           if-no-files-found: error
+          retention-days: 1
 
       - name: Upload WASM release zip
         uses: actions/upload-artifact@v7
@@ -153,6 +154,7 @@ jobs:
           name: pythonscad-wasm-release-zip
           path: ${{ steps.package.outputs.wasm_zip }}
           if-no-files-found: error
+          retention-days: 1
 
   upload-release:
     name: Upload WASM bundle to release

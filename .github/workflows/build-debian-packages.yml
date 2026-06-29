@@ -21,6 +21,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   prepare-matrix:
@@ -85,6 +86,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
+      actions: read
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
@@ -128,6 +130,11 @@ jobs:
         with:
           detached: true
           limit-access-to-actor: true
+
+      - name: Download matching WASM sandbox bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/download-wasm-artifact.sh "$(git rev-parse HEAD)" wasm-bundle
 
       - name: Set up QEMU for ARM64
         if: matrix.arch == 'arm64'
@@ -211,6 +218,7 @@ jobs:
         env:
           OUTPUT_DIR: /tmp/debs
           DEBIAN_DISTRO: ${{ matrix.distro }}
+          PYTHONSCAD_WASM_BUNDLE_DIR: ${{ github.workspace }}/wasm-bundle
           # Set Qt version for older distros
           USE_QT6: ${{ (matrix.distro == 'jammy' || matrix.distro == 'bullseye') && 'OFF' || 'ON' }}
         run: |
@@ -259,6 +267,7 @@ jobs:
             -v /tmp/debs:/tmp/debs \
             -w /workspace \
             -e OUTPUT_DIR=/tmp/debs \
+            -e PYTHONSCAD_WASM_BUNDLE_DIR=/workspace/wasm-bundle \
             -e DEBIAN_DISTRO="$MATRIX_DISTRO" \
             -e QT_PROFILE="$QT_PROFILE" \
             -e USE_QT6="$USE_QT6" \

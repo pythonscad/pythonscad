@@ -101,6 +101,16 @@ modern features.
     -DPORTABLE_BINARY=ON \
     -DSNAPSHOT=OFF
 
+if [ -n "$PYTHONSCAD_WASM_BUNDLE_DIR" ]; then
+    build_dir="$(find . -maxdepth 1 -type d -name '*build*' -print -quit)"
+    test -n "$build_dir"
+    mkdir -p "$build_dir/pythonscad-wasm"
+    cp "$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.js" \
+       "$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.wasm" \
+       "$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.data" \
+       "$build_dir/pythonscad-wasm/"
+fi
+
 %cmake_build
 
 %install

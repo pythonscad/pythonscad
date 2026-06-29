@@ -28,6 +28,15 @@ override_dh_auto_configure:
 		-DSNAPSHOT=OFF
 
 override_dh_auto_build:
+	if [ -n "$$PYTHONSCAD_WASM_BUNDLE_DIR" ]; then \
+		build_dir="$$(find . -maxdepth 1 -type d -name 'obj-*' -print -quit)"; \
+		test -n "$$build_dir"; \
+		mkdir -p "$$build_dir/pythonscad-wasm"; \
+		cp "$$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.js" \
+		   "$$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.wasm" \
+		   "$$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.data" \
+		   "$$build_dir/pythonscad-wasm/"; \
+	fi
 	dh_auto_build -- -j$(shell nproc)
 
 override_dh_shlibdeps:
