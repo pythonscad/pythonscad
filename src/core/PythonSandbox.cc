@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cctype>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -105,7 +106,7 @@ ProcessResult runProcess(const std::vector<std::string>& args)
   mutableCommandLine.push_back('\0');
   if (!CreateProcessA(nullptr, mutableCommandLine.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr,
                       &startupInfo, &processInfo)) {
-    result.error = "could not start process";
+    result.error = "could not start process, GetLastError=" + std::to_string(GetLastError());
     return result;
   }
 
@@ -123,7 +124,7 @@ ProcessResult runProcess(const std::vector<std::string>& args)
 #else
   const pid_t pid = fork();
   if (pid < 0) {
-    result.error = "could not start process";
+    result.error = "could not start process: " + std::string(std::strerror(errno));
     return result;
   }
   if (pid == 0) {
@@ -140,7 +141,7 @@ ProcessResult runProcess(const std::vector<std::string>& args)
   int status = 0;
   while (waitpid(pid, &status, 0) == -1) {
     if (errno != EINTR) {
-      result.error = "could not wait for process";
+      result.error = "could not wait for process: " + std::string(std::strerror(errno));
       return result;
     }
   }
