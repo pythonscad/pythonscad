@@ -10,6 +10,10 @@
 #include <sstream>
 #include <string>
 
+#ifndef _WIN32
+#include <sys/wait.h>
+#endif
+
 #include "platform/PlatformUtils.h"
 
 namespace fs = std::filesystem;
@@ -49,6 +53,18 @@ bool hasWasmBundle(const fs::path& dir)
 {
   return fs::is_regular_file(dir / "pythonscad.js") && fs::is_regular_file(dir / "pythonscad.wasm") &&
          fs::is_regular_file(dir / "pythonscad.data");
+}
+
+std::string processStatusMessage(int status)
+{
+  if (status == -1) return "could not start process";
+#ifdef _WIN32
+  return "exit code " + std::to_string(status);
+#else
+  if (WIFEXITED(status)) return "exit code " + std::to_string(WEXITSTATUS(status));
+  if (WIFSIGNALED(status)) return "signal " + std::to_string(WTERMSIG(status));
+  return "status " + std::to_string(status);
+#endif
 }
 
 fs::path findWasmBundleDir()
@@ -182,7 +198,7 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
 
   const int exitCode = std::system(command.str().c_str());
   if (exitCode != 0) {
-    result.error = "Sandboxed Python process failed with status " + std::to_string(exitCode) + ".";
+    result.error = "Sandboxed Python process failed with " + processStatusMessage(exitCode) + ".";
     fs::remove_all(tempDir);
     return result;
   }

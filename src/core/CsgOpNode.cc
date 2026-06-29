@@ -76,7 +76,11 @@ std::string CsgOpNode::toString() const
 {
   std::ostringstream stream;
   stream << this->name() << "(";
-  if (r != 0) stream << " r = " << this->r << " , fn = " << this->fn << " ";
+  if (r != 0) {
+    stream << " r = " << this->r << " , fn = " << this->fn << " ";
+  } else if (fn != 2) {
+    stream << " fn = " << this->fn << " ";
+  }
   stream << ")";
   return stream.str();
 }
