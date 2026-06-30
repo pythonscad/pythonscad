@@ -1390,10 +1390,57 @@ add_cmdline_test(rendermanifoldtest  EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EX
 add_cmdline_test(previewtest         EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --enable=skin --python=native)
 add_cmdline_test(previewmanifoldtest EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --enable=skin --backend=manifold --python=native)
 add_cmdline_test(throwntogethertest  EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --preview=throwntogether --enable=skin --python=native)
-add_cmdline_test(pythonscad          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_FILES} ARGS --render --python=native)
+# These Python fixtures match the existing goldens in sandboxed mode. Keep the
+# rest native for now: they either produce different images/echo output under
+# WASM or intentionally exercise native-only behavior.
+set(PYTHONSCAD_SANDBOX_FILES
+  ${TEST_PYTHONSCAD_DIR}/align2d.py
+  ${TEST_PYTHONSCAD_DIR}/children.py
+  ${TEST_PYTHONSCAD_DIR}/children_iterator.py
+  ${TEST_PYTHONSCAD_DIR}/csg-difference.py
+  ${TEST_PYTHONSCAD_DIR}/csg-hull.py
+  ${TEST_PYTHONSCAD_DIR}/csg-intersection.py
+  ${TEST_PYTHONSCAD_DIR}/csg-minkowski-render.py
+  ${TEST_PYTHONSCAD_DIR}/csg-union.py
+  ${TEST_PYTHONSCAD_DIR}/fillet_csg.py
+  ${TEST_PYTHONSCAD_DIR}/flower.py
+  ${TEST_PYTHONSCAD_DIR}/geometric-objects-circle.py
+  ${TEST_PYTHONSCAD_DIR}/geometric-objects-cube.py
+  ${TEST_PYTHONSCAD_DIR}/geometric-objects-cylinder.py
+  ${TEST_PYTHONSCAD_DIR}/geometric-objects-polygon.py
+  ${TEST_PYTHONSCAD_DIR}/geometric-objects-polyhedron.py
+  ${TEST_PYTHONSCAD_DIR}/geometric-objects-sphere-render.py
+  ${TEST_PYTHONSCAD_DIR}/geometric-objects-square.py
+  ${TEST_PYTHONSCAD_DIR}/hinge.py
+  ${TEST_PYTHONSCAD_DIR}/object-color.py
+  ${TEST_PYTHONSCAD_DIR}/object-export.py
+  ${TEST_PYTHONSCAD_DIR}/object-manipulation-chain.py
+  ${TEST_PYTHONSCAD_DIR}/object-mesh.py
+  ${TEST_PYTHONSCAD_DIR}/object-mirror-render.py
+  ${TEST_PYTHONSCAD_DIR}/object-rotate-render.py
+  ${TEST_PYTHONSCAD_DIR}/object-scale-render.py
+  ${TEST_PYTHONSCAD_DIR}/offset3d.py
+  ${TEST_PYTHONSCAD_DIR}/pie.py
+  ${TEST_PYTHONSCAD_DIR}/pie1.py
+  ${TEST_PYTHONSCAD_DIR}/polyline.py
+  ${TEST_PYTHONSCAD_DIR}/polyline_3d.py
+  ${TEST_PYTHONSCAD_DIR}/python-none-union-segfault.py
+  ${TEST_PYTHONSCAD_DIR}/show-list.py
+)
+set(PYTHONSCAD_NATIVE_FILES ${PYTHONSCAD_FILES})
+list(REMOVE_ITEM PYTHONSCAD_NATIVE_FILES ${PYTHONSCAD_SANDBOX_FILES})
+add_cmdline_test(pythonscad          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_SANDBOX_FILES} ARGS --render --python=sandboxed)
+add_cmdline_test(pythonscad          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_NATIVE_FILES} ARGS --render --python=native)
 add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_FILES} ARGS --python=native)
-add_cmdline_test(pythonscadlaser     EXPERIMENTAL OPENSCAD SUFFIX svg FILES ${PYTHONSCAD_LASER_FILES}            ARGS --python=native)
-add_cmdline_test(pythonscadoverlay      EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_OVERLAY_FILES} ARGS --render --python=native)
+set(PYTHONSCAD_LASER_SANDBOX_FILES
+  ${TEST_PYTHONSCAD_LASER_DIR}/laserbox.py
+  ${TEST_PYTHONSCAD_LASER_DIR}/lasercase.py
+)
+set(PYTHONSCAD_LASER_NATIVE_FILES ${PYTHONSCAD_LASER_FILES})
+list(REMOVE_ITEM PYTHONSCAD_LASER_NATIVE_FILES ${PYTHONSCAD_LASER_SANDBOX_FILES})
+add_cmdline_test(pythonscadlaser     EXPERIMENTAL OPENSCAD SUFFIX svg FILES ${PYTHONSCAD_LASER_SANDBOX_FILES} ARGS --python=sandboxed)
+add_cmdline_test(pythonscadlaser     EXPERIMENTAL OPENSCAD SUFFIX svg FILES ${PYTHONSCAD_LASER_NATIVE_FILES} ARGS --python=native)
+add_cmdline_test(pythonscadoverlay      EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_OVERLAY_FILES} ARGS --render --python=sandboxed)
 add_cmdline_test(pythonscadoverlayecho  EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_OVERLAY_ECHO_FILES} ARGS --python=native)
 add_cmdline_test(pythonscadecho_pure EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${TEST_PYTHONSCAD_ECHO_DIR}/add_parameter_pure.py ARGS --enable=add-parameter-pure-function --python=native)
 add_cmdline_test(echo EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${TEST_SCAD_DIR}/misc/vector-swizzling.scad ARGS --enable=vector-swizzle --python=native)
