@@ -93,6 +93,7 @@ jobs:
       - name: Run Test Suite
         env:
           PYTHONSCAD_WASM_DIR: ${{ github.workspace }}/wasm-bundle
+          PYTHONSCAD_SANDBOX_RUNNER: ${{ github.workspace }}/scripts/python-sandbox-runner.mjs
         run: |
           cd build
           ctest -j4
