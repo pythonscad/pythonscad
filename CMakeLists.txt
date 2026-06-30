@@ -2363,6 +2363,19 @@ if(NOT APPLE OR APPLE_UNIX)
     install(DIRECTORY "${CMAKE_BINARY_DIR}/pythonscad-wasm/"
             DESTINATION "${PYTHONSCAD_WASM_INSTALL_DIR}"
             OPTIONAL)
+    if(WIN32)
+      install(FILES "${CMAKE_SOURCE_DIR}/scripts/python-sandbox-runner.mjs"
+              DESTINATION "scripts")
+      install(DIRECTORY "${CMAKE_BINARY_DIR}/pythonscad-node/"
+              DESTINATION "node"
+              OPTIONAL)
+    else()
+      install(FILES "${CMAKE_SOURCE_DIR}/scripts/python-sandbox-runner.mjs"
+              DESTINATION "${OPENSCAD_INSTALL_RESOURCEDIR}/scripts")
+      install(DIRECTORY "${CMAKE_BINARY_DIR}/pythonscad-node/"
+              DESTINATION "${CMAKE_INSTALL_LIBDIR}/pythonscad-node"
+              OPTIONAL)
+    endif()
 
     # On Windows, the runtime Python deps (currently: IPython 9.x and its
     # transitive deps) are populated into ${CMAKE_BINARY_DIR}/pythonscad-bundled-py

@@ -41,6 +41,7 @@ BuildRequires:  double-conversion-devel
 BuildRequires:  lib3mf-devel
 BuildRequires:  libzip-devel
 BuildRequires:  libcurl-devel
+BuildRequires:  openssl-devel
 BuildRequires:  cairo-devel
 BuildRequires:  hidapi-devel
 BuildRequires:  libspnav-devel
@@ -53,6 +54,7 @@ BuildRequires:  qscintilla-qt6-devel
 BuildRequires:  chrpath
 
 Requires:       python3
+Requires:       nodejs
 Requires:       qt6-qtbase
 Requires:       qt6-qtmultimedia
 Requires:       qt6-qtsvg

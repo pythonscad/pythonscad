@@ -364,6 +364,16 @@ else
     info "Skipping runtime Python dep bundling (BUNDLE_RUNTIME_PYTHON=${BUNDLE_RUNTIME_PYTHON})"
 fi
 
+if [ "${BUNDLE_NODE_RUNTIME:-yes}" = "yes" ]; then
+    info "Bundling Node.js runtime for sandboxed Python..."
+    bash "${SCRIPT_DIR}/download-node-runtime.sh" \
+        --platform linux-x64 \
+        --dest "${APPDIR}/usr/lib/pythonscad-node" \
+        || die "Failed to bundle Node.js runtime"
+else
+    info "Skipping Node.js runtime bundling (BUNDLE_NODE_RUNTIME=${BUNDLE_NODE_RUNTIME})"
+fi
+
 # Set up proper AppDir structure for appimagetool
 info "Setting up AppDir structure..."
 

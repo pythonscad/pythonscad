@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^packaging/node-runtime\\.json$/"
+      ],
+      "matchStrings": [
+        "\"nodeVersion\"\\s*:\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\"",
+        "https://nodejs\\.org/dist/v(?<currentValue>\\d+\\.\\d+\\.\\d+)/node-v\\d+\\.\\d+\\.\\d+-",
+        "node-v(?<currentValue>\\d+\\.\\d+\\.\\d+)-(?:darwin|linux)-",
+        "https://nodejs\\.org/dist/v(?<currentValue>\\d+\\.\\d+\\.\\d+)/win-x64/node\\.exe"
+      ],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version",
+      "versioningTemplate": "node"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchDatasources": [
+        "node-version"
+      ],
+      "matchPackageNames": [
+        "node"
+      ],
+      "allowedVersions": "/^24\\./",
+      "groupName": "bundled Node.js LTS runtime"
+    }
+  ]
+}

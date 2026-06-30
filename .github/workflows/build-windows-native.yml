@@ -14,6 +14,11 @@ on:
         description: 'Run the build with tmate debugging enabled'
         required: false
         default: false
+      artifact_retention_days:
+        type: number
+        description: 'Retention in days for optional Windows artifacts (0 disables artifact upload)'
+        required: false
+        default: 0
 
 permissions:
   contents: read
@@ -88,6 +93,29 @@ jobs:
         timeout-minutes: 5
         with:
           detached: true
+
+      - name: Validate artifact retention
+        id: retention
+        shell: bash
+        env:
+          REQUESTED_RETENTION_DAYS: ${{ github.event.inputs.artifact_retention_days || '0' }}
+        run: |
+          case "$REQUESTED_RETENTION_DAYS" in
+            ''|*[!0-9]*)
+              echo "Artifact retention must be an integer number of days." >&2
+              exit 1
+              ;;
+          esac
+          if [ "$REQUESTED_RETENTION_DAYS" -gt 90 ]; then
+            echo "Artifact retention must be between 0 and 90 days." >&2
+            exit 1
+          fi
+          echo "days=$REQUESTED_RETENTION_DAYS" >> "$GITHUB_OUTPUT"
+          if [ "$REQUESTED_RETENTION_DAYS" -gt 0 ]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Calculate PACBOY_PACKAGES
         shell: bash
@@ -176,6 +204,13 @@ jobs:
              wasm-bundle/pythonscad.data \
              build/pythonscad-wasm/
 
+      - name: Download and stage Node.js sandbox runtime
+        shell: bash
+        run: |
+          bash scripts/download-node-runtime.sh \
+            --platform win-x64 \
+            --dest build/pythonscad-node
+
       - name: Install to staging directory
         run: |
           cd build
@@ -263,6 +298,16 @@ jobs:
           done
           ls -lh "${BUNDLE_DIR}"
 
+      - name: Sanity test - verify bundled Node.js sandbox runtime is in staging tree
+        shell: bash
+        run: |
+          NODE_EXE="build/staging/node/node.exe"
+          if [ ! -f "${NODE_EXE}" ]; then
+            echo "FAIL: ${NODE_EXE} is missing" >&2
+            exit 1
+          fi
+          "${NODE_EXE}" --version
+
       - name: Prepare artifacts
         id: artifacts
         run: |
@@ -300,20 +345,20 @@ jobs:
           fi
 
       - name: Upload ZIP package
-        if: steps.artifacts.outputs.zip_path != ''
+        if: steps.artifacts.outputs.zip_path != '' && steps.retention.outputs.upload == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.artifacts.outputs.zip_name }}
           path: ${{ steps.artifacts.outputs.zip_path }}
-          retention-days: 30
+          retention-days: ${{ steps.retention.outputs.days }}
 
       - name: Upload NSIS installer
-        if: steps.artifacts.outputs.exe_path != ''
+        if: steps.artifacts.outputs.exe_path != '' && steps.retention.outputs.upload == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.artifacts.outputs.exe_name }}
           path: ${{ steps.artifacts.outputs.exe_path }}
-          retention-days: 30
+          retention-days: ${{ steps.retention.outputs.days }}
 
       # Build MSIX before the release upload so it can be included in the release assets.
       # The composite action handles: locating makeappx, generating AppxManifest.xml,
@@ -371,11 +416,12 @@ jobs:
           output-msix: ${{ steps.msix-filename.outputs.msix_name }}
 
       - name: Upload MSIX artifact
+        if: steps.retention.outputs.upload == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.msix-filename.outputs.msix_name }}
           path: ${{ steps.msix-filename.outputs.msix_name }}
-          retention-days: 30
+          retention-days: ${{ steps.retention.outputs.days }}
 
       - name: Upload artifacts to release
         if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''

@@ -14,6 +14,11 @@ on:
         description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
         required: false
         default: false
+      artifact_retention_days:
+        type: number
+        description: 'Retention in days for optional RPM package artifacts (0 disables package artifact upload)'
+        required: false
+        default: 0
 
 concurrency:
   group: publish-yum-repo
@@ -131,6 +136,28 @@ jobs:
         with:
           detached: true
           limit-access-to-actor: true
+
+      - name: Validate artifact retention
+        id: retention
+        env:
+          REQUESTED_RETENTION_DAYS: ${{ github.event.inputs.artifact_retention_days || '0' }}
+        run: |
+          case "$REQUESTED_RETENTION_DAYS" in
+            ''|*[!0-9]*)
+              echo "Artifact retention must be an integer number of days." >&2
+              exit 1
+              ;;
+          esac
+          if [ "$REQUESTED_RETENTION_DAYS" -gt 90 ]; then
+            echo "Artifact retention must be between 0 and 90 days." >&2
+            exit 1
+          fi
+          echo "days=$REQUESTED_RETENTION_DAYS" >> "$GITHUB_OUTPUT"
+          if [ "$REQUESTED_RETENTION_DAYS" -gt 0 ]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Download matching WASM sandbox bundle
         env:
@@ -448,11 +475,12 @@ jobs:
           ldd /usr/bin/pythonscad | head -20 || true
 
       - name: Upload package artifacts
+        if: steps.retention.outputs.upload == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: pythonscad-${{ matrix.distro }}${{ matrix.version }}-${{ matrix.arch }}-rpm
           path: /tmp/rpms/*
-          retention-days: 30
+          retention-days: ${{ steps.retention.outputs.days }}
 
       - name: Upload to GitHub Release
         if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
@@ -473,16 +501,34 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download all RPM artifacts
-        uses: actions/download-artifact@v8
-        with:
-          path: /tmp/rpms
-          pattern: pythonscad-*-rpm
+      - name: Download RPM packages from GitHub Release
+        run: |
+          mkdir -p /tmp/rpms
+          cd /tmp/rpms
+
+          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+            TAG="${GITHUB_EVENT_RELEASE_TAG_NAME}"
+          else
+            TAG="${GITHUB_EVENT_INPUTS_UPLOAD_TO_RELEASE}"
+          fi
+
+          echo "Downloading RPM packages from release: $TAG"
+          gh release download "$TAG" \
+            -R "$GITHUB_REPOSITORY" \
+            -p "pythonscad-*.rpm" \
+            --dir /tmp/rpms
+
+          ls -lh /tmp/rpms/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
+          GITHUB_EVENT_INPUTS_UPLOAD_TO_RELEASE: ${{ github.event.inputs.upload_to_release }}
 
       - name: Merge packages
         run: |
           mkdir -p /tmp/rpms/all
-          find /tmp/rpms -name "*.rpm" -exec cp {} /tmp/rpms/all/ \;
+          find /tmp/rpms -maxdepth 1 -name "*.rpm" -exec cp {} /tmp/rpms/all/ \;
           ls -lh /tmp/rpms/all/
 
       - name: Install createrepo

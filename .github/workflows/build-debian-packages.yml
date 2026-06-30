@@ -14,6 +14,11 @@ on:
         description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
         required: false
         default: false
+      artifact_retention_days:
+        type: number
+        description: 'Retention in days for optional Debian/Ubuntu package artifacts (0 disables package artifact upload)'
+        required: false
+        default: 0
 
 concurrency:
   group: publish-apt-repo
@@ -130,6 +135,28 @@ jobs:
         with:
           detached: true
           limit-access-to-actor: true
+
+      - name: Validate artifact retention
+        id: retention
+        env:
+          REQUESTED_RETENTION_DAYS: ${{ github.event.inputs.artifact_retention_days || '0' }}
+        run: |
+          case "$REQUESTED_RETENTION_DAYS" in
+            ''|*[!0-9]*)
+              echo "Artifact retention must be an integer number of days." >&2
+              exit 1
+              ;;
+          esac
+          if [ "$REQUESTED_RETENTION_DAYS" -gt 90 ]; then
+            echo "Artifact retention must be between 0 and 90 days." >&2
+            exit 1
+          fi
+          echo "days=$REQUESTED_RETENTION_DAYS" >> "$GITHUB_OUTPUT"
+          if [ "$REQUESTED_RETENTION_DAYS" -gt 0 ]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Download matching WASM sandbox bundle
         env:
@@ -348,6 +375,15 @@ jobs:
           name: build-log-${{ matrix.distro }}-${{ matrix.arch }}
           path: /tmp/debs/*.log.txt
           retention-days: 7
+
+      - name: Upload package artifacts
+        if: steps.retention.outputs.upload == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: pythonscad-${{ matrix.family }}-${{ matrix.distro }}-${{ matrix.arch }}-deb
+          path: /tmp/debs/pythonscad_*.deb
+          if-no-files-found: error
+          retention-days: ${{ steps.retention.outputs.days }}
 
       - name: Upload to GitHub Release
         if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
