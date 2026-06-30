@@ -54,6 +54,8 @@
 #include "utils/degree_trig.h"
 #include "utils/printutils.h"
 #include "core/ColorUtil.h"
+#include <unordered_map>
+#include <unordered_set>
 #ifdef ENABLE_CGAL
 #include <CGAL/Point_2.h>
 #include <CGAL/convex_hull_2.h>
@@ -239,12 +241,6 @@ std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> createEdgeDb(
         edge.ind1 = ind1;
         edge.ind2 = ind2;
         if (edge_db.count(edge) == 0) edge_db[edge] = val;
-        // FIX: erkenne stille Ueberschreibung statt blind zu schreiben.
-        // Wenn facea bereits belegt ist, beanspruchen zwei Polygone dieselbe
-        // "Seite" der Kante -> das ist ein topologischer Fehler (non-manifold
-        // Kante mit >2 Faces, oder doppelte/degenerierte Kante durch einen Bug
-        // upstream in mergeTrianglesSub), der bisher unbemerkt blieb, weil nur
-        // auf facea==-1 geprueft wurde, nicht auf bereits gesetzte Werte.
         if (edge_db[edge].facea != -1 && edge_db[edge].facea != (int)i) {
           printf(
             "createEdgeDb: facea fuer Kante %d-%d bereits durch Face %d belegt, "
@@ -382,9 +378,6 @@ static indexedFaceList mergeTrianglesSub(const std::vector<IndexedFace>& triangl
     }
   }
 
-  // Kettenaufbau: jeder Startknoten kann mehrere Nachfolger haben.
-  // Statt map<int,int> + stubs_bak-Überlauf verwenden wir map<int, vector<int>>.
-  // Damit ist die Logik reihenfolgeunabhängig und deterministisch.
   std::unordered_map<int, std::vector<int>> stubs_chain;
 
   for (const auto& s : stubs_pos) stubs_chain[s.ind1].push_back(s.ind2);
@@ -474,30 +467,76 @@ static indexedFaceList mergeTrianglesSub(const std::vector<IndexedFace>& triangl
       }
     } while (repeat);
 
-    // cannot reduce colinear points as it would destroy the manifoldness
-    /*if (vert.size() != 0) {
-      // Reduce colinear points
-      int n = poly.size();
-      IndexedFace poly_new;
-      int last = poly[n - 1], cur = poly[0], next;
-      for (int i = 0; i < n; i++) {
-        next = poly[(i + 1) % n];
-        Vector3d d1 = (vert[next] - vert[cur]).normalized();
-        Vector3d d2 = (vert[cur] - vert[last]).normalized();
-        if (d1.cross(d2).norm() > 0.00001) {
-          poly_new.push_back(cur);
-        }
-        last = cur;
-        cur = next;
-      }
-
-      if (poly_new.size() > 2) result.push_back(poly_new);
-    } else */
     result.push_back(poly);
   }
   return result;
 }
 
+std::unordered_map<int, std::unordered_set<int>> buildVertexAdjacency(
+  const std::vector<IndexedFace>& indices)
+{
+  std::unordered_map<int, std::unordered_set<int>> adj;
+  for (const auto& face : indices) {
+    int n = face.size();
+    for (int j = 0; j < n; j++) {
+      int a = face[j];
+      int b = face[(j + 1) % n];
+      if (a == b) continue;
+      adj[a].insert(b);
+      adj[b].insert(a);
+    }
+  }
+  return adj;
+}
+
+std::unordered_set<int> findRemovableVertices(const std::vector<IndexedFace>& indices,
+                                              const std::vector<Vector3d>& vert, double eps = 1e-5)
+{
+  std::unordered_set<int> removable;
+  if (vert.empty()) return removable;
+
+  auto adj = buildVertexAdjacency(indices);
+
+  for (const auto& kv : adj) {
+    int v = kv.first;
+    const auto& neighbors = kv.second;
+
+    if (neighbors.size() != 2) continue;
+
+    auto it = neighbors.begin();
+    int a = *it;
+    ++it;
+    int b = *it;
+
+    // Bedingung 2: die beiden Kanten v-a und v-b sind kollinear
+    // (zeigen in entgegengesetzte Richtungen entlang derselben Geraden).
+    Vector3d d1 = (vert[a] - vert[v]);
+    Vector3d d2 = (vert[v] - vert[b]);
+    if (d1.norm() < eps || d2.norm() < eps) continue;  // degenerierte Kante, nicht anfassen
+    d1.normalize();
+    d2.normalize();
+    if (d1.cross(d2).norm() <= eps) {
+      removable.insert(v);
+    }
+  }
+  return removable;
+}
+
+void reduceColinearPointsGlobal(std::vector<IndexedFace>& indices, const std::vector<Vector3d>& vert)
+{
+  if (vert.empty()) return;
+
+  std::unordered_set<int> removable = findRemovableVertices(indices, vert);
+  if (removable.empty()) return;
+
+  for (auto& face : indices) {
+    IndexedFace face_new;
+    for (int v : face) {
+      if (removable.count(v) == 0) face_new.push_back(v);
+    }
+    if (face_new.size() >= 3) face = face_new;
+  }
+}
 std::vector<IndexedFace> mergeTriangles(const std::vector<IndexedFace> polygons,
                                         const std::vector<Vector4d> normals,
                                         std::vector<Vector4d>& newNormals, std::vector<int>& faceParents,
@@ -591,6 +630,7 @@ std::vector<IndexedFace> mergeTriangles(const std::vector<IndexedFace> polygons,
       }
     }
   }
+  reduceColinearPointsGlobal(indices, vert);
 
   return indices;
 }
