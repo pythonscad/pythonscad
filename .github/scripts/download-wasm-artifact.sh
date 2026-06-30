@@ -10,10 +10,24 @@ MAX_WAIT_SECONDS="${WASM_ARTIFACT_MAX_WAIT_SECONDS:-7200}"
 POLL_SECONDS="${WASM_ARTIFACT_POLL_SECONDS:-60}"
 
 deadline=$((SECONDS + MAX_WAIT_SECONDS))
+start_seconds=${SECONDS}
 
 echo "Waiting for ${WORKFLOW} artifact ${ARTIFACT} from ${TARGET_SHA}"
 
 while true; do
+  elapsed_seconds=$((SECONDS - start_seconds))
+  run_count="$(gh run list \
+    --workflow "${WORKFLOW}" \
+    --commit "${TARGET_SHA}" \
+    --limit 20 \
+    --json databaseId,status,conclusion,createdAt \
+    --jq 'length')"
+
+  if [ "${run_count}" = "0" ]; then
+    echo "No matching ${WORKFLOW} run exists for ${TARGET_SHA}; cannot download ${ARTIFACT}." >&2
+    exit 1
+  fi
+
   run_info="$(gh run list \
     --workflow "${WORKFLOW}" \
     --commit "${TARGET_SHA}" \
@@ -24,7 +38,7 @@ while true; do
   if [ -n "${run_info}" ]; then
     IFS=$'\t' read -r run_id status conclusion <<<"${run_info}"
 
-    echo "Matched WASM workflow run ${run_id}: status=${status} conclusion=${conclusion:-pending}"
+    echo "Matched WASM workflow run ${run_id}: status=${status} conclusion=${conclusion:-pending} elapsed=${elapsed_seconds}s"
 
     if [ "${status}" = "completed" ]; then
       if [ "${conclusion}" != "success" ]; then
@@ -34,11 +48,13 @@ while true; do
       rm -rf "${DESTINATION}"
       mkdir -p "${DESTINATION}"
       gh run download "${run_id}" --name "${ARTIFACT}" --dir "${DESTINATION}"
+      echo "Downloaded ${ARTIFACT} after waiting ${elapsed_seconds}s."
       ls -lh "${DESTINATION}"
       exit 0
     fi
   else
-    echo "No non-cancelled matching WASM workflow run found yet."
+    echo "No non-cancelled matching ${WORKFLOW} run exists for ${TARGET_SHA}; cannot download ${ARTIFACT}." >&2
+    exit 1
   fi
 
   if [ "${SECONDS}" -ge "${deadline}" ]; then
