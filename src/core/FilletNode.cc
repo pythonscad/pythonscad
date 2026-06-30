@@ -209,6 +209,16 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   std::vector<IndexedFace> merged =
     mergeTriangles(ps->indices, normals, newnormals, faceParents, ps->vertices);
 
+  EdgeKey failedEdge;
+  if (!validateFilletEdgePairs(merged, failedEdge)) {
+    LOG(message_group::Error,
+        "fillet() cannot process the selected object: edge %1$d-%2$d is not shared by exactly two "
+        "oppositely-oriented faces. This can happen when the fillet radius collides with nearby "
+        "geometry; try reducing the fillet radius or applying fillet() before unioning adjacent solids.",
+        failedEdge.ind1, failedEdge.ind2);
+    return PolySet::createEmpty();
+  }
+
   if (bn < 2) bn = 2;
   // Create vertex2face db
   auto vertices_copy = ps->vertices;
@@ -775,16 +785,6 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   }
   //
   auto result = builder.build();
-
-  EdgeKey failedEdge;
-  if (!validateFilletEdgePairs(result->indices, failedEdge)) {
-    LOG(message_group::Error,
-        "fillet() cannot process the selected object: edge %1$d-%2$d is not shared by exactly two "
-        "oppositely-oriented faces. This can happen when the fillet radius collides with nearby "
-        "geometry; try reducing the fillet radius or applying fillet() before unioning adjacent solids.",
-        failedEdge.ind1, failedEdge.ind2);
-    return PolySet::createEmpty();
-  }
 
   return result;
 }
