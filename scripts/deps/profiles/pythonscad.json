@@ -6,7 +6,8 @@
     "debian": {
       "extends": null,
       "packages": [
-        "libcurl4-openssl-dev"
+        "libcurl4-openssl-dev",
+        "libssl-dev"
       ]
     },
     "ubuntu": {

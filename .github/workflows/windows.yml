@@ -93,7 +93,7 @@ jobs:
       - name: Setup Node.js for sandbox runner
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24.18.0
       - name: Configure sandbox Node path
         shell: bash
         run: echo "PYTHONSCAD_NODE=$(cygpath -w "$(command -v node)")" >> "$GITHUB_ENV"

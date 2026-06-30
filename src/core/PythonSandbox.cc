@@ -12,7 +12,6 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
-#include <random>
 #include <signal.h>
 #include <sstream>
 #include <stdexcept>
@@ -70,6 +69,12 @@ bool hasWasmBundle(const fs::path& dir)
          fs::is_regular_file(dir / "pythonscad.data", ec) && !ec;
 }
 
+bool isExecutableFile(const fs::path& path)
+{
+  std::error_code ec;
+  return fs::is_regular_file(path, ec) && !ec;
+}
+
 std::string processStatusMessage(int status)
 {
 #ifdef _WIN32
@@ -91,10 +96,10 @@ std::chrono::milliseconds sandboxTimeout()
   constexpr int defaultTimeoutMs = 300000;
   const std::string fromEnv = getenvString("PYTHONSCAD_SANDBOX_TIMEOUT_MS");
   if (fromEnv.empty()) return std::chrono::milliseconds(defaultTimeoutMs);
-  try {
-    const int timeoutMs = std::stoi(fromEnv);
-    if (timeoutMs > 0) return std::chrono::milliseconds(timeoutMs);
-  } catch (const std::exception&) {
+  char *end = nullptr;
+  const long timeoutMs = std::strtol(fromEnv.c_str(), &end, 10);
+  if (end != fromEnv.c_str() && *end == '\0' && timeoutMs > 0) {
+    return std::chrono::milliseconds(timeoutMs);
   }
   return std::chrono::milliseconds(defaultTimeoutMs);
 }
@@ -272,9 +277,46 @@ fs::path findWasmBundleDir()
   return {};
 }
 
+fs::path findBundledNode()
+{
+  const fs::path appPath = PlatformUtils::applicationPath();
+#ifdef _WIN32
+  const std::array<fs::path, 2> candidates = {
+    appPath / "node" / "node.exe",
+    appPath / "pythonscad-node" / "node.exe",
+  };
+#elif defined(__APPLE__)
+  const std::array<fs::path, 2> candidates = {
+    appPath.parent_path() / "Resources" / "node" / "bin" / "node",
+    appPath.parent_path() / "Resources" / "pythonscad-node" / "bin" / "node",
+  };
+#else
+  const std::array<fs::path, 3> candidates = {
+    appPath.parent_path() / "lib" / "pythonscad-node" / "bin" / "node",
+    appPath / "pythonscad-node" / "bin" / "node",
+    appPath / "node" / "bin" / "node",
+  };
+#endif
+  for (const auto& candidate : candidates) {
+    if (isExecutableFile(candidate)) return candidate;
+  }
+  return {};
+}
+
+std::string findNodeExecutable()
+{
+  const fs::path bundledNode = findBundledNode();
+  if (!bundledNode.empty()) return bundledNode.string();
+
+  std::string fromEnv = getenvString("PYTHONSCAD_NODE");
+  if (!fromEnv.empty()) return fromEnv;
+
+  return "node";
+}
+
 fs::path findSandboxRunner()
 {
-  const auto fromEnv = getenvString("PYTHONSCAD_SANDBOX_RUNNER");
+  auto fromEnv = getenvString("PYTHONSCAD_SANDBOX_RUNNER");
   std::error_code ec;
   if (!fromEnv.empty() && fs::is_regular_file(fromEnv, ec) && !ec) return fs::path(fromEnv);
 
@@ -287,6 +329,18 @@ fs::path findSandboxRunner()
   fs::path appRunner =
     fs::path(PlatformUtils::applicationPath()) / "scripts" / "python-sandbox-runner.mjs";
   if (fs::is_regular_file(appRunner, ec) && !ec) return appRunner;
+
+  fs::path appPath = PlatformUtils::applicationPath();
+  fs::path siblingRunner = appPath.parent_path() / "scripts" / "python-sandbox-runner.mjs";
+  if (fs::is_regular_file(siblingRunner, ec) && !ec) return siblingRunner;
+#ifdef __APPLE__
+  fs::path macResourceRunner =
+    appPath.parent_path() / "Resources" / "scripts" / "python-sandbox-runner.mjs";
+  if (fs::is_regular_file(macResourceRunner, ec) && !ec) return macResourceRunner;
+#endif
+  fs::path installedResourceRunner =
+    appPath.parent_path() / "share" / "pythonscad" / "scripts" / "python-sandbox-runner.mjs";
+  if (fs::is_regular_file(installedResourceRunner, ec) && !ec) return installedResourceRunner;
 
   return {};
 }
@@ -393,8 +447,7 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
     return result;
   }
 
-  const std::string node =
-    getenvString("PYTHONSCAD_NODE").empty() ? "node" : getenvString("PYTHONSCAD_NODE");
+  const std::string node = findNodeExecutable();
   fs::path tempDir;
   try {
     tempDir = makeTempDir();

@@ -54,6 +54,7 @@ BuildRequires:  qscintilla-qt6-devel
 BuildRequires:  chrpath
 
 Requires:       python3
+Requires:       nodejs
 Requires:       qt6-qtbase
 Requires:       qt6-qtmultimedia
 Requires:       qt6-qtsvg

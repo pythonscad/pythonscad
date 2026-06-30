@@ -25,6 +25,11 @@ on:
         description: 'Run the build with tmate debugging enabled'
         required: false
         default: false
+      wasm_artifact_retention_days:
+        type: number
+        description: 'Retention in days for WASM handoff artifacts (1-90)'
+        required: false
+        default: 1
 
 permissions:
   contents: read
@@ -81,6 +86,23 @@ jobs:
         with:
           detached: true
           limit-access-to-actor: true
+
+      - name: Validate artifact retention
+        id: retention
+        env:
+          REQUESTED_RETENTION_DAYS: ${{ github.event.inputs.wasm_artifact_retention_days || '1' }}
+        run: |
+          case "$REQUESTED_RETENTION_DAYS" in
+            ''|*[!0-9]*)
+              echo "WASM artifact retention must be an integer number of days." >&2
+              exit 1
+              ;;
+          esac
+          if [ "$REQUESTED_RETENTION_DAYS" -lt 1 ] || [ "$REQUESTED_RETENTION_DAYS" -gt 90 ]; then
+            echo "WASM artifact retention must be between 1 and 90 days." >&2
+            exit 1
+          fi
+          echo "days=$REQUESTED_RETENTION_DAYS" >> "$GITHUB_OUTPUT"
 
       - name: Resolve WASM toolchain image
         id: toolchain
@@ -207,7 +229,7 @@ jobs:
           name: pythonscad-wasm-web
           path: dist-wasm/
           if-no-files-found: error
-          retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
+          retention-days: ${{ steps.retention.outputs.days }}
 
       - name: Upload WASM release zip
         uses: actions/upload-artifact@v7
@@ -215,7 +237,7 @@ jobs:
           name: pythonscad-wasm-release-zip
           path: ${{ steps.package.outputs.wasm_zip }}
           if-no-files-found: error
-          retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
+          retention-days: ${{ steps.retention.outputs.days }}
 
   upload-release:
     name: Upload WASM bundle to release
