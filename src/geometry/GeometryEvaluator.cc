@@ -239,12 +239,34 @@ std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> createEdgeDb(
         edge.ind1 = ind1;
         edge.ind2 = ind2;
         if (edge_db.count(edge) == 0) edge_db[edge] = val;
+        // FIX: erkenne stille Ueberschreibung statt blind zu schreiben.
+        // Wenn facea bereits belegt ist, beanspruchen zwei Polygone dieselbe
+        // "Seite" der Kante -> das ist ein topologischer Fehler (non-manifold
+        // Kante mit >2 Faces, oder doppelte/degenerierte Kante durch einen Bug
+        // upstream in mergeTrianglesSub), der bisher unbemerkt blieb, weil nur
+        // auf facea==-1 geprueft wurde, nicht auf bereits gesetzte Werte.
+        if (edge_db[edge].facea != -1 && edge_db[edge].facea != (int)i) {
+          printf(
+            "createEdgeDb: facea fuer Kante %d-%d bereits durch Face %d belegt, "
+            "wird jetzt durch Face %zu ueberschrieben! Non-manifold edge oder "
+            "doppelte Kante.\n",
+            edge.ind1, edge.ind2, edge_db[edge].facea, i);
+          error = 1;
+        }
         edge_db[edge].facea = i;
         edge_db[edge].posa = j;
       } else {
         edge.ind1 = ind2;
         edge.ind2 = ind1;
         if (edge_db.count(edge) == 0) edge_db[edge] = val;
+        if (edge_db[edge].faceb != -1 && edge_db[edge].faceb != (int)i) {
+          printf(
+            "createEdgeDb: faceb fuer Kante %d-%d bereits durch Face %d belegt, "
+            "wird jetzt durch Face %zu ueberschrieben! Non-manifold edge oder "
+            "doppelte Kante.\n",
+            edge.ind1, edge.ind2, edge_db[edge].faceb, i);
+          error = 1;
+        }
         edge_db[edge].faceb = i;
         edge_db[edge].posb = j;
       }
@@ -256,6 +278,15 @@ std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>> createEdgeDb(
       printf("Mismatched EdgeDB ind1=%d ind2=%d facea=%d faceb=%d\n", e.first.ind1, e.first.ind2,
              e.second.facea, e.second.faceb);
       error = 1;
+    }
+  }
+  if (error) {
+    for (int i = 0; i < indices.size(); i++) {
+      printf("%d :", i);
+      for (int j = 0; j < indices[i].size(); j++) {
+        printf("%d ", indices[i][j]);
+      }
+      printf("\n");
     }
   }
   return edge_db;
@@ -351,50 +382,33 @@ static indexedFaceList mergeTrianglesSub(const std::vector<IndexedFace>& triangl
     }
   }
 
-  // now chain everything
-  std::unordered_map<int, int> stubs_chain;
-  std::vector<TriCombineStub> stubs;
-  std::vector<TriCombineStub> stubs_bak;
-  for (const auto& stubs : stubs_pos) {
-    if (stubs_chain.count(stubs.ind1) > 0) {
-      stubs_bak.push_back(stubs);
-    } else stubs_chain[stubs.ind1] = stubs.ind2;
-  }
+  // Kettenaufbau: jeder Startknoten kann mehrere Nachfolger haben.
+  // Statt map<int,int> + stubs_bak-Überlauf verwenden wir map<int, vector<int>>.
+  // Damit ist die Logik reihenfolgeunabhängig und deterministisch.
+  std::unordered_map<int, std::vector<int>> stubs_chain;
 
-  for (const auto& stubs : stubs_neg) {
-    if (stubs_chain.count(stubs.ind2) > 0) {
-      TriCombineStub ts;
-      ts.ind1 = stubs.ind2;
-      ts.ind2 = stubs.ind1;
-      stubs_bak.push_back(ts);
-    } else stubs_chain[stubs.ind2] = stubs.ind1;
-  }
+  for (const auto& s : stubs_pos) stubs_chain[s.ind1].push_back(s.ind2);
+
+  for (const auto& s : stubs_neg) stubs_chain[s.ind2].push_back(s.ind1);
+
   std::vector<IndexedFace> result;
 
-  while (stubs_chain.size() > 0) {
-    int ind, ind_new;
-    auto [ind_start, dummy] = *(stubs_chain.begin());
-    ind = ind_start;
+  while (!stubs_chain.empty()) {
+    int ind_start = stubs_chain.begin()->first;
+    int ind = ind_start;
     IndexedFace poly;
-    while (1) {
-      if (stubs_chain.count(ind) > 0) {
-        ind_new = stubs_chain[ind];
-        stubs_chain.erase(ind);
-      } else {
-        ind_new = -1;
-        for (i = 0; ind_new == -1 && i < stubs_bak.size(); i++) {
-          if (stubs_bak[i].ind1 == ind) {
-            ind_new = stubs_bak[i].ind2;
-            std::vector<TriCombineStub>::iterator it = stubs_bak.begin();
-            std::advance(it, i);
-            stubs_bak.erase(it);
-            break;
-          }
-        }
-        if (ind_new == -1) break;
-      }
+
+    while (true) {
+      auto it = stubs_chain.find(ind);
+      if (it == stubs_chain.end() || it->second.empty()) break;
+
+      // Ersten verfügbaren Nachfolger nehmen und verbrauchen (O(1) mit pop_back)
+      int ind_new = it->second.back();
+      it->second.pop_back();
+      if (it->second.empty()) stubs_chain.erase(it);
+
       poly.push_back(ind_new);
-      if (ind_new == ind_start) break;  // chain closed
+      if (ind_new == ind_start) break;  // Kette geschlossen
       ind = ind_new;
     }
 
@@ -459,7 +473,9 @@ static indexedFaceList mergeTrianglesSub(const std::vector<IndexedFace>& triangl
         repeat = 1;
       }
     } while (repeat);
-    if (vert.size() != 0) {
+
+    // cannot reduce colinear points as it would destroy the manifoldness
+    /*if (vert.size() != 0) {
       // Reduce colinear points
       int n = poly.size();
       IndexedFace poly_new;
@@ -476,7 +492,8 @@ static indexedFaceList mergeTrianglesSub(const std::vector<IndexedFace>& triangl
       }
 
       if (poly_new.size() > 2) result.push_back(poly_new);
-    } else result.push_back(poly);
+    } else */
+    result.push_back(poly);
   }
   return result;
 }
@@ -3317,6 +3334,13 @@ static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolyS
 {
   auto psx = std::make_unique<PolySet>(ps->getDimension(), ps->convexValue());
   *psx = *ps;
+
+  printf("Repair\n");
+  int error;
+  auto edge_db = createEdgeDb(ps->indices, error);
+  if (error) printf("Repair errror\n");
+  else printf("repair no error\n");
+  std::cout << ps->dump();
 
   int color_ind = -1;
   if (node.color.isValid()) {
