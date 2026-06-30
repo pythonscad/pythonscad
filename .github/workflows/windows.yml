@@ -90,8 +90,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: bash .github/scripts/download-wasm-artifact.sh "$TARGET_SHA" wasm-bundle
+      - name: Setup Node.js for sandbox runner
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Configure sandbox Node path
+        shell: bash
+        run: echo "PYTHONSCAD_NODE=$(cygpath -w "$(command -v node)")" >> "$GITHUB_ENV"
       - name: Run Test Suite
         env:
+          PYTHONSCAD_NODE: ${{ env.PYTHONSCAD_NODE }}
           PYTHONSCAD_WASM_DIR: ${{ github.workspace }}/wasm-bundle
           PYTHONSCAD_SANDBOX_RUNNER: ${{ github.workspace }}/scripts/python-sandbox-runner.mjs
         run: |
