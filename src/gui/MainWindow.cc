@@ -1882,12 +1882,14 @@ void MainWindow::updatePythonTrustActions()
   const bool isPythonWithPath =
     activeEditor && activeEditor->language == LANG_PYTHON && !activeEditor->filepath.isEmpty();
   const bool isUntrustedPython = isPythonWithPath && !pythonDesignCanRun(activeEditor);
+  const bool nativeModeForced =
+    pythonExecutionModeIsNative(defaultPythonExecutionMode()) || python_trusted;
   designActionPreview->setEnabled(!isUntrustedPython);
   designActionRender->setEnabled(!isUntrustedPython);
-  // Checkable action: enabled for any saved Python design, checked after native-mode opt-in.
-  fileActionPythonTrustCurrentDesign->setEnabled(isPythonWithPath);
-  fileActionPythonTrustCurrentDesign->setChecked(isPythonWithPath &&
-                                                 activeEditor->pythonNativeExecution);
+  // Checkable action: enabled only when it controls per-file native-mode opt-in.
+  fileActionPythonTrustCurrentDesign->setEnabled(isPythonWithPath && !nativeModeForced);
+  fileActionPythonTrustCurrentDesign->setChecked(
+    isPythonWithPath && (nativeModeForced || activeEditor->pythonNativeExecution));
   // Only disable the parameter widget here; re-enabling is left to parseDocument() so
   // we don't override its intentional disable (e.g. no parameters, parse failure).
   if (isUntrustedPython && activeEditor) activeEditor->parameterWidget->setEnabled(false);
