@@ -33,6 +33,7 @@ Build-Depends: debhelper-compat (= 13),
                ninja-build,
                pkg-config,
                bison,
+               curl,
                flex,
                git
 Standards-Version: 4.6.2
@@ -43,7 +44,7 @@ Rules-Requires-Root: no
 
 Package: pythonscad
 Architecture: amd64 arm64
-Depends: ${shlibs:Depends}, ${misc:Depends}, nodejs
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: meshlab,
             openscad-mcad,
             python3-ipython
