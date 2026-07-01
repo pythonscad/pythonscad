@@ -121,11 +121,23 @@ ProcessResult runProcess(const std::vector<std::string>& args)
 
   STARTUPINFOA startupInfo{};
   startupInfo.cb = sizeof(startupInfo);
+  auto isValidHandle = [](HANDLE handle) { return handle != nullptr && handle != INVALID_HANDLE_VALUE; };
+  const HANDLE stdInput = GetStdHandle(STD_INPUT_HANDLE);
+  const HANDLE stdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+  const HANDLE stdError = GetStdHandle(STD_ERROR_HANDLE);
+  BOOL inheritHandles = FALSE;
+  if (isValidHandle(stdOutput) && isValidHandle(stdError)) {
+    startupInfo.dwFlags = STARTF_USESTDHANDLES;
+    startupInfo.hStdInput = isValidHandle(stdInput) ? stdInput : nullptr;
+    startupInfo.hStdOutput = stdOutput;
+    startupInfo.hStdError = stdError;
+    inheritHandles = TRUE;
+  }
   PROCESS_INFORMATION processInfo{};
   std::vector<char> mutableCommandLine(commandLine.begin(), commandLine.end());
   mutableCommandLine.push_back('\0');
-  if (!CreateProcessA(nullptr, mutableCommandLine.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr,
-                      &startupInfo, &processInfo)) {
+  if (!CreateProcessA(nullptr, mutableCommandLine.data(), nullptr, nullptr, inheritHandles, 0, nullptr,
+                      nullptr, &startupInfo, &processInfo)) {
     result.error = "could not start process, GetLastError=" + std::to_string(GetLastError());
     return result;
   }
@@ -391,6 +403,12 @@ bool writeFile(const fs::path& path, const std::string& content)
   return stream.good();
 }
 
+void removeTempDirNoThrow(const fs::path& tempDir)
+{
+  std::error_code ec;
+  fs::remove_all(tempDir, ec);
+}
+
 bool readManifest(const fs::path& manifestFile, const fs::path& outputRoot,
                   std::vector<PythonSandboxOutputFile>& files, std::string& error)
 {
@@ -464,14 +482,14 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
   std::error_code ec;
   if (!fs::create_directories(outputRoot, ec) || ec) {
     result.error = "Could not create sandbox output directory.";
-    fs::remove_all(tempDir);
+    removeTempDirNoThrow(tempDir);
     return result;
   }
   result.outputRoot = outputRoot.string();
 
   if (!writeFile(inputFile, code)) {
     result.error = "Could not write sandbox input file.";
-    fs::remove_all(tempDir);
+    removeTempDirNoThrow(tempDir);
     return result;
   }
 
@@ -481,18 +499,18 @@ PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const st
                 manifestFile.string()});
   if (!processResult.ok) {
     result.error = "Sandboxed Python process failed with " + processResult.error + ".";
-    fs::remove_all(tempDir);
+    removeTempDirNoThrow(tempDir);
     return result;
   }
 
   if (!readFile(outputFile, result.csg)) {
     result.error = "Sandboxed Python did not produce CSG output.";
-    fs::remove_all(tempDir);
+    removeTempDirNoThrow(tempDir);
     return result;
   }
 
   if (!readManifest(manifestFile, outputRoot, result.outputFiles, result.error)) {
-    fs::remove_all(tempDir);
+    removeTempDirNoThrow(tempDir);
     return result;
   }
   result.ok = true;
