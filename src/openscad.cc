@@ -242,10 +242,9 @@ bool isReservedWindowsSandboxPathComponent(const std::string& component)
 bool isSafeSandboxRelativePath(const std::string& relativePath)
 {
   if (relativePath.empty() || relativePath[0] == '/' || relativePath.find('\0') != std::string::npos ||
-      relativePath.find(':') != std::string::npos) {
+      relativePath.find_first_of("\t\r\n\\:") != std::string::npos) {
     return false;
   }
-  if (relativePath.rfind("\\\\", 0) == 0) return false;
 
   const fs::path normalized = fs::path(relativePath).lexically_normal();
   if (normalized.empty() || normalized == "." || normalized.is_absolute()) return false;

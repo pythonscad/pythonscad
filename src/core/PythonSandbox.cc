@@ -238,10 +238,9 @@ bool isReservedWindowsManifestPathComponent(const std::string& component)
 bool isSafeManifestRelativePath(const std::string& value)
 {
   if (hasManifestControlCharacter(value) || value.empty() || value[0] == '/') return false;
-  if (value.size() >= 2 && std::isalpha(static_cast<unsigned char>(value[0])) && value[1] == ':') {
+  if (value.find_first_of("\\:") != std::string::npos) {
     return false;
   }
-  if (value.rfind("\\\\", 0) == 0) return false;
 
   const fs::path normalized = fs::path(value).lexically_normal();
   if (normalized.empty() || normalized == "." || normalized.is_absolute()) return false;
