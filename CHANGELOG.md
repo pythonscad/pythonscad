@@ -1,5 +1,62 @@
 # Changelog
 
+## [1.1.0](https://github.com/pythonscad/pythonscad/compare/v1.0.0...v1.1.0) (2026-07-01)
+
+
+### Features
+
+* **appdata:** replace inherited OpenSCAD releases with PythonSCAD history ([#796](https://github.com/pythonscad/pythonscad/issues/796)) ([ca27d4e](https://github.com/pythonscad/pythonscad/commit/ca27d4ef452b277872c2dcfb3680ec3b661da554))
+* **gui:** add form-based bug report template and Help menu action ([#751](https://github.com/pythonscad/pythonscad/issues/751)) ([2dd38b8](https://github.com/pythonscad/pythonscad/commit/2dd38b873d98e40e3103bbcaa7d6b964eadc0db0))
+* **gui:** AIDock preferences ([#6836](https://github.com/pythonscad/pythonscad/issues/6836)) ([9aed34f](https://github.com/pythonscad/pythonscad/commit/9aed34f1cbc49585d006c25be04e7ad07162792b))
+* **mesh:** add ability for mesh to output color ([01b2d6b](https://github.com/pythonscad/pythonscad/commit/01b2d6b51f0c86ccd9fc0b8b8307cf7b07205809))
+* **packaging:** bundle IPython 9.x with MSYS2 psutil vendoring ([#746](https://github.com/pythonscad/pythonscad/issues/746)) ([8c10144](https://github.com/pythonscad/pythonscad/commit/8c1014491069184283c33c48078dad4b9df4e239))
+* **pip:** add binary wheels for PyPI distribution ([#744](https://github.com/pythonscad/pythonscad/issues/744)) ([a0b9b5f](https://github.com/pythonscad/pythonscad/commit/a0b9b5f2335c7a9e61ea7dbc8aa5bad41b67120b))
+* **python:** add rounded_cube helper with r or d rounding ([#738](https://github.com/pythonscad/pythonscad/issues/738)) ([1d38779](https://github.com/pythonscad/pythonscad/commit/1d387794f559f73f3c8ef57c58e4e3d40b9922a5))
+* **wasm:** add CPython 3.14 WebAssembly browser support ([#697](https://github.com/pythonscad/pythonscad/issues/697)) ([6920f8f](https://github.com/pythonscad/pythonscad/commit/6920f8fcde8500497fc05dfd81dfa5441ee32d68))
+* **wasm:** in-browser playground with notebook UI and website integration ([#800](https://github.com/pythonscad/pythonscad/issues/800)) ([46658ad](https://github.com/pythonscad/pythonscad/commit/46658ad022588084925fe8e4f4fc0e659062fc78))
+
+
+### Bug Fixes
+
+* **assert:** issue warning instead of hard assert ([#810](https://github.com/pythonscad/pythonscad/issues/810)) ([f056785](https://github.com/pythonscad/pythonscad/commit/f0567859f4d6ea48274435ee7beb67395693c363))
+* **build:** restore configure_file writability check with clearer diagnostics ([#756](https://github.com/pythonscad/pythonscad/issues/756)) ([7d2cbf7](https://github.com/pythonscad/pythonscad/commit/7d2cbf732ca197d71c97b285ee5dd626e43fc6cb))
+* **chore:** compiles again ([f39bd7e](https://github.com/pythonscad/pythonscad/commit/f39bd7e87db77d75a4c9d3b1a58dc637dcf8421d))
+* **chore:** customizer delevers recent values ([#720](https://github.com/pythonscad/pythonscad/issues/720)) ([8d8e09f](https://github.com/pythonscad/pythonscad/commit/8d8e09f8295849b23f416b7a93ed5d05d72693af))
+* **chore:** fixed meaning of stroke parameter ([980f545](https://github.com/pythonscad/pythonscad/commit/980f545e68f1917739e4990f0d58cd2684aebd70))
+* **chore:** get negation correct ([ed8b7a2](https://github.com/pythonscad/pythonscad/commit/ed8b7a2bfc044b40311f593737d4b336f3d97d66))
+* **chore:** merge ([a35eea8](https://github.com/pythonscad/pythonscad/commit/a35eea847b9a088dadd3c3b43bf57387746fd67d))
+* **chore:** merge it ([035ee5d](https://github.com/pythonscad/pythonscad/commit/035ee5d2001a20339892b3146e9620c991f98ebf))
+* **chore:** merging ([adeef5c](https://github.com/pythonscad/pythonscad/commit/adeef5c55125070895592b848d57e431a7a6f499))
+* **chore:** removed comment ([321c518](https://github.com/pythonscad/pythonscad/commit/321c51835a1d56a35b8cbccd4e58b8ddede06bd7))
+* **ci:** exempt Dependabot commits from commitlint body rule ([#762](https://github.com/pythonscad/pythonscad/issues/762)) ([5184596](https://github.com/pythonscad/pythonscad/commit/5184596208e0400773a2154859cdfe291ed19e58)), closes [#757](https://github.com/pythonscad/pythonscad/issues/757) [#758](https://github.com/pythonscad/pythonscad/issues/758)
+* **ci:** install pip-licenses before bundle step on Windows and macOS ([#792](https://github.com/pythonscad/pythonscad/issues/792)) ([ea74ade](https://github.com/pythonscad/pythonscad/commit/ea74aded9575828d7f6347f208de66e212af1d9e))
+* **ci:** resolve zizmor 1.26 high-severity workflow findings ([#787](https://github.com/pythonscad/pythonscad/issues/787)) ([43ed78c](https://github.com/pythonscad/pythonscad/commit/43ed78cadcd395fd720c43df65e4f1a7fa8ff152))
+* **ci:** restore clang-tidy cache speed after cancel-in-progress rollout ([#786](https://github.com/pythonscad/pythonscad/issues/786)) ([dabd672](https://github.com/pythonscad/pythonscad/commit/dabd672f4c1df477808e3adc68d203cc9e9978ca))
+* **ci:** sign bundled Python native extensions for macOS notarization ([#775](https://github.com/pythonscad/pythonscad/issues/775)) ([c963d95](https://github.com/pythonscad/pythonscad/commit/c963d95616f26af6362aee3f78d87feb404d05e3))
+* **ci:** trust openscad Homebrew tap before installing dependencies ([#732](https://github.com/pythonscad/pythonscad/issues/732)) ([40345f3](https://github.com/pythonscad/pythonscad/commit/40345f34b35209ec170cc7906850a07df02a92b1))
+* clean implementation with correct formatting ([7173204](https://github.com/pythonscad/pythonscad/commit/71732048141374775fbb794d078ac6142f9b5914))
+* clean up compiler warnings in openscad_gui and Tree.h ([#765](https://github.com/pythonscad/pythonscad/issues/765)) ([85573f2](https://github.com/pythonscad/pythonscad/commit/85573f2c4657671786cd558257f15aa2180bc1c3))
+* **deps:** update dependency three to v0.185.1 ([#826](https://github.com/pythonscad/pythonscad/issues/826)) ([1d827bd](https://github.com/pythonscad/pythonscad/commit/1d827bd30dd463c9a38642874254ba5357082ce7))
+* **gui:** align desktop file ID with installed .desktop entry ([#739](https://github.com/pythonscad/pythonscad/issues/739)) ([a82c63b](https://github.com/pythonscad/pythonscad/commit/a82c63b0cdb2bacaab1ffef19737f616a280ed90))
+* **gui:** launch gvim reliably as external editor ([#806](https://github.com/pythonscad/pythonscad/issues/806)) ([2caf6ff](https://github.com/pythonscad/pythonscad/commit/2caf6ffb779cc7738d8010eb21a34a91e9c30e94))
+* **python:** accept 1-3 element vectors in resize() ([#749](https://github.com/pythonscad/pythonscad/issues/749)) ([026fe94](https://github.com/pythonscad/pythonscad/commit/026fe949a601de00b9e378298bd1e3da2e1c58cb))
+* **python:** detect pythonscad-python argv[0] to enter Python mode ([#794](https://github.com/pythonscad/pythonscad/issues/794)) ([84c54d7](https://github.com/pythonscad/pythonscad/commit/84c54d71593a6bae754ce9971d95ffff8ab07bfc))
+* **python:** make nimport() work on Windows and report errors ([#729](https://github.com/pythonscad/pythonscad/issues/729)) ([8aab5d1](https://github.com/pythonscad/pythonscad/commit/8aab5d1bc83918dbfce6143ae5d17736ed5953c2))
+* **python:** prevent segfault when cloning nodes for children() ([#785](https://github.com/pythonscad/pythonscad/issues/785)) ([a7bf067](https://github.com/pythonscad/pythonscad/commit/a7bf067dd1dca678192063a8e3d2ebd2f3b3286a))
+* report unsafe fillet topology ([#809](https://github.com/pythonscad/pythonscad/issues/809)) ([4e79fe4](https://github.com/pythonscad/pythonscad/commit/4e79fe419b369c89f0a70044ed093a133ff17220))
+* use Cmd instead of Ctrl in hyperlink tooltip on macOS ([4936618](https://github.com/pythonscad/pythonscad/commit/49366181fb428d8b7085738702542b293c5bd812))
+* use Cmd instead of Ctrl in tooltip on macOS ([5ab9d3b](https://github.com/pythonscad/pythonscad/commit/5ab9d3bec239c46f298008217a208dd156426e6d)), closes [#4725](https://github.com/pythonscad/pythonscad/issues/4725)
+* use Cmd instead of Ctrl in tooltip on macOS ([a474df6](https://github.com/pythonscad/pythonscad/commit/a474df698a00af87c28dc53015dacc1a52c80fec)), closes [#4725](https://github.com/pythonscad/pythonscad/issues/4725)
+* use existing labels in issue templates ([#808](https://github.com/pythonscad/pythonscad/issues/808)) ([b2ca812](https://github.com/pythonscad/pythonscad/commit/b2ca812ff71b5b03da0bd62089437062942467c5))
+* **wasm:** compile svg target with -fPIC for web build ([#798](https://github.com/pythonscad/pythonscad/issues/798)) ([7c0aaec](https://github.com/pythonscad/pythonscad/commit/7c0aaecbd61d7c18070340608559522474881fb3))
+* **wasm:** Emscripten 6.0 sysroot and Python 3.14 browser builds ([#777](https://github.com/pythonscad/pythonscad/issues/777)) ([17a0403](https://github.com/pythonscad/pythonscad/commit/17a0403f3e00800e1ac63c85661d00c89e380774))
+* **windows:** patch libpython import lib on the fly and silence CMP0207 ([#764](https://github.com/pythonscad/pythonscad/issues/764)) ([0c9e2ca](https://github.com/pythonscad/pythonscad/commit/0c9e2cab0a1c89e8a6dc24e592ded6144a969645))
+
+
+### Documentation
+
+* revamp homepage and download UX (closes [#741](https://github.com/pythonscad/pythonscad/issues/741)) ([#752](https://github.com/pythonscad/pythonscad/issues/752)) ([f8cc3c0](https://github.com/pythonscad/pythonscad/commit/f8cc3c03df0dbe4bac6a431e668f32bf83af3f9c))
+
 ## [1.0.0](https://github.com/pythonscad/pythonscad/compare/v0.20.0...v1.0.0) (2026-06-02)
 
 
