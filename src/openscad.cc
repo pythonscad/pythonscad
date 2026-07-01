@@ -242,7 +242,8 @@ bool isReservedWindowsSandboxPathComponent(const std::string& component)
 
 bool isSafeSandboxRelativePath(const std::string& relativePath)
 {
-  if (relativePath.empty() || relativePath[0] == '/' || relativePath.find('\0') != std::string::npos) {
+  if (relativePath.empty() || relativePath[0] == '/' || relativePath.find('\0') != std::string::npos ||
+      relativePath.find(':') != std::string::npos) {
     return false;
   }
   if (relativePath.size() >= 2 && std::isalpha(static_cast<unsigned char>(relativePath[0])) &&

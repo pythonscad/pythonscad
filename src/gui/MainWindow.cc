@@ -306,7 +306,7 @@ bool isReservedWindowsSandboxOutputPathComponent(const QString& component)
 bool isSafeSandboxOutputRelativePath(const QString& value)
 {
   if (value.isEmpty() || value.contains(QChar::Null) || value.contains('\t') || value.contains('\r') ||
-      value.contains('\n') || value.contains('\\')) {
+      value.contains('\n') || value.contains('\\') || value.contains(':')) {
     return false;
   }
   if (QFileInfo(value).isAbsolute() || value.startsWith(QStringLiteral("\\\\"))) return false;
