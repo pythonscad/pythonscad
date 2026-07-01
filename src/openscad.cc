@@ -315,7 +315,21 @@ bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
 
   const fs::path destinationRoot = fs::path(outputDir);
   std::error_code directoryError;
-  if (!fs::is_directory(destinationRoot, directoryError) || directoryError) {
+  const bool destinationExists = fs::exists(destinationRoot, directoryError);
+  if (directoryError) {
+    LOG(message_group::Error, "Could not inspect --sandbox-output-dir: %1$s", outputDir);
+    return false;
+  }
+  if (!destinationExists) {
+    LOG(message_group::Error, "--sandbox-output-dir does not exist: %1$s", outputDir);
+    return false;
+  }
+  const bool destinationIsDirectory = fs::is_directory(destinationRoot, directoryError);
+  if (directoryError) {
+    LOG(message_group::Error, "Could not inspect --sandbox-output-dir: %1$s", outputDir);
+    return false;
+  }
+  if (!destinationIsDirectory) {
     LOG(message_group::Error, "--sandbox-output-dir is not a directory: %1$s", outputDir);
     return false;
   }
