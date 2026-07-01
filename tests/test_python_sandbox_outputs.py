@@ -105,8 +105,9 @@ def main():
     parser.add_argument("--runner", required=True)
     args = parser.parse_args()
 
-    if shutil.which("node") is None:
-        print("node was not found; skipping sandbox output test")
+    node = os.environ.get("PYTHONSCAD_NODE") or shutil.which("node")
+    if node is None:
+        print("node/PYTHONSCAD_NODE was not found; skipping sandbox output test")
         return
 
     with tempfile.TemporaryDirectory(prefix="pythonscad-sandbox-outputs-") as tmp:
@@ -124,6 +125,7 @@ def main():
         sandbox_outputs.mkdir()
 
         env = os.environ.copy()
+        env["PYTHONSCAD_NODE"] = node
         env["PYTHONSCAD_WASM_DIR"] = str(wasm_dir)
         env["PYTHONSCAD_SANDBOX_RUNNER"] = args.runner
 

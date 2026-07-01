@@ -96,7 +96,7 @@ jobs:
           node-version: 24.18.0
       - name: Configure sandbox Node path
         shell: bash
-        run: echo "PYTHONSCAD_NODE=$(cygpath -w "$(command -v node)")" >> "$GITHUB_ENV"
+        run: echo "PYTHONSCAD_NODE=$(node -e 'process.stdout.write(process.execPath)')" >> "$GITHUB_ENV"
       - name: Run Test Suite
         env:
           PYTHONSCAD_NODE: ${{ env.PYTHONSCAD_NODE }}
