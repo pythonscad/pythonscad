@@ -2976,19 +2976,19 @@
            <widget class="QTextEdit" name="textEditPythonImportList">
            </widget>
           </item>
-	  <item row="1" column="1">
-           <widget class="QLabel" name="labelGlobalTrustPython">
+         <item row="1" column="1">
+           <widget class="QLabel" name="labelPythonExecutionMode">
             <property name="text">
-             <string>Globally trust Python designs</string>
+             <string>Default Python execution mode</string>
             </property>
            </widget>
           </item>
-	  <item row="1" column="2">
-            <widget class="QCheckBox" name="checkBoxGlobalTrustPython">
-             <property name="text">
-              <string>Really (very dangerous)</string>
-             </property>
-            </widget>
+         <item row="1" column="2">
+          <widget class="QComboBox" name="comboBoxPythonExecutionMode">
+           <property name="toolTip">
+            <string>Sandboxed Python is recommended. Native Python can access your files and should only be used for trusted designs.</string>
+           </property>
+          </widget>
           </item>
          </layout>
         </item>

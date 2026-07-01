@@ -36,6 +36,7 @@
 #endif
 #include <libintl.h>
 
+#include <algorithm>
 #include <array>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/classification.hpp>
@@ -92,6 +93,8 @@
 #include "core/Context.h"
 #include "core/enums.h"
 #include "core/EvaluationSession.h"
+#include "core/PythonExecution.h"
+#include "core/PythonSandbox.h"
 #include "core/RenderVariables.h"
 #include "core/ScopeContext.h"
 #include "core/Settings.h"
@@ -128,6 +131,9 @@ std::string arg_colorscheme;
 namespace {
 
 bool arg_info = false;
+#ifdef ENABLE_PYTHON
+PythonExecutionMode arg_python_execution_mode = PythonExecutionMode::Sandboxed;
+#endif
 
 }  // namespace
 
@@ -180,6 +186,7 @@ struct CommandLine {
   const AnimateArgs animate;
   const std::vector<std::string> summaryOptions;
   const std::string summaryFile;
+  const std::string sandboxOutputDir;
 };
 
 namespace {
@@ -219,6 +226,150 @@ bool checkAndExport(const std::shared_ptr<const Geometry>& root_geom, unsigned d
   }
   return true;
 }
+
+#ifdef ENABLE_PYTHON
+bool isReservedWindowsSandboxPathComponent(const std::string& component)
+{
+  std::string stem = component.substr(0, component.find('.'));
+  boost::algorithm::to_lower(stem);
+  static const std::array<const char *, 22> reserved = {
+    "con",  "prn",  "aux",  "nul",  "com1", "com2", "com3", "com4", "com5", "com6", "com7",
+    "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
+  };
+  return std::find(reserved.begin(), reserved.end(), stem) != reserved.end();
+}
+
+bool isSafeSandboxRelativePath(const std::string& relativePath)
+{
+  if (relativePath.empty() || relativePath[0] == '/' || relativePath.find('\0') != std::string::npos ||
+      relativePath.find_first_of("\t\r\n\\:") != std::string::npos) {
+    return false;
+  }
+
+  const fs::path normalized = fs::path(relativePath).lexically_normal();
+  if (normalized.empty() || normalized == "." || normalized.is_absolute()) return false;
+
+  for (const auto& part : normalized) {
+    const std::string value = part.generic_string();
+    if (value.empty() || value == "." || value == "..") return false;
+    if (isReservedWindowsSandboxPathComponent(value)) return false;
+  }
+  return true;
+}
+
+bool isSandboxCopyTargetInsideDestination(const fs::path& targetParent, const fs::path& destinationRoot)
+{
+  std::error_code ec;
+  const fs::path canonicalParent = fs::weakly_canonical(targetParent, ec);
+  if (ec) return false;
+  const fs::path canonicalRoot = fs::weakly_canonical(destinationRoot, ec);
+  if (ec) return false;
+  const fs::path relative = canonicalParent.lexically_relative(canonicalRoot);
+  if (relative.empty()) return canonicalParent == canonicalRoot;
+  if (relative.is_absolute()) return false;
+  for (const auto& part : relative) {
+    if (part == "..") return false;
+  }
+  return true;
+}
+
+bool ensureSandboxOutputDirectory(const fs::path& targetParent, const fs::path& destinationRoot)
+{
+  std::error_code ec;
+  fs::path current = destinationRoot;
+  const fs::path relative = targetParent.lexically_relative(destinationRoot);
+  if (relative.empty()) return true;
+
+  for (const auto& part : relative) {
+    if (part.empty() || part == ".") continue;
+    if (part == "..") return false;
+    current /= part;
+    ec.clear();
+    if (fs::exists(current, ec)) {
+      if (ec) return false;
+      const fs::file_status status = fs::symlink_status(current, ec);
+      if (ec || fs::is_symlink(status) || !fs::is_directory(status)) return false;
+      continue;
+    }
+    if (ec) return false;
+    ec.clear();
+    fs::create_directory(current, ec);
+    if (ec || !isSandboxCopyTargetInsideDestination(current, destinationRoot)) return false;
+  }
+  return true;
+}
+
+bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
+                                   const std::string& outputDir)
+{
+  if (sandboxResult.outputFiles.empty()) return true;
+  if (outputDir.empty()) {
+    LOG(message_group::Warning,
+        "Sandboxed Python generated %1$d output file(s). Use --sandbox-output-dir DIR to copy them.",
+        static_cast<int>(sandboxResult.outputFiles.size()));
+    for (const auto& file : sandboxResult.outputFiles) {
+      LOG("  %1$s", file.relativePath);
+    }
+    return true;
+  }
+
+  const fs::path destinationRoot = fs::path(outputDir);
+  std::error_code directoryError;
+  const bool destinationExists = fs::exists(destinationRoot, directoryError);
+  if (directoryError) {
+    LOG(message_group::Error, "Could not inspect --sandbox-output-dir: %1$s", outputDir);
+    return false;
+  }
+  if (!destinationExists) {
+    LOG(message_group::Error, "--sandbox-output-dir does not exist: %1$s", outputDir);
+    return false;
+  }
+  const bool destinationIsDirectory = fs::is_directory(destinationRoot, directoryError);
+  if (directoryError) {
+    LOG(message_group::Error, "Could not inspect --sandbox-output-dir: %1$s", outputDir);
+    return false;
+  }
+  if (!destinationIsDirectory) {
+    LOG(message_group::Error, "--sandbox-output-dir is not a directory: %1$s", outputDir);
+    return false;
+  }
+
+  for (const auto& file : sandboxResult.outputFiles) {
+    if (!isSafeSandboxRelativePath(file.relativePath)) {
+      LOG(message_group::Error, "Unsafe sandbox output path rejected: %1$s", file.relativePath);
+      return false;
+    }
+    const fs::path target = destinationRoot / fs::path(file.relativePath);
+    std::error_code ec;
+    if (!ensureSandboxOutputDirectory(target.parent_path(), destinationRoot)) {
+      LOG(message_group::Error, "Could not create sandbox output directory: %1$s",
+          target.parent_path().generic_string());
+      return false;
+    }
+    if (!isSandboxCopyTargetInsideDestination(target.parent_path(), destinationRoot)) {
+      LOG(message_group::Error, "Refusing sandbox output path outside destination: %1$s",
+          target.generic_string());
+      return false;
+    }
+    const bool targetExists = fs::exists(target, ec);
+    if (ec) {
+      LOG(message_group::Error, "Could not inspect sandbox output file: %1$s", target.generic_string());
+      return false;
+    }
+    if (targetExists) {
+      LOG(message_group::Error, "Refusing to overwrite sandbox output file: %1$s",
+          target.generic_string());
+      return false;
+    }
+    if (!fs::copy_file(file.hostPath, target, ec) || ec) {
+      LOG(message_group::Error, "Could not copy sandbox output file: %1$s", target.generic_string());
+      return false;
+    }
+    LOG("Copied sandbox output %1$s", target.generic_string());
+  }
+  return true;
+}
+#endif
 
 void help(const char *arg0, const po::options_description& desc, bool failure = false)
 {
@@ -605,15 +756,35 @@ int cmdline(const CommandLine& cmd)
 
 #ifdef ENABLE_PYTHON
   python_active = false;
-  if (cmd.filename.c_str() != NULL) {
-    if (boost::algorithm::ends_with(cmd.filename, ".py")) {
-      if (python_trusted == true) python_active = true;
-      else LOG("Python is not enabled");
-    }
+  if (boost::algorithm::ends_with(cmd.filename, ".py") &&
+      pythonExecutionModeIsNative(arg_python_execution_mode)) {
+    python_active = true;
   }
 
   std::string text_py = text;
-  if (python_active) {
+  if (boost::algorithm::ends_with(cmd.filename, ".py") &&
+      !pythonExecutionModeIsNative(arg_python_execution_mode)) {
+    if (cmd.animate.frames != 0) {
+      LOG(message_group::Error, "Sandboxed Python animation export is not supported yet.");
+      return 1;
+    }
+    if (!commandline_commands.empty()) {
+      LOG(message_group::Warning,
+          "-D values in sandboxed Python mode are executed as Python code inside the sandbox; treat "
+          "them as trusted input. OpenSCAD DSL assignment syntax may fail.");
+    }
+    auto sandboxResult = evaluatePythonSandboxToCsg(commandline_commands + "\n" + text_py, cmd.filename);
+    if (!sandboxResult.ok) {
+      LOG(message_group::Error, "%1$s", sandboxResult.error.c_str());
+      return 1;
+    }
+    if (!copySandboxOutputsToDirectory(sandboxResult, cmd.sandboxOutputDir)) {
+      cleanupPythonSandboxResult(sandboxResult);
+      return 1;
+    }
+    text = sandboxResult.csg;
+    cleanupPythonSandboxResult(sandboxResult);
+  } else if (python_active) {
     if (cmd.animate.frames == 0) {
       initPython("", cmd.filename, &render_variables);
       auto error = evaluatePython(commandline_commands);
@@ -950,7 +1121,13 @@ int openscad_main(int argc, char **argv)
     ("debug", po::value<std::string>(),
       "special debug info - specify 'all' or a set of source file names")
 #ifdef ENABLE_PYTHON
-    ("trust-python", "Trust python")
+    ("python", po::value<std::string>(),
+      "=sandboxed|native Select Python execution mode. Sandboxed mode is the desktop default; "
+      "native mode is unsafe for untrusted designs.")
+    ("sandbox-output-dir", po::value<std::string>(),
+      "copy files generated by sandboxed Python export() calls into DIR, preserving subdirectories")
+    ("trust-python",
+      "deprecated and ignored; use --python=native to run trusted designs with native Python")
     ("ipython",
       "start an IPython shell on stdin; remaining positional args are forwarded as "
       "IPython argv (e.g. `--ipython script.py arg1`). The user namespace starts "
@@ -1006,7 +1183,20 @@ int openscad_main(int argc, char **argv)
   }
 #ifdef ENABLE_PYTHON
   if (vm.count("trust-python")) {
-    LOG("Python Code globally trusted", OpenSCAD::debug);
+    LOG(message_group::Warning,
+        "--trust-python is deprecated and no longer changes Python execution mode. "
+        "Use --python=native only for designs you trust.");
+  }
+  arg_python_execution_mode = defaultPythonExecutionMode();
+  if (vm.count("python")) {
+    const auto mode = vm["python"].as<std::string>();
+    if (mode != PYTHON_EXECUTION_SANDBOXED && mode != PYTHON_EXECUTION_NATIVE) {
+      LOG(message_group::Error, "--python must be either 'sandboxed' or 'native'.");
+      return 1;
+    }
+    arg_python_execution_mode = pythonExecutionModeFromString(mode);
+  }
+  if (pythonExecutionModeIsNative(arg_python_execution_mode)) {
     python_trusted = true;
   }
   if (vm.count("ipython") && vm.count("repl")) {
@@ -1224,21 +1414,23 @@ int openscad_main(int argc, char **argv)
           const bool is_stdout = filename == "-";
           const std::string output_file = is_stdout ? "<stdout>" : filename;
           const auto export_options = convert_export_options(vm);
-          const CommandLine cmd{is_stdin,
-                                input_file,
-                                is_stdout,
-                                output_file,
-                                original_path,
-                                parameterFile,
-                                parameterSet,
-                                viewOptions,
-                                camera,
-                                export_format,
-                                export_options,
-                                animate,
-                                vm.count("summary") ? vm["summary"].as<std::vector<std::string>>()
-                                                    : std::vector<std::string>{},
-                                vm.count("summary-file") ? vm["summary-file"].as<std::string>() : ""};
+          const CommandLine cmd{
+            is_stdin,
+            input_file,
+            is_stdout,
+            output_file,
+            original_path,
+            parameterFile,
+            parameterSet,
+            viewOptions,
+            camera,
+            export_format,
+            export_options,
+            animate,
+            vm.count("summary") ? vm["summary"].as<std::vector<std::string>>()
+                                : std::vector<std::string>{},
+            vm.count("summary-file") ? vm["summary-file"].as<std::string>() : "",
+            vm.count("sandbox-output-dir") ? vm["sandbox-output-dir"].as<std::string>() : ""};
           rc |= cmdline(cmd);
         }
       }

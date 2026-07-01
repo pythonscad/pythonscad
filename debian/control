@@ -23,6 +23,7 @@ Build-Depends: debhelper-compat (= 13),
                libdouble-conversion-dev,
                libzip-dev,
                libxml2-dev,
+               libssl-dev,
                libtbb-dev,
                libopencsg-dev,
                python3-dev,
@@ -42,7 +43,7 @@ Rules-Requires-Root: no
 
 Package: pythonscad
 Architecture: amd64 arm64
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, nodejs (>= 18)
 Recommends: meshlab,
             openscad-mcad,
             python3-ipython

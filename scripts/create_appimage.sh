@@ -183,6 +183,18 @@ cmake .. \
 info "Building PythonSCAD (using ${NUM_JOBS} jobs)..."
 make -j"${NUM_JOBS}" || die "Build failed"
 
+if [ -n "${PYTHONSCAD_WASM_BUNDLE_DIR:-}" ]; then
+    info "Bundling Python sandbox WASM runtime..."
+    WASM_DEST="${BUILD_DIR}/pythonscad-wasm"
+    rm -rf "${WASM_DEST}"
+    mkdir -p "${WASM_DEST}"
+    cp "${PYTHONSCAD_WASM_BUNDLE_DIR}/pythonscad.js" \
+       "${PYTHONSCAD_WASM_BUNDLE_DIR}/pythonscad.wasm" \
+       "${PYTHONSCAD_WASM_BUNDLE_DIR}/pythonscad.data" \
+       "${WASM_DEST}/" \
+       || die "Failed to copy Python sandbox WASM runtime"
+fi
+
 # Install to AppDir
 info "Installing to AppDir..."
 make install DESTDIR="${APPDIR}" || die "Installation to AppDir failed"
@@ -350,6 +362,16 @@ if [ "${BUNDLE_RUNTIME_PYTHON:-yes}" = "yes" ]; then
         || die "Failed to bundle runtime Python dependencies"
 else
     info "Skipping runtime Python dep bundling (BUNDLE_RUNTIME_PYTHON=${BUNDLE_RUNTIME_PYTHON})"
+fi
+
+if [ "${BUNDLE_NODE_RUNTIME:-yes}" = "yes" ]; then
+    info "Bundling Node.js runtime for sandboxed Python..."
+    bash "${SCRIPT_DIR}/download-node-runtime.sh" \
+        --platform linux-x64 \
+        --dest "${APPDIR}/usr/lib/pythonscad-node" \
+        || die "Failed to bundle Node.js runtime"
+else
+    info "Skipping Node.js runtime bundling (BUNDLE_NODE_RUNTIME=${BUNDLE_NODE_RUNTIME})"
 fi
 
 # Set up proper AppDir structure for appimagetool

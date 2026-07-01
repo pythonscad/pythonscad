@@ -1066,21 +1066,21 @@ bool TabManager::refreshDocument()
       // Run trust check unconditionally — text may match (session restore) but trusted
       // is still at its default (false) and needs to be resolved from the hash store.
       if (editor->language == LANG_PYTHON) {
-        if (editor->trusted && contentChanged && !python_trusted &&
-            !Settings::SettingsPython::globalTrustPython.value() && editor->hasPythonTrustHash()) {
+        if (editor->trusted && contentChanged && !python_trusted && editor->hasPythonTrustHash()) {
           // File changed externally while per-file trusted (e.g. external editor workflow).
-          // Re-trust and update the stored hash so future opens also auto-trust.
+          // External edits invalidate the explicit native-mode opt-in. Keep the old hash so
+          // modified content stays untrusted until the user explicitly opts in again.
           // Only when a per-file hash already exists — if trust came from global/CLI trust
           // (no hash entry), fall through to trust_python_file() so the file becomes
           // untrusted until explicitly trusted again.
-          editor->trustCurrent();
+          editor->revokeTrust();
+          editor->setPythonNativeExecution(false);
         } else {
           // Fresh open, previously untrusted, content unchanged, or trust came from
           // global/CLI — run hash check eagerly so the trust bar appears immediately.
           // If content changed under global/CLI trust, clear trusted first so the hash
           // check is not short-circuited if global trust is later disabled.
-          if (contentChanged &&
-              (python_trusted || Settings::SettingsPython::globalTrustPython.value())) {
+          if (contentChanged && python_trusted) {
             editor->revokeTrust();
           }
           editor->trust_python_file();
@@ -1273,7 +1273,7 @@ bool TabManager::shouldSkipSessionSave()
 void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
                                    bool contentModified, bool parameterModified,
                                    const QByteArray& customizerState, std::optional<int> sessionLanguage,
-                                   bool diskBackedValue)
+                                   bool diskBackedValue, bool pythonNativeExecution)
 {
   {
     const QSignalBlocker blockEditor(edt);
@@ -1287,6 +1287,7 @@ void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath
       edt->parameterWidget->setSessionState(customizerState);
     }
 #ifdef ENABLE_PYTHON
+    edt->pythonNativeExecution = pythonNativeExecution;
     if (sessionLanguage.has_value()) {
       const int lang = *sessionLanguage;
       if (lang == LANG_PYTHON || lang == LANG_SCAD) {
@@ -1340,6 +1341,11 @@ void TabManager::saveSession(const QString& path)
     obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
     obj.insert(QStringLiteral("diskBacked"), edt->diskBacked);
     obj.insert(QStringLiteral("language"), edt->language);
+#ifdef ENABLE_PYTHON
+    if (edt->language == LANG_PYTHON && edt->pythonNativeExecution) {
+      obj.insert(QStringLiteral("pythonExecutionMode"), QStringLiteral("native"));
+    }
+#endif
     int cursorLine = 0;
     int cursorColumn = 0;
     edt->getCursorPosition(&cursorLine, &cursorColumn);
@@ -1430,6 +1436,11 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       obj.insert(QStringLiteral("parameterModified"), edt->parameterWidget->isModified());
       obj.insert(QStringLiteral("diskBacked"), edt->diskBacked);
       obj.insert(QStringLiteral("language"), edt->language);
+#ifdef ENABLE_PYTHON
+      if (edt->language == LANG_PYTHON && edt->pythonNativeExecution) {
+        obj.insert(QStringLiteral("pythonExecutionMode"), QStringLiteral("native"));
+      }
+#endif
       int cursorLine = 0;
       int cursorColumn = 0;
       edt->getCursorPosition(&cursorLine, &cursorColumn);
@@ -1695,6 +1706,12 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     if (obj.contains(QStringLiteral("language"))) {
       sessionLanguage = obj.value(QStringLiteral("language")).toInt();
     }
+#ifdef ENABLE_PYTHON
+    const bool pythonNativeExecution =
+      obj.value(QStringLiteral("pythonExecutionMode")).toString() == QStringLiteral("native");
+#else
+    const bool pythonNativeExecution = false;
+#endif
 
     const QFileInfo fileInfo(filepath);
     bool tabDiskBacked = false;
@@ -1750,7 +1767,7 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
       edt = editor;
     }
     setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState,
-                      sessionLanguage, tabDiskBacked);
+                      sessionLanguage, tabDiskBacked, pythonNativeExecution);
     if (findState < TabManager::FIND_HIDDEN || findState > TabManager::FIND_REPLACE_VISIBLE) {
       findState = TabManager::FIND_HIDDEN;
     }
@@ -1984,15 +2001,13 @@ bool TabManager::save(EditorInterface *edt, const QString& path)
     QSettingsCached settings;
     settings.setValue(QStringLiteral("lastOpenDirName"), QFileInfo(path).absolutePath());
 #ifdef ENABLE_PYTHON
-    if (edt->language == LANG_PYTHON && !python_trusted &&
-        !Settings::SettingsPython::globalTrustPython.value()) {
-      // First save of a user-authored buffer: the design was trusted as untitled
-      // (filepath was empty) but has no per-file hash yet. Trust it immediately so
-      // Preview/Render remain enabled and a persistent hash entry is written.
+    if (edt->language == LANG_PYTHON && !python_trusted) {
+      // First save of a user-authored buffer has no per-file hash yet. Store one
+      // without changing the tab's explicit native/sandboxed execution choice.
       // For subsequent saves of already-trusted designs, update the hash to match
-      // the new on-disk content so trust persists across restarts.
+      // the new on-disk content.
       if (wasUntitled || edt->trusted) {
-        edt->trustCurrent();
+        edt->rememberCurrentPythonTrustHash();
       }
     }
 #endif

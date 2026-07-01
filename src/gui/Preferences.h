@@ -161,7 +161,7 @@ public slots:
   void on_checkBoxAlwaysShowExportSvgDialog_toggled(bool);
   void on_checkBoxAlwaysShowExportGcodeDialog_toggled(bool);
   void on_checkBoxAlwaysShowPrintServiceDialog_toggled(bool);
-  void on_checkBoxGlobalTrustPython_toggled(bool);
+  void on_comboBoxPythonExecutionMode_activated(int);
   void on_comboBoxSingleInstanceOpenMode_activated(int);
   void on_checkBoxSessionManagementEnabled_toggled(bool);
   void on_checkBoxAutosaveSessionEnabled_toggled(bool);

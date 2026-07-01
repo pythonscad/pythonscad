@@ -415,6 +415,7 @@ void Preferences::init()
   initComboBox(this->comboBoxToolbarExport3D, Settings::Settings::toolbarExport3D);
   initComboBox(this->comboBoxToolbarExport2D, Settings::Settings::toolbarExport2D);
   initComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
+  initComboBox(this->comboBoxPythonExecutionMode, Settings::SettingsPython::pythonExecutionMode);
 
   this->labelSingleInstanceOpenMode->setText(QString(_("When launching another instance with files:")));
   this->checkBoxSessionManagementEnabled->setText(
@@ -482,7 +483,7 @@ void Preferences::update()
     Settings::SettingsExportGcode::exportGcodeAlwaysShowDialog.value());
   this->checkBoxAlwaysShowPrintServiceDialog->setChecked(
     Settings::Settings::printServiceAlwaysShowDialog.value());
-  this->checkBoxGlobalTrustPython->setChecked(Settings::SettingsPython::globalTrustPython.value());
+  updateComboBox(this->comboBoxPythonExecutionMode, Settings::SettingsPython::pythonExecutionMode);
 }
 
 /**
@@ -1523,9 +1524,9 @@ void Preferences::on_checkBoxAlwaysShowPrintServiceDialog_toggled(bool state)
   writeSettings();
 }
 
-void Preferences::on_checkBoxGlobalTrustPython_toggled(bool state)
+void Preferences::on_comboBoxPythonExecutionMode_activated(int val)
 {
-  Settings::SettingsPython::globalTrustPython.setValue(state);
+  applyComboBox(this->comboBoxPythonExecutionMode, val, Settings::SettingsPython::pythonExecutionMode);
   writeSettings();
 }
 

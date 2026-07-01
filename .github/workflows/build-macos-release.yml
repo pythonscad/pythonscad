@@ -14,9 +14,20 @@ on:
         description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
         required: false
         default: false
+      handoff_artifact_retention_days:
+        type: number
+        description: 'Retention in days for required per-architecture app handoff artifacts (1-90)'
+        required: false
+        default: 1
+      artifact_retention_days:
+        type: number
+        description: 'Retention in days for optional final macOS artifacts (0 disables artifact upload)'
+        required: false
+        default: 0
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build-intel:
@@ -44,6 +55,23 @@ jobs:
         with:
           detached: true
           limit-access-to-actor: true
+
+      - name: Validate handoff artifact retention
+        id: handoff-retention
+        env:
+          REQUESTED_RETENTION_DAYS: ${{ github.event.inputs.handoff_artifact_retention_days || '1' }}
+        run: |
+          case "$REQUESTED_RETENTION_DAYS" in
+            ''|*[!0-9]*)
+              echo "Handoff artifact retention must be an integer number of days." >&2
+              exit 1
+              ;;
+          esac
+          if [ "$REQUESTED_RETENTION_DAYS" -lt 1 ] || [ "$REQUESTED_RETENTION_DAYS" -gt 90 ]; then
+            echo "Handoff artifact retention must be between 1 and 90 days." >&2
+            exit 1
+          fi
+          echo "days=$REQUESTED_RETENTION_DAYS" >> "$GITHUB_OUTPUT"
 
       - name: Workaround for python3 linking issue
         run: |
@@ -176,7 +204,7 @@ jobs:
         with:
           name: pythonscad-x86_64-app
           path: pythonscad-x86_64-app.tar
-          retention-days: 1
+          retention-days: ${{ steps.handoff-retention.outputs.days }}
 
   build-arm64:
     runs-on: macos-14
@@ -201,6 +229,23 @@ jobs:
         with:
           detached: true
           limit-access-to-actor: true
+
+      - name: Validate handoff artifact retention
+        id: handoff-retention
+        env:
+          REQUESTED_RETENTION_DAYS: ${{ github.event.inputs.handoff_artifact_retention_days || '1' }}
+        run: |
+          case "$REQUESTED_RETENTION_DAYS" in
+            ''|*[!0-9]*)
+              echo "Handoff artifact retention must be an integer number of days." >&2
+              exit 1
+              ;;
+          esac
+          if [ "$REQUESTED_RETENTION_DAYS" -lt 1 ] || [ "$REQUESTED_RETENTION_DAYS" -gt 90 ]; then
+            echo "Handoff artifact retention must be between 1 and 90 days." >&2
+            exit 1
+          fi
+          echo "days=$REQUESTED_RETENTION_DAYS" >> "$GITHUB_OUTPUT"
 
       - name: Workaround for python3 linking issue
         run: |
@@ -333,7 +378,7 @@ jobs:
         with:
           name: pythonscad-arm64-app
           path: pythonscad-arm64-app.tar
-          retention-days: 1
+          retention-days: ${{ steps.handoff-retention.outputs.days }}
 
   merge-and-package:
     runs-on: macos-latest
@@ -342,6 +387,7 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: write
+      actions: read
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -353,6 +399,28 @@ jobs:
         run: |
           git fetch --unshallow --tags || git fetch --tags
           git describe --tags --always --dirty
+
+      - name: Validate final artifact retention
+        id: retention
+        env:
+          REQUESTED_RETENTION_DAYS: ${{ github.event.inputs.artifact_retention_days || '0' }}
+        run: |
+          case "$REQUESTED_RETENTION_DAYS" in
+            ''|*[!0-9]*)
+              echo "Artifact retention must be an integer number of days." >&2
+              exit 1
+              ;;
+          esac
+          if [ "$REQUESTED_RETENTION_DAYS" -gt 90 ]; then
+            echo "Artifact retention must be between 0 and 90 days." >&2
+            exit 1
+          fi
+          echo "days=$REQUESTED_RETENTION_DAYS" >> "$GITHUB_OUTPUT"
+          if [ "$REQUESTED_RETENTION_DAYS" -gt 0 ]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Download x86_64 artifact
         uses: actions/download-artifact@v8
@@ -771,6 +839,48 @@ jobs:
         with:
           enable-cache: false
 
+      - name: Download and bundle WASM sandbox runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STEPS_MERGE_OUTPUTS_APP_BUNDLE: ${{ steps.merge.outputs.app_bundle }}
+        run: |
+          bash .github/scripts/download-wasm-artifact.sh "$(git rev-parse HEAD)" wasm-bundle
+          APP_BUNDLE="${STEPS_MERGE_OUTPUTS_APP_BUNDLE}"
+          WASM_DEST="${APP_BUNDLE}/Contents/Resources/wasm"
+          rm -rf "${WASM_DEST}"
+          mkdir -p "${WASM_DEST}"
+          cp wasm-bundle/pythonscad.js \
+             wasm-bundle/pythonscad.wasm \
+             wasm-bundle/pythonscad.data \
+             "${WASM_DEST}/"
+          ls -lh "${WASM_DEST}"
+
+      - name: Bundle Node.js sandbox runtime and runner
+        env:
+          STEPS_MERGE_OUTPUTS_APP_BUNDLE: ${{ steps.merge.outputs.app_bundle }}
+        run: |
+          APP_BUNDLE="${STEPS_MERGE_OUTPUTS_APP_BUNDLE}"
+          NODE_DEST="${APP_BUNDLE}/Contents/Resources/node"
+          rm -rf "${NODE_DEST}" /tmp/node-darwin-x64 /tmp/node-darwin-arm64
+          bash scripts/download-node-runtime.sh \
+            --platform darwin-x64 \
+            --dest /tmp/node-darwin-x64
+          bash scripts/download-node-runtime.sh \
+            --platform darwin-arm64 \
+            --dest /tmp/node-darwin-arm64
+          mkdir -p "${NODE_DEST}/bin"
+          lipo -create \
+            /tmp/node-darwin-x64/bin/node \
+            /tmp/node-darwin-arm64/bin/node \
+            -output "${NODE_DEST}/bin/node"
+          chmod +x "${NODE_DEST}/bin/node"
+
+          RUNNER_DEST="${APP_BUNDLE}/Contents/Resources/scripts"
+          mkdir -p "${RUNNER_DEST}"
+          cp scripts/python-sandbox-runner.mjs "${RUNNER_DEST}/"
+          lipo -info "${NODE_DEST}/bin/node"
+          "${NODE_DEST}/bin/node" --version
+
       - name: Bundle runtime Python deps (IPython) into merged .app
         env:
           STEPS_MERGE_OUTPUTS_APP_BUNDLE: ${{ steps.merge.outputs.app_bundle }}
@@ -920,6 +1030,13 @@ jobs:
               file "$f" | grep -q Mach-O || continue
               sign_target --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f"
             done < <(find "$BUNDLE_PY" -type f \( -name "*.so" -o -name "*.dylib" \) -print0)
+          fi
+
+          # Step 2c: Sign bundled Node.js runtime used by the WASM sandbox.
+          NODE_BIN="${APP_BUNDLE}/Contents/Resources/node/bin/node"
+          if [ -f "$NODE_BIN" ]; then
+            echo "Signing bundled Node.js runtime..."
+            sign_target --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$NODE_BIN"
           fi
 
           # Step 3: Sign Qt frameworks (each framework as a bundle)
@@ -1332,20 +1449,20 @@ jobs:
           STEPS_VALIDATION_OUTCOME: ${{ steps.validation.outcome }}
 
       - name: Upload DMG package
-        if: always() && steps.artifacts.outputs.dmg_path != ''
+        if: always() && steps.artifacts.outputs.dmg_path != '' && steps.retention.outputs.upload == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.artifacts.outputs.dmg_name }}
           path: ${{ steps.artifacts.outputs.dmg_path }}
-          retention-days: 30
+          retention-days: ${{ steps.retention.outputs.days }}
 
       - name: Upload pre-DMG app bundle for debugging
-        if: always()
+        if: always() && steps.retention.outputs.upload == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: pre-dmg-app-bundle-debug
           path: /tmp/out/pre-dmg-app-bundle.tar.gz
-          retention-days: 7
+          retention-days: ${{ steps.retention.outputs.days }}
 
       - name: Post validation status
         if: always()

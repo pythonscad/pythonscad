@@ -41,6 +41,7 @@ BuildRequires:  double-conversion-devel
 BuildRequires:  lib3mf-devel
 BuildRequires:  libzip-devel
 BuildRequires:  libcurl-devel
+BuildRequires:  openssl-devel
 BuildRequires:  cairo-devel
 BuildRequires:  hidapi-devel
 BuildRequires:  libspnav-devel
@@ -53,6 +54,7 @@ BuildRequires:  qscintilla-qt6-devel
 BuildRequires:  chrpath
 
 Requires:       python3
+Requires:       nodejs >= 18
 Requires:       qt6-qtbase
 Requires:       qt6-qtmultimedia
 Requires:       qt6-qtsvg
@@ -100,6 +102,16 @@ modern features.
     -DUSE_BUILTIN_CLIPPER2=ON \
     -DPORTABLE_BINARY=ON \
     -DSNAPSHOT=OFF
+
+if [ -n "$PYTHONSCAD_WASM_BUNDLE_DIR" ]; then
+    build_dir="$(find . -maxdepth 1 -type d -name '*build*' -print -quit)"
+    test -n "$build_dir"
+    mkdir -p "$build_dir/pythonscad-wasm"
+    cp "$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.js" \
+       "$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.wasm" \
+       "$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.data" \
+       "$build_dir/pythonscad-wasm/"
+fi
 
 %cmake_build
 

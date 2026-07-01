@@ -36,6 +36,7 @@
 #include <fcntl.h>
 #include "gui/ExportGcodeDialog.h"
 #include "genlang/genlang.h"
+#include <QAbstractItemView>
 #include <QApplication>
 #include <QByteArray>
 #include <QClipboard>
@@ -56,6 +57,7 @@
 #include <QKeySequence>
 #include <QLabel>
 #include <QList>
+#include <QListWidget>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -65,6 +67,7 @@
 #include <QPoint>
 #include <QProcess>
 #include <QProgressDialog>
+#include <QPushButton>
 #include <QScreen>
 #include <QSettings>  //Include QSettings for direct operations on settings arrays
 #include <QSignalMapper>
@@ -111,6 +114,8 @@
 #include "core/Context.h"
 #include "core/EvaluationSession.h"
 #include "core/Expression.h"
+#include "core/PythonExecution.h"
+#include "core/PythonSandbox.h"
 #include "core/RenderVariables.h"
 #include "core/ScopeContext.h"
 #include "core/Settings.h"
@@ -270,6 +275,86 @@ const char copyrighttext[] =
   "it under the terms of the GNU General Public License as published by "
   "the Free Software Foundation; either version 2 of the License, or "
   "(at your option) any later version.<p>";
+
+#ifdef ENABLE_PYTHON
+bool effectivePythonExecutionModeIsNative(const EditorInterface *editor)
+{
+  return pythonExecutionModeIsNative(defaultPythonExecutionMode()) || python_trusted ||
+         (editor && editor->pythonNativeExecution && (editor->filepath.isEmpty() || editor->trusted));
+}
+
+bool pythonDesignCanRun(const EditorInterface *editor)
+{
+  return !pythonExecutionModeIsNative(defaultPythonExecutionMode()) ||
+         effectivePythonExecutionModeIsNative(editor);
+}
+
+bool isReservedWindowsSandboxOutputPathComponent(const QString& component)
+{
+  const QString stem = component.section('.', 0, 0).toLower();
+  static const QStringList reserved = {
+    QStringLiteral("con"),  QStringLiteral("prn"),  QStringLiteral("aux"),  QStringLiteral("nul"),
+    QStringLiteral("com1"), QStringLiteral("com2"), QStringLiteral("com3"), QStringLiteral("com4"),
+    QStringLiteral("com5"), QStringLiteral("com6"), QStringLiteral("com7"), QStringLiteral("com8"),
+    QStringLiteral("com9"), QStringLiteral("lpt1"), QStringLiteral("lpt2"), QStringLiteral("lpt3"),
+    QStringLiteral("lpt4"), QStringLiteral("lpt5"), QStringLiteral("lpt6"), QStringLiteral("lpt7"),
+    QStringLiteral("lpt8"), QStringLiteral("lpt9"),
+  };
+  return reserved.contains(stem);
+}
+
+bool isSafeSandboxOutputRelativePath(const QString& value)
+{
+  if (value.isEmpty() || value.contains(QChar::Null) || value.contains('\t') || value.contains('\r') ||
+      value.contains('\n') || value.contains('\\') || value.contains(':')) {
+    return false;
+  }
+  if (QFileInfo(value).isAbsolute() || value.startsWith(QStringLiteral("\\\\"))) return false;
+
+  const QString cleaned = QDir::cleanPath(value);
+  if (cleaned.isEmpty() || cleaned == QStringLiteral(".") || cleaned.startsWith(QStringLiteral("../")) ||
+      cleaned == QStringLiteral("..")) {
+    return false;
+  }
+  const auto parts = cleaned.split('/', Qt::SkipEmptyParts);
+  return std::none_of(parts.begin(), parts.end(), [](const QString& part) {
+    return part == QStringLiteral(".") || part == QStringLiteral("..") ||
+           isReservedWindowsSandboxOutputPathComponent(part);
+  });
+}
+
+bool isSandboxExportTargetInsideDestination(const QString& targetParent, const QString& destination)
+{
+  const QString canonicalDestination = QFileInfo(destination).canonicalFilePath();
+  const QString canonicalParent = QFileInfo(targetParent).canonicalFilePath();
+  if (canonicalDestination.isEmpty() || canonicalParent.isEmpty()) return false;
+
+  const QString relative = QDir(canonicalDestination).relativeFilePath(canonicalParent);
+  return relative.isEmpty() || relative == QStringLiteral(".") ||
+         (!relative.startsWith(QStringLiteral("../")) && relative != QStringLiteral("..") &&
+          !QFileInfo(relative).isAbsolute());
+}
+
+bool ensureSandboxExportDirectory(const QString& relativePath, const QString& destination)
+{
+  const QString parentPath = QFileInfo(relativePath).path();
+  if (parentPath.isEmpty() || parentPath == QStringLiteral(".")) return true;
+
+  QString current = destination;
+  const QStringList parts = parentPath.split('/', Qt::SkipEmptyParts);
+  for (const QString& part : parts) {
+    current = QDir(current).filePath(part);
+    const QFileInfo info(current);
+    if (info.exists()) {
+      if (info.isSymLink() || !info.isDir()) return false;
+    } else if (!QDir().mkdir(current)) {
+      return false;
+    }
+    if (!isSandboxExportTargetInsideDestination(current, destination)) return false;
+  }
+  return true;
+}
+#endif
 
 struct DockFocus {
   Dock *widget;
@@ -571,6 +656,7 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   setupFontList();
   setupColorList();
   setupAIDock();
+  setupSandboxOutputs();
   setupDocks();
 
   setup3DView();
@@ -979,6 +1065,9 @@ void MainWindow::updateUndockMode(bool undockMode)
     consoleDock->setFeatures(consoleDock->features() | QDockWidget::DockWidgetFloatable);
     parameterDock->setFeatures(parameterDock->features() | QDockWidget::DockWidgetFloatable);
     errorLogDock->setFeatures(errorLogDock->features() | QDockWidget::DockWidgetFloatable);
+#ifdef ENABLE_PYTHON
+    sandboxOutputDock->setFeatures(sandboxOutputDock->features() | QDockWidget::DockWidgetFloatable);
+#endif
     animateDock->setFeatures(animateDock->features() | QDockWidget::DockWidgetFloatable);
     fontListDock->setFeatures(fontListDock->features() | QDockWidget::DockWidgetFloatable);
     colorListDock->setFeatures(colorListDock->features() | QDockWidget::DockWidgetFloatable);
@@ -1005,6 +1094,13 @@ void MainWindow::updateUndockMode(bool undockMode)
     }
     errorLogDock->setFeatures(errorLogDock->features() & ~QDockWidget::DockWidgetFloatable);
 
+#ifdef ENABLE_PYTHON
+    if (sandboxOutputDock->isFloating()) {
+      sandboxOutputDock->setFloating(false);
+    }
+    sandboxOutputDock->setFeatures(sandboxOutputDock->features() & ~QDockWidget::DockWidgetFloatable);
+
+#endif
     if (animateDock->isFloating()) {
       animateDock->setFloating(false);
     }
@@ -1045,6 +1141,9 @@ MainWindow::~MainWindow()
 {
   // Mark that we're being destroyed so eventFilter won't access freed members
   isBeingDestroyed = true;
+#ifdef ENABLE_PYTHON
+  clearSandboxOutputs();
+#endif
 
   delete this->cgalworker;
   scadApp->windowManager.remove(this);
@@ -1782,13 +1881,15 @@ void MainWindow::updatePythonTrustActions()
 {
   const bool isPythonWithPath =
     activeEditor && activeEditor->language == LANG_PYTHON && !activeEditor->filepath.isEmpty();
-  const bool isUntrustedPython = isPythonWithPath && !activeEditor->trusted && !python_trusted &&
-                                 !Settings::SettingsPython::globalTrustPython.value();
+  const bool isUntrustedPython = isPythonWithPath && !pythonDesignCanRun(activeEditor);
+  const bool nativeModeForced =
+    pythonExecutionModeIsNative(defaultPythonExecutionMode()) || python_trusted;
   designActionPreview->setEnabled(!isUntrustedPython);
   designActionRender->setEnabled(!isUntrustedPython);
-  // Checkable action: enabled for any saved Python design, checked when trusted.
-  fileActionPythonTrustCurrentDesign->setEnabled(isPythonWithPath);
-  fileActionPythonTrustCurrentDesign->setChecked(isPythonWithPath && activeEditor->trusted);
+  // Checkable action: enabled only when it controls per-file native-mode opt-in.
+  fileActionPythonTrustCurrentDesign->setEnabled(isPythonWithPath && !nativeModeForced);
+  fileActionPythonTrustCurrentDesign->setChecked(
+    isPythonWithPath && (nativeModeForced || activeEditor->pythonNativeExecution));
   // Only disable the parameter widget here; re-enabling is left to parseDocument() so
   // we don't override its intentional disable (e.g. no parameters, parse failure).
   if (isUntrustedPython && activeEditor) activeEditor->parameterWidget->setEnabled(false);
@@ -1817,7 +1918,7 @@ void MainWindow::on_fileActionPythonTrustCurrentDesign_triggered()
 {
 #ifdef ENABLE_PYTHON
   if (!activeEditor || activeEditor->language != LANG_PYTHON || activeEditor->filepath.isEmpty()) return;
-  if (activeEditor->trusted) {
+  if (activeEditor->pythonNativeExecution) {
     // Revoke trust for this design only — remove its hash entry and clear trusted flag.
     const QByteArray pathUtf8 = activeEditor->filepath.toUtf8();
     QSettingsCached settings;
@@ -2238,13 +2339,26 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
   auto fulltext_py = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size()));
   SourceFile *sourceFile = nullptr;
 #ifdef ENABLE_PYTHON
-  if (editor->language == LANG_PYTHON && !editor->trust_python_file()) {
-    LOG(message_group::Warning, Location::NONE, "", "Python design is not trusted");
+  if (editor->language == LANG_PYTHON && !effectivePythonExecutionModeIsNative(editor)) {
+    auto sandboxResult = evaluatePythonSandboxToCsg(fulltext_py, fnameNative);
+    if (!sandboxResult.ok) {
+      LOG(message_group::Error, Location::NONE, "", "%1$s", sandboxResult.error.c_str());
+      clearSandboxOutputs();
+      editor->resetHighlighting();
+      editor->parameterWidget->setEnabled(false);
+      updatePythonTrustActions();
+      return {};
+    }
     editor->resetHighlighting();
     editor->parameterWidget->setEnabled(false);
-    updatePythonTrustActions();
-    return {};
+    const std::string sandboxText = sandboxResult.csg + "\n\x03\n";
+    sourceFile = parse(sourceFile, sandboxText, fnameNative, fnameNative, false) ? sourceFile : nullptr;
+    if (sourceFile) {
+      editor->setIndicator(sourceFile->indicatorData);
+    }
+    updateSandboxOutputs(sandboxResult);
   } else if (editor->language == LANG_PYTHON) {
+    clearSandboxOutputs();
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
 
@@ -2359,9 +2473,7 @@ void MainWindow::parseTopLevelDocument(bool pythonDryRunFullScript)
   // Skip dry-run entirely for untrusted Python files: the trust bar is the gate,
   // and parseDocument would only log a WARNING and return null anyway.
   if (pythonDryRunFullScript && activeEditor && activeEditor->language == LANG_PYTHON) {
-    const bool effectivelyTrusted = activeEditor->trusted || python_trusted ||
-                                    Settings::SettingsPython::globalTrustPython.value() ||
-                                    activeEditor->filepath.isEmpty();
+    const bool effectivelyTrusted = pythonDesignCanRun(activeEditor) || activeEditor->filepath.isEmpty();
     if (!effectivelyTrusted) return;
   }
 #endif
@@ -2384,8 +2496,7 @@ void MainWindow::checkAutoReload()
 #ifdef ENABLE_PYTHON
     // For untrusted Python files: still reload the buffer from disk and re-evaluate trust
     // (so external edits are visible and a matching hash auto-trusts), but skip the compile.
-    if (activeEditor->language == LANG_PYTHON && !activeEditor->trusted && !python_trusted &&
-        !Settings::SettingsPython::globalTrustPython.value()) {
+    if (activeEditor->language == LANG_PYTHON && !pythonDesignCanRun(activeEditor)) {
       if (fileChangedOnDisk() && checkEditorModified()) {
         tabManager->refreshDocument();
       }
@@ -3897,6 +4008,138 @@ void MainWindow::onErrorLogDockVisibilityChanged(bool isVisible)
   }
 }
 
+#ifdef ENABLE_PYTHON
+void MainWindow::clearSandboxOutputs()
+{
+  for (const auto& tempDir : sandboxOutputTempDirs) {
+    PythonSandboxResult result;
+    result.tempDir = tempDir;
+    cleanupPythonSandboxResult(result);
+  }
+  sandboxOutputTempDirs.clear();
+  sandboxOutputFiles.clear();
+  if (sandboxOutputList) sandboxOutputList->clear();
+  if (sandboxOutputDock) sandboxOutputDock->hide();
+  onSandboxOutputSelectionChanged();
+}
+
+void MainWindow::updateSandboxOutputs(const PythonSandboxResult& result)
+{
+  clearSandboxOutputs();
+  if (result.outputFiles.empty()) {
+    cleanupPythonSandboxResult(result);
+    return;
+  }
+
+  sandboxOutputFiles = result.outputFiles;
+  sandboxOutputTempDirs.push_back(result.tempDir);
+  for (const auto& file : sandboxOutputFiles) {
+    const QString label =
+      QString::fromStdString(file.relativePath) + QStringLiteral(" (%1 bytes)").arg(file.size);
+    sandboxOutputList->addItem(label);
+  }
+  sandboxOutputList->setCurrentRow(0);
+  sandboxOutputDock->show();
+  sandboxOutputDock->raise();
+}
+
+void MainWindow::onSandboxOutputDockVisibilityChanged(bool isVisible)
+{
+  if (isVisible) {
+    sandboxOutputDock->raise();
+    sandboxOutputList->setFocus();
+  }
+}
+
+void MainWindow::onSandboxOutputSelectionChanged()
+{
+  const bool hasSelection =
+    sandboxOutputList && sandboxOutputList->currentRow() >= 0 &&
+    sandboxOutputList->currentRow() < static_cast<int>(sandboxOutputFiles.size());
+  if (sandboxOutputOpenButton) sandboxOutputOpenButton->setEnabled(hasSelection);
+  if (sandboxOutputSaveButton) sandboxOutputSaveButton->setEnabled(hasSelection);
+  if (sandboxOutputExportAllButton)
+    sandboxOutputExportAllButton->setEnabled(!sandboxOutputFiles.empty());
+}
+
+void MainWindow::onSandboxOutputOpen()
+{
+  const int row = sandboxOutputList->currentRow();
+  if (row < 0 || row >= static_cast<int>(sandboxOutputFiles.size())) return;
+  QDesktopServices::openUrl(
+    QUrl::fromLocalFile(QString::fromStdString(sandboxOutputFiles[row].hostPath)));
+}
+
+void MainWindow::onSandboxOutputSaveAs()
+{
+  const int row = sandboxOutputList->currentRow();
+  if (row < 0 || row >= static_cast<int>(sandboxOutputFiles.size())) return;
+
+  const auto& file = sandboxOutputFiles[row];
+  const QString target = QFileDialog::getSaveFileName(this, _("Save Sandbox Output"),
+                                                      QString::fromStdString(file.relativePath));
+  if (target.isEmpty()) return;
+  if (QFileInfo::exists(target)) {
+    QMessageBox::warning(this, _("Save Sandbox Output"),
+                         QString(_("Refusing to overwrite existing file: %1")).arg(target));
+    return;
+  }
+  if (!QFile::copy(QString::fromStdString(file.hostPath), target)) {
+    QMessageBox::warning(this, _("Save Sandbox Output"), _("Could not save the selected output file."));
+  }
+}
+
+void MainWindow::onSandboxOutputExportAll()
+{
+  if (sandboxOutputFiles.empty()) return;
+
+  const QString destination = QFileDialog::getExistingDirectory(this, _("Export Sandbox Outputs"));
+  if (destination.isEmpty()) return;
+
+  for (const auto& file : sandboxOutputFiles) {
+    const QString relativePath = QString::fromStdString(file.relativePath);
+    if (!isSafeSandboxOutputRelativePath(relativePath)) {
+      QMessageBox::warning(this, _("Export Sandbox Outputs"),
+                           QString(_("Refusing unsafe sandbox output path: %1")).arg(relativePath));
+      return;
+    }
+    const QString target = QDir(destination).filePath(relativePath);
+    if (QFileInfo::exists(target)) {
+      QMessageBox::warning(this, _("Export Sandbox Outputs"),
+                           QString(_("Refusing to overwrite existing file: %1")).arg(target));
+      return;
+    }
+  }
+
+  int copiedFiles = 0;
+  for (const auto& file : sandboxOutputFiles) {
+    const QString relativePath = QString::fromStdString(file.relativePath);
+    const QString target = QDir(destination).filePath(relativePath);
+    const QString targetParent = QFileInfo(target).absolutePath();
+    if (!ensureSandboxExportDirectory(relativePath, destination) ||
+        !isSandboxExportTargetInsideDestination(targetParent, destination)) {
+      QMessageBox::warning(
+        this, _("Export Sandbox Outputs"),
+        QString(_("Refusing sandbox output path outside destination: %1")).arg(relativePath));
+      return;
+    }
+    if (!QFile::copy(QString::fromStdString(file.hostPath), target)) {
+      QMessageBox::warning(this, _("Export Sandbox Outputs"),
+                           QString(_("Could not export sandbox output file: %1. %2 file(s) were "
+                                     "already exported."))
+                             .arg(relativePath)
+                             .arg(copiedFiles));
+      return;
+    }
+    ++copiedFiles;
+  }
+}
+#else
+void MainWindow::onSandboxOutputDockVisibilityChanged(bool)
+{
+}
+#endif
+
 void MainWindow::onAnimateDockVisibilityChanged(bool isVisible)
 {
   if (isVisible) {
@@ -4117,9 +4360,8 @@ void MainWindow::onTabManagerEditorContentReloaded(EditorInterface *reloadedEdit
     // when a new editor is created, it is important to compile the initial geometry
     // so the customizer panels are ok. Skip for untrusted Python files — the trust
     // bar will trigger a dry-run once the user clicks "Trust Design".
-    const bool canParse = reloadedEditor->language != LANG_PYTHON || reloadedEditor->trusted ||
-                          python_trusted || Settings::SettingsPython::globalTrustPython.value() ||
-                          reloadedEditor->filepath.isEmpty();
+    const bool canParse = reloadedEditor->language != LANG_PYTHON ||
+                          pythonDesignCanRun(reloadedEditor) || reloadedEditor->filepath.isEmpty();
     if (canParse) parseDocument(reloadedEditor, true);
     if (reloadedEditor == activeEditor) {
       lastCompiledDoc = activeEditor->toPlainText();
@@ -4150,13 +4392,13 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   editorTrustConnection = connect(newEditor, &EditorInterface::trustStateChanged, this, [this]() {
     if (!activeEditor) return;
     updatePythonTrustActions();
-    if (activeEditor->trusted) {
+    if (activeEditor->pythonNativeExecution) {
       // Populate the customizer via dry-run. If GuiLocker is held (e.g. a compile was
       // already running when trust was granted), defer until the event loop is free so
       // we don't re-enter initPython() while the CSG worker holds the GIL.
       if (GuiLocker::isLocked()) {
         QTimer::singleShot(0, this, [this]() {
-          if (activeEditor && activeEditor->trusted) parseTopLevelDocument(true);
+          if (activeEditor && activeEditor->pythonNativeExecution) parseTopLevelDocument(true);
         });
       } else {
         parseTopLevelDocument(true);
@@ -4173,6 +4415,9 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
 
   consoleDock->setNameSuffix(name);
   errorLogDock->setNameSuffix(name);
+#ifdef ENABLE_PYTHON
+  sandboxOutputDock->setNameSuffix(name);
+#endif
   animateDock->setNameSuffix(name);
   fontListDock->setNameSuffix(name);
   colorListDock->setNameSuffix(name);
@@ -4180,9 +4425,8 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
 
   // If there is no renderedEditor we request for a new preview if the
   // auto-reload is enabled.
-  const bool editorTrusted = newEditor->trusted || python_trusted ||
-                             Settings::SettingsPython::globalTrustPython.value() ||
-                             newEditor->filepath.isEmpty() || newEditor->language != LANG_PYTHON;
+  const bool editorTrusted =
+    pythonDesignCanRun(newEditor) || newEditor->filepath.isEmpty() || newEditor->language != LANG_PYTHON;
   if (renderedEditor == nullptr && designActionAutoReload->isChecked() && !MainWindow::isEmpty() &&
       editorTrusted) {
     // Do not prime autoReloadId here for dirty on-disk tabs: session restore already syncs ids for
@@ -4665,6 +4909,55 @@ void MainWindow::setupErrorLog()
                    &MainWindow::onErrorLogDockVisibilityChanged);
 }
 
+#ifdef ENABLE_PYTHON
+void MainWindow::setupSandboxOutputs()
+{
+  sandboxOutputDock = new Dock(this);
+  sandboxOutputDock->setObjectName(QStringLiteral("sandboxOutputDock"));
+  sandboxOutputDock->setWindowTitle(_("Sandbox Outputs"));
+  addDockWidget(Qt::BottomDockWidgetArea, sandboxOutputDock);
+
+  auto *contents = new QWidget(sandboxOutputDock);
+  auto *layout = new QVBoxLayout(contents);
+  layout->setContentsMargins(4, 4, 4, 4);
+
+  sandboxOutputList = new QListWidget(contents);
+  sandboxOutputList->setSelectionMode(QAbstractItemView::SingleSelection);
+  layout->addWidget(sandboxOutputList);
+
+  auto *buttonLayout = new QHBoxLayout();
+  sandboxOutputOpenButton = new QPushButton(_("Open Externally"), contents);
+  sandboxOutputSaveButton = new QPushButton(_("Save As..."), contents);
+  sandboxOutputExportAllButton = new QPushButton(_("Export All..."), contents);
+  buttonLayout->addWidget(sandboxOutputOpenButton);
+  buttonLayout->addWidget(sandboxOutputSaveButton);
+  buttonLayout->addWidget(sandboxOutputExportAllButton);
+  buttonLayout->addStretch(1);
+  layout->addLayout(buttonLayout);
+
+  sandboxOutputDock->setWidget(contents);
+  sandboxOutputDock->hide();
+  sandboxOutputWindowAction = sandboxOutputDock->toggleViewAction();
+  sandboxOutputWindowAction->setText(_("Sandbox &Outputs"));
+  sandboxOutputWindowAction->setObjectName(QStringLiteral("windowActionToggleSandboxOutputs"));
+  menuWindow->addAction(sandboxOutputWindowAction);
+
+  connect(sandboxOutputDock, &Dock::visibilityChanged, this,
+          &MainWindow::onSandboxOutputDockVisibilityChanged);
+  connect(sandboxOutputList, &QListWidget::itemSelectionChanged, this,
+          &MainWindow::onSandboxOutputSelectionChanged);
+  connect(sandboxOutputOpenButton, &QPushButton::clicked, this, &MainWindow::onSandboxOutputOpen);
+  connect(sandboxOutputSaveButton, &QPushButton::clicked, this, &MainWindow::onSandboxOutputSaveAs);
+  connect(sandboxOutputExportAllButton, &QPushButton::clicked, this,
+          &MainWindow::onSandboxOutputExportAll);
+  onSandboxOutputSelectionChanged();
+}
+#else
+void MainWindow::setupSandboxOutputs()
+{
+}
+#endif
+
 /**
   Set up resources related to the Editor dock widget
  */
@@ -4852,6 +5145,9 @@ void MainWindow::setupDocks()
     {consoleDock, _("&Console")},
     {parameterDock, _("C&ustomizer")},
     {errorLogDock, _("Error-&Log")},
+#ifdef ENABLE_PYTHON
+    {sandboxOutputDock, _("Sandbox &Outputs")},
+#endif
     {animateDock, _("&Animate")},
     {fontListDock, _("&Font List")},
     {colorListDock, _("C&olor List")},
@@ -4880,7 +5176,13 @@ void MainWindow::setupDocks()
     QAction *toggleAction = dock->toggleViewAction();
     QString baseName = getDockBaseName(title);
     toggleAction->setObjectName("windowActionToggle" + baseName);
+#ifdef ENABLE_PYTHON
+    if (dock != sandboxOutputDock) {
+      menuWindow->addAction(toggleAction);
+    }
+#else
     menuWindow->addAction(toggleAction);
+#endif
 
     auto dockAction = navigationMenu->addAction(title);
     dockAction->setProperty("id", QVariant::fromValue(dock));

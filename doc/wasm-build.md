@@ -21,10 +21,10 @@ absent from the WASM sysroot.
 
 ### Build variants
 
-| Variant | Filesystem                   | Use case                          |
-| ------- | ---------------------------- | --------------------------------- |
-| `node`  | NODERAWFS (real FS)          | Smoke testing, headless rendering |
-| `web`   | MEMFS + preloaded `.data`    | Browser distribution              |
+| Variant | Filesystem                | Use case                                            |
+| ------- | ------------------------- | --------------------------------------------------- |
+| `node`  | NODERAWFS (real FS)       | Smoke testing, headless rendering                   |
+| `web`   | MEMFS + preloaded `.data` | Browser distribution and desktop sandboxed Python   |
 
 ## Prerequisites
 
@@ -104,6 +104,12 @@ The web build produces three files:
 | `pythonscad.wasm` | 18 MB         | Binary (geometry engine + CPython)             |
 | `pythonscad.data` | 17 MB         | Preloaded Python stdlib + PythonSCAD libraries |
 
+The desktop application's sandboxed Python helper uses this `web` bundle via
+Node.js and reads results back from the WebAssembly virtual filesystem. For
+local testing, leave the files in `build-wasm-web` or set `PYTHONSCAD_WASM_DIR`
+to the directory containing them. Do not use the `node`/NODERAWFS build as the
+desktop sandbox, because it intentionally has direct filesystem access.
+
 ## Smoke testing
 
 ### Node variant
@@ -118,7 +124,7 @@ docker run --rm -i \
     echo 'from openscad import *
 show(difference(cube([20,20,20], center=True), cylinder(h=25, r=5, center=True)))' \
       > /tmp/test.py
-    node pythonscad.js -o /tmp/out.stl --trust-python /tmp/test.py
+    node pythonscad.js -o /tmp/out.stl --python=native /tmp/test.py
     wc -c /tmp/out.stl
   "
 ```
@@ -160,7 +166,7 @@ mod.FS.writeFile('/input.py', 'from openscad import *\nshow(cube(10))');
 // Render; exit() throws ExitStatus
 let exitCode = 0;
 try {
-  mod.callMain(['-o', '/output.stl', '--trust-python', '/input.py']);
+  mod.callMain(['-o', '/output.stl', '--python=native', '/input.py']);
 } catch (e) {
   exitCode = (e && typeof e.status === 'number') ? e.status : 1;
 }
@@ -173,7 +179,8 @@ Key points:
 
 - `INVOKE_RUN=0` is set in the CMake web build, so `main()` is **not** called
   automatically on module load — you must call `mod.callMain(...)` explicitly.
-- `--trust-python` is required; without it the Python evaluator refuses to run.
+- `--python=native` selects the CPython interpreter compiled into the WASM
+  module. It is still sandboxed by the browser/WebAssembly environment.
 - The module is not re-entrant: create a fresh instance for each render if you
   need concurrent or repeated use.
 

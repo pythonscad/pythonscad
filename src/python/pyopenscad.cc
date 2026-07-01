@@ -1799,8 +1799,8 @@ static PyModuleDef OpenSCADModule = {PyModuleDef_HEAD_INIT,
 
 #if PY_VERSION_HEX < 0x030A0000
 // Polyfill for `PyModule_AddObjectRef`, which CPython only added in 3.10.
-// Debian bullseye and RHEL/EL 9 ship Python 3.9, so we have to emulate it
-// there. This is a near-verbatim port of CPython's upstream implementation
+// RHEL/EL 9 ships Python 3.9, so we have to emulate it there. This is a
+// near-verbatim port of CPython's upstream implementation
 // in `Python/modsupport.c` (the body of the function below matches
 // the 3.10+ source line for line, only reformatted to project style),
 // so the validation surface (TypeError on a non-module first arg,

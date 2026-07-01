@@ -14,6 +14,11 @@ on:
         description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
         required: false
         default: false
+      artifact_retention_days:
+        type: number
+        description: 'Retention in days for optional Debian/Ubuntu package artifacts (0 disables package artifact upload)'
+        required: false
+        default: 0
 
 concurrency:
   group: publish-apt-repo
@@ -21,6 +26,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   prepare-matrix:
@@ -85,6 +91,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
+      actions: read
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
@@ -129,6 +136,33 @@ jobs:
           detached: true
           limit-access-to-actor: true
 
+      - name: Validate artifact retention
+        id: retention
+        env:
+          REQUESTED_RETENTION_DAYS: ${{ github.event.inputs.artifact_retention_days || '0' }}
+        run: |
+          case "$REQUESTED_RETENTION_DAYS" in
+            ''|*[!0-9]*)
+              echo "Artifact retention must be an integer number of days." >&2
+              exit 1
+              ;;
+          esac
+          if [ "$REQUESTED_RETENTION_DAYS" -gt 90 ]; then
+            echo "Artifact retention must be between 0 and 90 days." >&2
+            exit 1
+          fi
+          echo "days=$REQUESTED_RETENTION_DAYS" >> "$GITHUB_OUTPUT"
+          if [ "$REQUESTED_RETENTION_DAYS" -gt 0 ]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download matching WASM sandbox bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/download-wasm-artifact.sh "$(git rev-parse HEAD)" wasm-bundle
+
       - name: Set up QEMU for ARM64
         if: matrix.arch == 'arm64'
         uses: docker/setup-qemu-action@v4
@@ -144,13 +178,7 @@ jobs:
         run: |
           sudo apt-get update
 
-          # Determine Qt profile based on distribution version
-          # Older distros (Ubuntu 22.04, Debian 11) use Qt5, newer use Qt6
-          if [ "$MATRIX_DISTRO" = "jammy" ] || [ "$MATRIX_DISTRO" = "bullseye" ]; then
-            QT_PROFILE="pythonscad-qt5"
-          else
-            QT_PROFILE="pythonscad-qt6"
-          fi
+          QT_PROFILE="pythonscad-qt6"
           echo "Using profile: $QT_PROFILE for $MATRIX_DISTRO"
 
           # Install base dependencies using get-dependencies
@@ -176,13 +204,7 @@ jobs:
           # Install git and Python first (needed for uni-get-dependencies)
           apt-get install -y git python3
 
-          # Determine Qt profile based on distribution version
-          # Older distros (Ubuntu 22.04, Debian 11) use Qt5, newer use Qt6
-          if [ "$MATRIX_DISTRO" = "jammy" ] || [ "$MATRIX_DISTRO" = "bullseye" ]; then
-            QT_PROFILE="pythonscad-qt5"
-          else
-            QT_PROFILE="pythonscad-qt6"
-          fi
+          QT_PROFILE="pythonscad-qt6"
           echo "Using profile: $QT_PROFILE for $MATRIX_DISTRO"
 
           # Install base dependencies using get-dependencies (running as root, no sudo needed)
@@ -211,8 +233,8 @@ jobs:
         env:
           OUTPUT_DIR: /tmp/debs
           DEBIAN_DISTRO: ${{ matrix.distro }}
-          # Set Qt version for older distros
-          USE_QT6: ${{ (matrix.distro == 'jammy' || matrix.distro == 'bullseye') && 'OFF' || 'ON' }}
+          PYTHONSCAD_WASM_BUNDLE_DIR: ${{ github.workspace }}/wasm-bundle
+          USE_QT6: 'ON'
         run: |
           mkdir -p "$OUTPUT_DIR"
           chmod +x ./scripts/build-debian-package.sh
@@ -226,14 +248,8 @@ jobs:
           UPLOAD_TO_RELEASE: ${{ github.event.inputs.upload_to_release }}
           DEB_SIGNING_KEY: ${{ secrets.DEB_SIGNING_KEY }}
         run: |
-          # Determine Qt profile based on distribution version
-          if [ "$MATRIX_DISTRO" = "jammy" ] || [ "$MATRIX_DISTRO" = "bullseye" ]; then
-            QT_PROFILE="pythonscad-qt5"
-            USE_QT6="OFF"
-          else
-            QT_PROFILE="pythonscad-qt6"
-            USE_QT6="ON"
-          fi
+          QT_PROFILE="pythonscad-qt6"
+          USE_QT6="ON"
 
           # Run the entire build inside a Docker container with proper ARM64 emulation.
           #
@@ -259,6 +275,7 @@ jobs:
             -v /tmp/debs:/tmp/debs \
             -w /workspace \
             -e OUTPUT_DIR=/tmp/debs \
+            -e PYTHONSCAD_WASM_BUNDLE_DIR=/workspace/wasm-bundle \
             -e DEBIAN_DISTRO="$MATRIX_DISTRO" \
             -e QT_PROFILE="$QT_PROFILE" \
             -e USE_QT6="$USE_QT6" \
@@ -339,6 +356,15 @@ jobs:
           name: build-log-${{ matrix.distro }}-${{ matrix.arch }}
           path: /tmp/debs/*.log.txt
           retention-days: 7
+
+      - name: Upload package artifacts
+        if: steps.retention.outputs.upload == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: pythonscad-${{ matrix.family }}-${{ matrix.distro }}-${{ matrix.arch }}-deb
+          path: /tmp/debs/pythonscad_*.deb
+          if-no-files-found: error
+          retention-days: ${{ steps.retention.outputs.days }}
 
       - name: Upload to GitHub Release
         if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''

@@ -1414,10 +1414,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>&amp;Trust Current Design</string>
+    <string>Run Current Design in &amp;Native Python</string>
    </property>
    <property name="toolTip">
-    <string>Toggle trust for the active saved Python design</string>
+    <string>Toggle native Python execution for the active Python design</string>
    </property>
   </action>
   <action name="fileActionPythonRevoke">
