@@ -334,7 +334,12 @@ bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
           target.generic_string());
       return false;
     }
-    if (fs::exists(target, ec) || ec) {
+    const bool targetExists = fs::exists(target, ec);
+    if (ec) {
+      LOG(message_group::Error, "Could not inspect sandbox output file: %1$s", target.generic_string());
+      return false;
+    }
+    if (targetExists) {
       LOG(message_group::Error, "Refusing to overwrite sandbox output file: %1$s",
           target.generic_string());
       return false;
