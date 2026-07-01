@@ -464,6 +464,10 @@ jobs:
       - name: Test package installation (amd64 only)
         if: matrix.arch == 'amd64'
         run: |
+          if [ ! -f /etc/fedora-release ]; then
+            dnf module enable -y nodejs:24
+          fi
+
           # Install the package to verify it works
           dnf install -y /tmp/rpms/pythonscad-*.rpm
 
