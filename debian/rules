@@ -28,9 +28,10 @@ override_dh_auto_configure:
 		-DSNAPSHOT=OFF
 
 override_dh_auto_build:
+	build_dir="$$(find . -maxdepth 1 -type d -name 'obj-*' -print -quit)"; \
+	test -n "$$build_dir"; \
+	bash scripts/download-node-runtime.sh --dest "$$build_dir/pythonscad-node"; \
 	if [ -n "$$PYTHONSCAD_WASM_BUNDLE_DIR" ]; then \
-		build_dir="$$(find . -maxdepth 1 -type d -name 'obj-*' -print -quit)"; \
-		test -n "$$build_dir"; \
 		mkdir -p "$$build_dir/pythonscad-wasm"; \
 		cp "$$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.js" \
 		   "$$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.wasm" \

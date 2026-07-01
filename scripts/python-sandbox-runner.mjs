@@ -40,6 +40,15 @@ if (!wasmDir || !inputFile || !outputFile) {
 const modulePath = path.join(wasmDir, 'pythonscad.js');
 const source = fs.readFileSync(inputFile, 'utf8');
 
+function removeTreeSync(dir)
+{
+  if (typeof fs.rmSync === 'function') {
+    fs.rmSync(dir, {recursive: true, force: true});
+  } else {
+    fs.rmdirSync(dir, {recursive: true});
+  }
+}
+
 async function importOpenSCADModule()
 {
   try {
@@ -52,12 +61,10 @@ async function importOpenSCADModule()
       fs.copyFileSync(modulePath, tempModulePath);
       return (await import(pathToFileURL(tempModulePath).href)).default;
     } finally {
-      fs.rmSync(tempDir, {recursive: true, force: true});
+      removeTreeSync(tempDir);
     }
   }
 }
-
-const OpenSCAD = await importOpenSCADModule();
 
 const RESERVED_WINDOWS_NAMES = new Set([
   'con',  'prn',  'aux',  'nul',  'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7',
@@ -134,33 +141,43 @@ function collectSandboxOutputs(fsApi)
 
 const stdout = [];
 const stderr = [];
-const mod = await OpenSCAD({
-  locateFile: (name) => path.join(wasmDir, name),
-  print: (line) => stdout.push(line),
-  printErr: (line) => stderr.push(line),
-});
 
-mod.FS.mkdir('/work');
-mod.FS.writeFile('/work/input.py', source);
+async function main()
+{
+  const OpenSCAD = await importOpenSCADModule();
+  const mod = await OpenSCAD({
+    locateFile: (name) => path.join(wasmDir, name),
+    print: (line) => stdout.push(line),
+    printErr: (line) => stderr.push(line),
+  });
 
-let exitCode = 0;
-try {
-  mod.callMain(['-o', '/work/output.csg', '--python=native', '/work/input.py']);
-} catch (e) {
-  if (e && typeof e.status === 'number') {
-    exitCode = e.status;
-  } else {
-    exitCode = 1;
-    stderr.push(e?.stack || e?.message || String(e));
+  mod.FS.mkdir('/work');
+  mod.FS.writeFile('/work/input.py', source);
+
+  let exitCode = 0;
+  try {
+    mod.callMain(['-o', '/work/output.csg', '--python=native', '/work/input.py']);
+  } catch (e) {
+    if (e && typeof e.status === 'number') {
+      exitCode = e.status;
+    } else {
+      exitCode = 1;
+      stderr.push((e && (e.stack || e.message)) || String(e));
+    }
   }
+
+  if (exitCode !== 0) {
+    for (const line of stdout) console.error(line);
+    for (const line of stderr) console.error(line);
+    process.exit(exitCode);
+  }
+
+  const csg = mod.FS.readFile('/work/output.csg', {encoding: 'utf8'});
+  fs.writeFileSync(outputFile, csg);
+  collectSandboxOutputs(mod.FS);
 }
 
-if (exitCode !== 0) {
-  for (const line of stdout) console.error(line);
-  for (const line of stderr) console.error(line);
-  process.exit(exitCode);
-}
-
-const csg = mod.FS.readFile('/work/output.csg', {encoding: 'utf8'});
-fs.writeFileSync(outputFile, csg);
-collectSandboxOutputs(mod.FS);
+main().catch((e) => {
+  console.error((e && (e.stack || e.message)) || String(e));
+  process.exit(1);
+});
