@@ -284,9 +284,10 @@ bool ensureSandboxOutputDirectory(const fs::path& targetParent, const fs::path& 
     if (part.empty() || part == ".") continue;
     if (part == "..") return false;
     current /= part;
-    if (fs::is_symlink(current, ec) || ec) return false;
-    if (fs::exists(current, ec)) {
-      if (ec || !fs::is_directory(current, ec) || ec) return false;
+    const fs::file_status status = fs::symlink_status(current, ec);
+    if (ec) return false;
+    if (status.type() != fs::file_type::not_found) {
+      if (fs::is_symlink(status) || !fs::is_directory(status)) return false;
       continue;
     }
     fs::create_directory(current, ec);
