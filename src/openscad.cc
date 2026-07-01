@@ -57,7 +57,6 @@
 #include <core/customizer/CommentParser.h>
 #include <core/customizer/ParameterObject.h>
 #include <core/parsersettings.h>
-#include <cctype>
 #include <clocale>
 #include <cstddef>
 #include <cstdlib>
@@ -244,10 +243,6 @@ bool isSafeSandboxRelativePath(const std::string& relativePath)
 {
   if (relativePath.empty() || relativePath[0] == '/' || relativePath.find('\0') != std::string::npos ||
       relativePath.find(':') != std::string::npos) {
-    return false;
-  }
-  if (relativePath.size() >= 2 && std::isalpha(static_cast<unsigned char>(relativePath[0])) &&
-      relativePath[1] == ':') {
     return false;
   }
   if (relativePath.rfind("\\\\", 0) == 0) return false;

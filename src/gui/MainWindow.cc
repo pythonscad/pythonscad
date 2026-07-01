@@ -2363,6 +2363,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
     }
     updateSandboxOutputs(sandboxResult);
   } else if (editor->language == LANG_PYTHON) {
+    clearSandboxOutputs();
     const auto& venv = venvBinDirFromSettings();
     const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
 
