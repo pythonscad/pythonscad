@@ -60,12 +60,6 @@
         "xvfb"
       ],
       "version_overrides": {
-        "11": {
-          "add": [],
-          "remove": [
-            "libmimalloc-dev"
-          ]
-        },
         "12": {
           "add": [],
           "remove": []

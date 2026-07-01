@@ -178,13 +178,7 @@ jobs:
         run: |
           sudo apt-get update
 
-          # Determine Qt profile based on distribution version
-          # Older distros (Ubuntu 22.04, Debian 11) use Qt5, newer use Qt6
-          if [ "$MATRIX_DISTRO" = "jammy" ] || [ "$MATRIX_DISTRO" = "bullseye" ]; then
-            QT_PROFILE="pythonscad-qt5"
-          else
-            QT_PROFILE="pythonscad-qt6"
-          fi
+          QT_PROFILE="pythonscad-qt6"
           echo "Using profile: $QT_PROFILE for $MATRIX_DISTRO"
 
           # Install base dependencies using get-dependencies
@@ -210,13 +204,7 @@ jobs:
           # Install git and Python first (needed for uni-get-dependencies)
           apt-get install -y git python3
 
-          # Determine Qt profile based on distribution version
-          # Older distros (Ubuntu 22.04, Debian 11) use Qt5, newer use Qt6
-          if [ "$MATRIX_DISTRO" = "jammy" ] || [ "$MATRIX_DISTRO" = "bullseye" ]; then
-            QT_PROFILE="pythonscad-qt5"
-          else
-            QT_PROFILE="pythonscad-qt6"
-          fi
+          QT_PROFILE="pythonscad-qt6"
           echo "Using profile: $QT_PROFILE for $MATRIX_DISTRO"
 
           # Install base dependencies using get-dependencies (running as root, no sudo needed)
@@ -246,8 +234,7 @@ jobs:
           OUTPUT_DIR: /tmp/debs
           DEBIAN_DISTRO: ${{ matrix.distro }}
           PYTHONSCAD_WASM_BUNDLE_DIR: ${{ github.workspace }}/wasm-bundle
-          # Set Qt version for older distros
-          USE_QT6: ${{ (matrix.distro == 'jammy' || matrix.distro == 'bullseye') && 'OFF' || 'ON' }}
+          USE_QT6: 'ON'
         run: |
           mkdir -p "$OUTPUT_DIR"
           chmod +x ./scripts/build-debian-package.sh
@@ -261,14 +248,8 @@ jobs:
           UPLOAD_TO_RELEASE: ${{ github.event.inputs.upload_to_release }}
           DEB_SIGNING_KEY: ${{ secrets.DEB_SIGNING_KEY }}
         run: |
-          # Determine Qt profile based on distribution version
-          if [ "$MATRIX_DISTRO" = "jammy" ] || [ "$MATRIX_DISTRO" = "bullseye" ]; then
-            QT_PROFILE="pythonscad-qt5"
-            USE_QT6="OFF"
-          else
-            QT_PROFILE="pythonscad-qt6"
-            USE_QT6="ON"
-          fi
+          QT_PROFILE="pythonscad-qt6"
+          USE_QT6="ON"
 
           # Run the entire build inside a Docker container with proper ARM64 emulation.
           #

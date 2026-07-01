@@ -132,9 +132,8 @@ public:
   [[nodiscard]] size_t hash() const
   {
     size_t hash = 0;
-    // Gcc version 10.2.1 (Debian 11) fails to handle the
-    // range-for loop, it can't find the begin() definition
-    // of the Eigen::Matrix (with Eigen 3.3.9).
+    // Older Gcc/Eigen combinations fail to handle the range-for loop,
+    // as they can't find the begin() definition of the Eigen::Matrix.
     hash = std::hash<float>{}(r()) ^ (hash << 1);
     hash = std::hash<float>{}(g()) ^ (hash << 1);
     hash = std::hash<float>{}(b()) ^ (hash << 1);
