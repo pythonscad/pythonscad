@@ -72,7 +72,12 @@ bool hasWasmBundle(const fs::path& dir)
 bool isExecutableFile(const fs::path& path)
 {
   std::error_code ec;
-  return fs::is_regular_file(path, ec) && !ec;
+  if (!fs::is_regular_file(path, ec) || ec) return false;
+#ifdef _WIN32
+  return true;
+#else
+  return access(path.c_str(), X_OK) == 0;
+#endif
 }
 
 std::string processStatusMessage(int status)
