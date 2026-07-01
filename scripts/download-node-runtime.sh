@@ -63,7 +63,6 @@ if [ -z "$platform" ]; then
     Linux)
       case "$(uname -m)" in
         x86_64|amd64) platform="linux-x64" ;;
-        aarch64|arm64) platform="linux-arm64" ;;
         *) die "unsupported Linux architecture: $(uname -m)" ;;
       esac
       ;;

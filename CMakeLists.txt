@@ -431,8 +431,7 @@ target_compile_definitions(OpenSCADLibInternal PUBLIC
   _REENTRANT
   UNICODE
   _UNICODE
-  _USE_MATH_DEFINES
-  PYTHONSCAD_INSTALL_LIBDIR="${CMAKE_INSTALL_LIBDIR}")
+  _USE_MATH_DEFINES)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frounding-math")
@@ -2373,13 +2372,6 @@ if(NOT APPLE OR APPLE_UNIX)
     else()
       install(FILES "${CMAKE_SOURCE_DIR}/scripts/python-sandbox-runner.mjs"
               DESTINATION "${OPENSCAD_INSTALL_RESOURCEDIR}/scripts")
-      install(DIRECTORY "${CMAKE_BINARY_DIR}/pythonscad-node/"
-              DESTINATION "${CMAKE_INSTALL_LIBDIR}/pythonscad-node"
-              FILE_PERMISSIONS
-                OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                GROUP_READ GROUP_EXECUTE
-                WORLD_READ WORLD_EXECUTE
-              OPTIONAL)
     endif()
 
     # On Windows, the runtime Python deps (currently: IPython 9.x and its
