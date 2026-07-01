@@ -3375,12 +3375,8 @@ static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolyS
   auto psx = std::make_unique<PolySet>(ps->getDimension(), ps->convexValue());
   *psx = *ps;
 
-  printf("Repair\n");
   int error;
   auto edge_db = createEdgeDb(ps->indices, error);
-  if (error) printf("Repair errror\n");
-  else printf("repair no error\n");
-  std::cout << ps->dump();
 
   int color_ind = -1;
   if (node.color.isValid()) {
