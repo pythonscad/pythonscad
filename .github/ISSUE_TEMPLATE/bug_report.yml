@@ -55,7 +55,7 @@ body:
     attributes:
       label: Environment and Version info
       description: |
-        - OS [e.g. Windows 10, macOS 12 Monterey, Ubuntu 22.04]
+        - OS [e.g. Windows 10, macOS 12 Monterey, Ubuntu 24.04]
         - System [e.g. Intel PC 64-bit, Raspberry PI 4]
         - PythonSCAD Version [e.g. 0.0.1, 0.1.0, etc., and where it was installed from]
     validations:
