@@ -236,8 +236,8 @@ bool isPathInside(const fs::path& child, const fs::path& parent)
 
 bool hasManifestControlCharacter(const std::string& value)
 {
-  return value.find('\t') != std::string::npos || value.find('\r') != std::string::npos ||
-         value.find('\n') != std::string::npos || value.find('\0') != std::string::npos;
+  return std::any_of(value.begin(), value.end(),
+                     [](unsigned char ch) { return ch < 0x20 || ch == 0x7f; });
 }
 
 bool isReservedWindowsManifestPathComponent(const std::string& component)
