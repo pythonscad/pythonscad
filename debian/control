@@ -43,7 +43,7 @@ Rules-Requires-Root: no
 
 Package: pythonscad
 Architecture: amd64 arm64
-Depends: ${shlibs:Depends}, ${misc:Depends}, nodejs
+Depends: ${shlibs:Depends}, ${misc:Depends}, nodejs (>= 18)
 Recommends: meshlab,
             openscad-mcad,
             python3-ipython
