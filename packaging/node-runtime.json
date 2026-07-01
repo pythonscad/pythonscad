@@ -16,11 +16,6 @@
       "sha256": "55aa7153f9d88f28d765fcdad5ae6945b5c0f98a36881703817e4c450fa76742",
       "type": "tar"
     },
-    "linux-arm64": {
-      "url": "https://nodejs.org/dist/v24.18.0/node-v24.18.0-linux-arm64.tar.xz",
-      "sha256": "58c9520501f6ae2b52d5b210444e24b9d0c029a58c5011b797bc1fe7105886f6",
-      "type": "tar"
-    },
     "win-x64": {
       "url": "https://nodejs.org/dist/v24.18.0/win-x64/node.exe",
       "sha256": "9a4eb5f1c29c6a2e93852ead46b999e284a6a5ca8bab4d4e241d587d025a52de",

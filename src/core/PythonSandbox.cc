@@ -31,10 +31,6 @@
 
 namespace fs = std::filesystem;
 
-#ifndef PYTHONSCAD_INSTALL_LIBDIR
-#define PYTHONSCAD_INSTALL_LIBDIR "lib"
-#endif
-
 namespace {
 
 std::string getenvString(const char *name)
@@ -295,14 +291,10 @@ fs::path findBundledNode()
     appPath.parent_path() / "Resources" / "pythonscad-node" / "bin" / "node",
   };
 #else
-  const fs::path installPrefix = appPath.parent_path();
-  const std::array<fs::path, 6> candidates = {
-    installPrefix / PYTHONSCAD_INSTALL_LIBDIR / "pythonscad-node" / "bin" / "node",
-    installPrefix / "lib" / "pythonscad-node" / "bin" / "node",
-    installPrefix / "lib64" / "pythonscad-node" / "bin" / "node",
-    installPrefix / "lib" / "x86_64-linux-gnu" / "pythonscad-node" / "bin" / "node",
-    installPrefix / "lib" / "aarch64-linux-gnu" / "pythonscad-node" / "bin" / "node",
+  const std::array<fs::path, 3> candidates = {
+    appPath.parent_path() / "lib" / "pythonscad-node" / "bin" / "node",
     appPath / "pythonscad-node" / "bin" / "node",
+    appPath / "node" / "bin" / "node",
   };
 #endif
   for (const auto& candidate : candidates) {

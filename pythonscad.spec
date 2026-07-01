@@ -42,7 +42,6 @@ BuildRequires:  lib3mf-devel
 BuildRequires:  libzip-devel
 BuildRequires:  libcurl-devel
 BuildRequires:  openssl-devel
-BuildRequires:  curl
 BuildRequires:  cairo-devel
 BuildRequires:  hidapi-devel
 BuildRequires:  libspnav-devel
@@ -55,6 +54,7 @@ BuildRequires:  qscintilla-qt6-devel
 BuildRequires:  chrpath
 
 Requires:       python3
+Requires:       nodejs
 Requires:       qt6-qtbase
 Requires:       qt6-qtmultimedia
 Requires:       qt6-qtsvg
@@ -103,11 +103,9 @@ modern features.
     -DPORTABLE_BINARY=ON \
     -DSNAPSHOT=OFF
 
-build_dir="$(find . -maxdepth 1 -type d -name '*build*' -print -quit)"
-test -n "$build_dir"
-bash scripts/download-node-runtime.sh --dest "$build_dir/pythonscad-node"
-
 if [ -n "$PYTHONSCAD_WASM_BUNDLE_DIR" ]; then
+    build_dir="$(find . -maxdepth 1 -type d -name '*build*' -print -quit)"
+    test -n "$build_dir"
     mkdir -p "$build_dir/pythonscad-wasm"
     cp "$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.js" \
        "$PYTHONSCAD_WASM_BUNDLE_DIR/pythonscad.wasm" \
@@ -131,7 +129,6 @@ find %{buildroot} -type f \( -name "*.so*" -o -perm /111 \) -exec chrpath --dele
 %{_bindir}/pythonscad-python
 # Bundled libfive library (excluded from auto-requires on line 7)
 %{_libdir}/libfive.so*
-%{_libdir}/pythonscad-node/
 %{_datadir}/pythonscad/
 %{_datadir}/icons/hicolor/*/apps/pythonscad.png
 %{_datadir}/applications/org.pythonscad.pythonscad.desktop
