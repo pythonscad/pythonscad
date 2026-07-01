@@ -278,6 +278,28 @@ bool isSandboxCopyTargetInsideDestination(const fs::path& targetParent, const fs
   return true;
 }
 
+bool ensureSandboxOutputDirectory(const fs::path& targetParent, const fs::path& destinationRoot)
+{
+  std::error_code ec;
+  fs::path current = destinationRoot;
+  const fs::path relative = targetParent.lexically_relative(destinationRoot);
+  if (relative.empty()) return true;
+
+  for (const auto& part : relative) {
+    if (part.empty() || part == ".") continue;
+    if (part == "..") return false;
+    current /= part;
+    if (fs::is_symlink(current, ec) || ec) return false;
+    if (fs::exists(current, ec)) {
+      if (ec || !fs::is_directory(current, ec) || ec) return false;
+      continue;
+    }
+    fs::create_directory(current, ec);
+    if (ec || !isSandboxCopyTargetInsideDestination(current, destinationRoot)) return false;
+  }
+  return true;
+}
+
 bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
                                    const std::string& outputDir)
 {
@@ -306,8 +328,7 @@ bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
     }
     const fs::path target = destinationRoot / fs::path(file.relativePath);
     std::error_code ec;
-    fs::create_directories(target.parent_path(), ec);
-    if (ec) {
+    if (!ensureSandboxOutputDirectory(target.parent_path(), destinationRoot)) {
       LOG(message_group::Error, "Could not create sandbox output directory: %1$s",
           target.parent_path().generic_string());
       return false;

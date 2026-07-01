@@ -334,6 +334,26 @@ bool isSandboxExportTargetInsideDestination(const QString& targetParent, const Q
          (!relative.startsWith(QStringLiteral("../")) && relative != QStringLiteral("..") &&
           !QFileInfo(relative).isAbsolute());
 }
+
+bool ensureSandboxExportDirectory(const QString& relativePath, const QString& destination)
+{
+  const QString parentPath = QFileInfo(relativePath).path();
+  if (parentPath.isEmpty() || parentPath == QStringLiteral(".")) return true;
+
+  QString current = destination;
+  const QStringList parts = parentPath.split('/', Qt::SkipEmptyParts);
+  for (const QString& part : parts) {
+    current = QDir(current).filePath(part);
+    const QFileInfo info(current);
+    if (info.exists()) {
+      if (info.isSymLink() || !info.isDir()) return false;
+    } else if (!QDir().mkdir(current)) {
+      return false;
+    }
+    if (!isSandboxExportTargetInsideDestination(current, destination)) return false;
+  }
+  return true;
+}
 #endif
 
 struct DockFocus {
@@ -4093,7 +4113,7 @@ void MainWindow::onSandboxOutputExportAll()
     const QString relativePath = QString::fromStdString(file.relativePath);
     const QString target = QDir(destination).filePath(relativePath);
     const QString targetParent = QFileInfo(target).absolutePath();
-    if (!QDir().mkpath(targetParent) ||
+    if (!ensureSandboxExportDirectory(relativePath, destination) ||
         !isSandboxExportTargetInsideDestination(targetParent, destination)) {
       QMessageBox::warning(
         this, _("Export Sandbox Outputs"),

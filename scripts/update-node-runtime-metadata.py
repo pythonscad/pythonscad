@@ -41,8 +41,7 @@ def main() -> int:
             filename = "win-x64/node.exe"
             url = f"https://nodejs.org/dist/v{version}/win-x64/node.exe"
         else:
-            suffix = pathlib.PurePosixPath(entry["url"]).suffixes
-            extension = "".join(suffix[-2:]) if suffix[-2:] == [".tar", ".gz"] else "".join(suffix[-2:])
+            extension = "".join(pathlib.PurePosixPath(entry["url"]).suffixes[-2:])
             filename = f"node-v{version}-{platform}{extension}"
             url = f"https://nodejs.org/dist/v{version}/{filename}"
 
