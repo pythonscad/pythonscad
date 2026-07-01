@@ -35,6 +35,39 @@
   </screenshots>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.1.0" date="2026-07-01">
+      <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.1.0</url>
+      <description>
+        <p>Features:</p>
+        <ul>
+          <li>appdata: replace inherited OpenSCAD releases with PythonSCAD history</li>
+          <li>gui: add form-based bug report template and Help menu action</li>
+          <li>gui: AIDock preferences</li>
+          <li>mesh: add ability for mesh to output color</li>
+          <li>packaging: bundle IPython 9.x with MSYS2 psutil vendoring</li>
+          <li>pip: add binary wheels for PyPI distribution</li>
+          <li>python: add rounded_cube helper with r or d rounding</li>
+          <li>wasm: add CPython 3.14 WebAssembly browser support</li>
+          <li>wasm: in-browser playground with notebook UI and website integration</li>
+        </ul>
+        <p>Bug fixes:</p>
+        <ul>
+          <li>assert: issue warning instead of hard assert</li>
+          <li>build: restore configure_file writability check with clearer diagnostics</li>
+          <li>chore: compiles again</li>
+          <li>chore: customizer delevers recent values</li>
+          <li>chore: fixed meaning of stroke parameter</li>
+          <li>chore: get negation correct</li>
+          <li>chore: merge</li>
+          <li>chore: merge it</li>
+          <li>chore: merging</li>
+          <li>chore: removed comment</li>
+          <li>ci: exempt Dependabot commits from commitlint body rule (#762) (5184596), closes #757 #758</li>
+          <li>ci: install pip-licenses before bundle step on Windows and macOS</li>
+          <li>and more</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-06-02">
       <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.0.0</url>
       <description>
