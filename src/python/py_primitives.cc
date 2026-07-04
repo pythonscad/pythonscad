@@ -1369,3 +1369,522 @@ PyObject *python_sheet(PyObject *self, PyObject *args, PyObject *kwargs)
 
   return python_sheet_core(func, imin, imax, jmin, jmax, fs, ispan, jspan);
 }
+
+// organic_mesh.cpp
+// -----------------------------------------------------------------------
+// Eigenstaendige C++-Funktionen (keine CPython-Bindung noetig):
+//
+//   PolySet organic_resample(const std::vector<Vector3d>& points,
+//                             double max_mesh_size);
+//
+// Ablauf:
+//   1) delaunay2d_bowyer_watson()   - klassische 2D-Delaunay-Triangulierung
+//                                     (Bowyer-Watson, inkrementell)
+//   2) project_points_to_plane()    - PCA-Projektion der 3D-Punkte auf ihre
+//                                     Hauptebene, damit (1) angewendet werden
+//                                     kann (Topologie kommt aus der Ebene,
+//                                     die Positionen bleiben die echten 3D-
+//                                     Koordinaten)
+//   3) compute_vertex_normals()     - flaechengewichtete Eckennormalen
+//   4) compute_pn_patch()/eval_pn() - PN-Triangle (Vlachos et al. 2001):
+//                                     kubisches Bezier-Dreieck, dessen
+//                                     Randkurven nur von Position+Normale
+//                                     der beiden Eckpunkte abhaengen ->
+//                                     Normalensprung an gemeinsamen Kanten
+//                                     verschwindet.
+//   5) tessellate()                 - baryzentrisches Resampling aller
+//                                     Patches mit global einheitlicher
+//                                     Unterteilungstiefe, so gewaehlt, dass
+//                                     keine Kante > max_mesh_size lang ist.
+//                                     Kantenpunkte werden dedupliziert, das
+//                                     Ergebnis ist wasserdicht.
+//
+// Abhaengigkeit: nur Eigen (Vector2d/Vector3d), keine weiteren Libraries.
+//
+// Hinweis zur Integration in PythonSCAD/OpenSCAD:
+//   Falls ihr die echte OpenSCAD-Klasse PolySet (src/geometry/PolySet.h)
+//   statt der hier definierten Miniversion verwenden wollt, ersetzt die
+//   Struct-Definition unten durch ein #include "PolySet.h" und passt
+//   build_polyset() an eure PolySet-Konstruktion an (append_vertex /
+//   append_poly bzw. PolySetBuilder, je nach Version). Die eigentliche
+//   Geometrie-Berechnung (Schritte 1-5) bleibt unveraendert.
+// -----------------------------------------------------------------------
+
+#include <Eigen/Core>
+#include <Eigen/Eigenvalues>
+#include <vector>
+#include <array>
+#include <unordered_map>
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <cassert>
+
+using Vector2d = Eigen::Vector2d;
+using Vector3d = Eigen::Vector3d;
+
+// =========================================================================
+// 1) 2D-Delaunay-Triangulierung (Bowyer-Watson, inkrementell)
+// =========================================================================
+namespace detail {
+
+struct Tri2 {
+  int a, b, c;
+};
+
+// Umkreis-Test: liegt Punkt p im Umkreis des Dreiecks (a,b,c)?
+static bool in_circumcircle(const Vector2d& a, const Vector2d& b, const Vector2d& c, const Vector2d& p)
+{
+  const double ax = a.x() - p.x(), ay = a.y() - p.y();
+  const double bx = b.x() - p.x(), by = b.y() - p.y();
+  const double cx = c.x() - p.x(), cy = c.y() - p.y();
+
+  const double det = (ax * ax + ay * ay) * (bx * cy - cx * by) -
+                     (bx * bx + by * by) * (ax * cy - cx * ay) +
+                     (cx * cx + cy * cy) * (ax * by - bx * ay);
+
+  // Orientierung von (a,b,c) beruecksichtigen (Vorzeichenkonvention)
+  const double orient = (b.x() - a.x()) * (c.y() - a.y()) - (c.x() - a.x()) * (b.y() - a.y());
+  return orient > 0 ? (det > 0) : (det < 0);
+}
+
+struct EdgeKey {
+  int a, b;  // a < b
+  bool operator==(const EdgeKey& o) const { return a == o.a && b == o.b; }
+};
+struct EdgeKeyHash {
+  size_t operator()(const EdgeKey& e) const
+  {
+    return (static_cast<size_t>(e.a) << 32) ^ static_cast<size_t>(e.b);
+  }
+};
+
+// Liefert Dreiecke als Indizes in 'points' (points enthaelt NUR die
+// Eingabepunkte; das Super-Dreieck wird intern separat verwaltet und am
+// Ende herausgefiltert).
+inline std::vector<Tri2> delaunay2d_bowyer_watson(const std::vector<Vector2d>& points)
+{
+  const int n = static_cast<int>(points.size());
+  std::vector<Vector2d> pts = points;
+
+  // Super-Dreieck, das alle Punkte weit umschliesst
+  double minx = 1e300, miny = 1e300, maxx = -1e300, maxy = -1e300;
+  for (const auto& p : points) {
+    minx = std::min(minx, p.x());
+    maxx = std::max(maxx, p.x());
+    miny = std::min(miny, p.y());
+    maxy = std::max(maxy, p.y());
+  }
+  const double dx = maxx - minx, dy = maxy - miny;
+  const double delta = std::max(dx, dy) * 10.0 + 1.0;
+  const double midx = (minx + maxx) * 0.5, midy = (miny + maxy) * 0.5;
+
+  const int s0 = n, s1 = n + 1, s2 = n + 2;
+  pts.push_back(Vector2d(midx - 20 * delta, midy - delta));
+  pts.push_back(Vector2d(midx, midy + 20 * delta));
+  pts.push_back(Vector2d(midx + 20 * delta, midy - delta));
+
+  std::vector<Tri2> tris;
+  tris.push_back({s0, s1, s2});
+
+  for (int pi = 0; pi < n; ++pi) {
+    const Vector2d& p = pts[pi];
+
+    // 1) "schlechte" Dreiecke finden (Umkreis enthaelt p)
+    std::vector<int> bad;
+    bad.reserve(8);
+    for (int t = 0; t < static_cast<int>(tris.size()); ++t) {
+      const Tri2& tr = tris[t];
+      if (in_circumcircle(pts[tr.a], pts[tr.b], pts[tr.c], p)) bad.push_back(t);
+    }
+
+    // 2) Rand-Polygon = Kanten, die genau EINEM schlechten Dreieck angehoeren
+    std::unordered_map<EdgeKey, int, EdgeKeyHash> edge_count;
+    auto add_edge = [&](int a, int b) {
+      EdgeKey k{std::min(a, b), std::max(a, b)};
+      edge_count[k]++;
+    };
+    for (int t : bad) {
+      add_edge(tris[t].a, tris[t].b);
+      add_edge(tris[t].b, tris[t].c);
+      add_edge(tris[t].c, tris[t].a);
+    }
+
+    std::vector<std::array<int, 2>> boundary;
+    for (int t : bad) {
+      const Tri2& tr = tris[t];
+      int es[3][2] = {{tr.a, tr.b}, {tr.b, tr.c}, {tr.c, tr.a}};
+      for (auto& e : es) {
+        EdgeKey k{std::min(e[0], e[1]), std::max(e[0], e[1])};
+        if (edge_count[k] == 1) boundary.push_back({e[0], e[1]});
+      }
+    }
+
+    // 3) schlechte Dreiecke entfernen (rueckwaerts, damit Indizes stabil bleiben)
+    std::sort(bad.rbegin(), bad.rend());
+    for (int t : bad) tris.erase(tris.begin() + t);
+
+    // 4) neue Dreiecke aus Rand-Polygon + neuem Punkt
+    for (auto& e : boundary) tris.push_back({e[0], e[1], pi});
+  }
+
+  // Dreiecke entfernen, die eine Ecke des Super-Dreiecks benutzen
+  std::vector<Tri2> result;
+  result.reserve(tris.size());
+  for (const auto& t : tris) {
+    if (t.a >= n || t.b >= n || t.c >= n) continue;
+    result.push_back(t);
+  }
+  return result;
+}
+
+}  // namespace detail
+
+// =========================================================================
+// 2) PCA-Projektion der 3D-Punkte auf ihre Hauptebene (fuer die Topologie)
+// =========================================================================
+inline std::vector<Vector2d> project_points_to_plane(const std::vector<Vector3d>& pts)
+{
+  Vector3d centroid = Vector3d::Zero();
+  for (const auto& p : pts) centroid += p;
+  centroid /= static_cast<double>(pts.size());
+
+  Eigen::Matrix3d cov = Eigen::Matrix3d::Zero();
+  for (const auto& p : pts) {
+    Vector3d d = p - centroid;
+    cov += d * d.transpose();
+  }
+
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(cov);
+  // Eigenwerte aufsteigend sortiert -> die zwei groessten sind die letzten Spalten
+  Vector3d axis1 = solver.eigenvectors().col(2);
+  Vector3d axis2 = solver.eigenvectors().col(1);
+
+  std::vector<Vector2d> uv;
+  uv.reserve(pts.size());
+  for (const auto& p : pts) {
+    Vector3d d = p - centroid;
+    uv.emplace_back(d.dot(axis1), d.dot(axis2));
+  }
+  return uv;
+}
+
+// =========================================================================
+// 3) Eckennormalen (flaechengewichtet)
+// =========================================================================
+inline std::vector<Vector3d> compute_vertex_normals(const std::vector<Vector3d>& pts,
+                                                    const std::vector<std::array<int, 3>>& tris)
+{
+  std::vector<Vector3d> normals(pts.size(), Vector3d::Zero());
+  for (const auto& t : tris) {
+    const Vector3d &a = pts[t[0]], &b = pts[t[1]], &c = pts[t[2]];
+    Vector3d n = (b - a).cross(c - a);  // Laenge ~ 2x Dreiecksflaeche
+    normals[t[0]] += n;
+    normals[t[1]] += n;
+    normals[t[2]] += n;
+  }
+  for (auto& n : normals) {
+    double len = n.norm();
+    if (len > 1e-12) n /= len;
+  }
+  return normals;
+}
+
+// =========================================================================
+// 4) PN-Triangle: Kontrollpunkte + Auswertung
+// =========================================================================
+struct PNPatch {
+  Vector3d b300, b030, b003, b210, b120, b021, b012, b102, b201, b111;
+};
+
+// Max. Anteil der Kantenlaenge, um den ein Kanten-Kontrollpunkt von der
+// Verbindungsgeraden abweichen darf. Schuetzt vor Ausreissern durch
+// instabile Normalen an duennen/entarteten Randdreiecken (haeufig bei
+// spaerlich abgetasteten Punktwolken).
+static constexpr double kMaxOffsetFraction = 0.5;
+
+inline PNPatch compute_pn_patch(const Vector3d& p1, const Vector3d& p2, const Vector3d& p3,
+                                const Vector3d& n1, const Vector3d& n2, const Vector3d& n3)
+{
+  PNPatch cp;
+  cp.b300 = p1;
+  cp.b030 = p2;
+  cp.b003 = p3;
+
+  // Liefert den Kanten-Kontrollpunkt b_ij = (2*Pi+Pj - w*Ni)/3, wobei die
+  // Korrektur -w*Ni/3 auf kMaxOffsetFraction * |Pj-Pi| begrenzt wird.
+  auto edge_ctrl = [](const Vector3d& pi, const Vector3d& pj, const Vector3d& ni) {
+    double w = (pj - pi).dot(ni);
+    Vector3d correction = -w * ni / 3.0;
+    double max_len = kMaxOffsetFraction * (pj - pi).norm();
+    double len = correction.norm();
+    if (len > max_len && len > 1e-12) correction *= (max_len / len);
+    return (2 * pi + pj) / 3.0 + correction;
+  };
+
+  cp.b210 = edge_ctrl(p1, p2, n1);
+  cp.b120 = edge_ctrl(p2, p1, n2);
+  cp.b021 = edge_ctrl(p2, p3, n2);
+  cp.b012 = edge_ctrl(p3, p2, n3);
+  cp.b102 = edge_ctrl(p3, p1, n3);
+  cp.b201 = edge_ctrl(p1, p3, n1);
+
+  Vector3d E = (cp.b210 + cp.b120 + cp.b021 + cp.b012 + cp.b102 + cp.b201) / 6.0;
+  Vector3d V = (p1 + p2 + p3) / 3.0;
+  cp.b111 = E + (E - V) * 0.5;
+  return cp;
+}
+
+inline Vector3d eval_pn(const PNPatch& cp, double u, double v, double w)
+{
+  const double u2 = u * u, v2 = v * v, w2 = w * w;
+  const double u3 = u2 * u, v3 = v2 * v, w3 = w2 * w;
+  return cp.b300 * u3 + cp.b030 * v3 + cp.b003 * w3 + cp.b210 * (3 * u2 * v) + cp.b120 * (3 * u * v2) +
+         cp.b021 * (3 * v2 * w) + cp.b012 * (3 * v * w2) + cp.b102 * (3 * u * w2) +
+         cp.b201 * (3 * u2 * w) + cp.b111 * (6 * u * v * w);
+}
+
+// =========================================================================
+// 5) Subdiv-Tiefe aus max_mesh_size ableiten + baryzentrisches Resampling
+// =========================================================================
+namespace detail {
+
+inline int subdiv_from_max_edge(const std::vector<Vector3d>& pts,
+                                const std::vector<std::array<int, 3>>& tris, double max_mesh_size)
+{
+  double max_edge = 0.0;
+  for (const auto& t : tris) {
+    max_edge = std::max(max_edge, (pts[t[0]] - pts[t[1]]).norm());
+    max_edge = std::max(max_edge, (pts[t[1]] - pts[t[2]]).norm());
+    max_edge = std::max(max_edge, (pts[t[2]] - pts[t[0]]).norm());
+  }
+  if (max_mesh_size <= 0.0 || max_edge <= max_mesh_size) return 1;
+  int subdiv = static_cast<int>(std::ceil(max_edge / max_mesh_size));
+  return std::max(1, std::min(subdiv, 64));  // Obergrenze gegen Explosion
+}
+
+// baryzentrisches Gitter (u,v,w) fuer gegebene Unterteilungstiefe n,
+// inkl. Kantenmetadaten fuer die Dedup-Logik.
+struct Grid {
+  std::vector<std::array<double, 3>> coords;  // (u,v,w)
+  std::vector<std::array<int, 3>> faces;      // lokale Indizes
+  std::vector<int> edge_type;                 // 0=innen,1=ab,2=bc,3=ca
+  std::vector<int> edge_param;
+};
+
+inline Grid build_grid(int n)
+{
+  Grid g;
+  std::vector<std::vector<int>> index(n + 1, std::vector<int>(n + 1, -1));
+
+  for (int i = 0; i <= n; ++i) {
+    for (int j = 0; j <= n - i; ++j) {
+      int k = n - i - j;
+      index[i][j] = static_cast<int>(g.coords.size());
+      g.coords.push_back({double(i) / n, double(j) / n, double(k) / n});
+      if (k == 0) {
+        g.edge_type.push_back(1);
+        g.edge_param.push_back(i);
+      } else if (i == 0) {
+        g.edge_type.push_back(2);
+        g.edge_param.push_back(j);
+      } else if (j == 0) {
+        g.edge_type.push_back(3);
+        g.edge_param.push_back(i);
+      } else {
+        g.edge_type.push_back(0);
+        g.edge_param.push_back(0);
+      }
+    }
+  }
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n - i; ++j) {
+      int k = n - i - j;
+      int a = index[i][j], b = index[i + 1][j], c = index[i][j + 1];
+      g.faces.push_back({a, b, c});
+      if (k - 1 > 0) {
+        int d = index[i + 1][j + 1];
+        g.faces.push_back({b, d, c});
+      }
+    }
+  }
+  return g;
+}
+
+struct EdgeCacheKey {
+  int lo, hi, p;
+  bool operator==(const EdgeCacheKey& o) const { return lo == o.lo && hi == o.hi && p == o.p; }
+};
+struct EdgeCacheKeyHash {
+  size_t operator()(const EdgeCacheKey& k) const
+  {
+    return (static_cast<size_t>(k.lo) << 42) ^ (static_cast<size_t>(k.hi) << 21) ^
+           static_cast<size_t>(k.p);
+  }
+};
+
+}  // namespace detail
+
+// =========================================================================
+// Hauptfunktion
+// =========================================================================
+PolySet organic_resample(const std::vector<Vector3d>& points, double max_mesh_size)
+{
+  PolySet out(3);
+  if (points.size() < 3) return out;
+
+  // --- 1+2) Delaunay-Topologie ueber PCA-Projektion ---
+  std::vector<Vector2d> uv = project_points_to_plane(points);
+  std::vector<detail::Tri2> tris2d = detail::delaunay2d_bowyer_watson(uv);
+
+  std::vector<std::array<int, 3>> tris;
+  tris.reserve(tris2d.size());
+  for (const auto& t : tris2d) tris.push_back({t.a, t.b, t.c});
+
+  // --- 3) Eckennormalen ---
+  std::vector<Vector3d> normals = compute_vertex_normals(points, tris);
+
+  // --- 4+5) subdiv-Tiefe bestimmen, Gitter einmalig bauen ---
+  int subdiv = detail::subdiv_from_max_edge(points, tris, max_mesh_size);
+  detail::Grid grid = detail::build_grid(subdiv);
+
+  std::unordered_map<detail::EdgeCacheKey, int, detail::EdgeCacheKeyHash> edge_cache;
+  edge_cache.reserve(tris.size() * subdiv * 3);
+
+  std::vector<int> local_index(grid.coords.size());
+
+  for (const auto& t : tris) {
+    const int ia = t[0], ib = t[1], ic = t[2];
+    PNPatch cp =
+      compute_pn_patch(points[ia], points[ib], points[ic], normals[ia], normals[ib], normals[ic]);
+
+    for (size_t gi = 0; gi < grid.coords.size(); ++gi) {
+      const auto& uvw = grid.coords[gi];
+      const int et = grid.edge_type[gi];
+
+      if (et != 0) {
+        int lo, hi, p;
+        const int param = grid.edge_param[gi];
+        // Wichtig: die lokalen Parameter i/j messen je Kantentyp aus
+        // unterschiedlicher Richtung (siehe build_grid). Damit der
+        // globale Schluessel (lo,hi,p) unabhaengig vom Dreieck
+        // konsistent "Abstand ab lo" bedeutet, muss die Richtung
+        // pro Kantentyp passend gespiegelt werden.
+        if (et == 1) {
+          lo = std::min(ia, ib);
+          hi = std::max(ia, ib);
+          p = (ia < ib) ? subdiv - param : param;
+        } else if (et == 2) {
+          lo = std::min(ib, ic);
+          hi = std::max(ib, ic);
+          p = (ib < ic) ? subdiv - param : param;
+        } else {
+          lo = std::min(ic, ia);
+          hi = std::max(ic, ia);
+          p = (ic < ia) ? param : subdiv - param;
+        }
+
+        detail::EdgeCacheKey key{lo, hi, p};
+        auto it = edge_cache.find(key);
+        if (it != edge_cache.end()) {
+          local_index[gi] = it->second;
+          continue;
+        }
+        Vector3d pos = eval_pn(cp, uvw[0], uvw[1], uvw[2]);
+        int idx = static_cast<int>(out.vertices.size());
+        out.vertices.push_back(pos);
+        edge_cache.emplace(key, idx);
+        local_index[gi] = idx;
+      } else {
+        Vector3d pos = eval_pn(cp, uvw[0], uvw[1], uvw[2]);
+        int idx = static_cast<int>(out.vertices.size());
+        out.vertices.push_back(pos);
+        local_index[gi] = idx;
+      }
+    }
+
+    for (const auto& f : grid.faces) {
+      out.indices.push_back({local_index[f[0]], local_index[f[1]], local_index[f[2]]});
+    }
+  }
+
+  return out;
+}
+
+PyObject *python_organic(PyObject *obj, PyObject *args, PyObject *kwargs)
+{
+  DECLARE_INSTANCE();
+  auto node = std::make_shared<OrganicNode>(instance);
+  char *kwlist[] = {"pts", "r", nullptr};
+  double d = NAN;
+  PyObject *points = nullptr;
+  Vector3d point;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Od", kwlist, &points, &d)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing oragnic(ptlist,d)");
+    return NULL;
+  }
+  if (points != NULL && PyList_Check(points)) {
+    if (PyList_Size(points) == 0) {
+      PyErr_SetString(PyExc_TypeError, "There must at least be one point in the polyhedron");
+      return NULL;
+    }
+    for (Py_ssize_t i = 0; i < PyList_Size(points); i++) {
+      PyObject *element = PyList_GetItem(points, i);
+      if (PyList_Check(element) && PyList_Size(element) == 3) {
+        point[0] = PyFloat_AsDouble(PyList_GetItem(element, 0));
+        point[1] = PyFloat_AsDouble(PyList_GetItem(element, 1));
+        point[2] = PyFloat_AsDouble(PyList_GetItem(element, 2));
+        node->points.push_back(point);
+      } else {
+        PyErr_SetString(PyExc_TypeError, "Coordinate must exactly contain 3 numbers");
+        return NULL;
+      }
+    }
+  } else {
+    PyErr_SetString(PyExc_TypeError, "Polyhedron Points must be a list of coordinates");
+    return NULL;
+  }
+  node->d = d;
+  return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
+}
+
+// -------------------------------------------------------------------------
+// Optionaler Selbsttest: mit  g++ -DORGANIC_MESH_TEST_MAIN -I/usr/include/eigen3
+//                             organic_mesh.cpp -o test && ./test
+// -------------------------------------------------------------------------
+#ifdef ORGANIC_MESH_TEST_MAIN
+#include <cstdio>
+#include <random>
+
+int main()
+{
+  std::mt19937 rng(0);
+  std::uniform_real_distribution<double> ang_dist(0.0, 2 * M_PI);
+  std::uniform_real_distribution<double> rad_dist(0.0, 10.0);
+
+  std::vector<Vector3d> pts_in;
+  for (int i = 0; i < 40; ++i) {
+    double ang = ang_dist(rng);
+    double rad = rad_dist(rng);
+    double x = rad * std::cos(ang);
+    double y = rad * std::sin(ang);
+    double z = 2.5 * std::exp(-(rad * rad) / 40.0);
+    pts_in.emplace_back(x, y, z);
+  }
+
+  PolySet ps = organic_resample(pts_in, /*max_mesh_size=*/1.0);
+
+  std::printf("Eingang: %zu Punkte\n", pts_in.size());
+  std::printf("Ausgang: %zu Vertices, %zu Dreiecke\n", ps.vertices.size(), ps.triangles.size());
+
+  // Grobe Sanity-Checks
+  double max_edge = 0.0;
+  for (const auto& t : ps.triangles) {
+    max_edge = std::max(max_edge, (ps.vertices[t[0]] - ps.vertices[t[1]]).norm());
+    max_edge = std::max(max_edge, (ps.vertices[t[1]] - ps.vertices[t[2]]).norm());
+    max_edge = std::max(max_edge, (ps.vertices[t[2]] - ps.vertices[t[0]]).norm());
+  }
+  std::printf("Groesste Kantenlaenge im Ergebnis: %.4f (Ziel <= 1.0)\n", max_edge);
+  return 0;
+}
+#endif

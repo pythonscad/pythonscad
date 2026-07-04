@@ -129,6 +129,18 @@ public:
   std::vector<Color4f> colors;
 };
 
+class OrganicNode : public LeafNode
+{
+public:
+  OrganicNode(std::shared_ptr<const ModuleInstantiation> mi) : LeafNode(std::move(mi)) {}
+  std::string toString() const override;
+  std::string name() const override { return "polyhedron"; }
+  std::unique_ptr<const Geometry> createGeometry() const override;
+
+  std::vector<Vector3d> points;
+  double d;
+};
+
 class EdgeNode : public LeafNode
 {
 public:
