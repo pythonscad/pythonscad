@@ -1366,9 +1366,6 @@ target_compile_definitions(OpenSCADLibInternal PUBLIC
   OPENSCAD_YEAR=${OPENSCAD_YEAR}
   OPENSCAD_MONTH=${OPENSCAD_MONTH}
   OPENSCAD_DAY=${OPENSCAD_DAY})
-if (DEFINED OPENSCAD_DAY)
-  target_compile_definitions(OpenSCADLibInternal PUBLIC OPENSCAD_DAY=${OPENSCAD_DAY})
-endif()
 if(DEFINED OPENSCAD_COMMIT)
   target_compile_definitions(OpenSCADLibInternal PUBLIC OPENSCAD_COMMIT=${OPENSCAD_COMMIT})
 endif()

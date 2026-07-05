@@ -846,11 +846,11 @@ Value builtin_version_num(Arguments arguments, const Location& loc)
 {
   Value val =
     (arguments.size() == 0) ? builtin_version(std::move(arguments), loc) : std::move(arguments[0].value);
-  double y, m, d;
-  if (!val.getVec3(y, m, d, 0)) {
+  double major, minor, patch;
+  if (!val.getVec3(major, minor, patch, 0)) {
     return Value::undefined.clone();
   }
-  return {y * 1000000 + m * 1000 + d};
+  return {major * 1000000 + minor * 1000 + patch};
 }
 
 Value builtin_version_string(Arguments /*arguments*/, const Location& /*loc*/)
