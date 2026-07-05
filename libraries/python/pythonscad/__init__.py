@@ -292,7 +292,7 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         return [(self[i][0], self._part(i)) for i in range(len(self))]
 
     def export(self, single_file: _typing.Optional[str] = None) -> None:
-        """Export each part to a file via PythonSCAD.
+        """Export parts to per-part files or a single multi-object 3MF.
 
         By default, exports each result of :meth:`parts` to
         ``f"{prefix}{name}{suffix}"``. If ``single_file`` is given, exports
