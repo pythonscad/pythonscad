@@ -43,8 +43,13 @@ jobs:
           import os
 
           pr = json.loads(os.environ["RELEASE_PR"])
+          branch = pr.get("headBranchName") if isinstance(pr, dict) else None
+          if not isinstance(branch, str) or not branch:
+              print("No release PR branch found; skipping AppStream release sync")
+              raise SystemExit(0)
+
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"branch={pr['headBranchName']}\n")
+              output.write(f"branch={branch}\n")
           PY
 
       - name: Checkout release PR branch
