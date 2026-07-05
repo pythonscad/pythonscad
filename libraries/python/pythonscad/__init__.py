@@ -312,19 +312,30 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         """
         if single_file is not None:
             if _os.path.splitext(single_file)[1].casefold() != ".3mf":
-                raise ValueError("MultiToolExporter single-file export only supports .3mf")
+                raise ValueError(
+                    f"MultiToolExporter single-file export only supports .3mf: "
+                    f"{single_file!r}"
+                )
             if not self:
                 return
             self._check_unique_part_names()
             self._ensure_parent_dir(single_file)
-            export(dict(self.parts()), single_file)  # type: ignore[arg-type] # noqa: F405
+            export_multi = _typing.cast(
+                _typing.Callable[[_typing.Mapping[str, _typing.Any], str], None],
+                globals()["export"],
+            )
+            export_multi(dict(self.parts()), single_file)
             return
 
         self._check_unique_filenames()
+        export_one = _typing.cast(
+            _typing.Callable[[_typing.Any, str], None],
+            globals()["export"],
+        )
         for name, geometry in self.parts():
             filename = f"{self.prefix}{name}{self.suffix}"
             self._ensure_parent_dir(filename)
-            export(geometry, filename)  # noqa: F405
+            export_one(geometry, filename)
 
     def show(self) -> None:
         """Display each part in the PythonSCAD preview.
