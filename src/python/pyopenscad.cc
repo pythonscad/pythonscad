@@ -25,6 +25,7 @@
  */
 #include <Python.h>
 #include "genlang/genlang.h"
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cstdio>
@@ -81,6 +82,7 @@ PyMODINIT_FUNC PyInit__openscad(void);
 bool python_active;
 bool python_trusted;
 fs::path python_scriptpath;
+static std::string pythonManagedScriptDir;
 // https://docs.python.org/3.10/extending/newtypes.html
 
 void PyObjectDeleter(PyObject *pObject)
@@ -146,6 +148,92 @@ bool python_pyobject_to_utf8(PyObject *obj, std::string& out, const char *contex
   }
   out.assign(PyBytes_AS_STRING(bytes.get()), PyBytes_GET_SIZE(bytes.get()));
   return true;
+}
+
+static std::string python_script_dir_for_sys_path(const fs::path& scriptpath)
+{
+  if (scriptpath.empty()) return "";
+
+  std::error_code ec;
+  fs::path script = scriptpath.is_absolute() ? scriptpath : fs::absolute(scriptpath, ec);
+  if (ec) {
+    script = scriptpath;
+    ec.clear();
+  }
+
+  const fs::path dir = script.parent_path();
+  if (dir.empty()) return ".";
+
+  const fs::path normalized = fs::weakly_canonical(dir, ec);
+  if (!ec) return normalized.generic_string();
+
+  return dir.lexically_normal().generic_string();
+}
+
+static PyObject *python_string_from_path(const std::string& path)
+{
+#ifdef _WIN32
+  const std::wstring wide = fs::path(path).wstring();
+  return PyUnicode_FromWideChar(wide.c_str(), static_cast<Py_ssize_t>(wide.size()));
+#else
+  return PyUnicode_DecodeFSDefaultAndSize(path.c_str(), static_cast<Py_ssize_t>(path.size()));
+#endif
+}
+
+static bool python_sys_path_entry_equals(PyObject *entry, const std::string& path)
+{
+  if (!PyUnicode_Check(entry)) return false;
+
+  std::string entryStr;
+  if (!python_pyobject_to_utf8(entry, entryStr, "initPython() sys.path entry")) {
+    PyErr_Clear();
+    return false;
+  }
+  return entryStr == path;
+}
+
+static void python_update_script_sys_path(void)
+{
+  const std::string scriptDir = python_script_dir_for_sys_path(python_scriptpath);
+  if (scriptDir.empty()) return;
+
+  PyObject *sysPath = PySys_GetObject("path");  // borrowed reference
+  if (sysPath == nullptr || !PyList_Check(sysPath)) {
+    PyErr_Clear();
+    return;
+  }
+
+  for (Py_ssize_t i = PyList_GET_SIZE(sysPath) - 1; i >= 0; --i) {
+    PyObject *entry = PyList_GET_ITEM(sysPath, i);  // borrowed reference
+    if ((!pythonManagedScriptDir.empty() &&
+         python_sys_path_entry_equals(entry, pythonManagedScriptDir)) ||
+        python_sys_path_entry_equals(entry, scriptDir)) {
+      if (PySequence_DelItem(sysPath, i) != 0) {
+        PyErr_Clear();
+      }
+    }
+  }
+
+  Py_ssize_t insertIndex = PyList_GET_SIZE(sysPath);
+  for (Py_ssize_t i = 0; i < PyList_GET_SIZE(sysPath); ++i) {
+    PyObject *entry = PyList_GET_ITEM(sysPath, i);  // borrowed reference
+    if (python_sys_path_entry_equals(entry, ".")) {
+      insertIndex = i;
+      break;
+    }
+  }
+
+  PyObject *entry = python_string_from_path(scriptDir);
+  if (entry == nullptr) {
+    PyErr_Clear();
+    return;
+  }
+  if (PyList_Insert(sysPath, insertIndex, entry) != 0) {
+    PyErr_Clear();
+  } else {
+    pythonManagedScriptDir = scriptDir;
+  }
+  Py_DECREF(entry);
 }
 
 static std::atomic<bool> openscad_py_atexit_registered{false};
@@ -1124,10 +1212,9 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       stream << sepchar << fs::absolute(resourceLibPath).generic_string();
     }
 
-    fs::path scriptfile(python_scriptpath);
     stream << sepchar << PlatformUtils::userPythonLibraryPath();
     stream << sepchar << PlatformUtils::userLibraryPath();
-    stream << sepchar << scriptfile.parent_path().string();
+    stream << sepchar << python_script_dir_for_sys_path(python_scriptpath);
     stream << sepchar << ".";
 #endif
 #ifndef __EMSCRIPTEN__
@@ -1173,7 +1260,8 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
           PyErr_Clear();
         }
         if (!python_scriptpath.empty()) {
-          PyObject *s = PyUnicode_FromString(fs::path(python_scriptpath).parent_path().string().c_str());
+          const std::string scriptDir = python_script_dir_for_sys_path(python_scriptpath);
+          PyObject *s = python_string_from_path(scriptDir);
           if (s) {
             if (PyList_Append(syspath, s) < 0) {
               PyErr_Print();
@@ -1322,6 +1410,11 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       }
       pythonInventory.push_back(key_str);
     }
+  }
+  {
+    PyGILState_STATE pathGil = PyGILState_Ensure();
+    python_update_script_sys_path();
+    PyGILState_Release(pathGil);
   }
   std::ostringstream stream;
   if (r != nullptr) {
