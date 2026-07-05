@@ -83,7 +83,7 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         ...
 
     def export(self, single_file: str | None = ...) -> None:
-        """Export each part to a file via PythonSCAD."""
+        """Export each part separately, or all parts into one 3MF file."""
         ...
 
     def show(self) -> None:

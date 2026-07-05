@@ -90,6 +90,9 @@ expect(
     lambda: exp.export(single_file="assembly.stl"),
     ValueError,
 )
+empty = MultiToolExporter("p-", ".stl")
+empty.export(single_file="empty.3mf")
+print("single-file empty no-op: ok")
 
 # --- 5. End-to-end export(), with monkey-patched underlying export -----
 calls = []

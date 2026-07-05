@@ -313,6 +313,8 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         if single_file is not None:
             if _os.path.splitext(single_file)[1].casefold() != ".3mf":
                 raise ValueError("MultiToolExporter single-file export only supports .3mf")
+            if not self:
+                return
             self._check_unique_part_names()
             self._ensure_parent_dir(single_file)
             export(dict(self.parts()), single_file)  # type: ignore[arg-type] # noqa: F405
