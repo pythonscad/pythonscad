@@ -108,9 +108,9 @@ entry, all packed into the output file:
   `TypeError: Object not recognized` rather than writing an empty
   file.
 
-This is the lower-level form used by [`MultiToolExporter`](multitool.md).
-For most multi-tool / multi-color models, prefer
-`exporter.export(single_file="model.3mf")`; it computes the
+This is a lower-level form that can be used with
+`dict(exporter.parts())`. For most multi-tool / multi-color models,
+prefer `exporter.export(single_file="model.3mf")`; it computes the
 cumulative-difference split and writes the named parts into one 3MF file.
 
 ---

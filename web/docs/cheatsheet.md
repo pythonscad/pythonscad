@@ -389,7 +389,7 @@
 
       <div class="func"><code><a href="../reference/multitool/#multitoolexporter">MultiToolExporter</a>(prefix, suffix, mkdir, items)</code></div>
       <div>Split a model into per-color/per-tool files, or one multi-object 3MF</div>
-      <div><code>MultiToolExporter("out/m-", ".stl", mkdir=True, items=[("r",red),("b",blue)]).export(single_file="out/m.3mf")</code></div>
+      <div><code>MultiToolExporter("", "", items=[("r",red),("b",blue)]).export(single_file="out/m.3mf")</code></div>
   </div>
 </div>
 

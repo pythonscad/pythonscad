@@ -76,7 +76,7 @@ is created and no error is raised.
 | `append(item)`    | Append a single `(name, object)` 2-tuple. Validates the shape.                                                           |
 | `extend(items)`   | Append each `(name, object)` from an iterable.                                                                           |
 | `insert(i, item)` | Insert a single `(name, object)` 2-tuple at position `i`.                                                                |
-| `parts()`         | Return computed `(name, geometry)` pairs. Used internally and as input for lower-level `dict(exporter.parts())` 3MF export. |
+| `parts()`         | Return computed `(name, geometry)` pairs in declaration order. Useful for lower-level `dict(exporter.parts())` 3MF export. |
 | `export()`        | Write each part to its own file. Raises `ValueError` if any two items would write to the same output path.              |
 | `export(single_file="out/model.3mf")` | Write all computed parts into one multi-object 3MF file. Raises `ValueError` for non-`.3mf` paths or duplicate part names. |
 | `show()`          | Render each part into the preview viewport (same cumulative-difference semantics as `export`).                           |
