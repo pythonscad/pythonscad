@@ -220,8 +220,8 @@ PyObject *python_osversion_num(PyObject *self, PyObject *args, PyObject *kwargs)
     return NULL;
   }
 
-  long version = OPENSCAD_MAJOR * 1000000 + OPENSCAD_MINOR * 1000 + OPENSCAD_PATCH;
-  return PyLong_FromLong(version);
+  long long version = OPENSCAD_MAJOR * 1000000LL + OPENSCAD_MINOR * 1000LL + OPENSCAD_PATCH;
+  return PyLong_FromLongLong(version);
 }
 
 PyObject *python_osversion_string(PyObject *self, PyObject *args, PyObject *kwargs)
