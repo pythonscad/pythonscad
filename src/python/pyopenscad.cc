@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cctype>
 #include <cstdio>
 #include <filesystem>
 #include <string>
@@ -162,12 +163,29 @@ static std::string python_script_dir_for_sys_path(const fs::path& scriptpath)
   }
 
   const fs::path dir = script.parent_path();
-  if (dir.empty()) return ".";
+  if (dir.empty()) return "";
 
   const fs::path normalized = fs::weakly_canonical(dir, ec);
   if (!ec) return normalized.generic_string();
 
   return dir.lexically_normal().generic_string();
+}
+
+static std::string python_normalize_sys_path_for_compare(const std::string& path)
+{
+  fs::path p(path);
+  std::error_code ec;
+  if (p.is_absolute()) {
+    const fs::path canonical = fs::weakly_canonical(p, ec);
+    if (!ec) p = canonical;
+  }
+
+  std::string normalized = p.lexically_normal().generic_string();
+#ifdef _WIN32
+  std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+                 [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+#endif
+  return normalized;
 }
 
 static PyObject *python_string_from_path(const std::string& path)
@@ -189,7 +207,7 @@ static bool python_sys_path_entry_equals(PyObject *entry, const std::string& pat
     PyErr_Clear();
     return false;
   }
-  return entryStr == path;
+  return python_normalize_sys_path_for_compare(entryStr) == python_normalize_sys_path_for_compare(path);
 }
 
 static void python_update_script_sys_path(void)
