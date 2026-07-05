@@ -224,7 +224,7 @@ static void python_update_script_sys_path(void)
     PyObject *entry = PyList_GET_ITEM(sysPath, i);  // borrowed reference
     if ((!pythonManagedScriptDir.empty() &&
          python_sys_path_entry_equals(entry, pythonManagedScriptDir)) ||
-        python_sys_path_entry_equals(entry, scriptDir)) {
+        (!scriptDir.empty() && python_sys_path_entry_equals(entry, scriptDir))) {
       if (PySequence_DelItem(sysPath, i) != 0) {
         PyErr_Clear();
       }
