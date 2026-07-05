@@ -73,8 +73,23 @@ if ("${OPENSCAD_SHORTVERSION}" STREQUAL "")
   message(FATAL_ERROR "Version string '${OPENSCAD_VERSION}' doesn't match expected format. Please ensure git tags are fetched or VERSION.txt contains a valid version.")
 endif()
 
+string(REGEX REPLACE "^0+" "" OPENSCAD_MAJOR "${OPENSCAD_MAJOR}")
+if ("${OPENSCAD_MAJOR}" STREQUAL "")
+  set(OPENSCAD_MAJOR 0)
+endif()
+
+string(REGEX REPLACE "^0+" "" OPENSCAD_MINOR "${OPENSCAD_MINOR}")
+if ("${OPENSCAD_MINOR}" STREQUAL "")
+  set(OPENSCAD_MINOR 0)
+endif()
+
 if (NOT DEFINED OPENSCAD_PATCH OR "${OPENSCAD_PATCH}" STREQUAL "")
   # Patch version is optional (e.g., 0.6 instead of 0.6.0).
+  set(OPENSCAD_PATCH 0)
+endif()
+
+string(REGEX REPLACE "^0+" "" OPENSCAD_PATCH "${OPENSCAD_PATCH}")
+if ("${OPENSCAD_PATCH}" STREQUAL "")
   set(OPENSCAD_PATCH 0)
 endif()
 
