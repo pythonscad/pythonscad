@@ -35,7 +35,6 @@ void ParameterText::onEdit(const QString& text)
   std::string value = text.toStdString();
   if (lastSent != value) {
     lastSent = parameter->value = value;
-    emit changed(false);
   }
 }
 
