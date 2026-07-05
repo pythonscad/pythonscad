@@ -1234,7 +1234,10 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 
     stream << sepchar << PlatformUtils::userPythonLibraryPath();
     stream << sepchar << PlatformUtils::userLibraryPath();
-    stream << sepchar << python_script_dir_for_sys_path(python_scriptpath);
+    const std::string scriptDir = python_script_dir_for_sys_path(python_scriptpath);
+    if (!scriptDir.empty()) {
+      stream << sepchar << scriptDir;
+    }
     stream << sepchar << ".";
 #endif
 #ifndef __EMSCRIPTEN__
@@ -1281,16 +1284,18 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
         }
         if (!python_scriptpath.empty()) {
           const std::string scriptDir = python_script_dir_for_sys_path(python_scriptpath);
-          PyObject *s = python_string_from_path(scriptDir);
-          if (s) {
-            if (PyList_Append(syspath, s) < 0) {
+          if (!scriptDir.empty()) {
+            PyObject *s = python_string_from_path(scriptDir);
+            if (s) {
+              if (PyList_Append(syspath, s) < 0) {
+                PyErr_Print();
+                PyErr_Clear();
+              }
+              Py_DECREF(s);
+            } else {
               PyErr_Print();
               PyErr_Clear();
             }
-            Py_DECREF(s);
-          } else {
-            PyErr_Print();
-            PyErr_Clear();
           }
         }
       }
