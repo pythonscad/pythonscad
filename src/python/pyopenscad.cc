@@ -213,7 +213,6 @@ static bool python_sys_path_entry_equals(PyObject *entry, const std::string& pat
 static void python_update_script_sys_path(void)
 {
   const std::string scriptDir = python_script_dir_for_sys_path(python_scriptpath);
-  if (scriptDir.empty()) return;
 
   PyObject *sysPath = PySys_GetObject("path");  // borrowed reference
   if (sysPath == nullptr || !PyList_Check(sysPath)) {
@@ -231,6 +230,9 @@ static void python_update_script_sys_path(void)
       }
     }
   }
+  pythonManagedScriptDir.clear();
+
+  if (scriptDir.empty()) return;
 
   Py_ssize_t insertIndex = PyList_GET_SIZE(sysPath);
   for (Py_ssize_t i = 0; i < PyList_GET_SIZE(sysPath); ++i) {
@@ -997,7 +999,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
   if (alreadyTried) return;
   const auto name = PYTHON_EXECUTABLE_NAME;
   const auto exe = binDir + "/" + name;
-  if (scriptpath.size() > 0) python_scriptpath = scriptpath;
+  python_scriptpath = scriptpath;
   if (pythonInitDict) {
     /* Re-init path: remove user-added globals. Never call PyDict_DelItem* while iterating the same
      * dict with PyDict_Next — that invalidates the iteration and can crash (e.g. second initPython

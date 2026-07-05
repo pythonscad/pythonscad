@@ -11,6 +11,8 @@ from pathlib import Path
 
 TIMEOUT_SECONDS = 60
 MARKER_FILE = "sibling-import-marker.txt"
+HELPER_MODULE = "pythonscad_sibling_import_unique_helper"
+SENTINEL = "pythonscad-local-sibling-helper"
 
 
 def main() -> int:
@@ -30,7 +32,8 @@ def main() -> int:
         design_dir.mkdir()
         run_dir.mkdir()
 
-        (design_dir / "helper.py").write_text(
+        (design_dir / f"{HELPER_MODULE}.py").write_text(
+            f"SENTINEL = {SENTINEL!r}\n"
             "def side_length():\n"
             "    return 1\n",
             encoding="utf-8",
@@ -39,11 +42,12 @@ def main() -> int:
         main_py.write_text(
             "from openscad import cube, show\n"
             "from pathlib import Path\n"
-            "import helper\n\n"
+            f"import {HELPER_MODULE} as local_helper\n\n"
             "Path('" + MARKER_FILE + "').write_text(\n"
-            "    f'side={helper.side_length()}\\n', encoding='utf-8'\n"
+            "    f'{local_helper.SENTINEL}:side={local_helper.side_length()}\\n',\n"
+            "    encoding='utf-8',\n"
             ")\n"
-            "show(cube([helper.side_length()] * 3))\n",
+            "show(cube([local_helper.side_length()] * 3))\n",
             encoding="utf-8",
         )
 
@@ -76,7 +80,7 @@ def main() -> int:
         )
         return 1
 
-    if marker != "side=1\n":
+    if marker != f"{SENTINEL}:side=1\n":
         print(
             "FAIL: sibling helper import marker file was not written correctly",
             file=sys.stderr,
