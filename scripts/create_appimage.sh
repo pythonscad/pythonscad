@@ -366,6 +366,10 @@ fi
 info "Found executable: ${MAIN_EXEC}"
 EXEC_NAME=$(basename "${MAIN_EXEC}")
 
+# Keep GIO from discovering host modules that may not match the
+# bundled GLib/GIO libraries.
+mkdir -p "${APPDIR}/usr/lib/gio/modules"
+
 # Create AppRun script
 info "Creating AppRun..."
 
@@ -385,6 +389,8 @@ export LD_LIBRARY_PATH="\${HERE}/usr/lib:\${LD_LIBRARY_PATH}"
 export PYTHONPATH="\${HERE}/usr/lib/python${PYTHON_VERSION}:\${HERE}/usr/lib/python${PYTHON_VERSION}/site-packages:\${PYTHONPATH}"
 export PYTHONHOME="\${HERE}/usr"
 export QT_PLUGIN_PATH="\${HERE}/usr/plugins"
+export GIO_USE_VFS=local
+export GIO_MODULE_DIR="\${HERE}/usr/lib/gio/modules"
 
 # Force X11 platform (xcb) for maximum compatibility
 # PythonSCAD uses OpenGL (QOpenGLWidget) which works better with XWayland on Wayland systems
