@@ -1406,7 +1406,6 @@ PyObject *python_organic(PyObject *obj, PyObject *args, PyObject *kwargs)
   node->d = d;
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
 }
-
 // organic_mesh.cpp
 // -----------------------------------------------------------------------
 // Eigenstaendige C++-Funktionen (keine CPython-Bindung noetig):
@@ -1468,6 +1467,11 @@ PyObject *python_organic(PyObject *obj, PyObject *args, PyObject *kwargs)
 #include <limits>
 
 using Vector3d = Eigen::Vector3d;
+
+// -------------------------------------------------------------------------
+// Minimaler PolySet-Ersatz: nur Vertices + Dreiecke.
+// (Bei Bedarf durch die echte OpenSCAD-Klasse ersetzen, siehe Hinweis oben.)
+// -------------------------------------------------------------------------
 
 // =========================================================================
 // 1) 3D-Delaunay-Tetraedrisierung (Bowyer-Watson, inkrementell)
@@ -1722,6 +1726,49 @@ inline bool is_manifold(const std::vector<Face3>& faces)
   return true;
 }
 
+// Prueft, ob die Facetten EIN einziges zusammenhaengendes Stueck bilden
+// (ueber gemeinsame Kanten verbunden). Reine Punkt-Abdeckung + Mannig-
+// faltigkeit reichen nicht: bei mehreren raeumlich getrennten Punkt-
+// Clustern (z.B. ein grober Hauptkoerper + eine eng beieinander liegende
+// Gruppe von Punkten fuer eine feine Spitze) kann das kleinste Alpha, das
+// beides erfuellt, trotzdem ZWEI separate, je fuer sich geschlossene
+// Objekte erzeugen statt eines zusammenhaengenden.
+inline bool is_single_component(const std::vector<Face3>& faces)
+{
+  if (faces.empty()) return false;
+  std::unordered_map<int64_t, std::vector<int>> edge_to_faces;
+  auto key = [](int a, int b) {
+    int lo = std::min(a, b), hi = std::max(a, b);
+    return (static_cast<int64_t>(lo) << 32) | static_cast<int64_t>(hi);
+  };
+  for (size_t i = 0; i < faces.size(); ++i) {
+    const auto& f = faces[i];
+    edge_to_faces[key(f.a, f.b)].push_back(static_cast<int>(i));
+    edge_to_faces[key(f.b, f.c)].push_back(static_cast<int>(i));
+    edge_to_faces[key(f.c, f.a)].push_back(static_cast<int>(i));
+  }
+  std::vector<char> visited(faces.size(), 0);
+  std::vector<int> stack{0};
+  visited[0] = 1;
+  int seen = 1;
+  while (!stack.empty()) {
+    int cur = stack.back();
+    stack.pop_back();
+    const auto& f = faces[cur];
+    int idx[3] = {f.a, f.b, f.c};
+    for (int k = 0; k < 3; ++k) {
+      for (int nb : edge_to_faces[key(idx[k], idx[(k + 1) % 3])]) {
+        if (!visited[nb]) {
+          visited[nb] = 1;
+          ++seen;
+          stack.push_back(nb);
+        }
+      }
+    }
+  }
+  return seen == static_cast<int>(faces.size());
+}
+
 inline double estimate_alpha(const std::vector<Vector3d>& points, const std::vector<Tet4>& tets)
 {
   std::vector<double> radii;
@@ -1734,42 +1781,33 @@ inline double estimate_alpha(const std::vector<Vector3d>& points, const std::vec
   if (radii.empty()) return 1.0;
   std::sort(radii.begin(), radii.end());
 
-  // Erste Runde: kleinstes Alpha mit voller Punkt-Abdeckung UND
-  // Mannigfaltigkeit.
-  for (double r : radii) {
-    auto faces = alpha_shape_boundary(points, tets, r);
+  auto covers_all = [&](const std::vector<Face3>& faces) {
     std::vector<char> covered(points.size(), 0);
     for (const auto& f : faces) {
       covered[f.a] = 1;
       covered[f.b] = 1;
       covered[f.c] = 1;
     }
-    bool all_covered = true;
     for (char c : covered)
-      if (!c) {
-        all_covered = false;
-        break;
-      }
-    if (all_covered && is_manifold(faces)) return r;
+      if (!c) return false;
+    return true;
+  };
+
+  // Runde 1 (Idealfall): kleinstes Alpha mit voller Abdeckung UND
+  // Mannigfaltigkeit UND einem einzigen zusammenhaengenden Stueck.
+  for (double r : radii) {
+    auto faces = alpha_shape_boundary(points, tets, r);
+    if (covers_all(faces) && is_manifold(faces) && is_single_component(faces)) return r;
   }
-  // Fallback: kleinstes Alpha mit voller Abdeckung, auch wenn nicht
-  // perfekt mannigfaltig (seltener Grenzfall bei extrem entarteten
-  // Punktwolken) - besser als komplett leer zurueckzugeben.
+  // Runde 2: Abdeckung + Mannigfaltigkeit, auch wenn (noch) mehrteilig.
   for (double r : radii) {
     auto faces = alpha_shape_boundary(points, tets, r);
-    std::vector<char> covered(points.size(), 0);
-    for (const auto& f : faces) {
-      covered[f.a] = 1;
-      covered[f.b] = 1;
-      covered[f.c] = 1;
-    }
-    bool all_covered = true;
-    for (char c : covered)
-      if (!c) {
-        all_covered = false;
-        break;
-      }
-    if (all_covered) return r;
+    if (covers_all(faces) && is_manifold(faces)) return r;
+  }
+  // Runde 3: nur noch volle Abdeckung verlangen.
+  for (double r : radii) {
+    auto faces = alpha_shape_boundary(points, tets, r);
+    if (covers_all(faces)) return r;
   }
   return radii.back();  // Fallback: entspricht der reinen konvexen Huelle
 }
