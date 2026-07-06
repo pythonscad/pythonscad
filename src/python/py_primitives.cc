@@ -1406,52 +1406,55 @@ PyObject *python_organic(PyObject *obj, PyObject *args, PyObject *kwargs)
   node->d = d;
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
 }
-// organic_mesh.cpp
+
+// ddorganic_mesh.cpp
 // -----------------------------------------------------------------------
-// Eigenstaendige C++-Funktionen (keine CPython-Bindung noetig):
+// Self-contained C++ functions (no CPython binding needed):
 //
 //   PolySet organic_resample(const std::vector<Vector3d>& points,
 //                             double max_mesh_size);
 //
-// Immer fuer GESCHLOSSENE Koerper gedacht (kein Hoehenfeld-Modus).
-// Auch konkave Formen werden unterstuetzt, da die Oberflaeche ueber eine
-// echte 3D-Delaunay-Tetraedrisierung + Alpha-Shape-Filterung rekonstruiert
-// wird (nicht nur ueber die konvexe Huelle).
+// Always intended for CLOSED solids (no height-field mode).
+// Concave shapes are supported too, because the surface is reconstructed
+// via a real 3D Delaunay tetrahedralization + alpha-shape filtering
+// (not just the convex hull).
 //
-// Ablauf:
-//   1) delaunay3d_bowyer_watson()   - 3D-Delaunay-Tetraedrisierung
-//                                     (Bowyer-Watson, inkrementell)
-//   2) alpha_shape_boundary()       - Alpha-Shape-Filterung: nur "kompakte"
-//                                     Tetraeder (kleiner Umkugelradius)
-//                                     behalten, davon die Aussenflaechen
-//                                     extrahieren. Dadurch koennen auch
-//                                     konkave Einbuchtungen abgebildet
-//                                     werden (die reine konvexe Huelle
-//                                     wuerde sie "wegbuegeln").
-//   3) compute_vertex_normals()     - flaechengewichtete Eckennormalen
-//   4) compute_pn_patch()/eval_pn() - PN-Triangle (Vlachos et al. 2001):
-//                                     kubisches Bezier-Dreieck, dessen
-//                                     Randkurven nur von Position+Normale
-//                                     der beiden Eckpunkte abhaengen ->
-//                                     Normalensprung an gemeinsamen Kanten
-//                                     verschwindet.
-//   5) tessellate()                 - baryzentrisches Resampling aller
-//                                     Patches mit global einheitlicher
-//                                     Unterteilungstiefe, so gewaehlt, dass
-//                                     keine Kante > max_mesh_size lang ist.
-//                                     Kantenpunkte UND Original-Ecken werden
-//                                     dedupliziert, das Ergebnis ist
-//                                     wasserdicht.
+// Pipeline:
+//   1) delaunay3d_bowyer_watson()   - 3D Delaunay tetrahedralization
+//                                     (incremental Bowyer-Watson)
+//   2) adaptive_alpha_shape_boundary() - Alpha-shape filtering: only keep
+//                                     "compact" tetrahedra (small
+//                                     circumradius) and extract their
+//                                     outer faces. This allows concave
+//                                     indentations to show up (a pure
+//                                     convex hull would "iron them out").
+//                                     Adaptive: starts from the smallest
+//                                     alpha that preserves fine detail,
+//                                     then bridges any disconnected
+//                                     pieces with the minimal number of
+//                                     extra tetrahedra instead of raising
+//                                     alpha globally (which would bury
+//                                     fine concave details again).
+//   3) compute_vertex_normals()     - area-weighted vertex normals
+//   4) Loop subdivision             - genuine G1-smooth surface, so no
+//                                     visible creases remain along the
+//                                     original triangle edges (see the
+//                                     detailed comment near the Loop
+//                                     subdivision section below for why
+//                                     an earlier PN-triangle approach was
+//                                     not sufficient).
+//   5) loop_subdivide_to_target()   - repeatedly subdivides until no
+//                                     edge is longer than max_mesh_size.
 //
-// Abhaengigkeit: nur Eigen (Vector3d), keine weiteren Libraries.
+// Dependency: only Eigen (Vector3d), no other libraries.
 //
-// Hinweis zur Integration in PythonSCAD/OpenSCAD:
-//   Falls ihr die echte OpenSCAD-Klasse PolySet (src/geometry/PolySet.h)
-//   statt der hier definierten Miniversion verwenden wollt, ersetzt die
-//   Struct-Definition unten durch ein #include "PolySet.h" und passt
-//   build_polyset() an eure PolySet-Konstruktion an (append_vertex /
-//   append_poly bzw. PolySetBuilder, je nach Version). Die eigentliche
-//   Geometrie-Berechnung (Schritte 1-5) bleibt unveraendert.
+// Note on integrating into PythonSCAD/OpenSCAD:
+//   If you want to use the real OpenSCAD PolySet class
+//   (src/geometry/PolySet.h) instead of the minimal version defined here,
+//   replace the struct definition below with #include "PolySet.h" and
+//   adapt the construction of the result (append_vertex / append_poly or
+//   PolySetBuilder, depending on your version). The actual geometry
+//   computation (steps 1-5) stays unchanged.
 // -----------------------------------------------------------------------
 
 #include <Eigen/Core>
@@ -1469,12 +1472,12 @@ PyObject *python_organic(PyObject *obj, PyObject *args, PyObject *kwargs)
 using Vector3d = Eigen::Vector3d;
 
 // -------------------------------------------------------------------------
-// Minimaler PolySet-Ersatz: nur Vertices + Dreiecke.
-// (Bei Bedarf durch die echte OpenSCAD-Klasse ersetzen, siehe Hinweis oben.)
+// Minimal PolySet replacement: just vertices + triangles.
+// (Replace with the real OpenSCAD class if needed, see note above.)
 // -------------------------------------------------------------------------
 
 // =========================================================================
-// 1) 3D-Delaunay-Tetraedrisierung (Bowyer-Watson, inkrementell)
+// 1) 3D Delaunay tetrahedralization (incremental Bowyer-Watson)
 // =========================================================================
 namespace detail {
 
@@ -1482,11 +1485,15 @@ struct Tet4 {
   int a, b, c, d;
 };
 
+// Signed volume * 6 of (a,b,c,d). > 0 for "positive" orientation.
 inline double signed_volume6(const Vector3d& a, const Vector3d& b, const Vector3d& c, const Vector3d& d)
 {
   return (b - a).dot((c - a).cross(d - a));
 }
 
+// Circumsphere center + radius of a tetrahedron (solves the 3x3 linear
+// system given by the perpendicular-bisector planes). Robust enough for
+// tetrahedra that aren't extremely degenerate (near-coplanar).
 inline bool circumsphere(const Vector3d& a, const Vector3d& b, const Vector3d& c, const Vector3d& d,
                          Vector3d& center, double& radius)
 {
@@ -1500,7 +1507,7 @@ inline bool circumsphere(const Vector3d& a, const Vector3d& b, const Vector3d& c
   rhs(2) = 0.5 * (d.squaredNorm() - a.squaredNorm());
 
   double det = M.determinant();
-  if (std::fabs(det) < 1e-14) return false;
+  if (std::fabs(det) < 1e-14) return false;  // (nearly) coplanar
 
   center = M.fullPivLu().solve(rhs);
   radius = (center - a).norm();
@@ -1508,7 +1515,7 @@ inline bool circumsphere(const Vector3d& a, const Vector3d& b, const Vector3d& c
 }
 
 struct FaceKey {
-  int a, b, c;
+  int a, b, c;  // sorted ascending
   bool operator==(const FaceKey& o) const { return a == o.a && b == o.b && c == o.c; }
 };
 struct FaceKeyHash {
@@ -1525,18 +1532,21 @@ inline FaceKey make_face_key(int a, int b, int c)
   return {arr[0], arr[1], arr[2]};
 }
 
+// Returns the 3D Delaunay tetrahedralization of the input points (indices
+// as in 'points'). Tetrahedra that still reference a super-tetrahedron
+// corner have already been filtered out.
 inline std::vector<Tet4> delaunay3d_bowyer_watson(const std::vector<Vector3d>& points)
 {
   const int n = static_cast<int>(points.size());
   std::vector<Vector3d> pts = points;
 
-  // Mini-Jitter GEGEN NUMERISCHE ENTARTUNG: liegen viele Punkte (fast)
-  // exakt auf einer gemeinsamen Kugel (z.B. Kugel-Sampling), haben viele
-  // verschiedene Tetraeder exakt denselben Umkugelradius - die
-  // Bowyer-Watson-Kombinatorik wird dann mehrdeutig und kann nicht-
-  // mannigfaltige Facetten erzeugen. Ein winziges, deterministisches
-  // Jitter (nur fuer die Topologie-Berechnung hier, NICHT fuer die
-  // spaeter zurueckgegebene Geometrie) bricht solche Ties robust auf.
+  // Mini-jitter AGAINST NUMERICAL DEGENERACY: if many points lie
+  // (almost) exactly on a common sphere (e.g. sphere sampling), many
+  // different tetrahedra end up with exactly the same circumradius -
+  // the Bowyer-Watson combinatorics then become ambiguous and can
+  // produce non-manifold facets. A tiny, deterministic jitter (only
+  // for the topology computation here, NOT for the geometry returned
+  // later) robustly breaks such ties.
   {
     Vector3d lo0(1e300, 1e300, 1e300), hi0(-1e300, -1e300, -1e300);
     for (const auto& p : points) {
@@ -1559,6 +1569,7 @@ inline std::vector<Tet4> delaunay3d_bowyer_watson(const std::vector<Vector3d>& p
     }
   }
 
+  // Super-tetrahedron that widely encloses all points
   Vector3d lo(1e300, 1e300, 1e300), hi(-1e300, -1e300, -1e300);
   for (const auto& p : points) {
     lo = lo.cwiseMin(p);
@@ -1580,6 +1591,7 @@ inline std::vector<Tet4> delaunay3d_bowyer_watson(const std::vector<Vector3d>& p
   for (int pi = 0; pi < n; ++pi) {
     const Vector3d& p = pts[pi];
 
+    // 1) find "bad" tetrahedra (circumsphere contains p)
     std::vector<int> bad;
     bad.reserve(16);
     for (int t = 0; t < static_cast<int>(tets.size()); ++t) {
@@ -1589,14 +1601,16 @@ inline std::vector<Tet4> delaunay3d_bowyer_watson(const std::vector<Vector3d>& p
       if (!circumsphere(pts[tt.a], pts[tt.b], pts[tt.c], pts[tt.d], c, r)) continue;
       if ((p - c).norm() < r - 1e-9) bad.push_back(t);
     }
-    if (bad.empty()) continue;
+    if (bad.empty()) continue;  // point lies (almost) on an existing circumsphere boundary
 
+    // 2) boundary faces of the "cavity": faces that belong to exactly
+    //    one bad tetrahedron
     std::unordered_map<FaceKey, int, FaceKeyHash> face_count;
     std::unordered_map<FaceKey, std::array<int, 3>, FaceKeyHash> face_orient;
     auto add_face = [&](int a, int b, int c) {
       FaceKey k = make_face_key(a, b, c);
       face_count[k]++;
-      face_orient[k] = {a, b, c};
+      face_orient[k] = {a, b, c};  // remember the last-seen orientation
     };
     for (int t : bad) {
       const Tet4& tt = tets[t];
@@ -1606,9 +1620,11 @@ inline std::vector<Tet4> delaunay3d_bowyer_watson(const std::vector<Vector3d>& p
       add_face(tt.a, tt.b, tt.c);
     }
 
+    // 3) remove bad tetrahedra (in reverse order so indices stay valid)
     std::sort(bad.rbegin(), bad.rend());
     for (int t : bad) tets.erase(tets.begin() + t);
 
+    // 4) new tetrahedra from the cavity boundary + the new point
     for (auto& kv : face_count) {
       if (kv.second != 1) continue;
       auto& f = face_orient[kv.first];
@@ -1618,6 +1634,7 @@ inline std::vector<Tet4> delaunay3d_bowyer_watson(const std::vector<Vector3d>& p
     }
   }
 
+  // remove tetrahedra that use a super-tetrahedron corner
   std::vector<Tet4> result;
   result.reserve(tets.size());
   for (const auto& t : tets) {
@@ -1630,9 +1647,9 @@ inline std::vector<Tet4> delaunay3d_bowyer_watson(const std::vector<Vector3d>& p
 }  // namespace detail
 
 // =========================================================================
-// 2) Alpha-Shape: aus der Delaunay-Tetraedrisierung nur "kompakte"
-//    Tetraeder behalten und deren Aussenflaechen extrahieren. Das erlaubt
-//    (im Gegensatz zur reinen konvexen Huelle) auch konkave Formen.
+// 2) Alpha-shape: from the Delaunay tetrahedralization, keep only
+//    "compact" tetrahedra and extract their outer faces. This allows
+//    (unlike the pure convex hull) concave shapes too.
 // =========================================================================
 namespace detail {
 
@@ -1640,18 +1657,14 @@ struct Face3 {
   int a, b, c;
 };
 
-inline std::vector<Face3> alpha_shape_boundary(const std::vector<Vector3d>& points,
-                                               const std::vector<Tet4>& tets, double alpha)
+// Core function: extracts the outer faces from an arbitrary subset
+// "keep" of the Delaunay tetrahedra (not necessarily defined by a single
+// radius threshold - see adaptive_alpha_shape_boundary further below,
+// which deliberately extends "keep" with bridging tetrahedra).
+inline std::vector<Face3> boundary_from_kept(const std::vector<Vector3d>& points,
+                                             const std::vector<Tet4>& tets,
+                                             const std::vector<char>& keep)
 {
-  std::vector<char> keep(tets.size(), 0);
-  for (size_t i = 0; i < tets.size(); ++i) {
-    const Tet4& t = tets[i];
-    Vector3d c;
-    double r;
-    if (!circumsphere(points[t.a], points[t.b], points[t.c], points[t.d], c, r)) continue;
-    if (r <= alpha) keep[i] = 1;
-  }
-
   std::unordered_map<FaceKey, std::vector<std::pair<int, int>>, FaceKeyHash> face_owners;
   for (size_t i = 0; i < tets.size(); ++i) {
     if (!keep[i]) continue;
@@ -1670,7 +1683,7 @@ inline std::vector<Face3> alpha_shape_boundary(const std::vector<Vector3d>& poin
   std::vector<Face3> boundary;
   boundary.reserve(face_owners.size() / 2);
   for (auto& kv : face_owners) {
-    if (kv.second.size() != 1) continue;
+    if (kv.second.size() != 1) continue;  // only faces owned by exactly one kept tet are boundary
     int tet_idx = kv.second[0].first;
     int excluded = kv.second[0].second;
     const Tet4& t = tets[tet_idx];
@@ -1680,6 +1693,8 @@ inline std::vector<Face3> alpha_shape_boundary(const std::vector<Vector3d>& poin
     for (int v = 0; v < 4; ++v)
       if (verts[v] != excluded) f[k++] = verts[v];
 
+    // Orient outward: the normal of (f0,f1,f2) should point AWAY
+    // from the excluded (interior) vertex.
     Vector3d nrm = (points[f[1]] - points[f[0]]).cross(points[f[2]] - points[f[0]]);
     Vector3d toExcluded = points[excluded] - points[f[0]];
     if (nrm.dot(toExcluded) > 0) std::swap(f[1], f[2]);
@@ -1689,26 +1704,32 @@ inline std::vector<Face3> alpha_shape_boundary(const std::vector<Vector3d>& poin
   return boundary;
 }
 
-// Automatische Alpha-Wahl: die reine Abschaetzung ueber den naechsten-
-// Nachbar-Abstand versagt bei Punktwolken, die (wie eine Kugel) auf einer
-// gemeinsamen Oberflaeche liegen - dort ist der Umkugelradius jedes
-// Delaunay-Tetraeders durch die Gesamtkruemmung bestimmt, nicht durch den
-// lokalen Punktabstand, und kann um Groessenordnungen groesser sein.
+// Convenience wrapper: classic alpha-shape over a single global radius
+// threshold (for manual override / debugging).
+inline std::vector<Face3> alpha_shape_boundary(const std::vector<Vector3d>& points,
+                                               const std::vector<Tet4>& tets, double alpha)
+{
+  std::vector<char> keep(tets.size(), 0);
+  for (size_t i = 0; i < tets.size(); ++i) {
+    const Tet4& t = tets[i];
+    Vector3d c;
+    double r;
+    if (!circumsphere(points[t.a], points[t.b], points[t.c], points[t.d], c, r)) continue;
+    if (r <= alpha) keep[i] = 1;
+  }
+  return boundary_from_kept(points, tets, keep);
+}
+
+// Checks whether a face set is manifold: every edge must belong to
+// exactly 2 triangles.
 //
-// Stattdessen wird das KLEINSTE Alpha gesucht, bei dem noch jeder
-// Eingabepunkt auf der resultierenden Oberflaeche erscheint UND das
-// Ergebnis mannigfaltig ist (jede Kante gehoert zu genau 2 Dreiecken).
-// Reine Punkt-Abdeckung allein reicht nicht: bei duenn abgetasteten,
-// fast linienfoermigen "Spitzen" (z.B. nur 3 Punkte nahe einer Geraden)
-// kann das kleinste abdeckende Alpha eine beidseitige, quasi nulldicke
-// "Lasche" erzeugen (zwei fast deckungsgleiche, entgegengesetzt
-// orientierte Dreiecke). Der naechstgroessere kritische Alpha-Wert
-// loest das in der Praxis fast immer auf, da genau dort die Lasche durch
-// ein einzelnes, "dickeres" Tetraeder ersetzt wird.
-//
-// (Die kritischen Alpha-Werte sind exakt die Umkugelradien selbst,
-// dazwischen aendert sich die Topologie nicht - daher reicht es, diese
-// der Groesse nach zu durchsuchen.)
+// Note on why alpha is not a single fixed threshold in the automatic
+// path: a plain nearest-neighbor-distance estimate fails for point
+// clouds that lie (like a sphere) on a common surface - there, the
+// circumradius of every Delaunay tetrahedron is governed by the overall
+// curvature, not by the local point spacing, and can be orders of
+// magnitude larger. See adaptive_alpha_shape_boundary() below for the
+// actual automatic strategy used.
 inline bool is_manifold(const std::vector<Face3>& faces)
 {
   std::unordered_map<int64_t, int> edge_count;
@@ -1726,13 +1747,12 @@ inline bool is_manifold(const std::vector<Face3>& faces)
   return true;
 }
 
-// Prueft, ob die Facetten EIN einziges zusammenhaengendes Stueck bilden
-// (ueber gemeinsame Kanten verbunden). Reine Punkt-Abdeckung + Mannig-
-// faltigkeit reichen nicht: bei mehreren raeumlich getrennten Punkt-
-// Clustern (z.B. ein grober Hauptkoerper + eine eng beieinander liegende
-// Gruppe von Punkten fuer eine feine Spitze) kann das kleinste Alpha, das
-// beides erfuellt, trotzdem ZWEI separate, je fuer sich geschlossene
-// Objekte erzeugen statt eines zusammenhaengenden.
+// Checks whether the faces form a SINGLE connected piece (connected via
+// shared edges). Full point coverage + manifoldness alone are not
+// enough: with several spatially separated point clusters (e.g. a coarse
+// main body plus a tightly-packed group of points for a fine tip), the
+// smallest alpha satisfying both can still produce TWO separate,
+// individually closed objects instead of one connected piece.
 inline bool is_single_component(const std::vector<Face3>& faces)
 {
   if (faces.empty()) return false;
@@ -1769,20 +1789,199 @@ inline bool is_single_component(const std::vector<Face3>& faces)
   return seen == static_cast<int>(faces.size());
 }
 
-inline double estimate_alpha(const std::vector<Vector3d>& points, const std::vector<Tet4>& tets)
+// Number of connected pieces of a face set (via shared edges - not just
+// shared points! Two surface patches that only touch at a single point
+// ("hourglass" connection) are deliberately still counted as separate
+// here, since that is not a genuine, manifold connection).
+inline int count_components(const std::vector<Face3>& faces)
 {
-  std::vector<double> radii;
-  radii.reserve(tets.size());
-  for (const auto& t : tets) {
-    Vector3d c;
-    double r;
-    if (circumsphere(points[t.a], points[t.b], points[t.c], points[t.d], c, r)) radii.push_back(r);
+  if (faces.empty()) return 0;
+  std::unordered_map<int64_t, std::vector<int>> edge_to_faces;
+  auto key = [](int a, int b) {
+    int lo = std::min(a, b), hi = std::max(a, b);
+    return (static_cast<int64_t>(lo) << 32) | static_cast<int64_t>(hi);
+  };
+  for (size_t i = 0; i < faces.size(); ++i) {
+    const auto& f = faces[i];
+    edge_to_faces[key(f.a, f.b)].push_back(static_cast<int>(i));
+    edge_to_faces[key(f.b, f.c)].push_back(static_cast<int>(i));
+    edge_to_faces[key(f.c, f.a)].push_back(static_cast<int>(i));
   }
-  if (radii.empty()) return 1.0;
-  std::sort(radii.begin(), radii.end());
+  std::vector<char> visited(faces.size(), 0);
+  int ncomp = 0;
+  for (size_t start = 0; start < faces.size(); ++start) {
+    if (visited[start]) continue;
+    ++ncomp;
+    std::vector<int> stack{static_cast<int>(start)};
+    visited[start] = 1;
+    while (!stack.empty()) {
+      int cur = stack.back();
+      stack.pop_back();
+      const auto& f = faces[cur];
+      int idx[3] = {f.a, f.b, f.c};
+      for (int k = 0; k < 3; ++k)
+        for (int nb : edge_to_faces[key(idx[k], idx[(k + 1) % 3])])
+          if (!visited[nb]) {
+            visited[nb] = 1;
+            stack.push_back(nb);
+          }
+    }
+  }
+  return ncomp;
+}
 
-  auto covers_all = [&](const std::vector<Face3>& faces) {
-    std::vector<char> covered(points.size(), 0);
+// Step 2 (see adaptive_alpha_shape_boundary below): deliberately bridge
+// separate pieces with the minimal number of extra tetrahedra. Important:
+// "connected" must hold via REAL shared EDGES (not just a shared point -
+// a single shared corner would only be an "hourglass" touch, not a
+// genuine surface connection). That is why, after each candidate
+// tetrahedron, we actually re-check whether the number of (edge-)
+// connected pieces decreased, instead of relying on a coarser point-based
+// union-find estimate. Somewhat more expensive, but guaranteed correct;
+// not an issue at the usual, moderate point counts.
+// Step 2 (see adaptive_alpha_shape_boundary below): deliberately bridge
+// separate pieces AND fill in any still-missing points with the minimal
+// number of extra tetrahedra. Important: "connected" must hold via REAL
+// shared EDGES (not just a shared point - a single shared corner would
+// only be an "hourglass" touch, not a genuine surface connection). That
+// is why, after each candidate tetrahedron, we actually re-check whether
+// coverage/connectivity/manifoldness improved, instead of relying on a
+// coarser point-based union-find estimate. Somewhat more expensive, but
+// guaranteed correct; not an issue at the usual, moderate point counts.
+//
+// Priority (lexicographic): first maximize point coverage (bring in any
+// point still missing from the surface), then minimize the number of
+// separate pieces, then repair manifoldness. Coverage comes first
+// because a completely un-used point is the worst outcome; a small
+// concave feature made of just a few points, far away from a much
+// larger main body, would otherwise get buried entirely once the main
+// body forces a large-radius merge before the feature ever gets a
+// chance to attach (a genuine multi-scale limitation of a single global
+// alpha threshold - see the comment on adaptive_alpha_shape_boundary).
+inline std::vector<char> bridge_components(const std::vector<Vector3d>& points,
+                                           const std::vector<Tet4>& tets, std::vector<char> kept,
+                                           const std::vector<double>& tet_radius)
+{
+  const int n = static_cast<int>(points.size());
+  auto missing_count = [&](const std::vector<Face3>& faces) {
+    std::vector<char> covered(n, 0);
+    for (const auto& f : faces) {
+      covered[f.a] = 1;
+      covered[f.b] = 1;
+      covered[f.c] = 1;
+    }
+    int missing = 0;
+    for (char c : covered)
+      if (!c) ++missing;
+    return missing;
+  };
+
+  auto faces = boundary_from_kept(points, tets, kept);
+  int nmiss = missing_count(faces);
+  int ncomp = count_components(faces);
+  bool manifold_ok = is_manifold(faces);
+  if (nmiss == 0 && ncomp <= 1 && manifold_ok) return kept;
+
+  std::vector<int> order;
+  order.reserve(tets.size());
+  for (size_t i = 0; i < tets.size(); ++i)
+    if (!kept[i] && tet_radius[i] >= 0) order.push_back(static_cast<int>(i));
+  std::sort(order.begin(), order.end(), [&](int a, int b) { return tet_radius[a] < tet_radius[b]; });
+
+  // A candidate is "better" if it improves on the lexicographic tuple
+  // (fewer missing points, then fewer separate pieces, then manifold).
+  auto is_better = [](int cur_miss, int cur_c, bool cur_m, int trial_miss, int trial_c, bool trial_m) {
+    if (trial_miss != cur_miss) return trial_miss < cur_miss;
+    if (trial_c != cur_c) return trial_c < cur_c;
+    return (!cur_m && trial_m);
+  };
+
+  bool progressed = true;
+  while ((nmiss > 0 || ncomp > 1 || !manifold_ok) && progressed) {
+    progressed = false;
+    for (int ti : order) {
+      if (kept[ti]) continue;
+      std::vector<char> trial = kept;
+      trial[ti] = 1;
+      auto trial_faces = boundary_from_kept(points, tets, trial);
+      int trial_miss = missing_count(trial_faces);
+      int trial_ncomp = count_components(trial_faces);
+      bool trial_manifold = is_manifold(trial_faces);
+      if (is_better(nmiss, ncomp, manifold_ok, trial_miss, trial_ncomp, trial_manifold)) {
+        kept = std::move(trial);
+        nmiss = trial_miss;
+        ncomp = trial_ncomp;
+        manifold_ok = trial_manifold;
+        progressed = true;
+        break;  // restart from the smallest remaining radius
+      }
+    }
+    // Safety net: if no single candidate improves things anymore
+    // (theoretically possible for very unusual configurations), just
+    // force in the next-smallest remaining candidate - adding ALL
+    // tetrahedra always converges to the convex hull, which is
+    // guaranteed to be a single manifold piece covering every point.
+    if (!progressed) {
+      for (int ti : order) {
+        if (kept[ti]) continue;
+        kept[ti] = 1;
+        progressed = true;
+        break;
+      }
+      if (progressed) {
+        auto f = boundary_from_kept(points, tets, kept);
+        nmiss = missing_count(f);
+        ncomp = count_components(f);
+        manifold_ok = is_manifold(f);
+      }
+    }
+  }
+  return kept;
+}
+
+// Adaptive alpha-shape reconstruction: instead of ONE global alpha value
+// for the whole shape (which forces fine, small-scale concave details to
+// be buried whenever a much larger-scale part of the same shape needs a
+// big alpha just to be reached at all - a genuine multi-scale issue,
+// e.g. a small crater sitting on a much bigger body), this proceeds in
+// two stages:
+//
+//   1) Base reconstruction at the smallest alpha that is already
+//      manifold (coverage is NOT required yet at this stage!) - this
+//      lets small, tightly-packed local features (like a fine crater)
+//      reconstruct cleanly on their own small scale, as their own
+//      separate manifold piece, without being forced to merge with a
+//      much larger, far-away structure right away.
+//   2) Separate pieces - and any points still missing from the surface
+//      entirely - are then handled by bridge_components: deliberately
+//      adding the smallest possible additional tetrahedra (sorted by
+//      circumradius) until every point is used, everything is connected,
+//      and the result is manifold (see the priority order documented on
+//      bridge_components above).
+//
+// Result: fine detail at any local scale is preserved as well as
+// possible, AND the final result is still guaranteed to be a single
+// connected, manifold piece using every input point (whenever that is
+// geometrically at all achievable).
+// After bridging, some added tetrahedra may turn out to be unnecessary
+// for maintaining full coverage / single-component / manifold - they can
+// still end up "eating into" an already-good, naturally short local
+// face from the base reconstruction (by sharing that exact face, making
+// it interior), even though a different, non-conflicting bridging choice
+// existed or the tetrahedron simply wasn't needed at all. This pass
+// removes any added tetrahedron (largest radius first, since those are
+// the most likely to be dispensable "last resort" bridges) whose removal
+// still leaves full coverage + single component + manifold intact,
+// restoring the shorter/more natural local faces wherever possible.
+inline std::vector<char> prune_redundant(const std::vector<Vector3d>& points,
+                                         const std::vector<Tet4>& tets, std::vector<char> kept,
+                                         const std::vector<double>& tet_radius,
+                                         const std::vector<char>& base_kept)
+{
+  const int n = static_cast<int>(points.size());
+  auto is_ok = [&](const std::vector<Face3>& faces) {
+    if (faces.empty()) return false;
+    std::vector<char> covered(n, 0);
     for (const auto& f : faces) {
       covered[f.a] = 1;
       covered[f.b] = 1;
@@ -1790,50 +1989,97 @@ inline double estimate_alpha(const std::vector<Vector3d>& points, const std::vec
     }
     for (char c : covered)
       if (!c) return false;
-    return true;
+    return count_components(faces) == 1 && is_manifold(faces);
   };
 
-  // Runde 1 (Idealfall): kleinstes Alpha mit voller Abdeckung UND
-  // Mannigfaltigkeit UND einem einzigen zusammenhaengenden Stueck.
+  // Only ever consider removing tetrahedra that were added DURING
+  // bridging (not part of the original small-scale base reconstruction).
+  std::vector<int> added;
+  added.reserve(tets.size());
+  for (size_t i = 0; i < tets.size(); ++i)
+    if (kept[i] && !base_kept[i]) added.push_back(static_cast<int>(i));
+  std::sort(added.begin(), added.end(),
+            [&](int a, int b) { return tet_radius[a] > tet_radius[b]; });  // largest first
+
+  for (int ti : added) {
+    std::vector<char> trial = kept;
+    trial[ti] = 0;
+    auto trial_faces = boundary_from_kept(points, tets, trial);
+    if (is_ok(trial_faces)) kept = std::move(trial);  // safe to drop
+  }
+  return kept;
+}
+
+inline std::vector<Face3> adaptive_alpha_shape_boundary(const std::vector<Vector3d>& points,
+                                                        const std::vector<Tet4>& tets)
+{
+  std::vector<double> tet_radius(tets.size(), -1.0);
+  std::vector<double> radii;
+  radii.reserve(tets.size());
+  for (size_t i = 0; i < tets.size(); ++i) {
+    Vector3d c;
+    double r;
+    if (circumsphere(points[tets[i].a], points[tets[i].b], points[tets[i].c], points[tets[i].d], c, r)) {
+      tet_radius[i] = r;
+      radii.push_back(r);
+    }
+  }
+  if (radii.empty() || tets.empty()) return {};
+  std::sort(radii.begin(), radii.end());
+
+  // --- Step 1: smallest alpha that is already manifold on its own,
+  //     WITHOUT requiring full coverage yet. This is the key change
+  //     that allows small-scale concave features (far away from a
+  //     much bigger main body) to reconstruct at their own natural
+  //     scale instead of being forced into the same, much larger
+  //     alpha the main body needs. ---
+  double alpha_base = radii.back();
   for (double r : radii) {
     auto faces = alpha_shape_boundary(points, tets, r);
-    if (covers_all(faces) && is_manifold(faces) && is_single_component(faces)) return r;
+    if (!faces.empty() && is_manifold(faces)) {
+      alpha_base = r;
+      break;
+    }
   }
-  // Runde 2: Abdeckung + Mannigfaltigkeit, auch wenn (noch) mehrteilig.
-  for (double r : radii) {
-    auto faces = alpha_shape_boundary(points, tets, r);
-    if (covers_all(faces) && is_manifold(faces)) return r;
-  }
-  // Runde 3: nur noch volle Abdeckung verlangen.
-  for (double r : radii) {
-    auto faces = alpha_shape_boundary(points, tets, r);
-    if (covers_all(faces)) return r;
-  }
-  return radii.back();  // Fallback: entspricht der reinen konvexen Huelle
+
+  std::vector<char> kept(tets.size(), 0);
+  for (size_t i = 0; i < tets.size(); ++i)
+    if (tet_radius[i] >= 0 && tet_radius[i] <= alpha_base) kept[i] = 1;
+  const std::vector<char> base_kept = kept;  // remember pre-bridging state for pruning
+
+  // --- Step 2: bridge separate pieces AND bring in any still-missing
+  //     points, using the smallest possible additional tetrahedra. ---
+  kept = bridge_components(points, tets, std::move(kept), tet_radius);
+
+  // --- Step 3: prune bridging tetrahedra that turned out unnecessary,
+  //     restoring shorter/more natural local faces where possible. ---
+  kept = prune_redundant(points, tets, std::move(kept), tet_radius, base_kept);
+
+  return boundary_from_kept(points, tets, kept);
 }
 
 }  // namespace detail
 
 // =========================================================================
-// 3) Loop-Subdivision: echte G1-glatte Oberflaeche ohne sichtbare Kanten
+// 3) Loop subdivision: genuinely G1-smooth surface, no visible creases
 // =========================================================================
 //
-// PN-Triangles (frueherer Ansatz) garantieren nur, dass die Randkurve
-// zwischen zwei Nachbardreiecken IDENTISCH ist (keine Risse) - die
-// Tangentialebene QUER zur Kante wird dabei aber nicht angeglichen. Das
-// ergibt einen festen "Knick" entlang der Original-Kanten, der auch bei
-// feinerer Unterteilung nicht verschwindet.
+// PN-triangles (an earlier approach) only guarantee that the boundary
+// curve between two neighboring triangles is IDENTICAL (no cracks) - the
+// tangent plane ACROSS the edge is not aligned, though. That results in
+// a fixed "crease" along the original edges that does not go away even
+// with finer subdivision.
 //
-// Loop-Subdivision (Charles Loop, 1987) loest das strukturell: jede Kante
-// bekommt einen neuen Punkt als gewichtetes Mittel aus den beiden
-// Kanten-Endpunkten UND den beiden gegenueberliegenden Dreieckspitzen;
-// bestehende Punkte werden leicht in Richtung ihrer Nachbarn verschoben.
-// Das Ergebnis ist echte G1-Glattheit (tatsaechlich C2 fast ueberall) -
-// keine Knicke mehr, unabhaengig vom Winkel der Ursprungskanten.
+// Loop subdivision (Charles Loop, 1987) solves this structurally: every
+// edge gets a new point as a weighted average of its two endpoints AND
+// the two opposite triangle apexes; existing points are shifted slightly
+// towards their neighbors. The result is genuine G1 smoothness (in fact
+// C2 almost everywhere) - no more creases, regardless of the angle of
+// the original edges.
 //
-// Trade-off: Loop-Subdivision ist ein APPROXIMIERENDES Verfahren - die
-// Original-Punkte werden dabei leicht verschoben (nicht mehr exakt
-// interpoliert wie beim vorherigen PN-Triangle-Ansatz).
+// Trade-off: Loop subdivision is an APPROXIMATING scheme - the original
+// points get shifted slightly (no longer exactly interpolated, unlike
+// the earlier PN-triangle approach).
 // =========================================================================
 namespace detail {
 
@@ -1872,14 +2118,13 @@ inline LoopMesh loop_subdivide_once(const LoopMesh& in)
 {
   const int n = static_cast<int>(in.verts.size());
 
-  // Kante -> Liste von (gegenueberliegender Eckpunkt). Bei einer
-  // geschlossenen, mannigfaltigen Flaeche hat jede Kante genau 2
-  // Eintraege; bei offenen/nicht ganz sauberen Raendern (Sicherheitsnetz
-  // fuer seltene Alpha-Shape-Randfaelle) koennen es auch 1 oder >2 sein.
+  // Edge -> list of (opposite vertex). For a closed, manifold surface
+  // every edge has exactly 2 entries; for open/not-quite-clean borders
+  // (safety net for rare alpha-shape edge cases) it can also be 1 or > 2.
   std::unordered_map<EdgeKey2, std::vector<int>, EdgeKey2Hash> edge_opposite;
-  std::unordered_map<int, std::vector<int>> neighbors;  // alle Nachbarn (fuer Valenz-Regel)
+  std::unordered_map<int, std::vector<int>> neighbors;  // all neighbors (for the valence rule)
   std::unordered_map<int, std::vector<int>>
-    boundary_neighbors;  // nur ueber Rand-Kanten erreichte Nachbarn
+    boundary_neighbors;  // neighbors reached only via boundary edges
 
   auto add_edge = [&](int a, int b, int opp) { edge_opposite[make_edge_key2(a, b)].push_back(opp); };
   for (const auto& t : in.tris) {
@@ -1898,18 +2143,18 @@ inline LoopMesh loop_subdivide_once(const LoopMesh& in)
   }
 
   LoopMesh out;
-  out.verts.resize(n);  // Platz fuer die repositionierten Original-Punkte
+  out.verts.resize(n);  // room for the repositioned original points
 
-  // --- Original-Punkte reposition (Loop-Glaettungsregel) ---
+  // --- reposition original points (Loop smoothing rule) ---
   for (int v = 0; v < n; ++v) {
     auto bit = boundary_neighbors.find(v);
     if (bit != boundary_neighbors.end() && bit->second.size() == 2) {
-      // Randpunkt: 3/4*alt + 1/8*(beide Randnachbarn)
+      // boundary point: 3/4*old + 1/8*(both boundary neighbors)
       out.verts[v] = 0.75 * in.verts[v] + 0.125 * (in.verts[bit->second[0]] + in.verts[bit->second[1]]);
     } else {
       auto nit = neighbors.find(v);
       if (nit == neighbors.end() || nit->second.empty()) {
-        out.verts[v] = in.verts[v];  // isolierter Punkt (sollte nicht vorkommen)
+        out.verts[v] = in.verts[v];  // isolated point (should not occur)
         continue;
       }
       const auto& nb = nit->second;
@@ -1921,7 +2166,7 @@ inline LoopMesh loop_subdivide_once(const LoopMesh& in)
     }
   }
 
-  // --- Neue Kantenpunkte ---
+  // --- new edge points ---
   std::unordered_map<EdgeKey2, int, EdgeKey2Hash> edge_point_index;
   for (auto& kv : edge_opposite) {
     int a = kv.first.lo, b = kv.first.hi;
@@ -1930,7 +2175,7 @@ inline LoopMesh loop_subdivide_once(const LoopMesh& in)
       int o1 = kv.second[0], o2 = kv.second[1];
       pos = 0.375 * (in.verts[a] + in.verts[b]) + 0.125 * (in.verts[o1] + in.verts[o2]);
     } else {
-      // Randkante oder nicht-mannigfaltiger Sonderfall: einfacher Mittelpunkt
+      // boundary edge or non-manifold special case: plain midpoint
       pos = 0.5 * (in.verts[a] + in.verts[b]);
     }
     int idx = static_cast<int>(out.verts.size());
@@ -1938,7 +2183,7 @@ inline LoopMesh loop_subdivide_once(const LoopMesh& in)
     edge_point_index[kv.first] = idx;
   }
 
-  // --- Neue Topologie: jedes alte Dreieck -> 4 neue ---
+  // --- new topology: every old triangle -> 4 new ones ---
   out.tris.reserve(in.tris.size() * 4);
   for (const auto& t : in.tris) {
     int a = t[0], b = t[1], c = t[2];
@@ -1963,8 +2208,8 @@ inline LoopMesh loop_subdivide_to_target(const std::vector<Vector3d>& points, co
   double cur_max = max_edge_length(mesh);
   int levels = 0;
   double predicted = cur_max;
-  // Jede Stufe halbiert die Kantenlaenge ungefaehr (typisches Verhalten
-  // von Loop-Subdivision auf einem einigermassen regulaeren Netz).
+  // Each level roughly halves the edge length (typical behavior of
+  // Loop subdivision on a reasonably regular mesh).
   while (predicted > max_mesh_size && levels < 8) {
     predicted *= 0.5;
     levels++;
@@ -1976,26 +2221,31 @@ inline LoopMesh loop_subdivide_to_target(const std::vector<Vector3d>& points, co
 }  // namespace detail
 
 // =========================================================================
-// Hauptfunktion
+// Main function
 // =========================================================================
 PolySet organic_resample(const std::vector<Vector3d>& points, double max_mesh_size, double alpha = -1.0)
 {
   PolySet out(3);
   if (points.size() < 4) return out;
 
-  // --- 1) 3D-Delaunay-Tetraedrisierung ---
+  // --- 1) 3D Delaunay tetrahedralization ---
   std::vector<detail::Tet4> tets = detail::delaunay3d_bowyer_watson(points);
 
-  // --- 2) Alpha-Shape: Aussenflaeche extrahieren (erlaubt Konkavitaeten) ---
-  double eff_alpha = (alpha > 0.0) ? alpha : detail::estimate_alpha(points, tets);
-  std::vector<detail::Face3> faces = detail::alpha_shape_boundary(points, tets, eff_alpha);
+  // --- 2) Alpha-shape: extract the outer surface (allows concavities) ---
+  // By default (alpha < 0) the adaptive bridging method is used: it
+  // preserves fine concave detail and connects separate pieces
+  // deliberately instead of via a globally raised alpha. A manually
+  // supplied alpha (> 0) still uses the classic single-threshold
+  // variant.
+  std::vector<detail::Face3> faces = (alpha > 0.0) ? detail::alpha_shape_boundary(points, tets, alpha)
+                                                   : detail::adaptive_alpha_shape_boundary(points, tets);
 
   PolygonIndices tris;
   tris.reserve(faces.size());
   for (const auto& f : faces) tris.push_back({f.a, f.b, f.c});
   if (tris.empty()) return out;
 
-  // --- 3) Loop-Subdivision: glatt, ohne sichtbare Kanten ---
+  // --- 3) Loop subdivision: smooth, no visible creases ---
   detail::LoopMesh smooth = detail::loop_subdivide_to_target(points, tris, max_mesh_size);
 
   out.vertices = std::move(smooth.verts);
@@ -2004,8 +2254,8 @@ PolySet organic_resample(const std::vector<Vector3d>& points, double max_mesh_si
 }
 
 // -------------------------------------------------------------------------
-// Optionaler Selbsttest: mit  g++ -DORGANIC_MESH_TEST_MAIN -I/usr/include/eigen3
-//                             organic_mesh.cpp -o test && ./test
+// Optional self-test: build with  g++ -DORGANIC_MESH_TEST_MAIN -I/usr/include/eigen3
+//                                 organic_mesh.cpp -o test && ./test
 // -------------------------------------------------------------------------
 #ifdef ORGANIC_MESH_TEST_MAIN
 #include <cstdio>
@@ -2015,7 +2265,7 @@ int main()
   std::vector<Vector3d> octa = {Vector3d(1, 0, 0),  Vector3d(-1, 0, 0), Vector3d(0, 1, 0),
                                 Vector3d(0, -1, 0), Vector3d(0, 0, 1),  Vector3d(0, 0, -1)};
   PolySet ps = organic_resample(octa, 0.3);
-  std::printf("Oktaeder: %zu Vertices, %zu Dreiecke\n", ps.vertices.size(), ps.triangles.size());
+  std::printf("Octahedron: %zu vertices, %zu triangles\n", ps.vertices.size(), ps.triangles.size());
   return 0;
 }
 #endif
