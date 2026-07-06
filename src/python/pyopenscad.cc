@@ -1204,7 +1204,15 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 #if defined(_WIN32)
     char sepchar = ';';
     sep = sepchar;
-    stream << PlatformUtils::applicationPath() << "\\..\\libraries\\python";
+    // Windows installer places pythonscad.exe at the install root (not in a
+    // bin/ subdirectory), so paths must be relative to applicationPath()
+    // directly — no "../" prefix.
+    stream << PlatformUtils::applicationPath() << "\\libraries\\python";
+    // Also add the bundled CPython stdlib so Py_InitializeFromConfig can find
+    // the platform-independent libraries without needing a real python.exe.
+    const auto pythonXY =
+      "python" + std::to_string(PY_MAJOR_VERSION) + "." + std::to_string(PY_MINOR_VERSION);
+    stream << sepchar << PlatformUtils::applicationPath() << "\\lib\\" << pythonXY;
 #else
     char sepchar = ':';
     const auto pythonXY =
@@ -1246,7 +1254,24 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 
 #ifndef __EMSCRIPTEN__
     if (!binDir.empty()) {
+#if defined(_WIN32)
+      // On Windows the shim is named pythonscad-python.exe; "python.exe" does
+      // not exist in the install tree.  Setting config.executable to a
+      // nonexistent path causes CPython's path-probing to fail with "Could not
+      // find platform independent libraries", so only set it when the file
+      // actually exists.
+      const std::string pythonExe = binDir + "/python.exe";
+      const std::string pythonScadExe = binDir + "/pythonscad-python.exe";
+      if (fs::exists(pythonExe)) {
+        PyConfig_SetBytesString(&config, &config.executable, pythonExe.c_str());
+      } else if (fs::exists(pythonScadExe)) {
+        PyConfig_SetBytesString(&config, &config.executable, pythonScadExe.c_str());
+      }
+      // If neither exists, leave config.executable unset — CPython will probe
+      // using its own heuristics, guided by pythonpath_env set above.
+#else
       PyConfig_SetBytesString(&config, &config.executable, (binDir + "/python").c_str());
+#endif
     }
 #endif
 
