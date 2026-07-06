@@ -367,8 +367,22 @@ info "Found executable: ${MAIN_EXEC}"
 EXEC_NAME=$(basename "${MAIN_EXEC}")
 
 # Keep GIO from discovering host modules that may not match the
-# bundled GLib/GIO libraries.
-mkdir -p "${APPDIR}/usr/lib/gio/modules"
+# bundled GLib/GIO libraries. Copy the non-GVFS modules from the
+# build host so GIO features such as TLS still have matching modules.
+GIO_MODULE_DIR="${APPDIR}/usr/lib/gio/modules"
+mkdir -p "${GIO_MODULE_DIR}"
+SYSTEM_GIO_MODULE_DIR=$(pkg-config --variable=giomoduledir gio-2.0 2>/dev/null || true)
+if [ -n "${SYSTEM_GIO_MODULE_DIR}" ] && [ -d "${SYSTEM_GIO_MODULE_DIR}" ]; then
+    find "${SYSTEM_GIO_MODULE_DIR}" -maxdepth 1 -type f -name "libgio*.so" \
+        ! -name "libgvfsdbus.so" \
+        ! -name "libgioremote-volume-monitor.so" \
+        -exec cp -P {} "${GIO_MODULE_DIR}/" \;
+fi
+if command_exists gio-querymodules; then
+    gio-querymodules "${GIO_MODULE_DIR}" || warn "Failed to generate GIO module cache"
+else
+    warn "gio-querymodules not found; GIO module cache will not be generated"
+fi
 
 # Create AppRun script
 info "Creating AppRun..."
