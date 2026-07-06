@@ -1406,6 +1406,7 @@ PyObject *python_organic(PyObject *obj, PyObject *args, PyObject *kwargs)
   node->d = d;
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
 }
+
 // organic_mesh.cpp
 // -----------------------------------------------------------------------
 // Eigenstaendige C++-Funktionen (keine CPython-Bindung noetig):
@@ -1691,10 +1692,36 @@ inline std::vector<Face3> alpha_shape_boundary(const std::vector<Vector3d>& poin
 // lokalen Punktabstand, und kann um Groessenordnungen groesser sein.
 //
 // Stattdessen wird das KLEINSTE Alpha gesucht, bei dem noch jeder
-// Eingabepunkt auf der resultierenden Oberflaeche erscheint (die
-// kritischen Alpha-Werte sind exakt die Umkugelradien selbst, dazwischen
-// aendert sich die Topologie nicht - daher reicht es, diese der Groesse
-// nach zu durchsuchen).
+// Eingabepunkt auf der resultierenden Oberflaeche erscheint UND das
+// Ergebnis mannigfaltig ist (jede Kante gehoert zu genau 2 Dreiecken).
+// Reine Punkt-Abdeckung allein reicht nicht: bei duenn abgetasteten,
+// fast linienfoermigen "Spitzen" (z.B. nur 3 Punkte nahe einer Geraden)
+// kann das kleinste abdeckende Alpha eine beidseitige, quasi nulldicke
+// "Lasche" erzeugen (zwei fast deckungsgleiche, entgegengesetzt
+// orientierte Dreiecke). Der naechstgroessere kritische Alpha-Wert
+// loest das in der Praxis fast immer auf, da genau dort die Lasche durch
+// ein einzelnes, "dickeres" Tetraeder ersetzt wird.
+//
+// (Die kritischen Alpha-Werte sind exakt die Umkugelradien selbst,
+// dazwischen aendert sich die Topologie nicht - daher reicht es, diese
+// der Groesse nach zu durchsuchen.)
+inline bool is_manifold(const std::vector<Face3>& faces)
+{
+  std::unordered_map<int64_t, int> edge_count;
+  auto key = [](int a, int b) {
+    int lo = std::min(a, b), hi = std::max(a, b);
+    return (static_cast<int64_t>(lo) << 32) | static_cast<int64_t>(hi);
+  };
+  for (const auto& f : faces) {
+    edge_count[key(f.a, f.b)]++;
+    edge_count[key(f.b, f.c)]++;
+    edge_count[key(f.c, f.a)]++;
+  }
+  for (auto& kv : edge_count)
+    if (kv.second != 2) return false;
+  return true;
+}
+
 inline double estimate_alpha(const std::vector<Vector3d>& points, const std::vector<Tet4>& tets)
 {
   std::vector<double> radii;
@@ -1707,6 +1734,27 @@ inline double estimate_alpha(const std::vector<Vector3d>& points, const std::vec
   if (radii.empty()) return 1.0;
   std::sort(radii.begin(), radii.end());
 
+  // Erste Runde: kleinstes Alpha mit voller Punkt-Abdeckung UND
+  // Mannigfaltigkeit.
+  for (double r : radii) {
+    auto faces = alpha_shape_boundary(points, tets, r);
+    std::vector<char> covered(points.size(), 0);
+    for (const auto& f : faces) {
+      covered[f.a] = 1;
+      covered[f.b] = 1;
+      covered[f.c] = 1;
+    }
+    bool all_covered = true;
+    for (char c : covered)
+      if (!c) {
+        all_covered = false;
+        break;
+      }
+    if (all_covered && is_manifold(faces)) return r;
+  }
+  // Fallback: kleinstes Alpha mit voller Abdeckung, auch wenn nicht
+  // perfekt mannigfaltig (seltener Grenzfall bei extrem entarteten
+  // Punktwolken) - besser als komplett leer zurueckzugeben.
   for (double r : radii) {
     auto faces = alpha_shape_boundary(points, tets, r);
     std::vector<char> covered(points.size(), 0);
