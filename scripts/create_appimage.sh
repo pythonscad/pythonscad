@@ -373,7 +373,7 @@ GIO_MODULE_DIR="${APPDIR}/usr/lib/gio/modules"
 mkdir -p "${GIO_MODULE_DIR}"
 SYSTEM_GIO_MODULE_DIR=$(pkg-config --variable=giomoduledir gio-2.0 2>/dev/null || true)
 if [ -n "${SYSTEM_GIO_MODULE_DIR}" ] && [ -d "${SYSTEM_GIO_MODULE_DIR}" ]; then
-    find "${SYSTEM_GIO_MODULE_DIR}" -maxdepth 1 -type f -name "libgio*.so" \
+    find "${SYSTEM_GIO_MODULE_DIR}" -maxdepth 1 -type f -name "*.so" \
         ! -name "libgvfsdbus.so" \
         ! -name "libgioremote-volume-monitor.so" \
         -exec cp -P {} "${GIO_MODULE_DIR}/" \;
