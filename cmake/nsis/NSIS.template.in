@@ -1022,6 +1022,18 @@ interactive_uninst:
   StrCpy $3 $0 -$2
   ClearErrors
   ExecWait '"$0" /S _?="$3"' $1
+
+  ; Verify success by checking the ARP key rather than trusting exit code alone.
+  ; See the .onInit uninst block for the full explanation.
+  ${If} $InstallMode = 1
+    ReadRegStr $4 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ARP_KEY_ALL_USERS}" "UninstallString"
+  ${Else}
+    ReadRegStr $4 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ARP_KEY_CURRENT_USER}" "UninstallString"
+  ${EndIf}
+  ${If} $4 == ""
+    Return  ; ARP key is gone — uninstall succeeded regardless of exit code
+  ${EndIf}
+
   IfErrors interactive_uninst_failed
   ${If} $1 != 0
     Goto interactive_uninst_failed
@@ -1403,6 +1415,20 @@ uninst:
   StrLen $2 "\@CPACK_NSIS_UNINSTALL_NAME@.exe"
   StrCpy $3 $0 -$2 # remove "\@CPACK_NSIS_UNINSTALL_NAME@.exe" from UninstallString to get path
   ExecWait '"$0" /S _?="$3"' $1 ;Do not copy the uninstaller to a temp file
+
+  ; Some NSIS uninstallers (notably on Windows 11) return a non-zero exit code or
+  ; set the error flag when run with _?= because they cannot self-delete while
+  ; running in-place, even after a fully successful uninstall.  The only reliable
+  ; signal of success is that the ARP registry key is gone.  Check that first;
+  ; only treat it as a true failure when the key is still present.
+  ${If} $InstallMode = 1
+    ReadRegStr $4 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ARP_KEY_ALL_USERS}" "UninstallString"
+  ${Else}
+    ReadRegStr $4 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ARP_KEY_CURRENT_USER}" "UninstallString"
+  ${EndIf}
+  ${If} $4 == ""
+    Goto done_uninst_check  ; ARP key is gone — uninstall succeeded regardless of exit code
+  ${EndIf}
 
   IfErrors uninst_failed
   ${If} $1 != 0
