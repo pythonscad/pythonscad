@@ -306,10 +306,17 @@ if [ "${QT_VERSION}" = "6" ]; then
 fi
 
 # Ensure GMP is bundled with MPFR and exact-arithmetic geometry users.
-if ! compgen -G "${APPDIR}/usr/lib/libgmp.so.10*" >/dev/null; then
+GMP_SONAME="${APPDIR}/usr/lib/libgmp.so.10"
+if [ ! -e "${GMP_SONAME}" ]; then
     find /usr/lib -name "libgmp.so.10*" -exec cp -P {} "${APPDIR}/usr/lib/" \; 2>/dev/null || true
 fi
-if ! compgen -G "${APPDIR}/usr/lib/libgmp.so.10*" >/dev/null; then
+if [ ! -e "${GMP_SONAME}" ]; then
+    GMP_RUNTIME=$(find "${APPDIR}/usr/lib" -maxdepth 1 -type f -name "libgmp.so.10.*" | sort | head -1)
+    if [ -n "${GMP_RUNTIME}" ]; then
+        ln -sf "$(basename "${GMP_RUNTIME}")" "${GMP_SONAME}"
+    fi
+fi
+if [ ! -e "${GMP_SONAME}" ]; then
     die "Failed to bundle libgmp.so.10"
 fi
 
