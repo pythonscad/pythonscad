@@ -306,11 +306,11 @@ if [ "${QT_VERSION}" = "6" ]; then
 fi
 
 # Ensure GMP is bundled with MPFR and exact-arithmetic geometry users.
-if ! compgen -G "${APPDIR}/usr/lib/libgmp.so*" >/dev/null; then
-    find /usr/lib -name "libgmp.so*" -exec cp -P {} "${APPDIR}/usr/lib/" \; 2>/dev/null || true
+if ! compgen -G "${APPDIR}/usr/lib/libgmp.so.10*" >/dev/null; then
+    find /usr/lib -name "libgmp.so.10*" -exec cp -P {} "${APPDIR}/usr/lib/" \; 2>/dev/null || true
 fi
-if ! compgen -G "${APPDIR}/usr/lib/libgmp.so*" >/dev/null; then
-    die "Failed to bundle libgmp.so"
+if ! compgen -G "${APPDIR}/usr/lib/libgmp.so.10*" >/dev/null; then
+    die "Failed to bundle libgmp.so.10"
 fi
 
 # Bundle Python runtime and libraries
