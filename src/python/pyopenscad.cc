@@ -1215,7 +1215,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     // the platform-independent libraries without needing a real python.exe.
     const auto pythonXY =
       "python" + std::to_string(PY_MAJOR_VERSION) + "." + std::to_string(PY_MINOR_VERSION);
-    const auto windowsPythonLib = fs::path(PlatformUtils::applicationPath()) / "lib" / pythonXY;
+    const auto windowsPythonLib = applicationPath / "lib" / pythonXY;
     const std::array<fs::path, 2> windowsPythonRuntimePaths = {
       windowsPythonLib,
       windowsPythonLib / "lib-dynload",
