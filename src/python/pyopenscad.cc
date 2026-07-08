@@ -123,6 +123,15 @@ static void python_configure_windows_sys_compat(void)
       PyErr_Clear();
     }
   }
+  if (sysdict != nullptr && PyDict_GetItemString(sysdict, "abiflags") == nullptr) {
+    PyObject *value = PyUnicode_FromString("");
+    if (value == nullptr) {
+      PyErr_Clear();
+    } else if (PyDict_SetItemString(sysdict, "abiflags", value) != 0) {
+      PyErr_Clear();
+    }
+    Py_XDECREF(value);
+  }
   Py_DECREF(sys);
 }
 #endif
