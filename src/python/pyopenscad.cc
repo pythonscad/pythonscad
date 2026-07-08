@@ -1226,6 +1226,10 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       }
     }
     stream << sepchar << applicationPath.generic_string();
+    const auto windowsPythonDlls = applicationPath / "DLLs";
+    if (fs::is_directory(windowsPythonDlls)) {
+      stream << sepchar << fs::absolute(windowsPythonDlls).generic_string();
+    }
 #else
     char sepchar = ':';
     const auto pythonXY =
