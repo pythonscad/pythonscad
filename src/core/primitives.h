@@ -38,6 +38,8 @@
 #include "geometry/GeometryUtils.h"
 #include "geometry/linalg.h"
 
+PolySet organic_resample(const std::vector<Vector3d>& points, double max_mesh_size, double alpha = -1.0);
+
 class CubeNode : public LeafNode
 {
 public:

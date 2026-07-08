@@ -462,8 +462,8 @@ void MainWindow::addMenuItemCB(QString callback)
   const auto& venv = venvBinDirFromSettings();
   const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
   initPython(binDir, "", nullptr);
-  std::cout << evaluatePython(content);
-  std::cout << evaluatePython(callback.toStdString());
+  evaluatePython(content);
+  evaluatePython(callback.toStdString());
   finishPython();
 #endif
 }
@@ -476,7 +476,7 @@ void MainWindow::addMenuItem(const char *menuname, const char *itemname, const c
   foreach (QAction *menu, menubar->actions()) {
     if (menu->menu()) {
       const char *menutext = qUtf8Printable(menu->text());
-      if (strstr(menutext, menuname) != nullptr) menu_found = (QMenu *)menu->menu();
+      if (strstr(menutext, menuname) != nullptr) menu_found = (QMenu *)menu;
     }
   }
 
@@ -486,8 +486,10 @@ void MainWindow::addMenuItem(const char *menuname, const char *itemname, const c
     menu_found->setTitle(q_(menuname, nullptr));
     menu_found->show();
     menubar->addAction(menu_found->menuAction());
-    menubar->addMenu(menu_found);
+    //	menubar->addMenu(menu_found);
   }
+
+  menu_found = menu_File;
 
   // Create Menu Item
   QAction *my_menu_item = new QAction(this);
@@ -531,13 +533,13 @@ void MainWindow::customSetup(void)
   if (content == "") return;
 
   this->addmenu_mapper = new QSignalMapper(this);
-  connect(this->addmenu_mapper, &QSignalMapper::mappedString, this, &MainWindow::addMenuItemCB);
+  connect(this->addmenu_mapper, SIGNAL(mapped(QString)), this, SLOT(addMenuItemCB(QString)));
   const auto& venv = venvBinDirFromSettings();
   const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
   initPython(binDir, "", nullptr);
-  std::cout << evaluatePython(content);
+  evaluatePython(content);
   addmenuitem_this = this;
-  std::cout << evaluatePython("setup()");
+  evaluatePython("setup()");
   addmenuitem_this = nullptr;
   finishPython();
 }
@@ -546,6 +548,9 @@ void MainWindow::customSetup(void)
 
 MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 {
+#ifdef ENABLE_PYTHON
+  customSetup();
+#endif
   setupWindow();
   setupMenusAndActions();
 
@@ -574,9 +579,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   updateLanguageLabel();
   setupInput();
   setupPreferences();
-#ifdef ENABLE_PYTHON
-  customSetup();
-#endif
 
   restoreWindowState();
 

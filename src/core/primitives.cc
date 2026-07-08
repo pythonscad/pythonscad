@@ -623,8 +623,6 @@ std::string OrganicNode::toString() const
   return stream.str();
 }
 
-PolySet organic_resample(const std::vector<Vector3d>& points, double max_mesh_size, double alpha = -1.0);
-
 std::unique_ptr<const Geometry> OrganicNode::createGeometry() const
 {
   PolySet res = organic_resample(points, d);
