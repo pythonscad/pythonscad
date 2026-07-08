@@ -103,6 +103,30 @@ void PyObjectDeleter(PyObject *pObject)
 PyObjectUniquePtr pythonInitDict(nullptr, &PyObjectDeleter);
 PyObjectUniquePtr pythonMainModule(nullptr, &PyObjectDeleter);
 
+#ifdef _WIN32
+static void python_configure_windows_sys_compat(void)
+{
+  PyObject *sys = PyImport_ImportModule("sys");
+  if (sys == nullptr) {
+    PyErr_Clear();
+    return;
+  }
+
+  PyObject *sysdict = PyModule_GetDict(sys);
+  if (sysdict != nullptr && PyDict_GetItemString(sysdict, "_is_mingw") == nullptr) {
+#ifdef __MINGW32__
+    PyObject *value = Py_True;
+#else
+    PyObject *value = Py_False;
+#endif
+    if (PyDict_SetItemString(sysdict, "_is_mingw", value) != 0) {
+      PyErr_Clear();
+    }
+  }
+  Py_DECREF(sys);
+}
+#endif
+
 bool python_pyobject_to_utf8(PyObject *obj, std::string& out, const char *context)
 {
   if (obj == nullptr || !PyUnicode_Check(obj)) {
@@ -1308,6 +1332,13 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       return;
     }
     PyConfig_Clear(&config);
+
+#ifdef _WIN32
+    // CPython 3.14's Windows sysconfig expects this interpreter-private
+    // attribute. Normal MSYS2/python.org startup sets it, but our embedded
+    // PyConfig path can otherwise leave it absent in packaged builds.
+    python_configure_windows_sys_compat();
+#endif
 
 #ifdef __EMSCRIPTEN__
     // config.pythonpath_env is unreliable in cross-compiled WASM builds.
