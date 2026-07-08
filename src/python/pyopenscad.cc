@@ -1267,7 +1267,8 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 #endif
 #ifndef __EMSCRIPTEN__
 #if defined(_WIN32)
-    PyConfig_SetBytesString(&config, &config.home, PlatformUtils::applicationPath().c_str());
+    const auto applicationPathString = applicationPath.generic_string();
+    PyConfig_SetBytesString(&config, &config.home, applicationPathString.c_str());
 #endif
     PyConfig_SetBytesString(&config, &config.pythonpath_env, stream.str().c_str());
 #endif
