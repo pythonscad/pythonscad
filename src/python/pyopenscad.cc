@@ -1225,6 +1225,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
         stream << sepchar << fs::absolute(path).generic_string();
       }
     }
+    stream << sepchar << applicationPath.generic_string();
 #else
     char sepchar = ':';
     const auto pythonXY =
