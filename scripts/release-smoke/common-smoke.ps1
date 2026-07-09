@@ -1,0 +1,165 @@
+$ErrorActionPreference = 'Stop'
+
+function Write-SmokeLog {
+    param([Parameter(Mandatory = $true)][string]$Message)
+    Write-Host "==> $Message"
+}
+
+function Write-SmokeWarning {
+    param([Parameter(Mandatory = $true)][string]$Message)
+    Write-Warning $Message
+}
+
+function Assert-Command {
+    param([Parameter(Mandatory = $true)][string]$Name)
+    if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
+        throw "Required command not found: $Name"
+    }
+}
+
+function Assert-NonEmptyFile {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "Expected output file does not exist: $Path"
+    }
+    if ((Get-Item -LiteralPath $Path).Length -le 0) {
+        throw "Expected non-empty output file: $Path"
+    }
+}
+
+function Invoke-PythonSCAD {
+    param(
+        [Parameter(Mandatory = $true)][string]$ExecutablePath,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [string]$WorkingDirectory,
+        [string]$InputFile,
+        [string]$LogFile
+    )
+
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = $ExecutablePath
+    foreach ($arg in $Arguments) {
+        [void]$psi.ArgumentList.Add($arg)
+    }
+    if ($WorkingDirectory) {
+        $psi.WorkingDirectory = $WorkingDirectory
+    }
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    if ($InputFile) {
+        $psi.RedirectStandardInput = $true
+    }
+
+    $process = [System.Diagnostics.Process]::Start($psi)
+    if ($InputFile) {
+        $inputText = Get-Content -LiteralPath $InputFile -Raw
+        $process.StandardInput.Write($inputText)
+        $process.StandardInput.Close()
+    }
+    $stdout = $process.StandardOutput.ReadToEnd()
+    $stderr = $process.StandardError.ReadToEnd()
+    $process.WaitForExit()
+
+    if ($LogFile) {
+        $parent = Split-Path -Parent $LogFile
+        if ($parent) {
+            New-Item -ItemType Directory -Force -Path $parent | Out-Null
+        }
+        Set-Content -LiteralPath $LogFile -Value ($stdout + $stderr)
+    }
+
+    if ($process.ExitCode -ne 0) {
+        Write-Error "Smoke command failed with exit code $($process.ExitCode): $ExecutablePath $($Arguments -join ' ')" -ErrorAction Continue
+        if ($WorkingDirectory) {
+            Write-Error "Working directory: $WorkingDirectory" -ErrorAction Continue
+        }
+        if ($InputFile) {
+            Write-Error "Stdin: $InputFile" -ErrorAction Continue
+        }
+        if ($LogFile) {
+            Write-Error "Captured output: $LogFile" -ErrorAction Continue
+            if (Test-Path -LiteralPath $LogFile -PathType Leaf) {
+                Write-Error "--- begin command output: $LogFile ---" -ErrorAction Continue
+                Get-Content -LiteralPath $LogFile -Raw -ErrorAction SilentlyContinue | Write-Error -ErrorAction Continue
+                Write-Error "--- end command output: $LogFile ---" -ErrorAction Continue
+            } else {
+                Write-Error 'Command produced no captured output.' -ErrorAction Continue
+            }
+        }
+        throw "Smoke command failed with exit code $($process.ExitCode)"
+    }
+}
+
+function New-SmokeInputs {
+    param([Parameter(Mandatory = $true)][string]$TestDirectory)
+
+    New-Item -ItemType Directory -Force -Path $TestDirectory | Out-Null
+    Set-Content -LiteralPath (Join-Path $TestDirectory 'cube.scad') -Value 'cube(10);'
+    Set-Content -LiteralPath (Join-Path $TestDirectory 'cube.py') -Value @'
+from pythonscad import *
+
+cube(10).show()
+'@
+    Set-Content -LiteralPath (Join-Path $TestDirectory 'repl-smoke.py') -Value @'
+from pythonscad import *
+
+export(cube(10), "repl-cube.stl")
+raise SystemExit(0)
+'@
+    Set-Content -LiteralPath (Join-Path $TestDirectory 'ipython-smoke.py') -Value @'
+from pythonscad import *
+
+export(cube(10), "ipython-cube.stl")
+'@
+}
+
+function Invoke-SmokeTests {
+    param(
+        [Parameter(Mandatory = $true)][string]$ExecutablePath,
+        [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)][string]$Workdir
+    )
+
+    if (-not (Test-Path -LiteralPath $ExecutablePath -PathType Leaf)) {
+        throw "Executable not found: $ExecutablePath"
+    }
+
+    $safeLabel = $Label -replace '[^A-Za-z0-9_.-]', '_'
+    $testdir = Join-Path $Workdir "smoke-$safeLabel"
+    New-SmokeInputs -TestDirectory $testdir
+
+    Write-SmokeLog "Smoke testing $Label`: startup"
+    Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
+        -Arguments @('--info') `
+        -LogFile (Join-Path $testdir 'info.log')
+
+    Write-SmokeLog "Smoke testing $Label`: OpenSCAD .scad export"
+    Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
+        -Arguments @('-o', (Join-Path $testdir 'cube-scad.stl'), (Join-Path $testdir 'cube.scad')) `
+        -LogFile (Join-Path $testdir 'scad-export.log')
+    Assert-NonEmptyFile -Path (Join-Path $testdir 'cube-scad.stl')
+
+    Write-SmokeLog "Smoke testing $Label`: Python CLI export"
+    Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
+        -Arguments @('--trust-python', '-o', (Join-Path $testdir 'cube-python.stl'), (Join-Path $testdir 'cube.py')) `
+        -LogFile (Join-Path $testdir 'python-export.log')
+    Assert-NonEmptyFile -Path (Join-Path $testdir 'cube-python.stl')
+
+    Write-SmokeLog "Smoke testing $Label`: basic Python REPL"
+    Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
+        -Arguments @('--repl') `
+        -WorkingDirectory $testdir `
+        -InputFile (Join-Path $testdir 'repl-smoke.py') `
+        -LogFile (Join-Path $testdir 'repl.log')
+    Assert-NonEmptyFile -Path (Join-Path $testdir 'repl-cube.stl')
+
+    Write-SmokeLog "Smoke testing $Label`: IPython"
+    Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
+        -Arguments @('--ipython', 'ipython-smoke.py') `
+        -WorkingDirectory $testdir `
+        -LogFile (Join-Path $testdir 'ipython.log')
+    Assert-NonEmptyFile -Path (Join-Path $testdir 'ipython-cube.stl')
+
+    Write-SmokeLog "Smoke testing $Label`: OK"
+}
