@@ -102,11 +102,10 @@ find_dispatched_run_id() {
   gh run list \
     --repo "$repo" \
     --workflow "$workflow" \
-    --branch "$ref" \
     --event workflow_dispatch \
     --limit 20 \
-    --json databaseId,createdAt \
-    --jq "map(select(.createdAt >= \"$created_after\")) | sort_by(.createdAt) | .[0].databaseId // \"\""
+    --json 'databaseId,createdAt,headBranch' \
+    --jq "map(select(.createdAt >= \"$created_after\" and .headBranch == \"$ref\")) | sort_by(.createdAt) | .[0].databaseId // \"\""
 }
 
 wait_for_dispatched_run_id() {

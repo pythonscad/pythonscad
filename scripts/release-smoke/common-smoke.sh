@@ -60,10 +60,12 @@ rs_latest_successful_run() {
   local repo=$1
   local workflow=$2
   local ref=${3:-}
-  local args=(run list --repo "$repo" --workflow "$workflow" --status success --limit 1
-    --json databaseId --jq '.[0].databaseId')
+  local args=(run list --repo "$repo" --workflow "$workflow" --status success
+    --json 'databaseId,headBranch')
   if [[ -n "$ref" ]]; then
-    args+=(--branch "$ref")
+    args+=(--limit 50 --jq "map(select(.headBranch == \"$ref\")) | .[0].databaseId // \"\"")
+  else
+    args+=(--limit 1 --jq '.[0].databaseId')
   fi
   gh "${args[@]}"
 }

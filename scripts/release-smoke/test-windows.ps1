@@ -40,12 +40,13 @@ function Get-LatestSuccessfulRun {
         '--repo', $Repo,
         '--workflow', $Workflow,
         '--status', 'success',
-        '--limit', '1',
-        '--json', 'databaseId',
-        '--jq', '.[0].databaseId'
+        '--json', 'databaseId,headBranch'
     )
     if ($Ref) {
-        $ghArgs += @('--branch', $Ref)
+        $jq = 'map(select(.headBranch == "' + $Ref + '")) | .[0].databaseId // ""'
+        $ghArgs += @('--limit', '50', '--jq', $jq)
+    } else {
+        $ghArgs += @('--limit', '1', '--jq', '.[0].databaseId')
     }
     $runId = (& gh @ghArgs).Trim()
     if (-not $runId -or $runId -eq 'null') {
