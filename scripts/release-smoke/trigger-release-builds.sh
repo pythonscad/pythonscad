@@ -14,6 +14,8 @@ Usage: trigger-release-builds.sh [options]
 
 Dispatch all packaging workflows needed for release smoke testing.
 
+Requires Bash 4 or newer for --wait progress tracking.
+
 Options:
   --repo <owner/name>          GitHub repository to use. Defaults to current repo.
   --ref <branch-or-tag>        Ref to dispatch. Defaults to the release-please

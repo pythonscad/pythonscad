@@ -257,6 +257,9 @@ try {
         }
 
         $installDir = Join-Path $workdir 'nsis-install'
+        if ($installDir -match '\s') {
+            throw "NSIS silent install requires a space-free install path; rerun with --workdir under a path without whitespace: $installDir"
+        }
         New-Item -ItemType Directory -Force -Path $installDir | Out-Null
         Write-SmokeLog "Installing NSIS package $($installer.Name)"
         & $installer.FullName /S "/D=$installDir"
