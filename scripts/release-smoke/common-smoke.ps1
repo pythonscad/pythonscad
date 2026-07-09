@@ -36,6 +36,44 @@ function Set-Utf8Content {
     [System.IO.File]::WriteAllText($Path, $Value, $encoding)
 }
 
+function Quote-WindowsArgument {
+    param([AllowNull()][string]$Argument)
+
+    if ($null -eq $Argument) {
+        return '""'
+    }
+    if ($Argument -notmatch '[\s"]') {
+        return $Argument
+    }
+
+    $quoted = '"'
+    $backslashes = 0
+    foreach ($char in $Argument.ToCharArray()) {
+        if ($char -eq '\') {
+            $backslashes += 1
+        } elseif ($char -eq '"') {
+            $quoted += ('\' * (($backslashes * 2) + 1)) + '"'
+            $backslashes = 0
+        } else {
+            if ($backslashes -gt 0) {
+                $quoted += '\' * $backslashes
+                $backslashes = 0
+            }
+            $quoted += $char
+        }
+    }
+    if ($backslashes -gt 0) {
+        $quoted += '\' * ($backslashes * 2)
+    }
+    $quoted += '"'
+    $quoted
+}
+
+function Join-WindowsArguments {
+    param([string[]]$Arguments)
+    ($Arguments | ForEach-Object { Quote-WindowsArgument -Argument $_ }) -join ' '
+}
+
 function Invoke-PythonSCAD {
     param(
         [Parameter(Mandatory = $true)][string]$ExecutablePath,
@@ -47,9 +85,7 @@ function Invoke-PythonSCAD {
 
     $psi = [System.Diagnostics.ProcessStartInfo]::new()
     $psi.FileName = $ExecutablePath
-    foreach ($arg in $Arguments) {
-        [void]$psi.ArgumentList.Add($arg)
-    }
+    $psi.Arguments = Join-WindowsArguments -Arguments $Arguments
     if ($WorkingDirectory) {
         $psi.WorkingDirectory = $WorkingDirectory
     }

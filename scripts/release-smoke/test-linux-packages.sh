@@ -261,6 +261,7 @@ run_deb_package_test() {
     "$image" \
     bash -c '
       set -euo pipefail
+      apt-get update
       cd /tmp
       apt-get install -y ./pythonscad-package.deb
       QT_QPA_PLATFORM=xcb xvfb-run -a bash -c '"'"'
