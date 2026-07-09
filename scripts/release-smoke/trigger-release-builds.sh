@@ -185,7 +185,9 @@ if [[ -n "$upload_to_release" ]]; then
   rs_log "upload_to_release: $upload_to_release"
 fi
 
-declare -A run_ids=()
+if [[ "$wait_for_runs" == "1" ]]; then
+  declare -A run_ids=()
+fi
 
 for workflow in "${workflows[@]}"; do
   cmd=(gh workflow run "$workflow" --repo "$repo" --ref "$ref")
