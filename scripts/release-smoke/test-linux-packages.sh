@@ -291,9 +291,9 @@ run_rpm_package_test() {
     bash -c '
       set -euo pipefail
       if command -v dnf >/dev/null 2>&1; then
-        dnf install -y /tmp/pythonscad-package.rpm
+        dnf install -y --nogpgcheck /tmp/pythonscad-package.rpm
       else
-        yum install -y /tmp/pythonscad-package.rpm
+        yum install -y --nogpgcheck /tmp/pythonscad-package.rpm
       fi
       QT_QPA_PLATFORM=xcb xvfb-run -a bash -c '"'"'
         source /release-smoke/common-smoke.sh
