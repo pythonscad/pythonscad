@@ -43,6 +43,9 @@ function Get-LatestSuccessfulRun {
         '--json', 'databaseId,headBranch'
     )
     if ($Ref) {
+        if ($Ref -match '["\\\r\n]') {
+            throw '--ref contains characters that cannot be used in GitHub Actions jq filters'
+        }
         $jq = 'map(select(.headBranch == "' + $Ref + '")) | .[0].databaseId // ""'
         $ghArgs += @('--limit', '50', '--jq', $jq)
     } else {

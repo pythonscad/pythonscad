@@ -87,6 +87,12 @@ if [[ -z "$ref" ]]; then
   fi
 fi
 
+case "$ref" in
+  *\"*|*\\*|*$'\n'*|*$'\r'*)
+    rs_die "--ref contains characters that cannot be used in GitHub Actions jq filters"
+    ;;
+esac
+
 workflows=(
   build-appimage.yml
   build-debian-packages.yml

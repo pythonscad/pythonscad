@@ -63,6 +63,11 @@ rs_latest_successful_run() {
   local args=(run list --repo "$repo" --workflow "$workflow" --status success
     --json 'databaseId,headBranch')
   if [[ -n "$ref" ]]; then
+    case "$ref" in
+      *\"*|*\\*|*$'\n'*|*$'\r'*)
+        rs_die "--ref contains characters that cannot be used in GitHub Actions jq filters"
+        ;;
+    esac
     args+=(--limit 50 --jq "map(select(.headBranch == \"$ref\")) | .[0].databaseId // \"\"")
   else
     args+=(--limit 1 --jq '.[0].databaseId')
