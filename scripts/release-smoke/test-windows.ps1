@@ -58,7 +58,7 @@ function Get-LatestSuccessfulRun {
     $runId
 }
 
-function Parse-Options {
+function Get-SmokeOption {
     param([string[]]$Arguments)
 
     $options = [ordered]@{
@@ -144,7 +144,7 @@ function Find-PythonSCADExecutable {
     throw "Could not locate pythonscad executable under $Root"
 }
 
-function Split-CommandArguments {
+function Split-CommandArgument {
     param([string]$Arguments)
 
     if (-not $Arguments) {
@@ -162,7 +162,7 @@ function Split-CommandArguments {
     return $tokens
 }
 
-function Invoke-ExistingPythonSCADUninstallers {
+function Invoke-ExistingPythonSCADUninstaller {
     $registryRoots = @(
         'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
         'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
@@ -182,7 +182,7 @@ function Invoke-ExistingPythonSCADUninstallers {
             if ($uninstall -match '^\s*"(?<exe>[^"]+)"\s*(?<args>.*)$' -or
                 $uninstall -match '^\s*(?<exe>\S+?\.exe)\s*(?<args>.*)$') {
                 $exe = $Matches.exe
-                $argumentList = Split-CommandArguments -Arguments $Matches.args
+                $argumentList = Split-CommandArgument -Arguments $Matches.args
                 $argumentList += '/S'
                 Start-Process -FilePath $exe -ArgumentList $argumentList -Wait
             } else {
@@ -192,7 +192,7 @@ function Invoke-ExistingPythonSCADUninstallers {
     }
 }
 
-$options = Parse-Options -Arguments $args
+$options = Get-SmokeOption -Arguments $args
 if ($options.Help) {
     Show-Usage
     exit 0
@@ -241,7 +241,7 @@ try {
     Write-SmokeLog "Extracting ZIP $($zip.Name)"
     Expand-Archive -LiteralPath $zip.FullName -DestinationPath $zipExtractDir -Force
     $zipExecutable = Find-PythonSCADExecutable -Root $zipExtractDir
-    Invoke-SmokeTests -ExecutablePath $zipExecutable -Label "ZIP $($zip.Name)" -Workdir $workdir
+    Invoke-SmokeTest -ExecutablePath $zipExecutable -Label "ZIP $($zip.Name)" -Workdir $workdir
 
     if ($options.SkipNsisInstall) {
         Write-SmokeLog 'Skipping NSIS installer smoke test'
@@ -253,7 +253,7 @@ try {
         }
 
         if (-not $options.SkipUninstallExisting) {
-            Invoke-ExistingPythonSCADUninstallers
+            Invoke-ExistingPythonSCADUninstaller
         }
 
         $installDir = Join-Path $workdir 'nsis-install'
@@ -263,8 +263,11 @@ try {
         New-Item -ItemType Directory -Force -Path $installDir | Out-Null
         Write-SmokeLog "Installing NSIS package $($installer.Name)"
         & $installer.FullName /S "/D=$installDir"
+        if ($LASTEXITCODE -ne 0) {
+            throw "NSIS installer failed with exit code $LASTEXITCODE"
+        }
         $nsisExecutable = Find-PythonSCADExecutable -Root $installDir
-        Invoke-SmokeTests -ExecutablePath $nsisExecutable -Label "NSIS $($installer.Name)" -Workdir $workdir
+        Invoke-SmokeTest -ExecutablePath $nsisExecutable -Label "NSIS $($installer.Name)" -Workdir $workdir
     }
 
     Write-SmokeLog 'Windows smoke tests passed'

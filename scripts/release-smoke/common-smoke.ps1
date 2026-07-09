@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 function Write-SmokeLog {
     param([Parameter(Mandatory = $true)][string]$Message)
-    Write-Host "==> $Message"
+    Write-Information "==> $Message" -InformationAction Continue
 }
 
 function Write-SmokeWarning {
@@ -27,7 +27,7 @@ function Assert-NonEmptyFile {
     }
 }
 
-function Set-Utf8Content {
+function Write-Utf8Content {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
         [Parameter(Mandatory = $true)][string]$Value
@@ -36,7 +36,7 @@ function Set-Utf8Content {
     [System.IO.File]::WriteAllText($Path, $Value, $encoding)
 }
 
-function Quote-WindowsArgument {
+function ConvertTo-WindowsArgument {
     param([AllowNull()][string]$Argument)
 
     if ($null -eq $Argument) {
@@ -69,9 +69,9 @@ function Quote-WindowsArgument {
     $quoted
 }
 
-function Join-WindowsArguments {
+function Join-WindowsArgument {
     param([string[]]$Arguments)
-    ($Arguments | ForEach-Object { Quote-WindowsArgument -Argument $_ }) -join ' '
+    ($Arguments | ForEach-Object { ConvertTo-WindowsArgument -Argument $_ }) -join ' '
 }
 
 function Invoke-PythonSCAD {
@@ -85,7 +85,7 @@ function Invoke-PythonSCAD {
 
     $psi = [System.Diagnostics.ProcessStartInfo]::new()
     $psi.FileName = $ExecutablePath
-    $psi.Arguments = Join-WindowsArguments -Arguments $Arguments
+    $psi.Arguments = Join-WindowsArgument -Arguments $Arguments
     if ($WorkingDirectory) {
         $psi.WorkingDirectory = $WorkingDirectory
     }
@@ -113,7 +113,7 @@ function Invoke-PythonSCAD {
         if ($parent) {
             New-Item -ItemType Directory -Force -Path $parent | Out-Null
         }
-        Set-Utf8Content -Path $LogFile -Value ($stdout + $stderr)
+        Write-Utf8Content -Path $LogFile -Value ($stdout + $stderr)
     }
 
     if ($process.ExitCode -ne 0) {
@@ -138,30 +138,30 @@ function Invoke-PythonSCAD {
     }
 }
 
-function New-SmokeInputs {
+function Initialize-SmokeInput {
     param([Parameter(Mandatory = $true)][string]$TestDirectory)
 
     New-Item -ItemType Directory -Force -Path $TestDirectory | Out-Null
-    Set-Utf8Content -Path (Join-Path $TestDirectory 'cube.scad') -Value 'cube(10);'
-    Set-Utf8Content -Path (Join-Path $TestDirectory 'cube.py') -Value @'
+    Write-Utf8Content -Path (Join-Path $TestDirectory 'cube.scad') -Value 'cube(10);'
+    Write-Utf8Content -Path (Join-Path $TestDirectory 'cube.py') -Value @'
 from pythonscad import *
 
 cube(10).show()
 '@
-    Set-Utf8Content -Path (Join-Path $TestDirectory 'repl-smoke.py') -Value @'
+    Write-Utf8Content -Path (Join-Path $TestDirectory 'repl-smoke.py') -Value @'
 from pythonscad import *
 
 export(cube(10), "repl-cube.stl")
 raise SystemExit(0)
 '@
-    Set-Utf8Content -Path (Join-Path $TestDirectory 'ipython-smoke.py') -Value @'
+    Write-Utf8Content -Path (Join-Path $TestDirectory 'ipython-smoke.py') -Value @'
 from pythonscad import *
 
 export(cube(10), "ipython-cube.stl")
 '@
 }
 
-function Invoke-SmokeTests {
+function Invoke-SmokeTest {
     param(
         [Parameter(Mandatory = $true)][string]$ExecutablePath,
         [Parameter(Mandatory = $true)][string]$Label,
@@ -174,7 +174,7 @@ function Invoke-SmokeTests {
 
     $safeLabel = $Label -replace '[^A-Za-z0-9_.-]', '_'
     $testdir = Join-Path $Workdir "smoke-$safeLabel"
-    New-SmokeInputs -TestDirectory $testdir
+    Initialize-SmokeInput -TestDirectory $testdir
 
     Write-SmokeLog "Smoke testing $Label`: startup"
     Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
