@@ -33,7 +33,9 @@ rs_file_nonempty() {
 
 rs_print_log_excerpt() {
   local log_file=$1
-  if [[ -s "$log_file" ]]; then
+  if [[ ! -e "$log_file" ]]; then
+    printf -- '--- command output log was not created: %s ---\n' "$log_file" >&2
+  elif [[ -s "$log_file" ]]; then
     printf -- '--- begin command output: %s ---\n' "$log_file" >&2
     cat "$log_file" >&2
     printf -- '--- end command output: %s ---\n' "$log_file" >&2
