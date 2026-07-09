@@ -117,11 +117,10 @@ static void python_configure_windows_sys_compat(void)
   if (isMingw == nullptr && PyErr_Occurred()) {
     PyErr_Clear();
   } else if (sysdict != nullptr && isMingw == nullptr) {
-#ifdef __MINGW32__
-    PyObject *value = Py_True;
-#else
-    PyObject *value = Py_False;
-#endif
+    const char *compiler = Py_GetCompiler();
+    const bool runtimeIsMingw = compiler != nullptr && (strstr(compiler, "MINGW") != nullptr ||
+                                                        strstr(compiler, "GCC") != nullptr);
+    PyObject *value = runtimeIsMingw ? Py_True : Py_False;
     if (PyDict_SetItemString(sysdict, "_is_mingw", value) != 0) {
       PyErr_Clear();
     }
