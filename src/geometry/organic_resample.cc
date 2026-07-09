@@ -141,9 +141,23 @@ inline std::vector<Tet4> delaunay3d_bowyer_watson(const std::vector<Vector3d>& p
     std::sort(bad.rbegin(), bad.rend());
     for (int t : bad) tets.erase(tets.begin() + t);
 
-    for (auto& kv : face_count) {
-      if (kv.second != 1) continue;
-      auto& f = face_orient[kv.first];
+    // Iterate new-face candidates in a deterministic, platform-independent
+    // order (sorted by vertex indices) instead of raw unordered_map
+    // iteration order, which differs between standard library
+    // implementations (e.g. libstdc++ on Linux vs libc++ on macOS) and
+    // would otherwise make the resulting tetrahedra array order - and
+    // everything downstream that depends on it - vary by platform.
+    std::vector<FaceKey> new_face_keys;
+    new_face_keys.reserve(face_count.size());
+    for (auto& kv : face_count)
+      if (kv.second == 1) new_face_keys.push_back(kv.first);
+    std::sort(new_face_keys.begin(), new_face_keys.end(), [](const FaceKey& x, const FaceKey& y) {
+      if (x.a != y.a) return x.a < y.a;
+      if (x.b != y.b) return x.b < y.b;
+      return x.c < y.c;
+    });
+    for (auto& key : new_face_keys) {
+      auto& f = face_orient[key];
       int a = f[0], b = f[1], c = f[2];
       if (signed_volume6(pts[a], pts[b], pts[c], pts[pi]) < 0) std::swap(a, b);
       tets.push_back({a, b, c, pi});
@@ -186,12 +200,28 @@ inline std::vector<Face3> boundary_from_kept(const std::vector<Vector3d>& points
     }
   }
 
+  // Sort by face key before emitting boundary faces, for the same reason
+  // as in delaunay3d_bowyer_watson above: unordered_map iteration order
+  // is platform-dependent, and here it would otherwise determine which
+  // triangle ends up at index 0 of the result (used e.g. as the flood-
+  // fill start point in enforce_consistent_orientation), silently making
+  // the whole pipeline's output order-of-operations vary by platform.
+  std::vector<FaceKey> boundary_keys;
+  boundary_keys.reserve(face_owners.size());
+  for (auto& kv : face_owners)
+    if (kv.second.size() == 1) boundary_keys.push_back(kv.first);
+  std::sort(boundary_keys.begin(), boundary_keys.end(), [](const FaceKey& x, const FaceKey& y) {
+    if (x.a != y.a) return x.a < y.a;
+    if (x.b != y.b) return x.b < y.b;
+    return x.c < y.c;
+  });
+
   std::vector<Face3> boundary;
-  boundary.reserve(face_owners.size() / 2);
-  for (auto& kv : face_owners) {
-    if (kv.second.size() != 1) continue;
-    int tet_idx = kv.second[0].first;
-    int excluded = kv.second[0].second;
+  boundary.reserve(boundary_keys.size());
+  for (auto& key : boundary_keys) {
+    auto& kv_second = face_owners[key];
+    int tet_idx = kv_second[0].first;
+    int excluded = kv_second[0].second;
     const Tet4& t = tets[tet_idx];
     int verts[4] = {t.a, t.b, t.c, t.d};
     int f[3];
@@ -708,124 +738,7 @@ inline double average_dihedral_angle(const std::vector<Vector3d>& points, const 
 // Runs a single pass over all interior edges, flipping any edge whose
 // opposite diagonal would be shorter (and where the flip is geometrically
 // valid - see checks below). Returns true if at least one flip was made.
-inline bool edge_flip_pass(const std::vector<Vector3d>& points, PolygonIndices& tris)
-{
-  const int nt = static_cast<int>(tris.size());
-
-  // edge -> list of (triangle index, opposite vertex, position of that
-  // vertex within the triangle - used to reconstruct orientation)
-  std::unordered_map<EdgeKey2, std::vector<std::pair<int, int>>, EdgeKey2Hash> edge_owners;
-  for (int i = 0; i < nt; ++i) {
-    const auto& t = tris[i];
-    for (int k = 0; k < 3; ++k) {
-      int a = t[k], b = t[(k + 1) % 3], opp = t[(k + 2) % 3];
-      edge_owners[make_edge_key2(a, b)].push_back({i, opp});
-    }
-  }
-
-  // Track all edges currently present, so we never introduce a
-  // duplicate edge (which would make some edge non-manifold, i.e.
-  // shared by 3+ triangles instead of exactly 2).
-  std::unordered_map<EdgeKey2, bool, EdgeKey2Hash> existing_edges;
-  for (auto& kv : edge_owners) existing_edges[kv.first] = true;
-
-  std::vector<char> touched(nt, 0);  // a triangle can only be flipped once per pass
-  bool changed = false;
-
-  for (auto& kv : edge_owners) {
-    if (kv.second.size() != 2) continue;  // only interior, manifold edges are flip candidates
-    int t1 = kv.second[0].first, c = kv.second[0].second;
-    int t2 = kv.second[1].first, d = kv.second[1].second;
-    if (touched[t1] || touched[t2]) continue;
-    int a = kv.first.lo, b = kv.first.hi;
-    if (c == d) continue;  // degenerate, skip
-
-    EdgeKey2 new_edge = make_edge_key2(c, d);
-    if (existing_edges.count(new_edge)) continue;  // would create a non-manifold edge
-
-    // Current dihedral angle at this edge (between the two existing
-    // triangles, as actually stored/wound).
-    Vector3d n_t1 =
-      (points[tris[t1][1]] - points[tris[t1][0]]).cross(points[tris[t1][2]] - points[tris[t1][0]]);
-    Vector3d n_t2 =
-      (points[tris[t2][1]] - points[tris[t2][0]]).cross(points[tris[t2][2]] - points[tris[t2][0]]);
-    double old_dihedral = dihedral_angle_deg(n_t1, n_t2);
-
-    // Build the two replacement triangles, then fix winding so their
-    // normals stay consistent with the two triangles being replaced
-    // (robust against directed-edge bookkeeping mistakes: just check
-    // the resulting normal direction directly).
-    Vector3d old_normal = n_t1 + n_t2;
-
-    IndexedFace tri1 = {a, c, d};
-    IndexedFace tri2 = {b, d, c};
-    auto fix_winding = [&](IndexedFace& tri) {
-      Vector3d n = (points[tri[1]] - points[tri[0]]).cross(points[tri[2]] - points[tri[0]]);
-      if (n.dot(old_normal) < 0) std::swap(tri[1], tri[2]);
-    };
-    fix_winding(tri1);
-    fix_winding(tri2);
-
-    // Skip degenerate (zero-area) results.
-    Vector3d n1 = (points[tri1[1]] - points[tri1[0]]).cross(points[tri1[2]] - points[tri1[0]]);
-    Vector3d n2 = (points[tri2[1]] - points[tri2[0]]).cross(points[tri2[2]] - points[tri2[0]]);
-    if (n1.norm() < 1e-12 || n2.norm() < 1e-12) continue;
-
-    // Only flip if the resulting edge would be flatter (smaller
-    // dihedral angle = smoother, less creased) than the current one.
-    double new_dihedral = dihedral_angle_deg(n1, n2);
-    if (new_dihedral >= old_dihedral - 1e-9) continue;  // no improvement
-
-    for (int i = 0; i < 3; i++) {
-      tris[t1][i] = tri1[i];
-      tris[t2][i] = tri2[i];
-    }
-    touched[t1] = touched[t2] = 1;
-    existing_edges.erase(kv.first);
-    existing_edges[new_edge] = true;
-    changed = true;
-  }
-  return changed;
-}
-
-// Repeatedly applies edge_flip_pass() until no more improving flip is
-// found (or a safety cap on iterations is reached - one flip can enable
-// further improving flips nearby, so a handful of passes are typically
-// needed for full convergence).
-inline void improve_triangulation(const std::vector<Vector3d>& points, PolygonIndices& tris)
-{
-  for (int iter = 0; iter < 20; ++iter) {
-    if (!edge_flip_pass(points, tris)) break;
-  }
-}
-
-// =========================================================================
-// 3.5a2) Self-intersection detection + simulated-annealing edge-flip search
-// =========================================================================
-//
-// The greedy edge-flip / star-reduction passes above use PROXY quality
-// metrics (edge length, then dihedral angle) because those are cheap to
-// evaluate locally. Neither proxy actually guarantees avoiding real
-// geometric self-intersection - confirmed empirically: a mesh that is
-// optimal by either proxy can still contain genuinely crossing triangles
-// (e.g. two long, thin, spatially-close-but-topologically-distant
-// triangles bridging a sparse region can cross each other even though
-// each individually looks fine by both proxies). Greedy local search also
-// gets stuck whenever the single best-looking move is blocked by a
-// pre-existing conflicting edge, even when a short SEQUENCE of moves
-// would help.
-//
-// This section replaces the proxy-based greedy search with an explicit,
-// direct cost function - actual self-intersection count (heavily
-// weighted) plus average dihedral angle for smoothness - optimized via
-// simulated annealing over edge flips. SA can accept a temporarily worse
-// move to escape exactly the kind of local optimum the greedy passes get
-// stuck in, and because the cost function checks real 3D triangle-
-// triangle intersection directly, it targets the actual problem instead
-// of a proxy for it. This works for ANY topology (no star-shaped
-// assumption needed), unlike the radial-projection convex hull approach.
-
-inline bool triangles_share_vertex(const IndexedFace& a, const IndexedFace& b)
+inline bool triangles_share_vertex(IndexedFace& a, IndexedFace& b)
 {
   for (int x : a)
     for (int y : b)
@@ -868,7 +781,7 @@ inline bool triangle_triangle_intersect(const Vector3d& p1, const Vector3d& q1, 
 // Full O(n^2) self-intersection count (only used for the coarse base
 // mesh, which is small - a handful to a few hundred triangles - so this
 // stays cheap).
-inline int count_self_intersections(const std::vector<Vector3d>& points, const PolygonIndices& tris)
+inline int count_self_intersections(const std::vector<Vector3d>& points, PolygonIndices& tris)
 {
   int hits = 0;
   for (size_t i = 0; i < tris.size(); ++i) {
@@ -885,8 +798,8 @@ inline int count_self_intersections(const std::vector<Vector3d>& points, const P
 // How many OTHER triangles a single triangle (given directly, not yet
 // necessarily part of 'tris') intersects - used to cheaply evaluate the
 // local effect of a candidate edge flip without a full O(n^2) rescan.
-inline int intersections_with_others(const std::vector<Vector3d>& points, const PolygonIndices& tris,
-                                     const IndexedFace& tri, int skip_a, int skip_b)
+inline int intersections_with_others(const std::vector<Vector3d>& points, PolygonIndices& tris,
+                                     IndexedFace& tri, int skip_a, int skip_b)
 {
   int hits = 0;
   Vector3d a0 = points[tri[0]], a1 = points[tri[1]], a2 = points[tri[2]];
@@ -898,6 +811,142 @@ inline int intersections_with_others(const std::vector<Vector3d>& points, const 
   }
   return hits;
 }
+
+inline bool edge_flip_pass(const std::vector<Vector3d>& points, PolygonIndices& tris)
+{
+  const int nt = static_cast<int>(tris.size());
+
+  // edge -> list of (triangle index, opposite vertex, position of that
+  // vertex within the triangle - used to reconstruct orientation)
+  std::unordered_map<EdgeKey2, std::vector<std::pair<int, int>>, EdgeKey2Hash> edge_owners;
+  for (int i = 0; i < nt; ++i) {
+    const auto& t = tris[i];
+    for (int k = 0; k < 3; ++k) {
+      int a = t[k], b = t[(k + 1) % 3], opp = t[(k + 2) % 3];
+      edge_owners[make_edge_key2(a, b)].push_back({i, opp});
+    }
+  }
+
+  // Track all edges currently present, so we never introduce a
+  // duplicate edge (which would make some edge non-manifold, i.e.
+  // shared by 3+ triangles instead of exactly 2).
+  std::unordered_map<EdgeKey2, bool, EdgeKey2Hash> existing_edges;
+  for (auto& kv : edge_owners) existing_edges[kv.first] = true;
+
+  std::vector<char> touched(nt, 0);  // a triangle can only be flipped once per pass
+  bool changed = false;
+
+  // Process candidate edges in a deterministic, platform-independent
+  // order (sorted by vertex indices) rather than raw unordered_map
+  // iteration order - see the comment on the same pattern in
+  // delaunay3d_bowyer_watson above. Without this, which edge gets
+  // flipped first (and therefore the whole resulting triangulation,
+  // since flips are interdependent) could differ between standard
+  // library implementations, e.g. Linux vs macOS.
+  std::vector<EdgeKey2> candidate_edges;
+  candidate_edges.reserve(edge_owners.size());
+  for (auto& kv : edge_owners)
+    if (kv.second.size() == 2) candidate_edges.push_back(kv.first);
+  std::sort(candidate_edges.begin(), candidate_edges.end(), [](const EdgeKey2& x, const EdgeKey2& y) {
+    if (x.lo != y.lo) return x.lo < y.lo;
+    return x.hi < y.hi;
+  });
+
+  for (auto& edge : candidate_edges) {
+    auto& kv_second = edge_owners[edge];
+    int t1 = kv_second[0].first, c = kv_second[0].second;
+    int t2 = kv_second[1].first, d = kv_second[1].second;
+    if (touched[t1] || touched[t2]) continue;
+    int a = edge.lo, b = edge.hi;
+    if (c == d) continue;  // degenerate, skip
+
+    EdgeKey2 new_edge = make_edge_key2(c, d);
+    if (existing_edges.count(new_edge)) continue;  // would create a non-manifold edge
+
+    // Current dihedral angle at this edge (between the two existing
+    // triangles, as actually stored/wound).
+    Vector3d n_t1 =
+      (points[tris[t1][1]] - points[tris[t1][0]]).cross(points[tris[t1][2]] - points[tris[t1][0]]);
+    Vector3d n_t2 =
+      (points[tris[t2][1]] - points[tris[t2][0]]).cross(points[tris[t2][2]] - points[tris[t2][0]]);
+    double old_dihedral = dihedral_angle_deg(n_t1, n_t2);
+
+    // Build the two replacement triangles, then fix winding so their
+    // normals stay consistent with the two triangles being replaced
+    // (robust against directed-edge bookkeeping mistakes: just check
+    // the resulting normal direction directly).
+    Vector3d old_normal = n_t1 + n_t2;
+
+    IndexedFace tri1 = {a, c, d};
+    IndexedFace tri2 = {b, d, c};
+    auto fix_winding = [&](IndexedFace& tri) {
+      Vector3d n = (points[tri[1]] - points[tri[0]]).cross(points[tri[2]] - points[tri[0]]);
+      if (n.dot(old_normal) < 0) std::swap(tri[1], tri[2]);
+    };
+    fix_winding(tri1);
+    fix_winding(tri2);
+
+    // Skip degenerate (zero-area) results.
+    Vector3d n1 = (points[tri1[1]] - points[tri1[0]]).cross(points[tri1[2]] - points[tri1[0]]);
+    Vector3d n2 = (points[tri2[1]] - points[tri2[0]]).cross(points[tri2[2]] - points[tri2[0]]);
+    if (n1.norm() < 1e-12 || n2.norm() < 1e-12) continue;
+
+    // Only flip if the resulting edge would be flatter (smaller
+    // dihedral angle = smoother, less creased) than the current one.
+    double new_dihedral = dihedral_angle_deg(n1, n2);
+    if (new_dihedral >= old_dihedral - 1e-9) continue;  // no improvement
+
+    // Safety gate: a smaller dihedral angle alone does not guarantee
+    // the flip is actually safe - confirmed empirically, this proxy
+    // can introduce genuine geometric self-intersections with some
+    // OTHER, unrelated triangle elsewhere in the mesh (e.g. two long,
+    // thin triangles bridging a sparse region). Reject the flip if it
+    // would create any such crossing, even though it looks like an
+    // improvement by the dihedral-angle proxy alone.
+    if (intersections_with_others(points, tris, tri1, t1, t2) > 0) continue;
+    if (intersections_with_others(points, tris, tri2, t1, t2) > 0) continue;
+
+    tris[t1] = tri1;
+    tris[t2] = tri2;
+    touched[t1] = touched[t2] = 1;
+    existing_edges.erase(edge);
+    existing_edges[new_edge] = true;
+    changed = true;
+  }
+  return changed;
+}
+
+// Repeatedly applies edge_flip_pass() until no more improving flip is
+// found (or a safety cap on iterations is reached - one flip can enable
+// further improving flips nearby, so a handful of passes are typically
+// needed for full convergence).
+inline void improve_triangulation(const std::vector<Vector3d>& points, PolygonIndices& tris)
+{
+  for (int iter = 0; iter < 20; ++iter) {
+    if (!edge_flip_pass(points, tris)) break;
+  }
+}
+
+// =========================================================================
+// 3.5a2) Simulated-annealing edge-flip search (self-intersection-aware)
+// =========================================================================
+//
+// The greedy edge-flip / star-reduction passes above use PROXY quality
+// metrics (edge length, then dihedral angle) because those are cheap to
+// evaluate locally. Neither proxy actually guarantees avoiding real
+// geometric self-intersection on its own - confirmed empirically: a mesh
+// that is optimal by either proxy can still contain genuinely crossing
+// triangles (e.g. two long, thin, spatially-close-but-topologically-
+// distant triangles bridging a sparse region can cross each other even
+// though each individually looks fine by both proxies). That is why
+// edge_flip_pass above now ALSO checks intersections_with_others()
+// directly before accepting any flip, rather than relying on the
+// dihedral-angle proxy alone. Greedy local search can still get stuck
+// whenever the single best-looking move is blocked, even when a short
+// SEQUENCE of moves would help - the simulated-annealing search below
+// (not used by default - see the comment on organic_resample for why)
+// is an alternative that can escape such local optima by accepting a
+// temporarily worse move.
 
 // Simulated-annealing search over edge flips. Cost = a heavily-weighted
 // self-intersection count plus the average dihedral angle (smoothness).
@@ -1205,7 +1254,16 @@ inline bool reduce_star(const std::vector<Vector3d>& points, PolygonIndices& tri
   if (next_in_link.size() != incident.size()) return false;  // inconsistent, bail out safely
 
   std::vector<int> link;
+  // Deterministic, platform-independent starting point for walking the
+  // link cycle: the smallest vertex index, rather than
+  // "next_in_link.begin()->first" (unordered_map iteration order,
+  // which differs across standard library implementations). The cycle
+  // itself always visits the same set of vertices regardless of start
+  // point, but a different start rotates the resulting 'link' vector,
+  // which can lead the min-weight-triangulation search below to a
+  // genuinely different (though equally valid) diagonal choice.
   int start = next_in_link.begin()->first;
+  for (auto& kv : next_in_link) start = std::min(start, kv.first);
   int cur = start;
   do {
     link.push_back(cur);
@@ -1327,7 +1385,14 @@ inline void reduce_hub_vertices(const std::vector<Vector3d>& points, PolygonIndi
     // Try the highest-valence vertices first.
     std::vector<int> order(n);
     for (int i = 0; i < n; ++i) order[i] = i;
-    std::sort(order.begin(), order.end(), [&](int a, int b) { return valence[a] > valence[b]; });
+    // Tie-break by vertex index so the order is fully deterministic
+    // even when std::sort (not guaranteed stable) reorders equal-
+    // valence entries differently across standard library
+    // implementations.
+    std::sort(order.begin(), order.end(), [&](int a, int b) {
+      if (valence[a] != valence[b]) return valence[a] > valence[b];
+      return a < b;
+    });
 
     bool any_change = false;
     for (int v : order) {
