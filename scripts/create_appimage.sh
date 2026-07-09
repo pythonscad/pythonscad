@@ -299,6 +299,27 @@ else
     die "linuxdeploy not found"
 fi
 
+if [ "${QT_VERSION}" = "6" ]; then
+    # Avoid GTK native dialogs in the Qt6 AppImage: they pull in
+    # host gdk-pixbuf loaders and can crash against bundled librsvg.
+    rm -f "${APPDIR}/usr/plugins/platformthemes/libqgtk3.so"
+fi
+
+# Ensure GMP is bundled with MPFR and exact-arithmetic geometry users.
+GMP_SONAME="${APPDIR}/usr/lib/libgmp.so.10"
+if [ ! -e "${GMP_SONAME}" ]; then
+    find /usr/lib -name "libgmp.so.10*" -exec cp -P {} "${APPDIR}/usr/lib/" \; 2>/dev/null || true
+fi
+if [ ! -e "${GMP_SONAME}" ]; then
+    GMP_RUNTIME=$(find "${APPDIR}/usr/lib" -maxdepth 1 -type f -name "libgmp.so.10.*" | sort | head -1)
+    if [ -n "${GMP_RUNTIME}" ]; then
+        ln -sf "$(basename "${GMP_RUNTIME}")" "${GMP_SONAME}"
+    fi
+fi
+if [ ! -e "${GMP_SONAME}" ]; then
+    die "Failed to bundle libgmp.so.10"
+fi
+
 # Bundle Python runtime and libraries
 info "Bundling Python runtime..."
 
@@ -366,6 +387,24 @@ fi
 info "Found executable: ${MAIN_EXEC}"
 EXEC_NAME=$(basename "${MAIN_EXEC}")
 
+# Keep GIO from discovering host modules that may not match the
+# bundled GLib/GIO libraries. Copy the non-GVFS modules from the
+# build host so GIO features such as TLS still have matching modules.
+GIO_MODULE_DIR="${APPDIR}/usr/lib/gio/modules"
+mkdir -p "${GIO_MODULE_DIR}"
+SYSTEM_GIO_MODULE_DIR=$(pkg-config --variable=giomoduledir gio-2.0 2>/dev/null || true)
+if [ -n "${SYSTEM_GIO_MODULE_DIR}" ] && [ -d "${SYSTEM_GIO_MODULE_DIR}" ]; then
+    find "${SYSTEM_GIO_MODULE_DIR}" -maxdepth 1 -type f -name "*.so" \
+        ! -name "libgvfsdbus.so" \
+        ! -name "libgioremote-volume-monitor.so" \
+        -exec cp -P {} "${GIO_MODULE_DIR}/" \;
+fi
+if command_exists gio-querymodules; then
+    gio-querymodules "${GIO_MODULE_DIR}" || warn "Failed to generate GIO module cache"
+else
+    warn "gio-querymodules not found; GIO module cache will not be generated"
+fi
+
 # Create AppRun script
 info "Creating AppRun..."
 
@@ -385,6 +424,8 @@ export LD_LIBRARY_PATH="\${HERE}/usr/lib:\${LD_LIBRARY_PATH}"
 export PYTHONPATH="\${HERE}/usr/lib/python${PYTHON_VERSION}:\${HERE}/usr/lib/python${PYTHON_VERSION}/site-packages:\${PYTHONPATH}"
 export PYTHONHOME="\${HERE}/usr"
 export QT_PLUGIN_PATH="\${HERE}/usr/plugins"
+export GIO_USE_VFS=local
+export GIO_MODULE_DIR="\${HERE}/usr/lib/gio/modules"
 
 # Force X11 platform (xcb) for maximum compatibility
 # PythonSCAD uses OpenGL (QOpenGLWidget) which works better with XWayland on Wayland systems
