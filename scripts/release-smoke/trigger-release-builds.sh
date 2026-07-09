@@ -106,7 +106,7 @@ find_dispatched_run_id() {
     --event workflow_dispatch \
     --limit 20 \
     --json databaseId,createdAt \
-    --jq "map(select(.createdAt >= \"$created_after\")) | .[0].databaseId // \"\""
+    --jq "map(select(.createdAt >= \"$created_after\")) | sort_by(.createdAt) | .[0].databaseId // \"\""
 }
 
 wait_for_dispatched_run_id() {
@@ -179,7 +179,6 @@ if [[ -n "$upload_to_release" ]]; then
 fi
 
 declare -A run_ids=()
-dispatch_started=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 for workflow in "${workflows[@]}"; do
   cmd=(gh workflow run "$workflow" --repo "$repo" --ref "$ref")
@@ -193,6 +192,7 @@ for workflow in "${workflows[@]}"; do
     printf '\n'
   else
     rs_log "Dispatching $workflow"
+    dispatch_started=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     "${cmd[@]}"
     if [[ "$wait_for_runs" == "1" ]]; then
       if run_id=$(wait_for_dispatched_run_id "$workflow" "$dispatch_started"); then

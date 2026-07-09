@@ -140,6 +140,24 @@ function Find-PythonSCADExecutable {
     throw "Could not locate pythonscad executable under $Root"
 }
 
+function Split-CommandArguments {
+    param([string]$Arguments)
+
+    if (-not $Arguments) {
+        return @()
+    }
+
+    $tokens = @()
+    foreach ($match in [regex]::Matches($Arguments, '(?:"([^"]*)"|(\S+))')) {
+        if ($match.Groups[1].Success) {
+            $tokens += $match.Groups[1].Value
+        } else {
+            $tokens += $match.Groups[2].Value
+        }
+    }
+    return $tokens
+}
+
 function Invoke-ExistingPythonSCADUninstallers {
     $registryRoots = @(
         'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
@@ -156,14 +174,11 @@ function Invoke-ExistingPythonSCADUninstallers {
             Where-Object { $_.DisplayName -like '*PythonSCAD*' -and $_.UninstallString }
         foreach ($entry in $entries) {
             Write-SmokeLog "Uninstalling existing $($entry.DisplayName)"
-            $uninstall = $entry.UninstallString.Trim('"')
-            if ($uninstall -match '^(?<exe>.*?\.exe)(?<args>.*)$') {
-                $exe = $Matches.exe.Trim('"')
-                $extraArgs = $Matches.args.Trim()
-                $argumentList = @()
-                if ($extraArgs) {
-                    $argumentList += $extraArgs
-                }
+            $uninstall = $entry.UninstallString.Trim()
+            if ($uninstall -match '^\s*"(?<exe>[^"]+)"\s*(?<args>.*)$' -or
+                $uninstall -match '^\s*(?<exe>\S+?\.exe)\s*(?<args>.*)$') {
+                $exe = $Matches.exe
+                $argumentList = Split-CommandArguments -Arguments $Matches.args
                 $argumentList += '/S'
                 Start-Process -FilePath $exe -ArgumentList $argumentList -Wait
             } else {
