@@ -113,7 +113,10 @@ static void python_configure_windows_sys_compat(void)
   }
 
   PyObject *sysdict = PyModule_GetDict(sys);
-  if (sysdict != nullptr && PyDict_GetItemString(sysdict, "_is_mingw") == nullptr) {
+  PyObject *isMingw = sysdict == nullptr ? nullptr : PyDict_GetItemString(sysdict, "_is_mingw");
+  if (isMingw == nullptr && PyErr_Occurred()) {
+    PyErr_Clear();
+  } else if (sysdict != nullptr && isMingw == nullptr) {
 #ifdef __MINGW32__
     PyObject *value = Py_True;
 #else
@@ -123,7 +126,10 @@ static void python_configure_windows_sys_compat(void)
       PyErr_Clear();
     }
   }
-  if (sysdict != nullptr && PyDict_GetItemString(sysdict, "abiflags") == nullptr) {
+  PyObject *abiflags = sysdict == nullptr ? nullptr : PyDict_GetItemString(sysdict, "abiflags");
+  if (abiflags == nullptr && PyErr_Occurred()) {
+    PyErr_Clear();
+  } else if (sysdict != nullptr && abiflags == nullptr) {
     PyObject *value = PyUnicode_FromString("");
     if (value == nullptr) {
       PyErr_Clear();
