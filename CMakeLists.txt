@@ -2449,6 +2449,10 @@ if(NOT APPLE OR APPLE_UNIX)
         set(MSYS2_PREFIX "/ucrt64")
       endif()
       set(MSYS2_BIN_DIR "${MSYS2_PREFIX}/bin")
+      install(FILES "${MSYS2_BIN_DIR}/libpython${PYTHON_MINGW_VERSION}.dll"
+              DESTINATION ".")
+      install(FILES "${PYTHON_EMBED_DEVPATH}/python${PYTHON_DLL_VER}.zip"
+              DESTINATION ".")
 
       # Install Qt platform plugins (required for Qt to start)
       if(USE_QT6)
@@ -2511,10 +2515,10 @@ if(NOT APPLE OR APPLE_UNIX)
         )
         message(STATUS "Native MSYS2 build: Runtime DLLs will be bundled from ${MSYS2_BIN_DIR}")
 
-        # Resolve DLL dependencies of Python's own lib-dynload extension
+        # Resolve DLL dependencies of Python's embeddable extension
         # modules (_ctypes.pyd, _ssl.pyd, _sqlite3.pyd, ...). The base
         # RUNTIME_DEPENDENCY_SET above only walks OpenSCADExe's import
-        # table, which transitively reaches libpython3.x.dll but NOT
+        # table, which transitively reaches python3xx.dll but NOT
         # libffi-8.dll / libsqlite3-0.dll / libssl-3-x64.dll / etc. --
         # those are loaded by Python at `import ctypes` / `import ssl`
         # / ... time and so are invisible to a static walk of the main
@@ -2524,24 +2528,32 @@ if(NOT APPLE OR APPLE_UNIX)
         # Windows installs that lack MSYS2 globally on PATH.
         #
         # Use an install(CODE) hook so the scan happens AFTER the
-        # python stdlib `install(DIRECTORY)` rule above has copied
-        # lib-dynload into the staging tree. file(GET_RUNTIME_DEPENDENCIES)
-        # then sees the actual .pyd set that's about to be shipped
-        # (robust to Python minor-version upgrades and to the MSYS2
-        # python package shedding/adding extension modules).
+        # python.org embeddable distribution has been downloaded and the
+        # runtime install root exists. The embedded interpreter recognizes
+        # python.org suffixes such as `.cp314-win_amd64.pyd` / `.pyd`, not
+        # MSYS2's ABI-tagged lib-dynload suffixes, so ship the extension
+        # modules from the same embeddable distribution that provides the
+        # runtime DLL.
         install(CODE "
           set(_msys2_bindir \"${MSYS2_BIN_DIR}\")
-          set(_pyver \"${PYTHON_MINGW_VERSION}\")
-          set(_lib_dynload \"\${CMAKE_INSTALL_PREFIX}/lib/python\${_pyver}/lib-dynload\")
-          if(NOT IS_DIRECTORY \"\${_lib_dynload}\")
-            message(STATUS \"lib-dynload not found at \${_lib_dynload}; skipping .pyd dep scan\")
+          set(_python_embed_dir \"${PYTHON_EMBED_DEVPATH}\")
+          if(NOT IS_DIRECTORY \"\${_python_embed_dir}\")
+            message(STATUS \"python embed dir not found at \${_python_embed_dir}; skipping .pyd install\")
             return()
           endif()
-          file(GLOB _pyd_files \"\${_lib_dynload}/*.pyd\")
+          file(GLOB _pyd_files \"\${_python_embed_dir}/*.pyd\")
           if(NOT _pyd_files)
-            message(STATUS \"no .pyd files in \${_lib_dynload}; skipping dep scan\")
+            message(STATUS \"no .pyd files in \${_python_embed_dir}; skipping dep scan\")
             return()
           endif()
+          foreach(_pyd IN LISTS _pyd_files)
+            get_filename_component(_pyd_name \"\${_pyd}\" NAME)
+            if(EXISTS \"\${CMAKE_INSTALL_PREFIX}/\${_pyd_name}\")
+              continue()
+            endif()
+            message(STATUS \"Installing Python extension module: \${_pyd_name}\")
+            file(INSTALL \"\${_pyd}\" DESTINATION \"\${CMAKE_INSTALL_PREFIX}\")
+          endforeach()
           if(POLICY CMP0207)
             cmake_policy(PUSH)
             cmake_policy(SET CMP0207 NEW)
@@ -2567,10 +2579,10 @@ if(NOT APPLE OR APPLE_UNIX)
             file(INSTALL \"\${_dep}\" DESTINATION \"\${CMAKE_INSTALL_PREFIX}\")
           endforeach()
           if(_unresolved)
-            message(WARNING \"Unresolved lib-dynload deps: \${_unresolved}\")
+            message(WARNING \"Unresolved Python extension deps: \${_unresolved}\")
           endif()
         ")
-        message(STATUS "Native MSYS2 build: lib-dynload .pyd DLL deps will be bundled at install time")
+        message(STATUS "Native MSYS2 build: Python extension modules and DLL deps will be bundled at install time")
       endif()
     endif()
   else()
