@@ -1035,10 +1035,8 @@ inline void simulated_annealing_optimize(const std::vector<Vector3d>& points, Po
                           intersections_with_others(points, tris, tris[t2], t1, t2);
 
     PolygonIndices trial = tris;
-    for (int i = 0; i < 3; i++) {
-      trial[t1][i] = new1[i];
-      trial[t2][i] = new2[i];
-    }
+    trial[t1] = new1;
+    trial[t2] = new2;
     int new_local_inter = intersections_with_others(points, trial, new1, t1, t2) +
                           intersections_with_others(points, trial, new2, t1, t2);
 
