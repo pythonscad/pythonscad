@@ -85,15 +85,6 @@ rs_download_run_artifact() {
   gh run download "$run_id" --repo "$repo" --pattern "$pattern" --dir "$dest"
 }
 
-rs_download_run_artifacts() {
-  local repo=$1
-  local run_id=$2
-  local dest=$3
-
-  mkdir -p "$dest"
-  gh run download "$run_id" --repo "$repo" --dir "$dest"
-}
-
 rs_make_workdir() {
   local explicit_workdir=$1
   if [[ -n "$explicit_workdir" ]]; then
@@ -138,12 +129,6 @@ from pythonscad import *
 
 export(cube(10), "ipython-cube.stl")
 PY
-}
-
-rs_run_pythonscad() {
-  local exe=$1
-  shift
-  QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}" "$exe" "$@"
 }
 
 rs_run_logged() {
