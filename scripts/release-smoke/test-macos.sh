@@ -125,10 +125,14 @@ mkdir -p "$mountpoint"
 rs_log "Mounting $(basename "${dmgs[0]}")"
 hdiutil attach "${dmgs[0]}" -readonly -nobrowse -mountpoint "$mountpoint" >/dev/null
 
+shopt -s nullglob
+app_candidates=("$mountpoint"/*.app)
+shopt -u nullglob
+
 apps=()
-while IFS= read -r -d '' app; do
-  apps+=("$app")
-done < <(find "$mountpoint" -maxdepth 1 -name '*.app' -type d -print0)
+for app in "${app_candidates[@]}"; do
+  [[ -d "$app" ]] && apps+=("$app")
+done
 
 ((${#apps[@]} > 0)) || rs_die "no .app bundle found in mounted DMG"
 ((${#apps[@]} == 1)) || rs_die "expected exactly one .app bundle in DMG; found ${#apps[@]}"

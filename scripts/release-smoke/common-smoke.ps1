@@ -27,6 +27,15 @@ function Assert-NonEmptyFile {
     }
 }
 
+function Set-Utf8Content {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Value
+    )
+    $encoding = New-Object System.Text.UTF8Encoding -ArgumentList $false
+    [System.IO.File]::WriteAllText($Path, $Value, $encoding)
+}
+
 function Invoke-PythonSCAD {
     param(
         [Parameter(Mandatory = $true)][string]$ExecutablePath,
@@ -52,21 +61,23 @@ function Invoke-PythonSCAD {
     }
 
     $process = [System.Diagnostics.Process]::Start($psi)
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
     if ($InputFile) {
         $inputText = Get-Content -LiteralPath $InputFile -Raw
         $process.StandardInput.Write($inputText)
         $process.StandardInput.Close()
     }
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
     $process.WaitForExit()
+    $stdout = $stdoutTask.Result
+    $stderr = $stderrTask.Result
 
     if ($LogFile) {
         $parent = Split-Path -Parent $LogFile
         if ($parent) {
             New-Item -ItemType Directory -Force -Path $parent | Out-Null
         }
-        Set-Content -LiteralPath $LogFile -Value ($stdout + $stderr)
+        Set-Utf8Content -Path $LogFile -Value ($stdout + $stderr)
     }
 
     if ($process.ExitCode -ne 0) {
@@ -95,19 +106,19 @@ function New-SmokeInputs {
     param([Parameter(Mandatory = $true)][string]$TestDirectory)
 
     New-Item -ItemType Directory -Force -Path $TestDirectory | Out-Null
-    Set-Content -LiteralPath (Join-Path $TestDirectory 'cube.scad') -Value 'cube(10);'
-    Set-Content -LiteralPath (Join-Path $TestDirectory 'cube.py') -Value @'
+    Set-Utf8Content -Path (Join-Path $TestDirectory 'cube.scad') -Value 'cube(10);'
+    Set-Utf8Content -Path (Join-Path $TestDirectory 'cube.py') -Value @'
 from pythonscad import *
 
 cube(10).show()
 '@
-    Set-Content -LiteralPath (Join-Path $TestDirectory 'repl-smoke.py') -Value @'
+    Set-Utf8Content -Path (Join-Path $TestDirectory 'repl-smoke.py') -Value @'
 from pythonscad import *
 
 export(cube(10), "repl-cube.stl")
 raise SystemExit(0)
 '@
-    Set-Content -LiteralPath (Join-Path $TestDirectory 'ipython-smoke.py') -Value @'
+    Set-Utf8Content -Path (Join-Path $TestDirectory 'ipython-smoke.py') -Value @'
 from pythonscad import *
 
 export(cube(10), "ipython-cube.stl")
