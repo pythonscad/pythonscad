@@ -248,6 +248,7 @@ DOCKERFILE
 run_deb_package_test() {
   local package=$1
   local base_image=$2
+  local smoke_dir=$3
   local image
   local package_file
   image=$(ensure_deb_smoke_image "$base_image")
@@ -255,6 +256,7 @@ run_deb_package_test() {
 
   docker run --rm \
     -v "$package:/tmp/pythonscad-package.deb:ro" \
+    -v "$smoke_dir:/tmp/pythonscad-smoke" \
     -v "$SCRIPT_DIR:/release-smoke:ro" \
     -e DEBIAN_FRONTEND=noninteractive \
     -e PACKAGE_FILE="$package_file" \
@@ -274,6 +276,7 @@ run_deb_package_test() {
 run_rpm_package_test() {
   local package=$1
   local base_image=$2
+  local smoke_dir=$3
   local image
   local package_file
   image=$(ensure_rpm_smoke_image "$base_image")
@@ -281,6 +284,7 @@ run_rpm_package_test() {
 
   docker run --rm \
     -v "$package:/tmp/pythonscad-package.rpm:ro" \
+    -v "$smoke_dir:/tmp/pythonscad-smoke" \
     -v "$SCRIPT_DIR:/release-smoke:ro" \
     -e PACKAGE_FILE="$package_file" \
     "$image" \
@@ -301,14 +305,16 @@ run_rpm_package_test() {
 for package in "${packages[@]}"; do
   package=$(realpath "$package")
   image=$(package_container_image "$package")
+  smoke_dir="$workdir/package-smoke-$(basename "$package")"
+  mkdir -p "$smoke_dir"
 
   rs_log "Smoke testing $(basename "$package") in $image"
   case "$package" in
     *.deb)
-      run_deb_package_test "$package" "$image"
+      run_deb_package_test "$package" "$image" "$smoke_dir"
       ;;
     *.rpm)
-      run_rpm_package_test "$package" "$image"
+      run_rpm_package_test "$package" "$image" "$smoke_dir"
       ;;
     *)
       rs_die "unsupported package type: $package"
