@@ -354,9 +354,8 @@ C:/msys64/msys2_shell.cmd -defterm -here -no-start -ucrt64 -shell bash
 Inside that shell, install/update the package set used by CI:
 
 ```bash
-python3 ./scripts/get-dependencies.py --distro msys2 --profile pythonscad-qt6 \
-  --output-env /tmp/pythonscad-deps.env --env-var PACBOY_PACKAGES
-source /tmp/pythonscad-deps.env
+PACBOY_PACKAGES=$(python3 ./scripts/get-dependencies.py --distro msys2 \
+  --profile pythonscad-qt6 --list | tr '\n' ' ')
 pacboy -S --noconfirm --needed $PACBOY_PACKAGES nsis:p python-psutil:p uv:p
 ```
 
