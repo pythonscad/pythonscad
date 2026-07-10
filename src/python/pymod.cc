@@ -158,7 +158,7 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
 {
   PyStatus status;
   const auto name = PYTHON_EXECUTABLE_NAME;
-  const auto exe = PlatformUtils::applicationPath() + "/" + name;
+  const auto exe = pythonShimExecutablePath();
 
   PyPreConfig preconfig;
   PyPreConfig_InitPythonConfig(&preconfig);
@@ -225,6 +225,9 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
 
 done:
   PyConfig_Clear(&config);
+  if (!PyStatus_IsExit(status) && PyStatus_Exception(status)) {
+    return 1;
+  }
   return status.exitcode;
 }
 
