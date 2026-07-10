@@ -40,6 +40,7 @@
 #endif
 #include "platform/PlatformUtils.h"
 #include "pyopenscad.h"
+#include "python_runtime.h"
 
 namespace fs = std::filesystem;
 
@@ -88,42 +89,6 @@ static std::string pythonWindowsRuntimePath()
     sep = ";";
   }
   return stream.str();
-}
-
-static void pythonConfigureWindowsSysCompat()
-{
-  PyObject *sys = PyImport_ImportModule("sys");
-  if (sys == nullptr) {
-    PyErr_Clear();
-    return;
-  }
-
-  PyObject *sysdict = PyModule_GetDict(sys);
-  PyObject *isMingw = sysdict == nullptr ? nullptr : PyDict_GetItemString(sysdict, "_is_mingw");
-  if (isMingw == nullptr && PyErr_Occurred()) {
-    PyErr_Clear();
-  } else if (sysdict != nullptr && isMingw == nullptr) {
-    const char *compiler = Py_GetCompiler();
-    const bool runtimeIsMingw = compiler != nullptr && (strstr(compiler, "MINGW") != nullptr ||
-                                                        strstr(compiler, "GCC") != nullptr);
-    PyObject *value = runtimeIsMingw ? Py_True : Py_False;
-    if (PyDict_SetItemString(sysdict, "_is_mingw", value) != 0) {
-      PyErr_Clear();
-    }
-  }
-  PyObject *abiflags = sysdict == nullptr ? nullptr : PyDict_GetItemString(sysdict, "abiflags");
-  if (abiflags == nullptr && PyErr_Occurred()) {
-    PyErr_Clear();
-  } else if (sysdict != nullptr && abiflags == nullptr) {
-    PyObject *value = PyUnicode_FromString("");
-    if (value == nullptr) {
-      PyErr_Clear();
-    } else if (PyDict_SetItemString(sysdict, "abiflags", value) != 0) {
-      PyErr_Clear();
-    }
-    Py_XDECREF(value);
-  }
-  Py_DECREF(sys);
 }
 
 static void pythonConfigureHiddenConsoleSubprocesses()
@@ -230,7 +195,7 @@ int pythonRunArgs(int argc, char **argv)
     goto fail;
   }
 #if defined(_WIN32)
-  pythonConfigureWindowsSysCompat();
+  python_configure_windows_sys_compat();
   pythonConfigureHiddenConsoleSubprocesses();
 #endif
   PyConfig_Clear(&config);
@@ -286,7 +251,15 @@ PythonSCADEnvBuilder(with_pip=True, scm_ignore_files=frozenset(["git"])).create(
     const auto pythonExe = scriptsDir / "python.exe";
     const auto pythonScadExe = scriptsDir / (std::string(PYTHON_EXECUTABLE_NAME) + ".exe");
     std::error_code ec;
-    if (!fs::exists(pythonScadExe, ec) && fs::exists(pythonExe, ec)) {
+    const bool pythonScadExists = fs::exists(pythonScadExe, ec);
+    if (ec.value() > 0) {
+      return ec.value();
+    }
+    const bool pythonExists = fs::exists(pythonExe, ec);
+    if (ec.value() > 0) {
+      return ec.value();
+    }
+    if (!pythonScadExists && pythonExists) {
       fs::copy_file(pythonExe, pythonScadExe, fs::copy_options::overwrite_existing, ec);
       if (ec.value() > 0) {
         return ec.value();
@@ -403,7 +376,7 @@ static int pythonRunCommand(const std::string& command, const std::vector<std::s
     goto done;
   }
 #if defined(_WIN32)
-  pythonConfigureWindowsSysCompat();
+  python_configure_windows_sys_compat();
   pythonConfigureHiddenConsoleSubprocesses();
 #endif
 
@@ -500,7 +473,7 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
     goto done;
   }
 #if defined(_WIN32)
-  pythonConfigureWindowsSysCompat();
+  python_configure_windows_sys_compat();
   pythonConfigureHiddenConsoleSubprocesses();
 #endif
 

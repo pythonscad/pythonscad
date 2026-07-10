@@ -687,6 +687,7 @@ if(ENABLE_PYTHON)
     src/python/py_ops.cc
     src/python/py_io.cc
     src/python/pyconversion.cc
+    src/python/python_runtime.cc
     src/core/node_clone.cc
     src/core/PullNode.cc
     src/core/WrapNode.cc
@@ -954,7 +955,7 @@ if(ENABLE_PYTHON)
 	      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_EMBED_DEVPATH}/libssl-3.dll ${CMAKE_CURRENT_BINARY_DIR}/libssl-3.dll
 	      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_EMBED_DEVPATH}/libcrypto-3.dll ${CMAKE_CURRENT_BINARY_DIR}/libcrypto-3.dll
 	      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PYTHON_EMBED_DEVPATH}/sqlite3.dll ${CMAKE_CURRENT_BINARY_DIR}/sqlite3.dll
-	      DEPENDS OpenSCADExe
+	      DEPENDS OpenSCADExe tgt_python_embed
       )
       else()
         add_custom_target(OpenSCADPython ALL COMMAND ${CMAKE_COMMAND} -E create_symlink ${EXECUTABLE_NAME} ${PYTHON_EXECUTABLE_NAME})
