@@ -80,8 +80,11 @@ static std::string pythonWindowsRuntimePath()
   std::ostringstream stream;
   std::string sep;
   for (const auto& path : paths) {
-    if (!fs::is_directory(path)) continue;
-    stream << sep << fs::absolute(path).generic_string();
+    std::error_code ec;
+    if (!fs::is_directory(path, ec) || ec) continue;
+    const auto absolutePath = fs::absolute(path, ec);
+    if (ec) continue;
+    stream << sep << absolutePath.generic_string();
     sep = ";";
   }
   return stream.str();
@@ -171,6 +174,18 @@ int pythonRunModule(const std::string&, const std::string&, const std::vector<st
 #else
 
 static int pythonRunCommand(const std::string& command, const std::vector<std::string>& args);
+
+static bool pythonAppendConfigArg(PyConfig& config, const std::string& arg, PyStatus& status)
+{
+  wchar_t *warg = Py_DecodeLocale(arg.c_str(), nullptr);
+  if (warg == nullptr) {
+    status = PyStatus_Error("failed to decode Python argument");
+    return false;
+  }
+  status = PyWideStringList_Append(&config.argv, warg);
+  PyMem_RawFree(warg);
+  return !PyStatus_Exception(status);
+}
 
 int pythonRunArgs(int argc, char **argv)
 {
@@ -373,10 +388,7 @@ static int pythonRunCommand(const std::string& command, const std::vector<std::s
   }
 
   for (const auto& arg : args) {
-    std::wstring warg(arg.size(), L' ');
-    warg.resize(std::mbstowcs(&warg[0], arg.c_str(), arg.size()));
-    status = PyWideStringList_Append(&config.argv, warg.c_str());
-    if (PyStatus_Exception(status)) {
+    if (!pythonAppendConfigArg(config, arg, status)) {
       goto done;
     }
   }
@@ -395,6 +407,7 @@ static int pythonRunCommand(const std::string& command, const std::vector<std::s
   pythonConfigureHiddenConsoleSubprocesses();
 #endif
 
+  PyConfig_Clear(&config);
   return Py_RunMain();
 
 done:
@@ -471,10 +484,7 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
   }
 
   for (const auto& arg : args) {
-    std::wstring warg(arg.size(), L' ');
-    warg.resize(std::mbstowcs(&warg[0], arg.c_str(), arg.size()));
-    status = PyWideStringList_Append(&config.argv, warg.c_str());
-    if (PyStatus_Exception(status)) {
+    if (!pythonAppendConfigArg(config, arg, status)) {
       goto done;
     }
   }
@@ -494,6 +504,7 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
   pythonConfigureHiddenConsoleSubprocesses();
 #endif
 
+  PyConfig_Clear(&config);
   return Py_RunMain();
 
 done:
