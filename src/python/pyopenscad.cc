@@ -1231,14 +1231,19 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 #ifndef __EMSCRIPTEN__
     {
       const auto baseExecutable = pythonShimExecutablePath();
-      if (fs::exists(baseExecutable)) {
+      std::error_code ec;
+      if (fs::exists(baseExecutable, ec)) {
         status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
         if (PyStatus_Exception(status)) {
           alreadyTried = true;
           PyConfig_Clear(&config);
-          LOG(message_group::Error, "Failed to configure Python base executable.");
+          LOG(message_group::Error, "Failed to configure Python base executable '%1$s': %2$s",
+              baseExecutable, status.err_msg != nullptr ? status.err_msg : "unknown error");
           return;
         }
+      } else if (ec) {
+        LOG(message_group::Error, "Failed to inspect Python base executable '%1$s': %2$s",
+            baseExecutable, ec.message());
       }
     }
 #endif

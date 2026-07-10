@@ -93,7 +93,8 @@ int pythonRunArgs(int argc, char **argv)
   }
   {
     const auto baseExecutable = pythonShimExecutablePath();
-    if (fs::exists(baseExecutable)) {
+    std::error_code ec;
+    if (fs::exists(baseExecutable, ec)) {
       status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
       if (PyStatus_Exception(status)) {
         goto fail;
@@ -172,7 +173,8 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
   PyConfig_InitPythonConfig(&config);
   {
     const auto baseExecutable = pythonShimExecutablePath();
-    if (fs::exists(baseExecutable)) {
+    std::error_code ec;
+    if (fs::exists(baseExecutable, ec)) {
       status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
       if (PyStatus_Exception(status)) {
         goto done;
