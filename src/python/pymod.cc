@@ -42,6 +42,15 @@ namespace fs = std::filesystem;
 
 using SP = Settings::SettingsPython;
 
+static std::string pythonShimExecutablePath()
+{
+  auto path = fs::path(PlatformUtils::applicationPath()) / PYTHON_EXECUTABLE_NAME;
+#if defined(_WIN32)
+  path += ".exe";
+#endif
+  return path.generic_string();
+}
+
 std::string venvBinDirFromSettings()
 {
   const auto& venv = fs::path(SP::pythonVirtualEnv.value()) / "bin";
@@ -81,6 +90,15 @@ int pythonRunArgs(int argc, char **argv)
   status = PyConfig_SetBytesArgv(&config, argc, argv);
   if (PyStatus_Exception(status)) {
     goto fail;
+  }
+  {
+    const auto baseExecutable = pythonShimExecutablePath();
+    if (fs::exists(baseExecutable)) {
+      status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
+      if (PyStatus_Exception(status)) {
+        goto fail;
+      }
+    }
   }
 
   status = Py_InitializeFromConfig(&config);
@@ -152,6 +170,15 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
 
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
+  {
+    const auto baseExecutable = pythonShimExecutablePath();
+    if (fs::exists(baseExecutable)) {
+      status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
+      if (PyStatus_Exception(status)) {
+        goto done;
+      }
+    }
+  }
 
   status = PyConfig_SetBytesString(&config, &config.program_name, name);
   if (PyStatus_Exception(status)) {
