@@ -71,15 +71,6 @@
 #include "primitives.h"
 namespace fs = std::filesystem;
 
-static std::string pythonShimExecutablePath()
-{
-  auto path = fs::path(PlatformUtils::applicationPath()) / PYTHON_EXECUTABLE_NAME;
-#if defined(_WIN32)
-  path += ".exe";
-#endif
-  return path.generic_string();
-}
-
 // #define HAVE_PYTHON_YIELD
 // CPython requires the init function for the `_openscad` extension module to
 // be named `PyInit__openscad` (double underscore). The reserved-identifier
@@ -1235,12 +1226,19 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     PyImport_AppendInittab("libfive", &PyInit_data);
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
+    PyStatus status;
 
 #ifndef __EMSCRIPTEN__
     {
       const auto baseExecutable = pythonShimExecutablePath();
       if (fs::exists(baseExecutable)) {
-        PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
+        status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
+        if (PyStatus_Exception(status)) {
+          alreadyTried = true;
+          PyConfig_Clear(&config);
+          LOG(message_group::Error, "Failed to configure Python base executable.");
+          return;
+        }
       }
     }
 #endif
@@ -1356,7 +1354,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     }
 #endif
 
-    PyStatus status = Py_InitializeFromConfig(&config);
+    status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
       alreadyTried = true;
       LOG(message_group::Error, "Python %1$lu.%2$lu.%3$lu not found. Is it installed ?",

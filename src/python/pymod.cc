@@ -42,7 +42,7 @@ namespace fs = std::filesystem;
 
 using SP = Settings::SettingsPython;
 
-static std::string pythonShimExecutablePath()
+std::string pythonShimExecutablePath()
 {
   auto path = fs::path(PlatformUtils::applicationPath()) / PYTHON_EXECUTABLE_NAME;
 #if defined(_WIN32)
