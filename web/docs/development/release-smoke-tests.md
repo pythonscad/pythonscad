@@ -28,7 +28,8 @@ out of scope for the first automated pass.
 Install the tools needed for the platform you are testing:
 
 - `gh`, authenticated for the `pythonscad/pythonscad` repository.
-- Docker, for testing `.deb` and `.rpm` packages on Linux.
+- Docker, `python3`, and `realpath`, for testing `.deb` and `.rpm` packages
+  on Linux.
 - Bash, for Linux and macOS scripts.
 - PowerShell, for the Windows script.
 
