@@ -25,8 +25,11 @@
  */
 #include <Python.h>
 
+#include <array>
+#include <cstring>
 #include <cstdlib>
 #include <filesystem>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -60,6 +63,93 @@ std::string venvBinDirFromSettings()
   return "";
 }
 
+#if defined(_WIN32)
+static std::string pythonWindowsRuntimePath()
+{
+  const auto applicationPath = fs::path(PlatformUtils::applicationPath());
+  const auto pythonXY =
+    "python" + std::to_string(PY_MAJOR_VERSION) + "." + std::to_string(PY_MINOR_VERSION);
+  const auto windowsPythonLib = applicationPath / "lib" / pythonXY;
+  const std::array<fs::path, 4> paths = {
+    windowsPythonLib,
+    windowsPythonLib / "lib-dynload",
+    applicationPath,
+    applicationPath / "DLLs",
+  };
+
+  std::ostringstream stream;
+  std::string sep;
+  for (const auto& path : paths) {
+    if (!fs::is_directory(path)) continue;
+    stream << sep << fs::absolute(path).generic_string();
+    sep = ";";
+  }
+  return stream.str();
+}
+
+static void pythonConfigureWindowsSysCompat()
+{
+  PyObject *sys = PyImport_ImportModule("sys");
+  if (sys == nullptr) {
+    PyErr_Clear();
+    return;
+  }
+
+  PyObject *sysdict = PyModule_GetDict(sys);
+  PyObject *isMingw = sysdict == nullptr ? nullptr : PyDict_GetItemString(sysdict, "_is_mingw");
+  if (isMingw == nullptr && PyErr_Occurred()) {
+    PyErr_Clear();
+  } else if (sysdict != nullptr && isMingw == nullptr) {
+    const char *compiler = Py_GetCompiler();
+    const bool runtimeIsMingw = compiler != nullptr && (strstr(compiler, "MINGW") != nullptr ||
+                                                        strstr(compiler, "GCC") != nullptr);
+    PyObject *value = runtimeIsMingw ? Py_True : Py_False;
+    if (PyDict_SetItemString(sysdict, "_is_mingw", value) != 0) {
+      PyErr_Clear();
+    }
+  }
+  PyObject *abiflags = sysdict == nullptr ? nullptr : PyDict_GetItemString(sysdict, "abiflags");
+  if (abiflags == nullptr && PyErr_Occurred()) {
+    PyErr_Clear();
+  } else if (sysdict != nullptr && abiflags == nullptr) {
+    PyObject *value = PyUnicode_FromString("");
+    if (value == nullptr) {
+      PyErr_Clear();
+    } else if (PyDict_SetItemString(sysdict, "abiflags", value) != 0) {
+      PyErr_Clear();
+    }
+    Py_XDECREF(value);
+  }
+  Py_DECREF(sys);
+}
+
+static void pythonConfigureHiddenConsoleSubprocesses()
+{
+  if (getenv("PYTHONSCAD_HIDE_CONSOLE_SUBPROCESSES") == nullptr) {
+    return;
+  }
+  if (PyRun_SimpleString(R"PYTHON(
+import subprocess as _pythonscad_subprocess
+if not getattr(_pythonscad_subprocess, "_pythonscad_hidden_console", False):
+    _pythonscad_original_popen = _pythonscad_subprocess.Popen
+    class _PythonSCADHiddenPopen(_pythonscad_original_popen):
+        def __init__(self, args, *popen_args, **kwargs):
+            kwargs["creationflags"] = kwargs.get("creationflags", 0) | getattr(_pythonscad_subprocess, "CREATE_NO_WINDOW", 0)
+            startupinfo = kwargs.get("startupinfo")
+            if startupinfo is None:
+                startupinfo = _pythonscad_subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= _pythonscad_subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = 0
+            kwargs["startupinfo"] = startupinfo
+            super().__init__(args, *popen_args, **kwargs)
+    _pythonscad_subprocess.Popen = _PythonSCADHiddenPopen
+    _pythonscad_subprocess._pythonscad_hidden_console = True
+)PYTHON") != 0) {
+    PyErr_Clear();
+  }
+}
+#endif
+
 #ifdef __EMSCRIPTEN__
 // These functions manage Python runtime lifecycle for CLI / AppImage use cases.
 // They are never called in WASM builds but must exist to satisfy the linker.
@@ -80,6 +170,8 @@ int pythonRunModule(const std::string&, const std::string&, const std::vector<st
 }
 #else
 
+static int pythonRunCommand(const std::string& command, const std::vector<std::string>& args);
+
 int pythonRunArgs(int argc, char **argv)
 {
   PyStatus status;
@@ -91,6 +183,22 @@ int pythonRunArgs(int argc, char **argv)
   if (PyStatus_Exception(status)) {
     goto fail;
   }
+#if defined(_WIN32)
+  {
+    const auto applicationPath = fs::path(PlatformUtils::applicationPath()).generic_string();
+    status = PyConfig_SetBytesString(&config, &config.home, applicationPath.c_str());
+    if (PyStatus_Exception(status)) {
+      goto fail;
+    }
+    const auto pythonPath = pythonWindowsRuntimePath();
+    if (!pythonPath.empty()) {
+      status = PyConfig_SetBytesString(&config, &config.pythonpath_env, pythonPath.c_str());
+      if (PyStatus_Exception(status)) {
+        goto fail;
+      }
+    }
+  }
+#endif
   {
     const auto baseExecutable = pythonShimExecutablePath();
     std::error_code ec;
@@ -106,6 +214,10 @@ int pythonRunArgs(int argc, char **argv)
   if (PyStatus_Exception(status)) {
     goto fail;
   }
+#if defined(_WIN32)
+  pythonConfigureWindowsSysCompat();
+  pythonConfigureHiddenConsoleSubprocesses();
+#endif
   PyConfig_Clear(&config);
 
   return Py_RunMain();
@@ -120,10 +232,53 @@ fail:
 
 int pythonCreateVenv(const std::string& path)
 {
+#if defined(_WIN32)
+  static const char *const hiddenVenvCommand = R"PYTHON(
+import os
+import subprocess
+import sys
+import venv
+
+class PythonSCADEnvBuilder(venv.EnvBuilder):
+    def _call_new_python(self, context, *py_args, **kwargs):
+        args = [context.env_exec_cmd, *py_args]
+        kwargs["env"] = env = os.environ.copy()
+        env["VIRTUAL_ENV"] = context.env_dir
+        env["PYTHONSCAD_HIDE_CONSOLE_SUBPROCESSES"] = "1"
+        env.pop("PYTHONHOME", None)
+        env.pop("PYTHONPATH", None)
+        kwargs["cwd"] = context.env_dir
+        kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = 0
+        kwargs["startupinfo"] = startupinfo
+        subprocess.check_output(args, **kwargs)
+
+PythonSCADEnvBuilder(with_pip=True, scm_ignore_files=frozenset(["git"])).create(sys.argv[1])
+)PYTHON";
+  int result = pythonRunCommand(hiddenVenvCommand, {path});
+#else
   int result = pythonRunModule("", "venv", {path});
+#endif
   if (result != 0) {
     return result;
   }
+
+#if defined(_WIN32)
+  {
+    const auto scriptsDir = fs::path{path} / "Scripts";
+    const auto pythonExe = scriptsDir / "python.exe";
+    const auto pythonScadExe = scriptsDir / (std::string(PYTHON_EXECUTABLE_NAME) + ".exe");
+    std::error_code ec;
+    if (!fs::exists(pythonScadExe, ec) && fs::exists(pythonExe, ec)) {
+      fs::copy_file(pythonExe, pythonScadExe, fs::copy_options::overwrite_existing, ec);
+      if (ec.value() > 0) {
+        return ec.value();
+      }
+    }
+  }
+#endif
 
   // The created VENV points to the temporary mount point of the
   // AppImage, e.g. /tmp/.mount_OpenSCCpPaio - that is obviously
@@ -154,6 +309,102 @@ int pythonCreateVenv(const std::string& path)
   return 0;
 }
 
+static int pythonRunCommand(const std::string& command, const std::vector<std::string>& args)
+{
+  PyStatus status;
+  const auto name = PYTHON_EXECUTABLE_NAME;
+  const auto exe = pythonShimExecutablePath();
+
+  PyPreConfig preconfig;
+  PyPreConfig_InitPythonConfig(&preconfig);
+
+  status = Py_PreInitialize(&preconfig);
+  if (PyStatus_Exception(status)) {
+    Py_ExitStatusException(status);
+  }
+
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+#if defined(_WIN32)
+  {
+    const auto applicationPath = fs::path(PlatformUtils::applicationPath()).generic_string();
+    status = PyConfig_SetBytesString(&config, &config.home, applicationPath.c_str());
+    if (PyStatus_Exception(status)) {
+      goto done;
+    }
+    const auto pythonPath = pythonWindowsRuntimePath();
+    if (!pythonPath.empty()) {
+      status = PyConfig_SetBytesString(&config, &config.pythonpath_env, pythonPath.c_str());
+      if (PyStatus_Exception(status)) {
+        goto done;
+      }
+    }
+  }
+#endif
+  {
+    const auto baseExecutable = pythonShimExecutablePath();
+    std::error_code ec;
+    if (fs::exists(baseExecutable, ec)) {
+      status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
+      if (PyStatus_Exception(status)) {
+        goto done;
+      }
+    }
+  }
+
+  status = PyConfig_SetBytesString(&config, &config.program_name, name);
+  if (PyStatus_Exception(status)) {
+    goto done;
+  }
+
+  status = PyConfig_SetBytesString(&config, &config.executable, exe.c_str());
+  if (PyStatus_Exception(status)) {
+    goto done;
+  }
+
+  status = PyConfig_SetBytesString(&config, &config.run_command, command.c_str());
+  if (PyStatus_Exception(status)) {
+    goto done;
+  }
+
+  status = PyConfig_Read(&config);
+  if (PyStatus_Exception(status)) {
+    goto done;
+  }
+
+  for (const auto& arg : args) {
+    std::wstring warg(arg.size(), L' ');
+    warg.resize(std::mbstowcs(&warg[0], arg.c_str(), arg.size()));
+    status = PyWideStringList_Append(&config.argv, warg.c_str());
+    if (PyStatus_Exception(status)) {
+      goto done;
+    }
+  }
+
+  status = PyConfig_SetBytesString(&config, &config.executable, exe.c_str());
+  if (PyStatus_Exception(status)) {
+    goto done;
+  }
+
+  status = Py_InitializeFromConfig(&config);
+  if (PyStatus_Exception(status)) {
+    goto done;
+  }
+#if defined(_WIN32)
+  pythonConfigureWindowsSysCompat();
+  pythonConfigureHiddenConsoleSubprocesses();
+#endif
+
+  return Py_RunMain();
+
+done:
+  PyConfig_Clear(&config);
+  if (!PyStatus_IsExit(status) && PyStatus_Exception(status)) {
+    return 1;
+  }
+  return status.exitcode;
+}
+
 int pythonRunModule(const std::string& appPath, const std::string& module,
                     const std::vector<std::string>& args)
 {
@@ -171,6 +422,22 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
 
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
+#if defined(_WIN32)
+  {
+    const auto applicationPath = fs::path(PlatformUtils::applicationPath()).generic_string();
+    status = PyConfig_SetBytesString(&config, &config.home, applicationPath.c_str());
+    if (PyStatus_Exception(status)) {
+      goto done;
+    }
+    const auto pythonPath = pythonWindowsRuntimePath();
+    if (!pythonPath.empty()) {
+      status = PyConfig_SetBytesString(&config, &config.pythonpath_env, pythonPath.c_str());
+      if (PyStatus_Exception(status)) {
+        goto done;
+      }
+    }
+  }
+#endif
   {
     const auto baseExecutable = pythonShimExecutablePath();
     std::error_code ec;
@@ -222,6 +489,10 @@ int pythonRunModule(const std::string& appPath, const std::string& module,
   if (PyStatus_Exception(status)) {
     goto done;
   }
+#if defined(_WIN32)
+  pythonConfigureWindowsSysCompat();
+  pythonConfigureHiddenConsoleSubprocesses();
+#endif
 
   return Py_RunMain();
 
