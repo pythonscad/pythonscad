@@ -812,13 +812,13 @@ inline int count_folded_edges(const std::vector<Vector3d>& points, const Polygon
 }
 
 // Signed volume contribution (x6) of a single triangle towards the
-// divergence-theorem mesh volume sum - shared by mesh_volume(),
-// edge_flip_pass(), volume_flip_pass() and the volume guard in
-// reduce_star() below, so all of them agree on exactly the same
-// definition of "volume". Defined here, before its first use in
-// edge_flip_pass() right below, since these are free functions (not
-// class members) and so - unlike member functions - must be declared
-// before the point they are called from.
+// divergence-theorem mesh volume sum - shared by mesh_volume() and the
+// volume guard in reduce_star() below, so both agree on exactly the
+// same definition of "volume". No longer used by the edge-flip pass
+// itself (see bending_flip_pass() further below, which replaced the
+// earlier volume-maximizing criterion with a bending-energy one), but
+// kept as its own function since mesh_volume() and reduce_star() still
+// need it.
 inline double tri_signed_vol6(const Vector3d& a, const Vector3d& b, const Vector3d& c)
 {
   return a.dot(b.cross(c));
@@ -876,55 +876,71 @@ inline int count_orientation_inconsistent_edges(const PolygonIndices& tris,
   return count;
 }
 
-// --- TEMPORARY DEBUG INSTRUMENTATION ------------------------------------
-// While tracking down exactly which pipeline step introduces a specific
-// fold defect, set these to the two point indices of the affected edge
-// (e.g. 8, 9) and sprinkle debug_check_edge(...) calls after each
-// suspect step - a single compile+run then pinpoints exactly where the
-// edge's dihedral angle first crosses into folded territory. Set either
-// to -1 to disable all output cheaply without removing the calls.
-static const int DEBUG_EDGE_A = 8;
-static const int DEBUG_EDGE_B = 9;
+// =========================================================================
+// 3.5) Triangulation quality improvement via edge flips (bending energy)
+// =========================================================================
+//
+// Model: imagine a stiff rubber membrane draped over the mesh. Such a
+// membrane resists ANY bending, at every edge, not just the one being
+// flipped - so the right local quality criterion for a candidate flip is
+// neither "does the flipped edge itself look flatter" (too narrow: it
+// ignores what the flip does to the FOUR OTHER edges of the two
+// triangles involved) nor "does it increase enclosed volume" (too
+// indirect: it can trade a large volume gain for much sharper creases
+// elsewhere - exactly the kind of local dimple/spike this replaces).
+// Instead: for the two triangles t1=(a,b,c) and t2=(a,b,d) sharing edge
+// a-b, sum the ABSOLUTE dihedral angle over all 5 edges that touch
+// either triangle - t1's other two edges (a-c, c-b), t2's other two
+// edges (a-d, d-b), and the shared edge itself (a-b) - against whatever
+// triangle borders each of them. Compare that sum to the same
+// calculation for the flipped alternative (diagonal c-d instead of a-b,
+// where the 4 outer edges keep their EXTERNAL neighbor unchanged but now
+// touch differently-shaped triangles). Accept the flip only if the total
+// bending sum strictly decreases - literally "does the rubber membrane
+// relax if this diagonal is flipped".
 
-inline void debug_check_edge(const char *label, const std::vector<Vector3d>& points,
-                             const PolygonIndices& tris)
+// Looks up the OTHER owner of a given edge (any owner except the two
+// triangle indices belonging to the current flip candidate), using the
+// edge_owners map the caller already built, and returns its face normal
+// - or the zero vector if the edge has no such external neighbor (a true
+// boundary edge), in which case it simply contributes 0 to the bending
+// sum (nothing to bend against).
+inline Vector3d external_neighbor_normal(
+  const std::vector<Vector3d>& points, const PolygonIndices& tris,
+  const std::unordered_map<EdgeKey2, std::vector<std::pair<int, int>>, EdgeKey2Hash>& edge_owners, int x,
+  int y, int exclude1, int exclude2)
 {
-  if (DEBUG_EDGE_A < 0 || DEBUG_EDGE_B < 0) return;
-  std::vector<Vector3d> normals;
-  for (const auto& t : tris) {
-    int idx[3] = {t[0], t[1], t[2]};
-    for (int k = 0; k < 3; ++k) {
-      int x = idx[k], y = idx[(k + 1) % 3];
-      if ((x == DEBUG_EDGE_A && y == DEBUG_EDGE_B) || (x == DEBUG_EDGE_B && y == DEBUG_EDGE_A))
-        normals.push_back((points[t[1]] - points[t[0]]).cross(points[t[2]] - points[t[0]]));
-    }
+  auto it = edge_owners.find(make_edge_key2(x, y));
+  if (it == edge_owners.end()) return Vector3d::Zero();
+  for (auto& owner : it->second) {
+    if (owner.first == exclude1 || owner.first == exclude2) continue;
+    const auto& et = tris[owner.first];
+    return (points[et[1]] - points[et[0]]).cross(points[et[2]] - points[et[0]]);
   }
-  std::cout << "organic(): [debug " << label << "] edge (" << DEBUG_EDGE_A << "," << DEBUG_EDGE_B
-            << ") ";
-  if (normals.empty()) {
-    std::cout << "not present in mesh" << std::endl;
-  } else if (normals.size() == 1) {
-    std::cout << "is a BOUNDARY edge (only 1 owning triangle - should never happen on a closed mesh)"
-              << std::endl;
-  } else if (normals.size() == 2) {
-    double angle = dihedral_angle_deg(normals[0], normals[1]);
-    std::cout << "dihedral angle = " << angle << " degrees" << (angle >= 170.0 ? "  <-- FOLDED" : "")
-              << std::endl;
-  } else {
-    std::cout << "is NON-MANIFOLD (" << normals.size() << " owning triangles)" << std::endl;
-  }
+  return Vector3d::Zero();
 }
-// --- END TEMPORARY DEBUG INSTRUMENTATION --------------------------------
 
-// Runs a single pass over all interior edges, flipping any edge whose
-// opposite diagonal would be shorter (and where the flip is geometrically
-// valid - see checks below). Returns true if at least one flip was made.
-inline bool edge_flip_pass(const std::vector<Vector3d>& points, PolygonIndices& tris)
+// Total absolute bending (sum of |dihedral angle|, in degrees) over the
+// 5 edges touching two candidate triangles (normals n1, n2) and their
+// surroundings: the shared edge between them, plus each one's two outer
+// edges against whatever externally-neighboring normal is passed in
+// (Vector3d::Zero() meaning "no neighbor there, contributes 0").
+inline double quad_bending_energy(const Vector3d& n1, const Vector3d& n2, const Vector3d& ext_ac,
+                                  const Vector3d& ext_cb, const Vector3d& ext_ad, const Vector3d& ext_db)
+{
+  double sum = std::fabs(dihedral_angle_deg(n1, n2));  // the shared edge itself
+  if (ext_ac.norm() > 1e-12) sum += std::fabs(dihedral_angle_deg(n1, ext_ac));
+  if (ext_cb.norm() > 1e-12) sum += std::fabs(dihedral_angle_deg(n1, ext_cb));
+  if (ext_ad.norm() > 1e-12) sum += std::fabs(dihedral_angle_deg(n2, ext_ad));
+  if (ext_db.norm() > 1e-12) sum += std::fabs(dihedral_angle_deg(n2, ext_db));
+  return sum;
+}
+
+inline bool bending_flip_pass(const std::vector<Vector3d>& points, PolygonIndices& tris)
 {
   const int nt = static_cast<int>(tris.size());
 
-  // edge -> list of (triangle index, opposite vertex, position of that
-  // vertex within the triangle - used to reconstruct orientation)
+  // edge -> list of (triangle index, opposite vertex)
   std::unordered_map<EdgeKey2, std::vector<std::pair<int, int>>, EdgeKey2Hash> edge_owners;
   for (int i = 0; i < nt; ++i) {
     const auto& t = tris[i];
@@ -954,20 +970,14 @@ inline bool edge_flip_pass(const std::vector<Vector3d>& points, PolygonIndices& 
     EdgeKey2 new_edge = make_edge_key2(c, d);
     if (existing_edges.count(new_edge)) continue;  // would create a non-manifold edge
 
-    // Current dihedral angle at this edge (between the two existing
-    // triangles, as actually stored/wound).
     Vector3d n_t1 =
       (points[tris[t1][1]] - points[tris[t1][0]]).cross(points[tris[t1][2]] - points[tris[t1][0]]);
     Vector3d n_t2 =
       (points[tris[t2][1]] - points[tris[t2][0]]).cross(points[tris[t2][2]] - points[tris[t2][0]]);
-    double old_dihedral = dihedral_angle_deg(n_t1, n_t2);
-
-    // Build the two replacement triangles, then fix winding so their
-    // normals stay consistent with the two triangles being replaced
-    // (robust against directed-edge bookkeeping mistakes: just check
-    // the resulting normal direction directly).
     Vector3d old_normal = n_t1 + n_t2;
 
+    // Build the two replacement triangles, then fix winding so their
+    // normals stay consistent with the two triangles being replaced.
     IndexedFace tri1 = {a, c, d};
     IndexedFace tri2 = {b, d, c};
     auto fix_winding = [&](IndexedFace& tri) {
@@ -982,173 +992,33 @@ inline bool edge_flip_pass(const std::vector<Vector3d>& points, PolygonIndices& 
     Vector3d n2 = (points[tri2[1]] - points[tri2[0]]).cross(points[tri2[2]] - points[tri2[0]]);
     if (n1.norm() < 1e-12 || n2.norm() < 1e-12) continue;
 
-    // Only flip if the resulting edge would be flatter (smaller
-    // dihedral angle = smoother, less creased) than the current one.
-    double new_dihedral = dihedral_angle_deg(n1, n2);
-
-    // Cheap local pre-filter: never even consider a flip whose OWN new
-    // diagonal is already folded.
+    // Hard rule, checked before the soft bending-energy comparison
+    // below: never introduce a folded ("antiparallel") edge, no matter
+    // how much bending energy it would save elsewhere.
     const double FOLD_THRESHOLD_DEG = 170.0;
-    if (new_dihedral >= FOLD_THRESHOLD_DEG) continue;
+    if (dihedral_angle_deg(n1, n2) >= FOLD_THRESHOLD_DEG) continue;
 
-    if (new_dihedral >= old_dihedral - 1e-9) continue;  // no improvement
+    // The 4 external neighbors are the SAME triangles before and after
+    // the flip (only t1/t2's own shape changes) - look each of them up
+    // once, from the pre-flip mesh, and reuse for both energy sums.
+    Vector3d ext_ac = external_neighbor_normal(points, tris, edge_owners, a, c, t1, t2);
+    Vector3d ext_cb = external_neighbor_normal(points, tris, edge_owners, c, b, t1, t2);
+    Vector3d ext_ad = external_neighbor_normal(points, tris, edge_owners, a, d, t1, t2);
+    Vector3d ext_db = external_neighbor_normal(points, tris, edge_owners, d, b, t1, t2);
 
-    // Never accept a dihedral-motivated flip that shrinks the enclosed
-    // volume. Dihedral smoothing is a purely cosmetic criterion and must
-    // not undo the structural correctness volume_flip_pass established -
-    // confirmed empirically: without this guard, this pass can quietly
-    // flip away a large fraction of the mesh's volume in pursuit of
-    // smoother-looking edges, carving concave "dimples" that can even
-    // present as inward-facing faces from some viewing angles (exactly
-    // the (7,8,9) symptom reported).
-    double vol_before = tri_signed_vol6(points[tris[t1][0]], points[tris[t1][1]], points[tris[t1][2]]) +
-                        tri_signed_vol6(points[tris[t2][0]], points[tris[t2][1]], points[tris[t2][2]]);
-    double vol_after = tri_signed_vol6(points[tri1[0]], points[tri1[1]], points[tri1[2]]) +
-                       tri_signed_vol6(points[tri2[0]], points[tri2[1]], points[tri2[2]]);
-    if (vol_after < vol_before - 1e-9) continue;  // dihedral gain not worth the volume loss
+    double energy_before = quad_bending_energy(n_t1, n_t2, ext_ac, ext_cb, ext_ad, ext_db);
+    double energy_after = quad_bending_energy(n1, n2, ext_ac, ext_cb, ext_ad, ext_db);
+    if (energy_after >= energy_before - 1e-9) continue;  // the membrane would not relax - no improvement
 
-    // Authoritative, whole-mesh gate: build the actual candidate mesh
-    // and verify it introduces NO folded edge anywhere - not just at
-    // the new diagonal checked above. A flip also changes the SHAPE of
-    // the triangles across the quad's four "rim" edges (a-c, c-b, b-d,
-    // d-a keep their identity but now belong to differently-shaped
-    // triangles), which can create a fold against some entirely
-    // different, unrelated neighboring triangle at one of THOSE edges
-    // even when the new diagonal itself looks perfectly fine - a purely
-    // local check at the new edge alone cannot see this (confirmed
-    // empirically: an (8,9)-edge fold between two otherwise-unrelated
-    // triangles at a coplanar point cluster was exactly this kind of
-    // rim-edge side effect, not a defect at the flipped edge itself).
-    {
-      PolygonIndices trial = tris;
-      trial[t1] = tri1;
-      trial[t2] = tri2;
-      if (count_folded_edges(points, trial) > 0) continue;
-      // Same reasoning, but for the purely TOPOLOGICAL orientation
-      // invariant rather than the geometric dihedral angle - see
-      // count_orientation_inconsistent_edges() above for why this is a
-      // genuinely separate check the fold check alone cannot substitute
-      // for (an inconsistency elsewhere in the mesh can hide behind a
-      // perfectly normal-looking dihedral angle right where it starts).
-      if (count_orientation_inconsistent_edges(trial) > 0) continue;
-    }
-
-    for (int i = 0; i < 3; i++) {
-      tris[t1][i] = tri1[i];
-      tris[t2][i] = tri2[i];
-    }
-    touched[t1] = touched[t2] = 1;
-    existing_edges.erase(kv.first);
-    existing_edges[new_edge] = true;
-    changed = true;
-  }
-  return changed;
-}
-
-// Companion pass to edge_flip_pass(), using a DIFFERENT criterion:
-// instead of minimizing the dihedral angle at the edge, this flips
-// whenever the alternative diagonal strictly INCREASES the mesh's total
-// enclosed volume. The two criteria can disagree (a flip can be volume-
-// increasing while looking dihedral-neutral or even slightly worse
-// locally, so edge_flip_pass alone will not find it) - this is exactly
-// what was reported for the quad (0,4,9,8): the "correct" diagonal
-// there makes the body more convex/voluminous rather than flatter.
-//
-// The math: for the quad a-b-c-d (current diagonal a-b, alternative
-// c-d), the two ways of triangulating it contribute different amounts
-// to the mesh's total volume, computed via the divergence theorem as
-// the sum over all triangles of dot(p0, cross(p1, p2)) (from a shared,
-// arbitrary origin - only the DIFFERENCE between the two options is
-// used, so the origin cancels out and any origin works). Flipping is
-// accepted only if it strictly increases that sum, and only if it does
-// not create a duplicate/non-manifold edge or a degenerate triangle -
-// identical safety checks to edge_flip_pass().
-inline bool volume_flip_pass(const std::vector<Vector3d>& points, PolygonIndices& tris)
-{
-  const int nt = static_cast<int>(tris.size());
-
-  std::unordered_map<EdgeKey2, std::vector<std::pair<int, int>>, EdgeKey2Hash> edge_owners;
-  for (int i = 0; i < nt; ++i) {
-    const auto& t = tris[i];
-    for (int k = 0; k < 3; ++k) {
-      int a = t[k], b = t[(k + 1) % 3], opp = t[(k + 2) % 3];
-      edge_owners[make_edge_key2(a, b)].push_back({i, opp});
-    }
-  }
-  std::unordered_map<EdgeKey2, bool, EdgeKey2Hash> existing_edges;
-  for (auto& kv : edge_owners) existing_edges[kv.first] = true;
-
-  std::vector<char> touched(nt, 0);
-  bool changed = false;
-
-  auto tri_vol6 = [&](const IndexedFace& t) {
-    return points[t[0]].dot(points[t[1]].cross(points[t[2]]));
-  };
-
-  for (auto& kv : edge_owners) {
-    if (kv.second.size() != 2) continue;
-    int t1 = kv.second[0].first, c = kv.second[0].second;
-    int t2 = kv.second[1].first, d = kv.second[1].second;
-    if (touched[t1] || touched[t2]) continue;
-    int a = kv.first.lo, b = kv.first.hi;
-    if (c == d) continue;
-
-    EdgeKey2 new_edge = make_edge_key2(c, d);
-    bool would_duplicate = existing_edges.count(new_edge) > 0;
-
-    Vector3d n_t1 =
-      (points[tris[t1][1]] - points[tris[t1][0]]).cross(points[tris[t1][2]] - points[tris[t1][0]]);
-    Vector3d n_t2 =
-      (points[tris[t2][1]] - points[tris[t2][0]]).cross(points[tris[t2][2]] - points[tris[t2][0]]);
-    Vector3d old_normal = n_t1 + n_t2;
-
-    IndexedFace tri1 = {a, c, d};
-    IndexedFace tri2 = {b, d, c};
-    auto fix_winding = [&](IndexedFace& tri) {
-      Vector3d n = (points[tri[1]] - points[tri[0]]).cross(points[tri[2]] - points[tri[0]]);
-      if (n.dot(old_normal) < 0) std::swap(tri[1], tri[2]);
-    };
-    fix_winding(tri1);
-    fix_winding(tri2);
-
-    Vector3d n1 = (points[tri1[1]] - points[tri1[0]]).cross(points[tri1[2]] - points[tri1[0]]);
-    Vector3d n2 = (points[tri2[1]] - points[tri2[0]]).cross(points[tri2[2]] - points[tri2[0]]);
-    if (n1.norm() < 1e-12 || n2.norm() < 1e-12) continue;  // degenerate, skip
-
-    // Hard rule: never trade a volume gain for a folded ("antiparallel")
-    // edge - a volume-increasing flip that happens to fold the surface
-    // back on itself at the new diagonal is not an actual improvement,
-    // it is a different, more severe defect.
-    const double FOLD_THRESHOLD_DEG = 170.0;
-    double candidate_dihedral = dihedral_angle_deg(n1, n2);
-    if (candidate_dihedral >= FOLD_THRESHOLD_DEG) continue;
-
-    double vol_before = tri_vol6(tris[t1]) + tri_vol6(tris[t2]);
-    double vol_after = tri_vol6(tri1) + tri_vol6(tri2);
-    bool beneficial = vol_after > vol_before + 1e-9;
-
-    // Diagnostic: this is exactly the situation reported for the quad
-    // (0,4,10,8) - a flip that WOULD increase the enclosed volume, but
-    // is blocked because its target diagonal (c,d) already exists as an
-    // edge somewhere else in the mesh (accepting it would make that
-    // edge non-manifold, i.e. owned by 3+ triangles). Logging this
-    // makes the reason directly visible instead of requiring a manual
-    // re-derivation of the current triangulation by hand.
-    if (would_duplicate) {
-      if (beneficial) {
-        std::cout << "organic(): volume_flip_pass - kept edge (" << a << "," << b
-                  << "), skipped flip to (" << c << "," << d << ") which would increase volume by "
-                  << (vol_after - vol_before) << ", because edge (" << c << "," << d
-                  << ") already exists elsewhere in the mesh" << std::endl;
-      }
-      continue;
-    }
-    if (!beneficial) continue;  // only flip if it strictly grows the volume
-
-    // Authoritative, whole-mesh gate - same reasoning as in
-    // edge_flip_pass(): the local check above only covers the new
-    // diagonal itself, not the four "rim" edges whose owning triangles
-    // also change shape as a side effect of this flip.
+    // Authoritative, whole-mesh gate for the two remaining hard
+    // structural invariants: no fold anywhere (a flip changes the shape
+    // of the 4 rim triangles too, which can create a fold against some
+    // entirely unrelated neighbor even when this edge's own numbers
+    // look fine), and no purely topological orientation inconsistency
+    // (see count_orientation_inconsistent_edges() above - a defect that
+    // can hide behind a perfectly normal-looking dihedral angle right
+    // where it starts, only surfacing far away once
+    // enforce_consistent_orientation() has to repair it).
     {
       PolygonIndices trial = tris;
       trial[t1] = tri1;
@@ -1169,31 +1039,19 @@ inline bool volume_flip_pass(const std::vector<Vector3d>& points, PolygonIndices
   return changed;
 }
 
-// Repeatedly applies volume_flip_pass() and edge_flip_pass() until
-// neither finds any more improving flip (or a safety cap on iterations
-// is reached - one flip can enable further improving flips nearby, so a
-// handful of rounds are typically needed for full convergence). Volume
-// flips run first each round: fixing genuine local non-convexities
-// (dents) takes priority over the purely cosmetic dihedral-angle
-// smoothing, and a volume flip can itself unlock further dihedral
-// improvements right afterwards.
+// Repeatedly applies bending_flip_pass() until no more improving flip is
+// found (or a safety cap on iterations is reached - one flip can enable
+// further improving flips nearby, so a handful of rounds are typically
+// needed for full convergence).
 inline void improve_triangulation(const std::vector<Vector3d>& points, PolygonIndices& tris)
 {
-  debug_check_edge("improve_triangulation: entry", points, tris);
   for (int iter = 0; iter < 20; ++iter) {
-    bool changed_vol = volume_flip_pass(points, tris);
+    bool changed = bending_flip_pass(points, tris);
     {
       std::string label =
-        "improve_triangulation: iter=" + std::to_string(iter) + " after volume_flip_pass";
-      debug_check_edge(label.c_str(), points, tris);
+        "improve_triangulation: iter=" + std::to_string(iter) + " after bending_flip_pass";
     }
-    bool changed_dih = edge_flip_pass(points, tris);
-    {
-      std::string label =
-        "improve_triangulation: iter=" + std::to_string(iter) + " after edge_flip_pass";
-      debug_check_edge(label.c_str(), points, tris);
-    }
-    if (!changed_vol && !changed_dih) break;
+    if (!changed) break;
   }
 }
 
@@ -1433,7 +1291,6 @@ inline void simulated_annealing_optimize(const std::vector<Vector3d>& points, Po
 // triangle gets flipped once more.
 inline void enforce_consistent_orientation(const std::vector<Vector3d>& points, PolygonIndices& tris)
 {
-  debug_check_edge("enforce_consistent_orientation: entry", points, tris);
   const int nt = static_cast<int>(tris.size());
   if (nt == 0) return;
 
@@ -1471,9 +1328,6 @@ inline void enforce_consistent_orientation(const std::vector<Vector3d>& points, 
     }
   }
 
-  debug_check_edge("enforce_consistent_orientation: after BFS winding fix (before volume-sign flip)",
-                   points, tris);
-
   // Pick outward vs inward: total signed volume (sum of signed
   // tetrahedra volumes from the origin) should come out positive for a
   // consistently outward-oriented closed surface.
@@ -1482,8 +1336,6 @@ inline void enforce_consistent_orientation(const std::vector<Vector3d>& points, 
   if (signed_volume6 < 0) {
     for (auto& t : tris) std::swap(t[1], t[2]);
   }
-
-  debug_check_edge("enforce_consistent_orientation: exit", points, tris);
 }
 
 // =========================================================================
@@ -1728,7 +1580,7 @@ inline bool reduce_star(const std::vector<Vector3d>& points, PolygonIndices& tri
 
   if (new_avg_dihedral >= old_avg_dihedral - 1e-6) return false;  // not an improvement
 
-  // Same volume guard as edge_flip_pass(): a re-triangulation of the
+  // Same volume guard as previously used in the edge-flip pass: a re-triangulation of the
   // whole neighborhood can easily look better by the dihedral-angle
   // average while quietly carving away enclosed volume (min_weight_
   // polygon_triangulation only minimizes summed diagonal length, with
@@ -1749,7 +1601,6 @@ inline bool reduce_star(const std::vector<Vector3d>& points, PolygonIndices& tri
 // those respects - only total edge length is meant to improve.
 inline void reduce_hub_vertices(const std::vector<Vector3d>& points, PolygonIndices& tris)
 {
-  debug_check_edge("reduce_hub_vertices: entry", points, tris);
   const int n = static_cast<int>(points.size());
   auto is_ok = [&](const PolygonIndices& t) {
     std::vector<char> covered(n, 0);
@@ -1789,7 +1640,6 @@ inline void reduce_hub_vertices(const std::vector<Vector3d>& points, PolygonIndi
         {
           std::string label = "reduce_hub_vertices: pass=" + std::to_string(pass) +
                               " reduce_star(V=" + std::to_string(v) + ") applied";
-          debug_check_edge(label.c_str(), points, tris);
         }
         break;  // valences changed, restart ordering fresh
       }
@@ -2110,8 +1960,6 @@ PolySet organic_resample(const std::vector<Vector3d>& points, double max_mesh_si
   tris.reserve(faces.size());
   for (const auto& f : faces) tris.push_back({f.a, f.b, f.c});
   if (tris.empty()) return out;
-
-  detail::debug_check_edge("organic_resample: raw star_shaped_hull (before any polish)", points, tris);
 
   // Coarse structural cleanup first (collapses any extreme "hub"
   // vertices), then a lightweight dihedral-angle-based edge-flip polish.
