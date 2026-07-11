@@ -291,5 +291,8 @@ void OpenSCADApp::closeApp()
       return;
     }
   }
+  // Should not be reached, when closing the last MainWindow,
+  // the quit() call would already happen in the close event
+  // handler MainWindow::closeEvent().
   QApplication::quit();
 }
