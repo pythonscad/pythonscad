@@ -10,6 +10,7 @@
 #include <cassert>
 #include <limits>
 #include <functional>
+#include <string>
 #include <iostream>
 #include <geometry/PolySet.h>
 #include <geometry/GeometryUtils.h>
@@ -775,6 +776,146 @@ inline int count_nonmanifold_vertices(const std::vector<Vector3d>& points, const
   return bad;
 }
 
+// Detects edges whose two adjoining face normals are (nearly)
+// antiparallel - i.e. the surface folds back on itself at that edge,
+// producing a paper-thin, near-zero-volume "flap" where both triangles
+// lie almost in the same plane but face opposite directions. This is a
+// qualitatively different, more severe defect than an ordinary sharp
+// crease: any dihedral angle up to just below the threshold is a
+// perfectly normal, possibly sharp, feature (a plain octahedron corner
+// already sits around 109 degrees) - a fold this close to 180 degrees
+// means the two faces are essentially lying on top of each other, which
+// is never geometrically intended output, regardless of how it was
+// reached (self-intersection tests do not catch this either, since
+// exactly-touching-but-not-crossing triangles do not register as an
+// intersection).
+inline int count_folded_edges(const std::vector<Vector3d>& points, const PolygonIndices& tris,
+                              double threshold_deg = 170.0,
+                              std::vector<EdgeKey2> *offending_out = nullptr)
+{
+  std::unordered_map<EdgeKey2, std::vector<Vector3d>, EdgeKey2Hash> edge_normals;
+  for (const auto& t : tris) {
+    Vector3d n = (points[t[1]] - points[t[0]]).cross(points[t[2]] - points[t[0]]);
+    int idx[3] = {t[0], t[1], t[2]};
+    for (int k = 0; k < 3; ++k) edge_normals[make_edge_key2(idx[k], idx[(k + 1) % 3])].push_back(n);
+  }
+  int count = 0;
+  for (auto& kv : edge_normals) {
+    if (kv.second.size() != 2) continue;
+    double angle = dihedral_angle_deg(kv.second[0], kv.second[1]);
+    if (angle >= threshold_deg) {
+      ++count;
+      if (offending_out) offending_out->push_back(kv.first);
+    }
+  }
+  return count;
+}
+
+// Signed volume contribution (x6) of a single triangle towards the
+// divergence-theorem mesh volume sum - shared by mesh_volume(),
+// edge_flip_pass(), volume_flip_pass() and the volume guard in
+// reduce_star() below, so all of them agree on exactly the same
+// definition of "volume". Defined here, before its first use in
+// edge_flip_pass() right below, since these are free functions (not
+// class members) and so - unlike member functions - must be declared
+// before the point they are called from.
+inline double tri_signed_vol6(const Vector3d& a, const Vector3d& b, const Vector3d& c)
+{
+  return a.dot(b.cross(c));
+}
+
+// Total enclosed volume of a closed, consistently-oriented triangle mesh
+// via the divergence theorem. Used purely for diagnostics (printing
+// before/after values around the polishing passes), so the person can
+// directly confirm that volume actually increases as expected rather
+// than having to infer it from the mesh alone.
+inline double mesh_volume(const std::vector<Vector3d>& points, const PolygonIndices& tris)
+{
+  double vol6 = 0.0;
+  for (const auto& t : tris) vol6 += tri_signed_vol6(points[t[0]], points[t[1]], points[t[2]]);
+  return vol6 / 6.0;
+}
+
+// Detects edges where BOTH owning triangles traverse the shared edge in
+// the SAME direction, rather than the required opposite directions (the
+// standard 2-manifold consistent-orientation invariant, the same one
+// enforce_consistent_orientation()'s own BFS repair checks for). This is
+// a purely TOPOLOGICAL defect, entirely independent of the actual
+// geometric dihedral angle at that edge - which is exactly why it can
+// hide from count_folded_edges(): an orientation-inconsistent edge in a
+// non-coplanar part of the mesh can show any "normal-looking" dihedral
+// angle right where it is first introduced, only revealing itself as an
+// actual fold later, and possibly FAR AWAY - wherever
+// enforce_consistent_orientation()'s global BFS repair eventually has to
+// flip some triangle to restore consistency, which can propagate the
+// problem along the mesh's connectivity to a completely unrelated edge.
+// That is exactly the (8,9) symptom: edge (8,9) itself was never
+// touched by anything that looked wrong locally, it only became folded
+// because fixing a genuine inconsistency elsewhere forced a flip that
+// happened to reach it.
+inline int count_orientation_inconsistent_edges(const PolygonIndices& tris,
+                                                std::vector<EdgeKey2> *offending_out = nullptr)
+{
+  std::unordered_map<EdgeKey2, std::vector<bool>, EdgeKey2Hash> dirs;
+  for (const auto& t : tris) {
+    int idx[3] = {t[0], t[1], t[2]};
+    for (int k = 0; k < 3; ++k) {
+      int x = idx[k], y = idx[(k + 1) % 3];
+      EdgeKey2 key = make_edge_key2(x, y);
+      dirs[key].push_back(x == key.lo);
+    }
+  }
+  int count = 0;
+  for (auto& kv : dirs) {
+    if (kv.second.size() != 2) continue;
+    if (kv.second[0] == kv.second[1]) {
+      ++count;
+      if (offending_out) offending_out->push_back(kv.first);
+    }
+  }
+  return count;
+}
+
+// --- TEMPORARY DEBUG INSTRUMENTATION ------------------------------------
+// While tracking down exactly which pipeline step introduces a specific
+// fold defect, set these to the two point indices of the affected edge
+// (e.g. 8, 9) and sprinkle debug_check_edge(...) calls after each
+// suspect step - a single compile+run then pinpoints exactly where the
+// edge's dihedral angle first crosses into folded territory. Set either
+// to -1 to disable all output cheaply without removing the calls.
+static const int DEBUG_EDGE_A = 8;
+static const int DEBUG_EDGE_B = 9;
+
+inline void debug_check_edge(const char *label, const std::vector<Vector3d>& points,
+                             const PolygonIndices& tris)
+{
+  if (DEBUG_EDGE_A < 0 || DEBUG_EDGE_B < 0) return;
+  std::vector<Vector3d> normals;
+  for (const auto& t : tris) {
+    int idx[3] = {t[0], t[1], t[2]};
+    for (int k = 0; k < 3; ++k) {
+      int x = idx[k], y = idx[(k + 1) % 3];
+      if ((x == DEBUG_EDGE_A && y == DEBUG_EDGE_B) || (x == DEBUG_EDGE_B && y == DEBUG_EDGE_A))
+        normals.push_back((points[t[1]] - points[t[0]]).cross(points[t[2]] - points[t[0]]));
+    }
+  }
+  std::cout << "organic(): [debug " << label << "] edge (" << DEBUG_EDGE_A << "," << DEBUG_EDGE_B
+            << ") ";
+  if (normals.empty()) {
+    std::cout << "not present in mesh" << std::endl;
+  } else if (normals.size() == 1) {
+    std::cout << "is a BOUNDARY edge (only 1 owning triangle - should never happen on a closed mesh)"
+              << std::endl;
+  } else if (normals.size() == 2) {
+    double angle = dihedral_angle_deg(normals[0], normals[1]);
+    std::cout << "dihedral angle = " << angle << " degrees" << (angle >= 170.0 ? "  <-- FOLDED" : "")
+              << std::endl;
+  } else {
+    std::cout << "is NON-MANIFOLD (" << normals.size() << " owning triangles)" << std::endl;
+  }
+}
+// --- END TEMPORARY DEBUG INSTRUMENTATION --------------------------------
+
 // Runs a single pass over all interior edges, flipping any edge whose
 // opposite diagonal would be shorter (and where the flip is geometrically
 // valid - see checks below). Returns true if at least one flip was made.
@@ -844,7 +985,53 @@ inline bool edge_flip_pass(const std::vector<Vector3d>& points, PolygonIndices& 
     // Only flip if the resulting edge would be flatter (smaller
     // dihedral angle = smoother, less creased) than the current one.
     double new_dihedral = dihedral_angle_deg(n1, n2);
+
+    // Cheap local pre-filter: never even consider a flip whose OWN new
+    // diagonal is already folded.
+    const double FOLD_THRESHOLD_DEG = 170.0;
+    if (new_dihedral >= FOLD_THRESHOLD_DEG) continue;
+
     if (new_dihedral >= old_dihedral - 1e-9) continue;  // no improvement
+
+    // Never accept a dihedral-motivated flip that shrinks the enclosed
+    // volume. Dihedral smoothing is a purely cosmetic criterion and must
+    // not undo the structural correctness volume_flip_pass established -
+    // confirmed empirically: without this guard, this pass can quietly
+    // flip away a large fraction of the mesh's volume in pursuit of
+    // smoother-looking edges, carving concave "dimples" that can even
+    // present as inward-facing faces from some viewing angles (exactly
+    // the (7,8,9) symptom reported).
+    double vol_before = tri_signed_vol6(points[tris[t1][0]], points[tris[t1][1]], points[tris[t1][2]]) +
+                        tri_signed_vol6(points[tris[t2][0]], points[tris[t2][1]], points[tris[t2][2]]);
+    double vol_after = tri_signed_vol6(points[tri1[0]], points[tri1[1]], points[tri1[2]]) +
+                       tri_signed_vol6(points[tri2[0]], points[tri2[1]], points[tri2[2]]);
+    if (vol_after < vol_before - 1e-9) continue;  // dihedral gain not worth the volume loss
+
+    // Authoritative, whole-mesh gate: build the actual candidate mesh
+    // and verify it introduces NO folded edge anywhere - not just at
+    // the new diagonal checked above. A flip also changes the SHAPE of
+    // the triangles across the quad's four "rim" edges (a-c, c-b, b-d,
+    // d-a keep their identity but now belong to differently-shaped
+    // triangles), which can create a fold against some entirely
+    // different, unrelated neighboring triangle at one of THOSE edges
+    // even when the new diagonal itself looks perfectly fine - a purely
+    // local check at the new edge alone cannot see this (confirmed
+    // empirically: an (8,9)-edge fold between two otherwise-unrelated
+    // triangles at a coplanar point cluster was exactly this kind of
+    // rim-edge side effect, not a defect at the flipped edge itself).
+    {
+      PolygonIndices trial = tris;
+      trial[t1] = tri1;
+      trial[t2] = tri2;
+      if (count_folded_edges(points, trial) > 0) continue;
+      // Same reasoning, but for the purely TOPOLOGICAL orientation
+      // invariant rather than the geometric dihedral angle - see
+      // count_orientation_inconsistent_edges() above for why this is a
+      // genuinely separate check the fold check alone cannot substitute
+      // for (an inconsistency elsewhere in the mesh can hide behind a
+      // perfectly normal-looking dihedral angle right where it starts).
+      if (count_orientation_inconsistent_edges(trial) > 0) continue;
+    }
 
     for (int i = 0; i < 3; i++) {
       tris[t1][i] = tri1[i];
@@ -907,7 +1094,7 @@ inline bool volume_flip_pass(const std::vector<Vector3d>& points, PolygonIndices
     if (c == d) continue;
 
     EdgeKey2 new_edge = make_edge_key2(c, d);
-    if (existing_edges.count(new_edge)) continue;  // would create a non-manifold edge
+    bool would_duplicate = existing_edges.count(new_edge) > 0;
 
     Vector3d n_t1 =
       (points[tris[t1][1]] - points[tris[t1][0]]).cross(points[tris[t1][2]] - points[tris[t1][0]]);
@@ -928,9 +1115,47 @@ inline bool volume_flip_pass(const std::vector<Vector3d>& points, PolygonIndices
     Vector3d n2 = (points[tri2[1]] - points[tri2[0]]).cross(points[tri2[2]] - points[tri2[0]]);
     if (n1.norm() < 1e-12 || n2.norm() < 1e-12) continue;  // degenerate, skip
 
+    // Hard rule: never trade a volume gain for a folded ("antiparallel")
+    // edge - a volume-increasing flip that happens to fold the surface
+    // back on itself at the new diagonal is not an actual improvement,
+    // it is a different, more severe defect.
+    const double FOLD_THRESHOLD_DEG = 170.0;
+    double candidate_dihedral = dihedral_angle_deg(n1, n2);
+    if (candidate_dihedral >= FOLD_THRESHOLD_DEG) continue;
+
     double vol_before = tri_vol6(tris[t1]) + tri_vol6(tris[t2]);
     double vol_after = tri_vol6(tri1) + tri_vol6(tri2);
-    if (vol_after <= vol_before + 1e-9) continue;  // only flip if it strictly grows the volume
+    bool beneficial = vol_after > vol_before + 1e-9;
+
+    // Diagnostic: this is exactly the situation reported for the quad
+    // (0,4,10,8) - a flip that WOULD increase the enclosed volume, but
+    // is blocked because its target diagonal (c,d) already exists as an
+    // edge somewhere else in the mesh (accepting it would make that
+    // edge non-manifold, i.e. owned by 3+ triangles). Logging this
+    // makes the reason directly visible instead of requiring a manual
+    // re-derivation of the current triangulation by hand.
+    if (would_duplicate) {
+      if (beneficial) {
+        std::cout << "organic(): volume_flip_pass - kept edge (" << a << "," << b
+                  << "), skipped flip to (" << c << "," << d << ") which would increase volume by "
+                  << (vol_after - vol_before) << ", because edge (" << c << "," << d
+                  << ") already exists elsewhere in the mesh" << std::endl;
+      }
+      continue;
+    }
+    if (!beneficial) continue;  // only flip if it strictly grows the volume
+
+    // Authoritative, whole-mesh gate - same reasoning as in
+    // edge_flip_pass(): the local check above only covers the new
+    // diagonal itself, not the four "rim" edges whose owning triangles
+    // also change shape as a side effect of this flip.
+    {
+      PolygonIndices trial = tris;
+      trial[t1] = tri1;
+      trial[t2] = tri2;
+      if (count_folded_edges(points, trial) > 0) continue;
+      if (count_orientation_inconsistent_edges(trial) > 0) continue;
+    }
 
     for (int i = 0; i < 3; i++) {
       tris[t1][i] = tri1[i];
@@ -954,9 +1179,20 @@ inline bool volume_flip_pass(const std::vector<Vector3d>& points, PolygonIndices
 // improvements right afterwards.
 inline void improve_triangulation(const std::vector<Vector3d>& points, PolygonIndices& tris)
 {
+  debug_check_edge("improve_triangulation: entry", points, tris);
   for (int iter = 0; iter < 20; ++iter) {
     bool changed_vol = volume_flip_pass(points, tris);
+    {
+      std::string label =
+        "improve_triangulation: iter=" + std::to_string(iter) + " after volume_flip_pass";
+      debug_check_edge(label.c_str(), points, tris);
+    }
     bool changed_dih = edge_flip_pass(points, tris);
+    {
+      std::string label =
+        "improve_triangulation: iter=" + std::to_string(iter) + " after edge_flip_pass";
+      debug_check_edge(label.c_str(), points, tris);
+    }
     if (!changed_vol && !changed_dih) break;
   }
 }
@@ -1197,6 +1433,7 @@ inline void simulated_annealing_optimize(const std::vector<Vector3d>& points, Po
 // triangle gets flipped once more.
 inline void enforce_consistent_orientation(const std::vector<Vector3d>& points, PolygonIndices& tris)
 {
+  debug_check_edge("enforce_consistent_orientation: entry", points, tris);
   const int nt = static_cast<int>(tris.size());
   if (nt == 0) return;
 
@@ -1234,6 +1471,9 @@ inline void enforce_consistent_orientation(const std::vector<Vector3d>& points, 
     }
   }
 
+  debug_check_edge("enforce_consistent_orientation: after BFS winding fix (before volume-sign flip)",
+                   points, tris);
+
   // Pick outward vs inward: total signed volume (sum of signed
   // tetrahedra volumes from the origin) should come out positive for a
   // consistently outward-oriented closed surface.
@@ -1242,6 +1482,8 @@ inline void enforce_consistent_orientation(const std::vector<Vector3d>& points, 
   if (signed_volume6 < 0) {
     for (auto& t : tris) std::swap(t[1], t[2]);
   }
+
+  debug_check_edge("enforce_consistent_orientation: exit", points, tris);
 }
 
 // =========================================================================
@@ -1406,28 +1648,52 @@ inline bool reduce_star(const std::vector<Vector3d>& points, PolygonIndices& tri
     }
   }
 
-  Vector3d old_normal = Vector3d::Zero();
-  for (int ti : incident) {
-    const auto& t = tris[ti];
-    old_normal += (points[t[1]] - points[t[0]]).cross(points[t[2]] - points[t[0]]);
-  }
-
+  // Build the final replacement triangle list for this whole star
+  // region: the polygon's own triangles (translated back to global
+  // indices), except the chosen one gets replaced by 3 triangles using V.
+  //
+  // No geometric orientation correction (e.g. against an averaged
+  // reference normal) is applied or needed here at all:
+  // min_weight_polygon_triangulation() emits every triangle in ascending
+  // local-index order (i,k,j) - a structural property of its DP
+  // construction that always traverses each polygon BOUNDARY edge
+  // (i,i+1) as i->(i+1). Since poly[i] == points[link[i]], and
+  // link[i]->link[i+1] is exactly the boundary direction already
+  // established by the ORIGINAL (correctly oriented) incident triangles
+  // being removed (see next_in_link above - it was built directly from
+  // their existing, already-correct winding), using the (i,k,j) order
+  // as-is - with no per-triangle AND no per-batch flip decision -
+  // automatically reproduces the correct global orientation for the
+  // entire replacement patch, boundary and fan alike. This is a standard
+  // topological fact: the orientation of a triangulated disk is fully
+  // determined by its boundary orientation, independent of how the
+  // interior is triangulated.
+  //
+  // The PREVIOUS approach instead re-derived orientation from a dot
+  // product against an averaged normal of the removed triangles - for a
+  // nearly flat/degenerate local neighborhood (like the coplanar z=11
+  // point cluster that triggered this bug), that average can be tiny
+  // and its sign essentially noise-dominated, occasionally picking the
+  // WRONG global flip for the whole patch and introducing exactly the
+  // kind of fold reported. Removing the geometric decision entirely -
+  // relying purely on the topological guarantee instead - eliminates
+  // that failure mode structurally rather than papering over it.
   std::vector<std::array<int, 3>> replacement;
   for (size_t i = 0; i < local_tris.size(); ++i) {
     auto& t = local_tris[i];
     int a = link[t[0]], b = link[t[1]], c = link[t[2]];
     if (static_cast<int>(i) == best_local) {
-      std::array<int, 3> f1 = {V, a, b}, f2 = {V, b, c}, f3 = {V, c, a};
-      for (auto *f : {&f1, &f2, &f3}) {
-        Vector3d n = (points[(*f)[1]] - points[(*f)[0]]).cross(points[(*f)[2]] - points[(*f)[0]]);
-        if (n.dot(old_normal) < 0) std::swap((*f)[1], (*f)[2]);
-        replacement.push_back(*f);
-      }
+      // The 3-triangle fan (V,a,b)/(V,b,c)/(V,c,a), in this rotational
+      // order, is automatically self-consistent (each of its 3 internal
+      // V-spokes is traversed in opposite directions by its two owners
+      // within the fan) and automatically matches the boundary edge
+      // directions (a->b, b->c, c->a) established for the rest of the
+      // polygon.
+      replacement.push_back({V, a, b});
+      replacement.push_back({V, b, c});
+      replacement.push_back({V, c, a});
     } else {
-      std::array<int, 3> f = {a, b, c};
-      Vector3d n = (points[f[1]] - points[f[0]]).cross(points[f[2]] - points[f[0]]);
-      if (n.dot(old_normal) < 0) std::swap(f[1], f[2]);
-      replacement.push_back(f);
+      replacement.push_back({a, b, c});
     }
   }
 
@@ -1449,7 +1715,28 @@ inline bool reduce_star(const std::vector<Vector3d>& points, PolygonIndices& tri
 
   double old_avg_dihedral = average_dihedral_angle(points, tris);
   double new_avg_dihedral = average_dihedral_angle(points, trial_tris);
+
+  // Hard rejects, checked first (dominance order): a star reduction that
+  // trades a lower average dihedral for a new bowtie vertex or a folded
+  // edge elsewhere in the affected neighborhood is never acceptable,
+  // regardless of how good the average number looks - min_weight_
+  // polygon_triangulation() has no awareness of either defect, it only
+  // minimizes summed diagonal length.
+  if (count_nonmanifold_vertices(points, trial_tris) > 0) return false;
+  if (count_folded_edges(points, trial_tris) > 0) return false;
+  if (count_orientation_inconsistent_edges(trial_tris) > 0) return false;
+
   if (new_avg_dihedral >= old_avg_dihedral - 1e-6) return false;  // not an improvement
+
+  // Same volume guard as edge_flip_pass(): a re-triangulation of the
+  // whole neighborhood can easily look better by the dihedral-angle
+  // average while quietly carving away enclosed volume (min_weight_
+  // polygon_triangulation only minimizes summed diagonal length, with
+  // no awareness of volume at all) - reject any reduction that isn't at
+  // least volume-neutral.
+  double vol_before = mesh_volume(points, tris);
+  double vol_after = mesh_volume(points, trial_tris);
+  if (vol_after < vol_before - 1e-6) return false;
 
   tris = std::move(trial_tris);
   return true;
@@ -1462,6 +1749,7 @@ inline bool reduce_star(const std::vector<Vector3d>& points, PolygonIndices& tri
 // those respects - only total edge length is meant to improve.
 inline void reduce_hub_vertices(const std::vector<Vector3d>& points, PolygonIndices& tris)
 {
+  debug_check_edge("reduce_hub_vertices: entry", points, tris);
   const int n = static_cast<int>(points.size());
   auto is_ok = [&](const PolygonIndices& t) {
     std::vector<char> covered(n, 0);
@@ -1498,6 +1786,11 @@ inline void reduce_hub_vertices(const std::vector<Vector3d>& points, PolygonIndi
       if (reduce_star(points, trial, v) && is_ok(trial)) {
         tris = std::move(trial);
         any_change = true;
+        {
+          std::string label = "reduce_hub_vertices: pass=" + std::to_string(pass) +
+                              " reduce_star(V=" + std::to_string(v) + ") applied";
+          debug_check_edge(label.c_str(), points, tris);
+        }
         break;  // valences changed, restart ordering fresh
       }
     }
@@ -1567,27 +1860,51 @@ inline int star_hull_intersection_count(const std::vector<Vector3d>& points, con
   return count_self_intersections(points, tris);
 }
 
+// Checks, for the REATTACHED mesh (using the original point positions,
+// not the unit-sphere projections used to build the topology), whether
+// the chosen center actually lies on the interior side of every single
+// triangle's plane. This is precisely the property "the hull center
+// should not lie outside the plane of triangle (3,0,8)" - a center for
+// which this holds for every face can see the whole surface from a
+// single interior vantage point, which is the actual mathematical
+// definition of star-shaped and a much more direct, principled test
+// than "0 measured self-intersections": the direction-based convex hull
+// construction (see star_shaped_hull) only ever guarantees a valid,
+// non-self-crossing topology on the UNIT SPHERE - re-attaching the
+// original, non-uniform point positions afterwards can still leave the
+// center outside some face's half-space without the discrete
+// self-intersection test necessarily flagging it (that test only finds
+// actual triangle-triangle crossings, not "wrong side of a plane" on
+// its own). A center with 0 violations here is a "properly natural"
+// star center, which is exactly what was asked for.
+inline int count_center_visibility_violations(const std::vector<Vector3d>& points,
+                                              const PolygonIndices& tris, const Vector3d& center)
+{
+  int violations = 0;
+  for (const auto& t : tris) {
+    Vector3d a = points[t[0]], b = points[t[1]], c = points[t[2]];
+    Vector3d n = (b - a).cross(c - a);
+    Vector3d centroid = (a + b + c) / 3.0;
+    if (n.dot(center - centroid) > 1e-9) ++violations;
+  }
+  return violations;
+}
+
 // Combined objective for the center search: self-intersection count and
 // non-manifold ("bowtie") vertex count - both heavily and EQUALLY
-// weighted, since both are hard topological defects, not cosmetic ones -
-// plus average dihedral angle as a soft smoothness tie-breaker. Pure
-// intersection-count search happily accepts ANY center with 0 crossings,
-// even one whose resulting topology is otherwise poor - e.g. a small,
-// tightly-packed cluster of points can end up connected to distant,
-// unrelated parts of the hull instead of its nearest neighbors,
-// producing sharp "spoke" edges that are technically non-self-
-// intersecting but visually ugly. Worse, a center can also be chosen
-// where two genuinely different parts of the point cloud project to
-// directions that make them touch at exactly one point on the sphere
-// (rather than cross) - count_self_intersections() cannot see this at
-// all (touching is not crossing), yet it produces the same kind of
-// "two tips meeting, faces looking inverted from some angles" defect
-// reported for the point at (1,-1,11) - hence count_nonmanifold_vertices
-// is included here too, at the same weight, so the search treats it as
-// equally disqualifying. The dihedral term only ever breaks ties among
-// centers that are already free of both hard defects.
+// Combined objective for the center search: self-intersection count,
+// non-manifold ("bowtie") vertex count, and folded/antiparallel-edge
+// count - all three heavily and EQUALLY weighted, since all three are
+// hard topological/geometric defects, not cosmetic ones - plus center-
+// visibility violations (see count_center_visibility_violations above -
+// weighted noticeably, but below the three hard defects: a visibility
+// violation is a strong sign of a poorly-chosen, unnatural center, but
+// unlike the three above it does not by itself make the mesh invalid) -
+// plus average dihedral angle as the softest, purely cosmetic
+// tie-breaker.
 inline double star_hull_cost(const std::vector<Vector3d>& points, const Vector3d& center,
-                             int& intersections_out, int& nonmanifold_out)
+                             int& intersections_out, int& nonmanifold_out, int& folded_out,
+                             int& visibility_out)
 {
   auto faces = star_shaped_hull(points, center);
   PolygonIndices tris;
@@ -1595,11 +1912,16 @@ inline double star_hull_cost(const std::vector<Vector3d>& points, const Vector3d
   for (auto& f : faces) tris.push_back({f.a, f.b, f.c});
   intersections_out = count_self_intersections(points, tris);
   nonmanifold_out = count_nonmanifold_vertices(points, tris);
+  folded_out = count_folded_edges(points, tris);
+  visibility_out = count_center_visibility_violations(points, tris, center);
   double dihedral = average_dihedral_angle(points, tris);
   const double W_INTERSECT = 10000.0;
   const double W_NONMANIFOLD = 10000.0;
+  const double W_FOLDED = 10000.0;
+  const double W_VISIBILITY = 500.0;
   const double W_DIHEDRAL = 1.0;
-  return W_INTERSECT * intersections_out + W_NONMANIFOLD * nonmanifold_out + W_DIHEDRAL * dihedral;
+  return W_INTERSECT * intersections_out + W_NONMANIFOLD * nonmanifold_out + W_FOLDED * folded_out +
+         W_VISIBILITY * visibility_out + W_DIHEDRAL * dihedral;
 }
 
 // Iteratively searches for a center point from which the star-shaped
@@ -1628,8 +1950,8 @@ inline double star_hull_cost(const std::vector<Vector3d>& points, const Vector3d
 // Returns the best center found and reports how many intersections
 // remain there (0 means success).
 inline Vector3d find_good_star_center(const std::vector<Vector3d>& points, int& out_intersections,
-                                      int& out_nonmanifold, int max_iterations = 300,
-                                      unsigned seed = 987654321u)
+                                      int& out_nonmanifold, int& out_folded, int& out_visibility,
+                                      int max_iterations = 300, unsigned seed = 987654321u)
 {
   Vector3d lo(1e300, 1e300, 1e300), hi(-1e300, -1e300, -1e300);
   Vector3d centroid = Vector3d::Zero();
@@ -1645,7 +1967,42 @@ inline Vector3d find_good_star_center(const std::vector<Vector3d>& points, int& 
   Vector3d best = centroid;
   int best_intersections = 0;
   int best_nonmanifold = 0;
-  double best_cost = star_hull_cost(points, best, best_intersections, best_nonmanifold);
+  int best_folded = 0;
+  int best_visibility = 0;
+  star_hull_cost(points, best, best_intersections, best_nonmanifold, best_folded, best_visibility);
+
+  // If the plain geometric centroid already produces a hull with none of
+  // the hard defects (self-intersections, bowtie vertices, folded
+  // edges, center-visibility violations), it IS the natural, ideal
+  // center for the large majority of star-shaped point clouds - there is
+  // no reason to search any further and risk wandering off to a
+  // needlessly distant, harder-to-reason-about position purely to shave
+  // a fraction of a degree off the average dihedral angle (which is
+  // exactly what was happening before this check was added). Only fall
+  // back to the full simulated-annealing search when the centroid itself
+  // fails a hard check.
+  if (best_intersections == 0 && best_nonmanifold == 0 && best_folded == 0 && best_visibility == 0) {
+    out_intersections = best_intersections;
+    out_nonmanifold = best_nonmanifold;
+    out_folded = best_folded;
+    out_visibility = best_visibility;
+    return best;
+  }
+
+  // Soft pull back towards the centroid, added on top of star_hull_cost
+  // (not baked into star_hull_cost itself, since that function has no
+  // notion of "the natural center" - only this search does). Small
+  // enough to never override a genuine reduction in hard defects or a
+  // meaningful smoothness gain, but enough to stop the search from
+  // drifting arbitrarily far away between two candidates that are
+  // otherwise near-equivalent.
+  const double W_CENTROID_PULL = 0.05;
+  auto eval_cost = [&](const Vector3d& c, int& inter, int& nonmani, int& fold, int& vis) {
+    double base = star_hull_cost(points, c, inter, nonmani, fold, vis);
+    return base + W_CENTROID_PULL * (c - centroid).norm();
+  };
+
+  double best_cost = eval_cost(best, best_intersections, best_nonmanifold, best_folded, best_visibility);
 
   Vector3d current = best;
   double current_cost = best_cost;
@@ -1664,14 +2021,14 @@ inline Vector3d find_good_star_center(const std::vector<Vector3d>& points, int& 
     return n > 1e-9 ? v / n : Vector3d(1, 0, 0);
   };
 
-  // Note: unlike the earlier intersection-only version, this no longer
-  // exits early the moment 0 intersections is found - a 0-intersection
-  // center found on the very first try (e.g. the plain centroid) is not
-  // necessarily a good one topologically (see star_hull_cost above), so
-  // the full annealing budget is spent looking for a 0-intersection
-  // center that is ALSO smooth. The intersection term still dominates
-  // the cost by four orders of magnitude, so this can never trade away
-  // intersection-freedom once found.
+  // Once past the centroid short-circuit above, the search commits to
+  // spending its full annealing budget looking for a center that clears
+  // all three hard checks AND is reasonably smooth/close to the
+  // centroid - it does not stop the moment self-intersections alone
+  // reaches 0, since (as seen above) that is not sufficient on its own.
+  // The two hard-defect terms still dominate this cost by four orders
+  // of magnitude, so this can never trade away defect-freedom once
+  // found purely to get closer to the centroid.
   const double T0 = 5.0, T1 = 0.001;
   for (int it = 0; it < max_iterations; ++it) {
     double frac = static_cast<double>(it) / std::max(1, max_iterations - 1);
@@ -1682,7 +2039,10 @@ inline Vector3d find_good_star_center(const std::vector<Vector3d>& points, int& 
     Vector3d candidate = current + rand_dir() * step * rand01();
     int candidate_intersections = 0;
     int candidate_nonmanifold = 0;
-    double cost = star_hull_cost(points, candidate, candidate_intersections, candidate_nonmanifold);
+    int candidate_folded = 0;
+    int candidate_visibility = 0;
+    double cost = eval_cost(candidate, candidate_intersections, candidate_nonmanifold, candidate_folded,
+                            candidate_visibility);
 
     double delta = cost - current_cost;
     bool accept = delta < 0 || rand01() < std::exp(-delta / std::max(T, 1e-6));
@@ -1693,6 +2053,8 @@ inline Vector3d find_good_star_center(const std::vector<Vector3d>& points, int& 
         best_cost = cost;
         best_intersections = candidate_intersections;
         best_nonmanifold = candidate_nonmanifold;
+        best_folded = candidate_folded;
+        best_visibility = candidate_visibility;
         best = candidate;
       }
     }
@@ -1700,6 +2062,8 @@ inline Vector3d find_good_star_center(const std::vector<Vector3d>& points, int& 
 
   out_intersections = best_intersections;
   out_nonmanifold = best_nonmanifold;
+  out_folded = best_folded;
+  out_visibility = best_visibility;
   return best;
 }
 
@@ -1729,11 +2093,16 @@ PolySet organic_resample(const std::vector<Vector3d>& points, double max_mesh_si
   // instead (see the comment on find_good_star_center for details).
   int intersections = 0;
   int nonmanifold_at_center = 0;
-  Vector3d center = detail::find_good_star_center(points, intersections, nonmanifold_at_center);
+  int folded_at_center = 0;
+  int visibility_violations = 0;
+  Vector3d center = detail::find_good_star_center(points, intersections, nonmanifold_at_center,
+                                                  folded_at_center, visibility_violations);
 
   std::cout << "organic(): star-shaped hull center found at (" << center.x() << ", " << center.y()
             << ", " << center.z() << "), self-intersections=" << intersections
-            << ", non-manifold vertices=" << nonmanifold_at_center << std::endl;
+            << ", non-manifold vertices=" << nonmanifold_at_center
+            << ", folded edges=" << folded_at_center
+            << ", center-visibility violations=" << visibility_violations << std::endl;
 
   std::vector<detail::Face3> faces = detail::star_shaped_hull(points, center);
 
@@ -1741,6 +2110,8 @@ PolySet organic_resample(const std::vector<Vector3d>& points, double max_mesh_si
   tris.reserve(faces.size());
   for (const auto& f : faces) tris.push_back({f.a, f.b, f.c});
   if (tris.empty()) return out;
+
+  detail::debug_check_edge("organic_resample: raw star_shaped_hull (before any polish)", points, tris);
 
   // Coarse structural cleanup first (collapses any extreme "hub"
   // vertices), then a lightweight dihedral-angle-based edge-flip polish.
@@ -1757,9 +2128,15 @@ PolySet organic_resample(const std::vector<Vector3d>& points, double max_mesh_si
   // for the specific measurements). Kept available via
   // detail::simulated_annealing_optimize for anyone who wants to
   // experiment further.
+  double vol_before_polish = detail::mesh_volume(points, tris);
   detail::reduce_hub_vertices(points, tris);
   detail::improve_triangulation(points, tris);
+  std::cout << "organic(): orientation-inconsistent edges before enforce_consistent_orientation="
+            << detail::count_orientation_inconsistent_edges(tris) << std::endl;
   detail::enforce_consistent_orientation(points, tris);
+  double vol_after_polish = detail::mesh_volume(points, tris);
+  std::cout << "organic(): mesh volume before polish=" << vol_before_polish
+            << ", after=" << vol_after_polish << std::endl;
 
   // The center search above only ever sees the RAW star-shaped hull, not
   // the mesh after reduce_hub_vertices()/improve_triangulation() have
@@ -1779,6 +2156,18 @@ PolySet organic_resample(const std::vector<Vector3d>& points, double max_mesh_si
       for (size_t i = 0; i < bad_vertices.size(); ++i) {
         std::cout << bad_vertices[i];
         if (i + 1 < bad_vertices.size()) std::cout << ", ";
+      }
+      std::cout << std::endl;
+    }
+
+    std::vector<detail::EdgeKey2> bad_edges;
+    int final_folded = detail::count_folded_edges(points, tris, 170.0, &bad_edges);
+    if (final_folded > 0) {
+      std::cout << "organic(): WARNING - " << final_folded
+                << " folded (antiparallel) edge(s) remain in the final mesh, at point index pairs: ";
+      for (size_t i = 0; i < bad_edges.size(); ++i) {
+        std::cout << "(" << bad_edges[i].lo << "," << bad_edges[i].hi << ")";
+        if (i + 1 < bad_edges.size()) std::cout << ", ";
       }
       std::cout << std::endl;
     }
