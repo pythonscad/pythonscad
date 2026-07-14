@@ -1,0 +1,9 @@
+type: dict
+keys: ['#004080ff', '#804000ff']
+all values are PyOpenSCAD: True
+default is dict: False
+default type: PyOpenSCAD
+explicit False is dict: False
+explicit False type: PyOpenSCAD
+non-svg split_by_color: ValueError
+
