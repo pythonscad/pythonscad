@@ -449,7 +449,6 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
         size = view.shape[0];
         dim = view.shape[1];
       }
-      printf("Size=%d dim=%d\n", size, dim);
       std::string fmt = view.format ? view.format : "";
 
       char *base = static_cast<char *>(view.buf);
