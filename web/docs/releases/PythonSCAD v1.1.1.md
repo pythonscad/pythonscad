@@ -24,9 +24,9 @@ PythonSCAD in your browser](https://www.pythonscad.org/playground/). This is
 powered by a Python-enabled **WebAssembly** version, which you can integrate
 into your own web-based projects as well.
 
-Last but not least we've done a ton of behing-the-scenes fixes, improvements to
-our website and build system improvements. The **Windows installer** has been
-massively overhauled and now supports installing PythonSCAD without requiring
+Last but not least we've done a ton of behind-the-scenes fixes, improvements to
+our website and build system. The **Windows installer** has been massively
+overhauled and now supports installing PythonSCAD without requiring
 administrative privileges.
 
 (\*) We tried releasing v1.1.0 a few days ago, but since then learned that the
