@@ -2,12 +2,12 @@
 
 Hi everyone,
 
-We are happy to announce **PythonSCAD ~~v1.1.0~~ v1.1.1** "Prominetio" \(\*\).
+We are happy to announce **PythonSCAD ~~v1.1.0~~ v1.1.1** "Prominentio" (\*).
 This release adds a number of nice features to the Python API like the new
 `organic()` mesh feature, which connects a cloud of points into a smooth,
-watertight organic surface. There are improvments to the **MultiToolExporter**
-(which we introduced in the previous release), which now allows for exporting
-multiple objects into a single `.3mf`-file. This is great for multi-tool
+watertight organic surface. There are improvements to the **MultiToolExporter**
+(which we introduced in the previous release), which now allows exporting
+multiple objects into a single `.3mf` file. This is great for multi-tool
 printing! `.mesh()` now has an option to also export color information.
 
 We are now publishing **pre-built binary wheels** to
@@ -17,17 +17,17 @@ in mere seconds use it directly in your projects.
 
 One new feature we're particularly excited about is that you can now [try
 PythonSCAD in your browser](https://www.pythonscad.org/playground/). This is
-powered by a Python enabled **WebAssembly** version, which you can integrate in
+powered by a Python-enabled **WebAssembly** version, which you can integrate into
 your own web-based projects as well.
 
-Last but not least we've done a ton of behing-the scenes fixes and build system
+Last but not least we've done a ton of behing-the-scenes fixes and build system
 improvements. The **Windows installer** has been massively overhauled and now
-supports installing PythonSCAD without requiring administrarive privillges.
+supports installing PythonSCAD without requiring administrative privileges.
 
-\(\*\) We tried releasing v1.1.0 a few days ago, but since then learned that the
-new Python Wheel builds were failing and wee needed a few days to address that
+(\*) We tried releasing v1.1.0 a few days ago, but since then learned that the
+new Python Wheel builds were failing and we needed a few days to address that
 issue. Thus we decided to pull that version from the shelves again so we can
-address that issue and release it with v.1.1.1.*
+address that issue and release it with v1.1.1.
 
 ## Release name
 
@@ -197,7 +197,7 @@ theme path ([PR \#856](https://github.com/pythonscad/pythonscad/pull/856), [PR
 
 ### Release smoke tests
 
-v1.1.0 also adds automated release smoke tooling for AppImage, Linux package,
+v1.1.1 also adds automated release smoke tooling for AppImage, Linux package,
 macOS, and Windows artifacts ([PR
 \#870](https://github.com/pythonscad/pythonscad/pull/870)). The smoke checks
 cover application startup, `.scad` export, Python CLI export, REPL startup, and
@@ -209,7 +209,7 @@ Linux package artifact handling ([PR
 
 ## Reliability And Bug Fixes
 
-v1.1.0 includes many fixes across Python integration, geometry behavior, CI, and
+v1.1.1 includes many fixes across Python integration, geometry behavior, CI, and
 documentation:
 
 - `resize()` now accepts 1-3 element vectors from Python ([PR
