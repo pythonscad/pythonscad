@@ -30,7 +30,7 @@ overhauled and now supports installing PythonSCAD without requiring
 administrative privileges.
 
 (\*) We tried releasing v1.1.0 a few days ago, but since then learned that the
-new Python Wheel builds were failing and we needed a few days to address that
+new Python wheel builds were failing and we needed a few days to address that
 issue. Thus we decided to pull that version from the shelves again so we can
 address that issue and release it with v1.1.1.
 
