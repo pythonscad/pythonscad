@@ -1561,6 +1561,15 @@ if(ENABLE_PYTHON)
   )
   set_property(TEST python-conversions PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 
+  # Unit tests for the pure-Python Vector/Matrix helper classes
+  # (libraries/python/openscad/_vectors.py). Needs no pythonscad binary and
+  # exercises both the NumPy-backed and list-backed paths.
+  add_test(NAME python-vectors CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_python_vectors.py
+  )
+  set_property(TEST python-vectors PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+
   add_test(NAME python-sibling-import-cli CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_python_sibling_import_cli.py
