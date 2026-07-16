@@ -5,6 +5,7 @@
   "dependencies": [
     "boost-regex",
     "boost-program-options",
+    "boost-system",
     "boost-assign",
     "boost-lockfree",
     "eigen3",
