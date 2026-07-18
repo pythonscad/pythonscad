@@ -66,6 +66,15 @@ docs = [
     "pymdown-extensions",
     "Pygments",
 ]
+# Python test-suite, run via pytest in the sandboxed venv that
+# tests/CMakeLists.txt provisions (ctest target `python-pytest`).
+# numpy is a *test* dependency only: PythonSCAD itself treats it as
+# optional and degrades gracefully, but the tests must be able to
+# exercise both the NumPy-backed and the list-backed code paths.
+test = [
+    "pytest>=8,<9",
+    "numpy>=1.24",
+]
 
 [project.urls]
 Homepage = "https://pythonscad.org"
@@ -98,3 +107,11 @@ repair-wheel-command = "DYLD_LIBRARY_PATH=\"$(brew --prefix)/lib\" delocate-whee
 environment = { VCPKG_DEFAULT_TRIPLET = "x64-windows-release", PYTHONSCAD_BUILD_PARALLEL = "6" }
 before-all = "pwsh scripts/cibuildwheel/install-deps-windows.ps1"
 repair-wheel-command = "pwsh scripts/cibuildwheel/repair-wheel-windows.ps1 -Wheel {wheel} -DestDir {dest_dir}"
+
+[tool.pytest.ini_options]
+# The pytest layer lives under tests/python/ (test_*.py). The rest of tests/
+# is CTest fixtures, generated data and argv-driven scripts, so scope
+# collection here to avoid picking those up.
+testpaths = ["tests/python"]
+python_files = ["test_*.py"]
+addopts = "-ra"
