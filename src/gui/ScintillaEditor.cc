@@ -14,6 +14,10 @@
 #include <QChar>
 #include <QMenu>
 #include <QObject>
+#ifdef ENABLE_PYTHON
+#include "gui/PythonApi.h"
+#endif
+
 #include <QPoint>
 #include <QRegularExpression>
 #include <QShortcut>
@@ -257,6 +261,13 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
   setLexer(new ScadLexer(this));
 #endif
   recomputeLanguageActive();
+
+#ifdef ENABLE_PYTHON
+  {
+    auto *pythonApi = new PythonApi(this, this->pythonLexer);
+    this->pythonLexer->setAPIs(pythonApi);
+  }
+#endif
 
   initMargin();
 
