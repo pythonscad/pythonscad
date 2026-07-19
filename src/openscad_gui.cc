@@ -778,12 +778,15 @@ void registerDefaultIcon(const QString&)
 #define DESKTOP_FILENAME "org.pythonscad.pythonscad"
 #endif
 
+QApplication *qapp_global;
+MainWindow *mainwindow_global;
 int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& original_path, int argc,
         char **argv, const std::string& gui_test, const bool reset_window_settings,
         const std::string& open_in_override)
 {
   configureOpenGLContext();
   OpenSCADApp app(argc, argv);
+  qapp_global = &app;
   setGlobalTheme();
 
   // set up groups for QSettings
@@ -1060,7 +1063,8 @@ int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& origi
   QVector<MainWindow *> openedMainWindows;
   openedMainWindows.reserve(windowsToOpen.size());
   for (const auto& files : windowsToOpen) {
-    openedMainWindows.append(new MainWindow(files));
+    mainwindow_global = new MainWindow(files);
+    openedMainWindows.append(mainwindow_global);
   }
 
   if (openedSessionWindows && !openedMainWindows.isEmpty()) {
