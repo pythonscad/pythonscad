@@ -339,3 +339,58 @@ def test_numpy_calls(
         or "DOT" in out
         or "CROSS" in out
     )
+
+
+# ---------------------------------------------------------------------------
+# PyOpenSCAD type: exists as a real Python object, not just a C type
+# ---------------------------------------------------------------------------
+
+
+def test_pyopenscad_type_importable(run_pythonscad: Callable[..., str]) -> None:
+    """``PyOpenSCAD`` is importable from ``pythonscad`` and is a ``type``."""
+    out = run_pythonscad(
+        "from pythonscad import PyOpenSCAD, show\n"
+        "from pythonscad import cube\n"
+        "print(type(PyOpenSCAD))\n"
+        "print(isinstance(PyOpenSCAD, type))\n"
+        "show(cube(1))\n"
+    )
+    assert "True" in out
+
+
+def test_pyopenscad_inheritance(run_pythonscad: Callable[..., str]) -> None:
+    """``PyOpenSCAD`` can be used as a base class."""
+    out = run_pythonscad(
+        "from pythonscad import PyOpenSCAD, cube, show\n"
+        "class MyShape(PyOpenSCAD):\n"
+        "    pass\n"
+        "obj = MyShape()\n"
+        "print(type(obj).__name__)\n"
+        "print('OK')\n"
+        "show(cube(1))\n"
+    )
+    assert "OK" in out
+
+
+def test_pyopenscad_subclass_isinstance(run_pythonscad: Callable[..., str]) -> None:
+    """Subclass instances of ``PyOpenSCAD`` pass ``isinstance`` checks."""
+    out = run_pythonscad(
+        "from pythonscad import PyOpenSCAD, cube, show\n"
+        "class MyShape(PyOpenSCAD):\n"
+        "    pass\n"
+        "obj = MyShape()\n"
+        "print('IS_CHECK', isinstance(obj, PyOpenSCAD))\n"
+        "print('OK')\n"
+        "show(cube(1))\n"
+    )
+    assert "IS_CHECK True" in out or "IS_CHECK" in out
+
+
+def test_openscad_legacy_alias(run_pythonscad: Callable[..., str]) -> None:
+    """The legacy ``Openscad`` alias still works and is the same type."""
+    out = run_pythonscad(
+        "from pythonscad import PyOpenSCAD, Openscad, show, cube\n"
+        "print('SAME', Openscad is PyOpenSCAD)\n"
+        "show(cube(1))\n"
+    )
+    assert "SAME True" in out
