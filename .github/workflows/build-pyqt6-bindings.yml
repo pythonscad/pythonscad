@@ -67,7 +67,18 @@ jobs:
           mkdir -p /tmp/pyqt-out
           cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
 
-          pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+          # PyQt6-sip GETRENNT in einen Scratch-Ordner installieren, damit pip
+          # nicht den schon befuellten /tmp/pyqt-out/PyQt6 leerraeumt.
+          mkdir -p /tmp/pyqt-sip-only
+          pip install PyQt6-sip --target=/tmp/pyqt-sip-only --no-deps --upgrade
+          SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 -iname "sip*.so" | head -1)
+          if [ -z "$SIP_SO" ]; then
+            echo "ERROR: PyQt6-sip .so nicht gefunden" >&2
+            find /tmp/pyqt-sip-only -maxdepth 6 >&2
+            exit 1
+          fi
+          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
+
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
           python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
           python3 -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
@@ -136,7 +147,16 @@ jobs:
           mkdir -p /tmp/pyqt-out
           cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
 
-          pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+          mkdir -p /tmp/pyqt-sip-only
+          pip install PyQt6-sip --target=/tmp/pyqt-sip-only --no-deps --upgrade
+          SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 -iname "sip*.so" | head -1)
+          if [ -z "$SIP_SO" ]; then
+            echo "ERROR: PyQt6-sip .so nicht gefunden" >&2
+            find /tmp/pyqt-sip-only -maxdepth 6 >&2
+            exit 1
+          fi
+          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
+
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
           python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
           python3 -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
@@ -188,9 +208,15 @@ jobs:
           pip install --upgrade pip
           pip install sip PyQt-builder PyQt6-sip packaging
 
+          # qmake6 ohne .exe-Endung wird von pyqtbuilds os.access()-Check
+          # (nativer Windows-Filesystem-Check) nicht gefunden -> explizit ergaenzen.
           QMAKE=$(which qmake6)
+          if [[ "$QMAKE" != *.exe ]]; then
+            QMAKE="${QMAKE}.exe"
+          fi
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
           echo "Detected Qt version: $QT_VERSION"
+          echo "Using qmake: $QMAKE"
           MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
 
           mkdir -p src && cd src
@@ -216,7 +242,16 @@ jobs:
           mkdir -p /tmp/pyqt-out
           cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
 
-          pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+          mkdir -p /tmp/pyqt-sip-only
+          pip install PyQt6-sip --target=/tmp/pyqt-sip-only --no-deps --upgrade
+          SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 -iname "sip*.so" -o -iname "sip*.pyd" | head -1)
+          if [ -z "$SIP_SO" ]; then
+            echo "ERROR: PyQt6-sip .so/.pyd nicht gefunden" >&2
+            find /tmp/pyqt-sip-only -maxdepth 6 >&2
+            exit 1
+          fi
+          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
+
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
           python --version > /tmp/pyqt-out/PYTHON_VERSION.txt
           python -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
