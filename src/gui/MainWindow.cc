@@ -1049,12 +1049,6 @@ MainWindow::~MainWindow()
   isBeingDestroyed = true;
 
   delete this->cgalworker;
-  scadApp->windowManager.remove(this);
-  if (scadApp->windowManager.getWindows().empty()) {
-    // Quit application even in case some other windows like
-    // Preferences are still open.
-    scadApp->quit();
-  }
 }
 
 void MainWindow::showProgress()
@@ -4326,6 +4320,7 @@ void MainWindow::on_helpActionLibraryInfo_triggered()
   this->libraryInfoDialog->show();
 }
 
+<<<<<<< HEAD
 void MainWindow::on_helpActionReportIssue_triggered()
 {
   UIUtils::openReportIssueURL(QString::fromStdString(qglview->getRendererInfo()), this);
@@ -4377,14 +4372,62 @@ void MainWindow::closeEvent(QCloseEvent *event)
     clearCurrentOutput();
   }
 
+=======
+void MainWindow::saveWindowState()
+{
+>>>>>>> da9adf500 (Change window close sequencing again.)
   QSettingsCached settings;
   settings.setValue("window/geometry", saveGeometry());
   auto windowState = saveState();
   UIUtils::dumpSaveState(windowState);
   settings.setValue("window/state", windowState);
+<<<<<<< HEAD
   if (this->tempFile) {
     delete this->tempFile;
     this->tempFile = nullptr;
+=======
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+  if (!tabManager->shouldClose()) {
+    event->ignore();
+    return;
+  }
+  event->accept();
+
+  // Only save when this is the last MainWindow (or there are none left,
+  // which covers the edge case where closeEvent fires after another
+  // MainWindow has already been destroyed).
+  if (scadApp->windowManager.getWindows().size() == 1) {
+    saveWindowState();
+  }
+
+  isClosing = true;
+  progress_report_fin();
+
+  if (this->tempFile) {
+    delete this->tempFile;
+    this->tempFile = nullptr;
+  }
+
+  // Log to stdout from now on
+  clearCurrentOutput();
+  // Disable invokeMethod calls for consoleOutput during shutdown,
+  // otherwise will segfault if echos are in progress.
+  hideCurrentOutput();
+  for (auto& [dock, title] : docks) {
+    if (dock->isFloating()) {
+      dock->close();
+    }
+  }
+
+  scadApp->windowManager.remove(this);
+  if (scadApp->windowManager.getWindows().empty()) {
+    // Quit application even in case some other windows like
+    // Preferences are still open.
+    QApplication::quit();
+>>>>>>> da9adf500 (Change window close sequencing again.)
   }
 
   // Disable invokeMethod calls for consoleOutput during shutdown,
@@ -4948,9 +4991,13 @@ void MainWindow::setupMenusAndActions()
 #endif
 
 
+<<<<<<< HEAD
   connect(this->fileActionCloseWindow, &QAction::triggered, this, &MainWindow::close);
   connect(this->fileActionQuit, &QAction::triggered, this, &MainWindow::quitApplication,
           Qt::QueuedConnection);
+=======
+  connect(this->fileActionQuit, &QAction::triggered, scadApp, &OpenSCADApp::closeApp, Qt::QueuedConnection);
+>>>>>>> da9adf500 (Change window close sequencing again.)
 
 #ifdef ENABLE_PYTHON
 #else
@@ -5141,6 +5188,7 @@ void MainWindow::restoreWindowState()
     tabifyDockWidget(errorLogDock, fontListDock);
     tabifyDockWidget(fontListDock, colorListDock);
     tabifyDockWidget(colorListDock, animateDock);
+    tabifyDockWidget(animateDock, aiDock);
     parameterDock->hide();
     viewportControlDock->hide();
     consoleDock->show();

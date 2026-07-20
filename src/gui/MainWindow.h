@@ -133,8 +133,12 @@ private:
   std::vector<std::pair<Dock *, QString>> docks;
 
   volatile bool isClosing = false;
+<<<<<<< HEAD
   bool isSessionQuitting = false;
   bool isBeingDestroyed = false;  // Set in destructor to guard eventFilter
+=======
+  void saveWindowState();
+>>>>>>> da9adf500 (Change window close sequencing again.)
   void consoleOutputRaw(const QString& msg);
   void clearAllSelectionIndicators();
   void setSelectionIndicatorStatus(EditorInterface *editor, int nodeIndex,
