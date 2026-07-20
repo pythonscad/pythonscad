@@ -48,29 +48,29 @@ jobs:
           read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
           echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
           curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
-          tar xzf PyQt6.tar.gz
-          cd PyQt6-*/
 
-          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging --confirm-license
+          tar xzf PyQt6.tar.gz
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
+          cd "$EXTRACTED_DIR"
+
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
           make -j"$(nproc)"
           make INSTALL_ROOT=/tmp/pyqt-install-root install
 
+          FOUND_DIR=$(find /tmp/pyqt-install-root -maxdepth 12 -type f -iname "QtWidgets*.so" -exec dirname {} \; | head -1)
+          if [ -z "$FOUND_DIR" ]; then
+            echo "ERROR: konnte installierte PyQt6-Module nicht finden" >&2
+            find /tmp/pyqt-install-root -maxdepth 10 >&2
+            exit 1
+          fi
           mkdir -p /tmp/pyqt-out
-          cp -r /tmp/pyqt-install-root/tmp/pyqt-staging/PyQt6 /tmp/pyqt-out/ 2>/dev/null \
-            || find /tmp/pyqt-install-root -maxdepth 6 -type d -name PyQt6 -exec cp -r {} /tmp/pyqt-out/ \;
+          cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
 
           pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
-
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
           python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
           python3 -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
-
-      - name: Smoke test
-        run: |
-          set -euo pipefail
-          source /tmp/pyqt-build-venv/bin/activate
-          QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
 
       - name: Package as zip
         run: |
@@ -81,6 +81,12 @@ jobs:
         with:
           name: pyqt6-bindings-linux-x86_64
           path: pyqt6-bindings-linux-x86_64.zip
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
 
   build-macos:
     runs-on: macos-15
@@ -111,28 +117,29 @@ jobs:
           read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
           echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
           curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
+
           tar xzf PyQt6.tar.gz
-          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | head -1 | cut -d/ -f1)
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
           cd "$EXTRACTED_DIR"
 
-          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging --confirm-license
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
           make -j"$(sysctl -n hw.ncpu)"
-          make install
+          make INSTALL_ROOT=/tmp/pyqt-install-root install
 
+          FOUND_DIR=$(find /tmp/pyqt-install-root -maxdepth 12 -type f -iname "QtWidgets*.so" -exec dirname {} \; | head -1)
+          if [ -z "$FOUND_DIR" ]; then
+            echo "ERROR: konnte installierte PyQt6-Module nicht finden" >&2
+            find /tmp/pyqt-install-root -maxdepth 10 >&2
+            exit 1
+          fi
           mkdir -p /tmp/pyqt-out
-          cp -r /tmp/pyqt-staging/PyQt6 /tmp/pyqt-out/
-          pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+          cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
 
+          pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
           python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
           python3 -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
-
-      - name: Smoke test
-        run: |
-          set -euo pipefail
-          source /tmp/pyqt-build-venv/bin/activate
-          QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
 
       - name: Package as zip
         run: |
@@ -143,6 +150,12 @@ jobs:
         with:
           name: pyqt6-bindings-macos
           path: pyqt6-bindings-macos.zip
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
 
   build-windows:
     runs-on: windows-latest
@@ -165,7 +178,7 @@ jobs:
         with:
           msystem: UCRT64
           update: true
-          pacboy:  "${{ env.PACBOY_PACKAGES }} python-pip:p python-virtualenv:p zip:"
+          pacboy: "${{ env.PACBOY_PACKAGES }} python-pip:p python-virtualenv:p zip:"
 
       - name: Build PyQt6 bindings
         run: |
@@ -184,27 +197,29 @@ jobs:
           read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
           echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
           curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
-          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | head -1 | cut -d/ -f1)
+
+          tar xzf PyQt6.tar.gz
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
           cd "$EXTRACTED_DIR"
 
-          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging --confirm-license
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
           mingw32-make -j"$(nproc)"
-          mingw32-make install
+          mingw32-make INSTALL_ROOT=/tmp/pyqt-install-root install
 
+          FOUND_DIR=$(find /tmp/pyqt-install-root -maxdepth 12 -type f -iname "QtWidgets*.so" -exec dirname {} \; | head -1)
+          if [ -z "$FOUND_DIR" ]; then
+            echo "ERROR: konnte installierte PyQt6-Module nicht finden" >&2
+            find /tmp/pyqt-install-root -maxdepth 10 >&2
+            exit 1
+          fi
           mkdir -p /tmp/pyqt-out
-          cp -r /tmp/pyqt-staging/PyQt6 /tmp/pyqt-out/
-          pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+          cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
 
+          pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
           python --version > /tmp/pyqt-out/PYTHON_VERSION.txt
           python -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
-
-      - name: Smoke test
-        run: |
-          set -euo pipefail
-          source /tmp/pyqt-build-venv/bin/activate
-          QT_QPA_PLATFORM=offscreen python scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
 
       - name: Package as zip
         run: |
@@ -215,3 +230,9 @@ jobs:
         with:
           name: pyqt6-bindings-windows
           path: pyqt6-bindings-windows.zip
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QT_QPA_PLATFORM=offscreen python scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
