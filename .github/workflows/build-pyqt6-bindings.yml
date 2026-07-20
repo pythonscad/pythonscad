@@ -24,7 +24,11 @@ jobs:
           which sudo || ( apt update && apt install -y sudo )
           sudo -E ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
           sudo -E apt-get install -y qt6-base-dev-tools build-essential
-
+      - name: Symlink qmake6 -> qmake (PyQt6-Metadata-Hook expect 'qmake')
+        run: |
+          mkdir -p /tmp/qmake-shim
+          ln -sf "$(which qmake6)" /tmp/qmake-shim/qmake
+          echo "/tmp/qmake-shim" >> "$GITHUB_PATH"
       - name: Build PyQt6 bindings
         run: |
           set -euo pipefail
