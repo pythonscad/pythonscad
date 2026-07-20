@@ -37,20 +37,21 @@ jobs:
           python3 -m venv /tmp/pyqt-build-venv
           source /tmp/pyqt-build-venv/bin/activate
           pip install --upgrade pip
-          pip install sip PyQt-builder PyQt6-sip
+          pip install sip PyQt-builder PyQt6-sip packaging
 
           QMAKE=$(which qmake6)
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
           echo "Detected Qt version: $QT_VERSION"
           MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
-          NEXT_MINOR=$(echo "$MAJOR_MINOR" | awk -F. '{print $1"."$2+1}')
 
           mkdir -p src && cd src
-          pip download "PyQt6>=${MAJOR_MINOR},<${NEXT_MINOR}" --no-binary :all: --no-deps -d .
-          tar xzf PyQt6-*.tar.gz
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
+          curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
+          tar xzf PyQt6.tar.gz
           cd PyQt6-*/
 
-          sip-build --qmake="$QMAKE" --verbose --jobs=1 --target-dir=/tmp/pyqt-staging
+          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging
           cd build
           make -j"$(nproc)"
           make INSTALL_ROOT=/tmp/pyqt-install-root install
@@ -60,7 +61,10 @@ jobs:
             || find /tmp/pyqt-install-root -maxdepth 6 -type d -name PyQt6 -exec cp -r {} /tmp/pyqt-out/ \;
 
           pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+          python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
+          python3 -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
 
       - name: Smoke test
         run: |
@@ -96,20 +100,21 @@ jobs:
           python3 -m venv /tmp/pyqt-build-venv
           source /tmp/pyqt-build-venv/bin/activate
           pip install --upgrade pip
-          pip install sip PyQt-builder PyQt6-sip
+          pip install sip PyQt-builder PyQt6-sip packaging
 
           QMAKE="$(brew --prefix qt)/bin/qmake"
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
           echo "Detected Qt version: $QT_VERSION"
           MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
-          NEXT_MINOR=$(echo "$MAJOR_MINOR" | awk -F. '{print $1"."$2+1}')
 
           mkdir -p src && cd src
-          pip download "PyQt6>=${MAJOR_MINOR},<${NEXT_MINOR}" --no-binary :all: --no-deps -d .
-          tar xzf PyQt6-*.tar.gz
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
+          curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
+          tar xzf PyQt6.tar.gz
           cd PyQt6-*/
 
-          sip-build --qmake="$QMAKE" --verbose --jobs=1 --target-dir=/tmp/pyqt-staging
+          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging
           cd build
           make -j"$(sysctl -n hw.ncpu)"
           make install
@@ -117,7 +122,10 @@ jobs:
           mkdir -p /tmp/pyqt-out
           cp -r /tmp/pyqt-staging/PyQt6 /tmp/pyqt-out/
           pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+          python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
+          python3 -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
 
       - name: Smoke test
         run: |
@@ -156,7 +164,7 @@ jobs:
         with:
           msystem: UCRT64
           update: true
-          pacboy: ${{ env.PACBOY_PACKAGES }} python-pip:p python-virtualenv:p zip
+          pacboy:  "${{ env.PACBOY_PACKAGES }} python-pip:p python-virtualenv:p zip:"
 
       - name: Build PyQt6 bindings
         run: |
@@ -164,20 +172,21 @@ jobs:
           python -m venv /tmp/pyqt-build-venv
           source /tmp/pyqt-build-venv/bin/activate
           pip install --upgrade pip
-          pip install sip PyQt-builder PyQt6-sip
+          pip install sip PyQt-builder PyQt6-sip packaging
 
           QMAKE=$(which qmake6)
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
           echo "Detected Qt version: $QT_VERSION"
           MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
-          NEXT_MINOR=$(echo "$MAJOR_MINOR" | awk -F. '{print $1"."$2+1}')
 
           mkdir -p src && cd src
-          pip download "PyQt6>=${MAJOR_MINOR},<${NEXT_MINOR}" --no-binary :all: --no-deps -d .
-          tar xzf PyQt6-*.tar.gz
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
+          curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
+          tar xzf PyQt6.tar.gz
           cd PyQt6-*/
 
-          sip-build --qmake="$QMAKE" --verbose --jobs=1 --target-dir=/tmp/pyqt-staging
+          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging
           cd build
           mingw32-make -j"$(nproc)"
           mingw32-make install
@@ -185,7 +194,10 @@ jobs:
           mkdir -p /tmp/pyqt-out
           cp -r /tmp/pyqt-staging/PyQt6 /tmp/pyqt-out/
           pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+          python --version > /tmp/pyqt-out/PYTHON_VERSION.txt
+          python -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
 
       - name: Smoke test
         run: |
