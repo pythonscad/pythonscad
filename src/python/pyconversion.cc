@@ -51,7 +51,7 @@ int python_numberval(PyObject *number, double *result, int *flags, int flagor)
     *result = PyDataObjectToValue(number);
     return 0;
   }
-  if (PyNumber_Check(number)) {
+  if (PyFloat_Check(number)) {
     // Handle other python number protocol objects (e.g. numpy.int64)
     PyObject *f = PyNumber_Float(number);
     *result = PyFloat_AsDouble(f);
@@ -144,6 +144,53 @@ int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y
     *z = v->v[2];
     return 0;
   }
+
+  // Sequence protocol is used in numpy
+
+  if (PyObject_CheckBuffer(vec)) {
+    Py_buffer view;
+    if (PyObject_GetBuffer(vec, &view, PyBUF_FORMAT | PyBUF_ND) == 0) {
+      bool ok = false;
+      int size = 0;
+
+      if (view.ndim == 1 && view.shape[0] >= minval && view.shape[0] <= maxval) {
+        ok = true;
+        size = view.shape[0];
+      }
+
+      if (ok) {
+        std::string fmt = view.format ? view.format : "";
+        double vals[4];
+        if (fmt == "d") {
+          memcpy(vals, view.buf, size * sizeof(double));
+        } else if (fmt == "f") {
+          float *src = static_cast<float *>(view.buf);
+          for (int i = 0; i < size; i++) vals[i] = src[i];
+        } else if (fmt == "l" || fmt == "q") {
+          int64_t *src = static_cast<int64_t *>(view.buf);
+          for (int i = 0; i < size; i++) vals[i] = static_cast<double>(src[i]);
+        } else {
+          ok = false;  // unbekannter dtype -> lieber ablehnen als raten
+        }
+        if (ok) {
+          double *out[4] = {x, y, z, w};
+          for (int i = 0; i < size; i++) {
+            if (out[i] != nullptr) *out[i] = vals[i];
+          }
+        }
+      }
+      PyBuffer_Release(&view);
+      if (ok) return 0;
+      if (view.ndim != 1) {
+        PyErr_Format(PyExc_TypeError, "expected a 1D vector of length 3, got array with ndim=%d",
+                     view.ndim);
+        return 1;
+      }
+    } else {
+      PyErr_Clear();  // kein zusammenhängender Buffer -> Fallback unten
+    }
+  }
+
   return 1;
 }
 
@@ -388,5 +435,60 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
     for (int i = 0; i < 3; i++) result[i] = obj->v[i];
     results.push_back(result);
   }
+
+  // Sequence protocol is used in numpy (list of vectors
+
+  if (PyObject_CheckBuffer(vec)) {
+    Py_buffer view;
+    if (PyObject_GetBuffer(vec, &view, PyBUF_FORMAT | PyBUF_STRIDES) == 0) {
+      bool ok = false;
+      int size = 0, dim = 0;
+
+      if (view.ndim == 2 && view.shape[1] >= mindim && view.shape[1] <= maxdim) {
+        ok = true;
+        size = view.shape[0];
+        dim = view.shape[1];
+      }
+      std::string fmt = view.format ? view.format : "";
+
+      char *base = static_cast<char *>(view.buf);
+      Py_ssize_t stride0 = view.strides[0];
+      Py_ssize_t stride1 = view.strides[1];
+      double vals[3];
+
+      if (ok) {
+        for (Py_ssize_t i = 0; i < size && ok; i++) {
+          for (int j = 0; j < 3; j++) {
+            void *ptr = base + i * stride0 + j * stride1;
+            if (fmt == "d") {
+              vals[j] = *reinterpret_cast<double *>(ptr);
+            } else if (fmt == "f") {
+              vals[j] = *reinterpret_cast<float *>(ptr);
+            } else if (fmt == "l" || fmt == "q") {
+              vals[j] = static_cast<double>(*reinterpret_cast<int64_t *>(ptr));
+            } else if (fmt == "i") {
+              vals[j] = static_cast<double>(*reinterpret_cast<int32_t *>(ptr));
+            } else {
+              ok = false;
+              break;
+            }
+          }
+          if (ok) {
+            results.push_back(Vector3d(vals[0], vals[1], vals[2]));
+          }
+        }
+      }
+      PyBuffer_Release(&view);
+      if (ok) return results;
+      if (view.ndim != 2) {
+        PyErr_Format(PyExc_TypeError, "expected a 1D vector of length 3, got array with ndim=%d",
+                     view.ndim);
+        return results;
+      }
+    } else {
+      PyErr_Clear();  // kein zusammenhängender Buffer -> Fallback unten
+    }
+  }
+
   return results;  // Error
 }
