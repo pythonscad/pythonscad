@@ -2064,6 +2064,11 @@ PyMODINIT_FUNC PyInit__openscad(void)
   // failure left the manual `Py_INCREF` leaking and the module
   // half-initialised. `PyModule_AddObjectRef` never steals, making the
   // ref counting symmetric on both paths.
+  if (PyModule_AddObjectRef(m, "PyOpenSCAD", reinterpret_cast<PyObject *>(&PyOpenSCADType)) < 0) {
+    Py_DECREF(m);
+    return nullptr;
+  }
+  /* Legacy alias for backward compatibility. */
   if (PyModule_AddObjectRef(m, "Openscad", reinterpret_cast<PyObject *>(&PyOpenSCADType)) < 0) {
     Py_DECREF(m);
     return nullptr;
