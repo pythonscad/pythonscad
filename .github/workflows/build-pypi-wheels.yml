@@ -51,7 +51,7 @@ jobs:
           git fetch --unshallow --tags || git fetch --tags
           git describe --tags --always --dirty
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
