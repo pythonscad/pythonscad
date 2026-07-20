@@ -1055,9 +1055,6 @@ PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs, 
   Py_RETURN_NONE;
 }
 
-extern void *qapp_global;
-extern void *mainwindow_global;
-
 PyObject *python_qapp_ptr(PyObject *, PyObject *)
 {
   return PyLong_FromVoidPtr((void *)qapp_global);

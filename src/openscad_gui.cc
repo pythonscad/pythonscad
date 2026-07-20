@@ -780,6 +780,7 @@ void registerDefaultIcon(const QString&)
 
 QApplication *qapp_global;
 MainWindow *mainwindow_global;
+
 int gui(std::vector<std::string>& inputFiles, const std::filesystem::path& original_path, int argc,
         char **argv, const std::string& gui_test, const bool reset_window_settings,
         const std::string& open_in_override)
