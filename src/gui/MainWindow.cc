@@ -1051,6 +1051,57 @@ MainWindow::~MainWindow()
   delete this->cgalworker;
 }
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+  if (!tabManager->shouldClose()) {
+    event->ignore();
+    return;
+  }
+  event->accept();
+
+  // Only save when this is the last MainWindow (or there are none left,
+  // which covers the edge case where closeEvent fires after another
+  // MainWindow has already been destroyed).
+  if (scadApp->windowManager.getWindows().size() == 1) {
+    saveWindowState();
+  }
+
+  isClosing = true;
+  progress_report_fin();
+
+  if (this->tempFile) {
+    delete this->tempFile;
+    this->tempFile = nullptr;
+  }
+
+  // Log to stdout from now on
+  clearCurrentOutput();
+  // Disable invokeMethod calls for consoleOutput during shutdown,
+  // otherwise will segfault if echos are in progress.
+  hideCurrentOutput();
+  for (auto& [dock, title] : docks) {
+    if (dock->isFloating()) {
+      dock->close();
+    }
+  }
+
+  scadApp->windowManager.remove(this);
+  if (scadApp->windowManager.getWindows().empty()) {
+    // Quit application even in case some other windows like
+    // Preferences are still open.
+    QApplication::quit();
+  }
+}
+
+void MainWindow::saveWindowState()
+{
+  QSettingsCached settings;
+  settings.setValue("window/geometry", saveGeometry());
+  auto windowState = saveState();
+  UIUtils::dumpSaveState(windowState);
+  settings.setValue("window/state", windowState);
+}
+
 void MainWindow::showProgress()
 {
   updateStatusBar(qobject_cast<ProgressWidget *>(sender()));
@@ -4320,7 +4371,6 @@ void MainWindow::on_helpActionLibraryInfo_triggered()
   this->libraryInfoDialog->show();
 }
 
-<<<<<<< HEAD
 void MainWindow::on_helpActionReportIssue_triggered()
 {
   UIUtils::openReportIssueURL(QString::fromStdString(qglview->getRendererInfo()), this);
@@ -4372,535 +4422,541 @@ void MainWindow::closeEvent(QCloseEvent *event)
     clearCurrentOutput();
   }
 
-=======
-void MainWindow::saveWindowState()
-{
+  void MainWindow::saveWindowState()
+  {
 >>>>>>> da9adf500 (Change window close sequencing again.)
-  QSettingsCached settings;
-  settings.setValue("window/geometry", saveGeometry());
-  auto windowState = saveState();
-  UIUtils::dumpSaveState(windowState);
-  settings.setValue("window/state", windowState);
+    QSettingsCached settings;
+    settings.setValue("window/geometry", saveGeometry());
+    auto windowState = saveState();
+    UIUtils::dumpSaveState(windowState);
+    settings.setValue("window/state", windowState);
 <<<<<<< HEAD
-  if (this->tempFile) {
-    delete this->tempFile;
-    this->tempFile = nullptr;
+    if (this->tempFile) {
+      delete this->tempFile;
+      this->tempFile = nullptr;
 =======
-}
-
-void MainWindow::closeEvent(QCloseEvent *event)
-{
-  if (!tabManager->shouldClose()) {
-    event->ignore();
-    return;
-  }
-  event->accept();
-
-  // Only save when this is the last MainWindow (or there are none left,
-  // which covers the edge case where closeEvent fires after another
-  // MainWindow has already been destroyed).
-  if (scadApp->windowManager.getWindows().size() == 1) {
-    saveWindowState();
   }
 
-  isClosing = true;
-  progress_report_fin();
-
-  if (this->tempFile) {
-    delete this->tempFile;
-    this->tempFile = nullptr;
-  }
-
-  // Log to stdout from now on
-  clearCurrentOutput();
-  // Disable invokeMethod calls for consoleOutput during shutdown,
-  // otherwise will segfault if echos are in progress.
-  hideCurrentOutput();
-  for (auto& [dock, title] : docks) {
-    if (dock->isFloating()) {
-      dock->close();
+  void MainWindow::closeEvent(QCloseEvent * event)
+  {
+    if (!tabManager->shouldClose()) {
+      event->ignore();
+      return;
     }
-  }
+    event->accept();
 
-  scadApp->windowManager.remove(this);
-  if (scadApp->windowManager.getWindows().empty()) {
-    // Quit application even in case some other windows like
-    // Preferences are still open.
-    QApplication::quit();
->>>>>>> da9adf500 (Change window close sequencing again.)
-  }
+    // Only save when this is the last MainWindow (or there are none left,
+    // which covers the edge case where closeEvent fires after another
+    // MainWindow has already been destroyed).
+    if (scadApp->windowManager.getWindows().size() == 1) {
+      saveWindowState();
+    }
 
-  // Disable invokeMethod calls for consoleOutput during shutdown,
-  // otherwise will segfault if echos are in progress.
-  if (!outputSurvivor) {
+    isClosing = true;
+    progress_report_fin();
+
+    if (this->tempFile) {
+      delete this->tempFile;
+      this->tempFile = nullptr;
+    }
+
+    // Log to stdout from now on
+    clearCurrentOutput();
+    // Disable invokeMethod calls for consoleOutput during shutdown,
+    // otherwise will segfault if echos are in progress.
     hideCurrentOutput();
-  }
-  event->accept();
-}
+    for (auto& [dock, title] : docks) {
+      if (dock->isFloating()) {
+        dock->close();
+      }
+    }
 
-void MainWindow::on_editActionPreferences_triggered()
-{
-  GlobalPreferences::inst()->update();
-  GlobalPreferences::inst()->show();
-  GlobalPreferences::inst()->activateWindow();
-  GlobalPreferences::inst()->raise();
-}
+    scadApp->windowManager.remove(this);
+    if (scadApp->windowManager.getWindows().empty()) {
+      // Quit application even in case some other windows like
+      // Preferences are still open.
+      QApplication::quit();
+>>>>>>> da9adf500 (Change window close sequencing again.)
+    }
 
-void MainWindow::setColorScheme(const QString& scheme)
-{
-  RenderSettings::inst()->colorscheme = scheme.toStdString();
-  this->qglview->setColorScheme(scheme.toStdString());
-  this->qglview->update();
-}
-
-void MainWindow::setFont(const QString& family, uint size)
-{
-  QFont font;
-  if (!family.isEmpty()) font.setFamily(family);
-  else font.setFixedPitch(true);
-  if (size > 0) font.setPointSize(size);
-  font.setStyleHint(QFont::TypeWriter);
-  activeEditor->setFont(font);
-}
-
-void MainWindow::consoleOutput(const Message& msgObj, void *userdata)
-{
-  // Invoke the method in the main thread in case the output
-  // originates in a worker thread.
-  auto thisp = static_cast<MainWindow *>(userdata);
-  QMetaObject::invokeMethod(thisp, "consoleOutput", Q_ARG(Message, msgObj));
-}
-
-void MainWindow::consoleOutput(const Message& msgObj)
-{
-  this->console->addMessage(msgObj);
-  if (msgObj.group == message_group::Warning || msgObj.group == message_group::Deprecated) {
-    ++this->compileWarnings;
-  } else if (msgObj.group == message_group::Error) {
-    ++this->compileErrors;
-  }
-  // FIXME: scad parsing/evaluation should be done on separate thread so as not to block the gui.
-  // Then processEvents should no longer be needed here.
-  this->processEvents();
-  if (consoleUpdater && !consoleUpdater->isActive()) {
-    consoleUpdater->start(50);  // Limit console updates to 20 FPS
-  }
-}
-
-void MainWindow::consoleOutputRaw(const QString& html)
-{
-  this->console->addHtml(html);
-  this->processEvents();
-}
-
-void MainWindow::errorLogOutput(const Message& log_msg, void *userdata)
-{
-  auto thisp = static_cast<MainWindow *>(userdata);
-  QMetaObject::invokeMethod(thisp, "errorLogOutput", Q_ARG(Message, log_msg));
-}
-
-void MainWindow::errorLogOutput(const Message& log_msg)
-{
-  this->errorLogWidget->toErrorLog(log_msg);
-}
-
-void MainWindow::setCurrentOutput()
-{
-  set_output_handler(&MainWindow::consoleOutput, &MainWindow::errorLogOutput, this);
-}
-
-void MainWindow::hideCurrentOutput()
-{
-  set_output_handler(&MainWindow::noOutputConsole, &MainWindow::noOutputErrorLog, this);
-}
-
-void MainWindow::clearCurrentOutput()
-{
-  set_output_handler(nullptr, nullptr, nullptr);
-}
-
-void MainWindow::openCSGSettingsChanged()
-{
-#ifdef ENABLE_OPENCSG
-  OpenCSG::setOption(OpenCSG::AlgorithmSetting,
-                     GlobalPreferences::inst()->getValue("advanced/forceGoldfeather").toBool()
-                       ? OpenCSG::Goldfeather
-                       : OpenCSG::Automatic);
-#endif
-}
-
-void MainWindow::processEvents()
-{
-  if (this->procevents) QApplication::processEvents();
-}
-
-QString MainWindow::exportPath(const QString& suffix)
-{
-  const auto path_it = this->exportPaths.find(suffix);
-  const auto basename =
-    activeEditor->filepath.isEmpty() ? "Untitled" : QFileInfo(activeEditor->filepath).completeBaseName();
-  QString dir;
-  if (path_it != exportPaths.end()) {
-    dir = QFileInfo(path_it->second).absolutePath();
-  } else if (activeEditor->filepath.isEmpty()) {
-    dir = QString::fromStdString(PlatformUtils::userDocumentsPath());
-  } else {
-    dir = QFileInfo(activeEditor->filepath).absolutePath();
-  }
-  return QString("%1/%2.%3").arg(dir, basename, suffix);
-}
-
-void MainWindow::jumpToLine(int line, int col)
-{
-  this->activeEditor->setCursorPosition(line, col);
-}
-
-void MainWindow::resetMeasurementsState(bool enable, const QString& tooltipMessage)
-{
-  if (RenderSettings::inst()->backend3D != RenderBackend3D::ManifoldBackend) {
-    enable = false;
-    static const auto noCGALMessage =
-      "Measurements only work with Manifold backend; Preferences->Advanced->3D Rendering->Backend";
-    this->designActionMeasureDist->setToolTip(noCGALMessage);
-    this->designActionMeasureAngle->setToolTip(noCGALMessage);
-  } else {
-    this->designActionMeasureDist->setToolTip(tooltipMessage);
-    this->designActionMeasureAngle->setToolTip(tooltipMessage);
+    // Disable invokeMethod calls for consoleOutput during shutdown,
+    // otherwise will segfault if echos are in progress.
+    if (!outputSurvivor) {
+      hideCurrentOutput();
+    }
+    event->accept();
   }
 
-  this->designActionMeasureDist->setEnabled(enable);
-  this->designActionMeasureDist->setChecked(false);
-  this->designActionMeasureAngle->setEnabled(enable);
-  this->designActionMeasureAngle->setChecked(false);
-  this->designActionFindHandle->setChecked(false);
+=======
+>>>>>>> 0ec97df6f (Move close handler near Constructor/Destructor, no code changes.)
+  void MainWindow::on_editActionPreferences_triggered()
+  {
+    GlobalPreferences::inst()->update();
+    GlobalPreferences::inst()->show();
+    GlobalPreferences::inst()->activateWindow();
+    GlobalPreferences::inst()->raise();
+  }
 
-  (void)meas.stopMeasure();
-  activeMeasurement = nullptr;
-  this->qglview->handle_mode = false;
-}
+  void MainWindow::setColorScheme(const QString& scheme)
+  {
+    RenderSettings::inst()->colorscheme = scheme.toStdString();
+    this->qglview->setColorScheme(scheme.toStdString());
+    this->qglview->update();
+  }
 
-/**
-  Initialize the GUI from the .ui design file and other top-level GUI setup.
- */
-void MainWindow::setupWindow()
-{
-  installEventFilter(this);
-  setupUi(this);
-  this->fileActionWelcome->setText(QString(_("Welcome...")));
-  this->fileActionCloseWindow->setText(QString(_("Close &Window")));
-  this->setAttribute(Qt::WA_DeleteOnClose);
-  scadApp->windowManager.add(this);
-  setAcceptDrops(true);
-}
+  void MainWindow::setFont(const QString& family, uint size)
+  {
+    QFont font;
+    if (!family.isEmpty()) font.setFamily(family);
+    else font.setFixedPitch(true);
+    if (size > 0) font.setPointSize(size);
+    font.setStyleHint(QFont::TypeWriter);
+    activeEditor->setFont(font);
+  }
 
-/**
-  Set up non-GUI elements like timers, workers, sounds, etc.
- */
-void MainWindow::setupCoreSubsystems()
-{
-  renderCompleteSoundEffect = new QSoundEffect(this);
-  renderCompleteSoundEffect->setSource(QUrl("qrc:/sounds/complete.wav"));
+  void MainWindow::consoleOutput(const Message& msgObj, void *userdata)
+  {
+    // Invoke the method in the main thread in case the output
+    // originates in a worker thread.
+    auto thisp = static_cast<MainWindow *>(userdata);
+    QMetaObject::invokeMethod(thisp, "consoleOutput", Q_ARG(Message, msgObj));
+  }
 
-  this->cgalworker = new CGALWorker();
-  connect(this->cgalworker, &CGALWorker::done, this, &MainWindow::actionRenderDone);
-  this->csgworker = new CSGWorker(this);
-  connect(this->csgworker, SIGNAL(done(void)), this, SLOT(compileCSGDone(void)));
-
-  autoReloadTimer = new QTimer(this);
-  autoReloadTimer->setSingleShot(false);
-  autoReloadTimer->setInterval(autoReloadPollingPeriodMS);
-  connect(autoReloadTimer, &QTimer::timeout, this, &MainWindow::checkAutoReload);
-
-  waitAfterReloadTimer = new QTimer(this);
-  waitAfterReloadTimer->setSingleShot(true);
-  waitAfterReloadTimer->setInterval(autoReloadPollingPeriodMS);
-  connect(waitAfterReloadTimer, &QTimer::timeout, this, &MainWindow::waitAfterReload);
-
-  consoleUpdater = new QTimer(this);
-  consoleUpdater->setSingleShot(true);
-  connect(consoleUpdater, &QTimer::timeout, this->console, &Console::update);
-  this->consoleUpdater->start(0);  // Show initial messages immediately
-
-  progressThrottle->start();
-}
-
-/**
-  Initialize preferences and set up connections to respond to preference changes.
- */
-void MainWindow::setupPreferences()
-{
-  connect(GlobalPreferences::inst(), &Preferences::updateReorderMode, this,
-          &MainWindow::updateReorderMode);
-  connect(GlobalPreferences::inst(), &Preferences::updateUndockMode, this,
-          &MainWindow::updateUndockMode);
-  connect(GlobalPreferences::inst(), &Preferences::openCSGSettingsChanged, this,
-          &MainWindow::openCSGSettingsChanged);
-  connect(GlobalPreferences::inst(), &Preferences::colorSchemeChanged, this,
-          &MainWindow::setColorScheme);
-  connect(GlobalPreferences::inst(), &Preferences::toolbarExportChanged, this,
-          &MainWindow::updateExportActions);
-#ifdef ENABLE_PYTHON
-  connect(GlobalPreferences::inst(), &Preferences::editorConfigChanged, this,
-          [this]() { updatePythonTrustActions(); });
-#endif
-
-  connect(GlobalPreferences::inst(), &Preferences::requestRedraw, this->qglview,
-          QOverload<>::of(&QGLView::update));
-  connect(GlobalPreferences::inst(), &Preferences::updateMouseCentricZoom, this->qglview,
-          &QGLView::setMouseCentricZoom);
-  connect(GlobalPreferences::inst()->MouseConfig, &MouseConfigWidget::updateMouseActions, this,
-          &MainWindow::setAllMouseViewActions);
-
-  GlobalPreferences::inst()->apply_win();
-  GlobalPreferences::inst()->ButtonConfig->init();
-  GlobalPreferences::inst()->MouseConfig->init();
-
-  connect(GlobalPreferences::inst()->ButtonConfig, &ButtonConfigWidget::inputMappingChanged,
-          InputDriverManager::instance(), &InputDriverManager::onInputMappingUpdated,
-          Qt::UniqueConnection);
-  connect(GlobalPreferences::inst()->AxisConfig, &AxisConfigWidget::inputMappingChanged,
-          InputDriverManager::instance(), &InputDriverManager::onInputMappingUpdated,
-          Qt::UniqueConnection);
-  connect(GlobalPreferences::inst()->AxisConfig, &AxisConfigWidget::inputCalibrationChanged,
-          InputDriverManager::instance(), &InputDriverManager::onInputCalibrationUpdated,
-          Qt::UniqueConnection);
-  connect(GlobalPreferences::inst()->AxisConfig, &AxisConfigWidget::inputGainChanged,
-          InputDriverManager::instance(), &InputDriverManager::onInputGainUpdated, Qt::UniqueConnection);
-
-  connect(GlobalPreferences::inst(), &Preferences::ExperimentalChanged, this,
-          &MainWindow::onExperimentalChanged);
-  onExperimentalChanged();
-}
-
-/**
-  Set up resources related to the Status Bar
- */
-void MainWindow::setupStatusBar()
-{
-  // Must be initialized before setupEditor(), because creating a tab triggers
-  // tabSwitched -> onLanguageActiveChanged -> updateLanguageLabel() which
-  // dereferences these pointers.
-  this->versionLabel = nullptr;
-  this->languageLabel = nullptr;
-}
-
-/**
-  Set up resources related to the Console dock widget
- */
-void MainWindow::setupConsole()
-{
-  connect(this->console, &Console::openWindowRequested, this, &MainWindow::showLink);
-  connect(this->console, &Console::openFile, this, &MainWindow::openFileFromPath);
-
-  QObject::connect(consoleDock, &Dock::visibilityChanged, this,
-                   &MainWindow::onConsoleDockVisibilityChanged);
-
-  this->console->setConsoleFont(
-    GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
-    GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
-
-  const QString version =
-    QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(std::string(openscad_versionnumber)));
-  const QString weblink = "<a href=\"https://www.pythonscad.org/\">https://www.pythonscad.org/</a><br>";
-
-  consoleOutputRaw(version);
-  consoleOutputRaw(weblink);
-  consoleOutputRaw(copyrighttext);
-}
-
-/**
-  Set up resources related to the Error Log dock widget
- */
-void MainWindow::setupErrorLog()
-{
-  connect(this->errorLogWidget, &ErrorLog::openFile, this, &MainWindow::openFileFromPath);
-
-  QObject::connect(errorLogDock, &Dock::visibilityChanged, this,
-                   &MainWindow::onErrorLogDockVisibilityChanged);
-}
-
-/**
-  Set up resources related to the Editor dock widget
- */
-void MainWindow::setupEditor(const QStringList& filenames)
-{
-  QString ctorFirst;
-  if (!filenames.isEmpty()) {
-    const QString& f0 = filenames[0];
-    if (!f0.startsWith(QStringLiteral(":session:")) && TabManager::isMissingDesignDocumentPath(f0)) {
-      deferredCliMissingFile = QFileInfo(f0).absoluteFilePath();
-    } else {
-      ctorFirst = f0;
+  void MainWindow::consoleOutput(const Message& msgObj)
+  {
+    this->console->addMessage(msgObj);
+    if (msgObj.group == message_group::Warning || msgObj.group == message_group::Deprecated) {
+      ++this->compileWarnings;
+    } else if (msgObj.group == message_group::Error) {
+      ++this->compileErrors;
+    }
+    // FIXME: scad parsing/evaluation should be done on separate thread so as not to block the gui.
+    // Then processEvents should no longer be needed here.
+    this->processEvents();
+    if (consoleUpdater && !consoleUpdater->isActive()) {
+      consoleUpdater->start(50);  // Limit console updates to 20 FPS
     }
   }
 
-  tabManager = new TabManager(this, ctorFirst);
-  activeEditor = tabManager->editor;
-  editorDockContents->layout()->addWidget(tabManager->getTabContent());
-  if (!deferredCliMissingFile.isEmpty()) {
-    tabManager->getTabContent()->hide();
+  void MainWindow::consoleOutputRaw(const QString& html)
+  {
+    this->console->addHtml(html);
+    this->processEvents();
   }
 
-  connect(this->fileActionNew, &QAction::triggered, tabManager, &TabManager::actionNew);
-  connect(this->fileActionClose, &QAction::triggered, tabManager, &TabManager::closeCurrentTab);
-  connect(this->fileActionSaveAll, &QAction::triggered, tabManager, &TabManager::saveAll);
+  void MainWindow::errorLogOutput(const Message& log_msg, void *userdata)
+  {
+    auto thisp = static_cast<MainWindow *>(userdata);
+    QMetaObject::invokeMethod(thisp, "errorLogOutput", Q_ARG(Message, log_msg));
+  }
 
-  connect(this, &MainWindow::highlightError, tabManager, &TabManager::highlightError);
-  connect(this, &MainWindow::unhighlightLastError, tabManager, &TabManager::unhighlightLastError);
+  void MainWindow::errorLogOutput(const Message& log_msg)
+  {
+    this->errorLogWidget->toErrorLog(log_msg);
+  }
 
-  connect(this->editActionUndo, &QAction::triggered, tabManager, &TabManager::undo);
-  connect(this->editActionRedo, &QAction::triggered, tabManager, &TabManager::redo);
-  connect(this->editActionRedo_2, &QAction::triggered, tabManager, &TabManager::redo);
-  connect(this->editActionCut, &QAction::triggered, tabManager, &TabManager::cut);
-  connect(this->editActionPaste, &QAction::triggered, tabManager, &TabManager::paste);
+  void MainWindow::setCurrentOutput()
+  {
+    set_output_handler(&MainWindow::consoleOutput, &MainWindow::errorLogOutput, this);
+  }
 
-  connect(this->editActionIndent, &QAction::triggered, tabManager, &TabManager::indentSelection);
-  connect(this->editActionUnindent, &QAction::triggered, tabManager, &TabManager::unindentSelection);
-  connect(this->editActionComment, &QAction::triggered, tabManager, &TabManager::commentSelection);
-  connect(this->editActionUncomment, &QAction::triggered, tabManager, &TabManager::uncommentSelection);
+  void MainWindow::hideCurrentOutput()
+  {
+    set_output_handler(&MainWindow::noOutputConsole, &MainWindow::noOutputErrorLog, this);
+  }
 
-  connect(this->editActionToggleBookmark, &QAction::triggered, tabManager, &TabManager::toggleBookmark);
-  connect(this->editActionNextBookmark, &QAction::triggered, tabManager, &TabManager::nextBookmark);
-  connect(this->editActionPrevBookmark, &QAction::triggered, tabManager, &TabManager::prevBookmark);
-  connect(this->editActionJumpToNextError, &QAction::triggered, tabManager,
-          &TabManager::jumpToNextError);
+  void MainWindow::clearCurrentOutput()
+  {
+    set_output_handler(nullptr, nullptr, nullptr);
+  }
 
-  connect(tabManager, &TabManager::editorAboutToClose, this,
-          &MainWindow::onTabManagerAboutToCloseEditor);
-  connect(tabManager, &TabManager::currentEditorChanged, this, &MainWindow::onTabManagerEditorChanged);
-  connect(tabManager, &TabManager::editorContentReloaded, this,
-          &MainWindow::onTabManagerEditorContentReloaded);
+  void MainWindow::openCSGSettingsChanged()
+  {
+#ifdef ENABLE_OPENCSG
+    OpenCSG::setOption(OpenCSG::AlgorithmSetting,
+                       GlobalPreferences::inst()->getValue("advanced/forceGoldfeather").toBool()
+                         ? OpenCSG::Goldfeather
+                         : OpenCSG::Automatic);
+#endif
+  }
 
-  connect(this->editActionNextTab, &QAction::triggered, tabManager, &TabManager::nextTab);
-  connect(this->editActionPrevTab, &QAction::triggered, tabManager, &TabManager::prevTab);
+  void MainWindow::processEvents()
+  {
+    if (this->procevents) QApplication::processEvents();
+  }
 
-  onTabManagerEditorChanged(activeEditor);
-  QObject::connect(editorDock, &Dock::visibilityChanged, this,
-                   &MainWindow::onEditorDockVisibilityChanged);
-}
+  QString MainWindow::exportPath(const QString& suffix)
+  {
+    const auto path_it = this->exportPaths.find(suffix);
+    const auto basename = activeEditor->filepath.isEmpty()
+                            ? "Untitled"
+                            : QFileInfo(activeEditor->filepath).completeBaseName();
+    QString dir;
+    if (path_it != exportPaths.end()) {
+      dir = QFileInfo(path_it->second).absolutePath();
+    } else if (activeEditor->filepath.isEmpty()) {
+      dir = QString::fromStdString(PlatformUtils::userDocumentsPath());
+    } else {
+      dir = QFileInfo(activeEditor->filepath).absolutePath();
+    }
+    return QString("%1/%2.%3").arg(dir, basename, suffix);
+  }
 
-/**
-  Set up resources related to the Customizer dock widget
- */
-void MainWindow::setupCustomizer()
-{
-  QObject::connect(parameterDock, &Dock::visibilityChanged, this,
-                   &MainWindow::onParametersDockVisibilityChanged);
-}
+  void MainWindow::jumpToLine(int line, int col)
+  {
+    this->activeEditor->setCursorPosition(line, col);
+  }
 
-/**
-  Set up resources related to the Animate dock widget
- */
-void MainWindow::setupAnimate()
-{
-  this->animateWidget->setMainWindow(this);
-  QObject::connect(animateDock, &Dock::visibilityChanged, this,
-                   &MainWindow::onAnimateDockVisibilityChanged);
-}
+  void MainWindow::resetMeasurementsState(bool enable, const QString& tooltipMessage)
+  {
+    if (RenderSettings::inst()->backend3D != RenderBackend3D::ManifoldBackend) {
+      enable = false;
+      static const auto noCGALMessage =
+        "Measurements only work with Manifold backend; Preferences->Advanced->3D Rendering->Backend";
+      this->designActionMeasureDist->setToolTip(noCGALMessage);
+      this->designActionMeasureAngle->setToolTip(noCGALMessage);
+    } else {
+      this->designActionMeasureDist->setToolTip(tooltipMessage);
+      this->designActionMeasureAngle->setToolTip(tooltipMessage);
+    }
 
-/**
-  Set up resources related to the Font List  dock widget
- */
-void MainWindow::setupFontList()
-{
-  QObject::connect(fontListDock, &Dock::visibilityChanged, this,
-                   &MainWindow::onFontListDockVisibilityChanged);
-}
+    this->designActionMeasureDist->setEnabled(enable);
+    this->designActionMeasureDist->setChecked(false);
+    this->designActionMeasureAngle->setEnabled(enable);
+    this->designActionMeasureAngle->setChecked(false);
+    this->designActionFindHandle->setChecked(false);
 
-/**
-  Set up resources related to the Color List  dock widget
- */
-void MainWindow::setupColorList()
-{
-  QObject::connect(colorListDock, &Dock::visibilityChanged, this,
-                   &MainWindow::onColorListDockVisibilityChanged);
-  QObject::connect(colorListWidget, &ColorList::colorSelected, this,
-                   &MainWindow::onColorListColorSelected);
-}
+    (void)meas.stopMeasure();
+    activeMeasurement = nullptr;
+    this->qglview->handle_mode = false;
+  }
 
-/**
-  Set up resources related to the Viewport Control dock widget
- */
-void MainWindow::setupViewportControl()
-{
-  this->viewportControlWidget->setMainWindow(this);
-  QObject::connect(viewportControlDock, &Dock::visibilityChanged, this,
-                   &MainWindow::onViewportControlDockVisibilityChanged);
-}
+  /**
+    Initialize the GUI from the .ui design file and other top-level GUI setup.
+   */
+  void MainWindow::setupWindow()
+  {
+    installEventFilter(this);
+    setupUi(this);
+    this->fileActionWelcome->setText(QString(_("Welcome...")));
+    this->fileActionCloseWindow->setText(QString(_("Close &Window")));
+    this->setAttribute(Qt::WA_DeleteOnClose);
+    scadApp->windowManager.add(this);
+    setAcceptDrops(true);
+  }
 
-/**
-  Setup AIDock
- */
-void MainWindow::setupAIDock()
-{
-  this->aiDock = new AIDock(this);
-  addDockWidget(Qt::RightDockWidgetArea, this->aiDock);
-  this->aiDock->hide();
+  /**
+    Set up non-GUI elements like timers, workers, sounds, etc.
+   */
+  void MainWindow::setupCoreSubsystems()
+  {
+    renderCompleteSoundEffect = new QSoundEffect(this);
+    renderCompleteSoundEffect->setSource(QUrl("qrc:/sounds/complete.wav"));
 
-  QObject::connect(this->aiDock, &Dock::visibilityChanged, this, &MainWindow::onAIDockVisibilityChanged);
-}
+    this->cgalworker = new CGALWorker();
+    connect(this->cgalworker, &CGALWorker::done, this, &MainWindow::actionRenderDone);
+    this->csgworker = new CSGWorker(this);
+    connect(this->csgworker, SIGNAL(done(void)), this, SLOT(compileCSGDone(void)));
 
-/**
-  Set up resources related to the 3d View
- */
-void MainWindow::setup3DView()
-{
-  this->qglview->statusLabel = new QLabel(this);
-  this->qglview->statusLabel->setMinimumWidth(100);
-  statusBar()->addWidget(this->qglview->statusLabel);
+    autoReloadTimer = new QTimer(this);
+    autoReloadTimer->setSingleShot(false);
+    autoReloadTimer->setInterval(autoReloadPollingPeriodMS);
+    connect(autoReloadTimer, &QTimer::timeout, this, &MainWindow::checkAutoReload);
 
-  const QSettingsCached settings;
-  this->qglview->setMouseCentricZoom(Settings::Settings::mouseCentricZoom.value());
-  this->setAllMouseViewActions();
-  this->meas.setView(qglview);
-  resetMeasurementsState(false, "Render (not preview) to enable measurements");
+    waitAfterReloadTimer = new QTimer(this);
+    waitAfterReloadTimer->setSingleShot(true);
+    waitAfterReloadTimer->setInterval(autoReloadPollingPeriodMS);
+    connect(waitAfterReloadTimer, &QTimer::timeout, this, &MainWindow::waitAfterReload);
 
-  // Initial Color Scheme
-  const QString cs = GlobalPreferences::inst()->getValue("3dview/colorscheme").toString();
-  this->setColorScheme(cs);
+    consoleUpdater = new QTimer(this);
+    consoleUpdater->setSingleShot(true);
+    connect(consoleUpdater, &QTimer::timeout, this->console, &Console::update);
+    this->consoleUpdater->start(0);  // Show initial messages immediately
 
-  // Initialize View Mode
-  // Default to ThrownTogether as OpenCSG support is not known until initializeGL()
-  // runs (after show()). The initialized() signal will trigger an update to
-  // Preview mode if supported.
-  viewModeThrownTogether();
+    progressThrottle->start();
+  }
 
-  loadViewSettings();
-  loadDesignSettings();
+  /**
+    Initialize preferences and set up connections to respond to preference changes.
+   */
+  void MainWindow::setupPreferences()
+  {
+    connect(GlobalPreferences::inst(), &Preferences::updateReorderMode, this,
+            &MainWindow::updateReorderMode);
+    connect(GlobalPreferences::inst(), &Preferences::updateUndockMode, this,
+            &MainWindow::updateUndockMode);
+    connect(GlobalPreferences::inst(), &Preferences::openCSGSettingsChanged, this,
+            &MainWindow::openCSGSettingsChanged);
+    connect(GlobalPreferences::inst(), &Preferences::colorSchemeChanged, this,
+            &MainWindow::setColorScheme);
+    connect(GlobalPreferences::inst(), &Preferences::toolbarExportChanged, this,
+            &MainWindow::updateExportActions);
+#ifdef ENABLE_PYTHON
+    connect(GlobalPreferences::inst(), &Preferences::editorConfigChanged, this,
+            [this]() { updatePythonTrustActions(); });
+#endif
 
-  connect(this->qglview, &QGLView::cameraChanged, animateWidget, &Animate::cameraChanged);
-  connect(this->qglview, &QGLView::cameraChanged, viewportControlWidget,
-          &ViewportControl::cameraChanged);
-  connect(this->qglview, &QGLView::resized, viewportControlWidget, &ViewportControl::viewResized);
-  connect(this->qglview, &QGLView::doRightClick, this, &MainWindow::rightClick);
-  connect(this->qglview, &QGLView::doLeftClick, this, &MainWindow::leftClick);
-  connect(this->qglview, &QGLView::toolTipShow, this, &MainWindow::toolTipShow);
-  connect(this->qglview, &QGLView::dragPoint, this, &MainWindow::dragPoint);
-  connect(this->qglview, &QGLView::dragPointEnd, this, &MainWindow::dragPointEnd);
-  connect(this->qglview, &QGLView::initialized, this, &MainWindow::updateViewModeAfterGLInit);
-}
+    connect(GlobalPreferences::inst(), &Preferences::requestRedraw, this->qglview,
+            QOverload<>::of(&QGLView::update));
+    connect(GlobalPreferences::inst(), &Preferences::updateMouseCentricZoom, this->qglview,
+            &QGLView::setMouseCentricZoom);
+    connect(GlobalPreferences::inst()->MouseConfig, &MouseConfigWidget::updateMouseActions, this,
+            &MainWindow::setAllMouseViewActions);
 
-/**
-FIXME(kintel): Is this the right place for this?
- */
-void MainWindow::setupInput()
-{
-  InputDriverManager::instance()->registerActions(this->menuBar()->actions(), "", "");
-  InputDriverManager::instance()->registerActions(this->animateWidget->actions(), "animation",
-                                                  "animate");
-}
+    GlobalPreferences::inst()->apply_win();
+    GlobalPreferences::inst()->ButtonConfig->init();
+    GlobalPreferences::inst()->MouseConfig->init();
 
-/**
- Set up glocal Dock widget handling.
- */
-void MainWindow::setupDocks()
-{
-  setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
-  setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
-  setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
-  setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+    connect(GlobalPreferences::inst()->ButtonConfig, &ButtonConfigWidget::inputMappingChanged,
+            InputDriverManager::instance(), &InputDriverManager::onInputMappingUpdated,
+            Qt::UniqueConnection);
+    connect(GlobalPreferences::inst()->AxisConfig, &AxisConfigWidget::inputMappingChanged,
+            InputDriverManager::instance(), &InputDriverManager::onInputMappingUpdated,
+            Qt::UniqueConnection);
+    connect(GlobalPreferences::inst()->AxisConfig, &AxisConfigWidget::inputCalibrationChanged,
+            InputDriverManager::instance(), &InputDriverManager::onInputCalibrationUpdated,
+            Qt::UniqueConnection);
+    connect(GlobalPreferences::inst()->AxisConfig, &AxisConfigWidget::inputGainChanged,
+            InputDriverManager::instance(), &InputDriverManager::onInputGainUpdated,
+            Qt::UniqueConnection);
 
-  // clang-format off
+    connect(GlobalPreferences::inst(), &Preferences::ExperimentalChanged, this,
+            &MainWindow::onExperimentalChanged);
+    onExperimentalChanged();
+  }
+
+  /**
+    Set up resources related to the Status Bar
+   */
+  void MainWindow::setupStatusBar()
+  {
+    // Must be initialized before setupEditor(), because creating a tab triggers
+    // tabSwitched -> onLanguageActiveChanged -> updateLanguageLabel() which
+    // dereferences these pointers.
+    this->versionLabel = nullptr;
+    this->languageLabel = nullptr;
+  }
+
+  /**
+    Set up resources related to the Console dock widget
+   */
+  void MainWindow::setupConsole()
+  {
+    connect(this->console, &Console::openWindowRequested, this, &MainWindow::showLink);
+    connect(this->console, &Console::openFile, this, &MainWindow::openFileFromPath);
+
+    QObject::connect(consoleDock, &Dock::visibilityChanged, this,
+                     &MainWindow::onConsoleDockVisibilityChanged);
+
+    this->console->setConsoleFont(
+      GlobalPreferences::inst()->getValue("advanced/consoleFontFamily").toString(),
+      GlobalPreferences::inst()->getValue("advanced/consoleFontSize").toUInt());
+
+    const QString version =
+      QString("<b>PythonSCAD %1</b>").arg(QString::fromStdString(std::string(openscad_versionnumber)));
+    const QString weblink =
+      "<a href=\"https://www.pythonscad.org/\">https://www.pythonscad.org/</a><br>";
+
+    consoleOutputRaw(version);
+    consoleOutputRaw(weblink);
+    consoleOutputRaw(copyrighttext);
+  }
+
+  /**
+    Set up resources related to the Error Log dock widget
+   */
+  void MainWindow::setupErrorLog()
+  {
+    connect(this->errorLogWidget, &ErrorLog::openFile, this, &MainWindow::openFileFromPath);
+
+    QObject::connect(errorLogDock, &Dock::visibilityChanged, this,
+                     &MainWindow::onErrorLogDockVisibilityChanged);
+  }
+
+  /**
+    Set up resources related to the Editor dock widget
+   */
+  void MainWindow::setupEditor(const QStringList& filenames)
+  {
+    QString ctorFirst;
+    if (!filenames.isEmpty()) {
+      const QString& f0 = filenames[0];
+      if (!f0.startsWith(QStringLiteral(":session:")) && TabManager::isMissingDesignDocumentPath(f0)) {
+        deferredCliMissingFile = QFileInfo(f0).absoluteFilePath();
+      } else {
+        ctorFirst = f0;
+      }
+    }
+
+    tabManager = new TabManager(this, ctorFirst);
+    activeEditor = tabManager->editor;
+    editorDockContents->layout()->addWidget(tabManager->getTabContent());
+    if (!deferredCliMissingFile.isEmpty()) {
+      tabManager->getTabContent()->hide();
+    }
+
+    connect(this->fileActionNew, &QAction::triggered, tabManager, &TabManager::actionNew);
+    connect(this->fileActionClose, &QAction::triggered, tabManager, &TabManager::closeCurrentTab);
+    connect(this->fileActionSaveAll, &QAction::triggered, tabManager, &TabManager::saveAll);
+
+    connect(this, &MainWindow::highlightError, tabManager, &TabManager::highlightError);
+    connect(this, &MainWindow::unhighlightLastError, tabManager, &TabManager::unhighlightLastError);
+
+    connect(this->editActionUndo, &QAction::triggered, tabManager, &TabManager::undo);
+    connect(this->editActionRedo, &QAction::triggered, tabManager, &TabManager::redo);
+    connect(this->editActionRedo_2, &QAction::triggered, tabManager, &TabManager::redo);
+    connect(this->editActionCut, &QAction::triggered, tabManager, &TabManager::cut);
+    connect(this->editActionPaste, &QAction::triggered, tabManager, &TabManager::paste);
+
+    connect(this->editActionIndent, &QAction::triggered, tabManager, &TabManager::indentSelection);
+    connect(this->editActionUnindent, &QAction::triggered, tabManager, &TabManager::unindentSelection);
+    connect(this->editActionComment, &QAction::triggered, tabManager, &TabManager::commentSelection);
+    connect(this->editActionUncomment, &QAction::triggered, tabManager, &TabManager::uncommentSelection);
+
+    connect(this->editActionToggleBookmark, &QAction::triggered, tabManager,
+            &TabManager::toggleBookmark);
+    connect(this->editActionNextBookmark, &QAction::triggered, tabManager, &TabManager::nextBookmark);
+    connect(this->editActionPrevBookmark, &QAction::triggered, tabManager, &TabManager::prevBookmark);
+    connect(this->editActionJumpToNextError, &QAction::triggered, tabManager,
+            &TabManager::jumpToNextError);
+
+    connect(tabManager, &TabManager::editorAboutToClose, this,
+            &MainWindow::onTabManagerAboutToCloseEditor);
+    connect(tabManager, &TabManager::currentEditorChanged, this, &MainWindow::onTabManagerEditorChanged);
+    connect(tabManager, &TabManager::editorContentReloaded, this,
+            &MainWindow::onTabManagerEditorContentReloaded);
+
+    connect(this->editActionNextTab, &QAction::triggered, tabManager, &TabManager::nextTab);
+    connect(this->editActionPrevTab, &QAction::triggered, tabManager, &TabManager::prevTab);
+
+    onTabManagerEditorChanged(activeEditor);
+    QObject::connect(editorDock, &Dock::visibilityChanged, this,
+                     &MainWindow::onEditorDockVisibilityChanged);
+  }
+
+  /**
+    Set up resources related to the Customizer dock widget
+   */
+  void MainWindow::setupCustomizer()
+  {
+    QObject::connect(parameterDock, &Dock::visibilityChanged, this,
+                     &MainWindow::onParametersDockVisibilityChanged);
+  }
+
+  /**
+    Set up resources related to the Animate dock widget
+   */
+  void MainWindow::setupAnimate()
+  {
+    this->animateWidget->setMainWindow(this);
+    QObject::connect(animateDock, &Dock::visibilityChanged, this,
+                     &MainWindow::onAnimateDockVisibilityChanged);
+  }
+
+  /**
+    Set up resources related to the Font List  dock widget
+   */
+  void MainWindow::setupFontList()
+  {
+    QObject::connect(fontListDock, &Dock::visibilityChanged, this,
+                     &MainWindow::onFontListDockVisibilityChanged);
+  }
+
+  /**
+    Set up resources related to the Color List  dock widget
+   */
+  void MainWindow::setupColorList()
+  {
+    QObject::connect(colorListDock, &Dock::visibilityChanged, this,
+                     &MainWindow::onColorListDockVisibilityChanged);
+    QObject::connect(colorListWidget, &ColorList::colorSelected, this,
+                     &MainWindow::onColorListColorSelected);
+  }
+
+  /**
+    Set up resources related to the Viewport Control dock widget
+   */
+  void MainWindow::setupViewportControl()
+  {
+    this->viewportControlWidget->setMainWindow(this);
+    QObject::connect(viewportControlDock, &Dock::visibilityChanged, this,
+                     &MainWindow::onViewportControlDockVisibilityChanged);
+  }
+
+  /**
+    Setup AIDock
+   */
+  void MainWindow::setupAIDock()
+  {
+    this->aiDock = new AIDock(this);
+    addDockWidget(Qt::RightDockWidgetArea, this->aiDock);
+    this->aiDock->hide();
+
+    QObject::connect(this->aiDock, &Dock::visibilityChanged, this,
+                     &MainWindow::onAIDockVisibilityChanged);
+  }
+
+  /**
+    Set up resources related to the 3d View
+   */
+  void MainWindow::setup3DView()
+  {
+    this->qglview->statusLabel = new QLabel(this);
+    this->qglview->statusLabel->setMinimumWidth(100);
+    statusBar()->addWidget(this->qglview->statusLabel);
+
+    const QSettingsCached settings;
+    this->qglview->setMouseCentricZoom(Settings::Settings::mouseCentricZoom.value());
+    this->setAllMouseViewActions();
+    this->meas.setView(qglview);
+    resetMeasurementsState(false, "Render (not preview) to enable measurements");
+
+    // Initial Color Scheme
+    const QString cs = GlobalPreferences::inst()->getValue("3dview/colorscheme").toString();
+    this->setColorScheme(cs);
+
+    // Initialize View Mode
+    // Default to ThrownTogether as OpenCSG support is not known until initializeGL()
+    // runs (after show()). The initialized() signal will trigger an update to
+    // Preview mode if supported.
+    viewModeThrownTogether();
+
+    loadViewSettings();
+    loadDesignSettings();
+
+    connect(this->qglview, &QGLView::cameraChanged, animateWidget, &Animate::cameraChanged);
+    connect(this->qglview, &QGLView::cameraChanged, viewportControlWidget,
+            &ViewportControl::cameraChanged);
+    connect(this->qglview, &QGLView::resized, viewportControlWidget, &ViewportControl::viewResized);
+    connect(this->qglview, &QGLView::doRightClick, this, &MainWindow::rightClick);
+    connect(this->qglview, &QGLView::doLeftClick, this, &MainWindow::leftClick);
+    connect(this->qglview, &QGLView::toolTipShow, this, &MainWindow::toolTipShow);
+    connect(this->qglview, &QGLView::dragPoint, this, &MainWindow::dragPoint);
+    connect(this->qglview, &QGLView::dragPointEnd, this, &MainWindow::dragPointEnd);
+    connect(this->qglview, &QGLView::initialized, this, &MainWindow::updateViewModeAfterGLInit);
+  }
+
+  /**
+  FIXME(kintel): Is this the right place for this?
+   */
+  void MainWindow::setupInput()
+  {
+    InputDriverManager::instance()->registerActions(this->menuBar()->actions(), "", "");
+    InputDriverManager::instance()->registerActions(this->animateWidget->actions(), "animation",
+                                                    "animate");
+  }
+
+  /**
+   Set up glocal Dock widget handling.
+   */
+  void MainWindow::setupDocks()
+  {
+    setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
+    setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
+    setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
+    setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+
+    // clang-format off
   docks = {
     {editorDock, _("&Editor")},
     {consoleDock, _("&Console")},
