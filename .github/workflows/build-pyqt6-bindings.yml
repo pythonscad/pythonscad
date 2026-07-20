@@ -7,7 +7,162 @@ permissions:
   contents: read
 
 jobs:
-  placeholder:
+  build-linux:
     runs-on: ubuntu-24.04
+    name: Linux x86_64
     steps:
-      - run: echo "Placeholder - real build logic comes on feature branch"
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+          persist-credentials: false
+
+      - name: Install Qt6 + build tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          TZ: Etc/UTC
+        run: |
+          which sudo || ( apt update && apt install -y sudo )
+          sudo -E ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
+          sudo -E apt-get install -y qt6-base-dev-tools build-essential
+
+      - name: Build PyQt6 bindings
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/pyqt-build-venv
+          source /tmp/pyqt-build-venv/bin/activate
+          pip install --upgrade pip
+          pip install sip PyQt-builder PyQt6-sip
+
+          QMAKE=$(which qmake6)
+          QT_VERSION=$($QMAKE -query QT_VERSION)
+          echo "Detected Qt version: $QT_VERSION"
+          MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
+          NEXT_MINOR=$(echo "$MAJOR_MINOR" | awk -F. '{print $1"."$2+1}')
+
+          mkdir -p src && cd src
+          pip download "PyQt6>=${MAJOR_MINOR},<${NEXT_MINOR}" --no-binary :all: --no-deps -d .
+          tar xzf PyQt6-*.tar.gz
+          cd PyQt6-*/
+
+          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging
+          cd build
+          make -j"$(nproc)"
+          make INSTALL_ROOT=/tmp/pyqt-install-root install
+
+          mkdir -p /tmp/pyqt-out
+          cp -r /tmp/pyqt-install-root/tmp/pyqt-staging/PyQt6 /tmp/pyqt-out/ 2>/dev/null \
+            || find /tmp/pyqt-install-root -maxdepth 6 -type d -name PyQt6 -exec cp -r {} /tmp/pyqt-out/ \;
+
+          # PyQt6-sip ist reiner Python/C-Code, nicht Qt-gelinkt -> normaler Wheel-Install reicht
+          pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+
+          echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pyqt6-bindings-linux-x86_64
+          path: /tmp/pyqt-out
+
+  build-macos:
+    runs-on: macos-15
+    name: macOS (Homebrew Qt6)
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+          persist-credentials: false
+
+      - name: Install Qt6
+        run: ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
+
+      - name: Build PyQt6 bindings
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/pyqt-build-venv
+          source /tmp/pyqt-build-venv/bin/activate
+          pip install --upgrade pip
+          pip install sip PyQt-builder PyQt6-sip
+
+          # Homebrews Qt6-Paket heißt "qt", qmake liegt ohne "6"-Suffix vor
+          QMAKE="$(brew --prefix qt)/bin/qmake"
+          QT_VERSION=$($QMAKE -query QT_VERSION)
+          echo "Detected Qt version: $QT_VERSION"
+          MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
+          NEXT_MINOR=$(echo "$MAJOR_MINOR" | awk -F. '{print $1"."$2+1}')
+
+          mkdir -p src && cd src
+          pip download "PyQt6>=${MAJOR_MINOR},<${NEXT_MINOR}" --no-binary :all: --no-deps -d .
+          tar xzf PyQt6-*.tar.gz
+          cd PyQt6-*/
+
+          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging
+          cd build
+          make -j"$(sysctl -n hw.ncpu)"
+          make install
+
+          mkdir -p /tmp/pyqt-out
+          cp -r /tmp/pyqt-staging/PyQt6 /tmp/pyqt-out/
+          pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+          echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pyqt6-bindings-macos
+          path: /tmp/pyqt-out
+
+  build-windows:
+    runs-on: windows-latest
+    name: Windows (MSYS2 UCRT64)
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+          persist-credentials: false
+
+      - name: Calculate PACBOY_PACKAGES
+        shell: bash
+        run: |
+          python3 ./scripts/get-dependencies.py --distro msys2 --profile pythonscad-qt6 --output-env "$GITHUB_ENV" --env-var PACBOY_PACKAGES
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          pacboy: ${{ env.PACBOY_PACKAGES }} python-pip:p python-virtualenv:p
+
+      - name: Build PyQt6 bindings
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/pyqt-build-venv
+          source /tmp/pyqt-build-venv/bin/activate
+          pip install --upgrade pip
+          pip install sip PyQt-builder PyQt6-sip
+
+          QMAKE=$(which qmake6)
+          QT_VERSION=$($QMAKE -query QT_VERSION)
+          echo "Detected Qt version: $QT_VERSION"
+          MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
+          NEXT_MINOR=$(echo "$MAJOR_MINOR" | awk -F. '{print $1"."$2+1}')
+
+          mkdir -p src && cd src
+          pip download "PyQt6>=${MAJOR_MINOR},<${NEXT_MINOR}" --no-binary :all: --no-deps -d .
+          tar xzf PyQt6-*.tar.gz
+          cd PyQt6-*/
+
+          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging
+          cd build
+          mingw32-make -j"$(nproc)"
+          mingw32-make install
+
+          mkdir -p /tmp/pyqt-out
+          cp -r /tmp/pyqt-staging/PyQt6 /tmp/pyqt-out/
+          pip install PyQt6-sip --target=/tmp/pyqt-out --no-deps --upgrade
+          echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pyqt6-bindings-windows
+          path: /tmp/pyqt-out
