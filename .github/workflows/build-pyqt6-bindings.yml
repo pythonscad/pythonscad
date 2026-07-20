@@ -51,7 +51,7 @@ jobs:
           tar xzf PyQt6.tar.gz
           cd PyQt6-*/
 
-          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging
+          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging --confirm-license
           cd build
           make -j"$(nproc)"
           make INSTALL_ROOT=/tmp/pyqt-install-root install
@@ -112,9 +112,10 @@ jobs:
           echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
           curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
           tar xzf PyQt6.tar.gz
-          cd PyQt6-*/
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | head -1 | cut -d/ -f1)
+          cd "$EXTRACTED_DIR"
 
-          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging
+          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging --confirm-license
           cd build
           make -j"$(sysctl -n hw.ncpu)"
           make install
@@ -183,10 +184,10 @@ jobs:
           read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
           echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
           curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
-          tar xzf PyQt6.tar.gz
-          cd PyQt6-*/
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | head -1 | cut -d/ -f1)
+          cd "$EXTRACTED_DIR"
 
-          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging
+          sip-build --qmake="$QMAKE" --verbose --target-dir=/tmp/pyqt-staging --confirm-license
           cd build
           mingw32-make -j"$(nproc)"
           mingw32-make install
