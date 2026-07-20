@@ -1050,12 +1050,6 @@ MainWindow::~MainWindow()
   isBeingDestroyed = true;
 
   delete this->cgalworker;
-  scadApp->windowManager.remove(this);
-  if (scadApp->windowManager.getWindows().empty()) {
-    // Quit application even in case some other windows like
-    // Preferences are still open.
-    scadApp->quit();
-  }
 }
 
 void MainWindow::showProgress()
