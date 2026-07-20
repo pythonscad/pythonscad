@@ -1552,6 +1552,15 @@ if(ENABLE_PYTHON)
   )
   set_property(TEST version-helpers PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 
+  # Coverage for the C++ Python-object type-conversion helpers in
+  # src/python/pyconversion.cc, driven through their Python API entry points.
+  add_test(NAME python-conversions CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_python_conversions.py
+      ${OPENSCAD_BINPATH}
+  )
+  set_property(TEST python-conversions PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+
   add_test(NAME python-sibling-import-cli CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_python_sibling_import_cli.py
