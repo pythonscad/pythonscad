@@ -250,6 +250,26 @@ int curl_download(const std::string& url, const std::string& path, std::string *
   }
   return 0;
 }
+void editorInsertText(const char *text)
+{
+  if (mainwindow_global == nullptr) return;
+  MainWindow *mw = (MainWindow *)mainwindow_global;
+  if (mw->activeEditor == nullptr) return;
+  ScintillaEditor *si = dynamic_cast<ScintillaEditor *>(mw->activeEditor);
+  if (si == nullptr) return;
+  int line, index;
+  si->qsci->getCursorPosition(&line, &index);
+  si->qsci->insertAt(QString::fromUtf8(text), line, index);
+
+  // Cursor ans Ende des eingefuegten Textes setzen
+  int newlines = qtext.count('\n');
+  if (newlines == 0) {
+    si->qsci->setCursorPosition(line, index + qtext.length());
+  } else {
+    int lastLineLen = qtext.section('\n', -1).length();
+    si->qsci->setCursorPosition(line + newlines, lastLineLen);
+  }
+}
 #endif  // ifdef ENABLE_PYTHON
 
 // Global application state
@@ -544,6 +564,7 @@ void MainWindow::customSetup(void)
   auto setup_err = evaluatePython("setup()");
   if (!setup_err.empty()) std::cerr << setup_err << std::flush;
   addmenuitem_this = nullptr;
+  snapshotPythonInventory();
   finishPython();
 }
 

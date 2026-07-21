@@ -210,6 +210,7 @@ PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs, int mode);
 PyObject *python_qapp_ptr(PyObject *, PyObject *);
 PyObject *python_mainwindow_ptr(PyObject *, PyObject *);
+PyObject *python_editor_insert_text(PyObject *, PyObject *);
 #endif
 
 // Projection and rendering

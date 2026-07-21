@@ -228,6 +228,17 @@ jobs:
           EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
           cd "$EXTRACTED_DIR"
 
+          # Bekannte Qt-6.11.1-Inkompatibilitaet: sip nimmt freie
+          # Vergleichsoperatoren zwischen QLocale::Language und QLocale an,
+          # die in dieser Qt-Patch-Version nicht mehr eindeutig aufloesbar sind.
+          # Betrifft nicht die normalen QLocale==QLocale Vergleiche.
+          sed -i \
+            -e '/bool operator==(const QLocale &lhs, const QLocale::Language &rhs);/d' \
+            -e '/bool operator==(const QLocale::Language &lhs, const QLocale &rhs);/d' \
+            -e '/bool operator!=(const QLocale &lhs, const QLocale::Language &rhs);/d' \
+            -e '/bool operator!=(const QLocale::Language &lhs, const QLocale &rhs);/d' \
+            sip/QtCore/qlocale.sip
+
           sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
           mingw32-make -j"$(nproc)"

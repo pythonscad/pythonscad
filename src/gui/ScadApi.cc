@@ -12,6 +12,7 @@
 #include "core/Builtins.h"
 #include "core/EvaluationSession.h"
 #include "core/parsersettings.h"
+#include "python/python_public.h"
 #include "gui/ScintillaEditor.h"
 
 namespace {
@@ -149,11 +150,24 @@ QStringList ScadApi::callTips(const QStringList& context, int /*commas*/,
                               QsciScintilla::CallTipsStyle /*style*/, QList<int>& /*shifts*/)
 {
   QStringList callTips;
+  QString funcName = context.at(context.size() - 2);
+  editor->lastCallTipFunction = funcName;
+  editor->lastCallTipPosition = editor->qsci->SendScintilla(QsciScintillaBase::SCI_GETCURRENTPOS);
+
+  std::string pythonCalltip;
+  if (python_get_static_calltip(funcName.toStdString(), pythonCalltip)) {
+    callTips << QString::fromStdString(pythonCalltip).leftJustified(48, ' ') + "\u25B6";
+    return callTips;  // Python-Version gefunden -> Builtin-Liste wird gar nicht erst geprueft
+  }
+
   for (const auto& func : funcs) {
-    if (func.get_name() == context.at(context.size() - 2)) {
+    if (func.get_name() == funcName) {
       callTips = func.get_params();
       break;
     }
+  }
+  if (!callTips.isEmpty()) {
+    callTips[0] += "  \u25B6";  // rechtes Dreieck als visueller Hinweis
   }
   return callTips;
 }

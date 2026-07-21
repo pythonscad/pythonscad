@@ -139,6 +139,7 @@ public slots:
   void applySettings();
   void onAutocompleteChanged(bool state);
   void onCharacterThresholdChanged(int val);
+  void onCallTipClicked(int position);
 
 private slots:
   void onTextChanged();
@@ -152,6 +153,8 @@ signals:
 
 public:
   void public_applySettings();
+  QString lastCallTipFunction;
+  int lastCallTipPosition;
 
 private:
   QVBoxLayout *scintillaLayout;
@@ -163,6 +166,7 @@ private:
   static const int hyperlinkIndicatorOffset = 100;
   static const int errMarkerNumber = 2;
   static const int bmMarkerNumber = 3;
+  static const int widgetTriggerMarkerNumber = 4;    // NEU
   static const int selectionMarkerLevelNumber = 20;  // 20 - 25, there is at max 5 level of depth
   static const int selectionIndicatorIsActiveNumber =
     11;  // Represents the active selected area text 11 - 12
