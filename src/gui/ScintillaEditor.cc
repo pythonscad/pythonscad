@@ -1607,6 +1607,9 @@ void ScintillaEditor::onLanguageChanged(int lang)
 #ifdef ENABLE_PYTHON
   if (language == LANG_PYTHON) {
     this->qsci->setLexer(this->pythonLexer);
+    if (!this->pythonApi) {
+      this->pythonApi = new ScadApi(this, this->pythonLexer);
+    }
   } else {
     this->qsci->setLexer(this->lexer);
   }

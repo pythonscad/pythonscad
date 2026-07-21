@@ -184,6 +184,7 @@ private:
 #endif
 #ifdef ENABLE_PYTHON
   QsciLexerPython *pythonLexer = new QsciLexerPython();
+  ScadApi *pythonApi = nullptr;
 #endif
   QFont currentFont;
   ScadApi *api;

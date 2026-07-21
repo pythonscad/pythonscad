@@ -711,6 +711,9 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"add_menuitem", (PyCFunction)python_add_menuitem, METH_VARARGS | METH_KEYWORDS,
    "Add Menuitem to the the openscad window."},
   {"nimport", (PyCFunction)python_nimport, METH_VARARGS | METH_KEYWORDS, "Import Networked Object."},
+  {"qapp_ptr", (PyCFunction)python_qapp_ptr, METH_VARARGS | METH_KEYWORDS, "Gets Qapp Pointer"},
+  {"mainwindow_ptr", (PyCFunction)python_mainwindow_ptr, METH_VARARGS | METH_KEYWORDS,
+   "Gets Mainwindow Pointer"},
 #endif
   {"model", (PyCFunction)python_model, METH_VARARGS | METH_KEYWORDS, "Yield Model"},
   {"modelpath", (PyCFunction)python_modelpath, METH_VARARGS | METH_KEYWORDS,

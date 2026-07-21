@@ -31,7 +31,7 @@ DEBUG=
 
 debug()
 {
-  if [ $DEBUG ]; then echo check-dependencies.sh: $* ; fi
+  if [ $DEBUG ]; then echo check-dependencies.sh: "$*" ; fi
 }
 
 
@@ -42,7 +42,7 @@ doubleconversion_sysver()
   if [ ! -e $doubleconvpath ]; then return; fi
   # No version info in headers, not sure what to check here
   # Just assume version 2.0.1 (version available in trusty) if file exists?
-  doubleconversion_sysver_result="2.0.1"
+  #doubleconversion_sysver_result="2.0.1"
 }
 
 eigen_sysver()
@@ -51,10 +51,10 @@ eigen_sysver()
   eigpath=$1/include/eigen3/Eigen/src/Core/util/Macros.h
   debug $eigpath
   if [ ! -e $eigpath ]; then return; fi
-  eswrld=`grep "define  *EIGEN_WORLD_VERSION  *[0-9]*" $eigpath | awk '{print $3}'`
-  esmaj=`grep "define  *EIGEN_MAJOR_VERSION  *[0-9]*" $eigpath | awk '{print $3}'`
-  esmin=`grep "define  *EIGEN_MINOR_VERSION  *[0-9]*" $eigpath | awk '{print $3}'`
-  eigen_sysver_result="$eswrld.$esmaj.$esmin"
+  #eswrld=`grep "define  *EIGEN_WORLD_VERSION  *[0-9]*" $eigpath | awk '{print $3}'`
+  #esmaj=`grep "define  *EIGEN_MAJOR_VERSION  *[0-9]*" $eigpath | awk '{print $3}'`
+  #esmin=`grep "define  *EIGEN_MINOR_VERSION  *[0-9]*" $eigpath | awk '{print $3}'`
+  #eigen_sysver_result="$eswrld.$esmaj.$esmin"
 }
 
 opencsg_sysver()
@@ -63,23 +63,23 @@ opencsg_sysver()
   if [ ! -e $1/include/opencsg.h ]; then return; fi
   ocsgver=`grep -a "define  *OPENCSG_VERSION_STRING *[0-9x]*" $1/include/opencsg.h`
   ocsgver=`echo $ocsgver | awk '{print $4}' | sed s/'"'//g | sed s/[^0-9.]//g`
-  opencsg_sysver_result=$ocsgver
+  #opencsg_sysver_result=$ocsgver
 }
 
 catch2_sysver()
 {
   catch2path=$1/include/catch2/catch_version_macros.hpp
   if [ ! -e $catch2path ]; then return; fi
-  catch2maj=`grep "define  *CATCH_VERSION_MAJOR  *[0-9]*" $catch2path | awk '{print $3}'`
-  catch2min=`grep "define  *CATCH_VERSION_MINOR  *[0-9]*" $catch2path | awk '{print $3}'`
-  catch2_sysver_result="$catch2maj.$catch2min"
+  #catch2maj=`grep "define  *CATCH_VERSION_MAJOR  *[0-9]*" $catch2path | awk '{print $3}'`
+  #catch2min=`grep "define  *CATCH_VERSION_MINOR  *[0-9]*" $catch2path | awk '{print $3}'`
+  #catch2_sysver_result="$catch2maj.$catch2min"
 }
 
 cgal_sysver()
 {
   cgalpath=$1/include/CGAL/version.h
   if [ ! -e $cgalpath ]; then return; fi
-  cgal_sysver_result=`grep "define  *CGAL_VERSION  *[0-9.]*" $cgalpath | awk '{print $3}'`
+  #cgal_sysver_result=`grep "define  *CGAL_VERSION  *[0-9.]*" $cgalpath | awk '{print $3}'`
 }
 
 libzip_sysver()
@@ -87,7 +87,7 @@ libzip_sysver()
   libzippath="$1/include/zipconf.h"
   if [ ! -e "$libzippath" ]; then libzippath="$1/include/`gcc -dumpmachine 2>/dev/null`/zipconf.h"; fi
   if [ ! -e "$libzippath" ]; then return; fi
-  libzip_sysver_result="`grep 'define  *LIBZIP_VERSION *"[0-9.]*"' "$libzippath" | awk '{print $3}' | tr -d '"' `"
+  #libzip_sysver_result="`grep 'define  *LIBZIP_VERSION *"[0-9.]*"' "$libzippath" | awk '{print $3}' | tr -d '"' `"
 }
 
 glib2_sysver()
@@ -117,40 +117,38 @@ glib2_sysver()
   if [ ! -e $glib2path ]; then
     return
   fi
-  glib2major=`grep "define  *GLIB_MAJOR_VERSION  *[0-9.]*" $glib2path | awk '{print $3}'`
-  glib2minor=`grep "define  *GLIB_MINOR_VERSION  *[0-9.]*" $glib2path | awk '{print $3}'`
-  glib2micro=`grep "define  *GLIB_MICRO_VERSION  *[0-9.]*" $glib2path | awk '{print $3}'`
-  glib2_sysver_result="${glib2major}.${glib2minor}.${glib2micro}"
+#  glib2major=`grep "define  *GLIB_MAJOR_VERSION  *[0-9.]*" $glib2path | awk '{print $3}'`
+#  glib2minor=`grep "define  *GLIB_MINOR_VERSION  *[0-9.]*" $glib2path | awk '{print $3}'`
+#  glib2micro=`grep "define  *GLIB_MICRO_VERSION  *[0-9.]*" $glib2path | awk '{print $3}'`
 }
 
 fontconfig_sysver()
 {
   fcpath=$1/include/fontconfig/fontconfig.h
   if [ ! -e $fcpath ]; then return; fi
-  fcmajor=`grep "define *FC_MAJOR.*[0-9.]*" $fcpath | awk '{print $3}'`
-  fcminor=`grep "define *FC_MINOR.*[0-9.]*" $fcpath | awk '{print $3}'`
-  fcrevision=`grep "define *FC_REVISION.*[0-9.]*" $fcpath | awk '{print $3}'`
-  fontconfig_sysver_result="${fcmajor}.${fcminor}.${fcrevision}"
+#  fcmajor=`grep "define *FC_MAJOR.*[0-9.]*" $fcpath | awk '{print $3}'`
+#  fcminor=`grep "define *FC_MINOR.*[0-9.]*" $fcpath | awk '{print $3}'`
+#  fcrevision=`grep "define *FC_REVISION.*[0-9.]*" $fcpath | awk '{print $3}'`
 }
 
 freetype2_sysver()
 {
   freetype2path=$1/include/freetype2/freetype/freetype.h
   if [ ! -e $freetype2path ]; then return; fi
-  ftmajor=`grep "define  *FREETYPE_MAJOR  *[0-9.]*" $freetype2path | awk '{print $3}'`
-  ftminor=`grep "define  *FREETYPE_MINOR  *[0-9.]*" $freetype2path | awk '{print $3}'`
-  ftpatch=`grep "define  *FREETYPE_PATCH  *[0-9.]*" $freetype2path | awk '{print $3}'`
-  freetype2_sysver_result="${ftmajor}.${ftminor}.${ftpatch}"
+#  ftmajor=`grep "define  *FREETYPE_MAJOR  *[0-9.]*" $freetype2path | awk '{print $3}'`
+#  ftminor=`grep "define  *FREETYPE_MINOR  *[0-9.]*" $freetype2path | awk '{print $3}'`
+#  ftpatch=`grep "define  *FREETYPE_PATCH  *[0-9.]*" $freetype2path | awk '{print $3}'`
+#  freetype2_sysver_result="${ftmajor}.${ftminor}.${ftpatch}"
 }
 
 harfbuzz_sysver()
 {
   harfbuzzpath=$1/include/harfbuzz/hb-version.h
   if [ ! -e $harfbuzzpath ]; then return; fi
-  hbmajor=`grep "define  *HB_VERSION_MAJOR  *[0-9.]*" $harfbuzzpath | awk '{print $3}'`
-  hbminor=`grep "define  *HB_VERSION_MINOR  *[0-9.]*" $harfbuzzpath | awk '{print $3}'`
-  hbmicro=`grep "define  *HB_VERSION_MICRO  *[0-9.]*" $harfbuzzpath | awk '{print $3}'`
-  harfbuzz_sysver_result="${hbmajor}.${hbminor}.${hbmicro}"
+#  hbmajor=`grep "define  *HB_VERSION_MAJOR  *[0-9.]*" $harfbuzzpath | awk '{print $3}'`
+#  hbminor=`grep "define  *HB_VERSION_MINOR  *[0-9.]*" $harfbuzzpath | awk '{print $3}'`
+#  hbmicro=`grep "define  *HB_VERSION_MICRO  *[0-9.]*" $harfbuzzpath | awk '{print $3}'`
+#  harfbuzz_sysver_result="${hbmajor}.${hbminor}.${hbmicro}"
 }
 
 boost_sysver()
@@ -159,7 +157,7 @@ boost_sysver()
   if [ ! -e $boostpath ]; then return; fi
   bsver=`grep 'define  *BOOST_LIB_VERSION *[0-9_"]*' $boostpath | awk '{print $3}'`
   bsver=`echo $bsver | sed s/'"'//g | sed s/'_'/'.'/g`
-  boost_sysver_result=$bsver
+  #boost_sysver_result=$bsver
 }
 
 mpfr_sysver()
@@ -168,7 +166,7 @@ mpfr_sysver()
   if [ ! -e $mpfrpath ]; then return; fi
   mpfrsver=`grep 'define  *MPFR_VERSION_STRING  *' $mpfrpath | awk '{print $3}'`
   mpfrsver=`echo $mpfrsver | sed s/"-.*"// | sed s/'"'//g`
-  mpfr_sysver_result=$mpfrsver
+#  mpfr_sysver_result=$mpfrsver
 }
 
 gmp_sysver()
@@ -180,18 +178,19 @@ gmp_sysver()
   fi
   for gmpfile in $gmppaths; do
     if [ "`grep __GNU_MP_VERSION $gmpfile`" ]; then
-      gmpmaj=`grep "define  *__GNU_MP_VERSION  *[0-9]*" $gmpfile | awk '{print $3}'`
-      gmpmin=`grep "define  *__GNU_MP_VERSION_MINOR  *[0-9]*" $gmpfile | awk '{print $3}'`
-      gmppat=`grep "define  *__GNU_MP_VERSION_PATCHLEVEL  *[0-9]*" $gmpfile | awk '{print $3}'`
+      echo dummy
+#      gmpmaj=`grep "define  *__GNU_MP_VERSION  *[0-9]*" $gmpfile | awk '{print $3}'`
+#      gmpmin=`grep "define  *__GNU_MP_VERSION_MINOR  *[0-9]*" $gmpfile | awk '{print $3}'`
+#      gmppat=`grep "define  *__GNU_MP_VERSION_PATCHLEVEL  *[0-9]*" $gmpfile | awk '{print $3}'`
     fi
   done
-  gmp_sysver_result="$gmpmaj.$gmpmin.$gmppat"
+#  gmp_sysver_result="$gmpmaj.$gmpmin.$gmppat"
 }
 
 qt_sysver()
 {
   if [ -d '/usr/lib/qtchooser' ]; then
-    . <(/usr/lib/qtchooser/qtchooser -print-env)
+    /usr/lib/qtchooser/qtchooser -print-env
     PATH=$PATH:$QTTOOLDIR
   fi
   if [ "`command -v qtchooser`" ]; then
@@ -230,7 +229,7 @@ qt_sysver()
 
     qtver=`echo $qtver | awk '{print $3}' | sed s/'"'//g`
   fi
-  qt_sysver_result=$qtver
+#  qt_sysver_result=$qtver
 }
 
 qscintilla2_sysver()
@@ -253,9 +252,9 @@ qscintilla2_sysver()
     return
   fi
 
-  qsciver=`grep define.*QSCINTILLA_VERSION_STR "$qscipath" | awk '{print $3}'`
-  qsciver=`echo $qsciver | sed s/'"'//g`
-  qscintilla2_sysver_result="$qsciver"
+#  qsciver=`grep define.*QSCINTILLA_VERSION_STR "$qscipath" | awk '{print $3}'`
+#  qsciver=`echo $qsciver | sed s/'"'//g`
+#  qscintilla2_sysver_result="$qsciver"
 }
 
 glew_sysver()
@@ -282,8 +281,8 @@ glew_sysver()
 imagemagick_sysver()
 {
   if [ ! -x $1/bin/convert ]; then return; fi
-  imver=`$1/bin/convert --version | grep -i version`
-  imagemagick_sysver_result=`echo $imver | sed s/"[^0-9. ]"/" "/g | awk '{print $1}'`
+#  imver=`$1/bin/convert --version | grep -i version`
+#  imagemagick_sysver_result=`echo $imver | sed s/"[^0-9. ]"/" "/g | awk '{print $1}'`
 }
 
 flex_sysver()
@@ -291,7 +290,7 @@ flex_sysver()
   flexbin=$1/bin/flex
   if [ -x $1/bin/gflex ]; then flexbin=$1/bin/gflex; fi # openbsd
   if [ ! -x $flexbin ]; then return ; fi
-  flex_sysver_result=`$flexbin --version | sed s/"[^0-9.]"/" "/g`
+#  flex_sysver_result=`$flexbin --version | sed s/"[^0-9.]"/" "/g`
 }
 
 bison_sysver()
@@ -304,7 +303,7 @@ bison_sysver()
   debug bison_sver2: $bison_sver
   bison_sver=`echo $bison_sver | awk -F "-" ' { print $1 } '`
   debug bison_sver3: $bison_sver
-  bison_sysver_result=$bison_sver
+#  bison_sysver_result=$bison_sver
 }
 
 gcc_sysver()
@@ -324,25 +323,25 @@ gcc_sysver()
   debug g++ output2: $gccver
   gccver=`echo $gccver | awk ' { print $1 } '`
   debug g++ output3: $gccver
-  gcc_sysver_result=$gccver
+#  gcc_sysver_result=$gccver
 }
 
 git_sysver()
 {
   if [ ! -x $1/bin/git ]; then return ; fi
-  git_sysver_result=`$1/bin/git --version | grep git | sed s/"[^0-9.]"/" "/g`
+#  git_sysver_result=`$1/bin/git --version | grep git | sed s/"[^0-9.]"/" "/g`
 }
 
 curl_sysver()
 {
   if [ ! -x $1/bin/curl ]; then return; fi
-  curl_sysver_result=`$1/bin/curl --version | grep curl | sed s/"[^0-9. ]"/" "/g | awk '{print $1}'`
+#  curl_sysver_result=`$1/bin/curl --version | grep curl | sed s/"[^0-9. ]"/" "/g | awk '{print $1}'`
 }
 
 cmake_sysver()
 {
   if [ ! -x $1/bin/cmake ]; then return ; fi
-  cmake_sysver_result="$($1/bin/cmake --version | grep -m 1 cmake | sed s/"[^0-9.]"/" "/g | awk '{ print $1 }')"
+#  cmake_sysver_result="$($1/bin/cmake --version | grep -m 1 cmake | sed s/"[^0-9.]"/" "/g | awk '{ print $1 }')"
 }
 
 make_sysver()
@@ -359,9 +358,9 @@ make_sysver()
   fi
 
   make_sysver_tmp=`$binmake --version 2>&1 | grep -i 'gnu make' | sed s/"[^0-9.]"/" "/g`
-  if [ "`echo $make_sysver_tmp | grep [0-9]`" ]; then
-    make_sysver_result=$make_sysver_tmp
-  fi
+#  if [ "`echo $make_sysver_tmp | grep '[0-9]'`" ]; then
+#    make_sysver_result=$make_sysver_tmp
+#  fi
 }
 
 bash_sysver()
@@ -370,18 +369,18 @@ bash_sysver()
   if [ -x /usr/bin/bash ]; then binbash=/usr/bin/bash ;fi
   if [ -x $1/bin/bash ]; then binbash=$1/bin/bash ;fi
   if [ ! -x $binbash ]; then return; fi
-  bash_sysver_result=`$binbash --version | grep bash | sed s/"[^0-9. ]"/" "/g|awk '{print $1}'`
+#  bash_sysver_result=`$binbash --version | grep bash | sed s/"[^0-9. ]"/" "/g|awk '{print $1}'`
 }
 
 python_sysver()
 {
   if [ ! -x $1/bin/python ]; then return; fi
-  python_sysver_result=`$1/bin/python --version 2>&1 | awk '{print $2}'`
+#  python_sysver_result=`$1/bin/python --version 2>&1 | awk '{print $2}'`
 }
 
 pkg_config_search()
 {
-  debug pkg_config_search $*
+  debug pkg_config_search "$*"
   pkg_config_search_result=
   pcstmp=
   if [ ! $1 ]; then return; fi
@@ -397,15 +396,15 @@ pkg_config_search()
 
 get_minversion_from_readme()
 {
-  debug get_minversion_from_readme $*
+  debug get_minversion_from_readme "$*"
 
   # Extract dependency name
-  if [ ! $1 ]; then return; fi
+  if [ ! "$1" ]; then return; fi
   depname=$1
 
   debug $depname
   local grv_tmp=
-  for READFILE in README.md ../README.md "`dirname "$0"`/../README.md"
+  for READFILE in README.md ../README.md "$(dirname "$0")/../README.md"
   do
     if [ ! -e "$READFILE" ]
     then
@@ -413,16 +412,25 @@ get_minversion_from_readme()
       continue
     fi
     debug "get_minversion_from_readme $READFILE found"
-    grep -qi ".$depname.*([0-9]" $READFILE || continue
-    grv_tmp="`grep -i ".$depname.*([0-9]" $READFILE | sed s/"*"//`"
-    debug $grv_tmp
-    grv_tmp="`echo $grv_tmp | awk -F"(" '{print $2}'`"
-    debug $grv_tmp
-    grv_tmp="`echo $grv_tmp | awk -F"-" '{print $1}'`"
-    debug $grv_tmp
-    grv_tmp="`echo $grv_tmp | sed s/"x"/"0"/g`"
-    debug $grv_tmp
-    grv_tmp="`echo $grv_tmp | sed s/"[^0-9.]"//g`"
+    grv_tmp="$(awk -v depname="$depname" '
+      /^[[:space:]]*\*/ {
+        line = $0
+        dep = line
+        sub(/^[[:space:]]*\*+[[:space:]]*/, "", dep)
+        sub(/^\[/, "", dep)
+        sub(/\].*/, "", dep)
+        sub(/[[:space:]]*\(.*/, "", dep)
+
+        if (tolower(dep) == tolower(depname) && match(line, /\([[:space:]]*[0-9][^)]*\)/)) {
+          version = substr(line, RSTART + 1, RLENGTH - 2)
+          sub(/[[:space:]]*-.*/, "", version)
+          gsub(/[xX]/, "0", version)
+          gsub(/[^0-9.]/, "", version)
+          print version
+          exit
+        }
+      }
+    ' "$READFILE")"
     debug $grv_tmp
     if [ "z$grv_tmp" = "z" ]
     then
@@ -440,19 +448,63 @@ get_minversion_from_readme()
   fi
 }
 
+get_minversion_from_cmake()
+{
+  debug get_minversion_from_cmake
+
+  local gmvc_tmp=
+  for CMAKEFILE in CMakeLists.txt ../CMakeLists.txt "$(dirname "$0")/../CMakeLists.txt"
+  do
+    if [ ! -e "$CMAKEFILE" ]
+    then
+      debug "get_minversion_from_cmake $CMAKEFILE not found"
+      continue
+    fi
+    debug "get_minversion_from_cmake $CMAKEFILE found"
+    gmvc_tmp="$(awk '
+      /^[[:space:]]*cmake_minimum_required[[:space:]]*\(/ {
+        line = tolower($0)
+        if (match(line, /version[[:space:]]+[0-9][0-9.]*/)) {
+          version = substr(line, RSTART, RLENGTH)
+          sub(/^version[[:space:]]+/, "", version)
+          print version
+          exit
+        }
+      }
+    ' "$CMAKEFILE")"
+    debug "$gmvc_tmp"
+    if [ "z$gmvc_tmp" = "z" ]
+    then
+      debug "get_minversion_from_cmake no result from $CMAKEFILE"
+      continue
+    fi
+    get_minversion_from_cmake_result=$gmvc_tmp
+    return 0
+  done
+
+  debug "get_minversion_from_cmake no result found anywhere"
+  get_minversion_from_cmake_result=""
+  return 0
+}
+
 find_min_version()
 {
   find_min_version_result=
   fmvtmp=
-  if [ ! $1 ] ; then return; fi
+  if [ ! "$1" ] ; then return; fi
   fmvdep=$1
   get_minversion_from_readme $fmvdep
   fmvtmp=$get_minversion_from_readme_result
 
+  if [ "$fmvdep" = "cmake" ]; then
+    get_minversion_from_cmake
+    fmvtmp=$get_minversion_from_cmake_result
+  fi
+
   # items not included in README.md
   if [ $fmvdep = "git" ]; then fmvtmp=1.5 ; fi
   if [ $fmvdep = "curl" ]; then fmvtmp=6 ; fi
-  if [ $fmvdep = "make" ]; then fmvtmp=3 ; fi
+  if [ "$fmvdep" = "make" ]; then fmvtmp=3 ; fi
   if [ $fmvdep = "python" ]; then fmvtmp=2 ; fi
 
   find_min_version_result=$fmvtmp
@@ -470,7 +522,7 @@ vers_to_int()
   if [ ! $1 ] ; then return ; fi
   vtoi_ver=$1
   vtoi_test=`echo $vtoi_ver | sed s/"[^0-9.]"//g`
-  debug vers_to_int $* :: vtoi_ver: $vtoi_ver vtoi_test: $vtoi_test
+#  debug vers_to_int $* :: vtoi_ver: $vtoi_ver vtoi_test: $vtoi_test
   if [ ! "$vtoi_test" = "$vtoi_ver" ]; then
     debug failure in version-to-integer conversion.
     debug '"'$vtoi_ver'"' has letters, etc in it. setting to 0
@@ -508,7 +560,7 @@ version_less_than_or_equal()
 
 compare_version()
 {
-  debug compare_version $*
+  debug compare_version "$*"
   compare_version_result="NotOK"
   if [ ! "$1" ] ; then return; fi
   if [ ! "$2" ] ; then return; fi
@@ -533,25 +585,25 @@ pretty_print()
   # 3 = version found on system
   # 4 = whether it is OK or not
 
-  debug pretty_print $*
+  debug pretty_print "$*"
 
-  brightred="\033[40;31m"
-  red="\033[40;31m"
-  brown="\033[40;33m"
-  yellow="\033[40;33m"
-  white="\033[40;37m"
+#  brightred="\033[40;31m"
+#  red="\033[40;31m"
+#  brown="\033[40;33m"
+#  yellow="\033[40;33m"
+#  white="\033[40;37m"
   purple="\033[40;35m"
   green="\033[40;32m"
   cyan="\033[40;36m"
   gray="\033[40;37m"
-  nocolor="\033[0m"
+#  nocolor="\033[0m"
 
-  ppstr="%s%-18s"
-  pp_format='{printf("'$ppstr$ppstr$ppstr$ppstr$nocolor'\n",$1,$2,$3,$4,$5,$6,$7,$8)}'
+#  ppstr="%s%-18s"
+  pp_format="format" # '{printf("$ppstr$ppstr$ppstr$ppstr$nocolor\n",$1,$2,$3,$4,$5,$6,$7,$8)}'
   pp_title="$gray depname $gray minimum $gray found $gray OKness"
   if [ "$1" ]; then pp_depname=$1; fi
   if [ $pp_depname = "title" ]; then
-    echo -e $pp_title | awk $pp_format
+    echo -e "$pp_title" | awk "$pp_format"
     return ;
   fi
 
@@ -575,7 +627,7 @@ pretty_print()
 
 find_installed_version()
 {
-  debug find_installed_version $*
+  debug find_installed_version "$*"
   find_installed_version_result=unknown
   fsv_tmp=
   depname=$1
@@ -589,7 +641,7 @@ find_installed_version()
         depnameclean=`echo $depname | sed s/-//g`
         debug $depnameclean"_sysver" "${syspath}"
         eval $depnameclean"_sysver" "${syspath}"
-        fsv_tmp=`eval echo "$"$depnameclean"_sysver_result"`
+        fsv_tmp=`eval echo $depnameclean"_sysver_result"`
         if [ "${fsv_tmp}" ]; then break; fi
       fi
     done
@@ -618,14 +670,14 @@ check_old_local()
     header_list="opencsg.h CGAL boost GL/glew.h gmp.h mpfr.h eigen3"
     for i in $header_list; do
       if [ -e /usr/local/include/$i ]; then
-        echo "Warning: you have a copy of "$i" under /usr/local/include"
+        echo "Warning: you have a copy of $i under /usr/local/include"
         warnon=1
       fi
     done
     liblist="libboost_system libboost_system-mt libopencsg libCGAL libglew"
     for i in $liblist; do
       if [ -e /usr/local/lib/$i.so ]; then
-        echo "Warning: you have a copy of "$i" under /usr/local/lib"
+        echo "Warning: you have a copy of $i under /usr/local/lib"
         warnon=1
       fi
     done
@@ -647,7 +699,7 @@ check_misc()
 
   if [ "`uname -a|grep -i darwin`" ]; then
 	sparkle=
-	libs="~/Library /Library"
+	libs="$HOME/Library /Library"
     for libhome in $libs; do
 		echo "$libhome/Frameworks/Sparkle.framework..."
 		if [ -d $libhome/Frameworks/Sparkle.framework ]; then
@@ -666,7 +718,7 @@ check_misc()
 
 checkargs()
 {
-  for i in $*; do
+  for i in "$@" ; do
     if [ $i = "debug" ]; then DEBUG=1 ; fi
   done
 }
@@ -679,7 +731,7 @@ main()
   #deps="cgal"
   pretty_print title
   for depname in $deps; do
-    debug "processing $dep"
+#    debug "processing $dep"
     find_installed_version $depname
     dep_sysver=$find_installed_version_result
     find_min_version $depname
@@ -692,6 +744,6 @@ main()
   check_misc
 }
 
-checkargs $*
+checkargs "$*"
 main
 exit 0

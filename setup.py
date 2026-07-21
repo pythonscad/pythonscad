@@ -1,11 +1,11 @@
-from setuptools import setup, Extension
-from setuptools.command.build_ext import build_ext
-import subprocess
 import os
 import re
 import shutil
+import subprocess
 import sys
 
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 
 IS_WINDOWS = sys.platform == "win32"
 IS_DARWIN = sys.platform == "darwin"
@@ -38,6 +38,9 @@ def apply_wheel_build_env():
 
 
 def get_version():
+    override = os.environ.get("PYTHONSCAD_VERSION_OVERRIDE", "").strip()
+    if override:
+        return override
     here = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(here, "VERSION.txt")) as f:
         return f.read().strip()
@@ -45,14 +48,17 @@ def get_version():
 
 def get_version_parts():
     version = get_version()
-    match = re.match(r"^(([0-9]+)\.([0-9]+)(?:\.([0-9]+))?)(?:-([^+]+))?(?:\+(.*))?$", version)
+    # Build metadata and pre-release/development suffixes are allowed for wheel
+    # versions, but OPENSCAD_* macros still need numeric major/minor/patch.
+    match = re.match(r"^(([0-9]+)\.([0-9]+)(?:\.([0-9]+))?)(?:[.-].*)?(?:\+.*)?$", version)
     if not match:
         raise RuntimeError(f"Version string '{version}' doesn't match expected semantic version format")
 
     major = str(int(match.group(2)))
     minor = str(int(match.group(3)))
     patch = str(int(match.group(4) or "0"))
-    return version, match.group(1), major, minor, patch
+    shortversion = match.group(1)
+    return version, shortversion, major, minor, patch
 
 
 def pkg_config_cmd():
