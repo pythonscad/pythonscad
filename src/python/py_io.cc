@@ -1067,9 +1067,8 @@ PyObject *python_mainwindow_ptr(PyObject *, PyObject *)
 
 PyObject *python_editor_insert_text(PyObject *, PyObject *args)
 {
-  int pos;
   const char *text;
-  if (!PyArg_ParseTuple(args, "is", &pos, &text)) return nullptr;
+  if (!PyArg_ParseTuple(args, "s", &text)) return nullptr;
   editorInsertText(text);
   Py_RETURN_NONE;
 }

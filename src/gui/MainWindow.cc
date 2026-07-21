@@ -259,7 +259,8 @@ void editorInsertText(const char *text)
   if (si == nullptr) return;
   int line, index;
   si->qsci->getCursorPosition(&line, &index);
-  si->qsci->insertAt(QString::fromUtf8(text), line, index);
+  QString qtext = QString::fromUtf8(text);
+  si->qsci->insertAt(qtext, line, index);
 
   // Cursor ans Ende des eingefuegten Textes setzen
   int newlines = qtext.count('\n');
