@@ -69,9 +69,9 @@ jobs:
             distance=$(git rev-list --count HEAD)
           fi
           sha=$(git rev-parse --short=10 HEAD)
-          dev_version="${base_version}.dev${distance}+g${sha}"
+          dev_version="${base_version}.dev${distance}"
           echo "PYTHONSCAD_VERSION_OVERRIDE=${dev_version}" >> "$GITHUB_ENV"
-          echo "Using dynamic package version: ${dev_version}"
+          echo "Using dynamic package version: ${dev_version} (sha ${sha})"
 
       - uses: actions/setup-python@v7
         with:
@@ -201,9 +201,9 @@ jobs:
             distance=$(git rev-list --count HEAD)
           fi
           sha=$(git rev-parse --short=10 HEAD)
-          dev_version="${base_version}.dev${distance}+g${sha}"
+          dev_version="${base_version}.dev${distance}"
           echo "PYTHONSCAD_VERSION_OVERRIDE=${dev_version}" >> "$GITHUB_ENV"
-          echo "Using dynamic package version: ${dev_version}"
+          echo "Using dynamic package version: ${dev_version} (sha ${sha})"
 
       - uses: actions/setup-python@v7
         with:
