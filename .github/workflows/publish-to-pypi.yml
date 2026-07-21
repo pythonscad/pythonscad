@@ -1,14 +1,18 @@
-# Builds binary wheels and a source distribution. Release-triggered runs publish
-# all artifacts to PyPI; manually dispatched runs only validate the build.
+# Builds binary wheels and a source distribution.
+# - Release-triggered runs publish to TestPyPI first, then PyPI.
+# - Manually dispatched runs on the release-please branch publish to TestPyPI
+#   using a unique PEP 440 dev version for iterative pre-release testing.
 #
 # Prerequisites (one-time setup):
-#   1. Create the "pythonscad" project on PyPI (https://pypi.org)
-#   2. Configure "trusted publishing" for this repository under:
-#      PyPI project settings -> Publishing -> Add a new publisher
+#   1. Create the "pythonscad" projects on PyPI and TestPyPI:
+#      - https://pypi.org/project/pythonscad/
+#      - https://test.pypi.org/project/pythonscad/
+#   2. Configure trusted publishing for this repository in both indexes:
+#      PyPI/TestPyPI project settings -> Publishing -> Add a new publisher
 #      - Owner: pythonscad
 #      - Repository: pythonscad
 #      - Workflow name: publish-to-pypi.yml
-#      - Environment name: pypi
+#      - Environment names: pypi (PyPI), testpypi (TestPyPI)
 name: Publish to PyPI
 
 on:
@@ -46,6 +50,28 @@ jobs:
         run: |
           git fetch --unshallow --tags || git fetch --tags
           git describe --tags --always --dirty
+
+      - name: Set dynamic version for manual TestPyPI runs
+        if: >-
+          github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/release-please--branches--master--components--pythonscad'
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_version="$(grep -Eo '^[0-9]+\.[0-9]+(\.[0-9]+)?' VERSION.txt | head -n1 || true)"
+          if [[ -z "${base_version}" ]]; then
+            echo "Unable to derive base version from VERSION.txt" >&2
+            exit 1
+          fi
+          if tag=$(git describe --tags --abbrev=0 2>/dev/null); then
+            distance=$(git rev-list --count "${tag}..HEAD")
+          else
+            distance=$(git rev-list --count HEAD)
+          fi
+          sha=$(git rev-parse --short=10 HEAD)
+          dev_version="${base_version}.dev${distance}+g${sha}"
+          echo "PYTHONSCAD_VERSION_OVERRIDE=${dev_version}" >> "$GITHUB_ENV"
+          echo "Using dynamic package version: ${dev_version}"
 
       - uses: actions/setup-python@v7
         with:
@@ -157,6 +183,28 @@ jobs:
           git fetch --unshallow --tags || git fetch --tags
           git describe --tags --always --dirty
 
+      - name: Set dynamic version for manual TestPyPI runs
+        if: >-
+          github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/release-please--branches--master--components--pythonscad'
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_version="$(grep -Eo '^[0-9]+\.[0-9]+(\.[0-9]+)?' VERSION.txt | head -n1 || true)"
+          if [[ -z "${base_version}" ]]; then
+            echo "Unable to derive base version from VERSION.txt" >&2
+            exit 1
+          fi
+          if tag=$(git describe --tags --abbrev=0 2>/dev/null); then
+            distance=$(git rev-list --count "${tag}..HEAD")
+          else
+            distance=$(git rev-list --count HEAD)
+          fi
+          sha=$(git rev-parse --short=10 HEAD)
+          dev_version="${base_version}.dev${distance}+g${sha}"
+          echo "PYTHONSCAD_VERSION_OVERRIDE=${dev_version}" >> "$GITHUB_ENV"
+          echo "Using dynamic package version: ${dev_version}"
+
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -199,6 +247,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
   publish-to-pypi:
     name: Publish to PyPI
     needs: [build-wheels, build-sdist, publish-to-test-pypi]
