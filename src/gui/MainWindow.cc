@@ -540,6 +540,7 @@ void MainWindow::customSetup(void)
   auto init_err = evaluatePython(content);
   if (!init_err.empty()) std::cerr << init_err << std::flush;
   addmenuitem_this = this;
+  mainwindow_global = this;
   auto setup_err = evaluatePython("setup()");
   if (!setup_err.empty()) std::cerr << setup_err << std::flush;
   addmenuitem_this = nullptr;
@@ -1049,12 +1050,6 @@ MainWindow::~MainWindow()
   isBeingDestroyed = true;
 
   delete this->cgalworker;
-  scadApp->windowManager.remove(this);
-  if (scadApp->windowManager.getWindows().empty()) {
-    // Quit application even in case some other windows like
-    // Preferences are still open.
-    scadApp->quit();
-  }
 }
 
 void MainWindow::showProgress()
@@ -4862,11 +4857,11 @@ void MainWindow::setupDocks()
     {editorDock, _("&Editor")},
     {consoleDock, _("&Console")},
     {parameterDock, _("C&ustomizer")},
-    {errorLogDock, _("Error-&Log")},
+    {errorLogDock, _("Error &Log")},
     {animateDock, _("&Animate")},
     {fontListDock, _("&Font List")},
     {colorListDock, _("C&olor List")},
-    {viewportControlDock, _("&Viewport-Control")},
+    {viewportControlDock, _("&Viewport Control")},
     {aiDock,_("&AI Chat")}
   };
   // clang-format off
@@ -5110,13 +5105,7 @@ void MainWindow::applySessionWindowGeometry(const QByteArray& geometry)
 void MainWindow::restoreWindowState()
 {
   const QSettingsCached settings;
-  // fetch window states to be restored after restoreState() call
-  const bool isEditorToolbarVisible = !settings.value("view/hideEditorToolbar").toBool();
-  const bool is3DViewToolbarVisible = !settings.value("view/hide3DViewToolbar").toBool();
-
-  // make sure it looks nice..
   const auto windowState = settings.value("window/state", QByteArray()).toByteArray();
-  // Log to stdout
   clearCurrentOutput();
   UIUtils::dumpSaveState(windowState);
   setCurrentOutput();
@@ -5141,7 +5130,14 @@ void MainWindow::restoreWindowState()
     tabifyDockWidget(errorLogDock, fontListDock);
     tabifyDockWidget(fontListDock, colorListDock);
     tabifyDockWidget(colorListDock, animateDock);
+    tabifyDockWidget(animateDock, viewportControlDock);
+    tabifyDockWidget(parameterDock, aiDock);
     parameterDock->hide();
+    aiDock->hide();
+    errorLogDock->hide();
+    fontListDock->hide();
+    colorListDock->hide();
+    animateDock->hide();
     viewportControlDock->hide();
     consoleDock->show();
     consoleDock->raise();
