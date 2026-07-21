@@ -176,10 +176,36 @@ jobs:
           name: pypi-sdist
           path: dist/*.tar.gz
 
-  publish:
-    name: Publish to PyPI
+  publish-to-test-pypi:
+    name: Publish to test PyPI
     needs: [build-wheels, build-sdist]
-    if: github.event_name == 'release'
+    if: >
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/release-please--branches--master--components--pythonscad')
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: pypi-*
+          merge-multiple: true
+          path: dist/
+
+      - name: Publish to Test PyPI
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+  publish-to-pypi:
+    name: Publish to PyPI
+    needs: [build-wheels, build-sdist, publish-to-test-pypi]
+    if: >
+      github.event_name == 'release' &&
+      github.event.action == 'published' &&
+      !github.event.release.prerelease
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
