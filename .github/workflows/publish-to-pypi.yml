@@ -204,7 +204,7 @@ jobs:
     needs: [build-wheels, build-sdist, publish-to-test-pypi]
     if: >
       github.event_name == 'release' &&
-      github.event.action == 'published' &&
+      github.event.action == 'released' &&
       !github.event.release.prerelease
     runs-on: ubuntu-latest
     environment: pypi
