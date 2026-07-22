@@ -22,7 +22,8 @@ from openscad import *  # noqa: F401,F403
 from openscad import (  # noqa: F401
     ChildIterator,
     ChildRef,
-    Openscad,
+    Openscad,   # legacy alias
+    PyOpenSCAD,
 )
 
 # Convention: any module-level import that is NOT meant to be part of
