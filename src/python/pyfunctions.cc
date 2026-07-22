@@ -716,6 +716,10 @@ PyMethodDef PyOpenSCADFunctions[] = {
    "Gets Mainwindow Pointer"},
   {"editor_insert_text", (PyCFunction)python_editor_insert_text, METH_VARARGS | METH_KEYWORDS,
    "Inserts code into the current position"},
+  {"editor_get_call_args", (PyCFunction)python_editor_get_call_args, METH_VARARGS | METH_KEYWORDS,
+   "Get Current call arguments"},
+  {"editor_replace_call_args", (PyCFunction)python_editor_replace_call_args,
+   METH_VARARGS | METH_KEYWORDS, "Replace Current call arguments"},
 #endif
   {"model", (PyCFunction)python_model, METH_VARARGS | METH_KEYWORDS, "Yield Model"},
   {"modelpath", (PyCFunction)python_modelpath, METH_VARARGS | METH_KEYWORDS,

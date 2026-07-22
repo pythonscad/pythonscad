@@ -22,6 +22,8 @@ extern std::shared_ptr<RenderVariables> renderVarsSet;
 void python_export_obj_att(std::ostream& output);
 std::string python_version(void);
 void editorInsertText(const char *text);
+std::string editorGetCallArgs(int pos);
+void editorReplaceCallArgs(int pos, const char *newText);
 
 void initPython(const std::string& binDir, const std::string& scriptpath, const RenderVariables *r);
 std::string evaluatePython(const std::string& code, bool dry_run = false);

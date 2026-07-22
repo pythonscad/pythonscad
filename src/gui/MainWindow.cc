@@ -250,6 +250,8 @@ int curl_download(const std::string& url, const std::string& path, std::string *
   }
   return 0;
 }
+// Functions for the pyqt connector
+
 void editorInsertText(const char *text)
 {
   if (mainwindow_global == nullptr) return;
@@ -271,6 +273,58 @@ void editorInsertText(const char *text)
     si->qsci->setCursorPosition(line + newlines, lastLineLen);
   }
 }
+
+std::string editorGetCallArgs(int pos)
+{
+  if (mainwindow_global == nullptr) return "";
+  MainWindow *mw = (MainWindow *)mainwindow_global;
+  ScintillaEditor *si = dynamic_cast<ScintillaEditor *>(mw->activeEditor);
+  if (si == nullptr) return "";
+
+  long closePos = si->qsci->SendScintilla(QsciScintillaBase::SCI_BRACEMATCH, (long)(pos - 1), (long)0);
+  if (closePos < 0 || closePos <= pos) {
+    return "";  // keine passende ")" -> neuer, unvollstaendiger Aufruf
+  }
+
+  QString fullText = si->qsci->text();
+  return fullText.mid(pos, (int)closePos - pos).toStdString();
+}
+
+void editorReplaceCallArgs(int pos, const char *newText)
+{
+  if (mainwindow_global == nullptr) return;
+  MainWindow *mw = (MainWindow *)mainwindow_global;
+  if (mw->activeEditor == nullptr) return;
+  ScintillaEditor *si = dynamic_cast<ScintillaEditor *>(mw->activeEditor);
+  if (si == nullptr) return;
+
+  int lineOpen, colOpen;
+  si->qsci->lineIndexFromPosition(pos, &lineOpen, &colOpen);
+
+  long closePos = si->qsci->SendScintilla(QsciScintillaBase::SCI_BRACEMATCH, (long)(pos - 1), (long)0);
+  QString qtext = QString::fromUtf8(newText);
+  QString finalText;
+
+  if (closePos >= pos) {
+    int lineClose, colClose;
+    si->qsci->lineIndexFromPosition((int)closePos, &lineClose, &colClose);
+    si->qsci->setSelection(lineOpen, colOpen, lineClose, colClose);
+    si->qsci->replaceSelectedText(qtext);
+    finalText = qtext;
+  } else {
+    finalText = qtext + ")";  // NEU: schliessende Klammer ergaenzen
+    si->qsci->insertAt(finalText, lineOpen, colOpen);
+  }
+
+  int newLines = finalText.count('\n');
+  if (newLines == 0) {
+    si->qsci->setCursorPosition(lineOpen, colOpen + finalText.length());
+  } else {
+    int lastLineLen = finalText.section('\n', -1).length();
+    si->qsci->setCursorPosition(lineOpen + newLines, lastLineLen);
+  }
+}
+
 #endif  // ifdef ENABLE_PYTHON
 
 // Global application state
