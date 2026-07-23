@@ -232,15 +232,18 @@ jobs:
           # known patch sip files for windows
           python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_free_operators.py" sip/
 
-          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
+          mkdir -p /tmp/pyqt-staging
+          WIN_STAGING_DIR=$(cygpath -w /tmp/pyqt-staging)
+
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir="$WIN_STAGING_DIR"
           cd build
           mingw32-make -j"$(nproc)"
-          mingw32-make INSTALL_ROOT=/tmp/pyqt-install-root install
+          mingw32-make install
 
-          FOUND_DIR=$(find /tmp/pyqt-install-root -maxdepth 12 -type f -iname "QtWidgets*.so" -exec dirname {} \; | head -1)
+          FOUND_DIR=$(find /tmp/pyqt-staging -maxdepth 12 -type f \( -iname "QtWidgets*.pyd" -o -iname "QtWidgets*.dll" \) -exec dirname {} \; | head -1)
           if [ -z "$FOUND_DIR" ]; then
             echo "ERROR: konnte installierte PyQt6-Module nicht finden" >&2
-            find /tmp/pyqt-install-root -maxdepth 10 >&2
+            find /tmp/pyqt-staging -maxdepth 10 >&2
             exit 1
           fi
           mkdir -p /tmp/pyqt-out
