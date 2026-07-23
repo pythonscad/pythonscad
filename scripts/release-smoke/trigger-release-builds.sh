@@ -142,17 +142,17 @@ wait_for_workflows() {
   cancel_unfinished_workflows() {
     local failed_workflow=$1
 
-    for workflow in "${workflows[@]}"; do
-      if [[ "$workflow" == "$failed_workflow" || -n "${completed[$workflow]:-}" ]]; then
+    for cancel_workflow in "${workflows[@]}"; do
+      if [[ "$cancel_workflow" == "$failed_workflow" || -n "${completed[$cancel_workflow]:-}" ]]; then
         continue
       fi
 
-      local run_id=${run_ids[$workflow]:-}
+      local run_id=${run_ids[$cancel_workflow]:-}
       [[ -n "$run_id" ]] || continue
 
-      rs_warn "Cancelling unfinished run for $workflow: $run_id"
+      rs_warn "Cancelling unfinished run for $cancel_workflow: $run_id"
       gh run cancel "$run_id" --repo "$repo" ||
-        rs_warn "Could not cancel unfinished run for $workflow: $run_id"
+        rs_warn "Could not cancel unfinished run for $cancel_workflow: $run_id"
     done
   }
 
