@@ -1058,6 +1058,17 @@ PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs, 
   add_menuitem_trampoline(menuname, itemname, callback);
   Py_RETURN_NONE;
 }
+
+PyObject *python_qapp_ptr(PyObject *, PyObject *)
+{
+  return PyLong_FromVoidPtr((void *)qapp_global);
+}
+
+PyObject *python_mainwindow_ptr(PyObject *, PyObject *)
+{
+  return PyLong_FromVoidPtr((void *)mainwindow_global);
+}
+
 #endif
 
 PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs, int mode)

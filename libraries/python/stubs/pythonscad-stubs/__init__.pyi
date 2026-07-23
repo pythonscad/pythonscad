@@ -95,6 +95,7 @@ def rounded_cube(
     size: float | Vector3,
     r: float,
     *,
+    center: bool | None = ...,
     fn: float | None = ...,
     fa: float | None = ...,
     fs: float | None = ...,
@@ -104,6 +105,7 @@ def rounded_cube(
     size: float | Vector3,
     *,
     d: float,
+    center: bool | None = ...,
     fn: float | None = ...,
     fa: float | None = ...,
     fs: float | None = ...,
@@ -113,13 +115,16 @@ def rounded_cube(
     r: float | None = ...,
     *,
     d: float | None = ...,
+    center: bool | None = ...,
     fn: float | None = ...,
     fa: float | None = ...,
     fs: float | None = ...,
 ) -> PyOpenSCAD:
     """Create a cube or box with uniformly rounded edges and corners.
 
-    Specify exactly one of ``r`` (radius) or ``d`` (diameter). Optional
-    ``fn``, ``fa``, and ``fs`` control rounding-sphere tessellation.
+    Specify exactly one of ``r`` (radius) or ``d`` (diameter). Set
+    ``center=True`` to center the generated shape's bounding box on the origin;
+    ``False`` or ``None`` leaves it in the positive octant. Optional ``fn``,
+    ``fa``, and ``fs`` control rounding-sphere tessellation.
     """
     ...
