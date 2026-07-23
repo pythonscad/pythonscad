@@ -1,0 +1,108 @@
+name: Release smoke tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      trigger_release_builds:
+        description: 'Trigger fresh release build workflows before smoke testing'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare-release-builds:
+    name: Prepare release build artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Trigger and wait for release build workflows
+        if: ${{ inputs.trigger_release_builds }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          scripts/release-smoke/trigger-release-builds.sh \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF_NAME" \
+            --wait
+
+      - name: Use existing release build artifacts
+        if: ${{ !inputs.trigger_release_builds }}
+        run: |
+          echo "Using latest successful release build artifacts for $GITHUB_REF_NAME"
+
+  release-smoke:
+    name: ${{ matrix.name }}
+    needs: prepare-release-builds
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: ${{ matrix.timeout_minutes }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: Linux smoke tests
+            runner: ubuntu-24.04
+            timeout_minutes: 120
+          - name: macOS smoke tests
+            runner: macos-15-intel
+            timeout_minutes: 60
+          - name: Windows smoke tests
+            runner: windows-latest
+            timeout_minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Smoke test AppImages
+        if: runner.os == 'Linux'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          scripts/release-smoke/test-appimages.sh \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF_NAME"
+
+      - name: Smoke test Linux packages
+        if: runner.os == 'Linux'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          scripts/release-smoke/test-linux-packages.sh \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF_NAME"
+
+      - name: Smoke test macOS DMG
+        if: runner.os == 'macOS'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          scripts/release-smoke/test-macos.sh \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF_NAME"
+
+      - name: Smoke test Windows packages
+        if: runner.os == 'Windows'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts/release-smoke/test-windows.ps1 `
+            --repo "$env:GITHUB_REPOSITORY" `
+            --ref "$env:GITHUB_REF_NAME"

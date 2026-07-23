@@ -136,9 +136,8 @@ wait_for_dispatched_run_id() {
 wait_for_workflows() {
   local -A completed=()
   local remaining=${#run_ids[@]}
-  local failures=0
 
-  rs_log "Waiting for $remaining workflow runs; polling once per minute"
+  rs_log "Waiting for $remaining workflow runs; polling every 30 seconds"
 
   while ((remaining > 0)); do
     for workflow in "${workflows[@]}"; do
@@ -161,20 +160,16 @@ wait_for_workflows() {
         ((remaining -= 1))
         rs_log "Finished $workflow_name ($workflow): ${conclusion:-unknown} - $url"
         if [[ "$conclusion" != "success" ]]; then
-          failures=1
+          rs_die "$workflow_name ($workflow) failed with conclusion: ${conclusion:-unknown}"
         fi
       fi
     done
 
     if ((remaining > 0)); then
       rs_log "$remaining workflow run(s) still running"
-      sleep 60
+      sleep 30
     fi
   done
-
-  if ((failures)); then
-    rs_die "one or more dispatched workflows failed"
-  fi
 
   rs_log "All dispatched workflows completed successfully"
 }
