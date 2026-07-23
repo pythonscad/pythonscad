@@ -228,36 +228,8 @@ jobs:
           EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
           cd "$EXTRACTED_DIR"
 
-          # Bekannte Qt-6.11.1-Inkompatibilitaet: sip nimmt freie
-          # Vergleichsoperatoren zwischen QLocale::Language und QLocale an,
-          # die in dieser Qt-Patch-Version nicht mehr eindeutig aufloesbar sind.
-          # Betrifft nicht die normalen QLocale==QLocale Vergleiche.
-          sed -i \
-            -e '/bool operator==(const QLocale &lhs, const QLocale::Language &rhs);/d' \
-            -e '/bool operator==(const QLocale::Language &lhs, const QLocale &rhs);/d' \
-            -e '/bool operator!=(const QLocale &lhs, const QLocale::Language &rhs);/d' \
-            -e '/bool operator!=(const QLocale::Language &lhs, const QLocale &rhs);/d' \
-            sip/QtCore/qlocale.sip
-          sed -i \
-            -e '/bool operator!=(const QXmlStreamEntityDeclaration &lhs, const QXmlStreamEntityDeclaration &rhs);/d' \
-            -e '/bool operator!=(const QXmlStreamNotationDeclaration &lhs, const QXmlStreamNotationDeclaration &rhs);/d' \
-            -e '/bool operator!=(const QXmlStreamNamespaceDeclaration &lhs, const QXmlStreamNamespaceDeclaration &rhs);/d' \
-            -e '/bool operator!=(const QXmlStreamAttribute &lhs, const QXmlStreamAttribute &rhs);/d' \
-            -e '/bool operator==(const QXmlStreamEntityDeclaration &lhs, const QXmlStreamEntityDeclaration &rhs);/d' \
-            -e '/bool operator==(const QXmlStreamNotationDeclaration &lhs, const QXmlStreamNotationDeclaration &rhs);/d' \
-            -e '/bool operator==(const QXmlStreamNamespaceDeclaration &lhs, const QXmlStreamNamespaceDeclaration &rhs);/d' \
-            -e '/bool operator==(const QXmlStreamAttribute &lhs, const QXmlStreamAttribute &rhs);/d' \
-            sip/QtCore/qxmlstream.sip
-
-          sed -i \
-            -e '/^bool operator>(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
-            -e '/^bool operator>=(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
-            -e '/^bool operator<(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
-            -e '/^bool operator<=(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
-            -e '/^bool operator==(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
-            -e '/^bool operator!=(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
-            sip/QtCore/qversionnumber.sip
-
+          # known patch sip files for windows
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_free_operators.py" sip/
 
           sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
