@@ -184,9 +184,6 @@ QStringList ScadApi::callTips(const QStringList& context, int /*commas*/,
       break;
     }
   }
-  if (!callTips.isEmpty()) {
-    callTips[0] += "  \u25B6";  // rechtes Dreieck als visueller Hinweis
-  }
   return callTips;
 }
 

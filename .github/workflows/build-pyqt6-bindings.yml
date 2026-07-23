@@ -249,6 +249,16 @@ jobs:
             -e '/bool operator==(const QXmlStreamAttribute &lhs, const QXmlStreamAttribute &rhs);/d' \
             sip/QtCore/qxmlstream.sip
 
+          sed -i \
+            -e '/^bool operator>(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
+            -e '/^bool operator>=(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
+            -e '/^bool operator<(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
+            -e '/^bool operator<=(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
+            -e '/^bool operator==(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
+            -e '/^bool operator!=(const QVersionNumber &lhs, const QVersionNumber &rhs);$/d' \
+            sip/QtCore/qversionnumber.sip
+
+
           sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
           mingw32-make -j"$(nproc)"

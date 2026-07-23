@@ -252,28 +252,6 @@ int curl_download(const std::string& url, const std::string& path, std::string *
 }
 // Functions for the pyqt connector
 
-void editorInsertText(const char *text)
-{
-  if (mainwindow_global == nullptr) return;
-  MainWindow *mw = (MainWindow *)mainwindow_global;
-  if (mw->activeEditor == nullptr) return;
-  ScintillaEditor *si = dynamic_cast<ScintillaEditor *>(mw->activeEditor);
-  if (si == nullptr) return;
-  int line, index;
-  si->qsci->getCursorPosition(&line, &index);
-  QString qtext = QString::fromUtf8(text);
-  si->qsci->insertAt(qtext, line, index);
-
-  // Cursor ans Ende des eingefuegten Textes setzen
-  int newlines = qtext.count('\n');
-  if (newlines == 0) {
-    si->qsci->setCursorPosition(line, index + qtext.length());
-  } else {
-    int lastLineLen = qtext.section('\n', -1).length();
-    si->qsci->setCursorPosition(line + newlines, lastLineLen);
-  }
-}
-
 std::string editorGetCallArgs(int pos)
 {
   if (mainwindow_global == nullptr) return "";

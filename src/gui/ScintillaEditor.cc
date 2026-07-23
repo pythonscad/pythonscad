@@ -292,10 +292,6 @@ void ScintillaEditor::onCallTipClicked(int position)
   QString funcName = this->lastCallTipFunction;
   if (funcName.isEmpty()) return;
 
-  // WICHTIG: nicht synchron aufrufen -- wir stecken hier noch mitten in
-  // CallTipImpl::mousePressEvent()/CallTipCancel(). Erst nachdem der
-  // aktuelle Event-Loop-Durchlauf fertig ist, ist es sicher, einen
-  // modalen Python/PyQt6-Dialog zu oeffnen.
   int pos = this->lastCallTipPosition;
   QTimer::singleShot(0, this, [funcName, pos]() {
     python_call_static_editor_method(funcName.toStdString(), "on_editor_trigger", pos);
@@ -1327,7 +1323,6 @@ bool ScintillaEditor::handleKeyEventNavigateNumber(QKeyEvent *keyEvent)
     int k = keyEvent->key() | keyEvent->modifiers();
     auto *cmd = qsci->standardCommands()->boundTo(k);
     if (cmd && (cmd->command() == QsciCommand::Undo || cmd->command() == QsciCommand::Redo))
-
       QTimer::singleShot(0, this, &ScintillaEditor::previewRequest);
     else if (cmd || !keyEvent->text().isEmpty()) {
       // any insert or command (but not undo/redo) cancels the preview after undo

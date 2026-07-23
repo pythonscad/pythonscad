@@ -21,7 +21,6 @@ extern AssignmentList customizer_parameters_finished;
 extern std::shared_ptr<RenderVariables> renderVarsSet;
 void python_export_obj_att(std::ostream& output);
 std::string python_version(void);
-void editorInsertText(const char *text);
 std::string editorGetCallArgs(int pos);
 void editorReplaceCallArgs(int pos, const char *newText);
 

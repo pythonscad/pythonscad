@@ -1065,14 +1065,6 @@ PyObject *python_mainwindow_ptr(PyObject *, PyObject *)
   return PyLong_FromVoidPtr((void *)mainwindow_global);
 }
 
-PyObject *python_editor_insert_text(PyObject *, PyObject *args)
-{
-  const char *text;
-  if (!PyArg_ParseTuple(args, "s", &text)) return nullptr;
-  editorInsertText(text);
-  Py_RETURN_NONE;
-}
-
 PyObject *python_editor_get_call_args(PyObject *, PyObject *args)
 {
   int pos;
