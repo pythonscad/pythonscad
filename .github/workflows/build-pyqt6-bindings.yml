@@ -38,7 +38,6 @@ jobs:
           source /tmp/pyqt-build-venv/bin/activate
           pip install --upgrade pip
           pip install sip PyQt-builder PyQt6-sip packaging
-          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqtbuild_win32_pythonlib.py"
 
           QMAKE=$(which qmake6)
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
@@ -208,6 +207,7 @@ jobs:
           source /tmp/pyqt-build-venv/bin/activate
           pip install --upgrade pip
           pip install sip PyQt-builder PyQt6-sip packaging
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqtbuild_win32_pythonlib.py"
 
           # qmake6 ohne .exe-Endung wird von pyqtbuilds os.access()-Check
           # (nativer Windows-Filesystem-Check) nicht gefunden -> explizit ergaenzen.
