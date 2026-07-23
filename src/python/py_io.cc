@@ -494,9 +494,10 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   int convexity = 2;
   double scale = 1.0, width = 1, height = 1, dpi = ImportNode::SVG_DEFAULT_DPI;
   PyObject *origin = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|siO!dddOdsOddd", kwlist, &v, &layer, &convexity,
-                                   &PyList_Type, &origin, &scale, &width, &height, &center, &dpi, &id,
-                                   &stroke, &fn, &fa, &fs
+  // origin accepts a list/tuple/NumPy 2-vector; validated by python_vectorval().
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|siOdddOdsOddd", kwlist, &v, &layer, &convexity,
+                                   &origin, &scale, &width, &height, &center, &dpi, &id, &stroke, &fn,
+                                   &fa, &fs
 
                                    )) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing osimport(filename)");
@@ -550,9 +551,12 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   node->convexity = convexity;
   if (node->convexity <= 0) node->convexity = 1;
 
-  if (origin != NULL && PyList_Check(origin) && PyList_Size(origin) == 2) {
-    node->origin_x = PyFloat_AsDouble(PyList_GetItem(origin, 0));
-    node->origin_y = PyFloat_AsDouble(PyList_GetItem(origin, 1));
+  if (origin != NULL) {
+    double ox, oy;
+    if (python_vectorval(origin, 2, 2, &ox, &oy, nullptr, nullptr, nullptr) == 0) {
+      node->origin_x = ox;
+      node->origin_y = oy;
+    }
   }
 
   node->center = 0;

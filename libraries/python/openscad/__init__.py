@@ -33,6 +33,19 @@ from _openscad import (  # noqa: F401
     Openscad,
 )
 
+# Vector/matrix helper types. These live in the ``openscad._vectors``
+# submodule (so they ship inside this package in the pip wheel) and are
+# NumPy-backed when NumPy is installed, list-backed otherwise. Re-exported
+# here so scripts can write ``from openscad import Vector3`` /
+# ``from pythonscad import *``.
+from ._vectors import (  # noqa: F401
+    HAS_NUMPY,
+    Matrix4x4,
+    Vector1,
+    Vector2,
+    Vector3,
+)
+
 
 def _deprecated(name, replacement=None):
     """Decorator wrapping a callable so that calling it emits a
