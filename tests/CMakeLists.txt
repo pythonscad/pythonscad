@@ -1552,14 +1552,90 @@ if(ENABLE_PYTHON)
   )
   set_property(TEST version-helpers PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 
-  # Coverage for the C++ Python-object type-conversion helpers in
-  # src/python/pyconversion.cc, driven through their Python API entry points.
-  add_test(NAME python-conversions CONFIGURATIONS Default
-    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
-      ${CMAKE_CURRENT_SOURCE_DIR}/test_python_conversions.py
-      ${OPENSCAD_BINPATH}
-  )
-  set_property(TEST python-conversions PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  ###################################################
+  # Python-side pytest suite (tests/python/)
+  #
+  # A pytest layer covering the pure-Python side of PythonSCAD: the
+  # openscad/pythonscad overlays (MultiToolExporter, rounded_cube, and -- when
+  # present -- the _vectors helpers) and the helper modules (pyutil, pytexture,
+  # pymachineconfig, pylibfive, ...). Most tests need no build; a few
+  # integration tests drive the pythonscad binary and skip without it. Tests
+  # for modules that are not on this base (e.g. the NumPy _vectors overlay)
+  # self-skip, so the suite is green whether or not the numpy work is present.
+  #
+  # It runs in a dedicated, sandboxed virtualenv pinned to the
+  # [dependency-groups] test group in pyproject.toml (pytest + numpy) so the
+  # suite does not silently change behaviour based on system-wide packages.
+  # The venv is created at configure time and the install is skipped when it
+  # is already provisioned. If it cannot be built (e.g. offline builder) the
+  # pytest target is simply not registered and configuration continues.
+  ###################################################
+  set(PYTEST_VENV_DIR "${CMAKE_CURRENT_BINARY_DIR}/pytest-venv")
+  if(WIN32)
+    set(PYTEST_VENV_PYTHON "${PYTEST_VENV_DIR}/Scripts/python.exe")
+  else()
+    set(PYTEST_VENV_PYTHON "${PYTEST_VENV_DIR}/bin/python")
+  endif()
+
+  if(NOT EXISTS "${PYTEST_VENV_PYTHON}")
+    message(STATUS "Creating sandboxed pytest venv: ${PYTEST_VENV_DIR}")
+    execute_process(
+      COMMAND ${Python3_EXECUTABLE} -m venv "${PYTEST_VENV_DIR}"
+      RESULT_VARIABLE PYTEST_VENV_RC
+      OUTPUT_QUIET
+      ERROR_VARIABLE PYTEST_VENV_ERR
+    )
+    if(NOT PYTEST_VENV_RC EQUAL 0)
+      message(WARNING "Could not create pytest venv, skipping python-pytest: ${PYTEST_VENV_ERR}")
+    endif()
+  endif()
+
+  set(PYTEST_VENV_READY FALSE)
+  if(EXISTS "${PYTEST_VENV_PYTHON}")
+    # Idempotent: only install when pytest/numpy are not importable yet.
+    execute_process(
+      COMMAND "${PYTEST_VENV_PYTHON}" -c "import pytest, numpy"
+      RESULT_VARIABLE PYTEST_PRESENT_RC
+      OUTPUT_QUIET ERROR_QUIET
+    )
+    if(NOT PYTEST_PRESENT_RC EQUAL 0)
+      message(STATUS "Installing pytest test dependencies into ${PYTEST_VENV_DIR}")
+      execute_process(
+        COMMAND "${PYTEST_VENV_PYTHON}" -m pip install --quiet --disable-pip-version-check
+                "pytest>=8,<9" "numpy>=1.24"
+        RESULT_VARIABLE PYTEST_PIP_RC
+        OUTPUT_QUIET
+        ERROR_VARIABLE PYTEST_PIP_ERR
+      )
+      if(NOT PYTEST_PIP_RC EQUAL 0)
+        message(WARNING "Could not install pytest deps, skipping python-pytest: ${PYTEST_PIP_ERR}")
+      endif()
+    endif()
+    execute_process(
+      COMMAND "${PYTEST_VENV_PYTHON}" -c "import pytest, numpy"
+      RESULT_VARIABLE PYTEST_FINAL_RC
+      OUTPUT_QUIET ERROR_QUIET
+    )
+    if(PYTEST_FINAL_RC EQUAL 0)
+      set(PYTEST_VENV_READY TRUE)
+    endif()
+  endif()
+
+  if(PYTEST_VENV_READY)
+    # One ctest entry runs the whole pytest suite; pytest reports the
+    # individual outcomes. The binary under test is handed over via
+    # PYTHONSCAD_BINARY (see tests/python/conftest.py): the unit tests ignore
+    # it, the integration tests drive it in a subprocess (and skip without it).
+    add_test(NAME python-pytest CONFIGURATIONS Default
+      COMMAND "${PYTEST_VENV_PYTHON}" -m pytest -v
+        --rootdir=${CMAKE_CURRENT_SOURCE_DIR}/..
+        ${CMAKE_CURRENT_SOURCE_DIR}/python
+    )
+    set_property(TEST python-pytest PROPERTY ENVIRONMENT
+      ${CTEST_ENVIRONMENT} "PYTHONSCAD_BINARY=${OPENSCAD_BINPATH}")
+  else()
+    message(STATUS "python-pytest test not registered (sandboxed pytest venv unavailable)")
+  endif()
 
   add_test(NAME python-sibling-import-cli CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
