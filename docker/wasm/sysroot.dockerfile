@@ -35,7 +35,26 @@ RUN mkdir -p libs \
     && tar xf boost-1.87.0-b2-nodocs.tar.xz -C libs && mv libs/boost-1.87.0 libs/boost \
     && rm boost-1.87.0-b2-nodocs.tar.xz \
     && sed -i -E 's/-fwasm-exceptions/-fexceptions/g' libs/boost/tools/build/src/tools/emscripten.jam
-RUN make libs \
+RUN make \
+        libs/cairo \
+        libs/cgal \
+        libs/eigen \
+        libs/freetype \
+        libs/libffi \
+        libs/glib \
+        libs/harfbuzz \
+        libs/lib3mf \
+        libs/libexpat \
+        libs/liblzma \
+        libs/libzip \
+        libs/openscad \
+        libs/boost \
+        libs/gmp \
+        libs/mpfr \
+        libs/zlib \
+        libs/libxml2 \
+        libs/doubleconversion \
+        libs/emscripten-crossfile.meson \
     && rm -rf libs/fontconfig \
     && git clone --filter=blob:none --no-checkout https://gitlab.freedesktop.org/fontconfig/fontconfig.git libs/fontconfig \
     && git -C libs/fontconfig checkout ${FONTCONFIG_COMMIT} \
