@@ -27,6 +27,7 @@
 #include "genlang/genlang.h"
 #include <Python.h>
 #include <algorithm>
+#include <string>
 #include "pyopenscad.h"
 #include <io/fileutils.h>
 #include <handle_dep.h>
@@ -45,6 +46,39 @@
 #include <TransformNode.h>
 #include <ColorUtil.h>
 #include "pyfunctions.h"
+
+static std::string escape_color_name_for_error(const std::string& colorname)
+{
+  std::string escaped;
+  escaped.reserve(colorname.size());
+  constexpr char hex[] = "0123456789abcdef";
+  for (const unsigned char ch : colorname) {
+    switch (ch) {
+    case '\\': escaped += "\\\\"; break;
+    case '"':  escaped += "\\\""; break;
+    case '\0': escaped += "\\0"; break;
+    case '\n': escaped += "\\n"; break;
+    case '\r': escaped += "\\r"; break;
+    case '\t': escaped += "\\t"; break;
+    default:
+      if (ch < 0x20 || ch == 0x7f) {
+        escaped += "\\x";
+        escaped += hex[ch >> 4];
+        escaped += hex[ch & 0xf];
+      } else {
+        escaped += static_cast<char>(ch);
+      }
+      break;
+    }
+  }
+  return escaped;
+}
+
+static void set_color_parse_error(const std::string& colorname)
+{
+  const auto escaped_colorname = escape_color_name_for_error(colorname);
+  PyErr_Format(PyExc_TypeError, "Unable to parse color \"%s\"", escaped_colorname.c_str());
+}
 
 // std::string lookup_file(const std::string& filename, const std::string& path,
 //                         const std::string& fallbackpath);
@@ -246,13 +280,13 @@ PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha)
   } else if (PyUnicode_Check(color)) {
     auto value = py_owned(PyUnicode_AsEncodedString(color, "utf-8", "~"));
     if (value.get() == nullptr) return NULL;
-    char *colorname = PyBytes_AS_STRING(value.get());
+    const std::string colorname(PyBytes_AS_STRING(value.get()), PyBytes_GET_SIZE(value.get()));
     const auto parsed_color = OpenSCAD::parse_color(colorname);
     if (parsed_color) {
       node->color = *parsed_color;
       if (1.0 != alpha) node->color.setAlpha(alpha);
     } else {
-      PyErr_SetString(PyExc_TypeError, "Cannot parse color");
+      set_color_parse_error(colorname);
       return NULL;
     }
   } else {
@@ -461,13 +495,13 @@ PyObject *python_repair_core(PyObject *obj, PyObject *color)
     } else if (PyUnicode_Check(color)) {
       auto value = py_owned(PyUnicode_AsEncodedString(color, "utf-8", "~"));
       if (value.get() == nullptr) return nullptr;
-      const char *colorname = PyBytes_AS_STRING(value.get());
+      const std::string colorname(PyBytes_AS_STRING(value.get()), PyBytes_GET_SIZE(value.get()));
       const auto parsed_color = OpenSCAD::parse_color(colorname);
       if (parsed_color) {
         node->color = *parsed_color;
         node->color.setAlpha(1.0);
       } else {
-        PyErr_SetString(PyExc_TypeError, "Cannot parse color");
+        set_color_parse_error(colorname);
         return NULL;
       }
     } else {
