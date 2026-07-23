@@ -139,6 +139,23 @@ wait_for_workflows() {
 
   rs_log "Waiting for $remaining workflow runs; polling every 30 seconds"
 
+  cancel_unfinished_workflows() {
+    local failed_workflow=$1
+
+    for workflow in "${workflows[@]}"; do
+      if [[ "$workflow" == "$failed_workflow" || -n "${completed[$workflow]:-}" ]]; then
+        continue
+      fi
+
+      local run_id=${run_ids[$workflow]:-}
+      [[ -n "$run_id" ]] || continue
+
+      rs_warn "Cancelling unfinished run for $workflow: $run_id"
+      gh run cancel "$run_id" --repo "$repo" ||
+        rs_warn "Could not cancel unfinished run for $workflow: $run_id"
+    done
+  }
+
   while ((remaining > 0)); do
     for workflow in "${workflows[@]}"; do
       if [[ -n "${completed[$workflow]:-}" ]]; then
@@ -160,6 +177,7 @@ wait_for_workflows() {
         ((remaining -= 1))
         rs_log "Finished $workflow_name ($workflow): ${conclusion:-unknown} - $url"
         if [[ "$conclusion" != "success" ]]; then
+          cancel_unfinished_workflows "$workflow"
           rs_die "$workflow_name ($workflow) failed with conclusion: ${conclusion:-unknown}"
         fi
       fi

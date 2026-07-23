@@ -52,7 +52,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: ${{ matrix.timeout_minutes }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - name: Linux smoke tests
