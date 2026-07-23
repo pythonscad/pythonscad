@@ -238,6 +238,16 @@ jobs:
             -e '/bool operator!=(const QLocale &lhs, const QLocale::Language &rhs);/d' \
             -e '/bool operator!=(const QLocale::Language &lhs, const QLocale &rhs);/d' \
             sip/QtCore/qlocale.sip
+          sed -i \
+            -e '/bool operator!=(const QXmlStreamEntityDeclaration &lhs, const QXmlStreamEntityDeclaration &rhs);/d' \
+            -e '/bool operator!=(const QXmlStreamNotationDeclaration &lhs, const QXmlStreamNotationDeclaration &rhs);/d' \
+            -e '/bool operator!=(const QXmlStreamNamespaceDeclaration &lhs, const QXmlStreamNamespaceDeclaration &rhs);/d' \
+            -e '/bool operator!=(const QXmlStreamAttribute &lhs, const QXmlStreamAttribute &rhs);/d' \
+            -e '/bool operator==(const QXmlStreamEntityDeclaration &lhs, const QXmlStreamEntityDeclaration &rhs);/d' \
+            -e '/bool operator==(const QXmlStreamNotationDeclaration &lhs, const QXmlStreamNotationDeclaration &rhs);/d' \
+            -e '/bool operator==(const QXmlStreamNamespaceDeclaration &lhs, const QXmlStreamNamespaceDeclaration &rhs);/d' \
+            -e '/bool operator==(const QXmlStreamAttribute &lhs, const QXmlStreamAttribute &rhs);/d' \
+            sip/QtCore/qxmlstream.sip
 
           sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
