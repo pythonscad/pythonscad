@@ -37,7 +37,7 @@ class mypolygon:
     @staticmethod
     def on_editor_trigger(pos):
         """Called when the user clicks the calltip. `pos` is the character
-        offset of the opening parenthesis of the call in the editor."""
+        offset just after the opening parenthesis of the call in the editor."""
         ...
 
     def __new__(cls, points):
@@ -60,7 +60,7 @@ the same as the built-in calltip for a native primitive.
 ### `on_editor_trigger(pos)`
 
 A `staticmethod` called when the calltip is clicked. `pos` is the character
-offset (into the current document) of the call's opening parenthesis — pass
+offset (into the current document) just after the call's opening parenthesis — pass
 it straight through to the two helper functions below, which read and
 replace the argument text between that parenthesis and its matching close.
 This is where you build and run your `QDialog` (see

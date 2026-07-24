@@ -1620,9 +1620,12 @@ bool python_call_static_editor_method(const std::string& className, const std::s
   if (classObj != nullptr) {
     PyObject *method = PyObject_GetAttrString(classObj, methodName.c_str());
     if (method != nullptr && PyCallable_Check(method)) {
-      PyObject *args = PyTuple_Pack(1, PyLong_FromLong(position));
+      PyObject *posObj = PyLong_FromLong(position);
+      PyObject *args = PyTuple_Pack(1, posObj);
+      Py_DECREF(posObj);
       PyObject *funcresult = PyObject_CallObject(method, args);
       Py_DECREF(args);
+
       if (funcresult != nullptr) {
         Py_DECREF(funcresult);
         called = true;

@@ -154,7 +154,7 @@ signals:
 public:
   void public_applySettings();
   QString lastCallTipFunction;
-  int lastCallTipPosition;
+  int lastCallTipPosition = 0;
 
 private:
   QVBoxLayout *scintillaLayout;

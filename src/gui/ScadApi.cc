@@ -12,8 +12,10 @@
 #include "core/Builtins.h"
 #include "core/EvaluationSession.h"
 #include "core/parsersettings.h"
-#include "python/python_public.h"
 #include "gui/ScintillaEditor.h"
+#ifdef ENABLE_PYTHON
+#include "python/python_public.h"
+#endif
 
 namespace {
 
@@ -172,11 +174,13 @@ QStringList ScadApi::callTips(const QStringList& context, int /*commas*/,
   long openParenPos = findEnclosingOpenParenPos(editor->qsci, curPos);
   editor->lastCallTipPosition = (openParenPos >= 0) ? (int)openParenPos : (int)curPos;
 
+#ifdef ENABLE_PYTHON
   std::string pythonCalltip;
   if (python_get_static_calltip(funcName.toStdString(), pythonCalltip)) {
     callTips << QString::fromStdString(pythonCalltip).leftJustified(48, ' ') + "\u25B6";
     return callTips;  // Python-Version gefunden -> Builtin-Liste wird gar nicht erst geprueft
   }
+#endif
 
   for (const auto& func : funcs) {
     if (func.get_name() == funcName) {

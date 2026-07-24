@@ -200,7 +200,7 @@ jobs:
         run: |
           mkdir -p /tmp/pyqt6-fetch
           gh release download pyqt6-bindings-latest --repo pythonscad/pythonscad \
-            -p "pyqt6-bindings-windows.zip" -D /tmp/pyqt6-fetch
+            -p "pyqt6-bindings-macos.zip" -D /tmp/pyqt6-fetch
 
           mkdir -p libraries/python
           rm -rf libraries/python/PyQt6

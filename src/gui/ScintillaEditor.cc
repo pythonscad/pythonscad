@@ -287,6 +287,7 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
 }
 void ScintillaEditor::onCallTipClicked(int position)
 {
+#ifdef ENABLE_PYTHON
   if (position != 0) return;  // Navigationspfeile ignorieren
 
   QString funcName = this->lastCallTipFunction;
@@ -296,6 +297,7 @@ void ScintillaEditor::onCallTipClicked(int position)
   QTimer::singleShot(0, this, [funcName, pos]() {
     python_call_static_editor_method(funcName.toStdString(), "on_editor_trigger", pos);
   });
+#endif
 }
 
 QPoint ScintillaEditor::mapToGlobal(const QPoint& pos)
