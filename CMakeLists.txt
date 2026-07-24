@@ -328,7 +328,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   target_compile_options(svg PUBLIC -fexceptions -fPIC)
   target_link_options(OpenSCADExe PUBLIC
     -fexceptions
-    -sABORT_ON_WASM_EXCEPTIONS
     -sALLOW_MEMORY_GROWTH=1
     -sDISABLE_EXCEPTION_CATCHING=0
     -sEXIT_RUNTIME=1
@@ -345,6 +344,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   if (WASM_BUILD_TYPE STREQUAL "web")
     target_link_options(OpenSCADExe PUBLIC
       -sENVIRONMENT=web,worker
+      -sABORT_ON_WASM_EXCEPTIONS
       -sEXPORT_ES6=1
       -sEXPORT_NAME=OpenSCAD
       -sMODULARIZE=1
@@ -358,9 +358,55 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   elseif (WASM_BUILD_TYPE STREQUAL "node")
     # Node build uses NODERAWFS (real filesystem); CPython found at its build prefix /cpython-wasm
     target_compile_definitions(OpenSCADLibInternal PUBLIC WASM_NODE_BUILD)
+    set(WASM_NODE_PRE_JS "${CMAKE_CURRENT_BINARY_DIR}/node_catch_exit.js")
+    file(WRITE "${WASM_NODE_PRE_JS}" "
+if (typeof process !== 'undefined' && process.on) {
+  process.on('uncaughtException', (err) => {
+    if (err && err.name === 'ExitStatus') {
+      process.exit(err.status);
+    }
+    throw err;
+  });
+}
+")
+    set(WASM_NODE_POST_JS "${CMAKE_CURRENT_BINARY_DIR}/node_noderawfs_fstat.js")
+    file(WRITE "${WASM_NODE_POST_JS}" "
+{
+  const originalFstat = FS.fstat;
+  FS.fstat = (fd) => {
+    const stream = FS.getStreamChecked(fd);
+    const nfd = stream && (stream.nfd ?? fd);
+    if (stream && !stream.node && typeof nfd !== 'undefined') {
+      const stat = fs.fstatSync(nfd);
+      const blksize = stat.blksize || 4096;
+      if (NODEFS.isWindows) {
+        stat.mode |= (stat.mode & 292) >> 2;
+      }
+      return {
+        dev: stat.dev,
+        ino: stat.ino,
+        mode: stat.mode,
+        nlink: stat.nlink,
+        uid: stat.uid,
+        gid: stat.gid,
+        rdev: stat.rdev,
+        size: stat.size,
+        atime: stat.atime,
+        mtime: stat.mtime,
+        ctime: stat.ctime,
+        blksize,
+        blocks: stat.blocks || Math.ceil(stat.size / blksize)
+      };
+    }
+    return originalFstat(fd);
+  };
+}
+")
     target_link_options(OpenSCADExe PUBLIC
       -sENVIRONMENT=node,worker
       -sNODERAWFS
+      "SHELL:--pre-js ${WASM_NODE_PRE_JS}"
+      "SHELL:--post-js ${WASM_NODE_POST_JS}"
 
       # SINGLE_FILE disabled: Emscripten 6.0 embed can produce invalid JS for large builds.
     )
