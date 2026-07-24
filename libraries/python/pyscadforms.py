@@ -445,3 +445,168 @@ class polygon:
 
     def __new__(cls, points):
         return _native_polygon(points)
+
+class CubePreview(QtWidgets.QWidget):
+    # Asymmetrische Projektionswinkel statt symmetrischer Isometrie (30/30),
+    # damit ein Wuerfel nicht wie sechs gleiche Dreiecke wirkt.
+    ANGLE_X_DEG = 20
+    ANGLE_Y_DEG = 40
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(220, 220)
+        self.size = (1.0, 1.0, 1.0)
+
+    def set_size(self, x, y, z):
+        self.size = (max(x, 0.001), max(y, 0.001), max(z, 0.001))
+        self.update()
+
+    @classmethod
+    def _iso_raw(cls, dx, dy, dz):
+        import math
+        ax = math.radians(cls.ANGLE_X_DEG)
+        ay = math.radians(cls.ANGLE_Y_DEG)
+        ix = dx * math.cos(ax) - dy * math.cos(ay)
+        iy = -dz - dx * math.sin(ax) - dy * math.sin(ay)
+        return ix, iy
+
+    def paintEvent(self, event):
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        painter.fillRect(self.rect(), QtGui.QColor("white"))
+
+        x, y, z = self.size
+        max_dim = max(x, y, z)
+        target = 100
+        scale = target / max_dim
+        sx, sy, sz = x * scale, y * scale, z * scale
+
+        raw = {}
+        for key in ("000", "100", "010", "001", "110", "101", "011", "111"):
+            dx = sx if key[0] == "1" else 0
+            dy = sy if key[1] == "1" else 0
+            dz = sz if key[2] == "1" else 0
+            raw[key] = self._iso_raw(dx, dy, dz)
+
+        xs = [p[0] for p in raw.values()]
+        ys = [p[1] for p in raw.values()]
+        bbox_w = max(xs) - min(xs) or 1
+        bbox_h = max(ys) - min(ys) or 1
+        mid_x = (max(xs) + min(xs)) / 2
+        mid_y = (max(ys) + min(ys)) / 2
+
+        pad = 30
+        avail_w = self.width() - 2 * pad
+        avail_h = self.height() - 2 * pad
+        fit_scale = min(avail_w / bbox_w, avail_h / bbox_h, 1.0)
+
+        cx, cy = self.width() / 2, self.height() / 2
+        corners = {
+            key: QtCore.QPointF(cx + (rx - mid_x) * fit_scale, cy + (ry - mid_y) * fit_scale)
+            for key, (rx, ry) in raw.items()
+        }
+
+        # Kanten je nach Richtung (X/Y/Z) farblich zugeordnet
+        edges_x = [("000", "100"), ("010", "110"), ("001", "101"), ("011", "111")]
+        edges_y = [("000", "010"), ("100", "110"), ("001", "011"), ("101", "111")]
+        edges_z = [("000", "001"), ("100", "101"), ("010", "011"), ("110", "111")]
+
+        for edges, color in ((edges_x, "red"), (edges_y, "darkgreen"), (edges_z, "blue")):
+            pen = QtGui.QPen(QtGui.QColor(color))
+            pen.setWidth(2)
+            painter.setPen(pen)
+            for a, b in edges:
+                painter.drawLine(corners[a], corners[b])
+
+        painter.setPen(QtGui.QColor("red"))
+        p = corners["100"]
+        painter.drawText(int(p.x()) - 10, int(p.y()) + 18, f"x={x:.2f}")
+
+        painter.setPen(QtGui.QColor("darkgreen"))
+        p = corners["010"]
+        painter.drawText(int(p.x()) - 45, int(p.y()) + 4, f"y={y:.2f}")
+
+        painter.setPen(QtGui.QColor("blue"))
+        p = corners["001"]
+        painter.drawText(int(p.x()) + 6, int(p.y()) - 6, f"z={z:.2f}")
+
+_native_cube = cube
+
+class cube:
+    @staticmethod
+    def get_calltip():
+        return "cube(size=[1,1,1], center=False)"
+
+    def __new__(cls, size=1, center=False):
+        return _native_cube(size, center)
+
+    @staticmethod
+    def on_editor_trigger(pos):
+        mw = sip.wrapinstance(mainwindow_ptr(), QtWidgets.QMainWindow)
+        existing_args = editor_get_call_args(pos)
+        known, unknown = parse_arguments(cube, existing_args)
+
+        dialog = QtWidgets.QDialog(mw)
+        dialog.setWindowTitle("cube")
+        outer = QtWidgets.QHBoxLayout(dialog)
+
+        preview = CubePreview(dialog)
+        outer.addWidget(preview)
+
+        form_col = QtWidgets.QVBoxLayout()
+        outer.addLayout(form_col)
+
+        size_val = known.get("size", 1)
+        if not isinstance(size_val, (list, tuple)):
+            size_val = [size_val, size_val, size_val]
+
+        form = QtWidgets.QFormLayout()
+        form_col.addLayout(form)
+
+        x_box = QtWidgets.QDoubleSpinBox(); x_box.setRange(0.01, 10000); x_box.setValue(size_val[0])
+        y_box = QtWidgets.QDoubleSpinBox(); y_box.setRange(0.01, 10000); y_box.setValue(size_val[1])
+        z_box = QtWidgets.QDoubleSpinBox(); z_box.setRange(0.01, 10000); z_box.setValue(size_val[2])
+        form.addRow("size x", x_box)
+        form.addRow("size y", y_box)
+        form.addRow("size z", z_box)
+
+        uniform_box = QtWidgets.QCheckBox("Einheitliche Groesse (X/Y/Z gekoppelt)")
+        form_col.addWidget(uniform_box)
+
+        center_box = QtWidgets.QCheckBox()
+        form.addRow("center", center_box)
+        center_box.setChecked(bool(known.get("center", False)))
+
+        preview.set_size(x_box.value(), y_box.value(), z_box.value())
+
+        _syncing = {"active": False}
+
+        def on_value_changed(changed_box):
+            if _syncing["active"]:
+                return
+            if uniform_box.isChecked():
+                _syncing["active"] = True
+                value = changed_box.value()
+                x_box.setValue(value)
+                y_box.setValue(value)
+                z_box.setValue(value)
+                _syncing["active"] = False
+            preview.set_size(x_box.value(), y_box.value(), z_box.value())
+
+        x_box.valueChanged.connect(lambda _: on_value_changed(x_box))
+        y_box.valueChanged.connect(lambda _: on_value_changed(y_box))
+        z_box.valueChanged.connect(lambda _: on_value_changed(z_box))
+
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        form_col.addWidget(buttons)
+
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            size_str = f"[{x_box.value():.3f}, {y_box.value():.3f}, {z_box.value():.3f}]"
+            parts = [f"size={size_str}", f"center={center_box.isChecked()}"]
+            parts += [f"{k}={v!r}" for k, v in unknown.items()]
+            editor_replace_call_args(pos, ", ".join(parts))
