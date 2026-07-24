@@ -7,7 +7,7 @@
 #     -t pythonscad-wasm-sysroot:local .
 
 # emscripten/emsdk 6.0.0 (digest-pinned; Dependabot docker bumps /docker/wasm).
-ARG EMSCRIPTEN_SDK_TAG=emscripten/emsdk@sha256:bb0910e6a18bb9bd7cb31ae4ed40f9073148b78cb2cdb8ea8676454e0d85425c
+ARG EMSCRIPTEN_SDK_TAG=emscripten/emsdk@sha256:3a0d11e50f072dc2c4bc92e3b05ab1340fb7d4dd152f80b8af35fc1c6f15e644
 # Pin openscad-wasm for reproducible sysroot builds; bump OPENSCAD_WASM_COMMIT when
 # intentionally syncing upstream recipe/patches.
 ARG OPENSCAD_WASM_COMMIT=ac5cf9b129bdb243fef3862883bd5d64e54fffcb
