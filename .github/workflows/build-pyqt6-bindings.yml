@@ -304,6 +304,7 @@ jobs:
           QT_QPA_PLATFORM=offscreen python scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
 
       - name: Publish to persistent pyqt6-bindings-latest release
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
