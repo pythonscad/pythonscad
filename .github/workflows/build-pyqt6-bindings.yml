@@ -99,6 +99,18 @@ jobs:
           source /tmp/pyqt-build-venv/bin/activate
           QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
 
+      - name: Publish to persistent pyqt6-bindings-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view pyqt6-bindings-latest --repo pythonscad/pythonscad >/dev/null 2>&1 \
+            || gh release create pyqt6-bindings-latest --repo pythonscad/pythonscad \
+                 --title "PyQt6 Bindings (latest)" \
+                 --notes "Prebuilt PyQt6 bindings, rebuilt on demand when the linked Qt6 version changes. Not a versioned release of PythonSCAD itself." \
+                 --prerelease
+          gh release upload pyqt6-bindings-latest --repo pythonscad/pythonscad \
+            pyqt6-bindings-linux-x86_64.zip --clobber
+
   build-macos:
     runs-on: macos-15
     name: macOS (Homebrew Qt6)
@@ -176,6 +188,18 @@ jobs:
           set -euo pipefail
           source /tmp/pyqt-build-venv/bin/activate
           QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
+
+      - name: Publish to persistent pyqt6-bindings-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view pyqt6-bindings-latest --repo pythonscad/pythonscad >/dev/null 2>&1 \
+            || gh release create pyqt6-bindings-latest --repo pythonscad/pythonscad \
+                 --title "PyQt6 Bindings (latest)" \
+                 --notes "Prebuilt PyQt6 bindings, rebuilt on demand when the linked Qt6 version changes. Not a versioned release of PythonSCAD itself." \
+                 --prerelease
+          gh release upload pyqt6-bindings-latest --repo pythonscad/pythonscad \
+            pyqt6-bindings-macos.zip --clobber
 
   build-windows:
     runs-on: windows-latest
@@ -278,3 +302,15 @@ jobs:
           set -euo pipefail
           source /tmp/pyqt-build-venv/bin/activate
           QT_QPA_PLATFORM=offscreen python scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
+
+      - name: Publish to persistent pyqt6-bindings-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view pyqt6-bindings-latest --repo pythonscad/pythonscad >/dev/null 2>&1 \
+            || gh release create pyqt6-bindings-latest --repo pythonscad/pythonscad \
+                 --title "PyQt6 Bindings (latest)" \
+                 --notes "Prebuilt PyQt6 bindings, rebuilt on demand when the linked Qt6 version changes. Not a versioned release of PythonSCAD itself." \
+                 --prerelease
+          gh release upload pyqt6-bindings-latest --repo pythonscad/pythonscad \
+            pyqt6-bindings-windows.zip --clobber

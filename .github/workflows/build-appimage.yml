@@ -47,6 +47,18 @@ jobs:
         git fetch --unshallow --tags || git fetch --tags
         git describe --tags --always --dirty
 
+    - name: Fetch and place prebuilt PyQt6 bindings
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        mkdir -p /tmp/pyqt6-fetch
+        gh release download pyqt6-bindings-latest --repo pythonscad/pythonscad \
+          -p "pyqt6-bindings-windows.zip" -D /tmp/pyqt6-fetch
+
+        mkdir -p libraries/python
+        rm -rf libraries/python/PyQt6
+        unzip -q /tmp/pyqt6-fetch/pyqt6-bindings-linux-x86_64.zip -d libraries/python/PyQt6
+
     - name: Setup (detached) tmate session if enabled
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       uses: mxschmitt/action-tmate@v3
