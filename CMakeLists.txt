@@ -363,7 +363,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
 if (typeof process !== 'undefined' && process.on) {
   process.on('uncaughtException', (err) => {
     if (err && err.name === 'ExitStatus') {
-      process.exit(err.status);
+      process.exit(err.status ?? 0);
+      return;
     }
     throw err;
   });
