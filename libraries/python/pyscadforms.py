@@ -2,8 +2,8 @@ from pythonscad import *
 import ast
 import inspect
 
-import sys
-sys.path.insert(0, "/home/gsohler/tmp")
+# import sys
+# sys.path.insert(0, "/home/gsohler/tmp")
 
 from PyQt6 import sip , QtWidgets, QtCore, QtGui
 
