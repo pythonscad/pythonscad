@@ -7,7 +7,274 @@ permissions:
   contents: read
 
 jobs:
-  placeholder:
+  build-linux:
     runs-on: ubuntu-24.04
+    name: Linux x86_64
     steps:
-      - run: echo "Placeholder - real build logic comes on feature branch"
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+          persist-credentials: false
+
+      - name: Install Qt6 + build tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          TZ: Etc/UTC
+        run: |
+          which sudo || ( apt update && apt install -y sudo )
+          sudo -E ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
+          sudo -E apt-get install -y qt6-base-dev-tools build-essential zip
+
+      - name: Symlink qmake6 -> qmake (PyQt6 metadata hook expects 'qmake')
+        run: |
+          mkdir -p /tmp/qmake-shim
+          ln -sf "$(which qmake6)" /tmp/qmake-shim/qmake
+          echo "/tmp/qmake-shim" >> "$GITHUB_PATH"
+
+      - name: Build PyQt6 bindings
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/pyqt-build-venv
+          source /tmp/pyqt-build-venv/bin/activate
+          pip install --upgrade pip
+          pip install sip PyQt-builder PyQt6-sip packaging
+
+          QMAKE=$(which qmake6)
+          QT_VERSION=$("$QMAKE" -query QT_VERSION)
+          echo "Detected Qt version: $QT_VERSION"
+          MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
+
+          mkdir -p src && cd src
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
+          curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
+
+          tar xzf PyQt6.tar.gz
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
+          cd "$EXTRACTED_DIR"
+
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
+          cd build
+          make -j"$(nproc)"
+          make INSTALL_ROOT=/tmp/pyqt-install-root install
+
+          FOUND_DIR=$(find /tmp/pyqt-install-root -maxdepth 12 -type f -iname "QtWidgets*.so" -exec dirname {} \; | head -1)
+          if [ -z "$FOUND_DIR" ]; then
+            echo "ERROR: konnte installierte PyQt6-Module nicht finden" >&2
+            find /tmp/pyqt-install-root -maxdepth 10 >&2
+            exit 1
+          fi
+          mkdir -p /tmp/pyqt-out
+          cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
+
+          # PyQt6-sip GETRENNT in einen Scratch-Ordner installieren, damit pip
+          # nicht den schon befuellten /tmp/pyqt-out/PyQt6 leerraeumt.
+          mkdir -p /tmp/pyqt-sip-only
+          pip install PyQt6-sip --target=/tmp/pyqt-sip-only --no-deps --upgrade
+          SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 -iname "sip*.so" | head -1)
+          if [ -z "$SIP_SO" ]; then
+            echo "ERROR: PyQt6-sip .so nicht gefunden" >&2
+            find /tmp/pyqt-sip-only -maxdepth 6 >&2
+            exit 1
+          fi
+          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
+
+          echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+          python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
+          python3 -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
+
+      - name: Package as zip
+        run: |
+          cd /tmp/pyqt-out
+          zip -r "$GITHUB_WORKSPACE/pyqt6-bindings-linux-x86_64.zip" .
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pyqt6-bindings-linux-x86_64
+          path: pyqt6-bindings-linux-x86_64.zip
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
+
+  build-macos:
+    runs-on: macos-15
+    name: macOS (Homebrew Qt6)
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+          persist-credentials: false
+
+      - name: Install Qt6
+        run: ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
+
+      - name: Build PyQt6 bindings
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/pyqt-build-venv
+          source /tmp/pyqt-build-venv/bin/activate
+          pip install --upgrade pip
+          pip install sip PyQt-builder PyQt6-sip packaging
+
+          QMAKE="$(brew --prefix qt)/bin/qmake"
+          QT_VERSION=$("$QMAKE" -query QT_VERSION)
+          echo "Detected Qt version: $QT_VERSION"
+          MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
+
+          mkdir -p src && cd src
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
+          curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
+
+          tar xzf PyQt6.tar.gz
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
+          cd "$EXTRACTED_DIR"
+
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
+          cd build
+          make -j"$(sysctl -n hw.ncpu)"
+          make INSTALL_ROOT=/tmp/pyqt-install-root install
+
+          FOUND_DIR=$(find /tmp/pyqt-install-root -maxdepth 12 -type f -iname "QtWidgets*.so" -exec dirname {} \; | head -1)
+          if [ -z "$FOUND_DIR" ]; then
+            echo "ERROR: konnte installierte PyQt6-Module nicht finden" >&2
+            find /tmp/pyqt-install-root -maxdepth 10 >&2
+            exit 1
+          fi
+          mkdir -p /tmp/pyqt-out
+          cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
+
+          mkdir -p /tmp/pyqt-sip-only
+          pip install PyQt6-sip --target=/tmp/pyqt-sip-only --no-deps --upgrade
+          SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 -iname "sip*.so" | head -1)
+          if [ -z "$SIP_SO" ]; then
+            echo "ERROR: PyQt6-sip .so nicht gefunden" >&2
+            find /tmp/pyqt-sip-only -maxdepth 6 >&2
+            exit 1
+          fi
+          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
+
+          echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+          python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
+          python3 -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
+
+      - name: Package as zip
+        run: |
+          cd /tmp/pyqt-out
+          zip -r "$GITHUB_WORKSPACE/pyqt6-bindings-macos.zip" .
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pyqt6-bindings-macos
+          path: pyqt6-bindings-macos.zip
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
+
+  build-windows:
+    runs-on: windows-latest
+    name: Windows (MSYS2 UCRT64)
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+          persist-credentials: false
+
+      - name: Calculate PACBOY_PACKAGES
+        shell: bash
+        run: |
+          python3 ./scripts/get-dependencies.py --distro msys2 --profile pythonscad-qt6 --output-env "$GITHUB_ENV" --env-var PACBOY_PACKAGES
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          pacboy: "${{ env.PACBOY_PACKAGES }} python-pip:p python-virtualenv:p zip:"
+
+      - name: Build PyQt6 bindings
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/pyqt-build-venv
+          source /tmp/pyqt-build-venv/bin/activate
+          pip install --upgrade pip
+          pip install sip PyQt-builder PyQt6-sip packaging
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqtbuild_win32_pythonlib.py"
+
+          # qmake6 ohne .exe-Endung wird von pyqtbuilds os.access()-Check
+          # (nativer Windows-Filesystem-Check) nicht gefunden -> explizit ergaenzen.
+          QMAKE=$(which qmake6)
+          if [[ "$QMAKE" != *.exe ]]; then
+            QMAKE="${QMAKE}.exe"
+          fi
+          QT_VERSION=$("$QMAKE" -query QT_VERSION)
+          echo "Detected Qt version: $QT_VERSION"
+          echo "Using qmake: $QMAKE"
+          MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
+
+          mkdir -p src && cd src
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          echo "Gewaehlte PyQt6-Version: $PYQT_VERSION"
+          curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
+
+          tar xzf PyQt6.tar.gz
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
+          cd "$EXTRACTED_DIR"
+
+          # known patch sip files for windows
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_free_operators.py" sip/
+
+          mkdir -p /tmp/pyqt-staging
+          WIN_STAGING_DIR=$(cygpath -w /tmp/pyqt-staging)
+
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir="$WIN_STAGING_DIR"
+          cd build
+          mingw32-make -j"$(nproc)"
+          mingw32-make install
+
+          FOUND_DIR=$(find /tmp/pyqt-staging -maxdepth 12 -type f \( -iname "QtWidgets*.pyd" -o -iname "QtWidgets*.dll" \) -exec dirname {} \; | head -1)
+          if [ -z "$FOUND_DIR" ]; then
+            echo "ERROR: konnte installierte PyQt6-Module nicht finden" >&2
+            find /tmp/pyqt-staging -maxdepth 10 >&2
+            exit 1
+          fi
+          mkdir -p /tmp/pyqt-out
+          cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
+
+          mkdir -p /tmp/pyqt-sip-only
+          pip install PyQt6-sip --target=/tmp/pyqt-sip-only --no-deps --upgrade
+          SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 -iname "sip*.so" -o -iname "sip*.pyd" | head -1)
+          if [ -z "$SIP_SO" ]; then
+            echo "ERROR: PyQt6-sip .so/.pyd nicht gefunden" >&2
+            find /tmp/pyqt-sip-only -maxdepth 6 >&2
+            exit 1
+          fi
+          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
+
+          echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+          python --version > /tmp/pyqt-out/PYTHON_VERSION.txt
+          python -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
+
+      - name: Package as zip
+        run: |
+          cd /tmp/pyqt-out
+          zip -r "$(cygpath "$GITHUB_WORKSPACE")/pyqt6-bindings-windows.zip" .
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pyqt6-bindings-windows
+          path: pyqt6-bindings-windows.zip
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QT_QPA_PLATFORM=offscreen python scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out

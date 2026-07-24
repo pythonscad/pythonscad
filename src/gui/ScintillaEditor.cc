@@ -275,6 +275,7 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
                       QsciScintilla::INDIC_HIDDEN);
   connect(qsci, &QsciScintilla::indicatorClicked, this, &ScintillaEditor::onIndicatorClicked);
   connect(qsci, &QsciScintilla::indicatorReleased, this, &ScintillaEditor::onIndicatorReleased);
+  connect(qsci, &QsciScintilla::SCN_CALLTIPCLICK, this, &ScintillaEditor::onCallTipClicked);
 
 #if QSCINTILLA_VERSION >= 0x020b00
   connect(qsci, &QsciScintilla::SCN_URIDROPPED, this, &ScintillaEditor::uriDropped);
@@ -283,6 +284,18 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
 
   // Disabling buffered drawing resolves non-integer HiDPI scaling.
   qsci->SendScintilla(QsciScintillaBase::SCI_SETBUFFEREDDRAW, false);
+}
+void ScintillaEditor::onCallTipClicked(int position)
+{
+  if (position != 0) return;  // Navigationspfeile ignorieren
+
+  QString funcName = this->lastCallTipFunction;
+  if (funcName.isEmpty()) return;
+
+  int pos = this->lastCallTipPosition;
+  QTimer::singleShot(0, this, [funcName, pos]() {
+    python_call_static_editor_method(funcName.toStdString(), "on_editor_trigger", pos);
+  });
 }
 
 QPoint ScintillaEditor::mapToGlobal(const QPoint& pos)

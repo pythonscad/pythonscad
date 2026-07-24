@@ -1065,6 +1065,24 @@ PyObject *python_mainwindow_ptr(PyObject *, PyObject *)
   return PyLong_FromVoidPtr((void *)mainwindow_global);
 }
 
+PyObject *python_editor_get_call_args(PyObject *, PyObject *args)
+{
+  int pos;
+  if (!PyArg_ParseTuple(args, "i", &pos)) return nullptr;
+
+  std::string argsText = editorGetCallArgs(pos);
+  return PyUnicode_FromString(argsText.c_str());
+}
+
+PyObject *python_editor_replace_call_args(PyObject *, PyObject *args)
+{
+  int pos;
+  const char *newText;
+  if (!PyArg_ParseTuple(args, "is", &pos, &newText)) return nullptr;
+  editorReplaceCallArgs(pos, newText);
+  Py_RETURN_NONE;
+}
+
 #endif
 
 PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs, int mode)

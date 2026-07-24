@@ -714,6 +714,10 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"qapp_ptr", (PyCFunction)python_qapp_ptr, METH_VARARGS | METH_KEYWORDS, "Gets Qapp Pointer"},
   {"mainwindow_ptr", (PyCFunction)python_mainwindow_ptr, METH_VARARGS | METH_KEYWORDS,
    "Gets Mainwindow Pointer"},
+  {"editor_get_call_args", (PyCFunction)python_editor_get_call_args, METH_VARARGS | METH_KEYWORDS,
+   "Get Current call arguments"},
+  {"editor_replace_call_args", (PyCFunction)python_editor_replace_call_args,
+   METH_VARARGS | METH_KEYWORDS, "Replace Current call arguments"},
 #endif
   {"model", (PyCFunction)python_model, METH_VARARGS | METH_KEYWORDS, "Yield Model"},
   {"modelpath", (PyCFunction)python_modelpath, METH_VARARGS | METH_KEYWORDS,

@@ -1554,6 +1554,93 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
   full_node = std::make_shared<CubeNode>(instance);  // just placeholders
 }
 
+void snapshotPythonInventory()
+{
+  PyGILState_STATE st = PyGILState_Ensure();
+  PyObject *key, *value;
+  Py_ssize_t pos = 0;
+  PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
+  while (PyDict_Next(maindict, &pos, &key, &value)) {
+    if (!PyUnicode_Check(key)) continue;
+    std::string key_str;
+    if (!python_pyobject_to_utf8(key, key_str, "snapshotPythonInventory() key")) {
+      PyErr_Clear();
+      continue;
+    }
+    if (std::find(pythonInventory.begin(), pythonInventory.end(), key_str) == pythonInventory.end()) {
+      pythonInventory.push_back(key_str);
+    }
+  }
+  PyGILState_Release(st);
+}
+
+bool python_get_static_calltip(const std::string& className, std::string& result)
+{
+  if (!pythonMainModule) return false;
+
+  PyGILState_STATE gstate = PyGILState_Ensure();
+  bool ok = false;
+
+  PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
+  PyObject *classObj = PyDict_GetItemString(maindict, className.c_str());
+  if (classObj != nullptr) {
+    PyObject *method = PyObject_GetAttrString(classObj, "get_calltip");
+    if (method != nullptr && PyCallable_Check(method)) {
+      PyObject *funcresult = PyObject_CallObject(method, nullptr);
+      if (funcresult != nullptr) {
+        if (PyUnicode_Check(funcresult)) {
+          result = PyUnicode_AsUTF8(funcresult);
+          ok = true;
+        }
+        Py_DECREF(funcresult);
+      } else {
+        PyErr_Print();
+        PyErr_Clear();
+      }
+    }
+    Py_XDECREF(method);
+  } else {
+    PyErr_Clear();  // Name nicht gefunden ist kein Fehler, nur "kein Treffer"
+  }
+
+  PyGILState_Release(gstate);
+  return ok;
+}
+
+bool python_call_static_editor_method(const std::string& className, const std::string& methodName,
+                                      int position)
+{
+  if (!pythonMainModule) return false;
+
+  PyGILState_STATE gstate = PyGILState_Ensure();
+  bool called = false;
+
+  PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
+  PyObject *classObj = PyDict_GetItemString(maindict, className.c_str());
+  if (classObj != nullptr) {
+    PyObject *method = PyObject_GetAttrString(classObj, methodName.c_str());
+    if (method != nullptr && PyCallable_Check(method)) {
+      PyObject *args = PyTuple_Pack(1, PyLong_FromLong(position));
+      PyObject *funcresult = PyObject_CallObject(method, args);
+      Py_DECREF(args);
+      if (funcresult != nullptr) {
+        Py_DECREF(funcresult);
+        called = true;
+      } else {
+        PyErr_Print();
+        PyErr_Clear();
+      }
+    } else {
+      PyErr_Clear();  // Methode existiert nicht -> kein Fehler, einfach nichts tun
+    }
+    Py_XDECREF(method);
+  } else {
+    PyErr_Clear();  // Klasse nicht bekannt -> ebenfalls kein Fehler
+  }
+
+  PyGILState_Release(gstate);
+  return called;
+}
 void finishPython(void)
 {
   if (!pythonDryRun) {

@@ -12,6 +12,7 @@
 #include "core/Builtins.h"
 #include "core/EvaluationSession.h"
 #include "core/parsersettings.h"
+#include "python/python_public.h"
 #include "gui/ScintillaEditor.h"
 
 namespace {
@@ -145,12 +146,40 @@ void ScadApi::autoCompletionSelected(const QString& /*selection*/)
 {
 }
 
+static long findEnclosingOpenParenPos(QsciScintilla *qsci, long cursorPos)
+{
+  QString text = qsci->text();
+  int depth = 0;
+  for (long i = cursorPos - 1; i >= 0; --i) {
+    QChar c = text.at((int)i);
+    if (c == ')') depth++;
+    else if (c == '(') {
+      if (depth == 0) return i + 1;  // Position direkt NACH dieser "("
+      depth--;
+    }
+  }
+  return -1;
+}
+
 QStringList ScadApi::callTips(const QStringList& context, int /*commas*/,
                               QsciScintilla::CallTipsStyle /*style*/, QList<int>& /*shifts*/)
 {
   QStringList callTips;
+  QString funcName = context.at(context.size() - 2);
+
+  editor->lastCallTipFunction = funcName;
+  long curPos = editor->qsci->SendScintilla(QsciScintillaBase::SCI_GETCURRENTPOS);
+  long openParenPos = findEnclosingOpenParenPos(editor->qsci, curPos);
+  editor->lastCallTipPosition = (openParenPos >= 0) ? (int)openParenPos : (int)curPos;
+
+  std::string pythonCalltip;
+  if (python_get_static_calltip(funcName.toStdString(), pythonCalltip)) {
+    callTips << QString::fromStdString(pythonCalltip).leftJustified(48, ' ') + "\u25B6";
+    return callTips;  // Python-Version gefunden -> Builtin-Liste wird gar nicht erst geprueft
+  }
+
   for (const auto& func : funcs) {
-    if (func.get_name() == context.at(context.size() - 2)) {
+    if (func.get_name() == funcName) {
       callTips = func.get_params();
       break;
     }
