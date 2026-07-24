@@ -372,14 +372,15 @@ if (typeof process !== 'undefined' && process.on) {
     set(WASM_NODE_POST_JS "${CMAKE_CURRENT_BINARY_DIR}/node_noderawfs_fstat.js")
     file(WRITE "${WASM_NODE_POST_JS}" "
 {
+  const nodeFs = typeof require === 'function' ? require('fs') : null;
   const originalFstat = FS.fstat;
   FS.fstat = (fd) => {
     const stream = FS.getStreamChecked(fd);
     const nfd = stream && (stream.nfd ?? fd);
-    if (stream && !stream.node && typeof nfd !== 'undefined') {
-      const stat = fs.fstatSync(nfd);
+    if (stream && !stream.node && typeof nfd !== 'undefined' && nodeFs) {
+      const stat = nodeFs.fstatSync(nfd);
       const blksize = stat.blksize || 4096;
-      if (NODEFS.isWindows) {
+      if (typeof NODEFS !== 'undefined' && NODEFS.isWindows) {
         stat.mode |= (stat.mode & 292) >> 2;
       }
       return {
