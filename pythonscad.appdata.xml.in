@@ -35,6 +35,27 @@
   </screenshots>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.2.0" date="2026-07-24">
+      <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.2.0</url>
+      <description>
+        <p>Features:</p>
+        <ul>
+          <li>add center option to rounded_cube</li>
+          <li>add Test PyPI publishing step to workflow</li>
+          <li>numpy: accept numpy input</li>
+          <li>pyqt: connector to pyqt</li>
+          <li>web: added pyforge link</li>
+        </ul>
+        <p>Bug fixes:</p>
+        <ul>
+          <li>chore: fr tranaslation</li>
+          <li>chore: remove unneeed extra debug</li>
+          <li>chore: svgviewbox</li>
+          <li>chore: test old CMakeLists.txt</li>
+          <li>chore: upload more artifcats to locate the issue</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.1.2" date="2026-07-16">
       <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.1.2</url>
       <description>

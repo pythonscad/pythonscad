@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.2.0](https://github.com/pythonscad/pythonscad/compare/v1.1.2...v1.2.0) (2026-07-24)
+
+
+### Features
+
+* add center option to rounded_cube ([#912](https://github.com/pythonscad/pythonscad/issues/912)) ([a1b0c87](https://github.com/pythonscad/pythonscad/commit/a1b0c87ed51050604a8bd969404529dc841d4adc))
+* add Test PyPI publishing step to workflow ([#911](https://github.com/pythonscad/pythonscad/issues/911)) ([2f89eac](https://github.com/pythonscad/pythonscad/commit/2f89eac9e707acb8604ad1cc55788dd9ddc3e4c9))
+* **numpy:** accept numpy input ([fe60cd7](https://github.com/pythonscad/pythonscad/commit/fe60cd7023931e72df1f5bb3fac47587db709fa7))
+* **pyqt:** connector to pyqt ([#904](https://github.com/pythonscad/pythonscad/issues/904)) ([d5b3cec](https://github.com/pythonscad/pythonscad/commit/d5b3cecce1444bc93a8d755af372c08a010264a6))
+* **web:** added pyforge link ([#918](https://github.com/pythonscad/pythonscad/issues/918)) ([88fe40a](https://github.com/pythonscad/pythonscad/commit/88fe40ab20695001eed2f8af750028661c44e726))
+
+
+### Bug Fixes
+
+* **chore:** fr tranaslation ([3cc1045](https://github.com/pythonscad/pythonscad/commit/3cc1045fe41385b54e9ac6e760d897872a9e3375))
+* **chore:** remove unneeed extra debug ([1a6070a](https://github.com/pythonscad/pythonscad/commit/1a6070a1ded271eb09f983b2e7b5007d021eebd3))
+* **chore:** svgviewbox ([8ff3256](https://github.com/pythonscad/pythonscad/commit/8ff3256cf0a4495f0ee8eabd87ba4ffb36077ed7))
+* **chore:** test old CMakeLists.txt ([fc806e1](https://github.com/pythonscad/pythonscad/commit/fc806e16756b2b95f5cc42233c7f1bae8b15d5b4))
+* **chore:** upload more artifcats to locate the issue ([828bd22](https://github.com/pythonscad/pythonscad/commit/828bd22c3cbb62ce49056476b0e77c74398c8f40))
+
+
+### Documentation
+
+* **release:** fix mkdocs navigation after rename of release notes from v1.1.1 to v1.1.2 ([#896](https://github.com/pythonscad/pythonscad/issues/896)) ([e1877a2](https://github.com/pythonscad/pythonscad/commit/e1877a26b06e29f869c45de10a7b8937c9a8dd5e))
+
 ## [1.1.2](https://github.com/pythonscad/pythonscad/compare/v1.1.1...v1.1.2) (2026-07-16)
 
 
