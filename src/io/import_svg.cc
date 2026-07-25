@@ -138,7 +138,8 @@ std::vector<Color4f> import_svg_list_colors(CurveDiscretizer discretizer, const 
       discretizer.getPathSegmentCount(), stroke);
     build_svg_selector(scadContext, id, layer);
 
-    const auto shapes = libsvg::libsvg_read_file(filename.c_str(), (void *)&scadContext);
+    const std::unique_ptr<libsvg::shapes_list_t, decltype(&libsvg::libsvg_free)> shapes(
+      libsvg::libsvg_read_file(filename.c_str(), (void *)&scadContext), &libsvg::libsvg_free);
     for (const auto& shape_ptr : *shapes) {
       if (shape_ptr->is_excluded()) continue;
       const auto& s = *shape_ptr;
@@ -148,7 +149,6 @@ std::vector<Color4f> import_svg_list_colors(CurveDiscretizer discretizer, const 
         colors.push_back(color);
       }
     }
-    libsvg_free(shapes);
   } catch (const std::exception& e) {
     LOG(message_group::Error, "%1$s, import() at line %2$d", e.what(), loc.firstLine());
   }

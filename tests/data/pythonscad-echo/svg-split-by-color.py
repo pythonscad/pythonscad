@@ -2,7 +2,7 @@
 
 Exercises:
   * split_by_color=True on a multi-color SVG returns a dict keyed by
-    hex color, one entry per distinct fill/stroke color
+    hex color, one entry per distinct selected outline color
   * default (no flag) and explicit split_by_color=False both keep
     returning a single PyOpenSCAD object (backward compatibility)
   * split_by_color=True on a non-SVG import raises ValueError
