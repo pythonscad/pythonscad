@@ -573,6 +573,8 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     n->convexity = convexity;
     if (n->convexity <= 0) n->convexity = 1;
 
+    n->origin_x = 0;
+    n->origin_y = 0;
     if (origin != NULL && PyList_Check(origin) && PyList_Size(origin) == 2) {
       n->origin_x = PyFloat_AsDouble(PyList_GetItem(origin, 0));
       n->origin_y = PyFloat_AsDouble(PyList_GetItem(origin, 1));
@@ -609,7 +611,8 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     CreateCurveDiscretizer(kwargs), filename, idOpt, layerOpt, strokeBool, instance->location());
   if (colors.empty()) {
     PyErr_SetString(PyExc_ValueError,
-                    "osimport(): split_by_color=True but no colored shapes were found in the SVG");
+                    "osimport(): split_by_color=True found no colors matching the SVG selection; "
+                    "check id, layer, and stroke settings");
     return NULL;
   }
 
