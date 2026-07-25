@@ -18,6 +18,9 @@ print("type:", type(parts).__name__)
 print("keys:", sorted(parts.keys()))
 print("all values are PyOpenSCAD:", all(type(v).__name__ == "PyOpenSCAD" for v in parts.values()))
 
+truthy_result = osimport(SVG, layer=None, id=None, split_by_color=1)
+print("None selectors and truthy flag return dict:", isinstance(truthy_result, dict))
+
 default_result = osimport(SVG)
 print("default is dict:", isinstance(default_result, dict))
 print("default type:", type(default_result).__name__)

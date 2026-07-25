@@ -498,7 +498,7 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   int convexity = 2;
   double scale = 1.0, width = 1, height = 1, dpi = ImportNode::SVG_DEFAULT_DPI;
   PyObject *origin = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|siO!dddOdsOdddO", kwlist, &v, &layer, &convexity,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ziO!dddOdzOdddO", kwlist, &v, &layer, &convexity,
                                    &PyList_Type, &origin, &scale, &width, &height, &center, &dpi, &id,
                                    &stroke, &fn, &fa, &fs, &split_by_color
 
@@ -545,7 +545,9 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     else if (ext == ".step") actualtype = ImportType::STEP;
   }
 
-  const bool splitByColor = (split_by_color == Py_True);
+  const int splitByColorValue = split_by_color == nullptr ? 0 : PyObject_IsTrue(split_by_color);
+  if (splitByColorValue < 0) return nullptr;
+  const bool splitByColor = splitByColorValue != 0;
   if (splitByColor && actualtype != ImportType::SVG) {
     PyErr_SetString(PyExc_ValueError, "osimport(): split_by_color=True is only supported for SVG files");
     return NULL;
@@ -563,8 +565,9 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     return NULL;
   }
 
+  const auto discretizer = CreateCurveDiscretizer(kwargs);
   auto build_node = [&](const boost::optional<Color4f>& colorFilter) {
-    auto n = std::make_shared<ImportNode>(instance, actualtype, CreateCurveDiscretizer(kwargs));
+    auto n = std::make_shared<ImportNode>(instance, actualtype, discretizer);
 
     n->filename = filename;
 
@@ -607,8 +610,8 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   const boost::optional<std::string> layerOpt =
     layer != NULL ? boost::optional<std::string>(layer) : boost::none;
   const bool strokeBool = (stroke == Py_True);
-  const std::vector<Color4f> colors = import_svg_list_colors(
-    CreateCurveDiscretizer(kwargs), filename, idOpt, layerOpt, strokeBool, instance->location());
+  const std::vector<Color4f> colors =
+    import_svg_list_colors(discretizer, filename, idOpt, layerOpt, strokeBool, instance->location());
   if (colors.empty()) {
     PyErr_SetString(PyExc_ValueError,
                     "osimport(): split_by_color=True found no colors matching the SVG selection; "
