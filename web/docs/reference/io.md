@@ -30,7 +30,7 @@ Import geometry from a file. This is the PythonSCAD equivalent of OpenSCAD's `im
 | `id` | string | `None` | Element ID (for SVG) |
 | `stroke` | bool | `False` | Include stroke paths (for SVG) |
 | `fn`, `fa`, `fs` | float | global | Curve discretization; defaults to the global `fn`/`fa`/`fs` values |
-| `split_by_color` | bool | `False` | SVG only: return `{hex_color: 2D object}` instead of one merged object; raises `ValueError` for unsupported input. |
+| `split_by_color` | bool | `False` | SVG only: return `{hex_color: 2D object}` instead of one merged object; raises `ValueError` for non-SVG input or when no colors match the SVG selection. |
 
 **Supported formats:** STL, OFF, AMF, 3MF (3D); DXF, SVG (2D)
 

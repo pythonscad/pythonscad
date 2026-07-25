@@ -577,7 +577,19 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     return NULL;
   }
 
-  const auto discretizer = CreateCurveDiscretizer(kwargs);
+  PyObjectUniquePtr discretizerKwargs(PyDict_New(), &PyObjectDeleter);
+  if (!discretizerKwargs) return nullptr;
+  auto addDiscretizerArg = [&](const char *name, PyObject *value) {
+    if (value == nullptr || value == Py_None) return true;
+    const double number = PyFloat_AsDouble(value);
+    if (PyErr_Occurred()) return false;
+    PyObjectUniquePtr normalized(PyFloat_FromDouble(number), &PyObjectDeleter);
+    return normalized && PyDict_SetItemString(discretizerKwargs.get(), name, normalized.get()) == 0;
+  };
+  if (!addDiscretizerArg("fn", fn) || !addDiscretizerArg("fa", fa) || !addDiscretizerArg("fs", fs)) {
+    return nullptr;
+  }
+  const auto discretizer = CreateCurveDiscretizer(discretizerKwargs.get());
   auto build_node = [&](const boost::optional<Color4f>& colorFilter) {
     auto n = std::make_shared<ImportNode>(instance, actualtype, discretizer);
 
