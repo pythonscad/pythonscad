@@ -486,9 +486,8 @@ PyObject *python_oo_export(PyObject *obj, PyObject *args, PyObject *kwargs)
 PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, ImportType type)
 {
   DECLARE_INSTANCE();
-  char *kwlist[] = {"file",  "layer", "convexity", "origin", "scale", "width",
-                    "height", "center", "dpi",     "id",     "stroke", "fn",
-                    "fa",    "fs",    "split_by_color", NULL};
+  char *kwlist[] = {"file", "layer", "convexity", "origin", "scale", "width", "height",         "center",
+                    "dpi",  "id",    "stroke",    "fn",     "fa",    "fs",    "split_by_color", NULL};
   double fn = NAN, fa = NAN, fs = NAN;
   PyObject *stroke = nullptr;
   PyObject *split_by_color = nullptr;
@@ -553,15 +552,14 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   }
 #ifdef ENABLE_PIP
   if (splitByColor) {
-    PyErr_SetString(PyExc_ValueError,
-                    "osimport(): split_by_color=True is not supported in this build");
+    PyErr_SetString(PyExc_ValueError, "osimport(): split_by_color=True is not supported in this build");
     return NULL;
   }
 #endif
 
   double dpiVal = dpi;
   if (dpiVal < 0.001) {
-    PyErr_SetString(PyExc_TypeError, "Invalid dpi value giving");
+    PyErr_SetString(PyExc_TypeError, "osimport(): dpi must be at least 0.001");
     return NULL;
   }
 

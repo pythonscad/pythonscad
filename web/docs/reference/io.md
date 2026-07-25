@@ -10,7 +10,7 @@ Import geometry from a file. This is the PythonSCAD equivalent of OpenSCAD's `im
 
     ```python
     osimport(file, layer="", convexity=2, origin=None, scale=None,
-             width=0, height=0, center=False, dpi=96, id="", stroke=False,
+             width=0, height=0, center=False, dpi=72, id="", stroke=False,
              fn=0, fa=0, fs=0, split_by_color=False)
     ```
 
@@ -26,11 +26,11 @@ Import geometry from a file. This is the PythonSCAD equivalent of OpenSCAD's `im
 | `width` | float | `0` | Width (for image-based imports) |
 | `height` | float | `0` | Height (for image-based imports) |
 | `center` | bool | `False` | Center the imported geometry |
-| `dpi` | float | `96` | DPI for SVG imports |
+| `dpi` | float | `72` | DPI for SVG imports |
 | `id` | string | `""` | Element ID (for SVG) |
 | `stroke` | bool | `False` | Include stroke paths (for SVG) |
 | `fn`, `fa`, `fs` | float | global | Curve discretization; defaults to the global `fn`/`fa`/`fs` values |
-| `split_by_color` | bool | `False` | SVG only: return a dict of `{hex_color: 2D object}` — one object per distinct SVG color — instead of a single merged object. Raises `ValueError` for non-SVG files or an SVG with no colored shapes. |
+| `split_by_color` | bool | `False` | SVG only: return `{hex_color: 2D object}` instead of one merged object; raises `ValueError` for unsupported input. |
 
 **Supported formats:** STL, OFF, AMF, 3MF (3D); DXF, SVG (2D)
 

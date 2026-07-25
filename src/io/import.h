@@ -16,10 +16,11 @@ std::unique_ptr<class PolySet> import_off(const std::string& filename, const Loc
 std::unique_ptr<class PolySet> import_amf(const std::string&, const Location& loc);
 std::unique_ptr<class PolySet> import_3mf(const std::string&, const Location& loc);
 
-std::unique_ptr<class Polygon2d> import_svg(
-  CurveDiscretizer discretizer, const std::string& filename, const boost::optional<std::string>& id,
-  const boost::optional<std::string>& layer, const double dpi, const bool center, const Location& loc,
-  bool stroke, const boost::optional<Color4f>& colorFilter = boost::none);
+std::unique_ptr<class Polygon2d> import_svg(CurveDiscretizer discretizer, const std::string& filename,
+                                            const boost::optional<std::string>& id,
+                                            const boost::optional<std::string>& layer, const double dpi,
+                                            const bool center, const Location& loc, bool stroke,
+                                            const boost::optional<Color4f>& colorFilter = boost::none);
 
 // Returns the distinct outline colors found in an SVG file, in first-appearance order,
 // resolved through the same fill/stroke -> Color4f logic used by import_svg().

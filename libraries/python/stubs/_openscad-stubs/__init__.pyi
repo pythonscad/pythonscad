@@ -1389,11 +1389,11 @@ def osimport(
     fs: Optional[float] = None,
     split_by_color: Literal[False] = False,
 ) -> PyOpenSCAD:
-    """Imports Object from disc
+    """Imports an object from disk.
 
     Args:
-        stroke: defaults to true which turnes open SVG pathes to polygons. if set to false,
-                SVG pathes are converted to polylines instead.
+        stroke: When True, turns open SVG paths into polygons. When False (the
+                default), SVG paths are converted to polylines instead.
         split_by_color: SVG only. When True, returns a dict of ``{hex_color: PyOpenSCAD}``
                 with one 2D object per distinct color found in the SVG, instead of a
                 single merged object. Useful for exporting each color as a separate
