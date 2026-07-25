@@ -1435,7 +1435,7 @@ def osimport(
     file: str,
     layer: Optional[str],
     convexity: int,
-    origin: List[float],
+    origin: Optional[List[float]],
     scale: float,
     width: float,
     height: float,
@@ -1443,9 +1443,9 @@ def osimport(
     dpi: float,
     id: Optional[str],
     stroke: bool,
-    fn: float,
-    fa: float,
-    fs: float,
+    fn: Optional[float],
+    fa: Optional[float],
+    fs: Optional[float],
     split_by_color: Literal[True],
 ) -> dict[str, PyOpenSCAD]:
     """Positional form of the split-by-color overload."""

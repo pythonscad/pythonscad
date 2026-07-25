@@ -488,7 +488,7 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   DECLARE_INSTANCE();
   char *kwlist[] = {"file", "layer", "convexity", "origin", "scale", "width", "height",         "center",
                     "dpi",  "id",    "stroke",    "fn",     "fa",    "fs",    "split_by_color", NULL};
-  double fn = NAN, fa = NAN, fs = NAN;
+  PyObject *fn = nullptr, *fa = nullptr, *fs = nullptr;
   PyObject *stroke = nullptr;
   PyObject *split_by_color = nullptr;
 
@@ -498,13 +498,17 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   int convexity = 2;
   double scale = 1.0, width = 1, height = 1, dpi = ImportNode::SVG_DEFAULT_DPI;
   PyObject *origin = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ziO!dddOdzOdddO", kwlist, &v, &layer, &convexity,
-                                   &PyList_Type, &origin, &scale, &width, &height, &center, &dpi, &id,
-                                   &stroke, &fn, &fa, &fs, &split_by_color
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ziOdddOdzOOOOO", kwlist, &v, &layer, &convexity,
+                                   &origin, &scale, &width, &height, &center, &dpi, &id, &stroke, &fn,
+                                   &fa, &fs, &split_by_color
 
                                    )) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing osimport(filename)");
     return NULL;
+  }
+  if (origin != nullptr && origin != Py_None && (!PyList_Check(origin) || PyList_Size(origin) != 2)) {
+    PyErr_SetString(PyExc_TypeError, "osimport(): origin must be a two-element list or None");
+    return nullptr;
   }
   if (v == NULL || v[0] == '\0') {
     PyErr_SetString(PyExc_ValueError, "osimport(): filename must not be empty");
