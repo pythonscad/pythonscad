@@ -8,6 +8,7 @@
 #include "core/ModuleInstantiation.h"
 #include "core/Value.h"
 #include "core/node.h"
+#include "geometry/linalg.h"
 
 enum class ImportType {
   UNKNOWN,

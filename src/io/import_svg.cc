@@ -176,7 +176,8 @@ std::unique_ptr<Polygon2d> import_svg(CurveDiscretizer discretizer, const std::s
       match_args += "layer = \"" + layer.get() + "\"";
     }
 
-    const auto shapes = libsvg::libsvg_read_file(filename.c_str(), (void *)&scadContext);
+    const std::unique_ptr<libsvg::shapes_list_t, decltype(&libsvg::libsvg_free)> shapes(
+      libsvg::libsvg_read_file(filename.c_str(), (void *)&scadContext), &libsvg::libsvg_free);
     if (!match_args.empty() && !scadContext.has_matches()) {
       LOG(message_group::Warning, loc, "", "import() filter %2$s did not match anything", filename,
           match_args);
@@ -263,7 +264,6 @@ std::unique_ptr<Polygon2d> import_svg(CurveDiscretizer discretizer, const std::s
         if (!poly.isEmpty()) polygons.push_back(std::make_shared<const Polygon2d>(poly));
       }
     }
-    libsvg_free(shapes);
     std::reverse(polygons.begin(), polygons.end());
     auto result_cleaned = ClipperUtils::cleanUnion(polygons);
     return std::make_unique<Polygon2d>(result_cleaned);
