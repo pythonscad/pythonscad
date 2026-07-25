@@ -510,6 +510,14 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     PyErr_SetString(PyExc_TypeError, "osimport(): origin must be a two-element list or None");
     return nullptr;
   }
+  double originX = 0;
+  double originY = 0;
+  if (origin != nullptr && origin != Py_None) {
+    originX = PyFloat_AsDouble(PyList_GetItem(origin, 0));
+    if (PyErr_Occurred()) return nullptr;
+    originY = PyFloat_AsDouble(PyList_GetItem(origin, 1));
+    if (PyErr_Occurred()) return nullptr;
+  }
   if (v == NULL || v[0] == '\0') {
     PyErr_SetString(PyExc_ValueError, "osimport(): filename must not be empty");
     return NULL;
@@ -580,12 +588,8 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     n->convexity = convexity;
     if (n->convexity <= 0) n->convexity = 1;
 
-    n->origin_x = 0;
-    n->origin_y = 0;
-    if (origin != NULL && PyList_Check(origin) && PyList_Size(origin) == 2) {
-      n->origin_x = PyFloat_AsDouble(PyList_GetItem(origin, 0));
-      n->origin_y = PyFloat_AsDouble(PyList_GetItem(origin, 1));
-    }
+    n->origin_x = originX;
+    n->origin_y = originY;
 
     n->center = 0;
     if (center == Py_True) n->center = 1;

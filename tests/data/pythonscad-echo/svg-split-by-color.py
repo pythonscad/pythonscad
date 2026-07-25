@@ -24,6 +24,12 @@ print("None selectors and truthy flag return dict:", isinstance(truthy_result, d
 positional_result = osimport(SVG, None, 2, None, 1, 1, 1, False, 72, None, False, None, None, None, True)
 print("fully positional flag returns dict:", isinstance(positional_result, dict))
 
+try:
+    osimport(SVG, origin=["invalid", 0])
+    print("invalid origin: NO EXCEPTION (expected TypeError)")
+except TypeError:
+    print("invalid origin: TypeError")
+
 default_result = osimport(SVG)
 print("default is dict:", isinstance(default_result, dict))
 print("default type:", type(default_result).__name__)
