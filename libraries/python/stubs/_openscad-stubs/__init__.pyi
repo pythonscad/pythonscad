@@ -1430,6 +1430,27 @@ def osimport(
     """See the non-overloaded osimport() docstring."""
     ...
 
+@overload
+def osimport(
+    file: str,
+    layer: Optional[str],
+    convexity: int,
+    origin: List[float],
+    scale: float,
+    width: float,
+    height: float,
+    center: bool,
+    dpi: float,
+    id: Optional[str],
+    stroke: bool,
+    fn: float,
+    fa: float,
+    fs: float,
+    split_by_color: Literal[True],
+) -> dict[str, PyOpenSCAD]:
+    """Positional form of the split-by-color overload."""
+    ...
+
 def osuse(path: str) -> PyOpenSCAD:
     """Import an OpenSCAD library, exposing its modules and functions.
 

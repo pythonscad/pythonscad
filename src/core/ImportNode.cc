@@ -300,7 +300,7 @@ std::string ImportNode::toString() const
   }
   stream << ", origin = [" << std::dec << this->origin_x << ", " << this->origin_y << "]";
   if (this->type == ImportType::SVG) {
-    stream << ", dpi = " << this->dpi;
+    stream << ", dpi = " << this->dpi << ", stroke = " << (this->stroke ? "true" : "false");
     if (this->colorFilter) {
       stream << ", colorFilter = [" << this->colorFilter->r() << ", " << this->colorFilter->g() << ", "
              << this->colorFilter->b() << ", " << this->colorFilter->a() << "]";
