@@ -366,13 +366,6 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
     }
   }
 
-  {
-    double sx, sy;
-    if (scale != NULL && python_vectorval(scale, 2, 2, &sx, &sy, nullptr, nullptr, nullptr) == 0) {
-      node->scale_x = sx;
-      node->scale_y = sy;
-    }
-  }
   if (twist != NULL) {
     if (twist->ob_type == &PyFunction_Type) {
       Py_XINCREF(twist);  // TODO there to decref it ?

@@ -354,10 +354,10 @@ class PyOpenSCAD:
 
     def path_extrude(
         self,
-        path: List[float]| "npt.NDArray[np.float64]",
+        path: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
         xdir: List[float]| "npt.NDArray[np.float64]",
         convexity: int = 2,
-        origin: List[float]| "npt.NDArray[np.float64]" = [0, 0, 0],
+        origin: Sequence[float] | "npt.NDArray[np.float64]" = [0, 0],
         scale: float = 1,
         twist: float = 0,
         closed: bool = False,
@@ -1094,7 +1094,7 @@ def rotate_extrude(
 
 def path_extrude(
     obj: PyOpenSCAD,
-    path: List[float]| "npt.NDArray[np.float64]",
+    path: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
     xdir: List[float]| "npt.NDArray[np.float64]",
     convexity: int,
     origin: List[float]| "npt.NDArray[np.float64]",

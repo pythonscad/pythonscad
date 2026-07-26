@@ -703,6 +703,7 @@ Outline2d python_getprofile(void *v_cbfunc, int fn, double arg)
       Py_DECREF(seq);
     }
   }
+  Py_XDECREF(polygon);
   if (result.vertices.size() < 3) {
     Outline2d err;
     err.vertices.push_back(Vector2d(0, 0));
