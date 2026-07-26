@@ -10,6 +10,7 @@ PyObject *python_from3dpointlist(const std::vector<Vector3d>& ptlist);
 PyObject *python_from2dint(const std::vector<std::vector<size_t>>& intlist);
 PyObject *python_from2dlong(const std::vector<IndexedFace>& intlist);
 int python_numberval(PyObject *number, double *result, int *flags, int flagor);
+int python_indexval(PyObject *number, long *result);
 // True for list/tuple/NumPy-array-like objects (anything supporting the
 // sequence protocol) but not str/bytes/dict/PyOpenSCAD objects. Use this in
 // place of PyList_Check() when parsing user coordinate/index input so that

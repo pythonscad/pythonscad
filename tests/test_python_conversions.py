@@ -179,6 +179,13 @@ err("to2dvarpointlist-bad-coord", lambda: polygon([[1]]))
 same("to2dintlist-paths",
      _ext(polygon(_sq, paths=[[0, 1, 2, 3]])),
      _ext(polygon(_sq, paths=np.array([[0, 1, 2, 3]]))))
+err("to2dintlist-reject-float-index",
+    lambda: polygon(_sq, paths=np.array([[0.5, 1.0, 2.0, 3.0]])))
+err("polyhedron-reject-float-index",
+    lambda: polyhedron(
+        [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+        np.array([[0.5, 1.0, 2.0]]),
+    ))
 
 # --- python_fromvector (vector return) -------------------------------
 _sz = cube([2, 4, 6]).size

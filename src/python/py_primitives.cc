@@ -682,14 +682,13 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
         IndexedFace face;
         Py_ssize_t nind = PySequence_Fast_GET_SIZE(fseq);
         for (Py_ssize_t j = 0; j < nind; j++) {
-          double dind;
-          if (python_numberval(PySequence_Fast_GET_ITEM(fseq, j), &dind, nullptr, 0)) {
+          long pointIndex;
+          if (python_indexval(PySequence_Fast_GET_ITEM(fseq, j), &pointIndex)) {
             Py_DECREF(fseq);
             Py_DECREF(seq);
-            PyErr_SetString(PyExc_TypeError, "Polyhedron Point Index must be a number");
+            PyErr_SetString(PyExc_TypeError, "Polyhedron Point Index must be an integer");
             return NULL;
           }
-          long pointIndex = (long)dind;
           if (pointIndex < 0 || pointIndex >= static_cast<long>(node->points.size())) {
             Py_DECREF(fseq);
             Py_DECREF(seq);
@@ -703,7 +702,7 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
           node->faces.push_back(std::move(face));
         } else {
           Py_DECREF(seq);
-          PyErr_SetString(PyExc_TypeError, "Polyhedron Face must sepcify at least 3 indices");
+          PyErr_SetString(PyExc_TypeError, "Polyhedron Face must specify at least 3 indices");
           return NULL;
         }
 

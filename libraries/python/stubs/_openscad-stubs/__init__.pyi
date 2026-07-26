@@ -1,7 +1,7 @@
 """ PythonSCAD Stub File for use in editors like Visual Studio Code """
 
 from enum import Enum
-from typing import Annotated, List, Literal, Mapping, Optional, Self, Sequence, TYPE_CHECKING, Union, overload
+from typing import List, Literal, Mapping, Optional, Self, Sequence, TYPE_CHECKING, Union, overload
 
 if TYPE_CHECKING:
     import numpy as np
@@ -614,7 +614,9 @@ def circle(
     ...
 
 def polygon(
-    points: Matrix4x4, paths:list[list[int]] | Annotated[npt.NDArray[np.float64], Literal["Any", "Any"]] | None = None, convexity: int = 2
+    points: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
+    paths: Sequence[Sequence[int]] | "npt.NDArray[np.int64]" | None = None,
+    convexity: int = 2,
 ) -> PyOpenSCAD:
     """Create a polygon primitive.
 

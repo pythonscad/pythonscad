@@ -98,6 +98,18 @@ int python_numberval(PyObject *number, double *result, int *flags, int flagor)
   return 1;
 }
 
+int python_indexval(PyObject *number, long *result)
+{
+  if (number == nullptr) return 1;
+  PyObject *index = PyNumber_Index(number);
+  if (index == nullptr) return 1;
+  const long value = PyLong_AsLong(index);
+  Py_DECREF(index);
+  if (value == -1 && PyErr_Occurred()) return 1;
+  *result = value;
+  return 0;
+}
+
 /*
  * Returns true when `o` should be treated as a numeric coordinate/index
  * container: a list, tuple, or any object implementing the sequence
@@ -124,10 +136,12 @@ std::vector<int> python_intlistval(PyObject *list)
 {
   std::vector<int> result;
   if (list == nullptr) return result;
-  if (PyLong_Check(list)) {
-    result.push_back(PyLong_AsLong(list));
+  long value;
+  if (!python_indexval(list, &value)) {
+    result.push_back(static_cast<int>(value));
     return result;
   }
+  PyErr_Clear();
   // Accept lists, tuples and NumPy arrays of integers (or numpy int scalars).
   if (python_is_sequence(list)) {
     PyObject *seq = PySequence_Fast(list, "expected a sequence of integers");
@@ -137,9 +151,10 @@ std::vector<int> python_intlistval(PyObject *list)
     }
     Py_ssize_t size = PySequence_Fast_GET_SIZE(seq);
     for (Py_ssize_t i = 0; i < size; i++) {
-      double val;
-      if (!python_numberval(PySequence_Fast_GET_ITEM(seq, i), &val, nullptr, 0)) {
-        result.push_back((int)val);
+      if (!python_indexval(PySequence_Fast_GET_ITEM(seq, i), &value)) {
+        result.push_back(static_cast<int>(value));
+      } else {
+        PyErr_Clear();
       }
     }
     Py_DECREF(seq);
@@ -351,17 +366,16 @@ std::vector<std::vector<size_t>> python_to2dintlist(PyObject *pypaths)
     std::vector<size_t> path;
     Py_ssize_t m = PySequence_Fast_GET_SIZE(sub);
     for (Py_ssize_t j = 0; j < m; j++) {
-      double dval;
-      if (python_numberval(PySequence_Fast_GET_ITEM(sub, j), &dval, nullptr, 0)) {
-        PyErr_SetString(PyExc_TypeError, "Polyhedron Point Index must be a number");
+      long pointIndex;
+      if (python_indexval(PySequence_Fast_GET_ITEM(sub, j), &pointIndex)) {
+        PyErr_SetString(PyExc_TypeError, "Polygon Point Index must be an integer");
         Py_DECREF(sub);
         Py_DECREF(seq);
         result.clear();
         return result;
       }
-      long pointIndex = (long)dval;
       if (pointIndex < 0) {  // TODO fix || pointIndex >= node->points.size()) {
-        PyErr_SetString(PyExc_TypeError, "Polyhedron Point Index out of range");
+        PyErr_SetString(PyExc_TypeError, "Polygon Point Index out of range");
         Py_DECREF(sub);
         Py_DECREF(seq);
         return result;

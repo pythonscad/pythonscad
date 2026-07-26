@@ -972,7 +972,7 @@ Value python_convertresult(PyObject *arg, int& error)
       return {d};
     }
     PyErr_Clear();
-    PyErr_SetString(PyExc_TypeError, "Unsupported numeric function result\n");
+    PyErr_SetString(PyExc_TypeError, "Unsupported numeric function result");
     error = 1;
   } else if (arg->ob_type->tp_base == &PyBaseObject_Type) {
     Py_INCREF(arg);
