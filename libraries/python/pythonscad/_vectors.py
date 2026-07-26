@@ -16,12 +16,11 @@ In both cases every constructor accepts a Python list, tuple, another
 vector/matrix or (when available) a NumPy array, and validates the
 dimensionality.
 
-This module is a submodule of the ``openscad`` package so it ships inside
-the pip wheel (which packages the ``openscad``/``pythonscad`` packages, not
-the top-level helper modules). It imports only :mod:`numpy` (optionally), so
-it can be loaded directly by file path for unit testing without importing
-the ``openscad`` package (and hence without the compiled ``_openscad``
-extension).
+This module is a submodule of the ``pythonscad`` package because these
+helpers are PythonSCAD-specific rather than part of OpenSCAD's Python API.
+It imports only :mod:`numpy` (optionally), so it can be loaded directly by
+file path for unit testing without importing the package (and hence without
+the compiled ``_openscad`` extension).
 
 Public names: :data:`Vector1`, :data:`Vector2`, :data:`Vector3`,
 :class:`Matrix4x4` and the :data:`HAS_NUMPY` flag.

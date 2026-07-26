@@ -1,14 +1,7 @@
 """ PythonSCAD Stub File for use in editors like Visual Studio Code """
 
-from collections.abc import Iterable
 from enum import Enum
-from typing import Annotated, Any, List, Literal, Mapping, Optional, Self, Sequence, TYPE_CHECKING, Union, overload
-
-try:
-    import numpy as np
-    HAS_NUMPY = True
-except ImportError:
-    HAS_NUMPY = False
+from typing import Annotated, List, Literal, Mapping, Optional, Self, Sequence, TYPE_CHECKING, Union, overload
 
 if TYPE_CHECKING:
     import numpy as np
@@ -20,50 +13,17 @@ PyOpenSCADs = Union["PyOpenSCAD", list["PyOpenSCAD"]]
 Color = Union[str, list[float]]
 """Color specification as either a color name string (e.g., "red") or RGB/RGBA values as [r, g, b] or [r, g, b, a]."""
 
-# The concrete runtime types live in the pure-Python ``openscad._vectors``
-# submodule and are re-exported by the ``openscad`` / ``pythonscad`` packages.
-# At runtime each vector/matrix is a ``numpy.ndarray`` subclass when NumPy is
-# installed and a ``list`` subclass otherwise. They are declared here as
-# ``list`` subclasses so they remain acceptable wherever a
-# ``list[float]`` / ``Sequence[float]`` is expected, while also accepting a
-# NumPy array in their constructor and exposing ``from_array`` / ``__array__``.
-class _VectorBase(list[float]):
-    """Base class for fixed-length numeric vectors."""
+Vector1 = list[float]
+"""1D vector represented as [x] list."""
 
-    def __init__(
-        self, iterable: Iterable[float] | "npt.NDArray[np.float64]" | None = None
-    ) -> None: ...
-    def __array__(
-        self, dtype: Any = None, copy: Any = None
-    ) -> "npt.NDArray[np.float64]": ...
-    @classmethod
-    def from_array(cls, array: Any) -> Self: ...
+Vector2 = list[float]
+"""2D vector represented as [x, y] list."""
 
-class Vector1(_VectorBase):
-    """1D vector represented as [x]."""
+Vector3 = list[float]
+"""3D vector represented as [x, y, z] list."""
 
-class Vector2(_VectorBase):
-    """2D vector represented as [x, y]."""
-
-class Vector3(_VectorBase):
-    """3D vector represented as [x, y, z]."""
-
-class Matrix4x4(list[list[float]]):
-    """4x4 transformation matrix as 4 rows of 4 floats.
-
-    NumPy-backed when NumPy is installed; a list of lists otherwise. Accepts a
-    list of lists, tuples or a NumPy array and validates the 4x4 shape.
-    """
-
-    def __init__(
-        self, iterable: Iterable[Iterable[float]] | "npt.NDArray[np.float64]" | None = None
-    ) -> None: ...
-    def __array__(
-        self, dtype: Any = None, copy: Any = None
-    ) -> "npt.NDArray[np.float64]": ...
-    @classmethod
-    def from_array(cls, array: Any) -> "Matrix4x4": ...
-
+Matrix4x4 = list[list[float]]
+"""4x4 transformation matrix as a list of 4 lists of 4 floats."""
 
 class PyLibFive:
     def __init__(self, x: float, y: float, z: float):

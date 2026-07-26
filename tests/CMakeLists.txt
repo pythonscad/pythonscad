@@ -1563,19 +1563,9 @@ if(ENABLE_PYTHON)
   set_property(TEST python-conversions PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
   set_property(TEST python-conversions PROPERTY SKIP_REGULAR_EXPRESSION "^SKIP")
 
-  # Integration test: the C API accepts NumPy arrays wherever it accepts
-  # lists, producing identical geometry. Self-skips without numpy.
-  add_test(NAME python-numpy-api CONFIGURATIONS Default
-    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
-      ${CMAKE_CURRENT_SOURCE_DIR}/test_python_numpy_api.py
-      ${OPENSCAD_BINPATH}
-  )
-  set_property(TEST python-numpy-api PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
-  set_property(TEST python-numpy-api PROPERTY SKIP_REGULAR_EXPRESSION "^SKIP")
-
   # Unit tests for the pure-Python Vector/Matrix helper classes
-  # (libraries/python/openscad/_vectors.py). Needs no pythonscad binary and
-  # exercises both the NumPy-backed and list-backed paths.
+  # (libraries/python/pythonscad/_vectors.py). This remains a host-Python test
+  # so it can force and exercise the list-backed fallback with NumPy blocked.
   add_test(NAME python-vectors CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_python_vectors.py

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Unit tests for the ``openscad._vectors`` runtime vector/matrix helpers.
+"""Unit tests for the ``pythonscad._vectors`` runtime vector/matrix helpers.
 
 These exercise the pure-Python :class:`Vector1`/:class:`Vector2`/
 :class:`Vector3` / :class:`Matrix4x4` classes that back
 ``from pythonscad import Vector3`` etc. The module is loaded directly by file
-path (not via ``import openscad._vectors``) so that the ``openscad`` package
-``__init__`` -- and therefore the compiled ``_openscad`` extension -- is not
-required to run these tests.
+path (not via ``import pythonscad._vectors``) so that the package ``__init__``
+-- and therefore the compiled ``_openscad`` extension -- is not required to
+run these tests.
 
 Both code paths are covered:
 
@@ -27,13 +27,15 @@ import unittest
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _VECTORS_PY = os.path.join(
-    _HERE, os.pardir, "libraries", "python", "openscad", "_vectors.py"
+    _HERE, os.pardir, "libraries", "python", "pythonscad", "_vectors.py"
 )
 
 
 def _load_vectors():
-    """Load ``openscad/_vectors.py`` as a standalone module (no package import)."""
-    spec = importlib.util.spec_from_file_location("_openscad_vectors_under_test", _VECTORS_PY)
+    """Load ``pythonscad/_vectors.py`` standalone, without importing the package."""
+    spec = importlib.util.spec_from_file_location(
+        "_pythonscad_vectors_under_test", _VECTORS_PY
+    )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

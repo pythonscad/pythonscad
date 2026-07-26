@@ -15,14 +15,46 @@ import typing as _typing
 from openscad import *  # noqa: F401,F403
 from openscad import (  # noqa: F401
     Color,
-    Matrix4x4,
     PyLibFive,
     PyOpenSCAD,
     PyOpenSCADs,
-    Vector1,
-    Vector2,
-    Vector3,
 )
+
+HAS_NUMPY: bool
+
+class _VectorBase(list[float]):
+    """Base class for fixed-length PythonSCAD vectors."""
+
+    def __init__(
+        self, iterable: _typing.Iterable[float] | None = ...
+    ) -> None: ...
+    def __array__(
+        self, dtype: _typing.Any = ..., copy: _typing.Any = ...
+    ) -> _typing.Any: ...
+    @classmethod
+    def from_array(cls, array: _typing.Any) -> _typing.Self: ...
+
+class Vector1(_VectorBase):
+    """1D vector represented as [x]."""
+
+class Vector2(_VectorBase):
+    """2D vector represented as [x, y]."""
+
+class Vector3(_VectorBase):
+    """3D vector represented as [x, y, z]."""
+
+class Matrix4x4(list[list[float]]):
+    """4x4 transformation matrix helper."""
+
+    def __init__(
+        self,
+        iterable: _typing.Iterable[_typing.Iterable[float]] | None = ...,
+    ) -> None: ...
+    def __array__(
+        self, dtype: _typing.Any = ..., copy: _typing.Any = ...
+    ) -> _typing.Any: ...
+    @classmethod
+    def from_array(cls, array: _typing.Any) -> "Matrix4x4": ...
 
 class MultiToolExporter(list[tuple[str, _typing.Any]]):
     """List-based helper for exporting multi-tool / multi-color 3D models.
