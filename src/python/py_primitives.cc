@@ -938,9 +938,7 @@ PyObject *python_polygon(PyObject *self, PyObject *args, PyObject *kwargs)
   node->points = points;
 
   std::vector<std::vector<size_t>> paths = python_to2dintlist(pypaths);
-  //  if (paths.size() == 0) { TODO fehlercode ?
-  //    return NULL;
-  //  }
+  if (PyErr_Occurred()) return NULL;
   node->paths = paths;
 
   node->convexity = convexity;

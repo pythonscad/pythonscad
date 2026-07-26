@@ -14,6 +14,7 @@ from pythonscad import (
     linear_extrude,
     polygon,
     polyhedron,
+    rotate_extrude,
 )
 
 
@@ -53,6 +54,14 @@ def _assert_same(name, obj_list, obj_variant):
     assert list_stl == variant_stl, f"{name}: variant differs from list result"
 
 
+def _assert_type_error(name, func):
+    try:
+        func()
+    except TypeError:
+        return
+    raise AssertionError(f"{name}: expected TypeError")
+
+
 _assert_same(
     "Vector3",
     cube(10).translate([1.0, 2.0, 3.0]),
@@ -80,6 +89,26 @@ _points = [
     [5.0, 5.0, 10.0],
 ]
 _faces = [[0, 1, 2, 3], [0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]]
+
+_assert_type_error(
+    "rotate_extrude origin",
+    lambda: rotate_extrude(polygon(_polygon), origin=[0.0]),
+)
+_assert_type_error(
+    "rotate_extrude offset",
+    lambda: rotate_extrude(polygon(_polygon), offset=[0.0]),
+)
+_assert_type_error(
+    "linear_extrude origin",
+    lambda: linear_extrude(polygon(_polygon), height=5, origin=[0.0]),
+)
+_assert_type_error(
+    "linear_extrude scale",
+    lambda: linear_extrude(polygon(_polygon), height=5, scale=[1.0]),
+)
+_assert_type_error("flat transform vector", lambda: cube(1) + [])
+_assert_type_error("nested transform vector", lambda: cube(1) + [[]])
+_assert_type_error("empty polygon paths", lambda: polygon(_polygon, []))
 
 if HAS_NUMPY:
     _assert_same(

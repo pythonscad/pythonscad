@@ -463,7 +463,6 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
   if (python_is_sequence(vec)) {
     PyObject *seq = PySequence_Fast(vec, "expected a vector or list of vectors");
     if (seq == nullptr) {
-      PyErr_Clear();
       return results;
     }
     Py_ssize_t n = PySequence_Fast_GET_SIZE(seq);
@@ -486,19 +485,25 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
           for (int i = 0; i < 3; i++) result[i] = obj->v[i];
         } else {
           PyObject *inner = PySequence_Fast(item, "expected a vector");
-          if (inner != nullptr) {
-            Py_ssize_t m = PySequence_Fast_GET_SIZE(inner);
-            if (m >= mindim && m <= maxdim) {
-              for (Py_ssize_t i = 0; i < m && i < 3; i++) {
-                if (python_numberval(PySequence_Fast_GET_ITEM(inner, i), &result[i], nullptr, 0)) {
-                  Py_DECREF(inner);
-                  Py_DECREF(seq);
-                  return results;  // Error
-                }
-              }
-            }
-            Py_DECREF(inner);
+          if (inner == nullptr) {
+            Py_DECREF(seq);
+            return results;
           }
+          Py_ssize_t m = PySequence_Fast_GET_SIZE(inner);
+          if (m < mindim || m > maxdim) {
+            PyErr_Format(PyExc_TypeError, "expected a vector with %d to %d elements", mindim, maxdim);
+            Py_DECREF(inner);
+            Py_DECREF(seq);
+            return results;
+          }
+          for (Py_ssize_t i = 0; i < m && i < 3; i++) {
+            if (python_numberval(PySequence_Fast_GET_ITEM(inner, i), &result[i], nullptr, 0)) {
+              Py_DECREF(inner);
+              Py_DECREF(seq);
+              return results;  // Error
+            }
+          }
+          Py_DECREF(inner);
         }
         results.push_back(result);
       }
@@ -507,12 +512,15 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
     }
     // A single flat vector: [x, y, z]
     Vector3d result(0, 0, 0);
-    if (n >= mindim && n <= maxdim) {
-      for (Py_ssize_t i = 0; i < n && i < 3; i++) {
-        if (python_numberval(PySequence_Fast_GET_ITEM(seq, i), &result[i], dragflags, 1 << i)) {
-          Py_DECREF(seq);
-          return results;  // Error
-        }
+    if (n < mindim || n > maxdim) {
+      PyErr_Format(PyExc_TypeError, "expected a vector with %d to %d elements", mindim, maxdim);
+      Py_DECREF(seq);
+      return results;
+    }
+    for (Py_ssize_t i = 0; i < n && i < 3; i++) {
+      if (python_numberval(PySequence_Fast_GET_ITEM(seq, i), &result[i], dragflags, 1 << i)) {
+        Py_DECREF(seq);
+        return results;  // Error
       }
     }
     Py_DECREF(seq);
