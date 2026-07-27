@@ -12,17 +12,53 @@ re-exports `_openscad`). PythonSCAD-only additions are surfaced here.
 # at runtime.
 import typing as _typing
 
+try:
+    import numpy as _np
+except ImportError:
+    _np = _typing.Any
 from openscad import *  # noqa: F401,F403
 from openscad import (  # noqa: F401
     Color,
-    Matrix4x4,
     PyLibFive,
     PyOpenSCAD,
     PyOpenSCADs,
-    Vector1,
-    Vector2,
-    Vector3,
 )
+
+HAS_NUMPY: bool
+
+class _VectorBase(_np.ndarray[_typing.Any, _np.dtype[_np.float64]]):
+    """Base class for NumPy-backed fixed-length PythonSCAD vectors."""
+
+    def __init__(
+        self, iterable: _typing.Iterable[float] | None = ...
+    ) -> None: ...
+    def __array__(
+        self, dtype: _typing.Any = ..., copy: _typing.Any = ...
+    ) -> _typing.Any: ...
+    @classmethod
+    def from_array(cls, array: _typing.Any) -> _typing.Self: ...
+
+class Vector1(_VectorBase):
+    """1D vector represented as [x]."""
+
+class Vector2(_VectorBase):
+    """2D vector represented as [x, y]."""
+
+class Vector3(_VectorBase):
+    """3D vector represented as [x, y, z]."""
+
+class Matrix4x4(_np.ndarray[_typing.Any, _np.dtype[_np.float64]]):
+    """NumPy-backed 4x4 transformation matrix helper."""
+
+    def __init__(
+        self,
+        iterable: _typing.Iterable[_typing.Iterable[float]] | None = ...,
+    ) -> None: ...
+    def __array__(
+        self, dtype: _typing.Any = ..., copy: _typing.Any = ...
+    ) -> _typing.Any: ...
+    @classmethod
+    def from_array(cls, array: _typing.Any) -> "Matrix4x4": ...
 
 class MultiToolExporter(list[tuple[str, _typing.Any]]):
     """List-based helper for exporting multi-tool / multi-color 3D models.
@@ -95,6 +131,7 @@ def rounded_cube(
     size: float | Vector3,
     r: float,
     *,
+    center: bool | None = ...,
     fn: float | None = ...,
     fa: float | None = ...,
     fs: float | None = ...,
@@ -104,6 +141,7 @@ def rounded_cube(
     size: float | Vector3,
     *,
     d: float,
+    center: bool | None = ...,
     fn: float | None = ...,
     fa: float | None = ...,
     fs: float | None = ...,
@@ -113,13 +151,16 @@ def rounded_cube(
     r: float | None = ...,
     *,
     d: float | None = ...,
+    center: bool | None = ...,
     fn: float | None = ...,
     fa: float | None = ...,
     fs: float | None = ...,
 ) -> PyOpenSCAD:
     """Create a cube or box with uniformly rounded edges and corners.
 
-    Specify exactly one of ``r`` (radius) or ``d`` (diameter). Optional
-    ``fn``, ``fa``, and ``fs`` control rounding-sphere tessellation.
+    Specify exactly one of ``r`` (radius) or ``d`` (diameter). Set
+    ``center=True`` to center the generated shape's bounding box on the origin;
+    ``False`` or ``None`` leaves it in the positive octant. Optional ``fn``,
+    ``fa``, and ``fs`` control rounding-sphere tessellation.
     """
     ...
