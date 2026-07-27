@@ -361,6 +361,15 @@ void python_unlock(void)
   // #endif
 }
 
+const char *python_calltip(const char *funcname)
+{
+  for (PyMethodDef *m = PyOpenSCADFunctions; m->ml_name != NULL; m++) {
+    if (strcmp(m->ml_name, funcname) == 0) {
+      return m->ml_doc;
+    }
+  }
+  return nullptr;  // nothing found
+}
 /*
  *  extracts Absrtract Node from PyOpenSCAD Object
  */
