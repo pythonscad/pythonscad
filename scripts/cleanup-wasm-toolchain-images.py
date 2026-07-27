@@ -66,21 +66,21 @@ def main() -> int:
     retained = 0
     for version in versions:
         tags = set(version.get("metadata", {}).get("container", {}).get("tags", []))
-        age_days = (now - parse_time(version["updated_at"])).days
+        days_since_update = (now - parse_time(version["updated_at"])).days
 
         reason: str | None
         if tags & protected:
             reason = "referenced by a protected branch or release"
         elif any(tag.startswith("buildcache-") for tag in tags):
             reason = "active registry build cache"
-        elif not tags and age_days <= args.untagged_max_age_days:
+        elif not tags and days_since_update <= args.untagged_max_age_days:
             reason = "recent untagged manifest"
         elif not tags:
             reason = None
         elif version["id"] in newest_ids:
             reason = f"one of newest {args.keep_newest} toolchains"
-        elif age_days <= args.max_age_days:
-            reason = f"younger than {args.max_age_days} days"
+        elif days_since_update <= args.max_age_days:
+            reason = f"updated within the last {args.max_age_days} days"
         elif not any(tag.startswith("toolchain-v1-") for tag in tags):
             reason = "unknown non-toolchain tag"
         else:
@@ -93,7 +93,10 @@ def main() -> int:
             continue
 
         action = "DELETE" if args.delete else "WOULD DELETE"
-        print(f"{action:12} {version['id']} {label}: {age_days} days old")
+        print(
+            f"{action:12} {version['id']} {label}: "
+            f"{days_since_update} days since update"
+        )
         if args.delete:
             subprocess.run(
                 [
