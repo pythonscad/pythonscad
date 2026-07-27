@@ -106,9 +106,20 @@ _assert_type_error(
     "linear_extrude scale",
     lambda: linear_extrude(polygon(_polygon), height=5, scale=[1.0]),
 )
+_assert_type_error("invalid rotation vector", lambda: cube(1).rotate([]))
 _assert_type_error("flat transform vector", lambda: cube(1) + [])
 _assert_type_error("nested transform vector", lambda: cube(1) + [[]])
 _assert_type_error("empty polygon paths", lambda: polygon(_polygon, []))
+_assert_same(
+    "rotate_extrude None sentinels",
+    rotate_extrude(polygon(_polygon)),
+    rotate_extrude(polygon(_polygon), origin=None, offset=None),
+)
+_assert_same(
+    "linear_extrude None sentinels",
+    linear_extrude(polygon(_polygon), height=5),
+    linear_extrude(polygon(_polygon), height=5, origin=None, scale=None),
+)
 
 if HAS_NUMPY:
     _assert_same(

@@ -262,7 +262,10 @@ PyObject *python_rotate_core(PyObject *obj, PyObject *val_a, PyObject *val_v, Py
   double angle;
   int dragflags = 0;
   if (val_a != nullptr && python_is_sequence(val_a) && val_v == nullptr) {
-    python_vectorval(val_a, 1, 3, &(vec3[0]), &(vec3[1]), &(vec3[2]), nullptr, &dragflags);
+    if (python_vectorval(val_a, 1, 3, &(vec3[0]), &(vec3[1]), &(vec3[2]), nullptr, &dragflags)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid rotation vector");
+      return nullptr;
+    }
     return python_rotate_sub(obj, vec3, NAN, ref, dragflags);
   } else if (val_a != nullptr && val_v != nullptr && !python_numberval(val_a, &angle, nullptr, 0) &&
              python_tovector(val_v, vec3) == 0) {

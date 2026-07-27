@@ -77,7 +77,7 @@ PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double
 
   // origin/offset accept a list/tuple/NumPy 2-vector.
   double ox, oy;
-  if (origin != NULL) {
+  if (origin != NULL && origin != Py_None) {
     if (python_vectorval(origin, 2, 2, &ox, &oy, nullptr, nullptr, nullptr)) {
       PyErr_SetString(PyExc_TypeError, "Invalid rotate_extrude origin parameter");
       return NULL;
@@ -85,7 +85,7 @@ PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double
     node->origin_x = ox;
     node->origin_y = oy;
   }
-  if (offset != NULL) {
+  if (offset != NULL && offset != Py_None) {
     if (python_vectorval(offset, 2, 2, &ox, &oy, nullptr, nullptr, nullptr)) {
       PyErr_SetString(PyExc_TypeError, "Invalid rotate_extrude offset parameter");
       return NULL;
@@ -193,7 +193,7 @@ PyObject *linear_extrude_core(PyObject *obj, PyObject *height, int convexity, Py
 
   node->origin_x = 0.0;
   node->origin_y = 0.0;
-  if (origin != NULL) {
+  if (origin != NULL && origin != Py_None) {
     double ox, oy;
     if (python_vectorval(origin, 2, 2, &ox, &oy, nullptr, nullptr, nullptr)) {
       PyErr_SetString(PyExc_TypeError, "Invalid linear_extrude origin parameter");
@@ -205,7 +205,7 @@ PyObject *linear_extrude_core(PyObject *obj, PyObject *height, int convexity, Py
 
   node->scale_x = 1.0;
   node->scale_y = 1.0;
-  if (scale != NULL) {
+  if (scale != NULL && scale != Py_None) {
     double sx, sy;
     if (python_vectorval(scale, 2, 2, &sx, &sy, nullptr, nullptr, nullptr)) {
       PyErr_SetString(PyExc_TypeError, "Invalid linear_extrude scale parameter");
