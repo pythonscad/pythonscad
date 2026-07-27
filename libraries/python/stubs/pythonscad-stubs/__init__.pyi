@@ -12,6 +12,7 @@ re-exports `_openscad`). PythonSCAD-only additions are surfaced here.
 # at runtime.
 import typing as _typing
 
+import numpy as _np
 from openscad import *  # noqa: F401,F403
 from openscad import (  # noqa: F401
     Color,
@@ -22,8 +23,8 @@ from openscad import (  # noqa: F401
 
 HAS_NUMPY: bool
 
-class _VectorBase(list[float]):
-    """Base class for fixed-length PythonSCAD vectors."""
+class _VectorBase(_np.ndarray[_typing.Any, _np.dtype[_np.float64]]):
+    """Base class for NumPy-backed fixed-length PythonSCAD vectors."""
 
     def __init__(
         self, iterable: _typing.Iterable[float] | None = ...
@@ -43,8 +44,8 @@ class Vector2(_VectorBase):
 class Vector3(_VectorBase):
     """3D vector represented as [x, y, z]."""
 
-class Matrix4x4(list[list[float]]):
-    """4x4 transformation matrix helper."""
+class Matrix4x4(_np.ndarray[_typing.Any, _np.dtype[_np.float64]]):
+    """NumPy-backed 4x4 transformation matrix helper."""
 
     def __init__(
         self,

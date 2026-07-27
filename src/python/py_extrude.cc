@@ -400,8 +400,9 @@ PyObject *python_path_extrude(PyObject *self, PyObject *args, PyObject *kwargs)
   PyObject *twist = NULL;
   double fn = -1, fa = -1, fs = -1;
 
-  char *kwlist[] = {"obj",   "path",   "xdir", "convexity", "origin", "scale",
-                    "twist", "closed", "fn",   "fa",        "fs",     NULL};
+  char *kwlist[] = {"obj",   "path",  "xdir",   "convexity",       "origin",
+                    "scale", "twist", "closed", "allow_intersect", "fn",
+                    "fa",    "fs",    NULL};
   // path/xdir accept list/tuple/NumPy; validated by python_vectorval() in
   // path_extrude_core().
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|OiOOOOOddd", kwlist, &obj, &path, &xdir, &convexity,
@@ -561,8 +562,8 @@ PyObject *python_oo_path_extrude(PyObject *obj, PyObject *args, PyObject *kwargs
   PyObject *twist = NULL;
   double fn = -1, fa = -1, fs = -1;
 
-  char *kwlist[] = {"path",   "xdir", "convexity", "origin", "scale", "twist",
-                    "closed", "fn",   "fa",        "fs",     NULL};
+  char *kwlist[] = {"path", "xdir", "convexity", "origin", "scale", "twist", "closed", "allow_intersect",
+                    "fn",   "fa",   "fs",        NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OiOOOOOddd", kwlist, &path, &xdir, &convexity,
                                    &origin, &scale, &twist, &closed, &allow_intersect, &fn, &fa, &fs)) {
     PyErr_SetString(PyExc_TypeError, "error during parsing\n");

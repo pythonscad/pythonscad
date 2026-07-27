@@ -406,19 +406,19 @@ PyObject *python_nb_sub_vec3(PyObject *arg1, PyObject *arg2,
   if (mode == 3) {
     // Accept a list/tuple/NumPy array for the explode spec.
     if (!python_is_sequence(arg2)) {
-      PyErr_SetString(PyExc_TypeError, "explode arg must be a list");
+      PyErr_SetString(PyExc_TypeError, "explode arg must be a sequence");
       return NULL;
     }
     PyObject *arg2seq = PySequence_Fast(arg2, "expected an explode spec");
     if (arg2seq == NULL) {
       PyErr_Clear();
-      PyErr_SetString(PyExc_TypeError, "explode arg must be a list");
+      PyErr_SetString(PyExc_TypeError, "explode arg must be a sequence");
       return NULL;
     }
     int n = PySequence_Fast_GET_SIZE(arg2seq);
     if (n > 3) {
       Py_DECREF(arg2seq);
-      PyErr_SetString(PyExc_TypeError, "explode arg list can have maximal 3 directions");
+      PyErr_SetString(PyExc_TypeError, "explode arg sequence can have at most 3 directions");
       return NULL;
     }
     double dmy;

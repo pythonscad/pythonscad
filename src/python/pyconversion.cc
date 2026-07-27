@@ -336,10 +336,13 @@ std::vector<Vector3d> python_to2dvarpointlist(PyObject *pypoints)
 std::vector<std::vector<size_t>> python_to2dintlist(PyObject *pypaths)
 {
   std::vector<std::vector<size_t>> result;
-  if (pypaths == nullptr || !python_is_sequence(pypaths)) return result;
+  if (pypaths == nullptr) return result;
+  if (!python_is_sequence(pypaths)) {
+    PyErr_SetString(PyExc_TypeError, "Polygon paths must be a sequence of index sequences");
+    return result;
+  }
   PyObject *seq = PySequence_Fast(pypaths, "expected a list of paths");
   if (seq == nullptr) {
-    PyErr_Clear();
     return result;
   }
   Py_ssize_t n = PySequence_Fast_GET_SIZE(seq);
@@ -358,7 +361,6 @@ std::vector<std::vector<size_t>> python_to2dintlist(PyObject *pypaths)
     }
     PyObject *sub = PySequence_Fast(element, "expected a list of indices");
     if (sub == nullptr) {
-      PyErr_Clear();
       result.clear();
       Py_DECREF(seq);
       return result;

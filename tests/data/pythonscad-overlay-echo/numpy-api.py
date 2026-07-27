@@ -12,6 +12,7 @@ from pythonscad import (
     Vector3,
     cube,
     linear_extrude,
+    path_extrude,
     polygon,
     polyhedron,
     rotate_extrude,
@@ -110,6 +111,10 @@ _assert_type_error("invalid rotation vector", lambda: cube(1).rotate([]))
 _assert_type_error("flat transform vector", lambda: cube(1) + [])
 _assert_type_error("nested transform vector", lambda: cube(1) + [[]])
 _assert_type_error("empty polygon paths", lambda: polygon(_polygon, []))
+_assert_type_error("non-sequence polygon paths", lambda: polygon(_polygon, 1))
+_path = [[0.0, 0.0, 0.0], [0.0, 0.0, 10.0]]
+path_extrude(polygon(_polygon), _path, allow_intersect=True)
+polygon(_polygon).path_extrude(_path, allow_intersect=True)
 _assert_same(
     "rotate_extrude None sentinels",
     rotate_extrude(polygon(_polygon)),
