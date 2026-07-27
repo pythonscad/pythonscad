@@ -255,7 +255,7 @@ def main() -> int:
     # pythonscad routes Python print() output to stderr, so search both.
     combined = (proc.stdout or "") + (proc.stderr or "")
 
-    if "SKIP" in combined:
+    if any(line.startswith("SKIP:") for line in combined.splitlines()):
         print("SKIP: numpy not available")
         return 0
 

@@ -10,20 +10,20 @@ if TYPE_CHECKING:
 PyOpenSCADs = Union["PyOpenSCAD", list["PyOpenSCAD"]]
 """Type for functions that accept either a single OpenSCAD object or a list of objects."""
 
-Color = Union[str, list[float]]
+Color = Union[str, Sequence[float]]
 """Color specification as either a color name string (e.g., "red") or RGB/RGBA values as [r, g, b] or [r, g, b, a]."""
 
-Vector1 = list[float]
-"""1D vector represented as [x] list."""
+Vector1 = Sequence[float]
+"""1D vector represented as an [x] coordinate sequence."""
 
-Vector2 = list[float]
-"""2D vector represented as [x, y] list."""
+Vector2 = Sequence[float]
+"""2D vector represented as an [x, y] coordinate sequence."""
 
-Vector3 = list[float]
-"""3D vector represented as [x, y, z] list."""
+Vector3 = Sequence[float]
+"""3D vector represented as an [x, y, z] coordinate sequence."""
 
-Matrix4x4 = list[list[float]]
-"""4x4 transformation matrix as a list of 4 lists of 4 floats."""
+Matrix4x4 = Sequence[Sequence[float]]
+"""4x4 transformation matrix represented as four coordinate sequences."""
 
 class PyLibFive:
     def __init__(self, x: float, y: float, z: float):
@@ -127,39 +127,39 @@ class PyOpenSCAD:
         """
         ...
 
-    def right(self, v: List[float]| "npt.NDArray[np.float64]") -> Self:
+    def right(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
         """Moves an Object to the right"""
         ...
 
-    def left(self, v: List[float]| "npt.NDArray[np.float64]") -> Self:
+    def left(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
         """Moves an Object to the left"""
         ...
 
-    def back(self, v: List[float]| "npt.NDArray[np.float64]") -> Self:
+    def back(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
         """Moves Object backwards"""
         ...
 
-    def front(self, v: List[float]| "npt.NDArray[np.float64]") -> Self:
+    def front(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
         """Moves Object frontwards"""
         ...
 
-    def up(self, v: List[float]| "npt.NDArray[np.float64]") -> Self:
+    def up(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
         """Move Object upwards"""
         ...
 
-    def down(self, v: List[float]| "npt.NDArray[np.float64]") -> Self:
+    def down(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
         """Move Object downwards"""
         ...
 
-    def rotx(self, v: List[float]| "npt.NDArray[np.float64]") -> Self:
+    def rotx(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
         """Rotate Object around X Axis"""
         ...
 
-    def roty(self, v: List[float]| "npt.NDArray[np.float64]") -> Self:
+    def roty(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
         """Rotate Object around Y Axis"""
         ...
 
-    def rotz(self, v: List[float]| "npt.NDArray[np.float64]") -> Self:
+    def rotz(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
         """Rotate Object around Z Axis"""
         ...
 
@@ -355,7 +355,7 @@ class PyOpenSCAD:
     def path_extrude(
         self,
         path: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
-        xdir: List[float]| "npt.NDArray[np.float64]",
+        xdir: Sequence[float]| "npt.NDArray[np.float64]",
         convexity: int = 2,
         origin: Sequence[float] | "npt.NDArray[np.float64]" = [0, 0],
         scale: float = 1,
@@ -809,7 +809,7 @@ def organic(pts:list[list[float]], max_mesh_size:float, alpha:float=-1) -> PyOpe
     ...
 
 
-def frep(exp: PyLibFive, min: List[float], max: List[float], res: int) -> PyOpenSCAD:
+def frep(exp: PyLibFive, min: Sequence[float], max: Sequence[float], res: int) -> PyOpenSCAD:
     """Create F-Rep (libfive)
     exp : an SDF epression composed from SDF variables and operators, see tutorial
     """
@@ -846,27 +846,27 @@ def translate(matrix: Matrix4x4, v: Vector3) -> Matrix4x4:
     ...
 
 
-def right(obj: PyOpenSCAD, v: List[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def right(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Moves an Object to the right"""
     ...
 
-def left(obj: PyOpenSCAD, v: List[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def left(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Moves an Object to the left"""
     ...
 
-def back(obj: PyOpenSCAD, v: List[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def back(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Moves Object backwards"""
     ...
 
-def front(obj: PyOpenSCAD, v: List[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def front(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Moves Object frontwards"""
     ...
 
-def up(obj: PyOpenSCAD, v: List[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def up(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Move Object upwards"""
     ...
 
-def down(obj: PyOpenSCAD, v: List[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def down(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Move Object downwards"""
     ...
 
@@ -902,15 +902,15 @@ def rotate(
     """
     ...
 
-def rotx(obj: PyOpenSCAD, v: List[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def rotx(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Rotate Object around X Axis"""
     ...
 
-def roty(obj: PyOpenSCAD, v: List[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def roty(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Rotate Object around Y Axis"""
     ...
 
-def rotz(obj: PyOpenSCAD, v: List[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def rotz(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Rotate Object around Z Axis"""
     ...
 
@@ -1095,9 +1095,9 @@ def rotate_extrude(
 def path_extrude(
     obj: PyOpenSCAD,
     path: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
-    xdir: List[float]| "npt.NDArray[np.float64]",
+    xdir: Sequence[float]| "npt.NDArray[np.float64]",
     convexity: int,
-    origin: List[float]| "npt.NDArray[np.float64]",
+    origin: Sequence[float]| "npt.NDArray[np.float64]",
     scale: float,
     twist: float,
     closed: bool,
@@ -1253,7 +1253,7 @@ def roof(
     """Create Roof from an 2D Shape"""
     ...
 
-def pull(obj: PyOpenSCAD, src: List[float], dst: List[float]) -> PyOpenSCAD:
+def pull(obj: PyOpenSCAD, src: Sequence[float], dst: Sequence[float]) -> PyOpenSCAD:
     """Pull apart Object, basically between src and dst it creates a prisma with the x-section
     src: anchor
     dst: how much to pull
@@ -1381,7 +1381,7 @@ def osimport(
     file: str,
     layer: Optional[str] = None,
     convexity: int = 2,
-    origin: Optional[List[float] | "npt.NDArray[np.float64]"] = None,
+    origin: Optional[Sequence[float] | "npt.NDArray[np.float64]"] = None,
     scale: float = 1,
     width: float = 1,
     height: float = 1,
@@ -1418,7 +1418,7 @@ def osimport(
     file: str,
     layer: Optional[str] = None,
     convexity: int = 2,
-    origin: Optional[List[float] | "npt.NDArray[np.float64]"] = None,
+    origin: Optional[Sequence[float] | "npt.NDArray[np.float64]"] = None,
     scale: float = 1,
     width: float = 1,
     height: float = 1,
@@ -1440,7 +1440,7 @@ def osimport(
     file: str,
     layer: Optional[str],
     convexity: int,
-    origin: Optional[List[float] | "npt.NDArray[np.float64]"],
+    origin: Optional[Sequence[float] | "npt.NDArray[np.float64]"],
     scale: float,
     width: float,
     height: float,

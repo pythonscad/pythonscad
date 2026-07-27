@@ -133,6 +133,15 @@ _assert_type_error("scalar osimport origin", lambda: osimport("", origin=1.0))
 _assert_type_error("flat polygon points", lambda: polygon([1.0, 2.0, 3.0]))
 _assert_type_error("empty polygon paths", lambda: polygon(_polygon, []))
 _assert_type_error("non-sequence polygon paths", lambda: polygon(_polygon, 1))
+_polygon_obj = polygon(_polygon)
+_assert_type_error(
+    "invalid polygon points setter",
+    lambda: _polygon_obj.__setitem__("points", [1.0, 2.0, 3.0]),
+)
+_assert_type_error(
+    "invalid polygon paths setter",
+    lambda: _polygon_obj.__setitem__("paths", 1),
+)
 _assert_type_error("flat polyhedron points", lambda: polyhedron([1.0, 2.0, 3.0], [[0, 1, 2]]))
 _assert_type_error(
     "flat polyhedron colors",
