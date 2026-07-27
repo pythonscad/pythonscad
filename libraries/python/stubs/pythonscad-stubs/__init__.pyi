@@ -12,7 +12,10 @@ re-exports `_openscad`). PythonSCAD-only additions are surfaced here.
 # at runtime.
 import typing as _typing
 
-import numpy as _np
+try:
+    import numpy as _np
+except ImportError:
+    _np = _typing.Any
 from openscad import *  # noqa: F401,F403
 from openscad import (  # noqa: F401
     Color,

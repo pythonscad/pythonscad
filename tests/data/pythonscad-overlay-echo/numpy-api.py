@@ -110,6 +110,7 @@ _assert_type_error(
 _assert_type_error("invalid rotation vector", lambda: cube(1).rotate([]))
 _assert_type_error("flat transform vector", lambda: cube(1) + [])
 _assert_type_error("nested transform vector", lambda: cube(1) + [[]])
+_assert_type_error("partial transform matrix", lambda: cube(1).multmatrix([[1, 2, 3, 4]]))
 _assert_type_error("empty polygon paths", lambda: polygon(_polygon, []))
 _assert_type_error("non-sequence polygon paths", lambda: polygon(_polygon, 1))
 _path = [[0.0, 0.0, 0.0], [0.0, 0.0, 10.0]]

@@ -231,8 +231,12 @@ int python_tomatrix(PyObject *pyt, Matrix4d& mat)
     return 1;
   }
   Py_ssize_t nrows = PySequence_Fast_GET_SIZE(rows);
+  if (nrows != 4) {
+    Py_DECREF(rows);
+    return 1;
+  }
   int rc = 0;
-  for (Py_ssize_t i = 0; i < std::min((Py_ssize_t)4, nrows) && !rc; i++) {
+  for (Py_ssize_t i = 0; i < 4 && !rc; i++) {
     PyObject *row = PySequence_Fast_GET_ITEM(rows, i);
     if (!python_is_sequence(row)) {
       rc = 1;
@@ -245,7 +249,12 @@ int python_tomatrix(PyObject *pyt, Matrix4d& mat)
       break;
     }
     Py_ssize_t ncols = PySequence_Fast_GET_SIZE(cells);
-    for (Py_ssize_t j = 0; j < std::min((Py_ssize_t)4, ncols); j++) {
+    if (ncols != 4) {
+      Py_DECREF(cells);
+      rc = 1;
+      break;
+    }
+    for (Py_ssize_t j = 0; j < 4; j++) {
       double val;
       if (python_numberval(PySequence_Fast_GET_ITEM(cells, j), &val, nullptr, 0)) {
         rc = 1;
