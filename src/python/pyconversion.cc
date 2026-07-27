@@ -330,7 +330,8 @@ std::vector<Vector3d> python_to2dvarpointlist(PyObject *pypoints)
   for (Py_ssize_t i = 0; i < n; i++) {
     PyObject *element = PySequence_Fast_GET_ITEM(seq, i);
     Vector3d point(0, 0, 0);  // default no radius in the 3rd component
-    if (python_vectorval(element, 2, 3, &point[0], &point[1], &point[2])) {
+    if (!python_is_sequence(element) ||
+        python_vectorval(element, 2, 3, &point[0], &point[1], &point[2])) {
       Py_DECREF(seq);
       PyErr_SetString(PyExc_TypeError, "Coordinate must contain 2 or 3 numbers");
       points.clear();

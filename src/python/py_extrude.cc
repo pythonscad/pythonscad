@@ -78,7 +78,8 @@ PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double
   // origin/offset accept a list/tuple/NumPy 2-vector.
   double ox, oy;
   if (origin != NULL && origin != Py_None) {
-    if (python_vectorval(origin, 2, 2, &ox, &oy, nullptr, nullptr, nullptr)) {
+    if (!python_is_sequence(origin) ||
+        python_vectorval(origin, 2, 2, &ox, &oy, nullptr, nullptr, nullptr)) {
       PyErr_SetString(PyExc_TypeError, "Invalid rotate_extrude origin parameter");
       return NULL;
     }
@@ -86,7 +87,8 @@ PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double
     node->origin_y = oy;
   }
   if (offset != NULL && offset != Py_None) {
-    if (python_vectorval(offset, 2, 2, &ox, &oy, nullptr, nullptr, nullptr)) {
+    if (!python_is_sequence(offset) ||
+        python_vectorval(offset, 2, 2, &ox, &oy, nullptr, nullptr, nullptr)) {
       PyErr_SetString(PyExc_TypeError, "Invalid rotate_extrude offset parameter");
       return NULL;
     }
@@ -195,7 +197,8 @@ PyObject *linear_extrude_core(PyObject *obj, PyObject *height, int convexity, Py
   node->origin_y = 0.0;
   if (origin != NULL && origin != Py_None) {
     double ox, oy;
-    if (python_vectorval(origin, 2, 2, &ox, &oy, nullptr, nullptr, nullptr)) {
+    if (!python_is_sequence(origin) ||
+        python_vectorval(origin, 2, 2, &ox, &oy, nullptr, nullptr, nullptr)) {
       PyErr_SetString(PyExc_TypeError, "Invalid linear_extrude origin parameter");
       return NULL;
     }
@@ -207,7 +210,8 @@ PyObject *linear_extrude_core(PyObject *obj, PyObject *height, int convexity, Py
   node->scale_y = 1.0;
   if (scale != NULL && scale != Py_None) {
     double sx, sy;
-    if (python_vectorval(scale, 2, 2, &sx, &sy, nullptr, nullptr, nullptr)) {
+    if (!python_is_sequence(scale) ||
+        python_vectorval(scale, 2, 2, &sx, &sy, nullptr, nullptr, nullptr)) {
       PyErr_SetString(PyExc_TypeError, "Invalid linear_extrude scale parameter");
       return NULL;
     }
@@ -321,7 +325,7 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
     for (Py_ssize_t i = 0; i < n; i++) {
       PyObject *point = PySequence_Fast_GET_ITEM(seq, i);
       double x, y, z, w = 0;
-      if (python_vectorval(point, 3, 4, &x, &y, &z, &w)) {
+      if (!python_is_sequence(point) || python_vectorval(point, 3, 4, &x, &y, &z, &w)) {
         Py_DECREF(seq);
         PyErr_SetString(PyExc_TypeError, "Cannot parse vector in path_extrude path\n");
         return NULL;
@@ -339,7 +343,8 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
   if (closed == Py_True) node->closed = true;
   if (allow_intersect == Py_True) node->allow_intersect = true;
   if (xdir != NULL) {
-    if (python_vectorval(xdir, 3, 3, &(node->xdir_x), &(node->xdir_y), &(node->xdir_z))) {
+    if (!python_is_sequence(xdir) ||
+        python_vectorval(xdir, 3, 3, &(node->xdir_x), &(node->xdir_y), &(node->xdir_z))) {
       PyErr_SetString(PyExc_TypeError, "error in path_extrude xdir parameter\n");
       return NULL;
     }
@@ -360,7 +365,8 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
   node->origin_y = 0.0;
   if (origin != NULL) {
     double dummy;
-    if (python_vectorval(origin, 2, 2, &(node->origin_x), &(node->origin_y), &dummy)) {
+    if (!python_is_sequence(origin) ||
+        python_vectorval(origin, 2, 2, &(node->origin_x), &(node->origin_y), &dummy)) {
       PyErr_SetString(PyExc_TypeError, "error in path_extrude origin parameter\n");
       return NULL;
     }
@@ -370,7 +376,8 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
   node->scale_y = 1.0;
   if (scale != NULL) {
     double dummy;
-    if (python_vectorval(scale, 2, 2, &(node->scale_x), &(node->scale_y), &dummy)) {
+    if (!python_is_sequence(scale) ||
+        python_vectorval(scale, 2, 2, &(node->scale_x), &(node->scale_y), &dummy)) {
       PyErr_SetString(PyExc_TypeError, "error in path_extrude scale parameter\n");
       return NULL;
     }

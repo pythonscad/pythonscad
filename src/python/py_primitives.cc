@@ -639,7 +639,8 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     for (Py_ssize_t i = 0; i < npoints; i++) {
       element = PySequence_Fast_GET_ITEM(seq, i);
-      if (python_vectorval(element, 3, 3, &point[0], &point[1], &point[2], nullptr, nullptr)) {
+      if (!python_is_sequence(element) ||
+          python_vectorval(element, 3, 3, &point[0], &point[1], &point[2], nullptr, nullptr)) {
         Py_DECREF(seq);
         PyErr_SetString(PyExc_TypeError, "Coordinate must exactly contain 3 numbers");
         return NULL;
@@ -733,7 +734,8 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
       element = PySequence_Fast_GET_ITEM(seq, i);
       // python_vectorval() writes doubles; Vector4f stores floats.
       double r, g, b;
-      if (python_vectorval(element, 3, 3, &r, &g, &b, nullptr, nullptr) == 0) {
+      if (python_is_sequence(element) &&
+          python_vectorval(element, 3, 3, &r, &g, &b, nullptr, nullptr) == 0) {
         Vector4f color(r, g, b, 1.0);
         int colind = -1;
         int ind = 0;
@@ -1001,7 +1003,8 @@ PyObject *python_spline(PyObject *self, PyObject *args, PyObject *kwargs)
     for (Py_ssize_t i = 0; i < npoints; i++) {
       PyObject *element = PySequence_Fast_GET_ITEM(seq, i);
       double x, y;
-      if (python_vectorval(element, 2, 2, &x, &y, nullptr, nullptr, nullptr)) {
+      if (!python_is_sequence(element) ||
+          python_vectorval(element, 2, 2, &x, &y, nullptr, nullptr, nullptr)) {
         Py_DECREF(seq);
         PyErr_SetString(PyExc_TypeError, "Coordinate must exactly contain 2 numbers");
         return NULL;

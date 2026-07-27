@@ -12,10 +12,12 @@ from pythonscad import (
     Vector3,
     cube,
     linear_extrude,
+    osimport,
     path_extrude,
     polygon,
     polyhedron,
     rotate_extrude,
+    spline,
 )
 
 
@@ -100,6 +102,14 @@ _assert_type_error(
     lambda: rotate_extrude(polygon(_polygon), offset=[0.0]),
 )
 _assert_type_error(
+    "rotate_extrude scalar origin",
+    lambda: rotate_extrude(polygon(_polygon), origin=1.0),
+)
+_assert_type_error(
+    "rotate_extrude scalar offset",
+    lambda: rotate_extrude(polygon(_polygon), offset=1.0),
+)
+_assert_type_error(
     "linear_extrude origin",
     lambda: linear_extrude(polygon(_polygon), height=5, origin=[0.0]),
 )
@@ -107,15 +117,44 @@ _assert_type_error(
     "linear_extrude scale",
     lambda: linear_extrude(polygon(_polygon), height=5, scale=[1.0]),
 )
+_assert_type_error(
+    "linear_extrude scalar origin",
+    lambda: linear_extrude(polygon(_polygon), height=5, origin=1.0),
+)
+_assert_type_error(
+    "linear_extrude scalar scale",
+    lambda: linear_extrude(polygon(_polygon), height=5, scale=1.0),
+)
 _assert_type_error("invalid rotation vector", lambda: cube(1).rotate([]))
 _assert_type_error("flat transform vector", lambda: cube(1) + [])
 _assert_type_error("nested transform vector", lambda: cube(1) + [[]])
 _assert_type_error("partial transform matrix", lambda: cube(1).multmatrix([[1, 2, 3, 4]]))
+_assert_type_error("scalar osimport origin", lambda: osimport("", origin=1.0))
+_assert_type_error("flat polygon points", lambda: polygon([1.0, 2.0, 3.0]))
 _assert_type_error("empty polygon paths", lambda: polygon(_polygon, []))
 _assert_type_error("non-sequence polygon paths", lambda: polygon(_polygon, 1))
+_assert_type_error("flat polyhedron points", lambda: polyhedron([1.0, 2.0, 3.0], [[0, 1, 2]]))
+_assert_type_error(
+    "flat polyhedron colors",
+    lambda: polyhedron(_points, _faces, colors=[0.5] * len(_faces)),
+)
+_assert_type_error("flat spline points", lambda: spline([1.0, 2.0, 3.0]))
 _path = [[0.0, 0.0, 0.0], [0.0, 0.0, 10.0]]
 path_extrude(polygon(_polygon), _path, allow_intersect=True)
 polygon(_polygon).path_extrude(_path, allow_intersect=True)
+_assert_type_error("flat path_extrude path", lambda: path_extrude(polygon(_polygon), [1.0, 2.0, 3.0]))
+_assert_type_error(
+    "scalar path_extrude xdir",
+    lambda: path_extrude(polygon(_polygon), _path, xdir=1.0),
+)
+_assert_type_error(
+    "scalar path_extrude origin",
+    lambda: path_extrude(polygon(_polygon), _path, origin=1.0),
+)
+_assert_type_error(
+    "scalar path_extrude scale",
+    lambda: path_extrude(polygon(_polygon), _path, scale=1.0),
+)
 _assert_same(
     "rotate_extrude None sentinels",
     rotate_extrude(polygon(_polygon)),

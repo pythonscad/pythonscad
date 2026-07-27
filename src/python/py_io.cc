@@ -510,7 +510,8 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
   double originX = 0;
   double originY = 0;
   if (origin != nullptr && origin != Py_None) {
-    if (python_vectorval(origin, 2, 2, &originX, &originY, nullptr, nullptr, nullptr) != 0) {
+    if (!python_is_sequence(origin) ||
+        python_vectorval(origin, 2, 2, &originX, &originY, nullptr, nullptr, nullptr) != 0) {
       PyErr_SetString(PyExc_TypeError,
                       "osimport(): origin must be a two-element coordinate sequence or None");
       return nullptr;

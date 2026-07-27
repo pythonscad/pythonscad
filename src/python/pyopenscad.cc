@@ -696,7 +696,8 @@ Outline2d python_getprofile(void *v_cbfunc, int fn, double arg)
       for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *pypt = PySequence_Fast_GET_ITEM(seq, i);
         double x, y;
-        if (python_vectorval(pypt, 2, 2, &x, &y, nullptr, nullptr, nullptr) == 0) {
+        if (python_is_sequence(pypt) &&
+            python_vectorval(pypt, 2, 2, &x, &y, nullptr, nullptr, nullptr) == 0) {
           result.vertices.push_back(Vector2d(x, y));
         }
       }
