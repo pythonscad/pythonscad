@@ -7,7 +7,6 @@
 #   docker build -f docker/wasm/sysroot.dockerfile --target wasm-sysroot \
 #     -t pythonscad-wasm-sysroot:local .
 
-ARG EMSCRIPTEN_VERSION=6.0.3
 ARG EMSCRIPTEN_SDK_TAG=emscripten/emsdk:6.0.3@sha256:bb0910e6a18bb9bd7cb31ae4ed40f9073148b78cb2cdb8ea8676454e0d85425c
 # Pin openscad-wasm for reproducible sysroot builds; bump OPENSCAD_WASM_COMMIT when
 # intentionally syncing upstream recipe/patches.
@@ -354,7 +353,7 @@ RUN cd Python-${CPYTHON_VERSION} \
          ${CPYTHON_PREFIX}/lib/python3.14/turtledemo
 
 FROM wasm-sysroot AS wasm-python-base
-ARG EMSCRIPTEN_VERSION
+ARG EMSCRIPTEN_SDK_TAG
 ARG CPYTHON_VERSION
 ARG OPENSCAD_WASM_COMMIT
 ARG FONTCONFIG_COMMIT
@@ -362,7 +361,7 @@ COPY --from=cpython-builder /cpython-wasm /cpython-wasm
 LABEL org.opencontainers.image.title="PythonSCAD WASM toolchain" \
       org.opencontainers.image.description="Emscripten sysroot and CPython for PythonSCAD WebAssembly builds" \
       org.opencontainers.image.source="https://github.com/pythonscad/pythonscad" \
-      io.pythonscad.toolchain.emscripten="${EMSCRIPTEN_VERSION}" \
+      io.pythonscad.toolchain.emscripten-sdk="${EMSCRIPTEN_SDK_TAG}" \
       io.pythonscad.toolchain.cpython="${CPYTHON_VERSION}" \
       io.pythonscad.toolchain.openscad-wasm-commit="${OPENSCAD_WASM_COMMIT}" \
       io.pythonscad.toolchain.fontconfig-commit="${FONTCONFIG_COMMIT}"
