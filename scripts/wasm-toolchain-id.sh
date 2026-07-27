@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+#
+# Print the content-derived identifier for the PythonSCAD WASM toolchain.
+# With no argument, hash files from the working tree. With a git ref, hash the
+# versions stored at that ref. Including file names prevents ambiguous content
+# concatenation and keeps CI, local builds, and retention cleanup in agreement.
+#
+# This is the toolchain-v1 algorithm. Do not change it incompatibly without
+# also introducing a new image-tag prefix and retention migration.
+
+set -euo pipefail
+
+readonly TOOLCHAIN_FILES=(
+  docker/wasm/sysroot.dockerfile
+  docker/wasm/requirements.txt
+  docker/wasm/emscripten-crossfile.meson
+)
+
+git_ref=${1:-}
+
+if [[ -n "$git_ref" ]]; then
+  for path in "${TOOLCHAIN_FILES[@]}"; do
+    if ! git cat-file -e "${git_ref}:${path}" 2>/dev/null; then
+      exit 2
+    fi
+  done
+fi
+
+{
+  for path in "${TOOLCHAIN_FILES[@]}"; do
+    printf '%s\0' "$path"
+    if [[ -n "$git_ref" ]]; then
+      content_hash=$(git show "${git_ref}:${path}" | sha256sum | cut -d' ' -f1)
+    else
+      content_hash=$(sha256sum "$path" | cut -d' ' -f1)
+    fi
+    printf '%s' "$content_hash"
+    printf '\0'
+  done
+} | sha256sum | cut -d' ' -f1

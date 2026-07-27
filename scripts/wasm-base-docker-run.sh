@@ -25,21 +25,41 @@ set -euo pipefail
 CCACHE_DIR=${CCACHE_DIR:-$HOME/.ccache/}
 mkdir -p "$CCACHE_DIR"
 
-# Build the WASM docker image (sysroot + CPython) if not already present.
-# Slow on first run (~60 min); cached by Docker layer cache afterwards.
-# To force a rebuild: docker rmi pythonscad-wasm-python-base:local
-if ! docker image inspect pythonscad-wasm-python-base:local &>/dev/null; then
-  echo "Building pythonscad-wasm-python-base:local (sysroot + CPython — first run only)..."
-  docker build \
-    --platform=linux/amd64 \
-    -f docker/wasm/sysroot.dockerfile \
-    --target wasm-python-base \
-    -t pythonscad-wasm-python-base:local \
-    .
+# Prefer the immutable public GHCR image for this exact toolchain input set.
+# A source checkout with unpublished toolchain changes falls back to a local
+# build, preserving the ability to develop and test upgrades before merging.
+TOOLCHAIN_IMAGE=${PYTHONSCAD_WASM_TOOLCHAIN_IMAGE:-ghcr.io/pythonscad/wasm-python-base}
+TOOLCHAIN_HASH=$(./scripts/wasm-toolchain-id.sh)
+TOOLCHAIN_REF="${TOOLCHAIN_IMAGE}:toolchain-v1-${TOOLCHAIN_HASH}"
+LOCAL_TOOLCHAIN_TAG=pythonscad-wasm-python-base:local
+
+manifest_file=$(mktemp)
+trap 'rm -f "$manifest_file"' EXIT
+if docker buildx imagetools inspect "$TOOLCHAIN_REF" \
+  --raw > "$manifest_file" 2>/dev/null; then
+  digest="sha256:$(sha256sum "$manifest_file" | cut -d' ' -f1)"
+  immutable_ref="${TOOLCHAIN_REF}@${digest}"
+  echo "Pulling ${immutable_ref}..."
+  docker pull --platform=linux/amd64 "$immutable_ref"
+  docker tag "$immutable_ref" "$TOOLCHAIN_REF"
+elif ! docker image inspect "$TOOLCHAIN_REF" &>/dev/null; then
+  echo "No published or cached image exists for ${TOOLCHAIN_REF}."
+  if ! docker pull --platform=linux/amd64 "$TOOLCHAIN_REF"; then
+    echo "No published image exists; building the WASM toolchain locally..."
+    docker build \
+      --platform=linux/amd64 \
+      -f docker/wasm/sysroot.dockerfile \
+      --target wasm-python-base \
+      -t "$TOOLCHAIN_REF" \
+      .
+  fi
+else
+  echo "Registry unavailable; using the cached immutable toolchain image." >&2
 fi
+docker tag "$TOOLCHAIN_REF" "$LOCAL_TOOLCHAIN_TAG"
 
 echo "
-  FROM pythonscad-wasm-python-base:local
+  FROM ${LOCAL_TOOLCHAIN_TAG}
   RUN apt update && \
       apt install -y ccache && \
       apt clean

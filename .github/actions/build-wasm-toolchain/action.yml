@@ -1,0 +1,183 @@
+name: Resolve or build WASM toolchain
+description: >
+  Resolves the content-addressed PythonSCAD WASM toolchain image, pulling an
+  existing GHCR image or building it from the canonical Dockerfile.
+
+inputs:
+  image:
+    description: 'GHCR image name without a tag'
+    required: false
+    default: 'ghcr.io/pythonscad/wasm-python-base'
+  local-tag:
+    description: 'Local Docker tag used by subsequent build steps'
+    required: false
+    default: 'pythonscad-wasm-python-base:local'
+  push:
+    description: 'Publish a missing image and registry build cache'
+    required: false
+    default: 'false'
+  load:
+    description: 'Load the selected image into the local Docker daemon'
+    required: false
+    default: 'true'
+  reclaim-space:
+    description: 'Remove unused hosted-runner SDKs before a cold build'
+    required: false
+    default: 'false'
+
+outputs:
+  toolchain-hash:
+    description: 'SHA-256 over all effective in-repository toolchain inputs'
+    value: ${{ steps.identity.outputs.toolchain_hash }}
+  image-ref:
+    description: 'Content-addressed GHCR tag selected by this action'
+    value: ${{ steps.identity.outputs.image_ref }}
+  digest:
+    description: 'OCI manifest digest of the selected image'
+    value: ${{ steps.result.outputs.digest }}
+  built:
+    description: 'Whether this invocation built the image'
+    value: ${{ steps.result.outputs.built }}
+
+runs:
+  using: composite
+  steps:
+    - name: Compute toolchain identity
+      id: identity
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+      run: |
+        set -euo pipefail
+        toolchain_hash=$(./scripts/wasm-toolchain-id.sh)
+        image_ref="${IMAGE}:toolchain-v1-${toolchain_hash}"
+        echo "toolchain_hash=${toolchain_hash}" >> "$GITHUB_OUTPUT"
+        echo "image_ref=${image_ref}" >> "$GITHUB_OUTPUT"
+        echo "Toolchain image: ${image_ref}"
+
+    - name: Check container registry
+      id: registry
+      shell: bash
+      env:
+        IMAGE_REF: ${{ steps.identity.outputs.image_ref }}
+      run: |
+        set -euo pipefail
+        manifest_file="${RUNNER_TEMP:-/tmp}/wasm-toolchain-manifest.json"
+        for attempt in 1 2 3; do
+          if docker buildx imagetools inspect "$IMAGE_REF" \
+            --raw > "$manifest_file" 2>"${manifest_file}.err"; then
+            digest="sha256:$(sha256sum "$manifest_file" | cut -d' ' -f1)"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+            echo "Found ${IMAGE_REF}@${digest}"
+            exit 0
+          fi
+          if (( attempt < 3 )); then
+            echo "Registry lookup attempt ${attempt} failed; retrying..." >&2
+            sleep $((attempt * 5))
+          fi
+        done
+        cat "${manifest_file}.err" >&2
+        echo "exists=false" >> "$GITHUB_OUTPUT"
+        echo "No published image exists for this toolchain input set."
+
+    - name: Pull existing toolchain image
+      if: ${{ steps.registry.outputs.exists == 'true' && inputs.load == 'true' }}
+      shell: bash
+      env:
+        IMAGE_REF: ${{ steps.identity.outputs.image_ref }}
+        DIGEST: ${{ steps.registry.outputs.digest }}
+        LOCAL_TAG: ${{ inputs.local-tag }}
+      run: |
+        set -euo pipefail
+        immutable_ref="${IMAGE_REF}@${DIGEST}"
+        docker pull "$immutable_ref"
+        docker tag "$immutable_ref" "$LOCAL_TAG"
+
+    - name: Report disk space before cold build
+      if: ${{ steps.registry.outputs.exists != 'true' }}
+      shell: bash
+      run: |
+        df -h
+        docker system df || true
+
+    - name: Reclaim hosted-runner disk space
+      if: ${{ steps.registry.outputs.exists != 'true' && inputs.reclaim-space == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        docker system prune --all --force || true
+        if [[ -n "${RUNNER_TEMP:-}" ]]; then
+          sudo rm -rf \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL \
+            /usr/local/lib/android \
+            /usr/share/dotnet
+        fi
+        df -h
+
+    - name: Set up constrained Docker Buildx
+      if: ${{ steps.registry.outputs.exists != 'true' }}
+      uses: docker/setup-buildx-action@v4
+      with:
+        buildkitd-config-inline: |
+          [worker.oci]
+            max-parallelism = 2
+
+    - name: Build and load missing toolchain image
+      id: build_local
+      if: ${{ steps.registry.outputs.exists != 'true' && inputs.push != 'true' }}
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: docker/wasm/sysroot.dockerfile
+        target: wasm-python-base
+        platforms: linux/amd64
+        tags: ${{ inputs.local-tag }}
+        load: ${{ inputs.load }}
+        cache-from: type=registry,ref=${{ inputs.image }}:buildcache-v1
+
+    - name: Build and publish missing toolchain image
+      id: build_publish
+      if: ${{ steps.registry.outputs.exists != 'true' && inputs.push == 'true' }}
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: docker/wasm/sysroot.dockerfile
+        target: wasm-python-base
+        platforms: linux/amd64
+        tags: ${{ steps.identity.outputs.image_ref }}
+        push: true
+        cache-from: type=registry,ref=${{ inputs.image }}:buildcache-v1
+        cache-to: type=registry,ref=${{ inputs.image }}:buildcache-v1,mode=max
+        provenance: mode=max
+        sbom: true
+
+    - name: Report selected image
+      id: result
+      shell: bash
+      env:
+        EXISTING_DIGEST: ${{ steps.registry.outputs.digest }}
+        LOCAL_DIGEST: ${{ steps.build_local.outputs.digest }}
+        PUBLISHED_DIGEST: ${{ steps.build_publish.outputs.digest }}
+        IMAGE_EXISTS: ${{ steps.registry.outputs.exists }}
+      run: |
+        set -euo pipefail
+        digest=${EXISTING_DIGEST:-${LOCAL_DIGEST:-${PUBLISHED_DIGEST:-}}}
+        if [[ -z "$digest" ]]; then
+          echo "Unable to determine the selected image digest." >&2
+          exit 1
+        fi
+        echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+        if [[ "$IMAGE_EXISTS" == "true" ]]; then
+          echo "built=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "built=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Report disk space after cold build
+      if: ${{ steps.registry.outputs.exists != 'true' }}
+      shell: bash
+      run: |
+        df -h
+        docker system df || true
