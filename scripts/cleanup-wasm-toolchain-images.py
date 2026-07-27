@@ -61,7 +61,7 @@ def main() -> int:
     ]
     newest_ids = {version["id"] for version in toolchain_versions[: args.keep_newest]}
 
-    now = dt.datetime.now(dt.UTC)
+    now = dt.datetime.now(dt.timezone.utc)
     deleted = 0
     retained = 0
     for version in versions:

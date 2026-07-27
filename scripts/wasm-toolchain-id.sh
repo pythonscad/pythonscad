@@ -18,6 +18,18 @@ readonly TOOLCHAIN_FILES=(
 
 git_ref=${1:-}
 
+sha256_stream()
+{
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum | awk '{ print $1 }'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 | awk '{ print $1 }'
+  else
+    echo "Neither sha256sum nor shasum is available." >&2
+    return 1
+  fi
+}
+
 if [[ -n "$git_ref" ]]; then
   for path in "${TOOLCHAIN_FILES[@]}"; do
     if ! git cat-file -e "${git_ref}:${path}" 2>/dev/null; then
@@ -30,11 +42,11 @@ fi
   for path in "${TOOLCHAIN_FILES[@]}"; do
     printf '%s\0' "$path"
     if [[ -n "$git_ref" ]]; then
-      content_hash=$(git show "${git_ref}:${path}" | sha256sum | cut -d' ' -f1)
+      content_hash=$(git show "${git_ref}:${path}" | sha256_stream)
     else
-      content_hash=$(sha256sum "$path" | cut -d' ' -f1)
+      content_hash=$(sha256_stream < "$path")
     fi
     printf '%s' "$content_hash"
     printf '\0'
   done
-} | sha256sum | cut -d' ' -f1
+} | sha256_stream

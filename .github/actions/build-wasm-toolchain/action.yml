@@ -116,7 +116,7 @@ runs:
 
     - name: Set up constrained Docker Buildx
       if: ${{ steps.registry.outputs.exists != 'true' }}
-      uses: docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
       with:
         buildkitd-config-inline: |
           [worker.oci]
@@ -125,7 +125,7 @@ runs:
     - name: Build and load missing toolchain image
       id: build_local
       if: ${{ steps.registry.outputs.exists != 'true' && inputs.push != 'true' }}
-      uses: docker/build-push-action@v7
+      uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
       with:
         context: .
         file: docker/wasm/sysroot.dockerfile
@@ -138,7 +138,7 @@ runs:
     - name: Build and publish missing toolchain image
       id: build_publish
       if: ${{ steps.registry.outputs.exists != 'true' && inputs.push == 'true' }}
-      uses: docker/build-push-action@v7
+      uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
       with:
         context: .
         file: docker/wasm/sysroot.dockerfile
