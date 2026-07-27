@@ -86,7 +86,7 @@ _OPENSCAD_API_NAMES: list[str] = [
     "Sin", "Cos", "Tan", "Asin", "Acos", "Atan",
     "norm", "dot", "cross", "vector",
     # object protocol types
-    "ChildIterator", "ChildRef", "Openscad",
+    "ChildIterator", "ChildRef", "Openscad", "PyOpenSCAD",
 ]
 
 
