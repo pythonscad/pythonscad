@@ -13,6 +13,10 @@
       <div>Create a box with specified dimensions</div>
       <div><code>cube([10, 20, 30]).show()</code></div>
 
+      <div class="func"><code><a href="../reference/primitives3d/#rounded_cube">rounded_cube</a>(size, r|d, center=...)</code></div>
+      <div>Create a rounded cube or box; set center=True to center it</div>
+      <div><code>rounded_cube([30, 20, 10], r=2, center=True).show()</code></div>
+
       <div class="func"><code><a href="../reference/primitives3d/#sphere">sphere</a>(r | d)</code></div>
       <div>Create a sphere with radius r or diameter d</div>
       <div><code>sphere(15).show()</code></div>
@@ -405,6 +409,10 @@
       <div class="func"><code><a href="../reference/io/#osimport">osimport</a>(file, ...)</code></div>
       <div>Import geometry from file (STL, OFF, AMF, 3MF, SVG, DXF)</div>
       <div><code>osimport("model.stl").show()</code></div>
+
+      <div class="func"><code><a href="../reference/io/#osimport">osimport</a>(file, split_by_color=True)</code></div>
+      <div>SVG only: return a dict of <code>{hex_color: 2D object}</code>, one entry per SVG color, for per-color/per-tool export</div>
+      <div><code>parts = osimport("logo.svg", split_by_color=True)<br>export({k: v.linear_extrude(2) for k, v in parts.items()}, "logo.3mf")</code></div>
 
       <div class="func"><code><a href="../reference/io/#osuse">osuse</a>(file)</code></div>
       <div>Use an OpenSCAD library file (like <code>use &lt;...&gt;</code>); call modules/functions on the returned handle</div>

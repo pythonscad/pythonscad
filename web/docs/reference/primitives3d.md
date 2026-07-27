@@ -241,14 +241,18 @@ The given `size` is the **outer** extent of the solid, including the
 rounding. You must specify exactly one of `r` (radius) or `d`
 (diameter); supplying both or neither raises `TypeError`.
 
+By default, `rounded_cube()` is positioned like `cube(size)`, with its minimum
+corner at the origin. `center=False` and `center=None` both keep that behavior;
+set `center=True` to center the generated shape's bounding box on the origin.
+
 **Syntax:**
 
 === "Python"
 
     ```python
     rounded_cube(size, r)
-    rounded_cube(size, r=..., fn=..., fa=..., fs=...)
-    rounded_cube(size, d=..., fn=..., fa=..., fs=...)
+    rounded_cube(size, r=..., center=False, fn=..., fa=..., fs=...)
+    rounded_cube(size, d=..., center=False, fn=..., fa=..., fs=...)
     ```
 
 **Parameters:**
@@ -258,6 +262,7 @@ rounding. You must specify exactly one of `r` (radius) or `d`
 | `size` | number or `[x, y, z]` | — | Outer edge length for a cube, or outer box dimensions |
 | `r` | number | — | Rounding radius. Cannot be used with `d` |
 | `d` | number | — | Rounding diameter. Cannot be used with `r` |
+| `center` | bool or `None` | `False` | If `True`, center the generated shape's bounding box on the origin. If `False` or `None`, place it in the positive octant |
 | `fn` | int | — | Number of segments for the rounding sphere |
 | `fa` | float | — | Minimum angle per rounding-sphere segment |
 | `fs` | float | — | Minimum rounding-sphere segment size |
@@ -272,6 +277,8 @@ rounding. You must specify exactly one of `r` (radius) or `d`
     rounded_cube(20, r=2).show()
 
     rounded_cube([30, 20, 10], d=4).show()
+
+    rounded_cube([30, 20, 10], r=2, center=True).show()
 
     rounded_cube(20, r=2, fn=100).show()
     ```
