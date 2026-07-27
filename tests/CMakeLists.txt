@@ -106,6 +106,9 @@ endif()
 
 if(OPENSCAD_BINPATH)
   list(APPEND CTEST_ENVIRONMENT "OPENSCAD_BINARY=${OPENSCAD_BINPATH}")
+  # pytest integration tests in tests/python/ resolve the binary via
+  # --pythonscad-binary or the PYTHONSCAD_BINARY env var (conftest.py).
+  list(APPEND CTEST_ENVIRONMENT "PYTHONSCAD_BINARY=${OPENSCAD_BINPATH}")
   # Argument used for import/export tests
   set(OPENSCAD_EXE_ARG "--openscad=${OPENSCAD_BINPATH}")
 endif()
@@ -201,6 +204,9 @@ endif()
 #  message(FATAL_ERROR "Please build the OpenSCAD binary and place it here: ${OPENSCAD_BINPATH}")
 #endif()
 list(APPEND CTEST_ENVIRONMENT "OPENSCAD_BINARY=${OPENSCAD_BINPATH}")
+# pytest integration tests in tests/python/ resolve the binary via
+# --pythonscad-binary or the PYTHONSCAD_BINARY env var (conftest.py).
+list(APPEND CTEST_ENVIRONMENT "PYTHONSCAD_BINARY=${OPENSCAD_BINPATH}")
 # Argument used for import/export tests
 set(OPENSCAD_EXE_ARG "--openscad=${OPENSCAD_BINPATH}")
 
@@ -1571,6 +1577,25 @@ if(ENABLE_PYTHON)
       ${CMAKE_CURRENT_SOURCE_DIR}/test_python_vectors.py
   )
   set_property(TEST python-vectors PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+
+  # pytest-based tests from tests/python/.
+  # + Overlay/helper module tests (mock-based) run without a binary.
+  # + Integration tests self-skip when PYTHONSCAD_BINARY is absent.
+  # + The test is only registered when pytest is importable at cmake time.
+  execute_process(
+    COMMAND ${Python3_EXECUTABLE} -c "import pytest"
+    RESULT_VARIABLE PYTEST_AVAILABLE
+    OUTPUT_QUIET ERROR_QUIET
+  )
+  if(PYTEST_AVAILABLE EQUAL 0)
+    add_test(NAME python-pytest CONFIGURATIONS Default
+      COMMAND ${Python3_EXECUTABLE} -Xutf8=1 -m pytest
+        ${CMAKE_CURRENT_SOURCE_DIR}/python/
+        -v --tb=short --color=no
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    set_property(TEST python-pytest PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  endif()
 
   add_test(NAME python-sibling-import-cli CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
