@@ -60,11 +60,13 @@ runs:
       shell: bash
       env:
         IMAGE_REF: ${{ steps.identity.outputs.image_ref }}
+        PUSH: ${{ inputs.push }}
       run: |
         set -euo pipefail
+        error_file="${RUNNER_TEMP:-/tmp}/wasm-toolchain-inspect.err"
         for attempt in 1 2 3; do
           if digest=$(docker buildx imagetools inspect "$IMAGE_REF" \
-            --format '{{.Manifest.Digest}}' 2>"${RUNNER_TEMP:-/tmp}/wasm-toolchain-inspect.err"); then
+            --format '{{.Manifest.Digest}}' 2>"$error_file"); then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "digest=${digest}" >> "$GITHUB_OUTPUT"
             echo "Found ${IMAGE_REF}@${digest}"
@@ -75,9 +77,20 @@ runs:
             sleep $((attempt * 5))
           fi
         done
-        cat "${RUNNER_TEMP:-/tmp}/wasm-toolchain-inspect.err" >&2
-        echo "exists=false" >> "$GITHUB_OUTPUT"
-        echo "No published image exists for this toolchain input set."
+        inspect_error=$(< "$error_file")
+        echo "$inspect_error" >&2
+        if [[ "$inspect_error" == *"not found"* ||
+              "$inspect_error" == *"manifest unknown"* ||
+              "$inspect_error" == *"no such manifest"* ]]; then
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+          echo "No published image exists for this toolchain input set."
+        elif [[ "$PUSH" == "true" ]]; then
+          echo "::error::Registry lookup failed; refusing to publish to an unverified immutable tag."
+          exit 1
+        else
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::Registry lookup was inconclusive; falling back to a local build."
+        fi
 
     - name: Pull existing toolchain image
       if: ${{ steps.registry.outputs.exists == 'true' && inputs.load == 'true' }}
