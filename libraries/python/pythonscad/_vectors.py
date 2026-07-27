@@ -213,7 +213,9 @@ else:
             cleaned: list[list[float]] = []
             for row in rows:
                 if len(row) != 4:
-                    raise ValueError("Each row in Matrix4x4 must have exactly 4 columns")
+                    raise ValueError(
+                        "Each row in Matrix4x4 must have exactly 4 columns"
+                    )
                 cleaned.append([float(x) for x in row])
             super().__init__(cleaned)
 

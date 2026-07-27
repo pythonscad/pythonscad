@@ -7,10 +7,11 @@ MachineConfig class which can be used to read lasercutter and 3D
 printer machine and material configurations.  The config file is
 cached as a JSON export of python dictionaries.
 """
-class MachineConfig:
 
+
+class MachineConfig:
     _config = {}  # the config as read in from the config file
-    _working = {} # the, possibly modified, collapsed working config
+    _working = {}  # the, possibly modified, collapsed working config
 
     def __init__(self, name="PythonSCAD.json"):
         try:
@@ -21,10 +22,9 @@ class MachineConfig:
                 print("   Generating default.")
 
             self.gen_color_table()
-            self.register("default","default",
-                          {"machine":None,
-                           "head":None,
-                           "material":None})
+            self.register(
+                "default", "default", {"machine": None, "head": None, "material": None}
+            )
 
         self.gen_working(label="default")
         self.write_settings()
@@ -38,79 +38,47 @@ class MachineConfig:
             self.write_settings()
 
     def register(self, label, itype, iproperty):
-        item = {"type":itype,"property":iproperty}
+        item = {"type": itype, "property": iproperty}
         self._config[label] = item
         self.write_settings()
 
     def gen_color_table(self):
-        self.register("L00","ColorTable",
-                      {"power":1,"feed":1,"color":0x000000FF})
-        self.register("L01","ColorTable",
-                      {"power":1,"feed":1,"color":0x0000FFFF})
-        self.register("L02","ColorTable",
-                      {"power":1,"feed":1,"color":0xFF0000FF})
-        self.register("L03","ColorTable",
-                      {"power":1,"feed":1,"color":0x00E000FF})
-        self.register("L04","ColorTable",
-                      {"power":1,"feed":1,"color":0xD0D000FF})
-        self.register("L05","ColorTable",
-                      {"power":1,"feed":1,"color":0xFF8000FF})
-        self.register("L06","ColorTable",
-                      {"power":1,"feed":1,"color":0x00E0E0FF})
-        self.register("L07","ColorTable",
-                      {"power":1,"feed":1,"color":0xFF00FFFF})
-        self.register("L08","ColorTable",
-                      {"power":1,"feed":1,"color":0xB4B4B4FF})
-        self.register("L09","ColorTable",
-                      {"power":1,"feed":1,"color":0x0000A0FF})
-        self.register("L10","ColorTable",
-                      {"power":1,"feed":1,"color":0xA00000FF})
-        self.register("L11","ColorTable",
-                      {"power":1,"feed":1,"color":0x00A000FF})
-        self.register("L12","ColorTable",
-                      {"power":1,"feed":1,"color":0xA0A000FF})
-        self.register("L13","ColorTable",
-                      {"power":1,"feed":1,"color":0xC08000FF})
-        self.register("L14","ColorTable",
-                      {"power":1,"feed":1,"color":0x00A0FFFF})
-        self.register("L15","ColorTable",
-                      {"power":1,"feed":1,"color":0xA000A0FF})
-        self.register("L16","ColorTable",
-                      {"power":1,"feed":1,"color":0x808080FF})
-        self.register("L17","ColorTable",
-                      {"power":1,"feed":1,"color":0x7D87B9FF})
-        self.register("L18","ColorTable",
-                      {"power":1,"feed":1,"color":0xBB7784FF})
-        self.register("L19","ColorTable",
-                      {"power":1,"feed":1,"color":0x4A6FE3FF})
-        self.register("L20","ColorTable",
-                      {"power":1,"feed":1,"color":0xD33F6AFF})
-        self.register("L21","ColorTable",
-                      {"power":1,"feed":1,"color":0x8CD78CFF})
-        self.register("L22","ColorTable",
-                      {"power":1,"feed":1,"color":0xF0B98DFF})
-        self.register("L23","ColorTable",
-                      {"power":1,"feed":1,"color":0xF6C4E1FF})
-        self.register("L24","ColorTable",
-                      {"power":1,"feed":1,"color":0xFA9ED4FF})
-        self.register("L25","ColorTable",
-                      {"power":1,"feed":1,"color":0x500A78FF})
-        self.register("L26","ColorTable",
-                      {"power":1,"feed":1,"color":0xB45A00FF})
-        self.register("L27","ColorTable",
-                      {"power":1,"feed":1,"color":0x004754FF})
-        self.register("L28","ColorTable",
-                      {"power":1,"feed":1,"color":0x86FA88FF})
-        self.register("L29","ColorTable",
-                      {"power":1,"feed":1,"color":0xFFDB66FF})
-        self.register("T1","ColorTable",
-                      {"power":1,"feed":1,"color":0xF36926FF})
-        self.register("T2","ColorTable",
-                      {"power":1,"feed":1,"color":0x0C96D9FF})
+        self.register("L00", "ColorTable", {"power": 1, "feed": 1, "color": 0x000000FF})
+        self.register("L01", "ColorTable", {"power": 1, "feed": 1, "color": 0x0000FFFF})
+        self.register("L02", "ColorTable", {"power": 1, "feed": 1, "color": 0xFF0000FF})
+        self.register("L03", "ColorTable", {"power": 1, "feed": 1, "color": 0x00E000FF})
+        self.register("L04", "ColorTable", {"power": 1, "feed": 1, "color": 0xD0D000FF})
+        self.register("L05", "ColorTable", {"power": 1, "feed": 1, "color": 0xFF8000FF})
+        self.register("L06", "ColorTable", {"power": 1, "feed": 1, "color": 0x00E0E0FF})
+        self.register("L07", "ColorTable", {"power": 1, "feed": 1, "color": 0xFF00FFFF})
+        self.register("L08", "ColorTable", {"power": 1, "feed": 1, "color": 0xB4B4B4FF})
+        self.register("L09", "ColorTable", {"power": 1, "feed": 1, "color": 0x0000A0FF})
+        self.register("L10", "ColorTable", {"power": 1, "feed": 1, "color": 0xA00000FF})
+        self.register("L11", "ColorTable", {"power": 1, "feed": 1, "color": 0x00A000FF})
+        self.register("L12", "ColorTable", {"power": 1, "feed": 1, "color": 0xA0A000FF})
+        self.register("L13", "ColorTable", {"power": 1, "feed": 1, "color": 0xC08000FF})
+        self.register("L14", "ColorTable", {"power": 1, "feed": 1, "color": 0x00A0FFFF})
+        self.register("L15", "ColorTable", {"power": 1, "feed": 1, "color": 0xA000A0FF})
+        self.register("L16", "ColorTable", {"power": 1, "feed": 1, "color": 0x808080FF})
+        self.register("L17", "ColorTable", {"power": 1, "feed": 1, "color": 0x7D87B9FF})
+        self.register("L18", "ColorTable", {"power": 1, "feed": 1, "color": 0xBB7784FF})
+        self.register("L19", "ColorTable", {"power": 1, "feed": 1, "color": 0x4A6FE3FF})
+        self.register("L20", "ColorTable", {"power": 1, "feed": 1, "color": 0xD33F6AFF})
+        self.register("L21", "ColorTable", {"power": 1, "feed": 1, "color": 0x8CD78CFF})
+        self.register("L22", "ColorTable", {"power": 1, "feed": 1, "color": 0xF0B98DFF})
+        self.register("L23", "ColorTable", {"power": 1, "feed": 1, "color": 0xF6C4E1FF})
+        self.register("L24", "ColorTable", {"power": 1, "feed": 1, "color": 0xFA9ED4FF})
+        self.register("L25", "ColorTable", {"power": 1, "feed": 1, "color": 0x500A78FF})
+        self.register("L26", "ColorTable", {"power": 1, "feed": 1, "color": 0xB45A00FF})
+        self.register("L27", "ColorTable", {"power": 1, "feed": 1, "color": 0x004754FF})
+        self.register("L28", "ColorTable", {"power": 1, "feed": 1, "color": 0x86FA88FF})
+        self.register("L29", "ColorTable", {"power": 1, "feed": 1, "color": 0xFFDB66FF})
+        self.register("T1", "ColorTable", {"power": 1, "feed": 1, "color": 0xF36926FF})
+        self.register("T2", "ColorTable", {"power": 1, "feed": 1, "color": 0x0C96D9FF})
 
     def read(self, name="PythonSCAD.json"):
         name = self.configfile(name)
-        with open(name, 'r', encoding='utf-8') as f:
+        with open(name, "r", encoding="utf-8") as f:
             cfg = json.loads(f.read())
             return cfg
 
@@ -119,6 +87,7 @@ class MachineConfig:
 
         if backup is not None:
             import shutil
+
             shutil.copyfile(name, backup)
 
         if config is None:
@@ -127,7 +96,7 @@ class MachineConfig:
         jstr = json.dumps(config, indent=4)
 
         if jstr is not None:
-            with open(name,'w') as fout:
+            with open(name, "w") as fout:
                 fout.write(jstr)
 
         return
@@ -169,8 +138,7 @@ class MachineConfig:
 
     def get_label_by_type(self, label):
         try:
-            values = set([x for x in self._config
-                          if self._config[x]["type"]==label])
+            values = set([x for x in self._config if self._config[x]["type"] == label])
             return values
         except ValueError as e:
             print(f"An error occurred: {e}")
@@ -208,7 +176,7 @@ class MachineConfig:
         xdg = os.getenv("XDG_CONFIG_HOME")
         home = os.getenv("HOME")
 
-        if '/'==name[0] or '\\'==name[0]:
+        if "/" == name[0] or "\\" == name[0]:
             # FIXME: need to also handle 'C:' naming
             return name
 
@@ -216,7 +184,7 @@ class MachineConfig:
             return os.path.join(xdg, name)
 
         if home is not None:
-            return os.path.join(home,".config","PythonSCAD",name)
+            return os.path.join(home, ".config", "PythonSCAD", name)
 
         return name
 
@@ -283,11 +251,11 @@ class MachineConfig:
         self.write_settings()
         return val
 
-    def gen_color(self, power=-1,feed=-1):
+    def gen_color(self, power=-1, feed=-1):
         self._check_lasermode(1)
         color = 0
         power = int(power)
-        feed  = int(feed)
+        feed = int(feed)
         if power > 1000:
             print("\nError: cannot represent a power factor greater than 100.0%\n")
             return color
@@ -297,13 +265,15 @@ class MachineConfig:
         # the feed rate.  In order to make the visualizaion of the
         # alpha channel work, the top most 6-bits of the feed rate are
         # shifted into the alpha channel.
-        if power != -1: color |= (power << 22)
+        if power != -1:
+            color |= power << 22
 
         cfeed = feed & 0x3FFFFF
         a = (~(cfeed >> 16)) & 0xFF
         gb = (cfeed & 0xFFFF) << 8
 
-        if feed  != -1: color |= (gb | a)
+        if feed != -1:
+            color |= gb | a
 
         return color
 
@@ -313,10 +283,10 @@ class MachineConfig:
     def color2str(self, tag):
         return "#{:08X}".format(self.color(tag))
 
-    def gen_color2str(self, power=-1,feed=-1):
-        color = self.gen_color(power,feed)
+    def gen_color2str(self, power=-1, feed=-1):
+        color = self.gen_color(power, feed)
         return f"#{color:08X}"
 
-    def gen_color2hex(self, power=-1,feed=-1):
-        color = self.gen_color(power,feed)
+    def gen_color2hex(self, power=-1, feed=-1):
+        color = self.gen_color(power, feed)
         return f"0x{color:08X}"

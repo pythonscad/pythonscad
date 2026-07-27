@@ -13,6 +13,7 @@ Asserts the drop-in property: switching between ``from openscad import *``
 and ``from pythonscad import *`` does not change which callables a script
 binds (they are the same objects).
 """
+
 import os
 import tempfile
 

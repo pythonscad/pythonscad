@@ -4,7 +4,7 @@ import subprocess
 from datetime import date
 
 UPSTREAM = "upstream"
-UPSTREAM_BRANCH = "master"   # change to "main" if needed
+UPSTREAM_BRANCH = "master"  # change to "main" if needed
 REPO = "openscad/openscad"
 TAG_PREFIX = "upstream-sync/openscad-"
 
@@ -112,7 +112,7 @@ def main():
     print(f"# upstream tip: {tip}")
     print()
     print("# git checkout master")
-    print("# git checkout -b \"sync/openscad-%s\""%(newtag))
+    print('# git checkout -b "sync/openscad-%s"' % (newtag))
     print("# merge all hashes listed below")
     print()
 
@@ -124,17 +124,19 @@ def main():
                 for l in (pr.get("labels") or [])
                 if isinstance(l, dict) and l.get("name")
             )
-            print(
-                f"{c}  PR #{pr['number']}: {pr['title']}  [{labels}]  {pr['url']}"
-            )
+            print(f"{c}  PR #{pr['number']}: {pr['title']}  [{labels}]  {pr['url']}")
         else:
             subj = sh("git", "show", "-s", "--format=%s", c)
             print(f"{c}  (direct) {subj}")
 
     print()
     print(f"# finally:")
-    print("# git tag -a \"upstream-sync/openscad-%s\" \"%s\" -m \"Synced OpenSCAD up to %s\""%(newtag, tip, tip))
-    print("# git push origin \"upstream-sync/openscad-%s\""%(newtag))
+    print(
+        '# git tag -a "upstream-sync/openscad-%s" "%s" -m "Synced OpenSCAD up to %s"'
+        % (newtag, tip, tip)
+    )
+    print('# git push origin "upstream-sync/openscad-%s"' % (newtag))
+
 
 if __name__ == "__main__":
     main()

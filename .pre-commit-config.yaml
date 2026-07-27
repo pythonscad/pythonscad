@@ -69,14 +69,14 @@ repos:
     - repo: https://github.com/astral-sh/ruff-pre-commit
       rev: v0.16.0
       hooks:
-          # Validate Python stub files programmatically instead of
-          # eyeballing them. Scoped to the stubs tree so that the rest of
-          # the repository (tests, scripts, examples) is not touched by
-          # this hook yet; that is a separate decision.
           - id: ruff
-            name: ruff (python stubs)
-            files: ^libraries/python/stubs/.*\.pyi$
+            name: ruff (python lint)
+            files: \.pyi?$
             args: ["--select", "F401,F811,F821"]
+          - id: ruff-format
+            name: ruff format (check)
+            args: ["check"]
+            files: \.pyi?$
     - repo: https://github.com/RodrigoGonzalez/check-mkdocs
       rev: v1.2.0
       hooks:

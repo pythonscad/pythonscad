@@ -7,8 +7,6 @@ from pymachineconfig import *
 #   blank machine configuration.  For this example to work without a
 #   pre-defined configuration we are using the "default_machine"
 #   provided in the examples. (below)
-import define_machine
-
 mc = MachineConfig()
 print("\nConfigfile:", mc.configfile())
 
