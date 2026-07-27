@@ -62,11 +62,9 @@ runs:
         IMAGE_REF: ${{ steps.identity.outputs.image_ref }}
       run: |
         set -euo pipefail
-        manifest_file="${RUNNER_TEMP:-/tmp}/wasm-toolchain-manifest.json"
         for attempt in 1 2 3; do
-          if docker buildx imagetools inspect "$IMAGE_REF" \
-            --raw > "$manifest_file" 2>"${manifest_file}.err"; then
-            digest="sha256:$(sha256sum "$manifest_file" | cut -d' ' -f1)"
+          if digest=$(docker buildx imagetools inspect "$IMAGE_REF" \
+            --format '{{.Manifest.Digest}}' 2>"${RUNNER_TEMP:-/tmp}/wasm-toolchain-inspect.err"); then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "digest=${digest}" >> "$GITHUB_OUTPUT"
             echo "Found ${IMAGE_REF}@${digest}"
@@ -77,7 +75,7 @@ runs:
             sleep $((attempt * 5))
           fi
         done
-        cat "${manifest_file}.err" >&2
+        cat "${RUNNER_TEMP:-/tmp}/wasm-toolchain-inspect.err" >&2
         echo "exists=false" >> "$GITHUB_OUTPUT"
         echo "No published image exists for this toolchain input set."
 
@@ -91,7 +89,7 @@ runs:
       run: |
         set -euo pipefail
         immutable_ref="${IMAGE_REF}@${DIGEST}"
-        docker pull "$immutable_ref"
+        docker pull --platform=linux/amd64 "$immutable_ref"
         docker tag "$immutable_ref" "$LOCAL_TAG"
 
     - name: Report disk space before cold build

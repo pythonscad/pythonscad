@@ -33,11 +33,8 @@ TOOLCHAIN_HASH=$(./scripts/wasm-toolchain-id.sh)
 TOOLCHAIN_REF="${TOOLCHAIN_IMAGE}:toolchain-v1-${TOOLCHAIN_HASH}"
 LOCAL_TOOLCHAIN_TAG=pythonscad-wasm-python-base:local
 
-manifest_file=$(mktemp)
-trap 'rm -f "$manifest_file"' EXIT
-if docker buildx imagetools inspect "$TOOLCHAIN_REF" \
-  --raw > "$manifest_file" 2>/dev/null; then
-  digest="sha256:$(sha256sum "$manifest_file" | cut -d' ' -f1)"
+if digest=$(docker buildx imagetools inspect "$TOOLCHAIN_REF" \
+  --format '{{.Manifest.Digest}}' 2>/dev/null); then
   immutable_ref="${TOOLCHAIN_REF}@${digest}"
   echo "Pulling ${immutable_ref}..."
   docker pull --platform=linux/amd64 "$immutable_ref"

@@ -24,11 +24,11 @@ There are two build variants:
 ## Build
 
 ```bash
-# The helper pulls the content-addressed public toolchain image. If the current
-# checkout changes the toolchain inputs, it builds the image locally instead.
+# Show the content-derived identity used for the public toolchain image.
 ./scripts/wasm-toolchain-id.sh
 
-# Node variant (smoke test)
+# Node variant (smoke test). The helper pulls the matching public toolchain
+# image, or builds it locally when the current inputs have not been published.
 ./scripts/wasm-base-docker-run.sh emcmake cmake -B build-wasm-node \
   -DWASM_BUILD_TYPE=node -DCMAKE_BUILD_TYPE=Release -DEXPERIMENTAL=1
 ./scripts/wasm-base-docker-run.sh cmake --build build-wasm-node -j"$(nproc)"
