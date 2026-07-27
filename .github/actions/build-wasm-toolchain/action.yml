@@ -92,6 +92,27 @@ runs:
           echo "::warning::Registry lookup was inconclusive; falling back to a local build."
         fi
 
+    - name: Resolve optional registry build cache
+      id: cache
+      if: ${{ steps.registry.outputs.exists != 'true' }}
+      shell: bash
+      env:
+        CACHE_REF: ${{ inputs.image }}:buildcache-v1
+      run: |
+        set -euo pipefail
+        for attempt in 1 2 3; do
+          if docker buildx imagetools inspect "$CACHE_REF" >/dev/null 2>&1; then
+            echo "cache_from=type=registry,ref=${CACHE_REF}" >> "$GITHUB_OUTPUT"
+            echo "Using registry build cache ${CACHE_REF}."
+            exit 0
+          fi
+          if (( attempt < 3 )); then
+            sleep $((attempt * 5))
+          fi
+        done
+        echo "cache_from=" >> "$GITHUB_OUTPUT"
+        echo "::notice::Registry build cache is unavailable; continuing without it."
+
     - name: Pull existing toolchain image
       if: ${{ steps.registry.outputs.exists == 'true' && inputs.load == 'true' }}
       shell: bash
@@ -146,7 +167,7 @@ runs:
         platforms: linux/amd64
         tags: ${{ inputs.local-tag }}
         load: ${{ inputs.load }}
-        cache-from: type=registry,ref=${{ inputs.image }}:buildcache-v1
+        cache-from: ${{ steps.cache.outputs.cache_from }}
 
     - name: Build and publish missing toolchain image
       id: build_publish
@@ -159,7 +180,7 @@ runs:
         platforms: linux/amd64
         tags: ${{ steps.identity.outputs.image_ref }}
         push: true
-        cache-from: type=registry,ref=${{ inputs.image }}:buildcache-v1
+        cache-from: ${{ steps.cache.outputs.cache_from }}
         cache-to: type=registry,ref=${{ inputs.image }}:buildcache-v1,mode=max
         provenance: mode=max
         sbom: true

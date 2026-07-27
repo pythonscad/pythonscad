@@ -37,6 +37,7 @@ sha256_stream()
 if [[ -n "$git_ref" ]]; then
   for path in "${TOOLCHAIN_FILES[@]}"; do
     if ! git cat-file -e "${git_ref}:${path}" 2>/dev/null; then
+      echo "Toolchain input ${path} is missing at git ref ${git_ref}." >&2
       exit 2
     fi
   done
