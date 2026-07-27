@@ -53,7 +53,7 @@ pull_toolchain()
 pull_ref=$TOOLCHAIN_REF
 if digest=$(docker buildx imagetools inspect "$TOOLCHAIN_REF" \
   --format '{{.Manifest.Digest}}' 2>/dev/null); then
-  pull_ref="${TOOLCHAIN_REF}@${digest}"
+  pull_ref="${TOOLCHAIN_IMAGE}@${digest}"
 fi
 
 echo "Pulling ${pull_ref}..."

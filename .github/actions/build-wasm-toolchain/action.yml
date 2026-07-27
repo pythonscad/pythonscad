@@ -42,6 +42,13 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Set up constrained Docker Buildx
+      uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+      with:
+        buildkitd-config-inline: |
+          [worker.oci]
+            max-parallelism = 2
+
     - name: Compute toolchain identity
       id: identity
       shell: bash
@@ -117,12 +124,12 @@ runs:
       if: ${{ steps.registry.outputs.exists == 'true' && inputs.load == 'true' }}
       shell: bash
       env:
-        IMAGE_REF: ${{ steps.identity.outputs.image_ref }}
+        IMAGE: ${{ inputs.image }}
         DIGEST: ${{ steps.registry.outputs.digest }}
         LOCAL_TAG: ${{ inputs.local-tag }}
       run: |
         set -euo pipefail
-        immutable_ref="${IMAGE_REF}@${DIGEST}"
+        immutable_ref="${IMAGE}@${DIGEST}"
         docker pull --platform=linux/amd64 "$immutable_ref"
         docker tag "$immutable_ref" "$LOCAL_TAG"
 
@@ -147,14 +154,6 @@ runs:
             /usr/share/dotnet
         fi
         df -h
-
-    - name: Set up constrained Docker Buildx
-      if: ${{ steps.registry.outputs.exists != 'true' }}
-      uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
-      with:
-        buildkitd-config-inline: |
-          [worker.oci]
-            max-parallelism = 2
 
     - name: Build and load missing toolchain image
       id: build_local

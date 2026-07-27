@@ -49,7 +49,9 @@ def main() -> int:
     )
     pages = gh_json("--paginate", "--slurp", endpoint)
     versions = [version for page in pages for version in page]
-    versions.sort(key=lambda version: version["updated_at"], reverse=True)
+    versions.sort(
+        key=lambda version: parse_time(version["updated_at"]), reverse=True
+    )
 
     toolchain_versions = [
         version
