@@ -7,7 +7,7 @@
 #     -t pythonscad-wasm-sysroot:local .
 
 # emscripten/emsdk 6.0.0 (digest-pinned; Dependabot docker bumps /docker/wasm).
-ARG EMSCRIPTEN_SDK_TAG=emscripten/emsdk@sha256:9eed2e47b4206928b22f99d2917013ad5462d777bb24cb546a652729896badd8
+ARG EMSCRIPTEN_SDK_TAG=emscripten/emsdk@sha256:bb0910e6a18bb9bd7cb31ae4ed40f9073148b78cb2cdb8ea8676454e0d85425c
 # Pin openscad-wasm for reproducible sysroot builds; bump OPENSCAD_WASM_COMMIT when
 # intentionally syncing upstream recipe/patches.
 ARG OPENSCAD_WASM_COMMIT=ac5cf9b129bdb243fef3862883bd5d64e54fffcb
@@ -35,7 +35,22 @@ RUN mkdir -p libs \
     && tar xf boost-1.87.0-b2-nodocs.tar.xz -C libs && mv libs/boost-1.87.0 libs/boost \
     && rm boost-1.87.0-b2-nodocs.tar.xz \
     && sed -i -E 's/-fwasm-exceptions/-fexceptions/g' libs/boost/tools/build/src/tools/emscripten.jam
-RUN make libs \
+RUN make \
+        libs/cgal \
+        libs/eigen \
+        libs/freetype \
+        libs/libffi \
+        libs/glib \
+        libs/harfbuzz \
+        libs/lib3mf \
+        libs/libexpat \
+        libs/libzip \
+        libs/boost \
+        libs/gmp \
+        libs/mpfr \
+        libs/zlib \
+        libs/libxml2 \
+        libs/doubleconversion \
     && rm -rf libs/fontconfig \
     && git clone --filter=blob:none --no-checkout https://gitlab.freedesktop.org/fontconfig/fontconfig.git libs/fontconfig \
     && git -C libs/fontconfig checkout ${FONTCONFIG_COMMIT} \
