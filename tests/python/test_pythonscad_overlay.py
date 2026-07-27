@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import sys
 import types
+from pathlib import Path
 
 import pytest
 
@@ -113,7 +114,7 @@ def test_parts_last_wins_difference(ps: types.ModuleType) -> None:
     ps.difference.assert_called()
 
 
-def test_export_per_file_writes_one_per_part(ps: types.ModuleType, tmp_path: pytest.TempPathFactory) -> None:
+def test_export_per_file_writes_one_per_part(ps: types.ModuleType, tmp_path: Path) -> None:
     """``export()`` writes one file per item using ``f"{prefix}{name}{suffix}"``."""
     exp = ps.MultiToolExporter(f"{tmp_path}/flag-", ".stl",
                                items=[("base", object()), ("overlay", object())])
@@ -137,7 +138,7 @@ def test_export_single_file_requires_3mf(ps: types.ModuleType) -> None:
         exp.export(single_file="out/model.stl")
 
 
-def test_export_single_file_3mf_calls_multi_object_export(ps: types.ModuleType, tmp_path: pytest.TempPathFactory) -> None:
+def test_export_single_file_3mf_calls_multi_object_export(ps: types.ModuleType, tmp_path: Path) -> None:
     """``export(single_file="out.3mf")`` calls the multi-object ``export(dict, path)`` form."""
     target = f"{tmp_path}/model.3mf"
     exp = ps.MultiToolExporter("out/", ".stl",

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Coverage test for the C++ Python-object type-conversion helpers.
 
 Every conversion helper in ``src/python/pyconversion.cc`` is reachable only
@@ -11,7 +10,7 @@ points through the ``pythonscad`` binary and asserts:
 * invalid input raises ``TypeError`` (the converters' error paths), and
 * the values returned *to* Python have the documented type/shape.
 
-Helper -> entry point coverage:
+Helper -> entry point coverage::
 
     python_numberval        - cube(<scalar>), incl. numpy scalars; reject str
     python_vectorval        - cube(size3), color(3/4-vec, w component)
@@ -28,17 +27,14 @@ Helper -> entry point coverage:
 
 Self-skips (prints ``SKIP``) when the interpreter has no numpy.
 """
+
 from __future__ import annotations
 
-import os
-import subprocess
-import sys
-import tempfile
+from collections.abc import Callable
 
 
-TIMEOUT_SECONDS = 120
-
-PYTHONSCAD_PROGRAM = r'''
+# fmt: off
+CONVERSIONS_PROGRAM = r'''
 import atexit as _atexit
 import os as _os
 import sys as _sys
@@ -55,9 +51,6 @@ from pythonscad import (
     translate, scale, rotate, multmatrix, vector,
 )
 
-# TemporaryDirectory + atexit so the scratch dir is always removed when the
-# interpreter exits, including on failure; mkdtemp() alone leaked a directory
-# on every run.
 _tmpdir_ctx = _tempfile.TemporaryDirectory(prefix="conv_")
 _atexit.register(_tmpdir_ctx.cleanup)
 _tmpdir = _tmpdir_ctx.name
@@ -86,14 +79,7 @@ def same(name, *objs):
 
 
 def err(name, thunk):
-    """Assert the call raises TypeError -- the converters' documented error path.
-
-    Only TypeError counts as a pass. Catching every exception would let an
-    unrelated failure (a bug in this script, an AssertionError, a crash in
-    some other layer) masquerade as the converter correctly rejecting bad
-    input, and would not pin down the contract the module docstring claims.
-    Anything else is re-raised as a failure naming what actually happened.
-    """
+    """Assert the call raises TypeError -- the converters' documented error path."""
     try:
         thunk()
     except TypeError:
@@ -196,14 +182,12 @@ check("fromvector-cross", list(vector(1, 0, 0) * vector(0, 1, 0)) == [0.0, 0.0, 
 # --- python_frommatrix (4x4 return) ----------------------------------
 _m = cube(2).rotz(30).faces()[0].matrix
 check("frommatrix-shape", len(_m) == 4 and len(_m[0]) == 4)
-# round-trips straight back through python_tomatrix without error
 multmatrix(cube(1), _m)
 check("frommatrix-roundtrip", True)
 
 # --- python_from2dvarpointlist / from2dint (plain list returns) ------
 _pol = polygon([[0, 0], [10, 0], [10, 10]])
 check("from2dvar-list", isinstance(_pol.points, list))
-# list concatenation idiom (2-D -> 3-D promotion) must keep working
 check("from2dvar-concat", _pol.points[0] + [9] == [0.0, 0.0, 9])
 _ph = polyhedron([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
                  [[0, 1, 2], [0, 1, 3], [1, 2, 3], [0, 2, 3]])
@@ -216,60 +200,11 @@ print("CONVERSIONS_OK")
 from pythonscad import cube as _cube, show as _show
 _show(_cube(1))
 '''
+# fmt: on
 
 
-def main() -> int:
-    if len(sys.argv) < 2:
-        print("usage: test_python_conversions.py <pythonscad-binary>", file=sys.stderr)
-        return 2
-
-    pythonscad = sys.argv[1]
-    if not os.path.isfile(pythonscad):
-        print(f"binary not found: {pythonscad}", file=sys.stderr)
-        return 2
-
-    with tempfile.NamedTemporaryFile(
-        "w", suffix=".py", delete=False, encoding="utf-8"
-    ) as fh:
-        fh.write(PYTHONSCAD_PROGRAM)
-        script_path = fh.name
-    out_stl = script_path + ".out.stl"
-
-    try:
-        proc = subprocess.run(
-            [pythonscad, "--trust-python", script_path, "-o", out_stl],
-            capture_output=True,
-            text=True,
-            timeout=TIMEOUT_SECONDS,
-        )
-    finally:
-        os.remove(script_path)
-        if os.path.exists(out_stl):
-            os.remove(out_stl)
-
-    print("===== stdout =====")
-    print(proc.stdout)
-    print("===== stderr =====", file=sys.stderr)
-    print(proc.stderr, file=sys.stderr)
-
-    # pythonscad routes Python print() output to stderr, so search both.
-    combined = (proc.stdout or "") + (proc.stderr or "")
-
-    if any(line.startswith("SKIP:") for line in combined.splitlines()):
-        print("SKIP: numpy not available")
-        return 0
-
-    if proc.returncode != 0:
-        print(f"FAIL: pythonscad exited with {proc.returncode}", file=sys.stderr)
-        return 1
-
-    if "CONVERSIONS_OK" not in combined:
-        print("FAIL: conversion coverage script did not complete", file=sys.stderr)
-        return 1
-
-    print("PASS")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+def test_conversion_helpers(run_pythonscad: Callable[..., str]) -> None:
+    out = run_pythonscad(CONVERSIONS_PROGRAM)
+    assert "CONVERSIONS_OK" in out, (
+        "conversion coverage script did not complete\n--- output ---\n" + out
+    )

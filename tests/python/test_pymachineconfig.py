@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import types
+from pathlib import Path
 
 import pytest
 
@@ -73,9 +74,9 @@ def test_configfile_relative_resolves_under_home(mc: object, monkeypatch: pytest
     assert resolved == os.path.join("/tmp/pytest-home", ".config", "PythonSCAD", "cfg.json")
 
 
-def test_write_then_read_json_roundtrip(mc: object, tmp_path: pytest.TempPathFactory) -> None:
+def test_write_then_read_json_roundtrip(mc: object, tmp_path: Path) -> None:
     """Writing a config payload to disk and reading it back yields the same data."""
-    target = str(tmp_path / "cfg.json")  # type: ignore[operator]
+    target = str(tmp_path / "cfg.json")
     payload = {"default": {"type": "default", "property": {"machine": None}}}
     mc.write(payload, name=target)  # type: ignore[attr-defined]
     assert mc.read(target) == payload  # type: ignore[attr-defined]
