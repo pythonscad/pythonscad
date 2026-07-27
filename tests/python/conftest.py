@@ -16,7 +16,7 @@ file provides the shared machinery for both:
 
 * **Integration tests** that drive a built ``pythonscad`` binary in a
   subprocess via :func:`run_pythonscad`. The binary path comes from
-  ``--pythonscad-binary`` or ``PYTHONSCAD_BINARY`` (CMake sets the latter);
+  ``--pythonscad-binary`` or the ``PYTHONSCAD_BINARY`` environment variable;
   without it those tests skip, so ``pytest tests/python`` still works from a
   source checkout with no build.
 """
