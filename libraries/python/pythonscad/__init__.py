@@ -24,6 +24,13 @@ from openscad import (  # noqa: F401
     ChildRef,
     Openscad,
 )
+from ._vectors import (  # noqa: F401
+    HAS_NUMPY,
+    Matrix4x4,
+    Vector1,
+    Vector2,
+    Vector3,
+)
 
 # Convention: any module-level import that is NOT meant to be part of
 # the public `pythonscad` API must be aliased with a leading underscore
@@ -353,6 +360,7 @@ def rounded_cube(
     size: _typing.Union[float, _typing.List[float]],
     r: float,
     *,
+    center: _typing.Optional[bool] = False,
     fn: _typing.Optional[float] = None,
     fa: _typing.Optional[float] = None,
     fs: _typing.Optional[float] = None,
@@ -364,6 +372,7 @@ def rounded_cube(
     size: _typing.Union[float, _typing.List[float]],
     *,
     d: float,
+    center: _typing.Optional[bool] = False,
     fn: _typing.Optional[float] = None,
     fa: _typing.Optional[float] = None,
     fs: _typing.Optional[float] = None,
@@ -375,6 +384,7 @@ def rounded_cube(
     r: _typing.Optional[float] = None,
     *,
     d: _typing.Optional[float] = None,
+    center: _typing.Optional[bool] = False,
     fn: _typing.Optional[float] = None,
     fa: _typing.Optional[float] = None,
     fs: _typing.Optional[float] = None,
@@ -389,6 +399,10 @@ def rounded_cube(
         size: Edge length for a uniform cube, or ``[x, y, z]`` for a box.
         r: Rounding radius. Must be positive. Cannot be used with ``d``.
         d: Rounding diameter. Must be positive. Cannot be used with ``r``.
+        center: If ``False`` or ``None`` (the default is ``False``), place the
+            rounded cube in the positive octant like ``cube(size)``. If
+            ``True``, translate the generated shape so its bounding box is
+            centered on the origin.
         fn: Number of fragments for the rounding sphere approximation.
         fa: Minimum angle for each rounding-sphere fragment.
         fs: Minimum size for each rounding-sphere fragment.
@@ -406,6 +420,7 @@ def rounded_cube(
         >>> rounded_cube(20, 2).show()
         >>> rounded_cube([30, 20, 10], d=4).show()
         >>> rounded_cube(20, r=2, fn=100).show()
+        >>> rounded_cube([30, 20, 10], r=2, center=True).show()
     """
     if r is not None and d is not None:
         raise TypeError("rounded_cube: specify exactly one of r or d, not both")
@@ -430,16 +445,23 @@ def rounded_cube(
                 "rounded_cube: each size dimension must be greater than 2*radius"
             )
         inner_size = [s - (2 * radius) for s in size]
+        center_offset = [s * -0.5 for s in size]
     elif isinstance(size, (int, float)):
         if size <= 2 * radius:
             raise ValueError("rounded_cube: size must be greater than 2*radius")
         inner_size = size - (2 * radius)
+        center_offset = [size * -0.5] * 3
     else:
         raise TypeError(
             f"rounded_cube: size must be a number or [x, y, z] list, "
             f"got {type(size).__name__}"
         )
 
-    return minkowski(cube(inner_size), sphere(r=radius, fn=fn, fa=fa, fs=fs)).translate(
+    rounded_box = minkowski(
+        cube(inner_size), sphere(r=radius, fn=fn, fa=fa, fs=fs)
+    ).translate(
         [radius, radius, radius]
     )
+    if center:
+        return rounded_box.translate(center_offset)
+    return rounded_box

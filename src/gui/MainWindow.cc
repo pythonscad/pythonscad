@@ -540,6 +540,7 @@ void MainWindow::customSetup(void)
   auto init_err = evaluatePython(content);
   if (!init_err.empty()) std::cerr << init_err << std::flush;
   addmenuitem_this = this;
+  mainwindow_global = this;
   auto setup_err = evaluatePython("setup()");
   if (!setup_err.empty()) std::cerr << setup_err << std::flush;
   addmenuitem_this = nullptr;
@@ -1049,12 +1050,6 @@ MainWindow::~MainWindow()
   isBeingDestroyed = true;
 
   delete this->cgalworker;
-  scadApp->windowManager.remove(this);
-  if (scadApp->windowManager.getWindows().empty()) {
-    // Quit application even in case some other windows like
-    // Preferences are still open.
-    scadApp->quit();
-  }
 }
 
 void MainWindow::showProgress()

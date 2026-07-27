@@ -1,0 +1,13 @@
+name: Build PyQt6 Bindings (Qt6)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "Placeholder - real build logic comes on feature branch"

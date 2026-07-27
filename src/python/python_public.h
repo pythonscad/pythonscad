@@ -13,6 +13,8 @@ extern bool python_active;
 extern bool python_trusted;
 extern bool python_runipython;
 extern bool python_runrepl;
+extern void *qapp_global;
+extern void *mainwindow_global;
 extern std::vector<std::string> python_replargs;
 extern AssignmentList customizer_parameters;
 extern AssignmentList customizer_parameters_finished;

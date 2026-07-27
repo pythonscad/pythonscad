@@ -136,9 +136,25 @@ wait_for_dispatched_run_id() {
 wait_for_workflows() {
   local -A completed=()
   local remaining=${#run_ids[@]}
-  local failures=0
 
-  rs_log "Waiting for $remaining workflow runs; polling once per minute"
+  rs_log "Waiting for $remaining workflow runs; polling every 30 seconds"
+
+  cancel_unfinished_workflows() {
+    local failed_workflow=$1
+
+    for cancel_workflow in "${workflows[@]}"; do
+      if [[ "$cancel_workflow" == "$failed_workflow" || -n "${completed[$cancel_workflow]:-}" ]]; then
+        continue
+      fi
+
+      local run_id=${run_ids[$cancel_workflow]:-}
+      [[ -n "$run_id" ]] || continue
+
+      rs_warn "Cancelling unfinished run for $cancel_workflow: $run_id"
+      gh run cancel "$run_id" --repo "$repo" ||
+        rs_warn "Could not cancel unfinished run for $cancel_workflow: $run_id"
+    done
+  }
 
   while ((remaining > 0)); do
     for workflow in "${workflows[@]}"; do
@@ -161,20 +177,17 @@ wait_for_workflows() {
         ((remaining -= 1))
         rs_log "Finished $workflow_name ($workflow): ${conclusion:-unknown} - $url"
         if [[ "$conclusion" != "success" ]]; then
-          failures=1
+          cancel_unfinished_workflows "$workflow"
+          rs_die "$workflow_name ($workflow) failed with conclusion: ${conclusion:-unknown}"
         fi
       fi
     done
 
     if ((remaining > 0)); then
       rs_log "$remaining workflow run(s) still running"
-      sleep 60
+      sleep 30
     fi
   done
-
-  if ((failures)); then
-    rs_die "one or more dispatched workflows failed"
-  fi
 
   rs_log "All dispatched workflows completed successfully"
 }
