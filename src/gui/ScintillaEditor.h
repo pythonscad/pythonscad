@@ -23,6 +23,7 @@
 #include "gui/Editor.h"
 #include "gui/EditorColorMap.h"
 #include "gui/ScadApi.h"
+#include "gui/PythonApi.h"
 
 // don't need the full definition, because it confuses Qt
 class ScadLexer;
@@ -184,10 +185,10 @@ private:
 #endif
 #ifdef ENABLE_PYTHON
   QsciLexerPython *pythonLexer = new QsciLexerPython();
-  ScadApi *pythonApi = nullptr;
+  PythonApi *pythonApi = nullptr;
 #endif
   QFont currentFont;
-  ScadApi *api;
+  ScadApi *scadApi;
   QStringList userList;
   QMap<QString, ScadTemplate> templateMap;
   static const QString cursorPlaceHolder;

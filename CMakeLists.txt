@@ -1849,6 +1849,7 @@ set(GUI_SOURCES
   src/gui/QSettingsCached.cc
   src/gui/QWordSearchField.cc
   src/gui/ScadApi.cc
+  src/gui/PythonApi.cc
   src/gui/ScadLexer.cc
   src/gui/ScintillaEditor.cc
   src/gui/SettingsWriter.cc

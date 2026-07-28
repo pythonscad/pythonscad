@@ -27,6 +27,7 @@ std::string evaluatePython(const std::string& code, bool dry_run = false);
 void finishPython();
 void python_lock(void);
 void python_unlock(void);
+const char *python_calltip(const char *funcname);
 // Launch the real IPython interactive shell. `args` is forwarded as the
 // IPython argv (so `pythonscad --ipython script.py arg1` runs `script.py`
 // inside IPython with `arg1` available). The user namespace starts
