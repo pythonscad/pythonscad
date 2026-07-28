@@ -49,7 +49,9 @@ PyObject *python__getsetitem_hier(std::shared_ptr<AbstractNode> node, const std:
     std::shared_ptr<PolygonNode> polygon = std::dynamic_pointer_cast<PolygonNode>(node);
     if (polygon != nullptr) {
       if (v != nullptr) {
-        polygon->points = python_to2dvarpointlist(v);
+        auto points = python_to2dvarpointlist(v);
+        if (PyErr_Occurred()) return nullptr;
+        polygon->points = std::move(points);
         Py_RETURN_NONE;
       }
 
@@ -66,7 +68,9 @@ PyObject *python__getsetitem_hier(std::shared_ptr<AbstractNode> node, const std:
     std::shared_ptr<PolygonNode> polygon = std::dynamic_pointer_cast<PolygonNode>(node);
     if (polygon != nullptr) {
       if (v != nullptr) {
-        polygon->paths = python_to2dintlist(v);
+        auto paths = python_to2dintlist(v);
+        if (PyErr_Occurred()) return nullptr;
+        polygon->paths = std::move(paths);
         Py_RETURN_NONE;
       }
 
@@ -602,116 +606,331 @@ PyObject *python_memberfunction(PyObject *self, PyObject *args, PyObject *kwargs
 std::shared_ptr<RenderVariables> renderVarsSet = nullptr;
 
 PyMethodDef PyOpenSCADFunctions[] = {
-  {"edge", (PyCFunction)python_edge, METH_VARARGS | METH_KEYWORDS, "Create Edge."},
-  {"square", (PyCFunction)python_square, METH_VARARGS | METH_KEYWORDS, "Create Square."},
-  {"circle", (PyCFunction)python_circle, METH_VARARGS | METH_KEYWORDS, "Create Circle."},
-  {"polygon", (PyCFunction)python_polygon, METH_VARARGS | METH_KEYWORDS, "Create Polygon."},
-  {"polyline", (PyCFunction)python_polyline, METH_VARARGS | METH_KEYWORDS, "Create a Polyline."},
-  {"spline", (PyCFunction)python_spline, METH_VARARGS | METH_KEYWORDS, "Create Spline."},
-  {"text", (PyCFunction)python_text, METH_VARARGS | METH_KEYWORDS, "Create Text."},
-  {"textmetrics", (PyCFunction)python_textmetrics, METH_VARARGS | METH_KEYWORDS, "Get textmetrics."},
+  {"edge", (PyCFunction)python_edge, METH_VARARGS | METH_KEYWORDS,
+   "2D edge/line primitive.\n"
+   "edge()\n"
+   "edge(size=1)\n"
+   "edge(size=1, center=True)"},
+  {"square", (PyCFunction)python_square, METH_VARARGS | METH_KEYWORDS,
+   "2D square or rectangle.\n"
+   "square(dim)\n"
+   "square([width, height])\n"
+   "square([width, height], center=True)"},
+  {"circle", (PyCFunction)python_circle, METH_VARARGS | METH_KEYWORDS,
+   "2D circle.\n"
+   "circle(r=radius)\n"
+   "circle(d=diameter)\n"
+   "circle(r=radius, angle=270)"},
+  {"polygon", (PyCFunction)python_polygon, METH_VARARGS | METH_KEYWORDS,
+   "2D polygon from points and paths.\n"
+   "polygon(points=[...])\n"
+   "polygon(points=[...], paths=[...])\n"
+   "polygon(points=[...], paths=[...], convexity=2)"},
+  {"polyline", (PyCFunction)python_polyline, METH_VARARGS | METH_KEYWORDS,
+   "Open 2D polyline through points.\n"
+   "polyline(points=[...])"},
+  {"spline", (PyCFunction)python_spline, METH_VARARGS | METH_KEYWORDS,
+   "Smooth curve through points.\n"
+   "spline(points=[...])\n"
+   "spline(points=[...], fn=32)"},
+  {"text", (PyCFunction)python_text, METH_VARARGS | METH_KEYWORDS,
+   "2D text as outlines.\n"
+   "text(\"Hello\")\n"
+   "text(\"Hello\", size=10, font=\"Liberation Sans\")\n"
+   "text(\"Hello\", halign=\"center\", valign=\"center\")"},
+  {"textmetrics", (PyCFunction)python_textmetrics, METH_VARARGS | METH_KEYWORDS,
+   "Measure text dimensions, no geometry created.\n"
+   "textmetrics(\"Hello\")\n"
+   "textmetrics(\"Hello\", size=10, font=\"Liberation Sans\")"},
 
-  {"cube", (PyCFunction)python_cube, METH_VARARGS | METH_KEYWORDS, "Create Cube."},
-  {"cylinder", (PyCFunction)python_cylinder, METH_VARARGS | METH_KEYWORDS, "Create Cylinder."},
-  {"sphere", (PyCFunction)python_sphere, METH_VARARGS | METH_KEYWORDS, "Create Sphere."},
-  {"polyhedron", (PyCFunction)python_polyhedron, METH_VARARGS | METH_KEYWORDS, "Create Polyhedron."},
+  {"cube", (PyCFunction)python_cube, METH_VARARGS | METH_KEYWORDS,
+   "3D box.\n"
+   "cube(size)\n"
+   "cube([width, depth, height])\n"
+   "cube([width, depth, height], center=True)"},
+  {"cylinder", (PyCFunction)python_cylinder, METH_VARARGS | METH_KEYWORDS,
+   "3D cylinder or cone.\n"
+   "cylinder(h, r1, r2)\n"
+   "cylinder(h=height, r=radius, center=True)\n"
+   "cylinder(h=height, r1=bottom, r2=top, center=True)\n"
+   "cylinder(h=height, d=diameter, center=True)\n"
+   "cylinder(h=height, d1=bottom, d2=top, center=True)"},
+  {"sphere", (PyCFunction)python_sphere, METH_VARARGS | METH_KEYWORDS,
+   "3D sphere.\n"
+   "sphere(r=radius)\n"
+   "sphere(d=diameter)"},
+  {"polyhedron", (PyCFunction)python_polyhedron, METH_VARARGS | METH_KEYWORDS,
+   "3D solid from points and faces.\n"
+   "polyhedron(points=[...], faces=[...])\n"
+   "polyhedron(points=[...], faces=[...], convexity=2)\n"
+   "polyhedron(points=[...], faces=[...], colors=[...])"},
 #ifdef ENABLE_LIBFIVE
-  {"frep", (PyCFunction)python_frep, METH_VARARGS | METH_KEYWORDS, "Create F-Rep."},
-  {"ifrep", (PyCFunction)python_ifrep, METH_VARARGS | METH_KEYWORDS, "Create Inverse F-Rep."},
+  {"frep", (PyCFunction)python_frep, METH_VARARGS | METH_KEYWORDS,
+   "Implicit surface (F-Rep) from an expression.\n"
+   "frep(exp, min=[x, y, z], max=[x, y, z])\n"
+   "frep(exp, min=[x, y, z], max=[x, y, z], res=0.1)"},
+  {"ifrep", (PyCFunction)python_ifrep, METH_VARARGS | METH_KEYWORDS,
+   "Convert a mesh back into an implicit surface.\n"
+   "ifrep(obj)"},
 #endif
 
-  {"translate", (PyCFunction)python_translate, METH_VARARGS | METH_KEYWORDS, "Move  Object."},
-  {"right", (PyCFunction)python_right, METH_VARARGS | METH_KEYWORDS, "Move  Object."},
-  {"left", (PyCFunction)python_left, METH_VARARGS | METH_KEYWORDS, "Move Left Object."},
-  {"back", (PyCFunction)python_back, METH_VARARGS | METH_KEYWORDS, "Move Back Object."},
-  {"front", (PyCFunction)python_front, METH_VARARGS | METH_KEYWORDS, "Move Front Object."},
-  {"up", (PyCFunction)python_up, METH_VARARGS | METH_KEYWORDS, "Move Up Object."},
-  {"down", (PyCFunction)python_down, METH_VARARGS | METH_KEYWORDS, "Move Down Object."},
-  {"rotx", (PyCFunction)python_rotx, METH_VARARGS | METH_KEYWORDS, "Rotate X Object."},
-  {"roty", (PyCFunction)python_roty, METH_VARARGS | METH_KEYWORDS, "Rotate Y Object."},
-  {"rotz", (PyCFunction)python_rotz, METH_VARARGS | METH_KEYWORDS, "Rotate Z Object."},
-  {"rotate", (PyCFunction)python_rotate, METH_VARARGS | METH_KEYWORDS, "Rotate Object."},
-  {"scale", (PyCFunction)python_scale, METH_VARARGS | METH_KEYWORDS, "Scale Object."},
-  {"mirror", (PyCFunction)python_mirror, METH_VARARGS | METH_KEYWORDS, "Mirror Object."},
-  {"multmatrix", (PyCFunction)python_multmatrix, METH_VARARGS | METH_KEYWORDS, "Multmatrix Object."},
-  {"divmatrix", (PyCFunction)python_divmatrix, METH_VARARGS | METH_KEYWORDS, "Divmatrix Object."},
-  {"offset", (PyCFunction)python_offset, METH_VARARGS | METH_KEYWORDS, "Offset Object."},
+  {"translate", (PyCFunction)python_translate, METH_VARARGS | METH_KEYWORDS,
+   "Move object by a vector.\n"
+   "translate(obj, v=[x, y, z])"},
+  {"right", (PyCFunction)python_right, METH_VARARGS | METH_KEYWORDS,
+   "Move object along +X.\n"
+   "right(obj, distance)"},
+  {"left", (PyCFunction)python_left, METH_VARARGS | METH_KEYWORDS,
+   "Move object along -X.\n"
+   "left(obj, distance)"},
+  {"back", (PyCFunction)python_back, METH_VARARGS | METH_KEYWORDS,
+   "Move object along +Y.\n"
+   "back(obj, distance)"},
+  {"front", (PyCFunction)python_front, METH_VARARGS | METH_KEYWORDS,
+   "Move object along -Y.\n"
+   "front(obj, distance)"},
+  {"up", (PyCFunction)python_up, METH_VARARGS | METH_KEYWORDS,
+   "Move object along +Z.\n"
+   "up(obj, distance)"},
+  {"down", (PyCFunction)python_down, METH_VARARGS | METH_KEYWORDS,
+   "Move object along -Z.\n"
+   "down(obj, distance)"},
+  {"rotx", (PyCFunction)python_rotx, METH_VARARGS | METH_KEYWORDS,
+   "Rotate object around the X axis.\n"
+   "rotx(obj, angle)"},
+  {"roty", (PyCFunction)python_roty, METH_VARARGS | METH_KEYWORDS,
+   "Rotate object around the Y axis.\n"
+   "roty(obj, angle)"},
+  {"rotz", (PyCFunction)python_rotz, METH_VARARGS | METH_KEYWORDS,
+   "Rotate object around the Z axis.\n"
+   "rotz(obj, angle)"},
+  {"rotate", (PyCFunction)python_rotate, METH_VARARGS | METH_KEYWORDS,
+   "Rotate object by angle(s) or around an axis.\n"
+   "rotate(obj, a=angle)\n"
+   "rotate(obj, a=[x, y, z])\n"
+   "rotate(obj, a=angle, v=[x, y, z])\n"
+   "rotate(obj, a=angle, ref=[x, y, z])"},
+  {"scale", (PyCFunction)python_scale, METH_VARARGS | METH_KEYWORDS,
+   "Scale object uniformly or per axis.\n"
+   "scale(obj, v=[x, y, z])\n"
+   "scale(obj, v=factor)"},
+  {"mirror", (PyCFunction)python_mirror, METH_VARARGS | METH_KEYWORDS,
+   "Mirror object across a plane.\n"
+   "mirror(obj, v=[x, y, z])"},
+  {"multmatrix", (PyCFunction)python_multmatrix, METH_VARARGS | METH_KEYWORDS,
+   "Apply a 4x4 transformation matrix.\n"
+   "multmatrix(obj, m=matrix)"},
+  {"divmatrix", (PyCFunction)python_divmatrix, METH_VARARGS | METH_KEYWORDS,
+   "Apply the inverse of a 4x4 transformation matrix.\n"
+   "divmatrix(obj, m=matrix)"},
+  {"offset", (PyCFunction)python_offset, METH_VARARGS | METH_KEYWORDS,
+   "Grow or shrink a 2D outline.\n"
+   "offset(obj, r=radius)\n"
+   "offset(obj, delta=distance)\n"
+   "offset(obj, delta=distance, chamfer=True)"},
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
-  {"roof", (PyCFunction)python_roof, METH_VARARGS | METH_KEYWORDS, "Roof Object."},
+  {"roof", (PyCFunction)python_roof, METH_VARARGS | METH_KEYWORDS,
+   "Build a roof/hip shape over a 2D outline.\n"
+   "roof(obj)\n"
+   "roof(obj, method=\"voronoi\")\n"
+   "roof(obj, method=\"straight\", convexity=2)"},
 #endif
-  {"pull", (PyCFunction)python_pull, METH_VARARGS | METH_KEYWORDS, "Pull apart Object."},
-  {"wrap", (PyCFunction)python_wrap, METH_VARARGS | METH_KEYWORDS, "Wrap Object around cylinder."},
-  {"color", (PyCFunction)python_color, METH_VARARGS | METH_KEYWORDS, "Color Object."},
-  {"output", (PyCFunction)python_output, METH_VARARGS | METH_KEYWORDS, "Output the result."},
-  {"show", (PyCFunction)python_show, METH_VARARGS | METH_KEYWORDS, "Show the result."},
-  {"separate", (PyCFunction)python_separate, METH_VARARGS | METH_KEYWORDS, "Split into separate parts."},
-  {"export", (PyCFunction)python_export, METH_VARARGS | METH_KEYWORDS, "Export the result."},
+  {"pull", (PyCFunction)python_pull, METH_VARARGS | METH_KEYWORDS,
+   "Stretch part of an object between two points.\n"
+   "pull(obj, src=[x, y, z], dst=[x, y, z])"},
+  {"wrap", (PyCFunction)python_wrap, METH_VARARGS | METH_KEYWORDS,
+   "Wrap object around a cylinder.\n"
+   "wrap(obj, target)\n"
+   "wrap(obj, target, r=radius)\n"
+   "wrap(obj, target, d=diameter, fn=64)"},
+  {"color", (PyCFunction)python_color, METH_VARARGS | METH_KEYWORDS,
+   "Set object color and transparency.\n"
+   "color(obj, c=\"red\")\n"
+   "color(obj, c=[r, g, b])\n"
+   "color(obj, c=[r, g, b, a], alpha=0.5)"},
+  {"output", (PyCFunction)python_output, METH_VARARGS | METH_KEYWORDS,
+   "Deprecated alias for show().\n"
+   "output(obj)  # deprecated, use show(obj)"},
+  {"show", (PyCFunction)python_show, METH_VARARGS | METH_KEYWORDS,
+   "Mark object(s) as render output.\n"
+   "show(obj)"},
+  {"separate", (PyCFunction)python_separate, METH_VARARGS | METH_KEYWORDS,
+   "Split a compound object into its parts.\n"
+   "separate(obj)"},
+  {"export", (PyCFunction)python_export, METH_VARARGS | METH_KEYWORDS,
+   "Write object to a file (STL, etc.).\n"
+   "export(obj, file=\"out.stl\")"},
 
   {"linear_extrude", (PyCFunction)python_linear_extrude, METH_VARARGS | METH_KEYWORDS,
-   "Linear_extrude Object."},
+   "Extrude a 2D shape straight up.\n"
+   "linear_extrude(obj, height=10)\n"
+   "linear_extrude(obj, height=10, twist=90, slices=20)\n"
+   "linear_extrude(obj, height=10, scale=0.5, center=True)"},
   {"rotate_extrude", (PyCFunction)python_rotate_extrude, METH_VARARGS | METH_KEYWORDS,
-   "Rotate_extrude Object."},
+   "Extrude a 2D shape around an axis.\n"
+   "rotate_extrude(obj)\n"
+   "rotate_extrude(obj, angle=180)\n"
+   "rotate_extrude(obj, angle=360, v=[0, 1, 0])"},
   {"path_extrude", (PyCFunction)python_path_extrude, METH_VARARGS | METH_KEYWORDS,
-   "Path_extrude Object."},
-  {"skin", (PyCFunction)python_skin, METH_VARARGS | METH_KEYWORDS, "Path_extrude Object."},
+   "Extrude a 2D shape along a path.\n"
+   "path_extrude(obj, path=[...])\n"
+   "path_extrude(obj, path=[...], xdir=[1, 0, 0])\n"
+   "path_extrude(obj, path=[...], twist=360, closed=True)"},
+  {"skin", (PyCFunction)python_skin, METH_VARARGS | METH_KEYWORDS,
+   "Loft a solid through a sequence of cross-sections.\n"
+   "skin(obj1, obj2, ...)"},
 
-  {"union", (PyCFunction)python_union, METH_VARARGS | METH_KEYWORDS, "Union Object."},
-  {"difference", (PyCFunction)python_difference, METH_VARARGS | METH_KEYWORDS, "Difference Object."},
+  {"union", (PyCFunction)python_union, METH_VARARGS | METH_KEYWORDS,
+   "Boolean union of objects.\n"
+   "union(obj1, obj2, ...)"},
+  {"difference", (PyCFunction)python_difference, METH_VARARGS | METH_KEYWORDS,
+   "Boolean subtraction of objects.\n"
+   "difference(obj1, obj2, ...)"},
   {"intersection", (PyCFunction)python_intersection, METH_VARARGS | METH_KEYWORDS,
-   "Intersection Object."},
-  {"hull", (PyCFunction)python_hull, METH_VARARGS | METH_KEYWORDS, "Hull Object."},
-  {"minkowski", (PyCFunction)python_minkowski, METH_VARARGS | METH_KEYWORDS, "Minkowski Object."},
-  {"fill", (PyCFunction)python_fill, METH_VARARGS | METH_KEYWORDS, "Fill Object."},
-  {"resize", (PyCFunction)python_resize, METH_VARARGS | METH_KEYWORDS, "Resize Object."},
-  {"concat", (PyCFunction)python_concat, METH_VARARGS | METH_KEYWORDS, "Concatenate Object."},
+   "Boolean intersection of objects.\n"
+   "intersection(obj1, obj2, ...)"},
+  {"hull", (PyCFunction)python_hull, METH_VARARGS | METH_KEYWORDS,
+   "Convex hull around objects.\n"
+   "hull(obj1, obj2, ...)"},
+  {"minkowski", (PyCFunction)python_minkowski, METH_VARARGS | METH_KEYWORDS,
+   "Minkowski sum of two objects.\n"
+   "minkowski(obj1, obj2)\n"
+   "minkowski(obj1, obj2, convexity=2)"},
+  {"fill", (PyCFunction)python_fill, METH_VARARGS | METH_KEYWORDS,
+   "Fill holes in a 2D shape.\n"
+   "fill(obj)"},
+  {"resize", (PyCFunction)python_resize, METH_VARARGS | METH_KEYWORDS,
+   "Change object's bounding box size.\n"
+   "resize(obj, newsize=[x, y, z])\n"
+   "resize(obj, newsize=[x, y, z], auto=True)\n"
+   "resize(obj, newsize=[x, y, z], convexity=2)"},
+  {"concat", (PyCFunction)python_concat, METH_VARARGS | METH_KEYWORDS,
+   "Combine objects without a boolean operation.\n"
+   "concat(obj1, obj2, ...)"},
 
-  {"highlight", (PyCFunction)python_highlight, METH_VARARGS | METH_KEYWORDS, "Highlight Object."},
-  {"background", (PyCFunction)python_background, METH_VARARGS | METH_KEYWORDS, "Background Object."},
-  {"only", (PyCFunction)python_only, METH_VARARGS | METH_KEYWORDS, "Only Object."},
+  {"highlight", (PyCFunction)python_highlight, METH_VARARGS | METH_KEYWORDS,
+   "Mark object for highlighted (#) rendering.\n"
+   "highlight(obj)"},
+  {"background", (PyCFunction)python_background, METH_VARARGS | METH_KEYWORDS,
+   "Mark object as background (%), excluded from render.\n"
+   "background(obj)"},
+  {"only", (PyCFunction)python_only, METH_VARARGS | METH_KEYWORDS,
+   "Show only this object (!), hide siblings.\n"
+   "only(obj)"},
 
-  {"projection", (PyCFunction)python_projection, METH_VARARGS | METH_KEYWORDS, "Projection Object."},
-  {"surface", (PyCFunction)python_surface, METH_VARARGS | METH_KEYWORDS, "Surface Object."},
-  {"sheet", (PyCFunction)python_sheet, METH_VARARGS | METH_KEYWORDS, "Sheet Object."},
-  {"mesh", (PyCFunction)python_mesh, METH_VARARGS | METH_KEYWORDS, "exports mesh."},
+  {"projection", (PyCFunction)python_projection, METH_VARARGS | METH_KEYWORDS,
+   "Project a 3D object down to 2D.\n"
+   "projection(obj)\n"
+   "projection(obj, cut=True)"},
+  {"surface", (PyCFunction)python_surface, METH_VARARGS | METH_KEYWORDS,
+   "3D surface generated from a heightmap file.\n"
+   "surface(file=\"heightmap.png\")\n"
+   "surface(file=\"heightmap.dat\", center=True, invert=True)"},
+  {"sheet", (PyCFunction)python_sheet, METH_VARARGS | METH_KEYWORDS,
+   "Parametric surface from a function over a 2D grid.\n"
+   "sheet(func, imin=0, imax=1, jmin=0, jmax=1)\n"
+   "sheet(func, imin=0, imax=1, jmin=0, jmax=1, fs=0.5)\n"
+   "sheet(func, imin=0, imax=1, jmin=0, jmax=1, iclose=True, jclose=True)"},
+  {"mesh", (PyCFunction)python_mesh, METH_VARARGS | METH_KEYWORDS,
+   "Get triangle mesh vertices/faces of an object.\n"
+   "mesh(obj)\n"
+   "mesh(obj, triangulate=True)"},
   {"inside", (PyCFunction)python_inside, METH_VARARGS | METH_KEYWORDS,
-   "checks if a given point is inside"},
-  {"bbox", (PyCFunction)python_bbox, METH_VARARGS | METH_KEYWORDS, "caluculate bbox of object."},
-  {"size", (PyCFunction)python_size, METH_VARARGS | METH_KEYWORDS, "get size dimensions of object."},
+   "Test whether a point lies inside an object.\n"
+   "inside(obj, point=[x, y, z])"},
+  {"bbox", (PyCFunction)python_bbox, METH_VARARGS | METH_KEYWORDS,
+   "Get axis-aligned bounding box of an object.\n"
+   "bbox(obj)"},
+  {"size", (PyCFunction)python_size, METH_VARARGS | METH_KEYWORDS,
+   "Get object's dimensions (bounding box size).\n"
+   "size(obj)"},
   {"position", (PyCFunction)python_position, METH_VARARGS | METH_KEYWORDS,
-   "get position (minimum coordinates) of object."},
-  {"faces", (PyCFunction)python_faces, METH_VARARGS | METH_KEYWORDS, "exports a list of faces."},
-  {"children", (PyCFunction)python_children, METH_VARARGS | METH_KEYWORDS, "create Tuple from children"},
+   "Get object's minimum corner coordinates.\n"
+   "position(obj)"},
+  {"faces", (PyCFunction)python_faces, METH_VARARGS | METH_KEYWORDS,
+   "Get list of faces of an object.\n"
+   "faces(obj)\n"
+   "faces(obj, triangulate=True)"},
+  {"children", (PyCFunction)python_children, METH_VARARGS | METH_KEYWORDS,
+   "Get an object's children as a tuple.\n"
+   "children(obj)"},
   {"edges", (PyCFunction)python_edges, METH_VARARGS | METH_KEYWORDS,
-   "exports a list of edges from a face."},
+   "Get list of edges of an object.\n"
+   "edges(obj)"},
   {"explode", (PyCFunction)python_explode, METH_VARARGS | METH_KEYWORDS,
-   "explode a solid with a vector"},
-  {"oversample", (PyCFunction)python_oversample, METH_VARARGS | METH_KEYWORDS, "oversample."},
-  {"debug", (PyCFunction)python_debug, METH_VARARGS | METH_KEYWORDS, "debug a face."},
-  {"repair", (PyCFunction)python_repair, METH_VARARGS | METH_KEYWORDS, "Make solid watertight."},
-  {"fillet", (PyCFunction)python_fillet, METH_VARARGS | METH_KEYWORDS, "fillet."},
+   "Move object's parts apart along a vector.\n"
+   "explode(obj, v=[x, y, z])"},
+  {"oversample", (PyCFunction)python_oversample, METH_VARARGS | METH_KEYWORDS,
+   "Subdivide/refine a mesh, optionally with a texture.\n"
+   "oversample(obj, size=2)\n"
+   "oversample(obj, size=2, texture=\"leather\")\n"
+   "oversample(obj, size=2, texture=\"leather\", texturewidth=1, textureheight=1)"},
+  {"debug", (PyCFunction)python_debug, METH_VARARGS | METH_KEYWORDS,
+   "Highlight specific faces for debugging.\n"
+   "debug(obj)\n"
+   "debug(obj, faces=[...])"},
+  {"repair", (PyCFunction)python_repair, METH_VARARGS | METH_KEYWORDS,
+   "Make a mesh watertight/manifold.\n"
+   "repair(obj)\n"
+   "repair(obj, color=\"red\")"},
+  {"fillet", (PyCFunction)python_fillet, METH_VARARGS | METH_KEYWORDS,
+   "Round edges of a solid.\n"
+   "fillet(obj, r=radius)\n"
+   "fillet(obj, r=radius, sel=[...])\n"
+   "fillet(obj, r=radius, fn=32, minang=5)"},
 
-  {"group", (PyCFunction)python_group, METH_VARARGS | METH_KEYWORDS, "Group Object."},
-  {"render", (PyCFunction)python_render, METH_VARARGS | METH_KEYWORDS, "Render Object."},
-  {"organic", (PyCFunction)python_organic, METH_VARARGS | METH_KEYWORDS, "Create Organic object"},
-  {"osimport", (PyCFunction)python_import, METH_VARARGS | METH_KEYWORDS, "Import Object."},
-  {"osuse", (PyCFunction)python_osuse, METH_VARARGS | METH_KEYWORDS, "Use OpenSCAD Library."},
+  {"group", (PyCFunction)python_group, METH_VARARGS | METH_KEYWORDS,
+   "Group object(s) without a boolean operation.\n"
+   "group(obj)"},
+  {"render", (PyCFunction)python_render, METH_VARARGS | METH_KEYWORDS,
+   "Force full CGAL render (like SCAD render()).\n"
+   "render(obj)\n"
+   "render(obj, convexity=2)"},
+  {"organic", (PyCFunction)python_organic, METH_VARARGS | METH_KEYWORDS,
+   "Build an organic shape from points and a radius.\n"
+   "organic(pts=[...], r=radius)"},
+  {"osimport", (PyCFunction)python_import, METH_VARARGS | METH_KEYWORDS,
+   "Import a file (STL, DXF, ...) as geometry.\n"
+   "osimport(file=\"part.stl\")\n"
+   "osimport(file=\"part.dxf\", layer=\"0\", convexity=2)"},
+  {"osuse", (PyCFunction)python_osuse, METH_VARARGS | METH_KEYWORDS,
+   "Use another OpenSCAD library file.\n"
+   "osuse(file=\"library.scad\")"},
   {"osinclude", (PyCFunction)python_osinclude, METH_VARARGS | METH_KEYWORDS,
-   "Include OpenSCAD Library."},
+   "Include another OpenSCAD file's code.\n"
+   "osinclude(file=\"library.scad\")"},
   {"version", (PyCFunction)python_osversion, METH_VARARGS | METH_KEYWORDS,
-   "Output PythonSCAD semantic version components."},
+   "PythonSCAD version as [major, minor, patch].\n"
+   "version()"},
   {"version_num", (PyCFunction)python_osversion_num, METH_VARARGS | METH_KEYWORDS,
-   "Output PythonSCAD semantic version number."},
+   "PythonSCAD version as a single number.\n"
+   "version_num()"},
   {"version_string", (PyCFunction)python_osversion_string, METH_VARARGS | METH_KEYWORDS,
-   "Output PythonSCAD version string."},
+   "PythonSCAD version as a string.\n"
+   "version_string()"},
   {"add_parameter", (PyCFunction)python_add_parameter, METH_VARARGS | METH_KEYWORDS,
-   "Add Parameter for Customizer."},
-  {"scad", (PyCFunction)python_scad, METH_VARARGS | METH_KEYWORDS, "Source OpenSCAD code."},
-  {"align", (PyCFunction)python_align, METH_VARARGS | METH_KEYWORDS, "Align Object to another."},
+   "Register a Customizer parameter.\n"
+   "add_parameter(name=\"size\", default=10)\n"
+   "add_parameter(name=\"size\", default=10, description=\"Size of the part\", group=\"Dimensions\")\n"
+   "add_parameter(name=\"size\", default=10, range=[1, 100], step=1)"},
+  {"scad", (PyCFunction)python_scad, METH_VARARGS | METH_KEYWORDS,
+   "Run inline OpenSCAD code.\n"
+   "scad(code=\"cube(10);\")"},
+  {"align", (PyCFunction)python_align, METH_VARARGS | METH_KEYWORDS,
+   "Align object to another using reference matrices.\n"
+   "align(obj, refmat)\n"
+   "align(obj, refmat, objmat)\n"
+   "align(obj, refmat, objmat, flip=True)"},
 #ifndef OPENSCAD_NOGUI
   {"add_menuitem", (PyCFunction)python_add_menuitem, METH_VARARGS | METH_KEYWORDS,
-   "Add Menuitem to the the openscad window."},
-  {"nimport", (PyCFunction)python_nimport, METH_VARARGS | METH_KEYWORDS, "Import Networked Object."},
-  {"qapp_ptr", (PyCFunction)python_qapp_ptr, METH_VARARGS | METH_KEYWORDS, "Gets Qapp Pointer"},
+   "Add a custom menu item to the GUI.\n"
+   "add_menuitem(menuname=\"Tools\", itemname=\"My Action\", callback=\"my_callback\")"},
+  {"nimport", (PyCFunction)python_nimport, METH_VARARGS | METH_KEYWORDS,
+   "Import a Python model from a URL (not an STL).\n"
+   "nimport(url=\"https://example.com/model.py\")"},
+  {"qapp_ptr", (PyCFunction)python_qapp_ptr, METH_VARARGS | METH_KEYWORDS,
+   "Get raw pointer to the Qt application.\n"
+   "qapp_ptr()"},
   {"mainwindow_ptr", (PyCFunction)python_mainwindow_ptr, METH_VARARGS | METH_KEYWORDS,
    "Gets Mainwindow Pointer"},
   {"editor_get_call_args", (PyCFunction)python_editor_get_call_args, METH_VARARGS | METH_KEYWORDS,
@@ -719,25 +938,56 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"editor_replace_call_args", (PyCFunction)python_editor_replace_call_args,
    METH_VARARGS | METH_KEYWORDS, "Replace Current call arguments"},
 #endif
-  {"model", (PyCFunction)python_model, METH_VARARGS | METH_KEYWORDS, "Yield Model"},
+  {"model", (PyCFunction)python_model, METH_VARARGS | METH_KEYWORDS,
+   "Return the current top-level model object.\n"
+   "model()"},
   {"modelpath", (PyCFunction)python_modelpath, METH_VARARGS | METH_KEYWORDS,
-   "Returns absolute Path to script"},
+   "Absolute path of the running script.\n"
+   "modelpath()"},
   {"memberfunction", (PyCFunction)python_memberfunction, METH_VARARGS | METH_KEYWORDS,
-   "Registers additional openscad memberfunction functions"},
-  {"marked", (PyCFunction)python_marked, METH_VARARGS | METH_KEYWORDS, "Create a marked value."},
-  {"Sin", (PyCFunction)python_sin, METH_VARARGS | METH_KEYWORDS, "Calculate sin."},
-  {"Cos", (PyCFunction)python_cos, METH_VARARGS | METH_KEYWORDS, "Calculate cos."},
-  {"Tan", (PyCFunction)python_tan, METH_VARARGS | METH_KEYWORDS, "Calculate tan."},
-  {"Asin", (PyCFunction)python_asin, METH_VARARGS | METH_KEYWORDS, "Calculate asin."},
-  {"Acos", (PyCFunction)python_acos, METH_VARARGS | METH_KEYWORDS, "Calculate acos."},
-  {"Atan", (PyCFunction)python_atan, METH_VARARGS | METH_KEYWORDS, "Calculate atan."},
-  {"norm", (PyCFunction)python_norm, METH_VARARGS | METH_KEYWORDS, "Calculate vector size."},
-  {"dot", (PyCFunction)python_dot, METH_VARARGS | METH_KEYWORDS, "Calculate dot product."},
-  {"cross", (PyCFunction)python_cross, METH_VARARGS | METH_KEYWORDS, "Calculate cross product."},
+   "Register a custom member function on objects.\n"
+   "memberfunction(membername=\"myattr\", memberfunc=my_func)\n"
+   "memberfunction(membername=\"myattr\", memberfunc=my_func, docstring=\"...\")"},
+  {"marked", (PyCFunction)python_marked, METH_VARARGS | METH_KEYWORDS,
+   "Wrap a value so it is tracked/marked.\n"
+   "marked(value)"},
+  {"Sin", (PyCFunction)python_sin, METH_VARARGS | METH_KEYWORDS,
+   "Sine of an angle in degrees.\n"
+   "Sin(angle)"},
+  {"Cos", (PyCFunction)python_cos, METH_VARARGS | METH_KEYWORDS,
+   "Cosine of an angle in degrees.\n"
+   "Cos(angle)"},
+  {"Tan", (PyCFunction)python_tan, METH_VARARGS | METH_KEYWORDS,
+   "Tangent of an angle in degrees.\n"
+   "Tan(angle)"},
+  {"Asin", (PyCFunction)python_asin, METH_VARARGS | METH_KEYWORDS,
+   "Arc sine, result in degrees.\n"
+   "Asin(value)"},
+  {"Acos", (PyCFunction)python_acos, METH_VARARGS | METH_KEYWORDS,
+   "Arc cosine, result in degrees.\n"
+   "Acos(value)"},
+  {"Atan", (PyCFunction)python_atan, METH_VARARGS | METH_KEYWORDS,
+   "Arc tangent, result in degrees.\n"
+   "Atan(value)"},
+  {"norm", (PyCFunction)python_norm, METH_VARARGS | METH_KEYWORDS,
+   "Length (magnitude) of a vector.\n"
+   "norm(vec=[x, y, z])"},
+  {"dot", (PyCFunction)python_dot, METH_VARARGS | METH_KEYWORDS,
+   "Dot product of two vectors.\n"
+   "dot(vec1=[x, y, z], vec2=[x, y, z])"},
+  {"cross", (PyCFunction)python_cross, METH_VARARGS | METH_KEYWORDS,
+   "Cross product of two vectors.\n"
+   "cross(vec1=[x, y, z], vec2=[x, y, z])"},
   {"machineconfig", (PyCFunction)python_machineconfig, METH_VARARGS | METH_KEYWORDS,
-   "set Machineconfig"},
-  {"rendervars", (PyCFunction)python_rendervars, METH_VARARGS | METH_KEYWORDS, "Set Rendervars"},
-  {"vector", (PyCFunction)python_vector, METH_VARARGS | METH_KEYWORDS, "Create PythonSCAD Vector"},
+   "Set machine configuration (for G-code export).\n"
+   "machineconfig(config={...})"},
+  {"rendervars", (PyCFunction)python_rendervars, METH_VARARGS | METH_KEYWORDS,
+   "Set camera/render variables (viewport).\n"
+   "rendervars(vpd=distance, vpf=fov)\n"
+   "rendervars(vpr=[x, y, z], vpt=[x, y, z])"},
+  {"vector", (PyCFunction)python_vector, METH_VARARGS | METH_KEYWORDS,
+   "Create a 3D vector object.\n"
+   "vector(x, y, z)"},
   {NULL, NULL, 0, NULL}};
 
 #define OO_METHOD_ENTRY(name, desc) \

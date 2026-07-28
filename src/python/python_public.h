@@ -34,6 +34,7 @@ bool python_call_static_editor_method(const std::string& className, const std::s
                                       int position);
 void python_lock(void);
 void python_unlock(void);
+const char *python_calltip(const char *funcname);
 // Launch the real IPython interactive shell. `args` is forwarded as the
 // IPython argv (so `pythonscad --ipython script.py arg1` runs `script.py`
 // inside IPython with `arg1` available). The user namespace starts

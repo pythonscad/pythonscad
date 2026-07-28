@@ -117,7 +117,7 @@ QsciScintilla::WhitespaceVisibility SettingsConverter::toShowWhitespaces(const s
 
 ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
 {
-  api = nullptr;
+  scadApi = nullptr;
   lexer = nullptr;
   scintillaLayout = new QVBoxLayout(this);
   qsci = new QsciScintilla(this);
@@ -511,18 +511,18 @@ int ScintillaEditor::readInt(const boost::property_tree::ptree& pt, const std::s
 #if ENABLE_LEXERTL
 void ScintillaEditor::setLexer(ScadLexer2 *newLexer)
 {
-  delete this->api;
+  delete this->scadApi;
   this->qsci->setLexer(newLexer);
-  this->api = new ScadApi(this, newLexer);
+  this->scadApi = new ScadApi(this, newLexer);
   delete this->lexer;
   this->lexer = newLexer;
 }
 #else
 void ScintillaEditor::setLexer(ScadLexer *newLexer)
 {
-  delete this->api;
+  delete this->scadApi;
   this->qsci->setLexer(newLexer);
-  this->api = new ScadApi(this, newLexer);
+  this->scadApi = new ScadApi(this, newLexer);
   delete this->lexer;
   this->lexer = newLexer;
 }
@@ -1623,7 +1623,7 @@ void ScintillaEditor::onLanguageChanged(int lang)
   if (language == LANG_PYTHON) {
     this->qsci->setLexer(this->pythonLexer);
     if (!this->pythonApi) {
-      this->pythonApi = new ScadApi(this, this->pythonLexer);
+      this->pythonApi = new PythonApi(this, this->pythonLexer);
     }
   } else {
     this->qsci->setLexer(this->lexer);
@@ -1836,15 +1836,15 @@ void ScintillaEditor::correctUserVarNamesForCompletionFromSourceFile(
   const SourceFile *sourceFile, bool flagAutoCompleteIncludeVariables,
   bool flagAutoCompleteIncludeModules, bool flagAutoCompleteIncludeFunctions)
 {
-  api->correctUserVarNamesForCompletionFromSourceFile(sourceFile, flagAutoCompleteIncludeVariables,
-                                                      flagAutoCompleteIncludeModules,
-                                                      flagAutoCompleteIncludeFunctions);
+  scadApi->correctUserVarNamesForCompletionFromSourceFile(sourceFile, flagAutoCompleteIncludeVariables,
+                                                          flagAutoCompleteIncludeModules,
+                                                          flagAutoCompleteIncludeFunctions);
 }
 
 void ScintillaEditor::correctUserVarNamesForCompletionFromInputText(
   bool flagAutoCompleteIncludeVariables, bool flagAutoCompleteIncludeModules,
   bool flagAutoCompleteIncludeFunctions)
 {
-  api->correctUserVarNamesForCompletionFromInputText(
+  scadApi->correctUserVarNamesForCompletionFromInputText(
     flagAutoCompleteIncludeVariables, flagAutoCompleteIncludeModules, flagAutoCompleteIncludeFunctions);
 }
