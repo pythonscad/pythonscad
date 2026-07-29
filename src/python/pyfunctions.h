@@ -207,7 +207,7 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
 
 #ifndef OPENSCAD_NOGUI
 PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs);
-PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs, int mode);
+PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_qapp_ptr(PyObject *, PyObject *);
 PyObject *python_mainwindow_ptr(PyObject *, PyObject *);
 #endif
@@ -245,10 +245,10 @@ PyObject *python_osversion_num(PyObject *self, PyObject *args, PyObject *kwargs)
 PyObject *python_osversion_string(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_osuse(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_osinclude(PyObject *self, PyObject *args, PyObject *kwargs);
-PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs, ImportType type);
+PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_scad(PyObject *self, PyObject *args, PyObject *kwargs);
-PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs, int mode);
-PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs, int mode);
+PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs);
 
 // Object methods
 PyObject *python_oo_clone(PyObject *self, PyObject *args, PyObject *kwargs);
