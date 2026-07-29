@@ -1,7 +1,9 @@
 from openscad import *
 
-assert isinstance(qapp_ptr(), int)
-assert isinstance(mainwindow_ptr(), int)
+if not isinstance(qapp_ptr(), int):
+    raise AssertionError("qapp_ptr() must return an integer pointer")
+if not isinstance(mainwindow_ptr(), int):
+    raise AssertionError("mainwindow_ptr() must return an integer pointer")
 
 for callback in (qapp_ptr, mainwindow_ptr):
     try:
