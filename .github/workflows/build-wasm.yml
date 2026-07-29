@@ -130,8 +130,10 @@ jobs:
               echo 'PASS'
             "
 
-      - name: Test notebook geometry protocol
-        run: node --test wasm-test/notebook-geometry.test.mjs
+      - name: Test notebook worker protocol
+        run: |
+          node --test wasm-test/notebook-geometry.test.mjs
+          node --test wasm-test/notebook-protocol.test.mjs
 
       - name: Build WASM web variant
         run: |
@@ -160,6 +162,9 @@ jobs:
              wasm-test/test.html \
              wasm-test/notebook.html \
              wasm-test/notebook-geometry.mjs \
+             wasm-test/notebook-protocol.mjs \
+             wasm-test/notebook-kernel.mjs \
+             wasm-test/notebook-worker.mjs \
              dist-wasm/
           cp wasm-test/vendor/three.module.min.js \
              wasm-test/vendor/three.core.min.js \
@@ -268,6 +273,9 @@ jobs:
              wasm-bundle/pythonscad.wasm \
              wasm-bundle/pythonscad.data \
              wasm-bundle/notebook-geometry.mjs \
+             wasm-bundle/notebook-protocol.mjs \
+             wasm-bundle/notebook-kernel.mjs \
+             wasm-bundle/notebook-worker.mjs \
              playground/
           cp wasm-bundle/vendor/three.module.min.js \
              wasm-bundle/vendor/three.core.min.js \
