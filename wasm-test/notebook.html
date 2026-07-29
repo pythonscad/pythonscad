@@ -350,6 +350,7 @@
 
 <script type="module">
 import * as THREE from './vendor/three.module.min.js';
+import { extractGeometryPayloads, mergeGeometries } from './notebook-geometry.mjs';
 
 const _dbgPanel = document.createElement('div');
 _dbgPanel.id = 'dbg';
@@ -387,6 +388,7 @@ const stdoutBuf  = [];
 const stderrBuf  = [];
 
 const REPL_PRELUDE = [
+  "import ast as _ast",
   "import json as _json",
   "import pythonscad as _pyscad",
   "import openscad as _oscad",
@@ -421,47 +423,31 @@ const REPL_PRELUDE = [
   "    r = _orig_show(obj, *a, **kw)",
   "    _emit_geometry(obj)",
   "    return r",
+  "def _notebook_show(obj, *a, **kw):",
+  "    r = obj.show(*a, **kw)",
+  "    if isinstance(obj, _probe_base_class):",
+  "        _emit_geometry(obj)",
+  "    return r",
+  "class _NotebookShowTransformer(_ast.NodeTransformer):",
+  "    def visit_Call(self, node):",
+  "        node = self.generic_visit(node)",
+  "        if isinstance(node.func, _ast.Attribute) and node.func.attr == 'show':",
+  "            return _ast.copy_location(_ast.Call(",
+  "                func=_ast.Name(id='_notebook_show', ctx=_ast.Load()),",
+  "                args=[node.func.value, *node.args],",
+  "                keywords=node.keywords), node)",
+  "        return node",
+  "def _notebook_exec(source):",
+  "    tree = _ast.parse(source, filename='<notebook>', mode='exec')",
+  "    tree = _NotebookShowTransformer().visit(tree)",
+  "    _ast.fix_missing_locations(tree)",
+  "    exec(compile(tree, '<notebook>', 'exec'), globals(), globals())",
   "# Re-export the instrumented show onto the modules so a user cell that runs",
   "# 'from pythonscad import *' (or 'from openscad import *') re-binds THIS show",
   "# instead of clobbering it with the original (which emits no notebook geometry).",
   "_pyscad.show = show",
   "_oscad.show = show",
   "_probe_base_class = type(cube(1))",
-  "try:",
-  "    class _NotebookGeom(_probe_base_class):",
-  "        def show(self, *a, **kw):",
-  "            r = super().show(*a, **kw)",
-  "            _emit_geometry(self)",
-  "            return r",
-  "    _NotebookGeom.__name__ = _probe_base_class.__name__",
-  "    import builtins as _bi",
-  "    def _wrap_ctor(orig_fn):",
-  "        def wrapped(*a, **kw):",
-  "            r = orig_fn(*a, **kw)",
-  "            try:",
-  "                r.__class__ = _NotebookGeom",
-  "            except Exception:",
-  "                pass",
-  "            return r",
-  "        return wrapped",
-  "    for _name in ('cube','sphere','cylinder','polyhedron','square','circle','polygon',",
-  "                  'text','union','difference','intersection','linear_extrude',",
-  "                  'rotate_extrude','translate','rotate','scale','mirror','color',",
-  "                  'hull','minkowski','offset'):",
-  "        _orig_ctor = getattr(_pyscad, _name, None)",
-  "        if callable(_orig_ctor):",
-  "            _wrapped_ctor = _wrap_ctor(_orig_ctor)",
-  "            globals()[_name] = _wrapped_ctor",
-  "            # Patch the modules too, so 'from pythonscad/openscad import *' in a",
-  "            # user cell re-imports the instrumented constructors.",
-  "            setattr(_pyscad, _name, _wrapped_ctor)",
-  "            setattr(_oscad, _name, _wrapped_ctor)",
-  "    _test_obj = cube(1)",
-  "    print('TEST_CLASS_AFTER_PATCH: ' + str(type(_test_obj)))",
-  "    print('TEST_IS_NOTEBOOKGEOM: ' + str(type(_test_obj) is _NotebookGeom))",
-  "    print('SUBCLASS_PATCH_OK')",
-  "except Exception as _e:",
-  "    print('SUBCLASS_PATCH_ERROR: ' + repr(_e))",
   "print('PRELUDE_LOADED_OK')",
 ].join('\n');
 
@@ -651,20 +637,6 @@ function autoShowLastLine(code) {
     return lines.join('\n');
   }
 
-  // Pattern: <expr>.show(...)  — e.g. "cube(5).show()" or "mymodel.show()"
-  // Fallback for when patching .show() on the C-extension class doesn't take
-  // effect: evaluate the receiver once into a temp var, call .show() on it,
-  // then explicitly emit its geometry via our own _emit_geometry hook.
-  const showCallMatch = lastLine.match(/^(.*)\.show\((.*)\)\s*$/);
-  if (showCallMatch) {
-    const receiverExpr = showCallMatch[1];
-    const showArgs      = showCallMatch[2];
-    lines[lastIdx] =
-      indent + '_nb_tmp = ' + receiverExpr + '\n' +
-      indent + '_nb_tmp.show(' + showArgs + ')\n' +
-      indent + '_emit_geometry(_nb_tmp)';
-    return lines.join('\n');
-  }
   return lines.join('\n');
 }
 
@@ -673,7 +645,7 @@ function renderPython(code) {
   stderrBuf.length = 0;
   const finalCode = autoShowLastLine(code);
   dbg('evaluate() <- ' + JSON.stringify(finalCode.slice(0,120)), 'info');
-  const returnValue = evalPython.evaluate(finalCode, false);
+  const returnValue = evalPython.evaluate('_notebook_exec(' + JSON.stringify(finalCode) + ')', false);
   dbg('evaluate() return value -> ' + JSON.stringify(String(returnValue).slice(0,300)), 'info');
   dbg('stdoutBuf after call -> ' + JSON.stringify(stdoutBuf), 'info');
   dbg('stderrBuf after call -> ' + JSON.stringify(stderrBuf), 'info');
@@ -689,26 +661,15 @@ function renderPython(code) {
 }
 
 function extractGeometry(output) {
-  const text = String(output ?? '');
-  const MARK_START = '@@MIME_START@@';
-  const MARK_END   = '@@MIME_END@@';
-  const start = text.indexOf(MARK_START);
-  if (start === -1) return { geometry: null, text };
-  const end = text.indexOf(MARK_END, start);
-  if (end === -1) return { geometry: null, text };
-  const jsonStr = text.slice(start + MARK_START.length, end);
-  const rest = (text.slice(0, start) + text.slice(end + MARK_END.length)).trim();
-  try {
-    const parsed = JSON.parse(jsonStr);
-    // Normalize 2D outline geometry into the same {vertices, faces} shape
-    // the 3D viewer already understands, by triangulating onto the Z=0 plane.
-    if (parsed && parsed.type === '2d') {
-      return { geometry: outlinesTo3D(parsed.outlines), text: rest };
-    }
-    return { geometry: parsed, text: rest };
-  } catch(e) {
-    return { geometry: null, text };
-  }
+  const result = extractGeometryPayloads(output);
+  // Normalize 2D outline geometry into the same {vertices, faces} shape
+  // the 3D viewer already understands, by triangulating onto the Z=0 plane.
+  const geometries = result.geometries.map(parsed =>
+    parsed && parsed.type === '2d' ? outlinesTo3D(parsed.outlines) : parsed);
+  return {
+    geometry: geometries.length > 0 ? mergeGeometries(geometries) : null,
+    text: result.text,
+  };
 }
 
 // Convert a list of 2D outlines (each a list of [x,y] points) into a flat
