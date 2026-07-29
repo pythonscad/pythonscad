@@ -526,7 +526,7 @@ PyObject *python_multmatrix_sub(PyObject *pyobj, PyObject *pymat, int div)
     Py_ssize_t pos = 0;
     while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
       Matrix4d raw;
-      if (python_tomatrix(value, raw)) return nullptr;
+      if (python_tomatrix(value, raw)) continue;
       PyObject *value1 = python_frommatrix(node->matrix * raw);
       if (value1 != nullptr) PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value1);
       else PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
