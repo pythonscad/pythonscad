@@ -148,7 +148,6 @@ std::shared_ptr<const Geometry> applyMinkowski(const Geometry::Geometries& child
             minkowski_points.push_back(p0 + (p1 - CGAL::ORIGIN));
           }
         }
-
         if (minkowski_points.size() <= 3) {
           t.stop();
           return std::make_shared<ManifoldGeometry>();

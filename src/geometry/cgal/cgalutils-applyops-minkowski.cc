@@ -119,7 +119,6 @@ std::shared_ptr<const Geometry> applyMinkowski3D(const Geometry::Geometries& chi
               minkowski_points.push_back(points[0][i] + (points[1][j] - CGAL::ORIGIN));
             }
           }
-
           if (minkowski_points.size() <= 3) {
             t.stop();
             continue;
