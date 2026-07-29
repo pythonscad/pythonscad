@@ -741,7 +741,7 @@ PyObject *python_str(PyObject *self)
   return PyUnicode_FromStringAndSize(stream.str().c_str(), stream.str().size());
 }
 
-PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs, ImportType type)
+PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   char *kwlist[] = {"name", "default",    "description", "group", "range",
                     "step", "max_length", "options",     NULL};
@@ -1126,7 +1126,7 @@ PyObject *python_osinclude(PyObject *self, PyObject *args, PyObject *kwargs)
 
 #ifndef OPENSCAD_NOGUI
 extern void add_menuitem_trampoline(const char *menuname, const char *itemname, const char *callback);
-PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
+PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   char *kwlist[] = {"menuname", "itemname", "callback", NULL};
   const char *menuname = nullptr, *itemname = nullptr, *callback = nullptr;
@@ -1151,7 +1151,7 @@ PyObject *python_mainwindow_ptr(PyObject *, PyObject *)
 
 #endif
 
-PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
+PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   char *kwlist[] = {NULL};
 
