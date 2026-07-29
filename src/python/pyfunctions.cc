@@ -928,10 +928,10 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"nimport", (PyCFunction)python_nimport, METH_VARARGS | METH_KEYWORDS,
    "Import a Python model from a URL (not an STL).\n"
    "nimport(url=\"https://example.com/model.py\")"},
-  {"qapp_ptr", (PyCFunction)python_qapp_ptr, METH_VARARGS | METH_KEYWORDS,
+  {"qapp_ptr", python_qapp_ptr, METH_NOARGS,
    "Get raw pointer to the Qt application.\n"
    "qapp_ptr()"},
-  {"mainwindow_ptr", (PyCFunction)python_mainwindow_ptr, METH_VARARGS | METH_KEYWORDS,
+  {"mainwindow_ptr", python_mainwindow_ptr, METH_NOARGS,
    "Get raw pointer to the main window.\n"
    "mainwindow_ptr()"},
 #endif
