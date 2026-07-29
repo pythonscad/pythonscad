@@ -109,7 +109,6 @@ export function wrapNotebookExec(code)
 export function buildExportScript(format, path = '/tmp/download.' + format)
 {
   const safePath = String(path);
-  const safeFormat = String(format);
   return [
     'if _last_shown_obj is None:',
     '    print("NO_MODEL_SHOWN_YET")',

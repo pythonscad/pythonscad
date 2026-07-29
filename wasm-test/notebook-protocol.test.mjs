@@ -121,3 +121,19 @@ test('NotebookKernel serializes requests against a mock worker', async () => {
   await Promise.all([p1, p2]);
   assert.equal(serial, '1:OUT:first2:OUT:second');
 });
+
+test('NotebookKernel rejects in-flight and queued requests on termination', async () => {
+  const kernel = new NotebookKernel({workerUrl: 'unused'});
+  kernel._attachWorker({
+    postMessage: () => {},
+    terminate: () => {},
+  });
+  kernel.ready = true;
+
+  const inFlight = kernel.evaluate('first');
+  const queued = kernel.evaluate('second');
+  kernel.terminate();
+
+  await assert.rejects(inFlight, /Worker terminated/);
+  await assert.rejects(queued, /Worker terminated/);
+});

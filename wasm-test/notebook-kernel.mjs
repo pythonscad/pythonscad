@@ -43,8 +43,9 @@ export class NotebookKernel
     error.crashed = crashed;
     for (const [, entry] of this.pending) entry.reject(error);
     this.pending.clear();
-    this.busy = false;
+    for (const job of this.queue) job.reject(error);
     this.queue = [];
+    this.busy = false;
   }
 
   _onMessage(data)
