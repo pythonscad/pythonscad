@@ -16,3 +16,12 @@ c.setattr("Hello","World")
 print(c.hasattr("Hello"))
 print(c.getattr("configuration"))
 print(c.Hello)
+
+transformed=c.multmatrix([
+    [1,0,0,1],
+    [0,1,0,2],
+    [0,0,1,3],
+    [0,0,0,1],
+])
+print(transformed.configuration)
+print(transformed.Hello)
