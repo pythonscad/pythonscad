@@ -32,7 +32,7 @@ to STL, 3MF, and other formats for 3D printing and manufacturing.
   <div class="hero-download-enhanced" hidden></div>
 </div>
 
-[Try in browser](https://www.pythonscad.org/playground/){ .md-button .md-button--primary }
+[Try in browser ↗](https://www.pythonscad.org/playground/){ .md-button .md-button--primary target="_blank" rel="noopener" aria-label="Try in browser (opens in a new tab)" }
 [Get started](get_started.md){ .md-button }
 [Tutorial](tutorial/getting_started.md){ .md-button }
 [All downloads](downloads.md)
