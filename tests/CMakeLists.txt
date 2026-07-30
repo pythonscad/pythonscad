@@ -301,6 +301,10 @@ file(GLOB PYTHONSCAD_OVERLAY_ECHO_FILES ${TEST_PYTHONSCAD_OVERLAY_ECHO_DIR}/*.py
 file(GLOB SCAD_3D_EXPORT_FILES      ${TEST_SCAD_DIR}/3d-export/*.scad)
 # Exclude add_parameter_pure.py as it has a separate test with feature flag
 list(REMOVE_ITEM PYTHONSCAD_ECHO_FILES "${TEST_PYTHONSCAD_ECHO_DIR}/add_parameter_pure.py")
+# GUI pointer callbacks are not exposed in headless builds.
+if(HEADLESS)
+  list(REMOVE_ITEM PYTHONSCAD_ECHO_FILES "${TEST_PYTHONSCAD_ECHO_DIR}/gui_callback_abi.py")
+endif()
 # Exclude libfive tests if libfive is not enabled
 if(NOT ENABLE_LIBFIVE)
   list(REMOVE_ITEM PYTHONSCAD_FILES "${TEST_PYTHONSCAD_DIR}/libfive-union-stairs.py")

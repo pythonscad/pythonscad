@@ -112,6 +112,46 @@ jobs:
               echo 'PASS'
             "
 
+      - name: Smoke test Python callback ABI
+        run: |
+          docker run --rm -i \
+            -v "$PWD:/src:rw" \
+            -v "$PWD/libraries/python:/cpython-wasm/lib/pythonscad/libraries/python:ro" \
+            -w /src/build-wasm-node \
+            pythonscad-wasm-python-base:local \
+            bash -c "
+              set -euo pipefail
+              node pythonscad.js -o /tmp/add-parameter.stl --trust-python \
+                /src/wasm-test/python-callback-abi.py
+              SIZE=\$(wc -c < /tmp/add-parameter.stl)
+              echo \"add_parameter STL output: \${SIZE} bytes\"
+              [ \"\${SIZE}\" -gt 1000 ] || { echo 'FAIL: STL too small or missing'; exit 1; }
+              echo 'PASS'
+            "
+
+      - name: Smoke test Minkowski logo
+        run: |
+          docker run --rm -i \
+            -v "$PWD:/src:rw" \
+            -v "$PWD/libraries/python:/cpython-wasm/lib/pythonscad/libraries/python:ro" \
+            -w /src/build-wasm-node \
+            pythonscad-wasm-python-base:local \
+            bash -c "
+              set -euo pipefail
+              node pythonscad.js -o /tmp/logo.stl --trust-python \
+                /src/examples/Python/pythonscad-logo.py 2>&1 | tee /tmp/logo.log
+              ! grep -q 'assertion violation' /tmp/logo.log
+              SIZE=\$(wc -c < /tmp/logo.stl)
+              echo \"Logo STL output: \${SIZE} bytes\"
+              [ \"\${SIZE}\" -gt 1000 ] || { echo 'FAIL: logo STL too small or missing'; exit 1; }
+              echo 'PASS'
+            "
+
+      - name: Test notebook worker protocol
+        run: |
+          node --test wasm-test/notebook-geometry.test.mjs
+          node --test wasm-test/notebook-protocol.test.mjs
+
       - name: Build WASM web variant
         run: |
           docker run --rm -i \
@@ -138,6 +178,10 @@ jobs:
              build-wasm-web/pythonscad.data \
              wasm-test/test.html \
              wasm-test/notebook.html \
+             wasm-test/notebook-geometry.mjs \
+             wasm-test/notebook-protocol.mjs \
+             wasm-test/notebook-kernel.mjs \
+             wasm-test/notebook-worker.mjs \
              dist-wasm/
           cp wasm-test/vendor/three.module.min.js \
              wasm-test/vendor/three.core.min.js \
@@ -245,6 +289,10 @@ jobs:
           cp wasm-bundle/pythonscad.js \
              wasm-bundle/pythonscad.wasm \
              wasm-bundle/pythonscad.data \
+             wasm-bundle/notebook-geometry.mjs \
+             wasm-bundle/notebook-protocol.mjs \
+             wasm-bundle/notebook-kernel.mjs \
+             wasm-bundle/notebook-worker.mjs \
              playground/
           cp wasm-bundle/vendor/three.module.min.js \
              wasm-bundle/vendor/three.core.min.js \

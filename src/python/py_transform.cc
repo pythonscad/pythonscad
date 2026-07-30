@@ -521,15 +521,23 @@ PyObject *python_multmatrix_sub(PyObject *pyobj, PyObject *pymat, int div)
   node->matrix = mat;
   node->children.push_back(child);
   PyObject *pyresult = PyOpenSCADObjectFromNode(type, node);
+  if (pyresult == nullptr) return nullptr;
   if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(child_dict.get(), &pos, &key, &value)) {
       Matrix4d raw;
-      if (python_tomatrix(value, raw)) return nullptr;
-      PyObject *value1 = python_frommatrix(node->matrix * raw);
-      if (value1 != nullptr) PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value1);
-      else PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, value);
+      auto value1 =
+        python_tomatrix(value, raw) ? py_owned() : py_owned(python_frommatrix(node->matrix * raw));
+      if (value1.get() == nullptr && PyErr_Occurred()) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
+      PyObject *to_insert = value1.get() != nullptr ? value1.get() : value;
+      if (PyDict_SetItem(((PyOpenSCADObject *)pyresult)->dict, key, to_insert) < 0) {
+        Py_DECREF(pyresult);
+        return nullptr;
+      }
     }
   }
   return pyresult;

@@ -20,7 +20,7 @@ jobs:
       pull-requests: write
       actions: write
     steps:
-      - uses: actions/stale@v10
+      - uses: actions/stale@v11
         with:
           # Max number of operations per run
           operations-per-run: 10

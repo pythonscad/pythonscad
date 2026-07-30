@@ -345,7 +345,7 @@ PyObject *python_oo_setattr(PyObject *self, PyObject *args, PyObject *kwargs)
   Py_RETURN_NONE;
 }
 
-PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs, int mode)
+PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   char *kwlist[] = {NULL};
 
@@ -928,10 +928,10 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"nimport", (PyCFunction)python_nimport, METH_VARARGS | METH_KEYWORDS,
    "Import a Python model from a URL (not an STL).\n"
    "nimport(url=\"https://example.com/model.py\")"},
-  {"qapp_ptr", (PyCFunction)python_qapp_ptr, METH_VARARGS | METH_KEYWORDS,
+  {"qapp_ptr", python_qapp_ptr, METH_NOARGS,
    "Get raw pointer to the Qt application.\n"
    "qapp_ptr()"},
-  {"mainwindow_ptr", (PyCFunction)python_mainwindow_ptr, METH_VARARGS | METH_KEYWORDS,
+  {"mainwindow_ptr", (PyCFunction)python_mainwindow_ptr, METH_NOARGS,
    "Gets Mainwindow Pointer"},
   {"editor_get_call_args", (PyCFunction)python_editor_get_call_args, METH_VARARGS | METH_KEYWORDS,
    "Get Current call arguments"},

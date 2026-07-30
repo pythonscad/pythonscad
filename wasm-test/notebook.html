@@ -345,11 +345,13 @@
   <span class="sep">│</span>
   <span id="cell-count">0 cells</span>
   <span class="sep">│</span>
-  <span>PythonSCAD/WASM (EmsEvaluatePython)</span>
+  <span>PythonSCAD/WASM worker kernel</span>
 </div>
 
 <script type="module">
 import * as THREE from './vendor/three.module.min.js';
+import { extractGeometryPayloads, mergeGeometries } from './notebook-geometry.mjs';
+import { NotebookKernel } from './notebook-kernel.mjs';
 
 const _dbgPanel = document.createElement('div');
 _dbgPanel.id = 'dbg';
@@ -379,98 +381,31 @@ function dbg(msg, type) {
   body.scrollTop = body.scrollHeight;
 }
 
-let mod          = null;
-let evalPython    = null;
-let pythonInited  = false;
-let wasmReady     = false;
-const stdoutBuf  = [];
-const stderrBuf  = [];
-
-const REPL_PRELUDE = [
-  "import json as _json",
-  "import pythonscad as _pyscad",
-  "import openscad as _oscad",
-  "from pythonscad import *",
-  "_orig_show = _pyscad.show",
-  "_last_shown_obj = None",
-  "def _emit_geometry(obj):",
-  "    global _last_shown_obj",
-  "    _last_shown_obj = obj",
-  "    try:",
-  "        result = obj.mesh()",
-  "        if len(result) > 0 and len(result[0]) > 0 and len(result[0][0]) == 2:",
-  "            # 2D object: result is a list of outlines, each a list of [x,y] points",
-  "            outlines_list = [[[float(p[0]), float(p[1])] for p in outline] for outline in result]",
-  "            print('@@MIME_START@@' + _json.dumps({'type': '2d', 'outlines': outlines_list}) + '@@MIME_END@@')",
-  "        else:",
-  "            verts, faces, colors, color_indices = obj.mesh(color=True)",
-  "            verts_list  = [[float(c) for c in v] for v in verts]",
-  "            faces_list  = [[int(i) for i in f] for f in faces]",
-  "            colors_list = [[float(x) for x in col] for col in colors]",
-  "            cidx_list   = [int(i) for i in color_indices]",
-  "            print('@@MIME_START@@' + _json.dumps({",
-  "                'type': '3d',",
-  "                'vertices': verts_list,",
-  "                'faces': faces_list,",
-  "                'colors': colors_list,",
-  "                'color_indices': cidx_list",
-  "            }) + '@@MIME_END@@')",
-  "    except Exception as _e:",
-  "        print('GEOMETRY_ERROR: ' + repr(_e))",
-  "def show(obj, *a, **kw):",
-  "    r = _orig_show(obj, *a, **kw)",
-  "    _emit_geometry(obj)",
-  "    return r",
-  "# Re-export the instrumented show onto the modules so a user cell that runs",
-  "# 'from pythonscad import *' (or 'from openscad import *') re-binds THIS show",
-  "# instead of clobbering it with the original (which emits no notebook geometry).",
-  "_pyscad.show = show",
-  "_oscad.show = show",
-  "_probe_base_class = type(cube(1))",
-  "try:",
-  "    class _NotebookGeom(_probe_base_class):",
-  "        def show(self, *a, **kw):",
-  "            r = super().show(*a, **kw)",
-  "            _emit_geometry(self)",
-  "            return r",
-  "    _NotebookGeom.__name__ = _probe_base_class.__name__",
-  "    import builtins as _bi",
-  "    def _wrap_ctor(orig_fn):",
-  "        def wrapped(*a, **kw):",
-  "            r = orig_fn(*a, **kw)",
-  "            try:",
-  "                r.__class__ = _NotebookGeom",
-  "            except Exception:",
-  "                pass",
-  "            return r",
-  "        return wrapped",
-  "    for _name in ('cube','sphere','cylinder','polyhedron','square','circle','polygon',",
-  "                  'text','union','difference','intersection','linear_extrude',",
-  "                  'rotate_extrude','translate','rotate','scale','mirror','color',",
-  "                  'hull','minkowski','offset'):",
-  "        _orig_ctor = getattr(_pyscad, _name, None)",
-  "        if callable(_orig_ctor):",
-  "            _wrapped_ctor = _wrap_ctor(_orig_ctor)",
-  "            globals()[_name] = _wrapped_ctor",
-  "            # Patch the modules too, so 'from pythonscad/openscad import *' in a",
-  "            # user cell re-imports the instrumented constructors.",
-  "            setattr(_pyscad, _name, _wrapped_ctor)",
-  "            setattr(_oscad, _name, _wrapped_ctor)",
-  "    _test_obj = cube(1)",
-  "    print('TEST_CLASS_AFTER_PATCH: ' + str(type(_test_obj)))",
-  "    print('TEST_IS_NOTEBOOKGEOM: ' + str(type(_test_obj) is _NotebookGeom))",
-  "    print('SUBCLASS_PATCH_OK')",
-  "except Exception as _e:",
-  "    print('SUBCLASS_PATCH_ERROR: ' + repr(_e))",
-  "print('PRELUDE_LOADED_OK')",
-].join('\n');
+let kernel      = null;
+let wasmReady   = false;
+let kernelBusy  = false;
 
 async function reloadWasmAfterCrash() {
-  dbg('Reloading WASM module after crash…', 'info');
-  mod = null;
-  evalPython = null;
-  pythonInited = false;
-  await initWasm();
+  dbg('Reloading WASM worker after crash…', 'info');
+  wasmReady = false;
+  setControlsEnabled(false);
+  try {
+    if (kernel && kernel.cachedBuffers) {
+      await kernel.respawnAfterCrash();
+    } else {
+      await initWasm();
+      return;
+    }
+    wasmReady = true;
+    setBadge('ready', 'PySCAD/WASM');
+    setStatus('Kernel ready');
+    setControlsEnabled(true);
+  } catch (e) {
+    const msg = errMsg(e);
+    setBadge('error', 'Reload failed');
+    setStatus('Reload error: ' + msg);
+    dbg('reloadWasmAfterCrash ERROR: ' + msg, 'error');
+  }
 }
 
 function fmtBytes(n) {
@@ -565,17 +500,11 @@ function finishLoadProgress() {
 async function initWasm() {
   setBadge('busy', 'Loading…');
   setStatus('Loading PythonSCAD/WASM…');
+  setControlsEnabled(false);
   try {
-    const factoryOpts = {
-      noInitialRun: true,
-      print:    (t) => { stdoutBuf.push(t); dbg('stdout: ' + t); },
-      printErr: (t) => { stderrBuf.push(t); dbg('stderr: ' + t, 'error'); },
-    };
+    let wasmBuf = null;
+    let dataBuf = null;
 
-    // Pre-download the two large assets ourselves so we can show real
-    // progress. pythonscad.wasm (engine + CPython) and pythonscad.data
-    // (stdlib + libraries) are ~18 MB each and are the long pole on slow
-    // links. If anything here fails we fall back to Emscripten's own loader.
     try {
       const prog = { wasm: { loaded: 0, total: 0 }, data: { loaded: 0, total: 0 } };
       const report = () => {
@@ -589,40 +518,35 @@ async function initWasm() {
         }
       };
       setLoadProgress(null, 'Downloading…');
-      const [wasmBuf, dataBuf] = await Promise.all([
+      [wasmBuf, dataBuf] = await Promise.all([
         fetchWithProgress('./pythonscad.wasm', (l, t) => { prog.wasm = { loaded: l, total: t }; report(); }),
         fetchWithProgress('./pythonscad.data', (l, t) => { prog.data = { loaded: l, total: t }; report(); }),
       ]);
-      factoryOpts.wasmBinary = wasmBuf;
-      factoryOpts.getPreloadedPackage = () => dataBuf;
       setLoadProgress(100, 'Initialising kernel…');
     } catch (preErr) {
       dbg('asset prefetch failed, using default loader: ' + errMsg(preErr), 'error');
       setLoadProgress(null, 'Initialising kernel…');
     }
 
-    const { default: factory } = await import('./pythonscad.js');
-    mod = await factory(factoryOpts);
+    if (!kernel) {
+      kernel = new NotebookKernel({
+        onDebug: (msg, type) => dbg(msg, type),
+      });
+    }
 
-    evalPython = {
-      init:     mod.cwrap('EmsInitPython',     null,     []),
-      evaluate: mod.cwrap('EmsEvaluatePython', 'string', ['string', 'number']),
-      finish:   mod.cwrap('EmsFinishPython',   null,     []),
-    };
-
-    evalPython.init();
-    pythonInited = true;
-    dbg('EmsInitPython() done', 'info');
-
-    const preludeResult = evalPython.evaluate(REPL_PRELUDE, false);
-    dbg('prelude result: ' + JSON.stringify(preludeResult), 'info');
-    stdoutBuf.length = 0; stderrBuf.length = 0;  // discard prelude's own output
+    if (wasmBuf && dataBuf) {
+      await kernel.spawn(wasmBuf, dataBuf);
+    } else {
+      // Fallback: worker fetches assets via Emscripten's default loader.
+      await kernel.spawn(null, null);
+    }
 
     wasmReady = true;
     setBadge('ready', 'PySCAD/WASM');
     setStatus('Kernel ready');
     finishLoadProgress();
-    enableUI();
+    setControlsEnabled(true);
+    dbg('Notebook worker kernel ready', 'info');
   } catch(e) {
     const msg = errMsg(e);
     setBadge('error', 'Load failed');
@@ -635,80 +559,16 @@ async function initWasm() {
   }
 }
 
-function autoShowLastLine(code) {
-  const lines = code.split('\n');
-  let lastIdx = lines.length - 1;
-  while (lastIdx >= 0 && lines[lastIdx].trim() === '') lastIdx--;
-  if (lastIdx < 0) return code;
-
-  const originalLine = lines[lastIdx];
-  const indent = originalLine.match(/^(\s*)/)[1];
-  const lastLine = originalLine.trim();
-  const isBareIdentifier = /^[A-Za-z_][A-Za-z0-9_]*$/.test(lastLine);
-  const RESERVED = new Set(['pass','break','continue','return','else','elif','try','except','finally']);
-  if (isBareIdentifier && !RESERVED.has(lastLine)) {
-    lines[lastIdx] = indent + 'show(' + lastLine + ')';
-    return lines.join('\n');
-  }
-
-  // Pattern: <expr>.show(...)  — e.g. "cube(5).show()" or "mymodel.show()"
-  // Fallback for when patching .show() on the C-extension class doesn't take
-  // effect: evaluate the receiver once into a temp var, call .show() on it,
-  // then explicitly emit its geometry via our own _emit_geometry hook.
-  const showCallMatch = lastLine.match(/^(.*)\.show\((.*)\)\s*$/);
-  if (showCallMatch) {
-    const receiverExpr = showCallMatch[1];
-    const showArgs      = showCallMatch[2];
-    lines[lastIdx] =
-      indent + '_nb_tmp = ' + receiverExpr + '\n' +
-      indent + '_nb_tmp.show(' + showArgs + ')\n' +
-      indent + '_emit_geometry(_nb_tmp)';
-    return lines.join('\n');
-  }
-  return lines.join('\n');
-}
-
-function renderPython(code) {
-  stdoutBuf.length = 0;
-  stderrBuf.length = 0;
-  const finalCode = autoShowLastLine(code);
-  dbg('evaluate() <- ' + JSON.stringify(finalCode.slice(0,120)), 'info');
-  const returnValue = evalPython.evaluate(finalCode, false);
-  dbg('evaluate() return value -> ' + JSON.stringify(String(returnValue).slice(0,300)), 'info');
-  dbg('stdoutBuf after call -> ' + JSON.stringify(stdoutBuf), 'info');
-  dbg('stderrBuf after call -> ' + JSON.stringify(stderrBuf), 'info');
-  // Combine print()/stderr captured via callbacks with whatever
-  // evaluate() returns directly (some builds return '', others echo it back).
-  const fromBuffers = stdoutBuf.join('\n');
-  const fromStderr   = stderrBuf.join('\n');
-  const combined = [fromBuffers, String(returnValue || '').trim(), fromStderr]
-    .filter(s => s && s.trim())
-    .join('\n');
-  dbg('renderPython combined -> ' + JSON.stringify(combined.slice(0,200)), 'info');
-  return combined;
-}
-
 function extractGeometry(output) {
-  const text = String(output ?? '');
-  const MARK_START = '@@MIME_START@@';
-  const MARK_END   = '@@MIME_END@@';
-  const start = text.indexOf(MARK_START);
-  if (start === -1) return { geometry: null, text };
-  const end = text.indexOf(MARK_END, start);
-  if (end === -1) return { geometry: null, text };
-  const jsonStr = text.slice(start + MARK_START.length, end);
-  const rest = (text.slice(0, start) + text.slice(end + MARK_END.length)).trim();
-  try {
-    const parsed = JSON.parse(jsonStr);
-    // Normalize 2D outline geometry into the same {vertices, faces} shape
-    // the 3D viewer already understands, by triangulating onto the Z=0 plane.
-    if (parsed && parsed.type === '2d') {
-      return { geometry: outlinesTo3D(parsed.outlines), text: rest };
-    }
-    return { geometry: parsed, text: rest };
-  } catch(e) {
-    return { geometry: null, text };
-  }
+  const result = extractGeometryPayloads(output);
+  // Normalize 2D outline geometry into the same {vertices, faces} shape
+  // the 3D viewer already understands, by triangulating onto the Z=0 plane.
+  const geometries = result.geometries.map(parsed =>
+    parsed && parsed.type === '2d' ? outlinesTo3D(parsed.outlines) : parsed);
+  return {
+    geometry: geometries.length > 0 ? mergeGeometries(geometries) : null,
+    text: result.text,
+  };
 }
 
 // Convert a list of 2D outlines (each a list of [x,y] points) into a flat
@@ -1078,7 +938,7 @@ function outputRowHTML(c) {
     '</div>');
 }
 
-function runCell(id) {
+function runCell(id, opts = {}) {
   const cell = cells.find(c => c.id === id);
   if (!cell) return Promise.resolve();
   const ta = document.getElementById('ed-' + id);
@@ -1086,6 +946,7 @@ function runCell(id) {
 
   if (cell.type === 'markdown') { runMarkdown(cell); return Promise.resolve(); }
   if (!wasmReady) { alert('Kernel not ready yet.'); return Promise.resolve(); }
+  if (kernelBusy && !opts.batch) return Promise.resolve();
 
   const outRow = document.getElementById('outrow-' + id);
   const outCtr = document.getElementById('outctr-' + id);
@@ -1100,79 +961,83 @@ function runCell(id) {
   bodyEl.innerHTML = '<div class="output-body"><div class="output-log">⏳ Evaluating…</div></div>';
   ctrEl.textContent = '[*]';
   timEl.textContent = '';
+  if (!opts.batch) setKernelBusy(true);
   setBadge('busy', 'Running…');
   setStatus('Running cell ' + id + '…');
 
   const t0 = Date.now();
 
-  return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => {
-    let rawOutput;
-    let crashed = false;
-    try {
-      rawOutput = renderPython(cell.code);
-    } catch(e) {
-      crashed = true;
-      const msg = errMsg(e);
-      rawOutput = 'ERROR: ' + msg;
-      dbg('runCell ' + id + ' CRASHED: ' + msg, 'error');
-      // A WASM-level crash (e.g. "memory access out of bounds") corrupts
-      // the entire WASM heap — re-calling EmsInitPython on the same module
-      // instance won't help. Reload the whole module from scratch.
+  return kernel.evaluate(cell.code).then(result => {
+    const rawOutput = result.output || '';
+    finishRunCell(id, cell, rawOutput, false, t0);
+  }).catch(e => {
+    const crashed = Boolean(e && e.crashed);
+    const rawOutput = 'ERROR: ' + errMsg(e);
+    dbg('runCell ' + id + (crashed ? ' CRASHED: ' : ' error: ') + errMsg(e), 'error');
+    finishRunCell(id, cell, rawOutput, crashed, t0);
+    if (crashed) {
       wasmReady = false;
       setBadge('error', 'Kernel crashed — reloading…');
       reloadWasmAfterCrash();
     }
+  }).finally(() => {
+    if (!opts.batch) setKernelBusy(false);
+  });
+}
 
-    const elapsed = ((Date.now() - t0) / 1000).toFixed(2);
-    timEl.textContent = elapsed + 's';
-    // Restore the cell's own stable execution number (assigned at creation)
-    ctrEl.textContent = '[' + cell.executionCount + ']';
-    outCtr.textContent = '[' + cell.executionCount + ']';
-    if (!crashed) setBadge('ready', 'PySCAD/WASM');
+function finishRunCell(id, cell, rawOutput, crashed, t0) {
+  const outCtr = document.getElementById('outctr-' + id);
+  const lblEl  = document.getElementById('lbl-' + id);
+  const bodyEl = document.getElementById('body-' + id);
+  const ctrEl  = document.getElementById('ctr-' + id);
+  const timEl  = document.getElementById('tim-' + id);
 
-    const r = extractGeometry(rawOutput);
-    const geometry = r.geometry, text = r.text;
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(2);
+  timEl.textContent = elapsed + 's';
+  ctrEl.textContent = '[' + cell.executionCount + ']';
+  outCtr.textContent = '[' + cell.executionCount + ']';
+  if (!crashed && wasmReady) setBadge('ready', 'PySCAD/WASM');
 
-    dbg('runCell ' + id + ' -> geometry=' + (geometry ? 'yes' : 'no') + ' text=' + JSON.stringify(text), 'info');
+  const r = extractGeometry(rawOutput);
+  const geometry = r.geometry, text = r.text;
 
-    if (crashed) {
-      lblEl.textContent = 'error';
-      bodyEl.innerHTML = '<div class="output-body"><div class="output-log error">' + escHTML(text) + '</div></div>';
-      setStatus('Error in cell ' + id);
-    } else if (geometry) {
-      lblEl.textContent = '3D model';
-      bodyEl.innerHTML = '';
-      if (text) {
-        const d = document.createElement('div');
-        d.className = 'output-body';
-        d.innerHTML = '<div class="output-log warn">' + escHTML(text) + '</div>';
-        bodyEl.appendChild(d);
-      }
-      const wrap = document.createElement('div');
-      wrap.className = 'stl-viewer-wrap';
-      const canvas = document.createElement('canvas');
-      wrap.appendChild(canvas);
-      const bar = document.createElement('div');
-      bar.className = 'stl-bar';
-      bar.innerHTML = '<span class="stl-info">' + geometry.faces.length + ' faces &middot; ' + elapsed + 's</span>';
-      wrap.appendChild(bar);
-      bodyEl.appendChild(wrap);
-      initViewerGeometry(canvas, geometry);
-      setStatus('Render complete (' + elapsed + 's)');
-    } else if (text) {
-      // Heuristic: PythonSCAD error/traceback text usually contains these markers
-      const looksLikeError = /Traceback|Error:|SyntaxError|NameError|TypeError|ValueError/.test(text);
-      lblEl.textContent = looksLikeError ? 'error' : 'output';
-      bodyEl.innerHTML = '<div class="output-body"><div class="output-log' +
-        (looksLikeError ? ' error' : '') + '">' + escHTML(text) + '</div></div>';
-      setStatus('Done (' + elapsed + 's)');
-    } else {
-      lblEl.textContent = 'done';
-      bodyEl.innerHTML = '<div class="output-body"><div class="output-log" style="opacity:0.5">(no output)</div></div>';
-      setStatus('Done (' + elapsed + 's)');
+  dbg('runCell ' + id + ' -> geometry=' + (geometry ? 'yes' : 'no') + ' text=' + JSON.stringify(String(text).slice(0, 120)), 'info');
+
+  if (crashed) {
+    lblEl.textContent = 'error';
+    bodyEl.innerHTML = '<div class="output-body"><div class="output-log error">' + escHTML(text) + '</div></div>';
+    setStatus('Error in cell ' + id);
+  } else if (geometry) {
+    lblEl.textContent = '3D model';
+    bodyEl.innerHTML = '';
+    if (text) {
+      const d = document.createElement('div');
+      d.className = 'output-body';
+      d.innerHTML = '<div class="output-log warn">' + escHTML(text) + '</div>';
+      bodyEl.appendChild(d);
     }
-    resolve();
-  })));
+    const wrap = document.createElement('div');
+    wrap.className = 'stl-viewer-wrap';
+    const canvas = document.createElement('canvas');
+    wrap.appendChild(canvas);
+    const bar = document.createElement('div');
+    bar.className = 'stl-bar';
+    bar.innerHTML = '<span class="stl-info">' + geometry.faces.length + ' faces &middot; ' + elapsed + 's</span>';
+    wrap.appendChild(bar);
+    bodyEl.appendChild(wrap);
+    initViewerGeometry(canvas, geometry);
+    setStatus('Render complete (' + elapsed + 's)');
+  } else if (text) {
+    const looksLikeError = /Traceback|Error:|SyntaxError|NameError|TypeError|ValueError/.test(text);
+    lblEl.textContent = looksLikeError ? 'error' : 'output';
+    bodyEl.innerHTML = '<div class="output-body"><div class="output-log' +
+      (looksLikeError ? ' error' : '') + '">' + escHTML(text) + '</div></div>';
+    setStatus('Done (' + elapsed + 's)');
+  } else {
+    lblEl.textContent = 'done';
+    bodyEl.innerHTML = '<div class="output-body"><div class="output-log" style="opacity:0.5">(no output)</div></div>';
+    setStatus('Done (' + elapsed + 's)');
+  }
 }
 
 function runMarkdown(cell) {
@@ -1183,7 +1048,13 @@ function runMarkdown(cell) {
 }
 
 async function runAllCells() {
-  for (const c of cells) await runCell(c.id);
+  if (kernelBusy || !wasmReady) return;
+  setKernelBusy(true);
+  try {
+    for (const c of cells) await runCell(c.id, { batch: true });
+  } finally {
+    setKernelBusy(false);
+  }
 }
 
 function clearAllOutputs() {
@@ -1630,62 +1501,45 @@ window.loadNotebookFromFile = function(input) {
   input.value = '';  // allow re-selecting the same file later
 };
 
-window.downloadLastModel = function(format) {
+window.downloadLastModel = async function(format) {
   format = format || 'stl';
-  if (!wasmReady) { alert('Kernel not ready yet.'); return; }
-  const path = '/tmp/download.' + format;
+  if (!wasmReady || kernelBusy) {
+    alert(kernelBusy ? 'Kernel is busy — wait for the current cell to finish.' : 'Kernel not ready yet.');
+    return;
+  }
+  setKernelBusy(true);
+  setBadge('busy', 'Exporting…');
   try {
-    mod.FS.mkdir('/tmp');
-  } catch(_) { /* already exists — fine */ }
-  try {
-    mod.FS.unlink(path);
-  } catch(_) { /* file may not exist yet — fine */ }
-
-  stdoutBuf.length = 0;
-  stderrBuf.length = 0;
-  const exportCode =
-    'if _last_shown_obj is None:\n' +
-    '    print("NO_MODEL_SHOWN_YET")\n' +
-    'else:\n' +
-    '    export(_last_shown_obj, "' + path + '")\n' +
-    '    print("EXPORT_OK")\n';
-
-  let ret;
-  try {
-    ret = evalPython.evaluate(exportCode, false);
-  } catch(e) {
+    const result = await kernel.exportModel(format);
+    if (result.status === 'no-model') {
+      alert('No model has been shown yet — run a cell with show(...) first.');
+      return;
+    }
+    if (result.status !== 'ok' || !result.fileBytes) {
+      alert('Export did not produce a file.');
+      return;
+    }
+    const blob = new Blob([result.fileBytes], { type: 'application/octet-stream' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'model.' + format;
+    a.click();
+    setStatus(format.toUpperCase() + ' downloaded (' + result.fileBytes.byteLength + ' bytes)');
+  } catch (e) {
     const msg = errMsg(e);
-    dbg('downloadLastModel evaluate() CRASHED: ' + msg, 'error');
-    alert('Export crashed the kernel: ' + msg + '\nReloading WASM module…');
-    wasmReady = false;
-    setBadge('error', 'Kernel crashed — reloading…');
-    reloadWasmAfterCrash();
-    return;
+    dbg('downloadLastModel failed: ' + msg, 'error');
+    if (e && e.crashed) {
+      alert('Export crashed the kernel: ' + msg + '\nReloading WASM worker…');
+      wasmReady = false;
+      setBadge('error', 'Kernel crashed — reloading…');
+      reloadWasmAfterCrash();
+    } else {
+      alert('Export failed: ' + msg);
+    }
+  } finally {
+    setKernelBusy(false);
+    if (wasmReady) setBadge('ready', 'PySCAD/WASM');
   }
-  dbg('downloadLastModel evaluate() -> ' + JSON.stringify(ret) + ' stdout=' + JSON.stringify(stdoutBuf) + ' stderr=' + JSON.stringify(stderrBuf), 'info');
-
-  const combinedOut = stdoutBuf.join('\n');
-  if (combinedOut.includes('NO_MODEL_SHOWN_YET')) {
-    alert('No model has been shown yet — run a cell with show(...) first.');
-    return;
-  }
-
-  let fileBytes;
-  try {
-    fileBytes = mod.FS.readFile(path);
-  } catch(e) {
-    const msg = errMsg(e);
-    dbg('downloadLastModel FS.readFile failed: ' + msg, 'error');
-    alert('Export did not produce a file: ' + msg);
-    return;
-  }
-
-  const blob = new Blob([fileBytes], { type: 'application/octet-stream' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'model.' + format;
-  a.click();
-  setStatus(format.toUpperCase() + ' downloaded (' + fileBytes.byteLength + ' bytes)');
 };
 
 window.saveNotebook = function() {
@@ -1722,10 +1576,17 @@ window.autoH = function(ta) {
   ta.style.height = Math.max(80, ta.scrollHeight) + 'px';
 };
 
-function enableUI() {
+function setControlsEnabled(enabled) {
   ['btn-run-all','btn-add-code','btn-add-md','btn-download-stl','export-format'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.disabled = false;
+    const el = document.getElementById(id);
+    if (el) el.disabled = !enabled || kernelBusy;
   });
+}
+
+function setKernelBusy(busy) {
+  kernelBusy = busy;
+  setControlsEnabled(wasmReady);
+  document.querySelectorAll('.cell-run-btn').forEach(btn => { btn.disabled = busy; });
 }
 function setBadge(state, text) {
   const b = document.getElementById('kernel-badge');
