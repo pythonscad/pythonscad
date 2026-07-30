@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block announce %}
+  {% if config.extra.test_site %}
+  <div class="test-site-banner" role="note" aria-label="Test site notice">
+    <strong>Test site:</strong>
+    This site tracks <code>master</code>, is useful for source builds,
+    and can differ from the latest official PythonSCAD release.
+  </div>
+  {% endif %}
+{% endblock %}

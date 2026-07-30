@@ -1,5 +1,8 @@
 site_name: PythonSCAD
 site_url: https://www.pythonscad.org/
+
+extra:
+  test_site: false
 repo_url: https://github.com/pythonscad/pythonscad/
 repo_name: pythonscad/pythonscad
 theme:
@@ -54,7 +57,7 @@ nav:
       - PythonSCAD v0.18.0: releases/PythonSCAD v0.18.0.md
       - PythonSCAD v0.17.0: releases/PythonSCAD v0.17.0.md
       - PythonSCAD v0.16.0: releases/PythonSCAD v0.16.0.md
-  - Playground: https://www.pythonscad.org/playground/
+  - Playground: /playground/
   - Installation: installation.md
   - Development:
       - Release Smoke Tests: development/release-smoke-tests.md
