@@ -6,9 +6,12 @@ base_url="${1:?base URL required (e.g. https://test.pythonscad.org/)}"
 
 playground="${base_url%/}/playground/"
 wasm_url="${playground}pythonscad.wasm"
+body="$(mktemp)"
+trap 'rm -f "$body"' EXIT
 
 echo "Checking playground landing page ${playground}"
-curl -fsSL "$playground" | grep -q '<html'
+curl -fsSL "$playground" -o "$body"
+grep -q '<html' "$body"
 
 echo "Checking WASM MIME type for ${wasm_url}"
 content_type="$(
