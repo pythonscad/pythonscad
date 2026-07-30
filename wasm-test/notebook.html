@@ -393,6 +393,7 @@ _dbgCollapse.onclick = () => setDebugCollapsed(!_dbgPanel.classList.contains('co
 
 let debugVisible = false;
 try { debugVisible = localStorage.getItem(DEBUG_VISIBLE_KEY) === 'true'; } catch (_) { /* storage unavailable */ }
+setDebugCollapsed(window.matchMedia('(max-width: 760px)').matches);
 setDebugVisible(debugVisible, false);
 
 function errMsg(e) {
