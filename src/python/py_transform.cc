@@ -521,6 +521,7 @@ PyObject *python_multmatrix_sub(PyObject *pyobj, PyObject *pymat, int div)
   node->matrix = mat;
   node->children.push_back(child);
   PyObject *pyresult = PyOpenSCADObjectFromNode(type, node);
+  if (pyresult == nullptr) return nullptr;
   if (child_dict.get() != nullptr) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
