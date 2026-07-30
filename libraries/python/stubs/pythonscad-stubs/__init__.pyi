@@ -60,18 +60,24 @@ class Matrix4x4(_np.ndarray[_typing.Any, _np.dtype[_np.float64]]):
     @classmethod
     def from_array(cls, array: _typing.Any) -> "Matrix4x4": ...
 
-class MultiToolExporter(list[tuple[str, _typing.Any]]):
+_MultiToolExporterItem = tuple[str, _typing.Any] | tuple[str, _typing.Any, bool]
+
+
+class MultiToolExporter(list[_MultiToolExporterItem]):
     """List-based helper for exporting multi-tool / multi-color 3D models.
 
-    Each item is a ``(name, object)`` 2-tuple (matching :func:`dict.items`
-    and the multi-object form of :func:`export`). For each index ``i``,
-    :meth:`export` writes the geometry obtained by subtracting every later
-    item's object from ``self[i]``'s object into either per-part files
-    named ``f"{prefix}{name}{suffix}"`` or one multi-object 3MF file when
-    ``single_file`` is provided. The last entry is emitted as-is (no
-    degenerate one-child ``difference`` node). Output paths and
-    single-file part names must be unique; collisions raise
-    :class:`ValueError` at export time.
+    Each item is a ``(name, object)`` 2-tuple or ``(name, object, export)``
+    3-tuple (matching :func:`dict.items` and the multi-object form of
+    :func:`export`). The optional ``export`` flag defaults to ``True``;
+    ``export=False`` entries are *cutters* that still subtract from earlier
+    items but are omitted from :meth:`parts`, :meth:`show`, and all export
+    paths. For each index ``i``, :meth:`export` writes the geometry obtained
+    by subtracting every later item's object from ``self[i]``'s object into
+    either per-part files named ``f"{prefix}{name}{suffix}"`` or one
+    multi-object 3MF file when ``single_file`` is provided. The last list
+    entry is emitted as-is (no degenerate one-child ``difference`` node).
+    Output paths and single-file part names must be unique among exportable
+    items; collisions raise :class:`ValueError` at export time.
     """
 
     prefix: str
@@ -88,34 +94,34 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         prefix: str,
         suffix: str,
         mkdir: bool = ...,
-        items: _typing.Iterable[tuple[str, _typing.Any]] = ...,
+        items: _typing.Iterable[_MultiToolExporterItem] = ...,
     ) -> None:
         """Initialize the exporter, optionally seeding it with ``items``."""
         ...
 
-    def append(self, item: tuple[str, _typing.Any]) -> None:
-        """Append a validated ``(name, object)`` tuple."""
+    def append(self, item: _MultiToolExporterItem) -> None:
+        """Append a validated ``(name, object)`` or ``(name, object, export)`` tuple."""
         ...
 
-    def extend(self, items: _typing.Iterable[tuple[str, _typing.Any]]) -> None:
-        """Append each validated ``(name, object)`` tuple from ``items``."""
+    def extend(self, items: _typing.Iterable[_MultiToolExporterItem]) -> None:
+        """Append each validated item tuple from ``items``."""
         ...
 
     def insert(
-        self, index: _typing.SupportsIndex, item: tuple[str, _typing.Any]
+        self, index: _typing.SupportsIndex, item: _MultiToolExporterItem
     ) -> None:
-        """Insert a validated ``(name, object)`` tuple at ``index``."""
+        """Insert a validated item tuple at ``index``."""
         ...
 
     def __iadd__(  # type: ignore[override]
         self,
-        other: _typing.Iterable[tuple[str, _typing.Any]],
+        other: _typing.Iterable[_MultiToolExporterItem],
     ) -> "MultiToolExporter":
         """Validate each item then in-place extend (``self += other``)."""
         ...
 
     def parts(self) -> list[tuple[str, _typing.Any]]:
-        """Return computed ``(name, geometry)`` pairs in declaration order."""
+        """Return computed ``(name, geometry)`` pairs for exportable items."""
         ...
 
     def export(self, single_file: str | None = ...) -> None:
