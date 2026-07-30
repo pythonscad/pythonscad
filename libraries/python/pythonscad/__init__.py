@@ -499,9 +499,7 @@ def rounded_cube(
 
     rounded_box = minkowski(
         cube(inner_size), sphere(r=radius, fn=fn, fa=fa, fs=fs)
-    ).translate(
-        [radius, radius, radius]
-    )
+    ).translate([radius, radius, radius])
     if center:
         return rounded_box.translate(center_offset)
     return rounded_box

@@ -1,7 +1,17 @@
-""" PythonSCAD Stub File for use in editors like Visual Studio Code """
+"""PythonSCAD Stub File for use in editors like Visual Studio Code"""
 
 from enum import Enum
-from typing import List, Literal, Mapping, Optional, Self, Sequence, TYPE_CHECKING, Union, overload
+from typing import (
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Self,
+    Sequence,
+    TYPE_CHECKING,
+    Union,
+    overload,
+)
 
 if TYPE_CHECKING:
     import numpy as np
@@ -26,9 +36,7 @@ Matrix4x4 = Sequence[Sequence[float]]
 """4x4 transformation matrix represented as four coordinate sequences."""
 
 class PyLibFive:
-    def __init__(self, x: float, y: float, z: float):
-        ...
-
+    def __init__(self, x: float, y: float, z: float): ...
     def x(self) -> Self:
         """Return X coordinate"""
         ...
@@ -116,7 +124,7 @@ class PyOpenSCAD:
     """4x4 transformation matrix representing the object's origin.
     Initialized as identity matrix."""
 
-    def translate(self, v: Vector3| "npt.NDArray[np.float64]") -> "PyOpenSCAD":
+    def translate(self, v: Vector3 | "npt.NDArray[np.float64]") -> "PyOpenSCAD":
         """Translate this object.
 
         Args:
@@ -127,44 +135,47 @@ class PyOpenSCAD:
         """
         ...
 
-    def right(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
+    def right(self, v: Sequence[float] | "npt.NDArray[np.float64]") -> Self:
         """Moves an Object to the right"""
         ...
 
-    def left(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
+    def left(self, v: Sequence[float] | "npt.NDArray[np.float64]") -> Self:
         """Moves an Object to the left"""
         ...
 
-    def back(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
+    def back(self, v: Sequence[float] | "npt.NDArray[np.float64]") -> Self:
         """Moves Object backwards"""
         ...
 
-    def front(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
+    def front(self, v: Sequence[float] | "npt.NDArray[np.float64]") -> Self:
         """Moves Object frontwards"""
         ...
 
-    def up(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
+    def up(self, v: Sequence[float] | "npt.NDArray[np.float64]") -> Self:
         """Move Object upwards"""
         ...
 
-    def down(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
+    def down(self, v: Sequence[float] | "npt.NDArray[np.float64]") -> Self:
         """Move Object downwards"""
         ...
 
-    def rotx(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
+    def rotx(self, v: Sequence[float] | "npt.NDArray[np.float64]") -> Self:
         """Rotate Object around X Axis"""
         ...
 
-    def roty(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
+    def roty(self, v: Sequence[float] | "npt.NDArray[np.float64]") -> Self:
         """Rotate Object around Y Axis"""
         ...
 
-    def rotz(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
+    def rotz(self, v: Sequence[float] | "npt.NDArray[np.float64]") -> Self:
         """Rotate Object around Z Axis"""
         ...
 
     def rotate(
-        self, a: Union[float, Vector3| "npt.NDArray[np.float64]"], v: Optional[Vector3| "npt.NDArray[np.float64]"] = None, ref: Optional[Vector3] = None
+        self,
+        a: Union[float, Vector3 | "npt.NDArray[np.float64]"],
+        v: Optional[Vector3 | "npt.NDArray[np.float64]"] = None,
+        ref: Optional[Vector3] = None,
     ) -> "PyOpenSCAD":
         """Rotate this object.
 
@@ -178,7 +189,9 @@ class PyOpenSCAD:
         """
         ...
 
-    def scale(self, v: Union[float, Vector3| "npt.NDArray[np.float64]"]) -> "PyOpenSCAD":
+    def scale(
+        self, v: Union[float, Vector3 | "npt.NDArray[np.float64]"]
+    ) -> "PyOpenSCAD":
         """Scale this object.
 
         Args:
@@ -189,7 +202,7 @@ class PyOpenSCAD:
         """
         ...
 
-    def mirror(self, v: Vector3| "npt.NDArray[np.float64]") -> "PyOpenSCAD":
+    def mirror(self, v: Vector3 | "npt.NDArray[np.float64]") -> "PyOpenSCAD":
         """Mirror this object.
 
         Args:
@@ -249,6 +262,7 @@ class PyOpenSCAD:
     class RoofMethod(Enum):
         TOP = "top"
         LOFT = "loft"
+
     def roof(
         self,
         method: str = RoofMethod.TOP.name,
@@ -260,11 +274,7 @@ class PyOpenSCAD:
         """Create Roof from an 2D Shape"""
         ...
 
-    def pull(
-        self,
-        src: Self,
-        dst: Self
-    ) -> Self:
+    def pull(self, src: Self, dst: Self) -> Self:
         """Pull apart Object, basically between src and dst it creates a prisma with the x-section
         src: anchor
         dst: how much to pull
@@ -355,7 +365,7 @@ class PyOpenSCAD:
     def path_extrude(
         self,
         path: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
-        xdir: Sequence[float]| "npt.NDArray[np.float64]",
+        xdir: Sequence[float] | "npt.NDArray[np.float64]",
         convexity: int = 2,
         origin: Sequence[float] | "npt.NDArray[np.float64]" = [0, 0],
         scale: float = 1,
@@ -432,11 +442,7 @@ class PyOpenSCAD:
         """
         ...
 
-    def oversample(
-        self,
-        n: Optional[int] = None,
-        round: Optional[bool] = None
-    ) -> Self:
+    def oversample(self, n: Optional[int] = None, round: Optional[bool] = None) -> Self:
         """Create artificial intermediate points into straight lines
         n: factor of the oversampling
         round: whether to round the oversampling
@@ -447,7 +453,7 @@ class PyOpenSCAD:
         self,
         r: Optional[float] = None,
         sel: Optional[Self] = None,
-        fn: Optional[int] = None
+        fn: Optional[int] = None,
     ) -> Self:
         """Create nice roundings for sharp edges
         r: radius of the fillet
@@ -469,7 +475,6 @@ class PyOpenSCAD:
             A new object. The original object is unaffected.
         """
         ...
-
 
     def render(self, convexity: int = 2) -> "PyOpenSCAD":
         """Force rendering this object.
@@ -575,7 +580,8 @@ class PyOpenSCAD:
         ...
 
 def square(
-    dim: Optional[Union[float, list[float]| "npt.NDArray[np.float64]"]] = None, center: Optional[bool] = None
+    dim: Optional[Union[float, list[float] | "npt.NDArray[np.float64]"]] = None,
+    center: Optional[bool] = None,
 ) -> PyOpenSCAD:
     """Create a square primitive.
 
@@ -798,8 +804,9 @@ def polyhedron(
     """
     ...
 
-
-def organic(pts:list[list[float]], max_mesh_size:float, alpha:float=-1) -> PyOpenSCAD:
+def organic(
+    pts: list[list[float]], max_mesh_size: float, alpha: float = -1
+) -> PyOpenSCAD:
     """Connects a cloud of points into a smooth, watertight organic surface
     pts: list of [x,y,z] points to connect; every point is guaranteed to be used
     max_mesh_size: maximum edge length of the resulting mesh (smaller = finer/smoother)
@@ -808,8 +815,9 @@ def organic(pts:list[list[float]], max_mesh_size:float, alpha:float=-1) -> PyOpe
     """
     ...
 
-
-def frep(exp: PyLibFive, min: Sequence[float], max: Sequence[float], res: int) -> PyOpenSCAD:
+def frep(
+    exp: PyLibFive, min: Sequence[float], max: Sequence[float], res: int
+) -> PyOpenSCAD:
     """Create F-Rep (libfive)
     exp : an SDF epression composed from SDF variables and operators, see tutorial
     """
@@ -845,28 +853,31 @@ def translate(matrix: Matrix4x4, v: Vector3) -> Matrix4x4:
     """
     ...
 
-
-def right(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def right(
+    obj: PyOpenSCAD, v: Sequence[float] | "npt.NDArray[np.float64]"
+) -> PyOpenSCAD:
     """Moves an Object to the right"""
     ...
 
-def left(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def left(obj: PyOpenSCAD, v: Sequence[float] | "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Moves an Object to the left"""
     ...
 
-def back(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def back(obj: PyOpenSCAD, v: Sequence[float] | "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Moves Object backwards"""
     ...
 
-def front(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def front(
+    obj: PyOpenSCAD, v: Sequence[float] | "npt.NDArray[np.float64]"
+) -> PyOpenSCAD:
     """Moves Object frontwards"""
     ...
 
-def up(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def up(obj: PyOpenSCAD, v: Sequence[float] | "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Move Object upwards"""
     ...
 
-def down(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def down(obj: PyOpenSCAD, v: Sequence[float] | "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Move Object downwards"""
     ...
 
@@ -902,15 +913,15 @@ def rotate(
     """
     ...
 
-def rotx(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def rotx(obj: PyOpenSCAD, v: Sequence[float] | "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Rotate Object around X Axis"""
     ...
 
-def roty(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def roty(obj: PyOpenSCAD, v: Sequence[float] | "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Rotate Object around Y Axis"""
     ...
 
-def rotz(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
+def rotz(obj: PyOpenSCAD, v: Sequence[float] | "npt.NDArray[np.float64]") -> PyOpenSCAD:
     """Rotate Object around Z Axis"""
     ...
 
@@ -1095,9 +1106,9 @@ def rotate_extrude(
 def path_extrude(
     obj: PyOpenSCAD,
     path: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
-    xdir: Sequence[float]| "npt.NDArray[np.float64]",
+    xdir: Sequence[float] | "npt.NDArray[np.float64]",
     convexity: int,
-    origin: Sequence[float]| "npt.NDArray[np.float64]",
+    origin: Sequence[float] | "npt.NDArray[np.float64]",
     scale: float,
     twist: float,
     closed: bool,
@@ -1204,6 +1215,7 @@ def render(obj: PyOpenSCADs, convexity: int = 2) -> PyOpenSCAD:
 def output(obj: PyOpenSCAD) -> None:
     """same as show"""
     ...
+
 def resize(
     obj: PyOpenSCADs,
     newsize: Union[float, Vector1, Vector2, Vector3, Sequence[float]],
@@ -1246,7 +1258,6 @@ def fill(*objects: PyOpenSCADs) -> PyOpenSCAD:
     """
     ...
 
-
 def roof(
     obj: PyOpenSCAD, method: str, convexity: int, fn: int, fa: float, fs: float
 ) -> PyOpenSCAD:
@@ -1259,7 +1270,6 @@ def pull(obj: PyOpenSCAD, src: Sequence[float], dst: Sequence[float]) -> PyOpenS
     dst: how much to pull
     """
     ...
-
 
 @overload
 def export(obj: PyOpenSCAD, file: str) -> None:
@@ -1306,8 +1316,6 @@ def only(obj: PyOpenSCAD) -> PyOpenSCAD:
     """Shows only this object"""
     ...
 
-
-
 def oversample(obj: PyOpenSCAD, n: int, round: bool) -> PyOpenSCAD:
     """Create artificial intermediate points into straight lines
     n: factor  of the oversampling
@@ -1326,7 +1334,6 @@ def fillet(obj: PyOpenSCAD, r: float, sel: PyOpenSCAD, fn: int) -> PyOpenSCAD:
 def group(obj: PyOpenSCAD) -> PyOpenSCAD:
     """Groups several Objects"""
     ...
-
 
 def rendervars(
     vpd: Optional[float] = None,
@@ -1347,9 +1354,7 @@ def rendervars(
     """
     ...
 
-def machineconfig(
-    config: None
-) -> None:
+def machineconfig(config: None) -> None:
     """Specify extended parameters to be used for gcode Export
 
     Args:
@@ -1497,7 +1502,6 @@ def scad(code: str) -> PyOpenSCAD:
     """Evaluate Code in SCAD syntax"""
     ...
 
-
 def align(
     obj: PyOpenSCAD, refmat: Matrix4x4, objmat: Optional[Matrix4x4] = None
 ) -> PyOpenSCAD:
@@ -1513,7 +1517,9 @@ def align(
     """
     ...
 
-def edge(size: Optional[Union[float, Vector2]] = None, center: Optional[bool] = None) -> PyOpenSCAD:
+def edge(
+    size: Optional[Union[float, Vector2]] = None, center: Optional[bool] = None
+) -> PyOpenSCAD:
     """Create a 1D edge primitive.
 
     Args:
@@ -1525,7 +1531,12 @@ def edge(size: Optional[Union[float, Vector2]] = None, center: Optional[bool] = 
     """
     ...
 
-def spline(points: list[Vector2], fn: Optional[int] = None, fa: Optional[float] = None, fs: Optional[float] = None) -> PyOpenSCAD:
+def spline(
+    points: list[Vector2],
+    fn: Optional[int] = None,
+    fa: Optional[float] = None,
+    fs: Optional[float] = None,
+) -> PyOpenSCAD:
     """Create a spline curve from points.
 
     Args:

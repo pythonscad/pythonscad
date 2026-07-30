@@ -51,14 +51,17 @@ HEADING_RE = re.compile(r"^## \[?(\d+)\.(\d+)\.(\d+)")
 DATE_RE = re.compile(r"\((\d{4}-\d{2}-\d{2})\)\s*$")
 SECTION_RE = re.compile(r"^### (.+?)\s*$")
 BULLET_RE = re.compile(r"^\* (.+?)\s*$")
-RELEASES_BLOCK_RE = re.compile(r"^[ \t]*<releases>.*?</releases>", re.DOTALL | re.MULTILINE)
+RELEASES_BLOCK_RE = re.compile(
+    r"^[ \t]*<releases>.*?</releases>", re.DOTALL | re.MULTILINE
+)
 
 # A trailing "([text](url))" PR/commit reference group, anchored to the end.
 TRAILING_REF_RE = re.compile(r"\s*\(\[[^\]]+\]\([^)]+\)\)\s*$")
 # A trailing "closes/fixes [text](url)" issue reference, optionally wrapped in
 # parentheses (e.g. "(closes [#648](url))") and anchored to the end.
 TRAILING_CLOSES_RE = re.compile(
-    r",?\s*\(?(?:closes|fixes)\s+\[[^\]]+\]\([^)]+\)\)?\s*$", re.IGNORECASE)
+    r",?\s*\(?(?:closes|fixes)\s+\[[^\]]+\]\([^)]+\)\)?\s*$", re.IGNORECASE
+)
 # An in-text markdown link "[text](url)" -> "text".
 MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 
@@ -140,7 +143,9 @@ def clean_bullet(text):
 def render_release(release):
     version_str = ".".join(str(n) for n in release["version"])
     lines = [f'    <release version="{version_str}" date="{release["date"]}">']
-    lines.append(f'      <url type="details">{TAG_URL.format(version=version_str)}</url>')
+    lines.append(
+        f'      <url type="details">{TAG_URL.format(version=version_str)}</url>'
+    )
 
     blocks = []
     for key, label in SECTIONS:
@@ -184,13 +189,18 @@ def render_releases_block(releases):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--changelog", type=Path, default=REPO_ROOT / "CHANGELOG.md")
-    parser.add_argument("--appdata", type=Path,
-                        default=REPO_ROOT / "pythonscad.appdata.xml.in")
-    parser.add_argument("--check", action="store_true",
-                        help="exit non-zero if the file would change; make no edits")
+    parser.add_argument(
+        "--appdata", type=Path, default=REPO_ROOT / "pythonscad.appdata.xml.in"
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="exit non-zero if the file would change; make no edits",
+    )
     args = parser.parse_args()
 
     changelog = args.changelog.read_text(encoding="utf-8")
@@ -211,8 +221,10 @@ def main():
         return 0
 
     if args.check:
-        print(f"{args.appdata} is out of date; run scripts/update-appdata-releases.py",
-              file=sys.stderr)
+        print(
+            f"{args.appdata} is out of date; run scripts/update-appdata-releases.py",
+            file=sys.stderr,
+        )
         return 1
 
     args.appdata.write_text(updated, encoding="utf-8")

@@ -1,9 +1,6 @@
 from pythonscad import *
 from pymachineconfig import *
 
-# FIXME: overwrite the machine config file with the default for testing
-import define_machine
-
 # read in the machine configuration file.
 # Note: if one does not exist, it creates default structures
 #   to work from, but does not save the file.  The end user

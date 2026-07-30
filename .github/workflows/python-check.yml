@@ -1,0 +1,40 @@
+name: python-check
+
+on:
+  push:
+    paths:
+      - "**.py"
+      - "**.pyi"
+      - "pyproject.toml"
+      - ".pre-commit-config.yaml"
+  pull_request:
+    paths:
+      - "**.py"
+      - "**.pyi"
+      - "pyproject.toml"
+      - ".pre-commit-config.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-ruff@v3
+        with:
+          version: "0.16.0"
+
+      - name: ruff lint
+        run: ruff check --select "F401,F811,F821" libraries/python/ tests/python/ examples/ scripts/
+
+      - name: ruff format check
+        run: ruff format --check libraries/python/ tests/python/ examples/ scripts/

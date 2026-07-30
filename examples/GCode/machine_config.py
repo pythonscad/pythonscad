@@ -2,7 +2,6 @@ from pymachineconfig import *
 
 # set up a machine definition from scratch.
 # WARNING: executing this can overwrite your config
-import define_machine
 
 # read in the machine config.  If it does not exist, generate a default
 mc = MachineConfig()

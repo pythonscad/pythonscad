@@ -47,7 +47,7 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import Dict, List, Optional, Set
+from typing import List, Optional, Set
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -61,8 +61,22 @@ class DistroInfo:
         return f"DistroInfo(id={self.id!r}, version={self.version!r})"
 
 
-SUPPORTED = {"debian", "ubuntu", "arch", "gentoo", "fedora", "netbsd", "freebsd", "macos",
-             "opensuse", "mageia", "solus", "altlinux", "qomo", "msys2"}
+SUPPORTED = {
+    "debian",
+    "ubuntu",
+    "arch",
+    "gentoo",
+    "fedora",
+    "netbsd",
+    "freebsd",
+    "macos",
+    "opensuse",
+    "mageia",
+    "solus",
+    "altlinux",
+    "qomo",
+    "msys2",
+}
 
 
 def detect_distro() -> DistroInfo:
@@ -90,7 +104,7 @@ def detect_distro() -> DistroInfo:
             with open(path) as fh:
                 for line in fh:
                     line = line.strip()
-                    if not line or line.startswith('#') or '=' not in line:
+                    if not line or line.startswith("#") or "=" not in line:
                         continue
                     k, v = line.split("=", 1)
                     os_release[k] = v.strip().strip('"')
@@ -102,7 +116,11 @@ def detect_distro() -> DistroInfo:
     # Fallbacks
     if not rid and shutil.which("lsb_release"):
         try:
-            rid = subprocess.check_output(["lsb_release", "-si"], text=True).strip().lower()
+            rid = (
+                subprocess.check_output(["lsb_release", "-si"], text=True)
+                .strip()
+                .lower()
+            )
         except Exception:  # pragma: no cover - best effort
             pass
     if not version and shutil.which("lsb_release"):
@@ -129,7 +147,7 @@ def detect_distro() -> DistroInfo:
         "mageia": "mageia",
         "solus": "solus",
         "altlinux": "altlinux",
-        "qomo": "qomo"
+        "qomo": "qomo",
     }
     norm = mapping.get(rid, rid)
 
@@ -157,7 +175,9 @@ def load_config(path: str) -> dict:
 def resolve_packages(cfg: dict, distro: DistroInfo) -> List[str]:
     distros = cfg["distros"]
     if distro.id not in distros:
-        raise SystemExit(f"Unsupported / unknown distro '{distro.id}'. Supported: {', '.join(sorted(distros))}")
+        raise SystemExit(
+            f"Unsupported / unknown distro '{distro.id}'. Supported: {', '.join(sorted(distros))}"
+        )
 
     # Inheritance chain
     chain = []
@@ -187,11 +207,11 @@ def resolve_packages(cfg: dict, distro: DistroInfo) -> List[str]:
         keys_to_try = []
         v = distro.version
         keys_to_try.append(v)
-        if v.count('.') >= 1:
-            major_minor = '.'.join(v.split('.')[:2])
+        if v.count(".") >= 1:
+            major_minor = ".".join(v.split(".")[:2])
             if major_minor not in keys_to_try:
                 keys_to_try.append(major_minor)
-        major = v.split('.')[0]
+        major = v.split(".")[0]
         if major not in keys_to_try:
             keys_to_try.append(major)
         for key in keys_to_try:
@@ -209,7 +229,9 @@ def resolve_packages(cfg: dict, distro: DistroInfo) -> List[str]:
     return ordered
 
 
-def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_yes: bool) -> List[List[str]]:
+def build_commands(
+    cfg: dict, distro: DistroInfo, packages: List[str], assume_yes: bool
+) -> List[List[str]]:
     d = cfg["distros"][distro.id]
     mgr = d.get("manager")
     # Inherit package manager from ancestors if not defined locally (avoids duplication)
@@ -224,7 +246,9 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
                 break
             parent_id = parent.get("extends")
     if not mgr:
-        raise SystemExit(f"No package manager defined for {distro.id} (and none found in its inheritance chain)")
+        raise SystemExit(
+            f"No package manager defined for {distro.id} (and none found in its inheritance chain)"
+        )
 
     pre_cmds = [cmd.split() for cmd in d.get("pre_commands", [])]
     cmds: List[List[str]] = []
@@ -241,10 +265,23 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         cmds.append(["dnf", *yes_flag, "install", *packages])
     elif mgr == "pacman":
         # sync first
-        cmds.append(["pacman", "-Sy", "--needed", "--noconfirm" if assume_yes else "--needed", *packages])
+        cmds.append(
+            [
+                "pacman",
+                "-Sy",
+                "--needed",
+                "--noconfirm" if assume_yes else "--needed",
+                *packages,
+            ]
+        )
     elif mgr == "emerge":
         # assume pre_commands contains sync if needed
-        base = ["emerge", "--ask=n" if assume_yes else "--ask=y", "--quiet-build" , *packages]
+        base = [
+            "emerge",
+            "--ask=n" if assume_yes else "--ask=y",
+            "--quiet-build",
+            *packages,
+        ]
         cmds.append(base)
     elif mgr == "pkg":
         cmds.append(["pkg", "install", "-y" if assume_yes else "-y", *packages])
@@ -305,9 +342,14 @@ def run_commands(cmds: List[List[str]], dry_run: bool):
         # versions; fail loudly if the subcommand exists but the trust fails.
         if cmd[:2] == ["brew", "trust"]:
             if brew_has_trust is None:
-                brew_has_trust = subprocess.run(
-                    ["brew", "help", "trust"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                ).returncode == 0
+                brew_has_trust = (
+                    subprocess.run(
+                        ["brew", "help", "trust"],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    ).returncode
+                    == 0
+                )
             if not brew_has_trust:
                 print("$ # skipped (brew trust not available on this Homebrew version)")
                 continue
@@ -315,8 +357,14 @@ def run_commands(cmds: List[List[str]], dry_run: bool):
         # Use subprocess.run to get better error information
         result = subprocess.run(cmd, capture_output=False, text=True)
         if result.returncode != 0:
-            print(f"\nCommand failed with exit code {result.returncode}: {' '.join(cmd)}", file=sys.stderr)
-            print(f"Attempting to re-run command with captured output for debugging...", file=sys.stderr)
+            print(
+                f"\nCommand failed with exit code {result.returncode}: {' '.join(cmd)}",
+                file=sys.stderr,
+            )
+            print(
+                f"Attempting to re-run command with captured output for debugging...",
+                file=sys.stderr,
+            )
             # Re-run with captured output to show any stderr that might have been missed
             debug_result = subprocess.run(cmd, capture_output=True, text=True)
             if debug_result.stdout:
@@ -326,25 +374,34 @@ def run_commands(cmds: List[List[str]], dry_run: bool):
 
             # Check if this is a brew command where all packages are already installed
             # Brew returns exit code 1 when packages are already installed, which is not a real error
-            if cmd[0] == 'brew' and 'install' in cmd:
+            if cmd[0] == "brew" and "install" in cmd:
                 stderr_lower = debug_result.stderr.lower()
-                if 'already installed' in stderr_lower or 'up-to-date' in stderr_lower:
-                    print(f"Note: Packages are already installed, treating as success", file=sys.stderr)
+                if "already installed" in stderr_lower or "up-to-date" in stderr_lower:
+                    print(
+                        f"Note: Packages are already installed, treating as success",
+                        file=sys.stderr,
+                    )
                     continue
 
             raise subprocess.CalledProcessError(result.returncode, cmd)
 
 
-def load_profile_with_inheritance(profile_name: str, loaded_profiles: set = None) -> dict:
+def load_profile_with_inheritance(
+    profile_name: str, loaded_profiles: set = None
+) -> dict:
     """Load a profile and all its inherited profiles recursively."""
     if loaded_profiles is None:
         loaded_profiles = set()
 
     # Prevent circular inheritance
     if profile_name in loaded_profiles:
-        raise SystemExit(f"Circular inheritance detected: {profile_name} already loaded")
+        raise SystemExit(
+            f"Circular inheritance detected: {profile_name} already loaded"
+        )
 
-    profile_path = os.path.join(SCRIPT_DIR, "deps", "profiles", f"{profile_name.lower()}.json")
+    profile_path = os.path.join(
+        SCRIPT_DIR, "deps", "profiles", f"{profile_name.lower()}.json"
+    )
     if not os.path.exists(profile_path):
         raise SystemExit(f"Profile not found: {profile_path}")
 
@@ -452,9 +509,15 @@ def main():
     )
     parser.add_argument("--distro", help="Override detected distro id")
     parser.add_argument("--version", help="Override detected distro version")
-    parser.add_argument("--yes", action="store_true", help="Assume yes / non-interactive")
-    parser.add_argument("--dry-run", action="store_true", help="Show commands without executing")
-    parser.add_argument("--list", action="store_true", help="Only list resolved packages")
+    parser.add_argument(
+        "--yes", action="store_true", help="Assume yes / non-interactive"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show commands without executing"
+    )
+    parser.add_argument(
+        "--list", action="store_true", help="Only list resolved packages"
+    )
     parser.add_argument(
         "--output-env",
         metavar="FILE",

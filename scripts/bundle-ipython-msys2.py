@@ -67,7 +67,9 @@ def _export_bundle_requirements(project_root: pathlib.Path) -> pathlib.Path:
     return req_path
 
 
-def _parse_runtime_requirements(requirements_file: pathlib.Path) -> tuple[list[str], list[str]]:
+def _parse_runtime_requirements(
+    requirements_file: pathlib.Path,
+) -> tuple[list[str], list[str]]:
     """Split a requirements file into IPython specs and all other runtime deps."""
     ipython_specs: list[str] = []
     other_specs: list[str] = []
@@ -151,7 +153,9 @@ def _vend_psutil_from_system(target: pathlib.Path) -> None:
     shutil.copytree(dist_info, dest_meta)
 
 
-def _install_ipython_wheel(python: str, target: pathlib.Path, wheel_path: pathlib.Path) -> None:
+def _install_ipython_wheel(
+    python: str, target: pathlib.Path, wheel_path: pathlib.Path
+) -> None:
     _run(
         [
             python,
@@ -169,8 +173,12 @@ def _install_ipython_wheel(python: str, target: pathlib.Path, wheel_path: pathli
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--python", required=True, help="Python interpreter to drive pip")
-    parser.add_argument("--target", required=True, type=pathlib.Path, help="Bundle staging dir")
+    parser.add_argument(
+        "--python", required=True, help="Python interpreter to drive pip"
+    )
+    parser.add_argument(
+        "--target", required=True, type=pathlib.Path, help="Bundle staging dir"
+    )
     parser.add_argument(
         "--project",
         required=True,
@@ -185,7 +193,9 @@ def main() -> None:
         )
 
     try:
-        subprocess.run([args.python, "-c", "import psutil"], check=True, capture_output=True)
+        subprocess.run(
+            [args.python, "-c", "import psutil"], check=True, capture_output=True
+        )
     except subprocess.CalledProcessError:
         raise SystemExit(
             "psutil is not importable in the build Python. "

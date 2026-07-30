@@ -13,6 +13,7 @@ sorted alphabetically.
 import json
 import sys
 
+
 def main():
     if len(sys.argv) < 2:
         print("Error: Missing path to supported-distributions.json", file=sys.stderr)
@@ -39,6 +40,7 @@ def main():
 
     for codename in sorted(codenames):
         print(codename)
+
 
 if __name__ == "__main__":
     main()

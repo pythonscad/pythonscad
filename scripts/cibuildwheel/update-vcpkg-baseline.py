@@ -14,7 +14,11 @@ VCPKG_REPO = "https://github.com/microsoft/vcpkg.git"
 
 
 def pinned_vcpkg_version():
-    match = re.search(r'^\s*\$VcpkgVersion\s*=\s*"([^"]+)"\s*$', INSTALL_DEPS.read_text(), re.MULTILINE)
+    match = re.search(
+        r'^\s*\$VcpkgVersion\s*=\s*"([^"]+)"\s*$',
+        INSTALL_DEPS.read_text(),
+        re.MULTILINE,
+    )
     if not match:
         raise RuntimeError(f"Could not find $VcpkgVersion in {INSTALL_DEPS}")
     return match.group(1)
