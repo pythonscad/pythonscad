@@ -213,6 +213,7 @@
     /* Flex column so the head stays put and only the body scrolls. */
     display: flex; flex-direction: column; overflow: hidden;
   }
+  #dbg[hidden] { display: none; }
   #dbg .dbg-head {
     display: flex; justify-content: space-between; align-items: center;
     color: var(--text-muted); flex-shrink: 0;
@@ -316,6 +317,7 @@
     <button id="btn-add-code" onclick="addCell('code')" disabled>+ Code</button>
     <button id="btn-add-md"   onclick="addCell('markdown')" disabled>+ Text</button>
     <button onclick="clearAllOutputs()">Clear</button>
+    <button id="btn-debug" type="button" aria-controls="dbg" aria-expanded="false">Debug</button>
     <button id="btn-download-stl" onclick="downloadLastModel(document.getElementById('export-format').value)" disabled>↓ Download Model</button>
     <select id="export-format" style="background:var(--surface);border:1px solid var(--border);color:var(--text-muted);border-radius:6px;font-size:12px;padding:4px 6px;">
       <option value="stl">STL</option>
@@ -361,16 +363,44 @@ import { NotebookKernel } from './notebook-kernel.mjs';
 
 const _dbgPanel = document.createElement('div');
 _dbgPanel.id = 'dbg';
-_dbgPanel.innerHTML = '<div class="dbg-head"><span>debug</span><span><button id="dbg-collapse" title="Collapse/expand">_</button><button id="dbg-clear">clear</button></span></div><div id="dbg-body"></div>';
+_dbgPanel.hidden = true;
+_dbgPanel.setAttribute('role', 'region');
+_dbgPanel.setAttribute('aria-label', 'Debug log');
+_dbgPanel.innerHTML = '<div class="dbg-head"><span>debug</span><span><button id="dbg-collapse" type="button" aria-controls="dbg-body" aria-expanded="true" aria-label="Collapse debug log" title="Collapse debug log">−</button><button id="dbg-clear" type="button" aria-label="Clear debug log">clear</button><button id="dbg-close" type="button" aria-label="Close debug log">close</button></span></div><div id="dbg-body" role="log" aria-live="polite" aria-relevant="additions"></div>';
 document.body.appendChild(_dbgPanel);
+const _dbgToggle = document.getElementById('btn-debug');
+const _dbgCollapse = document.getElementById('dbg-collapse');
+const DEBUG_VISIBLE_KEY = 'pythonscad-notebook-debug-visible';
+
+function setDebugVisible(visible, persist = true) {
+  _dbgPanel.hidden = !visible;
+  _dbgPanel.setAttribute('aria-hidden', String(!visible));
+  _dbgToggle.setAttribute('aria-expanded', String(visible));
+  _dbgToggle.setAttribute('aria-label', visible ? 'Hide debug log' : 'Show debug log');
+  if (persist) {
+    try { localStorage.setItem(DEBUG_VISIBLE_KEY, String(visible)); } catch (_) { /* storage unavailable */ }
+  }
+}
+
+function setDebugCollapsed(collapsed) {
+  _dbgPanel.classList.toggle('collapsed', collapsed);
+  _dbgCollapse.setAttribute('aria-expanded', String(!collapsed));
+  _dbgCollapse.setAttribute('aria-label', collapsed ? 'Expand debug log' : 'Collapse debug log');
+  _dbgCollapse.title = collapsed ? 'Expand debug log' : 'Collapse debug log';
+  _dbgCollapse.textContent = collapsed ? '+' : '−';
+}
+
+_dbgToggle.addEventListener('click', () => setDebugVisible(_dbgPanel.hidden));
+document.getElementById('dbg-close').onclick = () => setDebugVisible(false);
 document.getElementById('dbg-clear').onclick = () => {
   document.getElementById('dbg-body').innerHTML = '';
 };
-document.getElementById('dbg-collapse').onclick = () => {
-  _dbgPanel.classList.toggle('collapsed');
-};
-// Start collapsed on small screens so the debug box doesn't cover the UI.
-if (window.matchMedia('(max-width: 760px)').matches) _dbgPanel.classList.add('collapsed');
+_dbgCollapse.onclick = () => setDebugCollapsed(!_dbgPanel.classList.contains('collapsed'));
+
+let debugVisible = false;
+try { debugVisible = localStorage.getItem(DEBUG_VISIBLE_KEY) === 'true'; } catch (_) { /* storage unavailable */ }
+setDebugCollapsed(window.matchMedia('(max-width: 760px)').matches);
+setDebugVisible(debugVisible, false);
 
 function errMsg(e) {
   if (e == null) return 'unknown error';
