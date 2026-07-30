@@ -65,14 +65,22 @@ def _normalize_filename_key(filename: str) -> str:
     return key
 
 
-class MultiToolExporter(list[tuple[str, _typing.Any]]):
+_MultiToolExporterItem = _typing.Union[
+    tuple[str, _typing.Any],
+    tuple[str, _typing.Any, bool],
+]
+
+
+class MultiToolExporter(list[_MultiToolExporterItem]):
     """List-based helper for exporting multi-tool / multi-color 3D models.
 
-    Each item in the list is a ``(name, object)`` tuple, where ``name`` is a
-    label used to build the output filename and ``object`` is a PythonSCAD
-    geometry. The exporter is designed for workflows where a single model is
-    split into several parts (for example, one part per filament color on a
-    multi-tool 3D printer).
+    Each item in the list is a ``(name, object)`` or ``(name, object, export)``
+    tuple, where ``name`` is a label used to build the output filename,
+    ``object`` is a PythonSCAD geometry, and ``export`` is an optional
+    ``bool`` (default ``True``) controlling whether the item is written to
+    disk or shown in the preview. Items with ``export=False`` are *cutters*:
+    they still participate in cumulative subtraction for every earlier item,
+    but are omitted from :meth:`parts`, :meth:`show`, and all export paths.
 
     Item order matches :func:`dict.items` and the multi-object form of
     :func:`export` (``export({"part1": obj1, "part2": obj2}, "out.3mf")``),
@@ -84,11 +92,13 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
     ---------
     For each index ``i`` in the list, the exporter produces the geometry
     obtained by taking ``self[i]``'s object and subtracting every later
-    item's object from it. Overlapping regions are therefore assigned to
-    exactly one part: **later entries "win" over earlier ones**, so each
-    part only keeps the volume not claimed by any subsequent part. The
-    last entry is emitted as-is (no degenerate one-child ``difference``
-    node) and therefore "wins" everything that overlaps with it.
+    item's object from it — including later items with ``export=False``.
+    Cutters therefore affect only earlier list entries; ordering semantics
+    are unchanged. Overlapping regions are assigned to exactly one exported
+    part: **later entries "win" over earlier ones**, so each part only keeps
+    the volume not claimed by any subsequent item. The last list entry is
+    emitted as-is (no degenerate one-child ``difference`` node) when it is
+    exportable and therefore "wins" everything that overlaps with it.
 
     Attributes:
         prefix: String prepended to each output filename. Typically a path
@@ -104,19 +114,21 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
     ----------
     Items are validated on insertion (constructor argument, :meth:`append`,
     :meth:`extend`, :meth:`insert`, ``self[i] = ...``). A :class:`TypeError`
-    is raised if the item is not a 2-tuple of ``(str, object)``, and a
-    :class:`ValueError` is raised if the name is empty.
+    is raised if the item is not a 2- or 3-tuple of ``(str, object)`` or
+    ``(str, object, bool)``, and a :class:`ValueError` is raised if the name
+    is empty. The optional third element must be an actual :class:`bool`
+    (``0``/``1`` and other truthy values are rejected).
 
-    Output paths must be unique per item: at :meth:`export` time, every
-    item's full ``f"{prefix}{name}{suffix}"`` filename is normalised with
-    :func:`os.path.normcase` and :func:`os.path.normpath` (plus
-    :meth:`str.casefold` on macOS) and any collision raises
-    :class:`ValueError`. This rejects raw duplicate names on every
-    platform, plus path aliases such as ``"a/../b"`` vs ``"b"``, plus
-    case-only collisions (``"a.stl"`` vs ``"A.stl"``) on Windows and
-    macOS where the destination filesystem is typically case-insensitive.
-    On Linux such pairs are accepted because the kernel treats them as
-    distinct files.
+    Output paths must be unique among *exportable* items: at :meth:`export`
+    time, every exportable item's full ``f"{prefix}{name}{suffix}"`` filename
+    is normalised with :func:`os.path.normcase` and :func:`os.path.normpath`
+    (plus :meth:`str.casefold` on macOS) and any collision raises
+    :class:`ValueError`. Hidden (``export=False``) duplicate names are
+    allowed. This rejects raw duplicate exportable names on every platform,
+    plus path aliases such as ``"a/../b"`` vs ``"b"``, plus case-only
+    collisions (``"a.stl"`` vs ``"A.stl"``) on Windows and macOS where the
+    destination filesystem is typically case-insensitive. On Linux such
+    pairs are accepted because the kernel treats them as distinct files.
 
     Example:
         >>> # Append base/background parts first; later entries "win" overlap.
@@ -132,7 +144,7 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         prefix: str,
         suffix: str,
         mkdir: bool = False,
-        items: _typing.Iterable[tuple[str, _typing.Any]] = (),
+        items: _typing.Iterable[_MultiToolExporterItem] = (),
     ):
         """Initialize a (possibly empty) MultiToolExporter.
 
@@ -142,13 +154,12 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
                 extension.
             mkdir: If ``True``, create the output directory for each file
                 before exporting. Defaults to ``False``.
-            items: Optional iterable of initial ``(name, object)`` tuples
-                (e.g. ``a_dict.items()``). Each item is validated as if it
-                were appended.
+            items: Optional iterable of initial ``(name, object)`` or
+                ``(name, object, export)`` tuples (e.g. ``a_dict.items()``).
+                Each item is validated as if it were appended.
 
         Raises:
-            TypeError: If any item in ``items`` is not a 2-tuple of
-                ``(str, object)``.
+            TypeError: If any item in ``items`` is not a valid 2- or 3-tuple.
             ValueError: If any name in ``items`` is empty.
         """
         super().__init__()
@@ -159,20 +170,26 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
             self.append(item)
 
     @staticmethod
-    def _validate_item(item: _typing.Any) -> tuple[str, _typing.Any]:
-        """Return ``item`` if it is a valid ``(str, object)`` 2-tuple.
+    def _validate_item(item: _typing.Any) -> _MultiToolExporterItem:
+        """Return ``item`` if it is a valid exporter entry tuple.
+
+        Accepts ``(name, object)`` 2-tuples and ``(name, object, export)``
+        3-tuples. The input shape is preserved (2-tuples are not normalised
+        to 3-tuples).
 
         Raises:
-            TypeError: If ``item`` is not a 2-tuple whose first element is
-                a string. Lists and other sequences are rejected.
+            TypeError: If ``item`` is not a 2- or 3-tuple whose first
+                element is a string and whose optional third element is a
+                :class:`bool`. Lists and other sequences are rejected.
             ValueError: If the name is empty.
         """
-        if not isinstance(item, tuple) or len(item) != 2:
+        if not isinstance(item, tuple) or len(item) not in (2, 3):
             raise TypeError(
-                f"MultiToolExporter items must be (name, object) 2-tuples, "
-                f"got {type(item).__name__}: {item!r}"
+                f"MultiToolExporter items must be (name, object) or "
+                f"(name, object, export) tuples, got {type(item).__name__}: "
+                f"{item!r}"
             )
-        name, _ = item
+        name = item[0]
         if not isinstance(name, str):
             raise TypeError(
                 f"MultiToolExporter item name must be a str, "
@@ -180,14 +197,24 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
             )
         if not name:
             raise ValueError("MultiToolExporter item name must be a non-empty string")
+        if len(item) == 3 and type(item[2]) is not bool:
+            raise TypeError(
+                f"MultiToolExporter item export flag must be a bool, "
+                f"got {type(item[2]).__name__}: {item[2]!r}"
+            )
         return item
 
-    def append(self, item: tuple[str, _typing.Any]) -> None:
-        """Append a validated ``(name, object)`` tuple."""
+    @staticmethod
+    def _item_export(item: _MultiToolExporterItem) -> bool:
+        """Return whether ``item`` should appear in export/preview output."""
+        return True if len(item) == 2 else item[2]
+
+    def append(self, item: _MultiToolExporterItem) -> None:
+        """Append a validated ``(name, object)`` or ``(name, object, export)`` tuple."""
         super().append(self._validate_item(item))
 
-    def extend(self, items: _typing.Iterable[tuple[str, _typing.Any]]) -> None:
-        """Append each ``(name, object)`` tuple from ``items``.
+    def extend(self, items: _typing.Iterable[_MultiToolExporterItem]) -> None:
+        """Append each validated item tuple from ``items``.
 
         Atomic: every item is validated *before* anything is appended, so a
         bad item in the middle of the iterable leaves the exporter unchanged.
@@ -196,13 +223,13 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         super().extend(validated)
 
     def insert(
-        self, index: _typing.SupportsIndex, item: tuple[str, _typing.Any]
+        self, index: _typing.SupportsIndex, item: _MultiToolExporterItem
     ) -> None:
-        """Insert a validated ``(name, object)`` tuple at ``index``."""
+        """Insert a validated item tuple at ``index``."""
         super().insert(index, self._validate_item(item))
 
     def __setitem__(self, index, value):
-        """Replace one or more items, validating each new ``(name, object)``."""
+        """Replace one or more items, validating each new entry tuple."""
         if isinstance(index, slice):
             super().__setitem__(index, [self._validate_item(v) for v in value])
         else:
@@ -234,12 +261,13 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
             _os.makedirs(directory, exist_ok=True)
 
     def _part(self, i: int):
-        """Return the geometry for part ``i``: ``self[i]``'s object minus all later parts.
+        """Return the geometry for part ``i``: ``self[i]``'s object minus all later items.
 
-        For the last entry, the object is returned as-is rather than wrapped
-        in a one-child ``difference`` node.
+        Every later list entry participates, including ``export=False`` cutters.
+        For the last list entry, the object is returned as-is rather than
+        wrapped in a one-child ``difference`` node.
         """
-        rest = [obj for _name, obj in self[i:]]
+        rest = [item[1] for item in self[i:]]
         return rest[0] if len(rest) == 1 else difference(*rest)  # noqa: F405
 
     def _check_unique_filenames(self) -> None:
@@ -256,6 +284,8 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         """
         seen: dict[str, tuple[str, str]] = {}
         for i in range(len(self)):
+            if not self._item_export(self[i]):
+                continue
             name = self[i][0]
             filename = self._filename(i)
             key = _normalize_filename_key(filename)
@@ -271,7 +301,10 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
     def _check_unique_part_names(self) -> None:
         """Raise :class:`ValueError` if part names would collide in a dict export."""
         seen: set[str] = set()
-        for name, _geometry in self:
+        for item in self:
+            if not self._item_export(item):
+                continue
+            name = item[0]
             if name in seen:
                 raise ValueError(
                     f"MultiToolExporter items must have unique names for "
@@ -285,8 +318,9 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         Each geometry is the cumulative-difference result identical to
         what :meth:`export` would write or :meth:`show` would preview:
         for index ``i``, ``self[i]``'s object minus every later item's
-        object, with the last entry returned as-is (no degenerate
-        one-child ``difference`` node).
+        object (including ``export=False`` cutters), with the last list
+        entry returned as-is (no degenerate one-child ``difference``
+        node). Items with ``export=False`` are omitted from the result.
 
         This is the programmatic accessor used internally by
         :meth:`export` and :meth:`show`. It is also the natural input
@@ -294,9 +328,14 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
         (``export(dict(exporter.parts()), "out.3mf")``).
 
         Returns:
-            A new list of ``(name, computed_geometry)`` tuples.
+            A new list of ``(name, computed_geometry)`` tuples for
+            exportable items only.
         """
-        return [(self[i][0], self._part(i)) for i in range(len(self))]
+        return [
+            (self[i][0], self._part(i))
+            for i in range(len(self))
+            if self._item_export(self[i])
+        ]
 
     def export(self, single_file: _typing.Optional[str] = None) -> None:
         """Export parts to per-part files or a single multi-object 3MF.
@@ -323,15 +362,16 @@ class MultiToolExporter(list[tuple[str, _typing.Any]]):
                     f"MultiToolExporter single-file export only supports .3mf: "
                     f"{single_file!r}"
                 )
-            if not self:
+            if not any(self._item_export(item) for item in self):
                 return
             self._check_unique_part_names()
+            exportable_parts = self.parts()
             self._ensure_parent_dir(single_file)
             export_multi = _typing.cast(
                 _typing.Callable[[_typing.Mapping[str, _typing.Any], str], None],
                 globals()["export"],
             )
-            export_multi(dict(self.parts()), single_file)
+            export_multi(dict(exportable_parts), single_file)
             return
 
         self._check_unique_filenames()

@@ -1,0 +1,19 @@
+stored shapes: [2, 2, 3]
+parts len: 2
+parts names: ['red', 'blue']
+part0 uses hidden cutter: True
+part1 uses hidden cutter: True
+part2 is bare object: True
+append export int: TypeError
+append export zero: TypeError
+append export str: TypeError
+append export false ok: appended
+hidden duplicate names export: ok
+exportable duplicate names: ValueError
+all-hidden parts len: 0
+all-hidden single-file no-op: ok
+show call count: 2
+per-file export: True p-red.stl
+per-file export: True p-blue.stl
+single-file keys: ['red', 'blue']
+
