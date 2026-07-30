@@ -17,9 +17,12 @@ case "$target" in
     ;;
   test)
     build_config="${repo_root}/web/.mkdocs-test.build.yml"
-    sed -e 's|^site_url:.*|site_url: https://test.pythonscad.org/|' \
-        -e 's|^  test_site: false|  test_site: true|' \
-        "$config" > "$build_config"
+    cat > "$build_config" <<'EOF'
+INHERIT: mkdocs.yml
+site_url: https://test.pythonscad.org/
+extra:
+  test_site: true
+EOF
     ;;
   *)
     echo "Error: unknown mkdocs deploy target '${target}' (expected production or test)." >&2
