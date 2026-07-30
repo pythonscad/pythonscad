@@ -1,3 +1,19 @@
+.test-site-banner {
+  margin: 0;
+  padding: 0.75em 1.25em;
+  background-color: #ffeb3b;
+  color: #1a1a1a;
+  border-bottom: 2px solid #f9a825;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.test-site-banner code {
+  background-color: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+
 .md-grid {
   max-width: initial;
 }
