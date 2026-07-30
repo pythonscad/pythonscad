@@ -30,7 +30,8 @@ from _openscad import *  # noqa: F401,F403
 from _openscad import (  # noqa: F401
     ChildIterator,
     ChildRef,
-    Openscad,
+    Openscad,   # legacy alias
+    PyOpenSCAD,
 )
 
 
