@@ -66,6 +66,9 @@ jobs:
           submodules: 'recursive'
           persist-credentials: false
 
+      - name: Test playground deploy smoke check
+        run: python3 wasm-test/wasm-playground-deploy-smoke.test.py
+
       - name: Fetch tags for version detection
         run: |
           git fetch --unshallow --tags || git fetch --tags
