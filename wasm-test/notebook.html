@@ -45,6 +45,11 @@
   }
   .logo { font-family: var(--mono); font-size: 15px; color: var(--accent2); font-weight: 500; }
   .logo span { color: var(--accent); }
+  .docs-link {
+    color: var(--text-muted); font-size: 12px; text-decoration: none;
+    border-bottom: 1px solid transparent; white-space: nowrap;
+  }
+  .docs-link:hover, .docs-link:focus-visible { color: var(--text); border-bottom-color: var(--accent); }
   .header-sep { flex: 1; }
   .toolbar { display: flex; gap: 6px; align-items: center; }
   .toolbar button {
@@ -304,6 +309,7 @@
 <header>
   <button class="menu-toggle" id="menu-toggle" aria-label="Toggle sidebar" onclick="toggleSidebar()">☰</button>
   <div class="logo"><span>Python</span>SCAD <span style="color:var(--text-muted);font-weight:400">notebook</span></div>
+  <a class="docs-link" href="/" aria-label="PythonSCAD documentation">Docs</a>
   <div class="header-sep"></div>
   <div class="toolbar">
     <button id="btn-run-all" onclick="runAllCells()" disabled>▶ Run all</button>
