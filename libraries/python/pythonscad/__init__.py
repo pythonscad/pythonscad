@@ -362,10 +362,10 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
                     f"MultiToolExporter single-file export only supports .3mf: "
                     f"{single_file!r}"
                 )
-            exportable_parts = self.parts()
-            if not exportable_parts:
+            if not any(self._item_export(item) for item in self):
                 return
             self._check_unique_part_names()
+            exportable_parts = self.parts()
             self._ensure_parent_dir(single_file)
             export_multi = _typing.cast(
                 _typing.Callable[[_typing.Mapping[str, _typing.Any], str], None],

@@ -56,9 +56,11 @@ hidden_dup = MultiToolExporter("p-", ".stl", items=[
 hidden_dup._check_unique_filenames()
 hidden_dup._check_unique_part_names()
 print("hidden duplicate names export: ok")
+duplicate = MultiToolExporter("p-", ".stl", items=[("a", red), ("a", blue)])
+duplicate._part = lambda _i: (_ for _ in ()).throw(RuntimeError("geometry built"))
 expect(
     "exportable duplicate names",
-    MultiToolExporter("p-", ".stl", items=[("a", red), ("a", blue)]).export,
+    lambda: duplicate.export(single_file="duplicate.3mf"),
     ValueError,
 )
 
