@@ -39,6 +39,7 @@ from ._vectors import (  # noqa: F401
 # auto-complete, and shows up in the public stub. The unaliased
 # re-exports above this line are deliberately public; everything below
 # is internal helper machinery.
+import math as _math
 import os as _os
 import sys as _sys
 import typing as _typing
@@ -505,3 +506,116 @@ def rounded_cube(
     if center:
         return rounded_box.translate(center_offset)
     return rounded_box
+
+
+def _loft_prepare(
+    solid1: _typing.Any, solid2: _typing.Any, n: int, rot: float
+) -> list:
+    loft_pts1 = solid1.mesh()[0]  # TODO fix
+    loft_pts2 = solid2.mesh()[0]
+    loft_ang = []
+
+    for pt in loft_pts1:
+        ang = _math.atan2(pt[1], pt[0])
+        if ang not in loft_ang:
+            loft_ang.append(ang)
+    for pt in loft_pts2:
+        ang = _math.atan2(pt[1], pt[0]) - rot
+        if ang < -3.1415926:
+            ang = ang + 2 * 3.1415926
+        if ang not in loft_ang:
+            loft_ang.append(ang)
+    for i in range(n):
+        ang = 3.14159265359 * (2 * i / n - 1)
+        if ang not in loft_ang:
+            loft_ang.append(ang)
+    loft_ang.sort()
+
+    loft_data = [loft_ang]
+    rnd = 0
+    for pts in loft_pts1, loft_pts2:
+        mags = []
+
+        for ang in loft_ang:
+            if rnd == 1:
+                ang = ang + rot
+                if ang > 3.1415926:
+                    ang = ang - 2 * 3.1415926
+            v = [_math.cos(ang), _math.sin(ang)]
+
+            # where does it cut
+            mag = 1
+            for i in range(len(pts)):
+                tail = pts[i]
+                head = pts[(i + 1) % len(pts)]
+                d = [head[0] - tail[0], head[1] - tail[1]]
+
+                det = d[1] * v[0] - d[0] * v[1]
+                if det != 0:
+                    a = (tail[0] * v[1] - tail[1] * v[0]) / det
+                    if a < 0 or a > 1:
+                        continue
+                    cut = [tail[0] + a * d[0], tail[1] + a * d[1]]
+                    if v[0] != 0:
+                        b = cut[0] / v[0]
+                    else:
+                        b = cut[1] / v[1]
+                    if b < 0:
+                        continue
+                    mag = _math.sqrt(cut[0] * cut[0] + cut[1] * cut[1])
+            mags.append(mag)
+        rnd = rnd + 1
+        loft_data.append(mags)
+    return loft_data
+
+
+def _loft_func(loft_data: list, loft_height: float, h: float, rot: float) -> list:
+    f = h / loft_height
+    pts = []
+    for i in range(len(loft_data[0])):
+        ang = loft_data[0][i] + rot * f
+        mag = loft_data[1][i] * (1 - f) + loft_data[2][i] * f
+        pts.append([mag * _math.cos(ang), mag * _math.sin(ang)])
+    return pts
+
+
+def loft(
+    shape1: _typing.Any,
+    shape2: _typing.Any,
+    height: float,
+    n: int = 20,
+    rot: float = 0,
+) -> _typing.Callable[[float], list]:
+    """Interpolate a 2D cross-section between two solids' outlines.
+
+    Samples the silhouettes of ``shape1`` and ``shape2`` at a shared set
+    of angular positions and returns a function that, given a height
+    ``h``, linearly interpolates between the two outlines by radius.
+    Sweeping the returned function from ``0`` to ``height`` (e.g. with a
+    surface/extrude helper) produces a smooth transition between the two
+    cross-sections, optionally twisting by ``rot`` degrees over that
+    span.
+
+    Args:
+        shape1: Solid whose outline is used at height ``0``.
+        shape2: Solid whose outline is used at height ``height``.
+        height: Total height over which the profile transitions from
+            ``shape1`` to ``shape2``.
+        n: Minimum number of extra angular samples added around the
+            profile, besides the vertices already contributed by
+            ``shape1`` and ``shape2``.
+        rot: Additional rotation, in degrees, applied to ``shape2``'s
+            outline relative to ``shape1``'s.
+
+    Returns:
+        A function ``f(h)`` returning the list of ``[x, y]`` points of
+        the interpolated cross-section at height ``h`` (``0 <= h <=
+        height``).
+
+    Example:
+        >>> profile = loft(cube(10), cylinder(r=5, h=1), 20)
+        >>> linear_extrude(profile, height=20).show()
+    """
+    rot = rot * 3.14 / 180.0
+    loft_data = _loft_prepare(shape1, shape2, n, rot)
+    return lambda h: _loft_func(loft_data, height, h, rot)
