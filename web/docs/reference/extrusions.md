@@ -76,6 +76,53 @@ The `twist` parameter can also be a Python function:
 
 ---
 
+## loft
+
+Create a cross-section function that transitions between two 2D shapes. Pass
+the result to `linear_extrude()` to build the lofted solid.
+
+**Syntax:**
+
+=== "Python"
+
+    ```python
+    loft(shape1, shape2, height, n=20, rot=0)
+    ```
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `shape1` | 2D solid | — | Cross-section at height `0` |
+| `shape2` | 2D solid | — | Cross-section at `height` |
+| `height` | number | — | Height over which to interpolate; must be non-zero |
+| `n` | int | `20` | Minimum number of additional angular samples |
+| `rot` | number | `0` | Rotation of the second profile in degrees |
+
+`loft()` samples each outline radially from the origin and returns a function
+`f(h) -> [[x, y], ...]`. The input shapes should therefore surround the origin
+and have one unambiguous boundary intersection in each direction (for example,
+centered convex shapes).
+
+**Example:**
+
+=== "Python"
+
+    ```python
+    from pythonscad import *
+
+    profile = loft(
+        square(10, center=True),
+        circle(r=3, fn=24),
+        height=20,
+        n=24,
+        rot=45,
+    )
+    linear_extrude(profile, height=20, slices=20).show()
+    ```
+
+---
+
 ## rotate_extrude
 
 Extrude a 2D shape by rotating it around the Z axis.

@@ -586,7 +586,7 @@ def loft(
     n: int = 20,
     rot: float = 0,
 ) -> _typing.Callable[[float], list]:
-    """Interpolate a 2D cross-section between two solids' outlines.
+    """Interpolate a cross-section between two 2D shapes.
 
     Samples the silhouettes of ``shape1`` and ``shape2`` at a shared set
     of angular positions and returns a function that, given a height
@@ -597,8 +597,8 @@ def loft(
     span.
 
     Args:
-        shape1: Solid whose outline is used at height ``0``.
-        shape2: Solid whose outline is used at height ``height``.
+        shape1: 2D shape whose outline is used at height ``0``.
+        shape2: 2D shape whose outline is used at height ``height``.
         height: Total height over which the profile transitions from
             ``shape1`` to ``shape2``.
         n: Minimum number of extra angular samples added around the
@@ -613,8 +613,8 @@ def loft(
         height``).
 
     Example:
-        >>> profile = loft(cube(10), cylinder(r=5, h=1), 20)
-        >>> linear_extrude(profile, height=20).show()
+        >>> profile = loft(square(10, center=True), circle(r=5), 20)
+        >>> linear_extrude(profile, height=20, slices=20).show()
     """
     rot = rot * 3.14 / 180.0
     loft_data = _loft_prepare(shape1, shape2, n, rot)

@@ -178,7 +178,7 @@ def loft(
     n: int = ...,
     rot: float = ...,
 ) -> _typing.Callable[[float], list[list[float]]]:
-    """Interpolate a 2D cross-section between two solids' outlines.
+    """Interpolate a cross-section between two 2D shapes.
 
     Returns a function ``f(h)`` that, for a height ``h`` between ``0`` and
     ``height``, linearly interpolates by radius between the sampled outlines
