@@ -539,8 +539,8 @@ def _loft_prepare(
         for ang in loft_ang:
             if rnd == 1:
                 ang = ang + rot
-                if ang > 3.1415926:
-                    ang = ang - 2 * 3.1415926
+                if ang > _math.pi:
+                    ang = ang - 2 * _math.pi
             v = [_math.cos(ang), _math.sin(ang)]
 
             # where does it cut
