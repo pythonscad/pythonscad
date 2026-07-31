@@ -170,3 +170,19 @@ def rounded_cube(
     ``fa``, and ``fs`` control rounding-sphere tessellation.
     """
     ...
+
+def loft(
+    shape1: PyOpenSCAD,
+    shape2: PyOpenSCAD,
+    height: float,
+    n: int = ...,
+    rot: float = ...,
+) -> _typing.Callable[[float], list[list[float]]]:
+    """Interpolate a cross-section between two 2D shapes.
+
+    Returns a function ``f(h)`` that, for a height ``h`` between ``0`` and
+    ``height``, linearly interpolates by radius between the sampled outlines
+    of ``shape1`` (at height ``0``) and ``shape2`` (at height ``height``),
+    optionally twisted by ``rot`` degrees over that span.
+    """
+    ...

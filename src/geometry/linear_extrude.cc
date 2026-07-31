@@ -310,7 +310,8 @@ void prepareVerticesAndIndices(const Polygon2d& polyref, Vector3d h1, Vector3d h
                        1 - (1 - scale_y) * (slice_idx - 1) / num_slices);
     Vector2d scale_top(1 - (1 - scale_x) * slice_idx / num_slices,
                        1 - (1 - scale_y) * slice_idx / num_slices);
-    add_slice_indices(indices, colors, color_indices, slice_idx, slice_stride, polyref, rot_bot, rot_top, scale_bot, scale_top);
+    add_slice_indices(indices, colors, color_indices, slice_idx, slice_stride, polyref, rot_bot, rot_top,
+                      scale_bot, scale_top);
   }
 }
 
@@ -456,7 +457,7 @@ std::unique_ptr<Geometry> extrudePolygon(const LinearExtrudeNode& node, const Po
         while (ibot < nbot || itop < ntop) {
           double dist_bot =
             (botvertices[(ibot + 1) % nbot] - topvertices[(itop + top_off) % ntop]).norm();
-          double dist_top = (botvertices[ibot] - topvertices[(itop + top_off + 1) % ntop]).norm();
+          double dist_top = (botvertices[ibot % nbot] - topvertices[(itop + top_off + 1) % ntop]).norm();
           if ((dist_bot < dist_top && ibot < nbot) || (itop == ntop)) {
             builder.beginPolygon(3);
             builder.addVertex(botvertices[ibot % nbot]);
