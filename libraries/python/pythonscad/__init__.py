@@ -521,12 +521,12 @@ def _loft_prepare(
             loft_ang.append(ang)
     for pt in loft_pts2:
         ang = _math.atan2(pt[1], pt[0]) - rot
-        if ang < -3.1415926:
-            ang = ang + 2 * 3.1415926
+        if ang < -_math.pi:
+            ang = ang + 2 * _math.pi
         if ang not in loft_ang:
             loft_ang.append(ang)
     for i in range(n):
-        ang = 3.14159265359 * (2 * i / n - 1)
+        ang = _math.pi * (2 * i / n - 1)
         if ang not in loft_ang:
             loft_ang.append(ang)
     loft_ang.sort()
@@ -616,6 +616,8 @@ def loft(
         >>> profile = loft(square(10, center=True), circle(r=5), 20)
         >>> linear_extrude(profile, height=20, slices=20).show()
     """
-    rot = rot * 3.14 / 180.0
+    if height == 0:
+        raise ValueError("loft height must be non-zero")
+    rot = rot * _math.pi / 180.0
     loft_data = _loft_prepare(shape1, shape2, n, rot)
     return lambda h: _loft_func(loft_data, height, h, rot)
