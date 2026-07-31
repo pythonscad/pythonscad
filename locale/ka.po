@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenSCAD 2022.03.05\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-11 04:33+0200\n"
+"POT-Creation-Date: 2026-08-01 00:48+0200\n"
 "PO-Revision-Date: 2023-02-14 16:47+0100\n"
 "Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
 "Language-Team: Georgian <(nothing)>\n"
@@ -364,23 +364,23 @@ msgid "AI Chat"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:135
-#: src/gui/ai/ChatWidget.cc:99
+#: src/gui/ai/ChatWidget.cc:104
 msgid "AI Assistant"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:137
-#: src/gui/ai/ChatWidget.cc:101
+#: src/gui/ai/ChatWidget.cc:106
 msgid "Clear chat history"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:139
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Console.h:42
-#: src/gui/ai/ChatWidget.cc:100
+#: src/gui/ai/ChatWidget.cc:105
 msgid "Clear"
 msgstr "გასუფთავება"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:140
-#: src/gui/ai/ChatWidget.cc:102
+#: src/gui/ai/ChatWidget.cc:107 src/gui/ai/ChatWidget.cc:367
 msgid "Send"
 msgstr ""
 
@@ -801,7 +801,7 @@ msgstr ""
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:109
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:185
 #: src/gui/UnsavedChangesDialog.cc:60 src/openscad_gui.cc:196
-#: src/openscad_gui.cc:860
+#: src/openscad_gui.cc:864
 msgid "Cancel"
 msgstr "გაუქმება"
 
@@ -1274,7 +1274,7 @@ msgid "Select Design"
 msgstr "პარამეტრები"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1068
-#: src/gui/MainWindow.cc:4544
+#: src/gui/MainWindow.cc:4541
 msgid "Welcome..."
 msgstr ""
 
@@ -1291,7 +1291,8 @@ msgid "New Window"
 msgstr "ახალი ფანჯარა"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1074
-msgid "&Open File"
+#, fuzzy
+msgid "&Open File..."
 msgstr "&ფაილის გახსნა"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1076
@@ -1319,8 +1320,9 @@ msgid "Ctrl+Shift+S"
 msgstr "Ctrl+Shift+S"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1087
-msgid "Save a Copy"
-msgstr ""
+#, fuzzy
+msgid "Save a Copy..."
+msgstr "ყველას შენახვა"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1088
 msgid "Save All"
@@ -1335,7 +1337,7 @@ msgid "Ctrl+R"
 msgstr "Ctrl+R"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1093
-#: src/gui/MainWindow.cc:4545
+#: src/gui/MainWindow.cc:4542
 #, fuzzy
 msgid "Close &Window"
 msgstr "&ფანჯარა"
@@ -1548,7 +1550,8 @@ msgid "&Check Validity"
 msgstr "&სისწორის გადამოწმება"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1191
-msgid "Display A&ST..."
+#, fuzzy
+msgid "Display A&ST"
 msgstr "A&ST-ის ჩვენება..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1192
@@ -1556,11 +1559,13 @@ msgid "Display Python conversion"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1193
-msgid "Display CSG &Tree..."
+#, fuzzy
+msgid "Display CSG &Tree"
 msgstr "CSG-ის ხის ჩვენება..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1194
-msgid "Display CSG Pr&oducts..."
+#, fuzzy
+msgid "Display CSG Pr&oducts"
 msgstr "CSG-ის &პროდუქტების ჩვენება..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1195
@@ -1747,11 +1752,12 @@ msgid "Export as &DXF..."
 msgstr "&DXF-ის სახით გატანა..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1265
-msgid "Run Current Design in &Native Python"
-msgstr ""
+#, fuzzy
+msgid "&Trust Current Design"
+msgstr "&დიზაინი"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1267
-msgid "Toggle native Python execution for the active Python design"
+msgid "Toggle trust for the active saved Python design"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1269
@@ -1852,7 +1858,8 @@ msgid "Report issue..."
 msgstr "პრობლემის შეტყობინება..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1309
-msgid "Show &Library Folder..."
+#, fuzzy
+msgid "Show &Library Folder"
 msgstr "&ბიბლიოთეკის საქაღალდის ჩვენება..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1310
@@ -1980,7 +1987,7 @@ msgid "Fold/Unfoll All"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
-msgid "Jump To ..."
+msgid "Jump To"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1358
@@ -2133,7 +2140,7 @@ msgid "OctoPrint API Key Request"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:108
-#: src/openscad_gui.cc:858
+#: src/openscad_gui.cc:862
 msgid "Retry"
 msgstr ""
 
@@ -2608,7 +2615,7 @@ msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:181
-#: src/gui/Preferences.cc:617
+#: src/gui/Preferences.cc:643
 msgid "OctoPrint"
 msgstr "OctoPrint"
 
@@ -2617,7 +2624,7 @@ msgid "URL"
 msgstr "URL"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
 msgid "API Key"
 msgstr "API-ის გასაღები"
 
@@ -2660,7 +2667,7 @@ msgid "Note: The API key is stored unencrypted in the application settings."
 msgstr "შენიშვნა: API-ის გასაღები აპლიკაციის პარამეტრებში დაუშიფრავად ინახება."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
-#: src/gui/Preferences.cc:618
+#: src/gui/Preferences.cc:644
 #, fuzzy
 msgid "Local Application"
 msgstr "აპლიკაცია"
@@ -2784,22 +2791,22 @@ msgid "sec"
 msgstr "წმ"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
-#: src/gui/Preferences.cc:419
+#: src/gui/Preferences.cc:445
 msgid "When launching another instance with files:"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
-#: src/gui/Preferences.cc:421
+#: src/gui/Preferences.cc:447
 msgid "Enable session management (save/restore tabs on quit, requires restart)"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2753
-#: src/gui/Preferences.cc:423
+#: src/gui/Preferences.cc:449
 msgid "Autosave session in background for crash recovery"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
-#: src/gui/Preferences.cc:424
+#: src/gui/Preferences.cc:450
 msgid "Autosave interval:"
 msgstr ""
 
@@ -2908,96 +2915,94 @@ msgid "Network Import List"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
-msgid "Default Python execution mode"
+msgid "Globally trust Python designs"
+msgstr ""
+
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
+msgid "Really (very dangerous)"
 msgstr ""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
-msgid ""
-"Sandboxed Python is recommended. Native Python can access your files and "
-"should only be used for trusted designs."
-msgstr ""
-
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
 msgid "Dialog visibility"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
 msgid "Always show PDF export dialog"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
 msgid "Always show 3MF export dialog"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
 msgid "Always show SVF export dialog"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
 msgid "Always show GCODE export dialog"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
 msgid "Always show Print Service dialog"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
 #, fuzzy
 msgid "AI Preferences"
 msgstr "პარამეტრები"
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
 msgid ""
 "AI assistant integration is active. Configure your connection profiles and "
 "parameters below."
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
 #, fuzzy
 msgid "Profiles"
 msgstr "სლაისერის პროფილი"
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
 #, fuzzy
 msgid "Active Profile"
 msgstr "სლაისერის პროფილი"
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
 #, fuzzy
 msgid "New Profile"
 msgstr "&ახალი ფაილი"
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
 msgid "Delete"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
 msgid "API Configuration"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
 msgid "API Endpoint"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
 msgid "System Prompt / Instructions"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
 msgid "Default User Prompt"
 msgstr ""
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
 #, fuzzy
 msgid "API Parameters"
 msgstr "პარამეტრი"
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2804
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
 #, fuzzy
 msgid "Add Parameter"
 msgstr "პარამეტრი"
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2805
+#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
 #, fuzzy
 msgid "Remove Parameter"
 msgstr "პარამეტრი"
@@ -3163,18 +3168,34 @@ msgstr ""
 "ვიუპორტი: translate = [ %.2f %.2f %.2f ], rotate = [ %.2f %.2f %.2f ], "
 "distance = %.2f, fov = %.2f"
 
-#: src/gui/ai/ChatWidget.cc:62 src/gui/ai/ChatWidget.cc:143
+#: src/gui/ai/ChatWidget.cc:67 src/gui/ai/ChatWidget.cc:319
 msgid "Thinking..."
 msgstr ""
 
-#: src/gui/ai/ChatWidget.cc:71
+#: src/gui/ai/ChatWidget.cc:76
 msgid "Thinking"
 msgstr ""
 
-#: src/gui/ai/ChatWidget.cc:114 src/gui/ai/ChatWidget.cc:210
+#: src/gui/ai/ChatWidget.cc:141 src/gui/ai/ChatWidget.cc:350
 msgid ""
 "Hello! I am your OpenSCAD AI assistant. Ask me to write some code, e.g. "
 "\"draw a sphere\" or \"create a box with a hole\"."
+msgstr ""
+
+#: src/gui/ai/ChatWidget.cc:156
+msgid "AI proposed code changes:"
+msgstr ""
+
+#: src/gui/ai/ChatWidget.cc:159
+msgid "Review & Apply"
+msgstr ""
+
+#: src/gui/ai/ChatWidget.cc:164
+msgid "Discard"
+msgstr ""
+
+#: src/gui/ai/ChatWidget.cc:227 src/gui/ai/ChatWidget.cc:371
+msgid "Stop"
 msgstr ""
 
 #: src/gui/Animate.cc:207
@@ -3284,21 +3305,21 @@ msgstr "QGAMEPAD მრავალპლატფორმული გეი�
 msgid "Toggle Perspective"
 msgstr "პერსპექტივის გადართვა"
 
-#: src/gui/MainWindow.cc:1249
+#: src/gui/MainWindow.cc:1246
 msgid "Compile error."
 msgstr "აგების შეცდომა."
 
-#: src/gui/MainWindow.cc:1252
+#: src/gui/MainWindow.cc:1249
 msgid "Error while compiling '%1'."
 msgstr "შეცდომა '%1'-ის აგებისას."
 
-#: src/gui/MainWindow.cc:1257
+#: src/gui/MainWindow.cc:1254
 msgid "Compilation generated %1 warning."
 msgid_plural "Compilation generated %1 warnings."
 msgstr[0] "აგებისას ნაპოვნია %1 გაფრთხილება."
 msgstr[1] "აგებისას ნაპოვნია %1 გაფრთხილება."
 
-#: src/gui/MainWindow.cc:1270
+#: src/gui/MainWindow.cc:1267
 msgid ""
 " For details see the <a href=\"#errorlog\">error log</a> and <a "
 "href=\"#console\">console window</a>."
@@ -3306,65 +3327,65 @@ msgstr ""
 " დეტალებისთვის იხილეთ <a href=\"#errorlog\">შეცდომების ჟურნალი</a> და <a "
 "href=\"#console\">კონსოლის ფანჯარა</a>."
 
-#: src/gui/MainWindow.cc:1610 src/gui/TabManager.cc:248
+#: src/gui/MainWindow.cc:1607 src/gui/TabManager.cc:248
 msgid "Session Save"
 msgstr ""
 
-#: src/gui/MainWindow.cc:1611
+#: src/gui/MainWindow.cc:1608
 msgid "Could not save the session."
 msgstr ""
 
-#: src/gui/MainWindow.cc:1612
+#: src/gui/MainWindow.cc:1609
 msgid ""
 "%1\n"
 "\n"
 "%2"
 msgstr ""
 
-#: src/gui/MainWindow.cc:1613
+#: src/gui/MainWindow.cc:1610
 msgid "Try Again"
 msgstr ""
 
-#: src/gui/MainWindow.cc:1615
+#: src/gui/MainWindow.cc:1612
 msgid "Quit Without Saving"
 msgstr ""
 
-#: src/gui/MainWindow.cc:1616
+#: src/gui/MainWindow.cc:1613
 #, fuzzy
 msgid "Keep Open"
 msgstr "გახსნა"
 
-#: src/gui/MainWindow.cc:1801
+#: src/gui/MainWindow.cc:1798
 msgid "Revoke All Trusted Designs"
 msgstr ""
 
-#: src/gui/MainWindow.cc:1802
+#: src/gui/MainWindow.cc:1799
 msgid ""
 "This will revoke trust for all Python designs.\n"
 "\n"
 "Are you sure?"
 msgstr ""
 
-#: src/gui/MainWindow.cc:1844 src/gui/MainWindow.cc:1851
-#: src/gui/MainWindow.cc:1860 src/gui/MainWindow.cc:1873
-#: src/gui/MainWindow.cc:1878
+#: src/gui/MainWindow.cc:1841 src/gui/MainWindow.cc:1848
+#: src/gui/MainWindow.cc:1857 src/gui/MainWindow.cc:1870
+#: src/gui/MainWindow.cc:1875
 msgid "Create Virtual Environment"
 msgstr ""
 
-#: src/gui/MainWindow.cc:1858
+#: src/gui/MainWindow.cc:1855
 msgid "Creating Python virtual environment. Please wait..."
 msgstr ""
 
-#: src/gui/MainWindow.cc:1895
+#: src/gui/MainWindow.cc:1892
 msgid "Select Virtual Environment"
 msgstr ""
 
-#: src/gui/MainWindow.cc:2422 src/gui/TabManager.cc:199
+#: src/gui/MainWindow.cc:2419 src/gui/TabManager.cc:199
 #: src/gui/TabManager.cc:313
 msgid "Application"
 msgstr "აპლიკაცია"
 
-#: src/gui/MainWindow.cc:2423
+#: src/gui/MainWindow.cc:2420
 msgid ""
 "The file has changed on disk, but this tab has unsaved edits.\n"
 "Reloading will discard your changes.\n"
@@ -3372,76 +3393,75 @@ msgid ""
 "Do you really want to reload the file?"
 msgstr ""
 
-#: src/gui/MainWindow.cc:3043
+#: src/gui/MainWindow.cc:3040
 msgid "Click to change language"
 msgstr ""
 
-#: src/gui/MainWindow.cc:3088
+#: src/gui/MainWindow.cc:3085
 msgid "Auto-detect from file extension"
 msgstr ""
 
-#: src/gui/MainWindow.cc:3487
+#: src/gui/MainWindow.cc:3484
 msgid "Export %1 File"
 msgstr "%1 ფაილის გატანა"
 
-#: src/gui/MainWindow.cc:3488
+#: src/gui/MainWindow.cc:3485
 msgid "%1 Files (*%2)"
 msgstr "%1 ფაილი (*%2)"
 
-#: src/gui/MainWindow.cc:3536
+#: src/gui/MainWindow.cc:3533
 msgid "Export CSG File"
 msgstr "CSG ფაილის გატანა"
 
-#: src/gui/MainWindow.cc:3537
+#: src/gui/MainWindow.cc:3534
 msgid "CSG Files (*.csg)"
 msgstr "CSG ფაილები (*.csg)"
 
-#: src/gui/MainWindow.cc:3560
+#: src/gui/MainWindow.cc:3557
 msgid "Export Image"
 msgstr "გამოსახულების გატანა"
 
-#: src/gui/MainWindow.cc:3560
+#: src/gui/MainWindow.cc:3557
 msgid "PNG Files (*.png)"
 msgstr "PNG ფაილები (*.png)"
 
-#: src/gui/MainWindow.cc:3964 src/gui/MainWindow.cc:4868
+#: src/gui/MainWindow.cc:3961 src/gui/MainWindow.cc:4865
 msgid "&AI Chat"
 msgstr ""
 
-#: src/gui/MainWindow.cc:4860
+#: src/gui/MainWindow.cc:4857
 msgid "&Editor"
 msgstr "&რედაქტორი"
 
-#: src/gui/MainWindow.cc:4861
+#: src/gui/MainWindow.cc:4858
 msgid "&Console"
 msgstr "&კონსოლი"
 
-#: src/gui/MainWindow.cc:4862
+#: src/gui/MainWindow.cc:4859
 msgid "C&ustomizer"
 msgstr "&მომრგები"
 
-#: src/gui/MainWindow.cc:4863
-#, fuzzy
-msgid "Error-&Log"
-msgstr "შეცდომების-ჟურნალი"
+#: src/gui/MainWindow.cc:4860
+msgid "Error &Log"
+msgstr "შეცდომების &ჟურნალი"
 
-#: src/gui/MainWindow.cc:4864
+#: src/gui/MainWindow.cc:4861
 #, fuzzy
 msgid "&Animate"
 msgstr "ან_იმაცია"
 
-#: src/gui/MainWindow.cc:4865
+#: src/gui/MainWindow.cc:4862
 msgid "&Font List"
 msgstr "&ფონტების სია"
 
-#: src/gui/MainWindow.cc:4866
+#: src/gui/MainWindow.cc:4863
 #, fuzzy
 msgid "C&olor List"
 msgstr "ფერების სქემა:"
 
-#: src/gui/MainWindow.cc:4867
+#: src/gui/MainWindow.cc:4864
 #, fuzzy
-msgid "&Viewport-Control"
+msgid "&Viewport Control"
 msgstr "3D ხელსაწყოთა ზოლის დამალვა"
 
 #: src/gui/Network.h:150
@@ -3515,66 +3535,66 @@ msgstr "შეიყვანეთ პარამეტრების სე�
 msgid "New set "
 msgstr "ახალი სეტი "
 
-#: src/gui/Preferences.cc:296
+#: src/gui/Preferences.cc:295
 #, fuzzy
 msgid "Parameter Key"
 msgstr "პარამეტრი"
 
-#: src/gui/Preferences.cc:296
+#: src/gui/Preferences.cc:295
 #, fuzzy
 msgid "Parameter Value"
 msgstr "პარამეტრი"
 
-#: src/gui/Preferences.cc:312 src/gui/Preferences.cc:317
+#: src/gui/Preferences.cc:311 src/gui/Preferences.cc:316
 msgid "Ollama Local"
 msgstr ""
 
-#: src/gui/Preferences.cc:425
+#: src/gui/Preferences.cc:451
 msgid " seconds"
 msgstr ""
 
-#: src/gui/Preferences.cc:452 src/gui/Preferences.cc:457
-#: src/gui/Preferences.cc:1433 src/gui/Preferences.cc:1472
+#: src/gui/Preferences.cc:478 src/gui/Preferences.cc:483
+#: src/gui/Preferences.cc:1461 src/gui/Preferences.cc:1500
 msgid "<Default>"
 msgstr "<ნაგულისხმები>"
 
-#: src/gui/Preferences.cc:616
+#: src/gui/Preferences.cc:642
 msgid "NONE"
 msgstr ""
 
-#: src/gui/Preferences.cc:1416
+#: src/gui/Preferences.cc:1444
 msgid "Success: Server Version = %2, API Version = %1"
 msgstr "წარმატება: სერვერის ვერსია = %2, API-ის ვერსია = %1"
 
-#: src/gui/Preferences.cc:1418 src/gui/Preferences.cc:1443
-#: src/gui/Preferences.cc:1482
+#: src/gui/Preferences.cc:1446 src/gui/Preferences.cc:1471
+#: src/gui/Preferences.cc:1510
 msgid "Error"
 msgstr "შეცდომა"
 
-#: src/gui/Preferences.cc:1559
+#: src/gui/Preferences.cc:1587
 #, fuzzy
 msgid "New AI Profile"
 msgstr "&ახალი ფაილი"
 
-#: src/gui/Preferences.cc:1559
+#: src/gui/Preferences.cc:1587
 #, fuzzy
 msgid "Profile name:"
 msgstr "ფაილის სახელის კოპირება"
 
-#: src/gui/Preferences.cc:1564
+#: src/gui/Preferences.cc:1592
 #, fuzzy
 msgid "Duplicate Profile"
 msgstr "სლაისერის პროფილი"
 
-#: src/gui/Preferences.cc:1564
+#: src/gui/Preferences.cc:1592
 msgid "A profile with that name already exists."
 msgstr ""
 
-#: src/gui/Preferences.cc:1599
+#: src/gui/Preferences.cc:1651
 msgid "Delete AI Profile"
 msgstr ""
 
-#: src/gui/Preferences.cc:1600
+#: src/gui/Preferences.cc:1652
 msgid "Delete profile \"%1\"?"
 msgstr ""
 
@@ -3851,12 +3871,12 @@ msgstr "ზოგიერთ ჩანართში შეუნახავ�
 msgid "There are %1 files with unsaved changes:"
 msgstr "ზოგიერთ ჩანართში შეუნახავი ცვლილებებია."
 
-#: src/gui/ViewportControl.cc:179 src/gui/ViewportControl.cc:182
-#: src/gui/ViewportControl.cc:195
+#: src/gui/ViewportControl.cc:204 src/gui/ViewportControl.cc:207
+#: src/gui/ViewportControl.cc:220
 msgid "extreme values might may lead to strange behavior"
 msgstr ""
 
-#: src/gui/ViewportControl.cc:192
+#: src/gui/ViewportControl.cc:217
 msgid "negative distances are not supported"
 msgstr ""
 
@@ -3870,7 +3890,7 @@ msgstr "გასატანად \"%1$s\"-ის გახსნა შეუ
 msgid "\"%1$s\" write error. (Disk full?)"
 msgstr "\"%1$s\"-ის ჩაწერის შეცდოა. (დისკი გადაივსო?)"
 
-#: src/openscad_gui.cc:193 src/openscad_gui.cc:822 src/openscad_gui.cc:852
+#: src/openscad_gui.cc:193 src/openscad_gui.cc:826 src/openscad_gui.cc:856
 #, fuzzy
 msgid "PythonSCAD"
 msgstr "PythonSCAD-ის შესახებ"
@@ -3909,7 +3929,7 @@ msgid ""
 "file(s) was sent to that instance; this process exits."
 msgstr ""
 
-#: src/openscad_gui.cc:823
+#: src/openscad_gui.cc:827
 msgid ""
 "Could not create the application configuration directory required for "
 "session data and single-instance locking:\n"
@@ -3917,19 +3937,19 @@ msgid ""
 "%1"
 msgstr ""
 
-#: src/openscad_gui.cc:854
+#: src/openscad_gui.cc:858
 msgid ""
 "PythonSCAD is already running but is not responding. The old PythonSCAD "
 "process must be closed to open a new window."
 msgstr ""
 
-#: src/openscad_gui.cc:857
+#: src/openscad_gui.cc:861
 msgid ""
 "Try again if the running instance may have recovered, or close it to start a "
 "new one."
 msgstr ""
 
-#: src/openscad_gui.cc:859
+#: src/openscad_gui.cc:863
 msgid "Close PythonSCAD"
 msgstr ""
 
@@ -3986,6 +4006,10 @@ msgid ""
 "Python can produce a model you can hold in your hand after 3D printing. "
 "OpenSCAD scripts remain supported alongside native Python."
 msgstr ""
+
+#, fuzzy
+#~ msgid "Error-&Log"
+#~ msgstr "შეცდომების-ჟურნალი"
 
 #~ msgid "Script-based 3D modeling app with Python support"
 #~ msgstr "Solid 3D CAD მოდელერი პროგრამისტებისთვის"
@@ -4116,9 +4140,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "Hide Animation Toolbar/Window"
 #~ msgstr "რედაქტორის პანელის დამალვა"
-
-#~ msgid "Error &Log"
-#~ msgstr "შეცდომების &ჟურნალი"
 
 #~ msgid "OpenCSG"
 #~ msgstr "OpenCSG"
