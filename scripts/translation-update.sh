@@ -94,7 +94,7 @@ updatemo()
   if which itstool > /dev/null 2>&1; then
     # ugly workaround for bug https://bugs.freedesktop.org/show_bug.cgi?id=90937
     for LANGCODE in `cat locale/LINGUAS | grep -v "#"`; do
-      ln -s openscad.mo ./locale/$LANGCODE/LC_MESSAGES/$LANGCODE.mo
+      ln -sfn openscad.mo ./locale/$LANGCODE/LC_MESSAGES/$LANGCODE.mo
     done
 
     # generate translated appdata file
