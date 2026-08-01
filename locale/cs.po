@@ -15,8 +15,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.7.3\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"X-Generator: Poedit 1.7.3\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:102
@@ -27,16 +27,18 @@ msgstr "O aplikaci PythonSCAD"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:104
 msgid ""
 "<html><head/><body>\n"
-"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
-"weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span "
-"style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
-"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
-"weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: "
-"2em;\">Script-based 3D modeling app with Python support</p>\n"
+"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
+"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: 2em;\">Script-based 3D modeling app with Python support</p>\n"
 "</body></html>\n"
 "\n"
 "\n"
 msgstr ""
+"<html><head/><body>\n"
+"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
+"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: 2em;\">Aplikace pro 3D modelování skriptem s podporou Pythonu</p>\n"
+"</body></html>\n"
+"\n"
+"\n"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:111
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:516
@@ -55,27 +57,27 @@ msgstr "Animovat"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:276
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:278
 msgid "Toggle animation pause/unpause"
-msgstr ""
+msgstr "Přepnout pauzu/obnovení animace"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:280
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:282
 msgid "Move to beginning (first frame)"
-msgstr ""
+msgstr "Přejít na začátek (první snímek)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:284
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:286
 msgid "Step one frame back"
-msgstr ""
+msgstr "O snímek zpět"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:288
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:290
 msgid "Step one frame forward"
-msgstr ""
+msgstr "O snímek vpřed"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:292
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:294
 msgid "Move to end (last frame)"
-msgstr ""
+msgstr "Přejít na konec (poslední snímek)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:296
 msgid "Time:"
@@ -110,12 +112,11 @@ msgstr "Předvolby"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:870
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:881
 msgid "Trim"
-msgstr ""
+msgstr "Trim"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:855
-#, fuzzy
 msgid "Reset Trim"
-msgstr "Výchozí pohled"
+msgstr "Obnovit trim"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:856
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:859
@@ -127,131 +128,126 @@ msgstr "Výchozí pohled"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:869
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:880
 msgid "DeadZone"
-msgstr ""
+msgstr "Mrtvá zóna"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:857
 msgid "Auto Trim Axes"
-msgstr ""
+msgstr "Automaticky trimovat osy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:871
 msgid "Axis 2"
-msgstr ""
+msgstr "Osa 2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:872
 msgid "Axis 0"
-msgstr ""
+msgstr "Osa 0"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:873
 msgid "Axis 3"
-msgstr ""
+msgstr "Osa 3"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:874
 msgid "Axis 6"
-msgstr ""
+msgstr "Osa 6"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:875
 msgid "Axis 8"
-msgstr ""
+msgstr "Osa 8"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:876
 msgid "Axis 7"
-msgstr ""
+msgstr "Osa 7"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:877
 msgid "Axis 5"
-msgstr ""
+msgstr "Osa 5"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:878
 msgid "Axis 1"
-msgstr ""
+msgstr "Osa 1"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:879
 msgid "Axis 4"
-msgstr ""
+msgstr "Osa 4"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:882
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:279
-#, fuzzy
 msgid "Rotation"
-msgstr "&Dokumentace"
+msgstr "Rotace"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:883
-#, fuzzy
 msgid "Zoom"
-msgstr "Přiblížit"
+msgstr "Zoom"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:884
 msgid "X"
-msgstr ""
+msgstr "X"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:885
 msgid "Gain"
-msgstr ""
+msgstr "Zesílení"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:886
 msgid "Y"
-msgstr ""
+msgstr "Y"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:887
 msgid "Z"
-msgstr ""
+msgstr "Z"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:888
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:280
 msgid "Translation"
-msgstr ""
+msgstr "Posun"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:889
-#, fuzzy
 msgid "ViewPort rel.<br/>Translation"
-msgstr "Vložit posun pohl&edu"
+msgstr "Posun vzhledem k pohledu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:890
-#, fuzzy
 msgid "ViewPort rel.<br />Rotation"
-msgstr "Vložit posun pohl&edu"
+msgstr "Rotace vzhledem k pohledu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:891
 msgid "Axis Setup:"
-msgstr ""
+msgstr "Nastavení os:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:892
-msgid "<b>Driver selection:</b> <i>(changes require restarting PythonSCAD)</i>"
-msgstr ""
+msgid ""
+"<b>Driver selection:</b> <i>(changes require restarting PythonSCAD)</i>"
+msgstr "<b>Výběr ovladače:</b> <i>(změny vyžadují restart PythonSCAD)</i>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:893
-#, fuzzy
 msgid "SpaceNav"
-msgstr "mezer"
+msgstr "SpaceNav"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:894
 msgid "HIDAPI"
-msgstr ""
+msgstr "HIDAPI"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:895
 msgid "QGamepad"
-msgstr ""
+msgstr "QGamepad"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:896
 msgid "Joystick"
-msgstr ""
+msgstr "Joystick"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:897
 msgid "DBus"
-msgstr ""
+msgstr "DBus"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:898
 msgid "Axes Mapping:"
-msgstr ""
+msgstr "Mapování os:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:899
 msgid "Status:"
-msgstr ""
+msgstr "Stav:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:900
-#, fuzzy
 msgid "TextLabel"
-msgstr "za textem"
+msgstr "TextLabel"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:901
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2584
@@ -260,160 +256,155 @@ msgstr "Aktualizace"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:363
 msgid "Button 19"
-msgstr ""
+msgstr "Tlačítko 19"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:364
 msgid "Button 5"
-msgstr ""
+msgstr "Tlačítko 5"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:365
 msgid "Button 14"
-msgstr ""
+msgstr "Tlačítko 14"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:366
 msgid "Button 7"
-msgstr ""
+msgstr "Tlačítko 7"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:367
 msgid "Button 16"
-msgstr ""
+msgstr "Tlačítko 16"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:368
 msgid "Button 20"
-msgstr ""
+msgstr "Tlačítko 20"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:369
 msgid "Button 1"
-msgstr ""
+msgstr "Tlačítko 1"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:370
 msgid "Button 21"
-msgstr ""
+msgstr "Tlačítko 21"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:371
 msgid "Button 18"
-msgstr ""
+msgstr "Tlačítko 18"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:372
 msgid "Button 0"
-msgstr ""
+msgstr "Tlačítko 0"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:373
 msgid "Button 4"
-msgstr ""
+msgstr "Tlačítko 4"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:374
 msgid "Button 10"
-msgstr ""
+msgstr "Tlačítko 10"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:375
 msgid "Button 6"
-msgstr ""
+msgstr "Tlačítko 6"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:376
 msgid "Button 8"
-msgstr ""
+msgstr "Tlačítko 8"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:377
 msgid "Button 15"
-msgstr ""
+msgstr "Tlačítko 15"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:378
 msgid "Button 11"
-msgstr ""
+msgstr "Tlačítko 11"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:379
 msgid "Button 3"
-msgstr ""
+msgstr "Tlačítko 3"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:380
 msgid "Button 23"
-msgstr ""
+msgstr "Tlačítko 23"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:381
 msgid "Button 9"
-msgstr ""
+msgstr "Tlačítko 9"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:382
 msgid "Button 2"
-msgstr ""
+msgstr "Tlačítko 2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:383
 msgid "Button 13"
-msgstr ""
+msgstr "Tlačítko 13"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:384
 msgid "Button 12"
-msgstr ""
+msgstr "Tlačítko 12"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:385
 msgid "Button 17"
-msgstr ""
+msgstr "Tlačítko 17"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:386
 msgid "Button 22"
-msgstr ""
+msgstr "Tlačítko 22"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:134
 msgid "AI Chat"
-msgstr ""
+msgstr "AI chat"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:135
 #: src/gui/ai/ChatWidget.cc:104
 msgid "AI Assistant"
-msgstr ""
+msgstr "AI asistent"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:137
 #: src/gui/ai/ChatWidget.cc:106
 msgid "Clear chat history"
-msgstr ""
+msgstr "Vymazat historii chatu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:139
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Console.h:42
 #: src/gui/ai/ChatWidget.cc:105
 msgid "Clear"
-msgstr ""
+msgstr "Vymazat"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:140
 #: src/gui/ai/ChatWidget.cc:107 src/gui/ai/ChatWidget.cc:367
 msgid "Send"
-msgstr ""
+msgstr "Odeslat"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:399
-#, fuzzy
 msgid "Color List"
-msgstr "Barevné téma:"
+msgstr "Seznam barev"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:400
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:402
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:404
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:406
-#, fuzzy
 msgid "Reset Sample Text"
-msgstr "Zobrazit pravítko"
+msgstr "Obnovit ukázkový text"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:408
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:410
-#, fuzzy
 msgid "Copy Color Name"
-msgstr "Písmo"
+msgstr "Kopírovat název barvy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:412
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:414
 msgid "Copy Color RGB"
-msgstr ""
+msgstr "Kopírovat RGB barvy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:416
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:305
-#, fuzzy
 msgid "Filter"
-msgstr "Filtr:"
+msgstr "Filtr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:417
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:446
-#, fuzzy
 msgid "Color name"
-msgstr "Barevné téma:"
+msgstr "Název barvy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:418
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:309
@@ -426,56 +417,53 @@ msgstr "vždy stejný"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:310
 #: src/core/Settings.cc:518
 msgid "Wildcard"
-msgstr ""
+msgstr "Zástupný znak"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:420
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:311
 #: src/core/Settings.cc:519
 msgid "RegExp"
-msgstr ""
+msgstr "RegExp"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:422
-#, fuzzy
 msgid "Sort order"
-msgstr "konec řádky"
+msgstr "Pořadí řazení"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:423
 msgid "Ascending"
-msgstr ""
+msgstr "Vzestupně"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:424
 msgid "Descending"
-msgstr ""
+msgstr "Sestupně"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:425
 msgid "Alphabetically"
-msgstr ""
+msgstr "Abecedně"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:426
 #: src/core/Settings.cc:529
-#, fuzzy
 msgid "By color"
-msgstr "Barevné téma:"
+msgstr "Podle barvy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:427
 #: src/core/Settings.cc:530
 msgid "By color warmth"
-msgstr ""
+msgstr "Podle teploty barvy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:428
 #: src/core/Settings.cc:531
 msgid "By lightness"
-msgstr ""
+msgstr "Podle světlosti"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:430
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:316
-#, fuzzy
 msgid "Selection"
-msgstr "Aplikace"
+msgstr "Výběr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:433
 msgid "Reset background color"
-msgstr ""
+msgstr "Obnovit barvu pozadí"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:435
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:439
@@ -498,84 +486,78 @@ msgstr ""
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2717
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2724
 msgid "..."
-msgstr ""
+msgstr "..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:437
 msgid "Select background color"
-msgstr ""
+msgstr "Vybrat barvu pozadí"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:440
-#, fuzzy
 msgid "Color RGB"
-msgstr "Barevné téma:"
+msgstr "RGB barvy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:441
 msgid "As Foreground"
-msgstr ""
+msgstr "Jako popředí"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:442
-#, fuzzy
 msgid "As Background"
-msgstr "Zezadu"
+msgstr "Jako pozadí"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:443
 msgid "R:"
-msgstr ""
+msgstr "R:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:444
 msgid "G:"
-msgstr ""
+msgstr "G:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:445
 msgid "B:"
-msgstr ""
+msgstr "B:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:449
 msgid "Reset foreground color"
-msgstr ""
+msgstr "Obnovit barvu popředí"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:453
 msgid "Select foreground color"
-msgstr ""
+msgstr "Vybrat barvu popředí"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Console.h:44
-#, fuzzy
 msgid "Clear console"
-msgstr "Konzole"
+msgstr "Vymazat konzoli"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Console.h:46
 #: src/gui/TabManager.cc:1846
-#, fuzzy
 msgid "Save As..."
 msgstr "Uložit &jako..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Console.h:48
 msgid "Save console content to file"
-msgstr ""
+msgstr "Uložit obsah konzole do souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:92
-#, fuzzy
 msgid "Error Log"
-msgstr "Skrýt nástrojové lišty"
+msgstr "Protokol &chyb"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:93
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:267
 msgid "RowSelected"
-msgstr ""
+msgstr "RowSelected"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:95
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:269
 msgid "Return"
-msgstr ""
+msgstr "Return"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:98
 msgid "double click to jump to file and line"
-msgstr ""
+msgstr "dvojklik pro přechod na soubor a řádek"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:100
-#, fuzzy
 msgid "&Show"
-msgstr "Zobrazit osy"
+msgstr "&Zobrazit"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:101
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:306
@@ -585,212 +567,213 @@ msgstr "Vše"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:102
 msgid "ERROR"
-msgstr ""
+msgstr "CHYBA"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:103
 msgid "WARNING"
-msgstr ""
+msgstr "VAROVÁNÍ"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:104
 msgid "UI-WARNING"
-msgstr ""
+msgstr "UI-VAROVÁNÍ"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:105
 msgid "FONT-WARNING"
-msgstr ""
+msgstr "VAROVÁNÍ-PÍSMO"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:106
 msgid "EXPORT-WARNING"
-msgstr ""
+msgstr "VAROVÁNÍ-EXPORT"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:107
 msgid "EXPORT-ERROR"
-msgstr ""
+msgstr "CHYBA-EXPORT"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:108
 msgid "DEPRECATED"
-msgstr ""
+msgstr "ZASTARALÉ"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:448
-#, fuzzy
 msgid "Export 3MF Options"
-msgstr "Funkce"
+msgstr "Možnosti exportu 3MF"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:450
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:543
 msgid ""
 "<html><head/><body><p>Set the PDF page (paper) size.  </p></body></html>"
 msgstr ""
+"<html><head/><body><p>Nastavte velikost stránky PDF (formát "
+"papíru).</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:452
 msgid "Unit"
-msgstr ""
+msgstr "Jednotka"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:453
 #: src/core/Settings.cc:452
 msgid "Micron"
-msgstr ""
+msgstr "Mikrometr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:454
 msgid "micron"
-msgstr ""
+msgstr "mikrometr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:455
 msgid "Millimeter (default)"
-msgstr ""
+msgstr "Milimetr (výchozí)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:456
 msgid "millimeter"
-msgstr ""
+msgstr "milimetr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:457
 #: src/core/Settings.cc:454
 msgid "Centimeter"
-msgstr ""
+msgstr "Centimetr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:458
 msgid "centimeter"
-msgstr ""
+msgstr "centimetr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
 #: src/core/Settings.cc:455
 msgid "Meter"
-msgstr ""
+msgstr "Metr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:460
 msgid "meter"
-msgstr ""
+msgstr "metr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
 #: src/core/Settings.cc:456
 msgid "Inch"
-msgstr ""
+msgstr "Palec"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:462
 msgid "inch"
-msgstr ""
+msgstr "palec"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:463
 msgid "Foot"
-msgstr ""
+msgstr "Stopa"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:464
 msgid "foot"
-msgstr ""
+msgstr "stopa"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:468
-#, fuzzy
 msgid "Colors"
-msgstr "Barevné téma:"
+msgstr "Barvy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:469
 msgid "Use colors from model and color scheme"
-msgstr ""
+msgstr "Použít barvy z modelu a barevného schématu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:470
 msgid "model"
-msgstr ""
+msgstr "model"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:471
 #: src/core/Settings.cc:445
 msgid "No colors"
-msgstr ""
+msgstr "Bez barev"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
 msgid "none"
-msgstr ""
+msgstr "žádné"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:473
 msgid "Use selected color for all objects"
-msgstr ""
+msgstr "Použít vybranou barvu pro všechny objekty"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:474
 msgid "selected-only"
-msgstr ""
+msgstr "pouze-výběr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:478
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
 msgid "Meta data"
-msgstr ""
+msgstr "Metadata"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:479
 msgid ""
 "The fields Title, Application and CreationDate are always filled in the "
 "exported file when meta data is enabled."
 msgstr ""
+"Při povolených metadatech jsou pole Název, Aplikace a Datum vytvoření v "
+"exportovaném souboru vždy vyplněna."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:481
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
 msgid "A copyright associated with this document"
-msgstr ""
+msgstr "Autorské právo spojené s tímto dokumentem"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:483
 msgid "Copyright"
-msgstr ""
+msgstr "Autorské právo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:484
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:567
 msgid "Title, leave empty to use the file name"
-msgstr ""
+msgstr "Název, ponechte prázdné pro použití názvu souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:485
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterDescriptionWidget.h:100
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterDescriptionWidget.h:101
 msgid "Description"
-msgstr ""
+msgstr "Popis"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:486
-#, fuzzy
 msgid "Designer"
-msgstr "&Design"
+msgstr "Návrhář"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:487
 msgid "License terms"
-msgstr ""
+msgstr "Licenční podmínky"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:489
 msgid "An industry rating associated with this document"
-msgstr ""
+msgstr "Oborové hodnocení spojené s tímto dokumentem"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:494
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
 msgid "A name for a designer of this document"
-msgstr ""
+msgstr "Jméno návrháře tohoto dokumentu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:498
 msgid "Rating"
-msgstr ""
+msgstr "Hodnocení"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:500
 msgid "License information associated with this document"
-msgstr ""
+msgstr "Licenční informace spojené s tímto dokumentem"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:504
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:564
 msgid "A description of the document"
-msgstr ""
+msgstr "Popis dokumentu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:507
 msgid "Format"
-msgstr ""
+msgstr "Formát"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:508
 msgid "Decimal precision"
-msgstr ""
+msgstr "Desetinná přesnost"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:509
 msgid "Export colors as"
-msgstr ""
+msgstr "Exportovat barvy jako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:511
 msgid "Reset value to the default decimal precision value."
-msgstr ""
+msgstr "Obnovit hodnotu na výchozí desetinnou přesnost."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:514
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:632
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:184
 msgid "Always show dialog"
-msgstr ""
+msgstr "Vždy zobrazit dialog"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:515
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:189
@@ -801,383 +784,379 @@ msgstr ""
 #: src/gui/UnsavedChangesDialog.cc:60 src/openscad_gui.cc:196
 #: src/openscad_gui.cc:864
 msgid "Cancel"
-msgstr ""
+msgstr "Zrušit"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:179
-#, fuzzy
 msgid "Export GCODE Options"
-msgstr "Funkce"
+msgstr "Možnosti exportu GCODE"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:180
 msgid "Laser Power and Speed"
-msgstr ""
+msgstr "Výkon a rychlost laseru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:181
 msgid "Laser Speed:"
-msgstr ""
+msgstr "Rychlost laseru:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:182
 msgid "Laser Power:"
-msgstr ""
+msgstr "Výkon laseru:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:183
 msgid "Laser Mode:"
-msgstr ""
+msgstr "Režim laseru:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:184
 msgid "Constant Power"
-msgstr ""
+msgstr "Konstantní výkon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:185
 msgid "Dynamic Power"
-msgstr ""
+msgstr "Dynamický výkon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:187
 msgid "Init Code:"
-msgstr ""
+msgstr "Inicializační kód:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:188
 msgid "Exit Code:"
-msgstr ""
+msgstr "Ukončovací kód:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:541
-#, fuzzy
 msgid "Export PDF Options"
-msgstr "Funkce"
+msgstr "Možnosti exportu PDF"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:545
-#, fuzzy
 msgid "Page Size"
-msgstr "Velikost"
+msgstr "Velikost stránky"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:546
 #: src/core/Settings.cc:397
 msgid "A6 (105 x 148 mm)"
-msgstr ""
+msgstr "A6 (105 × 148 mm)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:547
 msgid "a6"
-msgstr ""
+msgstr "a6"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:548
 #: src/core/Settings.cc:398
 msgid "A5 (148 x 210 mm)"
-msgstr ""
+msgstr "A5 (148 × 210 mm)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:549
 msgid "a5"
-msgstr ""
+msgstr "a5"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:550
 #: src/core/Settings.cc:399
 msgid "A4 (210x297 mm)"
-msgstr ""
+msgstr "A4 (210 × 297 mm)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:551
 msgid "a4"
-msgstr ""
+msgstr "a4"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:552
 #: src/core/Settings.cc:400
 msgid "A3 (297x420 mm)"
-msgstr ""
+msgstr "A3 (297 × 420 mm)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:553
 msgid "a3"
-msgstr ""
+msgstr "a3"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:554
 #: src/core/Settings.cc:401
 msgid "Letter (8.5x11 in)"
-msgstr ""
+msgstr "Letter (8,5 × 11 palců)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
 msgid "letter"
-msgstr ""
+msgstr "letter"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:556
 #: src/core/Settings.cc:402
 msgid "Legal (8.5x14 in)"
-msgstr ""
+msgstr "Legal (8,5 × 14 palců)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
 msgid "legal"
-msgstr ""
+msgstr "legal"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:558
 #: src/core/Settings.cc:403
 msgid "Tabloid (11x17 in)"
-msgstr ""
+msgstr "Tabloid (11 × 17 palců)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:560
 msgid "tabloid"
-msgstr ""
+msgstr "tabloid"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:562
 msgid ""
 "The fields Title, Creator and CreateDate are always filled in the exported "
 "file when meta data is enabled."
 msgstr ""
+"Při povolených metadatech jsou pole Název, Autor a Datum vytvoření v "
+"exportovaném souboru vždy vyplněna."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:568
 msgid "Subject"
-msgstr ""
+msgstr "Předmět"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
 msgid "Keywords"
-msgstr ""
+msgstr "Klíčová slova"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:577
 msgid "Author"
-msgstr ""
+msgstr "Autor"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:580
 msgid ""
-"<html><head/><body><p>Set the direction of the largest page dimension.</p></"
-"body></html>"
+"<html><head/><body><p>Set the direction of the largest page "
+"dimension.</p></body></html>"
 msgstr ""
+"<html><head/><body><p>Nastavte směr největšího rozměru "
+"stránky.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
-#, fuzzy
 msgid "Page Orientation"
-msgstr "Odsazování"
+msgstr "Orientace stránky"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:583
 #: src/core/Settings.cc:407
 msgid "Portrait (Vertical)"
-msgstr ""
+msgstr "Na výšku (vertikálně)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:585
 #: src/core/Settings.cc:408
 msgid "Landscape (Horizontal)"
-msgstr ""
+msgstr "Na šířku (horizontálně)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:586
 msgid "landscape"
-msgstr ""
+msgstr "na šířku"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:588
 msgid ""
 "<html><head/><body><p>Determine best orientation based on maximum geometry "
 "dimension.</p></body></html>"
 msgstr ""
+"<html><head/><body><p>Určit nejlepší orientaci podle největšího rozměru "
+"geometrie.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:590
 #: src/core/Settings.cc:409
 msgid "Auto"
-msgstr ""
+msgstr "Automaticky"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:591
 msgid "auto"
-msgstr ""
+msgstr "auto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:592
-#, fuzzy
 msgid "Annotations"
-msgstr "&Dokumentace"
+msgstr "Anotace"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:594
 msgid ""
 "<html><head/><body><p>Include design filename on page.</p></body></html>"
 msgstr ""
+"<html><head/><body><p>Zahrnout název souboru designu na "
+"stránku.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:596
 msgid "Show Design Filename"
-msgstr ""
+msgstr "Zobrazit název souboru designu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:598
 msgid ""
-"<html><head/><body><p>Include rulers on page to confirm 1:1 printing scale.</"
-"p></body></html>"
+"<html><head/><body><p>Include rulers on page to confirm 1:1 printing "
+"scale.</p></body></html>"
 msgstr ""
+"<html><head/><body><p>Zahrnout pravítka na stránku pro ověření měřítka tisku"
+" 1:1.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:600
-#, fuzzy
 msgid "Show Scale"
-msgstr "Zobrazit pravítko"
+msgstr "Zobrazit měřítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:602
 msgid ""
-"<html><head/><body><p>Include a grid of the selected size on the page.</p></"
-"body></html>"
+"<html><head/><body><p>Include a grid of the selected size on the "
+"page.</p></body></html>"
 msgstr ""
+"<html><head/><body><p>Zahrnout mřížku vybrané velikosti na "
+"stránku.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:604
-#, fuzzy
 msgid "Show Grid"
-msgstr "Zobrazit hrany"
+msgstr "Zobrazit mřížku"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:605
 msgid "2mm"
-msgstr ""
+msgstr "2 mm"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:606
 msgid "2.5mm"
-msgstr ""
+msgstr "2,5 mm"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:607
 msgid "4mm"
-msgstr ""
+msgstr "4 mm"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:608
 msgid "5mm"
-msgstr ""
+msgstr "5 mm"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:609
 msgid "10mm"
-msgstr ""
+msgstr "10 mm"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:611
 msgid ""
-"<html><head/><body><p>Include text describing usage of scale.</p></body></"
-"html>"
+"<html><head/><body><p>Include text describing usage of "
+"scale.</p></body></html>"
 msgstr ""
+"<html><head/><body><p>Zahrnout text popisující použití "
+"měřítka.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:613
-#, fuzzy
 msgid "Show Scale Usage"
-msgstr "Zobrazit pravítko"
+msgstr "Zobrazit popis měřítka"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:614
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:203
 msgid "Fill and Stroke"
-msgstr ""
+msgstr "Výplň a obrys"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:616
 msgid ""
-"<html><head/><body><p>Enable filling of exported geometry with a color.</p></"
-"body></html>"
+"<html><head/><body><p>Enable filling of exported geometry with a "
+"color.</p></body></html>"
 msgstr ""
+"<html><head/><body><p>Povolit vyplnění exportované geometrie "
+"barvou.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:618
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:207
 msgid "Fill Geometry"
-msgstr ""
+msgstr "Vyplnit geometrii"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:623
 msgid ""
-"<html><head/><body><p>Enable outline stroke for exported geometry.</p></"
-"body></html>"
+"<html><head/><body><p>Enable outline stroke for exported "
+"geometry.</p></body></html>"
 msgstr ""
+"<html><head/><body><p>Povolit obrys exportované geometrie.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:625
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:214
 msgid "Stroke Outline"
-msgstr ""
+msgstr "Obkreslit obrysy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:629
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:218
 msgid "Stroke Width:"
-msgstr ""
+msgstr "Šířka obrysu:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:630
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:219
 msgid " mm"
-msgstr ""
+msgstr " mm"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:202
-#, fuzzy
 msgid "Export SVG Options"
-msgstr "Funkce"
+msgstr "Možnosti exportu SVG"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:205
 msgid "Enable filling of exported geometry with a color."
-msgstr ""
+msgstr "Povolit vyplnění exportované geometrie barvou."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:212
 msgid "Enable outline stroke for exported geometry."
-msgstr ""
+msgstr "Povolit obrys exportované geometrie."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:291
-#, fuzzy
 msgid "Font List"
-msgstr "Seznam &písem"
+msgstr "Seznam písem"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:292
 msgid "ResetSampleText"
-msgstr ""
+msgstr "Obnovit ukázkový text"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:293
-#, fuzzy
 msgid "Open Font Folder"
-msgstr "&Soubor"
+msgstr "Otevřít složku písem"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:294
 msgid "Copy Font Folder"
-msgstr ""
+msgstr "Kopírovat složku písem"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:295
 msgid "Copy Full Path to Font"
-msgstr ""
+msgstr "Kopírovat úplnou cestu k písmu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:296
-#, fuzzy
 msgid "Copy Font Style"
-msgstr "Seznam &písem"
+msgstr "Kopírovat styl písma"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:297
-#, fuzzy
 msgid "Copy Font Name"
-msgstr "Písmo"
+msgstr "Kopírovat název písma"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:298
-#, fuzzy
 msgid "Show Font Name"
-msgstr "Písmo"
+msgstr "Zobrazit název písma"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:299
 msgid "Show Styled Font Name"
-msgstr ""
+msgstr "Zobrazit formátovaný název písma"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:300
-#, fuzzy
 msgid "Show Font Style"
-msgstr "Seznam &písem"
+msgstr "Zobrazit styl písma"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:301
-#, fuzzy
 msgid "Show Sample Text"
-msgstr "Zobrazit pravítko"
+msgstr "Zobrazit ukázkový text"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:302
-#, fuzzy
 msgid "ShowFileName"
-msgstr "&Soubor"
+msgstr "Zobrazit název souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:303
-#, fuzzy
 msgid "Show File Path"
-msgstr "Zobrazit pravítko"
+msgstr "Zobrazit cestu k souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:304
-#, fuzzy
 msgid "Reset Columns"
-msgstr "Výchozí pohled"
+msgstr "Obnovit sloupce"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:307
 msgid "Any"
-msgstr ""
+msgstr "Libovolné"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:313
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:317
 #: src/gui/FontList.cc:402
-#, fuzzy
 msgid "Font name"
-msgstr "Písmo"
+msgstr "Název písma"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:314
 #: src/gui/FontList.cc:406
 msgid "Sample text"
-msgstr ""
+msgstr "Ukázkový text"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:315
 msgid "Chars"
-msgstr ""
+msgstr "Znaky"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:318
-#, fuzzy
 msgid "Font path"
-msgstr "Písmo"
+msgstr "Cesta k písmu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:319
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2641
@@ -1220,16 +1199,18 @@ msgstr "Otevřít příklad"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:304
 msgid ""
 "<html><head/><body>\n"
-"\t\t<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
-"weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span "
-"style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
-"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
-"weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: "
-"2em;\">Script-based 3D modeling app with Python support</p>\n"
+"\t\t<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
+"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: 2em;\">Script-based 3D modeling app with Python support</p>\n"
 "</body></html>\n"
 "\n"
 "\n"
 msgstr ""
+"<html><head/><body>\n"
+"\t\t<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
+"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: 2em;\">Aplikace pro 3D modelování skriptem s podporou Pythonu</p>\n"
+"</body></html>\n"
+"\n"
+"\n"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:311
 msgid "Don't show again"
@@ -1254,36 +1235,32 @@ msgstr "&OK"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LoadShareDesignDialog.h:62
 msgid "Loading a shared Design from pythonscad.org"
-msgstr ""
+msgstr "Načítání sdíleného designu z pythonscad.org"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LoadShareDesignDialog.h:63
-#, fuzzy
 msgid "Select Design"
-msgstr "Aplikace"
+msgstr "Vybrat design"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1068
 #: src/gui/MainWindow.cc:4541
 msgid "Welcome..."
-msgstr ""
+msgstr "Vítejte …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1069
-#, fuzzy
 msgid "&New File"
-msgstr "&Soubor"
+msgstr "&Nový soubor"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1071
 msgid "Ctrl+N"
 msgstr "Ctrl+N"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1073
-#, fuzzy
 msgid "New Window"
-msgstr "Najít &předchozí"
+msgstr "Nové okno"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1074
-#, fuzzy
 msgid "&Open File..."
-msgstr "&Soubor"
+msgstr "&Otevřít soubor …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1076
 msgid "Ctrl+O"
@@ -1291,7 +1268,7 @@ msgstr "Ctrl+O"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1078
 msgid "Open in New Window"
-msgstr ""
+msgstr "Otevřít v novém okně"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1079
 msgid "&Save"
@@ -1310,14 +1287,12 @@ msgid "Ctrl+Shift+S"
 msgstr "Ctrl+Shift+S"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1087
-#, fuzzy
 msgid "Save a Copy..."
-msgstr "Uložit &jako..."
+msgstr "Uložit kopii …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1088
-#, fuzzy
 msgid "Save All"
-msgstr "Uložit &jako..."
+msgstr "Uložit vše"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1089
 msgid "&Reload"
@@ -1329,14 +1304,12 @@ msgstr "Ctrl+R"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1093
 #: src/gui/MainWindow.cc:4542
-#, fuzzy
 msgid "Close &Window"
-msgstr "Najít &předchozí"
+msgstr "Zavřít &okno"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1095
-#, fuzzy
 msgid "Alt+F4"
-msgstr "Ctrl+Alt+F"
+msgstr "Alt+F4"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1097
 msgid "&Quit"
@@ -1363,9 +1336,8 @@ msgid "Ctrl+Shift+Z"
 msgstr "Ctrl+Shift+Z"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1110
-#, fuzzy
 msgid "Ctrl+Y"
-msgstr "Ctrl+N"
+msgstr "Ctrl+Y"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1112
 msgid "Cu&t"
@@ -1416,58 +1388,48 @@ msgid "Ctrl+Shift+D"
 msgstr "Ctrl+Shift+D"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1136
-#, fuzzy
 msgid "Show Next Tab"
-msgstr "Zobrazit osy"
+msgstr "Zobrazit další kartu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1138
-#, fuzzy
 msgid "Ctrl+Tab"
-msgstr "Ctrl+T"
+msgstr "Ctrl+Tab"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1140
-#, fuzzy
 msgid "Show Previous Tab"
-msgstr "Zobrazit osy"
+msgstr "Zobrazit předchozí kartu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1142
-#, fuzzy
 msgid "Ctrl+Shift+Tab"
-msgstr "Ctrl+Shift+S"
+msgstr "Ctrl+Shift+Tab"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1144
-#, fuzzy
 msgid "Copy viewport ima&ge"
-msgstr "Kopírovat do schránky"
+msgstr "Kopírovat obrázek pohledu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1146
-#, fuzzy
 msgid "Ctrl+Shift+C"
-msgstr "Ctrl+Shift+S"
+msgstr "Ctrl+Shift+C"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1148
-#, fuzzy
 msgid "Copy viewport transl&ation"
-msgstr "Vložit posun pohl&edu"
+msgstr "Kopírovat aktuální &posun pohledu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1150
 msgid "Ctrl+T"
 msgstr "Ctrl+T"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1152
-#, fuzzy
 msgid "Cop&y viewport rotation"
-msgstr "Vlo&žit rotaci pohledu"
+msgstr "Kopírovat aktuální rotaci pohledu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1153
-#, fuzzy
 msgid "Copy vie&wport distance"
-msgstr "Kopírovat do schránky"
+msgstr "Kopírovat aktuální vzdálenost pohledu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1154
-#, fuzzy
 msgid "Copy vie&wport fov"
-msgstr "Kopírovat do schránky"
+msgstr "Kopírovat zorné pole pohledu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1155
 msgid "Increase Font &Size"
@@ -1511,107 +1473,95 @@ msgstr "F6"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1175
 msgid "&3D Print"
-msgstr ""
+msgstr "&3D tisk"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1177
 msgid "F8"
-msgstr ""
+msgstr "F8"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1179
 msgid "Measure &Distance"
-msgstr ""
+msgstr "Měřit &vzdálenost"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1181
 msgid "D"
-msgstr ""
+msgstr "D"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1183
 msgid "Measure &Angle"
-msgstr ""
+msgstr "Měřit &úhel"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1185
 msgid "A"
-msgstr ""
+msgstr "A"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1187
 msgid "Find Handle"
-msgstr ""
+msgstr "Najít handle"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1188
-#, fuzzy
 msgid "&Share Design"
-msgstr "&Design"
+msgstr "Sdílet &design"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1189
 msgid "&Load shared Design"
-msgstr ""
+msgstr "Načíst sdílený &design"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1190
 msgid "&Check Validity"
 msgstr "Zkontrolovat &správnost"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1191
-#, fuzzy
 msgid "Display A&ST"
-msgstr "&Ukázat ATS..."
+msgstr "Zobrazit A&ST"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1192
 msgid "Display Python conversion"
-msgstr ""
+msgstr "Zobrazit Python konverzi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1193
-#, fuzzy
 msgid "Display CSG &Tree"
-msgstr "Ukázat CSG s&trom..."
+msgstr "Zobrazit CSG s&trom …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1194
-#, fuzzy
 msgid "Display CSG Pr&oducts"
-msgstr "Ukázat CSG &produkty..."
+msgstr "Zobrazit CSG pr&odukty …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1195
-#, fuzzy
 msgid "Export as &STL (binary)..."
-msgstr "Exportovat jako &STL..."
+msgstr "Exportovat jako &STL (binární) …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1196
-#, fuzzy
 msgid "Export as &STL (ascii)..."
-msgstr "Exportovat jako &STL..."
+msgstr "Exportovat jako &STL (ASCII) …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1197
-#, fuzzy
 msgid "Export as &OBJ..."
-msgstr "Exportovat jako &OFF..."
+msgstr "Exportovat jako &OBJ …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1198
-#, fuzzy
 msgid "Export as &POV..."
-msgstr "Exportovat jako &OFF..."
+msgstr "Exportovat jako &POV …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1199
 msgid "Export as &OFF..."
 msgstr "Exportovat jako &OFF..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
-#, fuzzy
 msgid "Export as &WRL..."
-msgstr "Exportovat jako &STL..."
+msgstr "Exportovat jako &WRL …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1201
-#, fuzzy
 msgid "Export as &Foldable PS..."
-msgstr "Exportovat jako &obrázek..."
+msgstr "Exportovat jako skládací &PS …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1202
-#, fuzzy
 msgid "Export as &Step..."
-msgstr "Exportovat jako &CSG..."
+msgstr "Exportovat jako &STEP …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1203
-#, fuzzy
 msgid "Export as &GCode..."
-msgstr "Exportovat jako &CSG..."
+msgstr "Exportovat jako &GCode …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
 msgid "Preview"
@@ -1718,9 +1668,8 @@ msgid "Ce&nter"
 msgstr "Vy&centrovat"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1255
-#, fuzzy
 msgid "Ctrl+Shift+0"
-msgstr "Ctrl+Shift+S"
+msgstr "Ctrl+Shift+0"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1257
 msgid "&Perspective"
@@ -1739,14 +1688,12 @@ msgid "&Documentation"
 msgstr "&Dokumentace"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1261
-#, fuzzy
 msgid "&Offline Documentation"
-msgstr "&Dokumentace"
+msgstr "&Offline dokumentace"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1262
-#, fuzzy
 msgid "&Offline Cheat Sheet"
-msgstr "&Tahák"
+msgstr "&Offline tahák"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1263
 msgid "Clear Recent"
@@ -1757,21 +1704,20 @@ msgid "Export as &DXF..."
 msgstr "Exportovat jako &DXF..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1265
-#, fuzzy
 msgid "&Trust Current Design"
-msgstr "&Design"
+msgstr "Důvěřovat aktuálnímu &designu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1267
 msgid "Toggle trust for the active saved Python design"
-msgstr ""
+msgstr "Přepnout důvěru pro aktivní uložený Python design"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1269
 msgid "&Revoke Trust for All Python Designs..."
-msgstr ""
+msgstr "Odvolat důvěru pro všechny Python designy …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1271
 msgid "Revoke trust for all Python designs and clear the trust store"
-msgstr ""
+msgstr "Odvolat důvěru pro všechny Python designy a vymazat úložiště důvěry"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1273
 msgid "&Close"
@@ -1827,12 +1773,11 @@ msgstr "Ctrl+E"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1298
 msgid "Jump to next error"
-msgstr ""
+msgstr "Přejít na další chybu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1300
-#, fuzzy
 msgid "Ctrl+Alt+E"
-msgstr "Ctrl+Alt+F"
+msgstr "Ctrl+Alt+E"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1302
 msgid "&Flush Caches"
@@ -1859,19 +1804,16 @@ msgid "&Library info"
 msgstr "&Informace o knihovnách"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1308
-#, fuzzy
 msgid "Report issue..."
-msgstr "Nahlásit problém..."
+msgstr "Nahlásit problém …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1309
-#, fuzzy
 msgid "Show &Library Folder"
-msgstr "&Adresář s knihovnami..."
+msgstr "Zobrazit složku &knihoven"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1310
-#, fuzzy
 msgid "Show Backup Files"
-msgstr "Zobrazit osy"
+msgstr "Zobrazit záložní soubory"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
 msgid "Reset View"
@@ -1886,9 +1828,8 @@ msgid "Export as &AMF..."
 msgstr "Exportovat jako &AMF..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1314
-#, fuzzy
 msgid "Export as &3MF..."
-msgstr "Exportovat jako &AMF..."
+msgstr "Exportovat jako &3MF …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1315
 msgid "Zoom In"
@@ -1911,9 +1852,8 @@ msgid "View All"
 msgstr "Zobrazit vše"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1325
-#, fuzzy
 msgid "Ctrl+Shift+V"
-msgstr "Ctrl+Shift+S"
+msgstr "Ctrl+Shift+V"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1327
 msgid "Conv&ert Tabs to Spaces"
@@ -1921,35 +1861,31 @@ msgstr "Pře&vést tabulátory na mezery"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1328
 msgid "Toggle Bookmark"
-msgstr ""
+msgstr "Přepnout záložku"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1330
-#, fuzzy
 msgid "Ctrl+F2"
-msgstr "Ctrl+F"
+msgstr "Ctrl+F2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1332
 msgid "Jump to next bookmark"
-msgstr ""
+msgstr "Přejít na další záložku"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1334
-#, fuzzy
 msgid "F2"
-msgstr "F12"
+msgstr "F2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1336
 msgid "Jump to previous bookmark"
-msgstr ""
+msgstr "Přejít na předchozí záložku"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1338
-#, fuzzy
 msgid "Shift+F2"
-msgstr "Ctrl+Shift+S"
+msgstr "Shift+F2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1340
-#, fuzzy
 msgid "Hide Editor toolbar"
-msgstr "Skrýt nástrojové lišty"
+msgstr "Skrýt panel nástrojů editoru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1341
 msgid "U&nindent"
@@ -1964,59 +1900,52 @@ msgid "&Cheat Sheet"
 msgstr "&Tahák"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1346
-#, fuzzy
 msgid "&Python Cheat Sheet"
-msgstr "&Tahák"
+msgstr "Python &tahák"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1347
-#, fuzzy
 msgid "Export as PDF..."
-msgstr "Exportovat jako &DXF..."
+msgstr "Exportovat jako PDF …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
-#, fuzzy
 msgid "Hide 3D View toolbar"
-msgstr "Skrýt nástrojové lišty"
+msgstr "Skrýt panel nástrojů 3D pohledu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1349
-#, fuzzy
 msgid "&Next Window\tCtrl+K"
-msgstr "Najít &předchozí"
+msgstr "&Další okno\tCtrl+K"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
-#, fuzzy
 msgid "&Previous Window\tCtrl+H"
-msgstr "Najít &předchozí"
+msgstr "&Předchozí okno\tCtrl+H"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1351
-#, fuzzy
 msgid "Insert Template"
-msgstr "vloží znak tabulátoru"
+msgstr "Vložit šablonu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1353
 msgid "Alt+Ins"
-msgstr ""
+msgstr "Alt+Ins"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1355
 msgid "Fold/Unfoll All"
-msgstr ""
+msgstr "Sbalit/rozbalit vše"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
 msgid "Jump To"
-msgstr ""
+msgstr "Přejít na"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1358
-#, fuzzy
 msgid "Ctrl+J"
-msgstr "Ctrl+N"
+msgstr "Ctrl+J"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1360
 msgid "Create Virtual &Environment..."
-msgstr ""
+msgstr "Vytvořit virtuální &prostředí …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1361
 msgid "&Select Virtual Environment..."
-msgstr ""
+msgstr "&Vybrat virtuální prostředí …"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1362
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:107
@@ -2043,7 +1972,7 @@ msgstr "&Exportovat"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2595
 #: src/gui/Editor.cc:206 src/gui/Editor.cc:211 examples
 msgid "Python"
-msgstr ""
+msgstr "Python"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1370
 msgid "&Edit"
@@ -2062,9 +1991,8 @@ msgid "&Help"
 msgstr "&Nápověda"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1374
-#, fuzzy
 msgid "&Window"
-msgstr "Najít &předchozí"
+msgstr "&Okno"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1375
 msgid "Find"
@@ -2084,14 +2012,12 @@ msgid "Replacement string"
 msgstr "Nahradit za"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1382
-#, fuzzy
 msgid "Previous"
-msgstr "Najít &předchozí"
+msgstr "Předchozí"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1383
-#, fuzzy
 msgid "Next"
-msgstr "Najít &další"
+msgstr "Další"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1384
 msgid "Done"
@@ -2099,69 +2025,68 @@ msgstr "Hotovo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1385
 msgid "Customizer Widget"
-msgstr ""
+msgstr "Widget Customizer"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:215
 msgid "Ctrl + Shift + Middle-click"
-msgstr ""
+msgstr "Ctrl + Shift + prostřední tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:216
 msgid "Left-click"
-msgstr ""
+msgstr "Levé tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:217
 msgid "Ctrl + Left-click"
-msgstr ""
+msgstr "Ctrl + levé tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:218
 msgid "Shift + Left-click"
-msgstr ""
+msgstr "Shift + levé tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:219
 msgid "Ctrl + Shift + Right-click"
-msgstr ""
+msgstr "Ctrl + Shift + pravé tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:220
-#, fuzzy
 msgid "Preset"
-msgstr "Výchozí pohled"
+msgstr "Předvolba"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:221
 msgid "Right-click"
-msgstr ""
+msgstr "Pravé tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:222
 msgid "Ctrl + Middle-click"
-msgstr ""
+msgstr "Ctrl + prostřední tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:223
 msgid "Shift + Middle-click"
-msgstr ""
+msgstr "Shift + prostřední tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:224
 msgid "Ctrl + Right-click"
-msgstr ""
+msgstr "Ctrl + pravé tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:225
 msgid "Ctrl + Shift + Left-click"
-msgstr ""
+msgstr "Ctrl + Shift + levé tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:226
 msgid "Shift + Right-click"
-msgstr ""
+msgstr "Shift + pravé tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:227
 msgid "Middle-click"
-msgstr ""
+msgstr "Prostřední tlačítko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:106
 msgid "OctoPrint API Key Request"
-msgstr ""
+msgstr "Požadavek na API klíč OctoPrint"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:108
 #: src/openscad_gui.cc:862
 msgid "Retry"
-msgstr ""
+msgstr "Opakovat"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:76
 msgid "OpenGL Warning"
@@ -2169,17 +2094,17 @@ msgstr "OpenGL varování"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:77
 msgid ""
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/"
-"REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/"
-"css\">\n"
+"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; "
-"font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; "
-"margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></"
-"p></body></html>"
+"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></p></body></html>"
 msgstr ""
+"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:82
 msgid "Show this message again"
@@ -2198,74 +2123,68 @@ msgstr "Zavřít"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterVector.h:108
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:154
 msgid "Form"
-msgstr ""
+msgstr "Form"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterDescriptionWidget.h:99
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2718
 msgid "Parameter"
-msgstr ""
+msgstr "Parameter"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:155
-#, fuzzy
 msgid "Automatic Preview"
-msgstr "&Automaticky načítat a zobrazovat"
+msgstr "Automatický náhled"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:156
-#, fuzzy
 msgid "Show Details"
-msgstr "Zobrazit osy"
+msgstr "Zobrazit podrobnosti"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:157
-#, fuzzy
 msgid "Inline Details"
-msgstr "Skrýt nástrojové lišty"
+msgstr "Podrobnosti v řádku"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:158
-#, fuzzy
 msgid "Hide Details"
-msgstr "Skrýt nástrojové lišty"
+msgstr "Skrýt podrobnosti"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:159
 msgid "Description Only"
-msgstr ""
+msgstr "Pouze popis"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:161
 #: src/gui/parameter/ParameterWidget.cc:117
 #: src/gui/parameter/ParameterWidget.cc:220
 msgid "<design default>"
-msgstr ""
+msgstr "<výchozí design>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:164
 msgid "preset selection"
-msgstr ""
+msgstr "výběr předvolby"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:167
 msgid "Add new preset"
-msgstr ""
+msgstr "Přidat novou předvolbu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:169
 msgid "+"
-msgstr ""
+msgstr "+"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:171
 msgid "Remove current preset"
-msgstr ""
+msgstr "Odstranit aktuální předvolbu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:173
 msgid "-"
-msgstr ""
+msgstr "-"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:175
-#, fuzzy
 msgid "More actions"
-msgstr "&Dokumentace"
+msgstr "Další akce"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2581
 msgid "3D View"
 msgstr "3D zobrazení"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2582
-#, fuzzy
 msgctxt "preferences"
 msgid "Advanced"
 msgstr "Pokročilé"
@@ -2284,66 +2203,65 @@ msgid "Enable/Disable experimental features"
 msgstr "Povolit/Zakázat experimentální funkce"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2589
-#, fuzzy
 msgid "Axes"
-msgstr "Zobrazit osy"
+msgstr "Osy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2591
 msgid "Input driver configuration and Axis mapping"
-msgstr ""
+msgstr "Konfigurace vstupního ovladače a mapování os"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2593
 msgid "Buttons"
-msgstr ""
+msgstr "Tlačítka"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2594
 msgid "Mouse"
-msgstr ""
+msgstr "Myš"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2597
 msgid "Python Settings"
-msgstr ""
+msgstr "Nastavení Pythonu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2599
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:178
 msgid "3D Print"
-msgstr ""
+msgstr "3D tisk"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2601
 msgid "3D Printing Services"
-msgstr ""
+msgstr "Služby 3D tisku"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2603
 msgid "Dialogs"
-msgstr ""
+msgstr "Dialogy"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2604
 msgid "AI"
-msgstr ""
+msgstr "AI"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2606
 msgid "AI and LLM configurations"
-msgstr ""
+msgstr "Konfigurace AI a LLM"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2608
 msgid "Directory of the output file"
-msgstr ""
+msgstr "Adresář výstupního souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2609
 msgid "Extension of the output file without leading dot"
-msgstr ""
+msgstr "Přípona výstupního souboru bez úvodní tečky"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2610
 msgid "Full path to the main source file"
-msgstr ""
+msgstr "Úplná cesta k hlavnímu zdrojovému souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2611
 msgid "Directory of the main source file"
-msgstr ""
+msgstr "Adresář hlavního zdrojového souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2612
 msgid "Full path to the output file"
-msgstr ""
+msgstr "Úplná cesta k výstupnímu souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2613
 msgid "Color scheme:"
@@ -2355,78 +2273,76 @@ msgstr "Zobrazovat varování a chyby v 3D okně"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2615
 msgid "mouse centric zoom"
-msgstr ""
+msgstr "Přiblížení centrovat na myš"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2616
 msgid "Number Scroll"
-msgstr ""
+msgstr "Posun čísel"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2617
 #: src/core/Settings.cc:198
-#, fuzzy
 msgid "Alt"
-msgstr "Vše"
+msgstr "Alt"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2618
 #: src/core/Settings.cc:199
 msgid "Left Mouse Button"
-msgstr ""
+msgstr "Levé tlačítko myši"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2619
 #: src/core/Settings.cc:200
 msgid "Either"
-msgstr ""
+msgstr "Obojí"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2621
-#, fuzzy
 msgid "Step Size"
-msgstr "Velikost"
+msgstr "Velikost kroku"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2622
 msgid "Number Scroll Via Mouse Wheel"
-msgstr ""
+msgstr "Posun čísel kolečkem myši"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2623
 msgid "Modifier For Wheel Scroll "
-msgstr ""
+msgstr "Modifikátor pro posun kolečkem "
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2624
 msgid "Autocomplete"
-msgstr ""
+msgstr "Automatické doplňování"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2625
 msgid " Include defined modules"
-msgstr ""
+msgstr " Zahrnout definované moduly"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2626
 msgid "Character Threshold"
-msgstr ""
+msgstr "Prahová hodnota znaků"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2627
 msgid " Include defined functions"
-msgstr ""
+msgstr " Zahrnout definované funkce"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2628
 msgid "Enable Autocompletion"
-msgstr ""
+msgstr "Povolit automatické doplňování"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2629
 msgid " Include defined variables"
-msgstr ""
+msgstr " Zahrnout definované proměnné"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
 msgid "Mode"
-msgstr ""
+msgstr "Režim"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2631
 #: src/core/Settings.cc:538
 msgid "Parsed File Mode"
-msgstr ""
+msgstr "Režim parsovaného souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2632
 #: src/core/Settings.cc:539
 msgid "Regex Input Text Mode"
-msgstr ""
+msgstr "Režim regex vstupního textu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2634
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
@@ -2511,7 +2427,7 @@ msgstr "Zvýrazňovat aktuální řádek"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
 msgid "Display Line Numbers"
-msgstr ""
+msgstr "Zobrazit čísla řádků"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
 msgid "Enable brace matching"
@@ -2533,9 +2449,8 @@ msgid "Ctrl/Cmd-Mouse-wheel zooms text"
 msgstr "Ctrl/Cmd a kolečko myši mění velikost písma"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2667
-#, fuzzy
 msgid "Use gvim as editor (requires restart)"
-msgstr "(vyžaduje restart aplikace)"
+msgstr "Použít gvim jako editor (vyžaduje restart)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
 msgid "Indentation"
@@ -2547,7 +2462,7 @@ msgstr "Automatické odsazování"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
 msgid "Backspace unindents"
-msgstr ""
+msgstr "Backspace snižuje odsazení"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
 msgid "Indent using"
@@ -2620,100 +2535,97 @@ msgstr "Poslední kontrola:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2692
 msgid "General"
-msgstr ""
+msgstr "Obecné"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2693
 msgid "Default Print Service"
-msgstr ""
+msgstr "Výchozí tisková služba"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2694
 msgid "Enable remote print services"
-msgstr ""
+msgstr "Povolit vzdálené tiskové služby"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:181
 #: src/gui/Preferences.cc:643
 msgid "OctoPrint"
-msgstr ""
+msgstr "OctoPrint"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2696
 msgid "URL"
-msgstr ""
+msgstr "URL"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
 msgid "API Key"
-msgstr ""
+msgstr "API klíč"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2698
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2699
 msgid "Load"
-msgstr ""
+msgstr "Načíst"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
-#, fuzzy
 msgid "Check"
-msgstr "Zkontrolovat nyní"
+msgstr "Zkontrolovat"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2702
 msgid "Slicing Profile"
-msgstr ""
+msgstr "Profil slicování"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2703
 msgid "Slicing Engine"
-msgstr ""
+msgstr "Slicovací engine"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2704
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2710
 msgid "File Format"
-msgstr ""
+msgstr "Formát souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2705
-#, fuzzy
 msgid "Action"
-msgstr "Aplikace"
+msgstr "Akce"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2706
 msgid "Request"
-msgstr ""
+msgstr "Požadavek"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2707
-#, fuzzy
 msgid "Show"
-msgstr "Zobrazit osy"
+msgstr "Zobrazit"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2708
 msgid "Note: The API key is stored unencrypted in the application settings."
-msgstr ""
+msgstr "Poznámka: API klíč je uložen nešifrovaně v nastavení aplikace."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
 #: src/gui/Preferences.cc:644
-#, fuzzy
 msgid "Local Application"
-msgstr "Aplikace"
+msgstr "Lokální aplikace"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2711
-#, fuzzy
 msgid "File"
-msgstr "&Soubor"
+msgstr "Soubor"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2716
 msgid "Executable"
-msgstr ""
+msgstr "Spustitelný soubor"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2720
 msgid ""
 "Directory for storing the exported file, leave empty to use the default "
 "system location."
 msgstr ""
+"Adresář pro uložení exportovaného souboru; ponechte prázdné pro výchozí "
+"systémové umístění."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2723
 msgid "Temp Dir"
-msgstr ""
+msgstr "Dočasný adresář"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2725
 msgid "3D Preview (OpenCSG)"
-msgstr ""
+msgstr "3D náhled (OpenCSG)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2726
 msgid "Show capability warning"
@@ -2732,14 +2644,12 @@ msgid "Force Goldfeather"
 msgstr "Vynutit zobrazení Goldfeather"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2730
-#, fuzzy
 msgid "3D Rendering"
-msgstr "Vy&renderovat"
+msgstr "3D vykreslování"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2731
-#, fuzzy
 msgid "Backend"
-msgstr "Zezadu"
+msgstr "Backend"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2732
 msgid "CGAL Cache size"
@@ -2756,34 +2666,31 @@ msgstr "Velikost PolySet cache"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2736
 msgid "User Interface"
-msgstr ""
+msgstr "Uživatelské rozhraní"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
 msgid "GUI theme"
-msgstr ""
+msgstr "Motiv GUI"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
-#, fuzzy
 msgid "Light"
-msgstr "Z&prava"
+msgstr "Světlý"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
 msgid "Dark"
-msgstr ""
+msgstr "Tmavý"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2740
 msgid "Auto (follow system)"
-msgstr ""
+msgstr "Automaticky (podle systému)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2743
-#, fuzzy
 msgid "Enable docking helper widgets in different places"
-msgstr "Povolit zaparkování editoru a konzole na různá místa"
+msgstr "Povolit ukotvení pomocných widgetů na různá místa"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2744
-#, fuzzy
 msgid "Enable undocking of helper widgets to separate windows"
-msgstr "Povolit plovoucí editor a konzoli"
+msgstr "Povolit odpojení pomocných widgetů do samostatných oken"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2745
 msgid "Show Welcome Screen"
@@ -2795,39 +2702,42 @@ msgstr "Povolit lokalizaci rozhraní PythonSCADu (vyžaduje restart aplikace)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2747
 msgid "Bring window to front after automatic reload"
-msgstr ""
+msgstr "Přesunout okno do popředí po automatickém načtení"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2748
 msgid "Play sound notification on render complete"
-msgstr ""
+msgstr "Přehrát zvuk po dokončení vykreslení"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2749
 msgid "Play sound when render completion time is at least"
-msgstr ""
+msgstr "Přehrát zvuk, když doba vykreslení je alespoň"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2750
 msgid "sec"
-msgstr ""
+msgstr "s"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
 #: src/gui/Preferences.cc:445
 msgid "When launching another instance with files:"
-msgstr ""
+msgstr "Při spuštění další instance se soubory:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
 #: src/gui/Preferences.cc:447
-msgid "Enable session management (save/restore tabs on quit, requires restart)"
+msgid ""
+"Enable session management (save/restore tabs on quit, requires restart)"
 msgstr ""
+"Povolit správu relace (ukládání/obnovení karet při ukončení, vyžaduje "
+"restart)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2753
 #: src/gui/Preferences.cc:449
 msgid "Autosave session in background for crash recovery"
-msgstr ""
+msgstr "Automaticky ukládat relaci na pozadí pro obnovu po pádu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
 #: src/gui/Preferences.cc:450
 msgid "Autosave interval:"
-msgstr ""
+msgstr "Interval automatického ukládání:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2755
 msgid "Console"
@@ -2835,203 +2745,199 @@ msgstr "Konzole"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2756
 msgid "Clear console before Preview/Render"
-msgstr ""
+msgstr "Vymazat konzoli před náhledem/vykreslením"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2757
 msgid "Maximum lines for Console to keep:"
-msgstr ""
+msgstr "Maximální počet řádků v konzoli:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2758
 msgid "(0 for unlimited)"
-msgstr ""
+msgstr "(0 = neomezeně)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2760
-#, fuzzy
 msgid "Customizer"
-msgstr "Skrýt &terminál"
+msgstr "Customizer"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2762
 msgid "OpenSCAD Language Features"
-msgstr ""
+msgstr "Funkce jazyka OpenSCAD"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2763
-#, fuzzy
 msgid "Warnings"
-msgstr "OpenGL varování"
+msgstr "Varování"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2764
 msgid "Stop on the first warning"
-msgstr ""
+msgstr "Zastavit při prvním varování"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2765
 msgid "Check the parameter range for builtin modules"
-msgstr ""
+msgstr "Kontrolovat rozsah parametrů vestavěných modulů"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2766
 msgid "Warn when there is a parameter mismatch in user module calls"
-msgstr ""
+msgstr "Varovat při neshodě parametrů v uživatelských modulech"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2767
 msgid "Trace"
-msgstr ""
+msgstr "Trace"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2768
 msgid "Trace depth:"
-msgstr ""
+msgstr "Hloubka trace:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2769
 msgid "(max. number or trace messages)"
-msgstr ""
+msgstr "(max. počet trace zpráv)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2770
 msgid "Show parameters of usermodule calls in trace"
-msgstr ""
+msgstr "Zobrazit parametry volání usermodule v trace"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
 msgid "Render Summary"
-msgstr ""
+msgstr "Souhrn vykreslení"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
 msgid "Camera"
-msgstr ""
+msgstr "Kamera"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
 msgid "Bounding Box"
-msgstr ""
+msgstr "Ohraničující box"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
 msgid "Measurements: Area"
-msgstr ""
+msgstr "Měření: plocha"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2775
 msgid "Measurements: Volume"
-msgstr ""
+msgstr "Měření: objem"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2776
-#, fuzzy
 msgid "Export Features"
-msgstr "Funkce"
+msgstr "Funkce exportu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
 msgid "Toolbar Export 3D"
-msgstr ""
+msgstr "Panel nástrojů export 3D"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2778
 msgid "Toolbar Export 2D"
-msgstr ""
+msgstr "Panel nástrojů export 2D"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2779
 msgid "Debugging"
-msgstr ""
+msgstr "Ladění"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2780
 msgid "Enable tracing of HIDAPI events (requires restart of PythonSCAD)"
-msgstr ""
+msgstr "Povolit trasování událostí HIDAPI (vyžaduje restart PythonSCAD)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2781
 msgid "Network Import List"
-msgstr ""
+msgstr "Seznam síťových importů"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
 msgid "Globally trust Python designs"
-msgstr ""
+msgstr "Globálně důvěřovat Python designům"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
 msgid "Really (very dangerous)"
-msgstr ""
+msgstr "Opravdu (velmi nebezpečné)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
 msgid "Dialog visibility"
-msgstr ""
+msgstr "Viditelnost dialogů"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
 msgid "Always show PDF export dialog"
-msgstr ""
+msgstr "Vždy zobrazit dialog exportu PDF"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
 msgid "Always show 3MF export dialog"
-msgstr ""
+msgstr "Vždy zobrazit dialog exportu 3MF"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
 msgid "Always show SVF export dialog"
-msgstr ""
+msgstr "Vždy zobrazit dialog exportu SVG"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
 msgid "Always show GCODE export dialog"
-msgstr ""
+msgstr "Vždy zobrazit dialog exportu GCODE"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
 msgid "Always show Print Service dialog"
-msgstr ""
+msgstr "Vždy zobrazit dialog tiskové služby"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
-#, fuzzy
 msgid "AI Preferences"
-msgstr "Předvolby"
+msgstr "Nastavení AI"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
 msgid ""
 "AI assistant integration is active. Configure your connection profiles and "
 "parameters below."
 msgstr ""
+"Integrace AI asistenta je aktivní. Níže nakonfigurujte své připojovací "
+"profily a parametry."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
 msgid "Profiles"
-msgstr ""
+msgstr "Profily"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
 msgid "Active Profile"
-msgstr ""
+msgstr "Aktivní profil"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
-#, fuzzy
 msgid "New Profile"
-msgstr "&Soubor"
+msgstr "Nový profil"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
 msgid "Delete"
-msgstr ""
+msgstr "Smazat"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
 msgid "API Configuration"
-msgstr ""
+msgstr "Konfigurace API"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
 msgid "API Endpoint"
-msgstr ""
+msgstr "Koncový bod API"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
 msgid "System Prompt / Instructions"
-msgstr ""
+msgstr "Systémový prompt / instrukce"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
 msgid "Default User Prompt"
-msgstr ""
+msgstr "Výchozí uživatelský prompt"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
 msgid "API Parameters"
-msgstr ""
+msgstr "Parametry API"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
 msgid "Add Parameter"
-msgstr ""
+msgstr "Přidat parametr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
 msgid "Remove Parameter"
-msgstr ""
+msgstr "Odebrat parametr"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:180
-#, fuzzy
 msgid "Run local Application"
-msgstr "Aplikace"
+msgstr "Spustit lokální aplikaci"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:182
 msgid "File format"
-msgstr ""
+msgstr "Formát souboru"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:183
 msgid "Enable remote services that need network access"
-msgstr ""
+msgstr "Povolit vzdálené služby vyžadující síťový přístup"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ProgressWidget.h:70
 msgid "%v / %m"
@@ -3039,77 +2945,71 @@ msgstr "%v / %m"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:86
 msgid "Sharing Design on pythonscad.org"
-msgstr ""
+msgstr "Sdílení designu na pythonscad.org"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:87
-#, fuzzy
 msgid "Design name"
-msgstr "&Design"
+msgstr "Název designu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:88
 msgid "Author name(optional)"
-msgstr ""
+msgstr "Jméno autora (volitelné)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:89
 msgid "Publish on pythonscad.org"
-msgstr ""
+msgstr "Publikovat na pythonscad.org"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:266
-#, fuzzy
 msgid "ViewportControlWidget"
-msgstr "Skrýt nástrojové lišty"
+msgstr "Ovládání pohledu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:271
-#, fuzzy
 msgid "Aspect Ratio"
-msgstr "Aplikace"
+msgstr "Poměr stran"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:272
 msgid "Width"
-msgstr ""
+msgstr "Šířka"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:273
-#, fuzzy
 msgid "Height"
-msgstr "Z&prava"
+msgstr "Výška"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:275
 msgid "Lock"
-msgstr ""
+msgstr "Zamknout"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:276
-#, fuzzy
 msgid "Details"
-msgstr "Zobrazit osy"
+msgstr "Podrobnosti"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:277
-#, fuzzy
 msgid "Distance"
-msgstr "Pokročilé"
+msgstr "Vzdálenost"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:278
 msgid "FOV"
-msgstr ""
+msgstr "FOV"
 
 #: src/core/Settings.cc:48
 #, c-format
 msgid "axis-%d"
-msgstr ""
+msgstr "osa-%d"
 
 #: src/core/Settings.cc:49
 #, c-format
 msgid "Axis %d"
-msgstr ""
+msgstr "Osa %d"
 
 #: src/core/Settings.cc:52
 #, c-format
 msgid "axis-inverted-%d"
-msgstr ""
+msgstr "osa-invertovaná-%d"
 
 #: src/core/Settings.cc:53
 #, c-format
 msgid "Axis %d (inverted)"
-msgstr ""
+msgstr "Osa %d (invertovaná)"
 
 #: src/core/Settings.cc:181
 msgid "After indentation"
@@ -3117,195 +3017,202 @@ msgstr "za odsazením"
 
 #: src/core/Settings.cc:212
 msgid "Open in new window"
-msgstr ""
+msgstr "Otevřít v novém okně"
 
 #: src/core/Settings.cc:213
 msgid "Reuse active window"
-msgstr ""
+msgstr "Znovu použít aktivní okno"
 
 #: src/core/Settings.cc:224
 msgid "Upload only"
-msgstr ""
+msgstr "Pouze nahrát"
 
 #: src/core/Settings.cc:225
 msgid "Upload & Slice"
-msgstr ""
+msgstr "Nahrát a &slicovat"
 
 #: src/core/Settings.cc:226
 msgid "Upload, Slice & Select for printing"
-msgstr ""
+msgstr "Nahrát, slicovat a vybrat k tisku"
 
 #: src/core/Settings.cc:227
 msgid "Upload, Slice & Start printing"
-msgstr ""
+msgstr "Nahrát, slicovat a spustit tisk"
 
 #: src/core/Settings.cc:444
 msgid "Use colors from model"
-msgstr ""
+msgstr "Použít barvy z modelu"
 
 #: src/core/Settings.cc:446
-#, fuzzy
 msgid "Use selected color only"
-msgstr "Hledat vybraný řetěze&c"
+msgstr "Použít pouze vybranou barvu"
 
 #: src/core/Settings.cc:453
 msgid "Millimeter"
-msgstr ""
+msgstr "Milimetr"
 
 #: src/core/Settings.cc:457
 msgid "Feet"
-msgstr ""
+msgstr "Stopy"
 
 #: src/core/Settings.cc:465
-#, fuzzy
 msgid "Color"
-msgstr "Barevné téma:"
+msgstr "Barva"
 
 #: src/core/Settings.cc:466
 msgid "Base Material"
-msgstr ""
+msgstr "Základní materiál"
 
 #: src/core/Settings.cc:528
 msgid "Alphabetical"
-msgstr ""
+msgstr "Abecedně"
 
 #: src/glview/Camera.cc:208
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Viewport: translate = [ %.2f %.2f %.2f ], rotate = [ %.2f %.2f %.2f ], "
 "distance = %.2f, fov = %.2f"
 msgstr ""
 "Pohled: posun = [ %.2f %.2f %.2f ], rotace = [ %.2f %.2f %.2f ], vzdálenost "
-"= %.2f"
+"= %.2f, fov = %.2f"
 
 #: src/gui/ai/ChatWidget.cc:67 src/gui/ai/ChatWidget.cc:319
 msgid "Thinking..."
-msgstr ""
+msgstr "Přemýšlím …"
 
 #: src/gui/ai/ChatWidget.cc:76
 msgid "Thinking"
-msgstr ""
+msgstr "Přemýšlím"
 
 #: src/gui/ai/ChatWidget.cc:141 src/gui/ai/ChatWidget.cc:350
 msgid ""
 "Hello! I am your OpenSCAD AI assistant. Ask me to write some code, e.g. "
 "\"draw a sphere\" or \"create a box with a hole\"."
 msgstr ""
+"Ahoj! Jsem váš OpenSCAD AI asistent. Požádejte mě o napsání kódu, např. "
+"„nakresli kouli“ nebo „vytvoř krabici s dírou“."
 
 #: src/gui/ai/ChatWidget.cc:156
 msgid "AI proposed code changes:"
-msgstr ""
+msgstr "AI navrhla změny kódu:"
 
 #: src/gui/ai/ChatWidget.cc:159
 msgid "Review & Apply"
-msgstr ""
+msgstr "Zkontrolovat a &použít"
 
 #: src/gui/ai/ChatWidget.cc:164
 msgid "Discard"
-msgstr ""
+msgstr "Zahodit"
 
 #: src/gui/ai/ChatWidget.cc:227 src/gui/ai/ChatWidget.cc:371
 msgid "Stop"
-msgstr ""
+msgstr "Zastavit"
 
 #: src/gui/Animate.cc:207
 msgid "press to pause animation"
-msgstr ""
+msgstr "klikněte pro pozastavení animace"
 
 #: src/gui/Animate.cc:211
 msgid "press to start animation"
-msgstr ""
+msgstr "klikněte pro spuštění animace"
 
 #: src/gui/Animate.cc:214
 msgid "incorrect values"
-msgstr ""
+msgstr "nesprávné hodnoty"
 
 #: src/gui/ColorList.cc:207
 msgid "Filter (%1 colors found)"
-msgstr ""
+msgstr "Filtr (%1 nalezených barev)"
 
 #: src/gui/Console.cc:188
 msgid "Save console content"
-msgstr ""
+msgstr "Uložit obsah konzole"
 
 #: src/gui/Editor.cc:206
 msgid "The active design is not a Python design."
-msgstr ""
+msgstr "Aktivní design není Python design."
 
 #: src/gui/Editor.cc:212
 msgid ""
 "Untitled buffers are already trusted. Save to a file if you need a "
 "persistent trust entry."
 msgstr ""
+"Nepojmenované buffery jsou již důvěryhodné. Uložte do souboru, pokud "
+"potřebujete trvalý záznam důvěry."
 
 #: src/gui/Export3mfDialog.cc:78
 msgid ""
 "This PythonSCAD build uses lib3mf version 1. Setting the decimal precision "
 "for export needs version 2 or later."
 msgstr ""
+"Toto sestavení PythonSCAD používá lib3mf verze 1. Nastavení desetinné "
+"přesnosti pro export vyžaduje verzi 2 nebo novější."
 
 #: src/gui/ExternalToolInterface.cc:188
 msgid "Exported design exceeds the service upload limit of (%1 MB)."
-msgstr ""
+msgstr "Exportovaný design překračuje limit nahrávání služby (%1 MB)."
 
 #: src/gui/FontList.cc:403
-#, fuzzy
 msgid "Styled font name"
-msgstr "Písmo"
+msgstr "Formátovaný název písma"
 
 #: src/gui/FontList.cc:404
-#, fuzzy
 msgid "Font style"
-msgstr "Seznam &písem"
+msgstr "Styl písma"
 
 #: src/gui/FontList.cc:407
-#, fuzzy
 msgid "File name"
-msgstr "&Soubor"
+msgstr "Název souboru"
 
 #: src/gui/FontList.cc:408
 msgid "File path"
-msgstr ""
+msgstr "Cesta k souboru"
 
 #: src/gui/FontList.cc:409
 msgid "Hash"
-msgstr ""
+msgstr "Hash"
 
 #: src/gui/input/AxisConfigWidget.h:89
 msgid ""
 "This driver was not enabled during build time and is thus not available."
-msgstr ""
+msgstr "Tento ovladač nebyl povolen při sestavení a proto není k dispozici."
 
 #: src/gui/input/AxisConfigWidget.h:92
 msgid ""
-"The DBUS driver is not for actual devices but for remote control, Linux only."
+"The DBUS driver is not for actual devices but for remote control, Linux "
+"only."
 msgstr ""
+"Ovladač DBUS není pro skutečná zařízení, ale pro vzdálené ovládání, pouze "
+"Linux."
 
 #: src/gui/input/AxisConfigWidget.h:94
 msgid ""
 "The HIDAPI driver communicates directly with the 3D mice, Windows and macOS."
-msgstr ""
+msgstr "Ovladač HIDAPI komunikuje přímo se 3D myšemi, Windows a macOS."
 
 #: src/gui/input/AxisConfigWidget.h:96
 msgid ""
 "The SpaceNav driver enables 3D-input-devices using the spacenavd daemon, "
 "Linux only."
 msgstr ""
+"Ovladač SpaceNav umožňuje 3D vstupní zařízení pomocí démona spacenavd, pouze"
+" Linux."
 
 #: src/gui/input/AxisConfigWidget.h:98
 msgid ""
-"The Joystick driver uses the Linux joystick device (fixed to /dev/input/"
-"js0), Linux only."
+"The Joystick driver uses the Linux joystick device (fixed to "
+"/dev/input/js0), Linux only."
 msgstr ""
+"Ovladač Joystick používá linuxové joystick zařízení (pevně /dev/input/js0), "
+"pouze Linux."
 
 #: src/gui/input/AxisConfigWidget.h:100
 msgid "The QGAMEPAD driver is for multiplattform Gamepad Support."
-msgstr ""
+msgstr "Ovladač QGamepad je pro multiplatformní podporu gamepadů."
 
 #: src/gui/input/ButtonConfigWidget.cc:249
-#, fuzzy
 msgid "Toggle Perspective"
-msgstr "Pe&rspektivně"
+msgstr "Přepnout perspektivu"
 
 #: src/gui/MainWindow.cc:1246
 msgid "Compile error."
@@ -3323,19 +3230,20 @@ msgstr[1] "Kompilace vyvolala %1 varování."
 msgstr[2] "Kompilace vyvolala %1 varování."
 
 #: src/gui/MainWindow.cc:1267
-#, fuzzy
 msgid ""
 " For details see the <a href=\"#errorlog\">error log</a> and <a "
 "href=\"#console\">console window</a>."
-msgstr " Pro podrobnosti nahlédněte do <a href=\"#console\">konzole</a>."
+msgstr ""
+" Pro podrobnosti viz <a href=\"#errorlog\">protokol chyb</a> a <a "
+"href=\"#console\">okno konzole</a>."
 
 #: src/gui/MainWindow.cc:1607 src/gui/TabManager.cc:248
 msgid "Session Save"
-msgstr ""
+msgstr "Uložení relace"
 
 #: src/gui/MainWindow.cc:1608
 msgid "Could not save the session."
-msgstr ""
+msgstr "Relaci se nepodařilo uložit."
 
 #: src/gui/MainWindow.cc:1609
 msgid ""
@@ -3343,23 +3251,25 @@ msgid ""
 "\n"
 "%2"
 msgstr ""
+"%1\n"
+"\n"
+"%2"
 
 #: src/gui/MainWindow.cc:1610
 msgid "Try Again"
-msgstr ""
+msgstr "Zkusit znovu"
 
 #: src/gui/MainWindow.cc:1612
 msgid "Quit Without Saving"
-msgstr ""
+msgstr "Ukončit bez uložení"
 
 #: src/gui/MainWindow.cc:1613
-#, fuzzy
 msgid "Keep Open"
-msgstr "Otevřít"
+msgstr "Ponechat otevřené"
 
 #: src/gui/MainWindow.cc:1798
 msgid "Revoke All Trusted Designs"
-msgstr ""
+msgstr "Odvolat důvěru u všech designů"
 
 #: src/gui/MainWindow.cc:1799
 msgid ""
@@ -3367,20 +3277,23 @@ msgid ""
 "\n"
 "Are you sure?"
 msgstr ""
+"Tím se odvolá důvěra u všech Python designů.\n"
+"\n"
+"Opravdu?"
 
 #: src/gui/MainWindow.cc:1841 src/gui/MainWindow.cc:1848
 #: src/gui/MainWindow.cc:1857 src/gui/MainWindow.cc:1870
 #: src/gui/MainWindow.cc:1875
 msgid "Create Virtual Environment"
-msgstr ""
+msgstr "Vytvořit virtuální prostředí"
 
 #: src/gui/MainWindow.cc:1855
 msgid "Creating Python virtual environment. Please wait..."
-msgstr ""
+msgstr "Vytváření virtuálního prostředí Pythonu. Čekejte prosím …"
 
 #: src/gui/MainWindow.cc:1892
 msgid "Select Virtual Environment"
-msgstr ""
+msgstr "Vybrat virtuální prostředí"
 
 #: src/gui/MainWindow.cc:2419 src/gui/TabManager.cc:199
 #: src/gui/TabManager.cc:313
@@ -3394,14 +3307,18 @@ msgid ""
 "\n"
 "Do you really want to reload the file?"
 msgstr ""
+"Soubor se na disku změnil, ale tato karta obsahuje neuložené úpravy.\n"
+"Načtením ztratíte své změny.\n"
+"\n"
+"Opravdu chcete soubor znovu načíst?"
 
 #: src/gui/MainWindow.cc:3040
 msgid "Click to change language"
-msgstr ""
+msgstr "Klikněte pro změnu jazyka"
 
 #: src/gui/MainWindow.cc:3085
 msgid "Auto-detect from file extension"
-msgstr ""
+msgstr "Automaticky rozpoznat podle přípony souboru"
 
 #: src/gui/MainWindow.cc:3484
 msgid "Export %1 File"
@@ -3429,76 +3346,71 @@ msgstr "PNG Soubory (*.png)"
 
 #: src/gui/MainWindow.cc:3961 src/gui/MainWindow.cc:4865
 msgid "&AI Chat"
-msgstr ""
+msgstr "&AI chat"
 
 #: src/gui/MainWindow.cc:4857
-#, fuzzy
 msgid "&Editor"
-msgstr "Editor"
+msgstr "&Editor"
 
 #: src/gui/MainWindow.cc:4858
-#, fuzzy
 msgid "&Console"
-msgstr "Konzole"
+msgstr "&Konzole"
 
 #: src/gui/MainWindow.cc:4859
-#, fuzzy
 msgid "C&ustomizer"
-msgstr "Skrýt &terminál"
+msgstr "C&ustomizer"
 
 #: src/gui/MainWindow.cc:4860
-#, fuzzy
 msgid "Error &Log"
-msgstr "Skrýt nástrojové lišty"
+msgstr "Protokol &chyb"
 
 #: src/gui/MainWindow.cc:4861
-#, fuzzy
 msgid "&Animate"
-msgstr "Animovat"
+msgstr "&Animovat"
 
 #: src/gui/MainWindow.cc:4862
 msgid "&Font List"
 msgstr "Seznam &písem"
 
 #: src/gui/MainWindow.cc:4863
-#, fuzzy
 msgid "C&olor List"
-msgstr "Barevné téma:"
+msgstr "Se&znam barev"
 
 #: src/gui/MainWindow.cc:4864
-#, fuzzy
 msgid "&Viewport Control"
-msgstr "Skrýt nástrojové lišty"
+msgstr "&Ovládání pohledu"
 
 #: src/gui/Network.h:150
 msgid "Timeout error"
-msgstr ""
+msgstr "Chyba timeoutu"
 
 #: src/gui/OctoPrintApiKeyDialog.cc:58
 msgid "API key created, waiting for approval in OctoPrint..."
-msgstr ""
+msgstr "API klíč vytvořen, čeká se na schválení v OctoPrint …"
 
 #: src/gui/OctoPrintApiKeyDialog.cc:89
 msgid "API key approved."
-msgstr ""
+msgstr "API klíč schválen."
 
 #: src/gui/OctoPrintApiKeyDialog.cc:99
 msgid "API key approval failed."
-msgstr ""
+msgstr "Schválení API klíče selhalo."
 
 #: src/gui/OpenSCADApp.cc:82
 msgid "Unknown error"
-msgstr ""
+msgstr "Neznámá chyba"
 
 #: src/gui/OpenSCADApp.cc:86
 msgid "Critical Error"
-msgstr ""
+msgstr "Kritická chyba"
 
 #: src/gui/OpenSCADApp.cc:87
 msgid ""
 "A critical error was caught. The application may have become unstable:\n"
 "%1"
 msgstr ""
+"Byla zachycena kritická chyba. Aplikace může být nestabilní:\n"
+"%1"
 
 #: src/gui/OpenSCADApp.cc:113
 msgid ""
@@ -3509,102 +3421,94 @@ msgstr ""
 "To může trvat až několik minut."
 
 #: src/gui/parameter/ParameterWidget.cc:76
-#, fuzzy
 msgid "Collapse All"
-msgstr "Uložit &jako..."
+msgstr "Sbalit vše"
 
 #: src/gui/parameter/ParameterWidget.cc:79
 msgid "Expand All"
-msgstr ""
+msgstr "Rozbalit vše"
 
 #: src/gui/parameter/ParameterWidget.cc:153
 msgid "Saving presets"
-msgstr ""
+msgstr "Ukládání předvoleb"
 
 #: src/gui/parameter/ParameterWidget.cc:154
-#, fuzzy
 msgid "%1 was found, but was unreadable. Do you want to overwrite %1?"
-msgstr ""
-"%1 již existuje.\n"
-"Chcete jej nahradit?"
+msgstr "%1 bylo nalezeno, ale nešlo přečíst. Chcete %1 přepsat?"
 
 #: src/gui/parameter/ParameterWidget.cc:334
 msgid "Create new set of parameter"
-msgstr ""
+msgstr "Vytvořit novou sadu parametrů"
 
 #: src/gui/parameter/ParameterWidget.cc:334
 msgid "Enter name of the parameter set"
-msgstr ""
+msgstr "Zadejte název sady parametrů"
 
 #: src/gui/parameter/ParameterWidget.cc:390
 msgid "New set "
-msgstr ""
+msgstr "Nová sada "
 
 #: src/gui/Preferences.cc:295
 msgid "Parameter Key"
-msgstr ""
+msgstr "Klíč parametru"
 
 #: src/gui/Preferences.cc:295
 msgid "Parameter Value"
-msgstr ""
+msgstr "Hodnota parametru"
 
 #: src/gui/Preferences.cc:311 src/gui/Preferences.cc:316
 msgid "Ollama Local"
-msgstr ""
+msgstr "Ollama lokálně"
 
 #: src/gui/Preferences.cc:451
 msgid " seconds"
-msgstr ""
+msgstr " sekund"
 
 #: src/gui/Preferences.cc:478 src/gui/Preferences.cc:483
 #: src/gui/Preferences.cc:1461 src/gui/Preferences.cc:1500
 msgid "<Default>"
-msgstr ""
+msgstr "<Výchozí>"
 
 #: src/gui/Preferences.cc:642
 msgid "NONE"
-msgstr ""
+msgstr "ŽÁDNÉ"
 
 #: src/gui/Preferences.cc:1444
 msgid "Success: Server Version = %2, API Version = %1"
-msgstr ""
+msgstr "Úspěch: verze serveru = %2, verze API = %1"
 
 #: src/gui/Preferences.cc:1446 src/gui/Preferences.cc:1471
 #: src/gui/Preferences.cc:1510
-#, fuzzy
 msgid "Error"
-msgstr "Skrýt nástrojové lišty"
+msgstr "Chyba"
 
 #: src/gui/Preferences.cc:1587
-#, fuzzy
 msgid "New AI Profile"
-msgstr "&Soubor"
+msgstr "Nový AI profil"
 
 #: src/gui/Preferences.cc:1587
-#, fuzzy
 msgid "Profile name:"
-msgstr "&Soubor"
+msgstr "Název profilu:"
 
 #: src/gui/Preferences.cc:1592
 msgid "Duplicate Profile"
-msgstr ""
+msgstr "Duplikovat profil"
 
 #: src/gui/Preferences.cc:1592
 msgid "A profile with that name already exists."
-msgstr ""
+msgstr "Profil s tímto názvem již existuje."
 
 #: src/gui/Preferences.cc:1651
 msgid "Delete AI Profile"
-msgstr ""
+msgstr "Smazat AI profil"
 
 #: src/gui/Preferences.cc:1652
 msgid "Delete profile \"%1\"?"
-msgstr ""
+msgstr "Smazat profil „%1“?"
 
 #: src/gui/QGLView.cc:194
 msgid ""
-"Warning: Missing OpenGL capabilities for OpenCSG - OpenCSG has been "
-"disabled.\n"
+"Warning: Missing OpenGL capabilities for OpenCSG - OpenCSG has been disabled.\n"
 "\n"
 msgstr ""
 "Varování: Chybí OpenGL funkce pro OpenCSG - OpenCSG bylo vypnuto.\n"
@@ -3612,57 +3516,51 @@ msgstr ""
 
 #: src/gui/QGLView.cc:196
 msgid ""
-"It is highly recommended to use PythonSCAD on a system with OpenGL 2.0 or "
-"later.\n"
+"It is highly recommended to use PythonSCAD on a system with OpenGL 2.0 or later.\n"
 "Your renderer information is as follows:\n"
 msgstr ""
 "Vysoce doporučujeme používat OpenSCAD na systému s OpenGL 2.0 nebo novější.\n"
 "Zde je informace o vašem vykreslovacím systému:\n"
 
 #: src/gui/QGLView.cc:200
-#, fuzzy
 msgid ""
 "GLEW version %1\n"
 "%2 (%3)\n"
 "OpenGL version %4\n"
 msgstr ""
-"GLEW verze %s\n"
-"%s (%s)\n"
-"OpenGL verze %s\n"
+"Verze GLEW %1\n"
+"%2 (%3)\n"
+"Verze OpenGL %4\n"
 
 #: src/gui/QGLView.cc:206
-#, fuzzy
 msgid ""
 "GLAD version %1\n"
 "%2 (%3)\n"
 "OpenGL version %4\n"
 msgstr ""
-"GLEW verze %s\n"
-"%s (%s)\n"
-"OpenGL verze %s\n"
+"Verze GLAD %1\n"
+"%2 (%3)\n"
+"Verze OpenGL %4\n"
 
 #: src/gui/ScintillaEditor.cc:203
 msgid "This Python design is not trusted. Execution is disabled."
-msgstr ""
+msgstr "Tento Python design není důvěryhodný. Spuštění je zakázáno."
 
 #: src/gui/ScintillaEditor.cc:207
-#, fuzzy
 msgid "Trust Design"
-msgstr "&Design"
+msgstr "Důvěřovat designu"
 
 #: src/gui/TabManager.cc:130
 msgid "Python script (*.py)"
-msgstr ""
+msgstr "Python skript (*.py)"
 
 #: src/gui/TabManager.cc:133 src/gui/TabManager.cc:138
-#, fuzzy
 msgid "OpenSCAD script (*.scad)"
-msgstr "OpenSCAD designy(*.scad)"
+msgstr "OpenSCAD skript (*.scad)"
 
 #: src/gui/TabManager.cc:141
-#, fuzzy
 msgid "All files (*)"
-msgstr "%1 Soubor(ů) (*%2)"
+msgstr "Všechny soubory (*)"
 
 #: src/gui/TabManager.cc:163
 msgid ""
@@ -3674,7 +3572,7 @@ msgstr ""
 
 #: src/gui/TabManager.cc:200
 msgid "Cannot open design file \"%1\": path is a directory."
-msgstr ""
+msgstr "Nelze otevřít soubor designu „%1“: cesta je adresář."
 
 #: src/gui/TabManager.cc:249
 msgid ""
@@ -3685,85 +3583,92 @@ msgid ""
 "\n"
 "Session changes may be lost."
 msgstr ""
+"Nepodařilo se zapsat soubor relace:\n"
+"%1\n"
+"\n"
+"%2\n"
+"\n"
+"Změny relace mohou být ztraceny."
 
 #: src/gui/TabManager.cc:258
 msgid "Unable to create the session directory."
-msgstr ""
+msgstr "Nepodařilo se vytvořit adresář relace."
 
 #: src/gui/TabManager.cc:314
-#, fuzzy
 msgid ""
 "The file \"%1\" does not exist.\n"
 "\n"
 "Do you want to create it?"
 msgstr ""
-"%1 již existuje.\n"
-"Chcete jej nahradit?"
+"Soubor „%1“ neexistuje.\n"
+"\n"
+"Chcete ho vytvořit?"
 
 #: src/gui/TabManager.cc:803
 msgid "Copy file name"
-msgstr ""
+msgstr "Kopírovat název souboru"
 
 #: src/gui/TabManager.cc:809
 msgid "Copy full path"
-msgstr ""
+msgstr "Kopírovat úplnou cestu"
 
 #: src/gui/TabManager.cc:815
-#, fuzzy
 msgid "Open Folder"
-msgstr "&Soubor"
+msgstr "Otevřít složku"
 
 #: src/gui/TabManager.cc:820
-#, fuzzy
 msgid "Close Tab"
-msgstr "Zavřít"
+msgstr "Zavřít kartu"
 
 #: src/gui/TabManager.cc:825
 msgid "Close All But This Tab"
-msgstr ""
+msgstr "Zavřít všechny karty kromě této"
 
 #: src/gui/TabManager.cc:1121
-#, fuzzy
 msgid "Do you want to save the changes you made to %1?"
-msgstr "Chcete uložit změny?"
+msgstr "Chcete uložit změny provedené v %1?"
 
 #: src/gui/TabManager.cc:1122
 msgid "Your changes will be lost if you don't save them."
-msgstr ""
+msgstr "Pokud je neuložíte, vaše změny budou ztraceny."
 
 #: src/gui/TabManager.cc:1127
-#, fuzzy
 msgid "Don't save"
-msgstr "Příště nezobrazovat"
+msgstr "Neukládat"
 
 #: src/gui/TabManager.cc:1589 src/gui/TabManager.cc:1618
 #: src/gui/TabManager.cc:1625 src/gui/TabManager.cc:1653
 #: src/gui/TabManager.cc:1841
 msgid "Session Restore"
-msgstr ""
+msgstr "Obnovení relace"
 
 #: src/gui/TabManager.cc:1590
 msgid ""
 "The session file was created by a newer version of PythonSCAD (session "
 "version %1, but this build only supports up to version %2)."
 msgstr ""
+"Soubor relace byl vytvořen novější verzí PythonSCAD (verze relace %1, ale "
+"toto sestavení podporuje pouze do verze %2)."
 
 #: src/gui/TabManager.cc:1595
 msgid ""
-"Exit to keep the session file for use with a newer PythonSCAD, or discard it "
-"to start fresh here.\n"
+"Exit to keep the session file for use with a newer PythonSCAD, or discard it to start fresh here.\n"
 "\n"
 "Session file:\n"
 "%1"
 msgstr ""
+"Ukončete pro zachování souboru relace pro novější PythonSCAD, nebo ho zahoďte pro nový start zde.\n"
+"\n"
+"Soubor relace:\n"
+"%1"
 
 #: src/gui/TabManager.cc:1598
 msgid "Exit"
-msgstr ""
+msgstr "Ukončit"
 
 #: src/gui/TabManager.cc:1599
 msgid "Discard session"
-msgstr ""
+msgstr "Zahodit relaci"
 
 #: src/gui/TabManager.cc:1619
 msgid ""
@@ -3774,6 +3679,12 @@ msgid ""
 "\n"
 "Starting with a fresh session."
 msgstr ""
+"Nepodařilo se otevřít soubor relace ke čtení:\n"
+"%1\n"
+"\n"
+"%2\n"
+"\n"
+"Začíná se s novou relací."
 
 #: src/gui/TabManager.cc:1626
 msgid ""
@@ -3783,44 +3694,51 @@ msgid ""
 "The file has not been deleted — you may inspect it manually.\n"
 "Starting with a fresh session."
 msgstr ""
+"Soubor relace je poškozený nebo nečitelný:\n"
+"%1\n"
+"\n"
+"Soubor nebyl smazán — můžete ho ručně zkontrolovat.\n"
+"Začíná se s novou relací."
 
 #: src/gui/TabManager.cc:1654
 msgid ""
 "The session file uses an old format (version %1) that cannot be migrated to "
 "the current format (version %2). Starting with a fresh session."
 msgstr ""
+"Soubor relace používá starý formát (verze %1), který nelze migrovat do "
+"aktuálního formátu (verze %2). Začíná se s novou relací."
 
 #: src/gui/TabManager.cc:1842
 msgid "%1 file(s) could not be found on disk."
-msgstr ""
+msgstr "%1 soubor(ů) se na disku nepodařilo najít."
 
 #: src/gui/TabManager.cc:1844
 msgid ""
 "The session contents were restored, but the file paths are stale.\n"
 "Use Save As to pick a new location."
 msgstr ""
+"Obsah relace byl obnoven, ale cesty k souborům jsou zastaralé.\n"
+"Použijte Uložit jako pro výběr nového umístění."
 
 #: src/gui/TabManager.cc:1847
 msgid "Dismiss"
-msgstr ""
+msgstr "Zavřít"
 
 #: src/gui/TabManager.cc:1960 src/gui/TabManager.cc:2112
-#, fuzzy
 msgid "Failed to open file for writing"
-msgstr "Nepodařilo se otevřít soubor %s: %s"
+msgstr "Nepodařilo se otevřít soubor pro zápis"
 
 #: src/gui/TabManager.cc:2000 src/gui/TabManager.cc:2126
 msgid "Error saving design"
-msgstr ""
+msgstr "Chyba při ukládání designu"
 
 #: src/gui/TabManager.cc:2012
 msgid "Save File"
 msgstr "Uložit soubor"
 
 #: src/gui/TabManager.cc:2089
-#, fuzzy
 msgid "Save A Copy"
-msgstr "Uložit &jako..."
+msgstr "Uložit kopii"
 
 #: src/gui/UIUtils.cc:388
 msgid "Report issue"
@@ -3831,130 +3749,133 @@ msgid ""
 "Your browser has been opened to create a bug report.\n"
 "\n"
 "Environment information was added to the form automatically.\n"
-"Library and graphics information was copied to your clipboard — paste it "
-"into the \"Library & Graphics card information\" field."
+"Library and graphics information was copied to your clipboard — paste it into the \"Library & Graphics card information\" field."
 msgstr ""
 "Váš prohlížeč byl otevřen pro vytvoření hlášení o chybě.\n"
 "\n"
 "Informace o prostředí byly do formuláře přidány automaticky.\n"
-"Informace o knihovnách a grafice byly zkopírovány do schránky — vložte je do "
-"pole \"Library & Graphics card information\"."
+"Informace o knihovnách a grafice byly zkopírovány do schránky — vložte je do pole \"Library & Graphics card information\"."
 
 #: src/gui/UnsavedChangesDialog.cc:26
 msgid "Unsaved Changes"
-msgstr ""
+msgstr "Neuložené změny"
 
 #: src/gui/UnsavedChangesDialog.cc:42
 msgid "If you continue, these changes will be lost."
-msgstr ""
+msgstr "Pokud budete pokračovat, tyto změny budou ztraceny."
 
 #: src/gui/UnsavedChangesDialog.cc:46
 msgid "Press %1 to discard changes without saving."
-msgstr ""
+msgstr "Stiskněte %1 pro zahození změn bez uložení."
 
 #: src/gui/UnsavedChangesDialog.cc:64
 msgid "Discard Changes"
-msgstr ""
+msgstr "Zahodit změny"
 
 #: src/gui/UnsavedChangesDialog.cc:105 src/gui/UnsavedChangesDialog.cc:121
-#, fuzzy
 msgid "Untitled"
 msgstr "Bezejmenný"
 
 #: src/gui/UnsavedChangesDialog.cc:110
-#, fuzzy
 msgid "Save this file"
-msgstr "Uložit soubor"
+msgstr "Uložit tento soubor"
 
 #: src/gui/UnsavedChangesDialog.cc:131
 msgid "There is 1 file with unsaved changes:"
-msgstr ""
+msgstr "Existuje 1 soubor s neuloženými změnami:"
 
 #: src/gui/UnsavedChangesDialog.cc:133
 msgid "There are %1 files with unsaved changes:"
-msgstr ""
+msgstr "Existuje %1 souborů s neuloženými změnami:"
 
 #: src/gui/ViewportControl.cc:204 src/gui/ViewportControl.cc:207
 #: src/gui/ViewportControl.cc:220
 msgid "extreme values might may lead to strange behavior"
-msgstr ""
+msgstr "extrémní hodnoty mohou vést k podivnému chování"
 
 #: src/gui/ViewportControl.cc:217
 msgid "negative distances are not supported"
-msgstr ""
+msgstr "záporné vzdálenosti nejsou podporovány"
 
 #: src/io/export.cc:266
 #, c-format
 msgid "Can't open file \"%1$s\" for export"
-msgstr ""
+msgstr "Nelze otevřít soubor „%1$s“ pro export"
 
 #: src/io/export.cc:282
 #, c-format
 msgid "\"%1$s\" write error. (Disk full?)"
-msgstr ""
+msgstr "Chyba zápisu „%1$s“. (Plný disk?)"
 
 #: src/openscad_gui.cc:193 src/openscad_gui.cc:826 src/openscad_gui.cc:856
-#, fuzzy
 msgid "PythonSCAD"
-msgstr "O aplikaci PythonSCAD"
+msgstr "PythonSCAD"
 
 #: src/openscad_gui.cc:194
 msgid "Recovered session data was found."
-msgstr ""
+msgstr "Byla nalezena obnovená data relace."
 
 #: src/openscad_gui.cc:195
 msgid "Restore"
-msgstr ""
+msgstr "Obnovit"
 
 #: src/openscad_gui.cc:197
 msgid "Discard recovery only"
-msgstr ""
+msgstr "Zahodit pouze obnovu"
 
 #: src/openscad_gui.cc:198
-#, fuzzy
 msgid "Start fresh"
-msgstr "Začátek"
+msgstr "Začít znovu"
 
 #: src/openscad_gui.cc:199
-#, fuzzy
 msgid "Show File"
-msgstr "Zobrazit pravítko"
+msgstr "Zobrazit soubor"
 
 #: src/openscad_gui.cc:722
 msgid ""
-"PythonSCAD is already running. The existing window was brought to the front; "
-"this process exits."
+"PythonSCAD is already running. The existing window was brought to the front;"
+" this process exits."
 msgstr ""
+"PythonSCAD již běží. Existující okno bylo přesunuto do popředí; tento proces"
+" končí."
 
 #: src/openscad_gui.cc:726
 msgid ""
 "PythonSCAD is already running. An open request for the requested design "
 "file(s) was sent to that instance; this process exits."
 msgstr ""
+"PythonSCAD již běží. Požadavek na otevření souboru(ů) designu byl odeslán té"
+" instanci; tento proces končí."
 
 #: src/openscad_gui.cc:827
 msgid ""
-"Could not create the application configuration directory required for "
-"session data and single-instance locking:\n"
+"Could not create the application configuration directory required for session data and single-instance locking:\n"
 "\n"
 "%1"
 msgstr ""
+"Nepodařilo se vytvořit konfigurační adresář aplikace potřebný pro data relace a zámek jedné instance:\n"
+"\n"
+"%1"
 
 #: src/openscad_gui.cc:858
 msgid ""
 "PythonSCAD is already running but is not responding. The old PythonSCAD "
 "process must be closed to open a new window."
 msgstr ""
+"PythonSCAD již běží, ale nereaguje. Starý proces PythonSCAD musí být ukončen"
+" pro otevření nového okna."
 
 #: src/openscad_gui.cc:861
 msgid ""
-"Try again if the running instance may have recovered, or close it to start a "
-"new one."
+"Try again if the running instance may have recovered, or close it to start a"
+" new one."
 msgstr ""
+"Zkuste znovu, pokud běžící instance mohla obnovit odezvu, nebo ji ukončete "
+"pro spuštění nové."
 
 #: src/openscad_gui.cc:863
 msgid "Close PythonSCAD"
-msgstr ""
+msgstr "Zavřít PythonSCAD"
 
 #: examples
 msgid "Advanced"
@@ -3970,7 +3891,7 @@ msgstr "Staré"
 
 #: examples
 msgid "GCode"
-msgstr ""
+msgstr "GCode"
 
 #: examples
 msgid "Functions"
@@ -3978,12 +3899,12 @@ msgstr "Funkce"
 
 #: examples
 msgid "Parametric"
-msgstr ""
+msgstr "Parametrické"
 
 #. (itstool) path: component/summary
 #: pythonscad.appdata.xml.in2:6
 msgid "Design 3D models with Python — script-based CAD with live preview"
-msgstr ""
+msgstr "Navrhujte 3D modely v Pythonu — skriptové CAD s živým náhledem"
 
 #. (itstool) path: description/p
 #: pythonscad.appdata.xml.in2:20
@@ -3992,6 +3913,9 @@ msgid ""
 "parametric, engineering-oriented models in Python, preview them live, and "
 "export to STL, 3MF, and other formats for 3D printing and manufacturing."
 msgstr ""
+"PythonSCAD je skriptová aplikace pro 3D modelování s plným GUI. Pište "
+"parametrické, inženýrsky orientované modely v Pythonu, prohlížejte je živě a"
+" exportujte do STL, 3MF a dalších formátů pro 3D tisk a výrobu."
 
 #. (itstool) path: description/p
 #: pythonscad.appdata.xml.in2:21
@@ -4001,6 +3925,10 @@ msgid ""
 "values: compose models with Python, use pip packages, and iterate quickly "
 "with instant visual feedback in the 3D preview."
 msgstr ""
+"Na rozdíl od uměleckých modelovacích nástrojů jako Blender se PythonSCAD "
+"zaměřuje na přesné, opakovatelné CAD workflow řízené kódem. Tělesa jsou "
+"hodnoty první třídy: skládejte modely v Pythonu, používejte pip balíčky a "
+"rychle iterujte s okamžitou vizuální zpětnou vazbou v 3D náhledu."
 
 #. (itstool) path: description/p
 #: pythonscad.appdata.xml.in2:22
@@ -4009,6 +3937,9 @@ msgid ""
 "Python can produce a model you can hold in your hand after 3D printing. "
 "OpenSCAD scripts remain supported alongside native Python."
 msgstr ""
+"PythonSCAD je také obohacující způsob, jak se učit programovat — pár řádků "
+"Pythonu může vytvořit model, který po 3D tisku držíte v ruce. OpenSCAD "
+"skripty zůstávají podporovány vedle nativního Pythonu."
 
 #, fuzzy
 #~ msgid "Error-&Log"
@@ -4028,20 +3959,20 @@ msgstr ""
 #~ "OpenSCAD.</p><p>Example:</p><pre style=\" margin-top:12px; margin-"
 #~ "bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-"
 #~ "indent:0px;\"><span style=\" font-family:'Courier New,courier';\">  "
-#~ "text(&quot;OpenSCAD&quot;, font = &quot;DejaVu Sans&quot;);</span></"
-#~ "pre><pre style=\" margin-top:0px; margin-bottom:12px; margin-left:0px; "
-#~ "margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" "
-#~ "font-family:'Courier New,courier';\">  text(&quot;OpenSCAD&quot;, font = "
+#~ "text(&quot;OpenSCAD&quot;, font = &quot;DejaVu Sans&quot;);</span></pre><pre"
+#~ " style=\" margin-top:0px; margin-bottom:12px; margin-left:0px; margin-"
+#~ "right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-"
+#~ "family:'Courier New,courier';\">  text(&quot;OpenSCAD&quot;, font = "
 #~ "&quot;Liberation Sans:style=Italic&quot;);</span></pre></body></html>"
 #~ msgstr ""
-#~ "<html><head/><body><p>Tento seznam zobrazuje písma momentálně dostupná "
-#~ "pro OpenSCAD.</p><p>Příklad:</p><pre style=\" margin-top:12px; margin-"
+#~ "<html><head/><body><p>Tento seznam zobrazuje písma momentálně dostupná pro "
+#~ "OpenSCAD.</p><p>Příklad:</p><pre style=\" margin-top:12px; margin-"
 #~ "bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-"
 #~ "indent:0px;\"><span style=\" font-family:'Courier New,courier';\">  "
-#~ "text(&quot;OpenSCAD&quot;, font = &quot;DejaVu Sans&quot;);</span></"
-#~ "pre><pre style=\" margin-top:0px; margin-bottom:12px; margin-left:0px; "
-#~ "margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" "
-#~ "font-family:'Courier New,courier';\">  text(&quot;OpenSCAD&quot;, font = "
+#~ "text(&quot;OpenSCAD&quot;, font = &quot;DejaVu Sans&quot;);</span></pre><pre"
+#~ " style=\" margin-top:0px; margin-bottom:12px; margin-left:0px; margin-"
+#~ "right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-"
+#~ "family:'Courier New,courier';\">  text(&quot;OpenSCAD&quot;, font = "
 #~ "&quot;Liberation Sans:style=Italic&quot;);</span></pre></body></html>"
 
 #~ msgid ""
@@ -4254,8 +4185,7 @@ msgstr ""
 #~ "WARNING: minkowski() and hull() is not implemented for 2d objects with "
 #~ "holes!"
 #~ msgstr ""
-#~ "VAROVÁNÍ: minkowski() a hull() nejsou implementovány pro 2D objekty s "
-#~ "dírami"
+#~ "VAROVÁNÍ: minkowski() a hull() nejsou implementovány pro 2D objekty s dírami"
 
 #~ msgid "WARNING: minkowski() could not get any points from object 1!"
 #~ msgstr "VAROVÁNÍ: minkowski() nenalezl žádné body v objektu 1!"
@@ -4270,13 +4200,11 @@ msgstr ""
 #~ msgstr "VAROVÁNÍ: hull() neumožňuje kombinovat 2D a 3D objekty."
 
 #~ msgid ""
-#~ "Hull() currently requires a valid 2-manifold. Please modify your design. "
-#~ "See http://en.wikibooks.org/wiki/OpenSCAD_User_Manual/"
-#~ "STL_Import_and_Export"
+#~ "Hull() currently requires a valid 2-manifold. Please modify your design. See"
+#~ " http://en.wikibooks.org/wiki/OpenSCAD_User_Manual/STL_Import_and_Export"
 #~ msgstr ""
-#~ "Hull() nyní podporuje jen validní 2-manifold objekty. Upravte svůj "
-#~ "design. Viz http://en.wikibooks.org/wiki/OpenSCAD_User_Manual/"
-#~ "STL_Import_and_Export"
+#~ "Hull() nyní podporuje jen validní 2-manifold objekty. Upravte svůj design. "
+#~ "Viz http://en.wikibooks.org/wiki/OpenSCAD_User_Manual/STL_Import_and_Export"
 
 #~ msgid "Rendering cancelled."
 #~ msgstr "Renderování zrušeno."
@@ -4285,8 +4213,8 @@ msgstr ""
 #~ "DEPRECATED: The %s() module will be removed in future releases. Use %s() "
 #~ "instead."
 #~ msgstr ""
-#~ "ZASTARALÉ: Zápis %s() bude v dalších verzích odstraněn. Místo něj "
-#~ "použijte %s()."
+#~ "ZASTARALÉ: Zápis %s() bude v dalších verzích odstraněn. Místo něj použijte "
+#~ "%s()."
 
 #~ msgid "OpenSCAD - New Document[*]"
 #~ msgstr "OpenSCAD - Nový dokument[*]"
