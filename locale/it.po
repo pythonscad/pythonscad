@@ -1919,11 +1919,11 @@ msgstr "Nascondi Barra Strumenti Vista 3D"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1349
 msgid "&Next Window\tCtrl+K"
-msgstr "&Finestra successiva\\tCtrl+K"
+msgstr "&Finestra successiva\tCtrl+K"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
 msgid "&Previous Window\tCtrl+H"
-msgstr "&Finestra precedente\\tCtrl+H"
+msgstr "&Finestra precedente\tCtrl+H"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1351
 msgid "Insert Template"
@@ -2874,8 +2874,8 @@ msgid "Always show 3MF export dialog"
 msgstr "Mostra sempre la finestra di esportazione 3MF"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
-msgid "Always show SVF export dialog"
-msgstr "Mostra sempre la finestra di esportazione SVF"
+msgid "Always show SVG export dialog"
+msgstr "Mostra sempre la finestra di esportazione SVG"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
 msgid "Always show GCODE export dialog"
@@ -3098,7 +3098,7 @@ msgstr "Elaborazione"
 msgid ""
 "Hello! I am your OpenSCAD AI assistant. Ask me to write some code, e.g. "
 "\"draw a sphere\" or \"create a box with a hole\"."
-msgstr "Ciao! Sono il tuo assistente IA OpenSCAD. Chiedimi di scrivere del codice, ad es. \\\"disegna una sfera\\\" o \\\"crea un cubo con un foro\\\"."
+msgstr "Ciao! Sono il tuo assistente IA OpenSCAD. Chiedimi di scrivere del codice, ad es. \"disegna una sfera\" o \"crea un cubo con un foro\"."
 
 #: src/gui/ai/ChatWidget.cc:156
 msgid "AI proposed code changes:"
@@ -3256,7 +3256,7 @@ msgid ""
 "%1\n"
 "\n"
 "%2"
-msgstr "%1\\n\\n%2"
+msgstr "%1\n\n%2"
 
 #: src/gui/MainWindow.cc:1610
 msgid "Try Again"
@@ -3279,7 +3279,7 @@ msgid ""
 "This will revoke trust for all Python designs.\n"
 "\n"
 "Are you sure?"
-msgstr "Questo revocherà l'attendibilità per tutti i progetti Python.\\n\\nSei sicuro?"
+msgstr "Questo revocherà l'attendibilità per tutti i progetti Python.\n\nSei sicuro?"
 
 #: src/gui/MainWindow.cc:1841 src/gui/MainWindow.cc:1848
 #: src/gui/MainWindow.cc:1857 src/gui/MainWindow.cc:1870
@@ -3306,7 +3306,7 @@ msgid ""
 "Reloading will discard your changes.\n"
 "\n"
 "Do you really want to reload the file?"
-msgstr "Il file è cambiato su disco, ma questa scheda ha modifiche non salvate.\\nRicaricando perderai le modifiche.\\n\\nVuoi davvero ricaricare il file?"
+msgstr "Il file è cambiato su disco, ma questa scheda ha modifiche non salvate.\nRicaricando perderai le modifiche.\n\nVuoi davvero ricaricare il file?"
 
 #: src/gui/MainWindow.cc:3040
 msgid "Click to change language"
@@ -3502,7 +3502,7 @@ msgstr "Elimina profilo IA"
 
 #: src/gui/Preferences.cc:1652
 msgid "Delete profile \"%1\"?"
-msgstr "Eliminare il profilo \\\"%1\\\"?"
+msgstr "Eliminare il profilo \"%1\"?"
 
 #: src/gui/QGLView.cc:194
 msgid ""
@@ -3574,7 +3574,7 @@ msgstr ""
 
 #: src/gui/TabManager.cc:200
 msgid "Cannot open design file \"%1\": path is a directory."
-msgstr "Impossibile aprire il file di progetto \\\"%1\\\": il percorso è una directory."
+msgstr "Impossibile aprire il file di progetto \"%1\": il percorso è una directory."
 
 #: src/gui/TabManager.cc:249
 msgid ""
@@ -3584,7 +3584,7 @@ msgid ""
 "%2\n"
 "\n"
 "Session changes may be lost."
-msgstr "Impossibile scrivere il file di sessione:\\n%1\\n\\n%2\\n\\nLe modifiche alla sessione potrebbero andare perse."
+msgstr "Impossibile scrivere il file di sessione:\n%1\n\n%2\n\nLe modifiche alla sessione potrebbero andare perse."
 
 #: src/gui/TabManager.cc:258
 msgid "Unable to create the session directory."
@@ -3595,7 +3595,7 @@ msgid ""
 "The file \"%1\" does not exist.\n"
 "\n"
 "Do you want to create it?"
-msgstr "Il file \\\"%1\\\" non esiste.\\n\\nVuoi crearlo?"
+msgstr "Il file \"%1\" non esiste.\n\nVuoi crearlo?"
 
 #: src/gui/TabManager.cc:803
 msgid "Copy file name"
@@ -3648,7 +3648,7 @@ msgid ""
 "\n"
 "Session file:\n"
 "%1"
-msgstr "Esci per conservare il file di sessione per una versione più recente di PythonSCAD, oppure scartalo per ricominciare da zero.\\n\\nFile di sessione:\\n%1"
+msgstr "Esci per conservare il file di sessione per una versione più recente di PythonSCAD, oppure scartalo per ricominciare da zero.\n\nFile di sessione:\n%1"
 
 #: src/gui/TabManager.cc:1598
 msgid "Exit"
@@ -3666,7 +3666,7 @@ msgid ""
 "%2\n"
 "\n"
 "Starting with a fresh session."
-msgstr "Impossibile aprire il file di sessione in lettura:\\n%1\\n\\n%2\\n\\nAvvio con una nuova sessione."
+msgstr "Impossibile aprire il file di sessione in lettura:\n%1\n\n%2\n\nAvvio con una nuova sessione."
 
 #: src/gui/TabManager.cc:1626
 msgid ""
@@ -3675,7 +3675,7 @@ msgid ""
 "\n"
 "The file has not been deleted — you may inspect it manually.\n"
 "Starting with a fresh session."
-msgstr "Il file di sessione è corrotto o illeggibile:\\n%1\\n\\nIl file non è stato eliminato — puoi esaminarlo manualmente.\\nAvvio con una nuova sessione."
+msgstr "Il file di sessione è corrotto o illeggibile:\n%1\n\nIl file non è stato eliminato — puoi esaminarlo manualmente.\nAvvio con una nuova sessione."
 
 #: src/gui/TabManager.cc:1654
 msgid ""
@@ -3691,7 +3691,7 @@ msgstr "%1 file non trovato/i su disco."
 msgid ""
 "The session contents were restored, but the file paths are stale.\n"
 "Use Save As to pick a new location."
-msgstr "Il contenuto della sessione è stato ripristinato, ma i percorsi dei file non sono più validi.\\nUsa Salva con nome per scegliere una nuova posizione."
+msgstr "Il contenuto della sessione è stato ripristinato, ma i percorsi dei file non sono più validi.\nUsa Salva con nome per scegliere una nuova posizione."
 
 #: src/gui/TabManager.cc:1847
 msgid "Dismiss"
@@ -3776,12 +3776,12 @@ msgstr "distanze negative non consentite"
 #: src/io/export.cc:266
 #, c-format
 msgid "Can't open file \"%1$s\" for export"
-msgstr "Impossibile aprire il file \\\"%1$s\\\" per l'esportazione"
+msgstr "Impossibile aprire il file \"%1$s\" per l'esportazione"
 
 #: src/io/export.cc:282
 #, c-format
 msgid "\"%1$s\" write error. (Disk full?)"
-msgstr "Errore di scrittura \\\"%1$s\\\". (Disco pieno?)"
+msgstr "Errore di scrittura \"%1$s\". (Disco pieno?)"
 
 #: src/openscad_gui.cc:193 src/openscad_gui.cc:826 src/openscad_gui.cc:856
 msgid "PythonSCAD"
@@ -3825,7 +3825,7 @@ msgid ""
 "session data and single-instance locking:\n"
 "\n"
 "%1"
-msgstr "Impossibile creare la directory di configurazione dell'applicazione necessaria per i dati di sessione e il blocco a istanza singola:\\n\\n%1"
+msgstr "Impossibile creare la directory di configurazione dell'applicazione necessaria per i dati di sessione e il blocco a istanza singola:\n\n%1"
 
 #: src/openscad_gui.cc:858
 msgid ""

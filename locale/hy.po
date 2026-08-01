@@ -1902,11 +1902,11 @@ msgstr "Թաքցնել 3D դիտմանիգորցիցներիվահանակը"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1349
 msgid "&Next Window\tCtrl+K"
-msgstr "&Հաջորդպատուհան\\tCtrl+K"
+msgstr "&Հաջորդպատուհան\tCtrl+K"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
 msgid "&Previous Window\tCtrl+H"
-msgstr "&Նասորդպատուհան\\tCtrl+H"
+msgstr "&Նասորդպատուհան\tCtrl+H"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1351
 msgid "Insert Template"
@@ -2854,7 +2854,7 @@ msgid "Always show 3MF export dialog"
 msgstr "Միշտ ցույց տալ 3MF արտահանման պատուհան"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
-msgid "Always show SVF export dialog"
+msgid "Always show SVG export dialog"
 msgstr "Միշտ ցույց տալ SVG արտահանման պատուհան"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
@@ -3211,7 +3211,7 @@ msgstr[1] "Կոմպիլացիան ստեղծված է %1 զգուշացումն�
 msgid ""
 " For details see the <a href=\"#errorlog\">error log</a> and <a "
 "href=\"#console\">console window</a>."
-msgstr " Manrur tegneri hamar tes <a href=\\"#errorlog\\">sxalneri matyan</a> ev <a href=\\"#console\\">vahanki patuhane</a>:"
+msgstr " Մանրամասների համար տես <a href=\"#errorlog\">սխալների մատյանը</a> և <a href=\"#console\">վահանակի պատուհանը</a>։"
 
 #: src/gui/MainWindow.cc:1607 src/gui/TabManager.cc:248
 msgid "Session Save"
