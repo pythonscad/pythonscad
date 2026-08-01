@@ -1608,7 +1608,7 @@ msgstr "Ctrl+3"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1224
 msgid "Show Scale Markers"
-msgstr "Axen&einteilung anzeigen"
+msgstr "Achsen&einteilung anzeigen"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1225
 msgid "&Top"
