@@ -2870,8 +2870,8 @@ msgid "Always show 3MF export dialog"
 msgstr "Sempre mostrar diálogo de exportação 3MF"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
-msgid "Always show SVF export dialog"
-msgstr "Sempre mostrar diálogo de exportação SVF"
+msgid "Always show SVG export dialog"
+msgstr "Sempre mostrar diálogo de exportação SVG"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
 msgid "Always show GCODE export dialog"
