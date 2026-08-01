@@ -107,6 +107,7 @@ object_script.openscad.Release
 /tmp
 /vcpkg_installed
 .wheel-vcpkg/
+.wheel-vcpkg-manifest/
 scripts/cibuildwheel/wheel-build-env.env
 /nbproject
 /mingw32.*
