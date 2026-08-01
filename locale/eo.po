@@ -1,27 +1,35 @@
-# Turkish translations for OpenSCAD package.
-# Copyright (C) 2021 THE OpenSCAD'S COPYRIGHT HOLDER
+# #-#-#-#-#  pythonscad-tmp.pot (OpenSCAD 2026.08.01)  #-#-#-#-#
+# Esperanto translations for OpenSCAD package.
+# Copyright (C) 2026 THE OpenSCAD'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the OpenSCAD package.
-# Serkan ÖNDER <serkanonder@outlook.com>, 2021.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenSCAD 2021.12.04\n"
+"#-#-#-#-#  pythonscad-tmp.pot (OpenSCAD 2026.08.01)  #-#-#-#-#\n"
+"Project-Id-Version: OpenSCAD 2026.08.01\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-08-01 00:48+0200\n"
-"PO-Revision-Date: 2021-12-04 17:55+0300\n"
-"Last-Translator: Serkan ÖNDER <serkanonder@outlook.com>\n"
-"Language-Team: Turkish\n"
-"Language: tr\n"
+"PO-Revision-Date: 2026-08-01 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Esperanto\n"
+"Language: eo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 2.3\n"
+"#-#-#-#-#  appdata-strings.pot (PACKAGE VERSION)  #-#-#-#-#\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2026-08-01 00:48+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
 
-#: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:102
 #: src/gui/AboutDialog.h:22
 msgid "About PythonSCAD"
-msgstr "PythonSCAD Hakkında"
+msgstr "Pri PythonSCAD"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:104
 msgid ""
@@ -37,15 +45,12 @@ msgid ""
 "\n"
 msgstr ""
 "<html><head/><body>\n"
-"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
-"weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span "
-"style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
-"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
-"weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: "
-"2em;\">Python destekli betik tabanlı 3B modelleme uygulaması</p>\n"
+"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
+"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: 2em;\">Skripta 3D-modelada aplikaĵo kun subteno por Python</p>\n"
 "</body></html>\n"
 "\n"
 "\n"
+""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:111
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:516
@@ -55,40 +60,40 @@ msgstr ""
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:110
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:186
 msgid "OK"
-msgstr "TAMAM"
+msgstr "Bone"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:275
 msgid "Animate"
-msgstr "Canlandır"
+msgstr "Animacii"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:276
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:278
 msgid "Toggle animation pause/unpause"
-msgstr "Animasyonu duraklat/devam ettir"
+msgstr "Baskuligi paŭzon/ludigon de animacio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:280
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:282
 msgid "Move to beginning (first frame)"
-msgstr "Başa git (ilk kare)"
+msgstr "Iri al la komenco (unua kadro)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:284
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:286
 msgid "Step one frame back"
-msgstr "Bir kare geri"
+msgstr "Unu kadron reen"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:288
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:290
 msgid "Step one frame forward"
-msgstr "Bir kare ileri"
+msgstr "Unu kadron antaŭen"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:292
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:294
 msgid "Move to end (last frame)"
-msgstr "Sona git (son kare)"
+msgstr "Iri al la fino (lasta kadro)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:296
 msgid "Time:"
-msgstr "Zaman:"
+msgstr "Tempo:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:297
 msgid "FPS:"
@@ -96,18 +101,18 @@ msgstr "FPS:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:298
 msgid "Steps:"
-msgstr "Adımlar:"
+msgstr "Paŝoj:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Animate.h:299
 msgid "Dump Pictures"
-msgstr "Döküm Resimleri"
+msgstr "Konservi bildojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:852
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:362
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:214
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2580
 msgid "Preferences"
-msgstr "Tercihler"
+msgstr "Preferoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:853
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:854
@@ -119,11 +124,11 @@ msgstr "Tercihler"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:870
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:881
 msgid "Trim"
-msgstr "Trim"
+msgstr "Stuci"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:855
 msgid "Reset Trim"
-msgstr "Trim'i Sıfırla"
+msgstr "Restarigi stucadon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:856
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:859
@@ -135,56 +140,56 @@ msgstr "Trim'i Sıfırla"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:869
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:880
 msgid "DeadZone"
-msgstr "ÖlüBölge"
+msgstr "Senreaga zono"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:857
 msgid "Auto Trim Axes"
-msgstr "Otomatik Trim Eksenleri"
+msgstr "Aŭtomate stuci aksojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:871
 msgid "Axis 2"
-msgstr "Eksen 2"
+msgstr "Akso 2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:872
 msgid "Axis 0"
-msgstr "Eksen 0"
+msgstr "Akso 0"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:873
 msgid "Axis 3"
-msgstr "Eksen 3"
+msgstr "Akso 3"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:874
 msgid "Axis 6"
-msgstr "Eksen 6"
+msgstr "Akso 6"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:875
 msgid "Axis 8"
-msgstr "Eksen 8"
+msgstr "Akso 8"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:876
 msgid "Axis 7"
-msgstr "Eksen 7"
+msgstr "Akso 7"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:877
 msgid "Axis 5"
-msgstr "Eksen 5"
+msgstr "Akso 5"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:878
 msgid "Axis 1"
-msgstr "Eksen 1"
+msgstr "Akso 1"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:879
 msgid "Axis 4"
-msgstr "Eksen 4"
+msgstr "Akso 4"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:882
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:279
 msgid "Rotation"
-msgstr "Döndürme"
+msgstr "Rotacio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:883
 msgid "Zoom"
-msgstr "Yakınlaştır"
+msgstr "Pligrandigi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:884
 msgid "X"
@@ -192,7 +197,7 @@ msgstr "X"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:885
 msgid "Gain"
-msgstr "Kazanç"
+msgstr "Amplifo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:886
 msgid "Y"
@@ -205,25 +210,24 @@ msgstr "Z"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:888
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:280
 msgid "Translation"
-msgstr "Öteleme"
+msgstr "Translokigo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:889
 msgid "ViewPort rel.<br/>Translation"
-msgstr "Görünüm bağımlı<br/>Öteleme"
+msgstr "Vidpunkto rel.<br/>Translokigo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:890
 msgid "ViewPort rel.<br />Rotation"
-msgstr "Görünüm bağımlı<br />Döndürme"
+msgstr "Vidpunkto rel.<br />Rotacio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:891
 msgid "Axis Setup:"
-msgstr "Eksen Kurulumu:"
+msgstr "Akso-agordoj:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:892
 msgid "<b>Driver selection:</b> <i>(changes require restarting PythonSCAD)</i>"
 msgstr ""
-"<b>Sürücü seçimi:</b> <i>(değişiklikler PythonSCAD'in yeniden başlatılmasını "
-"gerektirir)</i>"
+"<b>Elekto de pelilo:</b> <i>(ŝanĝoj postulas restartigi PythonSCAD)</i>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:893
 msgid "SpaceNav"
@@ -239,7 +243,7 @@ msgstr "QGamepad"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:896
 msgid "Joystick"
-msgstr "Oyun kolu"
+msgstr "Joystiko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:897
 msgid "DBus"
@@ -247,231 +251,231 @@ msgstr "DBus"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:898
 msgid "Axes Mapping:"
-msgstr "Eksen Haritalama:"
+msgstr "Mapado de aksoj:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:899
 msgid "Status:"
-msgstr "Durum:"
+msgstr "Stato:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:900
 msgid "TextLabel"
-msgstr "TextLabel"
+msgstr "Tekstmarko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:901
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2584
 msgid "Update"
-msgstr "Güncelle"
+msgstr "Ĝisdatigi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:363
 msgid "Button 19"
-msgstr "Düğme 19"
+msgstr "Butono 19"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:364
 msgid "Button 5"
-msgstr "Düğme 5"
+msgstr "Butono 5"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:365
 msgid "Button 14"
-msgstr "Düğme 14"
+msgstr "Butono 14"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:366
 msgid "Button 7"
-msgstr "Düğme 7"
+msgstr "Butono 7"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:367
 msgid "Button 16"
-msgstr "Düğme 16"
+msgstr "Butono 16"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:368
 msgid "Button 20"
-msgstr "Düğme 20"
+msgstr "Butono 20"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:369
 msgid "Button 1"
-msgstr "Düğme 1"
+msgstr "Butono 1"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:370
 msgid "Button 21"
-msgstr "Düğme 21"
+msgstr "Butono 21"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:371
 msgid "Button 18"
-msgstr "Düğme 18"
+msgstr "Butono 18"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:372
 msgid "Button 0"
-msgstr "Düğme 0"
+msgstr "Butono 0"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:373
 msgid "Button 4"
-msgstr "Düğme 4"
+msgstr "Butono 4"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:374
 msgid "Button 10"
-msgstr "Düğme 10"
+msgstr "Butono 10"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:375
 msgid "Button 6"
-msgstr "Düğme 6"
+msgstr "Butono 6"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:376
 msgid "Button 8"
-msgstr "Düğme 8"
+msgstr "Butono 8"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:377
 msgid "Button 15"
-msgstr "Düğme 15"
+msgstr "Butono 15"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:378
 msgid "Button 11"
-msgstr "Düğme 11"
+msgstr "Butono 11"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:379
 msgid "Button 3"
-msgstr "Düğme 3"
+msgstr "Butono 3"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:380
 msgid "Button 23"
-msgstr "Düğme 23"
+msgstr "Butono 23"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:381
 msgid "Button 9"
-msgstr "Düğme 9"
+msgstr "Butono 9"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:382
 msgid "Button 2"
-msgstr "Düğme 2"
+msgstr "Butono 2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:383
 msgid "Button 13"
-msgstr "Düğme 13"
+msgstr "Butono 13"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:384
 msgid "Button 12"
-msgstr "Düğme 12"
+msgstr "Butono 12"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:385
 msgid "Button 17"
-msgstr "Düğme 17"
+msgstr "Butono 17"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:386
 msgid "Button 22"
-msgstr "Düğme 22"
+msgstr "Butono 22"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:134
 msgid "AI Chat"
-msgstr "Yapay Zeka Sohbeti"
+msgstr "AI-babilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:135
 #: src/gui/ai/ChatWidget.cc:104
 msgid "AI Assistant"
-msgstr "Yapay Zeka Asistanı"
+msgstr "AI-asistanto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:137
 #: src/gui/ai/ChatWidget.cc:106
 msgid "Clear chat history"
-msgstr "Sohbet geçmişini temizle"
+msgstr "Vakigi babilhistorion"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:139
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Console.h:42
 #: src/gui/ai/ChatWidget.cc:105
 msgid "Clear"
-msgstr "Temizle"
+msgstr "Vakigi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:140
 #: src/gui/ai/ChatWidget.cc:107 src/gui/ai/ChatWidget.cc:367
 msgid "Send"
-msgstr "Gönder"
+msgstr "Sendi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:399
 msgid "Color List"
-msgstr "Renk Listesi"
+msgstr "Kololisto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:400
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:402
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:404
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:406
 msgid "Reset Sample Text"
-msgstr "Örnek Metni Sıfırla"
+msgstr "Restarigi ekzemplan tekston"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:408
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:410
 msgid "Copy Color Name"
-msgstr "Renk Adını Kopyala"
+msgstr "Kopii kolornomon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:412
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:414
 msgid "Copy Color RGB"
-msgstr "Renk RGB'sini Kopyala"
+msgstr "Kopii koloron RGB"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:416
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:305
 msgid "Filter"
-msgstr "Filtre"
+msgstr "Filtrilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:417
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:446
 msgid "Color name"
-msgstr "Renk adı"
+msgstr "Kolornomo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:418
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:309
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2642
 #: src/core/Settings.cc:161 src/core/Settings.cc:517
 msgid "Fixed"
-msgstr "Sabit"
+msgstr "Fiksa"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:419
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:310
 #: src/core/Settings.cc:518
 msgid "Wildcard"
-msgstr "Joker karakter"
+msgstr "Ĝenerala karto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:420
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:311
 #: src/core/Settings.cc:519
 msgid "RegExp"
-msgstr "Düzenli ifade"
+msgstr "RegExp"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:422
 msgid "Sort order"
-msgstr "Sıralama düzeni"
+msgstr "Ordiga ordo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:423
 msgid "Ascending"
-msgstr "Artan"
+msgstr "Kreskante"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:424
 msgid "Descending"
-msgstr "Azalan"
+msgstr "Malkreskante"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:425
 msgid "Alphabetically"
-msgstr "Alfabetik"
+msgstr "Alfabete"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:426
 #: src/core/Settings.cc:529
 msgid "By color"
-msgstr "Renge göre"
+msgstr "Laŭ koloro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:427
 #: src/core/Settings.cc:530
 msgid "By color warmth"
-msgstr "Renk sıcaklığına göre"
+msgstr "Laŭ kolorvarmeco"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:428
 #: src/core/Settings.cc:531
 msgid "By lightness"
-msgstr "Açıklığa göre"
+msgstr "Laŭ heleco"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:430
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:316
 msgid "Selection"
-msgstr "Seçim"
+msgstr "Elekto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:433
 msgid "Reset background color"
-msgstr "Arka plan rengini sıfırla"
+msgstr "Restarigi fonan koloron"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:435
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:439
@@ -498,286 +502,288 @@ msgstr "..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:437
 msgid "Select background color"
-msgstr "Arka plan rengi seç"
+msgstr "Elekti fonan koloron"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:440
 msgid "Color RGB"
-msgstr "Renk RGB"
+msgstr "Koloro RGB"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:441
 msgid "As Foreground"
-msgstr "Ön plan olarak"
+msgstr "Kiel antaŭplano"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:442
 msgid "As Background"
-msgstr "Arka plan olarak"
+msgstr "Kiel fono"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:443
 msgid "R:"
-msgstr "K:"
+msgstr "R:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:444
 msgid "G:"
-msgstr "Y:"
+msgstr "G:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:445
 msgid "B:"
-msgstr "M:"
+msgstr "B:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:449
 msgid "Reset foreground color"
-msgstr "Ön plan rengini sıfırla"
+msgstr "Restarigi antaŭplanan koloron"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ColorList.h:453
 msgid "Select foreground color"
-msgstr "Ön plan rengi seç"
+msgstr "Elekti antaŭplanan koloron"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Console.h:44
 msgid "Clear console"
-msgstr "Konsolü temizle"
+msgstr "Vakigi konzolon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Console.h:46
 #: src/gui/TabManager.cc:1846
 msgid "Save As..."
-msgstr "Farklı Kaydet..."
+msgstr "Konservi kiel..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Console.h:48
 msgid "Save console content to file"
-msgstr "Konsol içeriğini dosyaya kaydet"
+msgstr "Konservi konzolan enhavon en dosieron"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:92
 msgid "Error Log"
-msgstr "Hata Günlüğü"
+msgstr "Erarprotokolo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:93
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:267
 msgid "RowSelected"
-msgstr "SatırSeçili"
+msgstr "VicoElektita"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:95
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:269
 msgid "Return"
-msgstr "Geri dön"
+msgstr "Reveni"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:98
 msgid "double click to jump to file and line"
-msgstr "dosya ve satıra gitmek için çift tıklayın"
+msgstr "duoble klaki por salti al dosiero kaj linio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:100
 msgid "&Show"
-msgstr "&Göster"
+msgstr "&Montri"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:101
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:306
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1381
 msgid "All"
-msgstr "Tümü"
+msgstr "Ĉio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:102
 msgid "ERROR"
-msgstr "HATA"
+msgstr "ERARO"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:103
 msgid "WARNING"
-msgstr "UYARI"
+msgstr "AVERTO"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:104
 msgid "UI-WARNING"
-msgstr "ARAYÜZ-UYARISI"
+msgstr "UI-AVERTO"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:105
 msgid "FONT-WARNING"
-msgstr "YAZI TİPİ-UYARISI"
+msgstr "TIPARO-AVERTO"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:106
 msgid "EXPORT-WARNING"
-msgstr "DIŞA AKTARMA-UYARISI"
+msgstr "EKSPORTO-AVERTO"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:107
 msgid "EXPORT-ERROR"
-msgstr "DIŞA AKTARMA-HATASI"
+msgstr "EKSPORTO-ERARO"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:108
 msgid "DEPRECATED"
-msgstr "KULLANIMDAN KALDIRILMIŞ"
+msgstr "MALNOVA"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:448
 msgid "Export 3MF Options"
-msgstr "3MF Dışa Aktarma Seçenekleri"
+msgstr "Eksportaj opcioj 3MF"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:450
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:543
 msgid ""
 "<html><head/><body><p>Set the PDF page (paper) size.  </p></body></html>"
-msgstr "<html><head/><body><p>PDF sayfa (kağıt) boyutunu ayarlayın.  </p></body></html>"
+msgstr ""
+"<html><head/><body><p>Difini la PDF-paĝon (paperon).  </p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:452
 msgid "Unit"
-msgstr "Birim"
+msgstr "Unuo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:453
 #: src/core/Settings.cc:452
 msgid "Micron"
-msgstr "Mikron"
+msgstr "Mikrometro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:454
 msgid "micron"
-msgstr "mikron"
+msgstr "mikrometro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:455
 msgid "Millimeter (default)"
-msgstr "Milimetre (varsayılan)"
+msgstr "Milimetro (defaŭlte)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:456
 msgid "millimeter"
-msgstr "milimetre"
+msgstr "milimetro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:457
 #: src/core/Settings.cc:454
 msgid "Centimeter"
-msgstr "Santimetre"
+msgstr "Centimetro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:458
 msgid "centimeter"
-msgstr "santimetre"
+msgstr "centimetro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
 #: src/core/Settings.cc:455
 msgid "Meter"
-msgstr "Metre"
+msgstr "Metro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:460
 msgid "meter"
-msgstr "metre"
+msgstr "metro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
 #: src/core/Settings.cc:456
 msgid "Inch"
-msgstr "İnç"
+msgstr "Colo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:462
 msgid "inch"
-msgstr "inç"
+msgstr "colo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:463
 msgid "Foot"
-msgstr "Fit"
+msgstr "Piedo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:464
 msgid "foot"
-msgstr "fit"
+msgstr "piedo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:468
 msgid "Colors"
-msgstr "Renkler"
+msgstr "Koloroj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:469
 msgid "Use colors from model and color scheme"
-msgstr "Model ve renk şemasındaki renkleri kullan"
+msgstr "Uzi kolorojn el modelo kaj kolora skemo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:470
 msgid "model"
-msgstr "model"
+msgstr "modelo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:471
 #: src/core/Settings.cc:445
 msgid "No colors"
-msgstr "Renk yok"
+msgstr "Sen koloroj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
 msgid "none"
-msgstr "yok"
+msgstr "neniu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:473
 msgid "Use selected color for all objects"
-msgstr "Tüm nesneler için seçili rengi kullan"
+msgstr "Uzi elektitan koloron por ĉiuj objektoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:474
 msgid "selected-only"
-msgstr "yalnızca-seçili"
+msgstr "nur-elektita"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:478
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
 msgid "Meta data"
-msgstr "Meta veri"
+msgstr "Metadatenoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:479
 msgid ""
 "The fields Title, Application and CreationDate are always filled in the "
 "exported file when meta data is enabled."
-msgstr "Meta veri etkinleştirildiğinde Başlık, Uygulama ve OluşturmaTarihi alanları dışa aktarılan dosyada her zaman doldurulur."
+msgstr ""
+"La kampoj Titolo, Aplikaĵo kaj CreationDate ĉiam plenigas en la eksportita dosiero kiam metadatenoj estas ebligitaj."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:481
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
 msgid "A copyright associated with this document"
-msgstr "Bu belgeyle ilişkili bir telif hakkı"
+msgstr "Kopirajto rilata al ĉi tiu dokumento"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:483
 msgid "Copyright"
-msgstr "Telif hakkı"
+msgstr "Kopirajto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:484
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:567
 msgid "Title, leave empty to use the file name"
-msgstr "Başlık, dosya adını kullanmak için boş bırakın"
+msgstr "Titolo, lasu malplena por uzi la dosiernomon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:485
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterDescriptionWidget.h:100
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterDescriptionWidget.h:101
 msgid "Description"
-msgstr "Tanım"
+msgstr "Priskribo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:486
 msgid "Designer"
-msgstr "&Tasarımcı"
+msgstr "Dezajnisto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:487
 msgid "License terms"
-msgstr "Lisans koşulları"
+msgstr "Permesilaj kondiĉoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:489
 msgid "An industry rating associated with this document"
-msgstr "Bu belgeyle ilişkili bir endüstri derecelendirmesi"
+msgstr "Industria takso rilata al ĉi tiu dokumento"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:494
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
 msgid "A name for a designer of this document"
-msgstr "Bu belgenin tasarımcısı için bir ad"
+msgstr "Nomo por dezajnisto de ĉi tiu dokumento"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:498
 msgid "Rating"
-msgstr "Derecelendirme"
+msgstr "Takso"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:500
 msgid "License information associated with this document"
-msgstr "Bu belgeyle ilişkili lisans bilgisi"
+msgstr "Permesilaj informoj rilataj al ĉi tiu dokumento"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:504
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:564
 msgid "A description of the document"
-msgstr "Belgenin açıklaması"
+msgstr "Priskribo de la dokumento"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:507
 msgid "Format"
-msgstr "Biçim"
+msgstr "Formato"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:508
 msgid "Decimal precision"
-msgstr "Ondalık hassasiyet"
+msgstr "Decimala precizeco"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:509
 msgid "Export colors as"
-msgstr "Renkleri şu biçimde dışa aktar"
+msgstr "Eksporti kolorojn kiel"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:511
 msgid "Reset value to the default decimal precision value."
-msgstr "Değeri varsayılan ondalık hassasiyet değerine sıfırlayın."
+msgstr "Restarigi valoron al la defaŭlta decimala precizeco."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:514
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:632
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:184
 msgid "Always show dialog"
-msgstr "Her zaman iletişim kutusunu göster"
+msgstr "Ĉiam montri dialogon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:515
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:189
@@ -788,51 +794,51 @@ msgstr "Her zaman iletişim kutusunu göster"
 #: src/gui/UnsavedChangesDialog.cc:60 src/openscad_gui.cc:196
 #: src/openscad_gui.cc:864
 msgid "Cancel"
-msgstr "Vazgeç"
+msgstr "Nuligi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:179
 msgid "Export GCODE Options"
-msgstr "GCODE Dışa Aktarma Seçenekleri"
+msgstr "Eksportaj opcioj GCODE"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:180
 msgid "Laser Power and Speed"
-msgstr "Lazer Gücü ve Hızı"
+msgstr "Lasera potenco kaj rapideco"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:181
 msgid "Laser Speed:"
-msgstr "Lazer Hızı:"
+msgstr "Lasera rapideco:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:182
 msgid "Laser Power:"
-msgstr "Lazer Gücü:"
+msgstr "Lasera potenco:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:183
 msgid "Laser Mode:"
-msgstr "Lazer Modu:"
+msgstr "Lasera reĝimo:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:184
 msgid "Constant Power"
-msgstr "Sabit Güç"
+msgstr "Konstanta potenco"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:185
 msgid "Dynamic Power"
-msgstr "Dinamik Güç"
+msgstr "Dinamika potenco"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:187
 msgid "Init Code:"
-msgstr "Başlangıç Kodu:"
+msgstr "Komenca kodo:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:188
 msgid "Exit Code:"
-msgstr "Çıkış Kodu:"
+msgstr "Fina kodo:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:541
 msgid "Export PDF Options"
-msgstr "PDF Dışa Aktarma Seçenekleri"
+msgstr "Eksportaj opcioj PDF"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:545
 msgid "Page Size"
-msgstr "Sayfa Boyutu"
+msgstr "Paĝa grando"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:546
 #: src/core/Settings.cc:397
@@ -873,7 +879,7 @@ msgstr "a3"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:554
 #: src/core/Settings.cc:401
 msgid "Letter (8.5x11 in)"
-msgstr "Letter (8,5x11 in)"
+msgstr "Letter (8.5x11 in)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
 msgid "letter"
@@ -882,7 +888,7 @@ msgstr "letter"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:556
 #: src/core/Settings.cc:402
 msgid "Legal (8.5x14 in)"
-msgstr "Legal (8,5x14 in)"
+msgstr "Legal (8.5x14 in)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
 msgid "legal"
@@ -901,91 +907,97 @@ msgstr "tabloid"
 msgid ""
 "The fields Title, Creator and CreateDate are always filled in the exported "
 "file when meta data is enabled."
-msgstr "Meta veri etkinleştirildiğinde Başlık, Oluşturan ve OluşturmaTarihi alanları dışa aktarılan dosyada her zaman doldurulur."
+msgstr ""
+"La kampoj Titolo, Creator kaj CreateDate ĉiam plenigas en la eksportita dosiero kiam metadatenoj estas ebligitaj."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:568
 msgid "Subject"
-msgstr "Konu"
+msgstr "Temo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
 msgid "Keywords"
-msgstr "Anahtar kelimeler"
+msgstr "Ŝlosilvortoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:577
 msgid "Author"
-msgstr "Yazar"
+msgstr "Aŭtoro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:580
 msgid ""
 "<html><head/><body><p>Set the direction of the largest page dimension.</p></"
 "body></html>"
-msgstr "<html><head/><body><p>En büyük sayfa boyutunun yönünü ayarlayın.</p></body></html>"
+msgstr ""
+"<html><head/><body><p>Difini la direkton de la plej granda paĝa dimensio.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
 msgid "Page Orientation"
-msgstr "Sayfa Yönelimi"
+msgstr "Paĝa orientiĝo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:583
 #: src/core/Settings.cc:407
 msgid "Portrait (Vertical)"
-msgstr "Dikey (Portre)"
+msgstr "Portreto (vertikala)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:585
 #: src/core/Settings.cc:408
 msgid "Landscape (Horizontal)"
-msgstr "Yatay (Manzara)"
+msgstr "Pejzaĝo (horizontala)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:586
 msgid "landscape"
-msgstr "manzara"
+msgstr "pejzaĝo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:588
 msgid ""
 "<html><head/><body><p>Determine best orientation based on maximum geometry "
 "dimension.</p></body></html>"
-msgstr "<html><head/><body><p>En büyük geometri boyutuna göre en uygun yönelimi belirleyin.</p></body></html>"
+msgstr ""
+"<html><head/><body><p>Difini la plej bonan orientiĝon laŭ maksimuma geometria dimensio.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:590
 #: src/core/Settings.cc:409
 msgid "Auto"
-msgstr "Otomatik"
+msgstr "Aŭtomate"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:591
 msgid "auto"
-msgstr "otomatik"
+msgstr "aŭtomate"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:592
 msgid "Annotations"
-msgstr "Ek açıklamalar"
+msgstr "Anotacioj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:594
 msgid ""
 "<html><head/><body><p>Include design filename on page.</p></body></html>"
-msgstr "<html><head/><body><p>Sayfaya tasarım dosya adını ekleyin.</p></body></html>"
+msgstr ""
+"<html><head/><body><p>Inkluzivi la dosiernomon de la desegno sur la paĝo.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:596
 msgid "Show Design Filename"
-msgstr "Tasarım Dosya Adını Göster"
+msgstr "Montri dosiernomon de desegno"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:598
 msgid ""
 "<html><head/><body><p>Include rulers on page to confirm 1:1 printing scale.</"
 "p></body></html>"
-msgstr "<html><head/><body><p>1:1 baskı ölçeğini doğrulamak için sayfaya cetvel ekleyin.</p></body></html>"
+msgstr ""
+"<html><head/><body><p>Inkluzivi rektilojn sur la paĝo por konfirmi 1:1 presan skalon.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:600
 msgid "Show Scale"
-msgstr "Ölçeği Göster"
+msgstr "Montri skalon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:602
 msgid ""
 "<html><head/><body><p>Include a grid of the selected size on the page.</p></"
 "body></html>"
-msgstr "<html><head/><body><p>Sayfaya seçili boyutta bir ızgara ekleyin.</p></body></html>"
+msgstr ""
+"<html><head/><body><p>Inkluzivi krucan reton de la elektita grando sur la paĝo.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:604
 msgid "Show Grid"
-msgstr "Izgarayı Göster"
+msgstr "Montri reton"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:605
 msgid "2mm"
@@ -993,7 +1005,7 @@ msgstr "2mm"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:606
 msgid "2.5mm"
-msgstr "2,5mm"
+msgstr "2.5mm"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:607
 msgid "4mm"
@@ -1011,43 +1023,46 @@ msgstr "10mm"
 msgid ""
 "<html><head/><body><p>Include text describing usage of scale.</p></body></"
 "html>"
-msgstr "<html><head/><body><p>Ölçeğin kullanımını açıklayan metin ekleyin.</p></body></html>"
+msgstr ""
+"<html><head/><body><p>Inkluzivi tekston priskribantan la uzon de la skalo.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:613
 msgid "Show Scale Usage"
-msgstr "Ölçek Kullanımını Göster"
+msgstr "Montri skalan uzon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:614
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:203
 msgid "Fill and Stroke"
-msgstr "Dolgu ve Kontur"
+msgstr "Plenigo kaj konturo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:616
 msgid ""
 "<html><head/><body><p>Enable filling of exported geometry with a color.</p></"
 "body></html>"
-msgstr "<html><head/><body><p>Dışa aktarılan geometrinin renkle doldurulmasını etkinleştirin.</p></body></html>"
+msgstr ""
+"<html><head/><body><p>Ebligi plenigon de eksportita geometrio per koloro.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:618
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:207
 msgid "Fill Geometry"
-msgstr "Geometriyi Doldur"
+msgstr "Plenigi geometrion"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:623
 msgid ""
 "<html><head/><body><p>Enable outline stroke for exported geometry.</p></"
 "body></html>"
-msgstr "<html><head/><body><p>Dışa aktarılan geometri için kontur çizgisini etkinleştirin.</p></body></html>"
+msgstr ""
+"<html><head/><body><p>Ebligi konturan linion por eksportita geometrio.</p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:625
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:214
 msgid "Stroke Outline"
-msgstr "Kontur Çizgisi"
+msgstr "Kontura linio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:629
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:218
 msgid "Stroke Width:"
-msgstr "Kontur Genişliği:"
+msgstr "Kontura larĝo:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:630
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:219
@@ -1056,132 +1071,132 @@ msgstr " mm"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:202
 msgid "Export SVG Options"
-msgstr "SVG Dışa Aktarma Seçenekleri"
+msgstr "Eksportaj opcioj SVG"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:205
 msgid "Enable filling of exported geometry with a color."
-msgstr "Dışa aktarılan geometrinin renkle doldurulmasını etkinleştirin."
+msgstr "Ebligi plenigon de eksportita geometrio per koloro."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:212
 msgid "Enable outline stroke for exported geometry."
-msgstr "Dışa aktarılan geometri için kontur çizgisini etkinleştirin."
+msgstr "Ebligi konturan linion por eksportita geometrio."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:291
 msgid "Font List"
-msgstr "&Yazı Tipi Listesi"
+msgstr "Tiparolisto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:292
 msgid "ResetSampleText"
-msgstr "ÖrnekMetniSıfırla"
+msgstr "RestarigiEkemplanTekston"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:293
 msgid "Open Font Folder"
-msgstr "Yazı Tipi Klasörünü Aç"
+msgstr "Malfermi tiparujon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:294
 msgid "Copy Font Folder"
-msgstr "Yazı Tipi Klasörünü Kopyala"
+msgstr "Kopii tiparujon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:295
 msgid "Copy Full Path to Font"
-msgstr "Yazı Tipinin Tam Yolunu Kopyala"
+msgstr "Kopii plenan vojon al tiparo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:296
 msgid "Copy Font Style"
-msgstr "Yazı Tipi Stilini Kopyala"
+msgstr "Kopii tiparstilon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:297
 msgid "Copy Font Name"
-msgstr "Yazı Tipi Adını Kopyala"
+msgstr "Kopii tiparnomon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:298
 msgid "Show Font Name"
-msgstr "Yazı Tipi Adını Göster"
+msgstr "Montri tiparnomon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:299
 msgid "Show Styled Font Name"
-msgstr "Stilli Yazı Tipi Adını Göster"
+msgstr "Montri stilitan tiparnomon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:300
 msgid "Show Font Style"
-msgstr "Yazı Tipi Stilini Göster"
+msgstr "Montri tiparstilon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:301
 msgid "Show Sample Text"
-msgstr "Örnek Metni Göster"
+msgstr "Montri ekzemplan tekston"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:302
 msgid "ShowFileName"
-msgstr "DosyaAdınıGöster"
+msgstr "MontriDosiernomon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:303
 msgid "Show File Path"
-msgstr "Dosya Yolunu Göster"
+msgstr "Montri dosiervojon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:304
 msgid "Reset Columns"
-msgstr "Sütunları Sıfırla"
+msgstr "Restarigi kolumnojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:307
 msgid "Any"
-msgstr "Herhangi"
+msgstr "Ajna"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:313
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:317
 #: src/gui/FontList.cc:402
 msgid "Font name"
-msgstr "Yazı tipi adı"
+msgstr "Tiparnomo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:314
 #: src/gui/FontList.cc:406
 msgid "Sample text"
-msgstr "Örnek metin"
+msgstr "Ekzempla teksto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:315
 msgid "Chars"
-msgstr "Karakterler"
+msgstr "Signoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:318
 msgid "Font path"
-msgstr "Yazı tipi yolu"
+msgstr "Tipara vojo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_FontList.h:319
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2641
 msgid "Style"
-msgstr "Stil"
+msgstr "Stilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:293
 msgid "Welcome to PythonSCAD"
-msgstr "PythonSCAD'e hoş geldiniz"
+msgstr "Bonvenon al PythonSCAD"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:294
 msgid "New"
-msgstr "Yeni"
+msgstr "Nova"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:295
 msgid "Open"
-msgstr "Aç"
+msgstr "Malfermi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:296
 msgid "Help"
-msgstr "Yardım"
+msgstr "Helpo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:297
 msgid "Recents"
-msgstr "Son bilgiler"
+msgstr "Lastaj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:298
 msgid "Open Recent"
-msgstr "Son Kullanılanları Aç"
+msgstr "Malfermi lastan"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:299
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:301
 msgid "Examples"
-msgstr "Örnekler"
+msgstr "Ekzemploj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:302
 msgid "Open Example"
-msgstr "Örneği Aç"
+msgstr "Malfermi ekzemplon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:304
 msgid ""
@@ -1197,52 +1212,49 @@ msgid ""
 "\n"
 msgstr ""
 "<html><head/><body>\n"
-"\t\t<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
-"weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span "
-"style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
-"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
-"weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: "
-"2em;\">Python destekli betik tabanlı 3B modelleme uygulaması</p>\n"
+"\t\t<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n"
+"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: 2em;\">Skripta 3D-modelada aplikaĵo kun subteno por Python</p>\n"
 "</body></html>\n"
 "\n"
 "\n"
+""
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:311
 msgid "Don't show again"
-msgstr "Bir daha gösterme"
+msgstr "Ne montri denove"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:312
 msgid "Version"
-msgstr "Sürüm"
+msgstr "Versio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LibraryInfoDialog.h:75
 msgid "Lib & Build Info"
-msgstr "Lib & Derleme Bilgisi"
+msgstr "Bibliotekaj & konstruaj informoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LibraryInfoDialog.h:76
 msgid "PythonSCAD Detailed Library and Build Information"
-msgstr "PythonSCAD Ayrıntılı Kitaplığı ve Yapı Bilgileri"
+msgstr "Detalaj bibliotekaj kaj konstruaj informoj de PythonSCAD"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LibraryInfoDialog.h:77
 msgid "&OK"
-msgstr "&Tamam"
+msgstr "&Bone"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LoadShareDesignDialog.h:62
 msgid "Loading a shared Design from pythonscad.org"
-msgstr "pythonscad.org'dan paylaşılan bir Tasarım yükleniyor"
+msgstr "Ŝargado de kunhavigita desegno el pythonscad.org"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_LoadShareDesignDialog.h:63
 msgid "Select Design"
-msgstr "Tasarım Seç"
+msgstr "Elekti desegnon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1068
 #: src/gui/MainWindow.cc:4541
 msgid "Welcome..."
-msgstr "Hoş geldiniz..."
+msgstr "Bonvenon..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1069
 msgid "&New File"
-msgstr "&Yeni dosya"
+msgstr "&Nova dosiero"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1071
 msgid "Ctrl+N"
@@ -1250,11 +1262,11 @@ msgstr "Ctrl+N"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1073
 msgid "New Window"
-msgstr "Yeni Pencere"
+msgstr "Nova fenestro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1074
 msgid "&Open File..."
-msgstr "&Dosya Aç..."
+msgstr "&Malfermi dosieron..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1076
 msgid "Ctrl+O"
@@ -1262,11 +1274,11 @@ msgstr "Ctrl+O"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1078
 msgid "Open in New Window"
-msgstr "Yeni Pencerede Aç"
+msgstr "Malfermi en nova fenestro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1079
 msgid "&Save"
-msgstr "&Kaydet"
+msgstr "&Konservi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1081
 msgid "Ctrl+S"
@@ -1274,7 +1286,7 @@ msgstr "Ctrl+S"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1083
 msgid "Save &As..."
-msgstr "Farklı &Kaydet..."
+msgstr "Konservi &kiel..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1085
 msgid "Ctrl+Shift+S"
@@ -1282,15 +1294,15 @@ msgstr "Ctrl+Shift+S"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1087
 msgid "Save a Copy..."
-msgstr "Kopyasını Kaydet..."
+msgstr "Konservi kopion..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1088
 msgid "Save All"
-msgstr "Hepsini Kaydet"
+msgstr "Konservi ĉion"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1089
 msgid "&Reload"
-msgstr "&Tekrar yükle"
+msgstr "&Reŝargi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1091
 msgid "Ctrl+R"
@@ -1299,7 +1311,7 @@ msgstr "Ctrl+R"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1093
 #: src/gui/MainWindow.cc:4542
 msgid "Close &Window"
-msgstr "&Pencereyi Kapat"
+msgstr "Fermi &fenestron"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1095
 msgid "Alt+F4"
@@ -1307,7 +1319,7 @@ msgstr "Alt+F4"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1097
 msgid "&Quit"
-msgstr "&Çık"
+msgstr "&Eliri"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1099
 msgid "Ctrl+Q"
@@ -1315,7 +1327,7 @@ msgstr "Ctrl+Q"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1101
 msgid "&Undo"
-msgstr "&Geri al"
+msgstr "&Malfari"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1103
 msgid "Ctrl+Z"
@@ -1323,7 +1335,7 @@ msgstr "Ctrl+Z"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1105
 msgid "&Redo"
-msgstr "&Yinele"
+msgstr "&Refari"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1107
 msgid "Ctrl+Shift+Z"
@@ -1335,7 +1347,7 @@ msgstr "Ctrl+Y"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1112
 msgid "Cu&t"
-msgstr "Ke&s"
+msgstr "&Eltondi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1114
 msgid "Ctrl+X"
@@ -1343,7 +1355,7 @@ msgstr "Ctrl+X"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1116
 msgid "&Copy"
-msgstr "&Kopyala"
+msgstr "&Kopii"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1118
 msgid "Ctrl+C"
@@ -1351,7 +1363,7 @@ msgstr "Ctrl+C"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1120
 msgid "&Paste"
-msgstr "&Yapıştır"
+msgstr "Al&glui"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1122
 msgid "Ctrl+V"
@@ -1359,7 +1371,7 @@ msgstr "Ctrl+V"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1124
 msgid "&Indent"
-msgstr "&Girinti"
+msgstr "&Alini"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1126
 msgid "Ctrl+I"
@@ -1367,7 +1379,7 @@ msgstr "Ctrl+I"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1128
 msgid "C&omment"
-msgstr "Y&orum"
+msgstr "Ko&menti"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1130
 msgid "Ctrl+D"
@@ -1375,7 +1387,7 @@ msgstr "Ctrl+D"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1132
 msgid "Unco&mment"
-msgstr "Yoru&msuz"
+msgstr "Mal&komenti"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1134
 msgid "Ctrl+Shift+D"
@@ -1383,7 +1395,7 @@ msgstr "Ctrl+Shift+D"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1136
 msgid "Show Next Tab"
-msgstr "Sonraki Sekmeyi Göster"
+msgstr "Montri sekvan langileton"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1138
 msgid "Ctrl+Tab"
@@ -1391,7 +1403,7 @@ msgstr "Ctrl+Tab"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1140
 msgid "Show Previous Tab"
-msgstr "Önceki Sekmeyi Göster"
+msgstr "Montri antaŭan langileton"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1142
 msgid "Ctrl+Shift+Tab"
@@ -1399,7 +1411,7 @@ msgstr "Ctrl+Shift+Tab"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1144
 msgid "Copy viewport ima&ge"
-msgstr "Görünüm alanı res&mini kopyala"
+msgstr "Kopii vidpunk&an bildon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1146
 msgid "Ctrl+Shift+C"
@@ -1407,7 +1419,7 @@ msgstr "Ctrl+Shift+C"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1148
 msgid "Copy viewport transl&ation"
-msgstr "Görünüm alanı çevir&isini kopyala"
+msgstr "Kopii vidpunk&an translokigon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1150
 msgid "Ctrl+T"
@@ -1415,19 +1427,19 @@ msgstr "Ctrl+T"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1152
 msgid "Cop&y viewport rotation"
-msgstr "Görünüm alanı döndürmeyi kopy&ala"
+msgstr "K&opii vidpunkan rotacion"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1153
 msgid "Copy vie&wport distance"
-msgstr "Görün&üm alanı mesafesini kopyala"
+msgstr "Kopii vidpunk&an distancon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1154
 msgid "Copy vie&wport fov"
-msgstr "Gör&ünüm alanını kopyala"
+msgstr "Kopii vidpunk&an vidangulon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1155
 msgid "Increase Font &Size"
-msgstr "Yazı Tipi &Boyutunu Artır"
+msgstr "Pli&grandigi tipargrandecon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1157
 msgid "Ctrl++"
@@ -1435,7 +1447,7 @@ msgstr "Ctrl++"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1159
 msgid "Decrease Font Si&ze"
-msgstr "Yazı Tipi Bo&yutunu Azalt"
+msgstr "Malpli&grandi tipargrandecon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1161
 msgid "Ctrl+-"
@@ -1443,7 +1455,7 @@ msgstr "Ctrl+-"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1163
 msgid "&Reload and Preview"
-msgstr "&Yeniden Yükle ve Önizle"
+msgstr "Reŝ&argi kaj antaŭrigardi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1165
 msgid "F4"
@@ -1451,7 +1463,7 @@ msgstr "F4"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1167
 msgid "&Preview"
-msgstr "Ön &izleme"
+msgstr "Anta&ŭrigardo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1169
 msgid "F5"
@@ -1459,7 +1471,7 @@ msgstr "F5"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1171
 msgid "R&ender"
-msgstr "&İşle"
+msgstr "&Bildigi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1173
 msgid "F6"
@@ -1467,7 +1479,7 @@ msgstr "F6"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1175
 msgid "&3D Print"
-msgstr "&3B Yazıcı"
+msgstr "&3D-presado"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1177
 msgid "F8"
@@ -1475,15 +1487,15 @@ msgstr "F8"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1179
 msgid "Measure &Distance"
-msgstr "&Mesafe Ölç"
+msgstr "Mezuri &distancon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1181
 msgid "D"
-msgstr "M"
+msgstr "D"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1183
 msgid "Measure &Angle"
-msgstr "&Açı Ölç"
+msgstr "Mezuri &angulon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1185
 msgid "A"
@@ -1491,75 +1503,75 @@ msgstr "A"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1187
 msgid "Find Handle"
-msgstr "Tutamacı Bul"
+msgstr "Trovi tenilon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1188
 msgid "&Share Design"
-msgstr "Tasarımı &Paylaş"
+msgstr "&Kunhavigi desegnon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1189
 msgid "&Load shared Design"
-msgstr "Paylaşılan Tasarımı &Yükle"
+msgstr "&Ŝargi kunhavigitan desegnon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1190
 msgid "&Check Validity"
-msgstr "&Geçerliliği Kontrol Et"
+msgstr "&Kontroli validecon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1191
 msgid "Display A&ST"
-msgstr "A&ST'yi Göster"
+msgstr "Montri A&ST"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1192
 msgid "Display Python conversion"
-msgstr "Python dönüşümünü göster"
+msgstr "Montri Python-konverton"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1193
 msgid "Display CSG &Tree"
-msgstr "CSG &Ağacını Görüntüle"
+msgstr "Montri CSG-&arbon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1194
 msgid "Display CSG Pr&oducts"
-msgstr "CSG Ür&ünlerini Görüntüle"
+msgstr "Montri CSG-&produktaĵojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1195
 msgid "Export as &STL (binary)..."
-msgstr "&STL olarak dışa aktar (ikili)..."
+msgstr "Eksporti kiel &STL (duuma)..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1196
 msgid "Export as &STL (ascii)..."
-msgstr "&STL olarak dışa aktar (ascii)..."
+msgstr "Eksporti kiel &STL (ascii)..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1197
 msgid "Export as &OBJ..."
-msgstr "&OBJ olarak dışa aktar..."
+msgstr "Eksporti kiel &OBJ..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1198
 msgid "Export as &POV..."
-msgstr "&POV olarak dışa aktar..."
+msgstr "Eksporti kiel &POV..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1199
 msgid "Export as &OFF..."
-msgstr "&KAPALI olarak dışa aktar..."
+msgstr "Eksporti kiel &OFF..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
 msgid "Export as &WRL..."
-msgstr "&WRL olarak dışa aktar..."
+msgstr "Eksporti kiel &WRL..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1201
 msgid "Export as &Foldable PS..."
-msgstr "Katlanabilir &PS olarak dışa aktar..."
+msgstr "Eksporti kiel &falteblan PS..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1202
 msgid "Export as &Step..."
-msgstr "&STEP olarak dışa aktar..."
+msgstr "Eksporti kiel &Step..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1203
 msgid "Export as &GCode..."
-msgstr "&GCode olarak dışa aktar..."
+msgstr "Eksporti kiel &GCode..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
 msgid "Preview"
-msgstr "Önizle"
+msgstr "Antaŭrigardo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1206
 msgid "F9"
@@ -1567,7 +1579,7 @@ msgstr "F9"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1208
 msgid "Thrown Together"
-msgstr "Birlikte Atılmış"
+msgstr "Kunmetita"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1210
 msgid "F12"
@@ -1575,7 +1587,7 @@ msgstr "F12"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1212
 msgid "Show Edges"
-msgstr "Kenarları Göster"
+msgstr "Montri randojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1214
 msgid "Ctrl+1"
@@ -1583,7 +1595,7 @@ msgstr "Ctrl+1"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1216
 msgid "Show Axes"
-msgstr "Eksenleri Göster"
+msgstr "Montri aksojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1218
 msgid "Ctrl+2"
@@ -1591,7 +1603,7 @@ msgstr "Ctrl+2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1220
 msgid "Show Crosshairs"
-msgstr "Artı İşaretlerini Göster"
+msgstr "Montri celkrucojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1222
 msgid "Ctrl+3"
@@ -1599,11 +1611,11 @@ msgstr "Ctrl+3"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1224
 msgid "Show Scale Markers"
-msgstr "Ölçek İşaretlerini Göster"
+msgstr "Montri skalmarkojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1225
 msgid "&Top"
-msgstr "&Üst"
+msgstr "&Supre"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1227
 msgid "Ctrl+4"
@@ -1611,7 +1623,7 @@ msgstr "Ctrl+4"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1229
 msgid "&Bottom"
-msgstr "&Alt"
+msgstr "&Sube"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1231
 msgid "Ctrl+5"
@@ -1619,7 +1631,7 @@ msgstr "Ctrl+5"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1233
 msgid "&Left"
-msgstr "&Sol"
+msgstr "&Maldekstre"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1235
 msgid "Ctrl+6"
@@ -1627,7 +1639,7 @@ msgstr "Ctrl+6"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1237
 msgid "&Right"
-msgstr "&Sağ"
+msgstr "&Dekstre"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1239
 msgid "Ctrl+7"
@@ -1635,7 +1647,7 @@ msgstr "Ctrl+7"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1241
 msgid "&Front"
-msgstr "&Ön"
+msgstr "&Antaŭe"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1243
 msgid "Ctrl+8"
@@ -1643,7 +1655,7 @@ msgstr "Ctrl+8"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1245
 msgid "Bac&k"
-msgstr "Ger&i"
+msgstr "Mal&antaŭe"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1247
 msgid "Ctrl+9"
@@ -1651,7 +1663,7 @@ msgstr "Ctrl+9"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1249
 msgid "&Diagonal"
-msgstr "&Diyagonal"
+msgstr "&Diagonal"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1251
 msgid "Ctrl+0"
@@ -1659,7 +1671,7 @@ msgstr "Ctrl+0"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1253
 msgid "Ce&nter"
-msgstr "Me&rkez"
+msgstr "C&entri"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1255
 msgid "Ctrl+Shift+0"
@@ -1667,55 +1679,55 @@ msgstr "Ctrl+Shift+0"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1257
 msgid "&Perspective"
-msgstr "&Perspektif"
+msgstr "&Perspektivo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1258
 msgid "&Orthogonal"
-msgstr "&Dikey"
+msgstr "&Ortogonala"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1259
 msgid "&About"
-msgstr "&Hakkında"
+msgstr "P&ri"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1260
 msgid "&Documentation"
-msgstr "&Belgelendirme"
+msgstr "&Dokumentado"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1261
 msgid "&Offline Documentation"
-msgstr "&Çevrimdışı Belgeler"
+msgstr "&Senkonekta dokumentado"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1262
 msgid "&Offline Cheat Sheet"
-msgstr "&Çevrimdışı Kopya Kağıdı"
+msgstr "&Senkonekta ŝparfolio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1263
 msgid "Clear Recent"
-msgstr "Son öğeleri Temizle"
+msgstr "Vakigi lastajn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1264
 msgid "Export as &DXF..."
-msgstr "&DXF olarak dışa aktar..."
+msgstr "Eksporti kiel &DXF..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1265
 msgid "&Trust Current Design"
-msgstr "Geçerli Tasarıma &Güven"
+msgstr "&Fidi nunan desegnon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1267
 msgid "Toggle trust for the active saved Python design"
-msgstr "Etkin kayıtlı Python tasarımı için güveni aç/kapat"
+msgstr "Baskuligi fidon por la aktiva konservita Python-desegno"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1269
 msgid "&Revoke Trust for All Python Designs..."
-msgstr "Tüm Python Tasarımları İçin Güveni &Geri Al..."
+msgstr "&Revoki fidon por ĉiuj Python-desegnoj..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1271
 msgid "Revoke trust for all Python designs and clear the trust store"
-msgstr "Tüm Python tasarımları için güveni geri al ve güven deposunu temizle"
+msgstr "Revoki fidon por ĉiuj Python-desegnoj kaj vakigi la fidujon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1273
 msgid "&Close"
-msgstr "&Kapat"
+msgstr "&Fermi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1275
 msgid "Ctrl+W"
@@ -1723,11 +1735,11 @@ msgstr "Ctrl+W"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1277
 msgid "&Preferences"
-msgstr "&Tercihler"
+msgstr "&Preferoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1278
 msgid "&Find..."
-msgstr "&Bul..."
+msgstr "&Trovi..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1280
 msgid "Ctrl+F"
@@ -1735,7 +1747,7 @@ msgstr "Ctrl+F"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1282
 msgid "Fin&d and Replace..."
-msgstr "Bu&l ve Değiştir..."
+msgstr "Tro&vi kaj anstataŭigi..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1284
 msgid "Ctrl+Alt+F"
@@ -1743,7 +1755,7 @@ msgstr "Ctrl+Alt+F"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1286
 msgid "Find Ne&xt"
-msgstr "Sonrakini Bu&l"
+msgstr "Trovi se&kvan"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1288
 msgid "Ctrl+G"
@@ -1751,7 +1763,7 @@ msgstr "Ctrl+G"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1290
 msgid "Find Pre&vious"
-msgstr "Öncekini Bu&l"
+msgstr "Trovi an&taŭan"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1292
 msgid "Ctrl+Shift+G"
@@ -1759,7 +1771,7 @@ msgstr "Ctrl+Shift+G"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1294
 msgid "Use Se&lection for Find"
-msgstr "Bul için Se&çimi Kullan"
+msgstr "Uzi elek&ton por serĉi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1296
 msgid "Ctrl+E"
@@ -1767,7 +1779,7 @@ msgstr "Ctrl+E"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1298
 msgid "Jump to next error"
-msgstr "Sonraki hataya atla"
+msgstr "Salti al sekva eraro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1300
 msgid "Ctrl+Alt+E"
@@ -1775,59 +1787,59 @@ msgstr "Ctrl+Alt+E"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1302
 msgid "&Flush Caches"
-msgstr "&Önbellekleri Temizle"
+msgstr "&Vakigi kaŝmemorojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1303
 msgid "&PythonSCAD Homepage"
-msgstr "&PythonSCAD Ana Sayfası"
+msgstr "&Hejmpaĝo de PythonSCAD"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1304
 msgid "&Automatic Reload and Preview"
-msgstr "&Otomatik Yeniden Yükleme ve Önizleme"
+msgstr "&Aŭtomata reŝargo kaj antaŭrigardo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1305
 msgid "Export as &Image..."
-msgstr "&Resim olarak dışa aktar..."
+msgstr "Eksporti kiel &bildon..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1306
 msgid "Export as &CSG..."
-msgstr "&CSG olarak dışa aktar..."
+msgstr "Eksporti kiel &CSG..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1307
 msgid "&Library info"
-msgstr "&Kütüphane bilgileri"
+msgstr "Informoj pri &biblioteko"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1308
 msgid "Report issue..."
-msgstr "Sorun bildir..."
+msgstr "Raporti problemon..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1309
 msgid "Show &Library Folder"
-msgstr "&Kitaplık Klasörünü Göster"
+msgstr "Montri &bibliotekujon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1310
 msgid "Show Backup Files"
-msgstr "Yedek Dosyaları Göster"
+msgstr "Montri savkopiajn dosierojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
 msgid "Reset View"
-msgstr "Görünümü Sıfırla"
+msgstr "Restarigi vidon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1312
 msgid "Export as S&VG..."
-msgstr "S&VG olarak dışa aktar..."
+msgstr "Eksporti kiel S&VG..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1313
 msgid "Export as &AMF..."
-msgstr "&AMF olarak dışa aktar..."
+msgstr "Eksporti kiel &AMF..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1314
 msgid "Export as &3MF..."
-msgstr "&3MF olarak dışa aktar..."
+msgstr "Eksporti kiel &3MF..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1315
 msgid "Zoom In"
-msgstr "Yakınlaş"
+msgstr "Pligrandigi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1317
 msgid "Ctrl+]"
@@ -1835,7 +1847,7 @@ msgstr "Ctrl+]"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1319
 msgid "Zoom Out"
-msgstr "Uzaklaştır"
+msgstr "Malgrandigi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1321
 msgid "Ctrl+["
@@ -1843,7 +1855,7 @@ msgstr "Ctrl+["
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1323
 msgid "View All"
-msgstr "Tümünü Görüntüle"
+msgstr "Vidi ĉion"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1325
 msgid "Ctrl+Shift+V"
@@ -1851,11 +1863,11 @@ msgstr "Ctrl+Shift+V"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1327
 msgid "Conv&ert Tabs to Spaces"
-msgstr "Sekmeleri Boşluklara Dönüş&tür"
+msgstr "Kon&verti tabojn al spacoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1328
 msgid "Toggle Bookmark"
-msgstr "Yer İşaretini Değiştir"
+msgstr "Baskuligi legosignon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1330
 msgid "Ctrl+F2"
@@ -1863,7 +1875,7 @@ msgstr "Ctrl+F2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1332
 msgid "Jump to next bookmark"
-msgstr "Sonraki yer işaretine atla"
+msgstr "Salti al sekva legosigno"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1334
 msgid "F2"
@@ -1871,7 +1883,7 @@ msgstr "F2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1336
 msgid "Jump to previous bookmark"
-msgstr "Önceki yer işaretine atla"
+msgstr "Salti al antaŭa legosigno"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1338
 msgid "Shift+F2"
@@ -1879,11 +1891,11 @@ msgstr "Shift+F2"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1340
 msgid "Hide Editor toolbar"
-msgstr "Düzenleyici araç çubuğunu gizle"
+msgstr "Kaŝi ilbreton de redaktilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1341
 msgid "U&nindent"
-msgstr "G&irintiyi kaldır"
+msgstr "Mal&alini"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1343
 msgid "Ctrl+Shift+I"
@@ -1891,31 +1903,31 @@ msgstr "Ctrl+Shift+I"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1345
 msgid "&Cheat Sheet"
-msgstr "&Kopya Kağıdı"
+msgstr "&Ŝparfolio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1346
 msgid "&Python Cheat Sheet"
-msgstr "&Python Kopya Kağıdı"
+msgstr "&Python-ŝparfolio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1347
 msgid "Export as PDF..."
-msgstr "PDF olarak dışa aktar..."
+msgstr "Eksporti kiel PDF..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
 msgid "Hide 3D View toolbar"
-msgstr "3B Görünüm araç çubuğunu gizle"
+msgstr "Kaŝi ilbreton de 3D-vido"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1349
 msgid "&Next Window\tCtrl+K"
-msgstr "&Sonraki Pencere\tCtrl+K"
+msgstr "Sekva &fenestro\tCtrl+K"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
 msgid "&Previous Window\tCtrl+H"
-msgstr "&Önceki Pencere\tCtrl+H"
+msgstr "Anta&ua fenestro\tCtrl+H"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1351
 msgid "Insert Template"
-msgstr "Şablon Ekle"
+msgstr "Enmeti ŝablonon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1353
 msgid "Alt+Ins"
@@ -1923,11 +1935,11 @@ msgstr "Alt+Ins"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1355
 msgid "Fold/Unfoll All"
-msgstr "Tümünü Katla/Aç"
+msgstr "Faldi/Malfermi ĉion"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
 msgid "Jump To"
-msgstr "Atla"
+msgstr "Salti al"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1358
 msgid "Ctrl+J"
@@ -1935,32 +1947,32 @@ msgstr "Ctrl+J"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1360
 msgid "Create Virtual &Environment..."
-msgstr "Sanal &Ortam Oluştur..."
+msgstr "Krei virtualan &medion..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1361
 msgid "&Select Virtual Environment..."
-msgstr "Sanal Ortam &Seç..."
+msgstr "&Elekti virtualan medion..."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1362
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:107
 msgid "Message"
-msgstr "İleti"
+msgstr "Mesaĝo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1365
 msgid "&File"
-msgstr "&Dosya"
+msgstr "&Dosiero"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1366
 msgid "Recen&t Files"
-msgstr "So&n Dosyalar"
+msgstr "La&staj dosieroj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1367
 msgid "&Examples"
-msgstr "&Örnekler"
+msgstr "&Ekzemploj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1368
 msgid "E&xport"
-msgstr "D&ışa aktar"
+msgstr "E&kporti"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1369
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2595
@@ -1970,121 +1982,121 @@ msgstr "Python"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1370
 msgid "&Edit"
-msgstr "&Düzenle"
+msgstr "&Redakti"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1371
 msgid "&Design"
-msgstr "&Tasarım"
+msgstr "&Desegno"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1372
 msgid "&View"
-msgstr "&Görünüm"
+msgstr "&Vido"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1373
 msgid "&Help"
-msgstr "&Yardım"
+msgstr "&Helpo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1374
 msgid "&Window"
-msgstr "&Pencere"
+msgstr "&Fenestro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1375
 msgid "Find"
-msgstr "Bul"
+msgstr "Trovi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1376
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1380
 msgid "Replace"
-msgstr "Yer değiştir"
+msgstr "Anstataŭigi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1378
 msgid "Search string"
-msgstr "Arama dizisi"
+msgstr "Serĉa teksto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1379
 msgid "Replacement string"
-msgstr "Yedek dize"
+msgstr "Anstataŭiga teksto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1382
 msgid "Previous"
-msgstr "Önceki"
+msgstr "Antaŭa"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1383
 msgid "Next"
-msgstr "Sonraki"
+msgstr "Sekva"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1384
 msgid "Done"
-msgstr "Bitti"
+msgstr "Farite"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1385
 msgid "Customizer Widget"
-msgstr "Özelleştirici Aracı"
+msgstr "Agordilo de personecigilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:215
 msgid "Ctrl + Shift + Middle-click"
-msgstr "Ctrl + Shift + Orta tıklama"
+msgstr "Ctrl + Shift + meza klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:216
 msgid "Left-click"
-msgstr "Sol tıklama"
+msgstr "Maldekstra klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:217
 msgid "Ctrl + Left-click"
-msgstr "Ctrl + Sol tıklama"
+msgstr "Ctrl + maldekstra klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:218
 msgid "Shift + Left-click"
-msgstr "Shift + Sol tıklama"
+msgstr "Shift + maldekstra klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:219
 msgid "Ctrl + Shift + Right-click"
-msgstr "Ctrl + Shift + Sağ tıklama"
+msgstr "Ctrl + Shift + dekstra klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:220
 msgid "Preset"
-msgstr "Ön ayar"
+msgstr "Antaŭagordo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:221
 msgid "Right-click"
-msgstr "Sağ tıklama"
+msgstr "Dekstra klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:222
 msgid "Ctrl + Middle-click"
-msgstr "Ctrl + Orta tıklama"
+msgstr "Ctrl + meza klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:223
 msgid "Shift + Middle-click"
-msgstr "Shift + Orta tıklama"
+msgstr "Shift + meza klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:224
 msgid "Ctrl + Right-click"
-msgstr "Ctrl + Sağ tıklama"
+msgstr "Ctrl + dekstra klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:225
 msgid "Ctrl + Shift + Left-click"
-msgstr "Ctrl + Shift + Sol tıklama"
+msgstr "Ctrl + Shift + maldekstra klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:226
 msgid "Shift + Right-click"
-msgstr "Shift + Sağ tıklama"
+msgstr "Shift + dekstra klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:227
 msgid "Middle-click"
-msgstr "Orta tıklama"
+msgstr "Meza klako"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:106
 msgid "OctoPrint API Key Request"
-msgstr "OctoPrint API Anahtarı İsteği"
+msgstr "Petado pri OctoPrint API-ŝlosilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:108
 #: src/openscad_gui.cc:862
 msgid "Retry"
-msgstr "Yeniden dene"
+msgstr "Reprovi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:76
 msgid "OpenGL Warning"
-msgstr "OpenGL Uyarısı"
+msgstr "OpenGL-averta"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:77
 msgid ""
@@ -2099,24 +2111,19 @@ msgid ""
 "margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></"
 "p></body></html>"
 msgstr ""
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/"
-"REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/"
-"css\">\n"
+"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; "
-"font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; "
-"margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></"
-"p></body></html>"
+"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></p></body></html>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:82
 msgid "Show this message again"
-msgstr "Bu mesajı tekrar göster"
+msgstr "Montri ĉi tiun mesaĝon denove"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:83
 msgid "Close"
-msgstr "Kapat"
+msgstr "Fermi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterCheckBox.h:60
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterComboBox.h:56
@@ -2127,46 +2134,46 @@ msgstr "Kapat"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterVector.h:108
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:154
 msgid "Form"
-msgstr "Şekil"
+msgstr "Formo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterDescriptionWidget.h:99
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2718
 msgid "Parameter"
-msgstr "Parametre"
+msgstr "Parametro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:155
 msgid "Automatic Preview"
-msgstr "Otomatik Önizleme"
+msgstr "Aŭtomata antaŭrigardo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:156
 msgid "Show Details"
-msgstr "Ayrıntıları Göster"
+msgstr "Montri detalojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:157
 msgid "Inline Details"
-msgstr "Satır İçi Ayrıntılar"
+msgstr "Enliniaj detaloj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:158
 msgid "Hide Details"
-msgstr "Ayrıntıları Gizle"
+msgstr "Kaŝi detalojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:159
 msgid "Description Only"
-msgstr "Sadece Açıklama"
+msgstr "Nur priskribo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:161
 #: src/gui/parameter/ParameterWidget.cc:117
 #: src/gui/parameter/ParameterWidget.cc:220
 msgid "<design default>"
-msgstr "<tasarım varsayılanı>"
+msgstr "<defaŭlto de desegno>"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:164
 msgid "preset selection"
-msgstr "ön ayar seçimi"
+msgstr "elekto de antaŭagordo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:167
 msgid "Add new preset"
-msgstr "Yeni hazır ayar ekle"
+msgstr "Aldoni novan antaŭagordon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:169
 msgid "+"
@@ -2174,7 +2181,7 @@ msgstr "+"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:171
 msgid "Remove current preset"
-msgstr "Mevcut ön ayarı kaldır"
+msgstr "Forigi nunan antaŭagordon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:173
 msgid "-"
@@ -2182,106 +2189,106 @@ msgstr "-"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:175
 msgid "More actions"
-msgstr "Diğer eylemler"
+msgstr "Pliaj agoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2581
 msgid "3D View"
-msgstr "3D Görünüm"
+msgstr "3D-vido"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2582
 msgctxt "preferences"
 msgid "Advanced"
-msgstr "Gelişmiş"
+msgstr "Altnivela"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2583
 msgid "Editor"
-msgstr "Düzenleyici"
+msgstr "Redaktilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2585
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2691
 msgid "Features"
-msgstr "Özellikler"
+msgstr "Trajtoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2587
 msgid "Enable/Disable experimental features"
-msgstr "Deneysel özellikleri Etkinleştir/Devre Dışı Bırak"
+msgstr "Ebligi/malŝalti eksperimentajn trajtojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2589
 msgid "Axes"
-msgstr "Eksen"
+msgstr "Aksoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2591
 msgid "Input driver configuration and Axis mapping"
-msgstr "Giriş sürücüsü yapılandırması ve Eksen eşlemesi"
+msgstr "Agordo de eniga pelilo kaj mapado de aksoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2593
 msgid "Buttons"
-msgstr "Düğmeler"
+msgstr "Butonoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2594
 msgid "Mouse"
-msgstr "Fare"
+msgstr "Muso"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2597
 msgid "Python Settings"
-msgstr "Python Ayarları"
+msgstr "Python-agordoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2599
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:178
 msgid "3D Print"
-msgstr "3B Yazdır"
+msgstr "3D-presado"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2601
 msgid "3D Printing Services"
-msgstr "3B Baskı Hizmetleri"
+msgstr "3D-presaj servoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2603
 msgid "Dialogs"
-msgstr "İletişim kutuları"
+msgstr "Dialogoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2604
 msgid "AI"
-msgstr "Yapay Zeka"
+msgstr "AI"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2606
 msgid "AI and LLM configurations"
-msgstr "Yapay zeka ve LLM yapılandırmaları"
+msgstr "Agordoj de AI kaj LLM"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2608
 msgid "Directory of the output file"
-msgstr "Çıktı dosyasının dizini"
+msgstr "Dosierujo de la eliga dosiero"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2609
 msgid "Extension of the output file without leading dot"
-msgstr "Çıktı dosyasının uzantısı (başındaki nokta olmadan)"
+msgstr "Dosierfinaĵo de la eliga dosiero sen antaŭa punkto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2610
 msgid "Full path to the main source file"
-msgstr "Ana kaynak dosyasının tam yolu"
+msgstr "Plena vojo al la ĉefa fontodosiero"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2611
 msgid "Directory of the main source file"
-msgstr "Ana kaynak dosyasının dizini"
+msgstr "Dosierujo de la ĉefa fontodosiero"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2612
 msgid "Full path to the output file"
-msgstr "Çıktı dosyasının tam yolu"
+msgstr "Plena vojo al la eliga dosiero"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2613
 msgid "Color scheme:"
-msgstr "Renk şeması:"
+msgstr "Kolora skemo:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2614
 msgid "Show Warnings and Errors in 3D View"
-msgstr "Uyarıları ve Hataları 3B Görünümde Göster"
+msgstr "Montri avertaĵojn kaj erarojn en 3D-vido"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2615
 msgid "mouse centric zoom"
-msgstr "fare merkezli yakınlaştırma"
+msgstr "mus-centra pligrandigo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2616
 msgid "Number Scroll"
-msgstr "Sayı Kaydırma"
+msgstr "Nombro-rulo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2617
 #: src/core/Settings.cc:198
@@ -2291,67 +2298,67 @@ msgstr "Alt"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2618
 #: src/core/Settings.cc:199
 msgid "Left Mouse Button"
-msgstr "Sol fare tuşu"
+msgstr "Maldekstra musbutono"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2619
 #: src/core/Settings.cc:200
 msgid "Either"
-msgstr "Herhangi biri"
+msgstr "Iu ajn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2621
 msgid "Step Size"
-msgstr "Adım Boyutu"
+msgstr "Paŝa grando"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2622
 msgid "Number Scroll Via Mouse Wheel"
-msgstr "Fare Tekerleği Üzerinden Sayı Kaydırma"
+msgstr "Nombro-rulo per musrado"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2623
 msgid "Modifier For Wheel Scroll "
-msgstr "Tekerlerk Kaydırma İçin Değiştirici "
+msgstr "Modifilo por radrulo "
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2624
 msgid "Autocomplete"
-msgstr "Kendiliğinden Tamamlama"
+msgstr "Aŭtocompletado"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2625
 msgid " Include defined modules"
-msgstr " Tanımlı modülleri dahil et"
+msgstr " Inkluzivi difinitajn modulojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2626
 msgid "Character Threshold"
-msgstr "Karakter Eşiği"
+msgstr "Signa sojlo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2627
 msgid " Include defined functions"
-msgstr " Tanımlı işlevleri dahil et"
+msgstr " Inkluzivi difinitajn funkciojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2628
 msgid "Enable Autocompletion"
-msgstr "Otomatik Tamamlamayı Etkinleştir"
+msgstr "Ebligi aŭtocompletadon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2629
 msgid " Include defined variables"
-msgstr " Tanımlı değişkenleri dahil et"
+msgstr " Inkluzivi difinitajn variablojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
 msgid "Mode"
-msgstr "Mod"
+msgstr "Reĝimo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2631
 #: src/core/Settings.cc:538
 msgid "Parsed File Mode"
-msgstr "Ayrıştırılmış Dosya Modu"
+msgstr "Reĝimo de analizita dosiero"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2632
 #: src/core/Settings.cc:539
 msgid "Regex Input Text Mode"
-msgstr "Düzenli İfade Giriş Metni Modu"
+msgstr "Reĝimo de regex-eniga teksto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2634
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
 msgid "Line wrap"
-msgstr "Satır kaydırma"
+msgstr "Linifaldao"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2635
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2648
@@ -2359,201 +2366,201 @@ msgstr "Satır kaydırma"
 #: src/core/Settings.cc:45 src/core/Settings.cc:155 src/core/Settings.cc:166
 #: src/core/Settings.cc:172 src/gui/input/ButtonConfigWidget.cc:248
 msgid "None"
-msgstr "Hiç"
+msgstr "Neniu"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2636
 #: src/core/Settings.cc:156
 msgid "Wrap at character boundaries"
-msgstr "Karakter sınırlarına sarın"
+msgstr "Faldi ĉe signlimoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2637
 #: src/core/Settings.cc:157
 msgid "Wrap at word boundaries"
-msgstr "Kelime sınırlarına sarın"
+msgstr "Faldi ĉe vortlimoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2639
 msgid "Line wrap indentation"
-msgstr "Satır sarma girintisi"
+msgstr "Linifaldada alineo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2640
 msgid "Line wrap visualization"
-msgstr "Satır sarma görselleştirme"
+msgstr "Linifaldada bildigo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2643
 #: src/core/Settings.cc:161
 msgid "Same"
-msgstr "Benzer"
+msgstr "Sama"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2644
 #: src/core/Settings.cc:161
 msgid "Indented"
-msgstr "Girintili"
+msgstr "Alinita"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2646
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2678
 #: src/core/Settings.cc:189
 msgid "Indent"
-msgstr "Girintili"
+msgstr "Alini"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2647
 msgid "Start"
-msgstr "Başlangıç"
+msgstr "Komenco"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2649
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2655
 #: src/core/Settings.cc:167 src/core/Settings.cc:173
 msgid "Text"
-msgstr "Metin"
+msgstr "Teksto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2650
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2656
 #: src/core/Settings.cc:168 src/core/Settings.cc:174
 msgid "Border"
-msgstr "Sınır"
+msgstr "Bordero"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2651
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2657
 #: src/core/Settings.cc:169 src/core/Settings.cc:175
 msgid "Margin"
-msgstr "Kenar Boşluğu"
+msgstr "Marĝeno"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2653
 msgid "End"
-msgstr "Son"
+msgstr "Fino"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
 msgid "Display"
-msgstr "Ekran"
+msgstr "Vidigo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
 msgid "Highlight current line"
-msgstr "Seçili satırı vurgula"
+msgstr "Emfazi nunan linion"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
 msgid "Display Line Numbers"
-msgstr "Satır Sayılarını Göster"
+msgstr "Montri lininombrojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
 msgid "Enable brace matching"
-msgstr "Ayraç eşleştirmeyi etkinleştir"
+msgstr "Ebligi kongruon de krampoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2742
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2759
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2761
 msgid "Font"
-msgstr "Yazı Tipi"
+msgstr "Tiparo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
 msgid "Color syntax highlighting"
-msgstr "Renk sözdizimi vurgulama"
+msgstr "Kolora sintaksa emfazado"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2666
 msgid "Ctrl/Cmd-Mouse-wheel zooms text"
-msgstr "Ctrl/Cmd-Fare tekerleği metni yakınlaştırır"
+msgstr "Ctrl/Cmd-musrado pligrandigas tekston"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2667
 msgid "Use gvim as editor (requires restart)"
-msgstr "Düzenleyici olarak gvim kullan (yeniden başlatma gerekir)"
+msgstr "Uzi gvim kiel redaktilon (postulas restarton)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
 msgid "Indentation"
-msgstr "Girinti"
+msgstr "Alinedo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
 msgid "Auto Indent"
-msgstr "Otomatik Girinti"
+msgstr "Aŭtomata alinedo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
 msgid "Backspace unindents"
-msgstr "Girintileri geri al"
+msgstr "Retropaŝo malalinas"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
 msgid "Indent using"
-msgstr "Kullanarak girinti"
+msgstr "Alini per"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
 #: src/core/Settings.cc:187
 msgid "Spaces"
-msgstr "Boşluklar"
+msgstr "Spacoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2673
 #: src/core/Settings.cc:187
 msgid "Tabs"
-msgstr "Sekmeler"
+msgstr "Taboj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2675
 msgid "Indentation width"
-msgstr "Girinti genişliği"
+msgstr "Alineda larĝo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2676
 msgid "Tab width"
-msgstr "Sekme genişliği"
+msgstr "Taba larĝo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2677
 msgid "Tab key function"
-msgstr "Sekme tuşu işlevi"
+msgstr "Funkcio de tabklavo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2679
 #: src/core/Settings.cc:190
 msgid "Insert Tab"
-msgstr "Sekme Ekle"
+msgstr "Enmeti tabon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2681
 msgid "Show whitespace"
-msgstr "Boşluğu göster"
+msgstr "Montri blankspacojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2682
 #: src/core/Settings.cc:178
 msgid "Never"
-msgstr "Asla"
+msgstr "Neniam"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2683
 #: src/core/Settings.cc:179
 msgid "Always"
-msgstr "Daima"
+msgstr "Ĉiam"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2684
 msgid "Only after indentation"
-msgstr "Sadece girintiden sonra"
+msgstr "Nur post alinedo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2686
 msgid "Size"
-msgstr "Boyut"
+msgstr "Grando"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2687
 msgid "Automatically check for updates"
-msgstr "Güncellemeleri otomatik olarak kontrol et"
+msgstr "Aŭtomate kontroli ĝisdatigojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2688
 msgid "Include development snapshots"
-msgstr "Geliştirme anlık görüntülerini dahil et"
+msgstr "Inkluzivi evolajn momentfotojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2689
 msgid "Check Now"
-msgstr "Şimdi kontrol et"
+msgstr "Kontroli nun"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2690
 msgid "Last checked: "
-msgstr "Son kontrol: "
+msgstr "Laste kontrolita: "
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2692
 msgid "General"
-msgstr "Genel"
+msgstr "Ĝenerala"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2693
 msgid "Default Print Service"
-msgstr "Varsayılan Yazdırma Hizmeti"
+msgstr "Defaŭlta presa servo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2694
 msgid "Enable remote print services"
-msgstr "Uzak yazdırma hizmetlerini etkinleştir"
+msgstr "Ebligi malproksimajn presajn servojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:181
 #: src/gui/Preferences.cc:643
 msgid "OctoPrint"
-msgstr "Sekiz Baskı"
+msgstr "OctoPrint"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2696
 msgid "URL"
@@ -2562,100 +2569,101 @@ msgstr "URL"
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
 msgid "API Key"
-msgstr "API Anahtarı"
+msgstr "API-ŝlosilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2698
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2699
 msgid "Load"
-msgstr "Yükle"
+msgstr "Ŝargi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
 msgid "Check"
-msgstr "Kontrol Et"
+msgstr "Kontroli"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2702
 msgid "Slicing Profile"
-msgstr "Dilimleme Profili"
+msgstr "Tranĉada profilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2703
 msgid "Slicing Engine"
-msgstr "Dilimleme Motoru"
+msgstr "Tranĉada motoro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2704
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2710
 msgid "File Format"
-msgstr "Dosya Biçimi"
+msgstr "Dosierformato"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2705
 msgid "Action"
-msgstr "Eylem"
+msgstr "Ago"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2706
 msgid "Request"
-msgstr "İstek"
+msgstr "Petado"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2707
 msgid "Show"
-msgstr "Göster"
+msgstr "Montri"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2708
 msgid "Note: The API key is stored unencrypted in the application settings."
-msgstr "Not: API anahtarı, uygulama ayarlarında şifrelenmemiş olarak saklanır."
+msgstr "Noto: La API-ŝlosilo konserviĝas neĉifrite en la aplikaĵaj agordoj."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
 #: src/gui/Preferences.cc:644
 msgid "Local Application"
-msgstr "Yerel Uygulama"
+msgstr "Loka aplikaĵo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2711
 msgid "File"
-msgstr "&Dosya"
+msgstr "Dosiero"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2716
 msgid "Executable"
-msgstr "Yürütülebilir"
+msgstr "Plenumebla"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2720
 msgid ""
 "Directory for storing the exported file, leave empty to use the default "
 "system location."
-msgstr "Dışa aktarılan dosyanın saklanacağı dizin; varsayılan sistem konumunu kullanmak için boş bırakın."
+msgstr ""
+"Dosierujo por konservi la eksportitan dosieron, lasu malplena por uzi la defaŭltan sistemlokon."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2723
 msgid "Temp Dir"
-msgstr "Geçici Dizin"
+msgstr "Provizora dosierujo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2725
 msgid "3D Preview (OpenCSG)"
-msgstr "3B Önizleme (OpenCSG)"
+msgstr "3D-antaŭrigardo (OpenCSG)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2726
 msgid "Show capability warning"
-msgstr "Yetenek uyarısını göster"
+msgstr "Montri kapablecaverta"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2727
 msgid "Turn off rendering at "
-msgstr "Şurada oluşturmayı kapat "
+msgstr "Malŝalti bildigon je "
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2728
 msgid "elements"
-msgstr "öğeler"
+msgstr "elementoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2729
 msgid "Force Goldfeather"
-msgstr "Altın tüyü zorla"
+msgstr "Devigi Goldfeather"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2730
 msgid "3D Rendering"
-msgstr "3B İşleme"
+msgstr "3D-bildigo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2731
 msgid "Backend"
-msgstr "Arka uç"
+msgstr "Backend"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2732
 msgid "CGAL Cache size"
-msgstr "CGAL Önbellek boyutu"
+msgstr "Kaŝmemora grando de CGAL"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2733
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2735
@@ -2664,281 +2672,279 @@ msgstr "MB"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2734
 msgid "PolySet Cache size"
-msgstr "Çoklu Ayar Önbellek boyutu"
+msgstr "Kaŝmemora grando de PolySet"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2736
 msgid "User Interface"
-msgstr "Kullanıcı Arabirimi"
+msgstr "Uzantinterfaco"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
 msgid "GUI theme"
-msgstr "Arayüz teması"
+msgstr "GUI-temoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
 msgid "Light"
-msgstr "Açık"
+msgstr "Hela"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
 msgid "Dark"
-msgstr "Koyu"
+msgstr "Malhela"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2740
 msgid "Auto (follow system)"
-msgstr "Otomatik (sistemi izle)"
+msgstr "Aŭtomate (sekvi sistemon)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2743
 msgid "Enable docking helper widgets in different places"
-msgstr "Yardımcı bileşenlerin farklı yerlere yerleştirilmesini etkinleştir"
+msgstr "Ebligi dokajn helpilojn en diversaj lokoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2744
 msgid "Enable undocking of helper widgets to separate windows"
-msgstr "Yardımcı bileşenlerin ayrı pencerelere taşınmasını etkinleştir"
+msgstr "Ebligi maldokadon de helpiloj al apartaj fenestroj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2745
 msgid "Show Welcome Screen"
-msgstr "Karşılama Ekranını Göster"
+msgstr "Montri bonvenan ekranon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2746
 msgid "Enable user interface localization (requires restart of PythonSCAD)"
-msgstr ""
-"Kullanıcı arabirimi yerelleştirmesini etkinleştir (PythonSCAD'in yeniden "
-"başlatılmasını gerektirir)"
+msgstr "Ebligi lokaligon de uzantinterfaco (postulas restarton de PythonSCAD)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2747
 msgid "Bring window to front after automatic reload"
-msgstr "Otomatik yeniden yüklemeden sonra pencereyi öne getirin"
+msgstr "Alfrontigi fenestron post aŭtomata reŝargo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2748
 msgid "Play sound notification on render complete"
-msgstr "Oluşturma tamamlandığında sesli bildirimi çal"
+msgstr "Ludi sonan sciigon kiam bildigo finiĝas"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2749
 msgid "Play sound when render completion time is at least"
-msgstr "Oluşturma tamamlanma süresi en az olduğunda ses çal"
+msgstr "Ludi sonon kiam bildiga tempo estas almenaŭ"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2750
 msgid "sec"
-msgstr "san"
+msgstr "sek"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
 #: src/gui/Preferences.cc:445
 msgid "When launching another instance with files:"
-msgstr "Dosyalarla başka bir örnek başlatılırken:"
+msgstr "Kiam lanĉi alian instancon kun dosieroj:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
 #: src/gui/Preferences.cc:447
 msgid "Enable session management (save/restore tabs on quit, requires restart)"
-msgstr "Oturum yönetimini etkinleştir (çıkışta sekmeleri kaydet/geri yükle, yeniden başlatma gerekir)"
+msgstr ""
+"Ebligi seancadministradon (konservi/restarigi langiletojn ĉe eliro, postulas restarton)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2753
 #: src/gui/Preferences.cc:449
 msgid "Autosave session in background for crash recovery"
-msgstr "Çökme kurtarması için oturumu arka planda otomatik kaydet"
+msgstr "Aŭtomate konservi seancon fone por kraŝa restaŭro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
 #: src/gui/Preferences.cc:450
 msgid "Autosave interval:"
-msgstr "Otomatik kaydetme aralığı:"
+msgstr "Aŭtomata konservintervalo:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2755
 msgid "Console"
-msgstr "Konsol"
+msgstr "Konzolo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2756
 msgid "Clear console before Preview/Render"
-msgstr "Önizleme/İşleme öncesinde konsolu temizle"
+msgstr "Vakigi konzolon antaŭ antaŭrigardo/bildigo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2757
 msgid "Maximum lines for Console to keep:"
-msgstr "Konsolun tutması gereken maksimum satır:"
+msgstr "Maksimuma nombro de linioj por konservi en konzolo:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2758
 msgid "(0 for unlimited)"
-msgstr "(sınırsız için 0)"
+msgstr "(0 por senlima)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2760
 msgid "Customizer"
-msgstr "Özelleştirici"
+msgstr "Personecigilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2762
 msgid "OpenSCAD Language Features"
-msgstr "OpenSCAD Dil Özellikleri"
+msgstr "Trajtoj de OpenSCAD-lingvo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2763
 msgid "Warnings"
-msgstr "Uyarılar"
+msgstr "Avertaĵoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2764
 msgid "Stop on the first warning"
-msgstr "İlk uyarıda dur"
+msgstr "Halti je la unua avertaĵo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2765
 msgid "Check the parameter range for builtin modules"
-msgstr "Yerleşik modüller için parametre aralığını kontrol edin"
+msgstr "Kontroli parametrintervalon por enkonstruitaj moduloj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2766
 msgid "Warn when there is a parameter mismatch in user module calls"
-msgstr "Kullanıcı modülü çağrılarında parametre uyuşmazlığı olduğunda uyar"
+msgstr "Averti kiam estas parametra miskongruo en uzantaj modulvokoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2767
 msgid "Trace"
-msgstr "İzleme"
+msgstr "Spuro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2768
 msgid "Trace depth:"
-msgstr "İzleme derinliği:"
+msgstr "Spura profundo:"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2769
 msgid "(max. number or trace messages)"
-msgstr "(maks. izleme mesajı sayısı)"
+msgstr "(maks. nombro de spurmensaĝoj)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2770
 msgid "Show parameters of usermodule calls in trace"
-msgstr "İzlemede kullanıcı modülü çağrılarının parametrelerini göster"
+msgstr "Montri parametrojn de uzantaj modulvokoj en spuro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
 msgid "Render Summary"
-msgstr "İşleme Özeti"
+msgstr "Bildiga resumo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
 msgid "Camera"
-msgstr "Kamera"
+msgstr "Kamerao"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
 msgid "Bounding Box"
-msgstr "Sınırlayıcı Kutu"
+msgstr "Limiga skatolo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
 msgid "Measurements: Area"
-msgstr "Ölçümler: Alan"
+msgstr "Mezuroj: Areo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2775
 msgid "Measurements: Volume"
-msgstr "Ölçümler: Hacim"
+msgstr "Mezuroj: Volumeno"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2776
 msgid "Export Features"
-msgstr "Dışa Aktarma Özellikleri"
+msgstr "Eksportaj trajtoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
 msgid "Toolbar Export 3D"
-msgstr "Araç çubuğu 3B dışa aktarma"
+msgstr "Ilbreto: eksporto 3D"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2778
 msgid "Toolbar Export 2D"
-msgstr "Araç çubuğu 2D dışa aktarma"
+msgstr "Ilbreto: eksporto 2D"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2779
 msgid "Debugging"
-msgstr "Hata Ayıklama"
+msgstr "Sencimigado"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2780
 msgid "Enable tracing of HIDAPI events (requires restart of PythonSCAD)"
-msgstr ""
-"HIDAPI olaylarının izlenmesini etkinleştir (PythonSCAD'in yeniden "
-"başlatılmasını gerektirir)"
+msgstr "Ebligi spuradon de HIDAPI-eventoj (postulas restarton de PythonSCAD)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2781
 msgid "Network Import List"
-msgstr "Ağ İçe Aktarma Listesi"
+msgstr "Reta importlisto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
 msgid "Globally trust Python designs"
-msgstr "Python tasarımlarına genel olarak güven"
+msgstr "Tutmonde fidi Python-desegnojn"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
 msgid "Really (very dangerous)"
-msgstr "Gerçekten (çok tehlikeli)"
+msgstr "Verdire (tre danĝera)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
 msgid "Dialog visibility"
-msgstr "İletişim kutusu görünürlüğü"
+msgstr "Dialoga videbleco"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
 msgid "Always show PDF export dialog"
-msgstr "PDF dışa aktarma iletişim kutusunu her zaman göster"
+msgstr "Ĉiam montri PDF-eksportan dialogon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
 msgid "Always show 3MF export dialog"
-msgstr "3MF dışa aktarma iletişim kutusunu her zaman göster"
+msgstr "Ĉiam montri 3MF-eksportan dialogon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
 msgid "Always show SVG export dialog"
-msgstr "SVG dışa aktarma iletişim kutusunu her zaman göster"
+msgstr "Ĉiam montri SVG-eksportan dialogon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
 msgid "Always show GCODE export dialog"
-msgstr "GCODE dışa aktarma iletişim kutusunu her zaman göster"
+msgstr "Ĉiam montri GCODE-eksportan dialogon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
 msgid "Always show Print Service dialog"
-msgstr "Yazdırma hizmeti iletişim kutusunu her zaman göster"
+msgstr "Ĉiam montri presan servdialogon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
 msgid "AI Preferences"
-msgstr "Yapay Zeka Tercihleri"
+msgstr "AI-preferoj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
 msgid ""
 "AI assistant integration is active. Configure your connection profiles and "
 "parameters below."
-msgstr "Yapay zeka asistanı entegrasyonu etkin. Bağlantı profillerinizi ve parametrelerinizi aşağıdan yapılandırın."
+msgstr ""
+"Integriĝo de AI-asistanto estas aktiva. Agordu viajn konektajn profilojn kaj parametrojn sube."
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
 msgid "Profiles"
-msgstr "Profiller"
+msgstr "Profiloj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
 msgid "Active Profile"
-msgstr "Etkin Profil"
+msgstr "Aktiva profilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
 msgid "New Profile"
-msgstr "Yeni Profil"
+msgstr "Nova profilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
 msgid "Delete"
-msgstr "Sil"
+msgstr "Forigi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
 msgid "API Configuration"
-msgstr "API Yapılandırması"
+msgstr "API-agordo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
 msgid "API Endpoint"
-msgstr "API Uç Noktası"
+msgstr "API-finpunkto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
 msgid "System Prompt / Instructions"
-msgstr "Sistem İstemi / Talimatlar"
+msgstr "Sistema prompto / Instrukcioj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
 msgid "Default User Prompt"
-msgstr "Varsayılan Kullanıcı İstemi"
+msgstr "Defaŭlta uzantprompto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
 msgid "API Parameters"
-msgstr "API Parametreleri"
+msgstr "API-parametroj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
 msgid "Add Parameter"
-msgstr "Parametre Ekle"
+msgstr "Aldoni parametron"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
 msgid "Remove Parameter"
-msgstr "Parametre Kaldır"
+msgstr "Forigi parametron"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:180
 msgid "Run local Application"
-msgstr "Yerel Uygulamayı Çalıştır"
+msgstr "Ruli lokan aplikaĵon"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:182
 msgid "File format"
-msgstr "Dosya biçimi"
+msgstr "Dosierformato"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:183
 msgid "Enable remote services that need network access"
-msgstr "Ağ erişimi gerektiren uzak hizmetleri etkinleştir"
+msgstr "Ebligi malproksimajn servojn kiuj bezonas retaliro"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ProgressWidget.h:70
 msgid "%v / %m"
@@ -2946,301 +2952,291 @@ msgstr "%v / %m"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:86
 msgid "Sharing Design on pythonscad.org"
-msgstr "Tasarımı pythonscad.org'da paylaşma"
+msgstr "Kunhavigo de desegno en pythonscad.org"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:87
 msgid "Design name"
-msgstr "Tasarım adı"
+msgstr "Desegna nomo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:88
 msgid "Author name(optional)"
-msgstr "Yazar adı (isteğe bağlı)"
+msgstr "Aŭtora nomo (nedeviga)"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:89
 msgid "Publish on pythonscad.org"
-msgstr "pythonscad.org'da yayınla"
+msgstr "Publikigi en pythonscad.org"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:266
 msgid "ViewportControlWidget"
-msgstr "GörünümAlanıKontrolBileşeni"
+msgstr "VidpunktoKontrolilo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:271
 msgid "Aspect Ratio"
-msgstr "En-Boy Oranı"
+msgstr "Proporcio"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:272
 msgid "Width"
-msgstr "Genişlik"
+msgstr "Larĝo"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:273
 msgid "Height"
-msgstr "Yükseklik"
+msgstr "Alto"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:275
 msgid "Lock"
-msgstr "Kilitle"
+msgstr "Ŝlosi"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:276
 msgid "Details"
-msgstr "Ayrıntılar"
+msgstr "Detaloj"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:277
 msgid "Distance"
-msgstr "Mesafe"
+msgstr "Distanco"
 
 #: build-sandbox-check/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:278
 msgid "FOV"
-msgstr "Görüş alanı"
+msgstr "Vidangulo"
 
 #: src/core/Settings.cc:48
-#, c-format
 msgid "axis-%d"
-msgstr "eksen-%d"
+msgstr "akso-%d"
 
 #: src/core/Settings.cc:49
-#, c-format
 msgid "Axis %d"
-msgstr "Eksen %d"
+msgstr "Akso %d"
 
 #: src/core/Settings.cc:52
-#, c-format
 msgid "axis-inverted-%d"
-msgstr "eksen-ters-%d"
+msgstr "akso-invertita-%d"
 
 #: src/core/Settings.cc:53
-#, c-format
 msgid "Axis %d (inverted)"
-msgstr "Eksen %d (ters çevrilmiş)"
+msgstr "Akso %d (invertita)"
 
 #: src/core/Settings.cc:181
 msgid "After indentation"
-msgstr "Girintiden sonra"
+msgstr "Post alinedo"
 
 #: src/core/Settings.cc:212
 msgid "Open in new window"
-msgstr "Yeni pencerede aç"
+msgstr "Malfermi en nova fenestro"
 
 #: src/core/Settings.cc:213
 msgid "Reuse active window"
-msgstr "Etkin pencereyi yeniden kullan"
+msgstr "Reuzi aktivan fenestron"
 
 #: src/core/Settings.cc:224
 msgid "Upload only"
-msgstr "Yalnızca yükle"
+msgstr "Nur alŝuti"
 
 #: src/core/Settings.cc:225
 msgid "Upload & Slice"
-msgstr "Yükle & Dilimle"
+msgstr "Alŝuti & tranĉi"
 
 #: src/core/Settings.cc:226
 msgid "Upload, Slice & Select for printing"
-msgstr "Yazdırmak için Yükle, Dilimle ve Seç"
+msgstr "Alŝuti, tranĉi & elekti por presado"
 
 #: src/core/Settings.cc:227
 msgid "Upload, Slice & Start printing"
-msgstr "Yükle, Dilimle ve Yazdırmaya Başla"
+msgstr "Alŝuti, tranĉi & komenci presadon"
 
 #: src/core/Settings.cc:444
 msgid "Use colors from model"
-msgstr "Modeldeki renkleri kullan"
+msgstr "Uzi kolorojn el modelo"
 
 #: src/core/Settings.cc:446
 msgid "Use selected color only"
-msgstr "Yalnızca seçili rengi kullan"
+msgstr "Uzi nur elektitan koloron"
 
 #: src/core/Settings.cc:453
 msgid "Millimeter"
-msgstr "Milimetre"
+msgstr "Milimetro"
 
 #: src/core/Settings.cc:457
 msgid "Feet"
-msgstr "Fit"
+msgstr "Piedoj"
 
 #: src/core/Settings.cc:465
 msgid "Color"
-msgstr "Renk"
+msgstr "Koloro"
 
 #: src/core/Settings.cc:466
 msgid "Base Material"
-msgstr "Temel Malzeme"
+msgstr "Baza materialo"
 
 #: src/core/Settings.cc:528
 msgid "Alphabetical"
-msgstr "Alfabetik"
+msgstr "Alfabeta"
 
 #: src/glview/Camera.cc:208
-#, c-format
 msgid ""
 "Viewport: translate = [ %.2f %.2f %.2f ], rotate = [ %.2f %.2f %.2f ], "
 "distance = %.2f, fov = %.2f"
 msgstr ""
-"Görünüm alanı: çeviri = [ %.2f %.2f %.2f ], döndür = [ %.2f %.2f %.2f ], "
-"mesafe = %.2f, fov = %.2f"
+"Vidpunkto: translokigo = [ %.2f %.2f %.2f ], rotacio = [ %.2f %.2f %.2f ], distanco = %.2f, vidangulo = %.2f"
 
 #: src/gui/ai/ChatWidget.cc:67 src/gui/ai/ChatWidget.cc:319
 msgid "Thinking..."
-msgstr "Düşünüyor..."
+msgstr "Pripensas..."
 
 #: src/gui/ai/ChatWidget.cc:76
 msgid "Thinking"
-msgstr "Düşünüyor"
+msgstr "Pripensas"
 
 #: src/gui/ai/ChatWidget.cc:141 src/gui/ai/ChatWidget.cc:350
 msgid ""
 "Hello! I am your OpenSCAD AI assistant. Ask me to write some code, e.g. "
 "\"draw a sphere\" or \"create a box with a hole\"."
-msgstr "Merhaba! Ben OpenSCAD yapay zeka asistanınızım. Kod yazmamı isteyin, örneğin \"bir küre çiz\" veya \"delikli bir kutu oluştur\"."
+msgstr ""
+"Saluton! Mi estas via OpenSCAD AI-asistanto. Petu min skribi kodon, ekz. \"desegnu sferon\" aŭ \"kreu skatolon kun truo\"."
 
 #: src/gui/ai/ChatWidget.cc:156
 msgid "AI proposed code changes:"
-msgstr "Yapay zeka önerilen kod değişiklikleri:"
+msgstr "AI proponis kodŝanĝojn:"
 
 #: src/gui/ai/ChatWidget.cc:159
 msgid "Review & Apply"
-msgstr "İncele ve &Uygula"
+msgstr "Revizi & apliki"
 
 #: src/gui/ai/ChatWidget.cc:164
 msgid "Discard"
-msgstr "Vazgeç"
+msgstr "Forĵeti"
 
 #: src/gui/ai/ChatWidget.cc:227 src/gui/ai/ChatWidget.cc:371
 msgid "Stop"
-msgstr "Durdur"
+msgstr "Halti"
 
 #: src/gui/Animate.cc:207
 msgid "press to pause animation"
-msgstr "animasyonu duraklatmak için basın"
+msgstr "premu por paŭzigi animacion"
 
 #: src/gui/Animate.cc:211
 msgid "press to start animation"
-msgstr "animasyonu başlatmak için basın"
+msgstr "premu por startigi animacion"
 
 #: src/gui/Animate.cc:214
 msgid "incorrect values"
-msgstr "hatalı değerler"
+msgstr "neĝustaj valoroj"
 
 #: src/gui/ColorList.cc:207
 msgid "Filter (%1 colors found)"
-msgstr "Filtre (%1 renk bulundu)"
+msgstr "Filtrilo (%1 koloroj trovitaj)"
 
 #: src/gui/Console.cc:188
 msgid "Save console content"
-msgstr "Konsol içeriğini kaydet"
+msgstr "Konservi konzolan enhavon"
 
 #: src/gui/Editor.cc:206
 msgid "The active design is not a Python design."
-msgstr "Etkin tasarım bir Python tasarımı değil."
+msgstr "La aktiva desegno ne estas Python-desegno."
 
 #: src/gui/Editor.cc:212
 msgid ""
 "Untitled buffers are already trusted. Save to a file if you need a "
 "persistent trust entry."
-msgstr "Adsız arabellekler zaten güvenilir. Kalıcı bir güven kaydı gerekiyorsa bir dosyaya kaydedin."
+msgstr ""
+"Sentitulaj bufroj jam estas fidindaj. Konservu en dosieron se vi bezonas daŭran fidan enskribon."
 
 #: src/gui/Export3mfDialog.cc:78
 msgid ""
 "This PythonSCAD build uses lib3mf version 1. Setting the decimal precision "
 "for export needs version 2 or later."
-msgstr "Bu PythonSCAD derlemesi lib3mf sürüm 1 kullanıyor. Dışa aktarma için ondalık hassasiyet ayarı sürüm 2 veya üstünü gerektirir."
+msgstr ""
+"Ĉi tiu PythonSCAD-konstruaĵo uzas lib3mf version 1. Agordi decimalan precizecon por eksporto postulas version 2 aŭ pli novan."
 
 #: src/gui/ExternalToolInterface.cc:188
 msgid "Exported design exceeds the service upload limit of (%1 MB)."
-msgstr "Dışa aktarılan tasarım, hizmet yükleme sınırını (%1 MB) aşıyor."
+msgstr "Eksportita desegno superas la alŝutlimon de la servo (%1 MB)."
 
 #: src/gui/FontList.cc:403
 msgid "Styled font name"
-msgstr "Stilli yazı tipi adı"
+msgstr "Stilita tiparnomo"
 
 #: src/gui/FontList.cc:404
 msgid "Font style"
-msgstr "Yazı tipi stili"
+msgstr "Tiparstilo"
 
 #: src/gui/FontList.cc:407
 msgid "File name"
-msgstr "Dosya adı"
+msgstr "Dosiernomo"
 
 #: src/gui/FontList.cc:408
 msgid "File path"
-msgstr "Dosya yolu"
+msgstr "Dosiervojo"
 
 #: src/gui/FontList.cc:409
 msgid "Hash"
-msgstr "Özet"
+msgstr "Hash"
 
 #: src/gui/input/AxisConfigWidget.h:89
 msgid ""
 "This driver was not enabled during build time and is thus not available."
 msgstr ""
-"Bu sürücü, oluşturma süresi boyunca etkinleştirilmedi ve bu nedenle mevcut "
-"değil."
+"Ĉi tiu pelilo ne estis ebligita dum konstruo kaj do ne estas disponebla."
 
 #: src/gui/input/AxisConfigWidget.h:92
 msgid ""
 "The DBUS driver is not for actual devices but for remote control, Linux only."
 msgstr ""
-"DBUS sürücüsü, gerçek cihazlar için değil, uzaktan kumanda içindir, yalnızca "
-"Linux."
+"La DBUS-pelilo ne estas por realaj aparatoj sed por malproksima stirado, nur Linux."
 
 #: src/gui/input/AxisConfigWidget.h:94
 msgid ""
 "The HIDAPI driver communicates directly with the 3D mice, Windows and macOS."
-msgstr ""
-"HIDAPI sürücüsü, doğrudan 3B fareler, Windows ve macOS ile iletişim kurar."
+msgstr "La HIDAPI-pelilo komunikas rekte kun 3D-musoj, Windows kaj macOS."
 
 #: src/gui/input/AxisConfigWidget.h:96
 msgid ""
 "The SpaceNav driver enables 3D-input-devices using the spacenavd daemon, "
 "Linux only."
 msgstr ""
-"BoşluktaGezinme sürücüsü, yalnızca Linux olan spacenavd arka plan programını "
-"kullanan 3B giriş aygıtlarını etkinleştirir."
+"La SpaceNav-pelilo ebligas 3D-enigajn aparatojn per la spacenavd-daemono, nur Linux."
 
 #: src/gui/input/AxisConfigWidget.h:98
 msgid ""
 "The Joystick driver uses the Linux joystick device (fixed to /dev/input/"
 "js0), Linux only."
 msgstr ""
-"Oyun kolu sürücüsü, yalnızca Linux Oyun kolu aygıtını (/dev/input/js0'a "
-"sabitlenmiştir) kullanır."
+"La Joystick-pelilo uzas la Linux-joystikaparaton (fiksita al /dev/input/js0), nur Linux."
 
 #: src/gui/input/AxisConfigWidget.h:100
 msgid "The QGAMEPAD driver is for multiplattform Gamepad Support."
-msgstr ""
-"QOyun kumandası sürücüsü, çok platformlu Oyun kumandası Desteği içindir."
+msgstr "La QGAMEPAD-pelilo estas por plurplatforma gamepad-subteno."
 
 #: src/gui/input/ButtonConfigWidget.cc:249
 msgid "Toggle Perspective"
-msgstr "Perspektifi Değiştir"
+msgstr "Baskuligi perspektivon"
 
 #: src/gui/MainWindow.cc:1246
 msgid "Compile error."
-msgstr "Derleme hatası."
+msgstr "Kompilada eraro."
 
 #: src/gui/MainWindow.cc:1249
 msgid "Error while compiling '%1'."
-msgstr "'%1' derlenirken hata oluştu."
+msgstr "Eraro dum kompilado de '%1'."
 
 #: src/gui/MainWindow.cc:1254
 msgid "Compilation generated %1 warning."
 msgid_plural "Compilation generated %1 warnings."
-msgstr[0] "Derleme %1 uyarısı oluşturdu."
-msgstr[1] "Derleme %1 uyarıları oluşturdu."
+msgstr[0] "Kompilado generis %1 avertaĵon."
+msgstr[1] "Kompilado generis %1 avertaĵojn."
 
 #: src/gui/MainWindow.cc:1267
 msgid ""
 " For details see the <a href=\"#errorlog\">error log</a> and <a "
 "href=\"#console\">console window</a>."
 msgstr ""
-" Ayrıntılar için <a href=\"#errorlog\">hata günlüğüne</a> ve <a "
-"href=\"#console\">konsol penceresine</a> bakın."
+" Por detaloj vidu la <a href=\"#errorlog\">erarprotokolon</a> kaj la <a href=\"#console\">konzolan fenestron</a>."
 
 #: src/gui/MainWindow.cc:1607 src/gui/TabManager.cc:248
 msgid "Session Save"
-msgstr "Oturum Kaydetme"
+msgstr "Seancokonservado"
 
 #: src/gui/MainWindow.cc:1608
 msgid "Could not save the session."
-msgstr "Oturum kaydedilemedi."
+msgstr "Ne eblis konservi la seancon."
 
 #: src/gui/MainWindow.cc:1609
 msgid ""
@@ -3254,19 +3250,19 @@ msgstr ""
 
 #: src/gui/MainWindow.cc:1610
 msgid "Try Again"
-msgstr "Yeniden Dene"
+msgstr "Reprovi"
 
 #: src/gui/MainWindow.cc:1612
 msgid "Quit Without Saving"
-msgstr "Kaydetmeden Çık"
+msgstr "Eliri sen konservi"
 
 #: src/gui/MainWindow.cc:1613
 msgid "Keep Open"
-msgstr "Açık Tut"
+msgstr "Lasi malferma"
 
 #: src/gui/MainWindow.cc:1798
 msgid "Revoke All Trusted Designs"
-msgstr "Tüm Güvenilir Tasarımların Güvenini Geri Al"
+msgstr "Revoki ĉiujn fidindajn desegnojn"
 
 #: src/gui/MainWindow.cc:1799
 msgid ""
@@ -3274,28 +3270,28 @@ msgid ""
 "\n"
 "Are you sure?"
 msgstr ""
-"Bu, tüm Python tasarımları için güveni geri alacaktır.\n"
+"Ĉi tio revokos fidon por ĉiuj Python-desegnoj.\n"
 "\n"
-"Emin misiniz?"
+"Ĉu vi certas?"
 
 #: src/gui/MainWindow.cc:1841 src/gui/MainWindow.cc:1848
 #: src/gui/MainWindow.cc:1857 src/gui/MainWindow.cc:1870
 #: src/gui/MainWindow.cc:1875
 msgid "Create Virtual Environment"
-msgstr "Sanal Ortam Oluştur"
+msgstr "Krei virtualan medion"
 
 #: src/gui/MainWindow.cc:1855
 msgid "Creating Python virtual environment. Please wait..."
-msgstr "Python sanal ortamı oluşturuluyor. Lütfen bekleyin..."
+msgstr "Kreante Python-virtualan medion. Bonvolu atendi..."
 
 #: src/gui/MainWindow.cc:1892
 msgid "Select Virtual Environment"
-msgstr "Sanal Ortam Seç"
+msgstr "Elekti virtualan medion"
 
 #: src/gui/MainWindow.cc:2419 src/gui/TabManager.cc:199
 #: src/gui/TabManager.cc:313
 msgid "Application"
-msgstr "Uygulama"
+msgstr "Aplikaĵo"
 
 #: src/gui/MainWindow.cc:2420
 msgid ""
@@ -3304,109 +3300,109 @@ msgid ""
 "\n"
 "Do you really want to reload the file?"
 msgstr ""
-"Dosya diskte değişti, ancak bu sekmede kaydedilmemiş düzenlemeler var.\n"
-"Yeniden yükleme değişikliklerinizi silecektir.\n"
+"La dosiero ŝanĝiĝis sur la disko, sed ĉi tiu langileto havas nekonservitajn redaktojn.\n"
+"Reŝargo forĵetos viajn ŝanĝojn.\n"
 "\n"
-"Dosyayı gerçekten yeniden yüklemek istiyor musunuz?"
+"Ĉu vi vere volas reŝargi la dosieron?"
 
 #: src/gui/MainWindow.cc:3040
 msgid "Click to change language"
-msgstr "Dili değiştirmek için tıklayın"
+msgstr "Klaki por ŝanĝi lingvon"
 
 #: src/gui/MainWindow.cc:3085
 msgid "Auto-detect from file extension"
-msgstr "Dosya uzantısından otomatik algıla"
+msgstr "Aŭtomate detekti laŭ dosierfinaĵo"
 
 #: src/gui/MainWindow.cc:3484
 msgid "Export %1 File"
-msgstr "%1 Dosyasını Dışa Aktar"
+msgstr "Eksporti dosieron %1"
 
 #: src/gui/MainWindow.cc:3485
 msgid "%1 Files (*%2)"
-msgstr "%1 Dosya (*%2)"
+msgstr "Dosieroj %1 (*%2)"
 
 #: src/gui/MainWindow.cc:3533
 msgid "Export CSG File"
-msgstr "CSG Dosyasını Dışa Aktar"
+msgstr "Eksporti CSG-dosieron"
 
 #: src/gui/MainWindow.cc:3534
 msgid "CSG Files (*.csg)"
-msgstr "CSG Dosyaları (*.csg)"
+msgstr "CSG-dosieroj (*.csg)"
 
 #: src/gui/MainWindow.cc:3557
 msgid "Export Image"
-msgstr "Görüntüyü Dışa Aktar"
+msgstr "Eksporti bildon"
 
 #: src/gui/MainWindow.cc:3557
 msgid "PNG Files (*.png)"
-msgstr "PNG Dosyaları (*.png)"
+msgstr "PNG-dosieroj (*.png)"
 
 #: src/gui/MainWindow.cc:3961 src/gui/MainWindow.cc:4865
 msgid "&AI Chat"
-msgstr "&Yapay Zeka Sohbeti"
+msgstr "&AI-babilo"
 
 #: src/gui/MainWindow.cc:4857
 msgid "&Editor"
-msgstr "&Düzenleyici"
+msgstr "&Redaktilo"
 
 #: src/gui/MainWindow.cc:4858
 msgid "&Console"
-msgstr "&Konsol"
+msgstr "&Konzolo"
 
 #: src/gui/MainWindow.cc:4859
 msgid "C&ustomizer"
-msgstr "Ö&zelleştirici"
+msgstr "Pe&rsonecigilo"
 
 #: src/gui/MainWindow.cc:4860
 msgid "Error &Log"
-msgstr "Hata &Günlüğü"
+msgstr "Erar&protokolo"
 
 #: src/gui/MainWindow.cc:4861
 msgid "&Animate"
-msgstr "&Canlandır"
+msgstr "&Animacii"
 
 #: src/gui/MainWindow.cc:4862
 msgid "&Font List"
-msgstr "&Yazı Tipi Listesi"
+msgstr "&Tiparolisto"
 
 #: src/gui/MainWindow.cc:4863
 msgid "C&olor List"
-msgstr "Renk &Listesi"
+msgstr "K&ololisto"
 
 #: src/gui/MainWindow.cc:4864
 msgid "&Viewport Control"
-msgstr "Görünüm &Alanı Kontrolü"
+msgstr "&Vidpunkto-stirado"
 
 #: src/gui/Network.h:150
 msgid "Timeout error"
-msgstr "Zaman aşımı hatası"
+msgstr "Tempolimita eraro"
 
 #: src/gui/OctoPrintApiKeyDialog.cc:58
 msgid "API key created, waiting for approval in OctoPrint..."
-msgstr "API anahtarı oluşturuldu, OctoPrint'te onay bekleniyor..."
+msgstr "API-ŝlosilo kreita, atendas aprobon en OctoPrint..."
 
 #: src/gui/OctoPrintApiKeyDialog.cc:89
 msgid "API key approved."
-msgstr "API anahtarı onaylandı."
+msgstr "API-ŝlosilo aprobita."
 
 #: src/gui/OctoPrintApiKeyDialog.cc:99
 msgid "API key approval failed."
-msgstr "API anahtarı onayı başarısız oldu."
+msgstr "Aprobo de API-ŝlosilo malsukcesis."
 
 #: src/gui/OpenSCADApp.cc:82
 msgid "Unknown error"
-msgstr "Bilinmeyen hata"
+msgstr "Nekonata eraro"
 
 #: src/gui/OpenSCADApp.cc:86
 msgid "Critical Error"
-msgstr "Kritik Hata"
+msgstr "Kritika eraro"
 
 #: src/gui/OpenSCADApp.cc:87
 msgid ""
 "A critical error was caught. The application may have become unstable:\n"
 "%1"
 msgstr ""
-"Kritik bir hata yakalandı. Uygulama kararsız hale gelmiş olabilir:\n"
+"Kritika eraro kaptiĝis. La aplikaĵo eble fariĝis malstabila:\n"
 "%1"
 
 #: src/gui/OpenSCADApp.cc:113
@@ -3414,94 +3410,94 @@ msgid ""
 "Fontconfig needs to update its font cache.\n"
 "This can take up to a couple of minutes."
 msgstr ""
-"Yazı tipi yapılandırması`nın yazı tipi önbelleğini güncellemesi gerekiyor.\n"
-"Bu birkaç dakika kadar sürebilir."
+"Fontconfig bezonas ĝisdatigi sian tiparujan kaŝmemoron.\n"
+"Ĉi tio povas daŭri ĝis kelkaj minutoj."
 
 #: src/gui/parameter/ParameterWidget.cc:76
 msgid "Collapse All"
-msgstr "Tümünü Daralt"
+msgstr "Faldi ĉion"
 
 #: src/gui/parameter/ParameterWidget.cc:79
 msgid "Expand All"
-msgstr "Tümünü Genişlet"
+msgstr "Malfermi ĉion"
 
 #: src/gui/parameter/ParameterWidget.cc:153
 msgid "Saving presets"
-msgstr "Ön ayarları kaydetme"
+msgstr "Konservado de antaŭagordoj"
 
 #: src/gui/parameter/ParameterWidget.cc:154
 msgid "%1 was found, but was unreadable. Do you want to overwrite %1?"
-msgstr "%1 bulundu, ancak okunamadı. %1'in üzerine yazmak istiyor musunuz?"
+msgstr "%1 troviĝis, sed ne legeblis. Ĉu vi volas anstataŭigi %1?"
 
 #: src/gui/parameter/ParameterWidget.cc:334
 msgid "Create new set of parameter"
-msgstr "Yeni parametre seti oluştur"
+msgstr "Krei novan parametran aron"
 
 #: src/gui/parameter/ParameterWidget.cc:334
 msgid "Enter name of the parameter set"
-msgstr "Parametre setinin adını girin"
+msgstr "Enigi nomon de la parametra aro"
 
 #: src/gui/parameter/ParameterWidget.cc:390
 msgid "New set "
-msgstr "Yeni set "
+msgstr "Nova aro "
 
 #: src/gui/Preferences.cc:295
 msgid "Parameter Key"
-msgstr "Parametre Anahtarı"
+msgstr "Parametra ŝlosilo"
 
 #: src/gui/Preferences.cc:295
 msgid "Parameter Value"
-msgstr "Parametre Değeri"
+msgstr "Parametra valoro"
 
 #: src/gui/Preferences.cc:311 src/gui/Preferences.cc:316
 msgid "Ollama Local"
-msgstr "Ollama Yerel"
+msgstr "Ollama Loka"
 
 #: src/gui/Preferences.cc:451
 msgid " seconds"
-msgstr " saniye"
+msgstr " sekundoj"
 
 #: src/gui/Preferences.cc:478 src/gui/Preferences.cc:483
 #: src/gui/Preferences.cc:1461 src/gui/Preferences.cc:1500
 msgid "<Default>"
-msgstr "<Default>"
+msgstr "<Defaŭlto>"
 
 #: src/gui/Preferences.cc:642
 msgid "NONE"
-msgstr "YOK"
+msgstr "NENIU"
 
 #: src/gui/Preferences.cc:1444
 msgid "Success: Server Version = %2, API Version = %1"
-msgstr "Başarılı: Sunucu Sürümü = %2, API Sürümü = %1"
+msgstr "Sukceso: Servila versio = %2, API-versio = %1"
 
 #: src/gui/Preferences.cc:1446 src/gui/Preferences.cc:1471
 #: src/gui/Preferences.cc:1510
 msgid "Error"
-msgstr "Hata"
+msgstr "Eraro"
 
 #: src/gui/Preferences.cc:1587
 msgid "New AI Profile"
-msgstr "Yeni Yapay Zeka Profili"
+msgstr "Nova AI-profilo"
 
 #: src/gui/Preferences.cc:1587
 msgid "Profile name:"
-msgstr "Profil adı:"
+msgstr "Profila nomo:"
 
 #: src/gui/Preferences.cc:1592
 msgid "Duplicate Profile"
-msgstr "Profili Çoğalt"
+msgstr "Duobligi profilon"
 
 #: src/gui/Preferences.cc:1592
 msgid "A profile with that name already exists."
-msgstr "Bu ada sahip bir profil zaten var."
+msgstr "Profilo kun tiu nomo jam ekzistas."
 
 #: src/gui/Preferences.cc:1651
 msgid "Delete AI Profile"
-msgstr "Yapay Zeka Profilini Sil"
+msgstr "Forigi AI-profilon"
 
 #: src/gui/Preferences.cc:1652
 msgid "Delete profile \"%1\"?"
-msgstr "\"%1\" profili silinsin mi?"
+msgstr "Forigi profilon \"%1\"?"
 
 #: src/gui/QGLView.cc:194
 msgid ""
@@ -3509,9 +3505,9 @@ msgid ""
 "disabled.\n"
 "\n"
 msgstr ""
-"Uyarı: OpenCSG için eksik OpenGL yetenekleri - OpenCSG devre dışı "
-"bırakıldı.\n"
+"Averta: Mankantaj OpenGL-kapabloj por OpenCSG — OpenCSG estas malŝaltita.\n"
 "\n"
+""
 
 #: src/gui/QGLView.cc:196
 msgid ""
@@ -3519,9 +3515,9 @@ msgid ""
 "later.\n"
 "Your renderer information is as follows:\n"
 msgstr ""
-"OpenSCAD'i OpenGL 2.0 veya daha sonraki bir sistemde kullanmanız şiddetle "
-"tavsiye edilir.\n"
-"Oluşturucu bilgileriniz aşağıdaki gibidir:\n"
+"Estas tre rekomendinde uzi PythonSCAD sur sistemo kun OpenGL 2.0 aŭ pli nova.\n"
+"Via bildigila informo estas jena:\n"
+""
 
 #: src/gui/QGLView.cc:200
 msgid ""
@@ -3529,9 +3525,10 @@ msgid ""
 "%2 (%3)\n"
 "OpenGL version %4\n"
 msgstr ""
-"GLEW sürümü %1\n"
+"GLEW-versio %1\n"
 "%2 (%3)\n"
-"OpenGL sürümü %4\n"
+"OpenGL-versio %4\n"
+""
 
 #: src/gui/QGLView.cc:206
 msgid ""
@@ -3539,41 +3536,42 @@ msgid ""
 "%2 (%3)\n"
 "OpenGL version %4\n"
 msgstr ""
-"GLAD sürümü %1\n"
+"GLAD-versio %1\n"
 "%2 (%3)\n"
-"OpenGL sürümü %4\n"
+"OpenGL-versio %4\n"
+""
 
 #: src/gui/ScintillaEditor.cc:203
 msgid "This Python design is not trusted. Execution is disabled."
-msgstr "Bu Python tasarımına güvenilmiyor. Çalıştırma devre dışı."
+msgstr "Ĉi tiu Python-desegno ne estas fidinda. Plenumado estas malŝaltita."
 
 #: src/gui/ScintillaEditor.cc:207
 msgid "Trust Design"
-msgstr "Tasarıma Güven"
+msgstr "Fidi desegnon"
 
 #: src/gui/TabManager.cc:130
 msgid "Python script (*.py)"
-msgstr "Python betiği (*.py)"
+msgstr "Python-skripto (*.py)"
 
 #: src/gui/TabManager.cc:133 src/gui/TabManager.cc:138
 msgid "OpenSCAD script (*.scad)"
-msgstr "OpenSCAD betiği (*.scad)"
+msgstr "OpenSCAD-skripto (*.scad)"
 
 #: src/gui/TabManager.cc:141
 msgid "All files (*)"
-msgstr "Tüm dosyalar (*)"
+msgstr "Ĉiuj dosieroj (*)"
 
 #: src/gui/TabManager.cc:163
 msgid ""
 "%1 already exists.\n"
 "Do you want to replace it?"
 msgstr ""
-"%1 zaten var.\n"
-"Değiştirmek istiyor musun?"
+"%1 jam ekzistas.\n"
+"Ĉu vi volas anstataŭigi ĝin?"
 
 #: src/gui/TabManager.cc:200
 msgid "Cannot open design file \"%1\": path is a directory."
-msgstr "\"%1\" tasarım dosyası açılamıyor: yol bir dizin."
+msgstr "Ne eblas malfermi desegndan dosieron \"%1\": la vojo estas dosierujo."
 
 #: src/gui/TabManager.cc:249
 msgid ""
@@ -3584,16 +3582,16 @@ msgid ""
 "\n"
 "Session changes may be lost."
 msgstr ""
-"Oturum dosyası yazılamadı:\n"
+"Ne eblis skribi seancodosieron:\n"
 "%1\n"
 "\n"
 "%2\n"
 "\n"
-"Oturum değişiklikleri kaybolabilir."
+"Seancaj ŝanĝoj povas perdiĝi."
 
 #: src/gui/TabManager.cc:258
 msgid "Unable to create the session directory."
-msgstr "Oturum dizini oluşturulamadı."
+msgstr "Ne eblas krei la seancodosierujon."
 
 #: src/gui/TabManager.cc:314
 msgid ""
@@ -3601,53 +3599,54 @@ msgid ""
 "\n"
 "Do you want to create it?"
 msgstr ""
-"\"%1\" dosyası mevcut değil.\n"
+"La dosiero \"%1\" ne ekzistas.\n"
 "\n"
-"Oluşturmak istiyor musunuz?"
+"Ĉu vi volas krei ĝin?"
 
 #: src/gui/TabManager.cc:803
 msgid "Copy file name"
-msgstr "Dosya adını kopyala"
+msgstr "Kopii dosiernomon"
 
 #: src/gui/TabManager.cc:809
 msgid "Copy full path"
-msgstr "Tam yolu kopyala"
+msgstr "Kopii plenan vojon"
 
 #: src/gui/TabManager.cc:815
 msgid "Open Folder"
-msgstr "Klasörü Aç"
+msgstr "Malfermi dosierujon"
 
 #: src/gui/TabManager.cc:820
 msgid "Close Tab"
-msgstr "Sekmeyi Kapat"
+msgstr "Fermi langileton"
 
 #: src/gui/TabManager.cc:825
 msgid "Close All But This Tab"
-msgstr "Bu Sekme Dışındakileri Kapat"
+msgstr "Fermi ĉion krom ĉi tiu langileto"
 
 #: src/gui/TabManager.cc:1121
 msgid "Do you want to save the changes you made to %1?"
-msgstr "%1 dosyasında yaptığınız değişiklikleri kaydetmek istiyor musunuz?"
+msgstr "Ĉu vi volas konservi la ŝanĝojn, kiujn vi faris al %1?"
 
 #: src/gui/TabManager.cc:1122
 msgid "Your changes will be lost if you don't save them."
-msgstr "Kaydetmezseniz değişiklikleriniz kaybolacaktır."
+msgstr "Viaj ŝanĝoj perdiĝos se vi ne konservos ilin."
 
 #: src/gui/TabManager.cc:1127
 msgid "Don't save"
-msgstr "Kaydetme"
+msgstr "Ne konservi"
 
 #: src/gui/TabManager.cc:1589 src/gui/TabManager.cc:1618
 #: src/gui/TabManager.cc:1625 src/gui/TabManager.cc:1653
 #: src/gui/TabManager.cc:1841
 msgid "Session Restore"
-msgstr "Oturum Geri Yükleme"
+msgstr "Seancorestaŭro"
 
 #: src/gui/TabManager.cc:1590
 msgid ""
 "The session file was created by a newer version of PythonSCAD (session "
 "version %1, but this build only supports up to version %2)."
-msgstr "Oturum dosyası daha yeni bir PythonSCAD sürümü tarafından oluşturuldu (oturum sürümü %1, ancak bu derleme en fazla sürüm %2'yi destekliyor)."
+msgstr ""
+"La seancodosiero kreiĝis per pli nova versio de PythonSCAD (seanca versio %1, sed ĉi tiu konstruaĵo subtenas nur ĝis version %2)."
 
 #: src/gui/TabManager.cc:1595
 msgid ""
@@ -3657,18 +3656,18 @@ msgid ""
 "Session file:\n"
 "%1"
 msgstr ""
-"Oturum dosyasını daha yeni bir PythonSCAD ile kullanmak için çıkın veya burada sıfırdan başlamak için silin.\n"
+"Eliri por konservi la seancodosieron por uzo kun pli nova PythonSCAD, aŭ forĵeti ĝin por komenci freŝe ĉi tie.\n"
 "\n"
-"Oturum dosyası:\n"
+"Seancodosiero:\n"
 "%1"
 
 #: src/gui/TabManager.cc:1598
 msgid "Exit"
-msgstr "Çık"
+msgstr "Eliri"
 
 #: src/gui/TabManager.cc:1599
 msgid "Discard session"
-msgstr "Oturumu sil"
+msgstr "Forĵeti seancon"
 
 #: src/gui/TabManager.cc:1619
 msgid ""
@@ -3679,12 +3678,12 @@ msgid ""
 "\n"
 "Starting with a fresh session."
 msgstr ""
-"Oturum dosyası okunamadı:\n"
+"Ne eblis malfermi la seancodosieron por legado:\n"
 "%1\n"
 "\n"
 "%2\n"
 "\n"
-"Yeni bir oturumla başlanıyor."
+"Komencante per freŝa seanco."
 
 #: src/gui/TabManager.cc:1626
 msgid ""
@@ -3694,53 +3693,54 @@ msgid ""
 "The file has not been deleted — you may inspect it manually.\n"
 "Starting with a fresh session."
 msgstr ""
-"Oturum dosyası bozuk veya okunamıyor:\n"
+"La seancodosiero estas difektita aŭ nelegebla:\n"
 "%1\n"
 "\n"
-"Dosya silinmedi — elle inceleyebilirsiniz.\n"
-"Yeni bir oturumla başlanıyor."
+"La dosiero ne foriĝis — vi povas inspekti ĝin permane.\n"
+"Komencante per freŝa seanco."
 
 #: src/gui/TabManager.cc:1654
 msgid ""
 "The session file uses an old format (version %1) that cannot be migrated to "
 "the current format (version %2). Starting with a fresh session."
-msgstr "Oturum dosyası, geçerli biçime (sürüm %2) taşınamayan eski bir biçim (sürüm %1) kullanıyor. Yeni bir oturumla başlanıyor."
+msgstr ""
+"La seancodosiero uzas malnovan formaton (versio %1) kiu ne povas migri al la nuna formato (versio %2). Komencante per freŝa seanco."
 
 #: src/gui/TabManager.cc:1842
 msgid "%1 file(s) could not be found on disk."
-msgstr "%1 dosya diskte bulunamadı."
+msgstr "%1 dosiero(j) ne troviĝis sur la disko."
 
 #: src/gui/TabManager.cc:1844
 msgid ""
 "The session contents were restored, but the file paths are stale.\n"
 "Use Save As to pick a new location."
 msgstr ""
-"Oturum içeriği geri yüklendi, ancak dosya yolları güncel değil.\n"
-"Yeni bir konum seçmek için Farklı Kaydet kullanın."
+"La seanca enhavo restaŭriĝis, sed la dosiervojoj estas malnoviĝintaj.\n"
+"Uzu Konservi kiel por elekti novan lokon."
 
 #: src/gui/TabManager.cc:1847
 msgid "Dismiss"
-msgstr "Kapat"
+msgstr "Forigi"
 
 #: src/gui/TabManager.cc:1960 src/gui/TabManager.cc:2112
 msgid "Failed to open file for writing"
-msgstr "Dosya yazmak için açılamadı"
+msgstr "Malsukcesis malfermi dosieron por skribado"
 
 #: src/gui/TabManager.cc:2000 src/gui/TabManager.cc:2126
 msgid "Error saving design"
-msgstr "Tasarım kaydedilirken hata oluştu"
+msgstr "Eraro dum konservado de desegno"
 
 #: src/gui/TabManager.cc:2012
 msgid "Save File"
-msgstr "Dosyayı Kaydet"
+msgstr "Konservi dosieron"
 
 #: src/gui/TabManager.cc:2089
 msgid "Save A Copy"
-msgstr "Kopyasını Kaydet"
+msgstr "Konservi kopion"
 
 #: src/gui/UIUtils.cc:388
 msgid "Report issue"
-msgstr "Sorun bildir"
+msgstr "Raporti problemon"
 
 #: src/gui/UIUtils.cc:389
 msgid ""
@@ -3750,62 +3750,59 @@ msgid ""
 "Library and graphics information was copied to your clipboard — paste it "
 "into the \"Library & Graphics card information\" field."
 msgstr ""
-"Hata raporu oluşturmak için tarayıcınız açıldı.\n"
+"Via retumilo malfermiĝis por krei erarraporton.\n"
 "\n"
-"Ortam bilgileri forma otomatik olarak eklendi.\n"
-"Kitaplık ve grafik kartı bilgileri panoya kopyalandı — \"Library & Graphics "
-"card information\" alanına yapıştırın."
+"Medio-informoj aldoniĝis al la formularo aŭtomate.\n"
+"Bibliotekaj kaj grafikaj informoj kopiĝis al via tondujo — algluu ilin en la kampon \"Informoj pri biblioteko & grafikkarto\"."
 
 #: src/gui/UnsavedChangesDialog.cc:26
 msgid "Unsaved Changes"
-msgstr "Kaydedilmemiş Değişiklikler"
+msgstr "Nekonservitaj ŝanĝoj"
 
 #: src/gui/UnsavedChangesDialog.cc:42
 msgid "If you continue, these changes will be lost."
-msgstr "Devam ederseniz bu değişiklikler kaybolacaktır."
+msgstr "Se vi daŭrigos, ĉi tiuj ŝanĝoj perdiĝos."
 
 #: src/gui/UnsavedChangesDialog.cc:46
 msgid "Press %1 to discard changes without saving."
-msgstr "Kaydetmeden değişiklikleri atmak için %1 tuşuna basın."
+msgstr "Premu %1 por forĵeti ŝanĝojn sen konservi."
 
 #: src/gui/UnsavedChangesDialog.cc:64
 msgid "Discard Changes"
-msgstr "Değişiklikleri At"
+msgstr "Forĵeti ŝanĝojn"
 
 #: src/gui/UnsavedChangesDialog.cc:105 src/gui/UnsavedChangesDialog.cc:121
 msgid "Untitled"
-msgstr "Başlıksız"
+msgstr "Sentitola"
 
 #: src/gui/UnsavedChangesDialog.cc:110
 msgid "Save this file"
-msgstr "Bu dosyayı kaydet"
+msgstr "Konservi ĉi tiun dosieron"
 
 #: src/gui/UnsavedChangesDialog.cc:131
 msgid "There is 1 file with unsaved changes:"
-msgstr "Kaydedilmemiş değişiklikleri olan 1 dosya var:"
+msgstr "Estas 1 dosiero kun nekonservitaj ŝanĝoj:"
 
 #: src/gui/UnsavedChangesDialog.cc:133
 msgid "There are %1 files with unsaved changes:"
-msgstr "Kaydedilmemiş değişiklikleri olan %1 dosya var:"
+msgstr "Estas %1 dosieroj kun nekonservitaj ŝanĝoj:"
 
 #: src/gui/ViewportControl.cc:204 src/gui/ViewportControl.cc:207
 #: src/gui/ViewportControl.cc:220
 msgid "extreme values might may lead to strange behavior"
-msgstr "aşırı değerler garip davranışlara yol açabilir"
+msgstr "ekstremaj valoroj povas konduki al strangaj kondutoj"
 
 #: src/gui/ViewportControl.cc:217
 msgid "negative distances are not supported"
-msgstr "negatif mesafeler desteklenmiyor"
+msgstr "negativaj distancoj ne estas subtenataj"
 
 #: src/io/export.cc:266
-#, c-format
 msgid "Can't open file \"%1$s\" for export"
-msgstr "\"%1$s\" dosyası dışa aktarma için açılamıyor"
+msgstr "Ne eblas malfermi dosieron \"%1$s\" por eksporto"
 
 #: src/io/export.cc:282
-#, c-format
 msgid "\"%1$s\" write error. (Disk full?)"
-msgstr "\"%1$s\" yazma hatası. (Disk dolu?)"
+msgstr "Skriba eraro de \"%1$s\". (Disko plena?)"
 
 #: src/openscad_gui.cc:193 src/openscad_gui.cc:826 src/openscad_gui.cc:856
 msgid "PythonSCAD"
@@ -3813,35 +3810,37 @@ msgstr "PythonSCAD"
 
 #: src/openscad_gui.cc:194
 msgid "Recovered session data was found."
-msgstr "Kurtarılmış oturum verisi bulundu."
+msgstr "Troviĝis restaŭritaj seancaj datumoj."
 
 #: src/openscad_gui.cc:195
 msgid "Restore"
-msgstr "Geri yükle"
+msgstr "Restaŭri"
 
 #: src/openscad_gui.cc:197
 msgid "Discard recovery only"
-msgstr "Yalnızca kurtarmayı sil"
+msgstr "Forĵeti nur restaŭron"
 
 #: src/openscad_gui.cc:198
 msgid "Start fresh"
-msgstr "Sıfırdan başla"
+msgstr "Komenci freŝe"
 
 #: src/openscad_gui.cc:199
 msgid "Show File"
-msgstr "Dosyayı Göster"
+msgstr "Montri dosieron"
 
 #: src/openscad_gui.cc:722
 msgid ""
 "PythonSCAD is already running. The existing window was brought to the front; "
 "this process exits."
-msgstr "PythonSCAD zaten çalışıyor. Mevcut pencere öne getirildi; bu süreç sonlandırılıyor."
+msgstr ""
+"PythonSCAD jam funkcias. La ekzistanta fenestro alfrontiĝis; ĉi tiu procezo eliras."
 
 #: src/openscad_gui.cc:726
 msgid ""
 "PythonSCAD is already running. An open request for the requested design "
 "file(s) was sent to that instance; this process exits."
-msgstr "PythonSCAD zaten çalışıyor. İstenen tasarım dosyası/dosyaları için açma isteği o örneğe gönderildi; bu süreç sonlandırılıyor."
+msgstr ""
+"PythonSCAD jam funkcias. Malfermpetado por la petitaj desegndosiero(j) sendiĝis al tiu instanco; ĉi tiu procezo eliras."
 
 #: src/openscad_gui.cc:827
 msgid ""
@@ -3850,7 +3849,7 @@ msgid ""
 "\n"
 "%1"
 msgstr ""
-"Oturum verisi ve tek örnek kilitlemesi için gerekli uygulama yapılandırma dizini oluşturulamadı:\n"
+"Ne eblis krei la aplikaĵan agordan dosierujon necesan por seancaj datumoj kaj unuinstanca ŝloso:\n"
 "\n"
 "%1"
 
@@ -3858,29 +3857,31 @@ msgstr ""
 msgid ""
 "PythonSCAD is already running but is not responding. The old PythonSCAD "
 "process must be closed to open a new window."
-msgstr "PythonSCAD zaten çalışıyor ancak yanıt vermiyor. Yeni bir pencere açmak için eski PythonSCAD süreci kapatılmalıdır."
+msgstr ""
+"PythonSCAD jam funkcias sed ne respondas. La malnova PythonSCAD-procezo devas fermiĝi por malfermi novan fenestron."
 
 #: src/openscad_gui.cc:861
 msgid ""
 "Try again if the running instance may have recovered, or close it to start a "
 "new one."
-msgstr "Çalışan örnek kendini toparlamış olabilir; yeniden deneyin veya yeni bir tane başlatmak için kapatın."
+msgstr ""
+"Reprovu se la funkcianta instanco eble restaŭriĝis, aŭ fermu ĝin por startigi novan."
 
 #: src/openscad_gui.cc:863
 msgid "Close PythonSCAD"
-msgstr "PythonSCAD'ı Kapat"
+msgstr "Fermi PythonSCAD"
 
 #: examples
 msgid "Advanced"
-msgstr "Gelişmiş"
+msgstr "Altnivela"
 
 #: examples
 msgid "Basics"
-msgstr "Temel bilgiler"
+msgstr "Bazoj"
 
 #: examples
 msgid "Old"
-msgstr "Eski"
+msgstr "Malnova"
 
 #: examples
 msgid "GCode"
@@ -3888,16 +3889,16 @@ msgstr "GCode"
 
 #: examples
 msgid "Functions"
-msgstr "Fonksiyonlar"
+msgstr "Funkcioj"
 
 #: examples
 msgid "Parametric"
-msgstr "Parametrik"
+msgstr "Parametra"
 
 #. (itstool) path: component/summary
 #: pythonscad.appdata.xml.in2:6
 msgid "Design 3D models with Python — script-based CAD with live preview"
-msgstr "Python ile 3B modeller tasarlayın — canlı önizlemeli betik tabanlı CAD"
+msgstr "Desegnu 3D-modelojn per Python — skripta CAD kun viva antaŭrigardo"
 
 #. (itstool) path: description/p
 #: pythonscad.appdata.xml.in2:20
@@ -3905,7 +3906,8 @@ msgid ""
 "PythonSCAD is a script-based 3D modeling application with a full GUI. Write "
 "parametric, engineering-oriented models in Python, preview them live, and "
 "export to STL, 3MF, and other formats for 3D printing and manufacturing."
-msgstr "PythonSCAD, tam bir arayüze sahip betik tabanlı bir 3B modelleme uygulamasıdır. Python'da parametrik, mühendislik odaklı modeller yazın, bunları canlı önizleyin ve 3B baskı ile üretim için STL, 3MF ve diğer biçimlere dışa aktarın."
+msgstr ""
+"PythonSCAD estas skripta 3D-modelada aplikaĵo kun plena GUI. Skribu parametrajn, inĝenierce orientitajn modelojn en Python, antaŭrigardu ilin vive, kaj eksportu al STL, 3MF, kaj aliaj formatoj por 3D-presado kaj fabrikado."
 
 #. (itstool) path: description/p
 #: pythonscad.appdata.xml.in2:21
@@ -3914,7 +3916,8 @@ msgid ""
 "precise, repeatable CAD workflows driven by code. Solids are first-class "
 "values: compose models with Python, use pip packages, and iterate quickly "
 "with instant visual feedback in the 3D preview."
-msgstr "Blender gibi sanatsal modelleme araçlarının aksine PythonSCAD, kodla yönlendirilen kesin, tekrarlanabilir CAD iş akışlarına odaklanır. Katılar birinci sınıf değerlerdir: Python ile modeller oluşturun, pip paketlerini kullanın ve 3B önizlemede anında görsel geri bildirimle hızla yineleyin."
+msgstr ""
+"Male al artaj modeliloj kiel Blender, PythonSCAD fokusiĝas je precizaj, ripeteblaj CAD-laborfluoj gvidataj de kodo. Solidoj estas unuklasaj valoroj: komponu modelojn per Python, uzu pip-pakaĵojn, kaj rapide iteru kun tujaj vidaj reagoj en la 3D-antaŭrigardo."
 
 #. (itstool) path: description/p
 #: pythonscad.appdata.xml.in2:22
@@ -3922,202 +3925,5 @@ msgid ""
 "PythonSCAD is also a rewarding way to learn programming — a few lines of "
 "Python can produce a model you can hold in your hand after 3D printing. "
 "OpenSCAD scripts remain supported alongside native Python."
-msgstr "PythonSCAD ayrıca programlama öğrenmek için ödüllendirici bir yoldur — birkaç satır Python, 3B baskıdan sonra elinizde tutabileceğiniz bir model üretebilir. OpenSCAD betikleri yerel Python'un yanında desteklenmeye devam eder."
-
-#, fuzzy
-#~ msgid "Error-&Log"
-#~ msgstr "Hata-Günlüğü"
-
-#~ msgid "Script-based 3D modeling app with Python support"
-#~ msgstr "Programcılar Katı 3B CAD Modelleyici"
-
-#~ msgid ""
-#~ "PythonSCAD is a software for creating solid 3D CAD models. Unlike most "
-#~ "free software for creating 3D models (such as Blender) it does not focus "
-#~ "on the artistic aspects of 3D modelling but instead on the CAD aspects. "
-#~ "Thus it might be the application you are looking for when you are "
-#~ "planning to create 3D models of machine parts but pretty sure is not what "
-#~ "you are looking for when you are more interested in creating computer-"
-#~ "animated movies."
-#~ msgstr ""
-#~ "PythonSCAD, katı 3B CAD modelleri oluşturmak için bir yazılımdır. 3B "
-#~ "modeller oluşturmaya yönelik çoğu ücretsiz yazılımın (Blender gibi) "
-#~ "aksine, 3B modellemenin sanatsal yönlerine değil, CAD yönlerine "
-#~ "odaklanır. Bu nedenle, makine parçalarının 3B modellerini oluşturmayı "
-#~ "planlarken aradığınız uygulama olabilir, ancak bilgisayar ile animasyonlu "
-#~ "filmler oluşturmakla daha çok ilgilendiğinizde aradığınız şey bu değildir."
-
-#~ msgid ""
-#~ "PythonSCAD is not an interactive modeller. Instead it is something like a "
-#~ "3D-compiler that reads in a script file that describes the object and "
-#~ "renders the 3D model from this script file. This gives you (the designer) "
-#~ "full control over the modelling process and enables you to easily change "
-#~ "any step in the modelling process or make designs that are defined by "
-#~ "configurable parameters."
-#~ msgstr ""
-#~ "PythonSCAD etkileşimli bir modelleyici değildir. Bunun yerine, nesneyi "
-#~ "tanımlayan bir komut dosyasında okuyan ve bu komut dosyasından 3B modeli "
-#~ "işleyen bir 3B derleyici gibi bir şeydir. Bu size (tasarımcıya) modelleme "
-#~ "süreci üzerinde tam kontrol sağlar ve modelleme sürecindeki herhangi bir "
-#~ "adımı kolayca değiştirmenize veya yapılandırılabilir parametrelerle "
-#~ "tanımlanan tasarımlar yapmanıza olanak tanır."
-
-#~ msgid ""
-#~ "PythonSCAD provides two main modelling techniques: First there is "
-#~ "constructive solid geometry (aka CSG) and second there is extrusion of 2D "
-#~ "outlines. As data exchange format for this 2D outlines Autocad DXF files "
-#~ "are used. In addition to 2D paths for extrusion it is also possible to "
-#~ "read design parameters from DXF files. Besides DXF files PythonSCAD can "
-#~ "read and create 3D models in the STL and OFF file formats."
-#~ msgstr ""
-#~ "PythonSCAD iki ana modelleme tekniği sunar: Birincisi yapıcı katı "
-#~ "geometri (aka CSG) ve ikincisi 2B anahatların ekstrüzyonu vardır. Bu 2B "
-#~ "anahatlar için veri alışverişi formatı olarak Autocad DXF dosyaları "
-#~ "kullanılır. Ekstrüzyon için 2B yollara ek olarak, DXF dosyalarından "
-#~ "tasarım parametrelerini okumak da mümkündür. DXF dosyalarının yanı sıra "
-#~ "PythonSCAD, STL ve OFF dosya formatlarında 3B modelleri okuyabilir ve "
-#~ "oluşturabilir."
-
-#~ msgid "PythonSCAD Font List"
-#~ msgstr "PythonSCAD Yazı Tipi Listesi"
-
-#~ msgid "Copy to Clipboard"
-#~ msgstr "Panoya Kopyala"
-
-#~ msgid "Filter:"
-#~ msgstr "Filtre:"
-
-#~ msgid ""
-#~ "<html><head/><body><p>This list shows the fonts currently registered with "
-#~ "OpenSCAD.</p><p>Example:</p><pre style=\" margin-top:12px; margin-"
-#~ "bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-"
-#~ "indent:0px;\"><span style=\" font-family:'Courier New,courier';\">  "
-#~ "text(&quot;OpenSCAD&quot;, font = &quot;DejaVu Sans&quot;);</span></"
-#~ "pre><pre style=\" margin-top:0px; margin-bottom:12px; margin-left:0px; "
-#~ "margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" "
-#~ "font-family:'Courier New,courier';\">  text(&quot;OpenSCAD&quot;, font = "
-#~ "&quot;Liberation Sans:style=Italic&quot;);</span></pre></body></html>"
-#~ msgstr ""
-#~ "<html><head/><body><p>Bu liste, şu anda OpenSCAD'de kayıtlı olan yazı "
-#~ "tiplerini gösterir.</p><p>Örnek:</p><pre style=\" margin-top:12px; margin-"
-#~ "bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-"
-#~ "indent:0px;\"><span style=\" font-family:'Courier New,courier';\">  "
-#~ "metin(&quot;OpenSCAD&quot;, yazı tipi = &quot;DejaVu Sans&quot;);</span></"
-#~ "pre><pre style=\" margin-top:0px; margin-bottom:12px; margin-left:0px; "
-#~ "margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" "
-#~ "font-family:'Courier New,courier';\">  metin(&quot;OpenSCAD&quot;, yazı "
-#~ "tipi = &quot;Liberation Sans:biçim=Italic&quot;);</span></pre></body></"
-#~ "html>"
-
-#~ msgid ""
-#~ "The document has been modified.\n"
-#~ "Do you really want to reload the file?"
-#~ msgstr ""
-#~ "Belge değiştirildi.\n"
-#~ "Dosyayı gerçekten yeniden yüklemek istiyor musunuz?"
-
-#~ msgid "Untitled.scad"
-#~ msgstr "Başlıksız.scad"
-
-#~ msgid "The document has been modified."
-#~ msgstr "Belge değiştirildi."
-
-#~ msgid "Do you want to save all your changes?"
-#~ msgstr "Tüm değişikliklerinizi kaydetmek istiyor musunuz?"
-
-#~ msgid "F7"
-#~ msgstr "F7"
-
-#, fuzzy
-#~ msgid "Swap Mouse Buttons"
-#~ msgstr "Sol fare tuşu"
-
-#, fuzzy
-#~ msgid "Line"
-#~ msgstr "Satır kaydırma"
-
-#, fuzzy
-#~ msgid "Filename"
-#~ msgstr "Dosya adını kopyala"
-
-#, fuzzy
-#~ msgid "Font Lists"
-#~ msgstr "&Yazı Tipi Listesi"
-
-#, fuzzy
-#~ msgid "PushButton"
-#~ msgstr "Düğmeler"
-
-#~ msgid "Hide Editor"
-#~ msgstr "Düzenleyiciyi Gizle"
-
-#~ msgid "Surfaces"
-#~ msgstr "Yüzeyler"
-
-#~ msgid "F10"
-#~ msgstr "F10"
-
-#~ msgid "F11"
-#~ msgstr "F11"
-
-#~ msgid "Hide Console"
-#~ msgstr "Konsolu Gizle"
-
-#~ msgid "Hide Customizer"
-#~ msgstr "Özelleştiriciyi Gizle"
-
-#~ msgid "Hide Error Log"
-#~ msgstr "Hata Günlüğünü Gizle"
-
-#~ msgid "Hide ErrorLog"
-#~ msgstr "Hata GünlüğünüGizle"
-
-#, fuzzy
-#~ msgid "Hide Animation Toolbar/Window"
-#~ msgstr "Düzenleyici araç çubuğunu gizle"
-
-#~ msgid "OpenCSG"
-#~ msgstr "OpenCSG"
-
-#~ msgid "CGAL"
-#~ msgstr "CGAL"
-
-#, fuzzy
-#~ msgid "WRL"
-#~ msgstr "URL"
-
-#~ msgid "Default to ASCII STL export"
-#~ msgstr "Varsayılan olarak ASCII STL dışa aktarma"
-
-#~ msgid "%1"
-#~ msgstr "%1"
-
-#, fuzzy
-#~ msgid "translate"
-#~ msgstr "Çeviri"
-
-#, fuzzy
-#~ msgid "play animation"
-#~ msgstr "Uygulama"
-
-#~ msgid "Upload Error"
-#~ msgstr "Yükleme Hatası"
-
-#~ msgid "Print Service not available"
-#~ msgstr "Yazdırma Hizmeti mevcut değil"
-
-#~ msgid "TRACE"
-#~ msgstr "İZ"
-
-#~ msgid "Enable OpenCSG"
-#~ msgstr "OpenCSG'yi Etkinleştir"
-
-#~ msgid "Enable for OpenGL 1.x"
-#~ msgstr "OpenGL 1.x için etkinleştir"
-
-#~ msgid ""
-#~ "Warning: You may experience OpenCSG rendering errors.\n"
-#~ "\n"
-#~ msgstr ""
-#~ "Uyarı: OpenCSG oluşturma hatalarıyla karşılaşabilirsiniz.\n"
-#~ "\n"
+msgstr ""
+"PythonSCAD ankaŭ estas gratiga maniero lerni programadon — kelkaj linioj de Python povas produkti modelon, kiun vi povas teni en la mano post 3D-presado. OpenSCAD-skriptoj restas subtenataj kune kun denaska Python."
