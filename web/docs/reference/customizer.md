@@ -26,9 +26,9 @@ functions just like any other configuration object:
     show(baseplate(params))
     ```
 
-`Customizer` is a read-only mapping. `add_parameter()` returns the current
-effective value as well as storing it in the mapping, so the return value can
-also be captured in a local variable:
+`Customizer` is a read-only mapping. `Customizer.add_parameter()` returns the
+current effective value as well as storing it in the mapping, so the return
+value can also be captured in a local variable:
 
 === "Python"
 

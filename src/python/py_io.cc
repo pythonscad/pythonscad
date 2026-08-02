@@ -756,9 +756,8 @@ static PyObject *python_register_parameter_impl(PyObject *args, PyObject *kwargs
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|zzOdiO", kwlist, &name, &value, &description,
                                    &group, &range_obj, &step_val, &max_length, &options)) {
-    PyErr_SetString(PyExc_TypeError,
-                    "Error during parsing add_parameter(name, default, [description], [group], "
-                    "[range], [step], [max_length], [options])");
+    const char *function_name = inject_global ? "add_parameter" : "Customizer.add_parameter";
+    PyErr_Format(PyExc_TypeError, "Error during parsing %s() arguments", function_name);
     return NULL;
   }
 
@@ -875,6 +874,15 @@ static PyObject *python_register_parameter_impl(PyObject *args, PyObject *kwargs
   }
 
   if (found) {
+    if (!inject_global) {
+      for (const auto& registered : customizer_parameters) {
+        if (registered->getName() == name) {
+          PyErr_Format(PyExc_ValueError, "Customizer parameter '%s' is already registered", name);
+          return NULL;
+        }
+      }
+    }
+
     auto *annotationList = new AnnotationList();
 
     // Create Parameter annotation with constraints
@@ -967,15 +975,6 @@ static PyObject *python_register_parameter_impl(PyObject *args, PyObject *kwargs
 
     if (group != NULL) {
       annotationList->push_back(Annotation("Group", std::make_shared<Literal>(group, Location::NONE)));
-    }
-
-    if (!inject_global) {
-      for (const auto& registered : customizer_parameters) {
-        if (registered->getName() == name) {
-          PyErr_Format(PyExc_ValueError, "Customizer parameter '%s' is already registered", name);
-          return NULL;
-        }
-      }
     }
 
     auto assignment = std::make_shared<Assignment>(name, default_expr);
