@@ -37,4 +37,11 @@ except ValueError as error:
 else:
     raise AssertionError("duplicate parameter name across containers was accepted")
 
+try:
+    Customizer().add_parameter("unsupported", object())
+except TypeError as error:
+    assert "unsupported default type" in str(error)
+else:
+    raise AssertionError("unsupported default type was accepted")
+
 print("OK")

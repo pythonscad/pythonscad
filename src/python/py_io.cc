@@ -1014,6 +1014,11 @@ static PyObject *python_register_parameter_impl(PyObject *args, PyObject *kwargs
     Py_INCREF(value_effective);
     return value_effective;
   }
+  if (!inject_global) {
+    PyErr_Format(PyExc_TypeError, "Customizer parameter '%s' has unsupported default type '%s'", name,
+                 Py_TYPE(value)->tp_name);
+    return NULL;
+  }
   Py_RETURN_NONE;
 }
 
