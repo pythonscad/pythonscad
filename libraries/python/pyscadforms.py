@@ -1,8 +1,16 @@
-from pythonscad import *
 import ast
 import inspect
 
-from PyQt6 import sip , QtWidgets, QtCore, QtGui
+from pythonscad import *
+
+try:
+    from PyQt6 import QtCore, QtGui, QtWidgets, sip
+except ModuleNotFoundError as error:
+    if error.name == "PyQt6":
+        raise ImportError(
+            "pyscadforms requires a Qt6 PythonSCAD package with bundled PyQt6"
+        ) from error
+    raise
 
 
 def parse_arguments(cls, args_text):
