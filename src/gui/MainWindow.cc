@@ -261,7 +261,7 @@ std::string editorGetCallArgs(int pos)
 
   long closePos = si->qsci->SendScintilla(QsciScintillaBase::SCI_BRACEMATCH, (long)(pos - 1), (long)0);
   if (closePos < 0 || closePos <= pos) {
-    return "";  // keine passende ")" -> neuer, unvollstaendiger Aufruf
+    return "";  // No matching ")": this is a new, incomplete call.
   }
 
   QString fullText = si->qsci->text();
@@ -290,8 +290,13 @@ void editorReplaceCallArgs(int pos, const char *newText)
     si->qsci->replaceSelectedText(qtext);
     finalText = qtext;
   } else {
-    finalText = qtext + ")";  // NEU: schliessende Klammer ergaenzen
-    si->qsci->insertAt(finalText, lineOpen, colOpen);
+    long cursorPos = si->qsci->SendScintilla(QsciScintillaBase::SCI_GETCURRENTPOS);
+    if (cursorPos < pos) cursorPos = pos;
+    int lineCursor, colCursor;
+    si->qsci->lineIndexFromPosition((int)cursorPos, &lineCursor, &colCursor);
+    si->qsci->setSelection(lineOpen, colOpen, lineCursor, colCursor);
+    finalText = qtext + ")";
+    si->qsci->replaceSelectedText(finalText);
   }
 
   int newLines = finalText.count('\n');

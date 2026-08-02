@@ -151,13 +151,12 @@ void PythonApi::autoCompletionSelected(const QString& /*selection*/)
 
 static long findEnclosingOpenParenPos(QsciScintilla *qsci, long cursorPos)
 {
-  QString text = qsci->text();
   int depth = 0;
   for (long i = cursorPos - 1; i >= 0; --i) {
-    QChar c = text.at((int)i);
+    const auto c = qsci->SendScintilla(QsciScintillaBase::SCI_GETCHARAT, i);
     if (c == ')') depth++;
     else if (c == '(') {
-      if (depth == 0) return i + 1;  // Position direkt NACH dieser "("
+      if (depth == 0) return i + 1;  // Position directly after this "(".
       depth--;
     }
   }
@@ -184,7 +183,7 @@ QStringList PythonApi::callTips(const QStringList& context, int /*commas*/,
 //  std::string pythonCalltip;
 //  if (python_get_static_calltip(funcName.toStdString(), pythonCalltip)) {
 //    callTips << QString::fromStdString(pythonCalltip).leftJustified(48, ' ') + "\u25B6";
-//    return callTips;  // Python-Version gefunden -> Builtin-Liste wird gar nicht erst geprueft
+//    return callTips;  // A Python calltip supersedes the built-in list.
 //  }
 #endif
 

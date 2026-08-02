@@ -1594,6 +1594,8 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 
 void snapshotPythonInventory()
 {
+  if (!Py_IsInitialized() || !pythonMainModule) return;
+
   PyGILState_STATE st = PyGILState_Ensure();
   PyObject *key, *value;
   Py_ssize_t pos = 0;
@@ -1627,18 +1629,25 @@ bool python_get_static_calltip(const std::string& className, std::string& result
       PyObject *funcresult = PyObject_CallObject(method, nullptr);
       if (funcresult != nullptr) {
         if (PyUnicode_Check(funcresult)) {
-          result = PyUnicode_AsUTF8(funcresult);
-          ok = true;
+          const char *calltip = PyUnicode_AsUTF8(funcresult);
+          if (calltip != nullptr) {
+            result = calltip;
+            ok = true;
+          } else {
+            PyErr_Clear();
+          }
         }
         Py_DECREF(funcresult);
       } else {
         PyErr_Print();
         PyErr_Clear();
       }
+    } else {
+      PyErr_Clear();
     }
     Py_XDECREF(method);
   } else {
-    PyErr_Clear();  // Name nicht gefunden ist kein Fehler, nur "kein Treffer"
+    PyErr_Clear();  // A missing name is not an error; it is simply not a match.
   }
 
   PyGILState_Release(gstate);
@@ -1672,11 +1681,11 @@ bool python_call_static_editor_method(const std::string& className, const std::s
         PyErr_Clear();
       }
     } else {
-      PyErr_Clear();  // Methode existiert nicht -> kein Fehler, einfach nichts tun
+      PyErr_Clear();  // A missing method is not an error; simply do nothing.
     }
     Py_XDECREF(method);
   } else {
-    PyErr_Clear();  // Klasse nicht bekannt -> ebenfalls kein Fehler
+    PyErr_Clear();  // An unknown class is not an error either.
   }
 
   PyGILState_Release(gstate);
