@@ -119,6 +119,18 @@ jobs:
           version: '22.1.7'
           build-type: 'release-mingw'
 
+      - name: Fetch and place prebuilt PyQt6 bindings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/pyqt6-fetch
+          gh release download pyqt6-bindings-latest --repo pythonscad/pythonscad \
+            -p "pyqt6-bindings-windows.zip" -D /tmp/pyqt6-fetch
+
+          mkdir -p libraries/python
+          rm -rf libraries/python/PyQt6
+          unzip -q /tmp/pyqt6-fetch/pyqt6-bindings-windows.zip -d libraries/python
+
       - name: Build PythonSCAD
         run: |
           mkdir build && cd build
