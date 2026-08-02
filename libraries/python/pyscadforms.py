@@ -41,15 +41,24 @@ def parse_arguments(cls, args_text):
             except (ValueError, SyntaxError):
                 pass
 
+    def assign_keyword(name, value):
+        if name in param_names:
+            known[name] = value
+        else:
+            unknown[name] = value
+
     for kw in call.keywords:
         try:
             value = ast.literal_eval(kw.value)
         except (ValueError, SyntaxError):
             continue
-        if kw.arg in param_names:
-            known[kw.arg] = value
-        else:
-            unknown[kw.arg] = value
+        if kw.arg is None:
+            if isinstance(value, dict):
+                for name, item in value.items():
+                    if isinstance(name, str):
+                        assign_keyword(name, item)
+            continue
+        assign_keyword(kw.arg, value)
 
     return known, unknown
 
