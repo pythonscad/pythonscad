@@ -349,7 +349,7 @@ _native_polygon = polygon
 class polygon:
     @staticmethod
     def get_calltip():
-        return "polygon(points=[[x1,y1], [x2,y2], ...])"
+        return "polygon(points=[[x1,y1], ...], paths=None, convexity=2)"
 
     @staticmethod
     def on_editor_trigger(pos):
@@ -396,12 +396,15 @@ class polygon:
 
         def refresh_table():
             syncing["active"] = True
-            table.setRowCount(len(canvas.points))
-            for i, (x, y) in enumerate(canvas.world_points()):
-                table.setItem(i, 0, QtWidgets.QTableWidgetItem(f"{x:.3f}"))
-                table.setItem(i, 1, QtWidgets.QTableWidgetItem(f"{y:.3f}"))
-            table.blockSignals(False)
-            syncing["active"] = False
+            signals_were_blocked = table.blockSignals(True)
+            try:
+                table.setRowCount(len(canvas.points))
+                for i, (x, y) in enumerate(canvas.world_points()):
+                    table.setItem(i, 0, QtWidgets.QTableWidgetItem(f"{x:.3f}"))
+                    table.setItem(i, 1, QtWidgets.QTableWidgetItem(f"{y:.3f}"))
+            finally:
+                table.blockSignals(signals_were_blocked)
+                syncing["active"] = False
 
         def refresh_table_selection():
             syncing["active"] = True
@@ -450,11 +453,15 @@ class polygon:
             pts = canvas.world_points()
             points_str = ", ".join(f"[{x:.2f}, {y:.2f}]" for x, y in pts)
             parts = [f"points=[{points_str}]"]
+            if "paths" in known:
+                parts.append(f"paths={known['paths']!r}")
+            if "convexity" in known:
+                parts.append(f"convexity={known['convexity']!r}")
             parts += [f"{k}={v!r}" for k, v in unknown.items()]
             editor_replace_call_args(pos, ", ".join(parts))
 
-    def __new__(cls, points):
-        return _native_polygon(points)
+    def __new__(cls, points, paths=None, convexity=2):
+        return _native_polygon(points=points, paths=paths, convexity=convexity)
 
 class CubePreview(QtWidgets.QWidget):
     # Use asymmetric projection angles instead of symmetric isometry (30/30)

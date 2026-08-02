@@ -264,8 +264,10 @@ std::string editorGetCallArgs(int pos)
     return "";  // No matching ")": this is a new, incomplete call.
   }
 
-  QString fullText = si->qsci->text();
-  return fullText.mid(pos, (int)closePos - pos).toStdString();
+  const auto length = closePos - pos;
+  QByteArray argsText((int)length + 1, '\0');
+  si->qsci->SendScintilla(QsciScintillaBase::SCI_GETTEXTRANGE, (long)pos, closePos, argsText.data());
+  return std::string(argsText.constData(), (size_t)length);
 }
 
 void editorReplaceCallArgs(int pos, const char *newText)
