@@ -2311,7 +2311,16 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
       }
     }
 
-    customizer_parameters_finished = (sourceFile ? sourceFile->scope->assignments : AssignmentList());
+    SourceFile *parameterSource =
+      sourceFile ? sourceFile : (rootFileMatchesEditor ? this->rootFile.get() : nullptr);
+    if (parameterSource != nullptr) {
+      // Runtime-discovered Customizer parameters do not take the legacy prefix-scan path. Apply
+      // the widget's latest values to the previous parameter AST before using it as this run's
+      // effective-value snapshot.
+      editor->parameterWidget->applyParameters(parameterSource);
+    }
+    customizer_parameters_finished =
+      parameterSource ? parameterSource->scope->assignments : AssignmentList();
     customizer_parameters.clear();
     if (venv.empty()) {
       LOG("Running %1$s without venv.", python_version());
@@ -2320,7 +2329,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
       LOG("Running %1$s in venv '%2$s'.", python_version(), v);
     }
     auto error = evaluatePython(fulltext_py, pythonDryRunFullScript);
-    if (error.size() > 0) LOG(message_group::Error, Location::NONE, "", error.c_str());
+    if (!error.empty()) LOG(message_group::Error, Location::NONE, "", error.c_str());
     finishPython();
 
     if (renderVarsSet != nullptr) {
@@ -2332,6 +2341,24 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
       // Match non-Python path below: parse() can leave sourceFile non-null on failure.
       sourceFile = parse(sourceFile, "", fnameNative, fnameNative, false) ? sourceFile : nullptr;
     }
+    if (error.empty() && sourceFile != nullptr) {
+      // A full Python evaluation is the source of truth for runtime-declared parameters such as
+      // pythonscad.Customizer. Reconcile even an empty list so removing declarations clears stale
+      // widgets. Legacy add_parameter() declarations still take the prefix-scan path above, then
+      // converge here after the full evaluation.
+      sourceFile->scope->assignments = customizer_parameters;
+      CommentParser::collectParameters(fulltext_py, sourceFile, '#');
+      editor->parameterWidget->setParameters(sourceFile, fulltext_py);
+      editor->parameterWidget->applyParameters(sourceFile);
+      editor->parameterWidget->setEnabled(true);
+      editor->setIndicator(sourceFile->indicatorData);
+      customizer_parameters_finished = sourceFile->scope->assignments;
+    } else if (!error.empty() && parameterSource != nullptr) {
+      // Keep the last complete Customizer usable rather than publishing declarations collected
+      // before the exception.
+      editor->parameterWidget->setEnabled(true);
+    }
+    customizer_parameters.clear();
 
   } else  // python not enabled
 #endif    // ifdef ENABLE_PYTHON

@@ -741,7 +741,7 @@ PyObject *python_str(PyObject *self)
   return PyUnicode_FromStringAndSize(stream.str().c_str(), stream.str().size());
 }
 
-PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *python_register_parameter_impl(PyObject *args, PyObject *kwargs, bool inject_global)
 {
   char *kwlist[] = {"name", "default",    "description", "group", "range",
                     "step", "max_length", "options",     NULL};
@@ -969,6 +969,15 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
       annotationList->push_back(Annotation("Group", std::make_shared<Literal>(group, Location::NONE)));
     }
 
+    if (!inject_global) {
+      for (const auto& registered : customizer_parameters) {
+        if (registered->getName() == name) {
+          PyErr_Format(PyExc_ValueError, "Customizer parameter '%s' is already registered", name);
+          return NULL;
+        }
+      }
+    }
+
     auto assignment = std::make_shared<Assignment>(name, default_expr);
     assignment->addAnnotations(annotationList);
     customizer_parameters.push_back(assignment);
@@ -999,7 +1008,7 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     // Only set global variable if the pure function feature is not enabled
     // (default: creates variable for backward compatibility)
-    if (!Feature::ExperimentalAddParameterPureFunction.is_enabled()) {
+    if (inject_global && !Feature::ExperimentalAddParameterPureFunction.is_enabled()) {
       PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
       PyDict_SetItemString(maindict, name, value_effective);
     }
@@ -1007,6 +1016,16 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
     return value_effective;
   }
   Py_RETURN_NONE;
+}
+
+PyObject *python_register_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return python_register_parameter_impl(args, kwargs, false);
+}
+
+PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return python_register_parameter_impl(args, kwargs, true);
 }
 
 PyObject *python_scad(PyObject *self, PyObject *args, PyObject *kwargs)

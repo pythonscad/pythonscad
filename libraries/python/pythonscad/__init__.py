@@ -43,6 +43,149 @@ import math as _math
 import os as _os
 import sys as _sys
 import typing as _typing
+import collections.abc as _collections_abc
+import _openscad as _openscad_core
+
+
+class Customizer(_collections_abc.Mapping[str, _typing.Any]):
+    """Container for PythonSCAD Customizer parameters.
+
+    Parameters added to this container are registered with the GUI without
+    creating variables in the script's global namespace. The container is a
+    read-only mapping from parameter names to their current effective values.
+    Use :meth:`group` to place parameters on named Customizer tabs.
+    """
+
+    def __init__(self) -> None:
+        self._values: dict[str, _typing.Any] = {}
+        self._parameter_groups: dict[str, str | None] = {}
+        self._groups: dict[str, _CustomizerGroup] = {}
+
+    def __getitem__(self, name: str) -> _typing.Any:
+        return self._values[name]
+
+    def __iter__(self) -> _typing.Iterator[str]:
+        return iter(self._values)
+
+    def __len__(self) -> int:
+        return len(self._values)
+
+    def add_parameter(
+        self,
+        name: str,
+        default: _typing.Any,
+        description: str | None = None,
+        range: _typing.Any = None,
+        step: float | None = None,
+        max_length: int | None = None,
+        options: list[_typing.Any] | dict[_typing.Any, str] | None = None,
+    ) -> _typing.Any:
+        """Register an ungrouped parameter and return its effective value."""
+        return self._add_parameter(
+            name,
+            default,
+            description=description,
+            group=None,
+            range=range,
+            step=step,
+            max_length=max_length,
+            options=options,
+        )
+
+    def group(self, title: str) -> "_CustomizerGroup":
+        """Return a cached view that registers parameters on *title*'s tab."""
+        if not isinstance(title, str):
+            raise TypeError("Customizer group title must be a string")
+        if not title:
+            raise ValueError("Customizer group title must not be empty")
+        if title not in self._groups:
+            self._groups[title] = _CustomizerGroup(self, title)
+        return self._groups[title]
+
+    def _add_parameter(
+        self,
+        name: str,
+        default: _typing.Any,
+        *,
+        description: str | None,
+        group: str | None,
+        range: _typing.Any,
+        step: float | None,
+        max_length: int | None,
+        options: list[_typing.Any] | dict[_typing.Any, str] | None,
+    ) -> _typing.Any:
+        if not isinstance(name, str):
+            raise TypeError("Customizer parameter name must be a string")
+        if not name:
+            raise ValueError("Customizer parameter name must not be empty")
+        if name in self._values:
+            raise ValueError(f"Customizer parameter {name!r} is already registered")
+
+        kwargs: dict[str, _typing.Any] = {"name": name, "default": default}
+        if description is not None:
+            kwargs["description"] = description
+        if group is not None:
+            kwargs["group"] = group
+        if range is not None:
+            kwargs["range"] = range
+        if step is not None:
+            kwargs["step"] = step
+        if max_length is not None:
+            kwargs["max_length"] = max_length
+        if options is not None:
+            kwargs["options"] = options
+
+        value = _openscad_core._register_parameter(**kwargs)
+        self._values[name] = value
+        self._parameter_groups[name] = group
+        return value
+
+
+class _CustomizerGroup(_collections_abc.Mapping[str, _typing.Any]):
+    """Named group view owned by a :class:`Customizer`."""
+
+    def __init__(self, owner: Customizer, title: str) -> None:
+        self._owner = owner
+        self._title = title
+
+    def __getitem__(self, name: str) -> _typing.Any:
+        if self._owner._parameter_groups.get(name) != self._title:
+            raise KeyError(name)
+        return self._owner[name]
+
+    def __iter__(self) -> _typing.Iterator[str]:
+        return (
+            name
+            for name in self._owner
+            if self._owner._parameter_groups[name] == self._title
+        )
+
+    def __len__(self) -> int:
+        return sum(
+            group == self._title for group in self._owner._parameter_groups.values()
+        )
+
+    def add_parameter(
+        self,
+        name: str,
+        default: _typing.Any,
+        description: str | None = None,
+        range: _typing.Any = None,
+        step: float | None = None,
+        max_length: int | None = None,
+        options: list[_typing.Any] | dict[_typing.Any, str] | None = None,
+    ) -> _typing.Any:
+        """Register a parameter in this group and return its effective value."""
+        return self._owner._add_parameter(
+            name,
+            default,
+            description=description,
+            group=self._title,
+            range=range,
+            step=step,
+            max_length=max_length,
+            options=options,
+        )
 
 
 def _normalize_filename_key(filename: str) -> str:

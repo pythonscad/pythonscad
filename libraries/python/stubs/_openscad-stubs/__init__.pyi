@@ -1,7 +1,7 @@
 """ PythonSCAD Stub File for use in editors like Visual Studio Code """
 
 from enum import Enum
-from typing import List, Literal, Mapping, Optional, Self, Sequence, TYPE_CHECKING, Union, overload
+from typing import Any, List, Literal, Mapping, Optional, Self, Sequence, TYPE_CHECKING, Union, overload
 
 if TYPE_CHECKING:
     import numpy as np
@@ -1489,8 +1489,30 @@ def version_string() -> str:
     """Outputs the full PythonSCAD version string."""
     ...
 
-def add_parameter(name: str, default) -> None:
-    """Adds Parameter for use in Customizer"""
+def _register_parameter(
+    name: str,
+    default: Any,
+    description: str | None = ...,
+    group: str | None = ...,
+    range: Any = ...,
+    step: float | None = ...,
+    max_length: int | None = ...,
+    options: list[Any] | dict[Any, str] | None = ...,
+) -> Any:
+    """Internal pure Customizer parameter registration helper."""
+    ...
+
+def add_parameter(
+    name: str,
+    default: Any,
+    description: str | None = ...,
+    group: str | None = ...,
+    range: Any = ...,
+    step: float | None = ...,
+    max_length: int | None = ...,
+    options: list[Any] | dict[Any, str] | None = ...,
+) -> Any:
+    """Add a Customizer parameter and return its effective value."""
     ...
 
 def scad(code: str) -> PyOpenSCAD:

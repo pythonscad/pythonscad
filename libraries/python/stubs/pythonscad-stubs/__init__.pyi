@@ -26,6 +26,40 @@ from openscad import (  # noqa: F401
 
 HAS_NUMPY: bool
 
+class Customizer(_typing.Mapping[str, _typing.Any]):
+    """Read-only mapping of Customizer parameter names to effective values."""
+
+    def __init__(self) -> None: ...
+    def __getitem__(self, name: str) -> _typing.Any: ...
+    def __iter__(self) -> _typing.Iterator[str]: ...
+    def __len__(self) -> int: ...
+    def add_parameter(
+        self,
+        name: str,
+        default: _typing.Any,
+        description: str | None = ...,
+        range: _typing.Any = ...,
+        step: float | None = ...,
+        max_length: int | None = ...,
+        options: list[_typing.Any] | dict[_typing.Any, str] | None = ...,
+    ) -> _typing.Any: ...
+    def group(self, title: str) -> _CustomizerGroup: ...
+
+class _CustomizerGroup(_typing.Mapping[str, _typing.Any]):
+    def __getitem__(self, name: str) -> _typing.Any: ...
+    def __iter__(self) -> _typing.Iterator[str]: ...
+    def __len__(self) -> int: ...
+    def add_parameter(
+        self,
+        name: str,
+        default: _typing.Any,
+        description: str | None = ...,
+        range: _typing.Any = ...,
+        step: float | None = ...,
+        max_length: int | None = ...,
+        options: list[_typing.Any] | dict[_typing.Any, str] | None = ...,
+    ) -> _typing.Any: ...
+
 class _VectorBase(_np.ndarray[_typing.Any, _np.dtype[_np.float64]]):
     """Base class for NumPy-backed fixed-length PythonSCAD vectors."""
 
