@@ -163,7 +163,7 @@ class PolygonCanvas(QtWidgets.QWidget):
         if self.on_selection_change and not from_table:
             self.on_selection_change()
 
-    # --- Maus-Events ---
+    # --- Mouse events ---
     def wheelEvent(self, event):
         old_world = self._to_world(event.position())
         factor = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
@@ -563,7 +563,7 @@ class cube:
         form.addRow("size y", y_box)
         form.addRow("size z", z_box)
 
-        uniform_box = QtWidgets.QCheckBox("Einheitliche Groesse (X/Y/Z gekoppelt)")
+        uniform_box = QtWidgets.QCheckBox("Uniform size (link X/Y/Z)")
         form_col.addWidget(uniform_box)
 
         center_box = QtWidgets.QCheckBox()
