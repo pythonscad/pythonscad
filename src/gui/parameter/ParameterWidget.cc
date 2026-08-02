@@ -537,6 +537,8 @@ ParameterVirtualWidget *ParameterWidget::createParameterWidget(ParameterObject *
     }
   } else if (parameter->type() == ParameterObject::ParameterType::Vector) {
     return new ParameterVector(this, static_cast<VectorParameter *>(parameter), descriptionStyle);
+  } else if (parameter->type() == ParameterObject::ParameterType::Custom) {
+    return new ParameterPyQtWidget(this, static_cast<CustomParameter *>(parameter), descriptionStyle);
   } else if (parameter->type() == ParameterObject::ParameterType::Enum) {
     return new ParameterComboBox(this, static_cast<EnumParameter *>(parameter), descriptionStyle);
   } else {

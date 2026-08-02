@@ -1139,6 +1139,25 @@ PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs)
   Py_RETURN_NONE;
 }
 
+// analog zur bestehenden Menu-Callback-Map
+static std::map<std::string, PyObject *> customizer_widget_factories;
+
+PyObject *python_add_parameter_widget(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *typenamec;
+  PyObject *factory;
+  static char *kwlist[] = {"typename", "factory", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO", kwlist, &typenamec, &factory)) return NULL;
+
+  if (!PyCallable_Check(factory)) {
+    PyErr_SetString(PyExc_TypeError, "factory must be callable");
+    return NULL;
+  }
+  Py_INCREF(factory);
+  customizer_widget_factories[typenamec] = factory;
+  Py_RETURN_NONE;
+}
+
 PyObject *python_qapp_ptr(PyObject *, PyObject *)
 {
   return PyLong_FromVoidPtr((void *)qapp_global);

@@ -925,14 +925,16 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"add_menuitem", (PyCFunction)python_add_menuitem, METH_VARARGS | METH_KEYWORDS,
    "Add a custom menu item to the GUI.\n"
    "add_menuitem(menuname=\"Tools\", itemname=\"My Action\", callback=\"my_callback\")"},
+
+  {"add_parameter_widget", (PyCFunction)python_add_parameter_widget, METH_VARARGS | METH_KEYWORDS,
+   "Register custom customizer widget type"},
   {"nimport", (PyCFunction)python_nimport, METH_VARARGS | METH_KEYWORDS,
    "Import a Python model from a URL (not an STL).\n"
    "nimport(url=\"https://example.com/model.py\")"},
   {"qapp_ptr", python_qapp_ptr, METH_NOARGS,
    "Get raw pointer to the Qt application.\n"
    "qapp_ptr()"},
-  {"mainwindow_ptr", (PyCFunction)python_mainwindow_ptr, METH_NOARGS,
-   "Gets Mainwindow Pointer"},
+  {"mainwindow_ptr", (PyCFunction)python_mainwindow_ptr, METH_NOARGS, "Gets Mainwindow Pointer"},
   {"editor_get_call_args", (PyCFunction)python_editor_get_call_args, METH_VARARGS | METH_KEYWORDS,
    "Get Current call arguments"},
   {"editor_replace_call_args", (PyCFunction)python_editor_replace_call_args,

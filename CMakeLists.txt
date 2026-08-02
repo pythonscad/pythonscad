@@ -1873,6 +1873,7 @@ set(GUI_SOURCES
   src/gui/parameter/ParameterText.cc
   src/gui/parameter/ParameterVector.cc
   src/gui/parameter/ParameterVirtualWidget.cc
+  src/gui/parameter/ParameterPyQtWidget.cc
   src/gui/parameter/ParameterWidget.cc
   src/gui/ai/AIDock.cc
   src/gui/ai/ChatWidget.cc
