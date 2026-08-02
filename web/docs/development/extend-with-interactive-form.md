@@ -80,15 +80,16 @@ solid/2D geometry, indistinguishable from a native primitive.
 
 ## Helper Functions
 
-These are available globally alongside `mainwindow_ptr()`/`qapp_ptr()`:
+The editor helpers are exported by `pythonscad`. The generic argument parser
+is a pure-Python helper in `pyscadforms`:
 
 | Function | Purpose |
 |---|---|
 | `editor_get_call_args(pos)` | Returns the raw text between the parentheses of the call at `pos` — empty string if there is no matching close paren (a fresh, unfinished call). |
 | `editor_replace_call_args(pos, new_args_text)` | Replaces the argument text of the call at `pos` with `new_args_text`, adding a closing parenthesis if none was found. |
-| `parse_arguments(cls, args_text)` | Parses an existing call's argument text against `cls.__new__`'s actual signature. Returns `(known, unknown)` . |
+| `pyscadforms.parse_arguments(cls, args_text)` | Parses an existing call's argument text against `cls.__new__`'s actual signature. Returns `(known, unknown)`. |
 
-`parse_arguments` is intentionally generic — it doesn't know anything about
+`pyscadforms.parse_arguments` is intentionally generic — it doesn't know anything about
 what a `points` or `size` parameter *means*, only that `cls.__new__` accepts
 one. This is what lets the same form both create a new call and edit an
 existing one: on open, pre-fill from `parse_arguments`; on accept, write
@@ -100,6 +101,11 @@ A minimal, complete class — no canvas, just two numeric fields, editable both
 for new and existing calls:
 
 ```python
+from PyQt6 import QtWidgets, sip
+from pythonscad import *
+from pyscadforms import parse_arguments
+
+
 class mysphere:
     @staticmethod
     def get_calltip():
