@@ -25,7 +25,7 @@ def main() -> None:
     candidates = [Version(v) for v, files in data["releases"].items() if files]
     matching = [v for v in candidates if f"{v.major}.{v.minor}" == major_minor]
     if not matching:
-        sys.exit(f"Keine PyQt6-Version fuer Qt {major_minor} gefunden")
+        sys.exit(f"No PyQt6 version found for Qt {major_minor}")
 
     best = max(matching)
     sdist = next(f for f in data["releases"][str(best)] if f["packagetype"] == "sdist")
