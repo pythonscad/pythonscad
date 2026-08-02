@@ -56,6 +56,14 @@ jobs:
         run: |
           ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
 
+      - name: Fetch compatible PyQt6 bindings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./scripts/ci/fetch_pyqt6_bindings.sh \
+            macos-x86_64 macos-15-intel-homebrew-qt6 \
+            "$(brew --prefix qt)/bin/qmake" "$(which python3)" libraries/python
+
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           enable-cache: false
@@ -194,18 +202,6 @@ jobs:
           git fetch --unshallow --tags || git fetch --tags
           git describe --tags --always --dirty
 
-      - name: Fetch and place prebuilt PyQt6 bindings
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p /tmp/pyqt6-fetch
-          gh release download pyqt6-bindings-latest --repo pythonscad/pythonscad \
-            -p "pyqt6-bindings-macos.zip" -D /tmp/pyqt6-fetch
-
-          mkdir -p libraries/python
-          rm -rf libraries/python/PyQt6
-          unzip -q /tmp/pyqt6-fetch/pyqt6-bindings-macos.zip -d libraries/python
-
       - name: Setup (detached) tmate session if enabled
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         uses: mxschmitt/action-tmate@v3
@@ -224,6 +220,14 @@ jobs:
           HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
         run: |
           ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
+
+      - name: Fetch compatible PyQt6 bindings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./scripts/ci/fetch_pyqt6_bindings.sh \
+            macos-arm64 macos-14-homebrew-qt6 \
+            "$(brew --prefix qt)/bin/qmake" "$(which python3)" libraries/python
 
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
@@ -641,6 +645,38 @@ jobs:
             fi
           fi
 
+          # Merge the separately built PyQt6 extension modules. The app bundle
+          # starts from the x86_64 tree, so pure Python files are already present.
+          echo "=== Merging PyQt6 bindings ==="
+          PYQT_REL="Contents/Resources/libraries/python/PyQt6"
+          X86_PYQT="$X86_BUNDLE/$PYQT_REL"
+          ARM_PYQT="$ARM_BUNDLE/$PYQT_REL"
+          MERGED_PYQT="$MERGED_DIR/$APP_NAME/$PYQT_REL"
+          if [ ! -d "$X86_PYQT" ] || [ ! -d "$ARM_PYQT" ]; then
+            echo "ERROR: both architecture-specific PyQt6 trees are required" >&2
+            exit 1
+          fi
+          while IFS= read -r x86_file; do
+            rel_path="${x86_file#"$X86_PYQT/"}"
+            arm_file="$ARM_PYQT/$rel_path"
+            merged_file="$MERGED_PYQT/$rel_path"
+            if [ ! -f "$arm_file" ]; then
+              echo "ERROR: arm64 PyQt6 module missing: $rel_path" >&2
+              exit 1
+            fi
+            if file "$x86_file" | grep -q "Mach-O"; then
+              echo "Merging PyQt6 module: $rel_path"
+              lipo -create "$x86_file" "$arm_file" -output "$merged_file"
+            fi
+          done < <(find "$X86_PYQT" -type f \( -name "*.so" -o -name "*.dylib" \))
+          while IFS= read -r arm_file; do
+            rel_path="${arm_file#"$ARM_PYQT/"}"
+            if [ ! -f "$X86_PYQT/$rel_path" ]; then
+              echo "ERROR: x86_64 PyQt6 module missing: $rel_path" >&2
+              exit 1
+            fi
+          done < <(find "$ARM_PYQT" -type f \( -name "*.so" -o -name "*.dylib" \))
+
           # Remove broken site-packages symlink that points outside the bundle
           # This must happen after Python.framework is fully assembled (regardless of merge path)
           echo "=== Cleaning up Python.framework ==="
@@ -932,6 +968,16 @@ jobs:
               file "$f" | grep -q Mach-O || continue
               sign_target --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f"
             done < <(find "$BUNDLE_PY" -type f \( -name "*.so" -o -name "*.dylib" \) -print0)
+          fi
+
+          # Step 2c: Sign bundled PyQt6 extension modules.
+          PYQT_DIR="${APP_BUNDLE}/Contents/Resources/libraries/python/PyQt6"
+          if [ -d "$PYQT_DIR" ]; then
+            echo "=== Signing bundled PyQt6 modules ==="
+            while IFS= read -r -d '' f; do
+              file "$f" | grep -q Mach-O || continue
+              sign_target --force --sign "$SIGN_ID" "${CODESIGN_EXTRA[@]}" "$f"
+            done < <(find "$PYQT_DIR" -type f \( -name "*.so" -o -name "*.dylib" \) -print0)
           fi
 
           # Step 3: Sign Qt frameworks (each framework as a bundle)

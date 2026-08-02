@@ -13,4 +13,4 @@ from PyQt6.QtCore import QT_VERSION_STR  # noqa: E402
 
 app = QtWidgets.QApplication([])
 widget = QtWidgets.QWidget()
-print(f"OK: PyQt6 importiert, QApplication erzeugt, Qt {QT_VERSION_STR}")
+print(f"OK: imported PyQt6 and created QApplication with Qt {QT_VERSION_STR}")

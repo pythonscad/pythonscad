@@ -1,9 +1,10 @@
 # PyQt6 and Forms in PythonSCAD
 
-PythonSCAD's Qt6 packages ship with a prebuilt copy of PyQt6, ready to import
-from any script or from `.pythonscadrc` — no separate installation or build
-step is needed. This page covers where it comes from, how to reach the running
-application window from Python, and how to build a basic dialog.
+PythonSCAD's Qt6 AppImage, macOS, and Windows packages ship with a prebuilt
+copy of PyQt6, ready to import from any script or from `.pythonscadrc` — no
+separate installation or build step is needed. This page covers where it
+comes from, how to reach the running application window from Python, and how
+to build a basic dialog.
 
 Qt5 packages do not include PyQt bindings, so the dialog and interactive-form
 features described here are unavailable in those builds. The rest of
@@ -11,8 +12,9 @@ PythonSCAD continues to work normally.
 
 ## Where PyQt6 Comes From
 
-PyQt6 is built for each supported platform against the Qt6 version PythonSCAD
-itself links against, and shipped inside Qt6 installations under
+PyQt6 is built for each supported platform and architecture against the exact
+Qt6 and Python ABI PythonSCAD itself uses, and shipped inside supported Qt6
+portable installations under
 `libraries/python/PyQt6`. It is available the moment PythonSCAD starts —
 there is nothing to install, and no internet access is required at runtime.
 
@@ -21,6 +23,22 @@ from PyQt6 import QtWidgets
 ```
 
 This works out of the box in any script, and in `.pythonscadrc`.
+
+### Build-system lifecycle
+
+The compiled bindings are published in this repository as immutable,
+content-addressed dependency releases. Their identity includes the platform,
+architecture, complete Qt and pinned PyQt versions, Python version and SOABI,
+and the binding builder inputs. Packaging jobs derive that identity from
+their own toolchain, download only the exact matching archive, and validate
+its embedded manifest before packaging it.
+
+The `Build PyQt6 Bindings (Qt6)` workflow runs when its builder inputs change
+and as a weekly compatibility canary. It can also be dispatched manually.
+Existing dependency releases are never overwritten. If a packaging job says
+that no compatible artifact exists, run that workflow on the default branch
+before retrying the package. When support moves to a new Qt minor version,
+first add its reviewed PyQt version to `scripts/ci/pyqt6-versions.json`.
 
 ## One Application, Not Two
 
@@ -90,8 +108,9 @@ parented to PythonSCAD's own window.
 
 ## Summary
 
-- PyQt6 is prebuilt and shipped with Qt6 installations — `from PyQt6 import
-  ...` works immediately there. Qt5 installations do not provide this feature.
+- PyQt6 is prebuilt and shipped with the Qt6 AppImage, macOS, and Windows
+  packages — `from PyQt6 import ...` works immediately there. Qt5
+  installations do not provide this feature.
 - Don't create a second `QApplication`; wrap the existing one via
   `mainwindow_ptr()` / `qapp_ptr()` and `sip.wrapinstance`.
 - From there, it's ordinary PyQt6 — dialogs, layouts, widgets, custom

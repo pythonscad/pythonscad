@@ -154,6 +154,6 @@ else
 fi
 
 [[ -n "$exe" ]] || rs_die "could not locate PythonSCAD executable inside $app"
-rs_smoke_binary "$exe" "$(basename "$app")" "$workdir"
+rs_smoke_binary "$exe" "$(basename "$app")" "$workdir" 1
 
 rs_log "macOS DMG smoke tests passed"
