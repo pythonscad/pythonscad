@@ -908,6 +908,8 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"version_string", (PyCFunction)python_osversion_string, METH_VARARGS | METH_KEYWORDS,
    "PythonSCAD version as a string.\n"
    "version_string()"},
+  {"_register_parameter", (PyCFunction)python_register_parameter, METH_VARARGS | METH_KEYWORDS,
+   "Internal pure Customizer parameter registration helper."},
   {"add_parameter", (PyCFunction)python_add_parameter, METH_VARARGS | METH_KEYWORDS,
    "Register a Customizer parameter.\n"
    "add_parameter(name=\"size\", default=10)\n"

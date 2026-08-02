@@ -741,7 +741,7 @@ PyObject *python_str(PyObject *self)
   return PyUnicode_FromStringAndSize(stream.str().c_str(), stream.str().size());
 }
 
-PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *python_register_parameter_impl(PyObject *args, PyObject *kwargs, bool inject_global)
 {
   char *kwlist[] = {"name", "default",    "description", "group", "range",
                     "step", "max_length", "options",     NULL};
@@ -756,9 +756,8 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|zzOdiO", kwlist, &name, &value, &description,
                                    &group, &range_obj, &step_val, &max_length, &options)) {
-    PyErr_SetString(PyExc_TypeError,
-                    "Error during parsing add_parameter(name, default, [description], [group], "
-                    "[range], [step], [max_length], [options])");
+    const char *function_name = inject_global ? "add_parameter" : "Customizer.add_parameter";
+    PyErr_Format(PyExc_TypeError, "Error during parsing %s() arguments", function_name);
     return NULL;
   }
 
@@ -875,6 +874,15 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   if (found) {
+    if (!inject_global) {
+      for (const auto& registered : customizer_parameters) {
+        if (registered->getName() == name) {
+          PyErr_Format(PyExc_ValueError, "Customizer parameter '%s' is already registered", name);
+          return NULL;
+        }
+      }
+    }
+
     auto *annotationList = new AnnotationList();
 
     // Create Parameter annotation with constraints
@@ -999,14 +1007,29 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     // Only set global variable if the pure function feature is not enabled
     // (default: creates variable for backward compatibility)
-    if (!Feature::ExperimentalAddParameterPureFunction.is_enabled()) {
+    if (inject_global && !Feature::ExperimentalAddParameterPureFunction.is_enabled()) {
       PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
       PyDict_SetItemString(maindict, name, value_effective);
     }
     Py_INCREF(value_effective);
     return value_effective;
   }
+  if (!inject_global) {
+    PyErr_Format(PyExc_TypeError, "Customizer parameter '%s' has unsupported default type '%s'", name,
+                 Py_TYPE(value)->tp_name);
+    return NULL;
+  }
   Py_RETURN_NONE;
+}
+
+PyObject *python_register_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return python_register_parameter_impl(args, kwargs, false);
+}
+
+PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return python_register_parameter_impl(args, kwargs, true);
 }
 
 PyObject *python_scad(PyObject *self, PyObject *args, PyObject *kwargs)
