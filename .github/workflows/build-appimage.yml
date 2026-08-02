@@ -48,6 +48,7 @@ jobs:
         git describe --tags --always --dirty
 
     - name: Fetch and place prebuilt PyQt6 bindings
+      if: matrix.qt_version == 6
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
@@ -58,6 +59,12 @@ jobs:
         mkdir -p libraries/python
         rm -rf libraries/python/PyQt6
         unzip -q /tmp/pyqt6-fetch/pyqt6-bindings-linux-x86_64.zip -d libraries/python
+
+    - name: Ensure Qt5 package excludes PyQt6 bindings
+      if: matrix.qt_version == 5
+      run: |
+        rm -rf libraries/python/PyQt6
+        rm -f libraries/python/QT_VERSION.txt libraries/python/PYTHON_VERSION.txt
 
     - name: Setup (detached) tmate session if enabled
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}

@@ -1,14 +1,18 @@
 # PyQt6 and Forms in PythonSCAD
 
-PythonSCAD ships with a prebuilt copy of PyQt6, ready to import from any
-script or from `.pythonscadrc` — no separate installation or build step is
-needed. This page covers where it comes from, how to reach the running
+PythonSCAD's Qt6 packages ship with a prebuilt copy of PyQt6, ready to import
+from any script or from `.pythonscadrc` — no separate installation or build
+step is needed. This page covers where it comes from, how to reach the running
 application window from Python, and how to build a basic dialog.
+
+Qt5 packages do not include PyQt bindings, so the dialog and interactive-form
+features described here are unavailable in those builds. The rest of
+PythonSCAD continues to work normally.
 
 ## Where PyQt6 Comes From
 
-PyQt6 is built for each supported platform against the exact Qt6 version
-PythonSCAD itself links against, and shipped inside every installation under
+PyQt6 is built for each supported platform against the Qt6 version PythonSCAD
+itself links against, and shipped inside Qt6 installations under
 `libraries/python/PyQt6`. It is available the moment PythonSCAD starts —
 there is nothing to install, and no internet access is required at runtime.
 
@@ -86,8 +90,8 @@ parented to PythonSCAD's own window.
 
 ## Summary
 
-- PyQt6 is prebuilt and shipped with every installation — `from PyQt6 import
-  ...` works immediately.
+- PyQt6 is prebuilt and shipped with Qt6 installations — `from PyQt6 import
+  ...` works immediately there. Qt5 installations do not provide this feature.
 - Don't create a second `QApplication`; wrap the existing one via
   `mainwindow_ptr()` / `qapp_ptr()` and `sip.wrapinstance`.
 - From there, it's ordinary PyQt6 — dialogs, layouts, widgets, custom
