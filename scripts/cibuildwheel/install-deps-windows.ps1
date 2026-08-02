@@ -68,6 +68,8 @@ if (-not $BisonExe -or -not $FlexExe) {
 $VcpkgVersion = "2026.06.24"
 $VcpkgBaseline = "cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3"
 $VcpkgRoot = Join-Path $ProjectRoot ".wheel-vcpkg"
+# This dependency-only file is a template, not a directly usable vcpkg manifest.
+# The generated manifest below adds the pinned builtin-baseline.
 $ManifestSource = Join-Path $ProjectRoot "scripts/cibuildwheel/vcpkg.json"
 $ManifestDir = Join-Path $ProjectRoot ".wheel-vcpkg-manifest"
 $VcpkgManifest = Join-Path $ManifestDir "vcpkg.json"
