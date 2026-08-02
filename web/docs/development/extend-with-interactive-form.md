@@ -14,6 +14,9 @@ with [PyQt6 and Forms in PythonSCAD](pyqt6-and-forms.md) and
 [.pythonscadrc](pythonscadrc-and-menuitems.md), since editor-trigger classes
 normally live in one or the other.
 
+Interactive forms require a Qt6 build of PythonSCAD. Qt5 builds do not bundle
+PyQt and continue to use the standard, non-interactive editor calltips.
+
 ## Why This Exists
 
 Some parameters are awkward to reason about as plain numbers — a 2D
