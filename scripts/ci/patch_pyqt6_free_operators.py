@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
-"""Entfernt freie ('bool operator==/!=/</<=/>/>=(...)') Vergleichsoperator-
-Deklarationen aus allen PyQt6-.sip-Dateien. Diese Deklarationen gehen davon
-aus, dass Qt dafuer einen passenden freien Operator bereitstellt -- neuere
-Qt6-Patch-Versionen brechen die ADL-Aufloesung fuer mehrere davon (Kollision
-mit QCborTag/QCborKnownTags-Operatoren aus unabhaengigen Headern). Das
-Entfernen kostet nur die Python-seitige Vergleichbarkeit (==, !=, <, <=, >,
->=) fuer den jeweiligen Qt-Typ -- alles andere bleibt unberuehrt.
+"""Remove free comparison-operator declarations from all PyQt6 .sip files.
+
+These declarations assume that Qt provides a matching free
+``bool operator==/!=/</<=/>/>=(...)``. Newer Qt 6 patch releases break ADL
+resolution for several of them because they collide with QCborTag and
+QCborKnownTags operators from unrelated headers. Removing the declarations
+only disables Python-side comparisons (==, !=, <, <=, >, >=) for the affected
+Qt type; all other functionality remains unchanged.
 """
 import re
 import sys
 from pathlib import Path
 
-# Nur unindentierte (Spalte 0), freie Operator-Deklarationen, die direkt mit
-# ");" enden -- Member-Operatoren ("    bool operator==(...) const;")
-# haben fuehrende Leerzeichen und zusaetzlichen Text vor dem ";" und werden
-# durch den Anker "^bool" bzw. das fehlende " const" vor ";" nicht getroffen.
+# Match only unindented (column-zero) free operator declarations that end
+# directly in ");". Member operators ("    bool operator==(...) const;") have
+# leading whitespace and additional text before the semicolon, so the "^bool"
+# anchor and the absence of " const" before ";" exclude them.
 PATTERN = re.compile(r'^bool operator(==|!=|<=|>=|<|>)\([^)]*\);\s*$')
 
 
@@ -42,9 +43,9 @@ def main():
     for sip_file in root.rglob("*.sip"):
         n = patch_file(sip_file)
         if n:
-            print(f"{sip_file}: {n} Operator-Deklaration(en) entfernt")
+            print(f"{sip_file}: removed {n} operator declaration(s)")
             total += n
-    print(f"Insgesamt entfernt: {total}")
+    print(f"Total removed: {total}")
 
 
 if __name__ == "__main__":

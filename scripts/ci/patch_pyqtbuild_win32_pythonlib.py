@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""MinGW/g++ ignoriert das '#pragma comment(lib, ...)', das Python.h unter
-Windows einbettet, um pythonXY.lib automatisch zu linken -- das ist reine
-MSVC-Funktionalitaet. PyQt-builder fuegt deswegen auf win32 nur den
-Bibliotheks-Suchpfad (-L...) hinzu, nie ein explizites -lpythonX.Y, und
-verlaesst sich stillschweigend auf das (MSVC-only) Pragma. Dieses Skript
-ergaenzt den fehlenden expliziten Link-Flag direkt im installierten
-PyQt-builder-Quellcode.
+"""Patch PyQt-builder to link Python explicitly when building with MinGW.
+
+MinGW/g++ ignores the ``#pragma comment(lib, ...)`` that Python.h embeds on
+Windows to link pythonXY.lib automatically; that pragma is an MSVC-only
+feature. PyQt-builder adds only the library search path (``-L...``) on win32,
+never an explicit ``-lpythonX.Y``, because it assumes the pragma is honored.
+This script adds the missing linker flag directly to the installed
+PyQt-builder source.
 """
 import os
 import pyqtbuild
@@ -27,9 +28,8 @@ new = """            pro_lines.extend(['win32 {',
 
 if old not in text:
     raise SystemExit(
-        "Erwarteter Codeblock in pyqtbuild/builder.py nicht gefunden -- "
-        "PyQt-builder-Version hat sich vermutlich geaendert, Patch muss "
-        "angepasst werden."
+        "Expected code block not found in pyqtbuild/builder.py; the "
+        "PyQt-builder version may have changed and the patch must be updated."
     )
 
 text = text.replace(old, new)
