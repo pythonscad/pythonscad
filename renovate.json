@@ -11,31 +11,13 @@
         "/^scripts\\/cibuildwheel\\/install-deps-windows\\.ps1$/"
       ],
       "matchStrings": [
-        "\\$VcpkgVersion = \"(?<currentValue>\\d{4}\\.\\d{2}\\.\\d{2})\""
+        "\\$VcpkgVersion = \"(?<currentValue>\\d{4}\\.\\d{2}\\.\\d{2})\"\\s+\\$VcpkgBaseline = \"(?<currentDigest>[a-f0-9]{40})\""
       ],
+      "autoReplaceStringTemplate":
+        "$VcpkgVersion = \"{{{newValue}}}\"\n$VcpkgBaseline = \"{{{newDigest}}}\"",
       "datasourceTemplate": "github-tags",
       "depNameTemplate": "microsoft/vcpkg",
       "versioningTemplate": "loose"
-    }
-  ],
-  "packageRules": [
-    {
-      "matchManagers": [
-        "custom.regex"
-      ],
-      "matchPackageNames": [
-        "microsoft/vcpkg"
-      ],
-      "postUpgradeTasks": {
-        "commands": [
-          "python3 scripts/cibuildwheel/update-vcpkg-baseline.py"
-        ],
-        "fileFilters": [
-          "scripts/cibuildwheel/install-deps-windows.ps1",
-          "scripts/cibuildwheel/vcpkg.json"
-        ],
-        "executionMode": "update"
-      }
     }
   ]
 }

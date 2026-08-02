@@ -55,8 +55,11 @@ Install native build dependencies first:
 
 Wheel build tooling is pinned in `pyproject.toml` (`[dependency-groups] build`)
 and locked in [`uv.lock`](../uv.lock). Dependabot bumps via the uv ecosystem.
-Windows native libraries are pinned via
-[`scripts/cibuildwheel/vcpkg.json`](../scripts/cibuildwheel/vcpkg.json)
-(`builtin-baseline`). cibuildwheel is pinned in `pyproject.toml`
-(`[dependency-groups] build`) and invoked via `uv run cibuildwheel`.
+Windows native libraries are listed in
+[`scripts/cibuildwheel/vcpkg.json`](../scripts/cibuildwheel/vcpkg.json).
+The vcpkg release tag and its `builtin-baseline` commit are pinned together in
+[`scripts/cibuildwheel/install-deps-windows.ps1`](../scripts/cibuildwheel/install-deps-windows.ps1);
+the install script generates the build manifest from those inputs. cibuildwheel
+is pinned in `pyproject.toml` (`[dependency-groups] build`) and invoked via
+`uv run cibuildwheel`.
 Dependabot's monthly GitHub Actions group covers other action tag bumps.
