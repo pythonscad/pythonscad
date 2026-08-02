@@ -175,16 +175,17 @@ QStringList PythonApi::callTips(const QStringList& context, int /*commas*/,
   editor->lastCallTipPosition = (openParenPos >= 0) ? (int)openParenPos : (int)curPos;
 
 #ifdef ENABLE_PYTHON
+  std::string pythonCalltip;
+  if (python_get_static_calltip(funcName.toStdString(), pythonCalltip)) {
+    callTips << QString::fromStdString(pythonCalltip).leftJustified(48, ' ') + "\u25B6";
+    return callTips;  // A Python editor form supersedes the native calltip.
+  }
+
   const char *callTip = python_calltip(funcName.toStdString().c_str());
   if (callTip != nullptr) {
     callTips += callTip;
     return callTips;
   }
-//  std::string pythonCalltip;
-//  if (python_get_static_calltip(funcName.toStdString(), pythonCalltip)) {
-//    callTips << QString::fromStdString(pythonCalltip).leftJustified(48, ' ') + "\u25B6";
-//    return callTips;  // A Python calltip supersedes the built-in list.
-//  }
 #endif
 
   return callTips;
