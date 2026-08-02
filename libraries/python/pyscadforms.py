@@ -6,16 +6,14 @@ from PyQt6 import sip , QtWidgets, QtCore, QtGui
 
 
 def parse_arguments(cls, args_text):
-    """Parst einen bestehenden Aufruf-String (Inhalt zwischen den Klammern)
-    generisch anhand der Parameter, die cls.__new__ tatsaechlich akzeptiert.
+    """Parse an existing call's arguments using the parameters accepted by
+    ``cls.__new__``.
 
-    Rueckgabe: (bekannt, unbekannt)
-      bekannt   -- dict {parametername: wert} fuer alles, was zur Signatur passt
-      unbekannt -- dict {name: wert} fuer Keyword-Argumente, die im Aufruf
-                   standen, aber nicht Teil der Signatur sind (z.B. weil die
-                   Klasse sich seither geaendert hat) -- werden beim
-                   Zurueckschreiben mit uebernommen, statt stillschweigend
-                   verworfen zu werden.
+    Return ``(known, unknown)``. ``known`` maps parameters present in the
+    signature to their values. ``unknown`` preserves keyword arguments that
+    were present in the call but are no longer part of the signature, for
+    example because the class changed since the call was written. Unknown
+    arguments are written back instead of being silently discarded.
     """
     sig = inspect.signature(cls.__new__)
     param_names = [
@@ -56,15 +54,15 @@ def parse_arguments(cls, args_text):
     return known, unknown
 
 HIT_RADIUS = 10
-DRAG_THRESHOLD = 4  # Pixel Bewegung, ab der ein Klick als Rubber-Band-Drag zaehlt
+DRAG_THRESHOLD = 4  # Pixel movement after which a click becomes a rubber-band drag.
 SCALE = 20
 
 
 class PolygonCanvas(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.points = []          # Welt-Koordinaten
-        self.selected = set()     # Indizes der ausgewaehlten Punkte
+        self.points = []          # World coordinates
+        self.selected = set()     # Indices of selected points
         self.setFixedSize(500, 500)
         self.pan = QtCore.QPointF(250, 250)
 
@@ -75,18 +73,18 @@ class PolygonCanvas(QtWidgets.QWidget):
 
         self.drag_active = False
         self.drag_start_world = None
-        self.drag_orig_points = None  # {index: (x,y)} beim Drag-Start
+        self.drag_orig_points = None  # {index: (x, y)} at the start of a drag
 
         self.press_screen_pos = None
         self.press_was_hit = None
         self.press_shift = False
         self.rubber_band_active = False
-        self.rubber_band_rect = None  # QRectF in Bildschirmkoordinaten
+        self.rubber_band_rect = None  # QRectF in screen coordinates
 
-        self.on_change = None          # Punkte haben sich geaendert (Werte)
-        self.on_selection_change = None  # Auswahl hat sich geaendert
+        self.on_change = None          # Point values changed
+        self.on_selection_change = None  # Selection changed
 
-    # --- Koordinatentransformation ---
+    # --- Coordinate transformations ---
     def _to_world(self, screen_pos):
         return QtCore.QPointF(
             (screen_pos.x() - self.pan.x()) / self.zoom,
@@ -125,7 +123,7 @@ class PolygonCanvas(QtWidgets.QWidget):
         self.points.insert(best_idx, (x, y))
         return best_idx
 
-    # --- Aktionen, auch von aussen (Tabelle/Buttons) aufrufbar ---
+    # --- Actions also callable externally by the table and buttons ---
     def delete_selected(self):
         if not self.selected:
             return
@@ -196,9 +194,9 @@ class PolygonCanvas(QtWidgets.QWidget):
                     self.drag_start_world = world_pos
                     self.drag_orig_points = {i: self.points[i] for i in self.selected}
             else:
-                # Weder Punkt getroffen -> entweder spaeter ein Klick (= Punkt
-                # einfuegen) oder ein Rubber-Band-Drag. Entscheidet sich in
-                # mouseMoveEvent/mouseReleaseEvent anhand der Bewegung.
+                # No point hit: this becomes either a click that inserts a
+                # point or a rubber-band drag, depending on the movement seen
+                # by mouseMoveEvent/mouseReleaseEvent.
                 self.press_screen_pos = screen_pos
                 self.press_shift = shift
                 if not shift:
@@ -217,8 +215,6 @@ class PolygonCanvas(QtWidgets.QWidget):
                 self.pan_start_pan = QtCore.QPointF(self.pan)
 
         self.update()
-        if self.on_change:
-            self.on_change()
 
     def mouseMoveEvent(self, event):
         screen_pos = event.position()
@@ -254,7 +250,7 @@ class PolygonCanvas(QtWidgets.QWidget):
                     self.selected = hit_indices
                 self._notify_selection()
             elif self.press_screen_pos is not None:
-                # Reiner Klick ohne Bewegung -> Punkt einfuegen
+                # A click without movement inserts a point.
                 world_pos = self._to_world(self.press_screen_pos)
                 idx = self._insert_at_best_edge(world_pos.x(), world_pos.y())
                 self.selected = {idx}
@@ -269,7 +265,7 @@ class PolygonCanvas(QtWidgets.QWidget):
         elif event.button() == QtCore.Qt.MouseButton.RightButton:
             self.panning = False
 
-    # --- Zeichnen ---
+    # --- Drawing ---
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
@@ -349,11 +345,11 @@ class polygon:
         outer = QtWidgets.QVBoxLayout(dialog)
 
         hint = QtWidgets.QLabel(
-            "Klick auf leere Flaeche: Punkt einfuegen (an guenstigster Stelle)\n"
-            "Klick+Ziehen auf Punkt: verschieben (auch mehrere ausgewaehlte)\n"
-            "Shift+Klick: Punkt zur Auswahl hinzufuegen/entfernen\n"
-            "Ziehen auf leerer Flaeche: Mehrfachauswahl per Rahmen\n"
-            "Rechtsklick auf Punkt: einzeln loeschen   |   Rechtsklick leer: Ansicht verschieben"
+            "Click empty space: insert a point at the best edge\n"
+            "Click and drag a point: move it (including multiple selected points)\n"
+            "Shift-click: add or remove a point from the selection\n"
+            "Drag across empty space: select multiple points with a rectangle\n"
+            "Right-click a point: delete it   |   Right-click empty space: pan the view"
         )
         outer.addWidget(hint)
 
@@ -374,12 +370,12 @@ class polygon:
         table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
         side.addWidget(table)
 
-        btn_add = QtWidgets.QPushButton("Punkt hinzufuegen")
-        btn_delete = QtWidgets.QPushButton("Auswahl loeschen")
+        btn_add = QtWidgets.QPushButton("Add point")
+        btn_delete = QtWidgets.QPushButton("Delete selection")
         side.addWidget(btn_add)
         side.addWidget(btn_delete)
 
-        syncing = {"active": False}  # verhindert Rueckkopplung zwischen Tabelle <-> Canvas
+        syncing = {"active": False}  # Prevent feedback between the table and canvas.
 
         def refresh_table():
             syncing["active"] = True
@@ -444,8 +440,8 @@ class polygon:
         return _native_polygon(points)
 
 class CubePreview(QtWidgets.QWidget):
-    # Asymmetrische Projektionswinkel statt symmetrischer Isometrie (30/30),
-    # damit ein Wuerfel nicht wie sechs gleiche Dreiecke wirkt.
+    # Use asymmetric projection angles instead of symmetric isometry (30/30)
+    # so a cube does not look like six identical triangles.
     ANGLE_X_DEG = 20
     ANGLE_Y_DEG = 40
 
@@ -503,7 +499,7 @@ class CubePreview(QtWidgets.QWidget):
             for key, (rx, ry) in raw.items()
         }
 
-        # Kanten je nach Richtung (X/Y/Z) farblich zugeordnet
+        # Color edges according to their X/Y/Z direction.
         edges_x = [("000", "100"), ("010", "110"), ("001", "101"), ("011", "111")]
         edges_y = [("000", "010"), ("100", "110"), ("001", "011"), ("101", "111")]
         edges_z = [("000", "001"), ("100", "101"), ("010", "011"), ("110", "111")]
