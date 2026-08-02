@@ -288,7 +288,7 @@ ScintillaEditor::ScintillaEditor(QWidget *parent) : EditorInterface(parent)
 void ScintillaEditor::onCallTipClicked(int position)
 {
 #ifdef ENABLE_PYTHON
-  if (position != 0) return;  // Navigationspfeile ignorieren
+  if (position != 0) return;  // Ignore calltip navigation arrows.
 
   QString funcName = this->lastCallTipFunction;
   if (funcName.isEmpty()) return;
