@@ -44,7 +44,7 @@ classifiers = [
 # IPython 8.x on Python 3.10 via environment markers below.
 dependencies = [
     "ipython>=9,<10; python_version>='3.11'",
-    "ipython>=8,<9; python_version<'3.11'",
+    "ipython>=9,<10; python_version<'3.11'",
 ]
 
 [dependency-groups]
