@@ -28,10 +28,19 @@ Public names: :data:`Vector1`, :data:`Vector2`, :data:`Vector3`,
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, Iterable
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
+else:
+    # Keep runtime annotation introspection working on Python 3.10 without
+    # importing typing_extensions solely for this typing-only construct.
+    Self = Any
+
 try:  # NumPy is an optional runtime dependency.
     import numpy as _np
 
-    HAS_NUMPY = True
+    HAS_NUMPY: bool = True
 except ImportError:  # pragma: no cover - exercised via monkeypatching in tests
     _np = None
     HAS_NUMPY = False
@@ -51,7 +60,47 @@ def _as_plain_list(value):
     return list(value)
 
 
-if HAS_NUMPY:
+if TYPE_CHECKING:
+    try:
+        import numpy as np
+    except ImportError:
+        np = Any
+
+    class _VectorBase(np.ndarray[Any, np.dtype[np.float64]]):
+        """NumPy-backed fixed-length vector (type-checker view)."""
+
+        def __init__(
+            self, iterable: Iterable[float] | None = None
+        ) -> None: ...
+        def __array__(
+            self, dtype: Any = None, copy: Any = None
+        ) -> Any: ...
+        @classmethod
+        def from_array(cls, array: Any) -> Self: ...
+
+    class Vector1(_VectorBase):
+        """1D vector represented as [x]."""
+
+    class Vector2(_VectorBase):
+        """2D vector represented as [x, y]."""
+
+    class Vector3(_VectorBase):
+        """3D vector represented as [x, y, z]."""
+
+    class Matrix4x4(np.ndarray[Any, np.dtype[np.float64]]):
+        """NumPy-backed 4x4 transformation matrix helper."""
+
+        def __init__(
+            self,
+            iterable: Iterable[Iterable[float]] | None = None,
+        ) -> None: ...
+        def __array__(
+            self, dtype: Any = None, copy: Any = None
+        ) -> Any: ...
+        @classmethod
+        def from_array(cls, array: Any) -> Matrix4x4: ...
+
+elif HAS_NUMPY:
 
     class _ScadArray(_np.ndarray):
         """Base ndarray subclass for the NumPy-backed vector/matrix types.
@@ -98,7 +147,7 @@ if HAS_NUMPY:
 
         _length: int = 0
 
-        def __new__(cls, iterable=None):
+        def __new__(cls, iterable: Iterable[float] | None = None) -> Self:
             if iterable is None:
                 data = _np.zeros(cls._length, dtype=float)
             else:
@@ -112,7 +161,7 @@ if HAS_NUMPY:
             return data.copy().view(cls)
 
         @classmethod
-        def from_array(cls, array):
+        def from_array(cls, array: Any) -> Self:
             """Build the vector from a NumPy array (or any list-like)."""
             return cls(array)
 
@@ -134,7 +183,9 @@ if HAS_NUMPY:
     class Matrix4x4(_ScadArray):
         """4x4 transformation matrix backed by :class:`numpy.ndarray`."""
 
-        def __new__(cls, iterable=None):
+        def __new__(
+            cls, iterable: Iterable[Iterable[float]] | None = None
+        ) -> Self:
             if iterable is None:
                 data = _np.identity(4, dtype=float)
             else:
@@ -144,7 +195,7 @@ if HAS_NUMPY:
             return data.copy().view(cls)
 
         @classmethod
-        def from_array(cls, array):
+        def from_array(cls, array: Any) -> Self:
             """Build the matrix from a NumPy array (or any list-of-lists)."""
             return cls(array)
 
@@ -155,7 +206,7 @@ else:
 
         _length: int = 0
 
-        def __init__(self, iterable=None):
+        def __init__(self, iterable: Iterable[float] | None = None) -> None:
             if iterable is None:
                 super().__init__([0.0] * self._length)
                 return
@@ -172,7 +223,7 @@ else:
             raise TypeError("NumPy is not installed; cannot convert to array.")
 
         @classmethod
-        def from_array(cls, array):
+        def from_array(cls, array: Any) -> Self:
             """Build the vector from a list (or a NumPy array, if given one)."""
             if hasattr(array, "tolist"):
                 return cls(array.tolist())
@@ -196,7 +247,9 @@ else:
     class Matrix4x4(list):
         """4x4 transformation matrix backed by a list of lists (NumPy absent)."""
 
-        def __init__(self, iterable=None):
+        def __init__(
+            self, iterable: Iterable[Iterable[float]] | None = None
+        ) -> None:
             if iterable is None:
                 super().__init__(
                     [
@@ -221,7 +274,7 @@ else:
             raise TypeError("NumPy is not installed; cannot convert to array.")
 
         @classmethod
-        def from_array(cls, array):
+        def from_array(cls, array: Any) -> Self:
             """Build the matrix from a list-of-lists (or a NumPy array)."""
             if hasattr(array, "tolist"):
                 return cls(array.tolist())

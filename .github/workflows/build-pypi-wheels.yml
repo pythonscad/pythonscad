@@ -10,9 +10,15 @@ on:
       - "setup.py"
       - "pyproject.toml"
       - "MANIFEST.in"
+      - "pyrightconfig.json"
+      - "libraries/python/openscad/**"
+      - "libraries/python/pythonscad/**"
+      - "libraries/python/stubs/**"
+      - "src/python/**"
       - "scripts/cibuildwheel/**"
       - "scripts/smoke-test-pip.py"
       - "scripts/deps/profiles/pythonscad-pip.json"
+      - "tests/typing/**"
       - "uv.lock"
       - ".github/workflows/build-pypi-wheels.yml"
   pull_request:
@@ -20,9 +26,15 @@ on:
       - "setup.py"
       - "pyproject.toml"
       - "MANIFEST.in"
+      - "pyrightconfig.json"
+      - "libraries/python/openscad/**"
+      - "libraries/python/pythonscad/**"
+      - "libraries/python/stubs/**"
+      - "src/python/**"
       - "scripts/cibuildwheel/**"
       - "scripts/smoke-test-pip.py"
       - "scripts/deps/profiles/pythonscad-pip.json"
+      - "tests/typing/**"
       - "uv.lock"
       - ".github/workflows/build-pypi-wheels.yml"
   workflow_dispatch:
@@ -61,7 +73,10 @@ jobs:
         run: uv lock --check
 
       - name: Install build tooling
-        run: uv sync --frozen --only-group build --no-install-project
+        run: uv sync --frozen --only-group build --only-group typing --no-install-project
+
+      - name: Type-check the public Python API
+        run: uv run --no-sync pyright --project tests/typing
 
       - name: Add build tools to PATH
         shell: bash
