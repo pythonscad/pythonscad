@@ -382,6 +382,20 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
         """Insert a validated item tuple at ``index``."""
         super().insert(index, self._validate_item(item))
 
+    @_typing.overload
+    def __setitem__(  # type: ignore[override]
+        self,
+        index: _typing.SupportsIndex,
+        value: _MultiToolExporterItem,
+    ) -> None: ...
+
+    @_typing.overload
+    def __setitem__(
+        self,
+        index: slice,
+        value: _typing.Iterable[_MultiToolExporterItem],
+    ) -> None: ...
+
     def __setitem__(
         self,
         index: _typing.SupportsIndex | slice,
@@ -390,9 +404,14 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
     ) -> None:
         """Replace one or more items, validating each new entry tuple."""
         if isinstance(index, slice):
-            super().__setitem__(index, [self._validate_item(v) for v in value])
+            values = _typing.cast(
+                _typing.Iterable[_MultiToolExporterItem],
+                value,
+            )
+            super().__setitem__(index, [self._validate_item(v) for v in values])
         else:
-            super().__setitem__(index, self._validate_item(value))
+            item = _typing.cast(_MultiToolExporterItem, value)
+            super().__setitem__(index, self._validate_item(item))
 
     def __iadd__(
         self, other: _typing.Iterable[_MultiToolExporterItem]

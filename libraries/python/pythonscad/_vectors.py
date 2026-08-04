@@ -61,7 +61,10 @@ def _as_plain_list(value):
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    try:
+        import numpy as np
+    except ImportError:
+        np = Any
 
     class _VectorBase(np.ndarray[Any, np.dtype[np.float64]]):
         """NumPy-backed fixed-length vector (type-checker view)."""
