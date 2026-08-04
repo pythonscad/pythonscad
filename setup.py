@@ -857,16 +857,24 @@ def main():
 
     # The pure-Python overlay packages live under libraries/python/{openscad,pythonscad}
     # so they are already shipped alongside the binary by the standalone CMake install
-    # (the libraries/ tree). Declare them here so `pip install` exposes the same
-    # three-module layout (`_openscad` + `openscad` + `pythonscad`) on PyPI.
+    # (the libraries/ tree). The stub-only package supplies the static contract for
+    # the raw C extension; the overlays carry py.typed markers and inline annotations.
+    # Shipping all three in this wheel makes `pip install pythonscad` sufficient for
+    # both runtime use and IDE/type-checker support.
     setup(
         version=get_version(),
         cmdclass={"build_ext": BuildExtWithLexYacc},
         ext_modules=[pythonscad_ext],
-        packages=["openscad", "pythonscad"],
+        packages=["openscad", "pythonscad", "_openscad-stubs"],
         package_dir={
             "openscad": "libraries/python/openscad",
             "pythonscad": "libraries/python/pythonscad",
+            "_openscad-stubs": "libraries/python/stubs/_openscad-stubs",
+        },
+        package_data={
+            "openscad": ["py.typed"],
+            "pythonscad": ["py.typed"],
+            "_openscad-stubs": ["__init__.pyi", "py.typed"],
         },
     )
 

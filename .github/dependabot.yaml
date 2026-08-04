@@ -74,16 +74,6 @@ updates:
       prefix: "build(deps)"
       include: "scope"
 
-  - package-ecosystem: "uv"
-    directory: "/libraries/python/stubs"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-    commit-message:
-      prefix: "build(deps)"
-      include: "scope"
-
   # WASM sysroot: Emscripten base image (FROM/ARG tags) in docker/wasm/sysroot.dockerfile.
   - package-ecosystem: "docker"
     directory: "/docker/wasm"

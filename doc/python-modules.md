@@ -112,6 +112,10 @@ In a **pip-installed wheel**:
   packages `openscad/` and `pythonscad/`, all dropped into
   `site-packages` by setuptools. Standard import resolution handles the
   rest.
+- The same wheel contains the maintained `_openscad-stubs` type package;
+  both pure-Python overlays are marked with `py.typed` and expose inline
+  annotations. Installing `pythonscad` is therefore enough for IDE
+  completion and static call validation.
 
 ## Re-init cleanup (embedded interpreter only)
 

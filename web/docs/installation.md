@@ -120,9 +120,83 @@ compiler or geometry libraries on your system.
 pip install pythonscad
 ```
 
+The PyPI package includes PythonSCAD's type information. Editors and type
+checkers such as VS Code with Pylance/Pyright can therefore validate calls and
+offer completion without a separate stub download or a machine-specific
+`stubPath`.
+
+If an older environment still has the former standalone package installed,
+remove it so its outdated definitions cannot override the bundled ones:
+
+```shell
+python -m pip uninstall pythonscad-stubs
+```
+
 If no compatible wheel exists for your platform or Python version, pip falls
 back to building from the source distribution. In that case you will need the
 build dependencies listed below.
+
+### Project-local environment for IDE support
+
+Create a virtual environment in the root of your design project:
+
+=== "Linux / macOS"
+
+    ```shell
+    python3 -m venv .venv
+    . .venv/bin/activate
+    python -m pip install --upgrade pip
+    python -m pip install pythonscad
+    ```
+
+=== "Windows PowerShell"
+
+    ```powershell
+    py -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    python -m pip install --upgrade pip
+    python -m pip install pythonscad
+    ```
+
+Open the project directory in VS Code and select the `.venv` interpreter with
+**Python: Select Interpreter**. Pylance then discovers the bundled type
+information automatically. Do not commit `.venv`, and do not add an absolute
+PythonSCAD installation path to `pyrightconfig.json`.
+
+For a small design repository, dependencies can be recorded in
+`requirements.txt`:
+
+```text
+pythonscad
+```
+
+Install them after activating the environment:
+
+```shell
+python -m pip install -r requirements.txt
+```
+
+An equivalent minimal `pyproject.toml` is:
+
+```toml
+[project]
+name = "my-pythonscad-design"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+  "pythonscad",
+]
+```
+
+Install that project and its dependencies with:
+
+```shell
+python -m pip install -e .
+```
+
+For a design that must remain reproducible, replace `pythonscad` in either
+example with the exact version used to render it, for example
+`pythonscad==1.2.0`.
 
 ### Build dependencies (source fallback only)
 

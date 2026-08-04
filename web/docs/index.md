@@ -102,7 +102,7 @@ Browse the [Examples gallery](examples.md) for QR codes, gyroids, GDS import, an
 - [r/OpenPythonSCAD](https://www.reddit.com/r/OpenPythonSCAD/)
 - [Google Group](https://groups.google.com/g/pythonscad)
 - [Community wiki](http://old.reddit.com/r/openpythonscad/wiki/index)
-- [Python type stubs for IDE support](https://raw.githubusercontent.com/pythonscad/pythonscad/refs/heads/master/libraries/python/stubs/openscad/__init__.pyi)
+- [IDE and type-checker setup](installation.md#project-local-environment-for-ide-support)
 - [Contact & support](contact.md)
 
 ---

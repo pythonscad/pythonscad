@@ -13,12 +13,55 @@ Asserts the drop-in property: switching between ``from openscad import *``
 and ``from pythonscad import *`` does not change which callables a script
 binds (they are the same objects).
 """
+import ast
+import importlib.metadata
 import os
 import tempfile
 
 import _openscad
 import openscad
 import pythonscad
+
+distribution_files = {
+    str(path): path
+    for path in (importlib.metadata.files("pythonscad") or ())
+}
+required_typing_files = {
+    "_openscad-stubs/__init__.pyi",
+    "_openscad-stubs/py.typed",
+    "openscad/py.typed",
+    "pythonscad/py.typed",
+}
+missing_typing_files = required_typing_files - distribution_files.keys()
+assert not missing_typing_files, (
+    f"wheel is missing packaged type information: {sorted(missing_typing_files)}"
+)
+
+stub_path = distribution_files["_openscad-stubs/__init__.pyi"].locate()
+stub_tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
+stub_exports = {
+    node.name
+    for node in stub_tree.body
+    if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+}
+stub_exports.update(
+    target.id
+    for node in stub_tree.body
+    if isinstance(node, ast.Assign)
+    for target in node.targets
+    if isinstance(target, ast.Name)
+)
+stub_exports.update(
+    node.target.id
+    for node in stub_tree.body
+    if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)
+)
+runtime_exports = {name for name in dir(_openscad) if not name.startswith("_")}
+missing_stub_exports = runtime_exports - stub_exports
+assert not missing_stub_exports, (
+    "public _openscad exports missing from the bundled stub: "
+    f"{sorted(missing_stub_exports)}"
+)
 
 assert openscad.cube is _openscad.cube, (
     "openscad.cube should be the same object as _openscad.cube"

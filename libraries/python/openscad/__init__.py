@@ -18,7 +18,10 @@ Switching a script between ``from openscad import *`` and
 ``from pythonscad import *`` requires no other code changes.
 """
 
+from __future__ import annotations
+
 import functools as _functools
+import typing as _typing
 import warnings as _warnings
 
 # `import _openscad` (in addition to the star-import below) binds the name
@@ -34,7 +37,13 @@ from _openscad import (  # noqa: F401
 )
 
 
-def _deprecated(name, replacement=None):
+def _deprecated(
+    name: str,
+    replacement: str | None = None,
+) -> _typing.Callable[
+    [_typing.Callable[..., _typing.Any]],
+    _typing.Callable[..., _typing.Any],
+]:
     """Decorator wrapping a callable so that calling it emits a
     :class:`DeprecationWarning` once per call site.
 

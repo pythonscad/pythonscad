@@ -1,7 +1,7 @@
 """ PythonSCAD Stub File for use in editors like Visual Studio Code """
 
 from enum import Enum
-from typing import Any, List, Literal, Mapping, Optional, Self, Sequence, TYPE_CHECKING, Union, overload
+from typing import Any, Iterator, List, Literal, Mapping, Optional, Self, Sequence, TYPE_CHECKING, Union, overload
 
 if TYPE_CHECKING:
     import numpy as np
@@ -25,89 +25,37 @@ Vector3 = Sequence[float]
 Matrix4x4 = Sequence[Sequence[float]]
 """4x4 transformation matrix represented as four coordinate sequences."""
 
+class PyOpenSCADVector(Sequence[float]):
+    """3D vector object returned by ``vector()``."""
+
+    def dot(self, other: Self) -> float:
+        """Dot product of two vectors."""
+        ...
+
+    def norm(self) -> float:
+        """Length (magnitude) of this vector."""
+        ...
+
 class PyLibFive:
-    def __init__(self, x: float, y: float, z: float):
-        ...
+    """Implicit-surface expression node (C type ``PyData``).
 
-    def x(self) -> Self:
-        """Return X coordinate"""
-        ...
+    Built via the separate ``libfive`` extension module (``x()``, ``y()``, ``z()``,
+    arithmetic, etc.), not via a Python constructor on this type.
+    """
 
-    def y(self) -> Self:
-        """Return Y coordinate"""
-        ...
+    ...
 
-    def z(self) -> Self:
-        """Return Z coordinate"""
-        ...
+class ChildRef:
+    """Mutable reference yielded while iterating over a solid's children."""
 
-    def sqrt(self, v) -> Self:
-        """Return Z coordinate"""
-        ...
+    value: "PyOpenSCAD"
+    def __getattr__(self, name: str) -> Any: ...
 
-    def square(self, v) -> Self:
-        """Calculates the square of v"""
-        ...
+class ChildIterator(Iterator[ChildRef]):
+    """Iterator over mutable child references."""
 
-    def abs(self, v) -> Self:
-        """Calculates the absolute Value of v"""
-        ...
-
-    def max(self, a, b) -> Self:
-        """Calculates the maximum from a and b"""
-        ...
-
-    def min(self, a, b) -> Self:
-        """Calculates the minimum from a and b"""
-        ...
-
-    def sin(self, v) -> Self:
-        """Calculates the sine of v"""
-        ...
-
-    def cos(self, v) -> Self:
-        """Calculates the cosine of v"""
-        ...
-
-    def tan(self, v) -> Self:
-        """Calculates the tangents of v"""
-        ...
-
-    def asin(self, v) -> Self:
-        """Calculates the arc sine of v"""
-        ...
-
-    def acos(self, v) -> Self:
-        """Calculates the arc cosine of v"""
-        ...
-
-    def atan(self, v) -> Self:
-        """Calculates the arc tangent of v"""
-        ...
-
-    def exp(self, v) -> Self:
-        """Calculates the exponent of v"""
-        ...
-
-    def log(self, v) -> Self:
-        """Calculates the logarithm of v"""
-        ...
-
-    def pow(self, a, b) -> Self:
-        """Calculates the power from a over b"""
-        ...
-
-    def comp(self, a, b) -> Self:
-        """Calculates the libfive comparision of a and b"""
-        ...
-
-    def atan2(self, y, x) -> Self:
-        """Calculates aractangent from y/x"""
-        ...
-
-    def print(self) -> Self:
-        """Print the Tree for debugging"""
-        ...
+    def __iter__(self) -> Self: ...
+    def __next__(self) -> ChildRef: ...
 
 class PyOpenSCAD:
     """Base class for OpenSCAD objects."""
@@ -115,6 +63,9 @@ class PyOpenSCAD:
     origin: Matrix4x4
     """4x4 transformation matrix representing the object's origin.
     Initialized as identity matrix."""
+
+    def __iter__(self) -> ChildIterator: ...
+    def __len__(self) -> int: ...
 
     def translate(self, v: Vector3| "npt.NDArray[np.float64]") -> "PyOpenSCAD":
         """Translate this object.
@@ -127,40 +78,40 @@ class PyOpenSCAD:
         """
         ...
 
-    def right(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
-        """Moves an Object to the right"""
+    def right(self, v: float) -> Self:
+        """Move object along +X by ``v``."""
         ...
 
-    def left(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
-        """Moves an Object to the left"""
+    def left(self, v: float) -> Self:
+        """Move object along -X by ``v``."""
         ...
 
-    def back(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
-        """Moves Object backwards"""
+    def back(self, v: float) -> Self:
+        """Move object along +Y by ``v``."""
         ...
 
-    def front(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
-        """Moves Object frontwards"""
+    def front(self, v: float) -> Self:
+        """Move object along -Y by ``v``."""
         ...
 
-    def up(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
-        """Move Object upwards"""
+    def up(self, v: float) -> Self:
+        """Move object along +Z by ``v``."""
         ...
 
-    def down(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
-        """Move Object downwards"""
+    def down(self, v: float) -> Self:
+        """Move object along -Z by ``v``."""
         ...
 
-    def rotx(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
-        """Rotate Object around X Axis"""
+    def rotx(self, v: float) -> Self:
+        """Rotate object around the X axis by ``v`` degrees."""
         ...
 
-    def roty(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
-        """Rotate Object around Y Axis"""
+    def roty(self, v: float) -> Self:
+        """Rotate object around the Y axis by ``v`` degrees."""
         ...
 
-    def rotz(self, v: Sequence[float]| "npt.NDArray[np.float64]") -> Self:
-        """Rotate Object around Z Axis"""
+    def rotz(self, v: float) -> Self:
+        """Rotate object around the Z axis by ``v`` degrees."""
         ...
 
     def rotate(
@@ -247,27 +198,37 @@ class PyOpenSCAD:
         ...
 
     class RoofMethod(Enum):
-        TOP = "top"
-        LOFT = "loft"
+        VORONOI = "voronoi"
+        STRAIGHT = "straight"
     def roof(
         self,
-        method: str = RoofMethod.TOP.name,
+        method: Optional[str] = None,
         convexity: int = 2,
-        fn: int = 0,
-        fa: float = 0,
-        fs: float = 0,
+        fn: Optional[float] = None,
+        fa: Optional[float] = None,
+        fs: Optional[float] = None,
     ) -> Self:
-        """Create Roof from an 2D Shape"""
+        """Build a roof/hip shape over a 2D outline.
+
+        Args:
+            method: Roof method (defaults to ``"voronoi"`` when omitted).
+            convexity: Convexity parameter for rendering. Defaults to 2.
+            fn: Number of fragments for curved parts.
+            fa: Minimum angle for each fragment.
+            fs: Minimum size for each fragment.
+        """
         ...
 
     def pull(
         self,
-        src: Self,
-        dst: Self
+        src: Vector3 | "npt.NDArray[np.float64]",
+        dst: Vector3 | "npt.NDArray[np.float64]",
     ) -> Self:
-        """Pull apart Object, basically between src and dst it creates a prisma with the x-section
-        src: anchor
-        dst: how much to pull
+        """Stretch part of an object between two 3D points.
+
+        Args:
+            src: Anchor point ``[x, y, z]``.
+            dst: Pull direction/end point ``[x, y, z]``.
         """
         ...
 
@@ -300,13 +261,14 @@ class PyOpenSCAD:
 
     def linear_extrude(
         self,
-        height: Optional[float] = None,
+        height: Optional[Union[float, Vector3 | "npt.NDArray[np.float64]"]] = None,
         convexity: int = 1,
+        origin: Optional[Vector2 | "npt.NDArray[np.float64]"] = None,
+        scale: Optional[Union[float, Vector2 | "npt.NDArray[np.float64]"]] = None,
         center: Optional[bool] = None,
         slices: int = 1,
         segments: int = 0,
-        scale: Optional[Vector2] = None,
-        twist: Optional[float] = None,
+        twist: Optional[Union[float, Any]] = None,
         fn: Optional[float] = None,
         fa: Optional[float] = None,
         fs: Optional[float] = None,
@@ -333,7 +295,13 @@ class PyOpenSCAD:
     def rotate_extrude(
         self,
         convexity: int = 1,
+        scale: float = 1.0,
         angle: float = 360.0,
+        twist: Optional[Union[float, Any]] = None,
+        origin: Optional[Vector2 | "npt.NDArray[np.float64]"] = None,
+        offset: Optional[Vector2 | "npt.NDArray[np.float64]"] = None,
+        v: Optional[Vector3 | "npt.NDArray[np.float64]"] = None,
+        method: Optional[str] = None,
         fn: Optional[float] = None,
         fa: Optional[float] = None,
         fs: Optional[float] = None,
@@ -355,18 +323,22 @@ class PyOpenSCAD:
     def path_extrude(
         self,
         path: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
-        xdir: Sequence[float]| "npt.NDArray[np.float64]",
-        convexity: int = 2,
-        origin: Sequence[float] | "npt.NDArray[np.float64]" = [0, 0],
-        scale: float = 1,
-        twist: float = 0,
+        xdir: Optional[Sequence[float] | "npt.NDArray[np.float64]"] = None,
+        convexity: int = 1,
+        origin: Optional[Sequence[float] | "npt.NDArray[np.float64]"] = None,
+        scale: Optional[Union[float, Sequence[float] | "npt.NDArray[np.float64]"]] = None,
+        twist: Optional[Union[float, Any]] = None,
         closed: bool = False,
-        fn: int = 0,
-        fa: float = 0,
-        fs: float = 0,
+        allow_intersect: bool = False,
+        fn: Optional[float] = None,
+        fa: Optional[float] = None,
+        fs: Optional[float] = None,
     ) -> Self:
-        """Path_extrude an 2D Object
-        xdir: initial vector of x axis
+        """Extrude a 2D shape along a 3D path.
+
+        Args:
+            path: Path as a sequence of 3D (or homogeneous 4D) points.
+            xdir: Initial local X axis direction (defaults to ``[1, 0, 0]``).
         """
         ...
 
@@ -414,50 +386,62 @@ class PyOpenSCAD:
         """
         ...
 
+    @overload
     def mesh(
-        self, triangulate: Optional[bool] = None
-    ) -> Union[tuple[list[Vector3], list[list[int]]], list[list[Vector2]]]:
+        self, triangulate: Optional[bool] = None, *, color: Literal[False] = False
+    ) -> Union[
+        tuple[list[Vector3], list[list[int]]],
+        list[list[Vector2]],
+        None,
+    ]:
+        ...
+
+    @overload
+    def mesh(
+        self, triangulate: Optional[bool] = None, *, color: Literal[True]
+    ) -> Union[
+        tuple[list[Vector3], list[list[int]], list[Sequence[float]], list[int]],
+        list[list[Union[Sequence[float], Vector2]]],
+        None,
+    ]:
         """Export mesh representation of this object.
 
         Args:
             triangulate: If True, triangulates the mesh.
+            color: If True, include per-face or per-outline color data.
 
         Returns:
-            For 3D objects: A tuple of (vertices, faces) where:
-            - vertices: List of 3D vertex coordinates [[x, y, z], ...]
-            - faces: List of face definitions (lists of vertex indices)
-
-            For 2D objects: A list of outlines where:
-            - Each outline is a list of 2D vertex coordinates [[x, y], ...]
+            For 3D objects without color: ``(vertices, faces)``.
+            For 3D objects with color: ``(vertices, faces, colors, color_indices)``.
+            For 2D objects: outline vertex lists (optionally prefixed with RGBA color).
+            Returns ``None`` when geometry cannot be exported.
         """
         ...
 
     def oversample(
         self,
-        n: Optional[int] = None,
-        round: Optional[bool] = None
+        size: float = 2,
+        texture: Optional[str] = None,
+        projection: Optional[str] = None,
+        texturewidth: float = 1,
+        textureheight: float = 1,
+        texturedepth: float = 1,
     ) -> Self:
-        """Create artificial intermediate points into straight lines
-        n: factor of the oversampling
-        round: whether to round the oversampling
-        """
+        """Subdivide/refine a mesh, optionally applying a texture."""
         ...
 
     def fillet(
         self,
-        r: Optional[float] = None,
-        sel: Optional[Self] = None,
-        fn: Optional[int] = None
+        r: float = 1.0,
+        sel: Optional[PyOpenSCADs] = None,
+        fn: Optional[float] = None,
+        minang: float = 30,
     ) -> Self:
-        """Create nice roundings for sharp edges
-        r: radius of the fillet
-        sel: Object which overlaps the "selected" edges
-        fn: number of points for fillet x-section
-        """
+        """Round edges of a solid."""
         ...
 
     def align(
-        self, refmat: Matrix4x4, objmat: Optional[Matrix4x4] = None
+        self, refmat: Matrix4x4, objmat: Optional[Matrix4x4] = None, flip: bool = False
     ) -> "PyOpenSCAD":
         """Align this object to a reference matrix.
 
@@ -515,10 +499,73 @@ class PyOpenSCAD:
         """
         ...
 
-    def __getattr__(self, name): ...
-    def __setattr__(self, name, value): ...
-    def __getitem__(self, name): ...
-    def __setitem__(self, name, value): ...
+    def separate(self) -> list["PyOpenSCAD"]:
+        """Split a compound object into connected parts."""
+        ...
+
+    def wrap(
+        self,
+        target: Optional[PyOpenSCAD] = None,
+        r: Optional[float] = None,
+        d: Optional[float] = None,
+        fn: Optional[float] = None,
+        fa: Optional[float] = None,
+        fs: Optional[float] = None,
+    ) -> Self:
+        """Wrap this object around a cylinder or target shape."""
+        ...
+
+    def explode(self, v: Sequence[Union[float, Sequence[float]]]) -> Self:
+        """Move this object's parts apart along one or more direction specs."""
+        ...
+
+    def inside(self, point: Vector3 | "npt.NDArray[np.float64]") -> Optional[bool]:
+        """Test whether ``point`` lies inside this object."""
+        ...
+
+    def bbox(self) -> Optional["PyOpenSCAD"]:
+        """Return a bounding-box shape for this object."""
+        ...
+
+    def faces(self, triangulate: Optional[bool] = None) -> Optional[list]:
+        """Return face index lists for this object."""
+        ...
+
+    def children(self) -> tuple["PyOpenSCAD", ...]:
+        """Return direct child solids as a tuple."""
+        ...
+
+    def edges(self) -> Optional[list["PyOpenSCAD"]]:
+        """Return 1D edge objects for 2D outline geometry."""
+        ...
+
+    def clone(self, obj: PyOpenSCADs) -> None:
+        """Replace this object in-place with a clone of ``obj``."""
+        ...
+
+    def hasattr(self, keyword: str) -> bool:
+        """Return whether ``keyword`` exists in this object's attribute dict."""
+        ...
+
+    def getattr(self, keyword: str) -> Any:
+        """Return an attribute from this object's dict, or ``None`` if missing."""
+        ...
+
+    def setattr(self, keyword: str, setvalue: Any) -> None:
+        """Set an attribute on this object's dict."""
+        ...
+
+    def dict(self) -> dict[str, Any]:
+        """Return this object's attribute dictionary."""
+        ...
+
+    def __getattr__(self, name: str) -> Any: ...
+    def __setattr__(self, name: str, value: Any) -> None: ...
+    @overload
+    def __getitem__(self, name: str) -> Any: ...
+    @overload
+    def __getitem__(self, index: int) -> "PyOpenSCAD": ...
+    def __setitem__(self, name: str, value: Any) -> None: ...
 
     # Operators:
 
@@ -535,6 +582,12 @@ class PyOpenSCAD:
         """Create a difference of two objects"""
         ...
 
+    @overload
+    def __add__(self, other: PyOpenSCAD) -> "PyOpenSCAD":
+        """Create a union when adding two solids"""
+        ...
+
+    @overload
     def __add__(self, other: Vector3) -> "PyOpenSCAD":
         """Create a new object by translating this object by a vector"""
         ...
@@ -555,13 +608,30 @@ class PyOpenSCAD:
         ...
 
     @overload
+    def __matmul__(self, other: Matrix4x4) -> Union["PyOpenSCAD", Matrix4x4]:
+        """Apply a 4x4 transformation matrix to this object or matrix"""
+        ...
+
+    def __invert__(self) -> "PyOpenSCAD":
+        """Mark this object with the ``only`` modifier (``!``)"""
+        ...
+
+    def __neg__(self) -> "PyOpenSCAD":
+        """Mark this object for highlight rendering (``#``)"""
+        ...
+
+    def __pos__(self) -> "PyOpenSCAD":
+        """Mark this object as background (``%``)"""
+        ...
+
+    @overload
     def __xor__(self, other: PyOpenSCAD) -> "PyOpenSCAD":
         """Create the hull from self and other"""
         ...
 
     @overload
-    def __xor__(self, other: list[Vector3]) -> "PyOpenSCAD":
-        """Create the explosion object from self and the vector list"""
+    def __xor__(self, other: Sequence[Union[float, Sequence[float]]]) -> "PyOpenSCAD":
+        """Create the explosion object from self and the direction spec"""
         ...
 
     @overload
@@ -594,6 +664,7 @@ def square(
 def circle(
     r: Optional[float] = None,
     d: Optional[float] = None,
+    angle: Optional[float] = None,
     fn: Optional[float] = None,
     fa: Optional[float] = None,
     fs: Optional[float] = None,
@@ -633,6 +704,12 @@ def polygon(
     Returns:
         A 2D geometric object.
     """
+    ...
+
+def polyline(
+    points: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
+) -> PyOpenSCAD:
+    """Create an open 2D polyline through ``points``."""
     ...
 
 def text(
@@ -777,10 +854,11 @@ def sphere(
     ...
 
 def polyhedron(
-    points: Matrix4x4,
+    points: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
     faces: list[list[int]],
     convexity: int = 2,
     triangles: Optional[list[list[int]]] = None,
+    colors: Optional[Sequence[Sequence[float]] | "npt.NDArray[np.float64]"] = None,
 ) -> PyOpenSCAD:
     """Create a polyhedron primitive.
 
@@ -799,17 +877,17 @@ def polyhedron(
     ...
 
 
-def organic(pts:list[list[float]], max_mesh_size:float, alpha:float=-1) -> PyOpenSCAD:
-    """Connects a cloud of points into a smooth, watertight organic surface
-    pts: list of [x,y,z] points to connect; every point is guaranteed to be used
-    max_mesh_size: maximum edge length of the resulting mesh (smaller = finer/smoother)
-    alpha: advanced override for the internal alpha-shape radius; leave at -1 for automatic selection
-    Requires the point cloud to be star-shaped around some interior point; split non-star-shaped objects (e.g. a figure with separate limbs) into several star-shaped point groups and union the results
-    """
+def organic(pts: list[list[float]], r: float) -> PyOpenSCAD:
+    """Build an organic shape from a point cloud and radius ``r``."""
     ...
 
 
-def frep(exp: PyLibFive, min: Sequence[float], max: Sequence[float], res: int) -> PyOpenSCAD:
+def frep(
+    exp: Union[PyLibFive, Any],
+    min: Sequence[float],
+    max: Sequence[float],
+    res: float = 10,
+) -> PyOpenSCAD:
     """Create F-Rep (libfive)
     exp : an SDF epression composed from SDF variables and operators, see tutorial
     """
@@ -846,33 +924,33 @@ def translate(matrix: Matrix4x4, v: Vector3) -> Matrix4x4:
     ...
 
 
-def right(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
-    """Moves an Object to the right"""
+def right(obj: PyOpenSCAD, v: float) -> PyOpenSCAD:
+    """Move object along +X."""
     ...
 
-def left(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
-    """Moves an Object to the left"""
+def left(obj: PyOpenSCAD, v: float) -> PyOpenSCAD:
+    """Move object along -X."""
     ...
 
-def back(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
-    """Moves Object backwards"""
+def back(obj: PyOpenSCAD, v: float) -> PyOpenSCAD:
+    """Move object along +Y."""
     ...
 
-def front(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
-    """Moves Object frontwards"""
+def front(obj: PyOpenSCAD, v: float) -> PyOpenSCAD:
+    """Move object along -Y."""
     ...
 
-def up(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
-    """Move Object upwards"""
+def up(obj: PyOpenSCAD, v: float) -> PyOpenSCAD:
+    """Move object along +Z."""
     ...
 
-def down(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
-    """Move Object downwards"""
+def down(obj: PyOpenSCAD, v: float) -> PyOpenSCAD:
+    """Move object along -Z."""
     ...
 
 @overload
 def rotate(
-    obj: PyOpenSCADs, a: Union[float, Vector3], v: Optional[Vector3] = None
+    obj: PyOpenSCADs, a: Union[float, Vector3], v: Optional[Vector3] = None, ref: Optional[Vector3] = None
 ) -> PyOpenSCAD:
     """Rotate an object or list of objects.
 
@@ -888,7 +966,7 @@ def rotate(
 
 @overload
 def rotate(
-    matrix: Matrix4x4, a: Union[float, Vector3], v: Optional[Vector3] = None
+    matrix: Matrix4x4, a: Union[float, Vector3], v: Optional[Vector3] = None, ref: Optional[Vector3] = None
 ) -> Matrix4x4:
     """Apply rotation to a 4x4 transformation matrix.
 
@@ -902,16 +980,16 @@ def rotate(
     """
     ...
 
-def rotx(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
-    """Rotate Object around X Axis"""
+def rotx(obj: PyOpenSCAD, v: float) -> PyOpenSCAD:
+    """Rotate object around the X axis."""
     ...
 
-def roty(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
-    """Rotate Object around Y Axis"""
+def roty(obj: PyOpenSCAD, v: float) -> PyOpenSCAD:
+    """Rotate object around the Y axis."""
     ...
 
-def rotz(obj: PyOpenSCAD, v: Sequence[float]| "npt.NDArray[np.float64]") -> PyOpenSCAD:
-    """Rotate Object around Z Axis"""
+def rotz(obj: PyOpenSCAD, v: float) -> PyOpenSCAD:
+    """Rotate object around the Z axis."""
     ...
 
 @overload
@@ -1038,13 +1116,14 @@ def hull(*objects: PyOpenSCADs) -> PyOpenSCAD:
 
 def linear_extrude(
     obj: PyOpenSCADs,
-    height: Optional[float] = None,
+    height: Optional[Union[float, Vector3 | "npt.NDArray[np.float64]"]] = None,
     convexity: int = 1,
+    origin: Optional[Vector2 | "npt.NDArray[np.float64]"] = None,
+    scale: Optional[Union[float, Vector2 | "npt.NDArray[np.float64]"]] = None,
     center: Optional[bool] = None,
     slices: int = 1,
     segments: int = 0,
-    scale: Optional[Vector2] = None,
-    twist: Optional[float] = None,
+    twist: Optional[Union[float, Any]] = None,
     fn: Optional[float] = None,
     fa: Optional[float] = None,
     fs: Optional[float] = None,
@@ -1072,7 +1151,13 @@ def linear_extrude(
 def rotate_extrude(
     obj: PyOpenSCADs,
     convexity: int = 1,
+    scale: float = 1.0,
     angle: float = 360.0,
+    twist: Optional[Union[float, Any]] = None,
+    origin: Optional[Vector2 | "npt.NDArray[np.float64]"] = None,
+    offset: Optional[Vector2 | "npt.NDArray[np.float64]"] = None,
+    v: Optional[Vector3 | "npt.NDArray[np.float64]"] = None,
+    method: Optional[str] = None,
     fn: Optional[float] = None,
     fa: Optional[float] = None,
     fs: Optional[float] = None,
@@ -1095,19 +1180,18 @@ def rotate_extrude(
 def path_extrude(
     obj: PyOpenSCAD,
     path: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
-    xdir: Sequence[float]| "npt.NDArray[np.float64]",
-    convexity: int,
-    origin: Sequence[float]| "npt.NDArray[np.float64]",
-    scale: float,
-    twist: float,
-    closed: bool,
-    fn: int,
-    fa: float,
-    fs: float,
+    xdir: Optional[Sequence[float] | "npt.NDArray[np.float64]"] = None,
+    convexity: int = 1,
+    origin: Optional[Sequence[float] | "npt.NDArray[np.float64]"] = None,
+    scale: Optional[Union[float, Sequence[float] | "npt.NDArray[np.float64]"]] = None,
+    twist: Optional[Union[float, Any]] = None,
+    closed: bool = False,
+    allow_intersect: bool = False,
+    fn: Optional[float] = None,
+    fa: Optional[float] = None,
+    fs: Optional[float] = None,
 ) -> PyOpenSCAD:
-    """Path_extrude an 2D Object
-    xdir: intial vector of x axis
-    """
+    """Extrude a 2D shape along a 3D path."""
     ...
 
 def offset(
@@ -1135,16 +1219,8 @@ def offset(
     """
     ...
 
-def minkowski(*objects: PyOpenSCADs, convexity: int = 2) -> PyOpenSCAD:
-    """Create a Minkowski sum of objects.
-
-    Args:
-        *objects: Objects or lists of objects to compute Minkowski sum of.
-        convexity: Convexity parameter for rendering. Defaults to 2.
-
-    Returns:
-        A new object representing the Minkowski sum. The original object is unaffected.
-    """
+def minkowski(obj1: PyOpenSCADs, obj2: PyOpenSCADs, convexity: int = 2) -> PyOpenSCAD:
+    """Create a Minkowski sum of two objects."""
     ...
 
 def projection(
@@ -1248,16 +1324,22 @@ def fill(*objects: PyOpenSCADs) -> PyOpenSCAD:
 
 
 def roof(
-    obj: PyOpenSCAD, method: str, convexity: int, fn: int, fa: float, fs: float
+    obj: PyOpenSCAD,
+    method: Optional[str] = None,
+    convexity: int = 2,
+    fn: Optional[float] = None,
+    fa: Optional[float] = None,
+    fs: Optional[float] = None,
 ) -> PyOpenSCAD:
-    """Create Roof from an 2D Shape"""
+    """Build a roof/hip shape over a 2D outline."""
     ...
 
-def pull(obj: PyOpenSCAD, src: Sequence[float], dst: Sequence[float]) -> PyOpenSCAD:
-    """Pull apart Object, basically between src and dst it creates a prisma with the x-section
-    src: anchor
-    dst: how much to pull
-    """
+def pull(
+    obj: PyOpenSCAD,
+    src: Vector3 | "npt.NDArray[np.float64]",
+    dst: Vector3 | "npt.NDArray[np.float64]",
+) -> PyOpenSCAD:
+    """Stretch part of an object between two 3D points."""
     ...
 
 
@@ -1276,23 +1358,30 @@ def export(obj: Mapping[str, PyOpenSCADs], file: str) -> None:
     """
     ...
 
+@overload
 def mesh(
-    obj: PyOpenSCADs, triangulate: Optional[bool] = None
-) -> Union[tuple[list[Vector3], list[list[int]]], list[list[Vector2]]]:
-    """Export mesh representation of an object.
+    obj: PyOpenSCADs, triangulate: Optional[bool] = None, *, color: Literal[False] = False
+) -> Union[
+    tuple[list[Vector3], list[list[int]]],
+    list[list[Vector2]],
+    None,
+]:
+    ...
 
-    Args:
-        obj: Object to convert to mesh.
-        triangulate: If True, triangulates the mesh.
+@overload
+def mesh(
+    obj: PyOpenSCADs, triangulate: Optional[bool] = None, *, color: Literal[True]
+) -> Union[
+    tuple[list[Vector3], list[list[int]], list[Sequence[float]], list[int]],
+    list[list[Union[Sequence[float], Vector2]]],
+    None,
+]:
+    """Export mesh representation of an object."""
+    ...
 
-    Returns:
-        For 3D objects: A tuple of (vertices, faces) where:
-        - vertices: List of 3D vertex coordinates [[x, y, z], ...]
-        - faces: List of face definitions (lists of vertex indices)
-
-        For 2D objects: A list of outlines where:
-        - Each outline is a list of 2D vertex coordinates [[x, y], ...]
-    """
+def inside(obj: PyOpenSCADs, point: Vector3 | "npt.NDArray[np.float64]") -> Optional[bool]:
+    """Test whether ``point`` lies inside ``obj``."""
+    ...
 
 def highlight(obj: PyOpenSCAD) -> PyOpenSCAD:
     """Highlights Object"""
@@ -1308,19 +1397,26 @@ def only(obj: PyOpenSCAD) -> PyOpenSCAD:
 
 
 
-def oversample(obj: PyOpenSCAD, n: int, round: bool) -> PyOpenSCAD:
-    """Create artificial intermediate points into straight lines
-    n: factor  of the oversampling
-    bool: whether to round the oversampling
-    """
+def oversample(
+    obj: PyOpenSCAD,
+    size: float = 2,
+    texture: Optional[str] = None,
+    projection: Optional[str] = None,
+    texturewidth: float = 1,
+    textureheight: float = 1,
+    texturedepth: float = 1,
+) -> PyOpenSCAD:
+    """Subdivide/refine a mesh, optionally applying a texture."""
     ...
 
-def fillet(obj: PyOpenSCAD, r: float, sel: PyOpenSCAD, fn: int) -> PyOpenSCAD:
-    """Create nice roundings for sharp edges
-    r: radius of the fillet
-    sel: Object which overlaps the "selected" edges
-    fn: number of points for fillet x-section
-    """
+def fillet(
+    obj: PyOpenSCAD,
+    r: float = 1.0,
+    sel: Optional[PyOpenSCADs] = None,
+    fn: Optional[float] = None,
+    minang: float = 30,
+) -> PyOpenSCAD:
+    """Round edges of a solid."""
     ...
 
 def group(obj: PyOpenSCAD) -> PyOpenSCAD:
@@ -1348,7 +1444,7 @@ def rendervars(
     ...
 
 def machineconfig(
-    config: None
+    config: Mapping[str, Any],
 ) -> None:
     """Specify extended parameters to be used for gcode Export
 
@@ -1456,11 +1552,11 @@ def osimport(
     """Positional form of the split-by-color overload."""
     ...
 
-def osuse(path: str) -> PyOpenSCAD:
+def osuse(file: str) -> PyOpenSCAD:
     """Import an OpenSCAD library, exposing its modules and functions.
 
     Args:
-        path: Path to the OpenSCAD (.scad) file to import.
+        file: Path to the OpenSCAD (.scad) file to import.
 
     Returns:
         An object with the library's modules and functions as attributes.
@@ -1521,7 +1617,7 @@ def scad(code: str) -> PyOpenSCAD:
 
 
 def align(
-    obj: PyOpenSCAD, refmat: Matrix4x4, objmat: Optional[Matrix4x4] = None
+    obj: PyOpenSCAD, refmat: Matrix4x4, objmat: Optional[Matrix4x4] = None, flip: bool = False
 ) -> PyOpenSCAD:
     """Align an object to a reference matrix.
 
@@ -1535,7 +1631,7 @@ def align(
     """
     ...
 
-def edge(size: Optional[Union[float, Vector2]] = None, center: Optional[bool] = None) -> PyOpenSCAD:
+def edge(size: float = 1, center: Optional[bool] = None) -> PyOpenSCAD:
     """Create a 1D edge primitive.
 
     Args:
@@ -1597,38 +1693,13 @@ def separate(obj: PyOpenSCADs) -> list[PyOpenSCAD]:
     """
     ...
 
-def find_face(obj: PyOpenSCADs, vec: Vector3) -> PyOpenSCAD:
-    """Find a face on an object facing a given direction.
-
-    Args:
-        obj: Object to search for faces.
-        vec: Direction vector to find face normal.
-
-    Returns:
-        Information about the found face.
-    """
-    ...
-
-def sitonto(
-    obj: PyOpenSCADs,
-    vecz: Vector3,
-    vecx: Optional[Vector3] = None,
-    vecy: Optional[Vector3] = None,
+def skin(
+    *objects: PyOpenSCADs,
+    convexity: int = 2,
+    align_angle: Optional[float] = None,
+    segments: Optional[int] = None,
+    interpolate: Optional[float] = None,
 ) -> PyOpenSCAD:
-    """Position an object with specified orientation vectors.
-
-    Args:
-        obj: Object to position.
-        vecz: Z-axis direction vector.
-        vecx: Optional X-axis direction vector.
-        vecy: Optional Y-axis direction vector.
-
-    Returns:
-        The positioned object.
-    """
-    ...
-
-def skin(*objects: PyOpenSCADs, convexity: int = 2) -> PyOpenSCAD:
     """Create a skin surface connecting multiple 2D cross-sections.
 
     Args:
@@ -1678,63 +1749,31 @@ def sheet(
     """
     ...
 
-def bbox(obj: PyOpenSCADs) -> list[Vector3]:
-    """Calculate the bounding box of an object.
-
-    Args:
-        obj: Object to calculate bounding box for.
-
-    Returns:
-        A list of two 3D vectors: [[min_x, min_y, min_z], [max_x, max_y, max_z]].
-    """
+def bbox(obj: PyOpenSCADs) -> Optional[PyOpenSCAD]:
+    """Return a bounding-box shape for ``obj``."""
     ...
 
-def size(obj: PyOpenSCADs) -> Vector3:
-    """Get the size dimensions of an object's bounding box.
-
-    Args:
-        obj: Object to measure.
-
-    Returns:
-        A 3D vector [width, height, depth] representing the object's dimensions.
-    """
+def size(obj: PyOpenSCADs) -> Optional[Union[Vector2, Vector3]]:
+    """Get the size dimensions of an object's bounding box."""
     ...
 
-def position(obj: PyOpenSCADs) -> Vector3:
-    """Get the position (minimum coordinates) of an object's bounding box.
-
-    Args:
-        obj: Object to get position from.
-
-    Returns:
-        A 3D vector [min_x, min_y, min_z] representing the minimum corner.
-    """
+def position(obj: PyOpenSCADs) -> Optional[Vector3]:
+    """Get the minimum corner of an object's bounding box."""
     ...
 
-def faces(obj: PyOpenSCADs, triangulate: Optional[bool] = None) -> list:
-    """Export a list of faces from an object.
-
-    Args:
-        obj: Object to extract faces from.
-        triangulate: If True, triangulates the faces.
-
-    Returns:
-        A list of face definitions.
-    """
+def faces(obj: PyOpenSCADs, triangulate: Optional[bool] = None) -> Optional[list]:
+    """Export a list of faces from an object."""
     ...
 
-def edges(obj: PyOpenSCADs) -> list:
-    """Export a list of edges from an object or face.
-
-    Args:
-        obj: Object or face to extract edges from.
-
-    Returns:
-        A list of edges.
-    """
+def children(obj: PyOpenSCADs) -> tuple[PyOpenSCAD, ...]:
+    """Return direct child solids of ``obj`` as a tuple."""
     ...
 
-def explode(obj: PyOpenSCADs, v: list[Vector3]) -> PyOpenSCAD:
+def edges(obj: PyOpenSCADs) -> Optional[list[PyOpenSCAD]]:
+    """Export 1D edge objects from 2D outline geometry."""
+    ...
+
+def explode(obj: PyOpenSCADs, v: Sequence[Union[float, Sequence[float]]]) -> PyOpenSCAD:
     """Explode a solid with a vector list.
 
     Args:
@@ -1770,11 +1809,11 @@ def repair(obj: PyOpenSCADs, color: Optional[Color] = None) -> PyOpenSCAD:
     """
     ...
 
-def osinclude(path: str) -> PyOpenSCAD:
+def osinclude(file: str) -> PyOpenSCAD:
     """Include an OpenSCAD library (deprecated - use osuse instead).
 
     Args:
-        path: Path to the OpenSCAD (.scad) file to include.
+        file: Path to the OpenSCAD (.scad) file to include.
 
     Returns:
         An object with the library's modules and functions as attributes.
@@ -1784,12 +1823,8 @@ def osinclude(path: str) -> PyOpenSCAD:
     """
     ...
 
-def model() -> PyOpenSCAD:
-    """Yield the current model.
-
-    Returns:
-        The current model object.
-    """
+def model() -> Optional[PyOpenSCAD]:
+    """Yield the current top-level model object, or ``None`` if unset."""
     ...
 
 def modelpath() -> str:
@@ -1800,7 +1835,7 @@ def modelpath() -> str:
     """
     ...
 
-def memberfunction(membername: str, memberfunc, docstring: str) -> None:
+def memberfunction(membername: str, memberfunc: Any, docstring: Optional[str] = None) -> None:
     """Register an additional OpenSCAD member function.
 
     Args:
@@ -1810,15 +1845,12 @@ def memberfunction(membername: str, memberfunc, docstring: str) -> None:
     """
     ...
 
-def marked(value: Union[float, Vector3, PyOpenSCAD]) -> PyOpenSCAD:
-    """Create a marked value for special processing.
+def marked(value: float) -> PyLibFive:
+    """Wrap a numeric value as a marked libfive expression node."""
+    ...
 
-    Args:
-        value: Value to mark (number, vector, or object).
-
-    Returns:
-        A marked value object.
-    """
+def vector(x: float, y: float, z: float) -> PyOpenSCADVector:
+    """Create a 3D vector object."""
     ...
 
 def Sin(value: float) -> float:
@@ -1921,3 +1953,6 @@ def cross(vec1: Vector3, vec2: Vector3) -> Vector3:
         The cross product as a 3D vector.
     """
     ...
+
+# Exported type aliases from the C extension module.
+Openscad = PyOpenSCAD

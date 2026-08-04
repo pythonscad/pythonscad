@@ -5,6 +5,10 @@ distribution. Wheels bundle the compiled `_openscad` extension and ship the
 pure-Python `openscad` / `pythonscad` overlay packages (see
 [`doc/python-modules.md`](python-modules.md)).
 
+The wheel also carries the `_openscad` type stubs and `py.typed` markers for
+both overlays. This keeps the runtime and editor/type-checker API in the same
+versioned artifact: users only need `pip install pythonscad`.
+
 ## Supported wheel matrix
 
 | Platform tag | GitHub Actions runner | Python ABIs |

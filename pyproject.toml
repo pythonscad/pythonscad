@@ -31,6 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Multimedia :: Graphics :: 3D Modeling",
     "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
 ]
 # The pip wheel automatically resolves these transitively. Binary
 # bundles (AppImage, macOS .app, Windows installer) install the
@@ -66,6 +67,7 @@ docs = [
     "pymdown-extensions",
     "Pygments",
 ]
+typing = ["pyright>=1.1.411"]
 
 [project.urls]
 Homepage = "https://pythonscad.org"

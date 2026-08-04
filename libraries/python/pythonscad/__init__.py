@@ -18,12 +18,19 @@ Switching a script between ``from openscad import *`` and
 ``from pythonscad import *`` requires no other code changes.
 """
 
+from __future__ import annotations
+
+import typing as _typing
+
 from openscad import *  # noqa: F401,F403
 from openscad import (  # noqa: F401
     ChildIterator,
     ChildRef,
     Openscad,
 )
+if _typing.TYPE_CHECKING:
+    from openscad import PyOpenSCAD
+
 from ._vectors import (  # noqa: F401
     HAS_NUMPY,
     Matrix4x4,
@@ -42,7 +49,6 @@ from ._vectors import (  # noqa: F401
 import math as _math
 import os as _os
 import sys as _sys
-import typing as _typing
 import collections.abc as _collections_abc
 import _openscad as _openscad_core
 
@@ -283,6 +289,10 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
         >>> exporter.export(single_file="out/flag.3mf")  # writes one multi-object 3MF
     """
 
+    prefix: str
+    suffix: str
+    mkdir: bool
+
     def __init__(
         self,
         prefix: str,
@@ -372,14 +382,21 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
         """Insert a validated item tuple at ``index``."""
         super().insert(index, self._validate_item(item))
 
-    def __setitem__(self, index, value):
+    def __setitem__(
+        self,
+        index: _typing.SupportsIndex | slice,
+        value: _MultiToolExporterItem
+        | _typing.Iterable[_MultiToolExporterItem],
+    ) -> None:
         """Replace one or more items, validating each new entry tuple."""
         if isinstance(index, slice):
             super().__setitem__(index, [self._validate_item(v) for v in value])
         else:
             super().__setitem__(index, self._validate_item(value))
 
-    def __iadd__(self, other):
+    def __iadd__(
+        self, other: _typing.Iterable[_MultiToolExporterItem]
+    ) -> "MultiToolExporter":
         """Validate each item then in-place extend (``self += other``).
 
         Without this override, CPython's ``list.__iadd__`` calls
@@ -481,7 +498,7 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
             if self._item_export(self[i])
         ]
 
-    def export(self, single_file: _typing.Optional[str] = None) -> None:
+    def export(self, single_file: str | None = None) -> None:
         """Export parts to per-part files or a single multi-object 3MF.
 
         By default, exports each result of :meth:`parts` to
@@ -541,38 +558,38 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
 
 @_typing.overload
 def rounded_cube(
-    size: _typing.Union[float, _typing.List[float]],
+    size: float | list[float],
     r: float,
     *,
-    center: _typing.Optional[bool] = False,
-    fn: _typing.Optional[float] = None,
-    fa: _typing.Optional[float] = None,
-    fs: _typing.Optional[float] = None,
-) -> _typing.Any: ...
+    center: bool | None = False,
+    fn: float | None = None,
+    fa: float | None = None,
+    fs: float | None = None,
+) -> PyOpenSCAD: ...
 
 
 @_typing.overload
 def rounded_cube(
-    size: _typing.Union[float, _typing.List[float]],
+    size: float | list[float],
     *,
     d: float,
-    center: _typing.Optional[bool] = False,
-    fn: _typing.Optional[float] = None,
-    fa: _typing.Optional[float] = None,
-    fs: _typing.Optional[float] = None,
-) -> _typing.Any: ...
+    center: bool | None = False,
+    fn: float | None = None,
+    fa: float | None = None,
+    fs: float | None = None,
+) -> PyOpenSCAD: ...
 
 
 def rounded_cube(
-    size: _typing.Union[float, _typing.List[float]],
-    r: _typing.Optional[float] = None,
+    size: float | list[float],
+    r: float | None = None,
     *,
-    d: _typing.Optional[float] = None,
-    center: _typing.Optional[bool] = False,
-    fn: _typing.Optional[float] = None,
-    fa: _typing.Optional[float] = None,
-    fs: _typing.Optional[float] = None,
-) -> _typing.Any:
+    d: float | None = None,
+    center: bool | None = False,
+    fn: float | None = None,
+    fa: float | None = None,
+    fs: float | None = None,
+) -> PyOpenSCAD:
     """Create a cube or box with uniformly rounded edges and corners.
 
     The outer ``size`` includes the rounding. Specify the corner radius with
@@ -723,12 +740,12 @@ def _loft_func(loft_data: list, loft_height: float, h: float, rot: float) -> lis
 
 
 def loft(
-    shape1: _typing.Any,
-    shape2: _typing.Any,
+    shape1: PyOpenSCAD,
+    shape2: PyOpenSCAD,
     height: float,
     n: int = 20,
     rot: float = 0,
-) -> _typing.Callable[[float], list]:
+) -> _typing.Callable[[float], list[list[float]]]:
     """Interpolate a cross-section between two 2D shapes.
 
     Samples the silhouettes of ``shape1`` and ``shape2`` at a shared set
