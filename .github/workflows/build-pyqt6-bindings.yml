@@ -2,12 +2,479 @@ name: Build PyQt6 Bindings (Qt6)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/build-pyqt6-bindings.yml'
+      - 'scripts/ci/fetch_pyqt6_bindings.sh'
+      - 'scripts/ci/patch_pyqt6_free_operators.py'
+      - 'scripts/ci/patch_pyqtbuild_win32_pythonlib.py'
+      - 'scripts/ci/pyqt6-build-requirements.txt'
+      - 'scripts/ci/pyqt6-versions.json'
+      - 'scripts/ci/pyqt6_artifact.py'
+      - 'scripts/ci/pyqt6_smoke_test.py'
+      - 'scripts/ci/resolve_pyqt6_version.py'
+      - 'scripts/deps/profiles/**'
+  schedule:
+    - cron: '17 4 * * 1'
+
+concurrency:
+  group: pyqt6-bindings
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  placeholder:
+  build-linux:
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04
+    name: Linux x86_64
     steps:
-      - run: echo "Placeholder - real build logic comes on feature branch"
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+          persist-credentials: false
+
+      - name: Install Qt6 + build tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          TZ: Etc/UTC
+        run: |
+          which sudo || ( apt update && apt install -y sudo )
+          sudo -E ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
+          sudo -E apt-get install -y qt6-base-dev-tools build-essential zip
+
+      - name: Symlink qmake6 -> qmake (PyQt6 metadata hook expects 'qmake')
+        run: |
+          mkdir -p /tmp/qmake-shim
+          ln -sf "$(which qmake6)" /tmp/qmake-shim/qmake
+          echo "/tmp/qmake-shim" >> "$GITHUB_PATH"
+
+      - name: Build PyQt6 bindings
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/pyqt-build-venv
+          source /tmp/pyqt-build-venv/bin/activate
+          pip install --upgrade pip
+          pip install -r scripts/ci/pyqt6-build-requirements.txt
+
+          QMAKE=$(which qmake6)
+          QT_VERSION=$("$QMAKE" -query QT_VERSION)
+          echo "Detected Qt version: $QT_VERSION"
+          MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
+
+          mkdir -p src && cd src
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          echo "Selected PyQt6 version: $PYQT_VERSION"
+          curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
+
+          tar xzf PyQt6.tar.gz
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
+          cd "$EXTRACTED_DIR"
+
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
+          cd build
+          make -j"$(nproc)"
+          make INSTALL_ROOT=/tmp/pyqt-install-root install
+
+          FOUND_DIR=$(find /tmp/pyqt-install-root -maxdepth 12 -type f -iname "QtWidgets*.so" -exec dirname {} \; | head -1)
+          if [ -z "$FOUND_DIR" ]; then
+            echo "ERROR: could not find installed PyQt6 modules" >&2
+            find /tmp/pyqt-install-root -maxdepth 10 >&2
+            exit 1
+          fi
+          mkdir -p /tmp/pyqt-out
+          cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
+
+          # Install PyQt6-sip separately in a scratch directory so pip does not
+          # clear the already populated /tmp/pyqt-out/PyQt6 directory.
+          mkdir -p /tmp/pyqt-sip-only
+          pip install PyQt6-sip \
+            --constraint="$GITHUB_WORKSPACE/scripts/ci/pyqt6-build-requirements.txt" \
+            --target=/tmp/pyqt-sip-only --no-deps
+          SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 -iname "sip*.so" | head -1)
+          if [ -z "$SIP_SO" ]; then
+            echo "ERROR: PyQt6-sip .so not found" >&2
+            find /tmp/pyqt-sip-only -maxdepth 6 >&2
+            exit 1
+          fi
+          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
+
+          echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+          echo "$PYQT_VERSION" > /tmp/pyqt-out/PYQT_VERSION.txt
+          python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
+          python3 -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
+
+      - name: Create immutable artifact
+        id: metadata
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QT_VERSION=$(qmake6 -query QT_VERSION)
+          PYQT_VERSION=$(cat /tmp/pyqt-out/PYQT_VERSION.txt)
+          PYTHON_VERSION=$(python3 -c 'import platform; print(platform.python_version())')
+          SOABI=$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("SOABI") or "")')
+          COMMON_ARGS=(
+            --platform linux-x86_64
+            --profile ubuntu-24.04-qt6
+            --qt-version "$QT_VERSION"
+            --pyqt-version "$PYQT_VERSION"
+            --python-version "$PYTHON_VERSION"
+            --soabi "$SOABI"
+          )
+          python3 scripts/ci/pyqt6_artifact.py create "${COMMON_ARGS[@]}" \
+            --output /tmp/pyqt-out/PYQT6_MANIFEST.json
+          ASSET_NAME=$(python3 scripts/ci/pyqt6_artifact.py field "${COMMON_ARGS[@]}" --field asset_name)
+          RELEASE_TAG=$(python3 scripts/ci/pyqt6_artifact.py field "${COMMON_ARGS[@]}" --field release_tag)
+          cd /tmp/pyqt-out
+          zip -r "$GITHUB_WORKSPACE/$ASSET_NAME" .
+          echo "asset_name=$ASSET_NAME" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.metadata.outputs.asset_name }}
+          path: ${{ steps.metadata.outputs.asset_name }}
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
+
+      - name: Publish immutable bindings release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.release_tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --json assets --jq '.assets[].name' | grep -Fxq "$ASSET_NAME"; then
+              echo "Immutable release $RELEASE_TAG already contains $ASSET_NAME."
+            else
+              echo "Repairing incomplete release $RELEASE_TAG with its missing asset."
+              gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" "$ASSET_NAME"
+            fi
+          else
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "PyQt6 bindings: linux-x86_64" \
+              --notes "Immutable PythonSCAD PyQt6 dependency. Not a PythonSCAD application release." \
+              --prerelease "$ASSET_NAME"
+          fi
+
+  build-macos:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: x86_64
+            profile: macos-15-intel-homebrew-qt6
+          - runner: macos-14
+            arch: arm64
+            profile: macos-14-homebrew-qt6
+    runs-on: ${{ matrix.runner }}
+    name: macOS ${{ matrix.arch }} (Homebrew Qt6)
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+          persist-credentials: false
+
+      - name: Install Qt6
+        run: ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
+
+      - name: Build PyQt6 bindings
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/pyqt-build-venv
+          source /tmp/pyqt-build-venv/bin/activate
+          pip install --upgrade pip
+          pip install -r scripts/ci/pyqt6-build-requirements.txt
+
+          QMAKE="$(brew --prefix qt)/bin/qmake"
+          QT_VERSION=$("$QMAKE" -query QT_VERSION)
+          echo "Detected Qt version: $QT_VERSION"
+          MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
+
+          mkdir -p src && cd src
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          echo "Selected PyQt6 version: $PYQT_VERSION"
+          curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
+
+          tar xzf PyQt6.tar.gz
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
+          cd "$EXTRACTED_DIR"
+
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
+          cd build
+          make -j"$(sysctl -n hw.ncpu)"
+          make INSTALL_ROOT=/tmp/pyqt-install-root install
+
+          FOUND_DIR=$(find /tmp/pyqt-install-root -maxdepth 12 -type f -iname "QtWidgets*.so" -exec dirname {} \; | head -1)
+          if [ -z "$FOUND_DIR" ]; then
+            echo "ERROR: could not find installed PyQt6 modules" >&2
+            find /tmp/pyqt-install-root -maxdepth 10 >&2
+            exit 1
+          fi
+          mkdir -p /tmp/pyqt-out
+          cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
+
+          mkdir -p /tmp/pyqt-sip-only
+          pip install PyQt6-sip \
+            --constraint="$GITHUB_WORKSPACE/scripts/ci/pyqt6-build-requirements.txt" \
+            --target=/tmp/pyqt-sip-only --no-deps
+          SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 -iname "sip*.so" | head -1)
+          if [ -z "$SIP_SO" ]; then
+            echo "ERROR: PyQt6-sip .so not found" >&2
+            find /tmp/pyqt-sip-only -maxdepth 6 >&2
+            exit 1
+          fi
+          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
+
+          echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+          echo "$PYQT_VERSION" > /tmp/pyqt-out/PYQT_VERSION.txt
+          python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
+          python3 -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
+
+      - name: Create immutable artifact
+        id: metadata
+        env:
+          PYQT_PLATFORM: macos-${{ matrix.arch }}
+          PYQT_PROFILE: ${{ matrix.profile }}
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QMAKE="$(brew --prefix qt)/bin/qmake"
+          QT_VERSION=$("$QMAKE" -query QT_VERSION)
+          PYQT_VERSION=$(cat /tmp/pyqt-out/PYQT_VERSION.txt)
+          PYTHON_VERSION=$(python3 -c 'import platform; print(platform.python_version())')
+          SOABI=$(python3 -c 'import sysconfig; print(sysconfig.get_config_var("SOABI") or "")')
+          COMMON_ARGS=(
+            --platform "$PYQT_PLATFORM"
+            --profile "$PYQT_PROFILE"
+            --qt-version "$QT_VERSION"
+            --pyqt-version "$PYQT_VERSION"
+            --python-version "$PYTHON_VERSION"
+            --soabi "$SOABI"
+          )
+          python3 scripts/ci/pyqt6_artifact.py create "${COMMON_ARGS[@]}" \
+            --output /tmp/pyqt-out/PYQT6_MANIFEST.json
+          ASSET_NAME=$(python3 scripts/ci/pyqt6_artifact.py field "${COMMON_ARGS[@]}" --field asset_name)
+          RELEASE_TAG=$(python3 scripts/ci/pyqt6_artifact.py field "${COMMON_ARGS[@]}" --field release_tag)
+          cd /tmp/pyqt-out
+          zip -r "$GITHUB_WORKSPACE/$ASSET_NAME" .
+          echo "asset_name=$ASSET_NAME" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.metadata.outputs.asset_name }}
+          path: ${{ steps.metadata.outputs.asset_name }}
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
+
+      - name: Publish immutable bindings release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.release_tag }}
+          PYQT_PLATFORM: macos-${{ matrix.arch }}
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --json assets --jq '.assets[].name' | grep -Fxq "$ASSET_NAME"; then
+              echo "Immutable release $RELEASE_TAG already contains $ASSET_NAME."
+            else
+              echo "Repairing incomplete release $RELEASE_TAG with its missing asset."
+              gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" "$ASSET_NAME"
+            fi
+          else
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "PyQt6 bindings: $PYQT_PLATFORM" \
+              --notes "Immutable PythonSCAD PyQt6 dependency. Not a PythonSCAD application release." \
+              --prerelease "$ASSET_NAME"
+          fi
+
+  build-windows:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    name: Windows (MSYS2 UCRT64)
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+          persist-credentials: false
+
+      - name: Calculate PACBOY_PACKAGES
+        shell: bash
+        run: |
+          python3 ./scripts/get-dependencies.py --distro msys2 --profile pythonscad-qt6 --output-env "$GITHUB_ENV" --env-var PACBOY_PACKAGES
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          pacboy: "${{ env.PACBOY_PACKAGES }} python-pip:p python-virtualenv:p zip:"
+
+      - name: Build PyQt6 bindings
+        run: |
+          set -euo pipefail
+          PYTHON_VERSION=$(python --version | cut -d' ' -f2 | cut -d'.' -f1,2)
+          PYTHON_FULL_VERSION=$(python --version | cut -d' ' -f2)
+          EMBED_URL="https://www.python.org/ftp/python/${PYTHON_FULL_VERSION}/python-${PYTHON_FULL_VERSION}-embed-amd64.zip"
+          curl -fL "$EMBED_URL" -o /tmp/python-embed.zip
+          mkdir -p /tmp/python-embed
+          unzip -q /tmp/python-embed.zip -d /tmp/python-embed
+          rm -f /tmp/python-embed/python*._pth
+
+          "$GITHUB_WORKSPACE/scripts/prepare-msys2-python.sh" \
+            ucrt "$PYTHON_VERSION" "$GITHUB_WORKSPACE/python_mingw"
+          cp "$GITHUB_WORKSPACE/python_mingw/ucrt64/lib/libpython${PYTHON_VERSION}.dll.a" \
+            "/ucrt64/lib/libpython${PYTHON_VERSION}.dll.a"
+
+          python -m venv /tmp/pyqt-build-venv
+          source /tmp/pyqt-build-venv/bin/activate
+          pip install --upgrade pip
+          pip install -r "$GITHUB_WORKSPACE/scripts/ci/pyqt6-build-requirements.txt"
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqtbuild_win32_pythonlib.py"
+
+          # pyqtbuild's native Windows os.access() check cannot find qmake6
+          # without the .exe suffix, so append it explicitly.
+          QMAKE=$(which qmake6)
+          if [[ "$QMAKE" != *.exe ]]; then
+            QMAKE="${QMAKE}.exe"
+          fi
+          QT_VERSION=$("$QMAKE" -query QT_VERSION)
+          echo "Detected Qt version: $QT_VERSION"
+          echo "Using qmake: $QMAKE"
+          MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
+
+          mkdir -p src && cd src
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          echo "Selected PyQt6 version: $PYQT_VERSION"
+          curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
+
+          tar xzf PyQt6.tar.gz
+          EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
+          cd "$EXTRACTED_DIR"
+
+          # known patch sip files for windows
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_free_operators.py" sip/
+
+          mkdir -p /tmp/pyqt-staging
+          WIN_STAGING_DIR=$(cygpath -w /tmp/pyqt-staging)
+
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir="$WIN_STAGING_DIR"
+          cd build
+          mingw32-make -j"$(nproc)"
+          mingw32-make install
+
+          FOUND_DIR=$(find /tmp/pyqt-staging -maxdepth 12 -type f \( -iname "QtWidgets*.pyd" -o -iname "QtWidgets*.dll" \) -exec dirname {} \; | head -1)
+          if [ -z "$FOUND_DIR" ]; then
+            echo "ERROR: could not find installed PyQt6 modules" >&2
+            find /tmp/pyqt-staging -maxdepth 10 >&2
+            exit 1
+          fi
+          mkdir -p /tmp/pyqt-out
+          cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
+
+          mkdir -p /tmp/pyqt-sip-only
+          pip install PyQt6-sip \
+            --constraint="$GITHUB_WORKSPACE/scripts/ci/pyqt6-build-requirements.txt" \
+            --target=/tmp/pyqt-sip-only --no-deps
+          SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 \
+            \( -iname "sip*.so" -o -iname "sip*.pyd" \) | head -1)
+          if [ -z "$SIP_SO" ]; then
+            echo "ERROR: PyQt6-sip .so/.pyd not found" >&2
+            find /tmp/pyqt-sip-only -maxdepth 6 >&2
+            exit 1
+          fi
+          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
+
+          QTCORE_PYD=$(find /tmp/pyqt-out/PyQt6 -maxdepth 2 -iname "QtCore*.pyd" | head -1)
+          EXPECTED_PYTHON_DLL="python$(echo "$PYTHON_VERSION" | tr -d '.').dll"
+          if ! objdump -p "$QTCORE_PYD" | tr '[:upper:]' '[:lower:]' \
+            | grep -Fq "$EXPECTED_PYTHON_DLL"; then
+            echo "ERROR: $QTCORE_PYD does not link to $EXPECTED_PYTHON_DLL" >&2
+            objdump -p "$QTCORE_PYD" | grep -i python >&2 || true
+            exit 1
+          fi
+
+          echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
+          echo "$PYQT_VERSION" > /tmp/pyqt-out/PYQT_VERSION.txt
+          python --version > /tmp/pyqt-out/PYTHON_VERSION.txt
+          python -c "import sysconfig; print(sysconfig.get_config_var('SOABI'))" >> /tmp/pyqt-out/PYTHON_VERSION.txt
+
+      - name: Create immutable artifact
+        id: metadata
+        run: |
+          set -euo pipefail
+          source /tmp/pyqt-build-venv/bin/activate
+          QMAKE=$(which qmake6)
+          [[ "$QMAKE" == *.exe ]] || QMAKE="${QMAKE}.exe"
+          QT_VERSION=$("$QMAKE" -query QT_VERSION)
+          PYQT_VERSION=$(cat /tmp/pyqt-out/PYQT_VERSION.txt)
+          PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')
+          SOABI=$(python -c 'import sysconfig; print(sysconfig.get_config_var("SOABI") or "")')
+          COMMON_ARGS=(
+            --platform windows-x86_64
+            --profile msys2-ucrt64-qt6-python-embed
+            --qt-version "$QT_VERSION"
+            --pyqt-version "$PYQT_VERSION"
+            --python-version "$PYTHON_VERSION"
+            --soabi "$SOABI"
+          )
+          python scripts/ci/pyqt6_artifact.py create "${COMMON_ARGS[@]}" \
+            --output /tmp/pyqt-out/PYQT6_MANIFEST.json
+          ASSET_NAME=$(python scripts/ci/pyqt6_artifact.py field "${COMMON_ARGS[@]}" --field asset_name)
+          RELEASE_TAG=$(python scripts/ci/pyqt6_artifact.py field "${COMMON_ARGS[@]}" --field release_tag)
+          cd /tmp/pyqt-out
+          zip -r "$(cygpath "$GITHUB_WORKSPACE")/$ASSET_NAME" .
+          echo "asset_name=$ASSET_NAME" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.metadata.outputs.asset_name }}
+          path: ${{ steps.metadata.outputs.asset_name }}
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          PATH="/ucrt64/bin:$PATH" QT_QPA_PLATFORM=offscreen \
+            /tmp/python-embed/python.exe scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
+
+      - name: Publish immutable bindings release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.release_tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --json assets --jq '.assets[].name' | grep -Fxq "$ASSET_NAME"; then
+              echo "Immutable release $RELEASE_TAG already contains $ASSET_NAME."
+            else
+              echo "Repairing incomplete release $RELEASE_TAG with its missing asset."
+              gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" "$ASSET_NAME"
+            fi
+          else
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "PyQt6 bindings: windows-x86_64" \
+              --notes "Immutable PythonSCAD PyQt6 dependency. Not a PythonSCAD application release." \
+              --prerelease "$ASSET_NAME"
+          fi
