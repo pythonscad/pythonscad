@@ -1383,6 +1383,23 @@ add_cmdline_test(pythonscadoverlayecho  EXPERIMENTAL OPENSCAD SUFFIX echo FILES 
 add_cmdline_test(pythonscadecho_pure EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${TEST_PYTHONSCAD_ECHO_DIR}/add_parameter_pure.py ARGS --enable=add-parameter-pure-function --trust-python)
 add_cmdline_test(echo EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${TEST_SCAD_DIR}/misc/vector-swizzling.scad ARGS --enable=vector-swizzle --trust-python)
 
+if(EXPERIMENTAL AND ENABLE_PYTHON)
+# osuse() must search OpenSCAD's library paths after its existing script/CWD lookup.
+# Override only OPENSCADPATH for this fixture; retain the common CTest environment.
+  set(OSUSE_LIBRARY_TEST_NAME "pythonscadecho_osuse-library-path")
+  get_property(OSUSE_LIBRARY_TEST_ENV TEST ${OSUSE_LIBRARY_TEST_NAME} PROPERTY ENVIRONMENT)
+  set(OSUSE_LIBRARY_TEST_ENV_WITHOUT_PATH)
+  foreach(ENV_ENTRY IN LISTS OSUSE_LIBRARY_TEST_ENV)
+    if(NOT ENV_ENTRY MATCHES "^OPENSCADPATH=")
+      list(APPEND OSUSE_LIBRARY_TEST_ENV_WITHOUT_PATH "${ENV_ENTRY}")
+    endif()
+  endforeach()
+  list(APPEND OSUSE_LIBRARY_TEST_ENV_WITHOUT_PATH
+       "OPENSCADPATH=${TEST_DATA_DIR}/osuse-library-path")
+  set_property(TEST ${OSUSE_LIBRARY_TEST_NAME} PROPERTY
+               ENVIRONMENT "${OSUSE_LIBRARY_TEST_ENV_WITHOUT_PATH}")
+endif()
+
 #
 # 3D export tests (compare exported 3MF files)
 #
