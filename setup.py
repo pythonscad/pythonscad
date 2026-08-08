@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from ctypes.util import find_library
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
@@ -179,8 +180,10 @@ def get_link_libraries():
 
     # Link concrete Boost libraries so auditwheel/delocate/delvewheel can
     # bundle them. Boost.System has been header-only by default since 1.69,
-    # including on Linux distributions that no longer ship libboost_system.
+    # but some Linux Boost builds still depend on its shared library.
     boost_libs = ["boost_program_options"]
+    if not IS_DARWIN and not IS_WINDOWS and find_library("boost_system"):
+        boost_libs.append("boost_system")
     # On Windows, Boost.Regex is selected via MSVC autolink; vcpkg's release
     # triplet does not provide a stable unversioned boost_regex.lib to name here.
     if not IS_WINDOWS:

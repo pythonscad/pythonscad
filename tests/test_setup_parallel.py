@@ -85,13 +85,29 @@ def test_build_ext_uses_default_compile_without_private_compiler_hooks():
     assert compiler.compiled == sources
 
 
-def test_link_libraries_do_not_require_header_only_boost_system():
+def test_link_libraries_omit_unavailable_boost_system():
     with (
         patch("setup.get_pkg_config_libraries", return_value=[]),
         patch("setup.pkg_config_flags", return_value=[]),
+        patch("setup.find_library", return_value=None),
+        patch("setup.IS_DARWIN", False),
+        patch("setup.IS_WINDOWS", False),
     ):
         libraries = get_link_libraries()
 
     assert "boost_regex" in libraries
     assert "boost_program_options" in libraries
     assert "boost_system" not in libraries
+
+
+def test_link_libraries_include_available_boost_system():
+    with (
+        patch("setup.get_pkg_config_libraries", return_value=[]),
+        patch("setup.pkg_config_flags", return_value=[]),
+        patch("setup.find_library", return_value="libboost_system.so"),
+        patch("setup.IS_DARWIN", False),
+        patch("setup.IS_WINDOWS", False),
+    ):
+        libraries = get_link_libraries()
+
+    assert "boost_system" in libraries
