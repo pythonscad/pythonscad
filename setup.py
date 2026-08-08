@@ -530,10 +530,7 @@ class BuildExtWithLexYacc(build_ext):
                 cc_args = self.compiler._get_cc_args(pp_opts, debug, extra_preargs)
 
                 def compile_object(obj):
-                    try:
-                        src, ext = build[obj]
-                    except KeyError:
-                        return
+                    src, ext = build[obj]
                     self.compiler._compile(
                         obj,
                         src,
