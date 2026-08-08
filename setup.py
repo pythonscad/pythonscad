@@ -508,7 +508,11 @@ class BuildExtWithLexYacc(build_ext):
         workers = self.parallel
         if workers is True:
             workers = os.cpu_count()
-        if workers and workers > 1:
+        parallel_compile_methods = ("_setup_compile", "_get_cc_args", "_compile")
+        supports_parallel_compile = all(
+            hasattr(self.compiler, method) for method in parallel_compile_methods
+        )
+        if workers and workers > 1 and supports_parallel_compile:
             def compile_in_parallel(
                 sources,
                 output_dir=None,

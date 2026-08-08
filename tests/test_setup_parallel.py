@@ -44,6 +44,14 @@ class FakeCompiler:
             self.active -= 1
 
 
+class MinimalCompiler:
+    def __init__(self):
+        self.compiled = []
+
+    def compile(self, sources, **kwargs):
+        self.compiled.extend(sources)
+
+
 def test_build_ext_compiles_sources_in_parallel():
     sources = [f"source-{index}.cc" for index in range(6)]
     compiler = FakeCompiler()
@@ -59,6 +67,22 @@ def test_build_ext_compiles_sources_in_parallel():
 
     assert compiler.max_active == 3
     assert sorted(compiler.compiled) == sources
+
+
+def test_build_ext_uses_default_compile_without_private_compiler_hooks():
+    sources = ["source.cc"]
+    compiler = MinimalCompiler()
+    command = BuildExtWithLexYacc(Distribution())
+    command.compiler = compiler
+    command.parallel = 3
+
+    def compile_extension(_command):
+        compiler.compile(sources)
+
+    with patch.object(build_ext, "build_extensions", compile_extension):
+        command.build_extensions()
+
+    assert compiler.compiled == sources
 
 
 def test_link_libraries_do_not_require_header_only_boost_system():
