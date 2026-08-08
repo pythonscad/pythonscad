@@ -36,6 +36,7 @@
 #include <ColorNode.h>
 #include <ColorUtil.h>
 #include <io/fileutils.h>
+#include <core/parsersettings.h>
 #include <GeometryEvaluator.h>
 #include <platform/PlatformUtils.h>
 #include <handle_dep.h>
@@ -1075,7 +1076,13 @@ PyObject *python_osuse_include(int mode, PyObject *self, PyObject *args, PyObjec
     PyErr_SetString(PyExc_ValueError, "osuse(): filename must not be empty");
     return NULL;
   }
-  const std::string includedfile = lookup_file(file, python_scriptpath.parent_path().u8string(), ".");
+  std::string includedfile = lookup_file(file, python_scriptpath.parent_path().u8string(), ".");
+  const fs::path requested_path = fs::u8path(file);
+  if (!requested_path.is_absolute() && !fs::exists(fs::u8path(includedfile))) {
+    // Fall back to OpenSCAD's library paths when file not found.
+    const fs::path libraryfile = search_libs(requested_path);
+    if (!libraryfile.empty()) includedfile = libraryfile.generic_string();
+  }
   {
     const fs::path fpath = fs::u8path(includedfile);
     if (!fs::exists(fpath)) {
