@@ -3,6 +3,7 @@ import re
 import shutil
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
@@ -177,10 +178,9 @@ def get_link_libraries():
     libs = get_pkg_config_libraries()
 
     # Link concrete Boost libraries so auditwheel/delocate/delvewheel can
-    # bundle them. Current Boost.System is header-only on macOS and vcpkg/MSVC.
+    # bundle them. Boost.System has been header-only by default since 1.69,
+    # including on Linux distributions that no longer ship libboost_system.
     boost_libs = ["boost_program_options"]
-    if not IS_DARWIN and not IS_WINDOWS:
-        boost_libs.append("boost_system")
     # On Windows, Boost.Regex is selected via MSVC autolink; vcpkg's release
     # triplet does not provide a stable unversioned boost_regex.lib to name here.
     if not IS_WINDOWS:
@@ -489,8 +489,11 @@ class BuildExtWithLexYacc(build_ext):
             if ".mm" not in self.compiler.src_extensions:
                 self.compiler.src_extensions.append(".mm")
 
+        original_compile = self.compiler.compile
+        original_single_compile = None
+
         if not IS_WINDOWS and hasattr(self.compiler, "_compile"):
-            original_compile = self.compiler._compile
+            original_single_compile = self.compiler._compile
 
             def compile_without_cxx_args_for_c_sources(obj, src, ext, cc_args, extra_postargs, pp_opts):
                 if src.endswith(".c") and extra_postargs:
@@ -498,16 +501,61 @@ class BuildExtWithLexYacc(build_ext):
                         arg for arg in extra_postargs
                         if arg not in self.cxx_only_compile_args
                     ]
-                return original_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+                return original_single_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
             self.compiler._compile = compile_without_cxx_args_for_c_sources
-            try:
-                super().build_extensions()
-            finally:
-                self.compiler._compile = original_compile
-            return
 
-        super().build_extensions()
+        workers = self.parallel
+        if workers is True:
+            workers = os.cpu_count()
+        if workers and workers > 1:
+            def compile_in_parallel(
+                sources,
+                output_dir=None,
+                macros=None,
+                include_dirs=None,
+                debug=False,
+                extra_preargs=None,
+                extra_postargs=None,
+                depends=None,
+            ):
+                macros, objects, extra_postargs, pp_opts, build = self.compiler._setup_compile(
+                    output_dir,
+                    macros,
+                    include_dirs,
+                    sources,
+                    depends,
+                    extra_postargs,
+                )
+                cc_args = self.compiler._get_cc_args(pp_opts, debug, extra_preargs)
+
+                def compile_object(obj):
+                    try:
+                        src, ext = build[obj]
+                    except KeyError:
+                        return
+                    self.compiler._compile(
+                        obj,
+                        src,
+                        ext,
+                        cc_args,
+                        extra_postargs,
+                        pp_opts,
+                    )
+
+                print(f"Compiling C/C++ sources with {workers} parallel jobs")
+                with ThreadPoolExecutor(max_workers=workers) as executor:
+                    list(executor.map(compile_object, objects))
+                return objects
+
+            self.compiler.compile = compile_in_parallel
+
+        try:
+            super().build_extensions()
+        finally:
+            self.compiler.compile = original_compile
+            if original_single_compile is not None:
+                self.compiler._compile = original_single_compile
 
     def run(self):
         yacc_src = "src/core/parser.y"
