@@ -24,6 +24,7 @@
  *
  */
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include "genlang/genlang.h"
@@ -988,7 +989,15 @@ static PyObject *python_register_parameter_impl(PyObject *args, PyObject *kwargs
         auto expr = customizer_parameters_finished[i]->getExpr();
         const auto& lit = std::dynamic_pointer_cast<Literal>(expr);
         if (lit != nullptr) {
-          if (lit->isDouble()) value_effective = PyFloat_FromDouble(lit->toDouble());
+          // Finished values are stored as OpenSCAD NUMBER (double). Preserve the
+          // Python default's type so int parameters stay int across GUI re-previews.
+          if (lit->isDouble()) {
+            if (!is_bool && PyLong_Check(value)) {
+              value_effective = PyLong_FromLongLong(std::llround(lit->toDouble()));
+            } else {
+              value_effective = PyFloat_FromDouble(lit->toDouble());
+            }
+          }
           if (lit->isString()) value_effective = PyUnicode_FromString(lit->toString().c_str());
           if (lit->isBool()) value_effective = lit->toBool() ? Py_True : Py_False;
         }

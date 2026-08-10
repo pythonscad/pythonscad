@@ -1,0 +1,4 @@
+int: int 256
+float: float 256.0
+str: str '256'
+

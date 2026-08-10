@@ -12,13 +12,17 @@ base = params.group("Base parameters")
 assert base is params.group("Base parameters")
 
 returned_diameter = base.add_parameter("diameter", 10, description="Diameter")
+returned_scale = params.add_parameter("scale", 1.0, description="Scale")
 label = params.add_parameter("label", "plate")
 
+assert type(returned_diameter) is int
+assert type(returned_scale) is float
 assert returned_diameter == 10
+assert returned_scale == 1.0
 assert label == "plate"
-assert dict(params) == {"diameter": 10.0, "label": "plate"}
-assert dict(base) == {"diameter": 10.0}
-assert len(params) == 2
+assert dict(params) == {"diameter": 10, "scale": 1.0, "label": "plate"}
+assert dict(base) == {"diameter": 10}
+assert len(params) == 3
 assert len(base) == 1
 
 assert "diameter" not in globals()
