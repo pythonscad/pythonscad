@@ -301,6 +301,8 @@ file(GLOB PYTHONSCAD_OVERLAY_ECHO_FILES ${TEST_PYTHONSCAD_OVERLAY_ECHO_DIR}/*.py
 file(GLOB SCAD_3D_EXPORT_FILES      ${TEST_SCAD_DIR}/3d-export/*.scad)
 # Exclude add_parameter_pure.py as it has a separate test with feature flag
 list(REMOVE_ITEM PYTHONSCAD_ECHO_FILES "${TEST_PYTHONSCAD_ECHO_DIR}/add_parameter_pure.py")
+# Exclude add_parameter_types.py: needs -D seeding of finished Customizer values
+list(REMOVE_ITEM PYTHONSCAD_ECHO_FILES "${TEST_PYTHONSCAD_ECHO_DIR}/add_parameter_types.py")
 # GUI pointer callbacks are not exposed in headless builds.
 if(HEADLESS)
   list(REMOVE_ITEM PYTHONSCAD_ECHO_FILES "${TEST_PYTHONSCAD_ECHO_DIR}/gui_callback_abi.py")
@@ -1381,6 +1383,8 @@ add_cmdline_test(pythonscadlaser     EXPERIMENTAL OPENSCAD SUFFIX svg FILES ${PY
 add_cmdline_test(pythonscadoverlay      EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_OVERLAY_FILES} ARGS --render --trust-python)
 add_cmdline_test(pythonscadoverlayecho  EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_OVERLAY_ECHO_FILES} ARGS --trust-python)
 add_cmdline_test(pythonscadecho_pure EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${TEST_PYTHONSCAD_ECHO_DIR}/add_parameter_pure.py ARGS --enable=add-parameter-pure-function --trust-python)
+# Seed customizer_parameters_finished via -D so int defaults are reapplied as doubles (GUI re-preview path).
+add_cmdline_test(pythonscadecho_types EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${TEST_PYTHONSCAD_ECHO_DIR}/add_parameter_types.py ARGS --trust-python "-Dfrom openscad import add_parameter as _ap$<SEMICOLON> _ap(\"int_param\", 256)$<SEMICOLON> _ap(\"float_param\", 256.0)$<SEMICOLON> _ap(\"str_param\", \"256\")")
 add_cmdline_test(echo EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${TEST_SCAD_DIR}/misc/vector-swizzling.scad ARGS --enable=vector-swizzle --trust-python)
 
 if(EXPERIMENTAL AND ENABLE_PYTHON)

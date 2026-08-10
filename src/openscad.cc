@@ -623,8 +623,15 @@ int cmdline(const CommandLine& cmd)
     }
     text = "\n";
   }
+  // For Python designs, -D overrides were already evaluated as Python above.
+  // Appending them here would feed Python into the SCAD parser and fail the run.
+  if (python_active) {
+    text += "\n\x03\n";
+  } else
 #endif  // ifdef ENABLE_PYTHON
-  text += "\n\x03\n" + commandline_commands;
+  {
+    text += "\n\x03\n" + commandline_commands;
+  }
 
   SourceFile *root_file = nullptr;
   if (!parse(root_file, text, cmd.filename, cmd.filename, false)) {
