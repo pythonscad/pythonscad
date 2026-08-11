@@ -113,7 +113,9 @@ export APPIMAGE_EXTRACT_AND_RUN="${APPIMAGE_EXTRACT_AND_RUN:-1}"
 
 for appimage in "${appimages[@]}"; do
   chmod +x "$appimage"
-  rs_smoke_binary "$appimage" "$(basename "$appimage")" "$workdir"
+  expect_pyqt6=0
+  [[ "$(basename "$appimage")" == *qt6* ]] && expect_pyqt6=1
+  rs_smoke_binary "$appimage" "$(basename "$appimage")" "$workdir" "$expect_pyqt6"
 done
 
 rs_log "All AppImage smoke tests passed"

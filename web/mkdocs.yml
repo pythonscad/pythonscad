@@ -62,6 +62,10 @@ nav:
   - Development:
       - Release Smoke Tests: development/release-smoke-tests.md
       - Upstream Sync: development/upstream-sync.md
+      - Reusing Qt Elements in PythonSCAD:
+          - .pythonscadrc and add_menuitem: development/pythonscadrc-and-menuitems.md
+          - PyQt6 and Forms in PythonSCAD: development/pyqt6-and-forms.md
+          - Extend Your Design with an Interactive Form: development/extend-with-interactive-form.md
   - Building: building.md
   - WebAssembly:
       - Building for WebAssembly: building-wasm.md
