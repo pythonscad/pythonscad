@@ -65,8 +65,8 @@ if (-not $BisonExe -or -not $FlexExe) {
 }
 
 # Renovate updates the release tag and its commit digest together.
-$VcpkgVersion = "2026.06.24"
-$VcpkgBaseline = "cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3"
+$VcpkgVersion = "2026.07.29"
+$VcpkgBaseline = "9e593bb18ea69cc5095e012465dcd675a822ed0d"
 $VcpkgRoot = Join-Path $ProjectRoot ".wheel-vcpkg"
 # This dependency-only file is a template, not a directly usable vcpkg manifest.
 # The generated manifest below adds the pinned builtin-baseline.
