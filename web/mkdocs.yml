@@ -106,6 +106,7 @@ nav:
   - Resources: resources.md
   - Jupyter Setup: jupyter.md
   - Contact: contact.md
+  - Imprint: imprint.md
 
 markdown_extensions:
   - admonition
