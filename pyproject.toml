@@ -55,7 +55,7 @@ bundle = ["ipython>=9,<10; python_version>='3.11'"]
 build = [
     "build==1.5.0; python_version>='3.11'",
     "cibuildwheel==4.2.0; python_version>='3.11'",
-    "auditwheel==6.7.0; python_version>='3.11'",
+    "auditwheel==6.8.0; python_version>='3.11'",
     "delocate==0.13.0; python_version>='3.11'",
     "delvewheel==1.13.0; python_version>='3.11'",
 ]
