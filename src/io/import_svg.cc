@@ -84,12 +84,18 @@ double calc_alignment(const libsvg::align_t alignment, double page_mm, double sc
 // Resolves an SVG fill/stroke color string the same way for every caller (regular
 // import, color enumeration, and color-filtered import), so that Color4f equality
 // comparisons between them (e.g. against ClipperUtils::cleanUnion's grouping) agree.
+//
+// "none" / alpha 0 means unpainted, not "emit fully transparent CSG faces".
+// Closed SVG paths are still filled geometry (OpenSCAD-compatible); painting
+// them with alpha=0 made extruded walls vanish while boolean-cap faces stayed
+// visible.
 Color4f resolve_outline_color(const std::string& color)
 {
-  if (color == "none") return Color4f(0, 0, 0, 0);  // transparent
+  if (color == "none") return Color4f();
   auto x = OpenSCAD::parse_color(color);
-  if (x.has_value()) return *x;
-  return *OpenSCAD::parse_color("#f9d72c");
+  Color4f result = x.has_value() ? *x : *OpenSCAD::parse_color("#f9d72c");
+  if (result.hasAlpha() && result.a() == 0.0f) return Color4f();
+  return result;
 }
 
 // Shared shape-selector construction for import_svg() and import_svg_list_colors(),
