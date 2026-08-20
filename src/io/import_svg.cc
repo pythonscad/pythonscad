@@ -85,17 +85,17 @@ double calc_alignment(const libsvg::align_t alignment, double page_mm, double sc
 // import, color enumeration, and color-filtered import), so that Color4f equality
 // comparisons between them (e.g. against ClipperUtils::cleanUnion's grouping) agree.
 //
-// "none" / alpha 0 means unpainted, not "emit fully transparent CSG faces".
-// Closed SVG paths are still filled geometry (OpenSCAD-compatible); painting
-// them with alpha=0 made extruded walls vanish while boolean-cap faces stayed
-// visible.
+// Keep fill:none as a valid fully-transparent color (alpha 0). export_svg.cc
+// maps r<0 to the fill-color option and a==0 to fill="none"; using the
+// unpainted sentinel here would change 2D SVG round-trips. Extrusion copies
+// the color onto 3D faces via Color4f::unpaintedIfFullyTransparent() so walls
+// are not drawn invisible.
 Color4f resolve_outline_color(const std::string& color)
 {
-  if (color == "none") return Color4f();
+  if (color == "none") return Color4f(0, 0, 0, 0);  // transparent
   auto x = OpenSCAD::parse_color(color);
-  Color4f result = x.has_value() ? *x : *OpenSCAD::parse_color("#f9d72c");
-  if (result.hasAlpha() && result.a() == 0.0f) return Color4f();
-  return result;
+  if (x.has_value()) return *x;
+  return *OpenSCAD::parse_color("#f9d72c");
 }
 
 // Shared shape-selector construction for import_svg() and import_svg_list_colors(),
