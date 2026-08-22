@@ -181,3 +181,5 @@ libraries/python/stubs/*.egg-info/
 # MkDocs build output
 web/site/
 web/.venv/
+/builddir
+/tests

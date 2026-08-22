@@ -406,7 +406,6 @@ public:
     setCurrentOutput();
     return sg::make_scope_guard([this] { clearCurrentOutput(); });
   }
-
   bool isEmpty();
 
   void onAxisChanged(InputEventAxisChanged *event) override;
