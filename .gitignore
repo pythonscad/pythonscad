@@ -46,6 +46,11 @@ wasm-test/node_modules/
 
 .cache/
 .claude/
+/.vs/
+/.vscode/
+/.idea/
+/.zed/
+*.code-workspace
 .clangd/
 /*.scad
 **/out*.*
@@ -182,4 +187,3 @@ libraries/python/stubs/*.egg-info/
 web/site/
 web/.venv/
 /builddir
-/tests
