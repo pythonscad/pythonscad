@@ -406,7 +406,11 @@ jobs:
           cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
 
           QTCORE_PYD=$(find /tmp/pyqt-out/PyQt6 -maxdepth 2 -iname "QtCore*.pyd" | head -1)
+          PYTHON_VERSION="$(printf '%s' "$PYTHON_VERSION" | tr -d '\r' | xargs)"
           EXPECTED_PYTHON_DLL="python$(echo "$PYTHON_VERSION" | tr -d '.').dll"
+
+          echo "Debug: QT_VERSION=$QT_VERSION PYQT_VERSION=$PYQT_VERSION PYTHON_VERSION=$PYTHON_VERSION EXPECTED_PYTHON_DLL=$EXPECTED_PYTHON_DLL" >&2
+
           if ! objdump -p "$QTCORE_PYD" | tr '[:upper:]' '[:lower:]' \
             | grep -Fq "$EXPECTED_PYTHON_DLL"; then
             echo "ERROR: $QTCORE_PYD does not link to $EXPECTED_PYTHON_DLL" >&2
