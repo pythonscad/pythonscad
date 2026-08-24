@@ -419,8 +419,7 @@ jobs:
 
           echo "Debug: QT_VERSION=$QT_VERSION PYQT_VERSION=$PYQT_VERSION PYTHON_VERSION=$PYTHON_VERSION EXPECTED_PYTHON_DLL=$EXPECTED_PYTHON_DLL" >&2
 
-          if ! objdump -p "$QTCORE_PYD" | tr '[:upper:]' '[:lower:]' \
-            | grep -Fq "$EXPECTED_PYTHON_DLL"; then
+          if ! objdump -p "$QTCORE_PYD" | grep -qi "$EXPECTED_PYTHON_DLL"; then
             echo "ERROR: $QTCORE_PYD does not link to $EXPECTED_PYTHON_DLL" >&2
             objdump -p "$QTCORE_PYD" | grep -i python >&2 || true
             exit 1
