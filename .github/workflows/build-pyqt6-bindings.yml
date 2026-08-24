@@ -330,6 +330,11 @@ jobs:
           update: true
           pacboy: "${{ env.PACBOY_PACKAGES }} python-pip:p python-virtualenv:p zip:"
 
+      - name: Pin Qt6 version (pre_commands)
+        shell: msys2 {0}
+        run: |
+          python3 ./scripts/get-dependencies.py --distro msys2 --profile pythonscad-qt6 --pre-commands-only
+
       - name: Build PyQt6 bindings
         shell: msys2 {0}
         run: |

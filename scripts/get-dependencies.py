@@ -464,6 +464,11 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Show commands without executing")
     parser.add_argument("--list", action="store_true", help="Only list resolved packages")
     parser.add_argument(
+        "--pre-commands-only",
+        action="store_true",
+        help="Run only this distro's pre_commands, then exit (for CI steps that must run after the package manager itself has been set up).",
+    )
+    parser.add_argument(
         "--output-env",
         metavar="FILE",
         help="Append PACKAGES=<space-separated list> to FILE (for CI integration, e.g. $GITHUB_ENV)",
@@ -500,21 +505,16 @@ def main():
     print(f"Detected distro: {distro.id} version: {distro.version}")
     print(f"Active profiles: {', '.join(cfg.get('active_profiles', []))}")
     print(f"Package count: {len(packages)}")
-    # --output-env: write package list to a file (e.g. $GITHUB_ENV) and exit
-    if args.output_env:
-        # Run pre_commands even in --output-env mode. This mode is used by
-        # CI steps that only want the resolved package list (e.g. to hand
-        # off to a separate `pacboy --sync` step), but pre_commands often
-        # contain setup that must happen regardless - e.g. pinning specific
-        # package versions via `pacman -U <url>` before the generic sync
-        # step runs. Skipping them here silently dropped the Qt version
-        # pin on Windows.
+
+    if args.pre_commands_only:
         d = cfg["distros"][distro.id]
         pre_cmds = [cmd.split() for cmd in d.get("pre_commands", [])]
-        if pre_cmds:
-            print(f"Running {len(pre_cmds)} pre_command(s) for {distro.id}...")
-            run_commands(pre_cmds, dry_run=args.dry_run)
+        print(f"Running {len(pre_cmds)} pre_command(s) for {distro.id}...")
+        run_commands(pre_cmds, dry_run=args.dry_run)
+        return 0
 
+    # --output-env: write package list to a file (e.g. $GITHUB_ENV) and exit
+    if args.output_env:
         pkg_str = " ".join(packages)
         with open(args.output_env, "a") as fh:
             fh.write(f"{args.env_var}={pkg_str}\n")
