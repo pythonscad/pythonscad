@@ -346,10 +346,6 @@ jobs:
           mkdir -p /tmp/python-embed
           python -c "import zipfile; zipfile.ZipFile('/tmp/python-embed.zip').extractall('/tmp/python-embed')"
 
-          ZIP_WIN=$(cygpath -w /tmp/python-embed.zip)
-          DEST_WIN=$(cygpath -w /tmp/python-embed)
-          powershell.exe -NoProfile -Command "Expand-Archive -Path '$ZIP_WIN' -DestinationPath '$DEST_WIN' -Force"
-
           rm -f /tmp/python-embed/python*._pth
 
           "$GITHUB_WORKSPACE/scripts/prepare-msys2-python.sh" \
