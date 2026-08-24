@@ -1376,7 +1376,7 @@ void TabManager::saveSession(const QString& path)
     findPanel.insert(QStringLiteral("text"), parent->findInputField->text());
     findPanel.insert(QStringLiteral("replaceText"), parent->replaceInputField->text());
     win.insert(QStringLiteral("findPanel"), findPanel);
-    const QByteArray windowGeometry = parent->saveGeometry();
+    const QByteArray windowGeometry = parent->geometryForStorage();
     if (!windowGeometry.isEmpty()) {
       win.insert(QStringLiteral("windowGeometry"), QString::fromLatin1(windowGeometry.toBase64()));
     }
@@ -1466,7 +1466,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       findPanel.insert(QStringLiteral("text"), mainWin->findInputField->text());
       findPanel.insert(QStringLiteral("replaceText"), mainWin->replaceInputField->text());
       win.insert(QStringLiteral("findPanel"), findPanel);
-      const QByteArray windowGeometry = mainWin->saveGeometry();
+      const QByteArray windowGeometry = mainWin->geometryForStorage();
       if (!windowGeometry.isEmpty()) {
         win.insert(QStringLiteral("windowGeometry"), QString::fromLatin1(windowGeometry.toBase64()));
       }

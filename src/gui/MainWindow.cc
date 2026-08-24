@@ -4412,7 +4412,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
   }
 
   QSettingsCached settings;
-  settings.setValue("window/geometry", saveGeometry());
+  settings.setValue("window/geometry", geometryForStorage());
   auto windowState = saveState();
   UIUtils::dumpSaveState(windowState);
   settings.setValue("window/state", windowState);
@@ -5139,6 +5139,20 @@ void MainWindow::applySessionWindowGeometry(const QByteArray& geometry)
     setGeometry(screen()->availableGeometry());
   }
 #endif
+  if (isFullScreen()) {
+    setWindowState(windowState() & ~Qt::WindowFullScreen);
+  }
+}
+
+QByteArray MainWindow::geometryForStorage()
+{
+  if (!isFullScreen()) {
+    return saveGeometry();
+  }
+
+  const QSettingsCached settings;
+  const QByteArray previous = settings.value("window/geometry").toByteArray();
+  return previous.isEmpty() ? saveGeometry() : previous;
 }
 
 void MainWindow::restoreWindowState()

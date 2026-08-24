@@ -214,6 +214,9 @@ public:
   /// Apply persisted top-level window geometry blob (QWidget::saveGeometry payload).
   void applySessionWindowGeometry(const QByteArray& geometry);
 
+  /// Geometry blob for persistence; never encodes fullscreen (see applySessionWindowGeometry).
+  QByteArray geometryForStorage();
+
   /// Mtime+size fingerprint for auto-reload (empty if path missing or stat fails).
   static std::string autoReloadIdentityForPath(const QString& filepath);
 
