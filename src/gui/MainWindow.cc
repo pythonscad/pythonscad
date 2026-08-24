@@ -3858,6 +3858,18 @@ void MainWindow::on_viewActionViewAll_triggered()
   this->qglview->update();
 }
 
+void MainWindow::on_viewActionFullScreen_toggled(bool checked)
+{
+  if (checked == isFullScreen()) {
+    return;
+  }
+  if (checked) {
+    showFullScreen();
+  } else {
+    showNormal();
+  }
+}
+
 void MainWindow::on_viewActionHideEditorToolBar_toggled(bool checked)
 {
   QSettingsCached settings;
@@ -5188,6 +5200,7 @@ void MainWindow::restoreWindowState()
 #endif  // ifdef Q_OS_WIN
   }
 
+  viewActionFullScreen->setChecked(isFullScreen());
 }
 
 void MainWindow::handleDeferredCliMissingFile()
@@ -5270,6 +5283,10 @@ void MainWindow::changeEvent(QEvent *event)
 {
   if (event->type() == QEvent::ThemeChange) {
     setGlobalTheme();
+  } else if (event->type() == QEvent::WindowStateChange) {
+    viewActionFullScreen->blockSignals(true);
+    viewActionFullScreen->setChecked(isFullScreen());
+    viewActionFullScreen->blockSignals(false);
   }
   QMainWindow::changeEvent(event);
 }

@@ -464,6 +464,7 @@ public slots:
   void viewTogglePerspective();
   void on_viewActionResetView_triggered();
   void on_viewActionViewAll_triggered();
+  void on_viewActionFullScreen_toggled(bool checked);
   void editorContentChanged();
   void leftClick(QPoint coordinate);
   void rightClick(QPoint coordinate);

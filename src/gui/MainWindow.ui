@@ -379,6 +379,7 @@
     <addaction name="viewActionPerspective"/>
     <addaction name="viewActionOrthogonal"/>
     <addaction name="separator"/>
+    <addaction name="viewActionFullScreen"/>
     <addaction name="viewActionHideEditorToolBar"/>
     <addaction name="viewActionHide3DViewToolBar"/>
    </widget>
@@ -1638,6 +1639,17 @@
    </property>
    <property name="shortcut">
     <string>Shift+F2</string>
+   </property>
+  </action>
+  <action name="viewActionFullScreen">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Full Screen</string>
+   </property>
+   <property name="shortcut">
+    <string>F11</string>
    </property>
   </action>
   <action name="viewActionHideEditorToolBar">
