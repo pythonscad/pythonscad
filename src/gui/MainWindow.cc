@@ -3864,9 +3864,9 @@ void MainWindow::on_viewActionFullScreen_toggled(bool checked)
     return;
   }
   if (checked) {
-    showFullScreen();
+    setWindowState(windowState() | Qt::WindowFullScreen);
   } else {
-    showNormal();
+    setWindowState(windowState() & ~Qt::WindowFullScreen);
   }
 }
 
