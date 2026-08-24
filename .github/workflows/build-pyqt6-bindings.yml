@@ -319,16 +319,17 @@ jobs:
           submodules: 'recursive'
           persist-credentials: false
 
-      - name: Calculate PACBOY_PACKAGES
-        shell: msys2 {0}
-        run: |
-          python3 ./scripts/get-dependencies.py --distro msys2 --profile pythonscad-qt6 --output-env "$GITHUB_ENV" --env-var PACBOY_PACKAGES
-
       - uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
           update: true
           pacboy: "${{ env.PACBOY_PACKAGES }} python-pip:p python-virtualenv:p zip:"
+
+      - name: Calculate PACBOY_PACKAGES
+        shell: msys2 {0}
+        run: |
+          python3 ./scripts/get-dependencies.py --distro msys2 --profile pythonscad-qt6 --output-env "$GITHUB_ENV" --env-var PACBOY_PACKAGES
+
 
       - name: Build PyQt6 bindings
         run: |

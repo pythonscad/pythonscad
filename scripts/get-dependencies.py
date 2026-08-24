@@ -231,9 +231,10 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
     # pre_commands are plain argv lists (no shell, no $() expansion) and
     # the prefix differs between Apple Silicon (/opt/homebrew) and Intel
     # (/usr/local) runners.
-    if mgr == "brew" and any("{brew_prefix}" in c for c in d.get("pre_commands", [])):
-        brew_prefix = subprocess.check_output(["brew", "--prefix"], text=True).strip()
-        pre_cmds = [[tok.replace("{brew_prefix}", brew_prefix) for tok in cmd] for cmd in pre_cmds]
+    if mgr == "brew" and any("{tap_repo}" in c for c in d.get("pre_commands", [])):
+        tap_repo = subprocess.check_output(["brew", "--repository", "local/pinned-qt"], text=True).strip()
+        pre_cmds = [[tok.replace("{tap_repo}", tap_repo) for tok in cmd] for cmd in pre_cmds]
+
     cmds: List[List[str]] = []
     cmds.extend(pre_cmds)
     yes_flag = []
