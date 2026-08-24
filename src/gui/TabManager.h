@@ -76,6 +76,8 @@ public:
   static uint64_t sessionDirtyGeneration();
   static void setSkipSessionSave(bool skip);
   static bool shouldSkipSessionSave();
+  static void markSessionSavedForShutdown();
+  static bool wasSessionSavedForShutdown();
 
   enum class SessionFileReadStatus {
     Ok,

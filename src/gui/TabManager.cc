@@ -68,6 +68,7 @@ namespace {
 uint64_t sessionDirtyGenerationValue = 0;
 bool sessionSaveWarningShown = false;
 bool skipSessionSaveOnQuit = false;
+bool sessionSavedForShutdown = false;
 
 QString untitledBasenameForLanguage(int language)
 {
@@ -1270,6 +1271,16 @@ bool TabManager::shouldSkipSessionSave()
   return skipSessionSaveOnQuit;
 }
 
+void TabManager::markSessionSavedForShutdown()
+{
+  sessionSavedForShutdown = true;
+}
+
+bool TabManager::wasSessionSavedForShutdown()
+{
+  return sessionSavedForShutdown;
+}
+
 void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,
                                    bool contentModified, bool parameterModified,
                                    const QByteArray& customizerState, std::optional<int> sessionLanguage,
@@ -1376,7 +1387,7 @@ void TabManager::saveSession(const QString& path)
     findPanel.insert(QStringLiteral("text"), parent->findInputField->text());
     findPanel.insert(QStringLiteral("replaceText"), parent->replaceInputField->text());
     win.insert(QStringLiteral("findPanel"), findPanel);
-    const QByteArray windowGeometry = parent->geometryForStorage();
+    const QByteArray windowGeometry = parent->saveGeometry();
     if (!windowGeometry.isEmpty()) {
       win.insert(QStringLiteral("windowGeometry"), QString::fromLatin1(windowGeometry.toBase64()));
     }
@@ -1466,7 +1477,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       findPanel.insert(QStringLiteral("text"), mainWin->findInputField->text());
       findPanel.insert(QStringLiteral("replaceText"), mainWin->replaceInputField->text());
       win.insert(QStringLiteral("findPanel"), findPanel);
-      const QByteArray windowGeometry = mainWin->geometryForStorage();
+      const QByteArray windowGeometry = mainWin->saveGeometry();
       if (!windowGeometry.isEmpty()) {
         win.insert(QStringLiteral("windowGeometry"), QString::fromLatin1(windowGeometry.toBase64()));
       }

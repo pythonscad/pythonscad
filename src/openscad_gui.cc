@@ -323,6 +323,9 @@ void markAllWindowsQuitting()
 // shutdown contexts only.
 bool saveSessionForShutdown()
 {
+  if (TabManager::wasSessionSavedForShutdown()) {
+    return true;
+  }
   markAllWindowsQuitting();
   return writeGlobalSessionFromAllWindows();
 }

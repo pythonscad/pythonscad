@@ -1622,6 +1622,7 @@ void MainWindow::quitApplication()
       }
       return;
     }
+    TabManager::markSessionSavedForShutdown();
   } else {
     for (auto *win : scadApp->windowManager.getWindows()) {
       if (!win->tabManager->shouldClose()) {
@@ -4373,6 +4374,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     if (scadApp->windowManager.getWindows().size() == 1) {
       isClosing = false;
       event->ignore();
+      persistWindowGeometry();
       quitApplication();
       return;
     }
@@ -4412,7 +4414,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
   }
 
   QSettingsCached settings;
-  settings.setValue("window/geometry", geometryForStorage());
+  persistWindowGeometry();
   auto windowState = saveState();
   UIUtils::dumpSaveState(windowState);
   settings.setValue("window/state", windowState);
@@ -5139,20 +5141,17 @@ void MainWindow::applySessionWindowGeometry(const QByteArray& geometry)
     setGeometry(screen()->availableGeometry());
   }
 #endif
-  if (isFullScreen()) {
-    setWindowState(windowState() & ~Qt::WindowFullScreen);
-  }
+  viewActionFullScreen->setChecked(isFullScreen());
 }
 
-QByteArray MainWindow::geometryForStorage()
+void MainWindow::persistWindowGeometry()
 {
-  if (!isFullScreen()) {
-    return saveGeometry();
+  QSettingsCached settings;
+  if (Settings::Settings::sessionManagementEnabled.value()) {
+    settings.remove("window/geometry");
+    return;
   }
-
-  const QSettingsCached settings;
-  const QByteArray previous = settings.value("window/geometry").toByteArray();
-  return previous.isEmpty() ? saveGeometry() : previous;
+  settings.setValue("window/geometry", saveGeometry());
 }
 
 void MainWindow::restoreWindowState()
@@ -5162,7 +5161,9 @@ void MainWindow::restoreWindowState()
   clearCurrentOutput();
   UIUtils::dumpSaveState(windowState);
   setCurrentOutput();
-  applySessionWindowGeometry(settings.value("window/geometry", QByteArray()).toByteArray());
+  if (!Settings::Settings::sessionManagementEnabled.value()) {
+    applySessionWindowGeometry(settings.value("window/geometry", QByteArray()).toByteArray());
+  }
   restoreState(windowState);
 
   if (windowState.size() == 0) {
@@ -5214,7 +5215,9 @@ void MainWindow::restoreWindowState()
 #endif  // ifdef Q_OS_WIN
   }
 
-  viewActionFullScreen->setChecked(isFullScreen());
+  if (!Settings::Settings::sessionManagementEnabled.value()) {
+    viewActionFullScreen->setChecked(isFullScreen());
+  }
 }
 
 void MainWindow::handleDeferredCliMissingFile()
