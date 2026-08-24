@@ -227,6 +227,13 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         raise SystemExit(f"No package manager defined for {distro.id} (and none found in its inheritance chain)")
 
     pre_cmds = [cmd.split() for cmd in d.get("pre_commands", [])]
+    # Allow pre_commands to reference the live Homebrew prefix, since
+    # pre_commands are plain argv lists (no shell, no $() expansion) and
+    # the prefix differs between Apple Silicon (/opt/homebrew) and Intel
+    # (/usr/local) runners.
+    if mgr == "brew" and any("{brew_prefix}" in c for c in d.get("pre_commands", [])):
+        brew_prefix = subprocess.check_output(["brew", "--prefix"], text=True).strip()
+        pre_cmds = [[tok.replace("{brew_prefix}", brew_prefix) for tok in cmd] for cmd in pre_cmds]
     cmds: List[List[str]] = []
     cmds.extend(pre_cmds)
     yes_flag = []

@@ -73,7 +73,7 @@
       "extends": null,
       "pre_commands": [
         "brew tap-new local/pinned-qt",
-        "curl -sSL https://raw.githubusercontent.com/Homebrew/homebrew-core/21ce42536b29140bf08d18b6847bc5528c46d33b/Formula/q/qt.rb -o /opt/homebrew/Library/Taps/local/homebrew-pinned-qt/Formula/qt.rb",
+        "curl -sSL https://raw.githubusercontent.com/Homebrew/homebrew-core/21ce42536b29140bf08d18b6847bc5528c46d33b/Formula/q/qt.rb -o {brew_prefix}/Library/Taps/local/homebrew-pinned-qt/Formula/qt.rb",
         "brew install local/pinned-qt/qt",
         "brew pin local/pinned-qt/qt"
       ],

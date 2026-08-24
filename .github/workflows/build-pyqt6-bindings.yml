@@ -320,7 +320,7 @@ jobs:
           persist-credentials: false
 
       - name: Calculate PACBOY_PACKAGES
-        shell: bash
+        shell: msys2 {0}
         run: |
           python3 ./scripts/get-dependencies.py --distro msys2 --profile pythonscad-qt6 --output-env "$GITHUB_ENV" --env-var PACBOY_PACKAGES
 
