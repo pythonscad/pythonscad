@@ -466,6 +466,10 @@ jobs:
       - name: Smoke test
         run: |
           set -euo pipefail
+          echo "RUNNER_TEMP=$RUNNER_TEMP"
+          echo "cygpath -u RUNNER_TEMP: $(cygpath -u "$RUNNER_TEMP")"
+          ls -la "$(cygpath -u "$RUNNER_TEMP")" || echo "RUNNER_TEMP-Verzeichnis nicht lesbar"
+          ls -la /tmp/python-embed || echo "/tmp/python-embed existiert nicht"
           PYTHON_EMBED_EXE=$(cygpath -u "${RUNNER_TEMP}/python-embed/python.exe")
           PATH="/ucrt64/bin:$PATH" QT_QPA_PLATFORM=offscreen \
             "$PYTHON_EMBED_EXE" scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
