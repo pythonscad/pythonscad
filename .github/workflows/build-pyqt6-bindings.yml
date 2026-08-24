@@ -339,13 +339,7 @@ jobs:
           EMBED_URL="https://www.python.org/ftp/python/${PYTHON_FULL_VERSION}/python-${PYTHON_FULL_VERSION}-embed-amd64.zip"
           curl -fL "$EMBED_URL" -o /tmp/python-embed.zip
           mkdir -p /tmp/python-embed
-          powershell.exe -NoProfile -Command "Expand-Archive -Path '/tmp/python-embed.zip' -DestinationPath '/tmp/python/embed/' -Force"
-                    curl -fL "$EMBED_URL" -o /tmp/python-embed.zip
-          mkdir -p /tmp/python-embed
-          curl -fL "$EMBED_URL" -o /tmp/python-embed.zip
-          mkdir -p /tmp/python-embed
           python -c "import zipfile; zipfile.ZipFile('/tmp/python-embed.zip').extractall('/tmp/python-embed')"
-
           rm -f /tmp/python-embed/python*._pth
 
           "$GITHUB_WORKSPACE/scripts/prepare-msys2-python.sh" \
