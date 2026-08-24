@@ -337,10 +337,12 @@ jobs:
           PYTHON_VERSION=$(python --version | cut -d' ' -f2 | cut -d'.' -f1,2)
           PYTHON_FULL_VERSION=$(python --version | cut -d' ' -f2)
           EMBED_URL="https://www.python.org/ftp/python/${PYTHON_FULL_VERSION}/python-${PYTHON_FULL_VERSION}-embed-amd64.zip"
-          curl -fL "$EMBED_URL" -o /tmp/python-embed.zip
-          mkdir -p /tmp/python-embed
-          python -c "import zipfile; zipfile.ZipFile('/tmp/python-embed.zip').extractall('/tmp/python-embed')"
-          rm -f /tmp/python-embed/python*._pth
+          ZIP_PATH="${RUNNER_TEMP}/python-embed.zip"
+          DEST_PATH="${RUNNER_TEMP}/python-embed"
+          curl -fL "$EMBED_URL" -o "$ZIP_PATH"
+          mkdir -p "$DEST_PATH"
+          python -c "import zipfile; zipfile.ZipFile(r'$ZIP_PATH').extractall(r'$DEST_PATH')"
+          rm -f "$DEST_PATH"/python*._pth
 
           "$GITHUB_WORKSPACE/scripts/prepare-msys2-python.sh" \
             ucrt "$PYTHON_VERSION" "$GITHUB_WORKSPACE/python_mingw"
