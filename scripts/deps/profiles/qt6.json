@@ -72,8 +72,10 @@
     "macos": {
       "extends": null,
       "pre_commands": [
-        "brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/21ce42536b29140bf08d18b6847bc5528c46d33b/Formula/q/qt.rb",
-        "brew pin qt"
+        "brew tap-new local/pinned-qt || true",
+        "curl -sSL https://raw.githubusercontent.com/Homebrew/homebrew-core/21ce42536b29140bf08d18b6847bc5528c46d33b/Formula/q/qt.rb -o \"$(brew --repository local/pinned-qt)/Formula/qt.rb\"",
+        "brew install local/pinned-qt/qt",
+        "brew pin local/pinned-qt/qt"
       ],
       "packages": [
         "qscintilla2"
@@ -115,11 +117,11 @@
     "msys2": {
       "extends": null,
       "pre_commands": [
-        "pacman -U --noconfirm https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-qt6-base-6.11.0-1-any.pkg.tar.zst",
-        "pacman -U --noconfirm https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-qt6-5compat-6.11.0-1-any.pkg.tar.zst",
-        "pacman -U --noconfirm https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-qt6-multimedia-6.11.0-1-any.pkg.tar.zst",
-        "pacman -U --noconfirm https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-qt6-svg-6.11.0-1-any.pkg.tar.zst",
-        "pacman -U --noconfirm https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-qscintilla-qt6-2.14.1-7-any.pkg.tar.zst"
+        "pacman -U --noconfirm https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qt6-base-6.11.0-1-any.pkg.tar.zst",
+        "pacman -U --noconfirm https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qt6-5compat-6.11.0-1-any.pkg.tar.zst",
+        "pacman -U --noconfirm https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qt6-multimedia-6.11.0-1-any.pkg.tar.zst",
+        "pacman -U --noconfirm https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qt6-svg-6.11.0-1-any.pkg.tar.zst",
+        "pacman -U --noconfirm https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qscintilla-qt6-2.14.1-7-any.pkg.tar.zst"
       ],
       "packages": []
     }
