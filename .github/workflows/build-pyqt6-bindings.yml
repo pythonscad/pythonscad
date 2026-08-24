@@ -466,8 +466,9 @@ jobs:
       - name: Smoke test
         run: |
           set -euo pipefail
+          PYTHON_EMBED_EXE=$(cygpath -u "${RUNNER_TEMP}/python-embed/python.exe")
           PATH="/ucrt64/bin:$PATH" QT_QPA_PLATFORM=offscreen \
-            /tmp/python-embed/python.exe scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
+            "$PYTHON_EMBED_EXE" scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
 
       - name: Publish immutable bindings release
         env:
