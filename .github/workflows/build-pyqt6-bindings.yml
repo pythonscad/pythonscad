@@ -332,6 +332,7 @@ jobs:
 
 
       - name: Build PyQt6 bindings
+        shell: msys2 {0}
         run: |
           set -euo pipefail
           PYTHON_VERSION=$(python --version | cut -d' ' -f2 | cut -d'.' -f1,2)
