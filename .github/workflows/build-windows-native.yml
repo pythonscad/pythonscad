@@ -233,6 +233,10 @@ jobs:
       - name: Sanity test - verify executable runs
         run: |
           cd build/staging
+
+          cmd.exe /c "pythonscad.exe --info"
+          echo "cmd exit code: $?"
+
           ls -la ./pythonscad.exe
           file ./pythonscad.exe
           ldd ./pythonscad.exe
