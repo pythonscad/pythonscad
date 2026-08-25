@@ -1,4 +1,4 @@
-# Imprint according to §24 MedienG Austria
+# Imprint according to §24 MedienG (Austria)
 
 
 **Name:** nomike Postmann<br>
