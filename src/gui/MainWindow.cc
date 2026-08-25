@@ -1622,6 +1622,7 @@ void MainWindow::quitApplication()
       }
       return;
     }
+    TabManager::markSessionSavedForShutdown();
   } else {
     for (auto *win : scadApp->windowManager.getWindows()) {
       if (!win->tabManager->shouldClose()) {
@@ -3858,6 +3859,18 @@ void MainWindow::on_viewActionViewAll_triggered()
   this->qglview->update();
 }
 
+void MainWindow::on_viewActionFullScreen_toggled(bool checked)
+{
+  if (checked == isFullScreen()) {
+    return;
+  }
+  if (checked) {
+    setWindowState(windowState() | Qt::WindowFullScreen);
+  } else {
+    setWindowState(windowState() & ~Qt::WindowFullScreen);
+  }
+}
+
 void MainWindow::on_viewActionHideEditorToolBar_toggled(bool checked)
 {
   QSettingsCached settings;
@@ -4361,6 +4374,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     if (scadApp->windowManager.getWindows().size() == 1) {
       isClosing = false;
       event->ignore();
+      persistWindowGeometry();
       quitApplication();
       return;
     }
@@ -4400,7 +4414,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
   }
 
   QSettingsCached settings;
-  settings.setValue("window/geometry", saveGeometry());
+  persistWindowGeometry();
   auto windowState = saveState();
   UIUtils::dumpSaveState(windowState);
   settings.setValue("window/state", windowState);
@@ -5127,6 +5141,17 @@ void MainWindow::applySessionWindowGeometry(const QByteArray& geometry)
     setGeometry(screen()->availableGeometry());
   }
 #endif
+  viewActionFullScreen->setChecked(isFullScreen());
+}
+
+void MainWindow::persistWindowGeometry()
+{
+  QSettingsCached settings;
+  if (Settings::Settings::sessionManagementEnabled.value()) {
+    settings.remove("window/geometry");
+    return;
+  }
+  settings.setValue("window/geometry", saveGeometry());
 }
 
 void MainWindow::restoreWindowState()
@@ -5136,7 +5161,9 @@ void MainWindow::restoreWindowState()
   clearCurrentOutput();
   UIUtils::dumpSaveState(windowState);
   setCurrentOutput();
-  applySessionWindowGeometry(settings.value("window/geometry", QByteArray()).toByteArray());
+  if (!Settings::Settings::sessionManagementEnabled.value()) {
+    applySessionWindowGeometry(settings.value("window/geometry", QByteArray()).toByteArray());
+  }
   restoreState(windowState);
 
   if (windowState.size() == 0) {
@@ -5188,6 +5215,9 @@ void MainWindow::restoreWindowState()
 #endif  // ifdef Q_OS_WIN
   }
 
+  if (!Settings::Settings::sessionManagementEnabled.value()) {
+    viewActionFullScreen->setChecked(isFullScreen());
+  }
 }
 
 void MainWindow::handleDeferredCliMissingFile()
@@ -5270,6 +5300,10 @@ void MainWindow::changeEvent(QEvent *event)
 {
   if (event->type() == QEvent::ThemeChange) {
     setGlobalTheme();
+  } else if (event->type() == QEvent::WindowStateChange) {
+    viewActionFullScreen->blockSignals(true);
+    viewActionFullScreen->setChecked(isFullScreen());
+    viewActionFullScreen->blockSignals(false);
   }
   QMainWindow::changeEvent(event);
 }

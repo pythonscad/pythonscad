@@ -68,6 +68,7 @@ namespace {
 uint64_t sessionDirtyGenerationValue = 0;
 bool sessionSaveWarningShown = false;
 bool skipSessionSaveOnQuit = false;
+bool sessionSavedForShutdown = false;
 
 QString untitledBasenameForLanguage(int language)
 {
@@ -1268,6 +1269,16 @@ void TabManager::setSkipSessionSave(bool skip)
 bool TabManager::shouldSkipSessionSave()
 {
   return skipSessionSaveOnQuit;
+}
+
+void TabManager::markSessionSavedForShutdown()
+{
+  sessionSavedForShutdown = true;
+}
+
+bool TabManager::wasSessionSavedForShutdown()
+{
+  return sessionSavedForShutdown;
 }
 
 void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,

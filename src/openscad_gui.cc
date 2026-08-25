@@ -323,8 +323,15 @@ void markAllWindowsQuitting()
 // shutdown contexts only.
 bool saveSessionForShutdown()
 {
+  if (TabManager::wasSessionSavedForShutdown()) {
+    return true;
+  }
   markAllWindowsQuitting();
-  return writeGlobalSessionFromAllWindows();
+  const bool success = writeGlobalSessionFromAllWindows();
+  if (success) {
+    TabManager::markSessionSavedForShutdown();
+  }
+  return success;
 }
 
 constexpr int kIpcTimeoutMs = 1500;
