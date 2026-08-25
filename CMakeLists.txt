@@ -64,7 +64,7 @@ option(USE_MIMALLOC "Use mimalloc as malloc replacement." ON)
 option(USE_BUILTIN_OPENCSG "Use OpenCSG from submodule." OFF)
 option(USE_CCACHE "Use ccache to speed up compilation." ON)
 
-if(APPLE AND (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$" OR CMAKE_OSX_ARCHITECTURES STREQUAL "arm64"))
+if(APPLE AND (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$" OR CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64($|;)"))
   set(USE_MIMALLOC OFF CACHE BOOL "Use mimalloc as malloc replacement." FORCE)
   message(STATUS "Disabling mimalloc on Apple Silicon macOS")
 endif()
