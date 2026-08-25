@@ -234,7 +234,7 @@ jobs:
         run: |
           cd build/staging
 
-          cmd.exe /c "pythonscad.exe --info"
+          cmd.exe //c "pythonscad.exe --info"
           echo "cmd exit code: $?"
 
           ls -la ./pythonscad.exe
