@@ -232,18 +232,18 @@ jobs:
 
       - name: Sanity test - verify executable runs
         run: |
+
           cd build/staging
-
-          cmd.exe //c "pythonscad.exe --info"
-          echo "cmd exit code: $?"
-
+          set -x
           ls -la ./pythonscad.exe
           file ./pythonscad.exe
           ldd ./pythonscad.exe
           echo "ldd exit code: $?"
-
           find . -iname "qwindows.dll"
           ldd ./platforms/qwindows.dll
+          echo "Testing pythonscad --info..."
+          QT_DEBUG_PLUGINS=1 ./pythonscad.exe --info
+          echo "pythonscad exit code: $?"
 
           echo "Testing pythonscad --info..."
           QT_DEBUG_PLUGINS=1 ./pythonscad.exe --info
