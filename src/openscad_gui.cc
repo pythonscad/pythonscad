@@ -328,7 +328,9 @@ bool saveSessionForShutdown()
   }
   markAllWindowsQuitting();
   const bool success = writeGlobalSessionFromAllWindows();
-  TabManager::markSessionSavedForShutdown();
+  if (success) {
+    TabManager::markSessionSavedForShutdown();
+  }
   return success;
 }
 
