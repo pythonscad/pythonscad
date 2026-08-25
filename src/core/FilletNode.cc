@@ -35,6 +35,7 @@
 #include "handle_dep.h"
 #include "src/geometry/PolySetBuilder.h"
 
+#include <algorithm>
 #include <cmath>
 #include <sstream>
 
@@ -200,7 +201,7 @@ bool validateFilletEdgePairs(const std::vector<IndexedFace>& indices, EdgeKey& f
 
 std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> ps,
                                                 std::vector<bool> corner_selected, double r_, int bn,
-                                                double minang)
+                                                double minang, double min_edge_len)
 {
   double cos_minang = cos(minang * 3.1415 / 180.0);
   std::vector<Vector4d> normals, newnormals;
@@ -391,6 +392,50 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
 
         }
     */
+    // Boolean operations with a tiny overlap can leave sliver edges around the
+    // seam. Collapse those before constructing fillet patches.
+    if (min_edge_len > 0) {
+      for (auto& e : edge_db) {
+        int keep = e.first.ind1;
+        int drop = e.first.ind2;
+        const double edge_len = (vertices_copy[keep] - vertices_copy[drop]).norm();
+        if (edge_len >= min_edge_len) continue;
+
+        const bool keep_selected =
+          keep < static_cast<int>(corner_selected.size()) && corner_selected[keep];
+        const bool drop_selected =
+          drop < static_cast<int>(corner_selected.size()) && corner_selected[drop];
+        if (!keep_selected && drop_selected) std::swap(keep, drop);
+        if (keep_selected && drop_selected) {
+          vertices_copy[keep] = 0.5 * (vertices_copy[keep] + vertices_copy[drop]);
+        }
+        if (drop < static_cast<int>(corner_selected.size())) corner_selected[drop] = false;
+
+        for (size_t face_index = 0; face_index < merged.size(); face_index++) {
+          auto& face = merged[face_index];
+          const int size = static_cast<int>(face.size());
+          int duplicate = -1;
+          for (int i = 0; i < size; i++) {
+            if (face[i] != drop) continue;
+            face[i] = keep;
+            if (face[(i + 1) % size] == keep || face[(i + size - 1) % size] == keep) duplicate = i;
+          }
+          if (duplicate != -1) face.erase(face.begin() + duplicate);
+          if (face.size() >= 3) continue;
+
+          merged.erase(merged.begin() + static_cast<long>(face_index));
+          faceParents.erase(faceParents.begin() + static_cast<long>(face_index));
+          newnormals.erase(newnormals.begin() + static_cast<long>(face_index));
+          for (int& parent : faceParents) {
+            if (parent == static_cast<int>(face_index)) parent = -1;
+            else if (parent > static_cast<int>(face_index)) parent--;
+          }
+          face_index--;
+        }
+        improved = true;
+        break;
+      }
+    }
   } while (improved == true);
 
   // start builder with existing vertices to have VertexIndex available
@@ -818,5 +863,5 @@ std::unique_ptr<const Geometry> FilletNode::createGeometry() const
   } else {
     for (size_t i = 0; i < ps_merged->vertices.size(); i++) corner_selected.push_back(true);
   }
-  return createFilletInt(ps_merged, corner_selected, this->r, this->fn, this->minang);
+  return createFilletInt(ps_merged, corner_selected, this->r, this->fn, this->minang, 0);
 }

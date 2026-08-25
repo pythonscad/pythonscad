@@ -1379,6 +1379,9 @@ add_cmdline_test(previewtest         EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EX
 add_cmdline_test(previewmanifoldtest EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --enable=skin --backend=manifold --trust-python)
 add_cmdline_test(throwntogethertest  EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --preview=throwntogether --enable=skin --trust-python)
 add_cmdline_test(pythonscad          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_FILES} ARGS --render --trust-python)
+# union(..., r=) fillets require full geometry evaluation; F5 preview must
+# still show them (issue #993). Share the --render expected image.
+add_cmdline_test(pythonscadpreview   EXPERIMENTAL OPENSCAD SUFFIX png FILES ${TEST_PYTHONSCAD_DIR}/issue-993-union-fillet.py EXPECTEDDIR pythonscad ARGS --trust-python)
 add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_FILES} ARGS --trust-python)
 add_cmdline_test(pythonscadlaser     EXPERIMENTAL OPENSCAD SUFFIX svg FILES ${PYTHONSCAD_LASER_FILES}            ARGS --trust-python)
 add_cmdline_test(pythonscadoverlay      EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_OVERLAY_FILES} ARGS --render --trust-python)
