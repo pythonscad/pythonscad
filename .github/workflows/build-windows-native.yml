@@ -130,11 +130,9 @@ jobs:
         run: |
           QMAKE=$(which qmake6)
           [[ "$QMAKE" == *.exe ]] || QMAKE="${QMAKE}.exe"
-          echo "gh via cmd.exe where:"
-          cmd.exe /c "where gh" || echo "cmd where fand nichts"
-          find "/c/Program Files" -iname "gh.exe" 2>/dev/null
-          find "/c/hostedtoolcache" -iname "gh.exe" 2>/dev/null
-          export PATH="$PATH:$(cygpath -u "$(powershell.exe -NoProfile -Command '[Environment]::GetEnvironmentVariable("PATH","Machine")' | tr -d '\r')" 2>/dev/null | tr ';' ':')"
+          GH_DIR_WIN="D:\a\pythonscad\pythonscad>/c/Program Files/GitHub CLI"
+          export PATH="$(cygpath -u "$GH_DIR_WIN"):$PATH"
+          which gh
           ./scripts/ci/fetch_pyqt6_bindings.sh \
             windows-x86_64 msys2-ucrt64-qt6-python-embed "$QMAKE" \
             "$(which python)" libraries/python
