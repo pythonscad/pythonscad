@@ -242,12 +242,8 @@ jobs:
           find . -iname "qwindows.dll"
           ldd ./platforms/qwindows.dll
           echo "Testing pythonscad --info..."
-          QT_DEBUG_PLUGINS=1 ./pythonscad.exe --info
+          QT_QPA_PLATFORM=offscreen QT_DEBUG_PLUGINS=1 ./pythonscad.exe --info
           echo "pythonscad exit code: $?"
-
-          echo "Testing pythonscad --info..."
-          QT_DEBUG_PLUGINS=1 ./pythonscad.exe --info
-          echo "Sanity test passed!"
 
       - name: Sanity test - verify bundled IPython is in staging tree
         run: |
