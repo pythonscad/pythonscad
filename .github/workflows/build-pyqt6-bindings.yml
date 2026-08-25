@@ -473,6 +473,7 @@ jobs:
             "$PYTHON_EMBED_EXE" scripts/ci/pyqt6_smoke_test.py "$PYQT_OUT_WIN"
 
       - name: Publish immutable bindings release
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
