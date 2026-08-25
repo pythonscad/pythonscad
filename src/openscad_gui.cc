@@ -327,7 +327,9 @@ bool saveSessionForShutdown()
     return true;
   }
   markAllWindowsQuitting();
-  return writeGlobalSessionFromAllWindows();
+  const bool success = writeGlobalSessionFromAllWindows();
+  TabManager::markSessionSavedForShutdown();
+  return success;
 }
 
 constexpr int kIpcTimeoutMs = 1500;
