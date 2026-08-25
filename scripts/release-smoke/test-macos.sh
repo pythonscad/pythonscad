@@ -83,11 +83,25 @@ rs_require_command find
 rs_require_command hdiutil
 
 workdir=$(rs_make_workdir "$workdir_arg")
+stop_gui() {
+  local pid=${1:-}
+  [[ -n "$pid" ]] || return 0
+  kill -TERM "$pid" 2>/dev/null || true
+  for _ in 1 2 3; do
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 1
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -KILL "$pid" 2>/dev/null || true
+  fi
+  wait "$pid" 2>/dev/null || true
+}
+
 cleanup() {
   local status=$?
   if [[ -n "$gui_pid" ]]; then
-    kill -TERM "$gui_pid" 2>/dev/null || true
-    wait "$gui_pid" 2>/dev/null || true
+    stop_gui "$gui_pid"
+    gui_pid=""
   fi
   if [[ -n "$mountpoint" && -d "$mountpoint" ]]; then
     hdiutil detach "$mountpoint" >/dev/null 2>&1 || true
@@ -167,7 +181,10 @@ mkdir -p "$gui_home"
 rs_log "Smoke testing $(basename "$app"): native GUI startup"
 
 set +e
-env -u QT_QPA_PLATFORM HOME="$gui_home" "$exe" > "$gui_log" 2>&1 &
+(
+  cd "$workdir"
+  exec env -u QT_QPA_PLATFORM HOME="$gui_home" "$exe" > "$gui_log" 2>&1 </dev/null
+) &
 gui_pid=$!
 set -e
 
@@ -183,10 +200,7 @@ for _ in {1..10}; do
   sleep 1
 done
 
-kill -TERM "$gui_pid" 2>/dev/null || true
-set +e
-wait "$gui_pid"
-set -e
+stop_gui "$gui_pid"
 gui_pid=""
 
 rs_log "macOS DMG smoke tests passed"
