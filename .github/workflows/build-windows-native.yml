@@ -233,7 +233,10 @@ jobs:
       - name: Sanity test - verify executable runs
         run: |
           cd build/staging
-          ldd ./pythonscad.exe | grep -i "not found" || true
+          ls -la ./pythonscad.exe
+          file ./pythonscad.exe
+          ldd ./pythonscad.exe
+          echo "ldd exit code: $?"
           echo "Testing pythonscad --info..."
           ./pythonscad.exe --info
           echo "Sanity test passed!"
