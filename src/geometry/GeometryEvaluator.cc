@@ -1474,14 +1474,30 @@ Vector3d createFilletRound(Vector3d pt)
 
 namespace {
 
+// Boolean triangulation can leave seam edges too short for a stable fillet
+// patch. Treat edges below 5% of the requested radius as numerical slivers.
+constexpr double FILLET_SLIVER_EDGE_RATIO = 0.05;
+
+bool pointOutsideBounds(const BoundingBox& bounds, const Vector3d& pt, double eps)
+{
+  return bounds.isNull() || (pt.array() < bounds.min().array() - eps).any() ||
+         (pt.array() > bounds.max().array() + eps).any();
+}
+
 // True if pt lies on (or within eps of) any triangle of an already-tessellated ps.
 bool pointOnPolySetSurface(const PolySet& ps, const Vector3d& pt, double eps)
 {
+  if (pointOutsideBounds(ps.getBoundingBox(), pt, eps)) return false;
   for (const auto& ind : ps.indices) {
     if (ind.size() < 3) continue;
     const Vector3d a = ps.vertices[ind[0]];
     const Vector3d b = ps.vertices[ind[1]];
     const Vector3d c = ps.vertices[ind[2]];
+    BoundingBox triangleBounds;
+    triangleBounds.extend(a);
+    triangleBounds.extend(b);
+    triangleBounds.extend(c);
+    if (pointOutsideBounds(triangleBounds, pt, eps)) continue;
     Vector3d n = (b - a).cross(c - a);
     const double nlen = n.norm();
     if (nlen < 1e-18) continue;
@@ -1553,7 +1569,7 @@ std::unique_ptr<const Geometry> addFillets(std::shared_ptr<const Geometry> resul
     corner_selected.push_back(sel);
   }
 
-  return createFilletInt(psr, corner_selected, r, fn, 30.0, 0.05 * std::fabs(r));
+  return createFilletInt(psr, corner_selected, r, fn, 30.0, FILLET_SLIVER_EDGE_RATIO * std::fabs(r));
 }
 
 double concat_round(double x)

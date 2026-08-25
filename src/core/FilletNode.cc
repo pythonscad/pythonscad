@@ -395,11 +395,22 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
     // Boolean operations with a tiny overlap can leave sliver edges around the
     // seam. Collapse those before constructing fillet patches.
     if (min_edge_len > 0) {
-      for (auto& e : edge_db) {
+      auto candidate = edge_db.end();
+      for (auto edge = edge_db.begin(); edge != edge_db.end(); ++edge) {
+        const int ind1 = edge->first.ind1;
+        const int ind2 = edge->first.ind2;
+        const double edge_len = (vertices_copy[ind1] - vertices_copy[ind2]).norm();
+        if (edge_len >= min_edge_len) continue;
+        if (candidate == edge_db.end() || ind1 < candidate->first.ind1 ||
+            (ind1 == candidate->first.ind1 && ind2 < candidate->first.ind2)) {
+          candidate = edge;
+        }
+      }
+
+      if (candidate != edge_db.end()) {
+        auto& e = *candidate;
         int keep = e.first.ind1;
         int drop = e.first.ind2;
-        const double edge_len = (vertices_copy[keep] - vertices_copy[drop]).norm();
-        if (edge_len >= min_edge_len) continue;
 
         const bool keep_selected =
           keep < static_cast<int>(corner_selected.size()) && corner_selected[keep];
@@ -433,7 +444,6 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
           face_index--;
         }
         improved = true;
-        break;
       }
     }
   } while (improved == true);
