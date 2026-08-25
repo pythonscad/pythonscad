@@ -130,6 +130,7 @@ jobs:
         run: |
           QMAKE=$(which qmake6)
           [[ "$QMAKE" == *.exe ]] || QMAKE="${QMAKE}.exe"
+          export PATH="$PATH:$(cygpath -u "$(powershell.exe -NoProfile -Command '[Environment]::GetEnvironmentVariable("PATH","Machine")' | tr -d '\r')" 2>/dev/null | tr ';' ':')"
           ./scripts/ci/fetch_pyqt6_bindings.sh \
             windows-x86_64 msys2-ucrt64-qt6-python-embed "$QMAKE" \
             "$(which python)" libraries/python
