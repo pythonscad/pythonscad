@@ -412,6 +412,7 @@ jobs:
             exit 1
           fi
           cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
+          echo "SIP_SO gefunden: $SIP_SO"
 
           QTCORE_PYD=$(find /tmp/pyqt-out/PyQt6 -maxdepth 2 -iname "QtCore*.pyd" | head -1)
           PYTHON_VERSION="$(printf '%s' "$PYTHON_VERSION" | tr -d '\r' | xargs)"
