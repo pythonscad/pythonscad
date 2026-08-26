@@ -233,16 +233,20 @@ jobs:
       - name: Sanity test - verify executable runs
         run: |
           cd build/staging
-          set -x
           ls -la ./pythonscad.exe
           file ./pythonscad.exe
           ldd ./pythonscad.exe
           echo "ldd exit code: $?"
           find . -iname "qwindows.dll"
           ldd ./platforms/qwindows.dll
+
+          ls -la --time-style=full-iso Qt6Core.dll Qt6Widgets.dll Qt6Gui.dll ./platforms/qwindows.dll
+          strings Qt6Core.dll | grep -E "^6\.[0-9]+\.[0-9]+$" | head -5
+          strings ./platforms/qwindows.dll | grep -E "^6\.[0-9]+\.[0-9]+$" | head -5
+
           echo "Testing pythonscad --info..."
           QT_QPA_PLATFORM=offscreen QT_DEBUG_PLUGINS=1 ./pythonscad.exe --info
-          echo "pythonscad exit code: $?"
+          echo "Sanity test passed!"
 
       - name: Sanity test - verify bundled IPython is in staging tree
         run: |
