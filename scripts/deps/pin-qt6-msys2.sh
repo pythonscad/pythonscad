@@ -8,7 +8,7 @@ BASE_URL="https://repo.msys2.org/mingw/ucrt64"
 echo "DEBUG: Phase 1 - explizite Kernpakete installieren/pinnen" >&2
 for pkg in qt6-base qt6-5compat qt6-multimedia qt6-svg qscintilla-qt6; do
   FULL_PKG="mingw-w64-ucrt-x86_64-${pkg}"
-  FILE=$(curl -s "${BASE_URL}/" | grep -oE "${FULL_PKG}-${QT_PIN_VERSION}-[0-9]+-any\.pkg\.tar\.zst" | head -1)
+  FILE=$(curl -s "${BASE_URL}/" | grep -oE "${FULL_PKG}-${QT_PIN_VERSION}-[0-9]+-any\.pkg\.tar\.zst" | head -1) || true
   if [ -z "$FILE" ]; then
     echo "WARNUNG: keine ${QT_PIN_VERSION}-Version von $FULL_PKG im Repo gefunden" >&2
     continue
@@ -26,7 +26,7 @@ pacman -Q | grep '^mingw-w64-ucrt-x86_64-qt6-' >&2 || echo "DEBUG: keine qt6-* P
 pacman -Q | awk '{print $1, $2}' | grep '^mingw-w64-ucrt-x86_64-qt6-' | while read -r pkg version; do
   if [[ "$version" != "${QT_PIN_VERSION}"* ]]; then
     echo "Pinne $pkg von $version auf $QT_PIN_VERSION..." >&2
-    FILE=$(curl -s "${BASE_URL}/" | grep -oE "${pkg}-${QT_PIN_VERSION}-[0-9]+-any\.pkg\.tar\.zst" | head -1)
+    FILE=$(curl -s "${BASE_URL}/" | grep -oE "${pkg}-${QT_PIN_VERSION}-[0-9]+-any\.pkg\.tar\.zst" | head -1) || true
     if [ -z "$FILE" ]; then
       echo "WARNUNG: keine ${QT_PIN_VERSION}-Version von $pkg im Repo gefunden" >&2
       continue
