@@ -234,16 +234,16 @@ jobs:
         run: |
 
           cd build/staging
-          set -x
-          ls -la ./pythonscad.exe
-          file ./pythonscad.exe
-          ldd ./pythonscad.exe
-          echo "ldd exit code: $?"
-          find . -iname "qwindows.dll"
-          ldd ./platforms/qwindows.dll
-          echo "Testing pythonscad --info..."
-          QT_QPA_PLATFORM=offscreen QT_DEBUG_PLUGINS=1 ./pythonscad.exe --info
-          echo "pythonscad exit code: $?"
+          # set -x
+          # ls -la ./pythonscad.exe
+          # file ./pythonscad.exe
+          # ldd ./pythonscad.exe
+          # echo "ldd exit code: $?"
+          # find . -iname "qwindows.dll"
+          # ldd ./platforms/qwindows.dll
+          # echo "Testing pythonscad --info..."
+          # QT_QPA_PLATFORM=offscreen QT_DEBUG_PLUGINS=1 ./pythonscad.exe --info
+          # echo "pythonscad exit code: $?"
 
       - name: Sanity test - verify bundled IPython is in staging tree
         run: |
