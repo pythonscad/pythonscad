@@ -7,4 +7,4 @@ from openscad import *
 
 plate = cube([40, 40, 20])
 tower = cylinder(50, 10, fn=6).rotx(30) + [20, 20, 0]
-union(plate, tower, fn=32, r=2).show()
+union(plate, tower, fn=32, r=2).rotz(180).show()
