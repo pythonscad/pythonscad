@@ -1484,6 +1484,22 @@ bool pointOutsideBounds(const BoundingBox& bounds, const Vector3d& pt, double ep
          (pt.array() > bounds.max().array() + eps).any();
 }
 
+bool pointOnTriangle(const Vector3d& pt, const Vector3d& a, const Vector3d& b, const Vector3d& c,
+                     double eps)
+{
+  const Vector3d normal = (b - a).cross(c - a);
+  const double normalSquared = normal.squaredNorm();
+  if (normalSquared < 1e-36 || std::abs((pt - a).dot(normal)) > eps * std::sqrt(normalSquared)) {
+    return false;
+  }
+
+  // Coplanarity alone is insufficient: the point must also be inside the bounded triangle.
+  const double edgeTolerance = -1e-7 * normalSquared;
+  return normal.dot((b - a).cross(pt - a)) >= edgeTolerance &&
+         normal.dot((c - b).cross(pt - b)) >= edgeTolerance &&
+         normal.dot((a - c).cross(pt - c)) >= edgeTolerance;
+}
+
 // True if pt lies on (or within eps of) any triangle of an already-tessellated ps.
 bool pointOnPolySetSurface(const PolySet& ps, const Vector3d& pt, double eps)
 {
@@ -1498,22 +1514,7 @@ bool pointOnPolySetSurface(const PolySet& ps, const Vector3d& pt, double eps)
     triangleBounds.extend(b);
     triangleBounds.extend(c);
     if (pointOutsideBounds(triangleBounds, pt, eps)) continue;
-    Vector3d n = (b - a).cross(c - a);
-    const double nlen = n.norm();
-    if (nlen < 1e-18) continue;
-    n /= nlen;
-    const double dist = n.dot(pt - a);
-    if (std::abs(dist) > eps) continue;
-    const Vector3d q = pt - n * dist;
-    const Vector3d v0 = b - a, v1 = c - a, v2 = q - a;
-    const double d00 = v0.dot(v0), d01 = v0.dot(v1), d11 = v1.dot(v1);
-    const double d20 = v2.dot(v0), d21 = v2.dot(v1);
-    const double denom = d00 * d11 - d01 * d01;
-    if (std::abs(denom) < 1e-18) continue;
-    const double v = (d11 * d20 - d01 * d21) / denom;
-    const double w = (d00 * d21 - d01 * d20) / denom;
-    const double u = 1.0 - v - w;
-    if (u >= -1e-7 && v >= -1e-7 && w >= -1e-7) return true;
+    if (pointOnTriangle(pt, a, b, c, eps)) return true;
   }
   return false;
 }
