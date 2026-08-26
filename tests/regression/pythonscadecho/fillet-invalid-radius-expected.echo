@@ -1,0 +1,10 @@
+ERROR: fillet(): radius 2 is too large (rounded outer and hole contours overlap); reduce the fillet radius
+ERROR: fillet(): radius 2 is too large (rounded outer and hole contours overlap); reduce the fillet radius
+ERROR: fillet(): radius 6 is too large for edge 2-6 (length 10, maximum radius below 5); reduce the fillet radius
+ERROR: fillet(): radius 30 is too large (a face contour intersects itself); reduce the fillet radius
+lazy construction: ok
+face collision mesh: ValueError: fillet(): radius 2 is too large (rounded outer and hole contours overlap); reduce the fillet radius
+face collision export: ValueError: fillet(): radius 2 is too large (rounded outer and hole contours overlap); reduce the fillet radius
+edge radius: ValueError: fillet(): radius 6 is too large for edge 2-6 (length 10, maximum radius below 5); reduce the fillet radius
+union radius: ValueError: fillet(): radius 30 is too large (a face contour intersects itself); reduce the fillet radius
+

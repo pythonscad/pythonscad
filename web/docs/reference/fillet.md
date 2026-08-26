@@ -40,3 +40,13 @@ Add rounded fillets or chamfers to the edges of a solid. This is a PythonSCAD-sp
     mask = cube([30, 1, 30], center=True)
     c.fillet(3, mask, fn=20).show()
     ```
+
+Fillets support manifold corners where four or more rounded edges meet. The
+requested radius is never reduced automatically. If nearby rounded edges
+overlap or a corner cannot be closed into a valid mesh, rendering reports an
+error suggesting a smaller radius.
+
+PythonSCAD solids are lazy, so geometry errors are discovered when geometry is
+evaluated rather than when `fillet()` is called. Eager Python operations such
+as `mesh()` and `export()` raise `ValueError`; F5/F6 and command-line rendering
+print the same error in the console.

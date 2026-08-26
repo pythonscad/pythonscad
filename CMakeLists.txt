@@ -744,6 +744,7 @@ if(ENABLE_PYTHON)
     src/python/py_extrude.cc
     src/python/py_csg.cc
     src/python/py_analysis.cc
+    src/python/py_geometry.cc
     src/python/py_ops.cc
     src/python/py_io.cc
     src/python/pywidget_bridge.cc
@@ -1540,6 +1541,7 @@ set(CORE_SOURCES
   src/core/ImportNode.cc
   src/core/LinearExtrudeNode.cc
   src/core/PathExtrudeNode.cc
+  src/core/FilletDiagnostics.cc
   src/core/FilletNode.cc
   src/core/LocalScope.cc
   src/core/ModuleInstantiation.cc

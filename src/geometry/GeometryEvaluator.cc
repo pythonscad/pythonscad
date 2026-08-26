@@ -14,6 +14,7 @@
 #include "core/ColorNode.h"
 #include "core/CsgOpNode.h"
 #include "core/CurveDiscretizer.h"
+#include "core/FilletDiagnostics.h"
 #include "core/LinearExtrudeNode.h"
 #include "core/ModuleInstantiation.h"
 #include "core/OffsetNode.h"
@@ -93,6 +94,7 @@ GeometryEvaluator::GeometryEvaluator(const Tree& tree) : tree(tree)
 std::shared_ptr<const Geometry> GeometryEvaluator::evaluateGeometry(const AbstractNode& node,
                                                                     bool allownef)
 {
+  FilletDiagnostics::EvaluationScope diagnosticScope;
   auto result = smartCacheGet(node, allownef);
   if (!result) {
     // If not found in any caches, we need to evaluate the geometry
@@ -102,7 +104,7 @@ std::shared_ptr<const Geometry> GeometryEvaluator::evaluateGeometry(const Abstra
     result = this->root;
 
     // Insert the raw result into the cache.
-    smartCacheInsert(node, result);
+    if (!FilletDiagnostics::hasError()) smartCacheInsert(node, result);
   }
 
   // Convert engine-specific 3D geometry to PolySet if needed
@@ -1525,6 +1527,7 @@ std::unique_ptr<const Geometry> addFillets(std::shared_ptr<const Geometry> resul
                                            const Geometry::Geometries& children, double r, int fn)
 {
   std::shared_ptr<const PolySet> psr = PolySetUtils::getGeometryAsPolySet(result);
+  if (!psr) return nullptr;
 
   std::vector<std::shared_ptr<const PolySet>> child_ps;
   std::vector<std::unordered_set<Vector3d>> child_verts;
@@ -1663,8 +1666,14 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
     }
 #endif
 #ifdef ENABLE_CGAL
-    return ResultObject::constResult(std::shared_ptr<const Geometry>(
-      CGALUtils::applyUnion3D(*csgOpNode, actualchildren.begin(), actualchildren.end())));
+    std::shared_ptr<const Geometry> csgResult(
+      CGALUtils::applyUnion3D(*csgOpNode, actualchildren.begin(), actualchildren.end()));
+    if (csgOpNode != nullptr && csgOpNode->r != 0) {
+      std::unique_ptr<const Geometry> filleted =
+        addFillets(csgResult, actualchildren, csgOpNode->r, csgOpNode->fn);
+      return ResultObject::mutableResult(std::shared_ptr<const Geometry>(filleted.release()));
+    }
+    return ResultObject::constResult(csgResult);
 #else
     assert(false && "No boolean backend available");
 #endif
@@ -1720,7 +1729,13 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
 #endif
 #ifdef ENABLE_CGAL
     const CsgOpNode *csgOpNode = dynamic_cast<const CsgOpNode *>(&node);
-    return ResultObject::constResult(CGALUtils::applyOperator3D(*csgOpNode, children, op));
+    std::shared_ptr<const Geometry> csgResult(CGALUtils::applyOperator3D(*csgOpNode, children, op));
+    if (csgOpNode != nullptr && csgOpNode->r != 0) {
+      std::unique_ptr<const Geometry> filleted =
+        addFillets(csgResult, children, csgOpNode->r, csgOpNode->fn);
+      return ResultObject::mutableResult(std::shared_ptr<const Geometry>(filleted.release()));
+    }
+    return ResultObject::constResult(csgResult);
 #else
     assert(false && "No boolean backend available");
 #endif
@@ -1907,6 +1922,7 @@ std::vector<std::shared_ptr<const Polygon2d>> GeometryEvaluator::collectChildren
 void GeometryEvaluator::smartCacheInsert(const AbstractNode& node,
                                          const std::shared_ptr<const Geometry>& geom)
 {
+  if (FilletDiagnostics::hasError()) return;
   const std::string& key = this->tree.getIdString(node);
 
   if (CGALCache::acceptsGeometry(geom)) {

@@ -627,6 +627,7 @@ def main():
               "src/python/py_extrude.cc",
               "src/python/py_csg.cc",
               "src/python/py_analysis.cc",
+              "src/python/py_geometry.cc",
               "src/python/py_ops.cc",
               "src/python/py_io.cc",
               "src/python/pyconversion.cc",
@@ -686,6 +687,7 @@ def main():
     nodes = [
               "src/core/primitives.cc",
               "src/core/CgalAdvNode.cc",
+              "src/core/FilletDiagnostics.cc",
               "src/core/FilletNode.cc",
               "src/core/ProjectionNode.cc",
               "src/core/SurfaceNode.cc",
