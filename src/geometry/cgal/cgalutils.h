@@ -33,11 +33,9 @@ bool is_weakly_convex(const CGAL::Polyhedron_3<K>& p);
 template <typename K>
 bool is_weakly_convex(const CGAL::Surface_mesh<CGAL::Point_3<K>>& m);
 
-std::shared_ptr<const Geometry> applyOperator3D(const CsgOpNode& node,
-                                                const Geometry::Geometries& children,
+std::shared_ptr<const Geometry> applyOperator3D(const Geometry::Geometries& children,
                                                 OpenSCADOperator op);
-std::unique_ptr<const Geometry> applyUnion3D(const CsgOpNode& node,
-                                             Geometry::Geometries::iterator chbegin,
+std::unique_ptr<const Geometry> applyUnion3D(Geometry::Geometries::iterator chbegin,
                                              Geometry::Geometries::iterator chend);
 std::shared_ptr<const Geometry> applyMinkowski3D(const Geometry::Geometries& children);
 std::unique_ptr<PolySet> applyHull3D(const Geometry::Geometries& children);

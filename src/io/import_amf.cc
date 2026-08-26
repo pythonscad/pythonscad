@@ -278,8 +278,7 @@ std::unique_ptr<PolySet> AmfImporter::read(const std::string& filename)
     }
 
 #ifdef ENABLE_CGAL
-    std::unique_ptr<const Geometry> geom =
-      CGALUtils::applyUnion3D(*node, children.begin(), children.end());
+    std::unique_ptr<const Geometry> geom = CGALUtils::applyUnion3D(children.begin(), children.end());
     if (auto ps = PolySetUtils::getGeometryAsPolySet(std::move(geom))) {
       // FIXME: Unnecessary copy
       return std::make_unique<PolySet>(*ps);

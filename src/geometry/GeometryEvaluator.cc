@@ -1666,25 +1666,21 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
     }
 #endif
 #ifdef ENABLE_CGAL
-    std::shared_ptr<const Geometry> csgResult(
-      CGALUtils::applyUnion3D(*csgOpNode, actualchildren.begin(), actualchildren.end()));
-    if (csgOpNode != nullptr && csgOpNode->r != 0) {
-      std::unique_ptr<const Geometry> filleted =
-        addFillets(csgResult, actualchildren, csgOpNode->r, csgOpNode->fn);
-      return ResultObject::mutableResult(std::shared_ptr<const Geometry>(filleted.release()));
+    if (csgOpNode == nullptr || csgOpNode->r == 0) {
+      return ResultObject::constResult(std::shared_ptr<const Geometry>(
+        CGALUtils::applyUnion3D(actualchildren.begin(), actualchildren.end())));
     }
-    return ResultObject::constResult(csgResult);
+    std::shared_ptr<const Geometry> csgResult(
+      CGALUtils::applyUnion3D(actualchildren.begin(), actualchildren.end()));
+    std::unique_ptr<const Geometry> filleted =
+      addFillets(csgResult, actualchildren, csgOpNode->r, csgOpNode->fn);
+    return ResultObject::mutableResult(std::shared_ptr<const Geometry>(filleted.release()));
 #else
     assert(false && "No boolean backend available");
 #endif
     break;
   }
   case OpenSCADOperator::OFFSET: {
-    std::string instance_name;
-    AssignmentList inst_asslist;
-    auto instance = std::make_shared<ModuleInstantiation>(instance_name, inst_asslist, Location::NONE);
-    auto node1 = std::make_shared<CsgOpNode>(std::move(instance), OpenSCADOperator::UNION);
-
     Geometry::Geometries actualchildren;
     for (const auto& item : children) {
       if (item.second && !item.second->isEmpty()) actualchildren.push_back(item);
@@ -1696,7 +1692,7 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
     case 1: geom = {actualchildren.front().second}; break;
     default:
 #ifdef ENABLE_CGAL
-      geom = {CGALUtils::applyUnion3D(*node1, actualchildren.begin(), actualchildren.end())};
+      geom = {CGALUtils::applyUnion3D(actualchildren.begin(), actualchildren.end())};
 #endif
       break;
     }
@@ -1729,13 +1725,13 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
 #endif
 #ifdef ENABLE_CGAL
     const CsgOpNode *csgOpNode = dynamic_cast<const CsgOpNode *>(&node);
-    std::shared_ptr<const Geometry> csgResult(CGALUtils::applyOperator3D(*csgOpNode, children, op));
-    if (csgOpNode != nullptr && csgOpNode->r != 0) {
-      std::unique_ptr<const Geometry> filleted =
-        addFillets(csgResult, children, csgOpNode->r, csgOpNode->fn);
-      return ResultObject::mutableResult(std::shared_ptr<const Geometry>(filleted.release()));
+    if (csgOpNode == nullptr || csgOpNode->r == 0) {
+      return ResultObject::constResult(CGALUtils::applyOperator3D(children, op));
     }
-    return ResultObject::constResult(csgResult);
+    std::shared_ptr<const Geometry> csgResult(CGALUtils::applyOperator3D(children, op));
+    std::unique_ptr<const Geometry> filleted =
+      addFillets(csgResult, children, csgOpNode->r, csgOpNode->fn);
+    return ResultObject::mutableResult(std::shared_ptr<const Geometry>(filleted.release()));
 #else
     assert(false && "No boolean backend available");
 #endif
