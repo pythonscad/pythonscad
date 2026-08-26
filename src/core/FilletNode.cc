@@ -50,6 +50,9 @@
 #include <src/core/Tree.h>
 #include <src/geometry/GeometryEvaluator.h>
 #include <boost/functional/hash.hpp>
+#if !defined(__SIZEOF_INT128__)
+#include <boost/multiprecision/cpp_int.hpp>
+#endif
 #include <src/utils/hash.h>
 #include <src/geometry/PolySetUtils.h>
 
@@ -246,7 +249,11 @@ bool validateCollapsedMesh(const std::vector<IndexedFace>& indices,
 
 using IntPoint = Clipper2Lib::Point64;
 using IntPath = Clipper2Lib::Path64;
+#if defined(__SIZEOF_INT128__)
 using WideInt = __int128;
+#else
+using WideInt = boost::multiprecision::int128_t;
+#endif
 
 struct FaceProjector {
   int axis1;
