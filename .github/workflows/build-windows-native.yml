@@ -119,11 +119,6 @@ jobs:
           version: '22.1.7'
           build-type: 'release-mingw'
 
-      - name: Pin Qt6 version (pre_commands)
-        shell: msys2 {0}
-        run: |
-          python3 ./scripts/get-dependencies.py --distro msys2 --profile pythonscad-qt6 --pre-commands-only
-
       - name: Fetch compatible PyQt6 bindings
         env:
           GH_TOKEN: ${{ github.token }}
