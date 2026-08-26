@@ -14,7 +14,10 @@ for pkg in qt6-base qt6-5compat qt6-multimedia qt6-svg qscintilla-qt6; do
     continue
   fi
   echo "Installiere/pinne $FULL_PKG auf $QT_PIN_VERSION..." >&2
-  pacman -U --noconfirm "${BASE_URL}/${FILE}"
+  pacman -U --noconfirm "${BASE_URL}/${FILE}" || {
+    status=$?
+    echo "WARNUNG: pacman -U für $FULL_PKG gab Exit-Code $status zurück (evtl. nur 'up to date -- reinstalling')" >&2
+  }
 done
 
 echo "DEBUG: Phase 2 - alle qt6-* Pakete nachpinnen (transitive Deps)" >&2
@@ -28,7 +31,10 @@ pacman -Q | awk '{print $1, $2}' | grep '^mingw-w64-ucrt-x86_64-qt6-' | while re
       echo "WARNUNG: keine ${QT_PIN_VERSION}-Version von $pkg im Repo gefunden" >&2
       continue
     fi
-    pacman -U --noconfirm "${BASE_URL}/${FILE}"
+    pacman -U --noconfirm "${BASE_URL}/${FILE}" || {
+    status=$?
+    echo "WARNUNG: pacman -U für $FULL_PKG gab Exit-Code $status zurück (evtl. nur 'up to date -- reinstalling')" >&2
+  }
   fi
 done || true
 
