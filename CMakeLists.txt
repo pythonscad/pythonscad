@@ -66,7 +66,7 @@ option(USE_CCACHE "Use ccache to speed up compilation." ON)
 
 if(APPLE AND (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$" OR CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64($|;)"))
   set(USE_MIMALLOC OFF CACHE BOOL "Use mimalloc as malloc replacement." FORCE)
-  message(STATUS "Disabling mimalloc on Apple Silicon macOS")
+  message(STATUS "Disabling mimalloc for arm64 macOS target")
 endif()
 
 set(ENABLE_CAIRO "AUTO" CACHE STRING "Enable support for cairo vector graphics library")
