@@ -1,0 +1,57 @@
+{
+  "extends": [
+    "base"
+  ],
+  "distros": {
+    "debian": {
+      "extends": null,
+      "packages": [
+        "libqscintilla2-qt6-dev",
+        "libqt6core5compat6-dev",
+        "libqt6svg6-dev",
+        "qt6-base-dev",
+        "qt6-multimedia-dev",
+        "qt6-tools-dev"
+      ]
+    },
+    "ubuntu": {
+      "extends": "debian",
+      "packages": []
+    },
+    "fedora": {
+      "extends": null,
+      "packages": [
+        "qscintilla-qt6-devel",
+        "qt6-qtbase-devel",
+        "qt6-qtmultimedia-devel",
+        "qt6-qttools-devel"
+      ]
+    },
+    "arch": {
+      "extends": null,
+      "packages": [
+        "qscintilla-qt6",
+        "qt6-base",
+        "qt6-multimedia",
+        "qt6-tools"
+      ]
+    },
+    "macos": {
+      "extends": null,
+      "packages": [
+        "qt",
+        "qscintilla2"
+      ]
+    },
+    "msys2": {
+      "extends": null,
+      "packages": [
+        "qt6-base:p",
+        "qt6-5compat:p",
+        "qt6-multimedia:p",
+        "qt6-svg:p",
+        "qscintilla-qt6:p"
+      ]
+    }
+  }
+}
