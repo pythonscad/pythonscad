@@ -21,6 +21,7 @@ namespace fs = std::filesystem;
 #include "../src/geometry/GeometryEvaluator.h"
 #include "../src/core/primitives.h"
 #include "core/Tree.h"
+#include "python/py_geometry.h"
 #include <PolySet.h>
 #include <PolySetUtils.h>
 #ifdef ENABLE_LIBFIVE
@@ -512,7 +513,9 @@ PyObject *PyDataObject_call_module(PyObject *self, PyObject *args, PyObject *kwa
       std::shared_ptr<AbstractNode> child = ((PyOpenSCADObject *)arg)->node;
       Tree tree(child, "");
       GeometryEvaluator geomevaluator(tree);
-      std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+      std::shared_ptr<const Geometry> geom =
+        python_evaluate_geometry_checked(geomevaluator, *tree.root(), true);
+      if (PyErr_Occurred()) return nullptr;
       std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
       if (ps != nullptr) {
         // prepare vertices

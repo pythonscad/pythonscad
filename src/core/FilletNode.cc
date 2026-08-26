@@ -30,13 +30,20 @@
 #include "Children.h"
 #include "Parameters.h"
 #include "src/utils/printutils.h"
+#include "core/FilletDiagnostics.h"
 #include "io/fileutils.h"
 #include "Builtins.h"
 #include "handle_dep.h"
 #include "src/geometry/PolySetBuilder.h"
+#include "geometry/ClipperUtils.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cmath>
+#include <iomanip>
+#include <iterator>
+#include <map>
+#include <set>
 #include <sstream>
 
 #include <src/geometry/PolySetUtils.h>
@@ -49,6 +56,7 @@
 struct SearchReplace {
   int pol;
   int search;
+  int other = -1;
   IndexedFace replace;
 };
 
@@ -236,6 +244,483 @@ bool validateCollapsedMesh(const std::vector<IndexedFace>& indices,
   return true;
 }
 
+using IntPoint = Clipper2Lib::Point64;
+using IntPath = Clipper2Lib::Path64;
+using WideInt = __int128;
+
+struct FaceProjector {
+  int axis1;
+  int axis2;
+  double scale;
+
+  IntPoint operator()(const Vector3d& point) const
+  {
+    return {static_cast<int64_t>(std::llround(point[axis1] * scale)),
+            static_cast<int64_t>(std::llround(point[axis2] * scale))};
+  }
+};
+
+FaceProjector makeFaceProjector(const Vector3d& normal, const BoundingBox& bounds)
+{
+  int drop = 0;
+  if (std::abs(normal[1]) > std::abs(normal[drop])) drop = 1;
+  if (std::abs(normal[2]) > std::abs(normal[drop])) drop = 2;
+  const int axis1 = (drop + 1) % 3;
+  const int axis2 = (drop + 2) % 3;
+  const int scaleBits = ClipperUtils::scaleBitsFromBounds(bounds, 50);
+  return {axis1, axis2, std::ldexp(1.0, scaleBits)};
+}
+
+bool samePoint(const IntPoint& a, const IntPoint& b)
+{
+  return a.x == b.x && a.y == b.y;
+}
+
+WideInt orient2d(const IntPoint& a, const IntPoint& b, const IntPoint& c)
+{
+  return static_cast<WideInt>(b.x - a.x) * static_cast<WideInt>(c.y - a.y) -
+         static_cast<WideInt>(b.y - a.y) * static_cast<WideInt>(c.x - a.x);
+}
+
+bool pointOnSegment(const IntPoint& point, const IntPoint& a, const IntPoint& b)
+{
+  return orient2d(a, b, point) == 0 && point.x >= std::min(a.x, b.x) && point.x <= std::max(a.x, b.x) &&
+         point.y >= std::min(a.y, b.y) && point.y <= std::max(a.y, b.y);
+}
+
+bool segmentsIntersect(const IntPoint& a, const IntPoint& b, const IntPoint& c, const IntPoint& d)
+{
+  const WideInt ab_c = orient2d(a, b, c);
+  const WideInt ab_d = orient2d(a, b, d);
+  const WideInt cd_a = orient2d(c, d, a);
+  const WideInt cd_b = orient2d(c, d, b);
+  if (((ab_c > 0 && ab_d < 0) || (ab_c < 0 && ab_d > 0)) &&
+      ((cd_a > 0 && cd_b < 0) || (cd_a < 0 && cd_b > 0))) {
+    return true;
+  }
+  return (ab_c == 0 && pointOnSegment(c, a, b)) || (ab_d == 0 && pointOnSegment(d, a, b)) ||
+         (cd_a == 0 && pointOnSegment(a, c, d)) || (cd_b == 0 && pointOnSegment(b, c, d));
+}
+
+IntPath projectFace(const IndexedFace& face, const std::vector<Vector3d>& vertices,
+                    const FaceProjector& projector)
+{
+  IntPath result;
+  result.reserve(face.size());
+  for (int index : face) {
+    const IntPoint point = projector(vertices[index]);
+    if (result.empty() || !samePoint(result.back(), point)) result.push_back(point);
+  }
+  if (result.size() > 1 && samePoint(result.front(), result.back())) result.pop_back();
+  return result;
+}
+
+WideInt pathArea(const IntPath& path)
+{
+  WideInt area = 0;
+  for (size_t i = 0; i < path.size(); i++) {
+    const auto& a = path[i];
+    const auto& b = path[(i + 1) % path.size()];
+    area += static_cast<WideInt>(a.x) * b.y - static_cast<WideInt>(a.y) * b.x;
+  }
+  return area;
+}
+
+bool pathSelfIntersects(const IntPath& path)
+{
+  const size_t count = path.size();
+  for (size_t i = 0; i < count; i++) {
+    const size_t inext = (i + 1) % count;
+    for (size_t j = i + 1; j < count; j++) {
+      const size_t jnext = (j + 1) % count;
+      if (i == j || inext == j || jnext == i) continue;
+      if (segmentsIntersect(path[i], path[inext], path[j], path[jnext])) return true;
+    }
+  }
+  return false;
+}
+
+bool pathsIntersect(const IntPath& first, const IntPath& second)
+{
+  for (size_t i = 0; i < first.size(); i++) {
+    for (size_t j = 0; j < second.size(); j++) {
+      if (segmentsIntersect(first[i], first[(i + 1) % first.size()], second[j],
+                            second[(j + 1) % second.size()])) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+enum class PointLocation { Outside, Inside, Boundary };
+
+PointLocation pointInPath(const IntPoint& point, const IntPath& path)
+{
+  bool inside = false;
+  for (size_t i = 0; i < path.size(); i++) {
+    const IntPoint& first = path[i];
+    const IntPoint& second = path[(i + 1) % path.size()];
+    if (pointOnSegment(point, first, second)) return PointLocation::Boundary;
+    if ((first.y > point.y) == (second.y > point.y)) continue;
+    const long double intersectionX = static_cast<long double>(second.x - first.x) *
+                                        static_cast<long double>(point.y - first.y) /
+                                        static_cast<long double>(second.y - first.y) +
+                                      first.x;
+    if (intersectionX > point.x) inside = !inside;
+  }
+  return inside ? PointLocation::Inside : PointLocation::Outside;
+}
+
+bool validateModifiedFaces(const std::vector<IndexedFace>& original,
+                           const std::vector<IndexedFace>& modified, const std::vector<int>& faceParents,
+                           const std::vector<Vector4d>& faceNormals,
+                           const std::vector<Vector3d>& vertices, int& failedFace, std::string& reason)
+{
+  BoundingBox bounds;
+  for (const auto& vertex : vertices) bounds.extend(vertex);
+
+  for (size_t outer = 0; outer < modified.size(); outer++) {
+    if (faceParents[outer] != -1) continue;
+    const FaceProjector projector = makeFaceProjector(faceNormals[outer].head<3>(), bounds);
+    std::vector<size_t> group{outer};
+    for (size_t hole = 0; hole < modified.size(); hole++) {
+      if (faceParents[hole] == static_cast<int>(outer)) group.push_back(hole);
+    }
+
+    std::vector<IntPath> modifiedPaths;
+    std::vector<WideInt> modifiedAreas;
+    for (size_t face : group) {
+      modifiedPaths.push_back(projectFace(modified[face], vertices, projector));
+      modifiedAreas.push_back(pathArea(modifiedPaths.back()));
+      const WideInt originalArea = pathArea(projectFace(original[face], vertices, projector));
+      if (originalArea != 0 && modifiedAreas.back() != 0 &&
+          (originalArea > 0) != (modifiedAreas.back() > 0)) {
+        failedFace = static_cast<int>(face);
+        reason = "a face contour turns inside out";
+        return false;
+      }
+      // A fillet may consume a face exactly. The replacement strips close the
+      // mesh, so a zero-area residual contour is valid and needs no tessellation.
+      if (modifiedAreas.back() != 0 && pathSelfIntersects(modifiedPaths.back())) {
+        failedFace = static_cast<int>(face);
+        reason = "a face contour intersects itself";
+        return false;
+      }
+    }
+
+    if (modifiedAreas.front() == 0) {
+      for (size_t i = 1; i < modifiedAreas.size(); i++) {
+        if (modifiedAreas[i] == 0) continue;
+        failedFace = static_cast<int>(group[i]);
+        reason = "a hole remains after its outer face is consumed";
+        return false;
+      }
+      continue;
+    }
+
+    for (size_t i = 0; i < modifiedPaths.size(); i++) {
+      for (size_t j = i + 1; j < modifiedPaths.size(); j++) {
+        if (modifiedAreas[i] == 0 || modifiedAreas[j] == 0) continue;
+        const bool boundariesIntersect = pathsIntersect(modifiedPaths[i], modifiedPaths[j]);
+        const PointLocation secondInFirst = pointInPath(modifiedPaths[j].front(), modifiedPaths[i]);
+        const PointLocation firstInSecond = pointInPath(modifiedPaths[i].front(), modifiedPaths[j]);
+        const bool invalidContainment =
+          i == 0 ? secondInFirst != PointLocation::Inside || firstInSecond != PointLocation::Outside
+                 : secondInFirst != PointLocation::Outside || firstInSecond != PointLocation::Outside;
+        if (boundariesIntersect || invalidContainment) {
+          failedFace = static_cast<int>(group[j]);
+          reason = "rounded outer and hole contours overlap";
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+std::string radiusFailure(double radius, const std::string& reason)
+{
+  std::ostringstream message;
+  message << "fillet(): radius " << std::setprecision(8) << radius << " is too large (" << reason
+          << "); reduce the fillet radius";
+  return message.str();
+}
+
+void reportFilletError(const std::string& message)
+{
+  FilletDiagnostics::setError(message);
+  LOG(message_group::Error, "%1$s", message);
+}
+
+using FilletEdgeMap = std::unordered_map<EdgeKey, EdgeVal, boost::hash<EdgeKey>>;
+using BoundaryKey = std::pair<int, int>;
+
+BoundaryKey boundaryKey(int first, int second)
+{
+  return first < second ? BoundaryKey{first, second} : BoundaryKey{second, first};
+}
+
+const IndexedFace& cornerChain(const EdgeKey& key, const EdgeVal& edge, int vertex)
+{
+  return vertex == key.ind1 ? edge.bez1 : edge.bez2;
+}
+
+int cornerEndpointOnFace(const EdgeKey& key, const EdgeVal& edge, int vertex, int face)
+{
+  const auto& chain = cornerChain(key, edge, vertex);
+  if (face == edge.facea) return chain.front();
+  if (face == edge.faceb) return chain.back();
+  return -1;
+}
+
+bool addBoundarySegment(std::map<int, std::set<int>>& adjacency,
+                        std::map<BoundaryKey, std::pair<int, int>>& directions, int first, int second,
+                        int desiredFirst, int desiredSecond)
+{
+  if (first == second) return true;
+  const BoundaryKey key = boundaryKey(first, second);
+  auto inserted = directions.emplace(key, std::pair<int, int>{desiredFirst, desiredSecond});
+  if (!inserted.second && inserted.first->second != std::pair<int, int>{desiredFirst, desiredSecond}) {
+    return false;
+  }
+  adjacency[first].insert(second);
+  adjacency[second].insert(first);
+  return true;
+}
+
+bool orderBoundaryLoop(const std::map<int, std::set<int>>& adjacency,
+                       const std::map<BoundaryKey, std::pair<int, int>>& directions,
+                       IndexedFace& boundary)
+{
+  if (adjacency.size() < 3) return false;
+  for (const auto& vertex : adjacency) {
+    if (vertex.second.size() != 2) return false;
+  }
+
+  const int start = adjacency.begin()->first;
+  int previous = -1;
+  int current = start;
+  do {
+    boundary.push_back(current);
+    const auto& neighbors = adjacency.at(current);
+    int next = *neighbors.begin();
+    if (next == previous) next = *std::next(neighbors.begin());
+    previous = current;
+    current = next;
+    if (boundary.size() > adjacency.size()) return false;
+  } while (current != start);
+  if (boundary.size() != adjacency.size()) return false;
+
+  const auto firstDirection = directions.at(boundaryKey(boundary[0], boundary[1]));
+  if (firstDirection != std::pair<int, int>{boundary[0], boundary[1]}) {
+    std::reverse(boundary.begin(), boundary.end());
+  }
+  for (size_t i = 0; i < boundary.size(); i++) {
+    const int first = boundary[i];
+    const int second = boundary[(i + 1) % boundary.size()];
+    if (directions.at(boundaryKey(first, second)) != std::pair<int, int>{first, second}) return false;
+  }
+  return true;
+}
+
+bool appendHighValenceCorner(PolySetBuilder& builder, int vertex, int resolution, double radius,
+                             const std::vector<Vector3d>& originalVertices,
+                             const std::vector<Vector3d>& plannedVertices,
+                             const std::vector<IndexedFace>& faces, const std::vector<int>& faceParents,
+                             const std::vector<int>& incidentFaces,
+                             const std::vector<int>& incidentPositions,
+                             const std::vector<int>& roundedNeighbors, const FilletEdgeMap& edgeDb,
+                             std::string& reason)
+{
+  std::map<int, std::set<int>> adjacency;
+  std::map<BoundaryKey, std::pair<int, int>> directions;
+  struct OpenBoundary {
+    int endpoint;
+    int desiredFirst;
+    int desiredSecond;
+  };
+  std::vector<OpenBoundary> openBoundaries;
+  for (int other : roundedNeighbors) {
+    const EdgeKey key(vertex, other);
+    const auto edgeIt = edgeDb.find(key);
+    if (edgeIt == edgeDb.end() || edgeIt->second.sel != 1) {
+      reason = "the selected-edge fan is incomplete";
+      return false;
+    }
+    const auto& chain = cornerChain(key, edgeIt->second, vertex);
+    if (chain.size() < 2) {
+      reason = "a rounded edge has no usable corner boundary";
+      return false;
+    }
+    for (size_t i = 0; i + 1 < chain.size(); i++) {
+      const bool atStart = vertex == key.ind1;
+      const int desiredFirst = atStart ? chain[i + 1] : chain[i];
+      const int desiredSecond = atStart ? chain[i] : chain[i + 1];
+      if (!addBoundarySegment(adjacency, directions, chain[i], chain[i + 1], desiredFirst,
+                              desiredSecond)) {
+        reason = "corner boundary directions disagree";
+        return false;
+      }
+    }
+  }
+
+  for (size_t i = 0; i < incidentFaces.size(); i++) {
+    const int faceIndex = incidentFaces[i];
+    const auto& face = faces[faceIndex];
+    const int position = incidentPositions[i];
+    const int faceSize = static_cast<int>(face.size());
+    const int previous = face[(position + faceSize - 1) % faceSize];
+    const int next = face[(position + 1) % faceSize];
+    const EdgeKey incomingKey(previous, vertex);
+    const EdgeKey outgoingKey(vertex, next);
+    const auto incoming = edgeDb.find(incomingKey);
+    const auto outgoing = edgeDb.find(outgoingKey);
+    const bool incomingSelected = incoming != edgeDb.end() && incoming->second.sel == 1;
+    const bool outgoingSelected = outgoing != edgeDb.end() && outgoing->second.sel == 1;
+    if (!incomingSelected && !outgoingSelected) continue;
+
+    const int incomingPoint =
+      incomingSelected ? cornerEndpointOnFace(incomingKey, incoming->second, vertex, faceIndex) : -1;
+    const int outgoingPoint =
+      outgoingSelected ? cornerEndpointOnFace(outgoingKey, outgoing->second, vertex, faceIndex) : -1;
+    if ((incomingSelected && incomingPoint < 0) || (outgoingSelected && outgoingPoint < 0)) {
+      reason = "face and rounded-edge boundaries do not connect";
+      return false;
+    }
+    if (incomingSelected && outgoingSelected) {
+      if (!addBoundarySegment(adjacency, directions, incomingPoint, outgoingPoint, outgoingPoint,
+                              incomingPoint)) {
+        reason = "face and rounded-edge boundary directions disagree";
+        return false;
+      }
+    } else if (incomingSelected) {
+      openBoundaries.push_back({incomingPoint, vertex, incomingPoint});
+    } else {
+      openBoundaries.push_back({outgoingPoint, outgoingPoint, vertex});
+    }
+  }
+
+  const Vector3d corner = originalVertices[vertex];
+
+  std::set<int> unvisited;
+  for (const auto& entry : adjacency) unvisited.insert(entry.first);
+  while (!unvisited.empty()) {
+    std::set<int> component;
+    std::vector<int> pending{*unvisited.begin()};
+    while (!pending.empty()) {
+      const int current = pending.back();
+      pending.pop_back();
+      if (!component.insert(current).second) continue;
+      unvisited.erase(current);
+      for (int neighbor : adjacency.at(current)) pending.push_back(neighbor);
+    }
+
+    std::map<int, std::set<int>> componentAdjacency;
+    std::map<BoundaryKey, std::pair<int, int>> componentDirections;
+    for (int current : component) {
+      for (int neighbor : adjacency.at(current)) {
+        if (current > neighbor || component.count(neighbor) == 0) continue;
+        const BoundaryKey key = boundaryKey(current, neighbor);
+        const auto direction = directions.at(key);
+        if (!addBoundarySegment(componentAdjacency, componentDirections, current, neighbor,
+                                direction.first, direction.second)) {
+          reason = "corner boundary directions disagree";
+          return false;
+        }
+      }
+    }
+
+    size_t openCount = 0;
+    for (const auto& open : openBoundaries) {
+      if (component.count(open.endpoint) == 0) continue;
+      openCount++;
+      if (!addBoundarySegment(componentAdjacency, componentDirections, open.endpoint, vertex,
+                              open.desiredFirst, open.desiredSecond)) {
+        reason = "open corner-fan boundary directions disagree";
+        return false;
+      }
+    }
+    if (openCount != 0 && openCount != 2) {
+      reason = "a selected-edge fan does not have exactly two ends";
+      return false;
+    }
+
+    IndexedFace boundary;
+    if (!orderBoundaryLoop(componentAdjacency, componentDirections, boundary)) {
+      reason = "the corner opening is not one simple closed loop";
+      return false;
+    }
+
+    const auto originalVertex = std::find(boundary.begin(), boundary.end(), vertex);
+    if (originalVertex != boundary.end()) {
+      std::rotate(boundary.begin(), originalVertex, boundary.end());
+      for (size_t i = 1; i + 1 < boundary.size(); i++) {
+        builder.appendPolygon({vertex, boundary[i], boundary[i + 1]});
+      }
+      continue;
+    }
+
+    Eigen::MatrixXd planes(incidentFaces.size(), 3);
+    Eigen::VectorXd offsets(incidentFaces.size());
+    for (size_t i = 0; i < incidentFaces.size(); i++) {
+      Vector3d normal = calcTriangleNormal(originalVertices, faces[incidentFaces[i]]).head<3>();
+      if (faceParents[incidentFaces[i]] != -1) normal = -normal;
+      normal.normalize();
+      planes.row(i) = normal;
+      offsets[i] = normal.dot(corner) - std::abs(radius);
+    }
+    const Vector3d ballCenter = planes.colPivHouseholderQr().solve(offsets);
+    if (!ballCenter.allFinite()) {
+      reason = "the incident face planes do not define a finite corner";
+      return false;
+    }
+    const Vector3d centerDirection = corner - ballCenter;
+    if (centerDirection.norm() < 1e-12) {
+      reason = "the incident face planes define a degenerate corner";
+      return false;
+    }
+    const Vector3d patchCenter = ballCenter + centerDirection.normalized() * std::abs(radius);
+    if (!patchCenter.allFinite()) {
+      reason = "the corner patch center is not finite";
+      return false;
+    }
+
+    const int rings = std::max(2, resolution);
+    IndexedFace previousRing = boundary;
+    for (int ring = 1; ring < rings - 1; ring++) {
+      const double t = static_cast<double>(ring) / static_cast<double>(rings - 1);
+      IndexedFace currentRing;
+      currentRing.reserve(boundary.size());
+      for (int boundaryIndex : boundary) {
+        const Vector3d point = plannedVertices[boundaryIndex];
+        Vector3d tangent = corner - point;
+        if (tangent.norm() < 1e-12) tangent = patchCenter - point;
+        const double controlLength = std::min(std::abs(radius), (patchCenter - point).norm());
+        const Vector3d control = point + tangent.normalized() * controlLength;
+        const Vector3d innerPoint = Bezier(t, point, control, patchCenter);
+        if (!innerPoint.allFinite()) {
+          reason = "the corner patch contains a non-finite point";
+          return false;
+        }
+        currentRing.push_back(builder.vertexIndex(innerPoint));
+      }
+      for (size_t i = 0; i < boundary.size(); i++) {
+        const size_t next = (i + 1) % boundary.size();
+        builder.appendPolygon({previousRing[i], previousRing[next], currentRing[next], currentRing[i]});
+      }
+      previousRing = std::move(currentRing);
+    }
+
+    const int centerIndex = builder.vertexIndex(patchCenter);
+    for (size_t i = 0; i < boundary.size(); i++) {
+      const size_t next = (i + 1) % boundary.size();
+      builder.appendPolygon({previousRing[i], previousRing[next], centerIndex});
+    }
+  }
+  return true;
+}
+
 }  // namespace
 
 std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> ps,
@@ -251,11 +736,13 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
 
   EdgeKey failedEdge;
   if (!validateFilletEdgePairs(merged, failedEdge)) {
-    LOG(message_group::Error,
-        "fillet() cannot process the selected object: edge %1$d-%2$d is not shared by exactly two "
-        "oppositely-oriented faces. This can happen when the fillet radius collides with nearby "
-        "geometry; try reducing the fillet radius or applying fillet() before unioning adjacent solids.",
-        failedEdge.ind1, failedEdge.ind2);
+    std::ostringstream message;
+    message << "fillet() cannot process the selected object: edge " << failedEdge.ind1 << "-"
+            << failedEdge.ind2
+            << " is not shared by exactly two oppositely-oriented faces. This can happen when the "
+               "fillet radius collides with nearby geometry; try reducing the fillet radius or applying "
+               "fillet() before unioning adjacent solids.";
+    reportFilletError(message.str());
     return PolySet::createEmpty();
   }
 
@@ -309,8 +796,6 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
         double d = fan.dot(fbn);
         e.second.sel = 0;
         if (d >= cos_minang) continue;  // dont create facets when the angle conner is too small
-        if (polinds[e.first.ind1].size() != 3) continue;  // start must be 3edge corner
-        if (polinds[e.first.ind2].size() != 3) continue;  // start must be 3edge corner
 
         e.second.sel = 1;
         corner_rounds[e.first.ind1].push_back(e.first.ind2);
@@ -501,6 +986,25 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
     }
   } while (improved == true);
 
+  const auto closesRoundedCorner = [&](int vertex) {
+    return corner_rounds[vertex].size() >= 3 && corner_rounds[vertex].size() == polinds[vertex].size();
+  };
+
+  for (const auto& edge : edge_db) {
+    if (edge.second.sel != 1) continue;
+    const double edgeLength = (vertices_copy[edge.first.ind2] - vertices_copy[edge.first.ind1]).norm();
+    const int trimmedEnds =
+      (closesRoundedCorner(edge.first.ind1) ? 1 : 0) + (closesRoundedCorner(edge.first.ind2) ? 1 : 0);
+    if (trimmedEnds == 0 || edgeLength > trimmedEnds * std::abs(r_) + 1e-9) continue;
+
+    std::ostringstream message;
+    message << "fillet(): radius " << std::setprecision(8) << r_ << " is too large for edge "
+            << edge.first.ind1 << "-" << edge.first.ind2 << " (length " << edgeLength
+            << ", maximum radius below " << edgeLength / trimmedEnds << "); reduce the fillet radius";
+    reportFilletError(message.str());
+    return PolySet::createEmpty();
+  }
+
   // start builder with existing vertices to have VertexIndex available
   //
   PolySetBuilder builder;
@@ -510,6 +1014,7 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
 
   SearchReplace s;
   std::vector<SearchReplace> sp;
+  std::unordered_map<EdgeKey, IndexedFace, boost::hash<EdgeKey>> taperedMiddles;
 
   // plan fillets of all edges now
   for (auto& e : edge_db) {
@@ -518,8 +1023,8 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
       Vector3d p2 = vertices_copy[e.first.ind2];
       Vector3d p1org = p1, p2org = p2;
       Vector3d dir = p2 - p1;
-      if (corner_rounds[e.first.ind1].size() >= 3) p1 += dir.normalized() * r_;
-      if (corner_rounds[e.first.ind2].size() >= 3) p2 -= dir.normalized() * r_;
+      if (closesRoundedCorner(e.first.ind1)) p1 += dir.normalized() * r_;
+      if (closesRoundedCorner(e.first.ind2)) p2 -= dir.normalized() * r_;
       dir = dir.normalized();  // TODO
       auto& facea = merged[e.second.facea];
       auto& faceb = merged[e.second.faceb];
@@ -572,7 +1077,7 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
         }
       }
 
-      if (corner_rounds[e.first.ind1].size() == 3) {
+      if (closesRoundedCorner(e.first.ind1)) {
         if ((fbn.cross(fan)).dot(e_fa1p) < 0 || (fbn.cross(fan)).dot(e_fb1p) < 0) {
           if ((e_fa1p.cross(e_fa1)).dot(fan) * fanf < 0) {
             e_fa1 = -e_fa1 * fanf - 2 * (p2org - p1org).normalized();
@@ -630,7 +1135,7 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
         }
       }
 
-      if (corner_rounds[e.first.ind2].size() == 3) {
+      if (closesRoundedCorner(e.first.ind2)) {
         if (-(fbn.cross(fan)).dot(e_fa2p) < 0 || -(fbn.cross(fan)).dot(e_fb2p) < 0) {
           if (-(e_fa2p.cross(e_fa2)).dot(fan) * fanf < 0) {
             e_fa2 = -e_fa2 * fanf + 2 * dir;
@@ -653,39 +1158,71 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
       e_fb2 *= r_;
 
       // Calculate bezier patches
+      const bool taperStart = polinds[e.first.ind1].size() > 3 && !closesRoundedCorner(e.first.ind1);
+      const bool taperEnd = polinds[e.first.ind2].size() > 3 && !closesRoundedCorner(e.first.ind2);
+      IndexedFace taperedMiddle;
+      if (taperStart && taperEnd) taperedMiddle.reserve(bn);
       for (int i = 0; i < bn; i++) {
         double f = (double)i / (double)(bn - 1);  // from 0 to 1
-        e.second.bez1.push_back(
-          builder.vertexIndex(p1 + e_fa1 - 2 * f * e_fa1 + f * f * (e_fa1 + e_fb1)));
-        e.second.bez2.push_back(
-          builder.vertexIndex(p2 + e_fa2 - 2 * f * e_fa2 + f * f * (e_fa2 + e_fb2)));
+        const Vector3d roundedStart = p1 + e_fa1 - 2 * f * e_fa1 + f * f * (e_fa1 + e_fb1);
+        const Vector3d roundedEnd = p2 + e_fa2 - 2 * f * e_fa2 + f * f * (e_fa2 + e_fb2);
+        const Vector3d startPoint = taperStart ? vertices_copy[e.first.ind1] : roundedStart;
+        const Vector3d endPoint = taperEnd ? vertices_copy[e.first.ind2] : roundedEnd;
+        e.second.bez1.push_back(builder.vertexIndex(startPoint));
+        e.second.bez2.push_back(builder.vertexIndex(endPoint));
+        if (taperStart && taperEnd) {
+          taperedMiddle.push_back(builder.vertexIndex((roundedStart + roundedEnd) / 2.0));
+        }
       }
+      if (!taperedMiddle.empty()) taperedMiddles.emplace(e.first, std::move(taperedMiddle));
+
+      const auto middle = taperedMiddles.find(e.first);
+      const int middleFaceA = middle == taperedMiddles.end() ? -1 : middle->second.front();
+      const int middleFaceB = middle == taperedMiddles.end() ? -1 : middle->second.back();
+      const auto railReplacement = [&](int faceIndex, int search, int other, int endpoint,
+                                       int middlePoint) {
+        IndexedFace replacement{endpoint};
+        if (middlePoint < 0) return replacement;
+        const auto& face = merged[faceIndex];
+        const auto position = std::find(face.begin(), face.end(), search);
+        if (position == face.end()) return replacement;
+        const size_t index = std::distance(face.begin(), position);
+        const bool outgoing = face[(index + 1) % face.size()] == other;
+        if (outgoing) replacement.push_back(middlePoint);
+        else replacement.insert(replacement.begin(), middlePoint);
+        return replacement;
+      };
       s.pol = e.second.facea;  // laengsseite1
       s.search = e.first.ind1;
-      s.replace = {e.second.bez1[0]};
+      s.other = e.first.ind2;
+      s.replace = railReplacement(s.pol, s.search, s.other, e.second.bez1[0], middleFaceA);
       sp.push_back(s);
       s.pol = e.second.facea;  // laengsseite1
       s.search = e.first.ind2;
-      s.replace = {e.second.bez2[0]};
+      s.other = e.first.ind1;
+      s.replace = railReplacement(s.pol, s.search, s.other, e.second.bez2[0], middleFaceA);
       sp.push_back(s);
 
       s.pol = e.second.faceb;  // laengsseite2
       s.search = e.first.ind2;
-      s.replace = {e.second.bez2[bn - 1]};
+      s.other = e.first.ind1;
+      s.replace = railReplacement(s.pol, s.search, s.other, e.second.bez2[bn - 1], middleFaceB);
       sp.push_back(s);
       s.pol = e.second.faceb;  // laengsseite2
       s.search = e.first.ind1;
-      s.replace = {e.second.bez1[bn - 1]};
+      s.other = e.first.ind2;
+      s.replace = railReplacement(s.pol, s.search, s.other, e.second.bez1[bn - 1], middleFaceB);
       sp.push_back(s);
 
       // stirnseite 1
-      if (corner_rounds[e.first.ind1].size() == 1) {
+      if (corner_rounds[e.first.ind1].size() == 1 && polinds[e.first.ind1].size() == 3) {
         for (size_t i = 0; i < polinds[e.first.ind1].size(); i++) {
           int faceid = polinds[e.first.ind1][i];
           if (faceid == e.second.facea) continue;
           if (faceid == e.second.faceb) continue;
           s.pol = faceid;  // stirnseite1
           s.search = e.first.ind1;
+          s.other = -1;
           s.replace = {e.second.bez1};
           std::reverse(s.replace.begin(), s.replace.end());
           sp.push_back(s);
@@ -693,13 +1230,14 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
       }
 
       // stirnseite2
-      if (corner_rounds[e.first.ind2].size() == 1) {
+      if (corner_rounds[e.first.ind2].size() == 1 && polinds[e.first.ind2].size() == 3) {
         for (size_t i = 0; i < polinds[e.first.ind2].size(); i++) {
           int faceid = polinds[e.first.ind2][i];
           if (faceid == e.second.facea) continue;
           if (faceid == e.second.faceb) continue;
           s.pol = faceid;  // stirnseite2
           s.search = e.first.ind2;
+          s.other = -1;
           s.replace = {e.second.bez2};
           sp.push_back(s);
         }
@@ -715,35 +1253,62 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   std::vector<IndexedFace> newfaces;
   for (size_t i = 0; i < merged.size(); i++) {
     const IndexedFace& face = merged[i];
+    const int faceSize = static_cast<int>(face.size());
     IndexedFace newface;
-    for (size_t j = 0; j < face.size(); j++) {
-      int ind = face[j];
-      newface.push_back(ind);
-    }
-    int fn = newface.size();
-    // does newface need any mods ?
-    for (size_t j = 0; j < sp.size(); j++) {  // TODO effektiver, sp sortiren und 0 groesser machen
-      if ((size_t)sp[j].pol == i) {
-        int needle = sp[j].search;
-        for (int k = 0; k < fn; k++) {  // all possible shifts
-          if (newface[k] == needle) {
-            // match bei shift k gefunden
-            IndexedFace tmp = sp[j].replace;
-            for (int l = 0; l < fn - 1; l++) {
-              tmp.push_back(newface[(k + 1 + l) % fn]);
-            }
-            newface = tmp;
-            fn = newface.size();
-            break;
-          }
+    for (int position = 0; position < faceSize; position++) {
+      const int vertex = face[position];
+      const int previous = face[(position + faceSize - 1) % faceSize];
+      const int next = face[(position + 1) % faceSize];
+      IndexedFace incoming;
+      IndexedFace outgoing;
+      IndexedFace extra;
+      for (const auto& replacement : sp) {
+        if (replacement.pol != static_cast<int>(i) || replacement.search != vertex) continue;
+        if (replacement.other == previous) {
+          incoming.insert(incoming.end(), replacement.replace.begin(), replacement.replace.end());
+        } else if (replacement.other == next) {
+          outgoing.insert(outgoing.end(), replacement.replace.begin(), replacement.replace.end());
+        } else {
+          extra.insert(extra.end(), replacement.replace.begin(), replacement.replace.end());
         }
       }
-    }
+      if (incoming.empty() && outgoing.empty() && extra.empty()) {
+        newface.push_back(vertex);
+        continue;
+      }
 
+      IndexedFace points;
+      const bool highValenceOpenFan =
+        polinds[vertex].size() > 3 && extra.empty() && incoming.empty() != outgoing.empty();
+      if (highValenceOpenFan && outgoing.empty()) {
+        points.insert(points.end(), incoming.begin(), incoming.end());
+        points.push_back(vertex);
+      } else if (highValenceOpenFan) {
+        points.push_back(vertex);
+        points.insert(points.end(), outgoing.begin(), outgoing.end());
+      } else {
+        points.insert(points.end(), incoming.begin(), incoming.end());
+        points.insert(points.end(), extra.begin(), extra.end());
+        points.insert(points.end(), outgoing.begin(), outgoing.end());
+      }
+      for (int point : points) {
+        if (newface.empty() || newface.back() != point) newface.push_back(point);
+      }
+    }
+    if (newface.size() > 1 && newface.front() == newface.back()) newface.pop_back();
     newfaces.push_back(newface);
   }
   std::vector<Vector3d> vertices;
   builder.copyVertices(vertices);
+
+  int failedFace = -1;
+  std::string failureReason;
+  if (!validateModifiedFaces(merged, newfaces, faceParents, newnormals, vertices, failedFace,
+                             failureReason)) {
+    reportFilletError(radiusFailure(r_, failureReason));
+    return PolySet::createEmpty();
+  }
+
   std::vector<Vector3f> verticesFloat;
   for (const auto& v : vertices) verticesFloat.push_back(v.cast<float>());
 
@@ -764,20 +1329,48 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   }
 
   // add Rounded edges
+  const auto appendStripSection = [&](const IndexedFace& first, const IndexedFace& second) {
+    for (int i = 0; i < bn - 1; i++) {
+      const int start = first[i];
+      const int startNext = first[i + 1];
+      const int endNext = second[i + 1];
+      const int end = second[i];
+      if (start == startNext && end == endNext) continue;
+      if (start == startNext) {
+        builder.appendPolygon({start, endNext, end});
+      } else if (end == endNext) {
+        builder.appendPolygon({start, startNext, end});
+      } else {
+        builder.appendPolygon({start, startNext, endNext, end});
+      }
+    }
+  };
   for (auto& e : edge_db) {
     if (e.second.sel == 1) {
-      // now create the faces
-      for (int i = 0; i < bn - 1; i++) {
-        builder.appendPolygon(
-          {e.second.bez1[i], e.second.bez1[i + 1], e.second.bez2[i + 1], e.second.bez2[i]});
+      const auto middle = taperedMiddles.find(e.first);
+      if (middle == taperedMiddles.end()) {
+        appendStripSection(e.second.bez1, e.second.bez2);
+      } else {
+        appendStripSection(e.second.bez1, middle->second);
+        appendStripSection(middle->second, e.second.bez2);
       }
     }
   }
   // add missing 3 corner patches
   //
   for (size_t i = 0; i < vertices_copy.size(); i++) {
-    if (corner_rounds[i].size() > 3) {
-      printf("corner %ld not possible\n", i);
+    if (polinds[i].size() > 3 && corner_rounds[i].size() == polinds[i].size()) {
+      std::string reason;
+      if (!appendHighValenceCorner(builder, static_cast<int>(i), bn, r_, vertices_copy, vertices, merged,
+                                   faceParents, polinds[i], polposs[i], corner_rounds[i], edge_db,
+                                   reason)) {
+        std::ostringstream message;
+        message << "fillet(): cannot build a valid radius " << std::setprecision(8) << r_
+                << " fillet at vertex " << i << " with " << corner_rounds[i].size() << " rounded edges ("
+                << reason << ")";
+        reportFilletError(message.str());
+        return PolySet::createEmpty();
+      }
     } else if (corner_rounds[i].size() == 3) {
       // now get the right ordering of corner_rounds[i]
       IndexedFace face[3];
