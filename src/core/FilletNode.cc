@@ -157,6 +157,9 @@ struct FilletEdgePair {
   int faceb = -1;
 };
 
+// Reject an edge collapse if it leaves an effectively zero-area face.
+constexpr double COLLAPSED_FACE_MIN_RELATIVE_AREA = 1e-12;
+
 bool validateFilletEdgePairs(const std::vector<IndexedFace>& indices, EdgeKey& failedEdge)
 {
   std::unordered_map<EdgeKey, FilletEdgePair, boost::hash<EdgeKey>> edge_db;
@@ -191,6 +194,42 @@ bool validateFilletEdgePairs(const std::vector<IndexedFace>& indices, EdgeKey& f
   for (const auto& edge : edge_db) {
     if (edge.second.facea == -1 || edge.second.faceb == -1) {
       failedEdge = edge.first;
+      return false;
+    }
+  }
+  return true;
+}
+
+bool validateCollapsedMesh(const std::vector<IndexedFace>& indices,
+                           const std::vector<Vector3d>& vertices,
+                           const std::vector<Vector4d>& referenceNormals)
+{
+  EdgeKey failedEdge;
+  if (!validateFilletEdgePairs(indices, failedEdge) || indices.size() != referenceNormals.size()) {
+    return false;
+  }
+
+  for (size_t faceIndex = 0; faceIndex < indices.size(); faceIndex++) {
+    const auto& face = indices[faceIndex];
+    if (face.size() < 3) return false;
+    for (size_t i = 0; i < face.size(); i++) {
+      for (size_t j = i + 1; j < face.size(); j++) {
+        if (face[i] == face[j]) return false;
+      }
+    }
+
+    Vector3d area = Vector3d::Zero();
+    double maxEdgeSquared = 0;
+    for (size_t i = 0; i < face.size(); i++) {
+      const Vector3d& current = vertices[face[i]];
+      const Vector3d& next = vertices[face[(i + 1) % face.size()]];
+      area += current.cross(next);
+      maxEdgeSquared = std::max(maxEdgeSquared, (next - current).squaredNorm());
+    }
+    if (!area.allFinite() || maxEdgeSquared == 0 ||
+        area.squaredNorm() <= maxEdgeSquared * maxEdgeSquared * COLLAPSED_FACE_MIN_RELATIVE_AREA *
+                                COLLAPSED_FACE_MIN_RELATIVE_AREA ||
+        area.dot(referenceNormals[faceIndex].head<3>()) <= 0) {
       return false;
     }
   }
@@ -408,6 +447,11 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
       }
 
       if (candidate != edge_db.end()) {
+        const auto vertices_before_collapse = vertices_copy;
+        const auto merged_before_collapse = merged;
+        const auto face_parents_before_collapse = faceParents;
+        const auto normals_before_collapse = newnormals;
+        const auto selected_before_collapse = corner_selected;
         auto& e = *candidate;
         int keep = e.first.ind1;
         int drop = e.first.ind2;
@@ -443,7 +487,16 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
           }
           face_index--;
         }
-        improved = true;
+        if (validateCollapsedMesh(merged, vertices_copy, newnormals)) {
+          newnormals = calcTriangleNormals(vertices_copy, merged);
+          improved = true;
+        } else {
+          vertices_copy = vertices_before_collapse;
+          merged = merged_before_collapse;
+          faceParents = face_parents_before_collapse;
+          newnormals = normals_before_collapse;
+          corner_selected = selected_before_collapse;
+        }
       }
     }
   } while (improved == true);
