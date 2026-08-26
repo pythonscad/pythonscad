@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo "DEBUG: pin-qt6-msys2.sh gestartet" >&2
+which pacman curl awk grep || echo "DEBUG: eines der Tools fehlt im PATH" >&2
+
 QT_PIN_VERSION="6.11.0"
 BASE_URL="https://repo.msys2.org/mingw/ucrt64"
 
