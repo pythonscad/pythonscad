@@ -1923,7 +1923,8 @@ std::vector<std::shared_ptr<const Polygon2d>> GeometryEvaluator::collectChildren
 void GeometryEvaluator::smartCacheInsert(const AbstractNode& node,
                                          const std::shared_ptr<const Geometry>& geom)
 {
-  if (FilletDiagnostics::hasError()) return;
+  // Fillet failures produce null or empty geometry. Keep successful siblings cacheable.
+  if (FilletDiagnostics::hasError() && (!geom || geom->isEmpty())) return;
   const std::string& key = this->tree.getIdString(node);
 
   if (CGALCache::acceptsGeometry(geom)) {
