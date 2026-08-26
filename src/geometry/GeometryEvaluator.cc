@@ -1527,7 +1527,12 @@ std::unique_ptr<const Geometry> addFillets(std::shared_ptr<const Geometry> resul
                                            const Geometry::Geometries& children, double r, int fn)
 {
   std::shared_ptr<const PolySet> psr = PolySetUtils::getGeometryAsPolySet(result);
-  if (!psr) return nullptr;
+  if (!psr) {
+    const std::string message = "fillet(): could not convert the boolean result to a mesh";
+    FilletDiagnostics::setError(message);
+    LOG(message_group::Error, "%1$s", message);
+    return nullptr;
+  }
 
   std::vector<std::shared_ptr<const PolySet>> child_ps;
   std::vector<std::unordered_set<Vector3d>> child_verts;
