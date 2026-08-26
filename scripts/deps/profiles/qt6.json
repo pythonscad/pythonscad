@@ -118,7 +118,7 @@
     "msys2": {
       "extends": null,
       "pre_commands": [
-        "/usr/bin/bash scripts/deps/pin-qt6-msys2.sh"
+        "D:/a/_temp/msys64/usr/bin/bash.exe scripts/deps/pin-qt6-msys2.sh"
       ],
       "packages": []
     }
