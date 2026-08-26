@@ -81,6 +81,7 @@ jobs:
             -DENABLE_TBB=OFF \
             -DENABLE_LIBFIVE=ON \
             -DPORTABLE_BINARY=ON \
+            -DUSE_MIMALLOC=OFF \
             -DENABLE_GAMEPAD=OFF \
             -DUSE_BUILTIN_CLIPPER2=OFF \
             -DUSE_BUILTIN_MANIFOLD=ON
@@ -238,6 +239,7 @@ jobs:
             -DENABLE_TBB=OFF \
             -DENABLE_LIBFIVE=ON \
             -DPORTABLE_BINARY=ON \
+            -DUSE_MIMALLOC=OFF \
             -DENABLE_GAMEPAD=OFF \
             -DUSE_BUILTIN_CLIPPER2=OFF \
             -DUSE_BUILTIN_MANIFOLD=ON

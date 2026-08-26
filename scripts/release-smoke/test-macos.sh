@@ -32,6 +32,7 @@ keep_workdir=0
 skip_download=0
 artifact_dir=""
 mountpoint=""
+gui_pid=""
 
 while (($#)); do
   case "$1" in
@@ -82,8 +83,26 @@ rs_require_command find
 rs_require_command hdiutil
 
 workdir=$(rs_make_workdir "$workdir_arg")
+stop_gui() {
+  local pid=${1:-}
+  [[ -n "$pid" ]] || return 0
+  kill -TERM "$pid" 2>/dev/null || true
+  for _ in 1 2 3; do
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 1
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -KILL "$pid" 2>/dev/null || true
+  fi
+  wait "$pid" 2>/dev/null || true
+}
+
 cleanup() {
   local status=$?
+  if [[ -n "$gui_pid" ]]; then
+    stop_gui "$gui_pid"
+    gui_pid=""
+  fi
   if [[ -n "$mountpoint" && -d "$mountpoint" ]]; then
     hdiutil detach "$mountpoint" >/dev/null 2>&1 || true
   fi
@@ -155,5 +174,33 @@ fi
 
 [[ -n "$exe" ]] || rs_die "could not locate PythonSCAD executable inside $app"
 rs_smoke_binary "$exe" "$(basename "$app")" "$workdir"
+
+gui_log="$workdir/gui-startup.log"
+gui_home="$workdir/gui-home"
+mkdir -p "$gui_home"
+rs_log "Smoke testing $(basename "$app"): native GUI startup"
+
+set +e
+(
+  cd "$workdir"
+  exec env -u QT_QPA_PLATFORM HOME="$gui_home" "$exe" > "$gui_log" 2>&1 </dev/null
+) &
+gui_pid=$!
+set -e
+
+for _ in {1..10}; do
+  if ! kill -0 "$gui_pid" 2>/dev/null; then
+    set +e
+    wait "$gui_pid"
+    gui_status=$?
+    set -e
+    rs_print_log_excerpt "$gui_log"
+    rs_die "native GUI exited during startup with status $gui_status"
+  fi
+  sleep 1
+done
+
+stop_gui "$gui_pid"
+gui_pid=""
 
 rs_log "macOS DMG smoke tests passed"

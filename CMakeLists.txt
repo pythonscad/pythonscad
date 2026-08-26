@@ -63,6 +63,12 @@ option(OFFLINE_DOCS "Download Documentation for offline usage" OFF)
 option(USE_MIMALLOC "Use mimalloc as malloc replacement." ON)
 option(USE_BUILTIN_OPENCSG "Use OpenCSG from submodule." OFF)
 option(USE_CCACHE "Use ccache to speed up compilation." ON)
+
+if(APPLE AND (CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$" OR CMAKE_OSX_ARCHITECTURES MATCHES "(^|;)arm64($|;)"))
+  set(USE_MIMALLOC OFF CACHE BOOL "Use mimalloc as malloc replacement." FORCE)
+  message(STATUS "Disabling mimalloc for arm64 macOS target")
+endif()
+
 set(ENABLE_CAIRO "AUTO" CACHE STRING "Enable support for cairo vector graphics library")
 set_property(CACHE ENABLE_CAIRO PROPERTY STRINGS "AUTO" "ON" "OFF")
 
