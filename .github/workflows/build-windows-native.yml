@@ -124,6 +124,18 @@ jobs:
         run: |
           python3 ./scripts/get-dependencies.py --distro msys2 --profile pythonscad-qt6 --pre-commands-only
 
+      - name: Fetch compatible PyQt6 bindings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          QMAKE=$(which qmake6)
+          [[ "$QMAKE" == *.exe ]] || QMAKE="${QMAKE}.exe"
+          export PATH="/c/Program Files/GitHub CLI:$PATH"
+          which gh
+          ./scripts/ci/fetch_pyqt6_bindings.sh \
+            windows-x86_64 msys2-ucrt64-qt6-python-embed "$QMAKE" \
+            "$(which python)" libraries/python
+
       - name: Build PythonSCAD
         run: |
           mkdir build && cd build
@@ -221,9 +233,16 @@ jobs:
       - name: Sanity test - verify executable runs
         run: |
           cd build/staging
+          set -x
+          ls -la ./pythonscad.exe
+          file ./pythonscad.exe
+          ldd ./pythonscad.exe
+          echo "ldd exit code: $?"
+          find . -iname "qwindows.dll"
+          ldd ./platforms/qwindows.dll
           echo "Testing pythonscad --info..."
-          ./pythonscad.exe --info
-          echo "Sanity test passed!"
+          QT_QPA_PLATFORM=offscreen QT_DEBUG_PLUGINS=1 ./pythonscad.exe --info
+          echo "pythonscad exit code: $?"
 
       - name: Sanity test - verify bundled IPython is in staging tree
         run: |
@@ -264,6 +283,15 @@ jobs:
           grep -q "IPYTHON_PACKAGED_OK" ipython.log
           ! grep -q "falling back to the basic Python prompt" ipython.log
           ! grep -q "Failed calling sys.__interactivehook__" ipython.log
+
+          printf '%s\n' \
+            'from PyQt6 import QtCore, QtWidgets, sip' \
+            'from pythonscad import qapp_ptr' \
+            'app = sip.wrapinstance(qapp_ptr(), QtWidgets.QApplication)' \
+            "print('PYQT6_PACKAGED_OK', QtCore.QT_VERSION_STR, type(app).__name__)" \
+            | QT_QPA_PLATFORM=offscreen ./pythonscad.com --repl > pyqt6.log 2>&1
+          cat pyqt6.log
+          grep -q "PYQT6_PACKAGED_OK" pyqt6.log
 
       - name: Prepare artifacts
         id: artifacts

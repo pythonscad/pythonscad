@@ -118,11 +118,7 @@
     "msys2": {
       "extends": null,
       "pre_commands": [
-        "pacman -U --noconfirm https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qt6-base-6.11.0-1-any.pkg.tar.zst",
-        "pacman -U --noconfirm https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qt6-5compat-6.11.0-1-any.pkg.tar.zst",
-        "pacman -U --noconfirm https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qt6-multimedia-6.11.0-1-any.pkg.tar.zst",
-        "pacman -U --noconfirm https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qt6-svg-6.11.0-1-any.pkg.tar.zst",
-        "pacman -U --noconfirm https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-qscintilla-qt6-2.14.1-7-any.pkg.tar.zst"
+        "bash scripts/deps/pin-qt6-msys2.sh"
       ],
       "packages": []
     }
