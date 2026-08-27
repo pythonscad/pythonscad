@@ -31,6 +31,7 @@
 #include <Python.h>
 #include "pyopenscad.h"
 #include "pyfunctions.h"
+#include "python/py_geometry.h"
 #include "export.h"
 #include "ImportNode.h"
 #include <io/import.h>
@@ -310,8 +311,9 @@ PyObject *python_export_core(PyObject *obj, char *file)
   if (child != nullptr) {
     Tree tree(child, "parent");
     GeometryEvaluator geomevaluator(tree);
-    Export3mfPartInfo info(geomevaluator.evaluateGeometry(*tree.root(), false), "OpenSCAD Model",
-                           nullptr);
+    auto geometry = python_evaluate_geometry_checked(geomevaluator, *tree.root(), false);
+    if (PyErr_Occurred()) return nullptr;
+    Export3mfPartInfo info(geometry, "OpenSCAD Model", nullptr);
     export3mfPartInfos.push_back(info);
   } else if (PyDict_Check(obj)) {
     PyObject *key, *value;
@@ -410,14 +412,16 @@ PyObject *python_export_core(PyObject *obj, char *file)
       }
 
       /* All Python-side validation done. Evaluating the geometry below
-       * is the expensive part and cannot fail with a Python exception.
+       * is the expensive part; checked evaluation can still translate a
+       * geometry diagnostic (for example an impossible fillet) to ValueError.
        * ``part_name`` is moved into the constructor; it isn't read
        * again in this iteration, and a typical export of N named parts
        * would otherwise pay one ``std::string`` copy per part. */
       Tree tree(dict_child, "parent");
       GeometryEvaluator geomevaluator(tree);
-      Export3mfPartInfo info(geomevaluator.evaluateGeometry(*tree.root(), false), std::move(part_name),
-                             nullptr);
+      auto geometry = python_evaluate_geometry_checked(geomevaluator, *tree.root(), false);
+      if (PyErr_Occurred()) return nullptr;
+      Export3mfPartInfo info(geometry, std::move(part_name), nullptr);
       info.propsFloat = std::move(propsFloat);
       info.propsLong = std::move(propsLong);
       info.propsString = std::move(propsString);

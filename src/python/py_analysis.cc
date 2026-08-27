@@ -27,6 +27,7 @@
 #include "genlang/genlang.h"
 #include <Python.h>
 #include "pyopenscad.h"
+#include "python/py_geometry.h"
 #include <TransformNode.h>
 #include <Tree.h>
 #include <GeometryEvaluator.h>
@@ -42,7 +43,9 @@ PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
   if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in mesh \n");
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
-  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const Geometry> geom =
+    python_evaluate_geometry_checked(geomevaluator, *tree.root(), true);
+  if (PyErr_Occurred()) return nullptr;
   std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
 
   if (ps != nullptr) {
@@ -186,7 +189,9 @@ PyObject *python_inside_core(PyObject *pyobj, PyObject *pypoint)
 
   Tree tree(node, "");
   GeometryEvaluator geomevaluator(tree);
-  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const Geometry> geom =
+    python_evaluate_geometry_checked(geomevaluator, *tree.root(), true);
+  if (PyErr_Occurred()) return nullptr;
   std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
   if (auto poly2 = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
     Vector2d vec2(vec3[0], vec3[1]);
@@ -315,7 +320,9 @@ PyObject *python_size_core(PyObject *obj)
   }
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
-  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const Geometry> geom =
+    python_evaluate_geometry_checked(geomevaluator, *tree.root(), true);
+  if (PyErr_Occurred()) return nullptr;
 
   // Handle 2D geometry (Polygon2d)
   if (auto poly2d = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
@@ -359,7 +366,9 @@ PyObject *python_position_core(PyObject *obj)
   }
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
-  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const Geometry> geom =
+    python_evaluate_geometry_checked(geomevaluator, *tree.root(), true);
+  if (PyErr_Occurred()) return nullptr;
 
   // Handle 2D geometry (Polygon2d)
   if (auto poly2d = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
@@ -418,7 +427,9 @@ PyObject *python_separate_core(PyObject *obj)
   if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in separate \n");
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
-  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const Geometry> geom =
+    python_evaluate_geometry_checked(geomevaluator, *tree.root(), true);
+  if (PyErr_Occurred()) return nullptr;
   std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
 
   if (ps != nullptr) {
@@ -522,7 +533,9 @@ PyObject *python_edges_core(PyObject *obj)
 
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
-  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const Geometry> geom =
+    python_evaluate_geometry_checked(geomevaluator, *tree.root(), true);
+  if (PyErr_Occurred()) return nullptr;
   const std::shared_ptr<const Polygon2d> poly = std::dynamic_pointer_cast<const Polygon2d>(geom);
   if (poly == nullptr) Py_RETURN_NONE;
   int edgenum = 0;
@@ -604,7 +617,9 @@ PyObject *python_faces_core(PyObject *obj, bool tessellate)
 
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
-  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const Geometry> geom =
+    python_evaluate_geometry_checked(geomevaluator, *tree.root(), true);
+  if (PyErr_Occurred()) return nullptr;
   std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
 
   if (ps != nullptr) {
