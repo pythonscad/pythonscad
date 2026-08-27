@@ -119,18 +119,6 @@ jobs:
           version: '22.1.7'
           build-type: 'release-mingw'
 
-      - name: Fetch compatible PyQt6 bindings
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          QMAKE=$(which qmake6)
-          [[ "$QMAKE" == *.exe ]] || QMAKE="${QMAKE}.exe"
-          export PATH="/c/Program Files/GitHub CLI:$PATH"
-          which gh
-          ./scripts/ci/fetch_pyqt6_bindings.sh \
-            windows-x86_64 msys2-ucrt64-qt6-python-embed "$QMAKE" \
-            "$(which python)" libraries/python
-
       - name: Build PythonSCAD
         run: |
           mkdir build && cd build
@@ -225,22 +213,53 @@ jobs:
             echo "NSISOutput.log not found under ${NSIS_DIR}"
           fi
 
+      - name: Fetch compatible PyQt6 bindings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          QMAKE=$(which qmake6)
+          [[ "$QMAKE" == *.exe ]] || QMAKE="${QMAKE}.exe"
+          export PATH="/c/Program Files/GitHub CLI:$PATH"
+          which gh
+          ./scripts/ci/fetch_pyqt6_bindings.sh \
+            windows-x86_64 msys2-ucrt64-qt6-python-embed "$QMAKE" \
+            "$(which python)" libraries/python
+
+
+
       - name: Sanity test - verify executable runs
         run: |
           cd build/staging
+
+          echo "=== Datei-Basics ==="
           ls -la ./pythonscad.exe
           file ./pythonscad.exe
-          ldd ./pythonscad.exe
-          echo "ldd exit code: $?"
-          find . -iname "qwindows.dll"
-          ldd ./platforms/qwindows.dll
 
-          ls -la --time-style=full-iso Qt6Core.dll Qt6Widgets.dll Qt6Gui.dll ./platforms/qwindows.dll
-          strings Qt6Core.dll | grep -E "^6\.[0-9]+\.[0-9]+$" | head -5
-          strings ./platforms/qwindows.dll | grep -E "^6\.[0-9]+\.[0-9]+$" | head -5
+          echo "=== Zeitstempel Kern-DLLs (Konsistenz-Check) ==="
+          ls -la --time-style=full-iso Qt6Core.dll Qt6Widgets.dll Qt6Gui.dll Qt6Multimedia.dll \
+            qscintilla2_qt6.dll ./platforms/qwindows.dll
 
-          echo "Testing pythonscad --info..."
+          echo "=== Qt-Versionsstrings je DLL (ABI-Konsistenz-Check) ==="
+          for dll in Qt6Core.dll Qt6Widgets.dll Qt6Gui.dll Qt6Multimedia.dll \
+                     qscintilla2_qt6.dll ./platforms/qwindows.dll; do
+            echo "--- $dll ---"
+            strings "$dll" | grep -E "^6\.[0-9]+\.[0-9]+$" | sort -u || echo "(kein Versionsstring gefunden)"
+          done
+
+          echo "=== ldd pythonscad.exe (fehlende DLLs?) ==="
+          ldd ./pythonscad.exe 2>&1 | tee ldd_main.log
+          grep -i "not found" ldd_main.log || echo "(keine fehlenden DLLs laut ldd)"
+
+          echo "=== ldd qwindows.dll (fehlende DLLs?) ==="
+          ldd ./platforms/qwindows.dll 2>&1 | tee ldd_qwindows.log
+          grep -i "not found" ldd_qwindows.log || echo "(keine fehlenden DLLs laut ldd)"
+
+          echo "=== Testing pythonscad --info ==="
           QT_QPA_PLATFORM=offscreen QT_DEBUG_PLUGINS=1 ./pythonscad.exe --info
+          echo "Exit code: $?"
+          echo "Sanity test passed!"cd build/staging
+          echo "Testing pythonscad --info..."
+          ./pythonscad.exe --info
           echo "Sanity test passed!"
 
       - name: Sanity test - verify bundled IPython is in staging tree
