@@ -117,10 +117,22 @@
     },
     "msys2": {
       "extends": null,
-      "pre_commands": [
-        "D:/a/_temp/msys64/usr/bin/bash.exe scripts/deps/pin-qt6-msys2.sh"
-      ],
-      "packages": []
+      "packages": [
+        "qt6-base:p",
+        "qt6-5compat:p",
+        "qt6-multimedia:p",
+        "qt6-svg:p",
+        "qscintilla-qt6:p"
+      ]
+    }
+    "msys2": {
+      "extends": null,
+      "packages": [
+        "qscintilla-qt6:p",
+        "qt6-5compat:p",
+        "qt6-multimedia:p",
+        "qt6-svg:p"
+      ]
     }
   }
 }
