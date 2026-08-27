@@ -64,7 +64,7 @@ jobs:
             macos-x86_64 macos-15-intel-homebrew-qt6 \
             "$(brew --prefix qt)/bin/qmake" "$(which python3)" libraries/python
 
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: false
 
@@ -89,6 +89,7 @@ jobs:
             -DENABLE_TBB=OFF \
             -DENABLE_LIBFIVE=ON \
             -DPORTABLE_BINARY=ON \
+            -DUSE_MIMALLOC=OFF \
             -DENABLE_GAMEPAD=OFF \
             -DUSE_BUILTIN_CLIPPER2=OFF \
             -DUSE_BUILTIN_MANIFOLD=ON
@@ -229,7 +230,7 @@ jobs:
             macos-arm64 macos-14-homebrew-qt6 \
             "$(brew --prefix qt)/bin/qmake" "$(which python3)" libraries/python
 
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: false
 
@@ -254,6 +255,7 @@ jobs:
             -DENABLE_TBB=OFF \
             -DENABLE_LIBFIVE=ON \
             -DPORTABLE_BINARY=ON \
+            -DUSE_MIMALLOC=OFF \
             -DENABLE_GAMEPAD=OFF \
             -DUSE_BUILTIN_CLIPPER2=OFF \
             -DUSE_BUILTIN_MANIFOLD=ON
@@ -815,7 +817,7 @@ jobs:
           echo "QtCore framework dependencies:"
           otool -L "$FRAMEWORKS_DIR/QtCore.framework/Versions/A/QtCore" | grep -E "icu|brotli" || echo "No ICU or brotli references found"
 
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: false
 
