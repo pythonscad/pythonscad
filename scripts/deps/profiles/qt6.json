@@ -124,7 +124,7 @@
         "qt6-svg:p",
         "qscintilla-qt6:p"
       ]
-    }
+    },
     "msys2": {
       "extends": null,
       "packages": [
