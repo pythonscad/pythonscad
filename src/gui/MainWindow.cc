@@ -563,8 +563,6 @@ void add_menuitem_trampoline(const char *menuname, const char *itemname, const c
 std::string MainWindow::loadInitFile(void)
 {
   std::string path = lookup_file(".pythonscadrc", PlatformUtils::userConfigPath(), ".");
-  LOG("Used pythonscadrc is: %1$s", path);
-
   if (path.size() == 0) return "";
   std::ifstream fh(path);
 
@@ -591,15 +589,11 @@ void MainWindow::customSetup(void)
   const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
   initPython(binDir, "", nullptr);
   auto init_err = evaluatePython(content);
-  LOG("pythonscadrc init_err is %1$d ", init_err);
-
   if (!init_err.empty()) std::cerr << init_err << std::flush;
   addmenuitem_this = this;
   mainwindow_global = this;
   auto setup_err = evaluatePython("setup()");
   if (!setup_err.empty()) std::cerr << setup_err << std::flush;
-  LOG("pythonscadrc setup_err is %1$d ", setup_err);
-
   addmenuitem_this = nullptr;
   snapshotPythonInventory();
   finishPython();

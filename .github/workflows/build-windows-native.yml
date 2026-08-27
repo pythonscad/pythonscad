@@ -225,9 +225,6 @@ jobs:
             echo "NSISOutput.log not found under ${NSIS_DIR}"
           fi
 
-
-
-
       - name: Sanity test - verify executable runs
         run: |
           cd build/staging
@@ -303,14 +300,14 @@ jobs:
           ! grep -q "falling back to the basic Python prompt" ipython.log
           ! grep -q "Failed calling sys.__interactivehook__" ipython.log
 
-          #printf '%s\n' \
-          #  'from PyQt6 import QtCore, QtWidgets, sip' \
-          #  'from pythonscad import qapp_ptr' \
-          #  'app = sip.wrapinstance(qapp_ptr(), QtWidgets.QApplication)' \
-          #  "print('PYQT6_PACKAGED_OK', QtCore.QT_VERSION_STR, type(app).__name__)" \
-          #  | QT_QPA_PLATFORM=offscreen ./pythonscad.com --repl > pyqt6.log 2>&1
-          #cat pyqt6.log
-          #grep -q "PYQT6_PACKAGED_OK" pyqt6.log
+          printf '%s\n' \
+            'from PyQt6 import QtCore, QtWidgets, sip' \
+            'from pythonscad import qapp_ptr' \
+            'app = sip.wrapinstance(qapp_ptr(), QtWidgets.QApplication)' \
+            "print('PYQT6_PACKAGED_OK', QtCore.QT_VERSION_STR, type(app).__name__)" \
+            | QT_QPA_PLATFORM=offscreen ./pythonscad.com --repl > pyqt6.log 2>&1
+          cat pyqt6.log
+          grep -q "PYQT6_PACKAGED_OK" pyqt6.log
 
       - name: Prepare artifacts
         id: artifacts
