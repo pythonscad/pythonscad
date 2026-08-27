@@ -62,6 +62,7 @@ jobs:
 
           QMAKE=$(which qmake6)
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
+          QT_MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
           echo "Detected Qt version: $QT_VERSION"
           MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
 
@@ -119,7 +120,7 @@ jobs:
           COMMON_ARGS=(
             --platform linux-x86_64
             --profile ubuntu-24.04-qt6
-            --qt-version "$QT_VERSION"
+            --qt-version "$QT_MAJOR_MINOR"
             --pyqt-version "$PYQT_VERSION"
             --python-version "$PYTHON_VERSION"
             --soabi "$SOABI"

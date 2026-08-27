@@ -25,7 +25,7 @@ IDENTITY_ARGS=(
   --repo-root "$REPO_ROOT"
   --platform "$PLATFORM"
   --profile "$PROFILE"
-  --qt-version "$QT_VERSION"
+  --qt-version "$QT_MAJOR_MINOR"
   --pyqt-version "$PYQT_VERSION"
   --python-version "$PYTHON_VERSION"
   --soabi "$SOABI"
