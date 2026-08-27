@@ -4,6 +4,9 @@ import inspect
 from pythonscad import *
 
 try:
+    import importlib.machinery
+    import sys
+    importlib.machinery = sys.modules['importlib.machinery']
     from PyQt6 import QtCore, QtGui, QtWidgets, sip
 except ModuleNotFoundError as error:
     if error.name == "PyQt6":
