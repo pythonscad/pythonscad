@@ -57,7 +57,7 @@ build = [
     "cibuildwheel==4.2.0; python_version>='3.11'",
     "auditwheel==6.8.1; python_version>='3.11'",
     "delocate==0.13.0; python_version>='3.11'",
-    "delvewheel==1.13.0; python_version>='3.11'",
+    "delvewheel==1.13.1; python_version>='3.11'",
 ]
 # MkDocs site build (deploy-website workflow).
 docs = [
