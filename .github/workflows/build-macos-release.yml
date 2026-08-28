@@ -60,6 +60,14 @@ jobs:
         with:
           enable-cache: false
 
+      - name: Fetch compatible PyQt6 bindings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./scripts/ci/fetch_pyqt6_bindings.sh \
+            macos-x86_64 macos-15-intel-homebrew-qt6 \
+            "$(brew --prefix qt)/bin/qmake" "$(which python3)" libraries/python
+
       - name: Build x86_64 Application
         env:
           NUMCPU: 4
@@ -130,14 +138,6 @@ jobs:
           fi
 
           echo "x86_64 build complete"
-
-      - name: Fetch compatible PyQt6 bindings
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          ./scripts/ci/fetch_pyqt6_bindings.sh \
-            macos-x86_64 macos-15-intel-homebrew-qt6 \
-            "$(brew --prefix qt)/bin/qmake" "$(which python3)" libraries/python
 
 
       - name: Determine app bundle name
@@ -223,6 +223,10 @@ jobs:
         run: |
           ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
 
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: false
+
       - name: Fetch compatible PyQt6 bindings
         env:
           GH_TOKEN: ${{ github.token }}
@@ -230,10 +234,6 @@ jobs:
           ./scripts/ci/fetch_pyqt6_bindings.sh \
             macos-arm64 macos-14-homebrew-qt6 \
             "$(brew --prefix qt)/bin/qmake" "$(which python3)" libraries/python
-
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
-        with:
-          enable-cache: false
 
       - name: Build arm64 Application
         env:
