@@ -287,6 +287,7 @@ std::list<std::string> pythonInventory;
 AssignmentList customizer_parameters;
 AssignmentList customizer_parameters_finished;
 bool pythonDryRun = false;
+bool pythonPreview = false;
 PyObject *python_result_obj = nullptr;
 std::vector<SelectedObject> python_result_handle;
 bool python_runipython = false;
@@ -1559,6 +1560,10 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     PyGILState_Release(pathGil);
   }
   std::ostringstream stream;
+  /* Always refresh pythonPreview. Call sites that pass nullptr (REPL,
+   * IPython, Emscripten, GUI startup) must not keep a stale true from a
+   * previous F5 and suppress later export() writes. */
+  pythonPreview = r != nullptr && r->preview;
   if (r != nullptr) {
     stream << "preview=" << (r->preview ? "True" : "False") << "\n";
 
@@ -1576,6 +1581,8 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 
     const auto vpf = r->camera.fovValue();
     stream << "vpf=" << vpf << "\n";
+  } else {
+    stream << "preview=False\n";
   }
   stream << commandline_commands << "\n";
   {
