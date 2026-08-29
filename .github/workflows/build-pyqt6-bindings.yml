@@ -227,6 +227,15 @@ jobs:
           cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
 
           mkdir -p /tmp/pyqt-sip-only
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            arch -arm64 pip install PyQt6-sip \
+              --constraint="$GITHUB_WORKSPACE/scripts/ci/pyqt6-build-requirements.txt" \
+              --target=/tmp/pyqt-sip-only --no-deps
+          else
+            pip install PyQt6-sip \
+              --constraint="$GITHUB_WORKSPACE/scripts/ci/pyqt6-build-requirements.txt" \
+              --target=/tmp/pyqt-sip-only --no-deps
+          fi
           pip install PyQt6-sip \
             --constraint="$GITHUB_WORKSPACE/scripts/ci/pyqt6-build-requirements.txt" \
             --target=/tmp/pyqt-sip-only --no-deps
@@ -234,6 +243,11 @@ jobs:
           if [ -z "$SIP_SO" ]; then
             echo "ERROR: PyQt6-sip .so not found" >&2
             find /tmp/pyqt-sip-only -maxdepth 6 >&2
+            exit 1
+          fi
+          ACTUAL_ARCH=$(lipo -archs "$SIP_SO")
+          if [ "$ACTUAL_ARCH" != "${{ matrix.arch }}" ]; then
+            echo "ERROR: PyQt6-sip .so is '$ACTUAL_ARCH', expected '${{ matrix.arch }}'" >&2
             exit 1
           fi
           cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
