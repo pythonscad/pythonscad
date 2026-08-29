@@ -1320,7 +1320,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     Vector3d xdir, ydir, zdir;
     zdir = norm.normalized();
     ydir = -zdir.cross(Vector3d(1, 0, 0));
-    if (ydir.norm() < 1e-5) ydir = -zdir.cross(Vector3d(1, 0, 0));
+    if (ydir.norm() < 1e-3) ydir = -zdir.cross(Vector3d(1, 0, 0));
     ydir.normalized();
     xdir = zdir.cross(ydir).normalized();
 
@@ -2850,14 +2850,15 @@ static std::unique_ptr<PolySet> pullObject(const PullNode& node, const PolySet *
 
   return builder.build();
 }
-
 Vector3d cross_pt(Vector3d p1, Vector3d p2, double x)
 {
+  if (p1[0] > p2[0]) std::swap(p1, p2);   // <-- immer gleiche Reihenfolge, unabhängig vom Aufrufer
   double f = (x - p1[0]) / (p2[0] - p1[0]);
   double y = p1[1] + (p2[1] - p1[1]) * f;
   double z = p1[2] + (p2[2] - p1[2]) * f;
   return Vector3d(x, y, z);
 }
+
 
 std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder,
                                                          const std::vector<Vector3d> vertices,
@@ -2865,15 +2866,18 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
                                                          const std::vector<Vector4d>& normals,
                                                          std::vector<double> xsteps)
 {
+	printf("wrapSlice\n");
   std::vector<Vector3f> builder_vertices;
   std::vector<std::vector<IndexedColorTriangle>> results;  // nach strips sortiert
   int strips = xsteps.size() + 1;
+  int numSlices = strips - 2;  // Anzahl der tatsächlich auszugebenden Slices (= xsteps.size() - 1)
+
 
   // initialize
   Polygon dmy;
   std::vector<Polygon> dmyx;
   std::vector<IndexedColorTriangle> dmyz;
-  for (int i = 0; i < strips ; i++) {  // TODO check very carefully
+  for (int i = 0; i < numSlices; i++) {  
     results.push_back(dmyz);
   }
 
@@ -2981,10 +2985,6 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
         chain.push_back(curpt);
       }
       // patching
-      if (stripPolygons[curlevel >> 1].size() - curpols > 1) {
-        printf("MEHRFACH-DURCHQUERUNG: level=%zu neue_chunks=%zu cutnum=%d\n",
-               curlevel >> 1, stripPolygons[curlevel >> 1].size() - curpols, cutnum);
-      }
       if (cutnum == 0) {
         tmpresults[curlevel >> 1].push_back(chain);
       } else {
@@ -3007,19 +3007,14 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
         }	      
       }
     }
-    auto compare_func = [](const Vector3d& b, const Vector3d& a) {
+    auto compare_func = [](const Vector3d& b, const Vector3d& a) -> bool {
       if (b[2] > a[2]) return 1.0;
       if (b[2] < a[2]) return -1.0;
-      return b[1] - a[1];
+      return b[1] > a[1];
     };
 
     for (int i = 0; i < strips; i++) {
       if (stripPolygons[i].size() == 0) continue;
-	if (stripBots[i].size() > 2 || stripTops[i].size() > 2) {
-	  printf("MEHRFACH-EINSCHNITT strip=%d stripBots=%zu stripTops=%zu\n",
-        	 i, stripBots[i].size(), stripTops[i].size());
-	}
-
       std::sort(stripBots[i].begin(), stripBots[i].end(), compare_func);
       std::sort(stripTops[i].begin(), stripTops[i].end(), compare_func);
 
@@ -3037,7 +3032,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
           }
         } else {
           for (size_t j = 0; j < stripPolygons[i].size(); j++) {
-            if ((stripPolygons[i][j][0] - connpt).norm() < 1e-5) {
+            if ((stripPolygons[i][j][0] - connpt).norm() < 1e-3) {
               chain.insert(chain.end(), stripPolygons[i][j].begin(), stripPolygons[i][j].end());
               stripPolygons[i].erase(stripPolygons[i].begin() + j);
               connpt = chain[chain.size() - 1];
@@ -3047,13 +3042,13 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
           }
         }
         for (size_t j = 0; j < stripBots[i].size(); j += 2) {
-          if ((stripBots[i][j] - connpt).norm() < 1e-5) {
+          if ((stripBots[i][j] - connpt).norm() < 1e-3) {
             connpt = stripBots[i][j + 1];
             stripBots[i].erase(stripBots[i].begin() + j, stripBots[i].begin() + j + 2);
             done = true;
             break;
           }
-          if ((stripBots[i][j + 1] - connpt).norm() < 1e-5) {
+          if ((stripBots[i][j + 1] - connpt).norm() < 1e-3) {
             connpt = stripBots[i][j];
             stripBots[i].erase(stripBots[i].begin() + j, stripBots[i].begin() + j + 2);
             done = true;
@@ -3061,13 +3056,13 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
           }
         }
         for (size_t j = 0; j < stripTops[i].size(); j += 2) {
-          if ((stripTops[i][j + 1] - connpt).norm() < 1e-5) {
+          if ((stripTops[i][j + 1] - connpt).norm() < 1e-3) {
             connpt = stripTops[i][j];
             stripTops[i].erase(stripTops[i].begin() + j, stripTops[i].begin() + j + 2);
             done = true;
             break;
           }
-          if ((stripTops[i][j] - connpt).norm() < 1e-5) {
+          if ((stripTops[i][j] - connpt).norm() < 1e-3) {
             connpt = stripTops[i][j + 1];
             stripTops[i].erase(stripTops[i].begin() + j, stripTops[i].begin() + j + 2);
             done = true;
@@ -3094,7 +3089,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
       // now output
     }
     // TODO strukturen nicht so tief, datem frueher verarbeiten
-    for (int i = 0; i < strips; i++) {
+    for (int i = 0; i <numSlices; i++) {
       // convert to indexed
 
       std::vector<IndexedFace> polys_ind;
@@ -3123,6 +3118,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
 
 static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *ps)
 {
+	printf("wrapObject\n");
   if (!Feature::ExperimentalWrapPolygon.is_enabled()) {
     PolySetBuilder builder(0, 0, 3, true);
     int segments1 = 360.0 / node.fa;
@@ -3185,8 +3181,13 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
           rad = node.r - pt[1];
           pt = Vector3d(rad * cos(ang), rad * sin(ang), pt[2]);
         }
+	builder.beginPolygon(curslice.size());
+        for (size_t j = 0; j < curslice.size() ; j++) {
+          builder.addVertex(curslice[j]);
+	}
+	builder.endPolygon();
         for (size_t j = 0; j < curslice.size() - 2; j++) {
-          builder.beginPolygon(curslice.size());
+          builder.beginPolygon(3);
           builder.addVertex(curslice[0]);
           builder.addVertex(curslice[j + 1]);
           builder.addVertex(curslice[j + 2]);
@@ -3316,9 +3317,9 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
         Vector2d px =
           p1 + dir1u * (pt[0] - xscale[ind]) / (xscale[ind + 1] - xscale[ind]) + dirn * pt[1];
         Vector3d pt_tran = Vector3d(px[0], px[1], pt[2]);
-//        pt_tran[0] = concat_round(pt_tran[0]);
-//        pt_tran[1] = concat_round(pt_tran[1]);
-//        pt_tran[2] = concat_round(pt_tran[2]);
+        pt_tran[0] = concat_round(pt_tran[0]);
+        pt_tran[1] = concat_round(pt_tran[1]);
+        pt_tran[2] = concat_round(pt_tran[2]);
 
         builder.addVertex(pt_tran);
       }
@@ -3328,6 +3329,24 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
     ind++;
   }
   auto ps1 = builder.build();
+
+  int error;
+printf("running\n");
+printf("createEdgeDb wird aufgerufen mit ps->indices.size()=%zu ps->vertices.size()=%zu\n",
+       ps1->indices.size(), ps1->vertices.size());
+
+  auto edge_db = createEdgeDb(ps1->indices, error);
+
+//  for (int fidx : {135, 313, 102, 358, 134, 326, 133, 359, 180, 360, 181, 367, 179, 418, 145, 419}) {
+//  printf("Face %d: ", fidx);
+//  for (int idx : ps1->indices[fidx]) {
+//    printf("%d(%.6f/%.6f/%.6f) ", idx, ps1->vertices[idx][0], ps1->vertices[idx][1], ps1->vertices[idx][2]);
+//  }
+//  printf("\n");
+//}
+
+printf("done\n");
+
   return ps1;
 }
 
@@ -3429,7 +3448,7 @@ static std::unique_ptr<PolySet> repairObject(const RepairNode& node, const PolyS
       for (auto ind : fence) {
         const auto& pt = ps->vertices[ind];
         double dist = (p1 - pt).dot(n);
-        if (dist > 1e-5) {
+        if (dist > 1e-3) {
           valid = false;
           break;
         }
