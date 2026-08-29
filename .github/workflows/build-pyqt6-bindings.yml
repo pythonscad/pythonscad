@@ -227,15 +227,6 @@ jobs:
           cp -r "$FOUND_DIR" /tmp/pyqt-out/PyQt6
 
           mkdir -p /tmp/pyqt-sip-only
-          if [ "${{ matrix.arch }}" = "arm64" ]; then
-            arch -arm64 pip install PyQt6-sip \
-              --constraint="$GITHUB_WORKSPACE/scripts/ci/pyqt6-build-requirements.txt" \
-              --target=/tmp/pyqt-sip-only --no-deps
-          else
-            pip install PyQt6-sip \
-              --constraint="$GITHUB_WORKSPACE/scripts/ci/pyqt6-build-requirements.txt" \
-              --target=/tmp/pyqt-sip-only --no-deps
-          fi
           pip install PyQt6-sip \
             --constraint="$GITHUB_WORKSPACE/scripts/ci/pyqt6-build-requirements.txt" \
             --target=/tmp/pyqt-sip-only --no-deps
@@ -245,11 +236,22 @@ jobs:
             find /tmp/pyqt-sip-only -maxdepth 6 >&2
             exit 1
           fi
-          ACTUAL_ARCH=$(lipo -archs "$SIP_SO")
-          if [ "$ACTUAL_ARCH" != "${{ matrix.arch }}" ]; then
-            echo "ERROR: PyQt6-sip .so is '$ACTUAL_ARCH', expected '${{ matrix.arch }}'" >&2
-            exit 1
-          fi
+          ACTUAL_ARCHS=$(lipo -archs "$SIP_SO")
+          case " $ACTUAL_ARCHS " in
+            *" ${{ matrix.arch }} "*)
+              # Wheel is universal2 (or already single-arch) - thin it down
+              # to just this leg's architecture so the per-arch tree stays
+              # single-arch, matching everything else fetch_pyqt6_bindings.sh
+              # / the merge job expects.
+              lipo -thin "${{ matrix.arch }}" "$SIP_SO" \
+                -output /tmp/pyqt-out/PyQt6/$(basename "$SIP_SO")
+              ;;
+            *)
+              echo "ERROR: PyQt6-sip .so ('$ACTUAL_ARCHS') does not contain '${{ matrix.arch }}'" >&2
+              exit 1
+              ;;
+          esac
+
           cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
 
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
