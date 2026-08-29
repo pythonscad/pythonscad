@@ -668,8 +668,14 @@ jobs:
               exit 1
             fi
             if file "$x86_file" | grep -q "Mach-O"; then
-              echo "Merging PyQt6 module: $rel_path"
-              lipo -create "$x86_file" "$arm_file" -output "$merged_file"
+              X86_ARCHS=$(lipo -archs "$x86_file")
+              if [ "$X86_ARCHS" = "x86_64 arm64" ] || [ "$X86_ARCHS" = "arm64 x86_64" ]; then
+                echo "Already universal2, copying as-is: $rel_path"
+                cp "$x86_file" "$merged_file"
+              else
+                echo "Merging PyQt6 module: $rel_path"
+                lipo -create "$x86_file" "$arm_file" -output "$merged_file"
+              fi            
             fi
           done < <(find "$X86_PYQT" -type f \( -name "*.so" -o -name "*.dylib" \))
           while IFS= read -r arm_file; do
