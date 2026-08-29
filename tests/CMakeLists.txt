@@ -303,6 +303,14 @@ file(GLOB SCAD_3D_EXPORT_FILES      ${TEST_SCAD_DIR}/3d-export/*.scad)
 list(REMOVE_ITEM PYTHONSCAD_ECHO_FILES "${TEST_PYTHONSCAD_ECHO_DIR}/add_parameter_pure.py")
 # Exclude add_parameter_types.py: needs -D seeding of finished Customizer values
 list(REMOVE_ITEM PYTHONSCAD_ECHO_FILES "${TEST_PYTHONSCAD_ECHO_DIR}/add_parameter_types.py")
+# export() is a no-op when preview=true (GUI F5 / CLI echo without --render).
+# Fixtures that must actually invoke python_export_core() run with --render.
+set(PYTHONSCAD_ECHO_EXPORT_FILES
+  "${TEST_PYTHONSCAD_ECHO_DIR}/export-error-handling.py"
+  "${TEST_PYTHONSCAD_ECHO_DIR}/issue587-export-non-str-keys.py"
+  "${TEST_PYTHONSCAD_ECHO_DIR}/issue232-lookup-file-export-deprecation.py"
+)
+list(REMOVE_ITEM PYTHONSCAD_ECHO_FILES ${PYTHONSCAD_ECHO_EXPORT_FILES})
 # GUI pointer callbacks are not exposed in headless builds.
 if(HEADLESS)
   list(REMOVE_ITEM PYTHONSCAD_ECHO_FILES "${TEST_PYTHONSCAD_ECHO_DIR}/gui_callback_abi.py")
@@ -1380,6 +1388,8 @@ add_cmdline_test(previewmanifoldtest EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EX
 add_cmdline_test(throwntogethertest  EXPERIMENTAL OPENSCAD SUFFIX png FILES ${EXPERIMENTAL_SKIN_FILES} ARGS --preview=throwntogether --enable=skin --trust-python)
 add_cmdline_test(pythonscad          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_FILES} ARGS --render --trust-python)
 add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_FILES} ARGS --trust-python)
+# Same group name so goldens stay under tests/regression/pythonscadecho/.
+add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_EXPORT_FILES} ARGS --trust-python --render)
 add_cmdline_test(pythonscadlaser     EXPERIMENTAL OPENSCAD SUFFIX svg FILES ${PYTHONSCAD_LASER_FILES}            ARGS --trust-python)
 add_cmdline_test(pythonscadoverlay      EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PYTHONSCAD_OVERLAY_FILES} ARGS --render --trust-python)
 add_cmdline_test(pythonscadoverlayecho  EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_OVERLAY_ECHO_FILES} ARGS --trust-python)

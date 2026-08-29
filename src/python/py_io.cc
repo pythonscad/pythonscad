@@ -248,7 +248,10 @@ static bool python_export_obj_att_pre_encode()
 
 PyObject *python_export_core(PyObject *obj, char *file)
 {
-  if (pythonDryRun) {
+  if (pythonDryRun || pythonPreview) {
+    /* Customizer dummy parse, GUI F5, and CLI preview (echo/PNG without
+     * --render) must not write files. F6 / --render / mesh -o set
+     * pythonPreview false. */
     Py_RETURN_NONE;
   }
   std::string filename;

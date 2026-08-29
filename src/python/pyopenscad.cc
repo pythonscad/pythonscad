@@ -287,6 +287,7 @@ std::list<std::string> pythonInventory;
 AssignmentList customizer_parameters;
 AssignmentList customizer_parameters_finished;
 bool pythonDryRun = false;
+bool pythonPreview = false;
 PyObject *python_result_obj = nullptr;
 std::vector<SelectedObject> python_result_handle;
 bool python_runipython = false;
@@ -1560,6 +1561,7 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
   }
   std::ostringstream stream;
   if (r != nullptr) {
+    pythonPreview = r->preview;
     stream << "preview=" << (r->preview ? "True" : "False") << "\n";
 
     stream << "t=" << r->time << "\n";

@@ -758,7 +758,7 @@ PyMethodDef PyOpenSCADFunctions[] = {
    "Split a compound object into its parts.\n"
    "separate(obj)"},
   {"export", (PyCFunction)python_export, METH_VARARGS | METH_KEYWORDS,
-   "Write object to a file (STL, etc.).\n"
+   "Write object to a file (STL, etc.). No-op during F5 preview.\n"
    "export(obj, file=\"out.stl\")"},
 
   {"linear_extrude", (PyCFunction)python_linear_extrude, METH_VARARGS | METH_KEYWORDS,
