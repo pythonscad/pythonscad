@@ -61,7 +61,7 @@ build = [
 ]
 # MkDocs site build (deploy-website workflow).
 docs = [
-    "click==8.4.2",
+    "click==8.5.0",
     "mkdocs",
     "mkdocs-material",
     "pymdown-extensions",
