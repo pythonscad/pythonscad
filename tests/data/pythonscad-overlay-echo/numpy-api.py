@@ -1,9 +1,5 @@
 """Check NumPy inputs and PythonSCAD-only vector helpers."""
 
-import atexit as _atexit
-import os as _os
-import tempfile as _tempfile
-
 import openscad as _openscad
 import pythonscad as _pythonscad
 from pythonscad import (
@@ -32,29 +28,25 @@ else:
     assert isinstance(Vector3([1, 2, 3]), list)
     assert isinstance(Matrix4x4(), list)
 
-_tmpdir_ctx = _tempfile.TemporaryDirectory(prefix="numpy_api_")
-_atexit.register(_tmpdir_ctx.cleanup)
-_tmpdir = _tmpdir_ctx.name
-_counter = 0
 
+def _geom(obj):
+    """Return a comparable (points, triangles) snapshot of ``obj``.
 
-def _stl(obj):
-    """Export obj to a fresh STL file and return its bytes."""
-    global _counter
-    _counter += 1
-    path = _os.path.join(_tmpdir, f"obj_{_counter}.stl")
-    obj.export(path)
-    with open(path, "rb") as fh:
-        data = fh.read()
-    _os.remove(path)
-    return data
+    Uses :meth:`mesh` rather than :func:`export` so this fixture still
+    runs under CLI echo / F5 preview, where ``export()`` is a no-op.
+    """
+    pts, tris = obj.mesh()
+    return (
+        tuple(tuple(float(c) for c in p) for p in pts),
+        tuple(tuple(int(i) for i in t) for t in tris),
+    )
 
 
 def _assert_same(name, obj_list, obj_variant):
-    list_stl = _stl(obj_list)
-    variant_stl = _stl(obj_variant)
-    assert list_stl, f"{name}: empty export"
-    assert list_stl == variant_stl, f"{name}: variant differs from list result"
+    list_geom = _geom(obj_list)
+    variant_geom = _geom(obj_variant)
+    assert list_geom[0] and list_geom[1], f"{name}: empty mesh"
+    assert list_geom == variant_geom, f"{name}: variant differs from list result"
 
 
 def _assert_type_error(name, func):
