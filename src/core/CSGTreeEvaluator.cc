@@ -301,6 +301,22 @@ Response CSGTreeEvaluator::visit(State& state, const AbstractPolyNode& node)
 Response CSGTreeEvaluator::visit(State& state, const CsgOpNode& node)
 {
   if (state.isPostfix()) {
+    if (node.r != 0 && this->geomevaluator) {
+      // r-fillets are a mesh post-process of the boolean result, so OpenCSG
+      // preview cannot represent them. Evaluate the subtree like render().
+      std::shared_ptr<CSGNode> t1;
+      auto geom = this->geomevaluator->evaluateGeometry(node, false);
+      if (geom) {
+        t1 = evaluateCSGNodeFromGeometry(state, geom, node.modinst, node);
+      } else {
+        t1 = CSGNode::createEmptySet();
+      }
+      node.progress_report();
+      this->stored_term[node.index()] = t1;
+      applyBackgroundAndHighlight(state, node);
+      addToParent(state, node);
+      return Response::ContinueTraversal;
+    }
     applyToChildren(state, node, node.type);
     addToParent(state, node);
   }
