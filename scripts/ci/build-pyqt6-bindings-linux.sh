@@ -47,6 +47,7 @@ tar xzf PyQt6.tar.gz
 EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
 cd "$EXTRACTED_DIR"
 
+python3 "$PROJECT_ROOT/scripts/ci/patch_pyqt6_free_operators.py" sip/
 sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
 cd build
 make -j"$(nproc)"
