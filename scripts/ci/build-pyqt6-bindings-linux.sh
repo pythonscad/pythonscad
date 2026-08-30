@@ -25,7 +25,8 @@ echo "Building PyQt6 bindings against system Qt $QT_VERSION"
 if command -v apt-get >/dev/null; then
   apt-get install -y python3-venv python3-pip curl >/dev/null
 elif command -v dnf >/dev/null; then
-  dnf install -y python3-pip curl >/dev/null
+  dnf install -y python3-pip >/dev/null
+ command -v curl >/dev/null || dnf install -y curl-minimal >/dev/null
 fi
 
 python3 -m venv /tmp/pyqt-build-venv
@@ -42,6 +43,7 @@ tar xzf PyQt6.tar.gz
 EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
 cd "$EXTRACTED_DIR"
 
+scripts/ci/build-pyqt6-bindings-linux.sh
 sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
 cd build
 make -j"$(nproc)"
