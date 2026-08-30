@@ -287,7 +287,10 @@ set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
 # The property above only applies to targets that already exist. Seed the
 # same default for every target created later (OpenSCADPy, tests, …) so
 # clangd / IntelliSense see Python.h and other per-target include paths.
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# CACHE+FORCE updates cmake-gui; CMake already put OFF in the cache by
+# this point, so a non-FORCE cache set() would be a no-op.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL
+  "Generate compile_commands.json for clangd/clang-tidy" FORCE)
 
 # Verbose link step
 if(("${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}" STREQUAL "GNU") OR
