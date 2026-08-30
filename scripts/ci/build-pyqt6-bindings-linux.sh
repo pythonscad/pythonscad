@@ -37,8 +37,14 @@ echo "Using Python: $PYTHON_BIN ($($PYTHON_BIN --version))"
 # shellcheck disable=SC1091
 source /tmp/pyqt-build-venv/bin/activate
 pip install --upgrade pip
-pip install -r "$PROJECT_ROOT/scripts/ci/pyqt6-build-requirements.txt"
-
+PY_MAJOR_MINOR=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+if [ -f "$PROJECT_ROOT/scripts/ci/pyqt6-build-requirements-py${PY_MAJOR_MINOR}.txt" ]; then
+  REQUIREMENTS_FILE="$PROJECT_ROOT/scripts/ci/pyqt6-build-requirements-py${PY_MAJOR_MINOR}.txt"
+else
+  REQUIREMENTS_FILE="$PROJECT_ROOT/scripts/ci/pyqt6-build-requirements.txt"
+fi
+echo "Using requirements file: $REQUIREMENTS_FILE (Python $PY_MAJOR_MINOR)"
+pip install -r "$REQUIREMENTS_FILE"
 mkdir -p /tmp/pyqt-src && cd /tmp/pyqt-src
 read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$PROJECT_ROOT/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
 echo "Selected PyQt6 version: $PYQT_VERSION"
@@ -66,7 +72,7 @@ cp -r "$FOUND_DIR" "$PROJECT_ROOT/libraries/python/PyQt6"
 
 mkdir -p /tmp/pyqt-sip-only
 pip install PyQt6-sip \
-  --constraint="$PROJECT_ROOT/scripts/ci/pyqt6-build-requirements.txt" \
+  --constraint="$REQUIREMENTS_FILE" \	
   --target=/tmp/pyqt-sip-only --no-deps
 SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 -iname "sip*.so" | head -1)
 if [ -z "$SIP_SO" ]; then
