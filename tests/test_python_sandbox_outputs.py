@@ -153,6 +153,23 @@ def main():
         assert not (sandbox_outputs / "con").exists()
         assert not (sandbox_outputs / "nul").exists()
 
+        dash_d = run(
+            [
+                args.pythonscad,
+                "--python=sandboxed",
+                "-D",
+                "import sys",
+                "-o",
+                str(tmpdir / "dash-d.csg"),
+                str(script),
+            ],
+            tmpdir,
+            env,
+        )
+        assert dash_d.returncode == 0, dash_d.stdout
+        assert (tmpdir / "dash-d.csg").read_text(encoding="utf-8").startswith("cube(")
+        assert "import sys" not in (tmpdir / "dash-d.csg").read_text(encoding="utf-8")
+
         second = run(
             [
                 args.pythonscad,

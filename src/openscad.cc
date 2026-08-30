@@ -745,14 +745,13 @@ int cmdline(const CommandLine& cmd)
 
 #ifdef ENABLE_PYTHON
   python_active = false;
-  if (boost::algorithm::ends_with(cmd.filename, ".py") &&
-      pythonExecutionModeIsNative(arg_python_execution_mode)) {
+  const bool python_file = boost::algorithm::ends_with(cmd.filename, ".py");
+  if (python_file && pythonExecutionModeIsNative(arg_python_execution_mode)) {
     python_active = true;
   }
 
   std::string text_py = text;
-  if (boost::algorithm::ends_with(cmd.filename, ".py") &&
-      !pythonExecutionModeIsNative(arg_python_execution_mode)) {
+  if (python_file && !pythonExecutionModeIsNative(arg_python_execution_mode)) {
     if (cmd.animate.frames != 0) {
       LOG(message_group::Error, "Sandboxed Python animation export is not supported yet.");
       return 1;
@@ -785,7 +784,7 @@ int cmdline(const CommandLine& cmd)
   }
   // For Python designs, -D overrides were already evaluated as Python above.
   // Appending them here would feed Python into the SCAD parser and fail the run.
-  if (python_active) {
+  if (python_file) {
     text += "\n\x03\n";
   } else
 #endif  // ifdef ENABLE_PYTHON
