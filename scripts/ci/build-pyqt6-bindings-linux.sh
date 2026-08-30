@@ -29,7 +29,11 @@ elif command -v dnf >/dev/null; then
  command -v curl >/dev/null || dnf install -y curl-minimal >/dev/null
 fi
 
-python3 -m venv /tmp/pyqt-build-venv
+PYTHON_BIN=$(command -v python3.12 || command -v python3.11 || command -v python3.10 || command -v python3)
+echo "Using Python: $PYTHON_BIN ($($PYTHON_BIN --version))"
+
+"$PYTHON_BIN" -m venv /tmp/pyqt-build-venv
+
 # shellcheck disable=SC1091
 source /tmp/pyqt-build-venv/bin/activate
 pip install --upgrade pip
