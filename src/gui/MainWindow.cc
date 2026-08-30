@@ -291,16 +291,7 @@ bool pythonDesignCanRun(const EditorInterface *editor)
 
 bool isReservedWindowsSandboxOutputPathComponent(const QString& component)
 {
-  const QString stem = component.section('.', 0, 0).toLower();
-  static const QStringList reserved = {
-    QStringLiteral("con"),  QStringLiteral("prn"),  QStringLiteral("aux"),  QStringLiteral("nul"),
-    QStringLiteral("com1"), QStringLiteral("com2"), QStringLiteral("com3"), QStringLiteral("com4"),
-    QStringLiteral("com5"), QStringLiteral("com6"), QStringLiteral("com7"), QStringLiteral("com8"),
-    QStringLiteral("com9"), QStringLiteral("lpt1"), QStringLiteral("lpt2"), QStringLiteral("lpt3"),
-    QStringLiteral("lpt4"), QStringLiteral("lpt5"), QStringLiteral("lpt6"), QStringLiteral("lpt7"),
-    QStringLiteral("lpt8"), QStringLiteral("lpt9"),
-  };
-  return reserved.contains(stem);
+  return isReservedWindowsDeviceNameComponent(component.toStdString());
 }
 
 bool isSafeSandboxOutputRelativePath(const QString& value)

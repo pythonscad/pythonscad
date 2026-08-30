@@ -23,4 +23,8 @@ struct PythonSandboxResult {
 PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const std::string& scriptpath);
 void cleanupPythonSandboxResult(const PythonSandboxResult& result);
 
+// Windows reserved device names (CON, NUL, ...) after stripping trailing
+// spaces and dots that the Win32 path normalizer would otherwise remove.
+bool isReservedWindowsDeviceNameComponent(const std::string& component);
+
 #endif  // ENABLE_PYTHON

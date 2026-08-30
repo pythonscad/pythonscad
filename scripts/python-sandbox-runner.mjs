@@ -71,6 +71,12 @@ const RESERVED_WINDOWS_NAMES = new Set([
   'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9',
 ]);
 
+function reservedWindowsStem(part)
+{
+  const withoutTrailer = part.replace(/[ .]+$/g, '');
+  return withoutTrailer.split('.')[0].replace(/[ .]+$/g, '').toLowerCase();
+}
+
 function safeRelativePath(relativePath)
 {
   if (!relativePath || relativePath.includes('\0') || relativePath.startsWith('/')) return null;
@@ -85,8 +91,7 @@ function safeRelativePath(relativePath)
   const parts = normalized.split('/');
   for (const part of parts) {
     if (!part || part === '.' || part === '..') return null;
-    const stem = part.split('.')[0].toLowerCase();
-    if (RESERVED_WINDOWS_NAMES.has(stem)) return null;
+    if (RESERVED_WINDOWS_NAMES.has(reservedWindowsStem(part))) return null;
   }
   return normalized;
 }

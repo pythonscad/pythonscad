@@ -79,6 +79,8 @@ async function OpenSCAD() {
       FS.writeFile('/work/output.csg', 'cube(size = [1, 1, 1], center = false);\n');
       FS.writeFile('/work/out/a.stl', 'solid a\nendsolid a\n');
       FS.writeFile('/work/out/nested/b.stl', 'solid b\nendsolid b\n');
+      FS.writeFile('/work/out/con ', 'reserved-con-space\n');
+      FS.writeFile('/work/out/nul.', 'reserved-nul-dot\n');
     },
   };
 }
@@ -146,6 +148,10 @@ def main():
         assert out_csg.read_text(encoding="utf-8").startswith("cube(")
         assert (sandbox_outputs / "a.stl").read_text(encoding="utf-8").startswith("solid a")
         assert (sandbox_outputs / "nested" / "b.stl").read_text(encoding="utf-8").startswith("solid b")
+        assert not (sandbox_outputs / "con ").exists()
+        assert not (sandbox_outputs / "nul.").exists()
+        assert not (sandbox_outputs / "con").exists()
+        assert not (sandbox_outputs / "nul").exists()
 
         second = run(
             [

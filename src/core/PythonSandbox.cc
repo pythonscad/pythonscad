@@ -240,18 +240,6 @@ bool hasManifestControlCharacter(const std::string& value)
                      [](unsigned char ch) { return ch < 0x20 || ch == 0x7f; });
 }
 
-bool isReservedWindowsManifestPathComponent(const std::string& component)
-{
-  std::string stem = component.substr(0, component.find('.'));
-  std::transform(stem.begin(), stem.end(), stem.begin(),
-                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-  static constexpr std::array<const char *, 22> reserved = {
-    "con",  "prn",  "aux",  "nul",  "com1", "com2", "com3", "com4", "com5", "com6", "com7",
-    "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
-  };
-  return std::find(reserved.begin(), reserved.end(), stem) != reserved.end();
-}
-
 bool isSafeManifestRelativePath(const std::string& value)
 {
   if (hasManifestControlCharacter(value) || value.empty() || value[0] == '/') return false;
@@ -264,7 +252,7 @@ bool isSafeManifestRelativePath(const std::string& value)
   for (const auto& part : normalized) {
     const std::string component = part.generic_string();
     if (component.empty() || component == "." || component == "..") return false;
-    if (isReservedWindowsManifestPathComponent(component)) return false;
+    if (isReservedWindowsDeviceNameComponent(component)) return false;
   }
   return true;
 }
@@ -448,6 +436,26 @@ bool readManifest(const fs::path& manifestFile, const fs::path& outputRoot,
 }
 
 }  // namespace
+
+bool isReservedWindowsDeviceNameComponent(const std::string& component)
+{
+  auto trimDecorations = [](std::string value) {
+    while (!value.empty() && (value.back() == ' ' || value.back() == '.')) {
+      value.pop_back();
+    }
+    return value;
+  };
+
+  std::string stem = trimDecorations(component);
+  stem = trimDecorations(stem.substr(0, stem.find('.')));
+  std::transform(stem.begin(), stem.end(), stem.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  static constexpr std::array<const char *, 22> reserved = {
+    "con",  "prn",  "aux",  "nul",  "com1", "com2", "com3", "com4", "com5", "com6", "com7",
+    "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
+  };
+  return std::find(reserved.begin(), reserved.end(), stem) != reserved.end();
+}
 
 PythonSandboxResult evaluatePythonSandboxToCsg(const std::string& code, const std::string& scriptpath)
 {

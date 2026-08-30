@@ -228,17 +228,6 @@ bool checkAndExport(const std::shared_ptr<const Geometry>& root_geom, unsigned d
 }
 
 #ifdef ENABLE_PYTHON
-bool isReservedWindowsSandboxPathComponent(const std::string& component)
-{
-  std::string stem = component.substr(0, component.find('.'));
-  boost::algorithm::to_lower(stem);
-  static const std::array<const char *, 22> reserved = {
-    "con",  "prn",  "aux",  "nul",  "com1", "com2", "com3", "com4", "com5", "com6", "com7",
-    "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
-  };
-  return std::find(reserved.begin(), reserved.end(), stem) != reserved.end();
-}
-
 bool isSafeSandboxRelativePath(const std::string& relativePath)
 {
   if (relativePath.empty() || relativePath[0] == '/' || relativePath.find('\0') != std::string::npos ||
@@ -252,7 +241,7 @@ bool isSafeSandboxRelativePath(const std::string& relativePath)
   for (const auto& part : normalized) {
     const std::string value = part.generic_string();
     if (value.empty() || value == "." || value == "..") return false;
-    if (isReservedWindowsSandboxPathComponent(value)) return false;
+    if (isReservedWindowsDeviceNameComponent(value)) return false;
   }
   return true;
 }
