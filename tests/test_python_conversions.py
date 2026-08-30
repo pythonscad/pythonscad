@@ -237,7 +237,7 @@ def main() -> int:
 
     try:
         proc = subprocess.run(
-            [pythonscad, "--trust-python", script_path, "-o", out_stl],
+            [pythonscad, "--python=native", script_path, "-o", out_stl],
             capture_output=True,
             text=True,
             timeout=TIMEOUT_SECONDS,

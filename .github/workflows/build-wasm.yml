@@ -153,7 +153,7 @@ jobs:
             pythonscad-wasm-python-base:local \
             bash -c "
               set -euo pipefail
-              node pythonscad.js -o /tmp/add-parameter.stl --trust-python \
+              node pythonscad.js -o /tmp/add-parameter.stl --python=native \
                 /src/wasm-test/python-callback-abi.py
               SIZE=\$(wc -c < /tmp/add-parameter.stl)
               echo \"add_parameter STL output: \${SIZE} bytes\"
@@ -170,7 +170,7 @@ jobs:
             pythonscad-wasm-python-base:local \
             bash -c "
               set -euo pipefail
-              node pythonscad.js -o /tmp/logo.stl --trust-python \
+              node pythonscad.js -o /tmp/logo.stl --python=native \
                 /src/examples/Python/pythonscad-logo.py 2>&1 | tee /tmp/logo.log
               ! grep -q 'assertion violation' /tmp/logo.log
               SIZE=\$(wc -c < /tmp/logo.stl)
