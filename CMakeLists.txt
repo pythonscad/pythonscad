@@ -107,6 +107,11 @@ endif()
 # Note: CMAKE_OSX_DEPLOYMENT_TARGET must be set before the project() invocation
 set(CMAKE_OSX_DEPLOYMENT_TARGET ${DEPLOYMENT_TARGET} CACHE STRING "Minimum OS X deployment version")
 
+# Default ON so later targets (OpenSCADPy, tests, …) appear in
+# compile_commands.json. No FORCE: -DCMAKE_EXPORT_COMPILE_COMMANDS=OFF wins.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL
+  "Generate compile_commands.json for clangd/clang-tidy")
+
 project(OpenSCAD
   VERSION ${PROJECT_VERSION}
   DESCRIPTION "The Programmer's Solid 3D CAD Modeler"
@@ -284,13 +289,6 @@ set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
   CXX_EXTENSIONS OFF
   CXX_STANDARD_REQUIRED ON
 )
-# The property above only applies to targets that already exist. Seed the
-# same default for every target created later (OpenSCADPy, tests, …) so
-# clangd / IntelliSense see Python.h and other per-target include paths.
-# CACHE+FORCE updates cmake-gui; CMake already put OFF in the cache by
-# this point, so a non-FORCE cache set() would be a no-op.
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL
-  "Generate compile_commands.json for clangd/clang-tidy" FORCE)
 
 # Verbose link step
 if(("${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}" STREQUAL "GNU") OR
@@ -1037,6 +1035,7 @@ if(ENABLE_PYTHON)
   set_property(TARGET OpenSCADPy PROPERTY CXX_STANDARD 17)
   set_property(TARGET OpenSCADPy PROPERTY CXX_EXTENSIONS OFF)
   set_property(TARGET OpenSCADPy PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_property(TARGET OpenSCADPy PROPERTY EXPORT_COMPILE_COMMANDS ON)
   target_compile_definitions(OpenSCADPy PRIVATE "STACKSIZE=${STACKSIZE}")
   target_compile_options(OpenSCADPy PRIVATE "$<$<CONFIG:DEBUG>:-DDEBUG>")
   target_compile_definitions(OpenSCADPy PRIVATE
