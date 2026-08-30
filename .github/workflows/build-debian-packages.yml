@@ -167,6 +167,19 @@ jobs:
             libboost-all-dev \
             libssl-dev
 
+      - name: Cache PyQt6 bindings (amd64 native)
+        if: matrix.arch == 'amd64' && !matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        uses: actions/cache@v4
+        with:
+          path: libraries/python/PyQt6
+          key: pyqt6-bindings-deb-${{ matrix.runner }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
+
+      - name: Build PyQt6 bindings (amd64 native)
+        if: matrix.arch == 'amd64' && !matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        run: |
+          sudo apt-get install -y qt6-base-dev-tools
+          test -d libraries/python/PyQt6 || sudo ./scripts/ci/build-pyqt6-bindings-linux.sh
+
       - name: Install build dependencies (amd64 Docker container)
         if: matrix.arch == 'amd64' && matrix.docker_image
         env:
@@ -201,6 +214,19 @@ jobs:
             libboost-all-dev \
             libssl-dev
 
+      - name: Cache PyQt6 bindings (amd64 container)
+        if: matrix.arch == 'amd64' && matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        uses: actions/cache@v4
+        with:
+          path: libraries/python/PyQt6
+          key: pyqt6-bindings-deb-${{ matrix.docker_image }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
+
+      - name: Build PyQt6 bindings (amd64 container)
+        if: matrix.arch == 'amd64' && matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        run: |
+          apt-get install -y qt6-base-dev-tools
+          test -d libraries/python/PyQt6 || ./scripts/ci/build-pyqt6-bindings-linux.sh
+
       - name: Import GPG signing key (amd64)
         if: matrix.arch == 'amd64' && (github.event_name == 'release' || github.event.inputs.upload_to_release != '')
         env:
@@ -221,6 +247,13 @@ jobs:
           mkdir -p "$OUTPUT_DIR"
           chmod +x ./scripts/build-debian-package.sh
           ./scripts/build-debian-package.sh
+
+  - name: Cache PyQt6 bindings (arm64)
+        if: matrix.arch == 'arm64' && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        uses: actions/cache@v4
+        with:
+          path: /tmp/pyqt6-bindings-cache
+          key: pyqt6-bindings-deb-arm64-${{ matrix.docker_image }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
 
       - name: Build Debian package (arm64) in Docker
         if: matrix.arch == 'arm64'
@@ -257,10 +290,12 @@ jobs:
             KEY_INPUT=""
           fi
           mkdir -p /tmp/debs
+          mkdir -p /tmp/pyqt6-bindings-cache          
           printf '%s' "$KEY_INPUT" | docker run --rm -i \
             --platform linux/arm64 \
             -v "$PWD:/workspace" \
             -v /tmp/debs:/tmp/debs \
+            -v /tmp/pyqt6-bindings-cache:/tmp/pyqt6-bindings-cache \
             -w /workspace \
             -e OUTPUT_DIR=/tmp/debs \
             -e DEBIAN_DISTRO="$MATRIX_DISTRO" \
@@ -298,6 +333,18 @@ jobs:
                 fakeroot \
                 libboost-all-dev \
                 libssl-dev
+
+              if [ "$QT_PROFILE" = "pythonscad-qt6" ]; then
+                apt-get install -y qt6-base-dev-tools python3-venv python3-pip curl
+                if [ -d /tmp/pyqt6-bindings-cache/PyQt6 ]; then
+                  mkdir -p libraries/python
+                  cp -r /tmp/pyqt6-bindings-cache/PyQt6 libraries/python/PyQt6
+                else
+                  ./scripts/ci/build-pyqt6-bindings-linux.sh
+                  mkdir -p /tmp/pyqt6-bindings-cache
+                  cp -r libraries/python/PyQt6 /tmp/pyqt6-bindings-cache/
+                fi
+              fi
 
               # Build package
               mkdir -p "$OUTPUT_DIR"
