@@ -47,7 +47,7 @@ tar xzf PyQt6.tar.gz
 EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
 cd "$EXTRACTED_DIR"
 
-scripts/ci/build-pyqt6-bindings-linux.sh
+./scripts/ci/build-pyqt6-bindings-linux.sh
 sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
 cd build
 make -j"$(nproc)"
