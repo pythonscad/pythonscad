@@ -72,7 +72,7 @@ cp -r "$FOUND_DIR" "$PROJECT_ROOT/libraries/python/PyQt6"
 
 mkdir -p /tmp/pyqt-sip-only
 pip install PyQt6-sip \
-  --constraint="$REQUIREMENTS_FILE" \	
+  --constraint="$REQUIREMENTS_FILE" \
   --target=/tmp/pyqt-sip-only --no-deps
 SIP_SO=$(find /tmp/pyqt-sip-only -maxdepth 6 -iname "sip*.so" | head -1)
 if [ -z "$SIP_SO" ]; then
