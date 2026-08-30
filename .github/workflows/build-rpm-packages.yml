@@ -34,20 +34,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: DEBUG - Python versions available
-        run: |
-          for v in python3.13 python3.12 python3.11 python3.10 python3.9 python3; do
-            if command -v "$v" >/dev/null; then
-              echo "$v: $($v --version)"
-            else
-              echo "$v: nicht gefunden"
-            fi
-          done
-          echo "--- dnf verfügbare python3.1x Pakete ---"
-          dnf list available 2>/dev/null | grep -E '^python3\.(1[0-3])' || echo "keine gefunden"
-          echo "--- rpm %python3_version ---"
-          rpm -E %python3_version
-
       - name: Validate and prepare matrix
         id: set-matrix
         run: |
@@ -130,6 +116,22 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: DEBUG - Python versions available
+        if: matrix.arch == 'amd64'
+        run: |
+          for v in python3.13 python3.12 python3.11 python3.10 python3.9 python3; do
+            if command -v "$v" >/dev/null; then
+              echo "$v: $($v --version)"
+            else
+              echo "$v: nicht gefunden"
+            fi
+          done
+          echo "--- dnf verfügbare python3.1x Pakete ---"
+          dnf list available 2>/dev/null | grep -E '^python3\.(1[0-3])' || echo "keine gefunden"
+          echo "--- rpm %python3_version ---"
+          rpm -E %python3_version
+
+            
       - name: Fetch tags for version detection
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE" || true
