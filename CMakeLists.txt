@@ -284,6 +284,10 @@ set_target_properties(OpenSCADLibInternal svg OpenSCADExe PROPERTIES
   CXX_EXTENSIONS OFF
   CXX_STANDARD_REQUIRED ON
 )
+# The property above only applies to targets that already exist. Seed the
+# same default for every target created later (OpenSCADPy, tests, …) so
+# clangd / IntelliSense see Python.h and other per-target include paths.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Verbose link step
 if(("${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}" STREQUAL "GNU") OR
