@@ -189,7 +189,7 @@ function Invoke-SmokeTest {
 
     Write-SmokeLog "Smoke testing $Label`: Python CLI export"
     Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
-        -Arguments @('--trust-python', '-o', (Join-Path $testdir 'cube-python.stl'), (Join-Path $testdir 'cube.py')) `
+        -Arguments @('--python=native', '-o', (Join-Path $testdir 'cube-python.stl'), (Join-Path $testdir 'cube.py')) `
         -LogFile (Join-Path $testdir 'python-export.log')
     Assert-NonEmptyFile -Path (Join-Path $testdir 'cube-python.stl')
 

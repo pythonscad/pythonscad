@@ -16,7 +16,7 @@ Each deployable is tested in an isolated temporary directory:
 - `pythonscad --info` starts without crashing.
 - A plain OpenSCAD file containing `cube(10);` exports to STL.
 - A Python script using `from pythonscad import *` exports to STL with
-  `--trust-python`.
+  `--python=native`.
 - `pythonscad --repl` accepts a small piped Python script and exports a cube.
 - `pythonscad --ipython` runs a small Python script and exports a cube.
 

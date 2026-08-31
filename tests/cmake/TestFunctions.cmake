@@ -495,7 +495,7 @@ endfunction()
 
 
 #
-# Adds tests for fixtures that drive PythonSCAD with --trust-python and
+# Adds tests for fixtures that drive PythonSCAD with --python=native and
 # write one or more output files via in-script export() calls (e.g.
 # `export(geom, "foo.stl")` or `MultiToolExporter(...).export()`).
 #

@@ -42,29 +42,45 @@
 static std::shared_ptr<AbstractNode> builtin_union(
   const std::shared_ptr<const ModuleInstantiation>& inst, Arguments arguments, const Children& children)
 {
-  Parameters parameters = Parameters::parse(std::move(arguments), inst->location(), {});
-  return children.instantiate(std::make_shared<CsgOpNode>(inst, OpenSCADOperator::UNION));
+  Parameters parameters = Parameters::parse(std::move(arguments), inst->location(), {"r", "fn"});
+  auto node = std::make_shared<CsgOpNode>(inst, OpenSCADOperator::UNION);
+  if (parameters["r"].type() == Value::Type::NUMBER) node->r = parameters["r"].toDouble();
+  if (parameters["fn"].type() == Value::Type::NUMBER)
+    node->fn = static_cast<int>(parameters["fn"].toDouble());
+  return children.instantiate(node);
 }
 
 static std::shared_ptr<AbstractNode> builtin_difference(
   const std::shared_ptr<const ModuleInstantiation>& inst, Arguments arguments, const Children& children)
 {
-  Parameters parameters = Parameters::parse(std::move(arguments), inst->location(), {});
-  return children.instantiate(std::make_shared<CsgOpNode>(inst, OpenSCADOperator::DIFFERENCE));
+  Parameters parameters = Parameters::parse(std::move(arguments), inst->location(), {"r", "fn"});
+  auto node = std::make_shared<CsgOpNode>(inst, OpenSCADOperator::DIFFERENCE);
+  if (parameters["r"].type() == Value::Type::NUMBER) node->r = parameters["r"].toDouble();
+  if (parameters["fn"].type() == Value::Type::NUMBER)
+    node->fn = static_cast<int>(parameters["fn"].toDouble());
+  return children.instantiate(node);
 }
 
 static std::shared_ptr<AbstractNode> builtin_intersection(
   const std::shared_ptr<const ModuleInstantiation>& inst, Arguments arguments, const Children& children)
 {
-  Parameters parameters = Parameters::parse(std::move(arguments), inst->location(), {});
-  return children.instantiate(std::make_shared<CsgOpNode>(inst, OpenSCADOperator::INTERSECTION));
+  Parameters parameters = Parameters::parse(std::move(arguments), inst->location(), {"r", "fn"});
+  auto node = std::make_shared<CsgOpNode>(inst, OpenSCADOperator::INTERSECTION);
+  if (parameters["r"].type() == Value::Type::NUMBER) node->r = parameters["r"].toDouble();
+  if (parameters["fn"].type() == Value::Type::NUMBER)
+    node->fn = static_cast<int>(parameters["fn"].toDouble());
+  return children.instantiate(node);
 }
 
 std::string CsgOpNode::toString() const
 {
   std::ostringstream stream;
   stream << this->name() << "(";
-  if (r != 0 || fn != 2) stream << " r = " << this->r << " , fn = " << this->fn << " ";
+  if (r != 0) {
+    stream << " r = " << this->r << " , fn = " << this->fn << " ";
+  } else if (fn != 2) {
+    stream << " fn = " << this->fn << " ";
+  }
   stream << ")";
   return stream.str();
 }

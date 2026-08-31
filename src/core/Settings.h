@@ -531,6 +531,7 @@ public:
   static SettingsEntryString pythonTrustedFiles;
   static SettingsEntryString pythonVirtualEnv;
   static SettingsEntryString pythonNetworkImportList;
+  static SettingsEntryEnum<std::string> pythonExecutionMode;
   static SettingsEntryBool globalTrustPython;
 };
 

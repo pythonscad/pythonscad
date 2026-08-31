@@ -213,7 +213,7 @@ rs_smoke_binary() {
 
   rs_log "Smoke testing $label: Python CLI export"
   rs_run_logged "$label: Python CLI export" "$testdir/python-export.log" \
-    "$exe" --trust-python -o "$testdir/cube-python.stl" "$testdir/cube.py"
+    "$exe" --python=native -o "$testdir/cube-python.stl" "$testdir/cube.py"
   rs_file_nonempty "$testdir/cube-python.stl" "$label: Python CLI export"
 
   rs_log "Smoke testing $label: basic Python REPL"

@@ -56,7 +56,7 @@ def main() -> int:
         proc = subprocess.run(
             [
                 pythonscad,
-                "--trust-python",
+                "--python=native",
                 "-o",
                 str(output_file),
                 str(main_py),

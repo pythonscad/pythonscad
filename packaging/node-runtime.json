@@ -1,0 +1,25 @@
+{
+  "nodeVersion": "24.18.0",
+  "platforms": {
+    "darwin-arm64": {
+      "url": "https://nodejs.org/dist/v24.18.0/node-v24.18.0-darwin-arm64.tar.gz",
+      "sha256": "e1a97e14c99c803e96c7339403282ea05a499c32f8d83defe9ef5ec66f979ed1",
+      "type": "tar"
+    },
+    "darwin-x64": {
+      "url": "https://nodejs.org/dist/v24.18.0/node-v24.18.0-darwin-x64.tar.gz",
+      "sha256": "dfd0dbd3e721503434df7b7205e719f61b3a3a31b2bcf9729b8b91fea240f080",
+      "type": "tar"
+    },
+    "linux-x64": {
+      "url": "https://nodejs.org/dist/v24.18.0/node-v24.18.0-linux-x64.tar.xz",
+      "sha256": "55aa7153f9d88f28d765fcdad5ae6945b5c0f98a36881703817e4c450fa76742",
+      "type": "tar"
+    },
+    "win-x64": {
+      "url": "https://nodejs.org/dist/v24.18.0/win-x64/node.exe",
+      "sha256": "9a4eb5f1c29c6a2e93852ead46b999e284a6a5ca8bab4d4e241d587d025a52de",
+      "type": "exe"
+    }
+  }
+}

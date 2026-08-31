@@ -355,7 +355,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
   )
   if (WASM_BUILD_TYPE STREQUAL "web")
     target_link_options(OpenSCADExe PUBLIC
-      -sENVIRONMENT=web,worker
+      -sENVIRONMENT=web,worker,node
       -sABORT_ON_WASM_EXCEPTIONS
       -sEXPORT_ES6=1
       -sEXPORT_NAME=OpenSCAD
@@ -1553,6 +1553,7 @@ set(CORE_SOURCES
   src/core/ScopeContext.cc
   src/core/Selection.cc
   src/core/Settings.cc
+  src/core/PythonSandbox.cc
   src/core/SourceFile.cc
   src/core/SourceFileCache.cc
   src/core/StatCache.cc
@@ -2435,6 +2436,25 @@ if(NOT APPLE OR APPLE_UNIX)
       install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/python.exe DESTINATION "${OPENSCAD_BINDIR}")
     else()
       install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/pythonscad-python DESTINATION "${OPENSCAD_BINDIR}")
+    endif()
+
+    if(WIN32)
+      set(PYTHONSCAD_WASM_INSTALL_DIR "wasm")
+    else()
+      set(PYTHONSCAD_WASM_INSTALL_DIR "${OPENSCAD_INSTALL_RESOURCEDIR}/wasm")
+    endif()
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/pythonscad-wasm/"
+            DESTINATION "${PYTHONSCAD_WASM_INSTALL_DIR}"
+            OPTIONAL)
+    if(WIN32)
+      install(FILES "${CMAKE_SOURCE_DIR}/scripts/python-sandbox-runner.mjs"
+              DESTINATION "scripts")
+      install(DIRECTORY "${CMAKE_BINARY_DIR}/pythonscad-node/"
+              DESTINATION "node"
+              OPTIONAL)
+    else()
+      install(FILES "${CMAKE_SOURCE_DIR}/scripts/python-sandbox-runner.mjs"
+              DESTINATION "${OPENSCAD_INSTALL_RESOURCEDIR}/scripts")
     endif()
 
     # On Windows, the runtime Python deps (currently: IPython 9.x and its
