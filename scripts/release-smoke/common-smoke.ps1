@@ -90,6 +90,7 @@ function Invoke-PythonSCAD {
         $psi.WorkingDirectory = $WorkingDirectory
     }
     $psi.UseShellExecute = $false
+    $psi.Environment['QT_QPA_PLATFORM'] = 'offscreen'
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     if ($InputFile) {
@@ -159,13 +160,23 @@ from pythonscad import *
 
 export(cube(10), "ipython-cube.stl")
 '@
+    Write-Utf8Content -Path (Join-Path $TestDirectory 'pyqt6-smoke.py') -Value @'
+from PyQt6 import QtCore, QtWidgets, sip
+from pythonscad import qapp_ptr
+
+app = sip.wrapinstance(qapp_ptr(), QtWidgets.QApplication)
+assert app is not None
+print("PYQT6_PACKAGED_OK", QtCore.QT_VERSION_STR)
+raise SystemExit(0)
+'@
 }
 
 function Invoke-SmokeTest {
     param(
         [Parameter(Mandatory = $true)][string]$ExecutablePath,
         [Parameter(Mandatory = $true)][string]$Label,
-        [Parameter(Mandatory = $true)][string]$Workdir
+        [Parameter(Mandatory = $true)][string]$Workdir,
+        [switch]$ExpectPyQt6
     )
 
     if (-not (Test-Path -LiteralPath $ExecutablePath -PathType Leaf)) {
@@ -207,6 +218,19 @@ function Invoke-SmokeTest {
         -WorkingDirectory $testdir `
         -LogFile (Join-Path $testdir 'ipython.log')
     Assert-NonEmptyFile -Path (Join-Path $testdir 'ipython-cube.stl')
+
+    if ($ExpectPyQt6) {
+        Write-SmokeLog "Smoke testing $Label`: packaged PyQt6"
+        $pyqtLog = Join-Path $testdir 'pyqt6.log'
+        Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
+            -Arguments @('--repl') `
+            -WorkingDirectory $testdir `
+            -InputFile (Join-Path $testdir 'pyqt6-smoke.py') `
+            -LogFile $pyqtLog
+        if (-not (Select-String -LiteralPath $pyqtLog -SimpleMatch 'PYQT6_PACKAGED_OK' -Quiet)) {
+            throw "$Label`: packaged PyQt6 did not emit its success marker"
+        }
+    }
 
     Write-SmokeLog "Smoke testing $Label`: OK"
 }

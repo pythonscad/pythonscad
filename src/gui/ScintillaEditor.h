@@ -140,6 +140,7 @@ public slots:
   void applySettings();
   void onAutocompleteChanged(bool state);
   void onCharacterThresholdChanged(int val);
+  void onCallTipClicked(int position);
   void moveLineUp() override;
   void moveLineDown() override;
 
@@ -155,6 +156,10 @@ signals:
 
 public:
   void public_applySettings();
+  long enclosingOpenParenPosition(long cursorPos) const;
+  QString lastCallTipFunction;
+  int lastCallTipPosition = 0;
+  bool lastCallTipIsPythonForm = false;
 
 private:
   QVBoxLayout *scintillaLayout;

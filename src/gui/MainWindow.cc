@@ -250,6 +250,66 @@ int curl_download(const std::string& url, const std::string& path, std::string *
   }
   return 0;
 }
+// Functions for the pyqt connector
+
+std::string editorGetCallArgs(int pos)
+{
+  if (mainwindow_global == nullptr) return "";
+  MainWindow *mw = (MainWindow *)mainwindow_global;
+  ScintillaEditor *si = dynamic_cast<ScintillaEditor *>(mw->activeEditor);
+  if (si == nullptr) return "";
+
+  long closePos = si->qsci->SendScintilla(QsciScintillaBase::SCI_BRACEMATCH, (long)(pos - 1), (long)0);
+  if (closePos < 0 || closePos <= pos) {
+    return "";  // No matching ")": this is a new, incomplete call.
+  }
+
+  const auto length = closePos - pos;
+  QByteArray argsText((int)length + 1, '\0');
+  si->qsci->SendScintilla(QsciScintillaBase::SCI_GETTEXTRANGE, (long)pos, closePos, argsText.data());
+  return std::string(argsText.constData(), (size_t)length);
+}
+
+void editorReplaceCallArgs(int pos, const char *newText)
+{
+  if (mainwindow_global == nullptr) return;
+  MainWindow *mw = (MainWindow *)mainwindow_global;
+  if (mw->activeEditor == nullptr) return;
+  ScintillaEditor *si = dynamic_cast<ScintillaEditor *>(mw->activeEditor);
+  if (si == nullptr) return;
+
+  int lineOpen, colOpen;
+  si->qsci->lineIndexFromPosition(pos, &lineOpen, &colOpen);
+
+  long closePos = si->qsci->SendScintilla(QsciScintillaBase::SCI_BRACEMATCH, (long)(pos - 1), (long)0);
+  QString qtext = QString::fromUtf8(newText);
+  QString finalText;
+
+  if (closePos >= pos) {
+    int lineClose, colClose;
+    si->qsci->lineIndexFromPosition((int)closePos, &lineClose, &colClose);
+    si->qsci->setSelection(lineOpen, colOpen, lineClose, colClose);
+    si->qsci->replaceSelectedText(qtext);
+    finalText = qtext;
+  } else {
+    long cursorPos = si->qsci->SendScintilla(QsciScintillaBase::SCI_GETCURRENTPOS);
+    if (cursorPos < pos) cursorPos = pos;
+    int lineCursor, colCursor;
+    si->qsci->lineIndexFromPosition((int)cursorPos, &lineCursor, &colCursor);
+    si->qsci->setSelection(lineOpen, colOpen, lineCursor, colCursor);
+    finalText = qtext + ")";
+    si->qsci->replaceSelectedText(finalText);
+  }
+
+  int newLines = finalText.count('\n');
+  if (newLines == 0) {
+    si->qsci->setCursorPosition(lineOpen, colOpen + finalText.length());
+  } else {
+    int lastLineLen = finalText.section('\n', -1).length();
+    si->qsci->setCursorPosition(lineOpen + newLines, lastLineLen);
+  }
+}
+
 #endif  // ifdef ENABLE_PYTHON
 
 // Global application state
@@ -457,17 +517,8 @@ std::unique_ptr<ExternalToolInterface> createExternalToolService(print_service_t
 void MainWindow::addMenuItemCB(QString callback)
 {
 #ifdef ENABLE_PYTHON
-  std::string content = loadInitFile();
-  if (content.size() == 0) return;
-  const auto& venv = venvBinDirFromSettings();
-  const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
-  initPython(binDir, "", nullptr);
-  const auto init_err = evaluatePython(content);
-  if (!init_err.empty()) std::cerr << init_err << std::flush;
   const auto cb_err = evaluatePython(callback.toStdString());
   if (!cb_err.empty()) std::cerr << cb_err << std::flush;
-
-  finishPython();
 #endif
 }
 
@@ -511,7 +562,7 @@ void add_menuitem_trampoline(const char *menuname, const char *itemname, const c
 
 std::string MainWindow::loadInitFile(void)
 {
-  std::string path = lookup_file(".pythonscadrc", ".", "");
+  std::string path = lookup_file(".pythonscadrc", PlatformUtils::userConfigPath(), ".");
   if (path.size() == 0) return "";
   std::ifstream fh(path);
 
@@ -544,6 +595,7 @@ void MainWindow::customSetup(void)
   auto setup_err = evaluatePython("setup()");
   if (!setup_err.empty()) std::cerr << setup_err << std::flush;
   addmenuitem_this = nullptr;
+  snapshotPythonInventory();
   finishPython();
 }
 

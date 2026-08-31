@@ -44,6 +44,10 @@
 
 set -e
 
+which ar || echo "ar NICHT im PATH"
+echo "PATH=$PATH"
+pacman -Q mingw-w64-ucrt-x86_64-binutils || echo "binutils NICHT installiert"
+
 find_python() {
     if command -v python3 >/dev/null 2>&1; then
         echo python3
