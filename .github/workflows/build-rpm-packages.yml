@@ -130,8 +130,7 @@ jobs:
           dnf list available 2>/dev/null | grep -E '^python3\.(1[0-3])' || echo "keine gefunden"
           echo "--- rpm %python3_version ---"
           rpm -E %python3_version
-
-            
+           
       - name: Fetch tags for version detection
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE" || true
@@ -181,7 +180,6 @@ jobs:
 
           # Install build dependencies from spec file
           dnf builddep -y pythonscad.spec
-
 
       - name: Cache PyQt6 bindings (amd64)
         uses: actions/cache@v4

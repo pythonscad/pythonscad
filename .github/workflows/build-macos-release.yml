@@ -139,7 +139,6 @@ jobs:
 
           echo "x86_64 build complete"
 
-
       - name: Determine app bundle name
         id: appname
         run: |
