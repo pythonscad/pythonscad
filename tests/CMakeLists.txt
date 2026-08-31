@@ -150,15 +150,6 @@ set(TEST_PYTHONSCAD_EXPORT_3MF_DIR     "${CCSD}/data/pythonscad-export-3mf")
 set(TEST_PYTHONSCAD_EXPORT_OBJ_DIR     "${CCSD}/data/pythonscad-export-obj")
 set(TEST_PYTHONSCAD_EXPORT_SVG_DIR     "${CCSD}/data/pythonscad-export-svg")
 set(TEST_PYTHONSCAD_EXPORT_POV_DIR     "${CCSD}/data/pythonscad-export-pov")
-# Note: there is intentionally no `pythonscad-export-amf` group --
-# AMF mesh tessellation (vertex order + triangle indexing) is not
-# stable across the CI matrix even with --enable=predictible-output
-# (see PR #590 / issue #586). Upstream OpenSCAD also has no
-# byte-compare `export-amf` ctest for the same reason; only the
-# render-PNG `render-amf_*` tests exist. AMF is also deprecated. If
-# determinism is fixed later, add a fixture under
-# tests/data/pythonscad-export-amf/ and an `add_export_files_test()`
-# entry below.
 set(TEST_PYTHONSCAD_OVERLAY_DIR "${CCSD}/data/pythonscad-overlay")
 set(TEST_PYTHONSCAD_OVERLAY_ECHO_DIR "${CCSD}/data/pythonscad-overlay-echo")
 set(TEST_CUSTOMIZER_DIR "${CCSD}/data/scad/customizer")
@@ -360,7 +351,6 @@ list(REMOVE_ITEM FEATURES_3D_FILES
 )
 file(GLOB DEPRECATED_3D_FILES ${TEST_SCAD_DIR}/3D/deprecated/*.scad)
 file(GLOB ISSUES_3D_FILES     ${TEST_SCAD_DIR}/3D/issues/*.scad)
-file(GLOB SCAD_AMF_FILES           ${TEST_SCAD_DIR}/amf/*.scad)
 file(GLOB SCAD_NEF3_FILES          ${TEST_SCAD_DIR}/nef3/*.scad)
 file(GLOB FUNCTION_FILES           ${TEST_SCAD_DIR}/functions/*.scad)
 file(GLOB REDEFINITION_FILES       ${TEST_SCAD_DIR}/redefinition/*.scad)
@@ -420,6 +410,7 @@ list(APPEND ECHO_FILES ${FUNCTION_FILES} ${MISC_FILES} ${REDEFINITION_FILES}
   ${TEST_SCAD_DIR}/misc/assert-fail5-test.scad
   ${TEST_SCAD_DIR}/misc/for-c-style-infinite-loop.scad
   ${TEST_SCAD_DIR}/misc/parser-tests.scad
+  ${TEST_SCAD_DIR}/issues/issue6942.scad
   ${TEST_SCAD_DIR}/misc/builtin-tests.scad
   ${TEST_SCAD_DIR}/misc/dim-all.scad
   ${TEST_SCAD_DIR}/misc/string-test.scad
@@ -498,7 +489,7 @@ list(APPEND ASTDUMP_FILES ${MISC_FILES}
 list(APPEND DUMP_FILES ${FEATURES_2D_FILES} ${FEATURES_3D_FILES} ${DEPRECATED_3D_FILES} ${MISC_FILES})
 
 list(APPEND RENDER_2D_FILES ${FEATURES_2D_FILES} ${SCAD_DXF_FILES} ${ISSUES_2D_FILES} ${EXAMPLE_2D_FILES})
-list(APPEND RENDER_3D_FILES ${FEATURES_3D_FILES} ${SCAD_AMF_FILES} ${DEPRECATED_3D_FILES} ${ISSUES_3D_FILES} ${EXAMPLE_3D_FILES} ${SCAD_NEF3_FILES})
+list(APPEND RENDER_3D_FILES ${FEATURES_3D_FILES} ${DEPRECATED_3D_FILES} ${ISSUES_3D_FILES} ${EXAMPLE_3D_FILES} ${SCAD_NEF3_FILES})
 list(APPEND RENDER_3D_FILES
   ${TEST_SCAD_DIR}/misc/include-tests.scad
   ${TEST_SCAD_DIR}/misc/use-tests.scad
@@ -1108,7 +1099,6 @@ set(EXPORT_IMPORT_3D_RENDERMANIFOLD_FILES ${EXPORT_IMPORT_3D_RENDER_FILES})
 add_cmdline_test(render-monotone OPENSCAD SUFFIX png FILES ${EXPORT_IMPORT_3D_PREVIEW_FILES} ${SIMPLE_EXPORT_IMPORT_2D_FILES} ARGS --colorscheme=Monotone --render --trust-python)
 add_cmdline_test(preview-stl SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_PREVIEW_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=STL --trust-python)
 add_cmdline_test(preview-off SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_PREVIEW_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=OFF --trust-python)
-add_cmdline_test(preview-amf SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_PREVIEW_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=AMF --trust-python)
 add_cmdline_test(preview-obj SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_PREVIEW_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=OBJ --trust-python)
 
 add_cmdline_test(render-csg-cgal SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${RENDER_COMMON_FILES} EXPECTEDDIR render ARGS ${OPENSCAD_EXE_ARG} --format=csg --render --backend=cgal --trust-python)
@@ -1116,7 +1106,6 @@ add_cmdline_test(render-csg-cgal SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png F
 add_cmdline_test(render-stl SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_RENDER_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=STL --render=force)
 add_cmdline_test(render-off-cgal SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_RENDER_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=OFF --render=force --backend=cgal --trust-python)
 add_cmdline_test(render-off-cgal SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_DIFFERENT_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=OFF --render=force --backend=cgal --trust-python)
-add_cmdline_test(render-amf SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_RENDER_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=AMF --render=force --trust-python)
 add_cmdline_test(render-obj SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_RENDER_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=OBJ --render=force --trust-python)
 
 if (ENABLE_MANIFOLD_TESTS)
@@ -1136,7 +1125,6 @@ add_cmdline_test(render-off-manifold SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX p
 add_cmdline_test(render-stl-manifold SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_RENDERMANIFOLD_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=STL --render=force --backend=manifold --trust-python)
 add_cmdline_test(render-stl-manifold SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${FILES_MANIFOLD_CORNER_CASES} EXPECTEDDIR render-off-manifold ARGS ${OPENSCAD_EXE_ARG} --format=STL --render=force --backend=manifold --trust-python)
 
-add_cmdline_test(render-amf-manifold SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_RENDERMANIFOLD_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=AMF --render=force --backend=manifold --trust-python)
 add_cmdline_test(render-obj-manifold SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${EXPORT_IMPORT_3D_RENDERMANIFOLD_FILES} EXPECTEDDIR render-monotone ARGS ${OPENSCAD_EXE_ARG} --format=OBJ --render=force --backend=manifold --trust-python)
 add_cmdline_test(render-obj-manifold SCRIPT ${EXPORT_IMPORT_PNGTEST_PY} SUFFIX png FILES ${FILES_MANIFOLD_CORNER_CASES} EXPECTEDDIR render-off-manifold ARGS ${OPENSCAD_EXE_ARG} --format=OBJ --render=force --backend=manifold --trust-python)
 endif(ENABLE_MANIFOLD_TESTS)
@@ -1491,6 +1479,12 @@ add_export_files_test(pythonscad-export-pov
 )
 
 #
+# --enable=unicode-identifiers tests
+#
+add_cmdline_test(echo EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${TEST_SCAD_DIR}/misc/unicode-identifiers.scad ARGS --enable=unicode-identifiers)
+add_failing_test(parsererrors SUFFIX stl FILES ${TEST_SCAD_DIR}/misc/unicode-identifiers-fail.scad ARGS --retval=1 --enable=unicode-identifiers)
+
+#
 # --enable=discretization-by-error tests
 #
 # Piggy-back on existing tests which have $fe in them. We don't care about preview vs cgal etc for just this feature.
@@ -1523,7 +1517,6 @@ endfunction()
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT stl)
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT off)
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT wrl)
-add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT amf)
 if (ENABLE_LIB3MF_TESTS)
   add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT 3mf)
 endif()
@@ -1722,12 +1715,6 @@ disable_tests_safe(
   render-csg-cgal_minkowski3-difference-test
   preview-cgal_minkowski3-difference-test
 
-  # https://github.com/openscad/openscad/issues/909
-  preview-amf_polyhedron-single-triangle
-  render-amf_bad-stl-tardis
-  render-amf_bad-stl-pcbvicebar
-  render-amf_bad-stl-wing
-
   # When exported from CGAL, the file cannot be re-imported
   render-stl_bad-stl-wing
   render-off-cgal_bad-stl-wing
@@ -1775,11 +1762,6 @@ disable_tests_safe(
   # objects to render differently on different machines
   render-manifold_color-tests
   render-manifold_hex-colors-tests
-
-  # https://github.com/openscad/openscad/issues/909
-  render-amf-manifold_bad-stl-wing
-  render-amf-manifold_bad-stl-pcbvicebar
-  render-amf-manifold_bad-stl-tardis
 
   # https://github.com/openscad/openscad/issues/2841
   render-manifold_issue2841b
@@ -1916,6 +1898,16 @@ disable_tests_safe(
 	render-cgal_2dcolor_union
 	render-csg-cgal_2dcolor_union
 	render-dxf_2dcolor_union
+)
+
+###############################
+# Test harness's own behaviour #
+###############################
+
+# Needs no OpenSCAD binary: it exercises test_pretty_print.py's log-file selection directly.
+add_test(NAME pretty_print_logfile
+  CONFIGURATIONS Default
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_pretty_print_logfile.py
 )
 
 ####################

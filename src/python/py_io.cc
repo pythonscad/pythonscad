@@ -554,7 +554,6 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     else if (ext == ".dxf") actualtype = ImportType::DXF;
     else if (ext == ".nef3") actualtype = ImportType::NEF3;
     else if (ext == ".3mf") actualtype = ImportType::_3MF;
-    else if (ext == ".amf") actualtype = ImportType::AMF;
     else if (ext == ".svg") actualtype = ImportType::SVG;
     else if (ext == ".cdr") actualtype = ImportType::CDR;
     else if (ext == ".stp") actualtype = ImportType::STEP;

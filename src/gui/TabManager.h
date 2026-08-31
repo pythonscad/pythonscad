@@ -184,4 +184,6 @@ public slots:
   void nextBookmark();
   void prevBookmark();
   void jumpToNextError();
+  void moveLineUp();
+  void moveLineDown();
 };
