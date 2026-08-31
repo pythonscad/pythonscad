@@ -315,6 +315,12 @@ bool isSafeSandboxOutputRelativePath(const QString& value)
   });
 }
 
+bool sandboxExportTargetAlreadyExists(const QString& path)
+{
+  const QFileInfo info(path);
+  return info.isSymLink() || info.exists();
+}
+
 bool isSandboxExportTargetInsideDestination(const QString& targetParent, const QString& destination)
 {
   const QString canonicalDestination = QFileInfo(destination).canonicalFilePath();
@@ -337,7 +343,7 @@ bool ensureSandboxExportDirectory(const QString& relativePath, const QString& de
   for (const QString& part : parts) {
     current = QDir(current).filePath(part);
     const QFileInfo info(current);
-    if (info.exists()) {
+    if (info.isSymLink() || info.exists()) {
       if (info.isSymLink() || !info.isDir()) return false;
     } else if (!QDir().mkdir(current)) {
       return false;
@@ -4117,7 +4123,7 @@ void MainWindow::onSandboxOutputSaveAs()
   const QString target = QFileDialog::getSaveFileName(this, _("Save Sandbox Output"),
                                                       QString::fromStdString(file.relativePath));
   if (target.isEmpty()) return;
-  if (QFileInfo::exists(target)) {
+  if (sandboxExportTargetAlreadyExists(target)) {
     QMessageBox::warning(this, _("Save Sandbox Output"),
                          QString(_("Refusing to overwrite existing file: %1")).arg(target));
     return;
@@ -4142,7 +4148,7 @@ void MainWindow::onSandboxOutputExportAll()
       return;
     }
     const QString target = QDir(destination).filePath(relativePath);
-    if (QFileInfo::exists(target)) {
+    if (sandboxExportTargetAlreadyExists(target)) {
       QMessageBox::warning(this, _("Export Sandbox Outputs"),
                            QString(_("Refusing to overwrite existing file: %1")).arg(target));
       return;

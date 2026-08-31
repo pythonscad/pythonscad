@@ -188,6 +188,30 @@ def main():
         assert second.returncode != 0
         assert "Refusing to overwrite sandbox output file" in second.stdout
 
+        dangling_dir = tmpdir / "dangling-symlink-out"
+        dangling_dir.mkdir()
+        dangling = dangling_dir / "a.stl"
+        try:
+            dangling.symlink_to(dangling_dir / "missing-target")
+        except OSError as exc:
+            print(f"skipping dangling-symlink overwrite test: {exc}")
+        else:
+            dangling_run = run(
+                [
+                    args.pythonscad,
+                    "--python=sandboxed",
+                    "--sandbox-output-dir",
+                    str(dangling_dir),
+                    "-o",
+                    str(tmpdir / "out-dangling.csg"),
+                    str(script),
+                ],
+                tmpdir,
+                env,
+            )
+            assert dangling_run.returncode != 0, dangling_run.stdout
+            assert "Refusing to overwrite sandbox output file" in dangling_run.stdout
+
 
 if __name__ == "__main__":
     main()

@@ -67,6 +67,7 @@
 #include <ios>
 #include <iostream>
 #include <istream>
+#include <system_error>
 #include <iterator>
 #include <map>
 #include <memory>
@@ -341,16 +342,22 @@ bool copySandboxOutputsToDirectory(const PythonSandboxResult& sandboxResult,
           target.generic_string());
       return false;
     }
-    const bool targetExists = fs::exists(target, ec);
-    if (ec) {
-      LOG(message_group::Error, "Could not inspect sandbox output file: %1$s", target.generic_string());
-      return false;
+    const fs::file_status status = fs::symlink_status(target, ec);
+    const bool missing =
+      status.type() == fs::file_type::not_found || ec == std::errc::no_such_file_or_directory;
+    if (!missing) {
+      if (ec) {
+        LOG(message_group::Error, "Could not inspect sandbox output file: %1$s",
+            target.generic_string());
+        return false;
+      }
+      if (fs::exists(status) || fs::is_symlink(status)) {
+        LOG(message_group::Error, "Refusing to overwrite sandbox output file: %1$s",
+            target.generic_string());
+        return false;
+      }
     }
-    if (targetExists) {
-      LOG(message_group::Error, "Refusing to overwrite sandbox output file: %1$s",
-          target.generic_string());
-      return false;
-    }
+    ec.clear();
     if (!fs::copy_file(file.hostPath, target, ec) || ec) {
       LOG(message_group::Error, "Could not copy sandbox output file: %1$s", target.generic_string());
       return false;
