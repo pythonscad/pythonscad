@@ -327,6 +327,18 @@ jobs:
                 libboost-all-dev \
                 libssl-dev
 
+              if [ "$QT_PROFILE" = "pythonscad-qt6" ]; then
+                apt-get install -y qt6-base-dev-tools python3-venv python3-pip curl
+                if [ -d /tmp/pyqt6-bindings-cache/PyQt6 ]; then
+                  mkdir -p libraries/python
+                  cp -r /tmp/pyqt6-bindings-cache/PyQt6 libraries/python/PyQt6
+                else
+                  ./scripts/ci/build-pyqt6-bindings-linux.sh
+                  mkdir -p /tmp/pyqt6-bindings-cache
+                  cp -r libraries/python/PyQt6 /tmp/pyqt6-bindings-cache/
+                fi
+              fi
+
               # Build package
               mkdir -p "$OUTPUT_DIR"
               chmod +x ./scripts/build-debian-package.sh
