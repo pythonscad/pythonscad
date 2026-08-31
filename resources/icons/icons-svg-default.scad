@@ -23,7 +23,6 @@ icons = [
     ["export-obj"],
     ["export-off"],
     ["export-wrl"],
-    ["export-amf"],
     ["export-3mf"],
     ["export-dxf"],
     ["export-svg"],
@@ -94,7 +93,6 @@ icon(selected_icon) {
     export("OBJ");
     export("OFF");
     export("WRL");
-    export("AMF");
     export("3MF");
     export("DXF");
     export("SVG");

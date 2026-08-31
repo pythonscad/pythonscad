@@ -31,7 +31,6 @@ enum class FileFormat {
   OBJ,
   OFF,
   WRL,
-  AMF,
   _3MF,
   DXF,
   SVG,

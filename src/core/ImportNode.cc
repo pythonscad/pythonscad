@@ -96,7 +96,6 @@ static std::shared_ptr<AbstractNode> do_import(const std::shared_ptr<const Modul
     else if (ext == ".dxf") actualtype = ImportType::DXF;
     else if (ext == ".nef3") actualtype = ImportType::NEF3;
     else if (ext == ".3mf") actualtype = ImportType::_3MF;
-    else if (ext == ".amf") actualtype = ImportType::AMF;
     else if (ext == ".svg") actualtype = ImportType::SVG;
 #ifdef ENABLE_CDR
     else if (ext == ".cdr") actualtype = ImportType::CDR;
@@ -214,10 +213,6 @@ std::unique_ptr<const Geometry> ImportNode::createGeometry() const
   }
   case ImportType::STEP: {
     g = import_step(this->filename, loc);
-    break;
-  }
-  case ImportType::AMF: {
-    g = optionally_center(import_amf(this->filename, loc), this->center);
     break;
   }
   case ImportType::_3MF: {
