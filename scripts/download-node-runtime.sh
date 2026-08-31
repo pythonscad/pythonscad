@@ -22,6 +22,40 @@ die() {
   exit 1
 }
 
+# Refuse destinations that would make `rm -rf` catastrophic (empty, `.`, `/`,
+# filesystem roots, and common system prefixes). Matches the layered check in
+# scripts/bundle-runtime-python.sh.
+assert_safe_delete_destination() {
+  local dest="${1:?destination is required}"
+  case "${dest}" in
+    /|//|.|..|/..|../|./) die "refusing to delete unsafe destination: ${dest}" ;;
+  esac
+  local py=""
+  if command -v python3 >/dev/null 2>&1; then
+    py=python3
+  elif command -v python >/dev/null 2>&1; then
+    py=python
+  else
+    return 0
+  fi
+  "${py}" -c '
+import os
+import sys
+
+raw = sys.argv[1]
+path = os.path.realpath(os.path.abspath(raw))
+blocked = {"/usr", "/usr/local", "/opt", "/etc", "/var", "/home", "/root"}
+home = os.environ.get("HOME")
+if home:
+    blocked.add(os.path.realpath(os.path.abspath(home)))
+if os.path.dirname(path) == path or path in blocked:
+    sys.stderr.write(
+        f"refusing to delete unsafe destination {path!r} (from {raw!r})\n"
+    )
+    sys.exit(2)
+' "${dest}" || die "destination path validation failed for \"${dest}\""
+}
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "${script_dir}/.." && pwd)"
 metadata_file="${project_root}/packaging/node-runtime.json"
@@ -49,6 +83,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 [ -n "$dest" ] || die "--dest is required"
+assert_safe_delete_destination "$dest"
 [ -f "$metadata_file" ] || die "metadata file not found: $metadata_file"
 
 if [ -z "$platform" ]; then
@@ -124,7 +159,7 @@ if [ "$actual_sha256" != "$expected_sha256" ]; then
   die "checksum mismatch for ${archive_name}: expected ${expected_sha256}, got ${actual_sha256}"
 fi
 
-rm -rf "$dest"
+rm -rf -- "${dest:?}"
 mkdir -p "$dest"
 
 case "$package_type" in

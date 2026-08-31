@@ -9,6 +9,47 @@ ARTIFACT="${4:-pythonscad-wasm-web}"
 MAX_WAIT_SECONDS="${WASM_ARTIFACT_MAX_WAIT_SECONDS:-7200}"
 POLL_SECONDS="${WASM_ARTIFACT_POLL_SECONDS:-60}"
 
+# Refuse destinations that would make `rm -rf` catastrophic (empty, `.`, `/`,
+# filesystem roots, and common system prefixes).
+assert_safe_delete_destination() {
+  local dest="${1:?destination is required}"
+  case "${dest}" in
+    /|//|.|..|/..|../|./)
+      echo "refusing to delete unsafe destination: ${dest}" >&2
+      exit 1
+      ;;
+  esac
+  local py=""
+  if command -v python3 >/dev/null 2>&1; then
+    py=python3
+  elif command -v python >/dev/null 2>&1; then
+    py=python
+  else
+    return 0
+  fi
+  "${py}" -c '
+import os
+import sys
+
+raw = sys.argv[1]
+path = os.path.realpath(os.path.abspath(raw))
+blocked = {"/usr", "/usr/local", "/opt", "/etc", "/var", "/home", "/root"}
+home = os.environ.get("HOME")
+if home:
+    blocked.add(os.path.realpath(os.path.abspath(home)))
+if os.path.dirname(path) == path or path in blocked:
+    sys.stderr.write(
+        f"refusing to delete unsafe destination {path!r} (from {raw!r})\n"
+    )
+    sys.exit(2)
+' "${dest}" || {
+    echo "destination path validation failed for \"${dest}\"" >&2
+    exit 1
+  }
+}
+
+assert_safe_delete_destination "${DESTINATION}"
+
 deadline=$((SECONDS + MAX_WAIT_SECONDS))
 start_seconds=${SECONDS}
 
@@ -45,7 +86,7 @@ while true; do
         echo "WASM workflow run ${run_id} finished with conclusion=${conclusion}" >&2
         exit 1
       fi
-      rm -rf "${DESTINATION}"
+      rm -rf -- "${DESTINATION:?}"
       mkdir -p "${DESTINATION}"
       gh run download "${run_id}" --name "${ARTIFACT}" --dir "${DESTINATION}"
       echo "Downloaded ${ARTIFACT} after waiting ${elapsed_seconds}s."
