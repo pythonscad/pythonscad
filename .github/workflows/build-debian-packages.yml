@@ -248,6 +248,13 @@ jobs:
           chmod +x ./scripts/build-debian-package.sh
           ./scripts/build-debian-package.sh
 
+      - name: Cache PyQt6 bindings (arm64)
+        if: matrix.arch == 'arm64' && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        uses: actions/cache@v4
+        with:
+          path: /tmp/pyqt6-bindings-cache
+          key: pyqt6-bindings-deb-arm64-${{ matrix.docker_image }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
+
       - name: Build Debian package (arm64) in Docker
         if: matrix.arch == 'arm64'
         env:
