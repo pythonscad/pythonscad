@@ -287,6 +287,7 @@ std::list<std::string> pythonInventory;
 AssignmentList customizer_parameters;
 AssignmentList customizer_parameters_finished;
 bool pythonDryRun = false;
+bool pythonPreview = false;
 PyObject *python_result_obj = nullptr;
 std::vector<SelectedObject> python_result_handle;
 bool python_runipython = false;
@@ -1559,6 +1560,10 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     PyGILState_Release(pathGil);
   }
   std::ostringstream stream;
+  /* Always refresh pythonPreview. Call sites that pass nullptr (REPL,
+   * IPython, Emscripten, GUI startup) must not keep a stale true from a
+   * previous F5 and suppress later export() writes. */
+  pythonPreview = r != nullptr && r->preview;
   if (r != nullptr) {
     stream << "preview=" << (r->preview ? "True" : "False") << "\n";
 
@@ -1576,6 +1581,8 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 
     const auto vpf = r->camera.fovValue();
     stream << "vpf=" << vpf << "\n";
+  } else {
+    stream << "preview=False\n";
   }
   stream << commandline_commands << "\n";
   {
@@ -1594,6 +1601,8 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 
 void snapshotPythonInventory()
 {
+  if (!Py_IsInitialized() || !pythonMainModule) return;
+
   PyGILState_STATE st = PyGILState_Ensure();
   PyObject *key, *value;
   Py_ssize_t pos = 0;
@@ -1627,18 +1636,25 @@ bool python_get_static_calltip(const std::string& className, std::string& result
       PyObject *funcresult = PyObject_CallObject(method, nullptr);
       if (funcresult != nullptr) {
         if (PyUnicode_Check(funcresult)) {
-          result = PyUnicode_AsUTF8(funcresult);
-          ok = true;
+          const char *calltip = PyUnicode_AsUTF8(funcresult);
+          if (calltip != nullptr) {
+            result = calltip;
+            ok = true;
+          } else {
+            PyErr_Clear();
+          }
         }
         Py_DECREF(funcresult);
       } else {
         PyErr_Print();
         PyErr_Clear();
       }
+    } else {
+      PyErr_Clear();
     }
     Py_XDECREF(method);
   } else {
-    PyErr_Clear();  // Name nicht gefunden ist kein Fehler, nur "kein Treffer"
+    PyErr_Clear();  // A missing name is not an error; it is simply not a match.
   }
 
   PyGILState_Release(gstate);
@@ -1659,24 +1675,32 @@ bool python_call_static_editor_method(const std::string& className, const std::s
     PyObject *method = PyObject_GetAttrString(classObj, methodName.c_str());
     if (method != nullptr && PyCallable_Check(method)) {
       PyObject *posObj = PyLong_FromLong(position);
-      PyObject *args = PyTuple_Pack(1, posObj);
-      Py_DECREF(posObj);
-      PyObject *funcresult = PyObject_CallObject(method, args);
-      Py_DECREF(args);
+      if (posObj != nullptr) {
+        PyObject *args = PyTuple_Pack(1, posObj);
+        Py_DECREF(posObj);
+        if (args != nullptr) {
+          PyObject *funcresult = PyObject_CallObject(method, args);
+          Py_DECREF(args);
 
-      if (funcresult != nullptr) {
-        Py_DECREF(funcresult);
-        called = true;
+          if (funcresult != nullptr) {
+            Py_DECREF(funcresult);
+            called = true;
+          } else {
+            PyErr_Print();
+            PyErr_Clear();
+          }
+        } else {
+          PyErr_Clear();
+        }
       } else {
-        PyErr_Print();
         PyErr_Clear();
       }
     } else {
-      PyErr_Clear();  // Methode existiert nicht -> kein Fehler, einfach nichts tun
+      PyErr_Clear();  // A missing method is not an error; simply do nothing.
     }
     Py_XDECREF(method);
   } else {
-    PyErr_Clear();  // Klasse nicht bekannt -> ebenfalls kein Fehler
+    PyErr_Clear();  // An unknown class is not an error either.
   }
 
   PyGILState_Release(gstate);

@@ -46,6 +46,11 @@ wasm-test/node_modules/
 
 .cache/
 .claude/
+/.vs/
+/.vscode/
+/.idea/
+/.zed/
+*.code-workspace
 .clangd/
 /*.scad
 **/out*.*
@@ -70,7 +75,6 @@ object_script.openscad.Release
 /*.stl
 /*.dxf
 /*.off
-/*.amf
 /*.png
 /*.csg
 /*.nef3
@@ -107,6 +111,7 @@ object_script.openscad.Release
 /tmp
 /vcpkg_installed
 .wheel-vcpkg/
+.wheel-vcpkg-manifest/
 scripts/cibuildwheel/wheel-build-env.env
 /nbproject
 /mingw32.*
@@ -174,10 +179,8 @@ src/core/parser.cc
 pythonscad.egg-info/
 # Editable pip install drops the compiled extension at the project root.
 _openscad*.so
-libraries/python/stubs/build/
-libraries/python/stubs/dist/
-libraries/python/stubs/*.egg-info/
 
 # MkDocs build output
 web/site/
 web/.venv/
+/builddir

@@ -249,6 +249,7 @@ PyObject *python_osversion_num(PyObject *self, PyObject *args, PyObject *kwargs)
 PyObject *python_osversion_string(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_osuse(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_osinclude(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_register_parameter(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_scad(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs);

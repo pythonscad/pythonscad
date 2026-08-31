@@ -31,6 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Multimedia :: Graphics :: 3D Modeling",
     "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
 ]
 # The pip wheel automatically resolves these transitively. Binary
 # bundles (AppImage, macOS .app, Windows installer) install the
@@ -52,20 +53,21 @@ dependencies = [
 bundle = ["ipython>=9,<10; python_version>='3.11'"]
 # Pinned tooling for PyPI wheel builds (CI + local cibuildwheel runs).
 build = [
-    "build==1.5.0; python_version>='3.11'",
-    "cibuildwheel==4.1.1; python_version>='3.11'",
-    "auditwheel==6.7.0; python_version>='3.11'",
+    "build==1.6.0; python_version>='3.11'",
+    "cibuildwheel==4.2.0; python_version>='3.11'",
+    "auditwheel==6.8.2; python_version>='3.11'",
     "delocate==0.13.0; python_version>='3.11'",
-    "delvewheel==1.13.0; python_version>='3.11'",
+    "delvewheel==1.13.1; python_version>='3.11'",
 ]
 # MkDocs site build (deploy-website workflow).
 docs = [
-    "click==8.4.2",
+    "click==8.5.0",
     "mkdocs",
     "mkdocs-material",
     "pymdown-extensions",
     "Pygments",
 ]
+typing = ["pyright>=1.1.411"]
 
 [project.urls]
 Homepage = "https://pythonscad.org"

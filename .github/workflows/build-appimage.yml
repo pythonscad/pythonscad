@@ -47,17 +47,12 @@ jobs:
         git fetch --unshallow --tags || git fetch --tags
         git describe --tags --always --dirty
 
-    - name: Fetch and place prebuilt PyQt6 bindings
-      env:
-        GH_TOKEN: ${{ github.token }}
+    - name: Ensure Qt5 package excludes PyQt6 bindings
+      if: matrix.qt_version == 5
       run: |
-        mkdir -p /tmp/pyqt6-fetch
-        gh release download pyqt6-bindings-latest --repo pythonscad/pythonscad \
-          -p "pyqt6-bindings-windows.zip" -D /tmp/pyqt6-fetch
-
-        mkdir -p libraries/python
         rm -rf libraries/python/PyQt6
-        unzip -q /tmp/pyqt6-fetch/pyqt6-bindings-linux-x86_64.zip -d libraries/python/PyQt6
+        rm -f libraries/python/QT_VERSION.txt libraries/python/PYQT_VERSION.txt \
+          libraries/python/PYTHON_VERSION.txt libraries/python/PYQT6_MANIFEST.json
 
     - name: Setup (detached) tmate session if enabled
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
@@ -83,7 +78,16 @@ jobs:
         sudo -E ./scripts/get-dependencies.py --yes --profile ${{ matrix.profile }}
         sudo apt-get install -y wget file libfuse2
 
-    - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+    - name: Fetch compatible PyQt6 bindings
+      if: matrix.qt_version == 6 && matrix.arch == 'x86_64'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        ./scripts/ci/fetch_pyqt6_bindings.sh \
+          linux-x86_64 ubuntu-24.04-qt6 "$(which qmake6)" "$(which python3)" \
+          libraries/python
+
+    - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       with:
         enable-cache: false
 

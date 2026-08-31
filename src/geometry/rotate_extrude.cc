@@ -233,7 +233,7 @@ std::unique_ptr<PolySet> rotatePolygonSub(const RotateExtrudeNode& node, const P
     for (const auto& outline : poly.outlines()) {
       assert(outline.vertices.size() > 2);
       int color_ind = colors.size();
-      colors.push_back(outline.color);  // TODO effizienter
+      colors.push_back(outline.color.unpaintedIfFullyTransparent());  // TODO effizienter
       for (size_t i = 1; i <= outline.vertices.size(); ++i) {
         const int curr_idx = curr_outline + (i % outline.vertices.size());
         const int prev_idx = curr_outline + i - 1;

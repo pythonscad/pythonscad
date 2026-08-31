@@ -3,6 +3,8 @@ import re
 import shutil
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from ctypes.util import find_library
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
@@ -177,9 +179,10 @@ def get_link_libraries():
     libs = get_pkg_config_libraries()
 
     # Link concrete Boost libraries so auditwheel/delocate/delvewheel can
-    # bundle them. Current Boost.System is header-only on macOS and vcpkg/MSVC.
+    # bundle them. Boost.System has been header-only by default since 1.69,
+    # but some Linux Boost builds still depend on its shared library.
     boost_libs = ["boost_program_options"]
-    if not IS_DARWIN and not IS_WINDOWS:
+    if not IS_DARWIN and not IS_WINDOWS and find_library("boost_system"):
         boost_libs.append("boost_system")
     # On Windows, Boost.Regex is selected via MSVC autolink; vcpkg's release
     # triplet does not provide a stable unversioned boost_regex.lib to name here.
@@ -489,8 +492,11 @@ class BuildExtWithLexYacc(build_ext):
             if ".mm" not in self.compiler.src_extensions:
                 self.compiler.src_extensions.append(".mm")
 
+        original_compile = self.compiler.compile
+        original_single_compile = None
+
         if not IS_WINDOWS and hasattr(self.compiler, "_compile"):
-            original_compile = self.compiler._compile
+            original_single_compile = self.compiler._compile
 
             def compile_without_cxx_args_for_c_sources(obj, src, ext, cc_args, extra_postargs, pp_opts):
                 if src.endswith(".c") and extra_postargs:
@@ -498,16 +504,62 @@ class BuildExtWithLexYacc(build_ext):
                         arg for arg in extra_postargs
                         if arg not in self.cxx_only_compile_args
                     ]
-                return original_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+                return original_single_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
             self.compiler._compile = compile_without_cxx_args_for_c_sources
-            try:
-                super().build_extensions()
-            finally:
-                self.compiler._compile = original_compile
-            return
 
-        super().build_extensions()
+        workers = self.parallel
+        if workers is True:
+            workers = os.cpu_count()
+        parallel_compile_methods = ("_setup_compile", "_get_cc_args", "_compile")
+        supports_parallel_compile = all(
+            hasattr(self.compiler, method) for method in parallel_compile_methods
+        )
+        if workers and workers > 1 and supports_parallel_compile:
+            def compile_in_parallel(
+                sources,
+                output_dir=None,
+                macros=None,
+                include_dirs=None,
+                debug=False,
+                extra_preargs=None,
+                extra_postargs=None,
+                depends=None,
+            ):
+                macros, objects, extra_postargs, pp_opts, build = self.compiler._setup_compile(
+                    output_dir,
+                    macros,
+                    include_dirs,
+                    sources,
+                    depends,
+                    extra_postargs,
+                )
+                cc_args = self.compiler._get_cc_args(pp_opts, debug, extra_preargs)
+
+                def compile_object(obj):
+                    src, ext = build[obj]
+                    self.compiler._compile(
+                        obj,
+                        src,
+                        ext,
+                        cc_args,
+                        extra_postargs,
+                        pp_opts,
+                    )
+
+                print(f"Compiling C/C++ sources with {workers} parallel jobs")
+                with ThreadPoolExecutor(max_workers=workers) as executor:
+                    list(executor.map(compile_object, objects))
+                return objects
+
+            self.compiler.compile = compile_in_parallel
+
+        try:
+            super().build_extensions()
+        finally:
+            self.compiler.compile = original_compile
+            if original_single_compile is not None:
+                self.compiler._compile = original_single_compile
 
     def run(self):
         yacc_src = "src/core/parser.y"
@@ -704,6 +756,7 @@ def main():
               "src/core/ColorUtil.cc",
               "src/core/NodeDumper.cc",
               "src/core/StatCache.cc",
+              "src/core/UnicodeIdentifier.cc",
               ]  + language + arith + context + nodes
     io_export = [
               "src/io/export_stl.cc",
@@ -715,7 +768,6 @@ def main():
               "src/io/export_foldable.cc",
               "src/io/export_ps.cc",
               "src/io/export_wrl.cc",
-              "src/io/export_amf.cc",
               "src/io/export_nef.cc",
               "src/io/export_pdf.cc",
               "src/io/export_obj.cc",
@@ -725,7 +777,6 @@ def main():
               "src/io/import_json.cc",
               "src/io/import_obj.cc",
               "src/io/import_step.cc",
-              "src/io/import_amf.cc",
               "src/io/import_nef.cc",
               "src/io/import_svg.cc",
               "src/io/import_off.cc",
@@ -857,16 +908,24 @@ def main():
 
     # The pure-Python overlay packages live under libraries/python/{openscad,pythonscad}
     # so they are already shipped alongside the binary by the standalone CMake install
-    # (the libraries/ tree). Declare them here so `pip install` exposes the same
-    # three-module layout (`_openscad` + `openscad` + `pythonscad`) on PyPI.
+    # (the libraries/ tree). The stub-only package supplies the static contract for
+    # the raw C extension; the overlays carry py.typed markers and inline annotations.
+    # Shipping all three in this wheel makes `pip install pythonscad` sufficient for
+    # both runtime use and IDE/type-checker support.
     setup(
         version=get_version(),
         cmdclass={"build_ext": BuildExtWithLexYacc},
         ext_modules=[pythonscad_ext],
-        packages=["openscad", "pythonscad"],
+        packages=["openscad", "pythonscad", "_openscad-stubs"],
         package_dir={
             "openscad": "libraries/python/openscad",
             "pythonscad": "libraries/python/pythonscad",
+            "_openscad-stubs": "libraries/python/stubs/_openscad-stubs",
+        },
+        package_data={
+            "openscad": ["py.typed"],
+            "pythonscad": ["py.typed"],
+            "_openscad-stubs": ["__init__.pyi", "py.typed"],
         },
     )
 

@@ -5,6 +5,10 @@ distribution. Wheels bundle the compiled `_openscad` extension and ship the
 pure-Python `openscad` / `pythonscad` overlay packages (see
 [`doc/python-modules.md`](python-modules.md)).
 
+The wheel also carries the `_openscad` type stubs and `py.typed` markers for
+both overlays. This keeps the runtime and editor/type-checker API in the same
+versioned artifact: users only need `pip install pythonscad`.
+
 ## Supported wheel matrix
 
 | Platform tag | GitHub Actions runner | Python ABIs |
@@ -55,8 +59,11 @@ Install native build dependencies first:
 
 Wheel build tooling is pinned in `pyproject.toml` (`[dependency-groups] build`)
 and locked in [`uv.lock`](../uv.lock). Dependabot bumps via the uv ecosystem.
-Windows native libraries are pinned via
-[`scripts/cibuildwheel/vcpkg.json`](../scripts/cibuildwheel/vcpkg.json)
-(`builtin-baseline`). cibuildwheel is pinned in `pyproject.toml`
-(`[dependency-groups] build`) and invoked via `uv run cibuildwheel`.
+Windows native libraries are listed in
+[`scripts/cibuildwheel/vcpkg.json`](../scripts/cibuildwheel/vcpkg.json).
+The vcpkg release tag and its `builtin-baseline` commit are pinned together in
+[`scripts/cibuildwheel/install-deps-windows.ps1`](../scripts/cibuildwheel/install-deps-windows.ps1);
+the install script generates the build manifest from those inputs. cibuildwheel
+is pinned in `pyproject.toml` (`[dependency-groups] build`) and invoked via
+`uv run cibuildwheel`.
 Dependabot's monthly GitHub Actions group covers other action tag bumps.

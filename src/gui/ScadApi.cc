@@ -170,15 +170,17 @@ QStringList ScadApi::callTips(const QStringList& context, int /*commas*/,
   QString funcName = context.at(context.size() - 2);
 
   editor->lastCallTipFunction = funcName;
+  editor->lastCallTipIsPythonForm = false;
   long curPos = editor->qsci->SendScintilla(QsciScintillaBase::SCI_GETCURRENTPOS);
-  long openParenPos = findEnclosingOpenParenPos(editor->qsci, curPos);
+  long openParenPos = editor->enclosingOpenParenPosition(curPos);
   editor->lastCallTipPosition = (openParenPos >= 0) ? (int)openParenPos : (int)curPos;
 
 #ifdef ENABLE_PYTHON
   std::string pythonCalltip;
   if (python_get_static_calltip(funcName.toStdString(), pythonCalltip)) {
+    editor->lastCallTipIsPythonForm = true;
     callTips << QString::fromStdString(pythonCalltip).leftJustified(48, ' ') + "\u25B6";
-    return callTips;  // Python-Version gefunden -> Builtin-Liste wird gar nicht erst geprueft
+    return callTips;  // A Python calltip supersedes the built-in list.
   }
 #endif
 

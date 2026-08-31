@@ -1,0 +1,94 @@
+name: Web SFTP deploy
+description: >
+  Validate pinned-host SFTP credentials, rsync a local directory to the remote
+  web root (or a subtree), and clean up the temporary SSH key material.
+
+inputs:
+  config_label:
+    description: 'Human-readable label for error messages (e.g. "test website")'
+    required: true
+  ssh_key:
+    description: 'Private SSH key secret value'
+    required: true
+  host_key:
+    description: 'Pinned ssh-keyscan output for the deploy host'
+    required: true
+  host:
+    description: 'Deploy server hostname'
+    required: true
+  user:
+    description: 'SFTP/SSH username'
+    required: true
+  path:
+    description: 'Remote document root path'
+    required: true
+  port:
+    description: 'SSH port (defaults to 22 when empty)'
+    required: false
+    default: ''
+  source:
+    description: 'Local directory to upload (trailing slash recommended)'
+    required: true
+  remote_subpath:
+    description: 'Optional path segment under the remote root (e.g. playground/)'
+    required: false
+    default: ''
+  rsync_delete:
+    description: 'Pass --delete to rsync'
+    required: false
+    default: 'true'
+  rsync_exclude:
+    description: 'Optional rsync --exclude pattern (may be repeated via caller script if needed)'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Validate deploy configuration
+      shell: bash
+      env:
+        DEPLOY_SSH_KEY: ${{ inputs.ssh_key }}
+        DEPLOY_HOST_KEY: ${{ inputs.host_key }}
+        DEPLOY_HOST: ${{ inputs.host }}
+        DEPLOY_USER: ${{ inputs.user }}
+        DEPLOY_PATH: ${{ inputs.path }}
+        CONFIG_LABEL: ${{ inputs.config_label }}
+      run: |
+        set -euo pipefail
+        # shellcheck disable=SC1091
+        source "${GITHUB_ACTION_PATH}/../../scripts/web-deploy-common.sh"
+        validate_web_deploy_config "$CONFIG_LABEL"
+
+    - name: Setup SSH key and known_hosts
+      shell: bash
+      env:
+        DEPLOY_SSH_KEY: ${{ inputs.ssh_key }}
+        DEPLOY_HOST_KEY: ${{ inputs.host_key }}
+      run: |
+        set -euo pipefail
+        # shellcheck disable=SC1091
+        source "${GITHUB_ACTION_PATH}/../../scripts/web-deploy-common.sh"
+        setup_web_deploy_ssh
+
+    - name: Deploy via rsync over SSH
+      shell: bash
+      env:
+        DEPLOY_PORT: ${{ inputs.port }}
+        DEPLOY_USER: ${{ inputs.user }}
+        DEPLOY_HOST: ${{ inputs.host }}
+        DEPLOY_PATH: ${{ inputs.path }}
+        DEPLOY_SOURCE: ${{ inputs.source }}
+        DEPLOY_REMOTE_SUBPATH: ${{ inputs.remote_subpath }}
+        RSYNC_DELETE: ${{ inputs.rsync_delete }}
+        RSYNC_EXCLUDE: ${{ inputs.rsync_exclude }}
+      run: |
+        set -euo pipefail
+        # shellcheck disable=SC1091
+        source "${GITHUB_ACTION_PATH}/../../scripts/web-deploy-common.sh"
+        web_sftp_rsync
+
+    - name: Cleanup SSH key
+      if: always()
+      shell: bash
+      run: rm -f ~/.ssh/deploy_key

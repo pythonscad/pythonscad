@@ -623,8 +623,15 @@ int cmdline(const CommandLine& cmd)
     }
     text = "\n";
   }
+  // For Python designs, -D overrides were already evaluated as Python above.
+  // Appending them here would feed Python into the SCAD parser and fail the run.
+  if (python_active) {
+    text += "\n\x03\n";
+  } else
 #endif  // ifdef ENABLE_PYTHON
-  text += "\n\x03\n" + commandline_commands;
+  {
+    text += "\n\x03\n" + commandline_commands;
+  }
 
   SourceFile *root_file = nullptr;
   if (!parse(root_file, text, cmd.filename, cmd.filename, false)) {
@@ -880,7 +887,7 @@ int openscad_main(int argc, char **argv)
       "default so asciistl should be explicitly specified in scripts when needed.\n")
     ("o,o", po::value<std::vector<std::string>>(),
       "output specified file instead of running the GUI. The file extension specifies the type: stl, "
-      "off, wrl, amf, 3mf, csg, dxf, svg, pdf, png, echo, ast, term, nef3, nefdbg, param, pov. May be "
+      "off, wrl, 3mf, csg, dxf, svg, pdf, png, echo, ast, term, nef3, nefdbg, param, pov. May be "
       "used multiple times for different exports. Use '-' for stdout.\n")
     ("O,O", po::value<std::vector<std::string>>(),
       "pass settings value to the file export using the format section/key=value, e.g "

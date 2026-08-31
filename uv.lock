@@ -26,15 +26,15 @@ wheels = [
 
 [[package]]
 name = "auditwheel"
-version = "6.7.0"
+version = "6.8.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
     { name = "pyelftools" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f6/4d/2684ff85bbc51d2acfe9d6184aea70e4f6a50d8de2de6cb41a23e501e4ef/auditwheel-6.7.0.tar.gz", hash = "sha256:70aa4fe8e24d447e9fb47082f0aa0de2d6bde8aaa9bbfe517020328cea80e0f1", size = 4675015, upload-time = "2026-05-26T04:46:16.497Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/52/83393c50a4d497e6d2f62ddf0b439bf3a5eecd4e6b8ae43c219cb722224e/auditwheel-6.8.2.tar.gz", hash = "sha256:d007c4fd8c9c4b5113690ab0b159e05c5aa9b2d31b69efc40875826cc095594b", size = 4702710, upload-time = "2026-08-30T09:35:26.514Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/a0/2e7d17e36a3741a9aaf1a952ccff308d2078148d62327db180f94979d963/auditwheel-6.7.0-py3-none-any.whl", hash = "sha256:34e93e1b64ca54116fc110c3e975d3c884c4d47c87a590d42a89e4edf23e2af8", size = 62282, upload-time = "2026-05-26T04:46:14.463Z" },
+    { url = "https://files.pythonhosted.org/packages/78/33/475398f5eb069aa20910ec8486bdc62a87deadd8229494cbc80a1ddbf740/auditwheel-6.8.2-py3-none-any.whl", hash = "sha256:05fd2dd4b743217cd5f66066adc95b03a079424b1f0a878ad1e40fe2cdea4704", size = 65324, upload-time = "2026-08-30T09:35:24.948Z" },
 ]
 
 [[package]]
@@ -79,16 +79,16 @@ wheels = [
 
 [[package]]
 name = "build"
-version = "1.5.0"
+version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "os_name == 'nt'" },
     { name = "packaging" },
     { name = "pyproject-hooks" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/78/e0/df5e171f685f82f37b12e1f208064e24244911079d7b767447d1af7e0d70/build-1.5.0.tar.gz", hash = "sha256:302c22c3ba2a0fd5f3911918651341ebb3896176cbdec15bd421f80b1afc7647", size = 89796, upload-time = "2026-04-30T03:18:25.17Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/b7/1db48a9ce2984842c8c886432ec8a2719613322e868a966ba82a28862f25/build-1.6.0.tar.gz", hash = "sha256:bd2c8afc603e7a2e0ce70e2ea85f0a6d02043bafbd307f5bada0f98669eca5af", size = 113825, upload-time = "2026-08-27T21:01:16.458Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0d/fe/6bea5c9162869c5beba5d9c8abbed835ec85bf1ec1fba05a3822325c45f3/build-1.5.0-py3-none-any.whl", hash = "sha256:13f3eecb844759ab66efec90ca17639bbf14dc06cb2fdf37a9010322d9c50a6f", size = 26018, upload-time = "2026-04-30T03:18:23.644Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/e5/aa1e81b21aea0ce0ba435311837a37d4cb936e7461f9fecac08580073ba9/build-1.6.0-py3-none-any.whl", hash = "sha256:f7aaf1ebbb79178a02ba248bb524f2176b256017e17e8e4bd4289c7b38cc2bad", size = 31187, upload-time = "2026-08-27T21:01:14.957Z" },
 ]
 
 [[package]]
@@ -207,7 +207,7 @@ wheels = [
 
 [[package]]
 name = "cibuildwheel"
-version = "4.1.1"
+version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bashlex" },
@@ -220,21 +220,18 @@ dependencies = [
     { name = "packaging" },
     { name = "platformdirs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/56/63/7c2e4e3ef8c133a2a7d167b031471b8bd8e0674edde8e5f8622f8f5965e7/cibuildwheel-4.1.1.tar.gz", hash = "sha256:30ee78f134a8273b2f128ffb8c84bce577b9352af30e8ecf412cdf71bb3844c2", size = 454766, upload-time = "2026-07-24T20:33:18.539Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a8/b5/68696cc0023dcde3dc5f9f94f7aa3d319fe8f47ad80ba12224f90c837fcb/cibuildwheel-4.2.0.tar.gz", hash = "sha256:a018495ace49e84422ef89c01891439ee0fd00cebd3758b9a879415ff4892d97", size = 455959, upload-time = "2026-08-05T02:25:04.579Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3d/21/6f157a49f86163aef5c5aa18e0e90a67a3d70428f4a66710440339a4ae0e/cibuildwheel-4.1.1-py3-none-any.whl", hash = "sha256:3d669d6fa20a3e70c33ea4d3128a7f78706dc22b6f40d2cc028b12fc80580276", size = 167204, upload-time = "2026-07-24T20:33:17.102Z" },
+    { url = "https://files.pythonhosted.org/packages/15/ef/217ba042d73ac2d7500794993069cde78551f538a75c67626929a8587f80/cibuildwheel-4.2.0-py3-none-any.whl", hash = "sha256:4c7d6fc52cf5422c944aed86bc531f15e2279b91ff2c5e9e6fed9d6e3eefc635", size = 167818, upload-time = "2026-08-05T02:25:02.833Z" },
 ]
 
 [[package]]
 name = "click"
-version = "8.4.2"
+version = "8.5.0"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/76/d4/81420972a676e8ffea40450d8c8c92943e7218a78fe9b64359836cc9876b/click-8.4.2.tar.gz", hash = "sha256:9a6cea6e60b17ebe0a44c5cc636d94f09bd66142c1cd7d8b4cd731c4917a15f6", size = 338000, upload-time = "2026-06-24T17:45:15.148Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/0e/7fa0ef50764b67090eca4114772a2abf8b6148198475e54c660b97caeee6/click-8.5.0.tar.gz", hash = "sha256:ba0d2089de75ea0310e2dde03160e6ca10009947fb95a182f9b54021bb272e34", size = 382235, upload-time = "2026-08-26T13:33:14.56Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fb/e2/79c688af8b210d232694e31e59da9f6ec747bae31c3f5946e4e9b98860d5/click-8.4.2-py3-none-any.whl", hash = "sha256:e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76", size = 119243, upload-time = "2026-06-24T17:45:13.73Z" },
+    { url = "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl", hash = "sha256:255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360", size = 125251, upload-time = "2026-08-26T13:33:12.928Z" },
 ]
 
 [[package]]
@@ -271,14 +268,14 @@ wheels = [
 
 [[package]]
 name = "delvewheel"
-version = "1.13.0"
+version = "1.13.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pefile" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3c/ba/4ce769b09cdee86c576a35fc17bb954fa22f81037884a028c978a8479fe1/delvewheel-1.13.0.tar.gz", hash = "sha256:440601f289c953d5b60e96af8a8dbe2729584d90b663e39c5eade6b9043b48f6", size = 63742, upload-time = "2026-05-28T18:46:19.749Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/36/8d/ad1ecad995732a6c53086ce3bf20479d37a970acc80b7bdb4ab1eb156f2e/delvewheel-1.13.1.tar.gz", hash = "sha256:ae445f35f411c367f5b350431ac5f1435af8128bff31ccf34035a409704da8c6", size = 64796, upload-time = "2026-08-28T18:31:07.461Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/13/f9/8163f9145012263743dee49333f3a39bf214b83dac0ede7b06bb9ff7287c/delvewheel-1.13.0-py3-none-any.whl", hash = "sha256:eb8c34dee5d8816516befde73bf5cf9ea6142955f41d3baf25381c0136b28608", size = 59411, upload-time = "2026-05-28T18:46:18.116Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/d0/fc48bf4c00b80c1ced5ce3740ea0c5d040758dafce385275e5de559375a4/delvewheel-1.13.1-py3-none-any.whl", hash = "sha256:1b3bc696193a57e322b8bfd644de240be6e003066aae44cc3d5aef8cbee22ca3", size = 60375, upload-time = "2026-08-28T18:31:06.18Z" },
 ]
 
 [[package]]
@@ -637,6 +634,15 @@ wheels = [
 ]
 
 [[package]]
+name = "nodeenv"
+version = "1.10.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/24/bf/d1bda4f6168e0b2e9e5958945e01910052158313224ada5ce1fb2e1113b8/nodeenv-1.10.0.tar.gz", hash = "sha256:996c191ad80897d076bdfba80a41994c2b47c68e224c542b48feba42ba00f8bb", size = 55611, upload-time = "2025-12-20T14:08:54.006Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/88/b2/d0896bdcdc8d28a7fc5717c305f1a861c26e18c05047949fb371034d98bd/nodeenv-1.10.0-py2.py3-none-any.whl", hash = "sha256:5bb13e3eed2923615535339b3c620e76779af4cb4c6a90deccc9e36b274d3827", size = 23438, upload-time = "2025-12-20T14:08:52.782Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "26.2"
 source = { registry = "https://pypi.org/simple" }
@@ -771,24 +777,24 @@ wheels = [
 
 [[package]]
 name = "pygments"
-version = "2.20.0"
+version = "2.21.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c3/b2/bc9c9196916376152d655522fdcebac55e66de6603a76a02bca1b6414f6c/pygments-2.20.0.tar.gz", hash = "sha256:6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f", size = 4955991, upload-time = "2026-03-29T13:29:33.898Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/2e/ced460408999b33da6b31b0021b0f37d329e202d4169aeb164493778f25b/pygments-2.21.0.tar.gz", hash = "sha256:610ca751c9bc2492b38eb9a38a7fbc93edbbb2d7182edaf34e66ae493dee5c8c", size = 5005329, upload-time = "2026-08-17T08:02:48.824Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f4/7e/a72dd26f3b0f4f2bf1dd8923c85f7ceb43172af56d63c7383eb62b332364/pygments-2.20.0-py3-none-any.whl", hash = "sha256:81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176", size = 1231151, upload-time = "2026-03-29T13:29:30.038Z" },
+    { url = "https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl", hash = "sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9", size = 1250147, upload-time = "2026-08-17T08:02:44.912Z" },
 ]
 
 [[package]]
 name = "pymdown-extensions"
-version = "11.0.1"
+version = "11.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markdown" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/21/a9/5f0c535ba3b08fe09270c16808e053a968868242ecbd5676d4e3a488bf28/pymdown_extensions-11.0.1.tar.gz", hash = "sha256:dd2905ae6fc5b75582fafb139a1266ffc754705efa902aa50067fa7ff4f94ec0", size = 857113, upload-time = "2026-07-02T17:59:22.955Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/17/2db4b414de89659144488e0d9c6c0bf0c8395841dc12d81d0532cc6ef310/pymdown_extensions-11.0.2.tar.gz", hash = "sha256:9506fcbe66fa355a775b768084334238dd6805020ac4b92bea0c0dda6f8f223d", size = 855419, upload-time = "2026-08-22T19:28:47.236Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d6/54/da572c98c0b77626a91b5d3b89f0231d8bff5125c225420908632f8b342d/pymdown_extensions-11.0.1-py3-none-any.whl", hash = "sha256:db3943a62bab7e03af1364f0c4083e64b91fb097675a4b6cceccfbe9a77e5eb2", size = 269455, upload-time = "2026-07-02T17:59:21.271Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/43/9f45ec4d14e596efc32c925a78104934790438b0c0628b70d741016734ad/pymdown_extensions-11.0.2-py3-none-any.whl", hash = "sha256:259910762019732caa1dfd76f3faa62c59f191d46573e80bcb1d13c0f675bbe5", size = 269929, upload-time = "2026-08-22T19:28:45.389Z" },
 ]
 
 [[package]]
@@ -798,6 +804,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e7/82/28175b2414effca1cdac8dc99f76d660e7a4fb0ceefa4b4ab8f5f6742925/pyproject_hooks-1.2.0.tar.gz", hash = "sha256:1e859bd5c40fae9448642dd871adf459e5e2084186e8d2c2a79a824c970da1f8", size = 19228, upload-time = "2024-09-29T09:24:13.293Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl", hash = "sha256:9e5c6bfa8dcc30091c74b0cf803c81fdd29d94f01992a7707bc97babb1141913", size = 10216, upload-time = "2024-09-29T09:24:11.978Z" },
+]
+
+[[package]]
+name = "pyright"
+version = "1.1.411"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nodeenv" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7e/ab/265f7dc69d28113ebba19092e57b075f41543b2ed048429c5f56e2b88eac/pyright-1.1.411.tar.gz", hash = "sha256:d885a0551f2e763b089a02702174e7f4ba77548cddabc972ab86d1f7f1b0f998", size = 4112861, upload-time = "2026-06-25T02:14:06.37Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0a/49/385be530a6a5b78d1cbcd5c2e38debc8959a2fc6bdb716f4e581002979fc/pyright-1.1.411-py3-none-any.whl", hash = "sha256:dc7c72a8e2700c55baa127554040e067041ea53ccfd50bf96308cc4291c7d5d9", size = 6181526, upload-time = "2026-06-25T02:14:04.691Z" },
 ]
 
 [[package]]
@@ -838,6 +857,9 @@ docs = [
     { name = "pygments" },
     { name = "pymdown-extensions" },
 ]
+typing = [
+    { name = "pyright" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -847,20 +869,21 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 build = [
-    { name = "auditwheel", marker = "python_full_version >= '3.11'", specifier = "==6.7.0" },
-    { name = "build", marker = "python_full_version >= '3.11'", specifier = "==1.5.0" },
-    { name = "cibuildwheel", marker = "python_full_version >= '3.11'", specifier = "==4.1.1" },
+    { name = "auditwheel", marker = "python_full_version >= '3.11'", specifier = "==6.8.2" },
+    { name = "build", marker = "python_full_version >= '3.11'", specifier = "==1.6.0" },
+    { name = "cibuildwheel", marker = "python_full_version >= '3.11'", specifier = "==4.2.0" },
     { name = "delocate", marker = "python_full_version >= '3.11'", specifier = "==0.13.0" },
-    { name = "delvewheel", marker = "python_full_version >= '3.11'", specifier = "==1.13.0" },
+    { name = "delvewheel", marker = "python_full_version >= '3.11'", specifier = "==1.13.1" },
 ]
 bundle = [{ name = "ipython", marker = "python_full_version >= '3.11'", specifier = ">=9,<10" }]
 docs = [
-    { name = "click", specifier = "==8.4.2" },
+    { name = "click", specifier = "==8.5.0" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "pygments" },
     { name = "pymdown-extensions" },
 ]
+typing = [{ name = "pyright", specifier = ">=1.1.411" }]
 
 [[package]]
 name = "pyyaml"

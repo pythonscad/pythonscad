@@ -2317,13 +2317,6 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="launcherBox">
-                 <property name="text">
-                  <string>Show Welcome Screen</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
                 <widget class="QCheckBox" name="localizationCheckBox">
                  <property name="text">
                   <string>Enable user interface localization (requires restart of PythonSCAD)</string>
@@ -2893,6 +2886,43 @@
              </widget>
             </item>
             <item>
+             <widget class="QGroupBox" name="groupBox_Network">
+              <property name="title">
+               <string>Network</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_Network">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayoutCaCertPath">
+                 <item>
+                  <widget class="QLabel" name="labelCaCertPath">
+                   <property name="text">
+                    <string>Custom CA certificates (PEM)</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="lineEditCaCertPath"/>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="toolButtonCaCertBrowse">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="checkBoxTlsSkipVerify">
+                 <property name="text">
+                  <string>Skip TLS certificate verification (insecure)</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
              <spacer name="verticalSpacerAdvanced">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -3084,6 +3114,13 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_19">
            <item>
+            <widget class="QCheckBox" name="launcherBox">
+             <property name="text">
+              <string>Always show Welcome screen</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QCheckBox" name="checkBoxAlwaysShowExportPdfDialog">
              <property name="text">
               <string>Always show PDF export dialog</string>
@@ -3100,7 +3137,7 @@
            <item>
             <widget class="QCheckBox" name="checkBoxAlwaysShowExportSvgDialog">
              <property name="text">
-              <string>Always show SVF export dialog</string>
+              <string>Always show SVG export dialog</string>
              </property>
             </widget>
            </item>

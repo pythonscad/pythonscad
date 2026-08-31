@@ -71,8 +71,14 @@
     },
     "macos": {
       "extends": null,
+      "pre_commands": [
+        "brew tap openscad/homebrew-tap",
+        "brew tap-new local/pinned-qt",
+        "curl -sSL https://raw.githubusercontent.com/Homebrew/homebrew-core/21ce42536b29140bf08d18b6847bc5528c46d33b/Formula/q/qt.rb -o {tap_repo}/Formula/qt.rb",
+        "brew install local/pinned-qt/qt",
+        "brew pin local/pinned-qt/qt"
+      ],
       "packages": [
-        "qt",
         "qscintilla2"
       ]
     },
@@ -107,6 +113,16 @@
         "qt6-qt5compat-devel",
         "qt6-qtmultimedia-devel",
         "qt6-qtsvg-devel"
+      ]
+    },
+    "msys2": {
+      "extends": null,
+      "packages": [
+        "qt6-base:p",
+        "qt6-5compat:p",
+        "qt6-multimedia:p",
+        "qt6-svg:p",
+        "qscintilla-qt6:p"
       ]
     },
     "msys2": {

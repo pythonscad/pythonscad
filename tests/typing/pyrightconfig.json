@@ -1,0 +1,13 @@
+{
+  "include": [
+    "python_api.py"
+  ],
+  "extraPaths": [
+    "../../libraries/python"
+  ],
+  "stubPath": "../../libraries/python/stubs",
+  "pythonVersion": "3.10",
+  "typeCheckingMode": "strict",
+  "reportMissingTypeStubs": "error",
+  "reportUnknownVariableType": "none"
+}

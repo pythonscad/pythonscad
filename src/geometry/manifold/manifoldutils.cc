@@ -243,7 +243,7 @@ std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d&
     manifold::SimplePolygon simplePolygon;
 
     Color4f col = outline_work[0].color;
-    polyset->colors.push_back(col);
+    polyset->colors.push_back(col.unpaintedIfFullyTransparent());
     for (const auto& outline : outline_work) {
       if (outline.color != col) {
         outline_next.push_back(outline);

@@ -214,6 +214,9 @@ public:
   /// Apply persisted top-level window geometry blob (QWidget::saveGeometry payload).
   void applySessionWindowGeometry(const QByteArray& geometry);
 
+  /// Write window geometry to the active persistence store (session or QSettings).
+  void persistWindowGeometry();
+
   /// Mtime+size fingerprint for auto-reload (empty if path missing or stat fails).
   static std::string autoReloadIdentityForPath(const QString& filepath);
 
@@ -406,7 +409,6 @@ public:
     setCurrentOutput();
     return sg::make_scope_guard([this] { clearCurrentOutput(); });
   }
-
   bool isEmpty();
 
   void onAxisChanged(InputEventAxisChanged *event) override;
@@ -465,6 +467,7 @@ public slots:
   void viewTogglePerspective();
   void on_viewActionResetView_triggered();
   void on_viewActionViewAll_triggered();
+  void on_viewActionFullScreen_toggled(bool checked);
   void editorContentChanged();
   void leftClick(QPoint coordinate);
   void rightClick(QPoint coordinate);

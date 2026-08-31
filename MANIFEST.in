@@ -2,7 +2,10 @@ include VERSION.txt
 include COPYING
 include pyproject.toml
 recursive-include libraries/python/openscad *.py
+recursive-include libraries/python/openscad py.typed
 recursive-include libraries/python/pythonscad *.py
+recursive-include libraries/python/pythonscad py.typed
+recursive-include libraries/python/stubs/_openscad-stubs *.pyi py.typed
 include ./src/*.h
 include ./src/platform/*.h
 include ./src/python/*.h

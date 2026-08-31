@@ -32,7 +32,7 @@ to STL, 3MF, and other formats for 3D printing and manufacturing.
   <div class="hero-download-enhanced" hidden></div>
 </div>
 
-[Try in browser](https://www.pythonscad.org/playground/){ .md-button .md-button--primary }
+[Try in browser ↗](https://www.pythonscad.org/playground/){ .md-button .md-button--primary target="_blank" rel="noopener" aria-label="Try in browser (opens in a new tab)" }
 [Get started](get_started.md){ .md-button }
 [Tutorial](tutorial/getting_started.md){ .md-button }
 [All downloads](downloads.md)
@@ -102,7 +102,7 @@ Browse the [Examples gallery](examples.md) for QR codes, gyroids, GDS import, an
 - [r/OpenPythonSCAD](https://www.reddit.com/r/OpenPythonSCAD/)
 - [Google Group](https://groups.google.com/g/pythonscad)
 - [Community wiki](http://old.reddit.com/r/openpythonscad/wiki/index)
-- [Python type stubs for IDE support](https://raw.githubusercontent.com/pythonscad/pythonscad/refs/heads/master/libraries/python/stubs/openscad/__init__.pyi)
+- [IDE and type-checker setup](installation.md#project-local-environment-for-ide-support)
 - [Contact & support](contact.md)
 
 ---

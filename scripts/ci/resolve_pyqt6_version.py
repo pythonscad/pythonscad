@@ -1,35 +1,48 @@
-"""Resolve the newest PyQt6 sdist release matching a given Qt
-major.minor version, without triggering pip's build-isolation
-metadata hook (which would otherwise kick off a full Qt6 module
-build just to read package metadata).
+"""Resolve the pinned PyQt6 sdist for a given Qt major.minor version.
 
-Usage: resolve_pyqt6_version.py <major.minor>
+Usage: resolve_pyqt6_version.py <major.minor> [--version-only]
 Prints: "<version> <sdist_url>"
 """
 import json
 import sys
 import urllib.request
-
-from packaging.version import Version
+from pathlib import Path
 
 
 def main() -> None:
-    if len(sys.argv) != 2:
-        print("Usage: resolve_pyqt6_version.py <major.minor>", file=sys.stderr)
+    if len(sys.argv) not in (2, 3) or (
+        len(sys.argv) == 3 and sys.argv[2] != "--version-only"
+    ):
+        print(
+            "Usage: resolve_pyqt6_version.py <major.minor> [--version-only]",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     major_minor = sys.argv[1]
+    versions_path = Path(__file__).with_name("pyqt6-versions.json")
+    versions = json.loads(versions_path.read_text())
+    try:
+        pinned_version = versions[major_minor]
+    except KeyError:
+        sys.exit(
+            f"No pinned PyQt6 version for Qt {major_minor}; "
+            f"update {versions_path.name}"
+        )
+
+    if len(sys.argv) == 3:
+        print(pinned_version)
+        return
+
     with urllib.request.urlopen("https://pypi.org/pypi/PyQt6/json") as r:
         data = json.load(r)
 
-    candidates = [Version(v) for v, files in data["releases"].items() if files]
-    matching = [v for v in candidates if f"{v.major}.{v.minor}" == major_minor]
-    if not matching:
-        sys.exit(f"Keine PyQt6-Version fuer Qt {major_minor} gefunden")
-
-    best = max(matching)
-    sdist = next(f for f in data["releases"][str(best)] if f["packagetype"] == "sdist")
-    print(best, sdist["url"])
+    files = data["releases"].get(pinned_version, [])
+    try:
+        sdist = next(f for f in files if f["packagetype"] == "sdist")
+    except StopIteration:
+        sys.exit(f"PyQt6 {pinned_version} has no sdist on PyPI")
+    print(pinned_version, sdist["url"])
 
 
 if __name__ == "__main__":

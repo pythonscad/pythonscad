@@ -141,6 +141,8 @@ public slots:
   void onAutocompleteChanged(bool state);
   void onCharacterThresholdChanged(int val);
   void onCallTipClicked(int position);
+  void moveLineUp() override;
+  void moveLineDown() override;
 
 private slots:
   void onTextChanged();
@@ -154,8 +156,10 @@ signals:
 
 public:
   void public_applySettings();
+  long enclosingOpenParenPosition(long cursorPos) const;
   QString lastCallTipFunction;
   int lastCallTipPosition = 0;
+  bool lastCallTipIsPythonForm = false;
 
 private:
   QVBoxLayout *scintillaLayout;
@@ -165,9 +169,12 @@ private:
   static const int findIndicatorNumber = 9;
   static const int hyperlinkIndicatorNumber = 10;
   static const int hyperlinkIndicatorOffset = 100;
+
+  // Note:  Marker numbers 25-31 are reserved for line-folding markers.
   static const int errMarkerNumber = 2;
   static const int bmMarkerNumber = 3;
-  static const int selectionMarkerLevelNumber = 20;  // 20 - 25, there is at max 5 level of depth
+  static const int selectionMarkerLevelNumber = 4;  // 4-9, there is at max 5 level of depth
+
   static const int selectionIndicatorIsActiveNumber =
     11;  // Represents the active selected area text 11 - 12
   static const int selectionIndicatorIsImpactedNumber =

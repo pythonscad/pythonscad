@@ -1,5 +1,55 @@
 # Customizer
 
+## Customizer containers
+
+The PythonSCAD-only `Customizer` class keeps parameter values in an explicit
+mapping instead of creating global variables. Pass that mapping to modeling
+functions just like any other configuration object:
+
+=== "Python"
+
+    ```python
+    from pythonscad import *
+
+    params = Customizer()
+    base = params.group("Base parameters")
+
+    base.add_parameter("diameter", 10, description="Plate diameter")
+    base.add_parameter("thickness", 3, range=(1, 10, 0.1))
+
+    def baseplate(params):
+        return cylinder(
+            d=params["diameter"],
+            h=params["thickness"],
+        )
+
+    show(baseplate(params))
+    ```
+
+`Customizer` is a read-only mapping. `Customizer.add_parameter()` returns the
+current effective value as well as storing it in the mapping, so the return
+value can also be captured in a local variable:
+
+=== "Python"
+
+    ```python
+    params = Customizer()
+    diameter = params.add_parameter("diameter", 10)
+    ```
+
+Use `params.group("Tab title")` to obtain a cached group view. Parameters added
+through that view appear on the corresponding Customizer tab, while all values
+remain available through the root `params` mapping. Parameter names must be
+unique across all groups and `Customizer` instances in one design.
+
+The GUI discovers container parameters when the Python design is evaluated.
+Run a new design once with F5 or F6 to populate the Customizer panel; subsequent
+widget changes participate in automatic previews normally.
+
+The module-level `add_parameter()` function below remains available unchanged
+for existing designs. Unlike `Customizer.add_parameter()`, its legacy default
+behavior may create a global variable with the registered name.
+
 ## add_parameter
 
 Add a parameter that appears in the PythonSCAD Customizer GUI. Users can modify these parameters through the GUI without editing code.

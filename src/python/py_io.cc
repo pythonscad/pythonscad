@@ -24,6 +24,7 @@
  *
  */
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include "genlang/genlang.h"
@@ -36,6 +37,7 @@
 #include <ColorNode.h>
 #include <ColorUtil.h>
 #include <io/fileutils.h>
+#include <core/parsersettings.h>
 #include <GeometryEvaluator.h>
 #include <platform/PlatformUtils.h>
 #include <handle_dep.h>
@@ -246,7 +248,10 @@ static bool python_export_obj_att_pre_encode()
 
 PyObject *python_export_core(PyObject *obj, char *file)
 {
-  if (pythonDryRun) {
+  if (pythonDryRun || pythonPreview) {
+    /* Customizer dummy parse, GUI F5, and CLI preview (echo/PNG without
+     * --render) must not write files. F6 / --render / mesh -o set
+     * pythonPreview false. */
     Py_RETURN_NONE;
   }
   std::string filename;
@@ -549,7 +554,6 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     else if (ext == ".dxf") actualtype = ImportType::DXF;
     else if (ext == ".nef3") actualtype = ImportType::NEF3;
     else if (ext == ".3mf") actualtype = ImportType::_3MF;
-    else if (ext == ".amf") actualtype = ImportType::AMF;
     else if (ext == ".svg") actualtype = ImportType::SVG;
     else if (ext == ".cdr") actualtype = ImportType::CDR;
     else if (ext == ".stp") actualtype = ImportType::STEP;
@@ -741,7 +745,7 @@ PyObject *python_str(PyObject *self)
   return PyUnicode_FromStringAndSize(stream.str().c_str(), stream.str().size());
 }
 
-PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *python_register_parameter_impl(PyObject *args, PyObject *kwargs, bool inject_global)
 {
   char *kwlist[] = {"name", "default",    "description", "group", "range",
                     "step", "max_length", "options",     NULL};
@@ -756,9 +760,8 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|zzOdiO", kwlist, &name, &value, &description,
                                    &group, &range_obj, &step_val, &max_length, &options)) {
-    PyErr_SetString(PyExc_TypeError,
-                    "Error during parsing add_parameter(name, default, [description], [group], "
-                    "[range], [step], [max_length], [options])");
+    const char *function_name = inject_global ? "add_parameter" : "Customizer.add_parameter";
+    PyErr_Format(PyExc_TypeError, "Error during parsing %s() arguments", function_name);
     return NULL;
   }
 
@@ -875,6 +878,15 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   if (found) {
+    if (!inject_global) {
+      for (const auto& registered : customizer_parameters) {
+        if (registered->getName() == name) {
+          PyErr_Format(PyExc_ValueError, "Customizer parameter '%s' is already registered", name);
+          return NULL;
+        }
+      }
+    }
+
     auto *annotationList = new AnnotationList();
 
     // Create Parameter annotation with constraints
@@ -979,7 +991,15 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
         auto expr = customizer_parameters_finished[i]->getExpr();
         const auto& lit = std::dynamic_pointer_cast<Literal>(expr);
         if (lit != nullptr) {
-          if (lit->isDouble()) value_effective = PyFloat_FromDouble(lit->toDouble());
+          // Finished values are stored as OpenSCAD NUMBER (double). Preserve the
+          // Python default's type so int parameters stay int across GUI re-previews.
+          if (lit->isDouble()) {
+            if (!is_bool && PyLong_Check(value)) {
+              value_effective = PyLong_FromLongLong(std::llround(lit->toDouble()));
+            } else {
+              value_effective = PyFloat_FromDouble(lit->toDouble());
+            }
+          }
           if (lit->isString()) value_effective = PyUnicode_FromString(lit->toString().c_str());
           if (lit->isBool()) value_effective = lit->toBool() ? Py_True : Py_False;
         }
@@ -999,14 +1019,29 @@ PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     // Only set global variable if the pure function feature is not enabled
     // (default: creates variable for backward compatibility)
-    if (!Feature::ExperimentalAddParameterPureFunction.is_enabled()) {
+    if (inject_global && !Feature::ExperimentalAddParameterPureFunction.is_enabled()) {
       PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
       PyDict_SetItemString(maindict, name, value_effective);
     }
     Py_INCREF(value_effective);
     return value_effective;
   }
+  if (!inject_global) {
+    PyErr_Format(PyExc_TypeError, "Customizer parameter '%s' has unsupported default type '%s'", name,
+                 Py_TYPE(value)->tp_name);
+    return NULL;
+  }
   Py_RETURN_NONE;
+}
+
+PyObject *python_register_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return python_register_parameter_impl(args, kwargs, false);
+}
+
+PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  return python_register_parameter_impl(args, kwargs, true);
 }
 
 PyObject *python_scad(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1052,7 +1087,13 @@ PyObject *python_osuse_include(int mode, PyObject *self, PyObject *args, PyObjec
     PyErr_SetString(PyExc_ValueError, "osuse(): filename must not be empty");
     return NULL;
   }
-  const std::string includedfile = lookup_file(file, python_scriptpath.parent_path().u8string(), ".");
+  std::string includedfile = lookup_file(file, python_scriptpath.parent_path().u8string(), ".");
+  const fs::path requested_path = fs::u8path(file);
+  if (!requested_path.is_absolute() && !fs::exists(fs::u8path(includedfile))) {
+    // Fall back to OpenSCAD's library paths when file not found.
+    const fs::path libraryfile = search_libs(requested_path);
+    if (!libraryfile.empty()) includedfile = libraryfile.generic_string();
+  }
   {
     const fs::path fpath = fs::u8path(includedfile);
     if (!fs::exists(fpath)) {

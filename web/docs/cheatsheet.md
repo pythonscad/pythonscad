@@ -197,6 +197,10 @@
       <div>Extrude a 2D shape or function linearly</div>
       <div><code>circle(5).linear_extrude(height=10).show()</code></div>
 
+      <div class="func"><code><a href="../reference/extrusions/#loft">loft</a>(shape1, shape2, height, n, rot)</code></div>
+      <div>Interpolate between two centered 2D cross-sections</div>
+      <div><code>linear_extrude(loft(square(10, center=True), circle(3), 20), height=20, slices=20).show()</code></div>
+
       <div class="func"><code><a href="../reference/extrusions/#rotate_extrude">rotate_extrude</a>(obj, angle, v, ...)</code></div>
       <div>Extrude a 2D shape by rotating; supports helix via v</div>
       <div><code>circle(3).right(10).rotate_extrude(angle=360).show()</code></div>

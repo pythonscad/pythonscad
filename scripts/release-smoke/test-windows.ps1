@@ -242,7 +242,8 @@ try {
     Write-SmokeLog "Extracting ZIP $($zip.Name)"
     Expand-Archive -LiteralPath $zip.FullName -DestinationPath $zipExtractDir -Force
     $zipExecutable = Find-PythonSCADExecutable -Root $zipExtractDir
-    Invoke-SmokeTest -ExecutablePath $zipExecutable -Label "ZIP $($zip.Name)" -Workdir $workdir
+    Invoke-SmokeTest -ExecutablePath $zipExecutable -Label "ZIP $($zip.Name)" `
+        -Workdir $workdir -ExpectPyQt6
 
     if ($options.SkipNsisInstall) {
         Write-SmokeLog 'Skipping NSIS installer smoke test'
@@ -272,7 +273,8 @@ try {
             throw "NSIS installer failed with exit code $($installProcess.ExitCode)"
         }
         $nsisExecutable = Find-PythonSCADExecutable -Root $installDir
-        Invoke-SmokeTest -ExecutablePath $nsisExecutable -Label "NSIS $($installer.Name)" -Workdir $workdir
+        Invoke-SmokeTest -ExecutablePath $nsisExecutable -Label "NSIS $($installer.Name)" `
+            -Workdir $workdir -ExpectPyQt6
     }
 
     Write-SmokeLog 'Windows smoke tests passed'

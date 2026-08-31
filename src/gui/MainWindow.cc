@@ -261,11 +261,13 @@ std::string editorGetCallArgs(int pos)
 
   long closePos = si->qsci->SendScintilla(QsciScintillaBase::SCI_BRACEMATCH, (long)(pos - 1), (long)0);
   if (closePos < 0 || closePos <= pos) {
-    return "";  // keine passende ")" -> neuer, unvollstaendiger Aufruf
+    return "";  // No matching ")": this is a new, incomplete call.
   }
 
-  QString fullText = si->qsci->text();
-  return fullText.mid(pos, (int)closePos - pos).toStdString();
+  const auto length = closePos - pos;
+  QByteArray argsText((int)length + 1, '\0');
+  si->qsci->SendScintilla(QsciScintillaBase::SCI_GETTEXTRANGE, (long)pos, closePos, argsText.data());
+  return std::string(argsText.constData(), (size_t)length);
 }
 
 void editorReplaceCallArgs(int pos, const char *newText)
@@ -290,8 +292,13 @@ void editorReplaceCallArgs(int pos, const char *newText)
     si->qsci->replaceSelectedText(qtext);
     finalText = qtext;
   } else {
-    finalText = qtext + ")";  // NEU: schliessende Klammer ergaenzen
-    si->qsci->insertAt(finalText, lineOpen, colOpen);
+    long cursorPos = si->qsci->SendScintilla(QsciScintillaBase::SCI_GETCURRENTPOS);
+    if (cursorPos < pos) cursorPos = pos;
+    int lineCursor, colCursor;
+    si->qsci->lineIndexFromPosition((int)cursorPos, &lineCursor, &colCursor);
+    si->qsci->setSelection(lineOpen, colOpen, lineCursor, colCursor);
+    finalText = qtext + ")";
+    si->qsci->replaceSelectedText(finalText);
   }
 
   int newLines = finalText.count('\n');
@@ -1667,6 +1674,7 @@ void MainWindow::quitApplication()
       }
       return;
     }
+    TabManager::markSessionSavedForShutdown();
   } else {
     for (auto *win : scadApp->windowManager.getWindows()) {
       if (!win->tabManager->shouldClose()) {
@@ -2356,7 +2364,16 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
       }
     }
 
-    customizer_parameters_finished = (sourceFile ? sourceFile->scope->assignments : AssignmentList());
+    SourceFile *parameterSource =
+      sourceFile ? sourceFile : (rootFileMatchesEditor ? this->rootFile.get() : nullptr);
+    if (parameterSource != nullptr) {
+      // Runtime-discovered Customizer parameters do not take the legacy prefix-scan path. Apply
+      // the widget's latest values to the previous parameter AST before using it as this run's
+      // effective-value snapshot.
+      editor->parameterWidget->applyParameters(parameterSource);
+    }
+    customizer_parameters_finished =
+      parameterSource ? parameterSource->scope->assignments : AssignmentList();
     customizer_parameters.clear();
     if (venv.empty()) {
       LOG("Running %1$s without venv.", python_version());
@@ -2365,7 +2382,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
       LOG("Running %1$s in venv '%2$s'.", python_version(), v);
     }
     auto error = evaluatePython(fulltext_py, pythonDryRunFullScript);
-    if (error.size() > 0) LOG(message_group::Error, Location::NONE, "", error.c_str());
+    if (!error.empty()) LOG(message_group::Error, Location::NONE, "", error.c_str());
     finishPython();
 
     if (renderVarsSet != nullptr) {
@@ -2377,6 +2394,24 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
       // Match non-Python path below: parse() can leave sourceFile non-null on failure.
       sourceFile = parse(sourceFile, "", fnameNative, fnameNative, false) ? sourceFile : nullptr;
     }
+    if (error.empty() && sourceFile != nullptr) {
+      // A full Python evaluation is the source of truth for runtime-declared parameters such as
+      // pythonscad.Customizer. Reconcile even an empty list so removing declarations clears stale
+      // widgets. Legacy add_parameter() declarations still take the prefix-scan path above, then
+      // converge here after the full evaluation.
+      sourceFile->scope->assignments = customizer_parameters;
+      CommentParser::collectParameters(fulltext_py, sourceFile, '#');
+      editor->parameterWidget->setParameters(sourceFile, fulltext_py);
+      editor->parameterWidget->applyParameters(sourceFile);
+      editor->parameterWidget->setEnabled(true);
+      editor->setIndicator(sourceFile->indicatorData);
+      customizer_parameters_finished = sourceFile->scope->assignments;
+    } else if (!error.empty() && parameterSource != nullptr) {
+      // Keep the last complete Customizer usable rather than publishing declarations collected
+      // before the exception.
+      editor->parameterWidget->setEnabled(true);
+    }
+    customizer_parameters.clear();
 
   } else  // python not enabled
 #endif    // ifdef ENABLE_PYTHON
@@ -3876,6 +3911,18 @@ void MainWindow::on_viewActionViewAll_triggered()
   this->qglview->update();
 }
 
+void MainWindow::on_viewActionFullScreen_toggled(bool checked)
+{
+  if (checked == isFullScreen()) {
+    return;
+  }
+  if (checked) {
+    setWindowState(windowState() | Qt::WindowFullScreen);
+  } else {
+    setWindowState(windowState() & ~Qt::WindowFullScreen);
+  }
+}
+
 void MainWindow::on_viewActionHideEditorToolBar_toggled(bool checked)
 {
   QSettingsCached settings;
@@ -4379,6 +4426,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     if (scadApp->windowManager.getWindows().size() == 1) {
       isClosing = false;
       event->ignore();
+      persistWindowGeometry();
       quitApplication();
       return;
     }
@@ -4418,7 +4466,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
   }
 
   QSettingsCached settings;
-  settings.setValue("window/geometry", saveGeometry());
+  persistWindowGeometry();
   auto windowState = saveState();
   UIUtils::dumpSaveState(windowState);
   settings.setValue("window/state", windowState);
@@ -4755,6 +4803,8 @@ void MainWindow::setupEditor(const QStringList& filenames)
   connect(this->editActionUnindent, &QAction::triggered, tabManager, &TabManager::unindentSelection);
   connect(this->editActionComment, &QAction::triggered, tabManager, &TabManager::commentSelection);
   connect(this->editActionUncomment, &QAction::triggered, tabManager, &TabManager::uncommentSelection);
+  connect(this->editActionMoveLineUp, &QAction::triggered, tabManager, &TabManager::moveLineUp);
+  connect(this->editActionMoveLineDown, &QAction::triggered, tabManager, &TabManager::moveLineDown);
 
   connect(this->editActionToggleBookmark, &QAction::triggered, tabManager, &TabManager::toggleBookmark);
   connect(this->editActionNextBookmark, &QAction::triggered, tabManager, &TabManager::nextBookmark);
@@ -5023,7 +5073,6 @@ void MainWindow::setupMenusAndActions()
   exportMap[FileFormat::PS] = this->fileActionExportFoldable;
   exportMap[FileFormat::STEP] = this->fileActionExportSTP;
   exportMap[FileFormat::GCODE] = this->fileActionExportGCode;
-  exportMap[FileFormat::AMF] = this->fileActionExportAMF;
   exportMap[FileFormat::DXF] = this->fileActionExportDXF;
   exportMap[FileFormat::SVG] = this->fileActionExportSVG;
   exportMap[FileFormat::PDF] = this->fileActionExportPDF;
@@ -5145,6 +5194,17 @@ void MainWindow::applySessionWindowGeometry(const QByteArray& geometry)
     setGeometry(screen()->availableGeometry());
   }
 #endif
+  viewActionFullScreen->setChecked(isFullScreen());
+}
+
+void MainWindow::persistWindowGeometry()
+{
+  QSettingsCached settings;
+  if (Settings::Settings::sessionManagementEnabled.value()) {
+    settings.remove("window/geometry");
+    return;
+  }
+  settings.setValue("window/geometry", saveGeometry());
 }
 
 void MainWindow::restoreWindowState()
@@ -5154,7 +5214,9 @@ void MainWindow::restoreWindowState()
   clearCurrentOutput();
   UIUtils::dumpSaveState(windowState);
   setCurrentOutput();
-  applySessionWindowGeometry(settings.value("window/geometry", QByteArray()).toByteArray());
+  if (!Settings::Settings::sessionManagementEnabled.value()) {
+    applySessionWindowGeometry(settings.value("window/geometry", QByteArray()).toByteArray());
+  }
   restoreState(windowState);
 
   if (windowState.size() == 0) {
@@ -5206,6 +5268,9 @@ void MainWindow::restoreWindowState()
 #endif  // ifdef Q_OS_WIN
   }
 
+  if (!Settings::Settings::sessionManagementEnabled.value()) {
+    viewActionFullScreen->setChecked(isFullScreen());
+  }
 }
 
 void MainWindow::handleDeferredCliMissingFile()
@@ -5288,6 +5353,10 @@ void MainWindow::changeEvent(QEvent *event)
 {
   if (event->type() == QEvent::ThemeChange) {
     setGlobalTheme();
+  } else if (event->type() == QEvent::WindowStateChange) {
+    viewActionFullScreen->blockSignals(true);
+    viewActionFullScreen->setChecked(isFullScreen());
+    viewActionFullScreen->blockSignals(false);
   }
   QMainWindow::changeEvent(event);
 }

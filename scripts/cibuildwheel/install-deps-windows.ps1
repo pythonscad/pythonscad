@@ -64,10 +64,14 @@ if (-not $BisonExe -or -not $FlexExe) {
     throw "MSYS2 flex/bison tools were not found after install (bison: $BisonExe, flex: $FlexExe)"
 }
 
-# Pin vcpkg to a release tag for reproducible builds (see vcpkg.json builtin-baseline).
-$VcpkgVersion = "2026.06.24"
+# Renovate updates the release tag and its commit digest together.
+$VcpkgVersion = "2026.07.29"
+$VcpkgBaseline = "9e593bb18ea69cc5095e012465dcd675a822ed0d"
 $VcpkgRoot = Join-Path $ProjectRoot ".wheel-vcpkg"
-$ManifestDir = Join-Path $ProjectRoot "scripts/cibuildwheel"
+# This dependency-only file is a template, not a directly usable vcpkg manifest.
+# The generated manifest below adds the pinned builtin-baseline.
+$ManifestSource = Join-Path $ProjectRoot "scripts/cibuildwheel/vcpkg.json"
+$ManifestDir = Join-Path $ProjectRoot ".wheel-vcpkg-manifest"
 $VcpkgManifest = Join-Path $ManifestDir "vcpkg.json"
 
 if (-not (Test-Path $VcpkgRoot)) {
@@ -93,7 +97,6 @@ if (-not (Test-Path $VcpkgRoot)) {
     }
 }
 
-$ManifestBaseline = ((Get-Content $VcpkgManifest -Raw) | ConvertFrom-Json)."builtin-baseline"
 Push-Location $VcpkgRoot
 try {
     $CheckedOutCommit = (git rev-parse HEAD).Trim()
@@ -101,9 +104,16 @@ try {
 } finally {
     Pop-Location
 }
-if ($ManifestBaseline -ne $CheckedOutCommit) {
-    throw "vcpkg tag $VcpkgVersion resolves to $CheckedOutCommit, but vcpkg.json builtin-baseline is $ManifestBaseline. Update both pins together."
+if ($VcpkgBaseline -ne $CheckedOutCommit) {
+    throw "vcpkg tag $VcpkgVersion resolves to $CheckedOutCommit, but its pinned baseline is $VcpkgBaseline. Update both pins together."
 }
+
+$Manifest = Get-Content $ManifestSource -Raw | ConvertFrom-Json
+$Manifest | Add-Member -NotePropertyName "builtin-baseline" -NotePropertyValue $VcpkgBaseline -Force
+New-Item -ItemType Directory -Path $ManifestDir -Force | Out-Null
+$Utf8NoBom = New-Object System.Text.UTF8Encoding $false
+$ManifestJson = $Manifest | ConvertTo-Json -Depth 10
+[System.IO.File]::WriteAllText($VcpkgManifest, $ManifestJson + [Environment]::NewLine, $Utf8NoBom)
 
 $VcpkgExe = Join-Path $VcpkgRoot "vcpkg.exe"
 if (-not (Test-Path $VcpkgExe)) {
@@ -148,7 +158,6 @@ $EnvLines = @(
     "FLEX=$FlexExe",
     "MSYS2_USR_BIN=$MsysUsrBin"
 )
-$Utf8NoBom = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllLines($EnvFile, $EnvLines, $Utf8NoBom)
 
 Write-Host "=== install-deps-windows.ps1: done (vcpkg root: $VcpkgRoot) ==="
