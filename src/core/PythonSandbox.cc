@@ -407,8 +407,10 @@ bool readManifest(const fs::path& manifestFile, const fs::path& outputRoot,
                   std::vector<PythonSandboxOutputFile>& files, std::string& error)
 {
   std::string manifest;
-  // No manifest means the runner completed without sandbox-visible output files.
-  if (!readFile(manifestFile, manifest)) return true;
+  if (!readFile(manifestFile, manifest)) {
+    error = "Sandboxed Python did not produce an output manifest.";
+    return false;
+  }
 
   std::istringstream stream(manifest);
   std::string line;
@@ -417,7 +419,10 @@ bool readManifest(const fs::path& manifestFile, const fs::path& outputRoot,
     const size_t firstTab = line.find('\t');
     const size_t secondTab =
       firstTab == std::string::npos ? std::string::npos : line.find('\t', firstTab + 1);
-    if (firstTab == std::string::npos || secondTab == std::string::npos) continue;
+    if (firstTab == std::string::npos || secondTab == std::string::npos) {
+      error = "Sandboxed Python produced a malformed output manifest.";
+      return false;
+    }
 
     PythonSandboxOutputFile file;
     file.relativePath = line.substr(0, firstTab);
@@ -429,7 +434,8 @@ bool readManifest(const fs::path& manifestFile, const fs::path& outputRoot,
     try {
       file.size = std::stoull(line.substr(secondTab + 1));
     } catch (const std::exception&) {
-      file.size = 0;
+      error = "Sandboxed Python produced a malformed output manifest.";
+      return false;
     }
     files.push_back(std::move(file));
   }
