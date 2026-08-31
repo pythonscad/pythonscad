@@ -7,6 +7,7 @@
 #include <QMessageBox>
 
 #ifdef ENABLE_PYTHON
+#include "core/PythonExecution.h"
 #include "nettle/base64.h"
 #include "nettle/sha2.h"
 #include "nettle/version.h"
@@ -156,6 +157,13 @@ void EditorInterface::resetLanguageDetection()
 
 #ifdef ENABLE_PYTHON
 extern bool python_trusted;
+
+bool EditorInterface::usesNativePythonExecution() const
+{
+  return pythonExecutionModeIsNative(defaultPythonExecutionMode()) || python_trusted ||
+         (pythonNativeExecution && (filepath.isEmpty() || trusted));
+}
+
 bool EditorInterface::hasPythonTrustHash(void) const
 {
   if (filepath.isEmpty()) return false;

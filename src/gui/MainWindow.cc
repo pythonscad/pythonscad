@@ -280,7 +280,7 @@ const char copyrighttext[] =
 bool effectivePythonExecutionModeIsNative(const EditorInterface *editor)
 {
   return pythonExecutionModeIsNative(defaultPythonExecutionMode()) || python_trusted ||
-         (editor && editor->pythonNativeExecution && (editor->filepath.isEmpty() || editor->trusted));
+         (editor && editor->usesNativePythonExecution());
 }
 
 bool pythonDesignCanRun(const EditorInterface *editor)
@@ -1878,8 +1878,8 @@ void MainWindow::updatePythonTrustActions()
   designActionRender->setEnabled(!isUntrustedPython);
   // Checkable action: enabled only when it controls per-file native-mode opt-in.
   fileActionPythonTrustCurrentDesign->setEnabled(isPythonWithPath && !nativeModeForced);
-  fileActionPythonTrustCurrentDesign->setChecked(
-    isPythonWithPath && (nativeModeForced || activeEditor->pythonNativeExecution));
+  fileActionPythonTrustCurrentDesign->setChecked(isPythonWithPath &&
+                                                 effectivePythonExecutionModeIsNative(activeEditor));
   // Only disable the parameter widget here; re-enabling is left to parseDocument() so
   // we don't override its intentional disable (e.g. no parameters, parse failure).
   if (isUntrustedPython && activeEditor) activeEditor->parameterWidget->setEnabled(false);
@@ -1908,7 +1908,7 @@ void MainWindow::on_fileActionPythonTrustCurrentDesign_triggered()
 {
 #ifdef ENABLE_PYTHON
   if (!activeEditor || activeEditor->language != LANG_PYTHON || activeEditor->filepath.isEmpty()) return;
-  if (activeEditor->pythonNativeExecution) {
+  if (effectivePythonExecutionModeIsNative(activeEditor)) {
     // Revoke trust for this design only — remove its hash entry and clear trusted flag.
     const QByteArray pathUtf8 = activeEditor->filepath.toUtf8();
     QSettingsCached settings;
@@ -4430,13 +4430,13 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   editorTrustConnection = connect(newEditor, &EditorInterface::trustStateChanged, this, [this]() {
     if (!activeEditor) return;
     updatePythonTrustActions();
-    if (activeEditor->pythonNativeExecution) {
+    if (activeEditor->usesNativePythonExecution()) {
       // Populate the customizer via dry-run. If GuiLocker is held (e.g. a compile was
       // already running when trust was granted), defer until the event loop is free so
       // we don't re-enter initPython() while the CSG worker holds the GIL.
       if (GuiLocker::isLocked()) {
         QTimer::singleShot(0, this, [this]() {
-          if (activeEditor && activeEditor->pythonNativeExecution) parseTopLevelDocument(true);
+          if (activeEditor && activeEditor->usesNativePythonExecution()) parseTopLevelDocument(true);
         });
       } else {
         parseTopLevelDocument(true);

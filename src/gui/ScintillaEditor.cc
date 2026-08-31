@@ -1667,8 +1667,7 @@ void ScintillaEditor::updateTrustBar()
 {
   const bool sandboxedByDefault =
     Settings::SettingsPython::pythonExecutionMode.value() != PYTHON_EXECUTION_NATIVE;
-  const bool showBar =
-    (language == LANG_PYTHON) && sandboxedByDefault && !python_trusted && !pythonNativeExecution;
+  const bool showBar = (language == LANG_PYTHON) && sandboxedByDefault && !usesNativePythonExecution();
   pythonTrustBar->setVisible(showBar);
 }
 

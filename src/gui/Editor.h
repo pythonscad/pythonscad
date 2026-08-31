@@ -73,6 +73,7 @@ public:
   void trustCurrent(void);
   void revokeTrust(void);
   void setPythonNativeExecution(bool enabled);
+  bool usesNativePythonExecution() const;
 #endif
 
 signals:
