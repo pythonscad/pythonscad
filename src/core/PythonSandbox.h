@@ -27,4 +27,9 @@ void cleanupPythonSandboxResult(const PythonSandboxResult& result);
 // spaces and dots that the Win32 path normalizer would otherwise remove.
 bool isReservedWindowsDeviceNameComponent(const std::string& component);
 
+inline bool hasWindowsUnsafeTrailingDecoration(const std::string& component)
+{
+  return !component.empty() && (component.back() == ' ' || component.back() == '.');
+}
+
 #endif  // ENABLE_PYTHON

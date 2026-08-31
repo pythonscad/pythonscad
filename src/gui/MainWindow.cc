@@ -310,6 +310,7 @@ bool isSafeSandboxOutputRelativePath(const QString& value)
   const auto parts = cleaned.split('/', Qt::SkipEmptyParts);
   return std::none_of(parts.begin(), parts.end(), [](const QString& part) {
     return part == QStringLiteral(".") || part == QStringLiteral("..") ||
+           part.endsWith(QLatin1Char(' ')) || part.endsWith(QLatin1Char('.')) ||
            isReservedWindowsSandboxOutputPathComponent(part);
   });
 }

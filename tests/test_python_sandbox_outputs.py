@@ -81,6 +81,7 @@ async function OpenSCAD() {
       FS.writeFile('/work/out/nested/b.stl', 'solid b\nendsolid b\n');
       FS.writeFile('/work/out/con ', 'reserved-con-space\n');
       FS.writeFile('/work/out/nul.', 'reserved-nul-dot\n');
+      FS.writeFile('/work/out/foo ', 'trailing-space\n');
     },
   };
 }
@@ -150,8 +151,10 @@ def main():
         assert (sandbox_outputs / "nested" / "b.stl").read_text(encoding="utf-8").startswith("solid b")
         assert not (sandbox_outputs / "con ").exists()
         assert not (sandbox_outputs / "nul.").exists()
+        assert not (sandbox_outputs / "foo ").exists()
         assert not (sandbox_outputs / "con").exists()
         assert not (sandbox_outputs / "nul").exists()
+        assert not (sandbox_outputs / "foo").exists()
 
         dash_d = run(
             [

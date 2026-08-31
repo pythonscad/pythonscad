@@ -252,6 +252,7 @@ bool isSafeManifestRelativePath(const std::string& value)
   for (const auto& part : normalized) {
     const std::string component = part.generic_string();
     if (component.empty() || component == "." || component == "..") return false;
+    if (hasWindowsUnsafeTrailingDecoration(component)) return false;
     if (isReservedWindowsDeviceNameComponent(component)) return false;
   }
   return true;

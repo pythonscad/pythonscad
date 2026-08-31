@@ -241,6 +241,7 @@ bool isSafeSandboxRelativePath(const std::string& relativePath)
   for (const auto& part : normalized) {
     const std::string value = part.generic_string();
     if (value.empty() || value == "." || value == "..") return false;
+    if (hasWindowsUnsafeTrailingDecoration(value)) return false;
     if (isReservedWindowsDeviceNameComponent(value)) return false;
   }
   return true;

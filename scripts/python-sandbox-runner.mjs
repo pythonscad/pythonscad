@@ -91,6 +91,7 @@ function safeRelativePath(relativePath)
   const parts = normalized.split('/');
   for (const part of parts) {
     if (!part || part === '.' || part === '..') return null;
+    if (/[ .]$/.test(part)) return null;
     if (RESERVED_WINDOWS_NAMES.has(reservedWindowsStem(part))) return null;
   }
   return normalized;
