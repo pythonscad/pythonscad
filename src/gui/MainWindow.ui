@@ -1581,14 +1581,6 @@
     <string>Export as S&amp;VG...</string>
    </property>
   </action>
-  <action name="fileActionExportAMF">
-   <property name="icon">
-    <iconset theme="chokusen-export-amf"/>
-   </property>
-   <property name="text">
-    <string>Export as &amp;AMF...</string>
-   </property>
-  </action>
   <action name="fileActionExport3MF">
    <property name="icon">
     <iconset theme="chokusen-export-3mf"/>

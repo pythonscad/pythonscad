@@ -1614,7 +1614,6 @@ set(CORE_SOURCES
   src/io/DxfData.cc
   src/io/dxfdim.cc
   src/io/export.cc
-  src/io/export_amf.cc
   src/io/export_dxf.cc
   src/io/export_obj.cc
   src/io/export_off.cc
@@ -1630,7 +1629,6 @@ set(CORE_SOURCES
   src/io/export_param.cc
   src/io/export_wrl.cc
   src/io/fileutils.cc
-  src/io/import_amf.cc
   src/io/import_json.cc
   src/io/import_obj.cc
   src/io/import_off.cc

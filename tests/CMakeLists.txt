@@ -360,7 +360,6 @@ list(REMOVE_ITEM FEATURES_3D_FILES
 )
 file(GLOB DEPRECATED_3D_FILES ${TEST_SCAD_DIR}/3D/deprecated/*.scad)
 file(GLOB ISSUES_3D_FILES     ${TEST_SCAD_DIR}/3D/issues/*.scad)
-file(GLOB SCAD_AMF_FILES           ${TEST_SCAD_DIR}/amf/*.scad)
 file(GLOB SCAD_NEF3_FILES          ${TEST_SCAD_DIR}/nef3/*.scad)
 file(GLOB FUNCTION_FILES           ${TEST_SCAD_DIR}/functions/*.scad)
 file(GLOB REDEFINITION_FILES       ${TEST_SCAD_DIR}/redefinition/*.scad)
@@ -499,7 +498,7 @@ list(APPEND ASTDUMP_FILES ${MISC_FILES}
 list(APPEND DUMP_FILES ${FEATURES_2D_FILES} ${FEATURES_3D_FILES} ${DEPRECATED_3D_FILES} ${MISC_FILES})
 
 list(APPEND RENDER_2D_FILES ${FEATURES_2D_FILES} ${SCAD_DXF_FILES} ${ISSUES_2D_FILES} ${EXAMPLE_2D_FILES})
-list(APPEND RENDER_3D_FILES ${FEATURES_3D_FILES} ${SCAD_AMF_FILES} ${DEPRECATED_3D_FILES} ${ISSUES_3D_FILES} ${EXAMPLE_3D_FILES} ${SCAD_NEF3_FILES})
+list(APPEND RENDER_3D_FILES ${FEATURES_3D_FILES} ${DEPRECATED_3D_FILES} ${ISSUES_3D_FILES} ${EXAMPLE_3D_FILES} ${SCAD_NEF3_FILES})
 list(APPEND RENDER_3D_FILES
   ${TEST_SCAD_DIR}/misc/include-tests.scad
   ${TEST_SCAD_DIR}/misc/use-tests.scad
@@ -1723,12 +1722,6 @@ disable_tests_safe(
   render-csg-cgal_minkowski3-difference-test
   preview-cgal_minkowski3-difference-test
 
-  # https://github.com/openscad/openscad/issues/909
-  preview-amf_polyhedron-single-triangle
-  render-amf_bad-stl-tardis
-  render-amf_bad-stl-pcbvicebar
-  render-amf_bad-stl-wing
-
   # When exported from CGAL, the file cannot be re-imported
   render-stl_bad-stl-wing
   render-off-cgal_bad-stl-wing
@@ -1776,11 +1769,6 @@ disable_tests_safe(
   # objects to render differently on different machines
   render-manifold_color-tests
   render-manifold_hex-colors-tests
-
-  # https://github.com/openscad/openscad/issues/909
-  render-amf-manifold_bad-stl-wing
-  render-amf-manifold_bad-stl-pcbvicebar
-  render-amf-manifold_bad-stl-tardis
 
   # https://github.com/openscad/openscad/issues/2841
   render-manifold_issue2841b
