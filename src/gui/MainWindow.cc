@@ -647,6 +647,9 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
 
   setupStatusBar();
   setupAnimate();
+  // Sandbox output dock is created here so tab creation during setupEditor()
+  // can set its name suffix without dereferencing a null pointer.
+  setupSandboxOutputs();
 
   setupEditor(filenames);
   setupCustomizer();
@@ -654,7 +657,6 @@ MainWindow::MainWindow(const QStringList& filenames) : rubberBandManager(this)
   setupFontList();
   setupColorList();
   setupAIDock();
-  setupSandboxOutputs();
   setupDocks();
 
   setup3DView();
@@ -4460,7 +4462,7 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   consoleDock->setNameSuffix(name);
   errorLogDock->setNameSuffix(name);
 #ifdef ENABLE_PYTHON
-  sandboxOutputDock->setNameSuffix(name);
+  if (sandboxOutputDock) sandboxOutputDock->setNameSuffix(name);
 #endif
   animateDock->setNameSuffix(name);
   fontListDock->setNameSuffix(name);
