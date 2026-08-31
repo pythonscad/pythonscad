@@ -295,6 +295,7 @@ jobs:
             --platform linux/arm64 \
             -v "$PWD:/workspace" \
             -v /tmp/debs:/tmp/debs \
+            -v /tmp/pyqt6-bindings-cache:/tmp/pyqt6-bindings-cache \
             -w /workspace \
             -e OUTPUT_DIR=/tmp/debs \
             -e DEBIAN_DISTRO="$MATRIX_DISTRO" \
