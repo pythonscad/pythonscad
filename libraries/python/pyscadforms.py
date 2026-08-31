@@ -310,7 +310,7 @@ class PolygonCanvas(QtWidgets.QWidget):
             painter.drawPoint(sp)
 
         painter.setPen(QtGui.QColor("black"))
-        for i, (sp, (wx, wy)) in enumerate(zip(screen_points, self.points)):
+        for i, (sp, (wx, wy)) in enumerate(zip(screen_points, self.world_points())):
             painter.drawText(int(sp.x()) + 8, int(sp.y()) - 8, f"({wx:.2f}, {wy:.2f})")
 
         if self.rubber_band_active and self.rubber_band_rect is not None:
@@ -464,7 +464,10 @@ class polygon:
             editor_replace_call_args(pos, ", ".join(parts))
 
     def __new__(cls, points, paths=None, convexity=2):
-        return _native_polygon(points=points, paths=paths, convexity=convexity)
+        if paths is not None:
+            return _native_polygon(points=points, paths=paths, convexity=convexity)
+        else:
+            return _native_polygon(points=points, convexity=convexity)
 
 class CubePreview(QtWidgets.QWidget):
     # Use asymmetric projection angles instead of symmetric isometry (30/30)
