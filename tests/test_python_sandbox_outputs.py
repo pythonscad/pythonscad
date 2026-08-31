@@ -149,12 +149,11 @@ def main():
         assert out_csg.read_text(encoding="utf-8").startswith("cube(")
         assert (sandbox_outputs / "a.stl").read_text(encoding="utf-8").startswith("solid a")
         assert (sandbox_outputs / "nested" / "b.stl").read_text(encoding="utf-8").startswith("solid b")
-        assert not (sandbox_outputs / "con ").exists()
-        assert not (sandbox_outputs / "nul.").exists()
-        assert not (sandbox_outputs / "foo ").exists()
-        assert not (sandbox_outputs / "con").exists()
-        assert not (sandbox_outputs / "nul").exists()
-        assert not (sandbox_outputs / "foo").exists()
+        # Use directory listings, not Path.exists(). On Windows, exists("nul.")
+        # is True because Win32 maps it to the NUL device even when no file was
+        # copied into the output directory.
+        assert {entry.name for entry in sandbox_outputs.iterdir()} == {"a.stl", "nested"}
+        assert {entry.name for entry in (sandbox_outputs / "nested").iterdir()} == {"b.stl"}
 
         dash_d = run(
             [
