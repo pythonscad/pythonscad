@@ -519,6 +519,32 @@ std::unique_ptr<ParameterObject> ParameterObject::fromAssignment(const Assignmen
     if (group == "Hidden") return nullptr;
   }
 
+
+  const Annotation *customTypeAnnotation = assignment->annotation("CustomType");
+  if (customTypeAnnotation) {
+    const auto *typeExpr = dynamic_cast<const Literal *>(customTypeAnnotation->getExpr().get());
+    if (typeExpr && typeExpr->isString()) {
+      json defaultJson;
+      const Expression *valueExpression = assignment->getExpr().get();
+      if (const auto *lit = dynamic_cast<const Literal *>(valueExpression)) {
+        if (lit->isBool()) defaultJson = lit->toBool();
+        else if (lit->isDouble()) defaultJson = lit->toDouble();
+        else if (lit->isString()) defaultJson = lit->toString();
+      } else if (const auto *vec = dynamic_cast<const Vector *>(valueExpression)) {
+        defaultJson = json::array();
+        for (const auto& child : vec->getChildren()) {
+          if (const auto *item = dynamic_cast<const Literal *>(child.get())) {
+            if (item->isDouble()) defaultJson.push_back(item->toDouble());
+            else if (item->isString()) defaultJson.push_back(item->toString());
+            else if (item->isBool()) defaultJson.push_back(item->toBool());
+          }
+        }
+      }
+      return std::make_unique<CustomParameter>(name, description, group,
+                                               typeExpr->toString(), defaultJson);
+    }
+  }
+
   const Expression *valueExpression = assignment->getExpr().get();
   if (const auto *expression = dynamic_cast<const Literal *>(valueExpression)) {
     if (expression->isBool()) {

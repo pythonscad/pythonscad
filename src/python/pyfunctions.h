@@ -251,6 +251,7 @@ PyObject *python_osuse(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_osinclude(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_register_parameter(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_add_parameter(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_set_modal_dialog_active(PyObject *, PyObject *args);
 PyObject *python_scad(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_model(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_modelpath(PyObject *self, PyObject *args, PyObject *kwargs);

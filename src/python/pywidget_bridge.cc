@@ -77,7 +77,11 @@ PyWidgetHandle pywidget_create(const std::string& typeName, const std::string& p
     if (obj) {
       // Gegenstück zu dem sip.wrapinstance(), das mainwindow_ptr() schon
       // in die andere Richtung benutzt (C++-Objekt -> PyQt6-Objekt).
-      PyObject *sipmod = PyImport_ImportModule("sip");
+      PyObject *sipmod = PyImport_ImportModule("PyQt6.sip");
+      if (!sipmod) {
+        PyErr_Clear();
+        sipmod = PyImport_ImportModule("sip");  // Fallback für ältere PyQt6-Builds
+      }
       if (sipmod) {
         PyObject *addr = PyObject_CallMethod(sipmod, "unwrapinstance", "O", obj);
         if (addr) {

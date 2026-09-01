@@ -14,9 +14,12 @@ ParameterPyQtWidget::ParameterPyQtWidget(QWidget *parent, CustomParameter *param
   pyWidget = reinterpret_cast<QWidget *>(h.qwidget_ptr);
   pyWidgetObj = (PyObject *) h.py_object_handle;
 
-  auto *layout = new QVBoxLayout(this);
+  auto *layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   if (pyWidget) {
+    auto *label = new QLabel(QString::fromStdString(parameter->name()), this);
+      label->setToolTip(QString::fromStdString(parameter->description()));
+    layout->addWidget(label);	  
     layout->addWidget(pyWidget);
     int idx = pyWidget->metaObject()->indexOfSignal("valueChanged()");
     if (idx >= 0) {
@@ -28,14 +31,15 @@ ParameterPyQtWidget::ParameterPyQtWidget(QWidget *parent, CustomParameter *param
 
 void ParameterPyQtWidget::onPyWidgetValueChanged()
 {
-  // "true" = immediate, analog zu ParameterCheckBox/ParameterComboBox,
-  // die ebenfalls diskrete statt kontinuierliche Änderungen liefern.
-  emit changed(true);
+  if (pyWidgetObj) {
+    parameter->value = pywidget_get_value(pyWidgetObj);  // Widget -> Parameter, HIER richtig
+  }
+  //emit changed(true);
 }
 void ParameterPyQtWidget::setValue()
 {
-  if (!pyWidgetObj) return;
-  parameter->value = pywidget_get_value(pyWidgetObj);
+  //if (!pyWidgetObj) return;
+  //parameter->value = pywidget_get_value(pyWidgetObj);
 }
 
 ParameterPyQtWidget::~ParameterPyQtWidget()
