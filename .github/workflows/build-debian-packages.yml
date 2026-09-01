@@ -169,7 +169,7 @@ jobs:
 
       - name: Cache PyQt6 bindings (amd64 native)
         if: matrix.arch == 'amd64' && !matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: libraries/python/PyQt6
           key: pyqt6-bindings-deb-${{ matrix.runner }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
@@ -216,7 +216,7 @@ jobs:
 
       - name: Cache PyQt6 bindings (amd64 container)
         if: matrix.arch == 'amd64' && matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: libraries/python/PyQt6
           key: pyqt6-bindings-deb-${{ matrix.docker_image }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
@@ -250,7 +250,7 @@ jobs:
 
       - name: Cache PyQt6 bindings (arm64)
         if: matrix.arch == 'arm64' && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: /tmp/pyqt6-bindings-cache
           key: pyqt6-bindings-deb-arm64-${{ matrix.docker_image }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
