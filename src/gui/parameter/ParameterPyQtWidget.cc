@@ -1,16 +1,18 @@
 #include "gui/parameter/ParameterPyQtWidget.h"
+#include "core/customizer/ParameterObject.h"
 #include "pywidget_bridge.h"
 #include <QVBoxLayout>
 #include <QMetaMethod>
+
 
 ParameterPyQtWidget::ParameterPyQtWidget(QWidget *parent, CustomParameter *parameter,
                                          DescriptionStyle descriptionStyle)
   : ParameterVirtualWidget(parent, parameter), parameter(parameter)
 {
   PyWidgetHandle h =
-    pywidget_create(parameter->customTypeName, parameter->name(), /* default als PyObject* */);
+    pywidget_create(parameter->customTypeName, parameter->name(), parameter->value);
   pyWidget = reinterpret_cast<QWidget *>(h.qwidget_ptr);
-  pyWidgetObj = h.py_object;
+  pyWidgetObj = (PyObject *) h.py_object_handle;
 
   auto *layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
@@ -22,4 +24,21 @@ ParameterPyQtWidget::ParameterPyQtWidget(QWidget *parent, CustomParameter *param
               this->metaObject()->method(this->metaObject()->indexOfSlot("onPyWidgetValueChanged()")));
     }
   }
+}
+
+void ParameterPyQtWidget::onPyWidgetValueChanged()
+{
+  // "true" = immediate, analog zu ParameterCheckBox/ParameterComboBox,
+  // die ebenfalls diskrete statt kontinuierliche Änderungen liefern.
+  emit changed(true);
+}
+void ParameterPyQtWidget::setValue()
+{
+  if (!pyWidgetObj) return;
+  parameter->value = pywidget_get_value(pyWidgetObj);
+}
+
+ParameterPyQtWidget::~ParameterPyQtWidget()
+{
+  pywidget_release(pyWidgetObj);
 }

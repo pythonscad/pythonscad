@@ -307,6 +307,59 @@ void EnumParameter::apply(Assignment *assignment) const
   }
 }
 
+
+bool CustomParameter::importValue(boost::property_tree::ptree encodedValue, bool store)
+{
+  try {
+    json decoded = json::parse(encodedValue.data());
+    if (store) {
+      value = decoded;
+    }
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+
+boost::property_tree::ptree CustomParameter::exportValue() const
+{
+  boost::property_tree::ptree output;
+  output.data() = value.dump();
+  return output;
+}
+
+json CustomParameter::jsonValue() const
+{
+  json o;
+  o["type"] = "custom";
+  o["customType"] = customTypeName;
+  o["initial"] = defaultValue;
+  return o;
+}
+
+void CustomParameter::apply(Assignment *assignment) const
+{
+  if (value.is_boolean()) {
+    assignment->setExpr(std::make_shared<Literal>(value.get<bool>()));
+  } else if (value.is_number()) {
+    assignment->setExpr(std::make_shared<Literal>(value.get<double>()));
+  } else if (value.is_string()) {
+    assignment->setExpr(std::make_shared<Literal>(value.get<std::string>()));
+  } else if (value.is_array()) {
+    std::shared_ptr<Vector> vector = std::make_shared<Vector>(Location::NONE);
+    for (const auto& item : value) {
+      if (item.is_number()) {
+        vector->emplace_back(new Literal(item.get<double>()));
+      } else if (item.is_string()) {
+        vector->emplace_back(new Literal(item.get<std::string>()));
+      } else if (item.is_boolean()) {
+        vector->emplace_back(new Literal(item.get<bool>()));
+      }
+    }
+    assignment->setExpr(std::move(vector));
+  }
+}
+
 struct EnumValues {
   std::vector<EnumParameter::EnumItem> items;
   int defaultValueIndex;

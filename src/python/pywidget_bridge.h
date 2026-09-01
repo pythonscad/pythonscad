@@ -1,20 +1,33 @@
-// pywidget_bridge.h
 #pragma once
+
+// Diese Datei darf NIE Qt-Header includen (kein QWidget, kein QObject).
+// Sie ist die einzige erlaubte Schnittstelle zwischen der Qt-Welt
+// (ParameterPyQtWidget.h/.cc, läuft durch moc) und der Python-Welt
+// (pywidget_bridge.cc, includet <Python.h> als erste Zeile).
+//
+// Der QWidget*-Pointer wird bewusst nur als void* durchgereicht - erst
+// ParameterPyQtWidget.cc (Qt-Seite, kein Python.h) macht daraus wieder
+// ein QWidget*. Genauso wird das PyObject* nur als opaker void*-Handle
+// durchgereicht - erst pywidget_bridge.cc (Python-Seite, kein Qt)
+// interpretiert ihn wieder als PyObject*.
+
 #include <string>
+#include "json/json.hpp"
+using json = nlohmann::json;
 
-#ifndef Py_PYTHON_H
-struct _object;
-typedef _object PyObject;
-#endif
-
-// Liefert rohen QWidget*-Pointer (als void*) + die PyObject*-Referenz zurück,
-// damit der Aufrufer (Qt-Seite) beides ohne Python.h weiterreichen kann.
 struct PyWidgetHandle {
-  void *qwidget_ptr;    // -> reinterpret_cast<QWidget*> auf Qt-Seite
-  PyObject *py_object;  // starke Referenz, muss später via pywidget_release freigegeben werden
+  void *qwidget_ptr;      // -> reinterpret_cast<QWidget*> auf Qt-Seite
+  void *py_object_handle; // -> reinterpret_cast<PyObject*> auf Python-Seite
 };
 
+// Ruft die per add_parameter_widget(typeName, factory) registrierte
+// Python-Factory auf: factory(name, default) -> QWidget (PyQt6).
+// Bei Fehler/unbekanntem Typ ist das Ergebnis {nullptr, nullptr}.
 PyWidgetHandle pywidget_create(const std::string& typeName, const std::string& paramName,
-                               PyObject *defaultVal);
-PyObject *pywidget_get_value(PyObject *obj);  // ruft obj.get_value() auf
-void pywidget_release(PyObject *obj);
+                                const json& defaultValue);
+
+// Ruft obj.get_value() auf dem von der Factory gelieferten Objekt auf.
+json pywidget_get_value(void *pyObjectHandle);
+
+// Gibt die gehaltene Python-Referenz frei (Py_DECREF unter GIL).
+void pywidget_release(void *pyObjectHandle);

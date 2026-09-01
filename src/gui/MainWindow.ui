@@ -236,7 +236,6 @@
      <addaction name="fileActionExportFoldable"/>
      <addaction name="fileActionExportSTP"/>
      <addaction name="fileActionExportGCode"/>
-     <addaction name="fileActionExportAMF"/>
      <addaction name="fileActionExport3MF"/>
      <addaction name="fileActionExportDXF"/>
      <addaction name="fileActionExportSVG"/>

@@ -1180,22 +1180,31 @@ PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs)
   Py_RETURN_NONE;
 }
 
-// analog zur bestehenden Menu-Callback-Map
-static std::map<std::string, PyObject *> customizer_widget_factories;
+std::map<std::string, PyObject *> customizer_widget_factories;
 
-PyObject *python_add_parameter_widget(PyObject *self, PyObject *args, PyObject *kwargs)
+PyObject *python_add_parameter_widget(PyObject * /*self*/, PyObject *args, PyObject *kwargs)
 {
-  char *typenamec;
+  const char *typenamec;
   PyObject *factory;
-  static char *kwlist[] = {"typename", "factory", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO", kwlist, &typenamec, &factory)) return NULL;
+  static const char *kwlist[] = {"typename", "factory", nullptr};
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO", const_cast<char **>(kwlist), &typenamec,
+                                    &factory)) {
+    return nullptr;
+  }
 
   if (!PyCallable_Check(factory)) {
     PyErr_SetString(PyExc_TypeError, "factory must be callable");
-    return NULL;
+    return nullptr;
   }
+
   Py_INCREF(factory);
+  auto it = customizer_widget_factories.find(typenamec);
+  if (it != customizer_widget_factories.end()) {
+    Py_DECREF(it->second);  // vorherige Registrierung für denselben Typnamen ersetzen
+  }
   customizer_widget_factories[typenamec] = factory;
+
   Py_RETURN_NONE;
 }
 
