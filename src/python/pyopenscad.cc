@@ -345,27 +345,30 @@ PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<Abs
   }
   return nullptr;
 }
-static std::vector<PyGILState_STATE> gstate_stack;
 
-std::atomic<bool> pythonModalDialogActive{false};  // von set_modal_dialog_active() gesetzt
+std::atomic<bool> pythonModalDialogActive{false};
+PyThreadState *tstate = nullptr;
+static thread_local int lockDepth = 0;
 
 void python_lock(void)
 {
   if (pythonModalDialogActive.load()) return;
-  if (pythonInitDict != nullptr) {
-    gstate_stack.push_back(PyGILState_Ensure());
+  if (pythonInitDict == nullptr) return;
+  lockDepth++;
+  if (lockDepth == 0 && tstate != nullptr) {
+    PyEval_RestoreThread(tstate);
   }
 }
 
 void python_unlock(void)
 {
   if (pythonModalDialogActive.load()) return;
-  if (pythonInitDict != nullptr && !gstate_stack.empty()) {
-    PyGILState_Release(gstate_stack.back());
-    gstate_stack.pop_back();
+  if (pythonInitDict == nullptr) return;
+  if (lockDepth == 0) {
+    tstate = PyEval_SaveThread();
   }
+  lockDepth--;
 }
-
 const char *python_calltip(const char *funcname)
 {
   for (PyMethodDef *m = PyOpenSCADFunctions; m->ml_name != NULL; m++) {

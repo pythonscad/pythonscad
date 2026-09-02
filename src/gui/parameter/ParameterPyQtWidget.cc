@@ -2,6 +2,7 @@
 #include "core/customizer/ParameterObject.h"
 #include "pywidget_bridge.h"
 #include <QVBoxLayout>
+#include <QTimer>
 #include <QMetaMethod>
 
 
@@ -34,7 +35,18 @@ void ParameterPyQtWidget::onPyWidgetValueChanged()
   if (pyWidgetObj) {
     parameter->value = pywidget_get_value(pyWidgetObj);  // Widget -> Parameter, HIER richtig
   }
-  //emit changed(true);
+
+  if (pyWidgetObj) {
+    parameter->value = pywidget_get_value(pyWidgetObj);
+  }
+  // Nicht synchron emittieren: wir laufen hier noch innerhalb des sip-
+  // Signal-Dispatch-Callstacks (GIL über sip's eigenes PyGILState_Ensure
+  // gehalten, nicht über unser tstate-System). Ein synchrones
+  // changed(true) würde MainWindow::compile() -> python_lock() re-entrant
+  // im selben Stack auslösen und mit der eigenen tstate-Buchhaltung
+  // kollidieren. Auf die nächste Event-Loop-Iteration verschieben, damit
+  // der sip-Kontext sauber beendet ist, bevor compile() läuft.
+  QTimer::singleShot(0, this, [this]() { emit changed(true); });
 }
 void ParameterPyQtWidget::setValue()
 {
