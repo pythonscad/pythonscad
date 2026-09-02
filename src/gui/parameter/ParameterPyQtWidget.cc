@@ -50,9 +50,8 @@ void ParameterPyQtWidget::onPyWidgetValueChanged()
 }
 void ParameterPyQtWidget::setValue()
 {
-  //if (!pyWidgetObj) return;
-  //parameter->value = pywidget_get_value(pyWidgetObj);
-}
+  if (!pyWidgetObj) return;
+  pywidget_set_value(pyWidgetObj, parameter->value);}
 
 ParameterPyQtWidget::~ParameterPyQtWidget()
 {

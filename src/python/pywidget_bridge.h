@@ -29,5 +29,7 @@ PyWidgetHandle pywidget_create(const std::string& typeName, const std::string& p
 // Ruft obj.get_value() auf dem von der Factory gelieferten Objekt auf.
 json pywidget_get_value(void *pyObjectHandle);
 
+void pywidget_set_value(void *pyObjectHandle, const json& value);
+
 // Gibt die gehaltene Python-Referenz frei (Py_DECREF unter GIL).
 void pywidget_release(void *pyObjectHandle);

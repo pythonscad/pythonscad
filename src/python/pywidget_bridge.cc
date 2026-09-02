@@ -122,6 +122,21 @@ json pywidget_get_value(void *pyObjectHandle)
   return result;
 }
 
+void pywidget_set_value(void *pyObjectHandle, const json& value)
+{
+  PyGILState_STATE gstate = PyGILState_Ensure();
+  PyObject *obj = reinterpret_cast<PyObject *>(pyObjectHandle);
+  PyObject *pyval = json_to_pyobject(value);
+  PyObject *result = PyObject_CallMethod(obj, "set_value", "O", pyval);
+  Py_XDECREF(pyval);
+  if (result) {
+    Py_DECREF(result);
+  } else {
+    PyErr_Print();
+  }
+  PyGILState_Release(gstate);
+}
+
 void pywidget_release(void *pyObjectHandle)
 {
   if (!pyObjectHandle) return;
