@@ -66,6 +66,7 @@ nav:
           - .pythonscadrc and add_menuitem: development/pythonscadrc-and-menuitems.md
           - PyQt6 and Forms in PythonSCAD: development/pyqt6-and-forms.md
           - Extend Your Design with an Interactive Form: development/extend-with-interactive-form.md
+          - Custom Customizer Widgets: development/custom-customizer-widgets.md
   - Building: building.md
   - WebAssembly:
       - Building for WebAssembly: building-wasm.md
