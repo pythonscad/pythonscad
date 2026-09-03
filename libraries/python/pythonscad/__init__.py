@@ -26,7 +26,8 @@ from openscad import *  # noqa: F401,F403
 from openscad import (  # noqa: F401
     ChildIterator,
     ChildRef,
-    Openscad,
+    Openscad,   # legacy alias
+    PyOpenSCAD,
 )
 if _typing.TYPE_CHECKING:
     from openscad import PyOpenSCAD
