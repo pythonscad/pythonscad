@@ -50,6 +50,9 @@ jobs:
           brew unlink python3
           brew link --overwrite python3
 
+      - name: Work around broken hashicorp tap on GitHub runners
+        run: brew untap hashicorp/tap 2>/dev/null || true
+
       - name: Install dependencies
         env:
           HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
@@ -223,6 +226,9 @@ jobs:
         run: |
           brew unlink python3
           brew link --overwrite python3
+
+      - name: Work around broken hashicorp tap on GitHub runners
+        run: brew untap hashicorp/tap 2>/dev/null || true
 
       - name: Install dependencies
         env:
