@@ -60,6 +60,12 @@ jobs:
         with:
           enable-cache: false
 
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: macos-x86_64-${{ hashFiles('CMakeLists.txt') }}
+          max-size: 2G            
+
       - name: Fetch compatible PyQt6 bindings
         env:
           GH_TOKEN: ${{ github.token }}
@@ -79,6 +85,8 @@ jobs:
           # Configure CMake for x86_64 only (NOT universal)
           # On Intel Macs, Homebrew prefix is /usr/local
           cmake .. \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \          
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES=x86_64 \
             -DCMAKE_PREFIX_PATH="/usr/local" \
@@ -226,6 +234,12 @@ jobs:
         with:
           enable-cache: false
 
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: macos-x86_64-${{ hashFiles('CMakeLists.txt') }}
+          max-size: 2G            
+
       - name: Fetch compatible PyQt6 bindings
         env:
           GH_TOKEN: ${{ github.token }}
@@ -245,6 +259,8 @@ jobs:
           # Configure CMake for arm64 only (NOT universal)
           # On Apple Silicon, Homebrew prefix is /opt/homebrew
           cmake .. \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \          
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_PREFIX_PATH="/opt/homebrew" \
