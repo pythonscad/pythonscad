@@ -45,13 +45,13 @@ jobs:
           detached: true
           limit-access-to-actor: true
 
+      - name: Work around broken hashicorp tap on GitHub runners
+        run: brew untap hashicorp/tap 2>/dev/null || true
+
       - name: Workaround for python3 linking issue
         run: |
           brew unlink python3
           brew link --overwrite python3
-
-      - name: Work around broken hashicorp tap on GitHub runners
-        run: brew untap hashicorp/tap 2>/dev/null || true
 
       - name: Install dependencies
         env:
@@ -222,13 +222,13 @@ jobs:
           detached: true
           limit-access-to-actor: true
 
+      - name: Work around broken hashicorp tap on GitHub runners
+        run: brew untap hashicorp/tap 2>/dev/null || true
+
       - name: Workaround for python3 linking issue
         run: |
           brew unlink python3
           brew link --overwrite python3
-
-      - name: Work around broken hashicorp tap on GitHub runners
-        run: brew untap hashicorp/tap 2>/dev/null || true
 
       - name: Install dependencies
         env:
