@@ -53,6 +53,19 @@ jobs:
           brew unlink python3
           brew link --overwrite python3
 
+      - name: Cache Homebrew Cellar
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/Cellar
+            /usr/local/opt
+            /usr/local/bin
+            /usr/local/lib
+            /usr/local/include
+            /usr/local/share
+            /usr/local/var/homebrew/linked
+          key: brew-intel-${{ hashFiles('scripts/get-dependencies.py', 'scripts/deps/profiles/qt6.json') }}
+
       - name: Install dependencies
         env:
           HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
@@ -69,14 +82,6 @@ jobs:
         with:
           key: macos-x86_64-${{ hashFiles('CMakeLists.txt') }}
           max-size: 2G            
-
-      - name: Cache Homebrew Cellar
-        uses: actions/cache@v4
-        with:
-          path: |
-            /usr/local/Cellar
-            /usr/local/opt
-          key: brew-intel-${{ hashFiles('scripts/get-dependencies.py', 'scripts/deps/profiles/qt6.json') }}
 
       - name: Fetch compatible PyQt6 bindings
         env:
