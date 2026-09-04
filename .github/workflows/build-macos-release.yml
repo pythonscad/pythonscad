@@ -56,6 +56,7 @@ jobs:
       - name: Install dependencies
         env:
           HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+          HOMEBREW_NO_AUTO_UPDATE: 1
         run: |
           ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
 
@@ -68,6 +69,14 @@ jobs:
         with:
           key: macos-x86_64-${{ hashFiles('CMakeLists.txt') }}
           max-size: 2G            
+
+      - name: Cache Homebrew Cellar
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/Cellar
+            /usr/local/opt
+          key: brew-intel-${{ hashFiles('scripts/get-dependencies.py', 'scripts/deps/profiles/qt6.json') }}
 
       - name: Fetch compatible PyQt6 bindings
         env:
