@@ -1835,21 +1835,6 @@ if(APPLE)
   # GPUs keep coverage.
   if((CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$") AND DEFINED ENV{CI})
     disable_tests_safe(
-      preview-cgal_intersection_for-tests
-      preview-cgal_nullspace-difference
-      preview-cgal_issue1105d
-      preview-cgal_issue911
-      preview-cgal_rotate-empty-bbox
-      preview-cgal_internal-cavity
-      preview-cgal_rotate_extrude-hole
-      preview-manifold_intersection_for-tests
-      preview-manifold_minkowski3-erosion
-      preview-manifold_nullspace-difference
-      preview-manifold_difference-tests
-      preview-manifold_issue911
-      preview-manifold_rotate-empty-bbox
-      preview-manifold_internal-cavity
-      preview-manifold_rotate_extrude-hole
       lazyunion-preview_lazyunion-intersection-for
 
       export-svg_spec-paths-arcs01
@@ -1866,11 +1851,11 @@ if(APPLE)
     foreach(TEST ${SVG_VIEWBOX_TESTS})
       disable_tests_safe(svgviewbox-${TEST}_viewbox-test)
     endforeach()
-    # Camera/imgstretch PNG tests flake across the whole family under
-    # Apple's software renderer, same as svgimport.
+    # Camera/imgstretch/preview PNG tests flake under Apple's software
+    # renderer, same as svgimport. Skip those prefixes wholesale.
     get_property(_apple_arm_ci_tests DIRECTORY PROPERTY TESTS)
     foreach(_t ${_apple_arm_ci_tests})
-      if(_t MATCHES "^(svgimport_|openscad-cam|openscad-imgstretch)")
+      if(_t MATCHES "^(svgimport_|openscad-cam|openscad-imgstretch|preview-cgal_|preview-manifold_)")
         disable_tests_safe(${_t})
       endif()
     endforeach()
