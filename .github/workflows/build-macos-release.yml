@@ -151,6 +151,9 @@ jobs:
             echo "ERROR: No .app bundle found in build_MACOSX"
             exit 1
           fi
+          # Later steps `cd` into the bundle; keep an absolute path so
+          # relative lookups do not break after that.
+          APP_BUNDLE="$(cd "$(dirname "$APP_BUNDLE")" && pwd)/$(basename "$APP_BUNDLE")"
           echo "app_bundle=$APP_BUNDLE" >> "$GITHUB_OUTPUT"
           echo "app_name=$(basename "$APP_BUNDLE")" >> "$GITHUB_OUTPUT"
           echo "Found app bundle: $APP_BUNDLE"
