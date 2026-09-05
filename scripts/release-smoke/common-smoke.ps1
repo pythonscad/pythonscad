@@ -232,12 +232,15 @@ function Invoke-SmokeTest {
     if ($ExpectPyQt6) {
         Write-SmokeLog "Smoke testing $Label`: packaged PyQt6"
         $pyqtLog = Join-Path $testdir 'pyqt6.log'
+        $pyqtOk = Join-Path $testdir 'pyqt6-ok.txt'
+        if (Test-Path -LiteralPath $pyqtOk) {
+            Remove-Item -LiteralPath $pyqtOk -Force
+        }
         Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
             -Arguments @('--repl') `
             -WorkingDirectory $testdir `
             -InputFile (Join-Path $testdir 'pyqt6-smoke.py') `
             -LogFile $pyqtLog
-        $pyqtOk = Join-Path $testdir 'pyqt6-ok.txt'
         if (-not (Test-Path -LiteralPath $pyqtOk -PathType Leaf) -or ((Get-Item -LiteralPath $pyqtOk).Length -le 0)) {
             Write-Error "--- begin command output: $pyqtLog ---" -ErrorAction Continue
             Get-Content -LiteralPath $pyqtLog -Raw -ErrorAction SilentlyContinue | Write-Error -ErrorAction Continue
