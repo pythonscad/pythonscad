@@ -47,12 +47,18 @@ private:
   ParameterSets sets;
   std::string source;
   ParameterObjects parameters;
+  // Shape of `parameters`: everything that decides which widgets exist and how they are
+  // configured. Current values are deliberately excluded - loadSet() restores those.
+  std::string parameterShape;
   std::map<ParameterObject *, std::vector<ParameterVirtualWidget *>> widgets;
 
   QString invalidJsonFile;  // set if a json file was read that could not be parsed
   QTimer autoPreviewTimer;
   bool modified = false;
   QByteArray pendingSessionState;  // customizer state to apply on next setParameters()
+  // UI state captured before a teardown and reapplied by rebuildWidgets().
+  std::map<QString, bool> savedGroupStates;
+  int savedScrollValue = 0;
 
 public:
   ParameterWidget(QWidget *parent = nullptr);
@@ -106,6 +112,7 @@ protected:
   std::vector<ParameterGroup> getParameterGroups();
   ParameterVirtualWidget *createParameterWidget(ParameterObject *parameter,
                                                 DescriptionStyle descriptionStyle);
+  void captureUiState();
   QString getJsonFile(const QString& scadFile);
   void cleanSets();
 };

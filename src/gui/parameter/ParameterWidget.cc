@@ -35,6 +35,7 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
+#include <QScrollBar>
 #include <QString>
 #include <QToolButton>
 #include <QWidget>
@@ -44,9 +45,11 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "core/customizer/ParameterObject.h"
@@ -59,6 +62,94 @@
 #include "gui/parameter/ParameterText.h"
 #include "gui/parameter/ParameterVector.h"
 #include "gui/parameter/ParameterVirtualWidget.h"
+
+namespace {
+
+void appendOptional(std::ostringstream& out, const boost::optional<double>& value)
+{
+  if (value) {
+    out << *value;
+  }
+  out << '\x1f';
+}
+
+// Length-prefix anything that originated from the user. Delimiters alone are not enough:
+// a name, description, group, string default or enum key containing \x1f or \x1e could
+// forge a field boundary, letting two genuinely different parameter sets produce the same
+// signature. setParameters() would then take the fast path and skip a rebuild it actually
+// needed, leaving the Customizer out of sync with the declarations.
+void appendString(std::ostringstream& out, const std::string& value)
+{
+  out << value.size() << ':' << value;
+}
+
+// Identity of the Customizer's *shape*: the parameter list plus everything that decides
+// which widget each parameter gets and how that widget is configured. Current values are
+// excluded on purpose - they are owned by the parameter set and restored by loadSet(), so
+// editing a value must not count as a shape change.
+std::string parameterShapeSignature(const ParameterObjects& parameters)
+{
+  std::ostringstream out;
+  out.precision(17);
+  for (const auto& parameter : parameters) {
+    appendString(out, parameter->name());
+    appendString(out, parameter->description());
+    appendString(out, parameter->group());
+    out << static_cast<int>(parameter->type()) << '\x1f';
+    switch (parameter->type()) {
+    case ParameterObject::ParameterType::Bool:
+      out << static_cast<const BoolParameter *>(parameter.get())->defaultValue;
+      break;
+    case ParameterObject::ParameterType::String: {
+      const auto *p = static_cast<const StringParameter *>(parameter.get());
+      appendString(out, p->defaultValue);
+      out << '\x1f';
+      if (p->maximumSize) {
+        out << *p->maximumSize;
+      }
+      break;
+    }
+    case ParameterObject::ParameterType::Number: {
+      const auto *p = static_cast<const NumberParameter *>(parameter.get());
+      out << p->defaultValue << '\x1f';
+      appendOptional(out, p->minimum);
+      appendOptional(out, p->maximum);
+      appendOptional(out, p->step);
+      break;
+    }
+    case ParameterObject::ParameterType::Vector: {
+      const auto *p = static_cast<const VectorParameter *>(parameter.get());
+      for (const double element : p->defaultValue) {
+        out << element << ',';
+      }
+      out << '\x1f';
+      appendOptional(out, p->minimum);
+      appendOptional(out, p->maximum);
+      appendOptional(out, p->step);
+      break;
+    }
+    case ParameterObject::ParameterType::Enum: {
+      const auto *p = static_cast<const EnumParameter *>(parameter.get());
+      out << p->defaultValueIndex << '\x1f';
+      for (const auto& item : p->items) {
+        appendString(out, item.key);
+        if (std::holds_alternative<double>(item.value)) {
+          out << 'd' << std::get<double>(item.value);
+        } else {
+          out << 's';
+          appendString(out, std::get<std::string>(item.value));
+        }
+        out << ',';
+      }
+      break;
+    }
+    }
+    out << '\x1e';
+  }
+  return out.str();
+}
+
+}  // namespace
 
 ParameterWidget::ParameterWidget(QWidget *parent) : QWidget(parent)
 {
@@ -93,6 +184,9 @@ void ParameterWidget::resetForNewDocument()
   pendingSessionState.clear();
   invalidJsonFile.clear();
   source.clear();
+  parameterShape.clear();
+  savedGroupStates.clear();
+  savedScrollValue = 0;
   setModified(false);
 
   if (comboBoxPreset->isEditable() && comboBoxPreset->lineEdit()) {
@@ -178,6 +272,30 @@ void ParameterWidget::setParameters(const SourceFile *sourceFile, const std::str
 {
   this->source = source;
 
+  // Build the incoming set first so its shape can be compared with what is on screen. This
+  // is a pure AST walk; no widget is touched and nothing existing is modified.
+  ParameterObjects newParameters = ParameterObjects::fromSourceFile(sourceFile);
+  const std::string newShape = parameterShapeSignature(newParameters);
+
+  // Fast path: same shape as the widgets already built. This is the common case, because a
+  // re-render triggered from the Customizer re-declares exactly the same parameters. Keep
+  // the widgets so scroll offset, keyboard focus and group expansion survive, and let
+  // loadSet() below push the current set's values into them. The existing ParameterObjects
+  // have to be kept too, since every widget holds a raw pointer to its own; the incoming
+  // ones carry no information the kept ones lack, the shape being identical.
+  //
+  // Programmatic setValue() is safe here: it is the same call loadSet() already makes when
+  // switching presets. The spin box widgets guard re-entry with lastSent/lastApplied, and
+  // the check box and combo box listen on clicked/activated, which only user input emits.
+  if (!widgets.empty() && pendingSessionState.isEmpty() && newShape == this->parameterShape) {
+    loadSet(comboBoxPreset->currentIndex());
+    return;
+  }
+
+  // Shape really changed, so a rebuild is unavoidable. Snapshot the UI state now:
+  // rebuildWidgets() cannot read it itself, the group widgets being gone by the time it runs.
+  captureUiState();
+
   // Store old parameters temporarily - they must stay alive until widgets using them
   // are fully deleted. Using deleteLater() defers widget deletion until the event
   // loop, but if the parameters are destroyed first, the widgets will access freed
@@ -204,7 +322,8 @@ void ParameterWidget::setParameters(const SourceFile *sourceFile, const std::str
 
   // Now it's safe to load new parameters - old widgets have been deleted
   // and oldParameters will be destroyed when this function returns.
-  this->parameters = ParameterObjects::fromSourceFile(sourceFile);
+  this->parameters = std::move(newParameters);
+  this->parameterShape = newShape;
 
   if (!pendingSessionState.isEmpty()) {
     const QJsonDocument doc = QJsonDocument::fromJson(pendingSessionState);
@@ -452,12 +571,27 @@ void ParameterWidget::updateSetEditability()
   }
 }
 
+// Snapshot the UI state a rebuild would otherwise discard. Does nothing when no group
+// widget is alive to read, so a snapshot taken before a teardown is not clobbered by the
+// captureUiState() call at the top of rebuildWidgets().
+void ParameterWidget::captureUiState()
+{
+  const auto groupWidgets = this->findChildren<GroupWidget *>();
+  if (groupWidgets.isEmpty()) {
+    return;
+  }
+  savedGroupStates.clear();
+  for (GroupWidget *groupWidget : groupWidgets) {
+    savedGroupStates[groupWidget->title()] = groupWidget->isExpanded();
+  }
+  savedScrollValue = scrollArea->verticalScrollBar()->value();
+}
+
 void ParameterWidget::rebuildWidgets()
 {
-  std::map<QString, bool> expandedGroups;
-  for (GroupWidget *groupWidget : this->findChildren<GroupWidget *>()) {
-    expandedGroups.emplace(groupWidget->title(), groupWidget->isExpanded());
-  }
+  // Reads current state when the widgets are still up (the detail-level combo box path),
+  // and otherwise falls through to what setParameters() captured before its teardown.
+  captureUiState();
 
   widgets.clear();
   QLayout *layout = this->scrollAreaWidgetContents->layout();
@@ -481,10 +615,20 @@ void ParameterWidget::rebuildWidgets()
       widgets[parameter].push_back(parameterWidget);
       groupWidget->addWidget(parameterWidget);
     }
-    auto it = expandedGroups.find(group.name);
-    groupWidget->setExpanded(it == expandedGroups.end() || it->second);
+    auto it = savedGroupStates.find(group.name);
+    groupWidget->setExpanded(it == savedGroupStates.end() || it->second);
     layout->addWidget(groupWidget);
   }
+
+  // The new contents have not been laid out yet, so the scroll bar's range is still stale
+  // and setValue() would clamp to 0. Defer until the layout has settled.
+  if (savedScrollValue > 0) {
+    const int scrollValue = savedScrollValue;
+    QTimer::singleShot(0, this, [this, scrollValue]() {
+      scrollArea->verticalScrollBar()->setValue(scrollValue);
+    });
+  }
+  savedScrollValue = 0;
 }
 
 std::vector<ParameterWidget::ParameterGroup> ParameterWidget::getParameterGroups()
