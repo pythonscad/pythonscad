@@ -244,7 +244,7 @@ jobs:
               # single-arch, matching everything else fetch_pyqt6_bindings.sh
               # / the merge job expects.
               lipo -thin "${{ matrix.arch }}" "$SIP_SO" \
-                -output /tmp/pyqt-out/PyQt6/$(basename "$SIP_SO")
+                -output "/tmp/pyqt-out/PyQt6/$(basename "$SIP_SO")"
               ;;
             *)
               echo "ERROR: PyQt6-sip .so ('$ACTUAL_ARCHS') does not contain '${{ matrix.arch }}'" >&2
