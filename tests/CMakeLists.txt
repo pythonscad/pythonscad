@@ -1823,6 +1823,55 @@ list(APPEND NEF3_BROKEN_TESTS
 
 # Platform specific test disable
 if(APPLE)
+  # GitHub-hosted macOS ARM VMs use Apple's software OpenGL renderer, which
+  # garbles some PNG image tests (dFdy/fwidth and related artifacts).
+  # This is not an Apple Silicon GPU bug. See:
+  #   https://github.com/openscad/openscad/issues/5201
+  #   https://github.com/actions/runner-images/issues/9712
+  # SVG path tessellation also differs on ARM vs the Intel golden files:
+  #   https://github.com/openscad/openscad/issues/6161
+  # OpenSCAD still skips ARM CI for the same renderer reason; there is no
+  # Mesa/OSMesa workaround in tree. Only disable under CI so real M-series
+  # GPUs keep coverage.
+  if((CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$") AND DEFINED ENV{CI})
+    disable_tests_safe(
+      preview-cgal_intersection_for-tests
+      preview-cgal_nullspace-difference
+      preview-cgal_issue1105d
+      preview-cgal_issue911
+      preview-cgal_rotate-empty-bbox
+      preview-cgal_internal-cavity
+      preview-cgal_rotate_extrude-hole
+      preview-manifold_intersection_for-tests
+      preview-manifold_minkowski3-erosion
+      preview-manifold_nullspace-difference
+      preview-manifold_issue911
+      preview-manifold_rotate-empty-bbox
+      preview-manifold_internal-cavity
+      preview-manifold_rotate_extrude-hole
+      openscad-imgstretch2_camera-tests
+      openscad-cameye_camera-tests
+      openscad-cameye_front_camera-tests
+      openscad-cameye_back_camera-tests
+      openscad-cameye_left_camera-tests
+      openscad-cameye_right_camera-tests
+      openscad-cameye_top_camera-tests
+      openscad-cameye_bottom_camera-tests
+      openscad-camcenter_camera-tests
+      openscad-camvp-override_camera-vp
+      lazyunion-preview_lazyunion-intersection-for
+
+      svgviewbox-viewbox_600x200_none_viewbox-test
+      export-svg_spec-paths-arcs01
+      export-svg-fill-stroke_spec-paths-arcs01
+      export-svg-fill-only_spec-paths-arcs01
+
+      # ARM vs Intel floating-point noise in printed rotation matrices
+      pythonscadecho_solid-attributes
+      # pexpect/IPython ANSI handshake EOF on GitHub-hosted ARM VMs
+      ipython-pty
+    )
+  endif()
 elseif(UNIX)
 elseif(WIN32 OR MXECROSS)
   set_tests_properties(
