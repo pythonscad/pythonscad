@@ -32,6 +32,8 @@ jobs:
         # garbles some PNG image tests. See:
         #   https://github.com/openscad/openscad/issues/5201
         #   https://github.com/actions/runner-images/issues/9712
+        # Those tests (plus ARM SVG/#6161 and two ARM-CI-only flakes) are
+        # disabled in tests/CMakeLists.txt when APPLE+arm64 and ENV{CI}.
     runs-on:  ${{ matrix.os }}
     name: ${{ matrix.os }} qt6
     # If it's not done in 90 minutes, something is wrong.
