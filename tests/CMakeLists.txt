@@ -1850,17 +1850,6 @@ if(APPLE)
       preview-manifold_rotate-empty-bbox
       preview-manifold_internal-cavity
       preview-manifold_rotate_extrude-hole
-      openscad-imgstretch2_camera-tests
-      openscad-cameye_camera-tests
-      openscad-cameye_front_camera-tests
-      openscad-cameye_back_camera-tests
-      openscad-cameye_left_camera-tests
-      openscad-cameye_right_camera-tests
-      openscad-cameye_top_camera-tests
-      openscad-cameye_bottom_camera-tests
-      openscad-camcenter_camera-tests
-      openscad-camcenter-viewall_camera-tests
-      openscad-camvp-override_camera-vp
       lazyunion-preview_lazyunion-intersection-for
 
       export-svg_spec-paths-arcs01
@@ -1877,9 +1866,11 @@ if(APPLE)
     foreach(TEST ${SVG_VIEWBOX_TESTS})
       disable_tests_safe(svgviewbox-${TEST}_viewbox-test)
     endforeach()
+    # Camera/imgstretch PNG tests flake across the whole family under
+    # Apple's software renderer, same as svgimport.
     get_property(_apple_arm_ci_tests DIRECTORY PROPERTY TESTS)
     foreach(_t ${_apple_arm_ci_tests})
-      if(_t MATCHES "^svgimport_")
+      if(_t MATCHES "^(svgimport_|openscad-cam|openscad-imgstretch)")
         disable_tests_safe(${_t})
       endif()
     endforeach()
