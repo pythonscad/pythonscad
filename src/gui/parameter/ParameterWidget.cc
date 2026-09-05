@@ -72,6 +72,16 @@ void appendOptional(std::ostringstream& out, const boost::optional<double>& valu
   out << '\x1f';
 }
 
+// Length-prefix anything that originated from the user. Delimiters alone are not enough:
+// a name, description, group, string default or enum key containing \x1f or \x1e could
+// forge a field boundary, letting two genuinely different parameter sets produce the same
+// signature. setParameters() would then take the fast path and skip a rebuild it actually
+// needed, leaving the Customizer out of sync with the declarations.
+void appendString(std::ostringstream& out, const std::string& value)
+{
+  out << value.size() << ':' << value;
+}
+
 // Identity of the Customizer's *shape*: the parameter list plus everything that decides
 // which widget each parameter gets and how that widget is configured. Current values are
 // excluded on purpose - they are owned by the parameter set and restored by loadSet(), so
@@ -81,15 +91,18 @@ std::string parameterShapeSignature(const ParameterObjects& parameters)
   std::ostringstream out;
   out.precision(17);
   for (const auto& parameter : parameters) {
-    out << parameter->name() << '\x1f' << parameter->description() << '\x1f' << parameter->group()
-        << '\x1f' << static_cast<int>(parameter->type()) << '\x1f';
+    appendString(out, parameter->name());
+    appendString(out, parameter->description());
+    appendString(out, parameter->group());
+    out << static_cast<int>(parameter->type()) << '\x1f';
     switch (parameter->type()) {
     case ParameterObject::ParameterType::Bool:
       out << static_cast<const BoolParameter *>(parameter.get())->defaultValue;
       break;
     case ParameterObject::ParameterType::String: {
       const auto *p = static_cast<const StringParameter *>(parameter.get());
-      out << p->defaultValue << '\x1f';
+      appendString(out, p->defaultValue);
+      out << '\x1f';
       if (p->maximumSize) {
         out << *p->maximumSize;
       }
@@ -118,11 +131,12 @@ std::string parameterShapeSignature(const ParameterObjects& parameters)
       const auto *p = static_cast<const EnumParameter *>(parameter.get());
       out << p->defaultValueIndex << '\x1f';
       for (const auto& item : p->items) {
-        out << item.key << '\x1e';
+        appendString(out, item.key);
         if (std::holds_alternative<double>(item.value)) {
-          out << std::get<double>(item.value);
+          out << 'd' << std::get<double>(item.value);
         } else {
-          out << std::get<std::string>(item.value);
+          out << 's';
+          appendString(out, std::get<std::string>(item.value));
         }
         out << ',';
       }
