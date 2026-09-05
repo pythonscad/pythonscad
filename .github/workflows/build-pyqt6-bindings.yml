@@ -249,8 +249,6 @@ jobs:
               ;;
           esac
 
-          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
-
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
           echo "$PYQT_VERSION" > /tmp/pyqt-out/PYQT_VERSION.txt
           python3 --version > /tmp/pyqt-out/PYTHON_VERSION.txt
