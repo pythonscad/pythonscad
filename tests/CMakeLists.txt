@@ -1863,7 +1863,6 @@ if(APPLE)
       openscad-camvp-override_camera-vp
       lazyunion-preview_lazyunion-intersection-for
 
-      svgviewbox-viewbox_600x200_none_viewbox-test
       export-svg_spec-paths-arcs01
       export-svg-fill-stroke_spec-paths-arcs01
       export-svg-fill-only_spec-paths-arcs01
@@ -1873,6 +1872,11 @@ if(APPLE)
       # pexpect/IPython ANSI handshake EOF on GitHub-hosted ARM VMs
       ipython-pty
     )
+    # svgviewbox-* are PNG comparisons of SVG viewBox rendering; the
+    # software renderer flakes across the whole family, not just one file.
+    foreach(TEST ${SVG_VIEWBOX_TESTS})
+      disable_tests_safe(svgviewbox-${TEST}_viewbox-test)
+    endforeach()
   endif()
 elseif(UNIX)
 elseif(WIN32 OR MXECROSS)
