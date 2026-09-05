@@ -234,20 +234,21 @@ jobs:
             exit 1
           fi
           ACTUAL_ARCHS=$(lipo -archs "$SIP_SO")
-          case " $ACTUAL_ARCHS " in
-            *" ${{ matrix.arch }} "*)
-              # Wheel is universal2 (or already single-arch) - thin it down
-              # to just this leg's architecture so the per-arch tree stays
-              # single-arch, matching everything else fetch_pyqt6_bindings.sh
-              # expects.
-              lipo -thin "${{ matrix.arch }}" "$SIP_SO" \
-                -output "/tmp/pyqt-out/PyQt6/$(basename "$SIP_SO")"
-              ;;
-            *)
-              echo "ERROR: PyQt6-sip .so ('$ACTUAL_ARCHS') does not contain '${{ matrix.arch }}'" >&2
-              exit 1
-              ;;
-          esac
+          SIP_OUT="/tmp/pyqt-out/PyQt6/$(basename "$SIP_SO")"
+          if [ "$ACTUAL_ARCHS" = "${{ matrix.arch }}" ]; then
+            cp "$SIP_SO" "$SIP_OUT"
+          else
+            case " $ACTUAL_ARCHS " in
+              *" ${{ matrix.arch }} "*)
+                # Wheel is universal2 - thin it down to just this leg.
+                lipo -thin "${{ matrix.arch }}" "$SIP_SO" -output "$SIP_OUT"
+                ;;
+              *)
+                echo "ERROR: PyQt6-sip .so ('$ACTUAL_ARCHS') does not contain '${{ matrix.arch }}'" >&2
+                exit 1
+                ;;
+            esac
+          fi
 
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
           echo "$PYQT_VERSION" > /tmp/pyqt-out/PYQT_VERSION.txt
