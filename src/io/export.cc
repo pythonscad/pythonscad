@@ -48,6 +48,7 @@
 #include <io.h>
 #endif
 
+#include "core/node.h"
 #include "geometry/Geometry.h"
 #include "geometry/GeometryUtils.h"
 #include "geometry/PolySet.h"
@@ -212,6 +213,45 @@ ExportInfo createExportInfo(const FileFormat& format, const FileFormatInfo& info
   return exportInfo;
 }
 
+/*!
+   Build one 3MF object per top-level part, named after the Python variable
+   that produced it when that is known.
+
+   export_3mf() has always accepted a vector of parts and calls SetName() on
+   each mesh, but the GUI path only ever handed it a single part called
+   "PythonSCAD Model". A design whose top-level objects were kept separate
+   therefore arrived in the slicer as one anonymous object, discarding both
+   the split and the names.
+ */
+static std::vector<Export3mfPartInfo> collect3mfParts(const std::shared_ptr<const Geometry>& geom)
+{
+  std::vector<Export3mfPartInfo> infos;
+
+  const auto geomlist = std::dynamic_pointer_cast<const GeometryList>(geom);
+  if (!geomlist) {
+    infos.emplace_back(geom, "PythonSCAD Model", nullptr);
+    return infos;
+  }
+
+  int index = 0;
+  // flatten() rather than getChildren(), so a list nested inside a list still
+  // yields one part per leaf instead of one part holding a sub-list.
+  for (const auto& child : geomlist->flatten()) {
+    ++index;
+    std::string name;
+#ifdef ENABLE_PYTHON
+    if (child.first) name = child.first->py_name;
+#endif
+    // Unnamed parts still need a stable, distinguishable label; a slicer
+    // listing several identical blanks is no better than one object.
+    if (name.empty()) name = "Object " + std::to_string(index);
+    infos.emplace_back(child.second, name, nullptr);
+  }
+
+  if (infos.empty()) infos.emplace_back(geom, "PythonSCAD Model", nullptr);
+  return infos;
+}
+
 static void exportFile(const std::shared_ptr<const Geometry>& root_geom, std::ostream& output,
                        const ExportInfo& exportInfo)
 {
@@ -222,12 +262,7 @@ static void exportFile(const std::shared_ptr<const Geometry>& root_geom, std::os
   case FileFormat::OFF:        export_off(root_geom, output); break;
   case FileFormat::WRL:        export_wrl(root_geom, output); break;
   case FileFormat::AMF:        export_amf(root_geom, output); break;
-  case FileFormat::_3MF:       {
-    Export3mfPartInfo info(root_geom, "PythonSCAD Model", nullptr);
-    std::vector<Export3mfPartInfo> infos;
-    infos.push_back(info);
-    export_3mf(infos, output, exportInfo);
-  } break;
+  case FileFormat::_3MF:       export_3mf(collect3mfParts(root_geom), output, exportInfo); break;
   case FileFormat::DXF:   export_dxf(root_geom, output); break;
   case FileFormat::SVG:   export_svg(root_geom, output, exportInfo); break;
   case FileFormat::PDF:   export_pdf(root_geom, output, exportInfo); break;
