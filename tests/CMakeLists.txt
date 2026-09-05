@@ -1845,6 +1845,7 @@ if(APPLE)
       preview-manifold_intersection_for-tests
       preview-manifold_minkowski3-erosion
       preview-manifold_nullspace-difference
+      preview-manifold_difference-tests
       preview-manifold_issue911
       preview-manifold_rotate-empty-bbox
       preview-manifold_internal-cavity
@@ -1858,6 +1859,7 @@ if(APPLE)
       openscad-cameye_top_camera-tests
       openscad-cameye_bottom_camera-tests
       openscad-camcenter_camera-tests
+      openscad-camcenter-viewall_camera-tests
       openscad-camvp-override_camera-vp
       lazyunion-preview_lazyunion-intersection-for
 
