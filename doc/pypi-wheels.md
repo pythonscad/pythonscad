@@ -15,7 +15,6 @@ versioned artifact: users only need `pip install pythonscad`.
 | ------------ | --------------------- | ------------- |
 | `manylinux_2_28_x86_64` | `ubuntu-24.04` | cp310–cp314 |
 | `manylinux_2_28_aarch64` | `ubuntu-24.04-arm` | cp310–cp314 |
-| `macosx_15_0_x86_64` | `macos-15-intel` | cp310–cp314 |
 | `macosx_15_0_arm64` | `macos-15` | cp310–cp314 |
 | `win_amd64` | `windows-2022` | cp310–cp314 |
 
