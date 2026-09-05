@@ -96,9 +96,9 @@ set(WASM_BUILD_TYPE "web" CACHE STRING
   "WebAssembly build type. Support web (builds an OpenSCAD module) or node (standalone .js executable)")
 
 if (USE_QT6)
-  # Minimum version required for PythonSCAD: macOS 14.0 (Sonoma)
-  # Only currently Apple-supported macOS versions are targeted.
-  set(DEPLOYMENT_TARGET "14.0")
+  # Minimum version required for PythonSCAD: macOS 15.0 (Sequoia).
+  # Oldest OS still fully supported by Apple, Homebrew, and GitHub Actions.
+  set(DEPLOYMENT_TARGET "15.0")
 else()
   # Minimum version required for std::filesystem
   set(DEPLOYMENT_TARGET "10.15")
@@ -2176,13 +2176,12 @@ if(APPLE AND NOT APPLE_UNIX)
       COMMENT "Bundling Python.framework into app bundle for portability"
     )
 
-    # Fix the install name to use @rpath instead of absolute path
-    # We need to use the exact path as it appears in the binary (the framework Python file, not libpython.dylib)
+    # Fix the install name to use @rpath instead of absolute path.
+    # Homebrew Python may link as either the framework binary
+    # (.../Versions/X.Y/Python) or libpythonX.Y.dylib; rewrite both.
     add_custom_command(TARGET OpenSCADExe POST_BUILD
-      COMMAND install_name_tool -change
-        ${PYTHON_FRAMEWORK_LIB}
-        @rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python
-        ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}
+      COMMAND /bin/sh -c "install_name_tool -change '${PYTHON_FRAMEWORK_LIB}' '@rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python' '${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}' || true"
+      COMMAND /bin/sh -c "install_name_tool -change '${Python3_LIBRARIES}' '@rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python' '${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}' || true"
       COMMENT "Updating Python library reference to use @rpath"
     )
   endif()
