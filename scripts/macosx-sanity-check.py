@@ -36,8 +36,8 @@ macos_version_min = '15.0'
 
 # Global flag to skip architecture validation (for single-arch test builds)
 skip_arch_check = False
-# Skip LC_BUILD_VERSION/minos checks (Homebrew test builds on a newer
-# runner stamp minos of that OS, e.g. 26.0 on macos-26).
+# Skip LC_BUILD_VERSION/minos checks (Homebrew test builds on newer
+# runners stamp minos of that OS, e.g. 26.0 on macos-26).
 skip_deployment_target_check = False
 
 def usage():
