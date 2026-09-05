@@ -232,6 +232,18 @@ jobs:
         run: |
           APP_BUNDLE="${STEPS_APPNAME_OUTPUTS_APP_BUNDLE}"
           EXEC_NAME=$(basename "$APP_BUNDLE" .app)
+
+          echo "=== Removing absolute Homebrew symlinks (Gatekeeper rejects them) ==="
+          while IFS= read -r -d '' link; do
+            target=$(readlink "$link")
+            case "$target" in
+              /opt/homebrew/*|/usr/local/*)
+                echo "Removing $link -> $target"
+                rm "$link"
+                ;;
+            esac
+          done < <(find "$APP_BUNDLE" -type l -print0)
+
           if [ "${STEPS_INSTALL_CERT_OUTPUTS_CERT_INSTALLED}" = "true" ] && [ -n "$SIGNING_IDENTITY" ]; then
             SIGN_ID="$SIGNING_IDENTITY"
             CODESIGN_EXTRA=(--timestamp --options runtime)
