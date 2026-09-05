@@ -248,6 +248,7 @@ rs_smoke_binary() {
 
   if [[ "$expect_pyqt6" == "1" ]]; then
     rs_log "Smoke testing $label: packaged PyQt6"
+    rm -f "$testdir/pyqt6-ok.txt"
     rs_run_logged_in_dir "$label: packaged PyQt6" "$testdir" "$testdir/pyqt6.log" \
       "$testdir/pyqt6-smoke.py" "$exe" --repl
     if [[ ! -s "$testdir/pyqt6-ok.txt" ]]; then
