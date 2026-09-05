@@ -117,6 +117,17 @@ jobs:
           # Bundle Qt frameworks
           macdeployqt "$APP_BUNDLE" -no-strip
 
+          # Homebrew Python 3.14 links as libpython*.dylib. Rewrite any
+          # leftover Homebrew Python paths to the bundled framework.
+          EXEC_PATH="$APP_BUNDLE/Contents/MacOS/$(basename "$APP_BUNDLE" .app)"
+          otool -L "$EXEC_PATH" | awk '/\/opt\/homebrew\/.*\/(Python|libpython)/ {print $1}' | while read -r old; do
+            ver=$(echo "$old" | sed -n 's|.*/Versions/\([0-9][0-9.]*\)/.*|\1|p')
+            [ -n "$ver" ] || continue
+            echo "Rewriting Python dependency $old -> @rpath/Python.framework/Versions/$ver/Python"
+            install_name_tool -change "$old" \
+              "@rpath/Python.framework/Versions/$ver/Python" "$EXEC_PATH"
+          done
+
           # Manually copy libbrotlicommon (dependency of libbrotlidec that macdeployqt misses)
           if [ ! -f "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib" ]; then
             BROTLI_LIB="/opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib"
