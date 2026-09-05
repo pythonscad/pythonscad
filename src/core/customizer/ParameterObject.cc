@@ -307,6 +307,59 @@ void EnumParameter::apply(Assignment *assignment) const
   }
 }
 
+
+bool CustomParameter::importValue(boost::property_tree::ptree encodedValue, bool store)
+{
+  try {
+    json decoded = json::parse(encodedValue.data());
+    if (store) {
+      value = decoded;
+    }
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+
+boost::property_tree::ptree CustomParameter::exportValue() const
+{
+  boost::property_tree::ptree output;
+  output.data() = value.dump();
+  return output;
+}
+
+json CustomParameter::jsonValue() const
+{
+  json o;
+  o["type"] = "custom";
+  o["customType"] = customTypeName;
+  o["initial"] = defaultValue;
+  return o;
+}
+
+void CustomParameter::apply(Assignment *assignment) const
+{
+  if (value.is_boolean()) {
+    assignment->setExpr(std::make_shared<Literal>(value.get<bool>()));
+  } else if (value.is_number()) {
+    assignment->setExpr(std::make_shared<Literal>(value.get<double>()));
+  } else if (value.is_string()) {
+    assignment->setExpr(std::make_shared<Literal>(value.get<std::string>()));
+  } else if (value.is_array()) {
+    std::shared_ptr<Vector> vector = std::make_shared<Vector>(Location::NONE);
+    for (const auto& item : value) {
+      if (item.is_number()) {
+        vector->emplace_back(new Literal(item.get<double>()));
+      } else if (item.is_string()) {
+        vector->emplace_back(new Literal(item.get<std::string>()));
+      } else if (item.is_boolean()) {
+        vector->emplace_back(new Literal(item.get<bool>()));
+      }
+    }
+    assignment->setExpr(std::move(vector));
+  }
+}
+
 struct EnumValues {
   std::vector<EnumParameter::EnumItem> items;
   int defaultValueIndex;
@@ -464,6 +517,32 @@ std::unique_ptr<ParameterObject> ParameterObject::fromAssignment(const Assignmen
       group = boost::algorithm::trim_copy(expression->toString());
     }
     if (group == "Hidden") return nullptr;
+  }
+
+
+  const Annotation *customTypeAnnotation = assignment->annotation("CustomType");
+  if (customTypeAnnotation) {
+    const auto *typeExpr = dynamic_cast<const Literal *>(customTypeAnnotation->getExpr().get());
+    if (typeExpr && typeExpr->isString()) {
+      json defaultJson;
+      const Expression *valueExpression = assignment->getExpr().get();
+      if (const auto *lit = dynamic_cast<const Literal *>(valueExpression)) {
+        if (lit->isBool()) defaultJson = lit->toBool();
+        else if (lit->isDouble()) defaultJson = lit->toDouble();
+        else if (lit->isString()) defaultJson = lit->toString();
+      } else if (const auto *vec = dynamic_cast<const Vector *>(valueExpression)) {
+        defaultJson = json::array();
+        for (const auto& child : vec->getChildren()) {
+          if (const auto *item = dynamic_cast<const Literal *>(child.get())) {
+            if (item->isDouble()) defaultJson.push_back(item->toDouble());
+            else if (item->isString()) defaultJson.push_back(item->toString());
+            else if (item->isBool()) defaultJson.push_back(item->toBool());
+          }
+        }
+      }
+      return std::make_unique<CustomParameter>(name, description, group,
+                                               typeExpr->toString(), defaultJson);
+    }
   }
 
   const Expression *valueExpression = assignment->getExpr().get();

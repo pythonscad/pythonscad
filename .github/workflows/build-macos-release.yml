@@ -45,6 +45,9 @@ jobs:
           detached: true
           limit-access-to-actor: true
 
+      - name: Work around broken hashicorp tap on GitHub runners
+        run: brew untap hashicorp/tap 2>/dev/null || true
+
       - name: Workaround for python3 linking issue
         run: |
           brew unlink python3
@@ -53,6 +56,7 @@ jobs:
       - name: Install dependencies
         env:
           HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+          HOMEBREW_NO_AUTO_UPDATE: 1
         run: |
           ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
 

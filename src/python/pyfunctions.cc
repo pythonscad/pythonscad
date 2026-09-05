@@ -927,6 +927,11 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"add_menuitem", (PyCFunction)python_add_menuitem, METH_VARARGS | METH_KEYWORDS,
    "Add a custom menu item to the GUI.\n"
    "add_menuitem(menuname=\"Tools\", itemname=\"My Action\", callback=\"my_callback\")"},
+
+  {"add_parameter_widget", (PyCFunction)python_add_parameter_widget, METH_VARARGS | METH_KEYWORDS,
+   "Register custom customizer widget type"},
+  {"set_modal_dialog_active", python_set_modal_dialog_active, METH_VARARGS,
+ "Suspend python_lock()/python_unlock() while a modal PyQt6 dialog is open"},
   {"nimport", (PyCFunction)python_nimport, METH_VARARGS | METH_KEYWORDS,
    "Import a Python model from a URL (not an STL).\n"
    "nimport(url=\"https://example.com/model.py\")"},

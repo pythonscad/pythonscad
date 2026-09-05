@@ -746,6 +746,7 @@ if(ENABLE_PYTHON)
     src/python/py_analysis.cc
     src/python/py_ops.cc
     src/python/py_io.cc
+    src/python/pywidget_bridge.cc
     src/python/pyconversion.cc
     src/python/python_runtime.cc
     src/core/node_clone.cc
@@ -1884,6 +1885,7 @@ set(GUI_SOURCES
   src/gui/parameter/ParameterText.cc
   src/gui/parameter/ParameterVector.cc
   src/gui/parameter/ParameterVirtualWidget.cc
+  src/gui/parameter/ParameterPyQtWidget.cc
   src/gui/parameter/ParameterWidget.cc
   src/gui/ai/AIDock.cc
   src/gui/ai/ChatWidget.cc

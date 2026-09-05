@@ -748,18 +748,19 @@ PyObject *python_str(PyObject *self)
 static PyObject *python_register_parameter_impl(PyObject *args, PyObject *kwargs, bool inject_global)
 {
   char *kwlist[] = {"name", "default",    "description", "group", "range",
-                    "step", "max_length", "options",     NULL};
+                    "step", "max_length", "options",    "type",  NULL};
   char *name = NULL;
   PyObject *value = NULL;
   const char *description = NULL;
   const char *group = NULL;
+  const char *custom_type = NULL;
   PyObject *range_obj = NULL;
   double step_val = -1.0;
   int max_length = -1;
   PyObject *options = NULL;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|zzOdiO", kwlist, &name, &value, &description,
-                                   &group, &range_obj, &step_val, &max_length, &options)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|zzOdiOz", kwlist, &name, &value, &description,
+                                   &group, &range_obj, &step_val, &max_length, &options, &custom_type)) {
     const char *function_name = inject_global ? "add_parameter" : "Customizer.add_parameter";
     PyErr_Format(PyExc_TypeError, "Error during parsing %s() arguments", function_name);
     return NULL;
@@ -981,6 +982,11 @@ static PyObject *python_register_parameter_impl(PyObject *args, PyObject *kwargs
       annotationList->push_back(Annotation("Group", std::make_shared<Literal>(group, Location::NONE)));
     }
 
+     if (custom_type != NULL) {
+      annotationList->push_back(
+        Annotation("CustomType", std::make_shared<Literal>(custom_type, Location::NONE)));
+    }
+
     auto assignment = std::make_shared<Assignment>(name, default_expr);
     assignment->addAnnotations(annotationList);
     customizer_parameters.push_back(assignment);
@@ -1179,6 +1185,45 @@ PyObject *python_add_menuitem(PyObject *self, PyObject *args, PyObject *kwargs)
   add_menuitem_trampoline(menuname, itemname, callback);
   Py_RETURN_NONE;
 }
+
+std::map<std::string, PyObject *> customizer_widget_factories;
+
+PyObject *python_add_parameter_widget(PyObject * /*self*/, PyObject *args, PyObject *kwargs)
+{
+  const char *typenamec;
+  PyObject *factory;
+  static const char *kwlist[] = {"typename", "factory", nullptr};
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO", const_cast<char **>(kwlist), &typenamec,
+                                    &factory)) {
+    return nullptr;
+  }
+
+  if (!PyCallable_Check(factory)) {
+    PyErr_SetString(PyExc_TypeError, "factory must be callable");
+    return nullptr;
+  }
+
+  Py_INCREF(factory);
+  auto it = customizer_widget_factories.find(typenamec);
+  if (it != customizer_widget_factories.end()) {
+    Py_DECREF(it->second);  // vorherige Registrierung für denselben Typnamen ersetzen
+  }
+  customizer_widget_factories[typenamec] = factory;
+
+  Py_RETURN_NONE;
+}
+
+extern std::atomic<bool> pythonModalDialogActive;
+
+PyObject *python_set_modal_dialog_active(PyObject *, PyObject *args)
+{
+  int active;
+  if (!PyArg_ParseTuple(args, "p", &active)) return nullptr;
+  pythonModalDialogActive.store(active != 0);
+  Py_RETURN_NONE;
+}
+
 
 PyObject *python_qapp_ptr(PyObject *, PyObject *)
 {
