@@ -117,16 +117,29 @@ jobs:
           # Bundle Qt frameworks
           macdeployqt "$APP_BUNDLE" -no-strip
 
-          # Homebrew Python 3.14 links as libpython*.dylib. Rewrite any
-          # leftover Homebrew Python paths to the bundled framework.
-          EXEC_PATH="$APP_BUNDLE/Contents/MacOS/$(basename "$APP_BUNDLE" .app)"
-          otool -L "$EXEC_PATH" | awk '/\/opt\/homebrew\/.*\/(Python|libpython)/ {print $1}' | while read -r old; do
-            ver=$(echo "$old" | sed -n 's|.*/Versions/\([0-9][0-9.]*\)/.*|\1|p')
-            [ -n "$ver" ] || continue
-            echo "Rewriting Python dependency $old -> @rpath/Python.framework/Versions/$ver/Python"
-            install_name_tool -change "$old" \
-              "@rpath/Python.framework/Versions/$ver/Python" "$EXEC_PATH"
-          done
+          # Homebrew Python keeps an absolute LC_ID_DYLIB. Point the
+          # bundled copy at @rpath, then rewrite dependents that still
+          # name the Cellar path.
+          PY_FW="$APP_BUNDLE/Contents/Frameworks/Python.framework"
+          if [ -d "$PY_FW" ]; then
+            PY_VER=$(basename "$(find "$PY_FW/Versions" -maxdepth 1 -mindepth 1 -type d ! -name Current | head -1)")
+            PY_BIN="$PY_FW/Versions/$PY_VER/Python"
+            if [ -f "$PY_BIN" ]; then
+              echo "Setting bundled Python id to @rpath (version $PY_VER)"
+              install_name_tool -id \
+                "@rpath/Python.framework/Versions/$PY_VER/Python" "$PY_BIN"
+            fi
+          fi
+          while IFS= read -r -d '' f; do
+            file "$f" | grep -q Mach-O || continue
+            otool -L "$f" | awk '/\/opt\/homebrew\/.*\/(Python|libpython)/ {print $1}' | while read -r old; do
+              ver=$(echo "$old" | sed -n 's|.*/Versions/\([0-9][0-9.]*\)/.*|\1|p')
+              [ -n "$ver" ] || continue
+              echo "Rewriting Python dependency in $f: $old"
+              install_name_tool -change "$old" \
+                "@rpath/Python.framework/Versions/$ver/Python" "$f" || true
+            done
+          done < <(find "$APP_BUNDLE" -type f -print0)
 
           # Manually copy libbrotlicommon (dependency of libbrotlidec that macdeployqt misses)
           if [ ! -f "$APP_BUNDLE/Contents/Frameworks/libbrotlicommon.1.dylib" ]; then
