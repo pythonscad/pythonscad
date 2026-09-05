@@ -41,7 +41,12 @@ skip_arch_check = False
 skip_deployment_target_check = False
 
 def usage():
-    print("Usage: " + sys.argv[0] + " [--skip-arch-check] <executable>", sys.stderr)
+    print(
+        "Usage: " + sys.argv[0]
+        + " [--skip-arch-check] [--allow-homebrew-deps]"
+        + " [--skip-deployment-target-check] <executable>",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 # Try to find the given library by searching in the typical locations
@@ -130,7 +135,7 @@ def validate_lib(lib):
         return False
     if (not skip_deployment_target_check
             and version_larger_than(deploymenttarget, macos_version_min)):
-        print("Error: Unsupported deployment target " + m.group(2) + " found: " + lib)
+        print("Error: Unsupported deployment target " + deploymenttarget + " found: " + lib)
         return False
 
     # Check that both x86_64 and arm64 architectures exist (unless skipped)
