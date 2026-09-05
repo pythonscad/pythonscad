@@ -233,15 +233,21 @@ jobs:
           APP_BUNDLE="${STEPS_APPNAME_OUTPUTS_APP_BUNDLE}"
           EXEC_NAME=$(basename "$APP_BUNDLE" .app)
 
-          echo "=== Removing absolute Homebrew symlinks (Gatekeeper rejects them) ==="
+          echo "=== Cleaning Python.framework site-packages and escaping symlinks ==="
+          for link in "$APP_BUNDLE/Contents/Frameworks/Python.framework"/Versions/*/lib/python*/site-packages; do
+            if [ -L "$link" ]; then
+              echo "Replacing site-packages symlink $link -> $(readlink "$link")"
+              rm "$link"
+              mkdir -p "$link"
+            fi
+          done
           while IFS= read -r -d '' link; do
             target=$(readlink "$link")
-            case "$target" in
-              /opt/homebrew/*|/usr/local/*)
-                echo "Removing $link -> $target"
-                rm "$link"
-                ;;
-            esac
+            resolved=$(python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" "$link")
+            if [ ! -e "$link" ] || [ "${resolved#"$APP_BUNDLE"}" = "$resolved" ]; then
+              echo "Removing symlink $link -> $target (resolves to $resolved)"
+              rm "$link"
+            fi
           done < <(find "$APP_BUNDLE" -type l -print0)
 
           if [ "${STEPS_INSTALL_CERT_OUTPUTS_CERT_INSTALLED}" = "true" ] && [ -n "$SIGNING_IDENTITY" ]; then
