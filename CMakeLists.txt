@@ -2180,14 +2180,8 @@ if(APPLE AND NOT APPLE_UNIX)
     # Homebrew Python may link as either the framework binary
     # (.../Versions/X.Y/Python) or libpythonX.Y.dylib; rewrite both.
     add_custom_command(TARGET OpenSCADExe POST_BUILD
-      COMMAND install_name_tool -change
-        ${PYTHON_FRAMEWORK_LIB}
-        @rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python
-        ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}
-      COMMAND install_name_tool -change
-        ${Python3_LIBRARIES}
-        @rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python
-        ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}
+      COMMAND /bin/sh -c "install_name_tool -change '${PYTHON_FRAMEWORK_LIB}' '@rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python' '${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}' || true"
+      COMMAND /bin/sh -c "install_name_tool -change '${Python3_LIBRARIES}' '@rpath/Python.framework/Versions/${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/Python' '${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}' || true"
       COMMENT "Updating Python library reference to use @rpath"
     )
   endif()
