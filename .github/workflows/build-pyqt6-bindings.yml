@@ -173,12 +173,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-15-intel
-            arch: x86_64
-            profile: macos-15-intel-homebrew-qt6
-          - runner: macos-14
+          - runner: macos-15
             arch: arm64
-            profile: macos-14-homebrew-qt6
+            profile: macos-15-homebrew-qt6
     runs-on: ${{ matrix.runner }}
     name: macOS ${{ matrix.arch }} (Homebrew Qt6)
     steps:
@@ -242,7 +239,7 @@ jobs:
               # Wheel is universal2 (or already single-arch) - thin it down
               # to just this leg's architecture so the per-arch tree stays
               # single-arch, matching everything else fetch_pyqt6_bindings.sh
-              # / the merge job expects.
+              # expects.
               lipo -thin "${{ matrix.arch }}" "$SIP_SO" \
                 -output "/tmp/pyqt-out/PyQt6/$(basename "$SIP_SO")"
               ;;

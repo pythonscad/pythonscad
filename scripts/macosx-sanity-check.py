@@ -138,15 +138,9 @@ def validate_lib(lib):
         print("Error: Unsupported deployment target " + deploymenttarget + " found: " + lib)
         return False
 
-    # Check that both x86_64 and arm64 architectures exist (unless skipped)
+    # Releases are Apple Silicon only; Intel is no longer shipped.
     if not skip_arch_check:
-        p = subprocess.Popen(["lipo", lib, "-verify_arch", "x86_64"], stdout=subprocess.PIPE, universal_newlines=True)
-        p.communicate()[0]
-        if p.returncode != 0:
-            print("Error: x86_64 architecture not found in " + lib)
-            return False
-
-        p  = subprocess.Popen(["lipo", lib, "-verify_arch", "arm64"], stdout=subprocess.PIPE, universal_newlines=True)
+        p = subprocess.Popen(["lipo", lib, "-verify_arch", "arm64"], stdout=subprocess.PIPE, universal_newlines=True)
         p.communicate()[0]
         if p.returncode != 0:
             print("Error: arm64 architecture not found in " + lib)
@@ -159,7 +153,7 @@ if __name__ == '__main__':
         description='Verify macOS executable dependencies and deployment targets')
     parser.add_argument('executable', help='Path to the executable to check')
     parser.add_argument('--skip-arch-check', action='store_true',
-                        help='Skip universal binary (x86_64/arm64) architecture validation')
+                        help='Skip arm64 architecture validation (Homebrew test builds)')
     parser.add_argument('--allow-homebrew-deps', action='store_true',
                         help='Allow external dependencies from Homebrew (/usr/local/opt/ or /opt/homebrew/) for test builds')
     parser.add_argument('--skip-deployment-target-check', action='store_true',

@@ -96,9 +96,9 @@ set(WASM_BUILD_TYPE "web" CACHE STRING
   "WebAssembly build type. Support web (builds an OpenSCAD module) or node (standalone .js executable)")
 
 if (USE_QT6)
-  # Minimum version required for PythonSCAD: macOS 14.0 (Sonoma)
-  # Only currently Apple-supported macOS versions are targeted.
-  set(DEPLOYMENT_TARGET "14.0")
+  # Minimum version required for PythonSCAD: macOS 15.0 (Sequoia).
+  # Oldest OS still fully supported by Apple, Homebrew, and GitHub Actions.
+  set(DEPLOYMENT_TARGET "15.0")
 else()
   # Minimum version required for std::filesystem
   set(DEPLOYMENT_TARGET "10.15")
