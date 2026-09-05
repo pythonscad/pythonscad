@@ -17,7 +17,7 @@ class Assignment;
 class ParameterObject
 {
 public:
-  enum class ParameterType { Bool, String, Number, Vector, Enum };
+  enum class ParameterType { Bool, String, Number, Vector, Enum, Custom };
 
   virtual ~ParameterObject() = default;
   static std::unique_ptr<ParameterObject> fromAssignment(const Assignment *assignment);
@@ -166,6 +166,29 @@ public:
   int valueIndex;
   int defaultValueIndex;
   std::vector<EnumItem> items;
+};
+
+class CustomParameter : public ParameterObject
+{
+public:
+  CustomParameter(const std::string& name, const std::string& description, const std::string& group,
+                  const std::string& customTypeName, const json& defaultValue)
+    : ParameterObject(name, description, group, ParameterObject::ParameterType::Custom),
+      customTypeName(customTypeName),
+      value(defaultValue),
+      defaultValue(defaultValue)
+  {
+  }
+
+  void reset() override { value = defaultValue; }
+  bool importValue(boost::property_tree::ptree encodedValue, bool store) override;
+  [[nodiscard]] boost::property_tree::ptree exportValue() const override;
+  [[nodiscard]] json jsonValue() const override;
+  void apply(Assignment *assignment) const override;
+
+  std::string customTypeName;  // Schlüssel in customizer_widget_factories, z.B. "color_picker"
+  json value;
+  json defaultValue;
 };
 
 class ParameterObjects : public std::vector<std::unique_ptr<ParameterObject>>

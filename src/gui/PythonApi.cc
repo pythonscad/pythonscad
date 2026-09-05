@@ -149,6 +149,21 @@ void PythonApi::autoCompletionSelected(const QString& /*selection*/)
 {
 }
 
+static long findEnclosingOpenParenPos(QsciScintilla *qsci, long cursorPos)
+{
+  QString text = qsci->text();
+  int depth = 0;
+  for (long i = cursorPos - 1; i >= 0; --i) {
+    QChar c = text.at((int)i);
+    if (c == ')') depth++;
+    else if (c == '(') {
+      if (depth == 0) return i + 1;  // Position direkt NACH dieser "("
+      depth--;
+    }
+  }
+  return -1;
+}
+
 QStringList PythonApi::callTips(const QStringList& context, int /*commas*/,
                                 QsciScintilla::CallTipsStyle /*style*/, QList<int>& /*shifts*/)
 {

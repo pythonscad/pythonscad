@@ -36,6 +36,7 @@
 #include <system_error>
 #include <vector>
 #include <glview/RenderSettings.h>
+#include <atomic>
 #ifdef _WIN32
 // AttachConsole / GetStdHandle / _wfreopen for the --repl/--ipython
 // console reattach dance (see windows_reattach_console_for_repl below).
@@ -345,23 +346,29 @@ PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<Abs
   return nullptr;
 }
 
-// PyGILState_STATE gstate=PyGILState_LOCKED;
+std::atomic<bool> pythonModalDialogActive{false};
 PyThreadState *tstate = nullptr;
+static thread_local int lockDepth = 0;
 
 void python_lock(void)
 {
-  // #ifndef _WIN32
-  if (tstate != nullptr && pythonInitDict != nullptr) PyEval_RestoreThread(tstate);
-  // #endif
+  if (pythonModalDialogActive.load()) return;
+  if (pythonInitDict == nullptr) return;
+  lockDepth++;
+  if (lockDepth == 0 && tstate != nullptr) {
+    PyEval_RestoreThread(tstate);
+  }
 }
 
 void python_unlock(void)
 {
-  // #ifndef _WIN32
-  if (pythonInitDict != nullptr) tstate = PyEval_SaveThread();
-  // #endif
+  if (pythonModalDialogActive.load()) return;
+  if (pythonInitDict == nullptr) return;
+  if (lockDepth == 0) {
+    tstate = PyEval_SaveThread();
+  }
+  lockDepth--;
 }
-
 const char *python_calltip(const char *funcname)
 {
   for (PyMethodDef *m = PyOpenSCADFunctions; m->ml_name != NULL; m++) {
