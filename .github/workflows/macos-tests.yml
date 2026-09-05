@@ -88,9 +88,11 @@ jobs:
     - name: Run macOS sanity check
       run: |
         # Run sanity check to validate deployment targets of bundled libraries.
-        # Skip architecture check since test builds are single-arch (not universal).
-        # Allow Homebrew dependencies since test builds use Homebrew libraries.
+        # Skip architecture and minos checks: test builds are single-arch and
+        # use Homebrew Python, whose Tahoe bottle stamps minos 26.0. The 15.0
+        # floor is enforced on the macos-15 release job, not here.
         python3 ./scripts/macosx-sanity-check.py --skip-arch-check --allow-homebrew-deps \
+          --skip-deployment-target-check \
           build/pythonscad.app/Contents/MacOS/pythonscad
     - name: Verify Python setup
       run: |

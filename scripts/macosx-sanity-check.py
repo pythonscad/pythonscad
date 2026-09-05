@@ -36,6 +36,9 @@ macos_version_min = '15.0'
 
 # Global flag to skip architecture validation (for single-arch test builds)
 skip_arch_check = False
+# Skip LC_BUILD_VERSION/minos checks (Homebrew test builds on a newer
+# runner stamp minos of that OS, e.g. 26.0 on macos-26).
+skip_deployment_target_check = False
 
 def usage():
     print("Usage: " + sys.argv[0] + " [--skip-arch-check] <executable>", sys.stderr)
@@ -125,7 +128,8 @@ def validate_lib(lib):
     if deploymenttarget is None:
         print("Error: Neither LC_VERSION_MIN_MACOSX nor LC_BUILD_VERSION found in " + lib)
         return False
-    if version_larger_than(deploymenttarget, macos_version_min):
+    if (not skip_deployment_target_check
+            and version_larger_than(deploymenttarget, macos_version_min)):
         print("Error: Unsupported deployment target " + m.group(2) + " found: " + lib)
         return False
 
@@ -152,10 +156,13 @@ if __name__ == '__main__':
     parser.add_argument('--skip-arch-check', action='store_true',
                         help='Skip universal binary (x86_64/arm64) architecture validation')
     parser.add_argument('--allow-homebrew-deps', action='store_true',
-                        help='Allow external dependencies from Homebrew (/usr/local/opt/) for test builds')
+                        help='Allow external dependencies from Homebrew (/usr/local/opt/ or /opt/homebrew/) for test builds')
+    parser.add_argument('--skip-deployment-target-check', action='store_true',
+                        help='Skip minos/deployment-target validation (Homebrew test builds)')
     args = parser.parse_args()
 
     skip_arch_check = args.skip_arch_check
+    skip_deployment_target_check = args.skip_deployment_target_check
     error = False
     executable = args.executable
     if DEBUG: print("Processing " + executable)
