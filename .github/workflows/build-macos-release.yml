@@ -134,6 +134,10 @@ jobs:
             file "$f" | grep -q Mach-O || continue
             otool -L "$f" | awk '/\/opt\/homebrew\/.*\/(Python|libpython)/ {print $1}' | while read -r old; do
               ver=$(echo "$old" | sed -n 's|.*/Versions/\([0-9][0-9.]*\)/.*|\1|p')
+              if [ -z "$ver" ]; then
+                ver=$(echo "$old" | sed -n 's|.*libpython\([0-9][0-9.]*\)\.dylib.*|\1|p')
+              fi
+              [ -n "$ver" ] || ver="$PY_VER"
               [ -n "$ver" ] || continue
               echo "Rewriting Python dependency in $f: $old"
               install_name_tool -change "$old" \
