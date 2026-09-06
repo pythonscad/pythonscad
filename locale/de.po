@@ -17,9 +17,9 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.0\n"
 "X-Poedit-SourceCharset: UTF-8\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:102
 #: src/gui/AboutDialog.h:22
@@ -212,7 +212,7 @@ msgstr "Z"
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:888
 #: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:280
 msgid "Translation"
-msgstr "Translation"
+msgstr "Verschiebung"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:889
 msgid "ViewPort rel.<br/>Translation"
@@ -517,6 +517,8 @@ msgstr "Auswahl"
 msgid "Reset background color"
 msgstr "Hintergrundfarbe zurücksetzen"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:435
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:439
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:451
@@ -556,14 +558,20 @@ msgstr "Als Vordergrund"
 msgid "As Background"
 msgstr "Als Hintergrund"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:443
 msgid "R:"
 msgstr "R:"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:444
 msgid "G:"
 msgstr "G:"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:445
 msgid "B:"
 msgstr "B:"
@@ -666,6 +674,8 @@ msgstr "Einheit"
 msgid "Micron"
 msgstr "Mikrometer"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:454
 msgid "micron"
 msgstr "mikrometer"
@@ -674,6 +684,8 @@ msgstr "mikrometer"
 msgid "Millimeter (default)"
 msgstr "Millimeter (Standard)"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:456
 msgid "millimeter"
 msgstr "millimeter"
@@ -683,6 +695,8 @@ msgstr "millimeter"
 msgid "Centimeter"
 msgstr "Zentimeter"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:458
 msgid "centimeter"
 msgstr "zentimeter"
@@ -692,6 +706,8 @@ msgstr "zentimeter"
 msgid "Meter"
 msgstr "Meter"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:460
 msgid "meter"
 msgstr "meter"
@@ -701,6 +717,8 @@ msgstr "meter"
 msgid "Inch"
 msgstr "Zoll"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:462
 msgid "inch"
 msgstr "zoll"
@@ -709,6 +727,8 @@ msgstr "zoll"
 msgid "Foot"
 msgstr "Fuß"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:464
 msgid "foot"
 msgstr "fuß"
@@ -721,6 +741,8 @@ msgstr "Farben"
 msgid "Use colors from model and color scheme"
 msgstr "Farben aus Modell und Farbschema verwenden"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:470
 msgid "model"
 msgstr "Modell"
@@ -730,6 +752,8 @@ msgstr "Modell"
 msgid "No colors"
 msgstr "Keine Farben"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
 msgid "none"
 msgstr "keine"
@@ -738,6 +762,8 @@ msgstr "keine"
 msgid "Use selected color for all objects"
 msgstr "Ausgewählte Farbe für alle Objekte verwenden"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:474
 msgid "selected-only"
 msgstr "nur-auswahl"
@@ -887,6 +913,8 @@ msgstr "Seitengröße"
 msgid "A6 (105 x 148 mm)"
 msgstr "A6 (105 × 148 mm)"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:547
 msgid "a6"
 msgstr "a6"
@@ -896,6 +924,8 @@ msgstr "a6"
 msgid "A5 (148 x 210 mm)"
 msgstr "A5 (148 × 210 mm)"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:549
 msgid "a5"
 msgstr "a5"
@@ -905,6 +935,8 @@ msgstr "a5"
 msgid "A4 (210x297 mm)"
 msgstr "A4 (210 × 297 mm)"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:551
 msgid "a4"
 msgstr "a4"
@@ -914,6 +946,8 @@ msgstr "a4"
 msgid "A3 (297x420 mm)"
 msgstr "A3 (297 × 420 mm)"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:553
 msgid "a3"
 msgstr "a3"
@@ -923,6 +957,8 @@ msgstr "a3"
 msgid "Letter (8.5x11 in)"
 msgstr "Letter (8,5 × 11 Zoll)"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
 msgid "letter"
 msgstr "letter"
@@ -932,6 +968,8 @@ msgstr "letter"
 msgid "Legal (8.5x14 in)"
 msgstr "Legal (8,5 × 14 Zoll)"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
 msgid "legal"
 msgstr "legal"
@@ -941,6 +979,8 @@ msgstr "legal"
 msgid "Tabloid (11x17 in)"
 msgstr "Tabloid (11 × 17 Zoll)"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:560
 msgid "tabloid"
 msgstr "tabloid"
@@ -967,8 +1007,8 @@ msgstr "Autor"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:580
 msgid ""
-"<html><head/><body><p>Set the direction of the largest page dimension.</p></"
-"body></html>"
+"<html><head/><body><p>Set the direction of the largest page "
+"dimension.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Richtung der größten Seitenabmessung festlegen.</p></"
 "body></html>"
@@ -987,6 +1027,8 @@ msgstr "Hochformat (vertikal)"
 msgid "Landscape (Horizontal)"
 msgstr "Querformat (horizontal)"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:586
 msgid "landscape"
 msgstr "querformat"
@@ -1004,6 +1046,8 @@ msgstr ""
 msgid "Auto"
 msgstr "Automatisch"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:591
 msgid "auto"
 msgstr "auto"
@@ -1025,8 +1069,8 @@ msgstr "Design-Dateiname anzeigen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:598
 msgid ""
-"<html><head/><body><p>Include rulers on page to confirm 1:1 printing scale.</"
-"p></body></html>"
+"<html><head/><body><p>Include rulers on page to confirm 1:1 printing "
+"scale.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Lineale auf der Seite anzeigen, um den Druckmaßstab "
 "1:1 zu bestätigen.</p></body></html>"
@@ -1037,8 +1081,8 @@ msgstr "Maßstab anzeigen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:602
 msgid ""
-"<html><head/><body><p>Include a grid of the selected size on the page.</p></"
-"body></html>"
+"<html><head/><body><p>Include a grid of the selected size on the "
+"page.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Ein Raster der gewählten Größe auf der Seite anzeigen."
 "</p></body></html>"
@@ -1047,30 +1091,40 @@ msgstr ""
 msgid "Show Grid"
 msgstr "Raster anzeigen"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:605
 msgid "2mm"
 msgstr "2 mm"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:606
 msgid "2.5mm"
 msgstr "2,5 mm"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:607
 msgid "4mm"
 msgstr "4 mm"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:608
 msgid "5mm"
 msgstr "5 mm"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:609
 msgid "10mm"
 msgstr "10 mm"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:611
 msgid ""
-"<html><head/><body><p>Include text describing usage of scale.</p></body></"
-"html>"
+"<html><head/><body><p>Include text describing usage of "
+"scale.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Text zur Verwendung des Maßstabs anzeigen.</p></body></"
 "html>"
@@ -1086,8 +1140,8 @@ msgstr "Füllung und Kontur"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:616
 msgid ""
-"<html><head/><body><p>Enable filling of exported geometry with a color.</p></"
-"body></html>"
+"<html><head/><body><p>Enable filling of exported geometry with a "
+"color.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Füllung der exportierten Geometrie mit einer Farbe "
 "aktivieren.</p></body></html>"
@@ -1099,8 +1153,8 @@ msgstr "Geometrie füllen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:623
 msgid ""
-"<html><head/><body><p>Enable outline stroke for exported geometry.</p></"
-"body></html>"
+"<html><head/><body><p>Enable outline stroke for exported "
+"geometry.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Kontur für exportierte Geometrie aktivieren.</p></"
 "body></html>"
@@ -1115,6 +1169,8 @@ msgstr "Kontur zeichnen"
 msgid "Stroke Width:"
 msgstr "Konturbreite:"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:630
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:219
 msgid " mm"
@@ -1136,6 +1192,8 @@ msgstr "Kontur für exportierte Geometrie aktivieren."
 msgid "Font List"
 msgstr "Schriftartenliste"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:292
 msgid "ResetSampleText"
 msgstr "Beispieltext zurücksetzen"
@@ -1176,6 +1234,8 @@ msgstr "Schriftstil anzeigen"
 msgid "Show Sample Text"
 msgstr "Beispieltext anzeigen"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:302
 msgid "ShowFileName"
 msgstr "Dateiname anzeigen"
@@ -2187,27 +2247,17 @@ msgstr "OpenGL Warnung"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:77
 msgid ""
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/"
-"REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/"
-"css\">\n"
+"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; "
-"font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; "
-"margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></"
-"p></body></html>"
+"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></p></body></html>"
 msgstr ""
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/"
-"REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/"
-"css\">\n"
+"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; "
-"font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; "
-"margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></"
-"p></body></html>"
+"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></p></body></html>"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:82
 msgid "Show this message again"
@@ -3093,10 +3143,14 @@ msgstr "Details"
 msgid "Distance"
 msgstr "Abstand"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:278
 msgid "FOV"
 msgstr "FOV"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: src/core/Settings.cc:48
 #, c-format
 msgid "axis-%d"
@@ -3107,6 +3161,8 @@ msgstr "achse-%d"
 msgid "Axis %d"
 msgstr "Achse %d"
 
+#. Interner Wert bzw. Tastenkuerzel - nicht uebersetzen. Ein leerer msgstr
+#. laesst gettext den Originaltext zurueckgeben.
 #: src/core/Settings.cc:52
 #, c-format
 msgid "axis-inverted-%d"
@@ -3403,7 +3459,8 @@ msgstr ""
 
 #: src/gui/input/AxisConfigWidget.h:92
 msgid ""
-"The DBUS driver is not for actual devices but for remote control, Linux only."
+"The DBUS driver is not for actual devices but for remote control, Linux "
+"only."
 msgstr "Der DBUS Treiber dient der Fernsteuerung, nur für Linux."
 
 #: src/gui/input/AxisConfigWidget.h:94
@@ -3422,11 +3479,11 @@ msgstr ""
 
 #: src/gui/input/AxisConfigWidget.h:98
 msgid ""
-"The Joystick driver uses the Linux joystick device (fixed to /dev/input/"
-"js0), Linux only."
+"The Joystick driver uses the Linux joystick device (fixed to "
+"/dev/input/js0), Linux only."
 msgstr ""
-"Der Joystick Treiber bedient die Linux Joystick Schnittstelle (/dev/input/"
-"js0), nur Linux."
+"Der Joystick Treiber bedient die Linux Joystick Schnittstelle "
+"(/dev/input/js0), nur Linux."
 
 #: src/gui/input/AxisConfigWidget.h:100
 msgid "The QGAMEPAD driver is for multiplattform Gamepad Support."
@@ -3631,8 +3688,7 @@ msgid ""
 "A critical error was caught. The application may have become unstable:\n"
 "%1"
 msgstr ""
-"Ein kritischer Fehler wurde abgefangen. Die Anwendung könnte jetzt instabil "
-"laufen:\n"
+"Ein kritischer Fehler wurde abgefangen. Die Anwendung könnte jetzt instabil laufen:\n"
 "%1"
 
 #: src/gui/OpenSCADApp.cc:113
@@ -3733,12 +3789,10 @@ msgstr "Profil „%1“ löschen?"
 
 #: src/gui/QGLView.cc:194
 msgid ""
-"Warning: Missing OpenGL capabilities for OpenCSG - OpenCSG has been "
-"disabled.\n"
+"Warning: Missing OpenGL capabilities for OpenCSG - OpenCSG has been disabled.\n"
 "\n"
 msgstr ""
-"Achtung: Der Funktionsumfang des OpenGL Treibers reicht für die Vorschau "
-"nicht aus - OpenCSG wurde deaktiviert.\n"
+"Achtung: Der Funktionsumfang des OpenGL Treibers reicht für die Vorschau nicht aus - OpenCSG wurde deaktiviert.\n"
 "\n"
 
 #: src/gui/QGLView.cc:196
@@ -3747,8 +3801,7 @@ msgid ""
 "later.\n"
 "Your renderer information is as follows:\n"
 msgstr ""
-"Für die korrekte Anzeige der Vorschau benötigt OpenSCAD mindestens OpenGL "
-"2.0.\n"
+"Für die korrekte Anzeige der Vorschau benötigt OpenSCAD mindestens OpenGL 2.0.\n"
 "Informationen zum OpenGL Treiber:\n"
 
 #: src/gui/QGLView.cc:200
@@ -4364,8 +4417,7 @@ msgstr ""
 #~ "Warning: You may experience OpenCSG rendering errors.\n"
 #~ "\n"
 #~ msgstr ""
-#~ "Achtung: Es können Darstellungsfehler beim Anzeigen der Vorschau "
-#~ "auftreten.\n"
+#~ "Achtung: Es können Darstellungsfehler beim Anzeigen der Vorschau auftreten.\n"
 #~ "\n"
 
 #~ msgid "save preset"
@@ -4390,8 +4442,8 @@ msgstr ""
 #~ msgstr "Änderungen an den aktuelle Voreinstellung nicht gespeichert"
 
 #~ msgid ""
-#~ "The changes on the current preset %1 are not saved yet. Do you really "
-#~ "want to reset this preset and lose your changes?"
+#~ "The changes on the current preset %1 are not saved yet. Do you really want "
+#~ "to reset this preset and lose your changes?"
 #~ msgstr ""
 #~ "Die Änderungen an der akutellen Voreinstellung %1 sind noch nicht "
 #~ "gespeichert.Möchten Sie die Änderungen wirklich zurücksetzen?"
@@ -4403,12 +4455,12 @@ msgstr ""
 #~ msgstr "JSON file ist nicht schreibbar"
 
 #~ msgid ""
-#~ "The current preset %1 contains changes, but is not saved yet. Do you "
-#~ "really want to change the preset and lose your changes?"
+#~ "The current preset %1 contains changes, but is not saved yet. Do you really "
+#~ "want to change the preset and lose your changes?"
 #~ msgstr ""
 #~ "Die Änderungen an der akutellen Voreinstellung %1 sind noch nicht "
-#~ "gespeichert.Möchten Sie wirklich die Voreinstellung wechseln und somit "
-#~ "Ihre Änderungen verlieren?"
+#~ "gespeichert.Möchten Sie wirklich die Voreinstellung wechseln und somit Ihre "
+#~ "Änderungen verlieren?"
 
 #~ msgid "Do you want to delete the current preset?"
 #~ msgstr "Möchten Sie die aktuelle Voreinstellung löschen?"
