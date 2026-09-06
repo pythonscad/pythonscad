@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 
+#include "core/str_utf8_wrapper.h"
 #include "utils/printutils.h"
 
 static std::string parameterSetsKey("parameterSets");
@@ -37,7 +38,10 @@ bool ParameterSets::readFile(const std::string& filename)
     ParameterSet set;
     set.setName(entry.first);
     for (const auto& value : entry.second) {
-      set[value.first] = value.second;
+      // Parameter names are compared against identifiers from the AST, which the
+      // lexer normalises to NFC. A key written in any other normalisation would
+      // silently fail to match and leave the parameter at its design default.
+      set[normalize_utf8_nfc(value.first)] = value.second;
     }
     push_back(set);
   }
