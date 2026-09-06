@@ -3024,67 +3024,6 @@ msgstr "პარამეტრის დამატება"
 msgid "Remove Parameter"
 msgstr "პარამეტრის წაშლა"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
-#, fuzzy
-msgid "AI Preferences"
-msgstr "პარამეტრები"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
-msgid ""
-"AI assistant integration is active. Configure your connection profiles and "
-"parameters below."
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
-#, fuzzy
-msgid "Profiles"
-msgstr "სლაისერის პროფილი"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
-#, fuzzy
-msgid "Active Profile"
-msgstr "სლაისერის პროფილი"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
-#, fuzzy
-msgid "New Profile"
-msgstr "&ახალი ფაილი"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
-msgid "Delete"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
-msgid "API Configuration"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2666
-msgid "API Endpoint"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
-msgid "System Prompt / Instructions"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
-msgid "Default User Prompt"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
-#, fuzzy
-msgid "API Parameters"
-msgstr "პარამეტრი"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
-#, fuzzy
-msgid "Add Parameter"
-msgstr "პარამეტრი"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
-#, fuzzy
-msgid "Remove Parameter"
-msgstr "პარამეტრი"
-
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:180
 msgid "Run local Application"
 msgstr "ლოკალური აპლიკაციის გაშვება"

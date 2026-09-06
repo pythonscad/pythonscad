@@ -417,66 +417,6 @@ msgstr ""
 msgid "Agentic"
 msgstr ""
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:194
-msgid "AI Chat"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:195
-#: src/gui/ai/ChatWidget.cc:138
-msgid "AI Assistant"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:197
-msgid "Chat options"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:199
-msgid "☰"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:201
-#: src/gui/ai/ChatWidget.cc:140
-msgid "Clear chat history"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:203
-#: build/OpenSCADLibInternal_autogen/include/ui_Console.h:42
-#: src/gui/ai/ChatWidget.cc:139
-msgid "Clear"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:204
-#: src/gui/ai/ChatWidget.cc:141 src/gui/ai/ChatWidget.cc:630
-msgid "Send"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:206
-msgid "Grab active 3D viewport frame and camera metadata"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:208
-msgid "Analyze Screen"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:210
-msgid "Attach local image file"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:212
-#: src/gui/ai/ChatWidget.cc:508
-msgid "Attach Image"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:214
-msgid ""
-"Agentic mode: allow the AI to call tools in multiple automatic turns per "
-"request"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:216
-msgid "Agentic"
-msgstr ""
-
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:399
 msgid "Color List"
 msgstr "Seznam barev"
@@ -3079,62 +3019,6 @@ msgstr "Přidat parametr"
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
 msgid "Remove Parameter"
 msgstr "Odebrat parametr"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
-#, fuzzy
-msgid "AI Preferences"
-msgstr "Předvolby"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
-msgid ""
-"AI assistant integration is active. Configure your connection profiles and "
-"parameters below."
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
-msgid "Profiles"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
-msgid "Active Profile"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
-#, fuzzy
-msgid "New Profile"
-msgstr "&Soubor"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
-msgid "Delete"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
-msgid "API Configuration"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2666
-msgid "API Endpoint"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
-msgid "System Prompt / Instructions"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
-msgid "Default User Prompt"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
-msgid "API Parameters"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
-msgid "Add Parameter"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
-msgid "Remove Parameter"
-msgstr ""
 
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:180
 msgid "Run local Application"
