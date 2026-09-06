@@ -44,7 +44,7 @@ repos:
           - id: check-yaml
           - id: detect-private-key
     - repo: https://github.com/pre-commit/mirrors-clang-format
-      rev: "v22.1.8"
+      rev: "v23.1.0"
       hooks:
           # clang-format's default file types include JavaScript, so without
           # an exclude it reformats the vendored, pre-minified three.js bundles
@@ -59,9 +59,9 @@ repos:
       hooks:
           - id: commitlint
             stages: [commit-msg]
-            additional_dependencies: ["@commitlint/config-conventional@21.2.0"]
+            additional_dependencies: ["@commitlint/config-conventional@21.2.2"]
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.16.1
+      rev: v0.16.6
       hooks:
           # Validate Python stub files programmatically instead of
           # eyeballing them. Scoped to the stubs tree so that the rest of
@@ -120,7 +120,7 @@ repos:
             files: ^(CHANGELOG\.md|pythonscad\.appdata\.xml\.in)$
             pass_filenames: false
     - repo: https://github.com/zizmorcore/zizmor-pre-commit
-      rev: v1.29.0
+      rev: v1.30.0
       hooks:
           # Security audits for GitHub Actions workflows and composite
           # actions. Catches template/expression injection from
