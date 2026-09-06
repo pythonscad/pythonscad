@@ -139,6 +139,12 @@ public slots:
   void on_lineEditLocalAppExecutable_editingFinished();
   void on_toolButtonLocalAppSelectExecutable_clicked();
   void on_lineEditLocalAppTempDir_editingFinished();
+  void on_comboBoxExportLocationMode_activated(int);
+  void on_comboBoxExportDateFormat_activated(int);
+  void on_lineEditExportFixedFolder_editingFinished();
+  void on_toolButtonExportSelectFolder_clicked();
+  void on_checkBoxExportDatedSubfolder_toggled(bool);
+  void updateExportLocationWidgets();
   void on_toolButtonLocalAppSelectTempDir_clicked();
   void on_comboBoxLocalAppFileFormat_activated(int);
   void on_toolButtonLocalAppParameterRemove_clicked();

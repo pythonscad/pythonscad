@@ -2042,6 +2042,73 @@
              <number>9</number>
             </property>
             <item>
+             <widget class="QGroupBox" name="groupBoxExportLocation">
+              <property name="title">
+               <string>Export Location</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayoutExportLocation">
+               <item row="0" column="0" alignment="Qt::AlignRight">
+                <widget class="QLabel" name="labelExportLocationMode">
+                 <property name="text">
+                  <string>Default location</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1" colspan="2">
+                <widget class="QComboBox" name="comboBoxExportLocationMode">
+                 <property name="toolTip">
+                  <string>Where the &quot;Export as ...&quot; dialog starts. &quot;Remember per design&quot; learns the folder each design was last exported to and keeps it between sessions.</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0" alignment="Qt::AlignRight">
+                <widget class="QLabel" name="labelExportFixedFolder">
+                 <property name="text">
+                  <string>Folder</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLineEdit" name="lineEditExportFixedFolder">
+                 <property name="toolTip">
+                  <string>Used when the default location is set to &quot;Always this folder&quot;.</string>
+                 </property>
+                 <property name="clearButtonEnabled">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="2" alignment="Qt::AlignHCenter">
+                <widget class="QToolButton" name="toolButtonExportSelectFolder">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1" colspan="2">
+                <widget class="QCheckBox" name="checkBoxExportDatedSubfolder">
+                 <property name="toolTip">
+                  <string>Put each day&apos;s exports into their own subfolder. Applies to &quot;Remember per design&quot; and &quot;Always this folder&quot;.</string>
+                 </property>
+                 <property name="text">
+                  <string>Put exports in a dated subfolder</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0" alignment="Qt::AlignRight">
+                <widget class="QLabel" name="labelExportDateFormat">
+                 <property name="text">
+                  <string>Date format</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1" colspan="2">
+                <widget class="QComboBox" name="comboBoxExportDateFormat"/>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
              <widget class="QGroupBox" name="groupBox_CSG">
               <property name="title">
                <string>3D Preview (OpenCSG)</string>

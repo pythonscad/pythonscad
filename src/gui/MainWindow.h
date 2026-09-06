@@ -518,6 +518,10 @@ private:
   time_t includesMTime{0};  // latest include mod time
   time_t depsMTime{0};      // latest dependency mod time
   std::unordered_map<QString, QString> exportPaths;  // for each file type, where it was exported to last
+  QString exportDirectory(const QString& suffix);
+  QString exportMemoryKey(const QString& suffix) const;
+  QString rememberedExportDir(const QString& suffix) const;
+  void rememberExportDir(const QString& suffix, const QString& dir);
   QString exportPath(
     const QString& suffix);    // look up the last export path and generate one if not found
   int lastParserErrorPos{-1};  // last highlighted error position

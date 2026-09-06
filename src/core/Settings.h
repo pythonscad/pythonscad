@@ -31,6 +31,7 @@ constexpr inline auto SECTION_EXPORT_3MF = "export-3mf";
 constexpr inline auto SECTION_EXPORT_SVG = "export-svg";
 constexpr inline auto SECTION_EXPORT_GCODE = "export-gcode";
 constexpr inline auto SECTION_COLOR_LIST = "color-list";
+constexpr inline auto SECTION_EXPORT_LOCATION = "export-location";
 
 class SettingsEntryBase
 {
@@ -570,6 +571,15 @@ public:
     &exportPdfFill,           &exportPdfFillColor,        &exportPdfStroke,
     &exportPdfStrokeColor,    &exportPdfStrokeWidth,
   };
+};
+
+class SettingsExportLocation
+{
+public:
+  static SettingsEntryEnum<ExportLocationMode> exportLocationMode;
+  static SettingsEntryString exportFixedFolder;
+  static SettingsEntryBool exportDatedSubfolder;
+  static SettingsEntryEnum<ExportDateFormat> exportDateFormat;
 };
 
 class SettingsExport3mf
