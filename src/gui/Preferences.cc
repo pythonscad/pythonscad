@@ -444,6 +444,10 @@ void Preferences::init()
   initComboBox(this->comboBoxToolbarExport3D, Settings::Settings::toolbarExport3D);
   initComboBox(this->comboBoxToolbarExport2D, Settings::Settings::toolbarExport2D);
   initComboBox(this->comboBoxSingleInstanceOpenMode, Settings::Settings::singleInstanceOpenMode);
+  initComboBox(this->comboBoxExportLocationMode,
+               Settings::SettingsExportLocation::exportLocationMode);
+  initComboBox(this->comboBoxExportDateFormat,
+               Settings::SettingsExportLocation::exportDateFormat);
 
   this->labelSingleInstanceOpenMode->setText(QString(_("When launching another instance with files:")));
   this->checkBoxSessionManagementEnabled->setText(
@@ -475,6 +479,11 @@ void Preferences::init()
     ->setText(QString::fromStdString(Settings::Settings::localAppExecutable.value()));
   BlockSignals<QLineEdit *>(this->lineEditLocalAppTempDir)
     ->setText(QString::fromStdString(Settings::Settings::localAppTempDir.value()));
+  BlockSignals<QLineEdit *>(this->lineEditExportFixedFolder)
+    ->setText(QString::fromStdString(Settings::SettingsExportLocation::exportFixedFolder.value()));
+  BlockSignals<QCheckBox *>(this->checkBoxExportDatedSubfolder)
+    ->setChecked(Settings::SettingsExportLocation::exportDatedSubfolder.value());
+  updateExportLocationWidgets();
   BlockSignals<QTextEdit *>(this->textEditPythonImportList)
     ->setText(QString::fromStdString(Settings::SettingsPython::pythonNetworkImportList.value()));
   this->comboBoxOctoPrintSlicingEngine->clear();
@@ -1307,6 +1316,65 @@ void Preferences::on_lineEditLocalAppTempDir_editingFinished()
 {
   Settings::Settings::localAppTempDir.setValue(this->lineEditLocalAppTempDir->text().toStdString());
   writeSettings();
+}
+
+/*!
+   Grey out the controls that do not apply to the selected mode, rather than
+   leaving a folder box and a date format on screen that silently do nothing.
+ */
+void Preferences::updateExportLocationWidgets()
+{
+  const auto mode = Settings::SettingsExportLocation::exportLocationMode.value();
+  const bool picksFolder = mode == ExportLocationMode::fixedFolder;
+  const bool canDate =
+    mode == ExportLocationMode::fixedFolder || mode == ExportLocationMode::perProject;
+
+  this->labelExportFixedFolder->setEnabled(picksFolder);
+  this->lineEditExportFixedFolder->setEnabled(picksFolder);
+  this->toolButtonExportSelectFolder->setEnabled(picksFolder);
+  this->checkBoxExportDatedSubfolder->setEnabled(canDate);
+
+  const bool dated = canDate && Settings::SettingsExportLocation::exportDatedSubfolder.value();
+  this->labelExportDateFormat->setEnabled(dated);
+  this->comboBoxExportDateFormat->setEnabled(dated);
+}
+
+void Preferences::on_comboBoxExportLocationMode_activated(int val)
+{
+  Settings::SettingsExportLocation::exportLocationMode.setIndex(val);
+  writeSettings();
+  updateExportLocationWidgets();
+}
+
+void Preferences::on_comboBoxExportDateFormat_activated(int val)
+{
+  Settings::SettingsExportLocation::exportDateFormat.setIndex(val);
+  writeSettings();
+}
+
+void Preferences::on_checkBoxExportDatedSubfolder_toggled(bool checked)
+{
+  Settings::SettingsExportLocation::exportDatedSubfolder.setValue(checked);
+  writeSettings();
+  updateExportLocationWidgets();
+}
+
+void Preferences::on_lineEditExportFixedFolder_editingFinished()
+{
+  Settings::SettingsExportLocation::exportFixedFolder.setValue(
+    this->lineEditExportFixedFolder->text().toStdString());
+  writeSettings();
+}
+
+void Preferences::on_toolButtonExportSelectFolder_clicked()
+{
+  const QString dir = QFileDialog::getExistingDirectory(this, _("Select export folder"));
+  if (dir.isEmpty()) {
+    return;
+  }
+
+  this->lineEditExportFixedFolder->setText(dir);
+  on_lineEditExportFixedFolder_editingFinished();
 }
 
 void Preferences::on_toolButtonLocalAppSelectTempDir_clicked()

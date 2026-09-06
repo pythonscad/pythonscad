@@ -41,6 +41,8 @@
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QDialog>
+#include <QCryptographicHash>
+#include <QDate>
 #include <QDir>
 #include <QDockWidget>
 #include <QDropEvent>
@@ -3547,6 +3549,8 @@ bool MainWindow::canExport(unsigned int dim)
   return true;
 }
 
+static QString exportDateFolder();
+
 void MainWindow::actionExport(unsigned int dim, ExportInfo& exportInfo)
 {
   const auto type_name = QString::fromStdString(exportInfo.info.description);
@@ -3563,12 +3567,33 @@ void MainWindow::actionExport(unsigned int dim, ExportInfo& exportInfo)
 
   auto title = QString(_("Export %1 File")).arg(type_name);
   auto filter = QString(_("%1 Files (*%2)")).arg(type_name, suffix);
-  auto exportFilename = QFileDialog::getSaveFileName(this, title, exportPath(suffix), filter);
+  // The dialog cannot start in a folder that does not exist yet, so a dated
+  // subfolder has to be created before it opens. If the user then cancels, an
+  // empty one is left behind, so remove it again -- rmdir only succeeds on an
+  // empty directory, so a folder that already held exports is never touched.
+  const QString startPath = exportPath(suffix);
+  const QString startDir = QFileInfo(startPath).absolutePath();
+  const bool createdDir = !QDir(startDir).exists() && QDir().mkpath(startDir);
+
+  auto exportFilename = QFileDialog::getSaveFileName(this, title, startPath, filter);
   auto guard2 = scopedSetCurrentOutput();
   if (exportFilename.isEmpty()) {
+    if (createdDir) QDir().rmdir(startDir);
     return;
   }
   this->exportPaths[suffix] = exportFilename;
+
+  // Remember the folder the user actually chose. When dated subfolders are on,
+  // store the parent instead, or tomorrow's export would start inside today's
+  // folder and nest a second date under it.
+  QString chosenDir = QFileInfo(exportFilename).absolutePath();
+  if (Settings::SettingsExportLocation::exportDatedSubfolder.value()) {
+    QDir chosen(chosenDir);
+    if (chosen.dirName() == exportDateFolder() && chosen.cdUp()) {
+      chosenDir = chosen.absolutePath();
+    }
+  }
+  rememberExportDir(suffix, chosenDir);
 
   const bool exportResult = exportFileByName(rootGeom, exportFilename.toStdString(), exportInfo);
 
@@ -4579,20 +4604,101 @@ void MainWindow::processEvents()
   if (this->procevents) QApplication::processEvents();
 }
 
+/*!
+   Name of today's dated subfolder. The ISO form is the default because it is
+   the only one of the three that sorts chronologically in a file manager.
+ */
+static QString exportDateFolder()
+{
+  const QDate today = QDate::currentDate();
+  switch (Settings::SettingsExportLocation::exportDateFormat.value()) {
+  case ExportDateFormat::dayFirst:   return today.toString("dd-MM-yyyy");
+  case ExportDateFormat::monthFirst: return today.toString("MM-dd-yyyy");
+  case ExportDateFormat::isoYearFirst:
+  default:                           return today.toString("yyyy-MM-dd");
+  }
+}
+
+/*!
+   Per-design memory is keyed by a hash of the design's path rather than the
+   path itself: QSettings treats '/' as group nesting, and a Windows path is
+   full of characters that would either nest or need escaping.
+ */
+QString MainWindow::exportMemoryKey(const QString& suffix) const
+{
+  const QByteArray digest =
+    QCryptographicHash::hash(activeEditor->filepath.toUtf8(), QCryptographicHash::Sha1).toHex();
+  return QString::fromLatin1(digest) + "-" + suffix;
+}
+
+QString MainWindow::rememberedExportDir(const QString& suffix) const
+{
+  if (activeEditor->filepath.isEmpty()) return {};
+  const QSettingsCached settings;
+  return settings.value("export-folders/" + exportMemoryKey(suffix)).toString();
+}
+
+void MainWindow::rememberExportDir(const QString& suffix, const QString& dir)
+{
+  if (activeEditor->filepath.isEmpty() || dir.isEmpty()) return;
+  QSettingsCached settings;
+  settings.setValue("export-folders/" + exportMemoryKey(suffix), dir);
+}
+
+/*!
+   Directory the export dialog should open in, per the configured mode.
+
+   Dated subfolders apply only to the two modes where the user picked a
+   destination; "next to the design file" is deliberately left clean so it does
+   not scatter dated folders through source trees, and "last used" is the
+   pre-existing behaviour, left untouched.
+ */
+QString MainWindow::exportDirectory(const QString& suffix)
+{
+  const QString designDir = activeEditor->filepath.isEmpty()
+                              ? QString::fromStdString(PlatformUtils::userDocumentsPath())
+                              : QFileInfo(activeEditor->filepath).absolutePath();
+
+  QString dir = designDir;
+  bool allowDated = false;
+
+  switch (Settings::SettingsExportLocation::exportLocationMode.value()) {
+  case ExportLocationMode::nextToDesign: break;
+
+  case ExportLocationMode::perProject: {
+    const QString remembered = rememberedExportDir(suffix);
+    if (!remembered.isEmpty()) dir = remembered;
+    allowDated = true;
+    break;
+  }
+
+  case ExportLocationMode::fixedFolder: {
+    const auto configured =
+      QString::fromStdString(Settings::SettingsExportLocation::exportFixedFolder.value());
+    if (!configured.isEmpty()) dir = configured;
+    allowDated = true;
+    break;
+  }
+
+  case ExportLocationMode::lastUsed:
+  default: {
+    const auto path_it = this->exportPaths.find(suffix);
+    if (path_it != exportPaths.end()) dir = QFileInfo(path_it->second).absolutePath();
+    break;
+  }
+  }
+
+  if (allowDated && Settings::SettingsExportLocation::exportDatedSubfolder.value()) {
+    dir = QString("%1/%2").arg(dir, exportDateFolder());
+  }
+  return dir;
+}
+
 QString MainWindow::exportPath(const QString& suffix)
 {
-  const auto path_it = this->exportPaths.find(suffix);
   const auto basename =
     activeEditor->filepath.isEmpty() ? "Untitled" : QFileInfo(activeEditor->filepath).completeBaseName();
-  QString dir;
-  if (path_it != exportPaths.end()) {
-    dir = QFileInfo(path_it->second).absolutePath();
-  } else if (activeEditor->filepath.isEmpty()) {
-    dir = QString::fromStdString(PlatformUtils::userDocumentsPath());
-  } else {
-    dir = QFileInfo(activeEditor->filepath).absolutePath();
-  }
-  return QString("%1/%2.%3").arg(dir, basename, suffix);
+  return QString("%1/%2.%3").arg(exportDirectory(suffix), basename, suffix);
 }
 
 void MainWindow::jumpToLine(int line, int col)

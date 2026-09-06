@@ -439,6 +439,28 @@ SettingsEntryString SettingsExportPdf::exportPdfStrokeColor(SECTION_EXPORT_PDF, 
 SettingsEntryDouble SettingsExportPdf::exportPdfStrokeWidth(SECTION_EXPORT_PDF, "stroke-width", 0, 0.01,
                                                             999, 0.35);
 
+SettingsEntryEnum<ExportLocationMode> SettingsExportLocation::exportLocationMode(
+  SECTION_EXPORT_LOCATION, "mode",
+  {
+    {ExportLocationMode::lastUsed, "last-used", _("Last used folder")},
+    {ExportLocationMode::nextToDesign, "next-to-design", _("Next to the design file")},
+    {ExportLocationMode::perProject, "per-project", _("Remember per design")},
+    {ExportLocationMode::fixedFolder, "fixed-folder", _("Always this folder")},
+  },
+  ExportLocationMode::lastUsed);
+SettingsEntryString SettingsExportLocation::exportFixedFolder(SECTION_EXPORT_LOCATION, "fixed-folder",
+                                                              "");
+SettingsEntryBool SettingsExportLocation::exportDatedSubfolder(SECTION_EXPORT_LOCATION,
+                                                               "dated-subfolder", false);
+SettingsEntryEnum<ExportDateFormat> SettingsExportLocation::exportDateFormat(
+  SECTION_EXPORT_LOCATION, "date-format",
+  {
+    {ExportDateFormat::isoYearFirst, "iso", _("2026-09-06 (sorts correctly)")},
+    {ExportDateFormat::dayFirst, "day-first", _("06-09-2026 (day first)")},
+    {ExportDateFormat::monthFirst, "month-first", _("09-06-2026 (month first)")},
+  },
+  ExportDateFormat::isoYearFirst);
+
 SettingsEntryBool SettingsExport3mf::export3mfAlwaysShowDialog(SECTION_EXPORT_3MF, "always-show-dialog",
                                                                true);
 SettingsEntryEnum<Export3mfColorMode> SettingsExport3mf::export3mfColorMode(
