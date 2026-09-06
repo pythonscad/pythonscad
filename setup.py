@@ -756,6 +756,7 @@ def main():
               "src/core/ColorUtil.cc",
               "src/core/NodeDumper.cc",
               "src/core/StatCache.cc",
+              "src/core/UnicodeIdentifier.cc",
               ]  + language + arith + context + nodes
     io_export = [
               "src/io/export_stl.cc",
@@ -767,7 +768,6 @@ def main():
               "src/io/export_foldable.cc",
               "src/io/export_ps.cc",
               "src/io/export_wrl.cc",
-              "src/io/export_amf.cc",
               "src/io/export_nef.cc",
               "src/io/export_pdf.cc",
               "src/io/export_obj.cc",
@@ -777,7 +777,6 @@ def main():
               "src/io/import_json.cc",
               "src/io/import_obj.cc",
               "src/io/import_step.cc",
-              "src/io/import_amf.cc",
               "src/io/import_nef.cc",
               "src/io/import_svg.cc",
               "src/io/import_off.cc",

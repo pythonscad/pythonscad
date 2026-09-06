@@ -131,6 +131,15 @@ from pythonscad import *
 
 export(cube(10), "ipython-cube.stl")
 PY
+  cat > "$testdir/pyqt6-smoke.py" <<'PY'
+from PyQt6 import QtCore, QtWidgets, sip
+from pythonscad import qapp_ptr
+
+app = sip.wrapinstance(qapp_ptr(), QtWidgets.QApplication)
+assert app is not None
+print("PYQT6_PACKAGED_OK", QtCore.QT_VERSION_STR)
+raise SystemExit(0)
+PY
 }
 
 rs_run_logged() {
@@ -197,6 +206,7 @@ rs_smoke_binary() {
   local exe=$1
   local label=$2
   local workdir=$3
+  local expect_pyqt6=${4:-0}
 
   [[ -x "$exe" ]] || rs_die "executable is not runnable: $exe"
 
@@ -225,6 +235,14 @@ rs_smoke_binary() {
   rs_run_logged_in_dir "$label: IPython" "$testdir" "$testdir/ipython.log" "" \
     "$exe" --ipython ipython-smoke.py
   rs_file_nonempty "$testdir/ipython-cube.stl" "$label: IPython"
+
+  if [[ "$expect_pyqt6" == "1" ]]; then
+    rs_log "Smoke testing $label: packaged PyQt6"
+    rs_run_logged_in_dir "$label: packaged PyQt6" "$testdir" "$testdir/pyqt6.log" \
+      "$testdir/pyqt6-smoke.py" "$exe" --repl
+    grep -Fq "PYQT6_PACKAGED_OK" "$testdir/pyqt6.log" \
+      || rs_die "$label: packaged PyQt6 did not emit its success marker"
+  fi
 
   rs_log "Smoke testing $label: OK"
 }

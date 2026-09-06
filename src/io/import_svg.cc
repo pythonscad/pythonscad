@@ -84,6 +84,12 @@ double calc_alignment(const libsvg::align_t alignment, double page_mm, double sc
 // Resolves an SVG fill/stroke color string the same way for every caller (regular
 // import, color enumeration, and color-filtered import), so that Color4f equality
 // comparisons between them (e.g. against ClipperUtils::cleanUnion's grouping) agree.
+//
+// Keep fill:none as a valid fully-transparent color (alpha 0). export_svg.cc
+// maps r<0 to the fill-color option and a==0 to fill="none"; using the
+// unpainted sentinel here would change 2D SVG round-trips. Extrusion copies
+// the color onto 3D faces via Color4f::unpaintedIfFullyTransparent() so walls
+// are not drawn invisible.
 Color4f resolve_outline_color(const std::string& color)
 {
   if (color == "none") return Color4f(0, 0, 0, 0);  // transparent

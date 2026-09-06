@@ -46,6 +46,11 @@ wasm-test/node_modules/
 
 .cache/
 .claude/
+/.vs/
+/.vscode/
+/.idea/
+/.zed/
+*.code-workspace
 .clangd/
 /*.scad
 **/out*.*
@@ -70,7 +75,6 @@ object_script.openscad.Release
 /*.stl
 /*.dxf
 /*.off
-/*.amf
 /*.png
 /*.csg
 /*.nef3
@@ -179,3 +183,4 @@ _openscad*.so
 # MkDocs build output
 web/site/
 web/.venv/
+/builddir

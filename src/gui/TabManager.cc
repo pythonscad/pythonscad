@@ -68,6 +68,7 @@ namespace {
 uint64_t sessionDirtyGenerationValue = 0;
 bool sessionSaveWarningShown = false;
 bool skipSessionSaveOnQuit = false;
+bool sessionSavedForShutdown = false;
 
 QString untitledBasenameForLanguage(int language)
 {
@@ -676,6 +677,16 @@ void TabManager::uncommentSelection()
   editor->uncommentSelection();
 }
 
+void TabManager::moveLineUp()
+{
+  editor->moveLineUp();
+}
+
+void TabManager::moveLineDown()
+{
+  editor->moveLineDown();
+}
+
 void TabManager::toggleBookmark()
 {
   editor->toggleBookmark();
@@ -1094,7 +1105,7 @@ bool TabManager::refreshDocument()
     }
   }
   if (file_opened) {
-    parent->fileChangedOnDisk();
+    this->parent->fileChangedOnDisk();
   }
   return file_opened;
 }
@@ -1268,6 +1279,16 @@ void TabManager::setSkipSessionSave(bool skip)
 bool TabManager::shouldSkipSessionSave()
 {
   return skipSessionSaveOnQuit;
+}
+
+void TabManager::markSessionSavedForShutdown()
+{
+  sessionSavedForShutdown = true;
+}
+
+bool TabManager::wasSessionSavedForShutdown()
+{
+  return sessionSavedForShutdown;
 }
 
 void TabManager::setTabSessionData(EditorInterface *edt, const QString& filepath, const QString& content,

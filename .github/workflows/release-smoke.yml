@@ -59,7 +59,7 @@ jobs:
             runner: ubuntu-24.04
             timeout_minutes: 120
           - name: macOS smoke tests
-            runner: macos-15-intel
+            runner: macos-14
             timeout_minutes: 60
           - name: Windows smoke tests
             runner: windows-latest

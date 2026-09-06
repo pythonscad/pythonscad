@@ -69,6 +69,14 @@ public:
     return color_[0] >= 0.0f && color_[1] >= 0.0f && color_[2] >= 0.0f;
   }
   [[nodiscard]] bool hasAlpha() const { return color_[3] >= 0.0f; }
+  // SVG fill:none is stored as a valid fully-transparent color so 2D SVG
+  // export can round-trip fill="none". 3D faces should not inherit that
+  // paint; return the unpainted sentinel so renderers use the scheme default.
+  [[nodiscard]] Color4f unpaintedIfFullyTransparent() const
+  {
+    if (isValid() && a() == 0.0f) return Color4f();
+    return *this;
+  }
 
   void setRgba(int r, int g, int b, int a = 255)
   {

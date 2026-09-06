@@ -84,7 +84,6 @@ Containers& containers()
     add_item(*containers, {FileFormat::OBJ, "obj", "obj", "OBJ"});
     add_item(*containers, {FileFormat::OFF, "off", "off", "OFF"});
     add_item(*containers, {FileFormat::WRL, "wrl", "wrl", "VRML"});
-    add_item(*containers, {FileFormat::AMF, "amf", "amf", "AMF"});
     add_item(*containers, {FileFormat::_3MF, "3mf", "3mf", "3MF"});
     add_item(*containers, {FileFormat::DXF, "dxf", "dxf", "DXF"});
     add_item(*containers, {FileFormat::SVG, "svg", "svg", "SVG"});
@@ -172,7 +171,7 @@ bool is3D(FileFormat format)
 {
   return format == FileFormat::ASCII_STL || format == FileFormat::BINARY_STL ||
          format == FileFormat::OBJ || format == FileFormat::OFF || format == FileFormat::WRL ||
-         format == FileFormat::AMF || format == FileFormat::_3MF || format == FileFormat::NEFDBG ||
+         format == FileFormat::_3MF || format == FileFormat::NEFDBG ||
          format == FileFormat::PS || format == FileFormat::NEF3 || format == FileFormat::STEP ||
          format == FileFormat::POV;
 }
@@ -261,8 +260,12 @@ static void exportFile(const std::shared_ptr<const Geometry>& root_geom, std::os
   case FileFormat::OBJ:        export_obj(root_geom, output); break;
   case FileFormat::OFF:        export_off(root_geom, output); break;
   case FileFormat::WRL:        export_wrl(root_geom, output); break;
-  case FileFormat::AMF:        export_amf(root_geom, output); break;
-  case FileFormat::_3MF:       export_3mf(collect3mfParts(root_geom), output, exportInfo); break;
+  case FileFormat::_3MF:       {
+    Export3mfPartInfo info(root_geom, "PythonSCAD Model", nullptr);
+    std::vector<Export3mfPartInfo> infos;
+    infos.push_back(info);
+    export_3mf(infos, output, exportInfo);
+  } break;
   case FileFormat::DXF:   export_dxf(root_geom, output); break;
   case FileFormat::SVG:   export_svg(root_geom, output, exportInfo); break;
   case FileFormat::PDF:   export_pdf(root_geom, output, exportInfo); break;

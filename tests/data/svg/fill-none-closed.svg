@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="40mm" height="20mm" viewBox="0 0 40 20">
+  <!-- Inkscape-style stroke-only closed path. Must still import as filled CSG. -->
+  <path
+     style="fill:none;stroke:#000000;stroke-width:0.25"
+     d="M 2,2 L 38,2 L 38,18 L 2,18 Z" />
+</svg>

@@ -135,7 +135,7 @@ void add_slice_indices(PolygonIndices& indices, std::vector<Color4f>& colors,
     // matched the direction of diagonal for neighboring edges (which did not exhibit "equal" diagonals).
     bool flip = ((!o.positive) xor (back_twist));
     int color_ind = colors.size();
-    colors.push_back(o.color);
+    colors.push_back(o.color.unpaintedIfFullyTransparent());
     for (int i = 1; i <= o.vertices.size(); ++i) {
       // curr1: previous slice, current vertex
       // curr2: current slice, current vertex

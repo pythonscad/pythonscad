@@ -1175,7 +1175,7 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
     LOG(message_group::Warning,
         "Resulting 3D offset is not manifold anymore, further processing might be inaccurate");
 
-  int abs_eff_fn = 0;
+  int abs_eff_fn = discretizer.getCircularSegmentCount(fabs(off)).value_or(3);
   for (auto& e : edge_db) {
     Vector3d p1 = ps->vertices[e.first.ind1];
     Vector3d p2 = ps->vertices[e.first.ind2];
