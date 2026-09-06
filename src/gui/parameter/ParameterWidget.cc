@@ -624,9 +624,8 @@ void ParameterWidget::rebuildWidgets()
   // and setValue() would clamp to 0. Defer until the layout has settled.
   if (savedScrollValue > 0) {
     const int scrollValue = savedScrollValue;
-    QTimer::singleShot(0, this, [this, scrollValue]() {
-      scrollArea->verticalScrollBar()->setValue(scrollValue);
-    });
+    QTimer::singleShot(
+      0, this, [this, scrollValue]() { scrollArea->verticalScrollBar()->setValue(scrollValue); });
   }
   savedScrollValue = 0;
 }
