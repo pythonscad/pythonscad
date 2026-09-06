@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenSCAD 2013.02.07\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-05 20:19+0200\n"
+"POT-Creation-Date: 2026-09-06 23:38+0200\n"
 "PO-Revision-Date: 2019-09-17 \n"
 "Last-Translator: Pierre ROUZEAU <github.com/PRouzeau>\n"
 "Language-Team: French\n"
@@ -426,6 +426,7 @@ msgstr "Liste des couleurs"
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:402
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:404
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:406
+#: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:292
 msgid "Reset Sample Text"
 msgstr "Réinitialiser le texte d'exemple"
 
@@ -636,105 +637,69 @@ msgstr "ERREUR-EXPORT"
 msgid "DEPRECATED"
 msgstr "OBSOLÈTE"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:448
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:457
 msgid "Export 3MF Options"
 msgstr "Options d'export 3MF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:450
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:543
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:552
 msgid ""
 "<html><head/><body><p>Set the PDF page (paper) size.  </p></body></html>"
 msgstr ""
 "<html><head/><body><p>Définit la taille de la page (papier) du PDF.</p></"
 "body></html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:452
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
 msgid "Unit"
 msgstr "Unité"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:453
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:462
 #: src/core/Settings.cc:443
 msgid "Micron"
 msgstr "Micron"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:454
-msgid "micron"
-msgstr "micron"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:455
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:463
 msgid "Millimeter (default)"
 msgstr "Millimètre (par défaut)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:456
-msgid "millimeter"
-msgstr "millimeter"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:457
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:464
 #: src/core/Settings.cc:445
 msgid "Centimeter"
 msgstr "Centimètre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:458
-msgid "centimeter"
-msgstr "centimeter"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:465
 #: src/core/Settings.cc:446
 msgid "Meter"
 msgstr "Mètre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:460
-msgid "meter"
-msgstr "meter"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:466
 #: src/core/Settings.cc:447
 msgid "Inch"
 msgstr "Pouce"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:462
-msgid "inch"
-msgstr "inch"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:463
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:467
 msgid "Foot"
 msgstr "Pied"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:464
-msgid "foot"
-msgstr "foot"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:468
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:471
 msgid "Colors"
 msgstr "Couleurs"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:469
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
 msgid "Use colors from model and color scheme"
 msgstr "Utiliser les couleurs du modèle et du jeu de couleurs"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:470
-msgid "model"
-msgstr "model"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:471
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:473
 #: src/core/Settings.cc:436
 msgid "No colors"
 msgstr "Aucune couleur"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
-msgid "none"
-msgstr "none"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:473
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:474
 msgid "Use selected color for all objects"
 msgstr "Utiliser la couleur sélectionnée pour tous les objets"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:474
-msgid "selected-only"
-msgstr "selected-only"
-
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:478
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:563
 msgid "Meta data"
 msgstr "Métadonnées"
 
@@ -747,7 +712,7 @@ msgstr ""
 "le fichier exporté lorsque les métadonnées sont activées."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:481
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
 msgid "A copyright associated with this document"
 msgstr "Un copyright associé à ce document"
 
@@ -756,7 +721,7 @@ msgid "Copyright"
 msgstr "Copyright"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:484
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:567
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:569
 msgid "Title, leave empty to use the file name"
 msgstr "Titre, laisser vide pour utiliser le nom du fichier"
 
@@ -779,7 +744,7 @@ msgid "An industry rating associated with this document"
 msgstr "Une classification industrielle associée à ce document"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:494
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:576
 msgid "A name for a designer of this document"
 msgstr "Le nom d'un concepteur de ce document"
 
@@ -792,7 +757,7 @@ msgid "License information associated with this document"
 msgstr "Informations de licence associées à ce document"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:504
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:564
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:566
 msgid "A description of the document"
 msgstr "Une description du document"
 
@@ -826,78 +791,50 @@ msgstr "Toujours afficher la boîte de dialogue"
 msgid "Cancel"
 msgstr "Annuler"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:541
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:550
 msgid "Export PDF Options"
 msgstr "Options d'export PDF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:545
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:554
 msgid "Page Size"
 msgstr "Taille de la page"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:546
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
 #: src/core/Settings.cc:388
 msgid "A6 (105 x 148 mm)"
 msgstr "A6 (105 x 148 mm)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:547
-msgid "a6"
-msgstr "a6"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:548
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:556
 #: src/core/Settings.cc:389
 msgid "A5 (148 x 210 mm)"
 msgstr "A5 (148 x 210 mm)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:549
-msgid "a5"
-msgstr "a5"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:550
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
 #: src/core/Settings.cc:390
 msgid "A4 (210x297 mm)"
 msgstr "A4 (210x297 mm)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:551
-msgid "a4"
-msgstr "a4"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:552
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:558
 #: src/core/Settings.cc:391
 msgid "A3 (297x420 mm)"
 msgstr "A3 (297x420 mm)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:553
-msgid "a3"
-msgstr "a3"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:554
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:559
 #: src/core/Settings.cc:392
 msgid "Letter (8.5x11 in)"
 msgstr "Letter (8.5x11 po)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
-msgid "letter"
-msgstr "letter"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:556
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:560
 #: src/core/Settings.cc:393
 msgid "Legal (8.5x14 in)"
 msgstr "Legal (8.5x14 po)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
-msgid "legal"
-msgstr "legal"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:558
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
 #: src/core/Settings.cc:394
 msgid "Tabloid (11x17 in)"
 msgstr "Tabloïd (11x17 po)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:560
-msgid "tabloid"
-msgstr "tabloid"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:562
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:564
 msgid ""
 "The fields Title, Creator and CreateDate are always filled in the exported "
 "file when meta data is enabled."
@@ -905,19 +842,19 @@ msgstr ""
 "Les champs Title, Creator et CreateDate sont toujours renseignés dans le "
 "fichier exporté lorsque les métadonnées sont activées."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:568
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
 msgid "Subject"
 msgstr "Sujet"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
 msgid "Keywords"
 msgstr "Mots-clés"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:577
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:579
 msgid "Author"
 msgstr "Auteur"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:580
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
 msgid ""
 "<html><head/><body><p>Set the direction of the largest page dimension.</p></"
 "body></html>"
@@ -925,25 +862,21 @@ msgstr ""
 "<html><head/><body><p>Définit la direction de la plus grande dimension de la "
 "page.</p></body></html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:584
 msgid "Page Orientation"
 msgstr "Orientation de la page"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:583
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:585
 #: src/core/Settings.cc:398
 msgid "Portrait (Vertical)"
 msgstr "Portrait (vertical)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:585
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:587
 #: src/core/Settings.cc:399
 msgid "Landscape (Horizontal)"
 msgstr "Paysage (horizontal)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:586
-msgid "landscape"
-msgstr "landscape"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:588
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:589
 msgid ""
 "<html><head/><body><p>Determine best orientation based on maximum geometry "
 "dimension.</p></body></html>"
@@ -951,14 +884,10 @@ msgstr ""
 "<html><head/><body><p>Détermine la meilleure orientation selon la dimension "
 "maximale de la géométrie.</p></body></html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:590
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:591
 #: src/core/Settings.cc:400
 msgid "Auto"
 msgstr "Auto"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:591
-msgid "auto"
-msgstr "auto"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:592
 msgid "Annotations"
@@ -1087,10 +1016,6 @@ msgstr "Active le contour de la géométrie exportée."
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:291
 msgid "Font List"
 msgstr "Liste des polices"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:292
-msgid "ResetSampleText"
-msgstr "ResetSampleText"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:293
 msgid "Open Font Folder"
@@ -2161,8 +2086,9 @@ msgid "Editor"
 msgstr "Éditeur"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2469
-msgid "Features"
-msgstr "Fonctionnalités"
+#, fuzzy
+msgid "Experimental"
+msgstr "Fonctionnalités d'export"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2471
 msgid "Enable/Disable experimental features"
@@ -2883,24 +2809,6 @@ msgstr "Activer les services distants nécessitant un accès réseau"
 #: build/OpenSCADLibInternal_autogen/include/ui_ProgressWidget.h:70
 msgid "%v / %m"
 msgstr "%v / %m"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ShortcutConfigurator.h:68
-msgid "Shortcut"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ShortcutConfigurator.h:69
-#, fuzzy
-msgid "Reset"
-msgstr "Jeu de paramètres"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ShortcutConfigurator.h:71
-#, fuzzy
-msgid "Search action..."
-msgstr "Rechercher une chaîne de caractères"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:266
-msgid "ViewportControlWidget"
-msgstr "ViewportControlWidget"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:271
 msgid "Aspect Ratio"
@@ -3687,6 +3595,77 @@ msgstr ""
 "2D pour l'extrusion il est aussi possible de lire les paramètres des "
 "fichiers DXF. En sus des fichiers DXF, OpenSCAD peut lire et créer des "
 "modèles 3D aux formats STL et OFF."
+
+#~ msgid "micron"
+#~ msgstr "micron"
+
+#~ msgid "millimeter"
+#~ msgstr "millimeter"
+
+#~ msgid "centimeter"
+#~ msgstr "centimeter"
+
+#~ msgid "meter"
+#~ msgstr "meter"
+
+#~ msgid "inch"
+#~ msgstr "inch"
+
+#~ msgid "foot"
+#~ msgstr "foot"
+
+#~ msgid "model"
+#~ msgstr "model"
+
+#~ msgid "none"
+#~ msgstr "none"
+
+#~ msgid "selected-only"
+#~ msgstr "selected-only"
+
+#~ msgid "a6"
+#~ msgstr "a6"
+
+#~ msgid "a5"
+#~ msgstr "a5"
+
+#~ msgid "a4"
+#~ msgstr "a4"
+
+#~ msgid "a3"
+#~ msgstr "a3"
+
+#~ msgid "letter"
+#~ msgstr "letter"
+
+#~ msgid "legal"
+#~ msgstr "legal"
+
+#~ msgid "tabloid"
+#~ msgstr "tabloid"
+
+#~ msgid "landscape"
+#~ msgstr "landscape"
+
+#~ msgid "auto"
+#~ msgstr "auto"
+
+#~ msgid "ResetSampleText"
+#~ msgstr "ResetSampleText"
+
+#~ msgid "Features"
+#~ msgstr "Fonctionnalités"
+
+#, fuzzy
+#~ msgid "Reset"
+#~ msgstr "Jeu de paramètres"
+
+#, fuzzy
+#~ msgid "Search action..."
+#~ msgstr "Rechercher une chaîne de caractères"
+
+#~ msgid "ViewportControlWidget"
+#~ msgstr "ViewportControlWidget"
 
 #~ msgid "OpenSCAD Font List"
 #~ msgstr "Liste des polices OpenSCAD"
