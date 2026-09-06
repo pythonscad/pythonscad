@@ -3029,6 +3029,65 @@ msgstr "Añadir parámetro"
 msgid "Remove Parameter"
 msgstr "Eliminar parámetro"
 
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
+#, fuzzy
+msgid "AI Preferences"
+msgstr "Preferencias"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
+msgid ""
+"AI assistant integration is active. Configure your connection profiles and "
+"parameters below."
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
+msgid "Profiles"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
+msgid "Active Profile"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
+#, fuzzy
+msgid "New Profile"
+msgstr "&Nuevo Archivo"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
+msgid "Delete"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
+msgid "API Configuration"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2666
+msgid "API Endpoint"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
+msgid "System Prompt / Instructions"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
+msgid "Default User Prompt"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
+#, fuzzy
+msgid "API Parameters"
+msgstr "Parámetro"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
+#, fuzzy
+msgid "Add Parameter"
+msgstr "Parámetro"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
+#, fuzzy
+msgid "Remove Parameter"
+msgstr "Parámetro"
+
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:180
 msgid "Run local Application"
 msgstr "Ejecutar aplicación local"
@@ -3060,6 +3119,20 @@ msgstr "Nombre del autor (opcional)"
 #: build/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:89
 msgid "Publish on pythonscad.org"
 msgstr "Publicar en pythonscad.org"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_ShortcutConfigurator.h:68
+msgid "Shortcut"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_ShortcutConfigurator.h:69
+#, fuzzy
+msgid "Reset"
+msgstr "Restablecer"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_ShortcutConfigurator.h:71
+#, fuzzy
+msgid "Search action..."
+msgstr "Buscar palabra"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:266
 msgid "ViewportControlWidget"
@@ -3396,14 +3469,14 @@ msgstr ""
 "Este controlador no se activó durante la compilación y por tanto no está "
 "disponible."
 
-#: src/gui/input/AxisConfigWidget.h:92
+#: src/gui/input/AxisConfigWidget.h:94
 msgid ""
 "The DBUS driver is not for actual devices but for remote control, Linux only."
 msgstr ""
 "El controlador DBUS no es para dispositivos físicos sino para control "
 "remoto; solo Linux."
 
-#: src/gui/input/AxisConfigWidget.h:94
+#: src/gui/input/AxisConfigWidget.h:96
 msgid ""
 "The HIDAPI driver communicates directly with the 3D mice, Windows and macOS."
 msgstr ""
@@ -4229,9 +4302,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "Font Lists"
 #~ msgstr "Lista de &Fuentes"
-
-#~ msgid "Hide Editor"
-#~ msgstr "Ocultar Editor"
 
 #~ msgid "Surfaces"
 #~ msgstr "Superficies"
