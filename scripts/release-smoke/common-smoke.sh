@@ -135,9 +135,19 @@ PY
 from PyQt6 import QtCore, QtWidgets, sip
 from pythonscad import qapp_ptr
 
-app = sip.wrapinstance(qapp_ptr(), QtWidgets.QApplication)
-assert app is not None
-print("PYQT6_PACKAGED_OK", QtCore.QT_VERSION_STR)
+# --repl never starts the GUI, so qapp_ptr() is 0. wrapinstance(0) raises
+# and repl() still exits 0, which used to look like a silent packaging miss.
+# Importing the bundled bindings is the packaging check; wrap the C++ app
+# only when one actually exists.
+ptr = qapp_ptr()
+if ptr:
+    app = sip.wrapinstance(ptr, QtWidgets.QApplication)
+    assert app is not None
+
+marker = "PYQT6_PACKAGED_OK " + QtCore.QT_VERSION_STR
+print(marker, flush=True)
+with open("pyqt6-ok.txt", "w", encoding="utf-8") as fh:
+    fh.write(marker + "\n")
 raise SystemExit(0)
 PY
 }
@@ -238,10 +248,13 @@ rs_smoke_binary() {
 
   if [[ "$expect_pyqt6" == "1" ]]; then
     rs_log "Smoke testing $label: packaged PyQt6"
+    rm -f "$testdir/pyqt6-ok.txt"
     rs_run_logged_in_dir "$label: packaged PyQt6" "$testdir" "$testdir/pyqt6.log" \
       "$testdir/pyqt6-smoke.py" "$exe" --repl
-    grep -Fq "PYQT6_PACKAGED_OK" "$testdir/pyqt6.log" \
-      || rs_die "$label: packaged PyQt6 did not emit its success marker"
+    if [[ ! -s "$testdir/pyqt6-ok.txt" ]]; then
+      rs_print_log_excerpt "$testdir/pyqt6.log"
+      rs_die "$label: packaged PyQt6 did not emit its success marker"
+    fi
   fi
 
   rs_log "Smoke testing $label: OK"

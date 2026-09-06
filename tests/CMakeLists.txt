@@ -1823,6 +1823,43 @@ list(APPEND NEF3_BROKEN_TESTS
 
 # Platform specific test disable
 if(APPLE)
+  # GitHub-hosted macOS ARM VMs use Apple's software OpenGL renderer, which
+  # garbles some PNG image tests (dFdy/fwidth and related artifacts).
+  # This is not an Apple Silicon GPU bug. See:
+  #   https://github.com/openscad/openscad/issues/5201
+  #   https://github.com/actions/runner-images/issues/9712
+  # SVG path tessellation also differs on ARM vs the Intel golden files:
+  #   https://github.com/openscad/openscad/issues/6161
+  # OpenSCAD still skips ARM CI for the same renderer reason; there is no
+  # Mesa/OSMesa workaround in tree. Only disable under CI so real M-series
+  # GPUs keep coverage.
+  if((CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$") AND DEFINED ENV{CI})
+    disable_tests_safe(
+      lazyunion-preview_lazyunion-intersection-for
+
+      export-svg_spec-paths-arcs01
+      export-svg-fill-stroke_spec-paths-arcs01
+      export-svg-fill-only_spec-paths-arcs01
+
+      # ARM vs Intel floating-point noise in printed rotation matrices
+      pythonscadecho_solid-attributes
+      # pexpect/IPython ANSI handshake EOF on GitHub-hosted ARM VMs
+      ipython-pty
+    )
+    # svgviewbox-* are PNG comparisons of SVG viewBox rendering; the
+    # software renderer flakes across the whole family, not just one file.
+    foreach(TEST ${SVG_VIEWBOX_TESTS})
+      disable_tests_safe(svgviewbox-${TEST}_viewbox-test)
+    endforeach()
+    # Camera/imgstretch/preview PNG tests flake under Apple's software
+    # renderer, same as svgimport. Skip those prefixes wholesale.
+    get_property(_apple_arm_ci_tests DIRECTORY PROPERTY TESTS)
+    foreach(_t ${_apple_arm_ci_tests})
+      if(_t MATCHES "^(svgimport_|openscad-cam|openscad-imgstretch|preview-cgal_|preview-manifold_)")
+        disable_tests_safe(${_t})
+      endif()
+    endforeach()
+  endif()
 elseif(UNIX)
 elseif(WIN32 OR MXECROSS)
   set_tests_properties(

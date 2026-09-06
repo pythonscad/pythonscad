@@ -130,7 +130,7 @@ jobs:
           dnf list available 2>/dev/null | grep -E '^python3\.(1[0-3])' || echo "keine gefunden"
           echo "--- rpm %python3_version ---"
           rpm -E %python3_version
-           
+
       - name: Fetch tags for version detection
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE" || true
@@ -182,12 +182,15 @@ jobs:
           dnf builddep -y pythonscad.spec
 
       - name: Cache PyQt6 bindings (amd64)
-        uses: actions/cache@v6
+        if: matrix.arch == 'amd64'
+        # Release/workflow_dispatch only (no pull_request), so PRs cannot poison this cache.
+        uses: actions/cache@v6 # zizmor: ignore[cache-poisoning]
         with:
           path: libraries/python/PyQt6
           key: pyqt6-bindings-rpm-${{ matrix.container }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
 
       - name: Build PyQt6 bindings (amd64)
+        if: matrix.arch == 'amd64'
         run: |
           dnf install -y qt6-qtbase-devel
           test -d libraries/python/PyQt6 || ./scripts/ci/build-pyqt6-bindings-linux.sh
