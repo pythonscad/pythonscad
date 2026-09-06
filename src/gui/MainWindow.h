@@ -44,8 +44,8 @@ Q_IMPORT_PLUGIN(QSvgPlugin)
 #endif
 
 class BuiltinContext;
-class CGALWorker;
 class CSGWorker;
+class GeometryWorker;
 class CSGNode;
 class CSGProducts;
 class FontListDialog;
@@ -118,8 +118,8 @@ public:
 
   Measurement::Measurement meas;
 
-  int compileErrors;
-  int compileWarnings;
+  int compileErrors = 0;
+  int compileWarnings = 0;
 
   MainWindow(const QStringList& filenames);
   std::string loadInitFile(void);
@@ -507,8 +507,8 @@ private:
   bool procevents{false};
   QTemporaryFile *tempFile{nullptr};
   ProgressWidget *progresswidget{nullptr};
-  CGALWorker *cgalworker;
   CSGWorker *csgworker;
+  GeometryWorker *geometryWorker;
   QMutex consolemutex;
   DragResult dragResult;
   EditorInterface *renderedEditor{
