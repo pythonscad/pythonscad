@@ -3504,8 +3504,7 @@ Response GeometryEvaluator::visit(State& state, const WrapNode& node)
   std::shared_ptr<const Geometry> geom = applyToChildren3D(node, OpenSCADOperator::UNION).constptr();
   if (geom) {
     std::shared_ptr<const PolySet> ps = std::dynamic_pointer_cast<const PolySet>(geom);
-    if (ps != nullptr) {
-    } else ps = PolySetUtils::getGeometryAsPolySet(geom);
+    if (ps == nullptr) ps = PolySetUtils::getGeometryAsPolySet(geom);
     if (ps != nullptr) {
       std::unique_ptr<Geometry> ps_wrapped = wrapObject(node, ps.get());
       newgeom = std::move(ps_wrapped);

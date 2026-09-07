@@ -15,7 +15,7 @@ Wrap a flat object around a cylinder. This transforms a planar shape so that it 
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `obj` | solid | — | The flat object to wrap |
+| `obj` | solid | — | The flat 3d object to wrap |
 | `target` | solid | `None` | The target 2D object to wrap around. Optional if `r` or `d` is given |
 | `r` | float | `None` | Cylinder radius (alternative to providing a target) |
 | `d` | float | `None` | Cylinder diameter |
