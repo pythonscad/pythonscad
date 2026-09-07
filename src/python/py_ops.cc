@@ -232,6 +232,10 @@ PyObject *python_oo_wrap(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_color_core(PyObject *obj, PyObject *color, double alpha)
 {
+  if (color == nullptr) {
+    PyErr_SetString(PyExc_TypeError, "No color specified");
+    return NULL;
+  }
   PyObject *child_dict_raw = nullptr;
   std::shared_ptr<AbstractNode> child;
   PyTypeObject *type = PyOpenSCADObjectType(obj);
