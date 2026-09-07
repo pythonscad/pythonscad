@@ -33,7 +33,7 @@ const Feature Feature::ExperimentalLazyUnion("lazy-union", "Enable lazy unions."
 const Feature Feature::ExperimentalPythonSeparateObjects(
   "python-separate-objects",
   "Keep objects passed to Python <code>show()</code> as separate top-level objects instead of "
-  "unioning them, so 3MF and AMF export can write one object per part.");
+  "unioning them, so 3MF export can write one object per part.");
 const Feature Feature::ExperimentalVxORenderersIndexing("vertex-object-renderers-indexing",
                                                         "Enable indexing in vertex object renderers");
 const Feature Feature::ExperimentalTextMetricsFunctions(

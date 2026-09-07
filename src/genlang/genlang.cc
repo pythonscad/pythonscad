@@ -19,7 +19,7 @@ void show_final(void)
     if (Feature::ExperimentalPythonSeparateObjects.is_enabled()) {
       /* A ListNode sitting at the root is unpacked into a GeometryList by the
        * geometry evaluator rather than being unioned, which is what lets the
-       * 3MF and AMF writers emit one object per part. Every other format is
+       * 3MF writers emit one object per part. Every other format is
        * handed a fused solid by the exporter, so nothing downstream breaks. */
       genlang_result_node = std::make_shared<ListNode>(instance);
     } else {
