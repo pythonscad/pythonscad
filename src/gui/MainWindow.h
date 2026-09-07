@@ -389,6 +389,7 @@ private slots:
   void on_designShareDesign_triggered();
   void on_designLoadShareDesign_triggered();
   void handleMeasurementClicked(QAction *clickedAction);
+  void findHandleClicked();
   void on_designCheckValidity_triggered();
   void on_designActionDisplayAST_triggered();
   void on_designActionDisplayPython_triggered();

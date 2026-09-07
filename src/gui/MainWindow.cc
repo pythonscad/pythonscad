@@ -2233,6 +2233,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
         this->activeMeasurement = nullptr;
         meas.stopMeasure();
       }
+      if (this->qglview->handle_mode) {
+        this->qglview->handle_mode = false;
+        qglview->update();
+      }
     }
   }
   return QMainWindow::eventFilter(obj, event);
@@ -2796,6 +2800,12 @@ void MainWindow::handleMeasurementClicked(QAction *clickedAction)
   if (clickedAction == designActionFindHandle) {
     meas.startFindHandle();
   }
+}
+
+void MainWindow::findHandleClicked(void)
+{
+  this->qglview->handle_mode = this->designActionFindHandle->isChecked();
+  qglview->update();
 }
 
 void MainWindow::leftClick(QPoint mouse)
@@ -5012,7 +5022,7 @@ void MainWindow::setupMenusAndActions()
   connect(this->exportFormatMapper, static_cast<void (QSignalMapper::*)(int)>(&QSignalMapper::mapped),
           this, &MainWindow::actionExportFileFormat);
 #endif
-
+ ((QApplication *) qapp_global)->installEventFilter(this);
   frameCompileResult->hide();
   this->labelCompileResultMessage->setOpenExternalLinks(false);
   connect(this->labelCompileResultMessage, &QLabel::linkActivated, this, &MainWindow::showLink);
@@ -5067,6 +5077,7 @@ void MainWindow::setupMenusAndActions()
   measurementGroup->addAction(designActionMeasureDist);
   measurementGroup->addAction(designActionMeasureAngle);
   connect(this->measurementGroup, &QActionGroup::triggered, this, &MainWindow::handleMeasurementClicked);
+  connect(this->designActionFindHandle, &QAction::triggered, this, &MainWindow::findHandleClicked);
 
   exportMap[FileFormat::BINARY_STL] = this->fileActionExportBinarySTL;
   exportMap[FileFormat::ASCII_STL] = this->fileActionExportAsciiSTL;
