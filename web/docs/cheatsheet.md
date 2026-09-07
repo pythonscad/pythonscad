@@ -128,8 +128,8 @@
       <div><code>cube(5).pull([1,1,3], [4,-2,5]).show()</code></div>
 
       <div class="func"><code><a href="../reference/wrap/#wrap">wrap</a>(obj, target, r|d)</code></div>
-      <div>Wrap a flat object around a cylinder</div>
-      <div><code>square(10).wrap(cylinder(r=5,h=10)).show()</code></div>
+      <div>Wrap a flat object around a circle</div>
+      <div><code>cube([20,1,10]).wrap(20).show()</code></div>
 
       <div class="func"><code><a href="../reference/align/#align">align</a>(obj, refmat, objmat, flip)</code></div>
       <div>Align object to a handle / reference matrix</div>
