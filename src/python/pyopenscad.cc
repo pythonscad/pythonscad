@@ -36,6 +36,7 @@
 #include <system_error>
 #include <vector>
 #include <glview/RenderSettings.h>
+#include <atomic>
 #ifdef _WIN32
 // AttachConsole / GetStdHandle / _wfreopen for the --repl/--ipython
 // console reattach dance (see windows_reattach_console_for_repl below).
@@ -287,6 +288,7 @@ std::list<std::string> pythonInventory;
 AssignmentList customizer_parameters;
 AssignmentList customizer_parameters_finished;
 bool pythonDryRun = false;
+bool pythonPreview = false;
 PyObject *python_result_obj = nullptr;
 std::vector<SelectedObject> python_result_handle;
 bool python_runipython = false;
@@ -344,23 +346,29 @@ PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<Abs
   return nullptr;
 }
 
-// PyGILState_STATE gstate=PyGILState_LOCKED;
+std::atomic<bool> pythonModalDialogActive{false};
 PyThreadState *tstate = nullptr;
+static thread_local int lockDepth = 0;
 
 void python_lock(void)
 {
-  // #ifndef _WIN32
-  if (tstate != nullptr && pythonInitDict != nullptr) PyEval_RestoreThread(tstate);
-  // #endif
+  if (pythonModalDialogActive.load()) return;
+  if (pythonInitDict == nullptr) return;
+  lockDepth++;
+  if (lockDepth == 0 && tstate != nullptr) {
+    PyEval_RestoreThread(tstate);
+  }
 }
 
 void python_unlock(void)
 {
-  // #ifndef _WIN32
-  if (pythonInitDict != nullptr) tstate = PyEval_SaveThread();
-  // #endif
+  if (pythonModalDialogActive.load()) return;
+  if (pythonInitDict == nullptr) return;
+  if (lockDepth == 0) {
+    tstate = PyEval_SaveThread();
+  }
+  lockDepth--;
 }
-
 const char *python_calltip(const char *funcname)
 {
   for (PyMethodDef *m = PyOpenSCADFunctions; m->ml_name != NULL; m++) {
@@ -1559,6 +1567,10 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
     PyGILState_Release(pathGil);
   }
   std::ostringstream stream;
+  /* Always refresh pythonPreview. Call sites that pass nullptr (REPL,
+   * IPython, Emscripten, GUI startup) must not keep a stale true from a
+   * previous F5 and suppress later export() writes. */
+  pythonPreview = r != nullptr && r->preview;
   if (r != nullptr) {
     stream << "preview=" << (r->preview ? "True" : "False") << "\n";
 
@@ -1576,6 +1588,8 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
 
     const auto vpf = r->camera.fovValue();
     stream << "vpf=" << vpf << "\n";
+  } else {
+    stream << "preview=False\n";
   }
   stream << commandline_commands << "\n";
   {
@@ -1592,6 +1606,113 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
   full_node = std::make_shared<CubeNode>(instance);  // just placeholders
 }
 
+void snapshotPythonInventory()
+{
+  if (!Py_IsInitialized() || !pythonMainModule) return;
+
+  PyGILState_STATE st = PyGILState_Ensure();
+  PyObject *key, *value;
+  Py_ssize_t pos = 0;
+  PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
+  while (PyDict_Next(maindict, &pos, &key, &value)) {
+    if (!PyUnicode_Check(key)) continue;
+    std::string key_str;
+    if (!python_pyobject_to_utf8(key, key_str, "snapshotPythonInventory() key")) {
+      PyErr_Clear();
+      continue;
+    }
+    if (std::find(pythonInventory.begin(), pythonInventory.end(), key_str) == pythonInventory.end()) {
+      pythonInventory.push_back(key_str);
+    }
+  }
+  PyGILState_Release(st);
+}
+
+bool python_get_static_calltip(const std::string& className, std::string& result)
+{
+  if (!pythonMainModule) return false;
+
+  PyGILState_STATE gstate = PyGILState_Ensure();
+  bool ok = false;
+
+  PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
+  PyObject *classObj = PyDict_GetItemString(maindict, className.c_str());
+  if (classObj != nullptr) {
+    PyObject *method = PyObject_GetAttrString(classObj, "get_calltip");
+    if (method != nullptr && PyCallable_Check(method)) {
+      PyObject *funcresult = PyObject_CallObject(method, nullptr);
+      if (funcresult != nullptr) {
+        if (PyUnicode_Check(funcresult)) {
+          const char *calltip = PyUnicode_AsUTF8(funcresult);
+          if (calltip != nullptr) {
+            result = calltip;
+            ok = true;
+          } else {
+            PyErr_Clear();
+          }
+        }
+        Py_DECREF(funcresult);
+      } else {
+        PyErr_Print();
+        PyErr_Clear();
+      }
+    } else {
+      PyErr_Clear();
+    }
+    Py_XDECREF(method);
+  } else {
+    PyErr_Clear();  // A missing name is not an error; it is simply not a match.
+  }
+
+  PyGILState_Release(gstate);
+  return ok;
+}
+
+bool python_call_static_editor_method(const std::string& className, const std::string& methodName,
+                                      int position)
+{
+  if (!pythonMainModule) return false;
+
+  PyGILState_STATE gstate = PyGILState_Ensure();
+  bool called = false;
+
+  PyObject *maindict = PyModule_GetDict(pythonMainModule.get());
+  PyObject *classObj = PyDict_GetItemString(maindict, className.c_str());
+  if (classObj != nullptr) {
+    PyObject *method = PyObject_GetAttrString(classObj, methodName.c_str());
+    if (method != nullptr && PyCallable_Check(method)) {
+      PyObject *posObj = PyLong_FromLong(position);
+      if (posObj != nullptr) {
+        PyObject *args = PyTuple_Pack(1, posObj);
+        Py_DECREF(posObj);
+        if (args != nullptr) {
+          PyObject *funcresult = PyObject_CallObject(method, args);
+          Py_DECREF(args);
+
+          if (funcresult != nullptr) {
+            Py_DECREF(funcresult);
+            called = true;
+          } else {
+            PyErr_Print();
+            PyErr_Clear();
+          }
+        } else {
+          PyErr_Clear();
+        }
+      } else {
+        PyErr_Clear();
+      }
+    } else {
+      PyErr_Clear();  // A missing method is not an error; simply do nothing.
+    }
+    Py_XDECREF(method);
+  } else {
+    PyErr_Clear();  // An unknown class is not an error either.
+  }
+
+  PyGILState_Release(gstate);
+  return called;
+}
 void finishPython(void)
 {
   if (!pythonDryRun) {

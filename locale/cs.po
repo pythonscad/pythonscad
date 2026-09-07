@@ -3385,14 +3385,14 @@ msgid ""
 "This driver was not enabled during build time and is thus not available."
 msgstr "Tento ovladač nebyl povolen při sestavení a proto není k dispozici."
 
-#: src/gui/input/AxisConfigWidget.h:92
+#: src/gui/input/AxisConfigWidget.h:94
 msgid ""
 "The DBUS driver is not for actual devices but for remote control, Linux only."
 msgstr ""
 "Ovladač DBUS není pro skutečná zařízení, ale pro vzdálené ovládání, pouze "
 "Linux."
 
-#: src/gui/input/AxisConfigWidget.h:94
+#: src/gui/input/AxisConfigWidget.h:96
 msgid ""
 "The HIDAPI driver communicates directly with the 3D mice, Windows and macOS."
 msgstr "Ovladač HIDAPI komunikuje přímo se 3D myšemi, Windows a macOS."

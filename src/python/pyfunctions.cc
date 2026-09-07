@@ -758,7 +758,7 @@ PyMethodDef PyOpenSCADFunctions[] = {
    "Split a compound object into its parts.\n"
    "separate(obj)"},
   {"export", (PyCFunction)python_export, METH_VARARGS | METH_KEYWORDS,
-   "Write object to a file (STL, etc.).\n"
+   "Write object to a file (STL, etc.). No-op during F5 preview.\n"
    "export(obj, file=\"out.stl\")"},
 
   {"linear_extrude", (PyCFunction)python_linear_extrude, METH_VARARGS | METH_KEYWORDS,
@@ -927,15 +927,26 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"add_menuitem", (PyCFunction)python_add_menuitem, METH_VARARGS | METH_KEYWORDS,
    "Add a custom menu item to the GUI.\n"
    "add_menuitem(menuname=\"Tools\", itemname=\"My Action\", callback=\"my_callback\")"},
+
+  {"add_parameter_widget", (PyCFunction)python_add_parameter_widget, METH_VARARGS | METH_KEYWORDS,
+   "Register custom customizer widget type"},
+  {"set_modal_dialog_active", python_set_modal_dialog_active, METH_VARARGS,
+ "Suspend python_lock()/python_unlock() while a modal PyQt6 dialog is open"},
   {"nimport", (PyCFunction)python_nimport, METH_VARARGS | METH_KEYWORDS,
    "Import a Python model from a URL (not an STL).\n"
    "nimport(url=\"https://example.com/model.py\")"},
   {"qapp_ptr", python_qapp_ptr, METH_NOARGS,
    "Get raw pointer to the Qt application.\n"
    "qapp_ptr()"},
-  {"mainwindow_ptr", python_mainwindow_ptr, METH_NOARGS,
-   "Get raw pointer to the main window.\n"
+  {"mainwindow_ptr", (PyCFunction)python_mainwindow_ptr, METH_NOARGS,
+   "Get raw pointer to the running main window.\n"
    "mainwindow_ptr()"},
+  {"editor_get_call_args", (PyCFunction)python_editor_get_call_args, METH_VARARGS,
+   "Get the current editor call's argument text.\n"
+   "editor_get_call_args(position)"},
+  {"editor_replace_call_args", (PyCFunction)python_editor_replace_call_args, METH_VARARGS,
+   "Replace the current editor call's argument text.\n"
+   "editor_replace_call_args(position, new_arguments)"},
 #endif
   {"model", (PyCFunction)python_model, METH_VARARGS | METH_KEYWORDS,
    "Return the current top-level model object.\n"

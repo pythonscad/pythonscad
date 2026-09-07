@@ -43,6 +43,11 @@ Passing a list of solids implicitly creates a union.
 
 Export an object to a file. Supports STL, 3MF, OFF, AMF, and other formats based on the file extension.
 
+`export()` writes the file only when `preview` is false: F6 in the GUI,
+CLI `--render`, or a CLI mesh `-o` format such as STL/3MF. During F5
+preview (and CLI echo/PNG without `--render`) it is a no-op, so use
+`show()` for the viewport.
+
 **Syntax:**
 
 === "Python"

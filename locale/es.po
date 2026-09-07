@@ -3061,6 +3061,20 @@ msgstr "Nombre del autor (opcional)"
 msgid "Publish on pythonscad.org"
 msgstr "Publicar en pythonscad.org"
 
+#: build/OpenSCADLibInternal_autogen/include/ui_ShortcutConfigurator.h:68
+msgid "Shortcut"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_ShortcutConfigurator.h:69
+#, fuzzy
+msgid "Reset"
+msgstr "Restablecer"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_ShortcutConfigurator.h:71
+#, fuzzy
+msgid "Search action..."
+msgstr "Buscar palabra"
+
 #: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:266
 msgid "ViewportControlWidget"
 msgstr "Control del viewport"
@@ -3396,14 +3410,14 @@ msgstr ""
 "Este controlador no se activó durante la compilación y por tanto no está "
 "disponible."
 
-#: src/gui/input/AxisConfigWidget.h:92
+#: src/gui/input/AxisConfigWidget.h:94
 msgid ""
 "The DBUS driver is not for actual devices but for remote control, Linux only."
 msgstr ""
 "El controlador DBUS no es para dispositivos físicos sino para control "
 "remoto; solo Linux."
 
-#: src/gui/input/AxisConfigWidget.h:94
+#: src/gui/input/AxisConfigWidget.h:96
 msgid ""
 "The HIDAPI driver communicates directly with the 3D mice, Windows and macOS."
 msgstr ""
@@ -4229,9 +4243,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "Font Lists"
 #~ msgstr "Lista de &Fuentes"
-
-#~ msgid "Hide Editor"
-#~ msgstr "Ocultar Editor"
 
 #~ msgid "Surfaces"
 #~ msgstr "Superficies"

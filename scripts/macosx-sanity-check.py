@@ -36,9 +36,17 @@ macos_version_min = '15.0'
 
 # Global flag to skip architecture validation (for single-arch test builds)
 skip_arch_check = False
+# Skip LC_BUILD_VERSION/minos checks (Homebrew test builds on newer
+# runners stamp minos of that OS, e.g. 26.0 on macos-26).
+skip_deployment_target_check = False
 
 def usage():
-    print("Usage: " + sys.argv[0] + " [--skip-arch-check] <executable>", sys.stderr)
+    print(
+        "Usage: " + sys.argv[0]
+        + " [--skip-arch-check] [--allow-homebrew-deps]"
+        + " [--skip-deployment-target-check] <executable>",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 # Try to find the given library by searching in the typical locations
@@ -125,19 +133,14 @@ def validate_lib(lib):
     if deploymenttarget is None:
         print("Error: Neither LC_VERSION_MIN_MACOSX nor LC_BUILD_VERSION found in " + lib)
         return False
-    if version_larger_than(deploymenttarget, macos_version_min):
-        print("Error: Unsupported deployment target " + m.group(2) + " found: " + lib)
+    if (not skip_deployment_target_check
+            and version_larger_than(deploymenttarget, macos_version_min)):
+        print("Error: Unsupported deployment target " + deploymenttarget + " found: " + lib)
         return False
 
-    # Check that both x86_64 and arm64 architectures exist (unless skipped)
+    # Releases are Apple Silicon only; Intel is no longer shipped.
     if not skip_arch_check:
-        p = subprocess.Popen(["lipo", lib, "-verify_arch", "x86_64"], stdout=subprocess.PIPE, universal_newlines=True)
-        p.communicate()[0]
-        if p.returncode != 0:
-            print("Error: x86_64 architecture not found in " + lib)
-            return False
-
-        p  = subprocess.Popen(["lipo", lib, "-verify_arch", "arm64"], stdout=subprocess.PIPE, universal_newlines=True)
+        p = subprocess.Popen(["lipo", lib, "-verify_arch", "arm64"], stdout=subprocess.PIPE, universal_newlines=True)
         p.communicate()[0]
         if p.returncode != 0:
             print("Error: arm64 architecture not found in " + lib)
@@ -150,12 +153,15 @@ if __name__ == '__main__':
         description='Verify macOS executable dependencies and deployment targets')
     parser.add_argument('executable', help='Path to the executable to check')
     parser.add_argument('--skip-arch-check', action='store_true',
-                        help='Skip universal binary (x86_64/arm64) architecture validation')
+                        help='Skip arm64 architecture validation (Homebrew test builds)')
     parser.add_argument('--allow-homebrew-deps', action='store_true',
-                        help='Allow external dependencies from Homebrew (/usr/local/opt/) for test builds')
+                        help='Allow external dependencies from Homebrew (/usr/local/opt/ or /opt/homebrew/) for test builds')
+    parser.add_argument('--skip-deployment-target-check', action='store_true',
+                        help='Skip minos/deployment-target validation (Homebrew test builds)')
     args = parser.parse_args()
 
     skip_arch_check = args.skip_arch_check
+    skip_deployment_target_check = args.skip_deployment_target_check
     error = False
     executable = args.executable
     if DEBUG: print("Processing " + executable)

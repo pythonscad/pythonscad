@@ -24,8 +24,16 @@ jobs:
   build_and_test:
     strategy:
       matrix:
-        os: [macos-15-intel]
-        # Note: macos-14 (ARM64) excluded due to known SW renderer issues causing image test failures
+        os: [macos-26]
+        # Intel (macos-15-intel) is no longer usable: Homebrew 6.0 dropped Intel
+        # bottles (Tier 3, Sep 2026), so installs compile from source and hit
+        # the 90-minute job timeout. See #1026.
+        # ARM GitHub-hosted VMs use Apple's software OpenGL renderer, which
+        # garbles some PNG image tests. See:
+        #   https://github.com/openscad/openscad/issues/5201
+        #   https://github.com/actions/runner-images/issues/9712
+        # Those tests (plus ARM SVG/#6161 and two ARM-CI-only flakes) are
+        # disabled in tests/CMakeLists.txt when APPLE+arm64 and ENV{CI}.
     runs-on:  ${{ matrix.os }}
     name: ${{ matrix.os }} qt6
     # If it's not done in 90 minutes, something is wrong.
@@ -82,9 +90,11 @@ jobs:
     - name: Run macOS sanity check
       run: |
         # Run sanity check to validate deployment targets of bundled libraries.
-        # Skip architecture check since test builds are single-arch (not universal).
-        # Allow Homebrew dependencies since test builds use Homebrew libraries.
+        # Skip architecture and minos checks: test builds are single-arch and
+        # use Homebrew Python, whose Tahoe bottle stamps minos 26.0. The 15.0
+        # floor is enforced on the macos-15 release job, not here.
         python3 ./scripts/macosx-sanity-check.py --skip-arch-check --allow-homebrew-deps \
+          --skip-deployment-target-check \
           build/pythonscad.app/Contents/MacOS/pythonscad
     - name: Verify Python setup
       run: |
