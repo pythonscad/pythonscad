@@ -4265,9 +4265,6 @@ msgstr ""
 #~ msgid "reset all parameters to the currently selected preset"
 #~ msgstr "将所有参数重置为当前所选预设"
 
-#~ msgid "Shortcut"
-#~ msgstr "快捷方式"
-
 #~ msgid "Search"
 #~ msgstr "搜索"
 
