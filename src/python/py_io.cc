@@ -45,6 +45,7 @@
 #include "BuiltinContext.h"
 #include <primitives.h>
 #include "pydata.h"
+#include "Feature.h"
 
 extern bool parse(SourceFile *& file, const std::string& text, const std::string& filename,
                   const std::string& mainFile, int debug);
@@ -55,6 +56,25 @@ PyObject *python_show_core(PyObject *obj)
     Py_INCREF(obj);
     return obj;
   }
+
+  /* With separate objects enabled, a sequence handed to show() contributes one
+   * top-level object per element. Without it PyOpenSCADObjectToNodeMulti()
+   * folds the sequence into a single union node, which is what collapsed a
+   * multi-part design into one anonymous 3MF object. */
+  if (Feature::ExperimentalPythonSeparateObjects.is_enabled() &&
+      (PyList_Check(obj) || PyTuple_Check(obj))) {
+    const Py_ssize_t count = PySequence_Size(obj);
+    if (count < 0) return nullptr;
+    for (Py_ssize_t i = 0; i < count; i++) {
+      PyObject *item = PySequence_GetItem(obj, i);  // new reference
+      if (item == nullptr) return nullptr;
+      PyObject *shown = python_show_core(item);
+      Py_DECREF(item);
+      if (shown == nullptr) return nullptr;
+    }
+    return obj;
+  }
+
   python_result_obj = obj;
   PyObject *child_dict_raw = nullptr;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict_raw);
