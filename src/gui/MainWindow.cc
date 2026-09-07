@@ -3581,6 +3581,13 @@ void MainWindow::actionExport(unsigned int dim, ExportInfo& exportInfo)
     if (createdDir) QDir().rmdir(startDir);
     return;
   }
+
+  // The user may have navigated out of the folder we prepared. Drop it again if
+  // so, rather than littering a dated folder that never received an export.
+  // rmdir only succeeds on an empty directory, and the file is not written
+  // until below, so this cannot remove a folder that is about to be used.
+  const bool savedElsewhere = QFileInfo(exportFilename).absolutePath() != startDir;
+  if (createdDir && savedElsewhere) QDir().rmdir(startDir);
   this->exportPaths[suffix] = exportFilename;
 
   // Remember the folder the user actually chose. When dated subfolders are on,
@@ -4633,14 +4640,28 @@ QString MainWindow::exportMemoryKey(const QString& suffix) const
 
 QString MainWindow::rememberedExportDir(const QString& suffix) const
 {
-  if (activeEditor->filepath.isEmpty()) return {};
+  // An unsaved design has no stable identity to key persistent storage on, so
+  // it is remembered for the session only. Without this the whole per-project
+  // mode silently does nothing until the design is saved: every export starts
+  // in the documents folder and choosing somewhere else is forgotten at once.
+  if (activeEditor->filepath.isEmpty()) {
+    const auto it = sessionExportDirs.find(suffix);
+    return it != sessionExportDirs.end() ? it->second : QString{};
+  }
+
   const QSettingsCached settings;
   return settings.value("export-folders/" + exportMemoryKey(suffix)).toString();
 }
 
 void MainWindow::rememberExportDir(const QString& suffix, const QString& dir)
 {
-  if (activeEditor->filepath.isEmpty() || dir.isEmpty()) return;
+  if (dir.isEmpty()) return;
+
+  if (activeEditor->filepath.isEmpty()) {
+    sessionExportDirs[suffix] = dir;
+    return;
+  }
+
   QSettingsCached settings;
   settings.setValue("export-folders/" + exportMemoryKey(suffix), dir);
 }

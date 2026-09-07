@@ -455,9 +455,9 @@ SettingsEntryBool SettingsExportLocation::exportDatedSubfolder(SECTION_EXPORT_LO
 SettingsEntryEnum<ExportDateFormat> SettingsExportLocation::exportDateFormat(
   SECTION_EXPORT_LOCATION, "date-format",
   {
-    {ExportDateFormat::isoYearFirst, "iso", _("2026-09-06 (sorts correctly)")},
-    {ExportDateFormat::dayFirst, "day-first", _("06-09-2026 (day first)")},
-    {ExportDateFormat::monthFirst, "month-first", _("09-06-2026 (month first)")},
+    {ExportDateFormat::isoYearFirst, "iso", _("YYYY-MM-DD (sorts correctly)")},
+    {ExportDateFormat::dayFirst, "day-first", _("DD-MM-YYYY (day first)")},
+    {ExportDateFormat::monthFirst, "month-first", _("MM-DD-YYYY (month first)")},
   },
   ExportDateFormat::isoYearFirst);
 

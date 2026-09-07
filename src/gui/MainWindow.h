@@ -517,6 +517,8 @@ private:
   time_t depsMTime{0};      // latest dependency mod time
   std::unordered_map<QString, QString> exportPaths;  // for each file type, where it was exported to last
   QString exportDirectory(const QString& suffix);
+  // Per-design export folders for designs that have no path to key on yet.
+  std::unordered_map<QString, QString> sessionExportDirs;
   QString exportMemoryKey(const QString& suffix) const;
   QString rememberedExportDir(const QString& suffix) const;
   void rememberExportDir(const QString& suffix, const QString& dir);
