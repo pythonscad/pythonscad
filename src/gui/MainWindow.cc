@@ -130,7 +130,7 @@
 #include "glview/preview/CSGTreeNormalizer.h"
 #include "glview/preview/ThrownTogetherRenderer.h"
 #include "gui/AboutDialog.h"
-#include "gui/CGALWorker.h"
+#include "gui/GeometryWorker.h"
 #include "gui/ColorList.h"
 #include "gui/Dock.h"
 #include "gui/ai/AIDock.h"
@@ -1101,7 +1101,7 @@ MainWindow::~MainWindow()
   // Mark that we're being destroyed so eventFilter won't access freed members
   isBeingDestroyed = true;
 
-  delete this->cgalworker;
+  delete this->geometryWorker;
 }
 
 void MainWindow::showProgress()
@@ -1174,8 +1174,7 @@ void MainWindow::compile(bool reload, bool forcedone)
     bool shouldcompiletoplevel = false;
     bool didcompile = false;
 
-    compileErrors = 0;
-    compileWarnings = 0;
+    resetCompileMessageCounts();
 
     this->renderStatistic.start();
 
@@ -1365,6 +1364,12 @@ void MainWindow::compileDone(bool didchange)
       }
     }
   }
+}
+
+void MainWindow::resetCompileMessageCounts()
+{
+  this->compileErrors = 0;
+  this->compileWarnings = 0;
 }
 
 void MainWindow::compileEnded()
@@ -2228,6 +2233,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
         this->activeMeasurement = nullptr;
         meas.stopMeasure();
       }
+      if (this->qglview->handle_mode) {
+        this->qglview->handle_mode = false;
+        qglview->update();
+      }
     }
   }
   return QMainWindow::eventFilter(obj, event);
@@ -2707,7 +2716,7 @@ void MainWindow::cgalRender()
   if (!isClosing) progress_report_prep(this->rootNode, report_func, this);
   else return;
 
-  this->cgalworker->start(this->tree);
+  this->geometryWorker->start(this->tree);
 }
 
 void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_geom)
@@ -2791,6 +2800,12 @@ void MainWindow::handleMeasurementClicked(QAction *clickedAction)
   if (clickedAction == designActionFindHandle) {
     meas.startFindHandle();
   }
+}
+
+void MainWindow::findHandleClicked(void)
+{
+  this->qglview->handle_mode = this->designActionFindHandle->isChecked();
+  qglview->update();
 }
 
 void MainWindow::leftClick(QPoint mouse)
@@ -4646,8 +4661,8 @@ void MainWindow::setupCoreSubsystems()
   renderCompleteSoundEffect = new QSoundEffect(this);
   renderCompleteSoundEffect->setSource(QUrl("qrc:/sounds/complete.wav"));
 
-  this->cgalworker = new CGALWorker();
-  connect(this->cgalworker, &CGALWorker::done, this, &MainWindow::actionRenderDone);
+  this->geometryWorker = new GeometryWorker();
+  connect(this->geometryWorker, &GeometryWorker::done, this, &MainWindow::actionRenderDone);
   this->csgworker = new CSGWorker(this);
   connect(this->csgworker, SIGNAL(done(void)), this, SLOT(compileCSGDone(void)));
 
@@ -5007,7 +5022,7 @@ void MainWindow::setupMenusAndActions()
   connect(this->exportFormatMapper, static_cast<void (QSignalMapper::*)(int)>(&QSignalMapper::mapped),
           this, &MainWindow::actionExportFileFormat);
 #endif
-
+ ((QApplication *) qapp_global)->installEventFilter(this);
   frameCompileResult->hide();
   this->labelCompileResultMessage->setOpenExternalLinks(false);
   connect(this->labelCompileResultMessage, &QLabel::linkActivated, this, &MainWindow::showLink);
@@ -5062,6 +5077,7 @@ void MainWindow::setupMenusAndActions()
   measurementGroup->addAction(designActionMeasureDist);
   measurementGroup->addAction(designActionMeasureAngle);
   connect(this->measurementGroup, &QActionGroup::triggered, this, &MainWindow::handleMeasurementClicked);
+  connect(this->designActionFindHandle, &QAction::triggered, this, &MainWindow::findHandleClicked);
 
   exportMap[FileFormat::BINARY_STL] = this->fileActionExportBinarySTL;
   exportMap[FileFormat::ASCII_STL] = this->fileActionExportAsciiSTL;

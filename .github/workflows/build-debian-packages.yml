@@ -169,7 +169,8 @@ jobs:
 
       - name: Cache PyQt6 bindings (amd64 native)
         if: matrix.arch == 'amd64' && !matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
-        uses: actions/cache@v6
+        # Release/workflow_dispatch only (no pull_request), so PRs cannot poison this cache.
+        uses: actions/cache@v6 # zizmor: ignore[cache-poisoning]
         with:
           path: libraries/python/PyQt6
           key: pyqt6-bindings-deb-${{ matrix.runner }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
@@ -216,7 +217,8 @@ jobs:
 
       - name: Cache PyQt6 bindings (amd64 container)
         if: matrix.arch == 'amd64' && matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
-        uses: actions/cache@v6
+        # Release/workflow_dispatch only (no pull_request), so PRs cannot poison this cache.
+        uses: actions/cache@v6 # zizmor: ignore[cache-poisoning]
         with:
           path: libraries/python/PyQt6
           key: pyqt6-bindings-deb-${{ matrix.docker_image }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
@@ -250,7 +252,8 @@ jobs:
 
       - name: Cache PyQt6 bindings (arm64)
         if: matrix.arch == 'arm64' && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
-        uses: actions/cache@v6
+        # Release/workflow_dispatch only (no pull_request), so PRs cannot poison this cache.
+        uses: actions/cache@v6 # zizmor: ignore[cache-poisoning]
         with:
           path: /tmp/pyqt6-bindings-cache
           key: pyqt6-bindings-deb-arm64-${{ matrix.docker_image }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
@@ -290,7 +293,7 @@ jobs:
             KEY_INPUT=""
           fi
           mkdir -p /tmp/debs
-          mkdir -p /tmp/pyqt6-bindings-cache          
+          mkdir -p /tmp/pyqt6-bindings-cache
           printf '%s' "$KEY_INPUT" | docker run --rm -i \
             --platform linux/arm64 \
             -v "$PWD:/workspace" \

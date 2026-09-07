@@ -17,9 +17,9 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.0\n"
 "X-Poedit-SourceCharset: UTF-8\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:102
 #: src/gui/AboutDialog.h:22
@@ -212,7 +212,7 @@ msgstr "Z"
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:888
 #: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:280
 msgid "Translation"
-msgstr "Translation"
+msgstr "Verschiebung"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:889
 msgid "ViewPort rel.<br/>Translation"
@@ -3422,11 +3422,11 @@ msgstr ""
 
 #: src/gui/input/AxisConfigWidget.h:98
 msgid ""
-"The Joystick driver uses the Linux joystick device (fixed to /dev/input/"
-"js0), Linux only."
+"The Joystick driver uses the Linux joystick device (fixed to "
+"/dev/input/js0), Linux only."
 msgstr ""
-"Der Joystick Treiber bedient die Linux Joystick Schnittstelle (/dev/input/"
-"js0), nur Linux."
+"Der Joystick Treiber bedient die Linux Joystick Schnittstelle "
+"(/dev/input/js0), nur Linux."
 
 #: src/gui/input/AxisConfigWidget.h:100
 msgid "The QGAMEPAD driver is for multiplattform Gamepad Support."
@@ -4379,9 +4379,6 @@ msgstr ""
 
 #~ msgid "reset all parameters to the currently selected preset"
 #~ msgstr "alle Parameter auf die aktuelle Voreinstellung zurücksetzen"
-
-#~ msgid "Shortcut"
-#~ msgstr "Shortcut"
 
 #~ msgid "Search"
 #~ msgstr "Suche"
