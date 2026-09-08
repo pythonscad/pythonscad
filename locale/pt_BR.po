@@ -639,15 +639,15 @@ msgstr "OBSOLETO"
 msgid "Export 3MF Options"
 msgstr "Opções de exportação 3MF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:450
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:543
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:552
 msgid ""
 "<html><head/><body><p>Set the PDF page (paper) size.  </p></body></html>"
 msgstr ""
 "<html><head/><body><p>Definir o tamanho da página PDF (papel).</p></body></"
 "html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:452
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
 msgid "Unit"
 msgstr "Unidade"
 
@@ -707,7 +707,7 @@ msgstr "pé"
 msgid "Colors"
 msgstr "Cores"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:469
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
 msgid "Use colors from model and color scheme"
 msgstr "Usar cores do modelo e do esquema de cores"
 
@@ -720,11 +720,7 @@ msgstr "modelo"
 msgid "No colors"
 msgstr "Sem cores"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
-msgid "none"
-msgstr "nenhum"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:473
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:474
 msgid "Use selected color for all objects"
 msgstr "Usar cor selecionada para todos os objetos"
 
@@ -733,7 +729,7 @@ msgid "selected-only"
 msgstr "somente-selecionado"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:478
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:563
 msgid "Meta data"
 msgstr "Metadados"
 
@@ -746,7 +742,7 @@ msgstr ""
 "arquivo exportado quando os metadados estão habilitados."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:481
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
 msgid "A copyright associated with this document"
 msgstr "Um copyright associado a este documento"
 
@@ -755,7 +751,7 @@ msgid "Copyright"
 msgstr "Copyright"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:484
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:567
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:569
 msgid "Title, leave empty to use the file name"
 msgstr "Título; deixe vazio para usar o nome do arquivo"
 
@@ -778,7 +774,7 @@ msgid "An industry rating associated with this document"
 msgstr "Uma classificação do setor associada a este documento"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:494
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:576
 msgid "A name for a designer of this document"
 msgstr "Um nome para o designer deste documento"
 
@@ -791,7 +787,7 @@ msgid "License information associated with this document"
 msgstr "Informações de licença associadas a este documento"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:504
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:564
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:566
 msgid "A description of the document"
 msgstr "Uma descrição do documento"
 
@@ -943,19 +939,19 @@ msgstr ""
 "Os campos Título, Criador e Data de Criação são sempre preenchidos no "
 "arquivo exportado quando os metadados estão habilitados."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:568
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
 msgid "Subject"
 msgstr "Assunto"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
 msgid "Keywords"
 msgstr "Palavras-chave"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:577
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:579
 msgid "Author"
 msgstr "Autor"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:580
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
 msgid ""
 "<html><head/><body><p>Set the direction of the largest page dimension.</p></"
 "body></html>"
@@ -3032,6 +3028,67 @@ msgstr "Adicionar parâmetro"
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
 msgid "Remove Parameter"
 msgstr "Remover parâmetro"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
+#, fuzzy
+msgid "AI Preferences"
+msgstr "Preferências"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
+msgid ""
+"AI assistant integration is active. Configure your connection profiles and "
+"parameters below."
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
+#, fuzzy
+msgid "Profiles"
+msgstr "Perfile de Fatiamento"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
+#, fuzzy
+msgid "Active Profile"
+msgstr "Perfile de Fatiamento"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
+#, fuzzy
+msgid "New Profile"
+msgstr "&Novo Arquivo"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
+msgid "Delete"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
+msgid "API Configuration"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2666
+msgid "API Endpoint"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
+msgid "System Prompt / Instructions"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
+msgid "Default User Prompt"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
+#, fuzzy
+msgid "API Parameters"
+msgstr "Parâmetros"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
+#, fuzzy
+msgid "Add Parameter"
+msgstr "Parâmetros"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
+#, fuzzy
+msgid "Remove Parameter"
+msgstr "Parâmetros"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:180
 msgid "Run local Application"
