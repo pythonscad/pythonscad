@@ -417,66 +417,6 @@ msgstr ""
 msgid "Agentic"
 msgstr ""
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:194
-msgid "AI Chat"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:195
-#: src/gui/ai/ChatWidget.cc:138
-msgid "AI Assistant"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:197
-msgid "Chat options"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:199
-msgid "☰"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:201
-#: src/gui/ai/ChatWidget.cc:140
-msgid "Clear chat history"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:203
-#: build/OpenSCADLibInternal_autogen/include/ui_Console.h:42
-#: src/gui/ai/ChatWidget.cc:139
-msgid "Clear"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:204
-#: src/gui/ai/ChatWidget.cc:141 src/gui/ai/ChatWidget.cc:630
-msgid "Send"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:206
-msgid "Grab active 3D viewport frame and camera metadata"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:208
-msgid "Analyze Screen"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:210
-msgid "Attach local image file"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:212
-#: src/gui/ai/ChatWidget.cc:508
-msgid "Attach Image"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:214
-msgid ""
-"Agentic mode: allow the AI to call tools in multiple automatic turns per "
-"request"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:216
-msgid "Agentic"
-msgstr ""
-
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:399
 msgid "Color List"
 msgstr "Seznam barev"
@@ -699,15 +639,15 @@ msgstr "ZASTARALÉ"
 msgid "Export 3MF Options"
 msgstr "Možnosti exportu 3MF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:552
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:450
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:543
 msgid ""
 "<html><head/><body><p>Set the PDF page (paper) size.  </p></body></html>"
 msgstr ""
 "<html><head/><body><p>Nastavte velikost stránky PDF (formát papíru).</p></"
 "body></html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:452
 msgid "Unit"
 msgstr "Jednotka"
 
@@ -767,7 +707,7 @@ msgstr "stopa"
 msgid "Colors"
 msgstr "Barvy"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:469
 msgid "Use colors from model and color scheme"
 msgstr "Použít barvy z modelu a barevného schématu"
 
@@ -793,7 +733,7 @@ msgid "selected-only"
 msgstr "pouze-výběr"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:478
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:563
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
 msgid "Meta data"
 msgstr "Metadata"
 
@@ -806,7 +746,7 @@ msgstr ""
 "exportovaném souboru vždy vyplněna."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:481
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
 msgid "A copyright associated with this document"
 msgstr "Autorské právo spojené s tímto dokumentem"
 
@@ -815,7 +755,7 @@ msgid "Copyright"
 msgstr "Autorské právo"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:484
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:569
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:567
 msgid "Title, leave empty to use the file name"
 msgstr "Název, ponechte prázdné pro použití názvu souboru"
 
@@ -838,7 +778,7 @@ msgid "An industry rating associated with this document"
 msgstr "Oborové hodnocení spojené s tímto dokumentem"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:494
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:576
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
 msgid "A name for a designer of this document"
 msgstr "Jméno návrháře tohoto dokumentu"
 
@@ -851,7 +791,7 @@ msgid "License information associated with this document"
 msgstr "Licenční informace spojené s tímto dokumentem"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:504
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:566
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:564
 msgid "A description of the document"
 msgstr "Popis dokumentu"
 
@@ -1003,19 +943,19 @@ msgstr ""
 "Při povolených metadatech jsou pole Název, Autor a Datum vytvoření v "
 "exportovaném souboru vždy vyplněna."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:568
 msgid "Subject"
 msgstr "Předmět"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
 msgid "Keywords"
 msgstr "Klíčová slova"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:579
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:577
 msgid "Author"
 msgstr "Autor"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:580
 msgid ""
 "<html><head/><body><p>Set the direction of the largest page dimension.</p></"
 "body></html>"
@@ -3079,62 +3019,6 @@ msgstr "Přidat parametr"
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
 msgid "Remove Parameter"
 msgstr "Odebrat parametr"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
-#, fuzzy
-msgid "AI Preferences"
-msgstr "Předvolby"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
-msgid ""
-"AI assistant integration is active. Configure your connection profiles and "
-"parameters below."
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
-msgid "Profiles"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
-msgid "Active Profile"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
-#, fuzzy
-msgid "New Profile"
-msgstr "&Soubor"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
-msgid "Delete"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
-msgid "API Configuration"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2666
-msgid "API Endpoint"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
-msgid "System Prompt / Instructions"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
-msgid "Default User Prompt"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
-msgid "API Parameters"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
-msgid "Add Parameter"
-msgstr ""
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
-msgid "Remove Parameter"
-msgstr ""
 
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:180
 msgid "Run local Application"
