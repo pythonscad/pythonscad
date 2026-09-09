@@ -1461,8 +1461,8 @@ std::shared_ptr<const Geometry> offset3D(const std::shared_ptr<const PolySet>& p
 }
 
 std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> ps,
-                                                std::vector<bool> corner_selected, double r, int fn,
-                                                double minang);
+                                                std::vector<bool> corner_selected, double r_, int bn,
+                                                double minang, double min_edge_len = 0);
 
 Vector3d createFilletRound(Vector3d pt)
 {
@@ -1471,28 +1471,106 @@ Vector3d createFilletRound(Vector3d pt)
   double z = ((int)(pt[2] * 1e6)) / 1e6;
   return Vector3d(x, y, z);
 }
+
+namespace {
+
+// Boolean triangulation can leave seam edges too short for a stable fillet
+// patch. Treat edges below 5% of the requested radius as numerical slivers.
+constexpr double FILLET_SLIVER_EDGE_RATIO = 0.05;
+
+bool pointOutsideBounds(const BoundingBox& bounds, const Vector3d& pt, double eps)
+{
+  return bounds.isNull() || (pt.array() < bounds.min().array() - eps).any() ||
+         (pt.array() > bounds.max().array() + eps).any();
+}
+
+bool pointOnTriangle(const Vector3d& pt, const Vector3d& a, const Vector3d& b, const Vector3d& c,
+                     double eps)
+{
+  const Vector3d normal = (b - a).cross(c - a);
+  const double normalSquared = normal.squaredNorm();
+  if (normalSquared < 1e-36 || std::abs((pt - a).dot(normal)) > eps * std::sqrt(normalSquared)) {
+    return false;
+  }
+
+  // Coplanarity alone is insufficient: the point must also be inside the bounded triangle.
+  const double edgeTolerance = -1e-7 * normalSquared;
+  return normal.dot((b - a).cross(pt - a)) >= edgeTolerance &&
+         normal.dot((c - b).cross(pt - b)) >= edgeTolerance &&
+         normal.dot((a - c).cross(pt - c)) >= edgeTolerance;
+}
+
+// True if pt lies on (or within eps of) any triangle of an already-tessellated ps.
+bool pointOnPolySetSurface(const PolySet& ps, const Vector3d& pt, double eps)
+{
+  if (pointOutsideBounds(ps.getBoundingBox(), pt, eps)) return false;
+  for (const auto& ind : ps.indices) {
+    if (ind.size() < 3) continue;
+    const Vector3d a = ps.vertices[ind[0]];
+    const Vector3d b = ps.vertices[ind[1]];
+    const Vector3d c = ps.vertices[ind[2]];
+    BoundingBox triangleBounds;
+    triangleBounds.extend(a);
+    triangleBounds.extend(b);
+    triangleBounds.extend(c);
+    if (pointOutsideBounds(triangleBounds, pt, eps)) continue;
+    if (pointOnTriangle(pt, a, b, c, eps)) return true;
+  }
+  return false;
+}
+
+}  // namespace
+
 std::unique_ptr<const Geometry> addFillets(std::shared_ptr<const Geometry> result,
                                            const Geometry::Geometries& children, double r, int fn)
 {
-  std::unordered_set<Vector3d> points;
-  Vector3d pt;
   std::shared_ptr<const PolySet> psr = PolySetUtils::getGeometryAsPolySet(result);
-  for (const Vector3d& pt : psr->vertices) {
-    points.insert(createFilletRound(pt));
-  }
 
+  std::vector<std::shared_ptr<const PolySet>> child_ps;
+  std::vector<std::unordered_set<Vector3d>> child_verts;
+  child_ps.reserve(children.size());
+  child_verts.reserve(children.size());
   for (const auto& child : children) {
-    std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(child.second);
-    for (const Vector3d& pt : ps->vertices) {
-      points.erase(createFilletRound(pt));
+    auto ps = PolySetUtils::getGeometryAsPolySet(child.second);
+    std::shared_ptr<const PolySet> tess;
+    if (ps) tess = PolySetUtils::tessellate_faces(*ps);
+    child_ps.push_back(tess);
+    std::unordered_set<Vector3d> verts;
+    if (ps) {
+      for (const Vector3d& pt : ps->vertices) verts.insert(createFilletRound(pt));
     }
+    child_verts.push_back(std::move(verts));
   }
 
   std::vector<bool> corner_selected;
-  for (size_t i = 0; i < psr->vertices.size(); i++)
-    corner_selected.push_back(points.count(createFilletRound(psr->vertices[i])) > 0 ? true : false);
+  for (size_t i = 0; i < psr->vertices.size(); i++) {
+    const Vector3d rounded = createFilletRound(psr->vertices[i]);
+    int owner = -1;
+    int n_owners = 0;
+    for (size_t c = 0; c < child_verts.size(); c++) {
+      if (child_verts[c].count(rounded)) {
+        owner = static_cast<int>(c);
+        n_owners++;
+      }
+    }
+    bool sel = false;
+    if (n_owners != 1) {
+      // Boolean-created and shared child vertices both lie on the seam.
+      sel = true;
+    } else {
+      // Original vertex of one child: keep it if it also lies on another child.
+      for (size_t c = 0; c < child_ps.size(); c++) {
+        if (static_cast<int>(c) == owner || !child_ps[c]) continue;
+        if (pointOnPolySetSurface(*child_ps[c], psr->vertices[i], 1e-4)) {
+          sel = true;
+          break;
+        }
+      }
+    }
+    corner_selected.push_back(sel);
+  }
 
-  return createFilletInt(psr, corner_selected, r, fn, 30.0);
+  return createFilletInt(psr, corner_selected, r, fn, 30.0, FILLET_SLIVER_EDGE_RATIO * std::fabs(r));
 }
 
 double concat_round(double x)

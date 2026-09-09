@@ -639,13 +639,13 @@ msgstr "棄用"
 msgid "Export 3MF Options"
 msgstr "匯出 3MF 選項"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:450
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:543
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:552
 msgid ""
 "<html><head/><body><p>Set the PDF page (paper) size.  </p></body></html>"
 msgstr "<html><head/><body><p>設定 PDF 頁面（紙張）大小。</p></body></html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:452
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
 msgid "Unit"
 msgstr "單位"
 
@@ -705,7 +705,7 @@ msgstr "英尺"
 msgid "Colors"
 msgstr "色彩"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:469
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
 msgid "Use colors from model and color scheme"
 msgstr "使用模型與色彩配置的色彩"
 
@@ -731,7 +731,7 @@ msgid "selected-only"
 msgstr "僅選取"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:478
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:563
 msgid "Meta data"
 msgstr "中繼資料"
 
@@ -742,7 +742,7 @@ msgid ""
 msgstr "啟用中繼資料時，匯出檔案一律會填入標題、應用程式與建立日期欄位。"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:481
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
 msgid "A copyright associated with this document"
 msgstr "與此文件相關的著作權"
 
@@ -751,7 +751,7 @@ msgid "Copyright"
 msgstr "著作權"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:484
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:567
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:569
 msgid "Title, leave empty to use the file name"
 msgstr "標題，留空則使用檔案名稱"
 
@@ -774,7 +774,7 @@ msgid "An industry rating associated with this document"
 msgstr "與此文件相關的業界評等"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:494
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:576
 msgid "A name for a designer of this document"
 msgstr "此文件設計者的名稱"
 
@@ -787,7 +787,7 @@ msgid "License information associated with this document"
 msgstr "與此文件相關的授權資訊"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:504
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:564
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:566
 msgid "A description of the document"
 msgstr "文件描述"
 
@@ -937,19 +937,19 @@ msgid ""
 "file when meta data is enabled."
 msgstr "啟用中繼資料時，匯出檔案一律會填入標題、建立者與建立日期欄位。"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:568
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
 msgid "Subject"
 msgstr "主旨"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
 msgid "Keywords"
 msgstr "關鍵字"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:577
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:579
 msgid "Author"
 msgstr "作者"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:580
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
 msgid ""
 "<html><head/><body><p>Set the direction of the largest page dimension.</p></"
 "body></html>"

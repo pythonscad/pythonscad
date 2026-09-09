@@ -640,15 +640,15 @@ msgstr "KULLANIMDAN KALDIRILMIŞ"
 msgid "Export 3MF Options"
 msgstr "3MF Dışa Aktarma Seçenekleri"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:450
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:543
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:552
 msgid ""
 "<html><head/><body><p>Set the PDF page (paper) size.  </p></body></html>"
 msgstr ""
 "<html><head/><body><p>PDF sayfa (kağıt) boyutunu ayarlayın.  </p></body></"
 "html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:452
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
 msgid "Unit"
 msgstr "Birim"
 
@@ -708,7 +708,7 @@ msgstr "fit"
 msgid "Colors"
 msgstr "Renkler"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:469
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
 msgid "Use colors from model and color scheme"
 msgstr "Model ve renk şemasındaki renkleri kullan"
 
@@ -734,7 +734,7 @@ msgid "selected-only"
 msgstr "yalnızca-seçili"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:478
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:563
 msgid "Meta data"
 msgstr "Meta veri"
 
@@ -747,7 +747,7 @@ msgstr ""
 "dışa aktarılan dosyada her zaman doldurulur."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:481
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
 msgid "A copyright associated with this document"
 msgstr "Bu belgeyle ilişkili bir telif hakkı"
 
@@ -756,7 +756,7 @@ msgid "Copyright"
 msgstr "Telif hakkı"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:484
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:567
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:569
 msgid "Title, leave empty to use the file name"
 msgstr "Başlık, dosya adını kullanmak için boş bırakın"
 
@@ -779,7 +779,7 @@ msgid "An industry rating associated with this document"
 msgstr "Bu belgeyle ilişkili bir endüstri derecelendirmesi"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:494
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:576
 msgid "A name for a designer of this document"
 msgstr "Bu belgenin tasarımcısı için bir ad"
 
@@ -792,7 +792,7 @@ msgid "License information associated with this document"
 msgstr "Bu belgeyle ilişkili lisans bilgisi"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:504
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:564
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:566
 msgid "A description of the document"
 msgstr "Belgenin açıklaması"
 
@@ -944,19 +944,19 @@ msgstr ""
 "Meta veri etkinleştirildiğinde Başlık, Oluşturan ve OluşturmaTarihi alanları "
 "dışa aktarılan dosyada her zaman doldurulur."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:568
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
 msgid "Subject"
 msgstr "Konu"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
 msgid "Keywords"
 msgstr "Anahtar kelimeler"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:577
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:579
 msgid "Author"
 msgstr "Yazar"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:580
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
 msgid ""
 "<html><head/><body><p>Set the direction of the largest page dimension.</p></"
 "body></html>"

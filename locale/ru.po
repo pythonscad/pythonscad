@@ -640,15 +640,15 @@ msgstr "УСТАРЕЛО"
 msgid "Export 3MF Options"
 msgstr "Параметры экспорта 3MF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:450
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:543
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:552
 msgid ""
 "<html><head/><body><p>Set the PDF page (paper) size.  </p></body></html>"
 msgstr ""
 "<html><head/><body><p>Задайте размер страницы PDF (формат бумаги).</p></"
 "body></html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:452
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
 msgid "Unit"
 msgstr "Единица"
 
@@ -708,7 +708,7 @@ msgstr "фут"
 msgid "Colors"
 msgstr "Цвета"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:469
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
 msgid "Use colors from model and color scheme"
 msgstr "Использовать цвета из модели и цветовой схемы"
 
@@ -734,7 +734,7 @@ msgid "selected-only"
 msgstr "только-выбранный"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:478
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:563
 msgid "Meta data"
 msgstr "Метаданные"
 
@@ -747,7 +747,7 @@ msgstr ""
 "всегда заполняются в экспортируемом файле."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:481
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
 msgid "A copyright associated with this document"
 msgstr "Авторское право, связанное с этим документом"
 
@@ -756,7 +756,7 @@ msgid "Copyright"
 msgstr "Авторское право"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:484
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:567
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:569
 msgid "Title, leave empty to use the file name"
 msgstr "Название; оставьте пустым, чтобы использовать имя файла"
 
@@ -779,7 +779,7 @@ msgid "An industry rating associated with this document"
 msgstr "Отраслевая классификация, связанная с этим документом"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:494
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:576
 msgid "A name for a designer of this document"
 msgstr "Имя дизайнера этого документа"
 
@@ -792,7 +792,7 @@ msgid "License information associated with this document"
 msgstr "Сведения о лицензии, связанные с этим документом"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:504
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:564
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:566
 msgid "A description of the document"
 msgstr "Описание документа"
 
@@ -944,19 +944,19 @@ msgstr ""
 "При включённых метаданных поля «Название», «Создатель» и «Дата создания» "
 "всегда заполняются в экспортируемом файле."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:568
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:570
 msgid "Subject"
 msgstr "Тема"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:572
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:574
 msgid "Keywords"
 msgstr "Ключевые слова"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:577
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:579
 msgid "Author"
 msgstr "Автор"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:580
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
 msgid ""
 "<html><head/><body><p>Set the direction of the largest page dimension.</p></"
 "body></html>"
