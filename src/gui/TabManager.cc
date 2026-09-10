@@ -111,6 +111,187 @@ QString normalizedSessionFilepathForJson(const QString& filepath)
   return filepath;
 }
 
+QString exportFormatIdentifier(FileFormat format)
+{
+  if (format == FileFormat::PS) return QStringLiteral("ps");
+  return QString::fromStdString(fileformat::info(format).identifier);
+}
+
+bool exportFormatFromIdentifier(const QString& id, FileFormat& format)
+{
+  if (id == QStringLiteral("ps")) {
+    format = FileFormat::PS;
+    return true;
+  }
+  return fileformat::fromIdentifier(id.toStdString(), format);
+}
+
+QJsonObject lastExportOptionsToJson(const EditorInterface::LastExport& state)
+{
+  QJsonObject options;
+  if (state.optionsPdf) {
+    const auto& o = *state.optionsPdf;
+    QJsonObject pdf;
+    pdf.insert(QStringLiteral("showScale"), o.showScale);
+    pdf.insert(QStringLiteral("showScaleMsg"), o.showScaleMsg);
+    pdf.insert(QStringLiteral("showGrid"), o.showGrid);
+    pdf.insert(QStringLiteral("gridSize"), o.gridSize);
+    pdf.insert(QStringLiteral("showDesignFilename"), o.showDesignFilename);
+    pdf.insert(QStringLiteral("orientation"), static_cast<int>(o.orientation));
+    pdf.insert(QStringLiteral("paperSize"), static_cast<int>(o.paperSize));
+    pdf.insert(QStringLiteral("addMetaData"), o.addMetaData);
+    pdf.insert(QStringLiteral("metaDataTitle"), QString::fromStdString(o.metaDataTitle));
+    pdf.insert(QStringLiteral("metaDataAuthor"), QString::fromStdString(o.metaDataAuthor));
+    pdf.insert(QStringLiteral("metaDataSubject"), QString::fromStdString(o.metaDataSubject));
+    pdf.insert(QStringLiteral("metaDataKeywords"), QString::fromStdString(o.metaDataKeywords));
+    pdf.insert(QStringLiteral("fill"), o.fill);
+    pdf.insert(QStringLiteral("fillColor"), QString::fromStdString(o.fillColor));
+    pdf.insert(QStringLiteral("stroke"), o.stroke);
+    pdf.insert(QStringLiteral("strokeColor"), QString::fromStdString(o.strokeColor));
+    pdf.insert(QStringLiteral("strokeWidth"), o.strokeWidth);
+    options.insert(QStringLiteral("pdf"), pdf);
+  }
+  if (state.options3mf) {
+    const auto& o = *state.options3mf;
+    QJsonObject mf;
+    mf.insert(QStringLiteral("colorMode"), static_cast<int>(o.colorMode));
+    mf.insert(QStringLiteral("unit"), static_cast<int>(o.unit));
+    mf.insert(QStringLiteral("color"), QString::fromStdString(o.color));
+    mf.insert(QStringLiteral("materialType"), static_cast<int>(o.materialType));
+    mf.insert(QStringLiteral("decimalPrecision"), o.decimalPrecision);
+    mf.insert(QStringLiteral("addMetaData"), o.addMetaData);
+    mf.insert(QStringLiteral("metaDataTitle"), QString::fromStdString(o.metaDataTitle));
+    mf.insert(QStringLiteral("metaDataDesigner"), QString::fromStdString(o.metaDataDesigner));
+    mf.insert(QStringLiteral("metaDataDescription"), QString::fromStdString(o.metaDataDescription));
+    mf.insert(QStringLiteral("metaDataCopyright"), QString::fromStdString(o.metaDataCopyright));
+    mf.insert(QStringLiteral("metaDataLicenseTerms"), QString::fromStdString(o.metaDataLicenseTerms));
+    mf.insert(QStringLiteral("metaDataRating"), QString::fromStdString(o.metaDataRating));
+    options.insert(QStringLiteral("3mf"), mf);
+  }
+  if (state.optionsSvg) {
+    const auto& o = *state.optionsSvg;
+    QJsonObject svg;
+    svg.insert(QStringLiteral("fill"), o.fill);
+    svg.insert(QStringLiteral("fillColor"), QString::fromStdString(o.fillColor));
+    svg.insert(QStringLiteral("stroke"), o.stroke);
+    svg.insert(QStringLiteral("strokeColor"), QString::fromStdString(o.strokeColor));
+    svg.insert(QStringLiteral("strokeWidth"), o.strokeWidth);
+    options.insert(QStringLiteral("svg"), svg);
+  }
+  if (state.optionsGcode) {
+    const auto& o = *state.optionsGcode;
+    QJsonObject gc;
+    gc.insert(QStringLiteral("feedrate"), o.feedrate);
+    gc.insert(QStringLiteral("laserpower"), o.laserpower);
+    gc.insert(QStringLiteral("lasermode"), o.lasermode);
+    gc.insert(QStringLiteral("initCode"), QString::fromStdString(o.initCode));
+    gc.insert(QStringLiteral("exitCode"), QString::fromStdString(o.exitCode));
+    options.insert(QStringLiteral("gcode"), gc);
+  }
+  return options;
+}
+
+QJsonObject lastExportToJson(const EditorInterface::LastExport& state)
+{
+  QJsonObject obj;
+  obj.insert(QStringLiteral("path"), state.path);
+  obj.insert(QStringLiteral("format"), exportFormatIdentifier(state.format));
+  const QJsonObject options = lastExportOptionsToJson(state);
+  if (!options.isEmpty()) {
+    obj.insert(QStringLiteral("options"), options);
+  }
+  return obj;
+}
+
+void applyLastExportFromJson(EditorInterface *edt, const QJsonObject& obj)
+{
+  if (!edt || obj.isEmpty()) return;
+  const QString path = obj.value(QStringLiteral("path")).toString();
+  const QString formatId = obj.value(QStringLiteral("format")).toString();
+  FileFormat format = FileFormat::ASCII_STL;
+  if (path.isEmpty() || !exportFormatFromIdentifier(formatId, format)) return;
+
+  EditorInterface::LastExport state;
+  state.path = path;
+  state.format = format;
+
+  const QJsonObject options = obj.value(QStringLiteral("options")).toObject();
+  if (options.contains(QStringLiteral("pdf"))) {
+    const QJsonObject pdf = options.value(QStringLiteral("pdf")).toObject();
+    auto o = std::make_shared<ExportPdfOptions>(*ExportPdfOptions::fromSettings());
+    o->showScale = pdf.value(QStringLiteral("showScale")).toBool(o->showScale);
+    o->showScaleMsg = pdf.value(QStringLiteral("showScaleMsg")).toBool(o->showScaleMsg);
+    o->showGrid = pdf.value(QStringLiteral("showGrid")).toBool(o->showGrid);
+    o->gridSize = pdf.value(QStringLiteral("gridSize")).toDouble(o->gridSize);
+    o->showDesignFilename =
+      pdf.value(QStringLiteral("showDesignFilename")).toBool(o->showDesignFilename);
+    o->orientation = static_cast<ExportPdfPaperOrientation>(
+      pdf.value(QStringLiteral("orientation")).toInt(static_cast<int>(o->orientation)));
+    o->paperSize = static_cast<ExportPdfPaperSize>(
+      pdf.value(QStringLiteral("paperSize")).toInt(static_cast<int>(o->paperSize)));
+    o->addMetaData = pdf.value(QStringLiteral("addMetaData")).toBool(o->addMetaData);
+    o->metaDataTitle = pdf.value(QStringLiteral("metaDataTitle")).toString().toStdString();
+    o->metaDataAuthor = pdf.value(QStringLiteral("metaDataAuthor")).toString().toStdString();
+    o->metaDataSubject = pdf.value(QStringLiteral("metaDataSubject")).toString().toStdString();
+    o->metaDataKeywords = pdf.value(QStringLiteral("metaDataKeywords")).toString().toStdString();
+    o->fill = pdf.value(QStringLiteral("fill")).toBool(o->fill);
+    o->fillColor = pdf.value(QStringLiteral("fillColor")).toString().toStdString();
+    o->stroke = pdf.value(QStringLiteral("stroke")).toBool(o->stroke);
+    o->strokeColor = pdf.value(QStringLiteral("strokeColor")).toString().toStdString();
+    o->strokeWidth = pdf.value(QStringLiteral("strokeWidth")).toDouble(o->strokeWidth);
+    state.optionsPdf = o;
+  }
+  if (options.contains(QStringLiteral("3mf"))) {
+    const QJsonObject mf = options.value(QStringLiteral("3mf")).toObject();
+    auto o = std::make_shared<Export3mfOptions>(*Export3mfOptions::fromSettings());
+    o->colorMode = static_cast<Export3mfColorMode>(
+      mf.value(QStringLiteral("colorMode")).toInt(static_cast<int>(o->colorMode)));
+    o->unit =
+      static_cast<Export3mfUnit>(mf.value(QStringLiteral("unit")).toInt(static_cast<int>(o->unit)));
+    o->color = mf.value(QStringLiteral("color")).toString().toStdString();
+    o->materialType = static_cast<Export3mfMaterialType>(
+      mf.value(QStringLiteral("materialType")).toInt(static_cast<int>(o->materialType)));
+    o->decimalPrecision = mf.value(QStringLiteral("decimalPrecision")).toInt(o->decimalPrecision);
+    o->addMetaData = mf.value(QStringLiteral("addMetaData")).toBool(o->addMetaData);
+    o->metaDataTitle = mf.value(QStringLiteral("metaDataTitle")).toString().toStdString();
+    o->metaDataDesigner = mf.value(QStringLiteral("metaDataDesigner")).toString().toStdString();
+    o->metaDataDescription = mf.value(QStringLiteral("metaDataDescription")).toString().toStdString();
+    o->metaDataCopyright = mf.value(QStringLiteral("metaDataCopyright")).toString().toStdString();
+    o->metaDataLicenseTerms = mf.value(QStringLiteral("metaDataLicenseTerms")).toString().toStdString();
+    o->metaDataRating = mf.value(QStringLiteral("metaDataRating")).toString().toStdString();
+    state.options3mf = o;
+  }
+  if (options.contains(QStringLiteral("svg"))) {
+    const QJsonObject svg = options.value(QStringLiteral("svg")).toObject();
+    auto o = std::make_shared<ExportSvgOptions>(*ExportSvgOptions::fromSettings());
+    o->fill = svg.value(QStringLiteral("fill")).toBool(o->fill);
+    o->fillColor = svg.value(QStringLiteral("fillColor")).toString().toStdString();
+    o->stroke = svg.value(QStringLiteral("stroke")).toBool(o->stroke);
+    o->strokeColor = svg.value(QStringLiteral("strokeColor")).toString().toStdString();
+    o->strokeWidth = svg.value(QStringLiteral("strokeWidth")).toDouble(o->strokeWidth);
+    state.optionsSvg = o;
+  }
+  if (options.contains(QStringLiteral("gcode"))) {
+    const QJsonObject gc = options.value(QStringLiteral("gcode")).toObject();
+    auto o = std::make_shared<ExportGcodeOptions>();
+    o->feedrate = gc.value(QStringLiteral("feedrate")).toDouble(0);
+    o->laserpower = gc.value(QStringLiteral("laserpower")).toDouble(0);
+    o->lasermode = gc.value(QStringLiteral("lasermode")).toInt(0);
+    o->initCode = gc.value(QStringLiteral("initCode")).toString().toStdString();
+    o->exitCode = gc.value(QStringLiteral("exitCode")).toString().toStdString();
+    state.optionsGcode = o;
+  }
+
+  edt->lastExport = std::move(state);
+}
+
+void insertLastExportIntoTabObject(QJsonObject& obj, const EditorInterface *edt)
+{
+  if (edt && edt->lastExport) {
+    obj.insert(QStringLiteral("lastExport"), lastExportToJson(*edt->lastExport));
+  }
+}
+
 /** Save / Save As / Save a copy: one primary format (matches editor language) plus All files. */
 struct DesignSaveFilterSet {
   QString primaryLabel;
@@ -1376,6 +1557,7 @@ void TabManager::saveSession(const QString& path)
       obj.insert(QStringLiteral("diskIdentity"),
                  QString::fromStdString(MainWindow::autoReloadIdentityForPath(sessionPath)));
     }
+    insertLastExportIntoTabObject(obj, edt);
     tabs.append(obj);
   }
   QJsonObject win;
@@ -1466,6 +1648,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
         obj.insert(QStringLiteral("diskIdentity"),
                    QString::fromStdString(MainWindow::autoReloadIdentityForPath(sessionPath)));
       }
+      insertLastExportIntoTabObject(obj, edt);
       tabs.append(obj);
     }
     QJsonObject win;
@@ -1772,6 +1955,9 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     }
     setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState,
                       sessionLanguage, tabDiskBacked);
+    if (obj.contains(QStringLiteral("lastExport"))) {
+      applyLastExportFromJson(edt, obj.value(QStringLiteral("lastExport")).toObject());
+    }
     if (findState < TabManager::FIND_HIDDEN || findState > TabManager::FIND_REPLACE_VISIBLE) {
       findState = TabManager::FIND_HIDDEN;
     }

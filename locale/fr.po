@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenSCAD 2013.02.07\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 23:59+0200\n"
+"POT-Creation-Date: 2026-09-10 04:06+0200\n"
 "PO-Revision-Date: 2026-08-01 01:42+0200\n"
 "Last-Translator: Pierre ROUZEAU <github.com/PRouzeau>\n"
 "Language-Team: French\n"
@@ -51,10 +51,6 @@ msgstr ""
 "\n"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:111
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:516
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:190
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:634
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:222
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:110
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:186
 msgid "OK"
@@ -108,7 +104,7 @@ msgstr "Exporter images"
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:852
 #: build/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:362
 #: build/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:214
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2580
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2626
 msgid "Preferences"
 msgstr "Préférences"
 
@@ -261,7 +257,7 @@ msgid "TextLabel"
 msgstr "TextLabel"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:901
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2584
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
 msgid "Update"
 msgstr "Mettre à jour"
 
@@ -399,8 +395,9 @@ msgid "Grab active 3D viewport frame and camera metadata"
 msgstr ""
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:208
+#, fuzzy
 msgid "Analyze Screen"
-msgstr ""
+msgstr "&Plein écran"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:210
 msgid "Attach local image file"
@@ -455,20 +452,20 @@ msgstr "Nom de la couleur"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:418
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:309
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2642
-#: src/core/Settings.cc:161 src/core/Settings.cc:517
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2688
+#: src/core/Settings.cc:161 src/core/Settings.cc:520
 msgid "Fixed"
 msgstr "Fixe"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:419
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:310
-#: src/core/Settings.cc:518
+#: src/core/Settings.cc:521
 msgid "Wildcard"
 msgstr "Joker"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:420
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:311
-#: src/core/Settings.cc:519
+#: src/core/Settings.cc:522
 msgid "RegExp"
 msgstr "Expression régulière"
 
@@ -489,17 +486,17 @@ msgid "Alphabetically"
 msgstr "Alphabétique"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:426
-#: src/core/Settings.cc:529
+#: src/core/Settings.cc:532
 msgid "By color"
 msgstr "Par couleur"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:427
-#: src/core/Settings.cc:530
+#: src/core/Settings.cc:533
 msgid "By color warmth"
 msgstr "Par chaleur de couleur"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:428
-#: src/core/Settings.cc:531
+#: src/core/Settings.cc:534
 msgid "By lightness"
 msgstr "Par luminosité"
 
@@ -530,8 +527,9 @@ msgstr "Réinitialiser la couleur d'arrière-plan"
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:217
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:220
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:177
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2717
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2724
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2764
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2829
 msgid "..."
 msgstr "..."
 
@@ -576,7 +574,7 @@ msgid "Clear console"
 msgstr "Effacer la console"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Console.h:46
-#: src/gui/TabManager.cc:1846
+#: src/gui/TabManager.cc:2052
 msgid "Save As..."
 msgstr "Enregistrer sous..."
 
@@ -608,7 +606,7 @@ msgstr "&Afficher"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:101
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:306
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1390
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1396
 msgid "All"
 msgstr "Tout"
 
@@ -656,8 +654,8 @@ msgstr ""
 msgid "Unit"
 msgstr "Unité"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:453
-#: src/core/Settings.cc:452
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:462
+#: src/core/Settings.cc:455
 msgid "Micron"
 msgstr "Micron"
 
@@ -665,30 +663,18 @@ msgstr "Micron"
 msgid "Millimeter (default)"
 msgstr "Millimètre (par défaut)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:456
-msgid "millimeter"
-msgstr "millimeter"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:457
-#: src/core/Settings.cc:454
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:464
+#: src/core/Settings.cc:457
 msgid "Centimeter"
 msgstr "Centimètre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:458
-msgid "centimeter"
-msgstr "centimeter"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
-#: src/core/Settings.cc:455
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:465
+#: src/core/Settings.cc:458
 msgid "Meter"
 msgstr "Mètre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:460
-msgid "meter"
-msgstr "meter"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
-#: src/core/Settings.cc:456
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:466
+#: src/core/Settings.cc:459
 msgid "Inch"
 msgstr "Pouce"
 
@@ -704,12 +690,8 @@ msgstr "Couleurs"
 msgid "Use colors from model and color scheme"
 msgstr "Utiliser les couleurs du modèle et du jeu de couleurs"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:470
-msgid "model"
-msgstr "model"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:471
-#: src/core/Settings.cc:445
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:473
+#: src/core/Settings.cc:448
 msgid "No colors"
 msgstr "Aucune couleur"
 
@@ -809,9 +791,19 @@ msgstr "Toujours afficher la boîte de dialogue"
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:109
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:185
 #: src/gui/UnsavedChangesDialog.cc:60 src/openscad_gui.cc:196
-#: src/openscad_gui.cc:864
+#: src/openscad_gui.cc:871
 msgid "Cancel"
 msgstr "Annuler"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:516
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:190
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:634
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:222
+#: src/gui/MainWindow.cc:3828 src/gui/MainWindow.cc:3832
+#: src/gui/MainWindow.cc:3854 src/gui/MainWindow.cc:3869
+#, fuzzy
+msgid "Export"
+msgstr "E&xporter"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:179
 msgid "Export GCODE Options"
@@ -849,7 +841,7 @@ msgstr "Code d'initialisation :"
 msgid "Exit Code:"
 msgstr "Code de fin :"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:541
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:550
 msgid "Export PDF Options"
 msgstr "Options d'export PDF"
 
@@ -857,62 +849,38 @@ msgstr "Options d'export PDF"
 msgid "Page Size"
 msgstr "Taille de la page"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:546
-#: src/core/Settings.cc:397
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
+#: src/core/Settings.cc:400
 msgid "A6 (105 x 148 mm)"
 msgstr "A6 (105 x 148 mm)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:547
-msgid "a6"
-msgstr "a6"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:548
-#: src/core/Settings.cc:398
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:556
+#: src/core/Settings.cc:401
 msgid "A5 (148 x 210 mm)"
 msgstr "A5 (148 x 210 mm)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:549
-msgid "a5"
-msgstr "a5"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:550
-#: src/core/Settings.cc:399
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
+#: src/core/Settings.cc:402
 msgid "A4 (210x297 mm)"
 msgstr "A4 (210x297 mm)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:551
-msgid "a4"
-msgstr "a4"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:552
-#: src/core/Settings.cc:400
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:558
+#: src/core/Settings.cc:403
 msgid "A3 (297x420 mm)"
 msgstr "A3 (297x420 mm)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:553
-msgid "a3"
-msgstr "a3"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:554
-#: src/core/Settings.cc:401
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:559
+#: src/core/Settings.cc:404
 msgid "Letter (8.5x11 in)"
 msgstr "Letter (8.5x11 po)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
-msgid "letter"
-msgstr "letter"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:556
-#: src/core/Settings.cc:402
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:560
+#: src/core/Settings.cc:405
 msgid "Legal (8.5x14 in)"
 msgstr "Legal (8.5x14 po)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
-msgid "legal"
-msgstr "legal"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:558
-#: src/core/Settings.cc:403
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
+#: src/core/Settings.cc:406
 msgid "Tabloid (11x17 in)"
 msgstr "Tabloïd (11x17 po)"
 
@@ -948,13 +916,13 @@ msgstr ""
 msgid "Page Orientation"
 msgstr "Orientation de la page"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:583
-#: src/core/Settings.cc:407
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:585
+#: src/core/Settings.cc:410
 msgid "Portrait (Vertical)"
 msgstr "Portrait (vertical)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:585
-#: src/core/Settings.cc:408
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:587
+#: src/core/Settings.cc:411
 msgid "Landscape (Horizontal)"
 msgstr "Paysage (horizontal)"
 
@@ -966,8 +934,8 @@ msgstr ""
 "<html><head/><body><p>Déterminer la meilleure orientation selon la dimension "
 "maximale de la géométrie.</p></body></html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:590
-#: src/core/Settings.cc:409
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:591
+#: src/core/Settings.cc:412
 msgid "Auto"
 msgstr "Auto"
 
@@ -1171,7 +1139,7 @@ msgid "Font path"
 msgstr "Chemin de la police"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:319
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2641
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2687
 msgid "Style"
 msgstr "Style"
 
@@ -1262,155 +1230,173 @@ msgstr "Chargement d'une conception partagée depuis pythonscad.org"
 msgid "Select Design"
 msgstr "Sélectionner la conception"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1073
-#: src/gui/MainWindow.cc:4580
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1065
+#: src/gui/MainWindow.cc:4869
 msgid "Welcome..."
 msgstr "Bienvenue..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1074
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1066
 msgid "&New File"
 msgstr "&Nouveau fichier"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1076
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1068
 msgid "Ctrl+N"
 msgstr "Ctrl+N"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1078
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1070
 #, fuzzy
 msgid "New &Window"
 msgstr "Nouvelle fenêtre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1079
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1071
 msgid "&Open File..."
 msgstr "&Ouvrir un fichier"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1081
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1073
 msgid "Ctrl+O"
 msgstr "Ctrl+O"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1083
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1075
 #, fuzzy
 msgid "Open in New Windo&w"
 msgstr "Ouvrir dans une nouvelle fenêtre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1084
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1076
 msgid "&Save"
 msgstr "Enregi&strer"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1086
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1078
 msgid "Ctrl+S"
 msgstr "Ctrl+S"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1088
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1080
 msgid "Save &As..."
 msgstr "Enregistrer &sous..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1090
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1082
 msgid "Ctrl+Shift+S"
 msgstr "Ctrl+Maj+S"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1092
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1084
 #, fuzzy
 msgid "Save a C&opy..."
 msgstr "Enregistrer une copie"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1093
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1085
 #, fuzzy
 msgid "S&ave All"
 msgstr "Tout enregistrer"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1094
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1086
 msgid "&Reload"
 msgstr "&Recharger"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1096
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1088
 msgid "Ctrl+R"
 msgstr "Ctrl+R"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1098
-#: src/gui/MainWindow.cc:4581
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1090
+#: src/gui/MainWindow.cc:4870
 msgid "Close &Window"
 msgstr "&Fermer la fenêtre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1100
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1092
 msgid "Alt+F4"
 msgstr "Alt+F4"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1102
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1094
 msgid "&Quit"
 msgstr "&Quitter"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1104
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1096
 msgid "Ctrl+Q"
 msgstr "Ctrl+Q"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1106
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1098
 msgid "&Undo"
 msgstr "Ann&uler"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1108
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1100
 msgid "Ctrl+Z"
 msgstr "Ctrl+Z"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1110
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1102
 msgid "&Redo"
 msgstr "&Répéter"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1112
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1104
 msgid "Ctrl+Shift+Z"
 msgstr "Ctrl+Maj+Z"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1115
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1107
 msgid "Ctrl+Y"
 msgstr "Ctrl+Y"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1117
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1109
 msgid "Cu&t"
 msgstr "Co&uper"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1119
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1111
 msgid "Ctrl+X"
 msgstr "Ctrl+X"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1121
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1113
 msgid "&Copy"
 msgstr "&Copier"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1123
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1115
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1125
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1117
 msgid "&Paste"
 msgstr "&Coller"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1127
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1119
 msgid "Ctrl+V"
 msgstr "Ctrl+V"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1129
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1121
 msgid "&Indent"
 msgstr "&Indenter"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1131
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1123
 msgid "Ctrl+I"
 msgstr "Ctrl+I"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1133
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1125
 msgid "C&omment"
 msgstr "C&ommenter"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1135
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1127
 msgid "Ctrl+D"
 msgstr "Ctrl+D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1137
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1129
 msgid "Unco&mment"
 msgstr "Déco&mmenter"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1139
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1131
 msgid "Ctrl+Shift+D"
 msgstr "Ctrl+Maj+D"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1133
+msgid "Mo&ve Line Up"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1135
+#, fuzzy
+msgid "Ctrl+Alt+Up"
+msgstr "Ctrl+Alt+F"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1137
+msgid "Mo&ve Line Down"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1139
+#, fuzzy
+msgid "Ctrl+Alt+Down"
+msgstr "Ctrl+Alt+F"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1141
 #, fuzzy
@@ -1555,530 +1541,542 @@ msgid "Display CSG Pr&oducts"
 msgstr "Afficher les &produits CSG"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
+#: src/gui/MainWindow.cc:3688
+#, fuzzy
+msgid "&Export..."
+msgstr "&Exporter..."
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1202
+msgid "F7"
+msgstr "F7"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
+#, fuzzy
+msgid "Export &as..."
+msgstr "Exporter &sous..."
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1206
+#, fuzzy
+msgid "Ctrl+F7"
+msgstr "Ctrl+F"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1208
 msgid "Export as &STL (binary)..."
 msgstr "Exporter comme &STL (binaire)..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1201
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1209
 msgid "Export as &STL (ascii)..."
 msgstr "Exporter comme &STL (ascii)..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1202
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1210
 msgid "Export as &OBJ..."
 msgstr "Exporter comme &OBJ..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1203
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1211
 msgid "Export as &POV..."
 msgstr "Exporter comme &POV..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1212
 msgid "Export as &OFF..."
 msgstr "Exporter comme &OFF..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1205
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1213
 msgid "Export as &WRL..."
 msgstr "Exporter comme &WRL..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1206
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1214
 msgid "Export as &Foldable PS..."
 msgstr "Exporter comme PS &pliable..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1207
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1215
 msgid "Export as &Step..."
 msgstr "Exporter comme &STEP..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1208
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1216
 msgid "Export as &GCode..."
 msgstr "Exporter comme &GCode..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1209
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1217
 #, fuzzy
 msgid "P&review"
 msgstr "Aperçu"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1211
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1219
 msgid "F9"
 msgstr "F9"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1213
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1221
 #, fuzzy
 msgid "T&hrown Together"
 msgstr "Jeté ensemble"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1215
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1223
 msgid "F12"
 msgstr "F12"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1217
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1225
 #, fuzzy
 msgid "&Show Edges"
 msgstr "Afficher les arêtes"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1219
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1227
 msgid "Ctrl+1"
 msgstr "Ctrl+1"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1221
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1229
 #, fuzzy
 msgid "Show A&xes"
 msgstr "Afficher les axes"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1223
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1231
 msgid "Ctrl+2"
 msgstr "Ctrl+2"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1225
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1233
 #, fuzzy
 msgid "Show &Crosshairs"
 msgstr "Afficher la mire"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1227
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1235
 msgid "Ctrl+3"
 msgstr "Ctrl+3"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1229
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1237
 #, fuzzy
 msgid "Show Scale &Markers"
 msgstr "Afficher les graduations"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1230
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1238
 msgid "&Top"
 msgstr "&Vue de dessus"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1232
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1240
 msgid "Ctrl+4"
 msgstr "Ctrl+4"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1234
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1242
 msgid "&Bottom"
 msgstr "Vue de dessous"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1236
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1244
 msgid "Ctrl+5"
 msgstr "Ctrl+5"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1238
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1246
 msgid "&Left"
 msgstr "Vue de gauche"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1240
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1248
 msgid "Ctrl+6"
 msgstr "Ctrl+6"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1242
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1250
 msgid "&Right"
 msgstr "Vue de droite"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1244
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1252
 msgid "Ctrl+7"
 msgstr "Ctrl+7"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1246
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1254
 msgid "&Front"
 msgstr "Vue de face"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1248
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1256
 msgid "Ctrl+8"
 msgstr "Ctrl+8"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1250
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1258
 msgid "Bac&k"
 msgstr "Vue de dos"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1252
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1260
 msgid "Ctrl+9"
 msgstr "Ctrl+9"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1254
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1262
 msgid "&Diagonal"
 msgstr "&Diagonale"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1256
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1264
 msgid "Ctrl+0"
 msgstr "Ctrl+0"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1258
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1266
 msgid "Ce&nter"
 msgstr "Ce&ntre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1260
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1268
 msgid "Ctrl+Shift+0"
 msgstr "Ctrl+Maj+0"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1262
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1270
 msgid "&Perspective"
 msgstr "&Perspective normale"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1263
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1271
 msgid "&Orthogonal"
 msgstr "&Orthogonale"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1264
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1272
 msgid "&About"
 msgstr "&À propos"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1265
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1273
 msgid "&Documentation"
 msgstr "&Documentation"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1266
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1274
 msgid "&Offline Documentation"
 msgstr "&Documentation hors ligne"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1267
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1275
 msgid "&Offline Cheat Sheet"
 msgstr "&Aide-mémoire hors ligne"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1268
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1276
 msgid "Clear Recent"
 msgstr "Effacer Récents"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1269
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1277
 msgid "Export as &DXF..."
 msgstr "Exporter comme &DXF..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1270
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1278
 msgid "&Trust Current Design"
 msgstr "&Approuver la conception active"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1272
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1280
 msgid "Toggle trust for the active saved Python design"
 msgstr "Basculer la confiance pour la conception Python active enregistrée"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1274
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1282
 msgid "&Revoke Trust for All Python Designs..."
 msgstr "&Révoquer la confiance pour toutes les conceptions Python..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1276
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1284
 msgid "Revoke trust for all Python designs and clear the trust store"
 msgstr ""
 "Révoquer la confiance pour toutes les conceptions Python et vider le magasin "
 "de confiance"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1278
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1286
 msgid "&Close"
 msgstr "&Fermer"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1280
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1288
 msgid "Ctrl+W"
 msgstr "Ctrl+W"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1282
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1290
 msgid "&Preferences"
 msgstr "&Préférences"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1283
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1291
 msgid "&Find..."
 msgstr "&Rechercher..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1285
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1293
 msgid "Ctrl+F"
 msgstr "Ctrl+F"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1287
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1295
 msgid "Fin&d and Replace..."
 msgstr "&Rechercher et remplacer..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1289
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1297
 msgid "Ctrl+Alt+F"
 msgstr "Ctrl+Alt+F"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1291
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1299
 msgid "Find Ne&xt"
 msgstr "Rechercher &Suivant"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1293
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1301
 msgid "Ctrl+G"
 msgstr "Ctrl+G"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1295
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1303
 msgid "Find Pre&vious"
 msgstr "Rechercher &Précédent"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1297
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1305
 msgid "Ctrl+Shift+G"
 msgstr "Ctrl+Maj+G"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1299
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1307
 msgid "Use Se&lection for Find"
 msgstr "Utiliser la sé&lection pour Rechercher"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1301
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1309
 msgid "Ctrl+E"
 msgstr "Ctrl+E"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1303
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
 #, fuzzy
 msgid "J&ump to next error"
 msgstr "Aller à l'erreur suivante"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1305
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1313
 msgid "Ctrl+Alt+E"
 msgstr "Ctrl+Alt+E"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1307
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1315
 msgid "&Flush Caches"
 msgstr "&Vider les caches"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1308
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1316
 msgid "&PythonSCAD Homepage"
 msgstr "Page d'accueil &PythonSCAD"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1309
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1317
 msgid "&Automatic Reload and Preview"
 msgstr "&Rechargement et aperçu automatiques"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1310
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1318
 msgid "Export as &Image..."
 msgstr "Exporter comme &Image..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1319
 msgid "Export as &CSG..."
 msgstr "Exporter comme &CSG..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1312
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1320
 msgid "&Library info"
 msgstr "Informations sur les &bibliothèques"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1313
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1321
 msgid "Report issue..."
 msgstr "Signaler un problème..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1314
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1322
 msgid "Show &Library Folder"
 msgstr "Afficher le dossier des &bibliothèques"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1315
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1323
 msgid "Show Backup Files"
 msgstr "Afficher les fichiers de sauvegarde"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1316
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1324
 #, fuzzy
 msgid "Reset &View"
 msgstr "Réinitialiser la vue"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1317
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1325
 msgid "Export as S&VG..."
 msgstr "Exporter comme S&VG..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1318
-msgid "Export as &AMF..."
-msgstr "Exporter comme &AMF..."
-
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1319
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1326
 msgid "Export as &3MF..."
 msgstr "Exporter comme &3MF..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1320
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1327
 #, fuzzy
 msgid "Zoom &In"
 msgstr "Zoom avant"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1322
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1329
 msgid "Ctrl+]"
 msgstr "Ctrl+]"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1324
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1331
 #, fuzzy
 msgid "&Zoom Out"
 msgstr "Zoom arrière"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1326
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1333
 msgid "Ctrl+["
 msgstr "Ctrl+["
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1328
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1335
 #, fuzzy
 msgid "View &All"
 msgstr "Voir tout"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1330
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1337
 msgid "Ctrl+Shift+V"
 msgstr "Ctrl+Maj+V"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1332
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1339
 msgid "Conv&ert Tabs to Spaces"
 msgstr "Conv&ertir les tabulations en espaces"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1333
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1340
 #, fuzzy
 msgid "&Toggle Bookmark"
 msgstr "Basculer le signet"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1335
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1342
 msgid "Ctrl+F2"
 msgstr "Ctrl+F2"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1337
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1344
 #, fuzzy
 msgid "Jump to next &bookmark"
 msgstr "Aller au signet suivant"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1339
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1346
 msgid "F2"
 msgstr "F2"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1341
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
 #, fuzzy
 msgid "Jump to &previous bookmark"
 msgstr "Aller au signet précédent"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1343
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
 msgid "Shift+F2"
 msgstr "Maj+F2"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1345
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1352
 msgid "&Full Screen"
 msgstr "&Plein écran"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1347
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1354
 msgid "F11"
 msgstr "F11"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1349
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
 #, fuzzy
 msgid "&Hide Editor toolbar"
 msgstr "Cacher la barre d'outils de l'éditeur"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1357
 msgid "U&nindent"
 msgstr "Dési&ndenter"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1352
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1359
 msgid "Ctrl+Shift+I"
 msgstr "Ctrl+Maj+I"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1354
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1361
 msgid "&Cheat Sheet"
 msgstr "&Aide-mémoire"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1355
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1362
 msgid "&Python Cheat Sheet"
 msgstr "&Aide-mémoire Python"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1363
 msgid "Export as PDF..."
 msgstr "Exporter en PDF..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1357
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
 #, fuzzy
 msgid "Hide &3D View toolbar"
 msgstr "Cacher la barre d'outils de la vue 3D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1358
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1365
 msgid "&Next Window\tCtrl+K"
 msgstr "Fenêtre suiva&nte\tCtrl+K"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1359
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1366
 msgid "&Previous Window\tCtrl+H"
 msgstr "Fenêtre &précédente\tCtrl+H"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1360
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1367
 msgid "Insert Template"
 msgstr "Insérer un modèle"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1362
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1369
 msgid "Alt+Ins"
 msgstr "Alt+Ins"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1371
 #, fuzzy
 msgid "Fold/Unfold All"
 msgstr "Tout plier/déplier"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1365
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1372
 #, fuzzy
 msgid "&Jump To"
 msgstr "Aller à ..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1367
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1374
 msgid "Ctrl+J"
 msgstr "Ctrl+J"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1369
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1376
 msgid "Create Virtual &Environment..."
 msgstr "Créer un &environnement virtuel..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1370
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1377
 msgid "&Select Virtual Environment..."
 msgstr "&Sélectionner l'environnement virtuel..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1371
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1378
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:107
 msgid "Message"
 msgstr "Message"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1374
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1381
 msgid "&File"
 msgstr "&Fichier"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1375
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1382
 msgid "Recen&t Files"
 msgstr "Fichiers Récen&ts"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1376
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1383
 msgid "&Examples"
 msgstr "&Exemples"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1377
-msgid "E&xport"
-msgstr "E&xporter"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1378
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2595
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1384
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2641
 #: src/gui/Editor.cc:206 src/gui/Editor.cc:211 examples
 msgid "Python"
 msgstr "Python"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1379
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1385
 msgid "&Edit"
 msgstr "&Édition"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1380
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1386
 msgid "&Design"
 msgstr "&Conception"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1381
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1387
 msgid "&View"
 msgstr "&Vue"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1382
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1388
 msgid "&Help"
 msgstr "&Aide"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1383
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1389
 msgid "&Window"
 msgstr "Fe&nêtre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1384
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1390
 msgid "Find"
 msgstr "Rechercher"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1385
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1389
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1391
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1395
 msgid "Replace"
 msgstr "Remplacer"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1387
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1393
 msgid "Search string"
 msgstr "Rechercher une chaîne de caractères"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1388
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1394
 msgid "Replacement string"
 msgstr "Chaîne de remplacement"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1391
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1397
 msgid "Previous"
 msgstr "Précédent"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1392
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1398
 msgid "Next"
 msgstr "Suivant"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1393
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1399
 msgid "Done"
 msgstr "Terminer"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1394
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1400
 msgid "Customizer Widget"
 msgstr "Panneau de personnalisation"
 
@@ -2139,7 +2137,7 @@ msgid "OctoPrint API Key Request"
 msgstr "Demande de clé API OctoPrint"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:108
-#: src/openscad_gui.cc:862
+#: src/openscad_gui.cc:869
 msgid "Retry"
 msgstr "Réessayer"
 
@@ -2191,7 +2189,7 @@ msgid "Form"
 msgstr "Formulaire"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterDescriptionWidget.h:99
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2718
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2765
 msgid "Parameter"
 msgstr "Paramètre"
 
@@ -2216,8 +2214,8 @@ msgid "Description Only"
 msgstr "Description seulement"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:161
-#: src/gui/parameter/ParameterWidget.cc:117
-#: src/gui/parameter/ParameterWidget.cc:220
+#: src/gui/parameter/ParameterWidget.cc:212
+#: src/gui/parameter/ParameterWidget.cc:340
 msgid "<design default>"
 msgstr "<défaut de la conception>"
 
@@ -2245,440 +2243,452 @@ msgstr "-"
 msgid "More actions"
 msgstr "Plus d'actions"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2581
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2627
 msgid "3D View"
 msgstr "Vue 3D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2582
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2628
 msgctxt "preferences"
 msgid "Advanced"
 msgstr "Avancé"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2583
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2629
 msgid "Editor"
 msgstr "Éditeur"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2585
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2691
-msgid "Features"
-msgstr "Fonctionnalités"
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2631
+msgid "Experimental"
+msgstr ""
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2587
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2633
 msgid "Enable/Disable experimental features"
 msgstr "Activer/Désactiver les fonctionnalités expérimentales"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2589
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2635
 msgid "Axes"
 msgstr "Axes"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2591
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2637
 msgid "Input driver configuration and Axis mapping"
 msgstr "Configuration des pilotes et de l'association des axes"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2593
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2639
 msgid "Buttons"
 msgstr "Boutons"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2594
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2640
 msgid "Mouse"
 msgstr "Souris"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2597
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2643
 msgid "Python Settings"
 msgstr "Paramètres Python"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2599
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2645
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:178
 msgid "3D Print"
 msgstr "Impression 3D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2601
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2647
 msgid "3D Printing Services"
 msgstr "Services d'impression 3D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2603
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2649
 msgid "Dialogs"
 msgstr "Boîtes de dialogue"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2604
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2650
 msgid "AI"
 msgstr "IA"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2606
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2652
 msgid "AI and LLM configurations"
 msgstr "Configurations IA et LLM"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2608
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2654
 msgid "Directory of the output file"
 msgstr "Répertoire du fichier de sortie"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2609
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2655
 msgid "Extension of the output file without leading dot"
 msgstr "Extension du fichier de sortie sans le point initial"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2610
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2656
 msgid "Full path to the main source file"
 msgstr "Chemin complet du fichier source principal"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2611
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2657
 msgid "Directory of the main source file"
 msgstr "Répertoire du fichier source principal"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2612
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2658
 msgid "Full path to the output file"
 msgstr "Chemin complet du fichier de sortie"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2613
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
 msgid "Color scheme:"
 msgstr "Palette de couleurs :"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2614
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
 msgid "Show Warnings and Errors in 3D View"
 msgstr "Afficher les Avertissements et les Erreurs dans la fenêtre de rendu"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2615
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
 msgid "mouse centric zoom"
 msgstr "Zoom centré sur le pointeur"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2616
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
 msgid "Number Scroll"
 msgstr "Défilement des nombres"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2617
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
 #: src/core/Settings.cc:198
 msgid "Alt"
 msgstr "Alt"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2618
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
 #: src/core/Settings.cc:199
 msgid "Left Mouse Button"
 msgstr "Bouton gauche de la souris"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2619
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
 #: src/core/Settings.cc:200
 msgid "Either"
 msgstr "L'un ou l'autre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2621
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2667
 msgid "Step Size"
 msgstr "Taille du pas"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2622
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
 msgid "Number Scroll Via Mouse Wheel"
 msgstr "Défilement des nombres avec la molette de la souris"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2623
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
 msgid "Modifier For Wheel Scroll "
 msgstr "Modificateur pour le défilement à la molette "
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2624
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
 msgid "Autocomplete"
 msgstr "Autocomplétion"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2625
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
 msgid " Include defined modules"
 msgstr " Inclure les modules définis"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2626
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
 msgid "Character Threshold"
 msgstr "Seuil de caractères"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2627
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2673
 msgid " Include defined functions"
 msgstr " Inclure les fonctions définies"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2628
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2674
 msgid "Enable Autocompletion"
 msgstr "Activer l'autocomplétion"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2629
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2675
 msgid " Include defined variables"
 msgstr " Inclure les variables définies"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2676
 msgid "Mode"
 msgstr "Mode"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2631
-#: src/core/Settings.cc:538
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2677
+#: src/core/Settings.cc:541
 msgid "Parsed File Mode"
 msgstr "Mode fichier analysé"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2632
-#: src/core/Settings.cc:539
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2678
+#: src/core/Settings.cc:542
 msgid "Regex Input Text Mode"
 msgstr "Mode texte d'entrée regex"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2634
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2680
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2705
 msgid "Line wrap"
 msgstr "Retour à la ligne automatique"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2635
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2648
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2654
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2681
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2694
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2700
 #: src/core/Settings.cc:45 src/core/Settings.cc:155 src/core/Settings.cc:166
 #: src/core/Settings.cc:172 src/gui/input/ButtonConfigWidget.cc:248
 msgid "None"
 msgstr "Aucun"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2636
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2682
 #: src/core/Settings.cc:156
 msgid "Wrap at character boundaries"
 msgstr "Coupure au caractère"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2637
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2683
 #: src/core/Settings.cc:157
 msgid "Wrap at word boundaries"
 msgstr "Coupure au mot"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2639
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2685
 msgid "Line wrap indentation"
 msgstr "Indentation des retours à la ligne"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2640
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2686
 msgid "Line wrap visualization"
 msgstr "Visualisation des retours à la ligne"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2643
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2689
 #: src/core/Settings.cc:161
 msgid "Same"
 msgstr "Identique"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2644
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2690
 #: src/core/Settings.cc:161
 msgid "Indented"
 msgstr "Indenté"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2646
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2678
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2692
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2724
 #: src/core/Settings.cc:189
 msgid "Indent"
 msgstr "Indenter"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2647
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2693
 msgid "Start"
 msgstr "Début"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2649
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2655
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
 #: src/core/Settings.cc:167 src/core/Settings.cc:173
 msgid "Text"
 msgstr "Texte"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2650
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2656
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2696
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2702
 #: src/core/Settings.cc:168 src/core/Settings.cc:174
 msgid "Border"
 msgstr "Bordure"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2651
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2657
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2703
 #: src/core/Settings.cc:169 src/core/Settings.cc:175
 msgid "Margin"
 msgstr "Marge"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2653
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2699
 msgid "End"
 msgstr "Fin"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2706
 msgid "Display"
 msgstr "Afficher"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2707
 msgid "Highlight current line"
 msgstr "Surligner la ligne courante"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2708
 msgid "Display Line Numbers"
 msgstr "Afficher les numéros de ligne"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
 msgid "Enable brace matching"
 msgstr "Activer la correspondance d'accolades"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2742
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2758
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2760
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2710
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2805
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2807
 msgid "Font"
 msgstr "Police"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2711
 msgid "Color syntax highlighting"
 msgstr "Utiliser la coloration syntaxique"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2666
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2712
 msgid "Ctrl/Cmd-Mouse-wheel zooms text"
 msgstr "Ctrl/Cmd-Roulette-Souris agrandit le texte"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2667
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2713
 msgid "Use gvim as editor (requires restart)"
 msgstr "Utiliser gvim comme éditeur (nécessite un redémarrage)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2714
 msgid "Indentation"
 msgstr "Indentation"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2715
 msgid "Auto Indent"
 msgstr "Indentation automatique"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2716
 msgid "Backspace unindents"
 msgstr "La touche \"effacement\" retire l'indentation"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2717
 msgid "Indent using"
 msgstr "Indenter en utilisant"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2718
 #: src/core/Settings.cc:187
 msgid "Spaces"
 msgstr "Espaces"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2673
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2719
 #: src/core/Settings.cc:187
 msgid "Tabs"
 msgstr "Tabulations"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2675
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2721
 msgid "Indentation width"
 msgstr "Largeur d'Indentation"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2676
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2722
 msgid "Tab width"
 msgstr "Largeur des tabulations"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2677
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2723
 msgid "Tab key function"
 msgstr "Fonction de la touche Tab"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2679
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2725
 #: src/core/Settings.cc:190
 msgid "Insert Tab"
 msgstr "Insérer une Tabulation"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2681
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2727
 msgid "Show whitespace"
 msgstr "Afficher les espaces blancs"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2682
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2728
 #: src/core/Settings.cc:178
 msgid "Never"
 msgstr "Jamais"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2683
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2729
 #: src/core/Settings.cc:179
 msgid "Always"
 msgstr "Toujours"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2684
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2730
 msgid "Only after indentation"
 msgstr "Seulement après indentation"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2686
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2732
 msgid "Size"
 msgstr "Taille"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2687
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2733
 msgid "Automatically check for updates"
 msgstr "Vérifier les mises à jour automatiquement"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2688
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2734
 msgid "Include development snapshots"
 msgstr "Inclure les versions de développement"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2689
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2735
 msgid "Check Now"
 msgstr "Vérifier Maintenant"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2690
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2736
 msgid "Last checked: "
 msgstr "Dernière vérification : "
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2692
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
+#, fuzzy
+msgid "Experimental Features"
+msgstr "Fonctionnalités d'export"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
+msgid ""
+"These features are experimental.  They may change or be removed entirely "
+"without notice. You may enable them and use them and comment on them, but "
+"you must assume that they may not be in their final form and may never "
+"appear in an OpenSCAD release in any form."
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
 msgid "General"
 msgstr "Général"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2693
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2740
 msgid "Default Print Service"
 msgstr "Service d'impression par défaut"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2694
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2741
 msgid "Enable remote print services"
 msgstr "Activer les services d'impression distants"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2742
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:181
 #: src/gui/Preferences.cc:646
 msgid "OctoPrint"
 msgstr "OctoPrint"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2696
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2743
 msgid "URL"
 msgstr "URL"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2744
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2849
 msgid "API Key"
 msgstr "Clé API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2698
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2699
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2745
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2746
 msgid "Load"
 msgstr "Charger"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2748
 msgid "Check"
 msgstr "Vérifier"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2702
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2749
 msgid "Slicing Profile"
 msgstr "Profil de tranchage"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2703
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2750
 msgid "Slicing Engine"
 msgstr "Trancheur"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2704
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2710
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2757
 msgid "File Format"
 msgstr "Format de fichier"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2705
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
 msgid "Action"
 msgstr "Action"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2706
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2753
 msgid "Request"
 msgstr "Requête"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2707
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
 msgid "Show"
 msgstr "Afficher"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2708
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2755
 msgid "Note: The API key is stored unencrypted in the application settings."
 msgstr ""
 "Remarque : la clé API est stockée sans chiffrement dans les paramètres de "
 "l'application."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2756
 #: src/gui/Preferences.cc:647
 msgid "Local Application"
 msgstr "Application locale"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2711
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2758
 msgid "File"
 msgstr "Fichier"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2716
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2763
 msgid "Executable"
 msgstr "Exécutable"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2720
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2767
 msgid ""
 "Directory for storing the exported file, leave empty to use the default "
 "system location."
@@ -2686,273 +2696,285 @@ msgstr ""
 "Répertoire de stockage du fichier exporté ; laisser vide pour utiliser "
 "l'emplacement système par défaut."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2723
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2770
 msgid "Temp Dir"
 msgstr "Répertoire temporaire"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2725
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
 msgid "3D Preview (OpenCSG)"
 msgstr "Aperçu 3D (OpenCSG)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2726
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
 msgid "Show capability warning"
 msgstr "Afficher les avertissements de fonctionnalité"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2727
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
 msgid "Turn off rendering at "
 msgstr "Désactiver le rendu à "
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2728
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2775
 msgid "elements"
 msgstr "éléments"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2729
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2776
 msgid "Force Goldfeather"
 msgstr "Forcer Goldfeather"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2730
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
 msgid "3D Rendering"
 msgstr "Rendu 3D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2731
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2778
 msgid "Backend"
 msgstr "Moteur de rendu"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2732
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2779
 msgid "CGAL Cache size"
 msgstr "Taille du Cache de CGAL"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2733
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2735
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2780
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
 msgid "MB"
 msgstr "Mo"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2734
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2781
 msgid "PolySet Cache size"
 msgstr "Taille du Cache PolySet"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2736
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
 msgid "User Interface"
 msgstr "Interface utilisateur"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
 msgid "GUI theme"
 msgstr "Thème de l'interface"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
 msgid "Light"
 msgstr "Clair"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
 msgid "Dark"
 msgstr "Sombre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2740
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
 msgid "Auto (follow system)"
 msgstr "Auto (suivre le système)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2743
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
 msgid "Enable docking helper widgets in different places"
 msgstr "Activer l'ancrage de l'Éditeur et de la Console à différents endroits"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2744
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
 msgid "Enable undocking of helper widgets to separate windows"
 msgstr ""
 "Activer le détachement des widgets auxiliaires dans des fenêtres séparées"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2745
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
 msgid "Enable user interface localization (requires restart of PythonSCAD)"
 msgstr ""
 "Activer la localisation de l'interface (nécessite un redémarrage de "
 "PythonSCAD)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2746
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
 msgid "Bring window to front after automatic reload"
 msgstr "Afficher la fenêtre en premier plan après un rechargement automatique"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2747
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
 msgid "Play sound notification on render complete"
 msgstr "Jouer un son de notification lorsque le rendu est terminé"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2748
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
 msgid "Play sound when render completion time is at least"
 msgstr "Jouer un son lorsque la durée du rendu atteint au moins"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2749
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
 msgid "sec"
 msgstr "sec"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2750
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
 #: src/gui/Preferences.cc:448
 msgid "When launching another instance with files:"
 msgstr "Lors du lancement d'une autre instance avec des fichiers :"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
 #: src/gui/Preferences.cc:450
 msgid "Enable session management (save/restore tabs on quit, requires restart)"
 msgstr ""
 "Activer la gestion de session (enregistrer/restaurer les onglets à la "
 "fermeture, redémarrage requis)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
 #: src/gui/Preferences.cc:452
 msgid "Autosave session in background for crash recovery"
 msgstr ""
 "Enregistrer automatiquement la session en arrière-plan pour la récupération "
 "après plantage"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2753
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
 #: src/gui/Preferences.cc:453
 msgid "Autosave interval:"
 msgstr "Intervalle d'enregistrement automatique :"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
 msgid "Console"
 msgstr "Console"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2755
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
 msgid "Clear console before Preview/Render"
 msgstr "Effacer la console avant l'aperçu/le rendu"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2756
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
 msgid "Maximum lines for Console to keep:"
 msgstr "Nombre maximal de lignes conservées dans la console :"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2757
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2804
 msgid "(0 for unlimited)"
 msgstr "(0 pour illimité)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2759
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2806
 msgid "Customizer"
 msgstr "Panneau de personnalisation"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2761
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2808
 msgid "OpenSCAD Language Features"
 msgstr "Fonctionnalités du langage OpenSCAD"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2762
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2809
 msgid "Warnings"
 msgstr "Avertissements"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2763
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2810
 msgid "Stop on the first warning"
 msgstr "Arrêter après la première alerte"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2764
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2811
 msgid "Check the parameter range for builtin modules"
 msgstr "Vérifier la plage des paramètres pour les modules intégrés"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2765
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2812
 msgid "Warn when there is a parameter mismatch in user module calls"
 msgstr ""
 "Avertir en cas de paramètres incompatibles dans les appels de modules "
 "utilisateur"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2766
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2813
 msgid "Trace"
 msgstr "Trace"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2767
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2814
 msgid "Trace depth:"
 msgstr "Profondeur de trace :"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2768
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2815
 msgid "(max. number or trace messages)"
 msgstr "(nombre max. de messages de trace)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2769
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2816
 msgid "Show parameters of usermodule calls in trace"
 msgstr "Afficher les paramètres des appels usermodule dans la trace"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2770
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2817
 msgid "Render Summary"
 msgstr "Résumé du rendu"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2818
 msgid "Camera"
 msgstr "Caméra"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2819
 msgid "Bounding Box"
 msgstr "Boîte englobante"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2820
 msgid "Measurements: Area"
 msgstr "Mesures : surface"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2821
 msgid "Measurements: Volume"
 msgstr "Mesures : volume"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2775
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2822
 msgid "Export Features"
 msgstr "Fonctionnalités d'export"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2776
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2823
 msgid "Toolbar Export 3D"
 msgstr "Barre d'outils Export 3D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2824
 msgid "Toolbar Export 2D"
 msgstr "Barre d'outils Export 2D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2778
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2825
 msgid "Debugging"
 msgstr "Débogage"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2779
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2826
 msgid "Enable tracing of HIDAPI events (requires restart of PythonSCAD)"
 msgstr ""
 "Activer le traçage des événements HIDAPI (nécessite un redémarrage de "
 "PythonSCAD)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2780
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2827
+msgid "Network"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2828
+msgid "Custom CA certificates (PEM)"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2830
+msgid "Skip TLS certificate verification (insecure)"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2831
 msgid "Network Import List"
 msgstr "Liste d'importation réseau"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2781
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2832
 msgid "Globally trust Python designs"
 msgstr "Faire confiance globalement aux conceptions Python"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2833
 msgid "Really (very dangerous)"
 msgstr "Vraiment (très dangereux)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2834
 msgid "Dialog visibility"
 msgstr "Visibilité des boîtes de dialogue"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2835
 #, fuzzy
 msgid "Always show Welcome screen"
 msgstr "Affiche l'écran d'accueil"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2836
 msgid "Always show PDF export dialog"
 msgstr "Toujours afficher la boîte de dialogue d'export PDF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2837
 msgid "Always show 3MF export dialog"
 msgstr "Toujours afficher la boîte de dialogue d'export 3MF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2838
 #, fuzzy
 msgid "Always show SVG export dialog"
 msgstr "Toujours afficher la boîte de dialogue d'export SVG"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2839
 msgid "Always show GCODE export dialog"
 msgstr "Toujours afficher la boîte de dialogue d'export GCODE"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2840
 msgid "Always show Print Service dialog"
 msgstr "Toujours afficher la boîte de dialogue du service d'impression"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2841
 msgid "AI Preferences"
 msgstr "Préférences IA"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2842
 msgid ""
 "AI assistant integration is active. Configure your connection profiles and "
 "parameters below."
@@ -2960,47 +2982,47 @@ msgstr ""
 "L'intégration de l'assistant IA est active. Configurez vos profils de "
 "connexion et paramètres ci-dessous."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2843
 msgid "Profiles"
 msgstr "Profils"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2844
 msgid "Active Profile"
 msgstr "Profil actif"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2845
 msgid "New Profile"
 msgstr "Nouveau profil"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2846
 msgid "Delete"
 msgstr "Supprimer"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2847
 msgid "API Configuration"
 msgstr "Configuration de l'API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2848
 msgid "API Endpoint"
 msgstr "Point de terminaison de l'API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2850
 msgid "System Prompt / Instructions"
 msgstr "Invite système / instructions"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2851
 msgid "Default User Prompt"
 msgstr "Invite utilisateur par défaut"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2852
 msgid "API Parameters"
 msgstr "Paramètres de l'API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2853
 msgid "Add Parameter"
 msgstr "Ajouter un paramètre"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2854
 msgid "Remove Parameter"
 msgstr "Supprimer un paramètre"
 
@@ -3035,10 +3057,6 @@ msgstr "Nom de l'auteur (facultatif)"
 #: build/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:89
 msgid "Publish on pythonscad.org"
 msgstr "Publier sur pythonscad.org"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:266
-msgid "ViewportControlWidget"
-msgstr "Contrôle de la vue"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:271
 msgid "Aspect Ratio"
@@ -3106,31 +3124,31 @@ msgstr "Téléverse, tranche et sélectionne pour l'impression"
 msgid "Upload, Slice & Start printing"
 msgstr "Téléverse, tranche et démarre l'impression"
 
-#: src/core/Settings.cc:444
+#: src/core/Settings.cc:447
 msgid "Use colors from model"
 msgstr "Utiliser les couleurs du modèle"
 
-#: src/core/Settings.cc:446
+#: src/core/Settings.cc:449
 msgid "Use selected color only"
 msgstr "Utiliser uniquement la couleur sélectionnée"
 
-#: src/core/Settings.cc:453
+#: src/core/Settings.cc:456
 msgid "Millimeter"
 msgstr "Millimètre"
 
-#: src/core/Settings.cc:457
+#: src/core/Settings.cc:460
 msgid "Feet"
 msgstr "Pieds"
 
-#: src/core/Settings.cc:465
+#: src/core/Settings.cc:468
 msgid "Color"
 msgstr "Couleur"
 
-#: src/core/Settings.cc:466
+#: src/core/Settings.cc:469
 msgid "Base Material"
 msgstr "Matériau de base"
 
-#: src/core/Settings.cc:528
+#: src/core/Settings.cc:531
 msgid "Alphabetical"
 msgstr "Alphabétique"
 
@@ -3362,14 +3380,14 @@ msgstr ""
 "Ce pilote n'a pas été activé lors de la compilation et n'est donc pas "
 "disponible."
 
-#: src/gui/input/AxisConfigWidget.h:94
+#: src/gui/input/AxisConfigWidget.h:92
 msgid ""
 "The DBUS driver is not for actual devices but for remote control, Linux only."
 msgstr ""
 "Le pilote DBUS n'est pas destiné aux périphériques réels mais à la "
 "télécommande, Linux uniquement."
 
-#: src/gui/input/AxisConfigWidget.h:96
+#: src/gui/input/AxisConfigWidget.h:94
 msgid ""
 "The HIDAPI driver communicates directly with the 3D mice, Windows and macOS."
 msgstr ""
@@ -3400,21 +3418,21 @@ msgstr ""
 msgid "Toggle Perspective"
 msgstr "Basculer la perspective"
 
-#: src/gui/MainWindow.cc:1246
+#: src/gui/MainWindow.cc:1296
 msgid "Compile error."
 msgstr "Erreur de compilation."
 
-#: src/gui/MainWindow.cc:1249
+#: src/gui/MainWindow.cc:1299
 msgid "Error while compiling '%1'."
 msgstr "Erreur lors de la compilation de '%1'."
 
-#: src/gui/MainWindow.cc:1254
+#: src/gui/MainWindow.cc:1304
 msgid "Compilation generated %1 warning."
 msgid_plural "Compilation generated %1 warnings."
 msgstr[0] "La compilation a généré %1 avertissement."
 msgstr[1] "La compilation a généré %1 avertissements."
 
-#: src/gui/MainWindow.cc:1267
+#: src/gui/MainWindow.cc:1317
 msgid ""
 " For details see the <a href=\"#errorlog\">error log</a> and <a "
 "href=\"#console\">console window</a>."
@@ -3422,15 +3440,15 @@ msgstr ""
 " Pour plus de détails, voir le <a href=\"#errorlog\">journal des erreurs</a> "
 "et la <a href=\"#console\">console</a>."
 
-#: src/gui/MainWindow.cc:1607 src/gui/TabManager.cc:248
+#: src/gui/MainWindow.cc:1663 src/gui/TabManager.cc:429
 msgid "Session Save"
 msgstr "Enregistrement de la session"
 
-#: src/gui/MainWindow.cc:1608
+#: src/gui/MainWindow.cc:1664
 msgid "Could not save the session."
 msgstr "Impossible d'enregistrer la session."
 
-#: src/gui/MainWindow.cc:1609
+#: src/gui/MainWindow.cc:1665
 msgid ""
 "%1\n"
 "\n"
@@ -3440,23 +3458,23 @@ msgstr ""
 "\n"
 "%2"
 
-#: src/gui/MainWindow.cc:1610
+#: src/gui/MainWindow.cc:1666
 msgid "Try Again"
 msgstr "Réessayer"
 
-#: src/gui/MainWindow.cc:1612
+#: src/gui/MainWindow.cc:1668
 msgid "Quit Without Saving"
 msgstr "Quitter sans enregistrer"
 
-#: src/gui/MainWindow.cc:1613
+#: src/gui/MainWindow.cc:1669
 msgid "Keep Open"
 msgstr "Garder ouvert"
 
-#: src/gui/MainWindow.cc:1798
+#: src/gui/MainWindow.cc:1855
 msgid "Revoke All Trusted Designs"
 msgstr "Révoquer la confiance pour toutes les conceptions"
 
-#: src/gui/MainWindow.cc:1799
+#: src/gui/MainWindow.cc:1856
 msgid ""
 "This will revoke trust for all Python designs.\n"
 "\n"
@@ -3466,26 +3484,26 @@ msgstr ""
 "\n"
 "Êtes-vous sûr ?"
 
-#: src/gui/MainWindow.cc:1841 src/gui/MainWindow.cc:1848
-#: src/gui/MainWindow.cc:1857 src/gui/MainWindow.cc:1870
-#: src/gui/MainWindow.cc:1875
+#: src/gui/MainWindow.cc:1898 src/gui/MainWindow.cc:1905
+#: src/gui/MainWindow.cc:1914 src/gui/MainWindow.cc:1927
+#: src/gui/MainWindow.cc:1932
 msgid "Create Virtual Environment"
 msgstr "Créer un environnement virtuel"
 
-#: src/gui/MainWindow.cc:1855
+#: src/gui/MainWindow.cc:1912
 msgid "Creating Python virtual environment. Please wait..."
 msgstr "Création de l'environnement virtuel Python. Veuillez patienter..."
 
-#: src/gui/MainWindow.cc:1892
+#: src/gui/MainWindow.cc:1949
 msgid "Select Virtual Environment"
 msgstr "Sélectionner l'environnement virtuel"
 
-#: src/gui/MainWindow.cc:2446 src/gui/TabManager.cc:199
-#: src/gui/TabManager.cc:313
+#: src/gui/MainWindow.cc:2507 src/gui/TabManager.cc:380
+#: src/gui/TabManager.cc:494
 msgid "Application"
 msgstr "Application"
 
-#: src/gui/MainWindow.cc:2447
+#: src/gui/MainWindow.cc:2508
 msgid ""
 "The file has changed on disk, but this tab has unsaved edits.\n"
 "Reloading will discard your changes.\n"
@@ -3498,75 +3516,67 @@ msgstr ""
 "\n"
 "Voulez-vous vraiment recharger le fichier ?"
 
-#: src/gui/MainWindow.cc:3067
+#: src/gui/MainWindow.cc:3134
 msgid "Click to change language"
 msgstr "Cliquer pour changer la langue"
 
-#: src/gui/MainWindow.cc:3112
+#: src/gui/MainWindow.cc:3179
 msgid "Auto-detect from file extension"
 msgstr "Détection automatique selon l'extension du fichier"
 
-#: src/gui/MainWindow.cc:3511
-msgid "Export %1 File"
-msgstr "Exporter le fichier %1"
+#: src/gui/MainWindow.cc:3610
+#, fuzzy
+msgid "By Extension"
+msgstr "Par extension"
 
-#: src/gui/MainWindow.cc:3512
-msgid "%1 Files (*%2)"
-msgstr "%1 Fichiers (*%2)"
+#: src/gui/MainWindow.cc:3686
+#, fuzzy
+msgid "Export to %1"
+msgstr "Exporter vers %1"
 
-#: src/gui/MainWindow.cc:3560
-msgid "Export CSG File"
-msgstr "Exporter un fichier CSG"
+#: src/gui/MainWindow.cc:3855 src/gui/MainWindow.cc:3870
+msgid ""
+"The given filename does not have any known file extension. Please enter a "
+"known file extension or select a file format from the file format list."
+msgstr "Le nom de fichier donné n'a aucune extension connue. Veuillez saisir une extension connue ou sélectionner un format dans la liste des formats de fichier."
 
-#: src/gui/MainWindow.cc:3561
-msgid "CSG Files (*.csg)"
-msgstr "Fichiers CSG (*.csg)"
-
-#: src/gui/MainWindow.cc:3584
-msgid "Export Image"
-msgstr "Exporter une Image"
-
-#: src/gui/MainWindow.cc:3584
-msgid "PNG Files (*.png)"
-msgstr "Fichiers PNG (*.png)"
-
-#: src/gui/MainWindow.cc:4000 src/gui/MainWindow.cc:4904
+#: src/gui/MainWindow.cc:4310 src/gui/MainWindow.cc:5195
 msgid "&AI Chat"
 msgstr "Chat &IA"
 
-#: src/gui/MainWindow.cc:4896
+#: src/gui/MainWindow.cc:5187
 msgid "&Editor"
 msgstr "&Éditeur"
 
-#: src/gui/MainWindow.cc:4897
+#: src/gui/MainWindow.cc:5188
 msgid "&Console"
 msgstr "&Console"
 
-#: src/gui/MainWindow.cc:4898
+#: src/gui/MainWindow.cc:5189
 msgid "C&ustomizer"
 msgstr "Personnalisateur"
 
-#: src/gui/MainWindow.cc:4899
+#: src/gui/MainWindow.cc:5190
 msgid "Error &Log"
 msgstr "Journal des &erreurs"
 
-#: src/gui/MainWindow.cc:4900
+#: src/gui/MainWindow.cc:5191
 msgid "&Animate"
 msgstr "Animer"
 
-#: src/gui/MainWindow.cc:4901
+#: src/gui/MainWindow.cc:5192
 msgid "&Font List"
 msgstr "Liste des &polices"
 
-#: src/gui/MainWindow.cc:4902
+#: src/gui/MainWindow.cc:5193
 msgid "C&olor List"
 msgstr "Liste de &couleurs"
 
-#: src/gui/MainWindow.cc:4903
+#: src/gui/MainWindow.cc:5194
 msgid "&Viewport Control"
 msgstr "Contrôle de la &vue"
 
-#: src/gui/Network.h:150
+#: src/gui/Network.h:168
 msgid "Timeout error"
 msgstr "Dépassement du temps alloué"
 
@@ -3582,15 +3592,15 @@ msgstr "Clé API approuvée."
 msgid "API key approval failed."
 msgstr "Échec de l'approbation de la clé API."
 
-#: src/gui/OpenSCADApp.cc:82
+#: src/gui/OpenSCADApp.cc:98
 msgid "Unknown error"
 msgstr "Erreur inconnue"
 
-#: src/gui/OpenSCADApp.cc:86
+#: src/gui/OpenSCADApp.cc:102
 msgid "Critical Error"
 msgstr "Erreur critique"
 
-#: src/gui/OpenSCADApp.cc:87
+#: src/gui/OpenSCADApp.cc:103
 msgid ""
 "A critical error was caught. The application may have become unstable:\n"
 "%1"
@@ -3599,7 +3609,7 @@ msgstr ""
 "instable :\n"
 "%1"
 
-#: src/gui/OpenSCADApp.cc:113
+#: src/gui/OpenSCADApp.cc:129
 msgid ""
 "Fontconfig needs to update its font cache.\n"
 "This can take up to a couple of minutes."
@@ -3607,31 +3617,31 @@ msgstr ""
 "Fontconfig doit mettre à jour son cache de polices.\n"
 "Cela peut prendre quelques minutes."
 
-#: src/gui/parameter/ParameterWidget.cc:76
+#: src/gui/parameter/ParameterWidget.cc:168
 msgid "Collapse All"
 msgstr "Tout replier"
 
-#: src/gui/parameter/ParameterWidget.cc:79
+#: src/gui/parameter/ParameterWidget.cc:171
 msgid "Expand All"
 msgstr "Tout développer"
 
-#: src/gui/parameter/ParameterWidget.cc:153
+#: src/gui/parameter/ParameterWidget.cc:248
 msgid "Saving presets"
 msgstr "Sauvegarde des jeux de paramètres"
 
-#: src/gui/parameter/ParameterWidget.cc:154
+#: src/gui/parameter/ParameterWidget.cc:249
 msgid "%1 was found, but was unreadable. Do you want to overwrite %1?"
 msgstr "%1 existe mais est illisible. Voulez-vous écraser %1?"
 
-#: src/gui/parameter/ParameterWidget.cc:334
+#: src/gui/parameter/ParameterWidget.cc:454
 msgid "Create new set of parameter"
 msgstr "Créer un nouveau jeu de paramètres"
 
-#: src/gui/parameter/ParameterWidget.cc:334
+#: src/gui/parameter/ParameterWidget.cc:454
 msgid "Enter name of the parameter set"
 msgstr "Entrer le nom du jeu de paramètres"
 
-#: src/gui/parameter/ParameterWidget.cc:390
+#: src/gui/parameter/ParameterWidget.cc:510
 msgid "New set "
 msgstr "Nouvel ensemble "
 
@@ -3652,7 +3662,7 @@ msgid " seconds"
 msgstr " secondes"
 
 #: src/gui/Preferences.cc:481 src/gui/Preferences.cc:486
-#: src/gui/Preferences.cc:1464 src/gui/Preferences.cc:1503
+#: src/gui/Preferences.cc:1489 src/gui/Preferences.cc:1528
 msgid "<Default>"
 msgstr "<Défaut>"
 
@@ -3660,36 +3670,44 @@ msgstr "<Défaut>"
 msgid "NONE"
 msgstr "AUCUN"
 
-#: src/gui/Preferences.cc:1447
+#: src/gui/Preferences.cc:1211
+msgid "Select CA certificate"
+msgstr ""
+
+#: src/gui/Preferences.cc:1212
+msgid "Certificate files (*.pem *.crt *.cer);;All files (*)"
+msgstr ""
+
+#: src/gui/Preferences.cc:1472
 msgid "Success: Server Version = %2, API Version = %1"
 msgstr "Succès : version serveur = %2, version API = %1"
 
-#: src/gui/Preferences.cc:1449 src/gui/Preferences.cc:1474
-#: src/gui/Preferences.cc:1513
+#: src/gui/Preferences.cc:1474 src/gui/Preferences.cc:1499
+#: src/gui/Preferences.cc:1538
 msgid "Error"
 msgstr "Erreur"
 
-#: src/gui/Preferences.cc:1590
+#: src/gui/Preferences.cc:1615
 msgid "New AI Profile"
 msgstr "Nouveau profil IA"
 
-#: src/gui/Preferences.cc:1590
+#: src/gui/Preferences.cc:1615
 msgid "Profile name:"
 msgstr "Nom du profil :"
 
-#: src/gui/Preferences.cc:1595
+#: src/gui/Preferences.cc:1620
 msgid "Duplicate Profile"
 msgstr "Dupliquer le profil"
 
-#: src/gui/Preferences.cc:1595
+#: src/gui/Preferences.cc:1620
 msgid "A profile with that name already exists."
 msgstr "Un profil portant ce nom existe déjà."
 
-#: src/gui/Preferences.cc:1657
+#: src/gui/Preferences.cc:1682
 msgid "Delete AI Profile"
 msgstr "Supprimer le profil IA"
 
-#: src/gui/Preferences.cc:1658
+#: src/gui/Preferences.cc:1683
 msgid "Delete profile \"%1\"?"
 msgstr "Supprimer le profil « %1 » ?"
 
@@ -3742,19 +3760,19 @@ msgstr ""
 msgid "Trust Design"
 msgstr "Approuver la conception"
 
-#: src/gui/TabManager.cc:130
+#: src/gui/TabManager.cc:311
 msgid "Python script (*.py)"
 msgstr "Script Python (*.py)"
 
-#: src/gui/TabManager.cc:133 src/gui/TabManager.cc:138
+#: src/gui/TabManager.cc:314 src/gui/TabManager.cc:319
 msgid "OpenSCAD script (*.scad)"
 msgstr "Script OpenSCAD (*.scad)"
 
-#: src/gui/TabManager.cc:141
+#: src/gui/TabManager.cc:322
 msgid "All files (*)"
 msgstr "Tous les fichiers (*)"
 
-#: src/gui/TabManager.cc:163
+#: src/gui/TabManager.cc:344
 msgid ""
 "%1 already exists.\n"
 "Do you want to replace it?"
@@ -3762,13 +3780,13 @@ msgstr ""
 "%1 existe déjà.\n"
 "Voulez-vous le remplacer ?"
 
-#: src/gui/TabManager.cc:200
+#: src/gui/TabManager.cc:381
 msgid "Cannot open design file \"%1\": path is a directory."
 msgstr ""
 "Impossible d'ouvrir le fichier de conception « %1 » : le chemin est un "
 "répertoire."
 
-#: src/gui/TabManager.cc:249
+#: src/gui/TabManager.cc:430
 msgid ""
 "Could not write session file:\n"
 "%1\n"
@@ -3784,11 +3802,11 @@ msgstr ""
 "\n"
 "Les modifications de session peuvent être perdues."
 
-#: src/gui/TabManager.cc:258
+#: src/gui/TabManager.cc:439
 msgid "Unable to create the session directory."
 msgstr "Impossible de créer le répertoire de session."
 
-#: src/gui/TabManager.cc:314
+#: src/gui/TabManager.cc:495
 msgid ""
 "The file \"%1\" does not exist.\n"
 "\n"
@@ -3798,45 +3816,45 @@ msgstr ""
 "\n"
 "Voulez-vous le créer ?"
 
-#: src/gui/TabManager.cc:803
+#: src/gui/TabManager.cc:994
 msgid "Copy file name"
 msgstr "Copier le nom du fichier"
 
-#: src/gui/TabManager.cc:809
+#: src/gui/TabManager.cc:1000
 msgid "Copy full path"
 msgstr "Copier le chemin complet"
 
-#: src/gui/TabManager.cc:815
+#: src/gui/TabManager.cc:1006
 msgid "Open Folder"
 msgstr "Ouvrir le dossier"
 
-#: src/gui/TabManager.cc:820
+#: src/gui/TabManager.cc:1011
 msgid "Close Tab"
 msgstr "Fermer l'onglet"
 
-#: src/gui/TabManager.cc:825
+#: src/gui/TabManager.cc:1016
 msgid "Close All But This Tab"
 msgstr "Fermer tous les onglets sauf celui-ci"
 
-#: src/gui/TabManager.cc:1121
+#: src/gui/TabManager.cc:1312
 msgid "Do you want to save the changes you made to %1?"
 msgstr "Voulez-vous enregistrer les modifications apportées à %1 ?"
 
-#: src/gui/TabManager.cc:1122
+#: src/gui/TabManager.cc:1313
 msgid "Your changes will be lost if you don't save them."
 msgstr "Vos modifications seront perdues si vous ne les enregistrez pas."
 
-#: src/gui/TabManager.cc:1127
+#: src/gui/TabManager.cc:1318
 msgid "Don't save"
 msgstr "Ne pas enregistrer"
 
-#: src/gui/TabManager.cc:1589 src/gui/TabManager.cc:1618
-#: src/gui/TabManager.cc:1625 src/gui/TabManager.cc:1653
-#: src/gui/TabManager.cc:1841
+#: src/gui/TabManager.cc:1792 src/gui/TabManager.cc:1821
+#: src/gui/TabManager.cc:1828 src/gui/TabManager.cc:1856
+#: src/gui/TabManager.cc:2047
 msgid "Session Restore"
 msgstr "Restauration de session"
 
-#: src/gui/TabManager.cc:1590
+#: src/gui/TabManager.cc:1793
 msgid ""
 "The session file was created by a newer version of PythonSCAD (session "
 "version %1, but this build only supports up to version %2)."
@@ -3845,7 +3863,7 @@ msgstr ""
 "(version de session %1, mais cette version ne prend en charge que jusqu'à la "
 "version %2)."
 
-#: src/gui/TabManager.cc:1595
+#: src/gui/TabManager.cc:1798
 msgid ""
 "Exit to keep the session file for use with a newer PythonSCAD, or discard it "
 "to start fresh here.\n"
@@ -3859,15 +3877,15 @@ msgstr ""
 "Fichier de session :\n"
 "%1"
 
-#: src/gui/TabManager.cc:1598
+#: src/gui/TabManager.cc:1801
 msgid "Exit"
 msgstr "Quitter"
 
-#: src/gui/TabManager.cc:1599
+#: src/gui/TabManager.cc:1802
 msgid "Discard session"
 msgstr "Rejeter la session"
 
-#: src/gui/TabManager.cc:1619
+#: src/gui/TabManager.cc:1822
 msgid ""
 "Could not open the session file for reading:\n"
 "%1\n"
@@ -3883,7 +3901,7 @@ msgstr ""
 "\n"
 "Démarrage avec une nouvelle session."
 
-#: src/gui/TabManager.cc:1626
+#: src/gui/TabManager.cc:1829
 msgid ""
 "The session file is corrupt or unreadable:\n"
 "%1\n"
@@ -3897,7 +3915,7 @@ msgstr ""
 "Le fichier n'a pas été supprimé — vous pouvez l'examiner manuellement.\n"
 "Démarrage avec une nouvelle session."
 
-#: src/gui/TabManager.cc:1654
+#: src/gui/TabManager.cc:1857
 msgid ""
 "The session file uses an old format (version %1) that cannot be migrated to "
 "the current format (version %2). Starting with a fresh session."
@@ -3906,11 +3924,11 @@ msgstr ""
 "être migré vers le format actuel (version %2). Démarrage avec une nouvelle "
 "session."
 
-#: src/gui/TabManager.cc:1842
+#: src/gui/TabManager.cc:2048
 msgid "%1 file(s) could not be found on disk."
 msgstr "%1 fichier(s) n'ont pas pu être trouvé(s) sur le disque."
 
-#: src/gui/TabManager.cc:1844
+#: src/gui/TabManager.cc:2050
 msgid ""
 "The session contents were restored, but the file paths are stale.\n"
 "Use Save As to pick a new location."
@@ -3919,23 +3937,23 @@ msgstr ""
 "obsolètes.\n"
 "Utilisez Enregistrer sous pour choisir un nouvel emplacement."
 
-#: src/gui/TabManager.cc:1847
+#: src/gui/TabManager.cc:2053
 msgid "Dismiss"
 msgstr "Ignorer"
 
-#: src/gui/TabManager.cc:1960 src/gui/TabManager.cc:2112
+#: src/gui/TabManager.cc:2166 src/gui/TabManager.cc:2318
 msgid "Failed to open file for writing"
 msgstr "Échec d'ouverture de fichier en écriture"
 
-#: src/gui/TabManager.cc:2000 src/gui/TabManager.cc:2126
+#: src/gui/TabManager.cc:2206 src/gui/TabManager.cc:2332
 msgid "Error saving design"
 msgstr "Erreur lors de l'enregistrement de la conception"
 
-#: src/gui/TabManager.cc:2012
+#: src/gui/TabManager.cc:2218
 msgid "Save File"
 msgstr "Enregistrer le fichier"
 
-#: src/gui/TabManager.cc:2089
+#: src/gui/TabManager.cc:2295
 msgid "Save A Copy"
 msgstr "Enregistrer une copie"
 
@@ -4000,17 +4018,17 @@ msgstr "des valeurs extrêmes peuvent conduire à un comportement étrange"
 msgid "negative distances are not supported"
 msgstr "les distances négatives ne sont pas prises en charge"
 
-#: src/io/export.cc:266
+#: src/io/export.cc:299
 #, c-format
 msgid "Can't open file \"%1$s\" for export"
 msgstr "Impossible d'ouvrir le fichier \"%1$s\" pour l'export"
 
-#: src/io/export.cc:282
+#: src/io/export.cc:315
 #, c-format
 msgid "\"%1$s\" write error. (Disk full?)"
 msgstr "\"%1$s\" erreur d'écriture. (Disque plein ?)"
 
-#: src/openscad_gui.cc:193 src/openscad_gui.cc:826 src/openscad_gui.cc:856
+#: src/openscad_gui.cc:193 src/openscad_gui.cc:833 src/openscad_gui.cc:863
 msgid "PythonSCAD"
 msgstr "PythonSCAD"
 
@@ -4034,7 +4052,7 @@ msgstr "Recommencer à zéro"
 msgid "Show File"
 msgstr "Afficher le fichier"
 
-#: src/openscad_gui.cc:722
+#: src/openscad_gui.cc:729
 msgid ""
 "PythonSCAD is already running. The existing window was brought to the front; "
 "this process exits."
@@ -4042,7 +4060,7 @@ msgstr ""
 "PythonSCAD est déjà en cours d'exécution. La fenêtre existante a été mise au "
 "premier plan ; ce processus se termine."
 
-#: src/openscad_gui.cc:726
+#: src/openscad_gui.cc:733
 msgid ""
 "PythonSCAD is already running. An open request for the requested design "
 "file(s) was sent to that instance; this process exits."
@@ -4051,7 +4069,7 @@ msgstr ""
 "fichier(s) de conception a été envoyée à cette instance ; ce processus se "
 "termine."
 
-#: src/openscad_gui.cc:827
+#: src/openscad_gui.cc:834
 msgid ""
 "Could not create the application configuration directory required for "
 "session data and single-instance locking:\n"
@@ -4063,7 +4081,7 @@ msgstr ""
 "\n"
 "%1"
 
-#: src/openscad_gui.cc:858
+#: src/openscad_gui.cc:865
 msgid ""
 "PythonSCAD is already running but is not responding. The old PythonSCAD "
 "process must be closed to open a new window."
@@ -4071,7 +4089,7 @@ msgstr ""
 "PythonSCAD est déjà en cours d'exécution mais ne répond pas. L'ancien "
 "processus PythonSCAD doit être fermé pour ouvrir une nouvelle fenêtre."
 
-#: src/openscad_gui.cc:861
+#: src/openscad_gui.cc:868
 msgid ""
 "Try again if the running instance may have recovered, or close it to start a "
 "new one."
@@ -4079,7 +4097,7 @@ msgstr ""
 "Réessayez si l'instance en cours d'exécution a pu récupérer, ou fermez-la "
 "pour en démarrer une nouvelle."
 
-#: src/openscad_gui.cc:863
+#: src/openscad_gui.cc:870
 msgid "Close PythonSCAD"
 msgstr "Fermer PythonSCAD"
 
@@ -4150,6 +4168,79 @@ msgstr ""
 "quelques lignes de Python peuvent produire un modèle que vous pourrez tenir "
 "en main après l'impression 3D. Les scripts OpenSCAD restent pris en charge "
 "aux côtés de Python natif."
+
+#, fuzzy
+#~ msgid "micron"
+#~ msgstr "Micron"
+
+#~ msgid "millimeter"
+#~ msgstr "millimeter"
+
+#~ msgid "centimeter"
+#~ msgstr "centimeter"
+
+#~ msgid "meter"
+#~ msgstr "meter"
+
+#~ msgid "model"
+#~ msgstr "model"
+
+#, fuzzy
+#~ msgid "selected-only"
+#~ msgstr "Utiliser uniquement la couleur sélectionnée"
+
+#~ msgid "a6"
+#~ msgstr "a6"
+
+#~ msgid "a5"
+#~ msgstr "a5"
+
+#~ msgid "a4"
+#~ msgstr "a4"
+
+#~ msgid "a3"
+#~ msgstr "a3"
+
+#~ msgid "letter"
+#~ msgstr "letter"
+
+#~ msgid "legal"
+#~ msgstr "legal"
+
+#, fuzzy
+#~ msgid "ResetSampleText"
+#~ msgstr "Réinitialiser le texte d'exemple"
+
+#, fuzzy
+#~ msgid "Preview"
+#~ msgstr "Calculer l’&aperçu"
+
+#~ msgid "Export as &AMF..."
+#~ msgstr "Exporter comme &AMF..."
+
+#~ msgid "E&xport"
+#~ msgstr "E&xporter"
+
+#~ msgid "Features"
+#~ msgstr "Fonctionnalités"
+
+#~ msgid "ViewportControlWidget"
+#~ msgstr "Contrôle de la vue"
+
+#~ msgid "%1 Files (*%2)"
+#~ msgstr "%1 Fichiers (*%2)"
+
+#~ msgid "Export CSG File"
+#~ msgstr "Exporter un fichier CSG"
+
+#~ msgid "CSG Files (*.csg)"
+#~ msgstr "Fichiers CSG (*.csg)"
+
+#~ msgid "Export Image"
+#~ msgstr "Exporter une Image"
+
+#~ msgid "PNG Files (*.png)"
+#~ msgstr "Fichiers PNG (*.png)"
 
 #, fuzzy
 #~ msgid "Error-&Log"
@@ -4253,9 +4344,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "Do you want to save all your changes?"
 #~ msgstr "Voulez-vous enregistrer vos changements?"
-
-#~ msgid "F7"
-#~ msgstr "F7"
 
 #, fuzzy
 #~ msgid "Line"
@@ -4444,9 +4532,6 @@ msgstr ""
 
 #~ msgid "Shapes"
 #~ msgstr "Formes"
-
-#~ msgid "Extrusion"
-#~ msgstr "Extrusion"
 
 #~ msgid "Untitled%1"
 #~ msgstr "Sans Titre%1"

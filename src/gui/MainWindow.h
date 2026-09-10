@@ -274,6 +274,16 @@ private:
   void addExportActions(QToolBar *toolbar, QAction *action) const;
   QAction *formatIdentifierToAction(const std::string& identifier) const;
   QString getDockBaseName(const QString& title) const;
+  QString exportStartDirectory() const;
+  QString defaultExportBasename() const;
+  QString defaultExportSuffix() const;
+  FileFormatInfo fileFormatInfoFor(FileFormat format) const;
+  bool promptExportOptions(FileFormat format, ExportInfo& exportInfo);
+  bool writeExportFile(const QString& filename, FileFormat format, ExportInfo& exportInfo);
+  void rememberSuccessfulExport(const QString& filename, FileFormat format,
+                                const ExportInfo& exportInfo);
+  bool runExportAsDialogFlow();
+  bool performRememberedExport();
 
   LibraryInfoDialog *libraryInfoDialog{nullptr};
   FontListDialog *fontListDialog{nullptr};
@@ -332,7 +342,9 @@ private slots:
   // Handle the Next/Prev shortcut, currently switch to the targetted dock
   // and adds the rubberband, the rubbreband is removed on shortcut key release.
   void onWindowShortcutNextPrevActivated();
-  void onWindowShortcutExport3DActivated();
+
+  void on_fileActionExport_triggered();
+  void on_fileActionExportAs_triggered();
 
   void onEditorDockVisibilityChanged(bool isVisible);
   void onConsoleDockVisibilityChanged(bool isVisible);
@@ -396,10 +408,13 @@ private slots:
   void on_designActionDisplayCSGTree_triggered();
   void on_designActionDisplayCSGProducts_triggered();
   bool canExport(unsigned int dim);
-  void actionExport(unsigned int dim, ExportInfo& exportInfo);
+  void actionExport();
+  void actionExportAs();
   void actionExportFileFormat(int fmt);
   void on_editActionCopyViewport_triggered();
   void on_designActionFlushCaches_triggered();
+  void updateExportMenuText();
+  void updateExportToolbarIcon();
 
 public:
   void viewModeActionsUncheck();
@@ -517,9 +532,8 @@ private:
     nullptr};               // stores pointer to editor which has been most recently rendered
   time_t includesMTime{0};  // latest include mod time
   time_t depsMTime{0};      // latest dependency mod time
-  std::unordered_map<QString, QString> exportPaths;  // for each file type, where it was exported to last
-  QString exportPath(
-    const QString& suffix);    // look up the last export path and generate one if not found
+  /// Last directory used for any export in this process (not persisted).
+  QString lastExportDirectory;
   int lastParserErrorPos{-1};  // last highlighted error position
   int tabCount = 0;
   ExportPdfPaperSize sizeString2Enum(const QString& current);

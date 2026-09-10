@@ -19,11 +19,7 @@ ExportGcodeDialog::ExportGcodeDialog()
 
 int ExportGcodeDialog::exec()
 {
-  bool showDialog = Settings::SettingsExportGcode::exportGcodeAlwaysShowDialog.value();
-  if ((QApplication::keyboardModifiers() & Qt::ShiftModifier) != 0) {
-    showDialog = true;
-  }
-  return showDialog ? QDialog::exec() : QDialog::Accepted;
+  return QDialog::exec();
 }
 
 double ExportGcodeDialog::getLaserSpeed() const

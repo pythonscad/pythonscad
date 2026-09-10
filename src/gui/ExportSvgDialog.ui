@@ -203,7 +203,7 @@
      <item>
       <widget class="QPushButton" name="pushButtonOk">
        <property name="text">
-        <string>OK</string>
+        <string>Export</string>
        </property>
        <property name="default">
         <bool>true</bool>
@@ -241,4 +241,4 @@
    <slot>reject()</slot>
   </connection>
  </connections>
-</ui> 
+</ui>

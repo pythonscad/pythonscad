@@ -6,12 +6,15 @@
 #include <QStringList>
 #include <QTextEdit>
 #include <QWidget>
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "core/IndicatorData.h"
 #include "genlang/language.h"
 #include "gui/parameter/ParameterWidget.h"
+#include "io/export.h"
 
 enum class EditorSelectionIndicatorStatus { SELECTED, IMPACTED };
 
@@ -131,4 +134,15 @@ public:
   ParameterWidget *parameterWidget;
   int language = LANG_SCAD;
   bool languageManuallySet = false;
+
+  /// Last successful GUI export for this tab (used by Export / Export to …).
+  struct LastExport {
+    QString path;
+    FileFormat format = FileFormat::ASCII_STL;
+    std::shared_ptr<const ExportPdfOptions> optionsPdf;
+    std::shared_ptr<const Export3mfOptions> options3mf;
+    std::shared_ptr<const ExportSvgOptions> optionsSvg;
+    std::shared_ptr<const ExportGcodeOptions> optionsGcode;
+  };
+  std::optional<LastExport> lastExport;
 };
