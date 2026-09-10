@@ -3747,10 +3747,17 @@ bool MainWindow::promptExportOptions(FileFormat format, ExportInfo& exportInfo)
 
 bool MainWindow::confirmExportPreconditions()
 {
-  // Require a rendered geometry before any save-as / options dialogs.
-  // Preview/compile may set rootNode without rootGeom; that is not enough for
-  // STL/3MF/etc., and showing the file dialog first is confusing.
-  return canExport(0);
+  // Mesh exports need a render (rootGeom). CSG only needs a compile (rootNode),
+  // and PNG can capture the current view. Cold start (neither) must abort before
+  // any save-as dialog — that was the confusing F7 UX.
+  if (rootGeom) {
+    return canExport(0);
+  }
+  if (rootNode) {
+    return true;
+  }
+  QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
+  return false;
 }
 
 bool MainWindow::confirmExportFormat(FileFormat format)
@@ -3939,8 +3946,8 @@ bool MainWindow::runExportAsDialogFlow(bool checkPreconditions)
     }
 
     if (!confirmExportFormat(format)) {
-      // Wrong dimension: reopen save-as so the user can pick another format.
-      // Missing geometry should already have aborted before any dialog.
+      // No usable mesh geometry: stop — reopening save-as cannot help until F6.
+      // Wrong dimension with existing geometry: let the user pick another format.
       if (!rootGeom || rootGeom->isEmpty()) return false;
       continue;
     }
