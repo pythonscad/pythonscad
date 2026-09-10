@@ -284,8 +284,8 @@ private:
   bool writeExportFile(const QString& filename, FileFormat format, ExportInfo& exportInfo);
   void rememberSuccessfulExport(const QString& filename, FileFormat format,
                                 const ExportInfo& exportInfo);
-  bool runExportAsDialogFlow();
-  bool performRememberedExport();
+  bool runExportAsDialogFlow(bool checkPreconditions = true);
+  bool performRememberedExport(bool checkPreconditions = true);
 
   LibraryInfoDialog *libraryInfoDialog{nullptr};
   FontListDialog *fontListDialog{nullptr};

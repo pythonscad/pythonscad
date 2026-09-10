@@ -3503,15 +3503,16 @@ bool MainWindow::canExport(unsigned int dim)
 {
   auto guard = scopedSetCurrentOutput();
   if (!rootGeom) {
+    QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
     LOG(message_group::Error, "Nothing to export! Try rendering first (press F6)");
     return false;
   }
 
   // editor has changed since last render
   if (!activeEditor->contentsRendered) {
-    auto ret = QMessageBox::warning(this, "Application",
-                                    "The current tab has been modified since its last render (F6).\n"
-                                    "Do you really want to export the previous content?",
+    auto ret = QMessageBox::warning(this, _("Export"),
+                                    _("The current tab has been modified since its last render (F6).\n"
+                                      "Do you really want to export the previous content?"),
                                     QMessageBox::Yes | QMessageBox::No);
     if (ret != QMessageBox::Yes) {
       return false;
@@ -3520,9 +3521,9 @@ bool MainWindow::canExport(unsigned int dim)
 
   // other tab contents most recently rendered
   if (renderedEditor != activeEditor) {
-    auto ret = QMessageBox::warning(this, "Application",
-                                    "The rendered data is of different tab.\n"
-                                    "Do you really want to export the another tab's content?",
+    auto ret = QMessageBox::warning(this, _("Export"),
+                                    _("The rendered data is of different tab.\n"
+                                      "Do you really want to export the another tab's content?"),
                                     QMessageBox::Yes | QMessageBox::No);
     if (ret != QMessageBox::Yes) {
       return false;
@@ -3530,11 +3531,14 @@ bool MainWindow::canExport(unsigned int dim)
   }
 
   if (this->rootGeom->getDimension() != dim && dim != 0) {
+    QMessageBox::warning(this, _("Export"),
+                         QString(_("Current top level object is not a %1D object.")).arg(dim));
     LOG(message_group::UI_Error, "Current top level object is not a %1$dD object.", dim);
     return false;
   }
 
   if (rootGeom->isEmpty()) {
+    QMessageBox::warning(this, _("Export"), _("Current top level object is empty."));
     LOG(message_group::UI_Error, "Current top level object is empty.");
     return false;
   }
@@ -3746,18 +3750,10 @@ bool MainWindow::promptExportOptions(FileFormat format, ExportInfo& exportInfo)
 
 bool MainWindow::confirmExportPreconditions()
 {
-  // Run render-related prompts before any save-as / options dialogs.
-  // dim=0 skips the 2D/3D format check (done later once the format is known).
-  if (rootGeom) {
-    return canExport(0);
-  }
-  if (rootNode) {
-    // CSG export can proceed from a compile without a full geometry render.
-    return true;
-  }
-  auto guard = scopedSetCurrentOutput();
-  LOG(message_group::Error, "Nothing to export! Try rendering first (press F6)");
-  return false;
+  // Require a rendered geometry before any save-as / options dialogs.
+  // Preview/compile may set rootNode without rootGeom; that is not enough for
+  // STL/3MF/etc., and showing the file dialog first is confusing.
+  return canExport(0);
 }
 
 bool MainWindow::confirmExportFormat(FileFormat format)
@@ -3766,8 +3762,9 @@ bool MainWindow::confirmExportFormat(FileFormat format)
     return true;
   }
   if (format == FileFormat::CSG) {
-    auto guard = scopedSetCurrentOutput();
     if (!this->rootNode) {
+      QMessageBox::warning(this, _("Export"), _("Nothing to export. Please try compiling first."));
+      auto guard = scopedSetCurrentOutput();
       LOG(message_group::Error, "Nothing to export. Please try compiling first.");
       return false;
     }
@@ -3778,17 +3775,21 @@ bool MainWindow::confirmExportFormat(FileFormat format)
   if (fileformat::is3D(format) || format == FileFormat::PS) dim = 3;
   else if (fileformat::is2D(format)) dim = 2;
 
-  // Preconditions (stale render, etc.) were already confirmed; only check dimension.
+  // Stale-render / missing-geometry prompts already ran; only enforce dimension.
   auto guard = scopedSetCurrentOutput();
   if (!rootGeom) {
+    QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
     LOG(message_group::Error, "Nothing to export! Try rendering first (press F6)");
     return false;
   }
   if (this->rootGeom->getDimension() != dim && dim != 0) {
+    QMessageBox::warning(this, _("Export"),
+                         QString(_("Current top level object is not a %1D object.")).arg(dim));
     LOG(message_group::UI_Error, "Current top level object is not a %1$dD object.", dim);
     return false;
   }
   if (rootGeom->isEmpty()) {
+    QMessageBox::warning(this, _("Export"), _("Current top level object is empty."));
     LOG(message_group::UI_Error, "Current top level object is empty.");
     return false;
   }
@@ -3855,14 +3856,14 @@ void MainWindow::rememberSuccessfulExport(const QString& filename, FileFormat fo
   updateExportMenuText();
 }
 
-bool MainWindow::performRememberedExport()
+bool MainWindow::performRememberedExport(bool checkPreconditions)
 {
   if (!activeEditor || !activeEditor->lastExport) return false;
   if (GuiLocker::isLocked()) return false;
   const GuiLocker lock;
 
   const auto& remembered = *activeEditor->lastExport;
-  if (!confirmExportPreconditions()) return false;
+  if (checkPreconditions && !confirmExportPreconditions()) return false;
   if (!confirmExportFormat(remembered.format)) return false;
 
   const FileFormatInfo info = fileFormatInfoFor(remembered.format);
@@ -3879,13 +3880,13 @@ bool MainWindow::performRememberedExport()
   return true;
 }
 
-bool MainWindow::runExportAsDialogFlow()
+bool MainWindow::runExportAsDialogFlow(bool checkPreconditions)
 {
   if (GuiLocker::isLocked()) return false;
   const GuiLocker lock;
   if (!activeEditor) return false;
 
-  if (!confirmExportPreconditions()) return false;
+  if (checkPreconditions && !confirmExportPreconditions()) return false;
 
   const auto choices = buildExportFormatChoices();
   const QString byExt = byExtensionFilter();
@@ -3947,7 +3948,9 @@ bool MainWindow::runExportAsDialogFlow()
     }
 
     if (!confirmExportFormat(format)) {
-      // Wrong dimension / missing compile — let the user pick another format.
+      // Wrong dimension: reopen save-as so the user can pick another format.
+      // Missing geometry should already have aborted before any dialog.
+      if (!rootGeom || rootGeom->isEmpty()) return false;
       continue;
     }
 
@@ -3971,11 +3974,16 @@ bool MainWindow::runExportAsDialogFlow()
 
 void MainWindow::actionExport()
 {
+  // Preconditions once up front — avoids a second modal if remembered export
+  // fails and we fall back to Export as…, and never opens save-as when there
+  // is nothing rendered.
+  if (!confirmExportPreconditions()) return;
+
   if (activeEditor && activeEditor->lastExport) {
-    if (performRememberedExport()) return;
+    if (performRememberedExport(/*checkPreconditions=*/false)) return;
     // Remembered path failed (missing file, permissions, etc.) — fall back to Export as…
   }
-  runExportAsDialogFlow();
+  runExportAsDialogFlow(/*checkPreconditions=*/false);
 }
 
 void MainWindow::actionExportAs()
