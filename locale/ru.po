@@ -4528,3 +4528,9 @@ msgstr ""
 
 #~ msgid "Untitled%1"
 #~ msgstr "Безымянный%1"
+
+msgid "ASCII STL"
+msgstr "ASCII STL"
+
+msgid "Binary STL"
+msgstr "Двоичный STL"

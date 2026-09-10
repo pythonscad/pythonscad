@@ -4534,3 +4534,9 @@ msgstr ""
 
 #~ msgid "Եռաչափ մոդելավորում ծրագրավորման միջոցով"
 #~ msgstr "Եռաչափ մոդելավորում ծրագրավորման միջոցով"
+
+msgid "ASCII STL"
+msgstr "ASCII STL"
+
+msgid "Binary STL"
+msgstr "Երկուական STL"

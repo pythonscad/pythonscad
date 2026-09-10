@@ -4227,3 +4227,9 @@ msgstr ""
 
 #~ msgid "PNG Files (*.png)"
 #~ msgstr "PNG-dosieroj (*.png)"
+
+msgid "ASCII STL"
+msgstr "ASCII-STL"
+
+msgid "Binary STL"
+msgstr "Binara STL"

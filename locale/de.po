@@ -4589,3 +4589,9 @@ msgstr ""
 
 #~ msgid "CGAL Grid Only"
 #~ msgstr "CGAL Gitter anzeigen"
+
+msgid "ASCII STL"
+msgstr "ASCII-STL"
+
+msgid "Binary STL"
+msgstr "Binäres STL"

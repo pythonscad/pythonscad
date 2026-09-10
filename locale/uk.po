@@ -4479,3 +4479,9 @@ msgstr ""
 
 #~ msgid "no preset selected"
 #~ msgstr "пресет не обрано"
+
+msgid "ASCII STL"
+msgstr "ASCII STL"
+
+msgid "Binary STL"
+msgstr "Двійковий STL"

@@ -4421,3 +4421,9 @@ msgstr ""
 
 #~ msgid "Shapes"
 #~ msgstr "Formas"
+
+msgid "ASCII STL"
+msgstr "STL ASCII"
+
+msgid "Binary STL"
+msgstr "STL binario"

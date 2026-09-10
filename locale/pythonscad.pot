@@ -3929,3 +3929,9 @@ msgid ""
 "Python can produce a model you can hold in your hand after 3D printing. "
 "OpenSCAD scripts remain supported alongside native Python."
 msgstr ""
+
+msgid "ASCII STL"
+msgstr ""
+
+msgid "Binary STL"
+msgstr ""

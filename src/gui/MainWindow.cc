@@ -3575,8 +3575,23 @@ FileFormatInfo foldablePsInfo()
 
 QString formatFilterLabel(const FileFormatInfo& info)
 {
-  return QString("%1 (*.%2)")
-    .arg(QString::fromStdString(info.description), QString::fromStdString(info.suffix));
+  // Native dialogs parse filters as "Description (*.ext)". Nested parentheses
+  // in the description (e.g. "STL (ascii)") make many portals show only "STL",
+  // so ASCII and binary STL become indistinguishable in the type dropdown.
+  QString description;
+  if (info.format == FileFormat::ASCII_STL) {
+    description = _("ASCII STL");
+  } else if (info.format == FileFormat::BINARY_STL) {
+    description = _("Binary STL");
+  } else {
+    description = QString::fromStdString(info.description);
+    if (description.contains(QLatin1Char('('))) {
+      description.replace(QLatin1Char('('), QLatin1String("- "));
+      description.remove(QLatin1Char(')'));
+      description = description.simplified();
+    }
+  }
+  return QStringLiteral("%1 (*.%2)").arg(description, QString::fromStdString(info.suffix));
 }
 
 std::vector<ExportFormatChoice> buildExportFormatChoices()

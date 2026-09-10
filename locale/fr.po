@@ -4562,3 +4562,9 @@ msgstr ""
 
 #~ msgid "OpenGL Info"
 #~ msgstr "Information OpenGL"
+
+msgid "ASCII STL"
+msgstr "STL ASCII"
+
+msgid "Binary STL"
+msgstr "STL binaire"

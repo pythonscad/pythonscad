@@ -4425,3 +4425,9 @@ msgstr ""
 #~ msgstr ""
 #~ "გაფრთხილება: შეიძლება OpenCSG-ის რენდერის შეცდომები მიიღოთ.\n"
 #~ "\n"
+
+msgid "ASCII STL"
+msgstr "ASCII STL"
+
+msgid "Binary STL"
+msgstr "ბინარული STL"

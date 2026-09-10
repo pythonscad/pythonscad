@@ -4436,3 +4436,9 @@ msgstr ""
 
 #~ msgid "Print Service not available"
 #~ msgstr "Servizio di Stampa non disponibile"
+
+msgid "ASCII STL"
+msgstr "STL ASCII"
+
+msgid "Binary STL"
+msgstr "STL binario"

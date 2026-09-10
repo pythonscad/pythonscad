@@ -4227,3 +4227,9 @@ msgstr ""
 
 #~ msgid "PNG Files (*.png)"
 #~ msgstr "Fasciculi PNG (*.png)"
+
+msgid "ASCII STL"
+msgstr "STL ASCII"
+
+msgid "Binary STL"
+msgstr "STL binarium"

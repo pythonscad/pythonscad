@@ -4537,3 +4537,9 @@ msgstr ""
 
 #~ msgid "Export OFF File"
 #~ msgstr "Exportovat OFF soubor"
+
+msgid "ASCII STL"
+msgstr "ASCII STL"
+
+msgid "Binary STL"
+msgstr "Binární STL"

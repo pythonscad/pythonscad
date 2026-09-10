@@ -4515,3 +4515,9 @@ msgstr ""
 
 #~ msgid "Untitled%1"
 #~ msgstr "BezTytułu%1"
+
+msgid "ASCII STL"
+msgstr "STL ASCII"
+
+msgid "Binary STL"
+msgstr "Binarny STL"

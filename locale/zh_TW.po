@@ -4420,3 +4420,9 @@ msgstr ""
 
 #~ msgid "/"
 #~ msgstr "/"
+
+msgid "ASCII STL"
+msgstr "ASCII STL"
+
+msgid "Binary STL"
+msgstr "二進位 STL"
