@@ -253,10 +253,19 @@ void applyLastExportFromJson(EditorInterface *edt, const QJsonObject& obj)
     o->gridSize = pdf.value(QStringLiteral("gridSize")).toDouble(o->gridSize);
     o->showDesignFilename =
       pdf.value(QStringLiteral("showDesignFilename")).toBool(o->showDesignFilename);
-    o->orientation = static_cast<ExportPdfPaperOrientation>(
-      pdf.value(QStringLiteral("orientation")).toInt(static_cast<int>(o->orientation)));
-    o->paperSize = static_cast<ExportPdfPaperSize>(
-      pdf.value(QStringLiteral("paperSize")).toInt(static_cast<int>(o->paperSize)));
+    {
+      const int orientation =
+        pdf.value(QStringLiteral("orientation")).toInt(static_cast<int>(o->orientation));
+      if (orientation >= static_cast<int>(ExportPdfPaperOrientation::AUTO) &&
+          orientation <= static_cast<int>(ExportPdfPaperOrientation::LANDSCAPE)) {
+        o->orientation = static_cast<ExportPdfPaperOrientation>(orientation);
+      }
+      const int paperSize = pdf.value(QStringLiteral("paperSize")).toInt(static_cast<int>(o->paperSize));
+      if (paperSize >= static_cast<int>(ExportPdfPaperSize::A6) &&
+          paperSize <= static_cast<int>(ExportPdfPaperSize::TABLOID)) {
+        o->paperSize = static_cast<ExportPdfPaperSize>(paperSize);
+      }
+    }
     o->addMetaData = pdf.value(QStringLiteral("addMetaData")).toBool(o->addMetaData);
     o->metaDataTitle = pdf.value(QStringLiteral("metaDataTitle")).toString().toStdString();
     o->metaDataAuthor = pdf.value(QStringLiteral("metaDataAuthor")).toString().toStdString();
