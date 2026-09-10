@@ -113,16 +113,20 @@ QString normalizedSessionFilepathForJson(const QString& filepath)
 
 QString exportFormatIdentifier(FileFormat format)
 {
+#ifdef ENABLE_CGAL
   if (format == FileFormat::PS) return QStringLiteral("ps");
+#endif
   return QString::fromStdString(fileformat::info(format).identifier);
 }
 
 bool exportFormatFromIdentifier(const QString& id, FileFormat& format)
 {
+#ifdef ENABLE_CGAL
   if (id == QStringLiteral("ps")) {
     format = FileFormat::PS;
     return true;
   }
+#endif
   return fileformat::fromIdentifier(id.toStdString(), format);
 }
 
