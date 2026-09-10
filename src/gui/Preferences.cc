@@ -509,6 +509,12 @@ void Preferences::update()
     Settings::SettingsExportSvg::exportSvgAlwaysShowDialog.value());
   this->checkBoxAlwaysShowExportGcodeDialog->setChecked(
     Settings::SettingsExportGcode::exportGcodeAlwaysShowDialog.value());
+  // Export as… always prompts for options; remembered Export reuses last options — these
+  // preferences no longer change behavior, so hide them to avoid a misleading UI.
+  this->checkBoxAlwaysShowExportPdfDialog->setVisible(false);
+  this->checkBoxAlwaysShowExport3mfDialog->setVisible(false);
+  this->checkBoxAlwaysShowExportSvgDialog->setVisible(false);
+  this->checkBoxAlwaysShowExportGcodeDialog->setVisible(false);
   this->checkBoxAlwaysShowPrintServiceDialog->setChecked(
     Settings::Settings::printServiceAlwaysShowDialog.value());
   this->checkBoxGlobalTrustPython->setChecked(Settings::SettingsPython::globalTrustPython.value());

@@ -42,6 +42,8 @@ ExportPdfDialog::ExportPdfDialog()
 {
   setupUi(this);
   this->checkBoxAlwaysShowDialog->setChecked(S::exportPdfAlwaysShowDialog.value());
+  // Export as… always shows options; remembered Export skips them — this toggle is unused.
+  this->checkBoxAlwaysShowDialog->setVisible(false);
 
   initButtonGroup(this->buttonGroupPaperSize, S::exportPdfPaperSize);
   initButtonGroup(this->buttonGroupOrientation, S::exportPdfOrientation);

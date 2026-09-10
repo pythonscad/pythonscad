@@ -49,6 +49,8 @@ Export3mfDialog::Export3mfDialog()
 {
   setupUi(this);
   this->checkBoxAlwaysShowDialog->setChecked(S::export3mfAlwaysShowDialog.value());
+  // Export as… always shows options; remembered Export skips them — this toggle is unused.
+  this->checkBoxAlwaysShowDialog->setVisible(false);
   initButtonGroup(this->buttonGroupColors, S::export3mfColorMode);
   initButtonGroup(this->buttonGroupUnit, S::export3mfUnit);
   this->color = QColor(QString::fromStdString(S::export3mfColor.value()));
