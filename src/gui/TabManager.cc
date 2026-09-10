@@ -281,13 +281,25 @@ void applyLastExportFromJson(EditorInterface *edt, const QJsonObject& obj)
   if (options.contains(QStringLiteral("3mf"))) {
     const QJsonObject mf = options.value(QStringLiteral("3mf")).toObject();
     auto o = std::make_shared<Export3mfOptions>(*Export3mfOptions::fromSettings());
-    o->colorMode = static_cast<Export3mfColorMode>(
-      mf.value(QStringLiteral("colorMode")).toInt(static_cast<int>(o->colorMode)));
-    o->unit =
-      static_cast<Export3mfUnit>(mf.value(QStringLiteral("unit")).toInt(static_cast<int>(o->unit)));
+    {
+      const int colorMode = mf.value(QStringLiteral("colorMode")).toInt(static_cast<int>(o->colorMode));
+      if (colorMode >= static_cast<int>(Export3mfColorMode::model) &&
+          colorMode <= static_cast<int>(Export3mfColorMode::selected_only)) {
+        o->colorMode = static_cast<Export3mfColorMode>(colorMode);
+      }
+      const int unit = mf.value(QStringLiteral("unit")).toInt(static_cast<int>(o->unit));
+      if (unit >= static_cast<int>(Export3mfUnit::micron) &&
+          unit <= static_cast<int>(Export3mfUnit::foot)) {
+        o->unit = static_cast<Export3mfUnit>(unit);
+      }
+      const int materialType =
+        mf.value(QStringLiteral("materialType")).toInt(static_cast<int>(o->materialType));
+      if (materialType >= static_cast<int>(Export3mfMaterialType::color) &&
+          materialType <= static_cast<int>(Export3mfMaterialType::basematerial)) {
+        o->materialType = static_cast<Export3mfMaterialType>(materialType);
+      }
+    }
     o->color = mf.value(QStringLiteral("color")).toString().toStdString();
-    o->materialType = static_cast<Export3mfMaterialType>(
-      mf.value(QStringLiteral("materialType")).toInt(static_cast<int>(o->materialType)));
     o->decimalPrecision = mf.value(QStringLiteral("decimalPrecision")).toInt(o->decimalPrecision);
     o->addMetaData = mf.value(QStringLiteral("addMetaData")).toBool(o->addMetaData);
     o->metaDataTitle = mf.value(QStringLiteral("metaDataTitle")).toString().toStdString();

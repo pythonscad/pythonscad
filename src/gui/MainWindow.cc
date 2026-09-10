@@ -3835,6 +3835,10 @@ bool MainWindow::writeExportFile(const QString& filename, FileFormat format, Exp
     }
     fstream << this->tree.getString(*this->rootNode, "\t") << "\n";
     fstream.close();
+    if (!fstream) {
+      LOG("Error writing file \"%1$s\"", filename.toStdString());
+      return false;
+    }
     fileExportedMessage("CSG", filename);
     return true;
   }
