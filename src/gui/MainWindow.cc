@@ -3628,10 +3628,13 @@ bool resolveExportFormatFromSuffix(const QString& suffix, FileFormat& format)
 {
   const QString s = suffix.toLower();
   if (s.isEmpty()) return false;
+#ifdef ENABLE_CGAL
+  // Foldable PS is not in the standard fileformat registry identifier map.
   if (s == QStringLiteral("ps")) {
     format = FileFormat::PS;
     return true;
   }
+#endif
   if (fileformat::fromIdentifier(s.toStdString(), format)) return true;
 
   // Match registry / menu suffixes that differ from the identifier (e.g. .stp vs "step").
