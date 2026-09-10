@@ -4429,3 +4429,34 @@ msgstr "ASCII STL"
 
 msgid "Binary STL"
 msgstr "İkili STL"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "Dışa aktarılacak bir şey yok! Önce render alın (F6)"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "Dışa aktarılacak bir şey yok. Önce derleyin."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "Geçerli üst düzey nesne bir %1D nesne değil."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "Geçerli üst düzey nesne boş."
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"Geçerli sekme son renderdan (F6) beri değiştirildi.\n"
+"Önceki içeriği gerçekten dışa aktarmak istiyor musunuz?"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"Renderlanan veriler farklı bir sekmeye ait.\n"
+"Başka bir sekmenin içeriğini gerçekten dışa aktarmak istiyor musunuz?"

@@ -4521,3 +4521,34 @@ msgstr "STL ASCII"
 
 msgid "Binary STL"
 msgstr "Binarny STL"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "Nie ma nic do eksportu! Najpierw wyrenderuj (F6)"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "Nie ma nic do eksportu. Najpierw skompiluj."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "Bieżący obiekt najwyższego poziomu nie jest obiektem %1D."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "Bieżący obiekt najwyższego poziomu jest pusty."
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"Bieżąca karta została zmieniona od ostatniego renderu (F6).\n"
+"Czy na pewno chcesz wyeksportować poprzednią zawartość?"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"Wyrenderowane dane pochodzą z innej karty.\n"
+"Czy na pewno chcesz wyeksportować zawartość innej karty?"

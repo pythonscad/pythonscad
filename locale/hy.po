@@ -4540,3 +4540,34 @@ msgstr "ASCII STL"
 
 msgid "Binary STL"
 msgstr "Երկուական STL"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "Արտահանելու բան չկա։ Նախ ռենդեր արեք (F6)"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "Արտահանելու բան չկա։ Նախ կոմպիլյացրեք։"
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "Ընթացիկ վերին մակարդակի օբյեկտը %1D օբյեկտ չէ։"
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "Ընթացիկ վերին մակարդակի օբյեկտը դատարկ է։"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"Ընթացիկ ներդիրը փոփոխվել է վերջին ռենդերից (F6) հետո։\n"
+"Իսկապե՞ս ցանկանում եք արտահանել նախորդ բովանդակությունը։"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"Ռենդեր արված տվյալները այլ ներդիրից են։\n"
+"Իսկապե՞ս ցանկանում եք արտահանել այլ ներդիրի բովանդակությունը։"

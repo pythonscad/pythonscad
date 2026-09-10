@@ -4534,3 +4534,34 @@ msgstr "ASCII STL"
 
 msgid "Binary STL"
 msgstr "Двоичный STL"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "Нечего экспортировать! Сначала выполните рендер (F6)"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "Нечего экспортировать. Сначала скомпилируйте."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "Текущий объект верхнего уровня не является %1D-объектом."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "Текущий объект верхнего уровня пуст."
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"Текущая вкладка изменена после последнего рендера (F6).\n"
+"Действительно экспортировать предыдущее содержимое?"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"Отрендеренные данные относятся к другой вкладке.\n"
+"Действительно экспортировать содержимое другой вкладки?"

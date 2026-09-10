@@ -4233,3 +4233,34 @@ msgstr "ASCII-STL"
 
 msgid "Binary STL"
 msgstr "Binara STL"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "Nenio eksportenda! Unue bildigu (F6)"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "Nenio eksportenda. Unue kompiliĝu."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "La nuna plejsupra objekto ne estas %1D objekto."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "La nuna plejsupra objekto estas malplena."
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"La nuna langeto estis ŝanĝita post la lasta bildigo (F6).\n"
+"Ĉu vi vere volas eksporti la antaŭan enhavon?"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"La bildigitaj datumoj estas de alia langeto.\n"
+"Ĉu vi vere volas eksporti la enhavon de alia langeto?"

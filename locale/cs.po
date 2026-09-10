@@ -4543,3 +4543,34 @@ msgstr "ASCII STL"
 
 msgid "Binary STL"
 msgstr "Binární STL"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "Není co exportovat! Nejdřív vyrenderujte (F6)"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "Není co exportovat. Nejdřív zkompilujte."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "Aktuální objekt nejvyšší úrovně není %1D objekt."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "Aktuální objekt nejvyšší úrovně je prázdný."
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"Aktuální panel byl od posledního renderu (F6) změněn.\n"
+"Opravdu chcete exportovat předchozí obsah?"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"Vyrenderovaná data jsou z jiného panelu.\n"
+"Opravdu chcete exportovat obsah jiného panelu?"

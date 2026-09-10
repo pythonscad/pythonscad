@@ -4420,3 +4420,34 @@ msgstr "ASCII STL"
 
 msgid "Binary STL"
 msgstr "二进制 STL"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "没有可导出的内容！请先渲染（F6）"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "没有可导出的内容。请先编译。"
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "当前顶层对象不是 %1D 对象。"
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "当前顶层对象为空。"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"当前标签页自上次渲染（F6）后已被修改。\n"
+"确定要导出之前的内容吗？"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"已渲染的数据来自另一个标签页。\n"
+"确定要导出另一个标签页的内容吗？"

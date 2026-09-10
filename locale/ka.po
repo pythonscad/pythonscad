@@ -4431,3 +4431,34 @@ msgstr "ASCII STL"
 
 msgid "Binary STL"
 msgstr "ბინარული STL"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "გასატანი არაფერია! ჯერ დაარენდერეთ (F6)"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "გასატანი არაფერია. ჯერ დააკომპილირეთ."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "მიმდინარე ზედა დონის ობიექტი არ არის %1D ობიექტი."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "მიმდინარე ზედა დონის ობიექტი ცარიელია."
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"მიმდინარე ჩანართი შეიცვალა ბოლო რენდერის (F6) შემდეგ.\n"
+"ნამდვილად გსურთ წინა შიგთავსის გატანა?"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"დარენდერებული მონაცემები სხვა ჩანართისაა.\n"
+"ნამდვილად გსურთ სხვა ჩანართის შიგთავსის გატანა?"

@@ -4426,3 +4426,34 @@ msgstr "ASCII STL"
 
 msgid "Binary STL"
 msgstr "二進位 STL"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "沒有可匯出的內容！請先算繪（F6）"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "沒有可匯出的內容。請先編譯。"
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "目前頂層物件不是 %1D 物件。"
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "目前頂層物件是空的。"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"目前分頁自上次算繪（F6）後已修改。\n"
+"確定要匯出先前的內容嗎？"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"已算繪的資料來自另一個分頁。\n"
+"確定要匯出另一個分頁的內容嗎？"

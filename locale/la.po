@@ -4233,3 +4233,34 @@ msgstr "STL ASCII"
 
 msgid "Binary STL"
 msgstr "STL binarium"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "Nihil exportandum! Prius redde (F6)"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "Nihil exportandum. Prius compila."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "Obiectum summum praesens non est obiectum %1D."
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "Obiectum summum praesens vacuum est."
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"Tabula praesens post ultimum redditum (F6) mutata est.\n"
+"Visne vere contentum priorem exportare?"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"Data reddita ex alia tabula sunt.\n"
+"Visne vere contentum alterius tabulae exportare?"
