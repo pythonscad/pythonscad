@@ -3501,10 +3501,8 @@ void MainWindow::on_designCheckValidity_triggered()
 // Separated into it's own function for re-use.
 bool MainWindow::canExport(unsigned int dim)
 {
-  auto guard = scopedSetCurrentOutput();
   if (!rootGeom) {
     QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
-    LOG(message_group::Error, "Nothing to export! Try rendering first (press F6)");
     return false;
   }
 
@@ -3533,16 +3531,15 @@ bool MainWindow::canExport(unsigned int dim)
   if (this->rootGeom->getDimension() != dim && dim != 0) {
     QMessageBox::warning(this, _("Export"),
                          QString(_("Current top level object is not a %1D object.")).arg(dim));
-    LOG(message_group::UI_Error, "Current top level object is not a %1$dD object.", dim);
     return false;
   }
 
   if (rootGeom->isEmpty()) {
     QMessageBox::warning(this, _("Export"), _("Current top level object is empty."));
-    LOG(message_group::UI_Error, "Current top level object is empty.");
     return false;
   }
 
+  auto guard = scopedSetCurrentOutput();
 #ifdef ENABLE_CGAL
   auto N = dynamic_cast<const CGALNefGeometry *>(rootGeom.get());
   if (N && !N->p3->is_simple()) {
@@ -3764,8 +3761,6 @@ bool MainWindow::confirmExportFormat(FileFormat format)
   if (format == FileFormat::CSG) {
     if (!this->rootNode) {
       QMessageBox::warning(this, _("Export"), _("Nothing to export. Please try compiling first."));
-      auto guard = scopedSetCurrentOutput();
-      LOG(message_group::Error, "Nothing to export. Please try compiling first.");
       return false;
     }
     return true;
@@ -3776,21 +3771,17 @@ bool MainWindow::confirmExportFormat(FileFormat format)
   else if (fileformat::is2D(format)) dim = 2;
 
   // Stale-render / missing-geometry prompts already ran; only enforce dimension.
-  auto guard = scopedSetCurrentOutput();
   if (!rootGeom) {
     QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
-    LOG(message_group::Error, "Nothing to export! Try rendering first (press F6)");
     return false;
   }
   if (this->rootGeom->getDimension() != dim && dim != 0) {
     QMessageBox::warning(this, _("Export"),
                          QString(_("Current top level object is not a %1D object.")).arg(dim));
-    LOG(message_group::UI_Error, "Current top level object is not a %1$dD object.", dim);
     return false;
   }
   if (rootGeom->isEmpty()) {
     QMessageBox::warning(this, _("Export"), _("Current top level object is empty."));
-    LOG(message_group::UI_Error, "Current top level object is empty.");
     return false;
   }
   return true;
