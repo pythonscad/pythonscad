@@ -127,7 +127,31 @@ bool exportFormatFromIdentifier(const QString& id, FileFormat& format)
     return true;
   }
 #endif
-  return fileformat::fromIdentifier(id.toStdString(), format);
+  if (!fileformat::fromIdentifier(id.toStdString(), format)) return false;
+
+  // Ignore formats that are compiled out / not offered by the Export UI in this build.
+  switch (format) {
+#ifdef ENABLE_LIB3MF
+  case FileFormat::_3MF:
+#endif
+#ifdef ENABLE_CGAL
+  case FileFormat::PS:
+#endif
+  case FileFormat::ASCII_STL:
+  case FileFormat::BINARY_STL:
+  case FileFormat::OBJ:
+  case FileFormat::POV:
+  case FileFormat::OFF:
+  case FileFormat::WRL:
+  case FileFormat::STEP:
+  case FileFormat::GCODE:
+  case FileFormat::DXF:
+  case FileFormat::SVG:
+  case FileFormat::CSG:
+  case FileFormat::PDF:
+  case FileFormat::PNG:        return true;
+  default:                     return false;
+  }
 }
 
 QJsonObject lastExportOptionsToJson(const EditorInterface::LastExport& state)

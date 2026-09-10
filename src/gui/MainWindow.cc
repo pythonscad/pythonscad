@@ -3619,6 +3619,14 @@ std::vector<ExportFormatChoice> buildExportFormatChoices()
   return choices;
 }
 
+bool isGuiExportFormat(FileFormat format)
+{
+  for (const auto& choice : buildExportFormatChoices()) {
+    if (choice.format == format) return true;
+  }
+  return false;
+}
+
 QString byExtensionFilter()
 {
   // Qt name filters need a wildcard pattern; without one the dialog can show an empty list.
@@ -3636,7 +3644,8 @@ bool resolveExportFormatFromSuffix(const QString& suffix, FileFormat& format)
     return true;
   }
 #endif
-  if (fileformat::fromIdentifier(s.toStdString(), format)) return true;
+  // Only accept identifiers that are actually offered in this build's Export UI.
+  if (fileformat::fromIdentifier(s.toStdString(), format) && isGuiExportFormat(format)) return true;
 
   // Match registry / menu suffixes that differ from the identifier (e.g. .stp vs "step").
   // Prefer ASCII STL when both STL variants share the suffix.
@@ -3682,9 +3691,13 @@ QString MainWindow::defaultExportSuffix() const
   const std::string& pref3d = Settings::Settings::toolbarExport3D.value();
   const std::string& pref2d = Settings::Settings::toolbarExport2D.value();
   if (rootGeom && rootGeom->getDimension() == 2) {
-    if (!fileformat::fromIdentifier(pref2d, format)) format = FileFormat::DXF;
+    if (!fileformat::fromIdentifier(pref2d, format) || !isGuiExportFormat(format)) {
+      format = FileFormat::DXF;
+    }
   } else {
-    if (!fileformat::fromIdentifier(pref3d, format)) format = FileFormat::ASCII_STL;
+    if (!fileformat::fromIdentifier(pref3d, format) || !isGuiExportFormat(format)) {
+      format = FileFormat::ASCII_STL;
+    }
   }
   if (format == FileFormat::PS) return QStringLiteral("ps");
   return QString::fromStdString(fileformat::toSuffix(format));
