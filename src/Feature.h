@@ -16,6 +16,7 @@ public:
   static const Feature ExperimentalInputDriverDBus;
   static const Feature ExperimentalSkin;
   static const Feature ExperimentalLazyUnion;
+  static const Feature ExperimentalPythonSeparateObjects;
   static const Feature ExperimentalVxORenderersIndexing;
   static const Feature ExperimentalTextMetricsFunctions;
   static const Feature ExperimentalImportFunction;
@@ -25,6 +26,7 @@ public:
   static const Feature ExperimentalVectorSwizzle;
   static const Feature ExperimentalDiscretizationByError;
   static const Feature ExperimentalAiFeatures;
+  static const Feature ExperimentalUnicodeIdentifiers;
 #ifdef ENABLE_PYTHON
   static const Feature ExperimentalPythonEngine;
   static const Feature ExperimentalAddParameterPureFunction;

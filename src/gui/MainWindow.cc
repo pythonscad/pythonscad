@@ -130,7 +130,7 @@
 #include "glview/preview/CSGTreeNormalizer.h"
 #include "glview/preview/ThrownTogetherRenderer.h"
 #include "gui/AboutDialog.h"
-#include "gui/CGALWorker.h"
+#include "gui/GeometryWorker.h"
 #include "gui/ColorList.h"
 #include "gui/Dock.h"
 #include "gui/ai/AIDock.h"
@@ -250,6 +250,66 @@ int curl_download(const std::string& url, const std::string& path, std::string *
   }
   return 0;
 }
+// Functions for the pyqt connector
+
+std::string editorGetCallArgs(int pos)
+{
+  if (mainwindow_global == nullptr) return "";
+  MainWindow *mw = (MainWindow *)mainwindow_global;
+  ScintillaEditor *si = dynamic_cast<ScintillaEditor *>(mw->activeEditor);
+  if (si == nullptr) return "";
+
+  long closePos = si->qsci->SendScintilla(QsciScintillaBase::SCI_BRACEMATCH, (long)(pos - 1), (long)0);
+  if (closePos < 0 || closePos <= pos) {
+    return "";  // No matching ")": this is a new, incomplete call.
+  }
+
+  const auto length = closePos - pos;
+  QByteArray argsText((int)length + 1, '\0');
+  si->qsci->SendScintilla(QsciScintillaBase::SCI_GETTEXTRANGE, (long)pos, closePos, argsText.data());
+  return std::string(argsText.constData(), (size_t)length);
+}
+
+void editorReplaceCallArgs(int pos, const char *newText)
+{
+  if (mainwindow_global == nullptr) return;
+  MainWindow *mw = (MainWindow *)mainwindow_global;
+  if (mw->activeEditor == nullptr) return;
+  ScintillaEditor *si = dynamic_cast<ScintillaEditor *>(mw->activeEditor);
+  if (si == nullptr) return;
+
+  int lineOpen, colOpen;
+  si->qsci->lineIndexFromPosition(pos, &lineOpen, &colOpen);
+
+  long closePos = si->qsci->SendScintilla(QsciScintillaBase::SCI_BRACEMATCH, (long)(pos - 1), (long)0);
+  QString qtext = QString::fromUtf8(newText);
+  QString finalText;
+
+  if (closePos >= pos) {
+    int lineClose, colClose;
+    si->qsci->lineIndexFromPosition((int)closePos, &lineClose, &colClose);
+    si->qsci->setSelection(lineOpen, colOpen, lineClose, colClose);
+    si->qsci->replaceSelectedText(qtext);
+    finalText = qtext;
+  } else {
+    long cursorPos = si->qsci->SendScintilla(QsciScintillaBase::SCI_GETCURRENTPOS);
+    if (cursorPos < pos) cursorPos = pos;
+    int lineCursor, colCursor;
+    si->qsci->lineIndexFromPosition((int)cursorPos, &lineCursor, &colCursor);
+    si->qsci->setSelection(lineOpen, colOpen, lineCursor, colCursor);
+    finalText = qtext + ")";
+    si->qsci->replaceSelectedText(finalText);
+  }
+
+  int newLines = finalText.count('\n');
+  if (newLines == 0) {
+    si->qsci->setCursorPosition(lineOpen, colOpen + finalText.length());
+  } else {
+    int lastLineLen = finalText.section('\n', -1).length();
+    si->qsci->setCursorPosition(lineOpen + newLines, lastLineLen);
+  }
+}
+
 #endif  // ifdef ENABLE_PYTHON
 
 // Global application state
@@ -457,17 +517,8 @@ std::unique_ptr<ExternalToolInterface> createExternalToolService(print_service_t
 void MainWindow::addMenuItemCB(QString callback)
 {
 #ifdef ENABLE_PYTHON
-  std::string content = loadInitFile();
-  if (content.size() == 0) return;
-  const auto& venv = venvBinDirFromSettings();
-  const auto& binDir = venv.empty() ? PlatformUtils::applicationPath() : venv;
-  initPython(binDir, "", nullptr);
-  const auto init_err = evaluatePython(content);
-  if (!init_err.empty()) std::cerr << init_err << std::flush;
   const auto cb_err = evaluatePython(callback.toStdString());
   if (!cb_err.empty()) std::cerr << cb_err << std::flush;
-
-  finishPython();
 #endif
 }
 
@@ -511,7 +562,7 @@ void add_menuitem_trampoline(const char *menuname, const char *itemname, const c
 
 std::string MainWindow::loadInitFile(void)
 {
-  std::string path = lookup_file(".pythonscadrc", ".", "");
+  std::string path = lookup_file(".pythonscadrc", PlatformUtils::userConfigPath(), ".");
   if (path.size() == 0) return "";
   std::ifstream fh(path);
 
@@ -544,6 +595,7 @@ void MainWindow::customSetup(void)
   auto setup_err = evaluatePython("setup()");
   if (!setup_err.empty()) std::cerr << setup_err << std::flush;
   addmenuitem_this = nullptr;
+  snapshotPythonInventory();
   finishPython();
 }
 
@@ -1049,7 +1101,7 @@ MainWindow::~MainWindow()
   // Mark that we're being destroyed so eventFilter won't access freed members
   isBeingDestroyed = true;
 
-  delete this->cgalworker;
+  delete this->geometryWorker;
 }
 
 void MainWindow::showProgress()
@@ -1122,8 +1174,7 @@ void MainWindow::compile(bool reload, bool forcedone)
     bool shouldcompiletoplevel = false;
     bool didcompile = false;
 
-    compileErrors = 0;
-    compileWarnings = 0;
+    resetCompileMessageCounts();
 
     this->renderStatistic.start();
 
@@ -1313,6 +1364,12 @@ void MainWindow::compileDone(bool didchange)
       }
     }
   }
+}
+
+void MainWindow::resetCompileMessageCounts()
+{
+  this->compileErrors = 0;
+  this->compileWarnings = 0;
 }
 
 void MainWindow::compileEnded()
@@ -2176,6 +2233,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
         this->activeMeasurement = nullptr;
         meas.stopMeasure();
       }
+      if (this->qglview->handle_mode) {
+        this->qglview->handle_mode = false;
+        qglview->update();
+      }
     }
   }
   return QMainWindow::eventFilter(obj, event);
@@ -2655,7 +2716,7 @@ void MainWindow::cgalRender()
   if (!isClosing) progress_report_prep(this->rootNode, report_func, this);
   else return;
 
-  this->cgalworker->start(this->tree);
+  this->geometryWorker->start(this->tree);
 }
 
 void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_geom)
@@ -2739,6 +2800,12 @@ void MainWindow::handleMeasurementClicked(QAction *clickedAction)
   if (clickedAction == designActionFindHandle) {
     meas.startFindHandle();
   }
+}
+
+void MainWindow::findHandleClicked(void)
+{
+  this->qglview->handle_mode = this->designActionFindHandle->isChecked();
+  qglview->update();
 }
 
 void MainWindow::leftClick(QPoint mouse)
@@ -4594,8 +4661,8 @@ void MainWindow::setupCoreSubsystems()
   renderCompleteSoundEffect = new QSoundEffect(this);
   renderCompleteSoundEffect->setSource(QUrl("qrc:/sounds/complete.wav"));
 
-  this->cgalworker = new CGALWorker();
-  connect(this->cgalworker, &CGALWorker::done, this, &MainWindow::actionRenderDone);
+  this->geometryWorker = new GeometryWorker();
+  connect(this->geometryWorker, &GeometryWorker::done, this, &MainWindow::actionRenderDone);
   this->csgworker = new CSGWorker(this);
   connect(this->csgworker, SIGNAL(done(void)), this, SLOT(compileCSGDone(void)));
 
@@ -4751,6 +4818,8 @@ void MainWindow::setupEditor(const QStringList& filenames)
   connect(this->editActionUnindent, &QAction::triggered, tabManager, &TabManager::unindentSelection);
   connect(this->editActionComment, &QAction::triggered, tabManager, &TabManager::commentSelection);
   connect(this->editActionUncomment, &QAction::triggered, tabManager, &TabManager::uncommentSelection);
+  connect(this->editActionMoveLineUp, &QAction::triggered, tabManager, &TabManager::moveLineUp);
+  connect(this->editActionMoveLineDown, &QAction::triggered, tabManager, &TabManager::moveLineDown);
 
   connect(this->editActionToggleBookmark, &QAction::triggered, tabManager, &TabManager::toggleBookmark);
   connect(this->editActionNextBookmark, &QAction::triggered, tabManager, &TabManager::nextBookmark);
@@ -4953,7 +5022,7 @@ void MainWindow::setupMenusAndActions()
   connect(this->exportFormatMapper, static_cast<void (QSignalMapper::*)(int)>(&QSignalMapper::mapped),
           this, &MainWindow::actionExportFileFormat);
 #endif
-
+ ((QApplication *) qapp_global)->installEventFilter(this);
   frameCompileResult->hide();
   this->labelCompileResultMessage->setOpenExternalLinks(false);
   connect(this->labelCompileResultMessage, &QLabel::linkActivated, this, &MainWindow::showLink);
@@ -5008,6 +5077,7 @@ void MainWindow::setupMenusAndActions()
   measurementGroup->addAction(designActionMeasureDist);
   measurementGroup->addAction(designActionMeasureAngle);
   connect(this->measurementGroup, &QActionGroup::triggered, this, &MainWindow::handleMeasurementClicked);
+  connect(this->designActionFindHandle, &QAction::triggered, this, &MainWindow::findHandleClicked);
 
   exportMap[FileFormat::BINARY_STL] = this->fileActionExportBinarySTL;
   exportMap[FileFormat::ASCII_STL] = this->fileActionExportAsciiSTL;
@@ -5019,7 +5089,6 @@ void MainWindow::setupMenusAndActions()
   exportMap[FileFormat::PS] = this->fileActionExportFoldable;
   exportMap[FileFormat::STEP] = this->fileActionExportSTP;
   exportMap[FileFormat::GCODE] = this->fileActionExportGCode;
-  exportMap[FileFormat::AMF] = this->fileActionExportAMF;
   exportMap[FileFormat::DXF] = this->fileActionExportDXF;
   exportMap[FileFormat::SVG] = this->fileActionExportSVG;
   exportMap[FileFormat::PDF] = this->fileActionExportPDF;

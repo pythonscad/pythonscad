@@ -90,6 +90,7 @@ function Invoke-PythonSCAD {
         $psi.WorkingDirectory = $WorkingDirectory
     }
     $psi.UseShellExecute = $false
+    $psi.Environment['QT_QPA_PLATFORM'] = 'offscreen'
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     if ($InputFile) {
@@ -159,13 +160,33 @@ from pythonscad import *
 
 export(cube(10), "ipython-cube.stl")
 '@
+    Write-Utf8Content -Path (Join-Path $TestDirectory 'pyqt6-smoke.py') -Value @'
+from PyQt6 import QtCore, QtWidgets, sip
+from pythonscad import qapp_ptr
+
+# --repl never starts the GUI, so qapp_ptr() is 0. wrapinstance(0) raises
+# and repl() still exits 0, which used to look like a silent packaging miss.
+# Importing the bundled bindings is the packaging check; wrap the C++ app
+# only when one actually exists.
+ptr = qapp_ptr()
+if ptr:
+    app = sip.wrapinstance(ptr, QtWidgets.QApplication)
+    assert app is not None
+
+marker = "PYQT6_PACKAGED_OK " + QtCore.QT_VERSION_STR
+print(marker, flush=True)
+with open("pyqt6-ok.txt", "w", encoding="utf-8") as fh:
+    fh.write(marker + "\n")
+raise SystemExit(0)
+'@
 }
 
 function Invoke-SmokeTest {
     param(
         [Parameter(Mandatory = $true)][string]$ExecutablePath,
         [Parameter(Mandatory = $true)][string]$Label,
-        [Parameter(Mandatory = $true)][string]$Workdir
+        [Parameter(Mandatory = $true)][string]$Workdir,
+        [switch]$ExpectPyQt6
     )
 
     if (-not (Test-Path -LiteralPath $ExecutablePath -PathType Leaf)) {
@@ -207,6 +228,26 @@ function Invoke-SmokeTest {
         -WorkingDirectory $testdir `
         -LogFile (Join-Path $testdir 'ipython.log')
     Assert-NonEmptyFile -Path (Join-Path $testdir 'ipython-cube.stl')
+
+    if ($ExpectPyQt6) {
+        Write-SmokeLog "Smoke testing $Label`: packaged PyQt6"
+        $pyqtLog = Join-Path $testdir 'pyqt6.log'
+        $pyqtOk = Join-Path $testdir 'pyqt6-ok.txt'
+        if (Test-Path -LiteralPath $pyqtOk) {
+            Remove-Item -LiteralPath $pyqtOk -Force
+        }
+        Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
+            -Arguments @('--repl') `
+            -WorkingDirectory $testdir `
+            -InputFile (Join-Path $testdir 'pyqt6-smoke.py') `
+            -LogFile $pyqtLog
+        if (-not (Test-Path -LiteralPath $pyqtOk -PathType Leaf) -or ((Get-Item -LiteralPath $pyqtOk).Length -le 0)) {
+            Write-Error "--- begin command output: $pyqtLog ---" -ErrorAction Continue
+            Get-Content -LiteralPath $pyqtLog -Raw -ErrorAction SilentlyContinue | Write-Error -ErrorAction Continue
+            Write-Error "--- end command output: $pyqtLog ---" -ErrorAction Continue
+            throw "$Label`: packaged PyQt6 did not emit its success marker"
+        }
+    }
 
     Write-SmokeLog "Smoke testing $Label`: OK"
 }

@@ -44,8 +44,8 @@ Q_IMPORT_PLUGIN(QSvgPlugin)
 #endif
 
 class BuiltinContext;
-class CGALWorker;
 class CSGWorker;
+class GeometryWorker;
 class CSGNode;
 class CSGProducts;
 class FontListDialog;
@@ -118,8 +118,8 @@ public:
 
   Measurement::Measurement meas;
 
-  int compileErrors;
-  int compileWarnings;
+  int compileErrors = 0;
+  int compileWarnings = 0;
 
   MainWindow(const QStringList& filenames);
   std::string loadInitFile(void);
@@ -310,6 +310,7 @@ private slots:
   void instantiateRoot();
   void compileDone(bool didchange);
   void compileEnded();
+  void resetCompileMessageCounts();
 
 private slots:
   void on_editActionCopyVPT_triggered();
@@ -388,6 +389,7 @@ private slots:
   void on_designShareDesign_triggered();
   void on_designLoadShareDesign_triggered();
   void handleMeasurementClicked(QAction *clickedAction);
+  void findHandleClicked();
   void on_designCheckValidity_triggered();
   void on_designActionDisplayAST_triggered();
   void on_designActionDisplayPython_triggered();
@@ -507,8 +509,8 @@ private:
   bool procevents{false};
   QTemporaryFile *tempFile{nullptr};
   ProgressWidget *progresswidget{nullptr};
-  CGALWorker *cgalworker;
   CSGWorker *csgworker;
+  GeometryWorker *geometryWorker;
   QMutex consolemutex;
   DragResult dragResult;
   EditorInterface *renderedEditor{

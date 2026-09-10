@@ -227,6 +227,14 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         raise SystemExit(f"No package manager defined for {distro.id} (and none found in its inheritance chain)")
 
     pre_cmds = [cmd.split() for cmd in d.get("pre_commands", [])]
+    # Allow pre_commands to reference the live Homebrew prefix, since
+    # pre_commands are plain argv lists (no shell, no $() expansion) and
+    # the prefix differs between Apple Silicon (/opt/homebrew) and Intel
+    # (/usr/local) runners.
+    if mgr == "brew" and any("{tap_repo}" in c for c in d.get("pre_commands", [])):
+        tap_repo = subprocess.check_output(["brew", "--repository", "local/pinned-qt"], text=True).strip()
+        pre_cmds = [[tok.replace("{tap_repo}", tap_repo) for tok in cmd] for cmd in pre_cmds]
+
     cmds: List[List[str]] = []
     cmds.extend(pre_cmds)
     yes_flag = []
@@ -456,6 +464,11 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Show commands without executing")
     parser.add_argument("--list", action="store_true", help="Only list resolved packages")
     parser.add_argument(
+        "--pre-commands-only",
+        action="store_true",
+        help="Run only this distro's pre_commands, then exit (for CI steps that must run after the package manager itself has been set up).",
+    )
+    parser.add_argument(
         "--output-env",
         metavar="FILE",
         help="Append PACKAGES=<space-separated list> to FILE (for CI integration, e.g. $GITHUB_ENV)",
@@ -492,6 +505,14 @@ def main():
     print(f"Detected distro: {distro.id} version: {distro.version}")
     print(f"Active profiles: {', '.join(cfg.get('active_profiles', []))}")
     print(f"Package count: {len(packages)}")
+
+    if args.pre_commands_only:
+        d = cfg["distros"][distro.id]
+        pre_cmds = [cmd.split() for cmd in d.get("pre_commands", [])]
+        print(f"Running {len(pre_cmds)} pre_command(s) for {distro.id}...")
+        run_commands(pre_cmds, dry_run=args.dry_run)
+        return 0
+
     # --output-env: write package list to a file (e.g. $GITHUB_ENV) and exit
     if args.output_env:
         pkg_str = " ".join(packages)

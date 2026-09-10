@@ -3010,19 +3010,9 @@ msgstr ""
 msgid "FOV"
 msgstr ""
 
-#: src/core/Settings.cc:48
-#, c-format
-msgid "axis-%d"
-msgstr ""
-
 #: src/core/Settings.cc:49
 #, c-format
 msgid "Axis %d"
-msgstr ""
-
-#: src/core/Settings.cc:52
-#, c-format
-msgid "axis-inverted-%d"
 msgstr ""
 
 #: src/core/Settings.cc:53
