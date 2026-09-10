@@ -2928,15 +2928,15 @@ static std::unique_ptr<PolySet> pullObject(const PullNode& node, const PolySet *
 
   return builder.build();
 }
+
 Vector3d cross_pt(Vector3d p1, Vector3d p2, double x)
 {
-  if (p1[0] > p2[0]) std::swap(p1, p2);   // <-- immer gleiche Reihenfolge, unabhängig vom Aufrufer
+  if (p1[0] > p2[0]) std::swap(p1, p2);  // <-- immer gleiche Reihenfolge, unabhängig vom Aufrufer
   double f = (x - p1[0]) / (p2[0] - p1[0]);
   double y = p1[1] + (p2[1] - p1[1]) * f;
   double z = p1[2] + (p2[2] - p1[2]) * f;
   return Vector3d(x, y, z);
 }
-
 
 std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder,
                                                          const std::vector<Vector3d> vertices,
@@ -2944,18 +2944,16 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
                                                          const std::vector<Vector4d>& normals,
                                                          std::vector<double> xsteps)
 {
-	printf("wrapSlice\n");
   std::vector<Vector3f> builder_vertices;
   std::vector<std::vector<IndexedColorTriangle>> results;  // nach strips sortiert
   int strips = xsteps.size() + 1;
   int numSlices = strips - 2;  // Anzahl der tatsächlich auszugebenden Slices (= xsteps.size() - 1)
 
-
   // initialize
   Polygon dmy;
   std::vector<Polygon> dmyx;
   std::vector<IndexedColorTriangle> dmyz;
-  for (int i = 0; i < numSlices; i++) {  
+  for (int i = 0; i < numSlices; i++) {
     results.push_back(dmyz);
   }
 
@@ -3066,7 +3064,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
       if (cutnum == 0) {
         tmpresults[curlevel >> 1].push_back(chain);
       } else {
-       if (chain.size() > 1) {
+        if (chain.size() > 1) {
           auto& bucket = stripPolygons[curlevel >> 1];
           Vector3d chainEnd = chain[chain.size() - 1];
           int match = -1;
@@ -3082,7 +3080,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
             // Fallback auf altes Verhalten, falls kein Match gefunden wird
             bucket[curpols].insert(bucket[curpols].begin(), chain.begin(), chain.end() - 1);
           }
-        }	      
+        }
       }
     }
     auto compare_func = [](const Vector3d& b, const Vector3d& a) -> bool {
@@ -3167,7 +3165,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
       // now output
     }
     // TODO strukturen nicht so tief, datem frueher verarbeiten
-    for (int i = 0; i <numSlices; i++) {
+    for (int i = 0; i < numSlices; i++) {
       // convert to indexed
 
       std::vector<IndexedFace> polys_ind;
@@ -3196,8 +3194,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
 
 static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *ps)
 {
-	printf("wrapObject\n");
-  if (!Feature::ExperimentalWrapPolygon.is_enabled()) {
+  if (node.shape == nullptr) {  // use radius ideal approach
     PolySetBuilder builder(0, 0, 3, true);
     int segments1 = 360.0 / node.fa;
     int segments2 = 2 * G_PI * node.r / node.fs;
@@ -3259,11 +3256,11 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
           rad = node.r - pt[1];
           pt = Vector3d(rad * cos(ang), rad * sin(ang), pt[2]);
         }
-	builder.beginPolygon(curslice.size());
-        for (size_t j = 0; j < curslice.size() ; j++) {
-          builder.addVertex(curslice[j]);
-	}
-	builder.endPolygon();
+        //	builder.beginPolygon(curslice.size());
+        //        for (size_t j = 0; j < curslice.size() ; j++) {
+        //          builder.addVertex(curslice[j]);
+        //	}
+        //      builder.endPolygon();
         for (size_t j = 0; j < curslice.size() - 2; j++) {
           builder.beginPolygon(3);
           builder.addVertex(curslice[0]);
@@ -3301,48 +3298,29 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
   std::vector<double> xscale;
   VectorOfVector2d polygon;
   int polygonlen;
-  if (node.shape != nullptr) {
-    Tree tree(node.shape, "");
-    GeometryEvaluator geomevaluator(tree);
-    std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
-    std::shared_ptr<const Polygon2d> pol = std::dynamic_pointer_cast<const Polygon2d>(geom);
-    if (pol != nullptr) {
-      auto outlines = pol->untransformedOutlines();
-      if (outlines.size() > 0) {
-        const Outline2d outl = outlines[0];
-        polygon = outl.vertices;
-      }
+  Tree tree(node.shape, "");
+  GeometryEvaluator geomevaluator(tree);
+  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  std::shared_ptr<const Polygon2d> pol = std::dynamic_pointer_cast<const Polygon2d>(geom);
+  if (pol != nullptr) {
+    auto outlines = pol->untransformedOutlines();
+    if (outlines.size() > 0) {
+      const Outline2d outl = outlines[0];
+      polygon = outl.vertices;
     }
-    if (polygon.size() == 0) return builder.build();
-    polygonlen = polygon.size();
-    double off = xmin;
-    int ind = 0;
-    xscale.push_back(off);
-    do {
-      auto& p1 = polygon[ind % polygonlen];
-      auto& p2 = polygon[(ind + 1) % polygonlen];
-      off += (p2 - p1).norm();
-      ind++;
-      xscale.push_back(off);
-    } while (off < xmax);
-  } else {  // r given
-    int segments1 = 360.0 / node.fa;
-    int segments2 = 2 * G_PI * node.r / node.fs;
-    int segments = segments1 > segments2 ? segments1 : segments2;
-    if (node.fn > 0) segments = node.fn;
-    double arclen = 2 * G_PI * node.r / segments;
-    //    if(xmin >= 0) xmin = ceil((xmin+1e-6)/arclen)*arclen;
-    //    else xmin = -floor((-xmin+1e-6)/arclen)*arclen;
-    do {
-      Vector2d pt(node.r * cos(xmin / node.r), node.r * sin(xmin / node.r));
-
-      xscale.push_back(xmin);
-      polygon.push_back(pt);
-      xmin += arclen;
-    } while (xmin <= xmax + 1e-6 + arclen);
-    polygonlen = polygon.size();
-    xscale.push_back(xmin);
   }
+  if (polygon.size() == 0) return builder.build();
+  polygonlen = polygon.size();
+  double off = xmin;
+  int ind = 0;
+  xscale.push_back(off);
+  do {
+    auto& p1 = polygon[ind % polygonlen];
+    auto& p2 = polygon[(ind + 1) % polygonlen];
+    off += (p2 - p1).norm();
+    ind++;
+    xscale.push_back(off);
+  } while (off < xmax);
 
   std::vector<indexedFaceList> polygons_sorted;
   std::vector<Vector4d> normals = calcTriangleNormals(ps->vertices, ps->indices);
@@ -3364,7 +3342,7 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
 
   std::vector<Vector3d> builder_vertices;
   builder.copyVertices(builder_vertices);  // TODO sehr ineffizient
-  int ind = 0;
+  ind = 0;
   for (const auto& slice : sliceresult) {
     double xbot = xscale[ind];
     double xtop = xscale[ind + 1];
@@ -3407,24 +3385,6 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
     ind++;
   }
   auto ps1 = builder.build();
-
-  int error;
-printf("running\n");
-printf("createEdgeDb wird aufgerufen mit ps->indices.size()=%zu ps->vertices.size()=%zu\n",
-       ps1->indices.size(), ps1->vertices.size());
-
-  auto edge_db = createEdgeDb(ps1->indices, error);
-
-//  for (int fidx : {135, 313, 102, 358, 134, 326, 133, 359, 180, 360, 181, 367, 179, 418, 145, 419}) {
-//  printf("Face %d: ", fidx);
-//  for (int idx : ps1->indices[fidx]) {
-//    printf("%d(%.6f/%.6f/%.6f) ", idx, ps1->vertices[idx][0], ps1->vertices[idx][1], ps1->vertices[idx][2]);
-//  }
-//  printf("\n");
-//}
-
-printf("done\n");
-
   return ps1;
 }
 
