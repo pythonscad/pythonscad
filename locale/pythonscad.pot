@@ -3378,7 +3378,7 @@ msgid "Auto-detect from file extension"
 msgstr ""
 
 #: src/gui/MainWindow.cc:3610
-msgid "By Extension"
+msgid "By Extension (*.*)"
 msgstr ""
 
 #: src/gui/MainWindow.cc:3686

@@ -3505,8 +3505,8 @@ msgid "Auto-detect from file extension"
 msgstr "ავტომატური გამოვლენა ფაილის გაფართოებიდან"
 
 #: src/gui/MainWindow.cc:3610
-msgid "By Extension"
-msgstr "გაფართოებით"
+msgid "By Extension (*.*)"
+msgstr "გაფართოებით (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy

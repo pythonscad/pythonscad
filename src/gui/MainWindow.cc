@@ -3520,8 +3520,8 @@ bool MainWindow::canExport(unsigned int dim)
   // other tab contents most recently rendered
   if (renderedEditor != activeEditor) {
     auto ret = QMessageBox::warning(this, _("Export"),
-                                    _("The rendered data is of different tab.\n"
-                                      "Do you really want to export the another tab's content?"),
+                                    _("The rendered data is from a different tab.\n"
+                                      "Do you really want to export another tab's content?"),
                                     QMessageBox::Yes | QMessageBox::No);
     if (ret != QMessageBox::Yes) {
       return false;
@@ -3621,7 +3621,8 @@ std::vector<ExportFormatChoice> buildExportFormatChoices()
 
 QString byExtensionFilter()
 {
-  return _("By Extension");
+  // Qt name filters need a wildcard pattern; without one the dialog can show an empty list.
+  return _("By Extension (*.*)");
 }
 
 bool resolveExportFormatFromSuffix(const QString& suffix, FileFormat& format)
@@ -3710,10 +3711,17 @@ void MainWindow::updateExportMenuText()
 
 void MainWindow::updateExportToolbarIcon()
 {
-  if (!fileActionExport) return;
-  QAction *prefAction = formatIdentifierToAction(Settings::Settings::toolbarExport3D.value());
-  if (prefAction && !prefAction->icon().isNull()) {
-    fileActionExport->setIcon(prefAction->icon());
+  if (fileActionExport) {
+    QAction *pref3d = formatIdentifierToAction(Settings::Settings::toolbarExport3D.value());
+    if (pref3d && !pref3d->icon().isNull()) {
+      fileActionExport->setIcon(pref3d->icon());
+    }
+  }
+  if (fileActionExportAs) {
+    QAction *pref2d = formatIdentifierToAction(Settings::Settings::toolbarExport2D.value());
+    if (pref2d && !pref2d->icon().isNull()) {
+      fileActionExportAs->setIcon(pref2d->icon());
+    }
   }
 }
 

@@ -3467,8 +3467,8 @@ msgid "Auto-detect from file extension"
 msgstr "根据文件扩展名自动检测"
 
 #: src/gui/MainWindow.cc:3610
-msgid "By Extension"
-msgstr "按扩展名"
+msgid "By Extension (*.*)"
+msgstr "按扩展名 (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy

@@ -3508,8 +3508,8 @@ msgid "Auto-detect from file extension"
 msgstr "Dosya uzantısından otomatik algıla"
 
 #: src/gui/MainWindow.cc:3610
-msgid "By Extension"
-msgstr "Uzantıya göre"
+msgid "By Extension (*.*)"
+msgstr "Uzantıya göre (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy

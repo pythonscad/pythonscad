@@ -3526,8 +3526,8 @@ msgstr "Détection automatique selon l'extension du fichier"
 
 #: src/gui/MainWindow.cc:3610
 #, fuzzy
-msgid "By Extension"
-msgstr "Par extension"
+msgid "By Extension (*.*)"
+msgstr "Par extension (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy

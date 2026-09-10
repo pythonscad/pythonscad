@@ -3503,8 +3503,8 @@ msgid "Auto-detect from file extension"
 msgstr "Aŭtomate detekti laŭ dosierfinaĵo"
 
 #: src/gui/MainWindow.cc:3610
-msgid "By Extension"
-msgstr "Laŭ finaĵo"
+msgid "By Extension (*.*)"
+msgstr "Laŭ finaĵo (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy

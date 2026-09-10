@@ -3502,8 +3502,8 @@ msgstr "Automaticky rozpoznat podle přípony souboru"
 
 #: src/gui/MainWindow.cc:3610
 #, fuzzy
-msgid "By Extension"
-msgstr "Podle přípony"
+msgid "By Extension (*.*)"
+msgstr "Podle přípony (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy

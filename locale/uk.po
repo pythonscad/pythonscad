@@ -3503,8 +3503,8 @@ msgid "Auto-detect from file extension"
 msgstr "Автовизначення за розширенням файлу"
 
 #: src/gui/MainWindow.cc:3610
-msgid "By Extension"
-msgstr "За розширенням"
+msgid "By Extension (*.*)"
+msgstr "За розширенням (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy

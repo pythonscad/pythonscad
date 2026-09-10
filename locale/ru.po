@@ -3502,8 +3502,8 @@ msgstr "Автоопределение по расширению файла"
 
 #: src/gui/MainWindow.cc:3610
 #, fuzzy
-msgid "By Extension"
-msgstr "По расширению"
+msgid "By Extension (*.*)"
+msgstr "По расширению (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy

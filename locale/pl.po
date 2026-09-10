@@ -3504,8 +3504,8 @@ msgstr "Wykrywaj automatycznie na podstawie rozszerzenia pliku"
 
 #: src/gui/MainWindow.cc:3610
 #, fuzzy
-msgid "By Extension"
-msgstr "Według rozszerzenia"
+msgid "By Extension (*.*)"
+msgstr "Według rozszerzenia (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy

@@ -3514,8 +3514,8 @@ msgstr "Detectar automáticamente por extensión"
 
 #: src/gui/MainWindow.cc:3610
 #, fuzzy
-msgid "By Extension"
-msgstr "Por extensión"
+msgid "By Extension (*.*)"
+msgstr "Por extensión (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy

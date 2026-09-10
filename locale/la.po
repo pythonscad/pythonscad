@@ -3505,8 +3505,8 @@ msgid "Auto-detect from file extension"
 msgstr "Automatice ex extensione fasciculi detegere"
 
 #: src/gui/MainWindow.cc:3610
-msgid "By Extension"
-msgstr "Per extensionem"
+msgid "By Extension (*.*)"
+msgstr "Per extensionem (*.*)"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy
