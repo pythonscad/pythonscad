@@ -35,6 +35,7 @@
 #include "handle_dep.h"
 #include "src/geometry/PolySetBuilder.h"
 
+#include <algorithm>
 #include <cmath>
 #include <sstream>
 
@@ -156,6 +157,9 @@ struct FilletEdgePair {
   int faceb = -1;
 };
 
+// Reject an edge collapse if it leaves an effectively zero-area face.
+constexpr double COLLAPSED_FACE_MIN_RELATIVE_AREA = 1e-12;
+
 bool validateFilletEdgePairs(const std::vector<IndexedFace>& indices, EdgeKey& failedEdge)
 {
   std::unordered_map<EdgeKey, FilletEdgePair, boost::hash<EdgeKey>> edge_db;
@@ -196,11 +200,47 @@ bool validateFilletEdgePairs(const std::vector<IndexedFace>& indices, EdgeKey& f
   return true;
 }
 
+bool validateCollapsedMesh(const std::vector<IndexedFace>& indices,
+                           const std::vector<Vector3d>& vertices,
+                           const std::vector<Vector4d>& referenceNormals)
+{
+  EdgeKey failedEdge;
+  if (!validateFilletEdgePairs(indices, failedEdge) || indices.size() != referenceNormals.size()) {
+    return false;
+  }
+
+  for (size_t faceIndex = 0; faceIndex < indices.size(); faceIndex++) {
+    const auto& face = indices[faceIndex];
+    if (face.size() < 3) return false;
+    for (size_t i = 0; i < face.size(); i++) {
+      for (size_t j = i + 1; j < face.size(); j++) {
+        if (face[i] == face[j]) return false;
+      }
+    }
+
+    Vector3d area = Vector3d::Zero();
+    double maxEdgeSquared = 0;
+    for (size_t i = 0; i < face.size(); i++) {
+      const Vector3d& current = vertices[face[i]];
+      const Vector3d& next = vertices[face[(i + 1) % face.size()]];
+      area += current.cross(next);
+      maxEdgeSquared = std::max(maxEdgeSquared, (next - current).squaredNorm());
+    }
+    if (!area.allFinite() || maxEdgeSquared == 0 ||
+        area.squaredNorm() <= maxEdgeSquared * maxEdgeSquared * COLLAPSED_FACE_MIN_RELATIVE_AREA *
+                                COLLAPSED_FACE_MIN_RELATIVE_AREA ||
+        area.dot(referenceNormals[faceIndex].head<3>()) <= 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace
 
 std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> ps,
                                                 std::vector<bool> corner_selected, double r_, int bn,
-                                                double minang)
+                                                double minang, double min_edge_len)
 {
   double cos_minang = cos(minang * 3.1415 / 180.0);
   std::vector<Vector4d> normals, newnormals;
@@ -391,6 +431,74 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
 
         }
     */
+    // Boolean operations with a tiny overlap can leave sliver edges around the
+    // seam. Collapse those before constructing fillet patches.
+    if (min_edge_len > 0) {
+      auto candidate = edge_db.end();
+      for (auto edge = edge_db.begin(); edge != edge_db.end(); ++edge) {
+        const int ind1 = edge->first.ind1;
+        const int ind2 = edge->first.ind2;
+        const double edge_len = (vertices_copy[ind1] - vertices_copy[ind2]).norm();
+        if (edge_len >= min_edge_len) continue;
+        if (candidate == edge_db.end() || ind1 < candidate->first.ind1 ||
+            (ind1 == candidate->first.ind1 && ind2 < candidate->first.ind2)) {
+          candidate = edge;
+        }
+      }
+
+      if (candidate != edge_db.end()) {
+        const auto vertices_before_collapse = vertices_copy;
+        const auto merged_before_collapse = merged;
+        const auto face_parents_before_collapse = faceParents;
+        const auto normals_before_collapse = newnormals;
+        const auto selected_before_collapse = corner_selected;
+        auto& e = *candidate;
+        int keep = e.first.ind1;
+        int drop = e.first.ind2;
+
+        const bool keep_selected =
+          keep < static_cast<int>(corner_selected.size()) && corner_selected[keep];
+        const bool drop_selected =
+          drop < static_cast<int>(corner_selected.size()) && corner_selected[drop];
+        if (!keep_selected && drop_selected) std::swap(keep, drop);
+        if (keep_selected && drop_selected) {
+          vertices_copy[keep] = 0.5 * (vertices_copy[keep] + vertices_copy[drop]);
+        }
+        if (drop < static_cast<int>(corner_selected.size())) corner_selected[drop] = false;
+
+        for (size_t face_index = 0; face_index < merged.size(); face_index++) {
+          auto& face = merged[face_index];
+          const int size = static_cast<int>(face.size());
+          int duplicate = -1;
+          for (int i = 0; i < size; i++) {
+            if (face[i] != drop) continue;
+            face[i] = keep;
+            if (face[(i + 1) % size] == keep || face[(i + size - 1) % size] == keep) duplicate = i;
+          }
+          if (duplicate != -1) face.erase(face.begin() + duplicate);
+          if (face.size() >= 3) continue;
+
+          merged.erase(merged.begin() + static_cast<long>(face_index));
+          faceParents.erase(faceParents.begin() + static_cast<long>(face_index));
+          newnormals.erase(newnormals.begin() + static_cast<long>(face_index));
+          for (int& parent : faceParents) {
+            if (parent == static_cast<int>(face_index)) parent = -1;
+            else if (parent > static_cast<int>(face_index)) parent--;
+          }
+          face_index--;
+        }
+        if (validateCollapsedMesh(merged, vertices_copy, newnormals)) {
+          newnormals = calcTriangleNormals(vertices_copy, merged);
+          improved = true;
+        } else {
+          vertices_copy = vertices_before_collapse;
+          merged = merged_before_collapse;
+          faceParents = face_parents_before_collapse;
+          newnormals = normals_before_collapse;
+          corner_selected = selected_before_collapse;
+        }
+      }
+    }
   } while (improved == true);
 
   // start builder with existing vertices to have VertexIndex available
@@ -818,5 +926,5 @@ std::unique_ptr<const Geometry> FilletNode::createGeometry() const
   } else {
     for (size_t i = 0; i < ps_merged->vertices.size(); i++) corner_selected.push_back(true);
   }
-  return createFilletInt(ps_merged, corner_selected, this->r, this->fn, this->minang);
+  return createFilletInt(ps_merged, corner_selected, this->r, this->fn, this->minang, 0);
 }
