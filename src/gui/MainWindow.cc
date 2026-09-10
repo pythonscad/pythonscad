@@ -3680,8 +3680,10 @@ void MainWindow::updateExportMenuText()
 {
   if (!fileActionExport) return;
   if (activeEditor && activeEditor->lastExport) {
-    const QString name = QFileInfo(activeEditor->lastExport->path).fileName();
-    fileActionExport->setText(QString(_("Export to %1")).arg(name));
+    const QString name = QFileInfo(activeEditor->lastExport->path)
+                           .fileName()
+                           .replace(QLatin1Char('&'), QLatin1String("&&"));
+    fileActionExport->setText(QString(_("E&xport to %1")).arg(name));
   } else {
     fileActionExport->setText(_("&Export..."));
   }
@@ -3894,10 +3896,10 @@ bool MainWindow::runExportAsDialogFlow()
 void MainWindow::actionExport()
 {
   if (activeEditor && activeEditor->lastExport) {
-    performRememberedExport();
-  } else {
-    runExportAsDialogFlow();
+    if (performRememberedExport()) return;
+    // Remembered path failed (missing file, permissions, etc.) — fall back to Export as…
   }
+  runExportAsDialogFlow();
 }
 
 void MainWindow::actionExportAs()

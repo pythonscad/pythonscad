@@ -274,11 +274,21 @@ void applyLastExportFromJson(EditorInterface *edt, const QJsonObject& obj)
   if (options.contains(QStringLiteral("gcode"))) {
     const QJsonObject gc = options.value(QStringLiteral("gcode")).toObject();
     auto o = std::make_shared<ExportGcodeOptions>();
-    o->feedrate = gc.value(QStringLiteral("feedrate")).toDouble(0);
-    o->laserpower = gc.value(QStringLiteral("laserpower")).toDouble(0);
-    o->lasermode = gc.value(QStringLiteral("lasermode")).toInt(0);
-    o->initCode = gc.value(QStringLiteral("initCode")).toString().toStdString();
-    o->exitCode = gc.value(QStringLiteral("exitCode")).toString().toStdString();
+    o->feedrate = Settings::SettingsExportGcode::exportGcodeFeedRate.value();
+    o->laserpower = Settings::SettingsExportGcode::exportGcodeLaserPower.value();
+    o->lasermode = Settings::SettingsExportGcode::exportGcodeLaserMode.value();
+    o->initCode = Settings::SettingsExportGcode::exportGcodeInitCode.value();
+    o->exitCode = Settings::SettingsExportGcode::exportGcodeExitCode.value();
+    if (gc.contains(QStringLiteral("feedrate")))
+      o->feedrate = gc.value(QStringLiteral("feedrate")).toDouble(o->feedrate);
+    if (gc.contains(QStringLiteral("laserpower")))
+      o->laserpower = gc.value(QStringLiteral("laserpower")).toDouble(o->laserpower);
+    if (gc.contains(QStringLiteral("lasermode")))
+      o->lasermode = gc.value(QStringLiteral("lasermode")).toInt(o->lasermode);
+    if (gc.contains(QStringLiteral("initCode")))
+      o->initCode = gc.value(QStringLiteral("initCode")).toString().toStdString();
+    if (gc.contains(QStringLiteral("exitCode")))
+      o->exitCode = gc.value(QStringLiteral("exitCode")).toString().toStdString();
     state.optionsGcode = o;
   }
 

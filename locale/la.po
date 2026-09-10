@@ -3510,8 +3510,8 @@ msgstr "Per extensionem"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy
-msgid "Export to %1"
-msgstr "Exportare ad %1"
+msgid "E&xport to %1"
+msgstr "E&xportare ad %1"
 
 #: src/gui/MainWindow.cc:3855 src/gui/MainWindow.cc:3870
 msgid ""

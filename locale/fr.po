@@ -3531,8 +3531,8 @@ msgstr "Par extension"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy
-msgid "Export to %1"
-msgstr "Exporter vers %1"
+msgid "E&xport to %1"
+msgstr "E&xporter vers %1"
 
 #: src/gui/MainWindow.cc:3855 src/gui/MainWindow.cc:3870
 msgid ""

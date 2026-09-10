@@ -3509,8 +3509,8 @@ msgstr "Według rozszerzenia"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy
-msgid "Export to %1"
-msgstr "Eksportuj do %1"
+msgid "E&xport to %1"
+msgstr "E&ksportuj do %1"
 
 #: src/gui/MainWindow.cc:3855 src/gui/MainWindow.cc:3870
 msgid ""

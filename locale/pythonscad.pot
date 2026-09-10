@@ -3382,7 +3382,7 @@ msgid "By Extension"
 msgstr ""
 
 #: src/gui/MainWindow.cc:3686
-msgid "Export to %1"
+msgid "E&xport to %1"
 msgstr ""
 
 #: src/gui/MainWindow.cc:3855 src/gui/MainWindow.cc:3870

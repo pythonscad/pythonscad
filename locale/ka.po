@@ -3510,8 +3510,8 @@ msgstr "გაფართოებით"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy
-msgid "Export to %1"
-msgstr "ექსპორტი %1-ში"
+msgid "E&xport to %1"
+msgstr "&ექსპორტი %1-ში"
 
 #: src/gui/MainWindow.cc:3855 src/gui/MainWindow.cc:3870
 msgid ""

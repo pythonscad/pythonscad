@@ -3508,8 +3508,8 @@ msgstr "Laŭ finaĵo"
 
 #: src/gui/MainWindow.cc:3686
 #, fuzzy
-msgid "Export to %1"
-msgstr "Eksporti al %1"
+msgid "E&xport to %1"
+msgstr "E&ksporti al %1"
 
 #: src/gui/MainWindow.cc:3855 src/gui/MainWindow.cc:3870
 msgid ""
