@@ -3744,6 +3744,57 @@ bool MainWindow::promptExportOptions(FileFormat format, ExportInfo& exportInfo)
   }
 }
 
+bool MainWindow::confirmExportPreconditions()
+{
+  // Run render-related prompts before any save-as / options dialogs.
+  // dim=0 skips the 2D/3D format check (done later once the format is known).
+  if (rootGeom) {
+    return canExport(0);
+  }
+  if (rootNode) {
+    // CSG export can proceed from a compile without a full geometry render.
+    return true;
+  }
+  auto guard = scopedSetCurrentOutput();
+  LOG(message_group::Error, "Nothing to export! Try rendering first (press F6)");
+  return false;
+}
+
+bool MainWindow::confirmExportFormat(FileFormat format)
+{
+  if (format == FileFormat::PNG) {
+    return true;
+  }
+  if (format == FileFormat::CSG) {
+    auto guard = scopedSetCurrentOutput();
+    if (!this->rootNode) {
+      LOG(message_group::Error, "Nothing to export. Please try compiling first.");
+      return false;
+    }
+    return true;
+  }
+
+  unsigned int dim = 0;
+  if (fileformat::is3D(format) || format == FileFormat::PS) dim = 3;
+  else if (fileformat::is2D(format)) dim = 2;
+
+  // Preconditions (stale render, etc.) were already confirmed; only check dimension.
+  auto guard = scopedSetCurrentOutput();
+  if (!rootGeom) {
+    LOG(message_group::Error, "Nothing to export! Try rendering first (press F6)");
+    return false;
+  }
+  if (this->rootGeom->getDimension() != dim && dim != 0) {
+    LOG(message_group::UI_Error, "Current top level object is not a %1$dD object.", dim);
+    return false;
+  }
+  if (rootGeom->isEmpty()) {
+    LOG(message_group::UI_Error, "Current top level object is empty.");
+    return false;
+  }
+  return true;
+}
+
 bool MainWindow::writeExportFile(const QString& filename, FileFormat format, ExportInfo& exportInfo)
 {
   const auto type_name = QString::fromStdString(exportInfo.info.description);
@@ -3776,11 +3827,11 @@ bool MainWindow::writeExportFile(const QString& filename, FileFormat format, Exp
     return false;
   }
 
-  unsigned int dim = 0;
-  if (fileformat::is3D(format) || format == FileFormat::PS) dim = 3;
-  else if (fileformat::is2D(format)) dim = 2;
-
-  if (!canExport(dim)) return false;
+  // Caller must have validated via confirmExportPreconditions / confirmExportFormat.
+  if (!rootGeom) {
+    LOG(message_group::Error, "Nothing to export! Try rendering first (press F6)");
+    return false;
+  }
 
   const bool exportResult = exportFileByName(rootGeom, filename.toStdString(), exportInfo);
   if (exportResult) fileExportedMessage(type_name, filename);
@@ -3811,6 +3862,9 @@ bool MainWindow::performRememberedExport()
   const GuiLocker lock;
 
   const auto& remembered = *activeEditor->lastExport;
+  if (!confirmExportPreconditions()) return false;
+  if (!confirmExportFormat(remembered.format)) return false;
+
   const FileFormatInfo info = fileFormatInfoFor(remembered.format);
   ExportInfo exportInfo =
     createExportInfo(remembered.format, info, activeEditor->filepath.toStdString(), &qglview->cam, {});
@@ -3830,6 +3884,8 @@ bool MainWindow::runExportAsDialogFlow()
   if (GuiLocker::isLocked()) return false;
   const GuiLocker lock;
   if (!activeEditor) return false;
+
+  if (!confirmExportPreconditions()) return false;
 
   const auto choices = buildExportFormatChoices();
   const QString byExt = byExtensionFilter();
@@ -3888,6 +3944,11 @@ bool MainWindow::runExportAsDialogFlow()
             "extension or select a file format from the file format list."));
         continue;
       }
+    }
+
+    if (!confirmExportFormat(format)) {
+      // Wrong dimension / missing compile — let the user pick another format.
+      continue;
     }
 
     const FileFormatInfo info = fileFormatInfoFor(format);

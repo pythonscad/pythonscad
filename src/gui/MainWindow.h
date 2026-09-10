@@ -279,6 +279,8 @@ private:
   QString defaultExportSuffix() const;
   FileFormatInfo fileFormatInfoFor(FileFormat format) const;
   bool promptExportOptions(FileFormat format, ExportInfo& exportInfo);
+  bool confirmExportPreconditions();
+  bool confirmExportFormat(FileFormat format);
   bool writeExportFile(const QString& filename, FileFormat format, ExportInfo& exportInfo);
   void rememberSuccessfulExport(const QString& filename, FileFormat format,
                                 const ExportInfo& exportInfo);
