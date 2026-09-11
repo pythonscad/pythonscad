@@ -3084,8 +3084,7 @@ std::vector<std::vector<IndexedColorTriangle>> wrapSlice(PolySetBuilder& builder
       }
     }
     auto compare_func = [](const Vector3d& b, const Vector3d& a) -> bool {
-      if (b[2] > a[2]) return 1.0;
-      if (b[2] < a[2]) return -1.0;
+      if (b[2] != a[2]) return b[2] > a[2];
       return b[1] > a[1];
     };
 
@@ -3352,10 +3351,10 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
       for (int j = 0; j < 3; j++) {
         Vector3d pt = builder_vertices[poly[j]];
 
-        auto& p0 = polygon[ind > 1 ? ind - 1 : 0];
-        auto& p1 = polygon[ind];
-        auto& p2 = polygon[ind < polygonlen - 1 ? ind + 1 : polygonlen - 1];
-        auto& p3 = polygon[ind < polygonlen - 2 ? ind + 2 : polygonlen - 1];
+        auto& p0 = polygon[(ind + polygonlen - 1) % polygonlen];
+        auto& p1 = polygon[ind % polygonlen];
+        auto& p2 = polygon[(ind + 1) % polygonlen];
+        auto& p3 = polygon[(ind + 2) % polygonlen];
 
         Vector2d dir0 = (p1 - p0).normalized();
         Vector2d dir0n = Vector2d(-dir0[1], dir0[0]);
