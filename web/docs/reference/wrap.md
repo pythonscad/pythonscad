@@ -1,6 +1,7 @@
 # wrap
 
-Wrap a flat object around a cylinder. This transforms a planar shape so that it conforms to a cylindrical surface.
+Wrap a flat object around a cylinder or a 2D outline. This transforms a
+planar shape so that it conforms to the target surface.
 
 **Syntax:**
 
@@ -29,9 +30,11 @@ Wrap a flat object around a cylinder. This transforms a planar shape so that it 
     from pythonscad import *
 
     flat_text = text("Hello", size=5).linear_extrude(height=1).rotx(90)
+
+    # Around a 2D outline
     cyl = circle(r=10)
     flat_text.wrap(cyl).show()
-    ```
 
-    Side note: Wrapping around an 2D object is only working when "wrap" experimental feature is turned on.
-    We aim not to distinguish here in the future anymore.
+    # Around a cylinder of the given radius
+    flat_text.wrap(r=10).show()
+    ```
