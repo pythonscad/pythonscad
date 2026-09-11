@@ -99,7 +99,7 @@ OpenGL details are discovered.
 Enable experimental features. Specify 'all' for enabling all available features.
 Available features: roof, input-driver-dbus, skin, lazy-union,
 vertex-object-renderers-indexing, textmetrics, import-function, object-function,
-predictible-output, wrap-polygon, vector-swizzle, python-engine,
+predictible-output, vector-swizzle, python-engine,
 add-parameter-pure-function.
 .TP
 \fB\-\-backend\fP \fIbackend\fP

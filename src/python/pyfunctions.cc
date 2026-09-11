@@ -739,10 +739,10 @@ PyMethodDef PyOpenSCADFunctions[] = {
    "Stretch part of an object between two points.\n"
    "pull(obj, src=[x, y, z], dst=[x, y, z])"},
   {"wrap", (PyCFunction)python_wrap, METH_VARARGS | METH_KEYWORDS,
-   "Wrap object around a cylinder.\n"
+   "Wrap a flat object around a cylinder or a 2D outline.\n"
    "wrap(obj, target)\n"
-   "wrap(obj, target, r=radius)\n"
-   "wrap(obj, target, d=diameter, fn=64)"},
+   "wrap(obj, r=radius)\n"
+   "wrap(obj, d=diameter, fn=64)"},
   {"color", (PyCFunction)python_color, METH_VARARGS | METH_KEYWORDS,
    "Set object color and transparency.\n"
    "color(obj, c=\"red\")\n"
@@ -931,7 +931,7 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"add_parameter_widget", (PyCFunction)python_add_parameter_widget, METH_VARARGS | METH_KEYWORDS,
    "Register custom customizer widget type"},
   {"set_modal_dialog_active", python_set_modal_dialog_active, METH_VARARGS,
- "Suspend python_lock()/python_unlock() while a modal PyQt6 dialog is open"},
+   "Suspend python_lock()/python_unlock() while a modal PyQt6 dialog is open"},
   {"nimport", (PyCFunction)python_nimport, METH_VARARGS | METH_KEYWORDS,
    "Import a Python model from a URL (not an STL).\n"
    "nimport(url=\"https://example.com/model.py\")"},
@@ -1045,7 +1045,7 @@ PyMethodDef PyOpenSCADMethods[] = {
                                         only, "Only Object") OO_METHOD_ENTRY(show, "Show Object")
                                         OO_METHOD_ENTRY(projection, "Projection Object")
                                           OO_METHOD_ENTRY(pull, "Pull Obejct apart") OO_METHOD_ENTRY(
-                                            wrap, "Wrap Object around Cylinder")
+                                            wrap, "Wrap object around a cylinder or 2D outline")
                                             OO_METHOD_ENTRY(render, "Render Object")
                                               OO_METHOD_ENTRY(clone, "Clone Object") OO_METHOD_ENTRY(
                                                 hasattr, "Check if an attribute exists")
