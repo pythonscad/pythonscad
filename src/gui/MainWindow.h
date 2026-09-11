@@ -533,7 +533,9 @@ private:
   QMutex consolemutex;
   DragResult dragResult;
   EditorInterface *renderedEditor{
-    nullptr};               // stores pointer to editor which has been most recently rendered
+    nullptr};  // stores pointer to editor which has been most recently rendered
+  /// Editor whose F6 geometry is currently in rootGeom (export ownership).
+  EditorInterface *geometrySourceEditor_{nullptr};
   time_t includesMTime{0};  // latest include mod time
   time_t depsMTime{0};      // latest dependency mod time
   /// Last directory used for any export in this process (not persisted).

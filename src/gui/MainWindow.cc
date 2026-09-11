@@ -2709,6 +2709,7 @@ void MainWindow::cgalRender()
   this->qglview->setRenderer(nullptr);
   this->geomRenderer = nullptr;
   rootGeom.reset();
+  geometrySourceEditor_ = nullptr;
 
   LOG("Rendering Polygon Mesh using %1$s...",
       renderBackend3DToString(RenderSettings::inst()->backend3D).c_str());
@@ -2777,6 +2778,9 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
 
   renderedEditor = activeEditor;
   activeEditor->contentsRendered = true;
+  if (root_geom) {
+    geometrySourceEditor_ = activeEditor;
+  }
   this->qglview->shown_obj = nullptr;
   compileEnded();
   if (pendingAfterRender_ != PendingAfterRender::None) {
@@ -3515,6 +3519,19 @@ bool MainWindow::canExport(unsigned int dim)
     return false;
   }
 
+  // Geometry still belongs to another tab (F5 preview updates renderedEditor
+  // without replacing rootGeom from a prior F6 on a different tab).
+  if (geometrySourceEditor_ && geometrySourceEditor_ != activeEditor) {
+    auto ret = QMessageBox::warning(this, _("Export"),
+                                    _("The rendered data is from a different tab.\n"
+                                      "Do you really want to export another tab's content?"),
+                                    QMessageBox::Yes | QMessageBox::No);
+    if (ret != QMessageBox::Yes) {
+      pendingAfterRender_ = PendingAfterRender::None;
+      return false;
+    }
+  }
+
   // editor has changed since last render
   if (!activeEditor->contentsRendered) {
     const bool forPrint = pendingAfterRender_ == PendingAfterRender::Print3D;
@@ -3545,18 +3562,6 @@ bool MainWindow::canExport(unsigned int dim)
     }
     // Export/use previous render — do not resume again after a later render.
     pendingAfterRender_ = PendingAfterRender::None;
-  }
-
-  // other tab contents most recently rendered
-  if (renderedEditor != activeEditor) {
-    auto ret = QMessageBox::warning(this, _("Export"),
-                                    _("The rendered data is from a different tab.\n"
-                                      "Do you really want to export another tab's content?"),
-                                    QMessageBox::Yes | QMessageBox::No);
-    if (ret != QMessageBox::Yes) {
-      pendingAfterRender_ = PendingAfterRender::None;
-      return false;
-    }
   }
 
   if (this->rootGeom->getDimension() != dim && dim != 0) {
@@ -4604,6 +4609,12 @@ QString MainWindow::getDockBaseName(const QString& title) const
 
 void MainWindow::onTabManagerAboutToCloseEditor(EditorInterface *closingEditor)
 {
+  // Drop F6 mesh ownership if the tab that produced rootGeom is closing.
+  if (closingEditor == geometrySourceEditor_) {
+    geometrySourceEditor_ = nullptr;
+    rootGeom.reset();
+  }
+
   // This slots is in charge of closing properly the preview when the
   // associated editor is about to close.
   if (closingEditor == renderedEditor) {
