@@ -3983,10 +3983,11 @@ bool MainWindow::performRememberedExport(bool checkPreconditions)
   const FileFormatInfo info = fileFormatInfoFor(remembered.format);
   ExportInfo exportInfo =
     createExportInfo(remembered.format, info, activeEditor->filepath.toStdString(), &qglview->cam, {});
-  exportInfo.optionsPdf = remembered.optionsPdf;
-  exportInfo.options3mf = remembered.options3mf;
-  exportInfo.optionsSvg = remembered.optionsSvg;
-  exportInfo.optionsGcode = remembered.optionsGcode;
+  // Keep createExportInfo() defaults when a session restore omitted options.
+  if (remembered.optionsPdf) exportInfo.optionsPdf = remembered.optionsPdf;
+  if (remembered.options3mf) exportInfo.options3mf = remembered.options3mf;
+  if (remembered.optionsSvg) exportInfo.optionsSvg = remembered.optionsSvg;
+  if (remembered.optionsGcode) exportInfo.optionsGcode = remembered.optionsGcode;
 
   // PNG: grab after any prior UI, immediately before write
   if (!writeExportFile(remembered.path, remembered.format, exportInfo)) return false;
