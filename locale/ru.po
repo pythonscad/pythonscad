@@ -4565,3 +4565,30 @@ msgid ""
 msgstr ""
 "Отрендеренные данные относятся к другой вкладке.\n"
 "Действительно экспортировать содержимое другой вкладки?"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "Модель изменилась после последнего рендера (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "Экспортируйте последнюю отрендеренную геометрию, сначала выполните рендер текущей модели или отмените."
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "Напечатайте последнюю отрендеренную геометрию, сначала выполните рендер текущей модели или отмените."
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "Экспортировать предыдущее"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "Использовать предыдущее"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "Рендер и экспорт"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "Рендер и печать"

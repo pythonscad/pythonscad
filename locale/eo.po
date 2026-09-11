@@ -4264,3 +4264,30 @@ msgid ""
 msgstr ""
 "La bildigitaj datumoj estas de alia langeto.\n"
 "Ĉu vi vere volas eksporti la enhavon de alia langeto?"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "La dezajno ŝanĝiĝis post la lasta bildigo (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "Eksportu la lastan bildigitan geometrion, unue bildigu la nunan dezajnon, aŭ nuligu."
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "Presu la lastan bildigitan geometrion, unue bildigu la nunan dezajnon, aŭ nuligu."
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "Eksporti antaŭan"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "Uzi antaŭan"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "Bildigi kaj eksporti"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "Bildigi kaj presi"

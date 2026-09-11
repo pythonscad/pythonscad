@@ -4451,3 +4451,30 @@ msgid ""
 msgstr ""
 "已渲染的数据来自另一个标签页。\n"
 "确定要导出另一个标签页的内容吗？"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "设计自上次渲染（F6）后已更改。"
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "导出上次渲染的几何体、先渲染当前设计，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "打印上次渲染的几何体、先渲染当前设计，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "导出先前内容"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "使用先前内容"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "渲染并导出"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "渲染并打印"

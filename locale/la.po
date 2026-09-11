@@ -4264,3 +4264,30 @@ msgid ""
 msgstr ""
 "Data reddita ex alia tabula sunt.\n"
 "Visne vere contentum alterius tabulae exportare?"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "Consilium mutatum est post ultimum redditum (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "Geometriam ultimo redditam exporta, consilium praesens prius redde, aut abroga."
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "Geometriam ultimo redditam imprime, consilium praesens prius redde, aut abroga."
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "Priorem exporta"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "Priore utere"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "Redde et exporta"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "Redde et imprime"

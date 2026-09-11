@@ -4462,3 +4462,30 @@ msgid ""
 msgstr ""
 "დარენდერებული მონაცემები სხვა ჩანართისაა.\n"
 "ნამდვილად გსურთ სხვა ჩანართის შიგთავსის გატანა?"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "დიზაინი შეიცვალა ბოლო რენდერის (F6) შემდეგ."
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "გაიტანეთ ბოლოს დარენდერებული გეომეტრია, ჯერ დაარენდერეთ მიმდინარე დიზაინი, ან გააუქმეთ."
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "დაბეჭდეთ ბოლოს დარენდერებული გეომეტრია, ჯერ დაარენდერეთ მიმდინარე დიზაინი, ან გააუქმეთ."
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "წინას გატანა"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "წინას გამოყენება"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "რენდერი და გატანა"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "რენდერი და ბეჭდვა"

@@ -2658,11 +2658,14 @@ void MainWindow::sendToExternalTool(ExternalToolInterface& externalToolService)
 void MainWindow::on_designAction3DPrint_triggered()
 {
   if (GuiLocker::isLocked()) return;
-  const GuiLocker lock;
 
-  // Make sure we can export:
-  const unsigned int dim = 3;
-  if (!canExport(dim)) return;
+  pendingAfterRender_ = PendingAfterRender::Print3D;
+  {
+    const GuiLocker lock;
+    const unsigned int dim = 3;
+    if (!canExport(dim)) return;
+  }
+  pendingAfterRender_ = PendingAfterRender::None;
 
   PrintInitDialog printInitDialog;
   const auto status = printInitDialog.exec();
@@ -2698,6 +2701,7 @@ void MainWindow::on_designActionRender_triggered()
 void MainWindow::cgalRender()
 {
   if (!this->rootFile || !this->rootNode) {
+    pendingAfterRender_ = PendingAfterRender::None;
     compileEnded();
     return;
   }
@@ -2775,6 +2779,10 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
   activeEditor->contentsRendered = true;
   this->qglview->shown_obj = nullptr;
   compileEnded();
+  if (pendingAfterRender_ != PendingAfterRender::None) {
+    // Continue Export / Print after GuiLocker is released by compileEnded().
+    QTimer::singleShot(0, this, &MainWindow::runPendingAfterRender);
+  }
 }
 
 void MainWindow::handleMeasurementClicked(QAction *clickedAction)
@@ -3503,18 +3511,40 @@ bool MainWindow::canExport(unsigned int dim)
 {
   if (!rootGeom) {
     QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
+    pendingAfterRender_ = PendingAfterRender::None;
     return false;
   }
 
   // editor has changed since last render
   if (!activeEditor->contentsRendered) {
-    auto ret = QMessageBox::warning(this, _("Export"),
-                                    _("The current tab has been modified since its last render (F6).\n"
-                                      "Do you really want to export the previous content?"),
-                                    QMessageBox::Yes | QMessageBox::No);
-    if (ret != QMessageBox::Yes) {
+    const bool forPrint = pendingAfterRender_ == PendingAfterRender::Print3D;
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle(forPrint ? _("3D Print") : _("Export"));
+    box.setText(_("The design has changed since it was last rendered (F6)."));
+    box.setInformativeText(
+      forPrint ? _("Print the last rendered geometry, render the current design first, or cancel.")
+               : _("Export the last rendered geometry, render the current design first, or cancel."));
+    auto *previousButton =
+      box.addButton(forPrint ? _("Use Previous") : _("Export Previous"), QMessageBox::AcceptRole);
+    auto *renderButton =
+      box.addButton(forPrint ? _("Render and Print") : _("Render and Export"), QMessageBox::ActionRole);
+    auto *cancelButton = box.addButton(_("Cancel"), QMessageBox::RejectRole);
+    box.setDefaultButton(renderButton);
+    box.setEscapeButton(cancelButton);
+    box.exec();
+
+    if (box.clickedButton() == renderButton) {
+      // Leave pendingAfterRender_ set so actionRenderDone can resume.
+      startRenderThenContinue();
       return false;
     }
+    if (box.clickedButton() != previousButton) {
+      pendingAfterRender_ = PendingAfterRender::None;
+      return false;
+    }
+    // Export/use previous render — do not resume again after a later render.
+    pendingAfterRender_ = PendingAfterRender::None;
   }
 
   // other tab contents most recently rendered
@@ -3524,6 +3554,7 @@ bool MainWindow::canExport(unsigned int dim)
                                       "Do you really want to export another tab's content?"),
                                     QMessageBox::Yes | QMessageBox::No);
     if (ret != QMessageBox::Yes) {
+      pendingAfterRender_ = PendingAfterRender::None;
       return false;
     }
   }
@@ -3531,11 +3562,13 @@ bool MainWindow::canExport(unsigned int dim)
   if (this->rootGeom->getDimension() != dim && dim != 0) {
     QMessageBox::warning(this, _("Export"),
                          QString(_("Current top level object is not a %1D object.")).arg(dim));
+    pendingAfterRender_ = PendingAfterRender::None;
     return false;
   }
 
   if (rootGeom->isEmpty()) {
     QMessageBox::warning(this, _("Export"), _("Current top level object is empty."));
+    pendingAfterRender_ = PendingAfterRender::None;
     return false;
   }
 
@@ -3560,6 +3593,28 @@ bool MainWindow::canExport(unsigned int dim)
 #endif
 
   return true;
+}
+
+void MainWindow::startRenderThenContinue()
+{
+  // Match on_designActionRender_triggered(): one lock level that compileEnded() releases.
+  // Safe when the caller already holds GuiLocker — the caller's unlock happens first,
+  // then compileEnded() releases this level.
+  GuiLocker::lock();
+  prepareCompile("cgalRender", true, false);
+  compile(false);
+}
+
+void MainWindow::runPendingAfterRender()
+{
+  const auto pending = pendingAfterRender_;
+  pendingAfterRender_ = PendingAfterRender::None;
+  switch (pending) {
+  case PendingAfterRender::Export:   actionExport(); break;
+  case PendingAfterRender::ExportAs: actionExportAs(); break;
+  case PendingAfterRender::Print3D:  on_designAction3DPrint_triggered(); break;
+  case PendingAfterRender::None:     break;
+  }
 }
 
 namespace {
@@ -4003,7 +4058,9 @@ void MainWindow::actionExport()
   // Preconditions once up front — avoids a second modal if remembered export
   // fails and we fall back to Export as…, and never opens save-as when there
   // is nothing rendered.
+  pendingAfterRender_ = PendingAfterRender::Export;
   if (!confirmExportPreconditions()) return;
+  pendingAfterRender_ = PendingAfterRender::None;
 
   if (activeEditor && activeEditor->lastExport) {
     if (performRememberedExport(/*checkPreconditions=*/false)) return;
@@ -4014,7 +4071,10 @@ void MainWindow::actionExport()
 
 void MainWindow::actionExportAs()
 {
-  runExportAsDialogFlow();
+  pendingAfterRender_ = PendingAfterRender::ExportAs;
+  if (!confirmExportPreconditions()) return;
+  pendingAfterRender_ = PendingAfterRender::None;
+  runExportAsDialogFlow(/*checkPreconditions=*/false);
 }
 
 void MainWindow::on_fileActionExport_triggered()

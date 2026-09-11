@@ -3962,3 +3962,30 @@ msgid ""
 "The rendered data is from a different tab.\n"
 "Do you really want to export another tab's content?"
 msgstr ""
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr ""
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr ""
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr ""
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr ""
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr ""
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr ""
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr ""

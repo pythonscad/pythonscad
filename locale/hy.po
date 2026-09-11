@@ -4571,3 +4571,30 @@ msgid ""
 msgstr ""
 "Ռենդեր արված տվյալները այլ ներդիրից են։\n"
 "Իսկապե՞ս ցանկանում եք արտահանել այլ ներդիրի բովանդակությունը։"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "Դիզայնը փոխվել է վերջին ռենդերից (F6) հետո։"
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "Արտահանեք վերջին ռենդեր արված երկրաչափությունը, նախ ռենդեր արեք ընթացիկ դիզայնը, կամ չեղարկեք։"
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "Տպեք վերջին ռենդեր արված երկրաչափությունը, նախ ռենդեր արեք ընթացիկ դիզայնը, կամ չեղարկեք։"
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "Արտահանել նախորդը"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "Օգտագործել նախորդը"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "Ռենդեր և արտահանում"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "Ռենդեր և տպում"

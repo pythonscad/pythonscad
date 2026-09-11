@@ -4574,3 +4574,30 @@ msgid ""
 msgstr ""
 "Vyrenderovaná data jsou z jiného panelu.\n"
 "Opravdu chcete exportovat obsah jiného panelu?"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "Návrh se od posledního renderu (F6) změnil."
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "Exportujte naposledy vyrenderovanou geometrii, nejdřív vyrenderujte aktuální návrh, nebo zrušte."
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "Vytiskněte naposledy vyrenderovanou geometrii, nejdřív vyrenderujte aktuální návrh, nebo zrušte."
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "Exportovat předchozí"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "Použít předchozí"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "Vyrenderovat a exportovat"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "Vyrenderovat a tisknout"

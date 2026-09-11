@@ -4460,3 +4460,30 @@ msgid ""
 msgstr ""
 "Renderlanan veriler farklı bir sekmeye ait.\n"
 "Başka bir sekmenin içeriğini gerçekten dışa aktarmak istiyor musunuz?"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "Tasarım son renderdan (F6) beri değişti."
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "Son renderlanan geometriyi dışa aktarın, önce geçerli tasarımı render alın veya iptal edin."
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "Son renderlanan geometriyi yazdırın, önce geçerli tasarımı render alın veya iptal edin."
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "Öncekini Dışa Aktar"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "Öncekini Kullan"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "Render Al ve Dışa Aktar"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "Render Al ve Yazdır"

@@ -4458,3 +4458,30 @@ msgid ""
 msgstr ""
 "Los datos renderizados pertenecen a otra pestaña.\n"
 "¿Realmente desea exportar el contenido de otra pestaña?"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "El diseño ha cambiado desde el último renderizado (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "Exporte la última geometría renderizada, renderice primero el diseño actual o cancele."
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "Imprima la última geometría renderizada, renderice primero el diseño actual o cancele."
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "Exportar anterior"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "Usar anterior"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "Renderizar y exportar"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "Renderizar e imprimir"

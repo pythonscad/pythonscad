@@ -4552,3 +4552,30 @@ msgid ""
 msgstr ""
 "Wyrenderowane dane pochodzą z innej karty.\n"
 "Czy na pewno chcesz wyeksportować zawartość innej karty?"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "Projekt zmienił się od ostatniego renderu (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "Wyeksportuj ostatnio wyrenderowaną geometrię, najpierw wyrenderuj bieżący projekt albo anuluj."
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "Wydrukuj ostatnio wyrenderowaną geometrię, najpierw wyrenderuj bieżący projekt albo anuluj."
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "Eksportuj poprzednie"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "Użyj poprzedniego"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "Renderuj i eksportuj"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "Renderuj i drukuj"

@@ -4599,3 +4599,30 @@ msgid ""
 msgstr ""
 "Les données rendues proviennent d’un autre onglet.\n"
 "Voulez-vous vraiment exporter le contenu d’un autre onglet ?"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "Le modèle a changé depuis le dernier rendu (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "Exportez la dernière géométrie rendue, rendez d’abord le modèle actuel, ou annulez."
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "Imprimez la dernière géométrie rendue, rendez d’abord le modèle actuel, ou annulez."
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "Exporter le précédent"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "Utiliser le précédent"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "Rendre et exporter"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "Rendre et imprimer"

@@ -413,6 +413,8 @@ private slots:
   void actionExport();
   void actionExportAs();
   void actionExportFileFormat(int fmt);
+  void startRenderThenContinue();
+  void runPendingAfterRender();
   void on_editActionCopyViewport_triggered();
   void on_designActionFlushCaches_triggered();
   void updateExportMenuText();
@@ -536,6 +538,8 @@ private:
   time_t depsMTime{0};      // latest dependency mod time
   /// Last directory used for any export in this process (not persisted).
   QString lastExportDirectory;
+  enum class PendingAfterRender { None, Export, ExportAs, Print3D };
+  PendingAfterRender pendingAfterRender_{PendingAfterRender::None};
   int lastParserErrorPos{-1};  // last highlighted error position
   int tabCount = 0;
   ExportPdfPaperSize sizeString2Enum(const QString& current);

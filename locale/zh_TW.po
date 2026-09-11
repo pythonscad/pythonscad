@@ -4457,3 +4457,30 @@ msgid ""
 msgstr ""
 "已算繪的資料來自另一個分頁。\n"
 "確定要匯出另一個分頁的內容嗎？"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "設計自上次算繪（F6）後已變更。"
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "匯出上次算繪的幾何、先算繪目前設計，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "列印上次算繪的幾何、先算繪目前設計，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "匯出先前內容"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "使用先前內容"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "算繪並匯出"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "算繪並列印"
