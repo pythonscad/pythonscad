@@ -2729,6 +2729,23 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
   python_lock();
 #endif
   progress_report_fin();
+
+  // instantiateRoot() recorded the editor that started this render. Prefer that
+  // over activeEditor — the user can switch tabs while geometry is computing.
+  EditorInterface *const owner = renderedEditor;
+  if (!owner) {
+    LOG(message_group::UI_Warning,
+        "Render finished after the source tab was closed; discarding geometry.");
+    this->rootGeom.reset();
+    this->geomRenderer = nullptr;
+    this->qglview->setRenderer(nullptr);
+    geometrySourceEditor_ = nullptr;
+    pendingAfterRender_ = PendingAfterRender::None;
+    updateStatusBar(nullptr);
+    compileEnded();
+    return;
+  }
+
   if (root_geom) {
     std::vector<std::string> options;
     if (Settings::Settings::summaryCamera.value()) {
@@ -2776,10 +2793,9 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
     renderCompleteSoundEffect->play();
   }
 
-  renderedEditor = activeEditor;
-  activeEditor->contentsRendered = true;
+  owner->contentsRendered = true;
   if (root_geom) {
-    geometrySourceEditor_ = activeEditor;
+    geometrySourceEditor_ = owner;
   }
   this->qglview->shown_obj = nullptr;
   compileEnded();
@@ -3838,6 +3854,18 @@ bool MainWindow::confirmExportPreconditions()
     return canExport(0);
   }
   if (rootNode) {
+    // rootNode comes from the editor that last compiled (renderedEditor), which
+    // may differ from the active tab if the user switched during/after preview.
+    if (renderedEditor && renderedEditor != activeEditor) {
+      auto ret = QMessageBox::warning(this, _("Export"),
+                                      _("The rendered data is from a different tab.\n"
+                                        "Do you really want to export another tab's content?"),
+                                      QMessageBox::Yes | QMessageBox::No);
+      if (ret != QMessageBox::Yes) {
+        pendingAfterRender_ = PendingAfterRender::None;
+        return false;
+      }
+    }
     return true;
   }
   QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
