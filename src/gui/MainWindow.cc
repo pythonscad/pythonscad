@@ -4060,6 +4060,7 @@ bool MainWindow::runExportAsDialogFlow(bool checkPreconditions)
 
 void MainWindow::actionExport()
 {
+  if (GuiLocker::isLocked()) return;
   // Preconditions once up front — avoids a second modal if remembered export
   // fails and we fall back to Export as…, and never opens save-as when there
   // is nothing rendered.
@@ -4076,6 +4077,7 @@ void MainWindow::actionExport()
 
 void MainWindow::actionExportAs()
 {
+  if (GuiLocker::isLocked()) return;
   pendingAfterRender_ = PendingAfterRender::ExportAs;
   if (!confirmExportPreconditions()) return;
   pendingAfterRender_ = PendingAfterRender::None;
