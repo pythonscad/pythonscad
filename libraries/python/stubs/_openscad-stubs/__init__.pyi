@@ -512,7 +512,7 @@ class PyOpenSCAD:
         fa: Optional[float] = None,
         fs: Optional[float] = None,
     ) -> Self:
-        """Wrap this object around a cylinder or target shape."""
+        """Wrap this object around a cylinder or a 2D outline."""
         ...
 
     def explode(self, v: Sequence[Union[float, Sequence[float]]]) -> Self:
@@ -1666,11 +1666,11 @@ def wrap(
     fa: Optional[float] = None,
     fs: Optional[float] = None,
 ) -> PyOpenSCAD:
-    """Wrap an object around a cylinder.
+    """Wrap an object around a cylinder or a 2D outline.
 
     Args:
         obj: Object to wrap.
-        target: Optional target object to wrap around.
+        target: Optional 2D target object to wrap around.
         r: Radius of the cylinder.
         d: Diameter of the cylinder.
         fn: Number of fragments for circle approximation.

@@ -178,10 +178,6 @@ PyObject *python_wrap_core(PyObject *obj, PyObject *target, double r, double d, 
     node->shape = nullptr;
   } else if (target != nullptr &&
              PyObject_IsInstance(target, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
-    if (!Feature::ExperimentalWrapPolygon.is_enabled()) {
-      PyErr_SetString(PyExc_TypeError, "Wrapping around a 2D shape is not enabled\n");
-      return NULL;
-    }
     std::shared_ptr<AbstractNode> abstr = ((PyOpenSCADObject *)target)->node;
     node->shape = abstr;
   } else if (!isnan(r)) {
@@ -227,9 +223,6 @@ PyObject *python_oo_wrap(PyObject *obj, PyObject *args, PyObject *kwargs)
     PyErr_SetString(PyExc_TypeError, "error during parsing wrap\n");
     return NULL;
   }
-  std::vector<double> xsteps;
-  xsteps.push_back(4);
-  xsteps.push_back(6);
 
   return python_wrap_core(obj, target, r, d, fn, fa, fs);
 }

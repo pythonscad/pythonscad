@@ -22,7 +22,6 @@ public:
   static const Feature ExperimentalImportFunction;
   static const Feature ExperimentalObjectFunction;
   static const Feature ExperimentalPredictibleOutput;
-  static const Feature ExperimentalWrapPolygon;
   static const Feature ExperimentalVectorSwizzle;
   static const Feature ExperimentalDiscretizationByError;
   static const Feature ExperimentalAiFeatures;
