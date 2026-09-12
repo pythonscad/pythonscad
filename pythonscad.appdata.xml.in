@@ -35,6 +35,43 @@
   </screenshots>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.2.0" date="2026-09-12">
+      <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.2.0</url>
+      <description>
+        <p>Features:</p>
+        <ul>
+          <li>add center option to rounded_cube</li>
+          <li>add Test PyPI publishing step to workflow</li>
+          <li>calltips: calltips for all functions</li>
+          <li>color-schemes: add Nord color schemes</li>
+          <li>gui: fullscreen toggle and unified window geometry persistence</li>
+          <li>i18n: complete translations and add Latin and Esperanto</li>
+          <li>numpy: accept numpy input</li>
+          <li>osimport: add split_by_color option for multi-color SVG import</li>
+          <li>PyQt6 connector, bundled bindings, editor forms, and pyscadforms library</li>
+          <li>pyqt: connector to pyqt</li>
+          <li>python: add Customizer parameter containers</li>
+          <li>python: bundle type information with wheels</li>
+          <li>and more</li>
+        </ul>
+        <p>Bug fixes:</p>
+        <ul>
+          <li>build: make pip extension builds portable and parallel</li>
+          <li>chore: a</li>
+          <li>chore: add missed file</li>
+          <li>chore: ctests clean</li>
+          <li>chore: fix crash in color</li>
+          <li>chore: fix languages</li>
+          <li>chore: fr tranaslation</li>
+          <li>chore: make wrap more stable</li>
+          <li>chore: remove unneeed extra debug</li>
+          <li>chore: restore show handle functionality</li>
+          <li>chore: some ideas</li>
+          <li>chore: svgviewbox</li>
+          <li>and more</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.1.2" date="2026-07-16">
       <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.1.2</url>
       <description>
