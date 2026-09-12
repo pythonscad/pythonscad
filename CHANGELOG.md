@@ -1,5 +1,82 @@
 # Changelog
 
+## [1.2.0](https://github.com/pythonscad/pythonscad/compare/v1.1.2...v1.2.0) (2026-09-12)
+
+
+### Features
+
+* add center option to rounded_cube ([#912](https://github.com/pythonscad/pythonscad/issues/912)) ([a1b0c87](https://github.com/pythonscad/pythonscad/commit/a1b0c87ed51050604a8bd969404529dc841d4adc))
+* add Test PyPI publishing step to workflow ([#911](https://github.com/pythonscad/pythonscad/issues/911)) ([2f89eac](https://github.com/pythonscad/pythonscad/commit/2f89eac9e707acb8604ad1cc55788dd9ddc3e4c9))
+* **calltips:** calltips for all functions ([#926](https://github.com/pythonscad/pythonscad/issues/926)) ([55a5e65](https://github.com/pythonscad/pythonscad/commit/55a5e6531645d6d05f51c8635efc722efc01cf46))
+* **color-schemes:** add Nord color schemes ([#7033](https://github.com/pythonscad/pythonscad/issues/7033)) ([80503b8](https://github.com/pythonscad/pythonscad/commit/80503b880019ce278e05a88229e7372d382a613a))
+* **gui:** fullscreen toggle and unified window geometry persistence ([#995](https://github.com/pythonscad/pythonscad/issues/995)) ([63f1d91](https://github.com/pythonscad/pythonscad/commit/63f1d917e4d75f3af5a4a7bba4cc8a25358c9b56))
+* **i18n:** complete translations and add Latin and Esperanto ([#951](https://github.com/pythonscad/pythonscad/issues/951)) ([44a95ea](https://github.com/pythonscad/pythonscad/commit/44a95ea62da9bd5517109816041f806eedff5ce4))
+* **numpy:** accept numpy input ([fe60cd7](https://github.com/pythonscad/pythonscad/commit/fe60cd7023931e72df1f5bb3fac47587db709fa7))
+* **osimport:** add split_by_color option for multi-color SVG import ([#887](https://github.com/pythonscad/pythonscad/issues/887)) ([e159740](https://github.com/pythonscad/pythonscad/commit/e159740d0b1b22dde3bd7b0a05355b5584b07fc6))
+* PyQt6 connector, bundled bindings, editor forms, and pyscadforms library ([#915](https://github.com/pythonscad/pythonscad/issues/915)) ([e7265e0](https://github.com/pythonscad/pythonscad/commit/e7265e0b2655e7624050aeb10c6c039c8ec4edbd))
+* **pyqt:** connector to pyqt ([#904](https://github.com/pythonscad/pythonscad/issues/904)) ([d5b3cec](https://github.com/pythonscad/pythonscad/commit/d5b3cecce1444bc93a8d755af372c08a010264a6))
+* **python:** add Customizer parameter containers ([#956](https://github.com/pythonscad/pythonscad/issues/956)) ([affb269](https://github.com/pythonscad/pythonscad/commit/affb269671a6239a3f4924b9fcc804a5109b7a4e))
+* **python:** bundle type information with wheels ([#958](https://github.com/pythonscad/pythonscad/issues/958)) ([727035c](https://github.com/pythonscad/pythonscad/commit/727035cc3cc047fb2e01015e8656cc53f7ebbd0b))
+* **python:** expand NumPy input support across the API ([#916](https://github.com/pythonscad/pythonscad/issues/916)) ([8e8b49d](https://github.com/pythonscad/pythonscad/commit/8e8b49dbb1b6e1ebc134fbf98ef49b6d12181e2c))
+* **python:** export multi-object 3MF from Python designs ([#1032](https://github.com/pythonscad/pythonscad/issues/1032)) ([6b726e5](https://github.com/pythonscad/pythonscad/commit/6b726e5cfc60fadb0df5a808cb8953c29834014f))
+* **python:** support hidden MultiToolExporter cutters ([#947](https://github.com/pythonscad/pythonscad/issues/947)) ([823f6e6](https://github.com/pythonscad/pythonscad/commit/823f6e69c021168aa1e12a56fba1916cdff87aa2))
+* **wasm:** hide playground debug log by default ([#945](https://github.com/pythonscad/pythonscad/issues/945)) ([297ab43](https://github.com/pythonscad/pythonscad/commit/297ab43797c708f93894068560f11bda8c6ef2d2))
+* **web:** added pyforge link ([#918](https://github.com/pythonscad/pythonscad/issues/918)) ([88fe40a](https://github.com/pythonscad/pythonscad/commit/88fe40ab20695001eed2f8af750028661c44e726))
+* **web:** clarify playground navigation ([#946](https://github.com/pythonscad/pythonscad/issues/946)) ([5c478a4](https://github.com/pythonscad/pythonscad/commit/5c478a400f127a796b24509d4f3ebd34820c489f))
+* **web:** deploy master builds to test site ([#944](https://github.com/pythonscad/pythonscad/issues/944)) ([d3fbf25](https://github.com/pythonscad/pythonscad/commit/d3fbf2564161653ab0e3ed7dcd7f4321221390b1))
+
+
+### Bug Fixes
+
+* **build:** make pip extension builds portable and parallel ([#970](https://github.com/pythonscad/pythonscad/issues/970)) ([34ee704](https://github.com/pythonscad/pythonscad/commit/34ee704ee82e23c0b89fd56435abdeba2c494dbe))
+* **chore:** a ([44c9e12](https://github.com/pythonscad/pythonscad/commit/44c9e12279e8877d31bbf13b4f99b9bdd0bd01b1))
+* **chore:** add missed file ([f7294f1](https://github.com/pythonscad/pythonscad/commit/f7294f11df3a895396864b49df16e310d0adfc65))
+* **chore:** ctests clean ([c3be6c0](https://github.com/pythonscad/pythonscad/commit/c3be6c0ebd1942e73c656d31b5962547fa9600cc))
+* **chore:** fix crash in color ([#1037](https://github.com/pythonscad/pythonscad/issues/1037)) ([37dae78](https://github.com/pythonscad/pythonscad/commit/37dae788f1ca5e3ddfcf479b6773777192d7ee61))
+* **chore:** fix languages ([12a345d](https://github.com/pythonscad/pythonscad/commit/12a345d20067eeca7e245114500db70399362a27))
+* **chore:** fr tranaslation ([3cc1045](https://github.com/pythonscad/pythonscad/commit/3cc1045fe41385b54e9ac6e760d897872a9e3375))
+* **chore:** make wrap more stable ([7131e13](https://github.com/pythonscad/pythonscad/commit/7131e134e589b5afc4b951a1139ff313bbfdabac))
+* **chore:** remove unneeed extra debug ([1a6070a](https://github.com/pythonscad/pythonscad/commit/1a6070a1ded271eb09f983b2e7b5007d021eebd3))
+* **chore:** restore show handle functionality ([#1034](https://github.com/pythonscad/pythonscad/issues/1034)) ([c23b446](https://github.com/pythonscad/pythonscad/commit/c23b4461f938729be76d561703dcb9833e80b61e))
+* **chore:** some ideas ([f43488c](https://github.com/pythonscad/pythonscad/commit/f43488c8c419afbe57c96ae892af1f6b7b05bff6))
+* **chore:** svgviewbox ([8ff3256](https://github.com/pythonscad/pythonscad/commit/8ff3256cf0a4495f0ee8eabd87ba4ffb36077ed7))
+* **chore:** test old CMakeLists.txt ([fc806e1](https://github.com/pythonscad/pythonscad/commit/fc806e16756b2b95f5cc42233c7f1bae8b15d5b4))
+* **chore:** upload more artifcats to locate the issue ([828bd22](https://github.com/pythonscad/pythonscad/commit/828bd22c3cbb62ce49056476b0e77c74398c8f40))
+* **chore:** using both algorithms ([3c489f5](https://github.com/pythonscad/pythonscad/commit/3c489f502a9b76fa094e7a645c98fd3f6658a940))
+* **ci:** make Renovate vcpkg updates artifact-free ([#954](https://github.com/pythonscad/pythonscad/issues/954)) ([a700037](https://github.com/pythonscad/pythonscad/commit/a7000374f2776f22e74da036ca102855e77eb776))
+* **customizer:** preserve scroll, focus and group state on re-render ([#976](https://github.com/pythonscad/pythonscad/issues/976)) ([37bf792](https://github.com/pythonscad/pythonscad/commit/37bf7923c24487040bae2a4b95954abdbddaa730))
+* **deps:** update dependency three to v0.186.0 ([a00e716](https://github.com/pythonscad/pythonscad/commit/a00e716d6c09f114e52eefc7d34b403db5e0643a))
+* **deps:** update dependency three to v0.186.0 ([e58ea4d](https://github.com/pythonscad/pythonscad/commit/e58ea4dadf919c64d1c3b3505f1974030b5db427))
+* **doc:** added documentation ([#922](https://github.com/pythonscad/pythonscad/issues/922)) ([1d782ee](https://github.com/pythonscad/pythonscad/commit/1d782ee0ae32274807a2b7c24c34114ab322e068))
+* **fillet:** preserve complete union seams ([5e053b7](https://github.com/pythonscad/pythonscad/commit/5e053b7d00f6a109eaa740818bfdb389caa04241))
+* **fillet:** stabilize seam preprocessing ([039866b](https://github.com/pythonscad/pythonscad/commit/039866b166ac18ee74ae9f7cae472db228c097a9))
+* **fillet:** validate sliver edge collapses ([e79684f](https://github.com/pythonscad/pythonscad/commit/e79684f4127a9d7b6b786e994f1997ba956cd38b))
+* **geometry:** keep wrap() from dropping slices of wrapped solids ([74eac4a](https://github.com/pythonscad/pythonscad/commit/74eac4a7f536cfb1646746e89071a93a8af8ec2c))
+* **geometry:** keep wrap() from dropping slices of wrapped solids ([93785c4](https://github.com/pythonscad/pythonscad/commit/93785c40f100d997c31d228d4d161697539a511f)), closes [#1005](https://github.com/pythonscad/pythonscad/issues/1005)
+* **geometry:** use a valid wrapSlice comparator and wrap outline indices ([f3af558](https://github.com/pythonscad/pythonscad/commit/f3af5588a731073e86412a47f8aa1ba7b0fa47eb))
+* **i18n:** correct German translation for axis division ([#953](https://github.com/pythonscad/pythonscad/issues/953)) ([d3d14b2](https://github.com/pythonscad/pythonscad/commit/d3d14b2245260e8d23f6fe5a7ece7fd85736e843))
+* **macos:** disable mimalloc to stop Apple Silicon startup crash ([#999](https://github.com/pythonscad/pythonscad/issues/999)) ([e181360](https://github.com/pythonscad/pythonscad/commit/e181360187f8a64552f06e425d10a12782b9ced1))
+* **python:** correct GUI callback registrations ([#943](https://github.com/pythonscad/pythonscad/issues/943)) ([b19ea1d](https://github.com/pythonscad/pythonscad/commit/b19ea1d4b04d73e8954543c3ae74424c4dd0367d))
+* **python:** expose and stabilize loft() ([#950](https://github.com/pythonscad/pythonscad/issues/950)) ([ba147f5](https://github.com/pythonscad/pythonscad/commit/ba147f577fe2060bfffe16da5558b4ebe4b945b9))
+* **python:** osuse() searches OpenSCAD library path after local lookup ([#966](https://github.com/pythonscad/pythonscad/issues/966)) ([#967](https://github.com/pythonscad/pythonscad/issues/967)) ([846bd4f](https://github.com/pythonscad/pythonscad/commit/846bd4f3a902a324251bc31fd1b3aa73e65e2ac1))
+* **python:** preserve int types for Customizer parameters ([#972](https://github.com/pythonscad/pythonscad/issues/972)) ([2c8675a](https://github.com/pythonscad/pythonscad/commit/2c8675a47db853ad3fab0e152b8b4bc6f614acbb))
+* **python:** report invalid color names safely ([#917](https://github.com/pythonscad/pythonscad/issues/917)) ([e4fe827](https://github.com/pythonscad/pythonscad/commit/e4fe827900906c4f1177889952a3f35bf969adbd))
+* **python:** skip export() file writes during F5 preview ([#1010](https://github.com/pythonscad/pythonscad/issues/1010)) ([3002b00](https://github.com/pythonscad/pythonscad/commit/3002b00308cd9b38177c44046f620260278c3d48))
+* **python:** skip non-matrix attributes in multmatrix ([#940](https://github.com/pythonscad/pythonscad/issues/940)) ([006df05](https://github.com/pythonscad/pythonscad/commit/006df05d867cdf11968e69c7f2e1b31f53b85341))
+* **svg:** treat fill:none as unpainted, not invisible geometry ([#987](https://github.com/pythonscad/pythonscad/issues/987)) ([bf458de](https://github.com/pythonscad/pythonscad/commit/bf458dee2c9e9c2a0643eabdc702d04505ad65d5))
+* **wasm:** correct Python keyword callback signatures ([#941](https://github.com/pythonscad/pythonscad/issues/941)) ([00af835](https://github.com/pythonscad/pythonscad/commit/00af835ed7fe88bd22f60dae6b67ca8feb13d778)), closes [#939](https://github.com/pythonscad/pythonscad/issues/939)
+* **wasm:** keep playground responsive during evaluation ([#937](https://github.com/pythonscad/pythonscad/issues/937)) ([2bbb9bf](https://github.com/pythonscad/pythonscad/commit/2bbb9bf3ad0fac4c4c266793025d13f8e9a4dda8))
+* **wasm:** render complete models without CGAL fallback ([#935](https://github.com/pythonscad/pythonscad/issues/935)) ([da23056](https://github.com/pythonscad/pythonscad/commit/da230567a4a4692a89a38e83060e016fe8e0f5c8)), closes [#934](https://github.com/pythonscad/pythonscad/issues/934)
+* **web:** avoid broken-pipe smoke failure ([#949](https://github.com/pythonscad/pythonscad/issues/949)) ([18bc1cf](https://github.com/pythonscad/pythonscad/commit/18bc1cffcf6406be8b77eff27e4dfb9589df09be))
+
+
+### Documentation
+
+* **release:** fix mkdocs navigation after rename of release notes from v1.1.1 to v1.1.2 ([#896](https://github.com/pythonscad/pythonscad/issues/896)) ([e1877a2](https://github.com/pythonscad/pythonscad/commit/e1877a26b06e29f869c45de10a7b8937c9a8dd5e))
+* **web:** add imprint ([#977](https://github.com/pythonscad/pythonscad/issues/977)) ([5ab0061](https://github.com/pythonscad/pythonscad/commit/5ab00617f79d72bfa4a0313003a2443c291229c0))
+* **wrap:** drop the experimental-flag caveat for 2D targets ([1bdb68e](https://github.com/pythonscad/pythonscad/commit/1bdb68e03988ba3b657ff855ef4d5fa1998b9d31))
+* **wrap:** drop wrap-polygon from the man page and API help ([2ecc388](https://github.com/pythonscad/pythonscad/commit/2ecc3884a1b75474a93947e0961715f0a692c292))
+
 ## [1.1.2](https://github.com/pythonscad/pythonscad/compare/v1.1.1...v1.1.2) (2026-07-16)
 
 
