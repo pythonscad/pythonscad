@@ -3366,8 +3366,19 @@ static std::unique_ptr<PolySet> wrapObject(const WrapNode& node, const PolySet *
         Vector2d dir2 = (p3 - p2).normalized();
         Vector2d dir2n = Vector2d(-dir2[1], dir2[0]);
 
-        Vector2d dirn = dir0n * (xtop - pt[0]) / (xtop - xbot) + dir2n * (pt[0] - xbot) / (xtop - xbot);
-        dirn = (dirn + dir1n).normalized();
+        double t = (pt[0] - xbot) / (xtop - xbot);       // 0..1 innerhalb des Segments
+        Vector2d bStart = (dir0n + dir1n).normalized();  // Grenze zum vorherigen Segment
+        Vector2d bEnd = (dir1n + dir2n).normalized();    // Grenze zum naechsten Segment
+
+        Vector2d dirn;
+        if (t < 0.5) {
+          double t2 = t * 2.0;
+          dirn = bStart * (1.0 - t2) + dir1n * t2;
+        } else {
+          double t2 = (t - 0.5) * 2.0;
+          dirn = dir1n * (1.0 - t2) + bEnd * t2;
+        }
+        dirn = dirn.normalized();
 
         Vector2d px =
           p1 + dir1u * (pt[0] - xscale[ind]) / (xscale[ind + 1] - xscale[ind]) + dirn * pt[1];

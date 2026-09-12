@@ -1,5 +1,4 @@
-"""wrap() around a 2D outline without an experimental feature flag."""
-from openscad import *
+from pythonscad import *
 
-flat = text("S", size=5).linear_extrude(height=1).rotx(90)
-flat.wrap(circle(r=10, fn=24)).show()
+t = text("PythonScad", size=5).scale([1,1.4,1]).linear_extrude(height=1.2).rotx(90).wrap(square(10)).down(2.25).rotz(215)
+show(t)
