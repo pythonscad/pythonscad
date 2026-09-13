@@ -422,6 +422,7 @@ private slots:
   void actionExportFileFormat(int fmt);
   void startRenderThenContinue();
   void runPendingAfterRender();
+  void clearPendingAfterRender();
   void on_editActionCopyViewport_triggered();
   void on_designActionFlushCaches_triggered();
   void updateExportMenuText();
@@ -549,6 +550,8 @@ private:
   QString lastExportDirectory;
   enum class PendingAfterRender { None, Export, ExportAs, Print3D };
   PendingAfterRender pendingAfterRender_{PendingAfterRender::None};
+  /// Tab that started Render-and-Export/Print; restored before resuming.
+  EditorInterface *pendingAfterRenderEditor_{nullptr};
   int lastParserErrorPos{-1};  // last highlighted error position
   int tabCount = 0;
   ExportPdfPaperSize sizeString2Enum(const QString& current);

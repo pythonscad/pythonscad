@@ -2665,7 +2665,7 @@ void MainWindow::on_designAction3DPrint_triggered()
     const unsigned int dim = 3;
     if (!canExport(dim)) return;
   }
-  pendingAfterRender_ = PendingAfterRender::None;
+  clearPendingAfterRender();
 
   PrintInitDialog printInitDialog;
   const auto status = printInitDialog.exec();
@@ -2701,7 +2701,7 @@ void MainWindow::on_designActionRender_triggered()
 void MainWindow::cgalRender()
 {
   if (!this->rootFile || !this->rootNode) {
-    pendingAfterRender_ = PendingAfterRender::None;
+    clearPendingAfterRender();
     compileEnded();
     return;
   }
@@ -2740,7 +2740,7 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
     this->geomRenderer = nullptr;
     this->qglview->setRenderer(nullptr);
     geometrySourceEditor_ = nullptr;
-    pendingAfterRender_ = PendingAfterRender::None;
+    clearPendingAfterRender();
     updateStatusBar(nullptr);
     compileEnded();
     return;
@@ -3557,7 +3557,7 @@ bool MainWindow::offerColdStartRenderThenContinue()
     startRenderThenContinue();
     return false;
   }
-  pendingAfterRender_ = PendingAfterRender::None;
+  clearPendingAfterRender();
   return false;
 }
 
@@ -3592,7 +3592,7 @@ bool MainWindow::confirmCrossTabGeometryOrRender(EditorInterface *sourceEditor)
   if (box.clickedButton() == otherButton) {
     return true;
   }
-  pendingAfterRender_ = PendingAfterRender::None;
+  clearPendingAfterRender();
   return false;
 }
 
@@ -3607,16 +3607,17 @@ bool MainWindow::canExport(unsigned int dim)
     return false;
   }
 
-  // Geometry still belongs to another tab (F5 preview updates renderedEditor
-  // without replacing rootGeom from a prior F6 on a different tab).
-  if (geometrySourceEditor_ && geometrySourceEditor_ != activeEditor) {
+  // F6 mesh still belongs to another tab.
+  const bool usingOtherTabGeom = geometrySourceEditor_ && geometrySourceEditor_ != activeEditor;
+  if (usingOtherTabGeom) {
     if (!confirmCrossTabGeometryOrRender(geometrySourceEditor_)) {
       return false;
     }
   }
 
-  // editor has changed since last render
-  if (!activeEditor->contentsRendered) {
+  // Active tab source changed since its last F6. Skip when the user already
+  // chose to export another tab's mesh (contentsRendered is about this tab).
+  if (!activeEditor->contentsRendered && !usingOtherTabGeom) {
     const bool forPrint = pendingAfterRender_ == PendingAfterRender::Print3D;
     QMessageBox box(this);
     box.setIcon(QMessageBox::Warning);
@@ -3644,23 +3645,23 @@ bool MainWindow::canExport(unsigned int dim)
       return false;
     }
     if (box.clickedButton() != previousButton) {
-      pendingAfterRender_ = PendingAfterRender::None;
+      clearPendingAfterRender();
       return false;
     }
     // Export/use previous render — do not resume again after a later render.
-    pendingAfterRender_ = PendingAfterRender::None;
+    clearPendingAfterRender();
   }
 
   if (this->rootGeom->getDimension() != dim && dim != 0) {
     QMessageBox::warning(this, _("Export"),
                          QString(_("Current top level object is not a %1D object.")).arg(dim));
-    pendingAfterRender_ = PendingAfterRender::None;
+    clearPendingAfterRender();
     return false;
   }
 
   if (rootGeom->isEmpty()) {
     QMessageBox::warning(this, _("Export"), _("Current top level object is empty."));
-    pendingAfterRender_ = PendingAfterRender::None;
+    clearPendingAfterRender();
     return false;
   }
 
@@ -3687,8 +3688,16 @@ bool MainWindow::canExport(unsigned int dim)
   return true;
 }
 
+void MainWindow::clearPendingAfterRender()
+{
+  pendingAfterRender_ = PendingAfterRender::None;
+  pendingAfterRenderEditor_ = nullptr;
+}
+
 void MainWindow::startRenderThenContinue()
 {
+  // Remember which tab asked to continue after F6 (user may switch tabs meanwhile).
+  pendingAfterRenderEditor_ = activeEditor;
   // Match on_designActionRender_triggered(): one lock level that compileEnded() releases.
   // Safe when the caller already holds GuiLocker — the caller's unlock happens first,
   // then compileEnded() releases this level.
@@ -3700,7 +3709,21 @@ void MainWindow::startRenderThenContinue()
 void MainWindow::runPendingAfterRender()
 {
   const auto pending = pendingAfterRender_;
-  pendingAfterRender_ = PendingAfterRender::None;
+  EditorInterface *const editor = pendingAfterRenderEditor_;
+  clearPendingAfterRender();
+
+  if (pending == PendingAfterRender::None) return;
+
+  if (editor) {
+    if (!tabManager->editorList.contains(editor)) {
+      // Initiating tab was closed during the render.
+      return;
+    }
+    if (editor != activeEditor) {
+      tabManager->switchToEditor(editor);
+    }
+  }
+
   switch (pending) {
   case PendingAfterRender::Export:   actionExport(); break;
   case PendingAfterRender::ExportAs: actionExportAs(); break;
@@ -3918,31 +3941,58 @@ bool MainWindow::promptExportOptions(FileFormat format, ExportInfo& exportInfo)
 
 bool MainWindow::confirmExportPreconditions()
 {
-  // Mesh exports need a render (rootGeom). CSG only needs a compile (rootNode),
-  // and PNG can capture the current view.
-  if (rootGeom) {
-    return canExport(0);
-  }
-
-  // Remembered Export to a mesh format (or Print) with no geometry yet: offer
-  // Render and Continue. Do not treat a preview CSG tree (rootNode) as enough —
-  // that previously opened save-as after a dead-end "Nothing to export" modal.
-  const bool rememberedNeedsMesh = pendingAfterRender_ == PendingAfterRender::Export && activeEditor &&
-                                   activeEditor->lastExport &&
-                                   formatNeedsRenderedGeometry(activeEditor->lastExport->format);
-  if (pendingAfterRender_ == PendingAfterRender::Print3D || rememberedNeedsMesh) {
-    return offerColdStartRenderThenContinue();
-  }
-
-  // Export as… (or Export with no remembered path): allow the save dialog so
-  // the user can still pick PNG/CSG. Mesh formats are gated in confirmExportFormat.
-  if (rootNode) {
-    if (renderedEditor && renderedEditor != activeEditor) {
-      if (!confirmCrossTabGeometryOrRender(renderedEditor)) {
-        return false;
+  // No F6 mesh yet.
+  if (!rootGeom) {
+    // Remembered PNG/CSG can proceed without a mesh (CSG needs a compiled tree).
+    if (pendingAfterRender_ == PendingAfterRender::Export && activeEditor && activeEditor->lastExport) {
+      const FileFormat fmt = activeEditor->lastExport->format;
+      if (fmt == FileFormat::PNG) {
+        return true;
+      }
+      if (fmt == FileFormat::CSG) {
+        if (!this->rootNode) {
+          QMessageBox::warning(this, _("Export"), _("Nothing to export. Please try compiling first."));
+          clearPendingAfterRender();
+          return false;
+        }
+        if (renderedEditor && renderedEditor != activeEditor) {
+          return confirmCrossTabGeometryOrRender(renderedEditor);
+        }
+        return true;
       }
     }
+    // Mesh Export / Export as / Print: never open save-as on cold start.
+    if (pendingAfterRender_ != PendingAfterRender::None) {
+      return offerColdStartRenderThenContinue();
+    }
+    return false;
   }
+
+  // Have an F6 mesh. Print and remembered mesh Export need full mesh gates now.
+  // Export as (and Export falling through to it) defer until a format is chosen so
+  // CSG/PNG are not blocked by another tab's leftover rootGeom.
+  if (pendingAfterRender_ == PendingAfterRender::Print3D) {
+    return canExport(3);
+  }
+  if (pendingAfterRender_ == PendingAfterRender::Export && activeEditor && activeEditor->lastExport &&
+      formatNeedsRenderedGeometry(activeEditor->lastExport->format)) {
+    return canExport(0);
+  }
+  if (pendingAfterRender_ == PendingAfterRender::Export && activeEditor && activeEditor->lastExport &&
+      !formatNeedsRenderedGeometry(activeEditor->lastExport->format)) {
+    if (activeEditor->lastExport->format == FileFormat::CSG) {
+      if (!this->rootNode) {
+        QMessageBox::warning(this, _("Export"), _("Nothing to export. Please try compiling first."));
+        clearPendingAfterRender();
+        return false;
+      }
+      if (renderedEditor && renderedEditor != activeEditor) {
+        return confirmCrossTabGeometryOrRender(renderedEditor);
+      }
+    }
+    return true;
+  }
+  // Export as… / Export without remembered path: format-specific checks later.
   return true;
 }
 
@@ -3956,6 +4006,12 @@ bool MainWindow::confirmExportFormat(FileFormat format)
       QMessageBox::warning(this, _("Export"), _("Nothing to export. Please try compiling first."));
       return false;
     }
+    // CSG comes from the last compiled tab (renderedEditor), not from F6.
+    if (renderedEditor && renderedEditor != activeEditor) {
+      if (!confirmCrossTabGeometryOrRender(renderedEditor)) {
+        return false;
+      }
+    }
     return true;
   }
 
@@ -3964,22 +4020,14 @@ bool MainWindow::confirmExportFormat(FileFormat format)
   else if (fileformat::is2D(format)) dim = 2;
 
   if (!rootGeom) {
-    // User already chose a mesh format in Export as… — offer render, then reopen.
+    // Save-as already chose a mesh format — offer render, then reopen Export as…
     if (pendingAfterRender_ == PendingAfterRender::None) {
       pendingAfterRender_ = PendingAfterRender::ExportAs;
     }
     return offerColdStartRenderThenContinue();
   }
-  if (this->rootGeom->getDimension() != dim && dim != 0) {
-    QMessageBox::warning(this, _("Export"),
-                         QString(_("Current top level object is not a %1D object.")).arg(dim));
-    return false;
-  }
-  if (rootGeom->isEmpty()) {
-    QMessageBox::warning(this, _("Export"), _("Current top level object is empty."));
-    return false;
-  }
-  return true;
+  // Full ownership / stale / dimension checks (may start Render-and-Export).
+  return canExport(dim);
 }
 
 bool MainWindow::writeExportFile(const QString& filename, FileFormat format, ExportInfo& exportInfo)
@@ -4099,13 +4147,15 @@ bool MainWindow::runExportAsDialogFlow(bool checkPreconditions)
     dialog.selectNameFilter(selectedFilter);
     dialog.setDirectory(directory);
     dialog.selectFile(suggestedName);
+    // Matches design-save dialogs: Qt appends this when the user omits a suffix.
+    dialog.setDefaultSuffix(defaultExportSuffix());
 
     if (dialog.exec() != QDialog::Accepted) return false;
 
     QStringList selected = dialog.selectedFiles();
     if (selected.isEmpty() || selected.first().isEmpty()) return false;
 
-    const QString filename = selected.first();
+    QString filename = selected.first();
     selectedFilter = dialog.selectedNameFilter();
     directory = QFileInfo(filename).absolutePath();
     suggestedName = QFileInfo(filename).fileName();
@@ -4135,6 +4185,22 @@ bool MainWindow::runExportAsDialogFlow(bool checkPreconditions)
           _("The given filename does not have any known file extension. Please enter a known file "
             "extension or select a file format from the file format list."));
         continue;
+      }
+      // Named filter: ensure the filename uses that format's suffix (setDefaultSuffix
+      // only helps when the native dialog honors it; enforce after accept).
+      const QString expectedSuffix = QString::fromStdString(fileformat::toSuffix(format));
+      const QFileInfo fi(filename);
+      if (fi.suffix().compare(expectedSuffix, Qt::CaseInsensitive) != 0) {
+        filename = fi.dir().filePath(fi.completeBaseName() + QLatin1Char('.') + expectedSuffix);
+        suggestedName = QFileInfo(filename).fileName();
+        if (QFileInfo::exists(filename)) {
+          const auto text =
+            QString(_("%1 already exists.\nDo you want to replace it?")).arg(suggestedName);
+          if (QMessageBox::warning(this, _("Export"), text, QMessageBox::Yes | QMessageBox::No,
+                                   QMessageBox::No) != QMessageBox::Yes) {
+            continue;
+          }
+        }
       }
     }
 
@@ -4166,22 +4232,32 @@ bool MainWindow::runExportAsDialogFlow(bool checkPreconditions)
 void MainWindow::actionExport()
 {
   if (GuiLocker::isLocked()) return;
-  // Preconditions once up front — avoids a second modal if remembered export
-  // fails and we fall back to Export as…, and never opens save-as when there
-  // is nothing rendered.
   pendingAfterRender_ = PendingAfterRender::Export;
   if (!confirmExportPreconditions()) return;
-  pendingAfterRender_ = PendingAfterRender::None;
 
   if (activeEditor && activeEditor->lastExport) {
-    if (performRememberedExport(/*checkPreconditions=*/false)) return;
-    // confirmExportFormat may have started Render-and-Export (pending re-armed).
+    if (performRememberedExport(/*checkPreconditions=*/false)) {
+      clearPendingAfterRender();
+      return;
+    }
+    // confirmExportFormat may have started Render-and-Export.
     if (pendingAfterRender_ != PendingAfterRender::None) return;
-    // Remembered path failed (missing file, permissions, etc.) — fall back to Export as…
-    // only when mesh geometry exists; missing geometry must not open the file chooser.
-    if (!rootGeom) return;
+    // Remembered path failed (I/O, etc.) — fall back to Export as… only with mesh.
+    if (!rootGeom) {
+      clearPendingAfterRender();
+      return;
+    }
   }
-  runExportAsDialogFlow(/*checkPreconditions=*/false);
+
+  // Keep ExportAs pending through the dialog so Render-and-Export can resume it.
+  pendingAfterRender_ = PendingAfterRender::ExportAs;
+  if (!runExportAsDialogFlow(/*checkPreconditions=*/false)) {
+    if (pendingAfterRender_ == PendingAfterRender::ExportAs) {
+      clearPendingAfterRender();
+    }
+    return;
+  }
+  clearPendingAfterRender();
 }
 
 void MainWindow::actionExportAs()
@@ -4189,8 +4265,14 @@ void MainWindow::actionExportAs()
   if (GuiLocker::isLocked()) return;
   pendingAfterRender_ = PendingAfterRender::ExportAs;
   if (!confirmExportPreconditions()) return;
-  pendingAfterRender_ = PendingAfterRender::None;
-  runExportAsDialogFlow(/*checkPreconditions=*/false);
+  // Leave pending ExportAs set through the dialog for Render-and-Export resume.
+  if (!runExportAsDialogFlow(/*checkPreconditions=*/false)) {
+    if (pendingAfterRender_ == PendingAfterRender::ExportAs) {
+      clearPendingAfterRender();
+    }
+    return;
+  }
+  clearPendingAfterRender();
 }
 
 void MainWindow::on_fileActionExport_triggered()
