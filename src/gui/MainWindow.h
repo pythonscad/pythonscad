@@ -547,11 +547,14 @@ private:
   time_t includesMTime{0};  // latest include mod time
   time_t depsMTime{0};      // latest dependency mod time
   /// Last directory used for any export in this process (not persisted).
-  QString lastExportDirectory;
+  inline static QString lastExportDirectory;
   enum class PendingAfterRender { None, Export, ExportAs, Print3D };
   PendingAfterRender pendingAfterRender_{PendingAfterRender::None};
   /// Tab that started Render-and-Export/Print; restored before resuming.
   EditorInterface *pendingAfterRenderEditor_{nullptr};
+  /// Cross-tab geometry ownership acknowledged for the current export action.
+  EditorInterface *approvedGeometrySourceEditor_{nullptr};
+  EditorInterface *approvedGeometryTargetEditor_{nullptr};
   int lastParserErrorPos{-1};  // last highlighted error position
   int tabCount = 0;
   ExportPdfPaperSize sizeString2Enum(const QString& current);

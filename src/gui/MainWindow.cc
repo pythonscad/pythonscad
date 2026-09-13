@@ -3590,6 +3590,8 @@ bool MainWindow::confirmCrossTabGeometryOrRender(EditorInterface *sourceEditor)
     return false;
   }
   if (box.clickedButton() == otherButton) {
+    approvedGeometrySourceEditor_ = sourceEditor;
+    approvedGeometryTargetEditor_ = activeEditor;
     return true;
   }
   clearPendingAfterRender();
@@ -3609,7 +3611,10 @@ bool MainWindow::canExport(unsigned int dim)
 
   // F6 mesh still belongs to another tab.
   const bool usingOtherTabGeom = geometrySourceEditor_ && geometrySourceEditor_ != activeEditor;
-  if (usingOtherTabGeom) {
+  const bool otherTabGeomApproved = usingOtherTabGeom &&
+                                    approvedGeometrySourceEditor_ == geometrySourceEditor_ &&
+                                    approvedGeometryTargetEditor_ == activeEditor;
+  if (usingOtherTabGeom && !otherTabGeomApproved) {
     if (!confirmCrossTabGeometryOrRender(geometrySourceEditor_)) {
       return false;
     }
@@ -3692,6 +3697,8 @@ void MainWindow::clearPendingAfterRender()
 {
   pendingAfterRender_ = PendingAfterRender::None;
   pendingAfterRenderEditor_ = nullptr;
+  approvedGeometrySourceEditor_ = nullptr;
+  approvedGeometryTargetEditor_ = nullptr;
 }
 
 void MainWindow::startRenderThenContinue()
@@ -3992,7 +3999,15 @@ bool MainWindow::confirmExportPreconditions()
     }
     return true;
   }
-  // Export as… / Export without remembered path: format-specific checks later.
+  // F7 without a remembered target still starts with the current/default mesh.
+  // Ask about cross-tab ownership before save-as, then retain the answer until
+  // confirmExportFormat() so the same warning is not shown twice.
+  if (pendingAfterRender_ == PendingAfterRender::Export && activeEditor && !activeEditor->lastExport &&
+      geometrySourceEditor_ && geometrySourceEditor_ != activeEditor) {
+    return confirmCrossTabGeometryOrRender(geometrySourceEditor_);
+  }
+  // Export as… (and same-tab Export without a remembered path): format-specific
+  // checks happen after the format is selected.
   return true;
 }
 
@@ -4101,8 +4116,7 @@ bool MainWindow::performRememberedExport(bool checkPreconditions)
   const GuiLocker lock;
 
   const auto& remembered = *activeEditor->lastExport;
-  if (checkPreconditions && !confirmExportPreconditions()) return false;
-  if (!confirmExportFormat(remembered.format)) return false;
+  if (checkPreconditions && !confirmExportFormat(remembered.format)) return false;
 
   const FileFormatInfo info = fileFormatInfoFor(remembered.format);
   ExportInfo exportInfo =
@@ -4188,7 +4202,7 @@ bool MainWindow::runExportAsDialogFlow(bool checkPreconditions)
       }
       // Named filter: ensure the filename uses that format's suffix (setDefaultSuffix
       // only helps when the native dialog honors it; enforce after accept).
-      const QString expectedSuffix = QString::fromStdString(fileformat::toSuffix(format));
+      const QString expectedSuffix = QString::fromStdString(fileFormatInfoFor(format).suffix);
       const QFileInfo fi(filename);
       if (fi.suffix().compare(expectedSuffix, Qt::CaseInsensitive) != 0) {
         filename = fi.dir().filePath(fi.completeBaseName() + QLatin1Char('.') + expectedSuffix);
@@ -4205,6 +4219,9 @@ bool MainWindow::runExportAsDialogFlow(bool checkPreconditions)
     }
 
     if (!confirmExportFormat(format)) {
+      // Render-and-Export keeps the operation pending. Stop this dialog now;
+      // actionRenderDone() will resume it after F6.
+      if (pendingAfterRender_ != PendingAfterRender::None) return false;
       // No usable mesh geometry: stop — reopening save-as cannot help until F6.
       // Wrong dimension with existing geometry: let the user pick another format.
       if (!rootGeom || rootGeom->isEmpty()) return false;
@@ -4233,9 +4250,11 @@ void MainWindow::actionExport()
 {
   if (GuiLocker::isLocked()) return;
   pendingAfterRender_ = PendingAfterRender::Export;
-  if (!confirmExportPreconditions()) return;
 
   if (activeEditor && activeEditor->lastExport) {
+    // Format-aware preconditions exactly once. In particular, stale/cross-tab
+    // choices must not be consumed here and then prompted again below.
+    if (!confirmExportFormat(activeEditor->lastExport->format)) return;
     if (performRememberedExport(/*checkPreconditions=*/false)) {
       clearPendingAfterRender();
       return;
@@ -4247,6 +4266,8 @@ void MainWindow::actionExport()
       clearPendingAfterRender();
       return;
     }
+  } else {
+    if (!confirmExportPreconditions()) return;
   }
 
   // Keep ExportAs pending through the dialog so Render-and-Export can resume it.
