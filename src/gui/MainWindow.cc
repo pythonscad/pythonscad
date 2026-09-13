@@ -3561,6 +3561,41 @@ bool MainWindow::offerColdStartRenderThenContinue()
   return false;
 }
 
+bool MainWindow::confirmCrossTabGeometryOrRender(EditorInterface *sourceEditor)
+{
+  const bool forPrint = pendingAfterRender_ == PendingAfterRender::Print3D;
+  QString sourceName = _("Untitled");
+  if (sourceEditor && !sourceEditor->filepath.isEmpty()) {
+    sourceName = QFileInfo(sourceEditor->filepath).fileName();
+  }
+
+  QMessageBox box(this);
+  box.setIcon(QMessageBox::Warning);
+  box.setWindowTitle(forPrint ? _("3D Print") : _("Export"));
+  box.setText(_("The current render belongs to a different tab (%1).").arg(sourceName));
+  box.setInformativeText(forPrint ? _("Use that tab's render, render this tab first, or cancel.")
+                                  : _("Export that tab's render, render this tab first, or cancel."));
+  // Align with cold-start / stale-render: Render = Accept, other-tab = Action, Cancel = Reject.
+  auto *otherButton = box.addButton(
+    forPrint ? _("Use Other Tab's Render") : _("Export Other Tab's Render"), QMessageBox::ActionRole);
+  auto *renderButton =
+    box.addButton(forPrint ? _("Render and Print") : _("Render and Export"), QMessageBox::AcceptRole);
+  auto *cancelButton = box.addButton(_("Cancel"), QMessageBox::RejectRole);
+  box.setDefaultButton(renderButton);
+  box.setEscapeButton(cancelButton);
+  box.exec();
+
+  if (box.clickedButton() == renderButton) {
+    startRenderThenContinue();
+    return false;
+  }
+  if (box.clickedButton() == otherButton) {
+    return true;
+  }
+  pendingAfterRender_ = PendingAfterRender::None;
+  return false;
+}
+
 bool MainWindow::canExport(unsigned int dim)
 {
   if (!rootGeom) {
@@ -3575,12 +3610,7 @@ bool MainWindow::canExport(unsigned int dim)
   // Geometry still belongs to another tab (F5 preview updates renderedEditor
   // without replacing rootGeom from a prior F6 on a different tab).
   if (geometrySourceEditor_ && geometrySourceEditor_ != activeEditor) {
-    auto ret = QMessageBox::warning(this, _("Export"),
-                                    _("The rendered data is from a different tab.\n"
-                                      "Do you really want to export another tab's content?"),
-                                    QMessageBox::Yes | QMessageBox::No);
-    if (ret != QMessageBox::Yes) {
-      pendingAfterRender_ = PendingAfterRender::None;
+    if (!confirmCrossTabGeometryOrRender(geometrySourceEditor_)) {
       return false;
     }
   }
@@ -3908,12 +3938,7 @@ bool MainWindow::confirmExportPreconditions()
   // the user can still pick PNG/CSG. Mesh formats are gated in confirmExportFormat.
   if (rootNode) {
     if (renderedEditor && renderedEditor != activeEditor) {
-      auto ret = QMessageBox::warning(this, _("Export"),
-                                      _("The rendered data is from a different tab.\n"
-                                        "Do you really want to export another tab's content?"),
-                                      QMessageBox::Yes | QMessageBox::No);
-      if (ret != QMessageBox::Yes) {
-        pendingAfterRender_ = PendingAfterRender::None;
+      if (!confirmCrossTabGeometryOrRender(renderedEditor)) {
         return false;
       }
     }

@@ -413,6 +413,9 @@ private slots:
   /// Cold start (no rootGeom): offer Render and Export/Print, or cancel.
   /// Always returns false; leaves pendingAfterRender_ set when a render starts.
   bool offerColdStartRenderThenContinue();
+  /// Geometry/CSG belongs to another tab: Export/Use other, Render and continue, or Cancel.
+  /// Returns true only if the user chose to proceed with the other tab's data.
+  bool confirmCrossTabGeometryOrRender(EditorInterface *sourceEditor);
   static bool formatNeedsRenderedGeometry(FileFormat format);
   void actionExport();
   void actionExportAs();
