@@ -3999,15 +3999,16 @@ bool MainWindow::confirmExportPreconditions()
     }
     return true;
   }
-  // F7 without a remembered target still starts with the current/default mesh.
+  // Export / Export as both start from the currently displayed F6 result.
   // Ask about cross-tab ownership before save-as, then retain the answer until
   // confirmExportFormat() so the same warning is not shown twice.
-  if (pendingAfterRender_ == PendingAfterRender::Export && activeEditor && !activeEditor->lastExport &&
-      geometrySourceEditor_ && geometrySourceEditor_ != activeEditor) {
+  const bool opensSaveAs =
+    pendingAfterRender_ == PendingAfterRender::ExportAs ||
+    (pendingAfterRender_ == PendingAfterRender::Export && activeEditor && !activeEditor->lastExport);
+  if (opensSaveAs && geometrySourceEditor_ && geometrySourceEditor_ != activeEditor) {
     return confirmCrossTabGeometryOrRender(geometrySourceEditor_);
   }
-  // Export as… (and same-tab Export without a remembered path): format-specific
-  // checks happen after the format is selected.
+  // Same-tab save-as: format-specific checks happen after format selection.
   return true;
 }
 
@@ -4022,7 +4023,11 @@ bool MainWindow::confirmExportFormat(FileFormat format)
       return false;
     }
     // CSG comes from the last compiled tab (renderedEditor), not from F6.
-    if (renderedEditor && renderedEditor != activeEditor) {
+    const bool compiledOtherTab = renderedEditor && renderedEditor != activeEditor;
+    const bool compiledOtherTabApproved = compiledOtherTab &&
+                                          approvedGeometrySourceEditor_ == renderedEditor &&
+                                          approvedGeometryTargetEditor_ == activeEditor;
+    if (compiledOtherTab && !compiledOtherTabApproved) {
       if (!confirmCrossTabGeometryOrRender(renderedEditor)) {
         return false;
       }
