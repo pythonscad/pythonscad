@@ -2793,13 +2793,18 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
     renderCompleteSoundEffect->play();
   }
 
-  owner->contentsRendered = true;
   if (root_geom) {
+    owner->contentsRendered = true;
     geometrySourceEditor_ = owner;
+  } else {
+    // Rendering failed or produced no top-level geometry. Do not resume into
+    // the same cold-start prompt indefinitely.
+    owner->contentsRendered = false;
+    clearPendingAfterRender();
   }
   this->qglview->shown_obj = nullptr;
   compileEnded();
-  if (pendingAfterRender_ != PendingAfterRender::None) {
+  if (root_geom && pendingAfterRender_ != PendingAfterRender::None) {
     // Continue Export / Print after GuiLocker is released by compileEnded().
     QTimer::singleShot(0, this, &MainWindow::runPendingAfterRender);
   }
@@ -4278,7 +4283,7 @@ void MainWindow::actionExport()
   // Keep ExportAs pending through the dialog so Render-and-Export can resume it.
   pendingAfterRender_ = PendingAfterRender::ExportAs;
   if (!runExportAsDialogFlow(/*checkPreconditions=*/false)) {
-    if (pendingAfterRender_ == PendingAfterRender::ExportAs) {
+    if (!pendingAfterRenderEditor_ && pendingAfterRender_ == PendingAfterRender::ExportAs) {
       clearPendingAfterRender();
     }
     return;
@@ -4293,7 +4298,7 @@ void MainWindow::actionExportAs()
   if (!confirmExportPreconditions()) return;
   // Leave pending ExportAs set through the dialog for Render-and-Export resume.
   if (!runExportAsDialogFlow(/*checkPreconditions=*/false)) {
-    if (pendingAfterRender_ == PendingAfterRender::ExportAs) {
+    if (!pendingAfterRenderEditor_ && pendingAfterRender_ == PendingAfterRender::ExportAs) {
       clearPendingAfterRender();
     }
     return;
