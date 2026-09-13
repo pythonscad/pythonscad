@@ -1536,7 +1536,6 @@ msgstr "Ցույցադրել CSG ա&րտադրանքը"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
 #: src/gui/MainWindow.cc:3688
-#, fuzzy
 msgid "&Export..."
 msgstr "&Արտահանել..."
 
@@ -1545,7 +1544,6 @@ msgid "F7"
 msgstr "F7"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
-#, fuzzy
 msgid "Export &as..."
 msgstr "Արտահանել &որպես..."
 
@@ -3509,7 +3507,6 @@ msgid "By Extension (*.*)"
 msgstr "Ըստ ընդլայնման (*.*)"
 
 #: src/gui/MainWindow.cc:3686
-#, fuzzy
 msgid "E&xport to %1"
 msgstr "&Արտահանել դեպի %1"
 

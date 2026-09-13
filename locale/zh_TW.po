@@ -1516,7 +1516,6 @@ msgstr "顯示 CSG 產物(&o)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
 #: src/gui/MainWindow.cc:3688
-#, fuzzy
 msgid "&Export..."
 msgstr "匯出(&E)..."
 
@@ -1525,7 +1524,6 @@ msgid "F7"
 msgstr "F7"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
-#, fuzzy
 msgid "Export &as..."
 msgstr "匯出為(&A)..."
 
@@ -3469,7 +3467,6 @@ msgid "By Extension (*.*)"
 msgstr "依副檔名 (*.*)"
 
 #: src/gui/MainWindow.cc:3686
-#, fuzzy
 msgid "E&xport to %1"
 msgstr "匯出到 %1(&E)"
 

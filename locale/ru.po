@@ -1537,7 +1537,6 @@ msgstr "Показать &результаты CSG…"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
 #: src/gui/MainWindow.cc:3688
-#, fuzzy
 msgid "&Export..."
 msgstr "&Экспорт..."
 
@@ -1546,7 +1545,6 @@ msgid "F7"
 msgstr "F7"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
-#, fuzzy
 msgid "Export &as..."
 msgstr "Экспортировать &как..."
 
@@ -3506,7 +3504,6 @@ msgid "By Extension (*.*)"
 msgstr "По расширению (*.*)"
 
 #: src/gui/MainWindow.cc:3686
-#, fuzzy
 msgid "E&xport to %1"
 msgstr "&Экспорт в %1"
 

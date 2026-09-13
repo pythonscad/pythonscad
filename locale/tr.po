@@ -1536,7 +1536,6 @@ msgstr "CSG Ür&ünlerini Görüntüle"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
 #: src/gui/MainWindow.cc:3688
-#, fuzzy
 msgid "&Export..."
 msgstr "&Dışa Aktar..."
 
@@ -1545,7 +1544,6 @@ msgid "F7"
 msgstr "F7"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
-#, fuzzy
 msgid "Export &as..."
 msgstr "&Farklı dışa aktar..."
 
@@ -3512,7 +3510,6 @@ msgid "By Extension (*.*)"
 msgstr "Uzantıya göre (*.*)"
 
 #: src/gui/MainWindow.cc:3686
-#, fuzzy
 msgid "E&xport to %1"
 msgstr "%1 dosyasına &dışa aktar"
 
