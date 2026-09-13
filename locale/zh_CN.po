@@ -4478,3 +4478,15 @@ msgstr "渲染并导出"
 #: src/gui/MainWindow.cc
 msgid "Render and Print"
 msgstr "渲染并打印"
+
+#: src/gui/MainWindow.cc
+msgid "The design has not been rendered yet (F6)."
+msgstr "设计尚未渲染（F6）。"
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and export, or cancel."
+msgstr "渲染设计并导出，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and print, or cancel."
+msgstr "渲染设计并打印，或取消。"

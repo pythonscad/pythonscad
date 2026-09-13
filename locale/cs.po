@@ -4601,3 +4601,15 @@ msgstr "Vyrenderovat a exportovat"
 #: src/gui/MainWindow.cc
 msgid "Render and Print"
 msgstr "Vyrenderovat a tisknout"
+
+#: src/gui/MainWindow.cc
+msgid "The design has not been rendered yet (F6)."
+msgstr "Návrh ještě nebyl renderován (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and export, or cancel."
+msgstr "Vyrenderovat návrh a exportovat, nebo zrušit."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and print, or cancel."
+msgstr "Vyrenderovat návrh a tisknout, nebo zrušit."

@@ -4489,3 +4489,15 @@ msgstr "რენდერი და გატანა"
 #: src/gui/MainWindow.cc
 msgid "Render and Print"
 msgstr "რენდერი და ბეჭდვა"
+
+#: src/gui/MainWindow.cc
+msgid "The design has not been rendered yet (F6)."
+msgstr "დიზაინი ჯერ არ არის რენდერირებული (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and export, or cancel."
+msgstr "დიზაინის რენდერი და ექსპორტი, ან გაუქმება."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and print, or cancel."
+msgstr "დიზაინის რენდერი და ბეჭდვა, ან გაუქმება."

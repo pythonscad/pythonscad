@@ -4291,3 +4291,15 @@ msgstr "Redde et exporta"
 #: src/gui/MainWindow.cc
 msgid "Render and Print"
 msgstr "Redde et imprime"
+
+#: src/gui/MainWindow.cc
+msgid "The design has not been rendered yet (F6)."
+msgstr "Consilium nondum depictum est (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and export, or cancel."
+msgstr "Depinge consilium et exporta, aut renuntia."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and print, or cancel."
+msgstr "Depinge consilium et imprime, aut renuntia."

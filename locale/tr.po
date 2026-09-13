@@ -4487,3 +4487,15 @@ msgstr "Render Al ve Dışa Aktar"
 #: src/gui/MainWindow.cc
 msgid "Render and Print"
 msgstr "Render Al ve Yazdır"
+
+#: src/gui/MainWindow.cc
+msgid "The design has not been rendered yet (F6)."
+msgstr "Tasarım henüz render edilmedi (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and export, or cancel."
+msgstr "Tasarımı render edip dışa aktarın veya iptal edin."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and print, or cancel."
+msgstr "Tasarımı render edip yazdırın veya iptal edin."

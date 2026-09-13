@@ -4626,3 +4626,15 @@ msgstr "Rendre et exporter"
 #: src/gui/MainWindow.cc
 msgid "Render and Print"
 msgstr "Rendre et imprimer"
+
+#: src/gui/MainWindow.cc
+msgid "The design has not been rendered yet (F6)."
+msgstr "Le design n’a pas encore été rendu (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and export, or cancel."
+msgstr "Rendre le design et exporter, ou annuler."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and print, or cancel."
+msgstr "Rendre le design et imprimer, ou annuler."

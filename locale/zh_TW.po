@@ -4484,3 +4484,15 @@ msgstr "算繪並匯出"
 #: src/gui/MainWindow.cc
 msgid "Render and Print"
 msgstr "算繪並列印"
+
+#: src/gui/MainWindow.cc
+msgid "The design has not been rendered yet (F6)."
+msgstr "設計尚未算繪（F6）。"
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and export, or cancel."
+msgstr "算繪設計並匯出，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and print, or cancel."
+msgstr "算繪設計並列印，或取消。"

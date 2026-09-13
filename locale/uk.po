@@ -4543,3 +4543,15 @@ msgstr "Рендер і експорт"
 #: src/gui/MainWindow.cc
 msgid "Render and Print"
 msgstr "Рендер і друк"
+
+#: src/gui/MainWindow.cc
+msgid "The design has not been rendered yet (F6)."
+msgstr "Дизайн ще не було відрендерено (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and export, or cancel."
+msgstr "Відрендерити дизайн і експортувати, або скасувати."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and print, or cancel."
+msgstr "Відрендерити дизайн і надрукувати, або скасувати."

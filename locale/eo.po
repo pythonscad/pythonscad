@@ -4291,3 +4291,15 @@ msgstr "Bildigi kaj eksporti"
 #: src/gui/MainWindow.cc
 msgid "Render and Print"
 msgstr "Bildigi kaj presi"
+
+#: src/gui/MainWindow.cc
+msgid "The design has not been rendered yet (F6)."
+msgstr "La dezajno ankoraŭ ne estis bildigita (F6)."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and export, or cancel."
+msgstr "Bildigu la dezajnon kaj eksportu, aŭ nuligu."
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and print, or cancel."
+msgstr "Bildigu la dezajnon kaj presu, aŭ nuligu."
