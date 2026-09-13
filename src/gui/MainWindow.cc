@@ -3530,14 +3530,6 @@ void MainWindow::on_designCheckValidity_triggered()
   LOG("Valid:      %1$6s", (valid ? "yes" : "no"));
 }
 
-// Returns if we can export (true) or not(false) (bool)
-// Separated into it's own function for re-use.
-bool MainWindow::formatNeedsRenderedGeometry(FileFormat format)
-{
-  // PNG captures the current view; CSG only needs a compiled tree.
-  return format != FileFormat::PNG && format != FileFormat::CSG;
-}
-
 bool MainWindow::offerColdStartRenderThenContinue()
 {
   const bool forPrint = pendingAfterRender_ == PendingAfterRender::Print3D;
@@ -3953,57 +3945,17 @@ bool MainWindow::promptExportOptions(FileFormat format, ExportInfo& exportInfo)
 
 bool MainWindow::confirmExportPreconditions()
 {
+  // This generic check is used only before a save-as dialog, where the format
+  // is not known yet. Remembered Export uses confirmExportFormat() directly.
   // No F6 mesh yet.
   if (!rootGeom) {
-    // Remembered PNG/CSG can proceed without a mesh (CSG needs a compiled tree).
-    if (pendingAfterRender_ == PendingAfterRender::Export && activeEditor && activeEditor->lastExport) {
-      const FileFormat fmt = activeEditor->lastExport->format;
-      if (fmt == FileFormat::PNG) {
-        return true;
-      }
-      if (fmt == FileFormat::CSG) {
-        if (!this->rootNode) {
-          QMessageBox::warning(this, _("Export"), _("Nothing to export. Please try compiling first."));
-          clearPendingAfterRender();
-          return false;
-        }
-        if (renderedEditor && renderedEditor != activeEditor) {
-          return confirmCrossTabGeometryOrRender(renderedEditor);
-        }
-        return true;
-      }
-    }
-    // Mesh Export / Export as / Print: never open save-as on cold start.
+    // Never open save-as on cold start.
     if (pendingAfterRender_ != PendingAfterRender::None) {
       return offerColdStartRenderThenContinue();
     }
     return false;
   }
 
-  // Have an F6 mesh. Print and remembered mesh Export need full mesh gates now.
-  // Export as (and Export falling through to it) defer until a format is chosen so
-  // CSG/PNG are not blocked by another tab's leftover rootGeom.
-  if (pendingAfterRender_ == PendingAfterRender::Print3D) {
-    return canExport(3);
-  }
-  if (pendingAfterRender_ == PendingAfterRender::Export && activeEditor && activeEditor->lastExport &&
-      formatNeedsRenderedGeometry(activeEditor->lastExport->format)) {
-    return canExport(0);
-  }
-  if (pendingAfterRender_ == PendingAfterRender::Export && activeEditor && activeEditor->lastExport &&
-      !formatNeedsRenderedGeometry(activeEditor->lastExport->format)) {
-    if (activeEditor->lastExport->format == FileFormat::CSG) {
-      if (!this->rootNode) {
-        QMessageBox::warning(this, _("Export"), _("Nothing to export. Please try compiling first."));
-        clearPendingAfterRender();
-        return false;
-      }
-      if (renderedEditor && renderedEditor != activeEditor) {
-        return confirmCrossTabGeometryOrRender(renderedEditor);
-      }
-    }
-    return true;
-  }
   // Export / Export as both start from the currently displayed F6 result.
   // Ask about cross-tab ownership before save-as, then retain the answer until
   // confirmExportFormat() so the same warning is not shown twice.

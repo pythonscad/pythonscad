@@ -416,7 +416,6 @@ private slots:
   /// Geometry/CSG belongs to another tab: Export/Use other, Render and continue, or Cancel.
   /// Returns true only if the user chose to proceed with the other tab's data.
   bool confirmCrossTabGeometryOrRender(EditorInterface *sourceEditor);
-  static bool formatNeedsRenderedGeometry(FileFormat format);
   void actionExport();
   void actionExportAs();
   void actionExportFileFormat(int fmt);
