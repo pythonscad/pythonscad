@@ -4303,3 +4303,23 @@ msgstr "Depinge consilium et exporta, aut renuntia."
 #: src/gui/MainWindow.cc
 msgid "Render the design and print, or cancel."
 msgstr "Depinge consilium et imprime, aut renuntia."
+
+#: src/gui/MainWindow.cc
+msgid "The current render belongs to a different tab (%1)."
+msgstr "Depictio praesens ad aliam schedam pertinet (%1)."
+
+#: src/gui/MainWindow.cc
+msgid "Export that tab's render, render this tab first, or cancel."
+msgstr "Exporta depictionem illius schedae, prius hanc schedam depinge, aut renuntia."
+
+#: src/gui/MainWindow.cc
+msgid "Use that tab's render, render this tab first, or cancel."
+msgstr "Utere depictione illius schedae, prius hanc schedam depinge, aut renuntia."
+
+#: src/gui/MainWindow.cc
+msgid "Export Other Tab's Render"
+msgstr "Exporta depictionem alterius schedae"
+
+#: src/gui/MainWindow.cc
+msgid "Use Other Tab's Render"
+msgstr "Utere depictione alterius schedae"

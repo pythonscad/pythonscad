@@ -4591,3 +4591,23 @@ msgstr "Wyrenderuj projekt i eksportuj albo anuluj."
 #: src/gui/MainWindow.cc
 msgid "Render the design and print, or cancel."
 msgstr "Wyrenderuj projekt i drukuj albo anuluj."
+
+#: src/gui/MainWindow.cc
+msgid "The current render belongs to a different tab (%1)."
+msgstr "Bieżący render należy do innej karty (%1)."
+
+#: src/gui/MainWindow.cc
+msgid "Export that tab's render, render this tab first, or cancel."
+msgstr "Eksportuj render tamtej karty, najpierw wyrenderuj tę kartę albo anuluj."
+
+#: src/gui/MainWindow.cc
+msgid "Use that tab's render, render this tab first, or cancel."
+msgstr "Użyj renderu tamtej karty, najpierw wyrenderuj tę kartę albo anuluj."
+
+#: src/gui/MainWindow.cc
+msgid "Export Other Tab's Render"
+msgstr "Eksportuj render innej karty"
+
+#: src/gui/MainWindow.cc
+msgid "Use Other Tab's Render"
+msgstr "Użyj renderu innej karty"

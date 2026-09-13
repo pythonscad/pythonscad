@@ -4501,3 +4501,23 @@ msgstr "დიზაინის რენდერი და ექსპორ
 #: src/gui/MainWindow.cc
 msgid "Render the design and print, or cancel."
 msgstr "დიზაინის რენდერი და ბეჭდვა, ან გაუქმება."
+
+#: src/gui/MainWindow.cc
+msgid "The current render belongs to a different tab (%1)."
+msgstr "მიმდინარე რენდერი სხვა ჩანართს ეკუთვნის (%1)."
+
+#: src/gui/MainWindow.cc
+msgid "Export that tab's render, render this tab first, or cancel."
+msgstr "იმ ჩანართის რენდერის ექსპორტი, ჯერ ამ ჩანართის რენდერი, ან გაუქმება."
+
+#: src/gui/MainWindow.cc
+msgid "Use that tab's render, render this tab first, or cancel."
+msgstr "იმ ჩანართის რენდერის გამოყენება, ჯერ ამ ჩანართის რენდერი, ან გაუქმება."
+
+#: src/gui/MainWindow.cc
+msgid "Export Other Tab's Render"
+msgstr "სხვა ჩანართის რენდერის ექსპორტი"
+
+#: src/gui/MainWindow.cc
+msgid "Use Other Tab's Render"
+msgstr "სხვა ჩანართის რენდერის გამოყენება"

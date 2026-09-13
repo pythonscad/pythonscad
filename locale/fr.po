@@ -4638,3 +4638,23 @@ msgstr "Rendre le design et exporter, ou annuler."
 #: src/gui/MainWindow.cc
 msgid "Render the design and print, or cancel."
 msgstr "Rendre le design et imprimer, ou annuler."
+
+#: src/gui/MainWindow.cc
+msgid "The current render belongs to a different tab (%1)."
+msgstr "Le rendu actuel appartient à un autre onglet (%1)."
+
+#: src/gui/MainWindow.cc
+msgid "Export that tab's render, render this tab first, or cancel."
+msgstr "Exporter le rendu de cet autre onglet, d’abord rendre cet onglet-ci, ou annuler."
+
+#: src/gui/MainWindow.cc
+msgid "Use that tab's render, render this tab first, or cancel."
+msgstr "Utiliser le rendu de cet autre onglet, d’abord rendre cet onglet-ci, ou annuler."
+
+#: src/gui/MainWindow.cc
+msgid "Export Other Tab's Render"
+msgstr "Exporter le rendu de l’autre onglet"
+
+#: src/gui/MainWindow.cc
+msgid "Use Other Tab's Render"
+msgstr "Utiliser le rendu de l’autre onglet"

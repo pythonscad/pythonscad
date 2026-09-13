@@ -4303,3 +4303,23 @@ msgstr "Bildigu la dezajnon kaj eksportu, aŭ nuligu."
 #: src/gui/MainWindow.cc
 msgid "Render the design and print, or cancel."
 msgstr "Bildigu la dezajnon kaj presu, aŭ nuligu."
+
+#: src/gui/MainWindow.cc
+msgid "The current render belongs to a different tab (%1)."
+msgstr "La nuna bildigo apartenas al alia langeto (%1)."
+
+#: src/gui/MainWindow.cc
+msgid "Export that tab's render, render this tab first, or cancel."
+msgstr "Eksportu la bildigon de tiu langeto, bildigu ĉi tiun langeton unue, aŭ nuligu."
+
+#: src/gui/MainWindow.cc
+msgid "Use that tab's render, render this tab first, or cancel."
+msgstr "Uzu la bildigon de tiu langeto, bildigu ĉi tiun langeton unue, aŭ nuligu."
+
+#: src/gui/MainWindow.cc
+msgid "Export Other Tab's Render"
+msgstr "Eksporti bildigon de alia langeto"
+
+#: src/gui/MainWindow.cc
+msgid "Use Other Tab's Render"
+msgstr "Uzi bildigon de alia langeto"

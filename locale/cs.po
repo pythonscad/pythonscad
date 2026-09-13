@@ -4613,3 +4613,23 @@ msgstr "Vyrenderovat návrh a exportovat, nebo zrušit."
 #: src/gui/MainWindow.cc
 msgid "Render the design and print, or cancel."
 msgstr "Vyrenderovat návrh a tisknout, nebo zrušit."
+
+#: src/gui/MainWindow.cc
+msgid "The current render belongs to a different tab (%1)."
+msgstr "Aktuální render patří k jiné záložce (%1)."
+
+#: src/gui/MainWindow.cc
+msgid "Export that tab's render, render this tab first, or cancel."
+msgstr "Exportovat render té záložky, nejdřív vyrenderovat tuto záložku, nebo zrušit."
+
+#: src/gui/MainWindow.cc
+msgid "Use that tab's render, render this tab first, or cancel."
+msgstr "Použít render té záložky, nejdřív vyrenderovat tuto záložku, nebo zrušit."
+
+#: src/gui/MainWindow.cc
+msgid "Export Other Tab's Render"
+msgstr "Exportovat render jiné záložky"
+
+#: src/gui/MainWindow.cc
+msgid "Use Other Tab's Render"
+msgstr "Použít render jiné záložky"

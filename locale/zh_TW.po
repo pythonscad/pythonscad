@@ -4496,3 +4496,23 @@ msgstr "算繪設計並匯出，或取消。"
 #: src/gui/MainWindow.cc
 msgid "Render the design and print, or cancel."
 msgstr "算繪設計並列印，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "The current render belongs to a different tab (%1)."
+msgstr "目前算繪屬於另一個分頁（%1）。"
+
+#: src/gui/MainWindow.cc
+msgid "Export that tab's render, render this tab first, or cancel."
+msgstr "匯出該分頁的算繪，先算繪此分頁，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Use that tab's render, render this tab first, or cancel."
+msgstr "使用該分頁的算繪，先算繪此分頁，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Export Other Tab's Render"
+msgstr "匯出其他分頁的算繪"
+
+#: src/gui/MainWindow.cc
+msgid "Use Other Tab's Render"
+msgstr "使用其他分頁的算繪"

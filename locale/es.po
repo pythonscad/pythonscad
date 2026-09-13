@@ -4497,3 +4497,23 @@ msgstr "Renderizar el diseño y exportar, o cancelar."
 #: src/gui/MainWindow.cc
 msgid "Render the design and print, or cancel."
 msgstr "Renderizar el diseño e imprimir, o cancelar."
+
+#: src/gui/MainWindow.cc
+msgid "The current render belongs to a different tab (%1)."
+msgstr "El render actual pertenece a otra pestaña (%1)."
+
+#: src/gui/MainWindow.cc
+msgid "Export that tab's render, render this tab first, or cancel."
+msgstr "Exportar el render de esa pestaña, renderizar esta pestaña primero, o cancelar."
+
+#: src/gui/MainWindow.cc
+msgid "Use that tab's render, render this tab first, or cancel."
+msgstr "Usar el render de esa pestaña, renderizar esta pestaña primero, o cancelar."
+
+#: src/gui/MainWindow.cc
+msgid "Export Other Tab's Render"
+msgstr "Exportar render de otra pestaña"
+
+#: src/gui/MainWindow.cc
+msgid "Use Other Tab's Render"
+msgstr "Usar render de otra pestaña"

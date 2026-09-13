@@ -4555,3 +4555,23 @@ msgstr "Відрендерити дизайн і експортувати, аб�
 #: src/gui/MainWindow.cc
 msgid "Render the design and print, or cancel."
 msgstr "Відрендерити дизайн і надрукувати, або скасувати."
+
+#: src/gui/MainWindow.cc
+msgid "The current render belongs to a different tab (%1)."
+msgstr "Поточний рендер належить іншій вкладці (%1)."
+
+#: src/gui/MainWindow.cc
+msgid "Export that tab's render, render this tab first, or cancel."
+msgstr "Експортувати рендер тієї вкладки, спочатку відрендерити цю, або скасувати."
+
+#: src/gui/MainWindow.cc
+msgid "Use that tab's render, render this tab first, or cancel."
+msgstr "Використати рендер тієї вкладки, спочатку відрендерити цю, або скасувати."
+
+#: src/gui/MainWindow.cc
+msgid "Export Other Tab's Render"
+msgstr "Експортувати рендер іншої вкладки"
+
+#: src/gui/MainWindow.cc
+msgid "Use Other Tab's Render"
+msgstr "Використати рендер іншої вкладки"
