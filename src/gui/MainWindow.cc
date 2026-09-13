@@ -3542,6 +3542,9 @@ bool MainWindow::offerColdStartRenderThenContinue()
   box.setText(_("The design has not been rendered yet (F6)."));
   box.setInformativeText(forPrint ? _("Render the design and print, or cancel.")
                                   : _("Render the design and export, or cancel."));
+  // Same roles as the stale-render dialog and session-save prompts: primary
+  // affirmative = AcceptRole, dismiss = RejectRole (platform lays out Cancel
+  // opposite the default action).
   auto *renderButton =
     box.addButton(forPrint ? _("Render and Print") : _("Render and Export"), QMessageBox::AcceptRole);
   auto *cancelButton = box.addButton(_("Cancel"), QMessageBox::RejectRole);
@@ -3592,10 +3595,14 @@ bool MainWindow::canExport(unsigned int dim)
     box.setInformativeText(
       forPrint ? _("Print the last rendered geometry, render the current design first, or cancel.")
                : _("Export the last rendered geometry, render the current design first, or cancel."));
+    // Match cold-start roles: Render = Accept (primary/default), Cancel = Reject.
+    // Export Previous is the extra alternative (Action), like session-save's
+    // secondary actions — Qt lays out by role so both dialogs keep Cancel and
+    // Render on the same sides.
     auto *previousButton =
-      box.addButton(forPrint ? _("Use Previous") : _("Export Previous"), QMessageBox::AcceptRole);
+      box.addButton(forPrint ? _("Use Previous") : _("Export Previous"), QMessageBox::ActionRole);
     auto *renderButton =
-      box.addButton(forPrint ? _("Render and Print") : _("Render and Export"), QMessageBox::ActionRole);
+      box.addButton(forPrint ? _("Render and Print") : _("Render and Export"), QMessageBox::AcceptRole);
     auto *cancelButton = box.addButton(_("Cancel"), QMessageBox::RejectRole);
     box.setDefaultButton(renderButton);
     box.setEscapeButton(cancelButton);
