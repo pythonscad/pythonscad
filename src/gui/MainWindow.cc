@@ -3572,7 +3572,7 @@ bool MainWindow::confirmCrossTabGeometryOrRender(EditorInterface *sourceEditor)
   QMessageBox box(this);
   box.setIcon(QMessageBox::Warning);
   box.setWindowTitle(forPrint ? _("3D Print") : _("Export"));
-  box.setText(_("The current render belongs to a different tab (%1).").arg(sourceName));
+  box.setText(QString(_("The current render belongs to a different tab (%1).")).arg(sourceName));
   box.setInformativeText(forPrint ? _("Use that tab's render, render this tab first, or cancel.")
                                   : _("Export that tab's render, render this tab first, or cancel."));
   // Align with cold-start / stale-render: Render = Accept, other-tab = Action, Cancel = Reject.
