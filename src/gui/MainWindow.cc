@@ -3527,11 +3527,45 @@ void MainWindow::on_designCheckValidity_triggered()
 
 // Returns if we can export (true) or not(false) (bool)
 // Separated into it's own function for re-use.
+bool MainWindow::formatNeedsRenderedGeometry(FileFormat format)
+{
+  // PNG captures the current view; CSG only needs a compiled tree.
+  return format != FileFormat::PNG && format != FileFormat::CSG;
+}
+
+bool MainWindow::offerColdStartRenderThenContinue()
+{
+  const bool forPrint = pendingAfterRender_ == PendingAfterRender::Print3D;
+  QMessageBox box(this);
+  box.setIcon(QMessageBox::Warning);
+  box.setWindowTitle(forPrint ? _("3D Print") : _("Export"));
+  box.setText(_("The design has not been rendered yet (F6)."));
+  box.setInformativeText(forPrint ? _("Render the design and print, or cancel.")
+                                  : _("Render the design and export, or cancel."));
+  auto *renderButton =
+    box.addButton(forPrint ? _("Render and Print") : _("Render and Export"), QMessageBox::AcceptRole);
+  auto *cancelButton = box.addButton(_("Cancel"), QMessageBox::RejectRole);
+  box.setDefaultButton(renderButton);
+  box.setEscapeButton(cancelButton);
+  box.exec();
+
+  if (box.clickedButton() == renderButton) {
+    // Leave pendingAfterRender_ set so actionRenderDone can resume.
+    startRenderThenContinue();
+    return false;
+  }
+  pendingAfterRender_ = PendingAfterRender::None;
+  return false;
+}
+
 bool MainWindow::canExport(unsigned int dim)
 {
   if (!rootGeom) {
+    // Cold start: offer Render and Continue when an Export/Print is pending.
+    if (pendingAfterRender_ != PendingAfterRender::None) {
+      return offerColdStartRenderThenContinue();
+    }
     QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
-    pendingAfterRender_ = PendingAfterRender::None;
     return false;
   }
 
@@ -3848,14 +3882,24 @@ bool MainWindow::promptExportOptions(FileFormat format, ExportInfo& exportInfo)
 bool MainWindow::confirmExportPreconditions()
 {
   // Mesh exports need a render (rootGeom). CSG only needs a compile (rootNode),
-  // and PNG can capture the current view. Cold start (neither) must abort before
-  // any save-as dialog — that was the confusing F7 UX.
+  // and PNG can capture the current view.
   if (rootGeom) {
     return canExport(0);
   }
+
+  // Remembered Export to a mesh format (or Print) with no geometry yet: offer
+  // Render and Continue. Do not treat a preview CSG tree (rootNode) as enough —
+  // that previously opened save-as after a dead-end "Nothing to export" modal.
+  const bool rememberedNeedsMesh = pendingAfterRender_ == PendingAfterRender::Export && activeEditor &&
+                                   activeEditor->lastExport &&
+                                   formatNeedsRenderedGeometry(activeEditor->lastExport->format);
+  if (pendingAfterRender_ == PendingAfterRender::Print3D || rememberedNeedsMesh) {
+    return offerColdStartRenderThenContinue();
+  }
+
+  // Export as… (or Export with no remembered path): allow the save dialog so
+  // the user can still pick PNG/CSG. Mesh formats are gated in confirmExportFormat.
   if (rootNode) {
-    // rootNode comes from the editor that last compiled (renderedEditor), which
-    // may differ from the active tab if the user switched during/after preview.
     if (renderedEditor && renderedEditor != activeEditor) {
       auto ret = QMessageBox::warning(this, _("Export"),
                                       _("The rendered data is from a different tab.\n"
@@ -3866,10 +3910,8 @@ bool MainWindow::confirmExportPreconditions()
         return false;
       }
     }
-    return true;
   }
-  QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
-  return false;
+  return true;
 }
 
 bool MainWindow::confirmExportFormat(FileFormat format)
@@ -3889,10 +3931,12 @@ bool MainWindow::confirmExportFormat(FileFormat format)
   if (fileformat::is3D(format) || format == FileFormat::PS) dim = 3;
   else if (fileformat::is2D(format)) dim = 2;
 
-  // Stale-render / missing-geometry prompts already ran; only enforce dimension.
   if (!rootGeom) {
-    QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
-    return false;
+    // User already chose a mesh format in Export as… — offer render, then reopen.
+    if (pendingAfterRender_ == PendingAfterRender::None) {
+      pendingAfterRender_ = PendingAfterRender::ExportAs;
+    }
+    return offerColdStartRenderThenContinue();
   }
   if (this->rootGeom->getDimension() != dim && dim != 0) {
     QMessageBox::warning(this, _("Export"),
@@ -4099,7 +4143,11 @@ void MainWindow::actionExport()
 
   if (activeEditor && activeEditor->lastExport) {
     if (performRememberedExport(/*checkPreconditions=*/false)) return;
+    // confirmExportFormat may have started Render-and-Export (pending re-armed).
+    if (pendingAfterRender_ != PendingAfterRender::None) return;
     // Remembered path failed (missing file, permissions, etc.) — fall back to Export as…
+    // only when mesh geometry exists; missing geometry must not open the file chooser.
+    if (!rootGeom) return;
   }
   runExportAsDialogFlow(/*checkPreconditions=*/false);
 }

@@ -410,6 +410,10 @@ private slots:
   void on_designActionDisplayCSGTree_triggered();
   void on_designActionDisplayCSGProducts_triggered();
   bool canExport(unsigned int dim);
+  /// Cold start (no rootGeom): offer Render and Export/Print, or cancel.
+  /// Always returns false; leaves pendingAfterRender_ set when a render starts.
+  bool offerColdStartRenderThenContinue();
+  static bool formatNeedsRenderedGeometry(FileFormat format);
   void actionExport();
   void actionExportAs();
   void actionExportFileFormat(int fmt);
