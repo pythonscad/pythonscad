@@ -1495,7 +1495,8 @@ bool TabManager::hasDirtyTabs()
   for (auto *mainWin : scadApp->windowManager.getWindows()) {
     auto *tm = mainWin->tabManager;
     for (auto *edt : tm->editorList) {
-      if (edt->isContentModified() || edt->parameterWidget->isModified()) return true;
+      if (edt->isContentModified() || edt->parameterWidget->isModified() || edt->sessionMetadataModified)
+        return true;
     }
   }
   return false;
@@ -1747,6 +1748,13 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
   const bool ok = writeSessionFile(root, path, targetError);
   if (!ok && showWarning) {
     warnSessionSaveFailure(path, *targetError);
+  }
+  if (ok && QFileInfo(path).absoluteFilePath() == QFileInfo(getSessionFilePath()).absoluteFilePath()) {
+    for (MainWindow *mainWin : windowOrder) {
+      for (auto *edt : mainWin->tabManager->editorList) {
+        edt->sessionMetadataModified = false;
+      }
+    }
   }
   return ok;
 }

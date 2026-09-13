@@ -4069,6 +4069,8 @@ void MainWindow::rememberSuccessfulExport(const QString& filename, FileFormat fo
   state.optionsSvg = exportInfo.optionsSvg;
   state.optionsGcode = exportInfo.optionsGcode;
   activeEditor->lastExport = std::move(state);
+  activeEditor->sessionMetadataModified = true;
+  TabManager::bumpSessionDirtyGeneration();
   updateExportMenuText();
 }
 

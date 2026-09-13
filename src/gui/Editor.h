@@ -145,4 +145,6 @@ public:
     std::shared_ptr<const ExportGcodeOptions> optionsGcode;
   };
   std::optional<LastExport> lastExport;
+  /// Session-only metadata changed since the canonical session file was saved.
+  bool sessionMetadataModified = false;
 };
