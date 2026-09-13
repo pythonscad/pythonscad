@@ -3977,6 +3977,7 @@ bool MainWindow::confirmExportFormat(FileFormat format)
   if (format == FileFormat::CSG) {
     if (!this->rootNode) {
       QMessageBox::warning(this, _("Export"), _("Nothing to export. Please try compiling first."));
+      clearPendingAfterRender();
       return false;
     }
     // CSG comes from the last compiled tab (renderedEditor), not from F6.
