@@ -42,6 +42,8 @@ ExportPdfDialog::ExportPdfDialog()
 {
   setupUi(this);
   this->checkBoxAlwaysShowDialog->setChecked(S::exportPdfAlwaysShowDialog.value());
+  // Export as… always shows options; remembered Export skips them — this toggle is unused.
+  this->checkBoxAlwaysShowDialog->setVisible(false);
 
   initButtonGroup(this->buttonGroupPaperSize, S::exportPdfPaperSize);
   initButtonGroup(this->buttonGroupOrientation, S::exportPdfOrientation);
@@ -86,12 +88,7 @@ ExportPdfDialog::ExportPdfDialog()
 
 int ExportPdfDialog::exec()
 {
-  bool showDialog = this->checkBoxAlwaysShowDialog->isChecked();
-  if ((QApplication::keyboardModifiers() & Qt::ShiftModifier) != 0) {
-    showDialog = true;
-  }
-
-  const auto result = showDialog ? QDialog::exec() : QDialog::Accepted;
+  const auto result = QDialog::exec();
 
   if (result == QDialog::Accepted) {
     S::exportPdfAlwaysShowDialog.setValue(this->checkBoxAlwaysShowDialog->isChecked());

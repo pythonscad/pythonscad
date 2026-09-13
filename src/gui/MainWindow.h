@@ -274,6 +274,18 @@ private:
   void addExportActions(QToolBar *toolbar, QAction *action) const;
   QAction *formatIdentifierToAction(const std::string& identifier) const;
   QString getDockBaseName(const QString& title) const;
+  QString exportStartDirectory() const;
+  QString defaultExportBasename() const;
+  QString defaultExportSuffix() const;
+  FileFormatInfo fileFormatInfoFor(FileFormat format) const;
+  bool promptExportOptions(FileFormat format, ExportInfo& exportInfo);
+  bool confirmExportPreconditions();
+  bool confirmExportFormat(FileFormat format);
+  bool writeExportFile(const QString& filename, FileFormat format, ExportInfo& exportInfo);
+  void rememberSuccessfulExport(const QString& filename, FileFormat format,
+                                const ExportInfo& exportInfo);
+  bool runExportAsDialogFlow(bool checkPreconditions = true);
+  bool performRememberedExport(bool checkPreconditions = true);
 
   LibraryInfoDialog *libraryInfoDialog{nullptr};
   FontListDialog *fontListDialog{nullptr};
@@ -332,7 +344,9 @@ private slots:
   // Handle the Next/Prev shortcut, currently switch to the targetted dock
   // and adds the rubberband, the rubbreband is removed on shortcut key release.
   void onWindowShortcutNextPrevActivated();
-  void onWindowShortcutExport3DActivated();
+
+  void on_fileActionExport_triggered();
+  void on_fileActionExportAs_triggered();
 
   void onEditorDockVisibilityChanged(bool isVisible);
   void onConsoleDockVisibilityChanged(bool isVisible);
@@ -396,10 +410,22 @@ private slots:
   void on_designActionDisplayCSGTree_triggered();
   void on_designActionDisplayCSGProducts_triggered();
   bool canExport(unsigned int dim);
-  void actionExport(unsigned int dim, ExportInfo& exportInfo);
+  /// Cold start (no rootGeom): offer Render and Export/Print, or cancel.
+  /// Always returns false; leaves pendingAfterRender_ set when a render starts.
+  bool offerColdStartRenderThenContinue();
+  /// Geometry/CSG belongs to another tab: Export/Use other, Render and continue, or Cancel.
+  /// Returns true only if the user chose to proceed with the other tab's data.
+  bool confirmCrossTabGeometryOrRender(EditorInterface *sourceEditor);
+  void actionExport();
+  void actionExportAs();
   void actionExportFileFormat(int fmt);
+  void startRenderThenContinue();
+  void runPendingAfterRender();
+  void clearPendingAfterRender();
   void on_editActionCopyViewport_triggered();
   void on_designActionFlushCaches_triggered();
+  void updateExportMenuText();
+  void updateExportToolbarIcon();
 
 public:
   void viewModeActionsUncheck();
@@ -514,12 +540,20 @@ private:
   QMutex consolemutex;
   DragResult dragResult;
   EditorInterface *renderedEditor{
-    nullptr};               // stores pointer to editor which has been most recently rendered
+    nullptr};  // stores pointer to editor which has been most recently rendered
+  /// Editor whose F6 geometry is currently in rootGeom (export ownership).
+  EditorInterface *geometrySourceEditor_{nullptr};
   time_t includesMTime{0};  // latest include mod time
   time_t depsMTime{0};      // latest dependency mod time
-  std::unordered_map<QString, QString> exportPaths;  // for each file type, where it was exported to last
-  QString exportPath(
-    const QString& suffix);    // look up the last export path and generate one if not found
+  /// Last directory used for any export in this process (not persisted).
+  inline static QString lastExportDirectory;
+  enum class PendingAfterRender { None, Export, ExportAs, Print3D };
+  PendingAfterRender pendingAfterRender_{PendingAfterRender::None};
+  /// Tab that started Render-and-Export/Print; restored before resuming.
+  EditorInterface *pendingAfterRenderEditor_{nullptr};
+  /// Cross-tab geometry ownership acknowledged for the current export action.
+  EditorInterface *approvedGeometrySourceEditor_{nullptr};
+  EditorInterface *approvedGeometryTargetEditor_{nullptr};
   int lastParserErrorPos{-1};  // last highlighted error position
   int tabCount = 0;
   ExportPdfPaperSize sizeString2Enum(const QString& current);

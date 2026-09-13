@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenSCAD 2020.02.17\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 23:59+0200\n"
+"POT-Creation-Date: 2026-09-10 04:06+0200\n"
 "PO-Revision-Date: 2026-08-01 01:42+0200\n"
 "Last-Translator: Michael Tsao <cwtsao@sce.pccu.edu.tw>\n"
 "Language-Team: Distance Learning Center at the Chinese Culture University "
@@ -49,10 +49,6 @@ msgstr ""
 "\n"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AboutDialog.h:111
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:516
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:190
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:634
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:222
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:110
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:186
 msgid "OK"
@@ -106,7 +102,7 @@ msgstr "轉存圖片"
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:852
 #: build/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:362
 #: build/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:214
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2580
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2626
 msgid "Preferences"
 msgstr "偏好設定"
 
@@ -257,7 +253,7 @@ msgid "TextLabel"
 msgstr "文字標籤"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:901
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2584
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
 msgid "Update"
 msgstr "更新"
 
@@ -395,8 +391,9 @@ msgid "Grab active 3D viewport frame and camera metadata"
 msgstr ""
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:208
+#, fuzzy
 msgid "Analyze Screen"
-msgstr ""
+msgstr "全螢幕(&F)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:210
 msgid "Attach local image file"
@@ -425,6 +422,7 @@ msgstr "色彩清單"
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:402
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:404
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:406
+#: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:292
 msgid "Reset Sample Text"
 msgstr "重設範例文字"
 
@@ -450,20 +448,20 @@ msgstr "色彩名稱"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:418
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:309
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2642
-#: src/core/Settings.cc:161 src/core/Settings.cc:517
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2688
+#: src/core/Settings.cc:161 src/core/Settings.cc:520
 msgid "Fixed"
 msgstr "固定"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:419
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:310
-#: src/core/Settings.cc:518
+#: src/core/Settings.cc:521
 msgid "Wildcard"
 msgstr "萬用字元"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:420
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:311
-#: src/core/Settings.cc:519
+#: src/core/Settings.cc:522
 msgid "RegExp"
 msgstr "正規表示式"
 
@@ -484,17 +482,17 @@ msgid "Alphabetically"
 msgstr "依字母"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:426
-#: src/core/Settings.cc:529
+#: src/core/Settings.cc:532
 msgid "By color"
 msgstr "依色彩"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:427
-#: src/core/Settings.cc:530
+#: src/core/Settings.cc:533
 msgid "By color warmth"
 msgstr "依色溫"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:428
-#: src/core/Settings.cc:531
+#: src/core/Settings.cc:534
 msgid "By lightness"
 msgstr "依明度"
 
@@ -525,8 +523,9 @@ msgstr "重設背景色彩"
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:217
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:220
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:177
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2717
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2724
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2764
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2829
 msgid "..."
 msgstr "..."
 
@@ -571,7 +570,7 @@ msgid "Clear console"
 msgstr "清除控制台"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Console.h:46
-#: src/gui/TabManager.cc:1846
+#: src/gui/TabManager.cc:2052
 msgid "Save As..."
 msgstr "另存新檔(&A)..."
 
@@ -603,7 +602,7 @@ msgstr "顯示(&S)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ErrorLog.h:101
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:306
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1390
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1396
 msgid "All"
 msgstr "全部"
 
@@ -635,7 +634,7 @@ msgstr "匯出錯誤"
 msgid "DEPRECATED"
 msgstr "棄用"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:448
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:457
 msgid "Export 3MF Options"
 msgstr "匯出 3MF 選項"
 
@@ -649,59 +648,35 @@ msgstr "<html><head/><body><p>設定 PDF 頁面（紙張）大小。</p></body><
 msgid "Unit"
 msgstr "單位"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:453
-#: src/core/Settings.cc:452
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:462
+#: src/core/Settings.cc:455
 msgid "Micron"
 msgstr "微米"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:454
-msgid "micron"
-msgstr "微米"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:455
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:463
 msgid "Millimeter (default)"
 msgstr "公釐（預設）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:456
-msgid "millimeter"
-msgstr "公釐"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:457
-#: src/core/Settings.cc:454
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:464
+#: src/core/Settings.cc:457
 msgid "Centimeter"
 msgstr "公分"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:458
-msgid "centimeter"
-msgstr "公分"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:459
-#: src/core/Settings.cc:455
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:465
+#: src/core/Settings.cc:458
 msgid "Meter"
 msgstr "公尺"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:460
-msgid "meter"
-msgstr "公尺"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:461
-#: src/core/Settings.cc:456
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:466
+#: src/core/Settings.cc:459
 msgid "Inch"
 msgstr "英吋"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:462
-msgid "inch"
-msgstr "英吋"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:463
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:467
 msgid "Foot"
 msgstr "英尺"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:464
-msgid "foot"
-msgstr "英尺"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:468
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:471
 msgid "Colors"
 msgstr "色彩"
 
@@ -709,26 +684,14 @@ msgstr "色彩"
 msgid "Use colors from model and color scheme"
 msgstr "使用模型與色彩配置的色彩"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:470
-msgid "model"
-msgstr "模型"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:471
-#: src/core/Settings.cc:445
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:473
+#: src/core/Settings.cc:448
 msgid "No colors"
 msgstr "無色彩"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:472
-msgid "none"
-msgstr "無"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:473
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:474
 msgid "Use selected color for all objects"
 msgstr "對所有物件使用選取的色彩"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:474
-msgid "selected-only"
-msgstr "僅選取"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:478
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:563
@@ -820,9 +783,19 @@ msgstr "一律顯示對話框"
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:109
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:185
 #: src/gui/UnsavedChangesDialog.cc:60 src/openscad_gui.cc:196
-#: src/openscad_gui.cc:864
+#: src/openscad_gui.cc:871
 msgid "Cancel"
 msgstr "取消"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:516
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:190
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:634
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:222
+#: src/gui/MainWindow.cc:3828 src/gui/MainWindow.cc:3832
+#: src/gui/MainWindow.cc:3854 src/gui/MainWindow.cc:3869
+#, fuzzy
+msgid "Export"
+msgstr "匯出(&E)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:179
 msgid "Export GCODE Options"
@@ -860,78 +833,50 @@ msgstr "起始程式碼："
 msgid "Exit Code:"
 msgstr "結束程式碼："
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:541
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:550
 msgid "Export PDF Options"
 msgstr "匯出 PDF 選項"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:545
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:554
 msgid "Page Size"
 msgstr "頁面大小"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:546
-#: src/core/Settings.cc:397
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
+#: src/core/Settings.cc:400
 msgid "A6 (105 x 148 mm)"
 msgstr "A6（105 x 148 mm）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:547
-msgid "a6"
-msgstr "a6"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:548
-#: src/core/Settings.cc:398
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:556
+#: src/core/Settings.cc:401
 msgid "A5 (148 x 210 mm)"
 msgstr "A5（148 x 210 mm）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:549
-msgid "a5"
-msgstr "a5"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:550
-#: src/core/Settings.cc:399
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
+#: src/core/Settings.cc:402
 msgid "A4 (210x297 mm)"
 msgstr "A4（210x297 mm）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:551
-msgid "a4"
-msgstr "a4"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:552
-#: src/core/Settings.cc:400
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:558
+#: src/core/Settings.cc:403
 msgid "A3 (297x420 mm)"
 msgstr "A3（297x420 mm）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:553
-msgid "a3"
-msgstr "a3"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:554
-#: src/core/Settings.cc:401
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:559
+#: src/core/Settings.cc:404
 msgid "Letter (8.5x11 in)"
 msgstr "Letter（8.5x11 英吋）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
-msgid "letter"
-msgstr "letter"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:556
-#: src/core/Settings.cc:402
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:560
+#: src/core/Settings.cc:405
 msgid "Legal (8.5x14 in)"
 msgstr "Legal（8.5x14 英吋）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
-msgid "legal"
-msgstr "legal"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:558
-#: src/core/Settings.cc:403
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
+#: src/core/Settings.cc:406
 msgid "Tabloid (11x17 in)"
 msgstr "Tabloid（11x17 英吋）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:560
-msgid "tabloid"
-msgstr "tabloid"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:562
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:564
 msgid ""
 "The fields Title, Creator and CreateDate are always filled in the exported "
 "file when meta data is enabled."
@@ -955,38 +900,30 @@ msgid ""
 "body></html>"
 msgstr "<html><head/><body><p>設定頁面最大尺寸的方向。</p></body></html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:584
 msgid "Page Orientation"
 msgstr "頁面方向"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:583
-#: src/core/Settings.cc:407
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:585
+#: src/core/Settings.cc:410
 msgid "Portrait (Vertical)"
 msgstr "直向（垂直）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:585
-#: src/core/Settings.cc:408
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:587
+#: src/core/Settings.cc:411
 msgid "Landscape (Horizontal)"
 msgstr "橫向（水平）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:586
-msgid "landscape"
-msgstr "橫向"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:588
+#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:589
 msgid ""
 "<html><head/><body><p>Determine best orientation based on maximum geometry "
 "dimension.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>依幾何最大尺寸自動決定最佳方向。</p></body></html>"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:590
-#: src/core/Settings.cc:409
-msgid "Auto"
-msgstr "自動"
-
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:591
-msgid "auto"
+#: src/core/Settings.cc:412
+msgid "Auto"
 msgstr "自動"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:592
@@ -1106,10 +1043,6 @@ msgstr "啟用匯出幾何圖形的輪廓描邊。"
 msgid "Font List"
 msgstr "字型清單"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:292
-msgid "ResetSampleText"
-msgstr "重設範例文字"
-
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:293
 msgid "Open Font Folder"
 msgstr "開啟字型資料夾"
@@ -1182,7 +1115,7 @@ msgid "Font path"
 msgstr "字型路徑"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:319
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2641
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2687
 msgid "Style"
 msgstr "樣式"
 
@@ -1271,155 +1204,173 @@ msgstr "正在從 pythonscad.org 載入共享設計"
 msgid "Select Design"
 msgstr "選取設計"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1073
-#: src/gui/MainWindow.cc:4580
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1065
+#: src/gui/MainWindow.cc:4869
 msgid "Welcome..."
 msgstr "歡迎..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1074
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1066
 msgid "&New File"
 msgstr "新增檔案(&N)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1076
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1068
 msgid "Ctrl+N"
 msgstr "Ctrl+N"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1078
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1070
 #, fuzzy
 msgid "New &Window"
 msgstr "新視窗"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1079
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1071
 msgid "&Open File..."
 msgstr "開啟檔案(&O)..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1081
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1073
 msgid "Ctrl+O"
 msgstr "Ctrl+O"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1083
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1075
 #, fuzzy
 msgid "Open in New Windo&w"
 msgstr "在新視窗開啟"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1084
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1076
 msgid "&Save"
 msgstr "儲存(&S)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1086
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1078
 msgid "Ctrl+S"
 msgstr "Ctrl+S"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1088
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1080
 msgid "Save &As..."
 msgstr "另存為(&A)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1090
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1082
 msgid "Ctrl+Shift+S"
 msgstr "Ctrl+Shift+S"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1092
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1084
 #, fuzzy
 msgid "Save a C&opy..."
 msgstr "儲存副本..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1093
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1085
 #, fuzzy
 msgid "S&ave All"
 msgstr "全部儲存"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1094
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1086
 msgid "&Reload"
 msgstr "重新載入(&R)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1096
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1088
 msgid "Ctrl+R"
 msgstr "Ctrl+R"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1098
-#: src/gui/MainWindow.cc:4581
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1090
+#: src/gui/MainWindow.cc:4870
 msgid "Close &Window"
 msgstr "關閉視窗(&W)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1100
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1092
 msgid "Alt+F4"
 msgstr "Alt+F4"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1102
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1094
 msgid "&Quit"
 msgstr "結束(&Q)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1104
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1096
 msgid "Ctrl+Q"
 msgstr "Ctrl+Q"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1106
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1098
 msgid "&Undo"
 msgstr "還原(&U)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1108
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1100
 msgid "Ctrl+Z"
 msgstr "Ctrl+Z"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1110
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1102
 msgid "&Redo"
 msgstr "重做(&)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1112
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1104
 msgid "Ctrl+Shift+Z"
 msgstr "Ctrl+Shift+Z"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1115
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1107
 msgid "Ctrl+Y"
 msgstr "Ctrl+Y"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1117
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1109
 msgid "Cu&t"
 msgstr "剪下(&T)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1119
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1111
 msgid "Ctrl+X"
 msgstr "Ctrl+X"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1121
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1113
 msgid "&Copy"
 msgstr "複製(&C)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1123
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1115
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1125
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1117
 msgid "&Paste"
 msgstr "貼上(&P)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1127
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1119
 msgid "Ctrl+V"
 msgstr "Ctrl+V"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1129
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1121
 msgid "&Indent"
 msgstr "縮排(&I)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1131
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1123
 msgid "Ctrl+I"
 msgstr "Ctrl+I"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1133
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1125
 msgid "C&omment"
 msgstr "註解(&O)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1135
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1127
 msgid "Ctrl+D"
 msgstr "Ctrl+D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1137
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1129
 msgid "Unco&mment"
 msgstr "取消註解(&M)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1139
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1131
 msgid "Ctrl+Shift+D"
 msgstr "Ctrl+Shift+D"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1133
+msgid "Mo&ve Line Up"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1135
+#, fuzzy
+msgid "Ctrl+Alt+Up"
+msgstr "Ctrl+Alt+F"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1137
+msgid "Mo&ve Line Down"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1139
+#, fuzzy
+msgid "Ctrl+Alt+Down"
+msgstr "Ctrl+Alt+F"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1141
 #, fuzzy
@@ -1564,528 +1515,538 @@ msgid "Display CSG Pr&oducts"
 msgstr "顯示 CSG 產物(&o)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
+#: src/gui/MainWindow.cc:3688
+msgid "&Export..."
+msgstr "匯出(&E)..."
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1202
+msgid "F7"
+msgstr "F7"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
+msgid "Export &as..."
+msgstr "匯出為(&A)..."
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1206
+#, fuzzy
+msgid "Ctrl+F7"
+msgstr "Ctrl+F"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1208
 msgid "Export as &STL (binary)..."
 msgstr "匯出為 &STL（二進位）..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1201
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1209
 msgid "Export as &STL (ascii)..."
 msgstr "匯出為 &STL（ASCII）..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1202
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1210
 msgid "Export as &OBJ..."
 msgstr "匯出為 &OBJ..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1203
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1211
 msgid "Export as &POV..."
 msgstr "匯出為 &POV..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1212
 msgid "Export as &OFF..."
 msgstr "匯出為&OFF..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1205
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1213
 msgid "Export as &WRL..."
 msgstr "匯出為 &WRL..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1206
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1214
 msgid "Export as &Foldable PS..."
 msgstr "匯出為可摺疊 PS..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1207
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1215
 msgid "Export as &Step..."
 msgstr "匯出為 &Step..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1208
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1216
 msgid "Export as &GCode..."
 msgstr "匯出為 &GCode..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1209
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1217
 #, fuzzy
 msgid "P&review"
 msgstr "預覽"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1211
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1219
 msgid "F9"
 msgstr "F9"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1213
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1221
 #, fuzzy
 msgid "T&hrown Together"
 msgstr "組合顯示"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1215
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1223
 msgid "F12"
 msgstr "F12"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1217
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1225
 #, fuzzy
 msgid "&Show Edges"
 msgstr "顯示邊緣"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1219
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1227
 msgid "Ctrl+1"
 msgstr "Ctrl+1"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1221
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1229
 #, fuzzy
 msgid "Show A&xes"
 msgstr "顯示座標軸"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1223
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1231
 msgid "Ctrl+2"
 msgstr "Ctrl+2"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1225
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1233
 #, fuzzy
 msgid "Show &Crosshairs"
 msgstr "顯示十字準線"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1227
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1235
 msgid "Ctrl+3"
 msgstr "Ctrl+3"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1229
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1237
 #, fuzzy
 msgid "Show Scale &Markers"
 msgstr "顯示刻度標記"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1230
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1238
 msgid "&Top"
 msgstr "上(&T)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1232
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1240
 msgid "Ctrl+4"
 msgstr "Ctrl+4"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1234
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1242
 msgid "&Bottom"
 msgstr "下(&B)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1236
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1244
 msgid "Ctrl+5"
 msgstr "Ctrl+5"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1238
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1246
 msgid "&Left"
 msgstr "左(&L)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1240
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1248
 msgid "Ctrl+6"
 msgstr "Ctrl+6"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1242
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1250
 msgid "&Right"
 msgstr "右(&R)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1244
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1252
 msgid "Ctrl+7"
 msgstr "Ctrl+7"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1246
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1254
 msgid "&Front"
 msgstr "前(&F)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1248
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1256
 msgid "Ctrl+8"
 msgstr "Ctrl+8"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1250
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1258
 msgid "Bac&k"
 msgstr "後(&K)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1252
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1260
 msgid "Ctrl+9"
 msgstr "Ctrl+9"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1254
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1262
 msgid "&Diagonal"
 msgstr "對角線(&D)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1256
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1264
 msgid "Ctrl+0"
 msgstr "Ctrl+0"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1258
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1266
 msgid "Ce&nter"
 msgstr "中心(&N)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1260
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1268
 msgid "Ctrl+Shift+0"
 msgstr "Ctrl+Shift+0"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1262
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1270
 msgid "&Perspective"
 msgstr "透視(&P)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1263
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1271
 msgid "&Orthogonal"
 msgstr "正交(&O)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1264
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1272
 msgid "&About"
 msgstr "關於(&A)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1265
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1273
 msgid "&Documentation"
 msgstr "文件(&D)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1266
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1274
 msgid "&Offline Documentation"
 msgstr "離線文件(&O)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1267
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1275
 msgid "&Offline Cheat Sheet"
 msgstr "離線速查表(&O)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1268
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1276
 msgid "Clear Recent"
 msgstr "清除紀錄"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1269
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1277
 msgid "Export as &DXF..."
 msgstr "匯出為&DXF..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1270
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1278
 msgid "&Trust Current Design"
 msgstr "信任目前設計(&T)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1272
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1280
 msgid "Toggle trust for the active saved Python design"
 msgstr "切換目前已儲存 Python 設計的信任狀態"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1274
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1282
 msgid "&Revoke Trust for All Python Designs..."
 msgstr "撤銷所有 Python 設計的信任(&R)..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1276
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1284
 msgid "Revoke trust for all Python designs and clear the trust store"
 msgstr "撤銷所有 Python 設計的信任並清除信任存放區"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1278
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1286
 msgid "&Close"
 msgstr "關閉(&C)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1280
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1288
 msgid "Ctrl+W"
 msgstr "Ctrl+W"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1282
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1290
 msgid "&Preferences"
 msgstr "偏好(&P)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1283
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1291
 msgid "&Find..."
 msgstr "尋找(&F)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1285
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1293
 msgid "Ctrl+F"
 msgstr "Ctrl+F"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1287
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1295
 msgid "Fin&d and Replace..."
 msgstr "尋找和取代...(&D)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1289
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1297
 msgid "Ctrl+Alt+F"
 msgstr "Ctrl+Alt+F"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1291
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1299
 msgid "Find Ne&xt"
 msgstr "尋找下一個(&N)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1293
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1301
 msgid "Ctrl+G"
 msgstr "Ctrl+G"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1295
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1303
 msgid "Find Pre&vious"
 msgstr "尋找上一個(&V)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1297
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1305
 msgid "Ctrl+Shift+G"
 msgstr "Ctrl+Shift+G"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1299
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1307
 msgid "Use Se&lection for Find"
 msgstr "以選取文字尋找(&L)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1301
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1309
 msgid "Ctrl+E"
 msgstr "Ctrl+E"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1303
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
 #, fuzzy
 msgid "J&ump to next error"
 msgstr "移至下一個錯誤"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1305
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1313
 msgid "Ctrl+Alt+E"
 msgstr "Ctrl+Alt+E"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1307
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1315
 msgid "&Flush Caches"
 msgstr "重新整理快取(&F)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1308
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1316
 msgid "&PythonSCAD Homepage"
 msgstr "PythonSCAD首頁(&P)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1309
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1317
 msgid "&Automatic Reload and Preview"
 msgstr "自動重新載入和預覽(&A)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1310
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1318
 msgid "Export as &Image..."
 msgstr "匯出為圖檔...(&I)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1319
 msgid "Export as &CSG..."
 msgstr "匯出為CSG...(&C)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1312
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1320
 msgid "&Library info"
 msgstr "程式庫資訊(&L)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1313
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1321
 msgid "Report issue..."
 msgstr "回報問題..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1314
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1322
 msgid "Show &Library Folder"
 msgstr "顯示程式庫資料夾(&L)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1315
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1323
 msgid "Show Backup Files"
 msgstr "顯示備份檔案"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1316
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1324
 #, fuzzy
 msgid "Reset &View"
 msgstr "重設視埠"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1317
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1325
 msgid "Export as S&VG..."
 msgstr "匯出為S&VG..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1318
-msgid "Export as &AMF..."
-msgstr "匯出為&AMF..."
-
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1319
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1326
 msgid "Export as &3MF..."
 msgstr "匯出為&3MF..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1320
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1327
 #, fuzzy
 msgid "Zoom &In"
 msgstr "放大"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1322
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1329
 msgid "Ctrl+]"
 msgstr "Ctrl+]"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1324
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1331
 #, fuzzy
 msgid "&Zoom Out"
 msgstr "縮小"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1326
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1333
 msgid "Ctrl+["
 msgstr "Ctrl+["
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1328
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1335
 #, fuzzy
 msgid "View &All"
 msgstr "檢視全部"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1330
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1337
 msgid "Ctrl+Shift+V"
 msgstr "Ctrl+Shift+V"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1332
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1339
 msgid "Conv&ert Tabs to Spaces"
 msgstr "將Tab轉換為空格"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1333
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1340
 #, fuzzy
 msgid "&Toggle Bookmark"
 msgstr "切換書籤"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1335
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1342
 msgid "Ctrl+F2"
 msgstr "Ctrl+F2"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1337
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1344
 #, fuzzy
 msgid "Jump to next &bookmark"
 msgstr "移到下一個書籤"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1339
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1346
 msgid "F2"
 msgstr "F2"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1341
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
 #, fuzzy
 msgid "Jump to &previous bookmark"
 msgstr "移到上一個書籤"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1343
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
 msgid "Shift+F2"
 msgstr "Shift+F2"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1345
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1352
 msgid "&Full Screen"
 msgstr "全螢幕(&F)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1347
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1354
 msgid "F11"
 msgstr "F11"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1349
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
 #, fuzzy
 msgid "&Hide Editor toolbar"
 msgstr "隱藏編輯器工具列"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1357
 msgid "U&nindent"
 msgstr "減少縮排"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1352
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1359
 msgid "Ctrl+Shift+I"
 msgstr "Ctrl+Shift+I"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1354
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1361
 msgid "&Cheat Sheet"
 msgstr "速查表"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1355
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1362
 msgid "&Python Cheat Sheet"
 msgstr "Python 速查表(&P)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1363
 msgid "Export as PDF..."
 msgstr "匯出為 PDF..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1357
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
 #, fuzzy
 msgid "Hide &3D View toolbar"
 msgstr "隱藏 3D 檢視工具列"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1358
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1365
 msgid "&Next Window\tCtrl+K"
 msgstr "下一個視窗(&N)\tCtrl+K"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1359
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1366
 msgid "&Previous Window\tCtrl+H"
 msgstr "上一個視窗(&P)\tCtrl+H"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1360
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1367
 msgid "Insert Template"
 msgstr "插入範本"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1362
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1369
 msgid "Alt+Ins"
 msgstr "Alt+Ins"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1371
 #, fuzzy
 msgid "Fold/Unfold All"
 msgstr "全部摺疊/展開"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1365
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1372
 #, fuzzy
 msgid "&Jump To"
 msgstr "跳至"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1367
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1374
 msgid "Ctrl+J"
 msgstr "Ctrl+J"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1369
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1376
 msgid "Create Virtual &Environment..."
 msgstr "建立虛擬環境(&E)..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1370
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1377
 msgid "&Select Virtual Environment..."
 msgstr "選取虛擬環境(&S)..."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1371
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1378
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:107
 msgid "Message"
 msgstr "訊息"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1374
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1381
 msgid "&File"
 msgstr "檔案(&F)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1375
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1382
 msgid "Recen&t Files"
 msgstr "最近檔案(&F)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1376
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1383
 msgid "&Examples"
 msgstr "範例(&F)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1377
-msgid "E&xport"
-msgstr "匯出(&E)"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1378
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2595
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1384
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2641
 #: src/gui/Editor.cc:206 src/gui/Editor.cc:211 examples
 msgid "Python"
 msgstr "Python"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1379
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1385
 msgid "&Edit"
 msgstr "編輯(&E)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1380
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1386
 msgid "&Design"
 msgstr "設計(&D)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1381
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1387
 msgid "&View"
 msgstr "檢視(&V)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1382
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1388
 msgid "&Help"
 msgstr "說明(&H)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1383
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1389
 msgid "&Window"
 msgstr "視窗(&W)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1384
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1390
 msgid "Find"
 msgstr "尋找"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1385
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1389
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1391
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1395
 msgid "Replace"
 msgstr "取代"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1387
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1393
 msgid "Search string"
 msgstr "搜尋字串"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1388
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1394
 msgid "Replacement string"
 msgstr "取代字串"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1391
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1397
 msgid "Previous"
 msgstr "上一個"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1392
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1398
 msgid "Next"
 msgstr "下一個"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1393
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1399
 msgid "Done"
 msgstr "完成"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1394
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1400
 msgid "Customizer Widget"
 msgstr "自訂小工具"
 
@@ -2146,7 +2107,7 @@ msgid "OctoPrint API Key Request"
 msgstr "OctoPrint API 金鑰請求"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:108
-#: src/openscad_gui.cc:862
+#: src/openscad_gui.cc:869
 msgid "Retry"
 msgstr "重試"
 
@@ -2198,7 +2159,7 @@ msgid "Form"
 msgstr "表格"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterDescriptionWidget.h:99
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2718
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2765
 msgid "Parameter"
 msgstr "參數"
 
@@ -2223,8 +2184,8 @@ msgid "Description Only"
 msgstr "僅限說明"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:161
-#: src/gui/parameter/ParameterWidget.cc:117
-#: src/gui/parameter/ParameterWidget.cc:220
+#: src/gui/parameter/ParameterWidget.cc:212
+#: src/gui/parameter/ParameterWidget.cc:340
 msgid "<design default>"
 msgstr "<設計預設>"
 
@@ -2252,745 +2213,769 @@ msgstr "-"
 msgid "More actions"
 msgstr "更多動作"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2581
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2627
 msgid "3D View"
 msgstr "3D檢視"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2582
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2628
 msgctxt "preferences"
 msgid "Advanced"
 msgstr "進階"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2583
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2629
 msgid "Editor"
 msgstr "編輯器"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2585
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2691
-msgid "Features"
-msgstr "特徵"
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2631
+msgid "Experimental"
+msgstr ""
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2587
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2633
 msgid "Enable/Disable experimental features"
 msgstr "啟用/停用實驗功能"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2589
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2635
 msgid "Axes"
 msgstr "座標軸"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2591
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2637
 msgid "Input driver configuration and Axis mapping"
 msgstr "輸入裝置設定與座標軸對應"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2593
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2639
 msgid "Buttons"
 msgstr "按鈕"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2594
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2640
 msgid "Mouse"
 msgstr "滑鼠"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2597
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2643
 msgid "Python Settings"
 msgstr "Python 設定"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2599
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2645
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:178
 msgid "3D Print"
 msgstr "3D列印"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2601
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2647
 msgid "3D Printing Services"
 msgstr "3D列印服務"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2603
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2649
 msgid "Dialogs"
 msgstr "對話框"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2604
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2650
 msgid "AI"
 msgstr "AI"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2606
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2652
 msgid "AI and LLM configurations"
 msgstr "AI 與 LLM 設定"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2608
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2654
 msgid "Directory of the output file"
 msgstr "輸出檔案的目錄"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2609
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2655
 msgid "Extension of the output file without leading dot"
 msgstr "輸出檔案的副檔名（不含前導點）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2610
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2656
 msgid "Full path to the main source file"
 msgstr "主要來源檔案的完整路徑"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2611
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2657
 msgid "Directory of the main source file"
 msgstr "主要來源檔案的目錄"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2612
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2658
 msgid "Full path to the output file"
 msgstr "輸出檔案的完整路徑"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2613
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
 msgid "Color scheme:"
 msgstr "色彩方案:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2614
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
 msgid "Show Warnings and Errors in 3D View"
 msgstr "在3D檢視中顯示警告與錯誤"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2615
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
 msgid "mouse centric zoom"
 msgstr "以滑鼠為中心縮放"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2616
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
 msgid "Number Scroll"
 msgstr "數字捲動"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2617
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
 #: src/core/Settings.cc:198
 msgid "Alt"
 msgstr "Alt"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2618
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
 #: src/core/Settings.cc:199
 msgid "Left Mouse Button"
 msgstr "滑鼠左鍵"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2619
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
 #: src/core/Settings.cc:200
 msgid "Either"
 msgstr "任一"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2621
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2667
 msgid "Step Size"
 msgstr "步進大小"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2622
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
 msgid "Number Scroll Via Mouse Wheel"
 msgstr "以滑鼠滾輪捲動數字"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2623
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
 msgid "Modifier For Wheel Scroll "
 msgstr "滾輪捲動修飾鍵 "
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2624
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
 msgid "Autocomplete"
 msgstr "自動補全"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2625
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
 msgid " Include defined modules"
 msgstr " 包含已定義的模組"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2626
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
 msgid "Character Threshold"
 msgstr "字元門檻"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2627
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2673
 msgid " Include defined functions"
 msgstr " 包含已定義的函式"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2628
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2674
 msgid "Enable Autocompletion"
 msgstr "啟用自動補全"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2629
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2675
 msgid " Include defined variables"
 msgstr " 包含已定義的變數"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2676
 msgid "Mode"
 msgstr "模式"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2631
-#: src/core/Settings.cc:538
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2677
+#: src/core/Settings.cc:541
 msgid "Parsed File Mode"
 msgstr "已解析檔案模式"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2632
-#: src/core/Settings.cc:539
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2678
+#: src/core/Settings.cc:542
 msgid "Regex Input Text Mode"
 msgstr "正規表示式輸入文字模式"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2634
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2680
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2705
 msgid "Line wrap"
 msgstr "自動換行"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2635
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2648
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2654
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2681
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2694
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2700
 #: src/core/Settings.cc:45 src/core/Settings.cc:155 src/core/Settings.cc:166
 #: src/core/Settings.cc:172 src/gui/input/ButtonConfigWidget.cc:248
 msgid "None"
 msgstr "沒有"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2636
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2682
 #: src/core/Settings.cc:156
 msgid "Wrap at character boundaries"
 msgstr "以字母換行"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2637
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2683
 #: src/core/Settings.cc:157
 msgid "Wrap at word boundaries"
 msgstr "以單字換行"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2639
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2685
 msgid "Line wrap indentation"
 msgstr "縮排換行"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2640
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2686
 msgid "Line wrap visualization"
 msgstr "視覺化換行"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2643
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2689
 #: src/core/Settings.cc:161
 msgid "Same"
 msgstr "相同"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2644
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2690
 #: src/core/Settings.cc:161
 msgid "Indented"
 msgstr "縮排"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2646
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2678
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2692
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2724
 #: src/core/Settings.cc:189
 msgid "Indent"
 msgstr "縮排"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2647
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2693
 msgid "Start"
 msgstr "開始"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2649
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2655
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
 #: src/core/Settings.cc:167 src/core/Settings.cc:173
 msgid "Text"
 msgstr "文字"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2650
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2656
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2696
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2702
 #: src/core/Settings.cc:168 src/core/Settings.cc:174
 msgid "Border"
 msgstr "邊框"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2651
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2657
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2703
 #: src/core/Settings.cc:169 src/core/Settings.cc:175
 msgid "Margin"
 msgstr "邊緣間隔"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2653
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2699
 msgid "End"
 msgstr "結束"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2706
 msgid "Display"
 msgstr "顯示"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2707
 msgid "Highlight current line"
 msgstr "高亮游標所在行"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2708
 msgid "Display Line Numbers"
 msgstr "顯示行號"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
 msgid "Enable brace matching"
 msgstr "啟用括弧配對"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2742
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2758
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2760
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2710
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2805
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2807
 msgid "Font"
 msgstr "字型"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2711
 msgid "Color syntax highlighting"
 msgstr "彩色語法標記"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2666
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2712
 msgid "Ctrl/Cmd-Mouse-wheel zooms text"
 msgstr "Ctrl/Cmd滑鼠滾輪文字縮放"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2667
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2713
 msgid "Use gvim as editor (requires restart)"
 msgstr "使用 gvim 作為編輯器（需重新啟動）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2714
 msgid "Indentation"
 msgstr "縮排"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2715
 msgid "Auto Indent"
 msgstr "自動縮排"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2716
 msgid "Backspace unindents"
 msgstr "退格鍵取消縮排"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2717
 msgid "Indent using"
 msgstr "縮排使用"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2718
 #: src/core/Settings.cc:187
 msgid "Spaces"
 msgstr "空白"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2673
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2719
 #: src/core/Settings.cc:187
 msgid "Tabs"
 msgstr "分頁"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2675
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2721
 msgid "Indentation width"
 msgstr "縮排寬度"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2676
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2722
 msgid "Tab width"
 msgstr "Tab寬度"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2677
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2723
 msgid "Tab key function"
 msgstr "Tab鍵功能"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2679
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2725
 #: src/core/Settings.cc:190
 msgid "Insert Tab"
 msgstr "插入Tab"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2681
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2727
 msgid "Show whitespace"
 msgstr "顯示空白字元"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2682
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2728
 #: src/core/Settings.cc:178
 msgid "Never"
 msgstr "從不"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2683
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2729
 #: src/core/Settings.cc:179
 msgid "Always"
 msgstr "永遠"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2684
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2730
 msgid "Only after indentation"
 msgstr "僅在縮排後"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2686
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2732
 msgid "Size"
 msgstr "大小"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2687
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2733
 msgid "Automatically check for updates"
 msgstr "自動檢查更新"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2688
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2734
 msgid "Include development snapshots"
 msgstr "包含開發版本"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2689
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2735
 msgid "Check Now"
 msgstr "立刻檢查"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2690
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2736
 msgid "Last checked: "
 msgstr "最後檢查： "
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2692
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
+#, fuzzy
+msgid "Experimental Features"
+msgstr "匯出功能"
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
+msgid ""
+"These features are experimental.  They may change or be removed entirely "
+"without notice. You may enable them and use them and comment on them, but "
+"you must assume that they may not be in their final form and may never "
+"appear in an OpenSCAD release in any form."
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
 msgid "General"
 msgstr "一般"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2693
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2740
 msgid "Default Print Service"
 msgstr "預設列印服務"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2694
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2741
 msgid "Enable remote print services"
 msgstr "啟用遠端列印服務"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2742
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:181
 #: src/gui/Preferences.cc:646
 msgid "OctoPrint"
 msgstr "OctoPrint"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2696
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2743
 msgid "URL"
 msgstr "網址"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2744
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2849
 msgid "API Key"
 msgstr "API金鑰"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2698
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2699
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2745
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2746
 msgid "Load"
 msgstr "讀取"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2748
 msgid "Check"
 msgstr "檢查"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2702
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2749
 msgid "Slicing Profile"
 msgstr "切片設定檔"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2703
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2750
 msgid "Slicing Engine"
 msgstr "切片引擎"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2704
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2710
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2757
 msgid "File Format"
 msgstr "檔案格式"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2705
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
 msgid "Action"
 msgstr "動作"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2706
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2753
 msgid "Request"
 msgstr "請求"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2707
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
 msgid "Show"
 msgstr "顯示"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2708
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2755
 msgid "Note: The API key is stored unencrypted in the application settings."
 msgstr "備註: 此API金鑰以非加密儲存於軟體設定中."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2756
 #: src/gui/Preferences.cc:647
 msgid "Local Application"
 msgstr "本機應用程式"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2711
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2758
 msgid "File"
 msgstr "檔案"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2716
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2763
 msgid "Executable"
 msgstr "可執行檔"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2720
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2767
 msgid ""
 "Directory for storing the exported file, leave empty to use the default "
 "system location."
 msgstr "儲存匯出檔案的目錄，留空則使用系統預設位置。"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2723
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2770
 msgid "Temp Dir"
 msgstr "暫存目錄"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2725
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
 msgid "3D Preview (OpenCSG)"
 msgstr "3D 預覽（OpenCSG）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2726
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
 msgid "Show capability warning"
 msgstr "顯示相容性警告"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2727
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
 msgid "Turn off rendering at "
 msgstr "關閉渲染於 "
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2728
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2775
 msgid "elements"
 msgstr "元素"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2729
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2776
 msgid "Force Goldfeather"
 msgstr "強制Goldfeather"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2730
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
 msgid "3D Rendering"
 msgstr "3D 渲染"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2731
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2778
 msgid "Backend"
 msgstr "後端"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2732
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2779
 msgid "CGAL Cache size"
 msgstr "CGAL快取大小"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2733
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2735
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2780
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
 msgid "MB"
 msgstr "MB"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2734
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2781
 msgid "PolySet Cache size"
 msgstr "PolySet快取大小"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2736
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
 msgid "User Interface"
 msgstr "使用者介面"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
 msgid "GUI theme"
 msgstr "GUI 主題"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
 msgid "Light"
 msgstr "淺色"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
 msgid "Dark"
 msgstr "深色"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2740
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
 msgid "Auto (follow system)"
 msgstr "自動（跟隨系統）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2743
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
 msgid "Enable docking helper widgets in different places"
 msgstr "在不同位置啟用可停靠的輔助元件"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2744
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
 msgid "Enable undocking of helper widgets to separate windows"
 msgstr "允許將輔助元件分離至獨立視窗"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2745
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
 msgid "Enable user interface localization (requires restart of PythonSCAD)"
 msgstr "啟用本地化使用者介面(需要重新啟動PythonSCAD)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2746
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
 msgid "Bring window to front after automatic reload"
 msgstr "自動重整後將視窗浮到前景"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2747
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
 msgid "Play sound notification on render complete"
 msgstr "渲染完成後播放音效通知"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2748
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
 msgid "Play sound when render completion time is at least"
 msgstr "渲染完成時間至少達以下秒數時播放音效"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2749
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
 msgid "sec"
 msgstr "秒"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2750
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
 #: src/gui/Preferences.cc:448
 msgid "When launching another instance with files:"
 msgstr "以檔案啟動另一個執行個體時："
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
 #: src/gui/Preferences.cc:450
 msgid "Enable session management (save/restore tabs on quit, requires restart)"
 msgstr "啟用工作階段管理（結束時儲存/還原分頁，需重新啟動）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
 #: src/gui/Preferences.cc:452
 msgid "Autosave session in background for crash recovery"
 msgstr "在背景自動儲存工作階段以便當機復原"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2753
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
 #: src/gui/Preferences.cc:453
 msgid "Autosave interval:"
 msgstr "自動儲存間隔："
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
 msgid "Console"
 msgstr "控制台"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2755
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
 msgid "Clear console before Preview/Render"
 msgstr "預覽/渲染前清除控制台"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2756
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
 msgid "Maximum lines for Console to keep:"
 msgstr "控制台保留的最大行數："
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2757
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2804
 msgid "(0 for unlimited)"
 msgstr "（0 表示無限制）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2759
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2806
 msgid "Customizer"
 msgstr "自訂"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2761
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2808
 msgid "OpenSCAD Language Features"
 msgstr "OpenSCAD 語言功能"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2762
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2809
 msgid "Warnings"
 msgstr "警告"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2763
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2810
 msgid "Stop on the first warning"
 msgstr "在第一個警告時停止"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2764
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2811
 msgid "Check the parameter range for builtin modules"
 msgstr "檢查內建模組的參數範圍"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2765
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2812
 msgid "Warn when there is a parameter mismatch in user module calls"
 msgstr "當呼叫使用者模組中有參數錯誤時發出警告"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2766
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2813
 msgid "Trace"
 msgstr "追蹤"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2767
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2814
 msgid "Trace depth:"
 msgstr "追蹤深度："
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2768
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2815
 msgid "(max. number or trace messages)"
 msgstr "（追蹤訊息的最大數量）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2769
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2816
 msgid "Show parameters of usermodule calls in trace"
 msgstr "在追蹤中顯示使用者模組呼叫的參數"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2770
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2817
 msgid "Render Summary"
 msgstr "渲染摘要"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2818
 msgid "Camera"
 msgstr "相機"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2819
 msgid "Bounding Box"
 msgstr "邊界框"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2820
 msgid "Measurements: Area"
 msgstr "測量：面積"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2821
 msgid "Measurements: Volume"
 msgstr "測量：體積"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2775
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2822
 msgid "Export Features"
 msgstr "匯出功能"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2776
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2823
 msgid "Toolbar Export 3D"
 msgstr "工具列匯出 3D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2824
 msgid "Toolbar Export 2D"
 msgstr "工具列匯出 2D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2778
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2825
 msgid "Debugging"
 msgstr "除錯"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2779
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2826
 msgid "Enable tracing of HIDAPI events (requires restart of PythonSCAD)"
 msgstr "啟用 HIDAPI 事件追蹤（需重新啟動 PythonSCAD）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2780
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2827
+msgid "Network"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2828
+msgid "Custom CA certificates (PEM)"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2830
+msgid "Skip TLS certificate verification (insecure)"
+msgstr ""
+
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2831
 msgid "Network Import List"
 msgstr "網路匯入清單"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2781
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2832
 msgid "Globally trust Python designs"
 msgstr "全域信任 Python 設計"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2833
 msgid "Really (very dangerous)"
 msgstr "確定（非常危險）"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2834
 msgid "Dialog visibility"
 msgstr "對話框可見性"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2835
 #, fuzzy
 msgid "Always show Welcome screen"
 msgstr "顯示歡迎視窗"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2836
 msgid "Always show PDF export dialog"
 msgstr "一律顯示 PDF 匯出對話框"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2837
 msgid "Always show 3MF export dialog"
 msgstr "一律顯示 3MF 匯出對話框"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2838
 #, fuzzy
 msgid "Always show SVG export dialog"
 msgstr "一律顯示 SVG 匯出對話框"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2839
 msgid "Always show GCODE export dialog"
 msgstr "一律顯示 GCODE 匯出對話框"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2840
 msgid "Always show Print Service dialog"
 msgstr "一律顯示列印服務對話框"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2841
 msgid "AI Preferences"
 msgstr "AI 偏好設定"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2842
 msgid ""
 "AI assistant integration is active. Configure your connection profiles and "
 "parameters below."
 msgstr "AI 助理整合已啟用。請在下方設定連線設定檔與參數。"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2843
 msgid "Profiles"
 msgstr "設定檔"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2844
 msgid "Active Profile"
 msgstr "使用中設定檔"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2845
 msgid "New Profile"
 msgstr "新增設定檔"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2846
 msgid "Delete"
 msgstr "刪除"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2847
 msgid "API Configuration"
 msgstr "API 設定"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2848
 msgid "API Endpoint"
 msgstr "API 端點"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2850
 msgid "System Prompt / Instructions"
 msgstr "系統提示 / 指示"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2851
 msgid "Default User Prompt"
 msgstr "預設使用者提示"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2852
 msgid "API Parameters"
 msgstr "API 參數"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2853
 msgid "Add Parameter"
 msgstr "新增參數"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2854
 msgid "Remove Parameter"
 msgstr "移除參數"
 
@@ -3026,10 +3011,6 @@ msgstr "作者名稱（選填）"
 msgid "Publish on pythonscad.org"
 msgstr "發布至 pythonscad.org"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:266
-msgid "ViewportControlWidget"
-msgstr "視埠控制"
-
 #: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:271
 msgid "Aspect Ratio"
 msgstr "長寬比"
@@ -3058,20 +3039,10 @@ msgstr "距離"
 msgid "FOV"
 msgstr "視野"
 
-#: src/core/Settings.cc:48
-#, c-format
-msgid "axis-%d"
-msgstr "軸-%d"
-
 #: src/core/Settings.cc:49
 #, c-format
 msgid "Axis %d"
 msgstr "軸 %d"
-
-#: src/core/Settings.cc:52
-#, c-format
-msgid "axis-inverted-%d"
-msgstr "軸-%d（反轉）"
 
 #: src/core/Settings.cc:53
 #, c-format
@@ -3106,31 +3077,31 @@ msgstr "上傳、切片並選取列印項目"
 msgid "Upload, Slice & Start printing"
 msgstr "上傳、切片並開始列印"
 
-#: src/core/Settings.cc:444
+#: src/core/Settings.cc:447
 msgid "Use colors from model"
 msgstr "使用模型色彩"
 
-#: src/core/Settings.cc:446
+#: src/core/Settings.cc:449
 msgid "Use selected color only"
 msgstr "僅使用選取色彩"
 
-#: src/core/Settings.cc:453
+#: src/core/Settings.cc:456
 msgid "Millimeter"
 msgstr "公釐"
 
-#: src/core/Settings.cc:457
+#: src/core/Settings.cc:460
 msgid "Feet"
 msgstr "英尺"
 
-#: src/core/Settings.cc:465
+#: src/core/Settings.cc:468
 msgid "Color"
 msgstr "色彩"
 
-#: src/core/Settings.cc:466
+#: src/core/Settings.cc:469
 msgid "Base Material"
 msgstr "基底材質"
 
-#: src/core/Settings.cc:528
+#: src/core/Settings.cc:531
 msgid "Alphabetical"
 msgstr "依字母"
 
@@ -3356,7 +3327,7 @@ msgid ""
 "This driver was not enabled during build time and is thus not available."
 msgstr "此驅動程式在建置時未啟用，因此不可用。"
 
-#: src/gui/input/AxisConfigWidget.h:94
+#: src/gui/input/AxisConfigWidget.h:92
 msgid ""
 "The DBUS driver is not for actual devices but for remote control, Linux only."
 msgstr "DBUS 驅動程式並非供實際裝置使用，而是用於遠端控制（僅 Linux）。"
@@ -3387,20 +3358,20 @@ msgstr "QGAMEPAD驅動程式用於多平台手把支援。"
 msgid "Toggle Perspective"
 msgstr "切換視角"
 
-#: src/gui/MainWindow.cc:1246
+#: src/gui/MainWindow.cc:1296
 msgid "Compile error."
 msgstr "編譯錯誤."
 
-#: src/gui/MainWindow.cc:1249
+#: src/gui/MainWindow.cc:1299
 msgid "Error while compiling '%1'."
 msgstr "編譯 '%1' 時錯誤."
 
-#: src/gui/MainWindow.cc:1254
+#: src/gui/MainWindow.cc:1304
 msgid "Compilation generated %1 warning."
 msgid_plural "Compilation generated %1 warnings."
 msgstr[0] "編譯產生 %1 警告."
 
-#: src/gui/MainWindow.cc:1267
+#: src/gui/MainWindow.cc:1317
 msgid ""
 " For details see the <a href=\"#errorlog\">error log</a> and <a "
 "href=\"#console\">console window</a>."
@@ -3408,15 +3379,15 @@ msgstr ""
 " 詳情請見 <a href=\"#errorlog\">錯誤日誌</a> 與 <a href=\"#console\">控制台視"
 "窗</a>。"
 
-#: src/gui/MainWindow.cc:1607 src/gui/TabManager.cc:248
+#: src/gui/MainWindow.cc:1663 src/gui/TabManager.cc:429
 msgid "Session Save"
 msgstr "工作階段儲存"
 
-#: src/gui/MainWindow.cc:1608
+#: src/gui/MainWindow.cc:1664
 msgid "Could not save the session."
 msgstr "無法儲存工作階段。"
 
-#: src/gui/MainWindow.cc:1609
+#: src/gui/MainWindow.cc:1665
 msgid ""
 "%1\n"
 "\n"
@@ -3426,23 +3397,23 @@ msgstr ""
 "\n"
 "%2"
 
-#: src/gui/MainWindow.cc:1610
+#: src/gui/MainWindow.cc:1666
 msgid "Try Again"
 msgstr "再試一次"
 
-#: src/gui/MainWindow.cc:1612
+#: src/gui/MainWindow.cc:1668
 msgid "Quit Without Saving"
 msgstr "不儲存並結束"
 
-#: src/gui/MainWindow.cc:1613
+#: src/gui/MainWindow.cc:1669
 msgid "Keep Open"
 msgstr "保持開啟"
 
-#: src/gui/MainWindow.cc:1798
+#: src/gui/MainWindow.cc:1855
 msgid "Revoke All Trusted Designs"
 msgstr "撤銷所有受信任設計"
 
-#: src/gui/MainWindow.cc:1799
+#: src/gui/MainWindow.cc:1856
 msgid ""
 "This will revoke trust for all Python designs.\n"
 "\n"
@@ -3452,26 +3423,26 @@ msgstr ""
 "\n"
 "確定嗎？"
 
-#: src/gui/MainWindow.cc:1841 src/gui/MainWindow.cc:1848
-#: src/gui/MainWindow.cc:1857 src/gui/MainWindow.cc:1870
-#: src/gui/MainWindow.cc:1875
+#: src/gui/MainWindow.cc:1898 src/gui/MainWindow.cc:1905
+#: src/gui/MainWindow.cc:1914 src/gui/MainWindow.cc:1927
+#: src/gui/MainWindow.cc:1932
 msgid "Create Virtual Environment"
 msgstr "建立虛擬環境"
 
-#: src/gui/MainWindow.cc:1855
+#: src/gui/MainWindow.cc:1912
 msgid "Creating Python virtual environment. Please wait..."
 msgstr "正在建立 Python 虛擬環境，請稍候..."
 
-#: src/gui/MainWindow.cc:1892
+#: src/gui/MainWindow.cc:1949
 msgid "Select Virtual Environment"
 msgstr "選取虛擬環境"
 
-#: src/gui/MainWindow.cc:2446 src/gui/TabManager.cc:199
-#: src/gui/TabManager.cc:313
+#: src/gui/MainWindow.cc:2507 src/gui/TabManager.cc:380
+#: src/gui/TabManager.cc:494
 msgid "Application"
 msgstr "套用"
 
-#: src/gui/MainWindow.cc:2447
+#: src/gui/MainWindow.cc:2508
 msgid ""
 "The file has changed on disk, but this tab has unsaved edits.\n"
 "Reloading will discard your changes.\n"
@@ -3483,75 +3454,65 @@ msgstr ""
 "\n"
 "確定要重新載入檔案嗎？"
 
-#: src/gui/MainWindow.cc:3067
+#: src/gui/MainWindow.cc:3134
 msgid "Click to change language"
 msgstr "點擊以變更語言"
 
-#: src/gui/MainWindow.cc:3112
+#: src/gui/MainWindow.cc:3179
 msgid "Auto-detect from file extension"
 msgstr "依副檔名自動偵測"
 
-#: src/gui/MainWindow.cc:3511
-msgid "Export %1 File"
-msgstr "匯出 %1 檔案"
+#: src/gui/MainWindow.cc:3610
+msgid "By Extension (*.*)"
+msgstr "依副檔名 (*.*)"
 
-#: src/gui/MainWindow.cc:3512
-msgid "%1 Files (*%2)"
-msgstr "%1 個檔案 (*%2)"
+#: src/gui/MainWindow.cc:3686
+msgid "E&xport to %1"
+msgstr "匯出到 %1(&E)"
 
-#: src/gui/MainWindow.cc:3560
-msgid "Export CSG File"
-msgstr "匯出CSG檔案"
+#: src/gui/MainWindow.cc:3855 src/gui/MainWindow.cc:3870
+msgid ""
+"The given filename does not have any known file extension. Please enter a "
+"known file extension or select a file format from the file format list."
+msgstr "指定的檔名沒有任何已知的副檔名。請輸入已知的副檔名，或從檔案格式清單中選擇一種格式。"
 
-#: src/gui/MainWindow.cc:3561
-msgid "CSG Files (*.csg)"
-msgstr "CSG檔案 (*.csg)"
-
-#: src/gui/MainWindow.cc:3584
-msgid "Export Image"
-msgstr "匯出圖片"
-
-#: src/gui/MainWindow.cc:3584
-msgid "PNG Files (*.png)"
-msgstr "PNG檔 (*.png)"
-
-#: src/gui/MainWindow.cc:4000 src/gui/MainWindow.cc:4904
+#: src/gui/MainWindow.cc:4310 src/gui/MainWindow.cc:5195
 msgid "&AI Chat"
 msgstr "AI 聊天(&A)"
 
-#: src/gui/MainWindow.cc:4896
+#: src/gui/MainWindow.cc:5187
 msgid "&Editor"
 msgstr "編輯器(&E)"
 
-#: src/gui/MainWindow.cc:4897
+#: src/gui/MainWindow.cc:5188
 msgid "&Console"
 msgstr "控制台(&C)"
 
-#: src/gui/MainWindow.cc:4898
+#: src/gui/MainWindow.cc:5189
 msgid "C&ustomizer"
 msgstr "自訂(&u)"
 
-#: src/gui/MainWindow.cc:4899
+#: src/gui/MainWindow.cc:5190
 msgid "Error &Log"
 msgstr "錯誤日誌(&L)"
 
-#: src/gui/MainWindow.cc:4900
+#: src/gui/MainWindow.cc:5191
 msgid "&Animate"
 msgstr "動畫(&A)"
 
-#: src/gui/MainWindow.cc:4901
+#: src/gui/MainWindow.cc:5192
 msgid "&Font List"
 msgstr "字型清單(&F)"
 
-#: src/gui/MainWindow.cc:4902
+#: src/gui/MainWindow.cc:5193
 msgid "C&olor List"
 msgstr "色彩清單(&o)"
 
-#: src/gui/MainWindow.cc:4903
+#: src/gui/MainWindow.cc:5194
 msgid "&Viewport Control"
 msgstr "視埠控制(&V)"
 
-#: src/gui/Network.h:150
+#: src/gui/Network.h:168
 msgid "Timeout error"
 msgstr "逾時錯誤"
 
@@ -3567,15 +3528,15 @@ msgstr "API 金鑰已核准。"
 msgid "API key approval failed."
 msgstr "API 金鑰核准失敗。"
 
-#: src/gui/OpenSCADApp.cc:82
+#: src/gui/OpenSCADApp.cc:98
 msgid "Unknown error"
 msgstr "未知錯誤"
 
-#: src/gui/OpenSCADApp.cc:86
+#: src/gui/OpenSCADApp.cc:102
 msgid "Critical Error"
 msgstr "嚴重錯誤"
 
-#: src/gui/OpenSCADApp.cc:87
+#: src/gui/OpenSCADApp.cc:103
 msgid ""
 "A critical error was caught. The application may have become unstable:\n"
 "%1"
@@ -3583,7 +3544,7 @@ msgstr ""
 "發生嚴重錯誤，程式可能不穩定:\n"
 "%1"
 
-#: src/gui/OpenSCADApp.cc:113
+#: src/gui/OpenSCADApp.cc:129
 msgid ""
 "Fontconfig needs to update its font cache.\n"
 "This can take up to a couple of minutes."
@@ -3591,31 +3552,31 @@ msgstr ""
 "字型設定需要更新字型快取。\n"
 "這可能要花上幾分鐘。"
 
-#: src/gui/parameter/ParameterWidget.cc:76
+#: src/gui/parameter/ParameterWidget.cc:168
 msgid "Collapse All"
 msgstr "全部摺疊"
 
-#: src/gui/parameter/ParameterWidget.cc:79
+#: src/gui/parameter/ParameterWidget.cc:171
 msgid "Expand All"
 msgstr "全部展開"
 
-#: src/gui/parameter/ParameterWidget.cc:153
+#: src/gui/parameter/ParameterWidget.cc:248
 msgid "Saving presets"
 msgstr "儲存預設中"
 
-#: src/gui/parameter/ParameterWidget.cc:154
+#: src/gui/parameter/ParameterWidget.cc:249
 msgid "%1 was found, but was unreadable. Do you want to overwrite %1?"
 msgstr "找到 %1，但無法讀取。是否要覆寫 %1？"
 
-#: src/gui/parameter/ParameterWidget.cc:334
+#: src/gui/parameter/ParameterWidget.cc:454
 msgid "Create new set of parameter"
 msgstr "建立新的參數設定"
 
-#: src/gui/parameter/ParameterWidget.cc:334
+#: src/gui/parameter/ParameterWidget.cc:454
 msgid "Enter name of the parameter set"
 msgstr "輸入參數設定的名稱"
 
-#: src/gui/parameter/ParameterWidget.cc:390
+#: src/gui/parameter/ParameterWidget.cc:510
 msgid "New set "
 msgstr "新增集合 "
 
@@ -3636,7 +3597,7 @@ msgid " seconds"
 msgstr " 秒"
 
 #: src/gui/Preferences.cc:481 src/gui/Preferences.cc:486
-#: src/gui/Preferences.cc:1464 src/gui/Preferences.cc:1503
+#: src/gui/Preferences.cc:1489 src/gui/Preferences.cc:1528
 msgid "<Default>"
 msgstr "<預設>"
 
@@ -3644,36 +3605,44 @@ msgstr "<預設>"
 msgid "NONE"
 msgstr "無"
 
-#: src/gui/Preferences.cc:1447
+#: src/gui/Preferences.cc:1211
+msgid "Select CA certificate"
+msgstr ""
+
+#: src/gui/Preferences.cc:1212
+msgid "Certificate files (*.pem *.crt *.cer);;All files (*)"
+msgstr ""
+
+#: src/gui/Preferences.cc:1472
 msgid "Success: Server Version = %2, API Version = %1"
 msgstr "成功：伺服器版本 = %2，API 版本 = %1"
 
-#: src/gui/Preferences.cc:1449 src/gui/Preferences.cc:1474
-#: src/gui/Preferences.cc:1513
+#: src/gui/Preferences.cc:1474 src/gui/Preferences.cc:1499
+#: src/gui/Preferences.cc:1538
 msgid "Error"
 msgstr "錯誤"
 
-#: src/gui/Preferences.cc:1590
+#: src/gui/Preferences.cc:1615
 msgid "New AI Profile"
 msgstr "新增 AI 設定檔"
 
-#: src/gui/Preferences.cc:1590
+#: src/gui/Preferences.cc:1615
 msgid "Profile name:"
 msgstr "設定檔名稱："
 
-#: src/gui/Preferences.cc:1595
+#: src/gui/Preferences.cc:1620
 msgid "Duplicate Profile"
 msgstr "複製設定檔"
 
-#: src/gui/Preferences.cc:1595
+#: src/gui/Preferences.cc:1620
 msgid "A profile with that name already exists."
 msgstr "已有同名設定檔。"
 
-#: src/gui/Preferences.cc:1657
+#: src/gui/Preferences.cc:1682
 msgid "Delete AI Profile"
 msgstr "刪除 AI 設定檔"
 
-#: src/gui/Preferences.cc:1658
+#: src/gui/Preferences.cc:1683
 msgid "Delete profile \"%1\"?"
 msgstr "刪除設定檔「%1」？"
 
@@ -3721,19 +3690,19 @@ msgstr "此 Python 設計未受信任，已停用執行。"
 msgid "Trust Design"
 msgstr "信任設計"
 
-#: src/gui/TabManager.cc:130
+#: src/gui/TabManager.cc:311
 msgid "Python script (*.py)"
 msgstr "Python 指令碼 (*.py)"
 
-#: src/gui/TabManager.cc:133 src/gui/TabManager.cc:138
+#: src/gui/TabManager.cc:314 src/gui/TabManager.cc:319
 msgid "OpenSCAD script (*.scad)"
 msgstr "OpenSCAD 指令碼 (*.scad)"
 
-#: src/gui/TabManager.cc:141
+#: src/gui/TabManager.cc:322
 msgid "All files (*)"
 msgstr "所有檔案 (*)"
 
-#: src/gui/TabManager.cc:163
+#: src/gui/TabManager.cc:344
 msgid ""
 "%1 already exists.\n"
 "Do you want to replace it?"
@@ -3741,11 +3710,11 @@ msgstr ""
 "%1 已存在。\n"
 "是否要覆寫？"
 
-#: src/gui/TabManager.cc:200
+#: src/gui/TabManager.cc:381
 msgid "Cannot open design file \"%1\": path is a directory."
 msgstr "無法開啟設計檔案「%1」：路徑為目錄。"
 
-#: src/gui/TabManager.cc:249
+#: src/gui/TabManager.cc:430
 msgid ""
 "Could not write session file:\n"
 "%1\n"
@@ -3761,11 +3730,11 @@ msgstr ""
 "\n"
 "工作階段變更可能遺失。"
 
-#: src/gui/TabManager.cc:258
+#: src/gui/TabManager.cc:439
 msgid "Unable to create the session directory."
 msgstr "無法建立工作階段目錄。"
 
-#: src/gui/TabManager.cc:314
+#: src/gui/TabManager.cc:495
 msgid ""
 "The file \"%1\" does not exist.\n"
 "\n"
@@ -3775,45 +3744,45 @@ msgstr ""
 "\n"
 "是否要建立？"
 
-#: src/gui/TabManager.cc:803
+#: src/gui/TabManager.cc:994
 msgid "Copy file name"
 msgstr "複製檔案名稱"
 
-#: src/gui/TabManager.cc:809
+#: src/gui/TabManager.cc:1000
 msgid "Copy full path"
 msgstr "複製完整路徑"
 
-#: src/gui/TabManager.cc:815
+#: src/gui/TabManager.cc:1006
 msgid "Open Folder"
 msgstr "開啟資料夾"
 
-#: src/gui/TabManager.cc:820
+#: src/gui/TabManager.cc:1011
 msgid "Close Tab"
 msgstr "關閉分頁"
 
-#: src/gui/TabManager.cc:825
+#: src/gui/TabManager.cc:1016
 msgid "Close All But This Tab"
 msgstr "關閉除此分頁外的所有分頁"
 
-#: src/gui/TabManager.cc:1121
+#: src/gui/TabManager.cc:1312
 msgid "Do you want to save the changes you made to %1?"
 msgstr "是否要儲存您對 %1 所做的變更？"
 
-#: src/gui/TabManager.cc:1122
+#: src/gui/TabManager.cc:1313
 msgid "Your changes will be lost if you don't save them."
 msgstr "若不儲存，您的變更將會遺失。"
 
-#: src/gui/TabManager.cc:1127
+#: src/gui/TabManager.cc:1318
 msgid "Don't save"
 msgstr "不儲存"
 
-#: src/gui/TabManager.cc:1589 src/gui/TabManager.cc:1618
-#: src/gui/TabManager.cc:1625 src/gui/TabManager.cc:1653
-#: src/gui/TabManager.cc:1841
+#: src/gui/TabManager.cc:1792 src/gui/TabManager.cc:1821
+#: src/gui/TabManager.cc:1828 src/gui/TabManager.cc:1856
+#: src/gui/TabManager.cc:2047
 msgid "Session Restore"
 msgstr "工作階段還原"
 
-#: src/gui/TabManager.cc:1590
+#: src/gui/TabManager.cc:1793
 msgid ""
 "The session file was created by a newer version of PythonSCAD (session "
 "version %1, but this build only supports up to version %2)."
@@ -3821,7 +3790,7 @@ msgstr ""
 "工作階段檔案由較新版本的 PythonSCAD 建立（工作階段版本 %1，但此建置僅支援至版"
 "本 %2）。"
 
-#: src/gui/TabManager.cc:1595
+#: src/gui/TabManager.cc:1798
 msgid ""
 "Exit to keep the session file for use with a newer PythonSCAD, or discard it "
 "to start fresh here.\n"
@@ -3834,15 +3803,15 @@ msgstr ""
 "工作階段檔案：\n"
 "%1"
 
-#: src/gui/TabManager.cc:1598
+#: src/gui/TabManager.cc:1801
 msgid "Exit"
 msgstr "結束"
 
-#: src/gui/TabManager.cc:1599
+#: src/gui/TabManager.cc:1802
 msgid "Discard session"
 msgstr "捨棄工作階段"
 
-#: src/gui/TabManager.cc:1619
+#: src/gui/TabManager.cc:1822
 msgid ""
 "Could not open the session file for reading:\n"
 "%1\n"
@@ -3858,7 +3827,7 @@ msgstr ""
 "\n"
 "將以全新工作階段開始。"
 
-#: src/gui/TabManager.cc:1626
+#: src/gui/TabManager.cc:1829
 msgid ""
 "The session file is corrupt or unreadable:\n"
 "%1\n"
@@ -3872,7 +3841,7 @@ msgstr ""
 "檔案尚未刪除 — 您可手動檢查。\n"
 "將以全新工作階段開始。"
 
-#: src/gui/TabManager.cc:1654
+#: src/gui/TabManager.cc:1857
 msgid ""
 "The session file uses an old format (version %1) that cannot be migrated to "
 "the current format (version %2). Starting with a fresh session."
@@ -3880,11 +3849,11 @@ msgstr ""
 "工作階段檔案使用無法遷移至目前格式（版本 %2）的舊格式（版本 %1）。將以全新工"
 "作階段開始。"
 
-#: src/gui/TabManager.cc:1842
+#: src/gui/TabManager.cc:2048
 msgid "%1 file(s) could not be found on disk."
 msgstr "磁碟上找不到 %1 個檔案。"
 
-#: src/gui/TabManager.cc:1844
+#: src/gui/TabManager.cc:2050
 msgid ""
 "The session contents were restored, but the file paths are stale.\n"
 "Use Save As to pick a new location."
@@ -3892,23 +3861,23 @@ msgstr ""
 "工作階段內容已還原，但檔案路徑已過期。\n"
 "請使用「另存新檔」選擇新位置。"
 
-#: src/gui/TabManager.cc:1847
+#: src/gui/TabManager.cc:2053
 msgid "Dismiss"
 msgstr "關閉"
 
-#: src/gui/TabManager.cc:1960 src/gui/TabManager.cc:2112
+#: src/gui/TabManager.cc:2166 src/gui/TabManager.cc:2318
 msgid "Failed to open file for writing"
 msgstr "寫入時開啟檔案錯誤"
 
-#: src/gui/TabManager.cc:2000 src/gui/TabManager.cc:2126
+#: src/gui/TabManager.cc:2206 src/gui/TabManager.cc:2332
 msgid "Error saving design"
 msgstr "儲存設計錯誤"
 
-#: src/gui/TabManager.cc:2012
+#: src/gui/TabManager.cc:2218
 msgid "Save File"
 msgstr "儲存檔案"
 
-#: src/gui/TabManager.cc:2089
+#: src/gui/TabManager.cc:2295
 msgid "Save A Copy"
 msgstr "儲存副本"
 
@@ -3971,17 +3940,17 @@ msgstr "極端數值可能導致異常行為"
 msgid "negative distances are not supported"
 msgstr "不支援負距離"
 
-#: src/io/export.cc:266
+#: src/io/export.cc:299
 #, c-format
 msgid "Can't open file \"%1$s\" for export"
 msgstr "無法開啟檔案 \"%1$s\" 以供匯出"
 
-#: src/io/export.cc:282
+#: src/io/export.cc:315
 #, c-format
 msgid "\"%1$s\" write error. (Disk full?)"
 msgstr "\"%1$s\" 寫入錯誤。（磁碟已滿？）"
 
-#: src/openscad_gui.cc:193 src/openscad_gui.cc:826 src/openscad_gui.cc:856
+#: src/openscad_gui.cc:193 src/openscad_gui.cc:833 src/openscad_gui.cc:863
 msgid "PythonSCAD"
 msgstr "PythonSCAD"
 
@@ -4005,13 +3974,13 @@ msgstr "重新開始"
 msgid "Show File"
 msgstr "顯示檔案"
 
-#: src/openscad_gui.cc:722
+#: src/openscad_gui.cc:729
 msgid ""
 "PythonSCAD is already running. The existing window was brought to the front; "
 "this process exits."
 msgstr "PythonSCAD 已在執行中。已將現有視窗帶至前景；此程序結束。"
 
-#: src/openscad_gui.cc:726
+#: src/openscad_gui.cc:733
 msgid ""
 "PythonSCAD is already running. An open request for the requested design "
 "file(s) was sent to that instance; this process exits."
@@ -4019,7 +3988,7 @@ msgstr ""
 "PythonSCAD 已在執行中。已向該執行個體傳送開啟所請求設計檔案的請求；此程序結"
 "束。"
 
-#: src/openscad_gui.cc:827
+#: src/openscad_gui.cc:834
 msgid ""
 "Could not create the application configuration directory required for "
 "session data and single-instance locking:\n"
@@ -4030,20 +3999,20 @@ msgstr ""
 "\n"
 "%1"
 
-#: src/openscad_gui.cc:858
+#: src/openscad_gui.cc:865
 msgid ""
 "PythonSCAD is already running but is not responding. The old PythonSCAD "
 "process must be closed to open a new window."
 msgstr ""
 "PythonSCAD 已在執行中但無回應。必須關閉舊的 PythonSCAD 程序才能開啟新視窗。"
 
-#: src/openscad_gui.cc:861
+#: src/openscad_gui.cc:868
 msgid ""
 "Try again if the running instance may have recovered, or close it to start a "
 "new one."
 msgstr "若執行中的執行個體可能已恢復，請再試一次；或關閉它以啟動新的執行個體。"
 
-#: src/openscad_gui.cc:863
+#: src/openscad_gui.cc:870
 msgid "Close PythonSCAD"
 msgstr "關閉 PythonSCAD"
 
@@ -4107,6 +4076,102 @@ msgid ""
 msgstr ""
 "PythonSCAD 也是學習程式設計的絕佳途徑 — 幾行 Python 即可產出 3D 列印後可握在"
 "手中的模型。原生 Python 之外仍支援 OpenSCAD 指令碼。"
+
+#~ msgid "micron"
+#~ msgstr "微米"
+
+#~ msgid "millimeter"
+#~ msgstr "公釐"
+
+#~ msgid "centimeter"
+#~ msgstr "公分"
+
+#~ msgid "meter"
+#~ msgstr "公尺"
+
+#~ msgid "inch"
+#~ msgstr "英吋"
+
+#~ msgid "foot"
+#~ msgstr "英尺"
+
+#~ msgid "model"
+#~ msgstr "模型"
+
+#~ msgid "none"
+#~ msgstr "無"
+
+#~ msgid "selected-only"
+#~ msgstr "僅選取"
+
+#~ msgid "a6"
+#~ msgstr "a6"
+
+#~ msgid "a5"
+#~ msgstr "a5"
+
+#~ msgid "a4"
+#~ msgstr "a4"
+
+#~ msgid "a3"
+#~ msgstr "a3"
+
+#~ msgid "letter"
+#~ msgstr "letter"
+
+#~ msgid "legal"
+#~ msgstr "legal"
+
+#~ msgid "tabloid"
+#~ msgstr "tabloid"
+
+#~ msgid "landscape"
+#~ msgstr "橫向"
+
+#~ msgid "auto"
+#~ msgstr "自動"
+
+#~ msgid "ResetSampleText"
+#~ msgstr "重設範例文字"
+
+#, fuzzy
+#~ msgid "Preview"
+#~ msgstr "預覽(&P)"
+
+#~ msgid "Export as &AMF..."
+#~ msgstr "匯出為&AMF..."
+
+#~ msgid "E&xport"
+#~ msgstr "匯出(&E)"
+
+#~ msgid "Features"
+#~ msgstr "特徵"
+
+#~ msgid "ViewportControlWidget"
+#~ msgstr "視埠控制"
+
+#, c-format
+#~ msgid "axis-%d"
+#~ msgstr "軸-%d"
+
+#, c-format
+#~ msgid "axis-inverted-%d"
+#~ msgstr "軸-%d（反轉）"
+
+#~ msgid "%1 Files (*%2)"
+#~ msgstr "%1 個檔案 (*%2)"
+
+#~ msgid "Export CSG File"
+#~ msgstr "匯出CSG檔案"
+
+#~ msgid "CSG Files (*.csg)"
+#~ msgstr "CSG檔案 (*.csg)"
+
+#~ msgid "Export Image"
+#~ msgstr "匯出圖片"
+
+#~ msgid "PNG Files (*.png)"
+#~ msgstr "PNG檔 (*.png)"
 
 #~ msgid "Error-&Log"
 #~ msgstr "錯誤日誌(&L)"
@@ -4197,9 +4262,6 @@ msgstr ""
 
 #~ msgid "Do you want to save all your changes?"
 #~ msgstr "是否要儲存所有變更？"
-
-#~ msgid "F7"
-#~ msgstr "F7"
 
 #~ msgid "Line"
 #~ msgstr "行"
@@ -4355,3 +4417,99 @@ msgstr ""
 
 #~ msgid "/"
 #~ msgstr "/"
+
+msgid "ASCII STL"
+msgstr "ASCII STL"
+
+msgid "Binary STL"
+msgstr "二進位 STL"
+#: src/gui/MainWindow.cc
+msgid "Nothing to export! Try rendering first (press F6)"
+msgstr "沒有可匯出的內容！請先算繪（F6）"
+
+#: src/gui/MainWindow.cc
+msgid "Nothing to export. Please try compiling first."
+msgstr "沒有可匯出的內容。請先編譯。"
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is not a %1D object."
+msgstr "目前頂層物件不是 %1D 物件。"
+
+#: src/gui/MainWindow.cc
+msgid "Current top level object is empty."
+msgstr "目前頂層物件是空的。"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The current tab has been modified since its last render (F6).\n"
+"Do you really want to export the previous content?"
+msgstr ""
+"目前分頁自上次算繪（F6）後已修改。\n"
+"確定要匯出先前的內容嗎？"
+
+#: src/gui/MainWindow.cc
+msgid ""
+"The rendered data is from a different tab.\n"
+"Do you really want to export another tab's content?"
+msgstr ""
+"已算繪的資料來自另一個分頁。\n"
+"確定要匯出另一個分頁的內容嗎？"
+#: src/gui/MainWindow.cc
+msgid "The design has changed since it was last rendered (F6)."
+msgstr "設計自上次算繪（F6）後已變更。"
+
+#: src/gui/MainWindow.cc
+msgid "Export the last rendered geometry, render the current design first, or cancel."
+msgstr "匯出上次算繪的幾何、先算繪目前設計，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Print the last rendered geometry, render the current design first, or cancel."
+msgstr "列印上次算繪的幾何、先算繪目前設計，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Export Previous"
+msgstr "匯出先前內容"
+
+#: src/gui/MainWindow.cc
+msgid "Use Previous"
+msgstr "使用先前內容"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Export"
+msgstr "算繪並匯出"
+
+#: src/gui/MainWindow.cc
+msgid "Render and Print"
+msgstr "算繪並列印"
+
+#: src/gui/MainWindow.cc
+msgid "The design has not been rendered yet (F6)."
+msgstr "設計尚未算繪（F6）。"
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and export, or cancel."
+msgstr "算繪設計並匯出，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Render the design and print, or cancel."
+msgstr "算繪設計並列印，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "The current render belongs to a different tab (%1)."
+msgstr "目前算繪屬於另一個分頁（%1）。"
+
+#: src/gui/MainWindow.cc
+msgid "Export that tab's render, render this tab first, or cancel."
+msgstr "匯出該分頁的算繪，先算繪此分頁，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Use that tab's render, render this tab first, or cancel."
+msgstr "使用該分頁的算繪，先算繪此分頁，或取消。"
+
+#: src/gui/MainWindow.cc
+msgid "Export Other Tab's Render"
+msgstr "匯出其他分頁的算繪"
+
+#: src/gui/MainWindow.cc
+msgid "Use Other Tab's Render"
+msgstr "使用其他分頁的算繪"
