@@ -353,6 +353,7 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
         }
         return x;
       };
+
       bool any_weld = false;
       for (auto& e : edge_db) {
         if (!e.second.sel) continue;
@@ -382,80 +383,38 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
         remap[rdrop] = rkeep;  // delete the 2-rounding vertex into the 3-rounding one
         any_weld = true;
       }
-      // Splits a (possibly self-touching) face into simple sub-faces
-      // wherever the same vertex id occurs more than once non-adjacently.
-      // Two welds landing on the same face can each remove one shared
-      // vertex without the two occurrences ever being next to each other
-      // -- plain adjacent-duplicate removal leaves the point count
-      // unchanged and the face pinched into a bowtie at that vertex. Each
-      // split separates the two loops that touch at the repeated vertex.
-      auto split_face_at_repeats = [](IndexedFace face) -> std::vector<IndexedFace> {
-        std::vector<IndexedFace> result;
-        std::vector<IndexedFace> stack;
-        stack.push_back(std::move(face));
-        while (!stack.empty()) {
-          IndexedFace f = std::move(stack.back());
-          stack.pop_back();
-          int n = (int)f.size();
-          std::unordered_map<int, int> firstpos;
-          int dupI = -1, dupJ = -1;
-          for (int idx = 0; idx < n; idx++) {
-            auto it = firstpos.find(f[idx]);
-            if (it != firstpos.end()) {
-              dupI = it->second;
-              dupJ = idx;
-              break;
-            }
-            firstpos[f[idx]] = idx;
-          }
-          if (dupI < 0) {
-            if (n >= 3) result.push_back(std::move(f));
-            continue;
-          }
-          IndexedFace loop1(f.begin() + dupI, f.begin() + dupJ + 1);
-          IndexedFace loop2;
-          loop2.insert(loop2.end(), f.begin(), f.begin() + dupI + 1);
-          loop2.insert(loop2.end(), f.begin() + dupJ + 1, f.end());
-          stack.push_back(std::move(loop1));
-          stack.push_back(std::move(loop2));
-        }
-        return result;
-      };
       if (any_weld) {
+        // Each face maps to at most one output face now (dropped
+        // entirely if welding collapsed it below 3 points, otherwise
+        // kept as-is) -- no more splitting, so a single old-index ->
+        // new-index map is enough to keep faceParents in lockstep.
         std::vector<IndexedFace> cleaned_faces;
-        std::vector<int> new_origin;  // for each new face: which OLD face index it came from
-        std::unordered_map<int, int> old_to_new_first;  // old face idx -> its first new fragment's idx
+        std::unordered_map<int, int> old_to_new;
         cleaned_faces.reserve(merged.size());
-        new_origin.reserve(merged.size());
         for (size_t old_i = 0; old_i < merged.size(); old_i++) {
-          auto& face = merged[old_i];
-          IndexedFace remapped = face;
+          IndexedFace remapped = merged[old_i];
           for (auto& v : remapped) v = find_root(v);
           IndexedFace cleaned;
           for (int v : remapped) {
             if (cleaned.empty() || cleaned.back() != v) cleaned.push_back(v);
           }
           while (cleaned.size() > 1 && cleaned.front() == cleaned.back()) cleaned.pop_back();
-          for (auto& sub : split_face_at_repeats(std::move(cleaned))) {
-            if (old_to_new_first.find((int)old_i) == old_to_new_first.end()) {
-              old_to_new_first[(int)old_i] = (int)cleaned_faces.size();
-            }
-            new_origin.push_back((int)old_i);
-            cleaned_faces.push_back(std::move(sub));
-          }
+          if (cleaned.size() < 3) continue;  // welded away entirely
+          old_to_new[(int)old_i] = (int)cleaned_faces.size();
+          cleaned_faces.push_back(std::move(cleaned));
         }
         // faceParents is index-parallel to merged and marks hole faces
         // (faceParents[i] != -1 -> face i is a hole, value = its parent's
-        // index). merged just got rebuilt/reordered/split, so this has to
-        // be rebuilt in lockstep or every hole/parent lookup downstream
+        // index). merged just got rebuilt/reordered, so this has to be
+        // rebuilt in lockstep or every hole/parent lookup downstream
         // (including the fanf/fbnf "is this edge part of a hole" checks)
         // silently points at the wrong face.
         std::vector<int> new_faceParents(cleaned_faces.size(), -1);
-        for (size_t k = 0; k < cleaned_faces.size(); k++) {
-          int old_parent = faceParents[new_origin[k]];
+        for (auto& [old_i, new_i] : old_to_new) {
+          int old_parent = faceParents[old_i];
           if (old_parent < 0) continue;
-          auto it = old_to_new_first.find(old_parent);
-          new_faceParents[k] = (it != old_to_new_first.end()) ? it->second : -1;
+          auto it = old_to_new.find(old_parent);
+          new_faceParents[new_i] = (it != old_to_new.end()) ? it->second : -1;
         }
         merged = std::move(cleaned_faces);
         faceParents = std::move(new_faceParents);
