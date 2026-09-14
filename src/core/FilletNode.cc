@@ -268,6 +268,17 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   std::vector<intList> polinds, polposs;
 
   std::vector<std::vector<int>> corner_rounds;
+  // corner_rounds gets recomputed every iteration below, but welding
+  // decisions must only ever look at which vertices were 3-way junctions
+  // in the ORIGINAL, unwelded geometry -- otherwise a weld can make a
+  // previously-normal (2-edge) vertex look like a 3-way junction on the
+  // next iteration (because two chains now happen to meet there), which
+  // cascades into welding large stretches of otherwise-fine geometry.
+  // Vertex ids are stable across welds (we only ever remap ind2 -> ind1,
+  // never renumber survivors), so indexing this frozen snapshot by
+  // current ids remains valid on every iteration.
+  std::vector<std::vector<int>> corner_rounds_frozen;
+  bool corner_rounds_frozen_set = false;
   do {
     improved = false;  // fix short edges until happy
     std::vector<int> lockouts;
@@ -315,6 +326,149 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
         e.second.sel = 1;
         corner_rounds[e.first.ind1].push_back(e.first.ind2);
         corner_rounds[e.first.ind2].push_back(e.first.ind1);
+      }
+    }
+
+    if (!corner_rounds_frozen_set) {
+      corner_rounds_frozen = corner_rounds;
+      corner_rounds_frozen_set = true;
+    }
+
+    // Weld too-short selected fillet edges. A selected edge shorter than
+    // 2*r_ leaves no room for an unmodified fillet to fit -- that's what
+    // produced the self-intersecting spikes at 3-way corners. Collapse
+    // such edges directly on `merged`: wherever ind2 stood, use ind1
+    // instead, and drop the now-degenerate ind1-ind1 entries this
+    // creates. This works purely on `merged`/`vertices_copy`, never on
+    // edge_db (whose indices we're about to invalidate), and only looks
+    // at edges edge_db has already confirmed are sel==1 -- the same
+    // narrow scope the old, crashing plane-intersection code used.
+    {
+      std::vector<int> remap(vertices_copy.size());
+      for (size_t i = 0; i < remap.size(); i++) remap[i] = (int)i;
+      auto find_root = [&](int x) {
+        while (remap[x] != x) {
+          remap[x] = remap[remap[x]];
+          x = remap[x];
+        }
+        return x;
+      };
+      bool any_weld = false;
+      for (auto& e : edge_db) {
+        if (!e.second.sel) continue;
+        // Only handle the exact transition case: one end of the short
+        // edge is a normal, fully-selected 2-edge corner (legitimately
+        // short by design -- fine curve tessellation, must NOT be
+        // touched), the other end is a genuine 3-way junction. Drop the
+        // 2-rounding vertex into the 3-rounding one. Edges where both
+        // ends are already 3-way (like the crossbar's own long edges) or
+        // both are normal 2-way corners are left alone entirely.
+        int s1 = (int)corner_rounds_frozen[e.first.ind1].size();
+        int s2 = (int)corner_rounds_frozen[e.first.ind2].size();
+        int keep, drop;
+        if (s1 == 3 && s2 == 2) {
+          keep = e.first.ind1;
+          drop = e.first.ind2;
+        } else if (s1 == 2 && s2 == 3) {
+          keep = e.first.ind2;
+          drop = e.first.ind1;
+        } else {
+          continue;
+        }
+        int rkeep = find_root(keep), rdrop = find_root(drop);
+        if (rkeep == rdrop) continue;
+        double len = (vertices_copy[rkeep] - vertices_copy[rdrop]).norm();
+        if (len > 2 * r_) continue;
+        remap[rdrop] = rkeep;  // delete the 2-rounding vertex into the 3-rounding one
+        any_weld = true;
+      }
+      // Splits a (possibly self-touching) face into simple sub-faces
+      // wherever the same vertex id occurs more than once non-adjacently.
+      // Two welds landing on the same face can each remove one shared
+      // vertex without the two occurrences ever being next to each other
+      // -- plain adjacent-duplicate removal leaves the point count
+      // unchanged and the face pinched into a bowtie at that vertex. Each
+      // split separates the two loops that touch at the repeated vertex.
+      auto split_face_at_repeats = [](IndexedFace face) -> std::vector<IndexedFace> {
+        std::vector<IndexedFace> result;
+        std::vector<IndexedFace> stack;
+        stack.push_back(std::move(face));
+        while (!stack.empty()) {
+          IndexedFace f = std::move(stack.back());
+          stack.pop_back();
+          int n = (int)f.size();
+          std::unordered_map<int, int> firstpos;
+          int dupI = -1, dupJ = -1;
+          for (int idx = 0; idx < n; idx++) {
+            auto it = firstpos.find(f[idx]);
+            if (it != firstpos.end()) {
+              dupI = it->second;
+              dupJ = idx;
+              break;
+            }
+            firstpos[f[idx]] = idx;
+          }
+          if (dupI < 0) {
+            if (n >= 3) result.push_back(std::move(f));
+            continue;
+          }
+          IndexedFace loop1(f.begin() + dupI, f.begin() + dupJ + 1);
+          IndexedFace loop2;
+          loop2.insert(loop2.end(), f.begin(), f.begin() + dupI + 1);
+          loop2.insert(loop2.end(), f.begin() + dupJ + 1, f.end());
+          stack.push_back(std::move(loop1));
+          stack.push_back(std::move(loop2));
+        }
+        return result;
+      };
+      if (any_weld) {
+        std::vector<IndexedFace> cleaned_faces;
+        std::vector<int> new_origin;  // for each new face: which OLD face index it came from
+        std::unordered_map<int, int> old_to_new_first;  // old face idx -> its first new fragment's idx
+        cleaned_faces.reserve(merged.size());
+        new_origin.reserve(merged.size());
+        for (size_t old_i = 0; old_i < merged.size(); old_i++) {
+          auto& face = merged[old_i];
+          IndexedFace remapped = face;
+          for (auto& v : remapped) v = find_root(v);
+          IndexedFace cleaned;
+          for (int v : remapped) {
+            if (cleaned.empty() || cleaned.back() != v) cleaned.push_back(v);
+          }
+          while (cleaned.size() > 1 && cleaned.front() == cleaned.back()) cleaned.pop_back();
+          for (auto& sub : split_face_at_repeats(std::move(cleaned))) {
+            if (old_to_new_first.find((int)old_i) == old_to_new_first.end()) {
+              old_to_new_first[(int)old_i] = (int)cleaned_faces.size();
+            }
+            new_origin.push_back((int)old_i);
+            cleaned_faces.push_back(std::move(sub));
+          }
+        }
+        // faceParents is index-parallel to merged and marks hole faces
+        // (faceParents[i] != -1 -> face i is a hole, value = its parent's
+        // index). merged just got rebuilt/reordered/split, so this has to
+        // be rebuilt in lockstep or every hole/parent lookup downstream
+        // (including the fanf/fbnf "is this edge part of a hole" checks)
+        // silently points at the wrong face.
+        std::vector<int> new_faceParents(cleaned_faces.size(), -1);
+        for (size_t k = 0; k < cleaned_faces.size(); k++) {
+          int old_parent = faceParents[new_origin[k]];
+          if (old_parent < 0) continue;
+          auto it = old_to_new_first.find(old_parent);
+          new_faceParents[k] = (it != old_to_new_first.end()) ? it->second : -1;
+        }
+        merged = std::move(cleaned_faces);
+        faceParents = std::move(new_faceParents);
+        // newnormals is likewise index-parallel to merged (used later as
+        // the exact normal tessellatePolygonWithHoles projects into) and
+        // has exactly the same "goes stale the moment merged is rebuilt"
+        // problem faceParents had. Recompute it fresh from the new
+        // merged/vertices_copy rather than trying to carry old entries
+        // forward -- same approach the pre-existing sliver-collapse code
+        // below already uses after its own merged-editing.
+        newnormals = calcTriangleNormals(vertices_copy, merged);
+        improved = true;
+        continue;  // re-derive polinds/edge_db/corner_rounds from scratch
       }
     }
     /* TODO activate
@@ -750,10 +904,14 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   for (size_t i = 0; i < newfaces.size(); i++) {
     // tessellate first with holes // search all holes
     if (faceParents[i] != -1) continue;
+    if (newfaces[i].size() < 3) continue;
     std::vector<IndexedFace> faces;
     faces.push_back(newfaces[i]);
-    for (size_t j = 0; j < newfaces.size(); j++)
-      if ((size_t)faceParents[j] == i) faces.push_back(newfaces[j]);
+    for (size_t j = 0; j < newfaces.size(); j++) {
+      if ((size_t)faceParents[j] != i) continue;
+      if (newfaces[j].size() < 3) continue;  // degenerate hole: skip, don't break indexing
+      faces.push_back(newfaces[j]);
+    }
     //    if(faces.size() >1 ) continue;
     std::vector<IndexedTriangle> triangles;
     Vector3f norm(newnormals[i][0], newnormals[i][1], newnormals[i][2]);
