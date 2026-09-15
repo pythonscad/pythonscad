@@ -268,6 +268,17 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   std::vector<intList> polinds, polposs;
 
   std::vector<std::vector<int>> corner_rounds;
+  // corner_rounds gets recomputed every iteration below, but welding
+  // decisions must only ever look at which vertices were 3-way junctions
+  // in the ORIGINAL, unwelded geometry -- otherwise a weld can make a
+  // previously-normal (2-edge) vertex look like a 3-way junction on the
+  // next iteration (because two chains now happen to meet there), which
+  // cascades into welding large stretches of otherwise-fine geometry.
+  // Vertex ids are stable across welds (we only ever remap ind2 -> ind1,
+  // never renumber survivors), so indexing this frozen snapshot by
+  // current ids remains valid on every iteration.
+  std::vector<std::vector<int>> corner_rounds_frozen;
+  bool corner_rounds_frozen_set = false;
   do {
     improved = false;  // fix short edges until happy
     std::vector<int> lockouts;
@@ -317,120 +328,108 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
         corner_rounds[e.first.ind2].push_back(e.first.ind1);
       }
     }
-    /* TODO activate
 
-        // eliminate  too short edges by extrapolating the neighboring edges
-        for(auto &e: edge_db) {
-          if(!e.second.sel) continue;
-          Vector3d line = vertices_copy[e.first.ind1] - vertices_copy[e.first.ind2];
-          if(line.norm() < 2*r_) {
+    if (!corner_rounds_frozen_set) {
+      corner_rounds_frozen = corner_rounds;
+      corner_rounds_frozen_set = true;
+    }
 
-            int a_prev=-1, a_next=-1;
-            int b_prev=-1, b_next=-1;
-
-            if(std::find(lockouts.begin(), lockouts.end(), e.first.ind1) != lockouts.end()) continue;
-            if(std::find(lockouts.begin(), lockouts.end(), e.first.ind2) != lockouts.end()) continue;
-            auto &facea = merged[e.second.facea];
-            int na=facea.size();
-            for(int i=0;i<na;i++) {
-              if(facea[i] == e.first.ind1){
-                a_prev = facea[(i+na-1)%na];
-                a_next = facea[(i+na+2)%na];
-              }
-            }
-
-            auto &faceb = merged[e.second.faceb];
-            int nb=faceb.size();
-            for(int i=0;i<nb;i++) {
-              if(faceb[i] == e.first.ind2){
-                b_prev = faceb[(i+nb-1)%nb];
-                b_next = faceb[(i+nb+2)%nb];
-              }
-            }
-
-            if(std::find(lockouts.begin(), lockouts.end(), a_prev) != lockouts.end()) continue;
-            if(std::find(lockouts.begin(), lockouts.end(), a_next) != lockouts.end()) continue;
-            if(std::find(lockouts.begin(), lockouts.end(), b_prev) != lockouts.end()) continue;
-            if(std::find(lockouts.begin(), lockouts.end(), b_next) != lockouts.end()) continue;
-
-            // is it safe to take the bigger face ?
-            int commonfaceind=-1, faceind1=-1, faceind2=-1;
-            EdgeKey ek1, ek2;
-            if(nb > na) {
-              commonfaceind=e.second.faceb; // TODO b hat die richtigen punkte
-              ek1 = EdgeKey(b_prev, e.first.ind2);
-              ek2 = EdgeKey(e.first.ind1, b_next);
-            } else { // na  > nb)
-              commonfaceind=e.second.facea; // TODO b hat die richtigen punkte
-              ek1 = EdgeKey(a_prev, e.first.ind1);
-              ek2 = EdgeKey(e.first.ind2, a_next);
-            }
-
-            if(edge_db.count(ek1)) {
-              auto &ev1 = edge_db.at(ek1);
-              if(ev1.facea == commonfaceind) faceind1= ev1.faceb;
-              if(ev1.faceb == commonfaceind) faceind1= ev1.facea;
-            }
-
-            // find opposite of e.first.ind1, b_next)
-            if(edge_db.count(ek2)) {
-              auto &ev2 = edge_db.at(ek2);
-              if(ev2.facea == commonfaceind) faceind2= ev2.faceb;
-              if(ev2.faceb == commonfaceind) faceind2= ev2.facea;
-            }
-
-            Vector3d fn1 =calcTriangleNormal(vertices_copy, merged[commonfaceind]).head<3>();
-            Vector3d fn2 =calcTriangleNormal(vertices_copy, merged[faceind1]).head<3>();
-            Vector3d fn3 =calcTriangleNormal(vertices_copy, merged[faceind2]).head<3>();
-
-            Vector3d fp1 = vertices_copy[merged[commonfaceind][0]];
-            Vector3d fp2 = vertices_copy[merged[faceind1][0]];
-            Vector3d fp3 = vertices_copy[merged[faceind2][0]];
-            Vector3d ptcut;
-            if(cut_face_face_face(fp1, fn1, fp2, fn2, fp3, fn3, ptcut,nullptr)) {
-              printf("Error during cutting\n");
-              e.second.sel=0;
-              continue;
-            }
-            //
-            // change is going to happen
-            vertices_copy[e.first.ind1]=ptcut;
-            lockouts.push_back(ek1.ind1);
-            lockouts.push_back(ek1.ind2);
-            lockouts.push_back(ek2.ind1);
-            lockouts.push_back(ek2.ind2);
-
-            for(int j=0;j<merged.size();j++) {
-              auto &tri = merged[j];
-              int n = tri.size();
-              int dupind=-1;
-              for(int i=0;i<n;i++)
-              {
-                if(tri[i] == e.first.ind2){
-                  tri[i] =e.first.ind1;
-                  if(tri[(i+1)%n] == e.first.ind1 || tri[(i+n-1)%n] == e.first.ind1) {
-                    dupind=i;
-                  }
-                }
-              }
-              if(dupind != -1) {
-                IndexedFace tri_new;
-                for(int i=0;i<dupind;i++) tri_new.push_back(tri[i]);
-                for(int i=dupind+1;i<n;i++) tri_new.push_back(tri[i]);
-                tri = tri_new;
-                n--;
-              }
-              if(n < 3) {
-                    merged.erase(merged.begin()+j);
-                    j--;
-              }
-            }
-            improved=true;
-          // TODO lockout
-          }
-
+    // Weld too-short selected fillet edges. A selected edge shorter than
+    // 2*r_ leaves no room for an unmodified fillet to fit -- that's what
+    // produced the self-intersecting spikes at 3-way corners. Collapse
+    // such edges directly on `merged`: wherever ind2 stood, use ind1
+    // instead, and drop the now-degenerate ind1-ind1 entries this
+    // creates. This works purely on `merged`/`vertices_copy`, never on
+    // edge_db (whose indices we're about to invalidate), and only looks
+    // at edges edge_db has already confirmed are sel==1 -- the same
+    // narrow scope the old, crashing plane-intersection code used.
+    {
+      std::vector<int> remap(vertices_copy.size());
+      for (size_t i = 0; i < remap.size(); i++) remap[i] = (int)i;
+      auto find_root = [&](int x) {
+        while (remap[x] != x) {
+          remap[x] = remap[remap[x]];
+          x = remap[x];
         }
-    */
+        return x;
+      };
+
+      bool any_weld = false;
+      for (auto& e : edge_db) {
+        if (!e.second.sel) continue;
+        // Only handle the exact transition case: one end of the short
+        // edge is a normal, fully-selected 2-edge corner (legitimately
+        // short by design -- fine curve tessellation, must NOT be
+        // touched), the other end is a genuine 3-way junction. Drop the
+        // 2-rounding vertex into the 3-rounding one. Edges where both
+        // ends are already 3-way (like the crossbar's own long edges) or
+        // both are normal 2-way corners are left alone entirely.
+        int s1 = (int)corner_rounds_frozen[e.first.ind1].size();
+        int s2 = (int)corner_rounds_frozen[e.first.ind2].size();
+        int keep, drop;
+        if (s1 == 3 && s2 == 2) {
+          keep = e.first.ind1;
+          drop = e.first.ind2;
+        } else if (s1 == 2 && s2 == 3) {
+          keep = e.first.ind2;
+          drop = e.first.ind1;
+        } else {
+          continue;
+        }
+        int rkeep = find_root(keep), rdrop = find_root(drop);
+        if (rkeep == rdrop) continue;
+        double len = (vertices_copy[rkeep] - vertices_copy[rdrop]).norm();
+        if (len > 2 * r_) continue;
+        remap[rdrop] = rkeep;  // delete the 2-rounding vertex into the 3-rounding one
+        any_weld = true;
+      }
+      if (any_weld) {
+        // Each face maps to at most one output face now (dropped
+        // entirely if welding collapsed it below 3 points, otherwise
+        // kept as-is) -- no more splitting, so a single old-index ->
+        // new-index map is enough to keep faceParents in lockstep.
+        std::vector<IndexedFace> cleaned_faces;
+        std::unordered_map<int, int> old_to_new;
+        cleaned_faces.reserve(merged.size());
+        for (size_t old_i = 0; old_i < merged.size(); old_i++) {
+          IndexedFace remapped = merged[old_i];
+          for (auto& v : remapped) v = find_root(v);
+          IndexedFace cleaned;
+          for (int v : remapped) {
+            if (cleaned.empty() || cleaned.back() != v) cleaned.push_back(v);
+          }
+          while (cleaned.size() > 1 && cleaned.front() == cleaned.back()) cleaned.pop_back();
+          if (cleaned.size() < 3) continue;  // welded away entirely
+          old_to_new[(int)old_i] = (int)cleaned_faces.size();
+          cleaned_faces.push_back(std::move(cleaned));
+        }
+        // faceParents is index-parallel to merged and marks hole faces
+        // (faceParents[i] != -1 -> face i is a hole, value = its parent's
+        // index). merged just got rebuilt/reordered, so this has to be
+        // rebuilt in lockstep or every hole/parent lookup downstream
+        // (including the fanf/fbnf "is this edge part of a hole" checks)
+        // silently points at the wrong face.
+        std::vector<int> new_faceParents(cleaned_faces.size(), -1);
+        for (auto& [old_i, new_i] : old_to_new) {
+          int old_parent = faceParents[old_i];
+          if (old_parent < 0) continue;
+          auto it = old_to_new.find(old_parent);
+          new_faceParents[new_i] = (it != old_to_new.end()) ? it->second : -1;
+        }
+        merged = std::move(cleaned_faces);
+        faceParents = std::move(new_faceParents);
+        // newnormals is likewise index-parallel to merged (used later as
+        // the exact normal tessellatePolygonWithHoles projects into) and
+        // has exactly the same "goes stale the moment merged is rebuilt"
+        // problem faceParents had. Recompute it fresh from the new
+        // merged/vertices_copy rather than trying to carry old entries
+        // forward -- same approach the pre-existing sliver-collapse code
+        // below already uses after its own merged-editing.
+        newnormals = calcTriangleNormals(vertices_copy, merged);
+        improved = true;
+        continue;  // re-derive polinds/edge_db/corner_rounds from scratch
+      }
+    }
     // Boolean operations with a tiny overlap can leave sliver edges around the
     // seam. Collapse those before constructing fillet patches.
     if (min_edge_len > 0) {
@@ -750,10 +749,14 @@ std::unique_ptr<const Geometry> createFilletInt(std::shared_ptr<const PolySet> p
   for (size_t i = 0; i < newfaces.size(); i++) {
     // tessellate first with holes // search all holes
     if (faceParents[i] != -1) continue;
+    if (newfaces[i].size() < 3) continue;
     std::vector<IndexedFace> faces;
     faces.push_back(newfaces[i]);
-    for (size_t j = 0; j < newfaces.size(); j++)
-      if ((size_t)faceParents[j] == i) faces.push_back(newfaces[j]);
+    for (size_t j = 0; j < newfaces.size(); j++) {
+      if ((size_t)faceParents[j] != i) continue;
+      if (newfaces[j].size() < 3) continue;  // degenerate hole: skip, don't break indexing
+      faces.push_back(newfaces[j]);
+    }
     //    if(faces.size() >1 ) continue;
     std::vector<IndexedTriangle> triangles;
     Vector3f norm(newnormals[i][0], newnormals[i][1], newnormals[i][2]);
