@@ -70,6 +70,7 @@
 #include <QSignalMapper>
 #include <QSoundEffect>
 #include <QSplitter>
+#include <QStandardPaths>
 #include <QStatusBar>
 #include <QStringList>
 #include <QTemporaryFile>
@@ -729,13 +730,10 @@ void MainWindow::onNavigationHoveredContextMenuEntry()
 
 void MainWindow::addExportActions(QToolBar *toolbar, QAction *action) const
 {
-  for (const std::string& identifier :
-       {Settings::Settings::toolbarExport3D.value(), Settings::Settings::toolbarExport2D.value()}) {
-    QAction *exportAction = formatIdentifierToAction(identifier);
-    if (exportAction) {
-      toolbar->insertAction(action, exportAction);
-    }
-  }
+  // Toolbar Export 3D == File > Export... / Export to …
+  toolbar->insertAction(action, this->fileActionExport);
+  // Toolbar Export 2D == Export as… (distinct from remembered Export)
+  toolbar->insertAction(action, this->fileActionExportAs);
 }
 
 void MainWindow::updateExportActions()
@@ -748,6 +746,7 @@ void MainWindow::updateExportActions()
   if (!editorDock->isVisible()) {
     addExportActions(viewerToolBar, this->viewActionViewAll);
   }
+  updateExportToolbarIcon();
 }
 
 void MainWindow::openFileFromPath(const QString& path, int line)
@@ -2659,11 +2658,14 @@ void MainWindow::sendToExternalTool(ExternalToolInterface& externalToolService)
 void MainWindow::on_designAction3DPrint_triggered()
 {
   if (GuiLocker::isLocked()) return;
-  const GuiLocker lock;
 
-  // Make sure we can export:
-  const unsigned int dim = 3;
-  if (!canExport(dim)) return;
+  pendingAfterRender_ = PendingAfterRender::Print3D;
+  {
+    const GuiLocker lock;
+    const unsigned int dim = 3;
+    if (!canExport(dim)) return;
+  }
+  clearPendingAfterRender();
 
   PrintInitDialog printInitDialog;
   const auto status = printInitDialog.exec();
@@ -2699,6 +2701,7 @@ void MainWindow::on_designActionRender_triggered()
 void MainWindow::cgalRender()
 {
   if (!this->rootFile || !this->rootNode) {
+    clearPendingAfterRender();
     compileEnded();
     return;
   }
@@ -2706,6 +2709,7 @@ void MainWindow::cgalRender()
   this->qglview->setRenderer(nullptr);
   this->geomRenderer = nullptr;
   rootGeom.reset();
+  geometrySourceEditor_ = nullptr;
 
   LOG("Rendering Polygon Mesh using %1$s...",
       renderBackend3DToString(RenderSettings::inst()->backend3D).c_str());
@@ -2725,6 +2729,23 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
   python_lock();
 #endif
   progress_report_fin();
+
+  // instantiateRoot() recorded the editor that started this render. Prefer that
+  // over activeEditor — the user can switch tabs while geometry is computing.
+  EditorInterface *const owner = renderedEditor;
+  if (!owner) {
+    LOG(message_group::UI_Warning,
+        "Render finished after the source tab was closed; discarding geometry.");
+    this->rootGeom.reset();
+    this->geomRenderer = nullptr;
+    this->qglview->setRenderer(nullptr);
+    geometrySourceEditor_ = nullptr;
+    clearPendingAfterRender();
+    updateStatusBar(nullptr);
+    compileEnded();
+    return;
+  }
+
   if (root_geom) {
     std::vector<std::string> options;
     if (Settings::Settings::summaryCamera.value()) {
@@ -2772,10 +2793,21 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
     renderCompleteSoundEffect->play();
   }
 
-  renderedEditor = activeEditor;
-  activeEditor->contentsRendered = true;
+  if (root_geom) {
+    owner->contentsRendered = true;
+    geometrySourceEditor_ = owner;
+  } else {
+    // Rendering failed or produced no top-level geometry. Do not resume into
+    // the same cold-start prompt indefinitely.
+    owner->contentsRendered = false;
+    clearPendingAfterRender();
+  }
   this->qglview->shown_obj = nullptr;
   compileEnded();
+  if (root_geom && pendingAfterRender_ != PendingAfterRender::None) {
+    // Continue Export / Print after GuiLocker is released by compileEnded().
+    QTimer::singleShot(0, this, &MainWindow::runPendingAfterRender);
+  }
 }
 
 void MainWindow::handleMeasurementClicked(QAction *clickedAction)
@@ -3498,48 +3530,144 @@ void MainWindow::on_designCheckValidity_triggered()
   LOG("Valid:      %1$6s", (valid ? "yes" : "no"));
 }
 
-// Returns if we can export (true) or not(false) (bool)
-// Separated into it's own function for re-use.
+bool MainWindow::offerColdStartRenderThenContinue()
+{
+  const bool forPrint = pendingAfterRender_ == PendingAfterRender::Print3D;
+  QMessageBox box(this);
+  box.setIcon(QMessageBox::Warning);
+  box.setWindowTitle(forPrint ? _("3D Print") : _("Export"));
+  box.setText(_("The design has not been rendered yet (F6)."));
+  box.setInformativeText(forPrint ? _("Render the design and print, or cancel.")
+                                  : _("Render the design and export, or cancel."));
+  // Same roles as the stale-render dialog and session-save prompts: primary
+  // affirmative = AcceptRole, dismiss = RejectRole (platform lays out Cancel
+  // opposite the default action).
+  auto *renderButton =
+    box.addButton(forPrint ? _("Render and Print") : _("Render and Export"), QMessageBox::AcceptRole);
+  auto *cancelButton = box.addButton(_("Cancel"), QMessageBox::RejectRole);
+  box.setDefaultButton(renderButton);
+  box.setEscapeButton(cancelButton);
+  box.exec();
+
+  if (box.clickedButton() == renderButton) {
+    // Leave pendingAfterRender_ set so actionRenderDone can resume.
+    startRenderThenContinue();
+    return false;
+  }
+  clearPendingAfterRender();
+  return false;
+}
+
+bool MainWindow::confirmCrossTabGeometryOrRender(EditorInterface *sourceEditor)
+{
+  const bool forPrint = pendingAfterRender_ == PendingAfterRender::Print3D;
+  QString sourceName = _("Untitled");
+  if (sourceEditor && !sourceEditor->filepath.isEmpty()) {
+    sourceName = QFileInfo(sourceEditor->filepath).fileName();
+  }
+
+  QMessageBox box(this);
+  box.setIcon(QMessageBox::Warning);
+  box.setWindowTitle(forPrint ? _("3D Print") : _("Export"));
+  box.setText(QString(_("The current render belongs to a different tab (%1).")).arg(sourceName));
+  box.setInformativeText(forPrint ? _("Use that tab's render, render this tab first, or cancel.")
+                                  : _("Export that tab's render, render this tab first, or cancel."));
+  // Align with cold-start / stale-render: Render = Accept, other-tab = Action, Cancel = Reject.
+  auto *otherButton = box.addButton(
+    forPrint ? _("Use Other Tab's Render") : _("Export Other Tab's Render"), QMessageBox::ActionRole);
+  auto *renderButton =
+    box.addButton(forPrint ? _("Render and Print") : _("Render and Export"), QMessageBox::AcceptRole);
+  auto *cancelButton = box.addButton(_("Cancel"), QMessageBox::RejectRole);
+  box.setDefaultButton(renderButton);
+  box.setEscapeButton(cancelButton);
+  box.exec();
+
+  if (box.clickedButton() == renderButton) {
+    startRenderThenContinue();
+    return false;
+  }
+  if (box.clickedButton() == otherButton) {
+    approvedGeometrySourceEditor_ = sourceEditor;
+    approvedGeometryTargetEditor_ = activeEditor;
+    return true;
+  }
+  clearPendingAfterRender();
+  return false;
+}
+
 bool MainWindow::canExport(unsigned int dim)
 {
-  auto guard = scopedSetCurrentOutput();
   if (!rootGeom) {
-    LOG(message_group::Error, "Nothing to export! Try rendering first (press F6)");
+    // Cold start: offer Render and Continue when an Export/Print is pending.
+    if (pendingAfterRender_ != PendingAfterRender::None) {
+      return offerColdStartRenderThenContinue();
+    }
+    QMessageBox::warning(this, _("Export"), _("Nothing to export! Try rendering first (press F6)"));
     return false;
   }
 
-  // editor has changed since last render
-  if (!activeEditor->contentsRendered) {
-    auto ret = QMessageBox::warning(this, "Application",
-                                    "The current tab has been modified since its last render (F6).\n"
-                                    "Do you really want to export the previous content?",
-                                    QMessageBox::Yes | QMessageBox::No);
-    if (ret != QMessageBox::Yes) {
+  // F6 mesh still belongs to another tab.
+  const bool usingOtherTabGeom = geometrySourceEditor_ && geometrySourceEditor_ != activeEditor;
+  const bool otherTabGeomApproved = usingOtherTabGeom &&
+                                    approvedGeometrySourceEditor_ == geometrySourceEditor_ &&
+                                    approvedGeometryTargetEditor_ == activeEditor;
+  if (usingOtherTabGeom && !otherTabGeomApproved) {
+    if (!confirmCrossTabGeometryOrRender(geometrySourceEditor_)) {
       return false;
     }
   }
 
-  // other tab contents most recently rendered
-  if (renderedEditor != activeEditor) {
-    auto ret = QMessageBox::warning(this, "Application",
-                                    "The rendered data is of different tab.\n"
-                                    "Do you really want to export the another tab's content?",
-                                    QMessageBox::Yes | QMessageBox::No);
-    if (ret != QMessageBox::Yes) {
+  // Active tab source changed since its last F6. Skip when the user already
+  // chose to export another tab's mesh (contentsRendered is about this tab).
+  if (!activeEditor->contentsRendered && !usingOtherTabGeom) {
+    const bool forPrint = pendingAfterRender_ == PendingAfterRender::Print3D;
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle(forPrint ? _("3D Print") : _("Export"));
+    box.setText(_("The design has changed since it was last rendered (F6)."));
+    box.setInformativeText(
+      forPrint ? _("Print the last rendered geometry, render the current design first, or cancel.")
+               : _("Export the last rendered geometry, render the current design first, or cancel."));
+    // Match cold-start roles: Render = Accept (primary/default), Cancel = Reject.
+    // Export Previous is the extra alternative (Action), like session-save's
+    // secondary actions — Qt lays out by role so both dialogs keep Cancel and
+    // Render on the same sides.
+    auto *previousButton =
+      box.addButton(forPrint ? _("Use Previous") : _("Export Previous"), QMessageBox::ActionRole);
+    auto *renderButton =
+      box.addButton(forPrint ? _("Render and Print") : _("Render and Export"), QMessageBox::AcceptRole);
+    auto *cancelButton = box.addButton(_("Cancel"), QMessageBox::RejectRole);
+    box.setDefaultButton(renderButton);
+    box.setEscapeButton(cancelButton);
+    box.exec();
+
+    if (box.clickedButton() == renderButton) {
+      // Leave pendingAfterRender_ set so actionRenderDone can resume.
+      startRenderThenContinue();
       return false;
     }
+    if (box.clickedButton() != previousButton) {
+      clearPendingAfterRender();
+      return false;
+    }
+    // Export/use previous render — do not resume again after a later render.
+    clearPendingAfterRender();
   }
 
   if (this->rootGeom->getDimension() != dim && dim != 0) {
-    LOG(message_group::UI_Error, "Current top level object is not a %1$dD object.", dim);
+    QMessageBox::warning(this, _("Export"),
+                         QString(_("Current top level object is not a %1D object.")).arg(dim));
+    clearPendingAfterRender();
     return false;
   }
 
   if (rootGeom->isEmpty()) {
-    LOG(message_group::UI_Error, "Current top level object is empty.");
+    QMessageBox::warning(this, _("Export"), _("Current top level object is empty."));
+    clearPendingAfterRender();
     return false;
   }
 
+  auto guard = scopedSetCurrentOutput();
 #ifdef ENABLE_CGAL
   auto N = dynamic_cast<const CGALNefGeometry *>(rootGeom.get());
   if (N && !N->p3->is_simple()) {
@@ -3562,123 +3690,593 @@ bool MainWindow::canExport(unsigned int dim)
   return true;
 }
 
-void MainWindow::actionExport(unsigned int dim, ExportInfo& exportInfo)
+void MainWindow::clearPendingAfterRender()
+{
+  pendingAfterRender_ = PendingAfterRender::None;
+  pendingAfterRenderEditor_ = nullptr;
+  approvedGeometrySourceEditor_ = nullptr;
+  approvedGeometryTargetEditor_ = nullptr;
+}
+
+void MainWindow::startRenderThenContinue()
+{
+  // Remember which tab asked to continue after F6 (user may switch tabs meanwhile).
+  pendingAfterRenderEditor_ = activeEditor;
+  // Match on_designActionRender_triggered(): one lock level that compileEnded() releases.
+  // Safe when the caller already holds GuiLocker — the caller's unlock happens first,
+  // then compileEnded() releases this level.
+  GuiLocker::lock();
+  prepareCompile("cgalRender", true, false);
+  compile(false);
+}
+
+void MainWindow::runPendingAfterRender()
+{
+  const auto pending = pendingAfterRender_;
+  EditorInterface *const editor = pendingAfterRenderEditor_;
+  clearPendingAfterRender();
+
+  if (pending == PendingAfterRender::None) return;
+
+  if (editor) {
+    if (!tabManager->editorList.contains(editor)) {
+      // Initiating tab was closed during the render.
+      return;
+    }
+    if (editor != activeEditor) {
+      tabManager->switchToEditor(editor);
+    }
+  }
+
+  switch (pending) {
+  case PendingAfterRender::Export:   actionExport(); break;
+  case PendingAfterRender::ExportAs: actionExportAs(); break;
+  case PendingAfterRender::Print3D:  on_designAction3DPrint_triggered(); break;
+  case PendingAfterRender::None:     break;
+  }
+}
+
+namespace {
+
+struct ExportFormatChoice {
+  FileFormat format;
+  QString filter;  // Qt name-filter string
+};
+
+FileFormatInfo foldablePsInfo()
+{
+  return {FileFormat::PS, "ps", "ps", "Foldable PS"};
+}
+
+QString formatFilterLabel(const FileFormatInfo& info)
+{
+  // Native dialogs parse filters as "Description (*.ext)". Nested parentheses
+  // in the description (e.g. "STL (ascii)") make many portals show only "STL",
+  // so ASCII and binary STL become indistinguishable in the type dropdown.
+  QString description;
+  if (info.format == FileFormat::ASCII_STL) {
+    description = _("ASCII STL");
+  } else if (info.format == FileFormat::BINARY_STL) {
+    description = _("Binary STL");
+  } else {
+    description = QString::fromStdString(info.description);
+    if (description.contains(QLatin1Char('('))) {
+      description.replace(QLatin1Char('('), QLatin1String("- "));
+      description.remove(QLatin1Char(')'));
+      description = description.simplified();
+    }
+  }
+  return QStringLiteral("%1 (*.%2)").arg(description, QString::fromStdString(info.suffix));
+}
+
+std::vector<ExportFormatChoice> buildExportFormatChoices()
+{
+  std::vector<ExportFormatChoice> choices;
+  const std::vector<FileFormat> menuOrder = {
+    FileFormat::ASCII_STL, FileFormat::BINARY_STL, FileFormat::OBJ, FileFormat::POV, FileFormat::OFF,
+    FileFormat::WRL,
+#ifdef ENABLE_CGAL
+    FileFormat::PS,
+#endif
+    FileFormat::STEP,      FileFormat::GCODE,
+#ifdef ENABLE_LIB3MF
+    FileFormat::_3MF,
+#endif
+    FileFormat::DXF,       FileFormat::SVG,        FileFormat::CSG, FileFormat::PDF, FileFormat::PNG,
+  };
+
+  for (FileFormat format : menuOrder) {
+    FileFormatInfo info = (format == FileFormat::PS) ? foldablePsInfo() : fileformat::info(format);
+    if (format != FileFormat::PS && info.identifier.empty()) continue;
+    choices.push_back({format, formatFilterLabel(info)});
+  }
+  return choices;
+}
+
+bool isGuiExportFormat(FileFormat format)
+{
+  for (const auto& choice : buildExportFormatChoices()) {
+    if (choice.format == format) return true;
+  }
+  return false;
+}
+
+QString byExtensionFilter()
+{
+  // Qt name filters need a wildcard pattern; without one the dialog can show an empty list.
+  return _("By Extension (*.*)");
+}
+
+bool resolveExportFormatFromSuffix(const QString& suffix, FileFormat& format)
+{
+  const QString s = suffix.toLower();
+  if (s.isEmpty()) return false;
+#ifdef ENABLE_CGAL
+  // Foldable PS is not in the standard fileformat registry identifier map.
+  if (s == QStringLiteral("ps")) {
+    format = FileFormat::PS;
+    return true;
+  }
+#endif
+  // Only accept identifiers that are actually offered in this build's Export UI.
+  if (fileformat::fromIdentifier(s.toStdString(), format) && isGuiExportFormat(format)) return true;
+
+  // Match registry / menu suffixes that differ from the identifier (e.g. .stp vs "step").
+  // Prefer ASCII STL when both STL variants share the suffix.
+  for (const auto& choice : buildExportFormatChoices()) {
+    if (choice.format == FileFormat::BINARY_STL) continue;
+    const FileFormatInfo info =
+      (choice.format == FileFormat::PS) ? foldablePsInfo() : fileformat::info(choice.format);
+    if (QString::fromStdString(info.suffix).toLower() == s) {
+      format = choice.format;
+      return true;
+    }
+  }
+  return false;
+}
+
+}  // namespace
+
+QString MainWindow::exportStartDirectory() const
+{
+  if (!lastExportDirectory.isEmpty()) {
+    const QFileInfo fi(lastExportDirectory);
+    if (fi.isDir()) return lastExportDirectory;
+  }
+  if (activeEditor && !activeEditor->filepath.isEmpty()) {
+    return QFileInfo(activeEditor->filepath).absolutePath();
+  }
+  const QString pictures = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+  if (!pictures.isEmpty() && QDir(pictures).exists()) return pictures;
+  const QString home = QDir::homePath();
+  if (!home.isEmpty() && QDir(home).exists()) return home;
+  return QDir::currentPath();
+}
+
+QString MainWindow::defaultExportBasename() const
+{
+  if (!activeEditor || activeEditor->filepath.isEmpty()) return QStringLiteral("Untitled");
+  return QFileInfo(activeEditor->filepath).completeBaseName();
+}
+
+QString MainWindow::defaultExportSuffix() const
+{
+  FileFormat format = FileFormat::ASCII_STL;
+  const std::string& pref3d = Settings::Settings::toolbarExport3D.value();
+  const std::string& pref2d = Settings::Settings::toolbarExport2D.value();
+  if (rootGeom && rootGeom->getDimension() == 2) {
+    if (!fileformat::fromIdentifier(pref2d, format) || !isGuiExportFormat(format)) {
+      format = FileFormat::DXF;
+    }
+  } else {
+    if (!fileformat::fromIdentifier(pref3d, format) || !isGuiExportFormat(format)) {
+      format = FileFormat::ASCII_STL;
+    }
+  }
+  if (format == FileFormat::PS) return QStringLiteral("ps");
+  return QString::fromStdString(fileformat::toSuffix(format));
+}
+
+FileFormatInfo MainWindow::fileFormatInfoFor(FileFormat format) const
+{
+  if (format == FileFormat::PS) return foldablePsInfo();
+  return fileformat::info(format);
+}
+
+void MainWindow::updateExportMenuText()
+{
+  if (!fileActionExport) return;
+  if (activeEditor && activeEditor->lastExport) {
+    const QString name = QFileInfo(activeEditor->lastExport->path)
+                           .fileName()
+                           .replace(QLatin1Char('&'), QLatin1String("&&"));
+    fileActionExport->setText(QString(_("E&xport to %1")).arg(name));
+  } else {
+    fileActionExport->setText(_("&Export..."));
+  }
+}
+
+void MainWindow::updateExportToolbarIcon()
+{
+  if (fileActionExport) {
+    QAction *pref3d = formatIdentifierToAction(Settings::Settings::toolbarExport3D.value());
+    if (pref3d && !pref3d->icon().isNull()) {
+      fileActionExport->setIcon(pref3d->icon());
+    }
+  }
+  if (fileActionExportAs) {
+    QAction *pref2d = formatIdentifierToAction(Settings::Settings::toolbarExport2D.value());
+    if (pref2d && !pref2d->icon().isNull()) {
+      fileActionExportAs->setIcon(pref2d->icon());
+    }
+  }
+}
+
+bool MainWindow::promptExportOptions(FileFormat format, ExportInfo& exportInfo)
+{
+  switch (format) {
+  case FileFormat::PDF: {
+    ExportPdfDialog dialog;
+    if (dialog.exec() == QDialog::Rejected) return false;
+    exportInfo.optionsPdf = dialog.getOptions();
+    return true;
+  }
+  case FileFormat::_3MF: {
+    Export3mfDialog dialog;
+    if (dialog.exec() == QDialog::Rejected) return false;
+    exportInfo.options3mf = dialog.getOptions();
+    return true;
+  }
+  case FileFormat::SVG: {
+    ExportSvgDialog dialog;
+    if (dialog.exec() == QDialog::Rejected) return false;
+    exportInfo.optionsSvg = std::make_shared<ExportSvgOptions>(dialog.getOptions());
+    return true;
+  }
+  case FileFormat::GCODE: {
+    ExportGcodeDialog dialog;
+    if (dialog.exec() == QDialog::Rejected) return false;
+    exportInfo.optionsGcode = std::make_shared<ExportGcodeOptions>(dialog.getOptions());
+    return true;
+  }
+  default: return true;
+  }
+}
+
+bool MainWindow::confirmExportPreconditions()
+{
+  // This generic check is used only before a save-as dialog, where the format
+  // is not known yet. Remembered Export uses confirmExportFormat() directly.
+  // No F6 mesh yet.
+  if (!rootGeom) {
+    // Never open save-as on cold start.
+    if (pendingAfterRender_ != PendingAfterRender::None) {
+      return offerColdStartRenderThenContinue();
+    }
+    return false;
+  }
+
+  // Export / Export as both start from the currently displayed F6 result.
+  // Ask about cross-tab ownership before save-as, then retain the answer until
+  // confirmExportFormat() so the same warning is not shown twice.
+  const bool opensSaveAs =
+    pendingAfterRender_ == PendingAfterRender::ExportAs ||
+    (pendingAfterRender_ == PendingAfterRender::Export && activeEditor && !activeEditor->lastExport);
+  if (opensSaveAs && geometrySourceEditor_ && geometrySourceEditor_ != activeEditor) {
+    return confirmCrossTabGeometryOrRender(geometrySourceEditor_);
+  }
+  // Same-tab save-as: format-specific checks happen after format selection.
+  return true;
+}
+
+bool MainWindow::confirmExportFormat(FileFormat format)
+{
+  if (format == FileFormat::PNG) {
+    return true;
+  }
+  if (format == FileFormat::CSG) {
+    if (!this->rootNode) {
+      QMessageBox::warning(this, _("Export"), _("Nothing to export. Please try compiling first."));
+      clearPendingAfterRender();
+      return false;
+    }
+    // CSG comes from the last compiled tab (renderedEditor), not from F6.
+    const bool compiledOtherTab = renderedEditor && renderedEditor != activeEditor;
+    const bool compiledOtherTabApproved = compiledOtherTab &&
+                                          approvedGeometrySourceEditor_ == renderedEditor &&
+                                          approvedGeometryTargetEditor_ == activeEditor;
+    if (compiledOtherTab && !compiledOtherTabApproved) {
+      if (!confirmCrossTabGeometryOrRender(renderedEditor)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  unsigned int dim = 0;
+  if (fileformat::is3D(format) || format == FileFormat::PS) dim = 3;
+  else if (fileformat::is2D(format)) dim = 2;
+
+  if (!rootGeom) {
+    // Save-as already chose a mesh format — offer render, then reopen Export as…
+    if (pendingAfterRender_ == PendingAfterRender::None) {
+      pendingAfterRender_ = PendingAfterRender::ExportAs;
+    }
+    return offerColdStartRenderThenContinue();
+  }
+  // Full ownership / stale / dimension checks (may start Render-and-Export).
+  return canExport(dim);
+}
+
+bool MainWindow::writeExportFile(const QString& filename, FileFormat format, ExportInfo& exportInfo)
 {
   const auto type_name = QString::fromStdString(exportInfo.info.description);
-  const auto suffix = QString::fromStdString(exportInfo.info.suffix);
-
-  // Setting filename skips the file selection dialog and uses the path provided instead.
-  if (GuiLocker::isLocked()) return;
-  const GuiLocker lock;
-
   auto guard = scopedSetCurrentOutput();
 
-  // Return if something is wrong and we can't export.
-  if (!canExport(dim)) return;
+  if (format == FileFormat::CSG) {
+    if (!this->rootNode) {
+      LOG(message_group::Error, "Nothing to export. Please try compiling first.");
+      return false;
+    }
+    std::ofstream fstream(std::filesystem::u8path(filename.toStdString()));
+    if (!fstream.is_open()) {
+      LOG("Can't open file \"%1$s\" for export", filename.toStdString());
+      return false;
+    }
+    fstream << this->tree.getString(*this->rootNode, "\t") << "\n";
+    fstream.close();
+    if (!fstream) {
+      LOG("Error writing file \"%1$s\"", filename.toStdString());
+      return false;
+    }
+    fileExportedMessage("CSG", filename);
+    return true;
+  }
 
-  auto title = QString(_("Export %1 File")).arg(type_name);
-  auto filter = QString(_("%1 Files (*%2)")).arg(type_name, suffix);
-  auto exportFilename = QFileDialog::getSaveFileName(this, title, exportPath(suffix), filter);
-  auto guard2 = scopedSetCurrentOutput();
-  if (exportFilename.isEmpty()) {
+  if (format == FileFormat::PNG) {
+    qglview->grabFrame();
+    const bool saveResult = qglview->save(filename.toStdString().c_str());
+    if (saveResult) {
+      fileExportedMessage("PNG", filename);
+      return true;
+    }
+    LOG("Can't open file \"%1$s\" for export image", filename.toStdString());
+    return false;
+  }
+
+  // Caller must have validated via confirmExportPreconditions / confirmExportFormat.
+  if (!rootGeom) {
+    LOG(message_group::Error, "Nothing to export! Try rendering first (press F6)");
+    return false;
+  }
+
+  const bool exportResult = exportFileByName(rootGeom, filename.toStdString(), exportInfo);
+  if (exportResult) fileExportedMessage(type_name, filename);
+  return exportResult;
+}
+
+void MainWindow::rememberSuccessfulExport(const QString& filename, FileFormat format,
+                                          const ExportInfo& exportInfo)
+{
+  lastExportDirectory = QFileInfo(filename).absolutePath();
+  if (!activeEditor) return;
+
+  EditorInterface::LastExport state;
+  state.path = filename;
+  state.format = format;
+  state.optionsPdf = exportInfo.optionsPdf;
+  state.options3mf = exportInfo.options3mf;
+  state.optionsSvg = exportInfo.optionsSvg;
+  state.optionsGcode = exportInfo.optionsGcode;
+  activeEditor->lastExport = std::move(state);
+  activeEditor->sessionMetadataModified = true;
+  TabManager::bumpSessionDirtyGeneration();
+  updateExportMenuText();
+}
+
+bool MainWindow::performRememberedExport(bool checkPreconditions)
+{
+  if (!activeEditor || !activeEditor->lastExport) return false;
+  if (GuiLocker::isLocked()) return false;
+  const GuiLocker lock;
+
+  const auto& remembered = *activeEditor->lastExport;
+  if (checkPreconditions && !confirmExportFormat(remembered.format)) return false;
+
+  const FileFormatInfo info = fileFormatInfoFor(remembered.format);
+  ExportInfo exportInfo =
+    createExportInfo(remembered.format, info, activeEditor->filepath.toStdString(), &qglview->cam, {});
+  // Keep createExportInfo() defaults when a session restore omitted options.
+  if (remembered.optionsPdf) exportInfo.optionsPdf = remembered.optionsPdf;
+  if (remembered.options3mf) exportInfo.options3mf = remembered.options3mf;
+  if (remembered.optionsSvg) exportInfo.optionsSvg = remembered.optionsSvg;
+  if (remembered.optionsGcode) exportInfo.optionsGcode = remembered.optionsGcode;
+
+  // PNG: grab after any prior UI, immediately before write
+  if (!writeExportFile(remembered.path, remembered.format, exportInfo)) return false;
+  lastExportDirectory = QFileInfo(remembered.path).absolutePath();
+  return true;
+}
+
+bool MainWindow::runExportAsDialogFlow(bool checkPreconditions)
+{
+  if (GuiLocker::isLocked()) return false;
+  const GuiLocker lock;
+  if (!activeEditor) return false;
+
+  if (checkPreconditions && !confirmExportPreconditions()) return false;
+
+  const auto choices = buildExportFormatChoices();
+  const QString byExt = byExtensionFilter();
+  QStringList filters;
+  filters << byExt;
+  for (const auto& choice : choices) filters << choice.filter;
+
+  QString directory = exportStartDirectory();
+  QString selectedFilter = byExt;
+  QString suggestedName = QString("%1.%2").arg(defaultExportBasename(), defaultExportSuffix());
+
+  while (true) {
+    QFileDialog dialog(this, _("Export"));
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setFileMode(QFileDialog::AnyFile);
+    dialog.setOption(QFileDialog::DontConfirmOverwrite, false);
+    dialog.setLabelText(QFileDialog::Accept, _("Export"));
+    dialog.setNameFilters(filters);
+    dialog.selectNameFilter(selectedFilter);
+    dialog.setDirectory(directory);
+    dialog.selectFile(suggestedName);
+    // Matches design-save dialogs: Qt appends this when the user omits a suffix.
+    dialog.setDefaultSuffix(defaultExportSuffix());
+
+    if (dialog.exec() != QDialog::Accepted) return false;
+
+    QStringList selected = dialog.selectedFiles();
+    if (selected.isEmpty() || selected.first().isEmpty()) return false;
+
+    QString filename = selected.first();
+    selectedFilter = dialog.selectedNameFilter();
+    directory = QFileInfo(filename).absolutePath();
+    suggestedName = QFileInfo(filename).fileName();
+
+    FileFormat format = FileFormat::ASCII_STL;
+    bool resolved = false;
+    if (selectedFilter == byExt) {
+      const QString suffix = QFileInfo(filename).suffix();
+      if (!resolveExportFormatFromSuffix(suffix, format)) {
+        QMessageBox::warning(
+          this, _("Export"),
+          _("The given filename does not have any known file extension. Please enter a known file "
+            "extension or select a file format from the file format list."));
+        continue;
+      }
+    } else {
+      for (const auto& choice : choices) {
+        if (choice.filter == selectedFilter) {
+          format = choice.format;
+          resolved = true;
+          break;
+        }
+      }
+      if (!resolved) {
+        QMessageBox::warning(
+          this, _("Export"),
+          _("The given filename does not have any known file extension. Please enter a known file "
+            "extension or select a file format from the file format list."));
+        continue;
+      }
+      // Named filter: ensure the filename uses that format's suffix (setDefaultSuffix
+      // only helps when the native dialog honors it; enforce after accept).
+      const QString expectedSuffix = QString::fromStdString(fileFormatInfoFor(format).suffix);
+      const QFileInfo fi(filename);
+      if (fi.suffix().compare(expectedSuffix, Qt::CaseInsensitive) != 0) {
+        filename = fi.dir().filePath(fi.completeBaseName() + QLatin1Char('.') + expectedSuffix);
+        suggestedName = QFileInfo(filename).fileName();
+        if (QFileInfo::exists(filename)) {
+          const auto text =
+            QString(_("%1 already exists.\nDo you want to replace it?")).arg(suggestedName);
+          if (QMessageBox::warning(this, _("Export"), text, QMessageBox::Yes | QMessageBox::No,
+                                   QMessageBox::No) != QMessageBox::Yes) {
+            continue;
+          }
+        }
+      }
+    }
+
+    if (!confirmExportFormat(format)) {
+      // Render-and-Export keeps the operation pending. Stop this dialog now;
+      // actionRenderDone() will resume it after F6.
+      if (pendingAfterRender_ != PendingAfterRender::None) return false;
+      // No usable mesh geometry: stop — reopening save-as cannot help until F6.
+      // Wrong dimension with existing geometry: let the user pick another format.
+      if (!rootGeom || rootGeom->isEmpty()) return false;
+      continue;
+    }
+
+    const FileFormatInfo info = fileFormatInfoFor(format);
+    ExportInfo exportInfo =
+      createExportInfo(format, info, activeEditor->filepath.toStdString(), &qglview->cam, {});
+
+    if (!promptExportOptions(format, exportInfo)) {
+      // Cancelled options dialog — reopen save-as with same state
+      continue;
+    }
+
+    if (!writeExportFile(filename, format, exportInfo)) {
+      return false;
+    }
+
+    rememberSuccessfulExport(filename, format, exportInfo);
+    return true;
+  }
+}
+
+void MainWindow::actionExport()
+{
+  if (GuiLocker::isLocked()) return;
+  pendingAfterRender_ = PendingAfterRender::Export;
+
+  if (activeEditor && activeEditor->lastExport) {
+    // Format-aware preconditions exactly once. In particular, stale/cross-tab
+    // choices must not be consumed here and then prompted again below.
+    if (!confirmExportFormat(activeEditor->lastExport->format)) return;
+    if (performRememberedExport(/*checkPreconditions=*/false)) {
+      clearPendingAfterRender();
+      return;
+    }
+    // confirmExportFormat may have started Render-and-Export.
+    if (pendingAfterRender_ != PendingAfterRender::None) return;
+    // Remembered path failed (I/O, etc.) — fall back to Export as… only with mesh.
+    if (!rootGeom) {
+      clearPendingAfterRender();
+      return;
+    }
+  } else {
+    if (!confirmExportPreconditions()) return;
+  }
+
+  // Keep ExportAs pending through the dialog so Render-and-Export can resume it.
+  pendingAfterRender_ = PendingAfterRender::ExportAs;
+  if (!runExportAsDialogFlow(/*checkPreconditions=*/false)) {
+    if (!pendingAfterRenderEditor_ && pendingAfterRender_ == PendingAfterRender::ExportAs) {
+      clearPendingAfterRender();
+    }
     return;
   }
-  this->exportPaths[suffix] = exportFilename;
+  clearPendingAfterRender();
+}
 
-  const bool exportResult = exportFileByName(rootGeom, exportFilename.toStdString(), exportInfo);
+void MainWindow::actionExportAs()
+{
+  if (GuiLocker::isLocked()) return;
+  pendingAfterRender_ = PendingAfterRender::ExportAs;
+  if (!confirmExportPreconditions()) return;
+  // Leave pending ExportAs set through the dialog for Render-and-Export resume.
+  if (!runExportAsDialogFlow(/*checkPreconditions=*/false)) {
+    if (!pendingAfterRenderEditor_ && pendingAfterRender_ == PendingAfterRender::ExportAs) {
+      clearPendingAfterRender();
+    }
+    return;
+  }
+  clearPendingAfterRender();
+}
 
-  if (exportResult) fileExportedMessage(type_name, exportFilename);
+void MainWindow::on_fileActionExport_triggered()
+{
+  actionExport();
+}
+
+void MainWindow::on_fileActionExportAs_triggered()
+{
+  actionExportAs();
 }
 
 void MainWindow::actionExportFileFormat(int fmt)
 {
-  const auto format = static_cast<FileFormat>(fmt);
-  const FileFormatInfo& info = fileformat::info(format);
-
-  ExportInfo exportInfo =
-    createExportInfo(format, info, activeEditor->filepath.toStdString(), &qglview->cam, {});
-
-  switch (format) {
-  case FileFormat::PDF: {
-    ExportPdfDialog exportPdfDialog;
-    if (exportPdfDialog.exec() == QDialog::Rejected) {
-      return;
-    }
-
-    exportInfo.optionsPdf = exportPdfDialog.getOptions();
-    actionExport(2, exportInfo);
-  } break;
-  case FileFormat::_3MF: {
-    Export3mfDialog export3mfDialog;
-    if (export3mfDialog.exec() == QDialog::Rejected) {
-      return;
-    }
-
-    exportInfo.options3mf = export3mfDialog.getOptions();
-    actionExport(3, exportInfo);
-  } break;
-  case FileFormat::CSG: {
-    auto guard = scopedSetCurrentOutput();
-
-    if (!this->rootNode) {
-      LOG(message_group::Error, "Nothing to export. Please try compiling first.");
-      return;
-    }
-    const QString suffix = "csg";
-    auto csg_filename = QFileDialog::getSaveFileName(this, _("Export CSG File"), exportPath(suffix),
-                                                     _("CSG Files (*.csg)"));
-
-    if (csg_filename.isEmpty()) {
-      return;
-    }
-
-    auto guard2 = scopedSetCurrentOutput();
-    std::ofstream fstream(std::filesystem::u8path(csg_filename.toStdString()));
-    if (!fstream.is_open()) {
-      LOG("Can't open file \"%1$s\" for export", csg_filename.toStdString());
-    } else {
-      fstream << this->tree.getString(*this->rootNode, "\t") << "\n";
-      fstream.close();
-      fileExportedMessage("CSG", csg_filename);
-      this->exportPaths[suffix] = csg_filename;
-    }
-
-  } break;
-  case FileFormat::PNG: {
-    // Grab first to make sure dialog box isn't part of the grabbed image
-    qglview->grabFrame();
-    const QString suffix = "png";
-    auto img_filename =
-      QFileDialog::getSaveFileName(this, _("Export Image"), exportPath(suffix), _("PNG Files (*.png)"));
-    if (!img_filename.isEmpty()) {
-      const bool saveResult = qglview->save(img_filename.toStdString().c_str());
-      if (saveResult) {
-        this->exportPaths[suffix] = img_filename;
-        auto guard = scopedSetCurrentOutput();
-        fileExportedMessage("PNG", img_filename);
-      } else {
-        LOG("Can't open file \"%1$s\" for export image", img_filename.toStdString());
-      }
-    }
-  } break;
-  case FileFormat::SVG: {
-    ExportSvgDialog exportSvgDialog;
-    if (exportSvgDialog.exec() == QDialog::Rejected) {
-      return;
-    }
-    exportInfo.optionsSvg = std::make_shared<ExportSvgOptions>(exportSvgDialog.getOptions());
-    actionExport(2, exportInfo);
-  } break;
-  case FileFormat::GCODE: {
-    ExportGcodeDialog exportGcodeDialog;
-    if (exportGcodeDialog.exec() == QDialog::Rejected) {
-      return;
-    }
-    exportInfo.optionsGcode = std::make_shared<ExportGcodeOptions>(exportGcodeDialog.getOptions());
-    actionExport(2, exportInfo);
-  } break;
-  default: actionExport(fileformat::is3D(format) ? 3 : fileformat::is2D(format) ? 2 : 0, exportInfo);
-  }
+  // Kept for toolbar preference icon lookup / any remaining format actions.
+  // Prefer the unified Export / Export as flow.
+  Q_UNUSED(fmt);
+  actionExportAs();
 }
 
 void MainWindow::on_editActionCopy_triggered()
@@ -4144,14 +4742,6 @@ QAction *MainWindow::formatIdentifierToAction(const std::string& identifier) con
   return nullptr;
 }
 
-void MainWindow::onWindowShortcutExport3DActivated()
-{
-  QAction *action = formatIdentifierToAction(Settings::Settings::toolbarExport3D.value());
-  if (action) {
-    action->trigger();
-  }
-}
-
 void MainWindow::on_editActionInsertTemplate_triggered()
 {
   activeEditor->displayTemplates();
@@ -4198,6 +4788,12 @@ QString MainWindow::getDockBaseName(const QString& title) const
 
 void MainWindow::onTabManagerAboutToCloseEditor(EditorInterface *closingEditor)
 {
+  // Drop F6 mesh ownership if the tab that produced rootGeom is closing.
+  if (closingEditor == geometrySourceEditor_) {
+    geometrySourceEditor_ = nullptr;
+    rootGeom.reset();
+  }
+
   // This slots is in charge of closing properly the preview when the
   // associated editor is about to close.
   if (closingEditor == renderedEditor) {
@@ -4290,6 +4886,8 @@ void MainWindow::onTabManagerEditorChanged(EditorInterface *newEditor)
   fontListDock->setNameSuffix(name);
   colorListDock->setNameSuffix(name);
   viewportControlDock->setNameSuffix(name);
+
+  updateExportMenuText();
 
   // If there is no renderedEditor we request for a new preview if the
   // auto-reload is enabled.
@@ -4592,22 +5190,6 @@ void MainWindow::openCSGSettingsChanged()
 void MainWindow::processEvents()
 {
   if (this->procevents) QApplication::processEvents();
-}
-
-QString MainWindow::exportPath(const QString& suffix)
-{
-  const auto path_it = this->exportPaths.find(suffix);
-  const auto basename =
-    activeEditor->filepath.isEmpty() ? "Untitled" : QFileInfo(activeEditor->filepath).completeBaseName();
-  QString dir;
-  if (path_it != exportPaths.end()) {
-    dir = QFileInfo(path_it->second).absolutePath();
-  } else if (activeEditor->filepath.isEmpty()) {
-    dir = QString::fromStdString(PlatformUtils::userDocumentsPath());
-  } else {
-    dir = QFileInfo(activeEditor->filepath).absolutePath();
-  }
-  return QString("%1/%2.%3").arg(dir, basename, suffix);
 }
 
 void MainWindow::jumpToLine(int line, int col)
@@ -5183,10 +5765,7 @@ void MainWindow::setupMenusAndActions()
   QObject::connect(shortcutPreviousWindow, &QShortcut::activated, this,
                    &MainWindow::onWindowShortcutNextPrevActivated);
 
-  auto shortcutExport3D = new QShortcut(QKeySequence("F7"), this);
-  QObject::connect(shortcutExport3D, &QShortcut::activated, this,
-                   &MainWindow::onWindowShortcutExport3DActivated);
-
+  updateExportMenuText();
   updateExportActions();
 }
 

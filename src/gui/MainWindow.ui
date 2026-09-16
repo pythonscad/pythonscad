@@ -223,27 +223,6 @@
       <string>&amp;Examples</string>
      </property>
     </widget>
-    <widget class="QMenu" name="menuExport">
-     <property name="title">
-      <string>E&amp;xport</string>
-     </property>
-     <addaction name="fileActionExportAsciiSTL"/>
-     <addaction name="fileActionExportBinarySTL"/>
-     <addaction name="fileActionExportOBJ"/>
-     <addaction name="fileActionExportPOV"/>
-     <addaction name="fileActionExportOFF"/>
-     <addaction name="fileActionExportWRL"/>
-     <addaction name="fileActionExportFoldable"/>
-     <addaction name="fileActionExportSTP"/>
-     <addaction name="fileActionExportGCode"/>
-     <addaction name="fileActionExport3MF"/>
-     <addaction name="fileActionExportDXF"/>
-     <addaction name="fileActionExportSVG"/>
-     <addaction name="fileActionExportCSG"/>
-     <addaction name="fileActionExportPDF"/>
-     <addaction name="separator"/>
-     <addaction name="fileActionExportImage"/>
-    </widget>
     <widget class="QMenu" name="menuPython">
      <property name="title">
       <string>Python</string>
@@ -274,7 +253,8 @@
     <addaction name="fileActionSaveACopy"/>
     <addaction name="fileActionSaveAll"/>
     <addaction name="separator"/>
-    <addaction name="menuExport"/>
+    <addaction name="fileActionExport"/>
+    <addaction name="fileActionExportAs"/>
     <addaction name="separator"/>
     <addaction name="menuPython"/>
     <addaction name="separator"/>
@@ -1129,6 +1109,28 @@
   <action name="designActionDisplayCSGProducts">
    <property name="text">
     <string>Display CSG Pr&amp;oducts</string>
+   </property>
+  </action>
+  <action name="fileActionExport">
+   <property name="icon">
+    <iconset theme="chokusen-export-stl"/>
+   </property>
+   <property name="text">
+    <string>&amp;Export...</string>
+   </property>
+   <property name="shortcut">
+    <string>F7</string>
+   </property>
+  </action>
+  <action name="fileActionExportAs">
+   <property name="icon">
+    <iconset theme="chokusen-export-stl"/>
+   </property>
+   <property name="text">
+    <string>Export &amp;as...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F7</string>
    </property>
   </action>
   <action name="fileActionExportBinarySTL">

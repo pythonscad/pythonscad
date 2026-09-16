@@ -94,7 +94,7 @@ Containers& containers()
     add_item(*containers, {FileFormat::PARAM, "param", "param", "param"});
     add_item(*containers, {FileFormat::AST, "ast", "ast", "AST"});
     add_item(*containers, {FileFormat::STEP, "step", "stp", "STEP"});
-    add_item(*containers, {FileFormat::GCODE, "gcode", "gcode", "GCDODE"});
+    add_item(*containers, {FileFormat::GCODE, "gcode", "gcode", "GCODE"});
     add_item(*containers, {FileFormat::TERM, "term", "term", "term"});
     add_item(*containers, {FileFormat::ECHO, "echo", "echo", "echo"});
     add_item(*containers, {FileFormat::PNG, "png", "png", "PNG"});
@@ -171,9 +171,8 @@ bool is3D(FileFormat format)
 {
   return format == FileFormat::ASCII_STL || format == FileFormat::BINARY_STL ||
          format == FileFormat::OBJ || format == FileFormat::OFF || format == FileFormat::WRL ||
-         format == FileFormat::_3MF || format == FileFormat::NEFDBG ||
-         format == FileFormat::PS || format == FileFormat::NEF3 || format == FileFormat::STEP ||
-         format == FileFormat::POV;
+         format == FileFormat::_3MF || format == FileFormat::NEFDBG || format == FileFormat::PS ||
+         format == FileFormat::NEF3 || format == FileFormat::STEP || format == FileFormat::POV;
 }
 
 bool is2D(FileFormat format)
@@ -261,12 +260,12 @@ static void exportFile(const std::shared_ptr<const Geometry>& root_geom, std::os
   case FileFormat::OFF:        export_off(root_geom, output); break;
   case FileFormat::WRL:        export_wrl(root_geom, output); break;
   case FileFormat::_3MF:       export_3mf(collect3mfParts(root_geom), output, exportInfo); break;
-  case FileFormat::DXF:   export_dxf(root_geom, output); break;
-  case FileFormat::SVG:   export_svg(root_geom, output, exportInfo); break;
-  case FileFormat::PDF:   export_pdf(root_geom, output, exportInfo); break;
-  case FileFormat::POV:   export_pov(root_geom, output, exportInfo); break;
-  case FileFormat::STEP:  export_step(root_geom, output, exportInfo); break;
-  case FileFormat::GCODE: export_gcode(root_geom, output, exportInfo); break;
+  case FileFormat::DXF:        export_dxf(root_geom, output); break;
+  case FileFormat::SVG:        export_svg(root_geom, output, exportInfo); break;
+  case FileFormat::PDF:        export_pdf(root_geom, output, exportInfo); break;
+  case FileFormat::POV:        export_pov(root_geom, output, exportInfo); break;
+  case FileFormat::STEP:       export_step(root_geom, output, exportInfo); break;
+  case FileFormat::GCODE:      export_gcode(root_geom, output, exportInfo); break;
 #ifdef ENABLE_CGAL
   case FileFormat::NEFDBG: export_nefdbg(root_geom, output); break;
   case FileFormat::NEF3:   export_nef3(root_geom, output); break;
