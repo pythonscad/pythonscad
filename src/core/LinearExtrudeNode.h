@@ -35,5 +35,7 @@ public:
 #ifdef ENABLE_PYTHON
   void *profile_func;
   void *twist_func;
+  std::string profile_func_hash;
+  std::string twist_func_hash;
 #endif
 };

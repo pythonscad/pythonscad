@@ -33,7 +33,6 @@
 #include "pyconversion.h"
 #include "primitives.h"
 #include "pydata.h"
-// #include "Geometry.h"
 #include "PolySet.h"
 #include "PolySetBuilder.h"
 #include "GeometryEvaluator.h"
@@ -482,6 +481,11 @@ PyObject *python_sphere(PyObject *self, PyObject *args, PyObject *kwargs)
   if (rp != nullptr) {
     if (python_numberval(rp, &r, &(node->dragflags), 1))
       if (rp->ob_type == &PyFunction_Type) node->r_func = rp;
+    {
+      Py_INCREF(rp);
+
+      node->func_hash = python_func_hash(rp);  // neu
+    }
   }
   if (!isnan(r)) {
     if (r <= 0) {
@@ -1135,16 +1139,29 @@ PyObject *python_textmetrics(PyObject *self, PyObject *args, PyObject *kwargs)
 
 int sheetCalcIndInt(PyObject *func, double i, double j, Vector3d& pos)
 {
-  PyObject *args = PyTuple_Pack(2, PyFloat_FromDouble(i), PyFloat_FromDouble(j));
+  PyGILState_STATE gstate = PyGILState_Ensure();
+
+  PyObject *iobj = PyFloat_FromDouble(i);
+  PyObject *jobj = PyFloat_FromDouble(j);
+  PyObject *args = PyTuple_Pack(2, iobj, jobj);
+  Py_DECREF(iobj);
+  Py_DECREF(jobj);
+
   PyObject *pos_p = PyObject_CallObject(func, args);
+  Py_DECREF(args);
+
   if (pos_p == nullptr) {
     std::string errorstr;
     python_catch_error(errorstr);
     PyErr_SetString(PyExc_TypeError, errorstr.c_str());
     LOG(message_group::Error, errorstr.c_str());
+    PyGILState_Release(gstate);
     return 1;
   }
-  return python_vectorval(pos_p, 3, 3, &pos[0], &pos[1], &pos[2], nullptr, nullptr);
+  int result = python_vectorval(pos_p, 3, 3, &pos[0], &pos[1], &pos[2], nullptr, nullptr);
+  Py_DECREF(pos_p);
+  PyGILState_Release(gstate);
+  return result;
 }
 
 int sheetCalcInd(PolySetBuilder& builder, std::vector<Vector3d>& vertices, std::vector<double>& istore,
@@ -1385,8 +1402,9 @@ PyObject *python_sheet_core(PyObject *func, double imin, double imax, double jmi
 {
   DECLARE_INSTANCE();
   auto node = std::make_shared<SheetNode>(instance);
-  // TODO check type of func
   node->func = (void *)func;
+  Py_INCREF(func);
+  node->func_hash = python_func_hash(func);  // neu
   node->imin = imin;
   node->imax = imax;
   node->jmin = jmin;

@@ -70,9 +70,10 @@ std::string SheetNode::toString() const
 {
   std::ostringstream stream;
 
-  stream << this->name() << "(func = " << rand() << ", fs = " << (this->fs)
+  stream << this->name() << "(func = " << this->func_hash << ", fs = " << (this->fs)
          << ", imin = " << (this->imin) << ", imax = " << (this->imax) << ", jmin = " << (this->jmin)
          << ", jmax = " << (this->jmax) << ", ispan = " << (this->ispan)
          << ", jspan = " << (this->jspan);
+  printf("Sheet string is %s\n", stream.str().c_str());
   return stream.str();
 }

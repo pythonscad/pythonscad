@@ -92,6 +92,7 @@ public:
   double r = 1;
 #ifdef ENABLE_PYTHON
   void *r_func = nullptr;
+  std::string func_hash;
 #endif
   int dragflags = 0;  // r
 };
@@ -251,6 +252,7 @@ public:
   std::string name() const override { return "sheet"; }
 #ifdef ENABLE_PYTHON
   void *func = nullptr;
+  std::string func_hash;
 #endif
   double imin, imax, jmin, jmax;
   bool ispan, jspan;

@@ -218,7 +218,7 @@ std::string SphereNode::toString() const
   std::ostringstream stream;
   stream << "sphere(" << discretizer;
 #ifdef ENABLE_PYTHON
-  if (r_func != nullptr) stream << ", r_func = " << rand();
+  if (r_func != nullptr) stream << ", r_func = " << this->func_hash;
   else
 #endif
     stream << ", r = " << r;
