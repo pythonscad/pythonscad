@@ -130,10 +130,10 @@ std::string RotateExtrudeNode::toString() const
          << this->convexity << ", ";
 #ifdef ENABLE_PYTHON
   if (this->profile_func != NULL) {
-    stream << ", profile = " << rand();
+    stream << ", profile = " << this->profile_func_hash;
   }
   if (this->twist_func != NULL) {
-    stream << ", twist_func = " << rand();
+    stream << ", twist_func = " << this->twist_func_hash;
   } else
 #endif
     if (twist != 0)

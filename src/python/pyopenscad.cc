@@ -1899,6 +1899,87 @@ PyObject *python__getattro__(PyObject *obj, PyObject *key)
   return result;
 }
 
+static uint64_t fnv1a_mix(uint64_t h, const char *buf, Py_ssize_t len)
+{
+  for (Py_ssize_t i = 0; i < len; i++) {
+    h ^= (unsigned char)buf[i];
+    h *= 1099511628211ULL;
+  }
+  return h;
+}
+
+static uint64_t python_func_hash_rec(PyObject *func, int depth, uint64_t h)
+{
+  if (depth > 6) return h;  // Rekursionsschutz gegen sich gegenseitig aufrufende Funktionen
+
+  PyObject *code = PyObject_GetAttrString(func, "__code__");
+  if (code == nullptr) {
+    PyErr_Clear();
+    return h;
+  }
+
+  PyObject *marshal = PyImport_ImportModule("marshal");
+  PyObject *dumps = PyObject_GetAttrString(marshal, "dumps");
+  PyObject *bytes = PyObject_CallFunctionObjArgs(dumps, code, nullptr);
+  if (bytes && PyBytes_Check(bytes)) {
+    char *buf;
+    Py_ssize_t len;
+    PyBytes_AsStringAndSize(bytes, &buf, &len);
+    h = fnv1a_mix(h, buf, len);
+  }
+
+  PyObject *co_names = PyObject_GetAttrString(code, "co_names");
+  PyObject *globals = PyObject_GetAttrString(func, "__globals__");
+  if (co_names && globals && PyTuple_Check(co_names)) {
+    Py_ssize_t n = PyTuple_Size(co_names);
+    for (Py_ssize_t i = 0; i < n; i++) {
+      PyObject *name = PyTuple_GetItem(co_names, i);  // borrowed
+      PyObject *val = PyDict_GetItem(globals, name);  // borrowed, ggf. NULL
+      if (val == nullptr) continue;
+
+      if (PyFunction_Check(val)) {
+        // rekursiv: eigener Bytecode-Hash statt instabiler repr()
+        h = python_func_hash_rec(val, depth + 1, h);
+      } else if (PyModule_Check(val) || PyCFunction_Check(val) || PyType_Check(val)) {
+        // Module/Builtins/Klassen: nur der qualifizierte Name ist stabil, nicht repr()
+        PyObject *qn = PyObject_GetAttrString(val, "__name__");
+        if (qn && PyUnicode_Check(qn)) {
+          Py_ssize_t qlen;
+          const char *qbuf = PyUnicode_AsUTF8AndSize(qn, &qlen);
+          if (qbuf) h = fnv1a_mix(h, qbuf, qlen);
+        } else {
+          PyErr_Clear();
+        }
+        Py_XDECREF(qn);
+      } else {
+        // "echte" Werte: repr() ist hier stabil (keine Adresse enthalten)
+        PyObject *repr = PyObject_Repr(val);
+        if (repr && PyUnicode_Check(repr)) {
+          Py_ssize_t rlen;
+          const char *rbuf = PyUnicode_AsUTF8AndSize(repr, &rlen);
+          if (rbuf) h = fnv1a_mix(h, rbuf, rlen);
+        }
+        Py_XDECREF(repr);
+      }
+    }
+  }
+  Py_XDECREF(co_names);
+  Py_XDECREF(globals);
+  Py_XDECREF(bytes);
+  Py_XDECREF(dumps);
+  Py_XDECREF(marshal);
+  Py_XDECREF(code);
+  return h;
+}
+
+std::string python_func_hash(PyObject *func)
+{
+  uint64_t h = python_func_hash_rec(func, 0, 1469598103934665603ULL /* FNV offset basis */);
+  std::ostringstream os;
+  os << std::hex << h;
+  return os.str();
+}
+
 int python__setattro__(PyObject *dict, PyObject *key, PyObject *v)
 {
   return python__setitem__(dict, key, v);

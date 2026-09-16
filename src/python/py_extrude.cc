@@ -54,6 +54,7 @@ PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double
   if (obj->ob_type == &PyFunction_Type) {
     Py_XINCREF(obj);  // TODO there to decref it ?
     node->profile_func = obj;
+    node->profile_func_hash = python_func_hash(obj);
     auto dummy_node = std::make_shared<SquareNode>(instance);
     node->children.push_back(dummy_node);
   } else {
@@ -72,6 +73,7 @@ PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double
     if (twist->ob_type == &PyFunction_Type) {
       Py_XINCREF(twist);  // TODO there to decref it ?
       node->twist_func = twist;
+      node->twist_func_hash = python_func_hash(twist);
     } else node->twist = PyFloat_AsDouble(twist);
   }
 
@@ -168,6 +170,7 @@ PyObject *linear_extrude_core(PyObject *obj, PyObject *height, int convexity, Py
   if (obj->ob_type == &PyFunction_Type) {
     Py_XINCREF(obj);  // TODO there to decref it ?
     node->profile_func = obj;
+    node->profile_func_hash = python_func_hash(obj);
     auto dummy_node = std::make_shared<SquareNode>(instance);
     node->children.push_back(dummy_node);
   } else {
@@ -236,6 +239,7 @@ PyObject *linear_extrude_core(PyObject *obj, PyObject *height, int convexity, Py
     if (twist->ob_type == &PyFunction_Type) {
       Py_XINCREF(twist);  // TODO there to decref it ?
       node->twist_func = twist;
+      node->twist_func_hash = python_func_hash(twist);
     } else node->twist = PyFloat_AsDouble(twist);
     node->has_twist = 1;
   } else node->has_twist = 0;
@@ -304,6 +308,7 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
   if (obj->ob_type == &PyFunction_Type) {
     Py_XINCREF(obj);  // TODO there to decref it ?
     node->profile_func = obj;
+    node->profile_func_hash = python_func_hash(obj);
     auto dummy_node = std::make_shared<SquareNode>(instance);
     node->children.push_back(dummy_node);
   } else {
@@ -387,6 +392,7 @@ PyObject *path_extrude_core(PyObject *obj, PyObject *path, PyObject *xdir, int c
     if (twist->ob_type == &PyFunction_Type) {
       Py_XINCREF(twist);  // TODO there to decref it ?
       node->twist_func = twist;
+      node->twist_func_hash = python_func_hash(twist);
     } else node->twist = PyFloat_AsDouble(twist);
     node->has_twist = 1;
   } else node->has_twist = 0;
