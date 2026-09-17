@@ -758,7 +758,7 @@ def _loft_func(loft_data: list, loft_height: float, h: float, rot: float) -> lis
     return pts
 
 
-def loft(
+def loftx(
     shape1: PyOpenSCAD,
     shape2: PyOpenSCAD,
     height: float,
