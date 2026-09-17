@@ -3,28 +3,11 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <utility>
 #include <vector>
 
-#include <sstream>
-#include <string>
-
 #include "geometry/Polygon2d.h"
-#include "geometry/PolySetBuilder.h"
-#include "utils/printutils.h"
-
-namespace {
-// LOG()'s format-string support varies across call sites in this codebase,
-// so trace messages are assembled as plain strings here to avoid depending
-// on a particular formatting syntax.
-template <typename... Args>
-std::string concatStr(Args&&...args)
-{
-  std::ostringstream oss;
-  (oss << ... << args);
-  return oss.str();
-}
-}  // namespace
 
 namespace {
 
@@ -52,12 +35,8 @@ void reverseRingInPlace(std::vector<Vector2d>& uv, std::vector<Vector3d>& pos3d)
 }
 
 // Forces 'outer' to be wound CCW and every entry of 'holes' to be wound CW
-// (the standard convention for a polygon-with-holes). Not strictly required
-// any more by the Delaunay-based construction below (which doesn't care
-// about winding), but Polygon2d's "positive" outline flag is conventionally
-// interpreted this way elsewhere in the codebase, so we keep the rings
-// consistent with that convention. Keeps the parallel 3D point arrays in
-// sync with any reversal.
+// (the standard convention for a polygon-with-holes), keeping the parallel
+// 3D point arrays in sync with any reversal.
 void ensureOrientation(std::vector<Vector2d>& outer_uv, std::vector<Vector3d>& outer_pos,
                        std::vector<std::vector<Vector2d>>& holes_uv,
                        std::vector<std::vector<Vector3d>>& holes_pos)
@@ -91,13 +70,82 @@ Polygon2d buildDomainPolygon(const std::vector<Vector2d>& outer_uv,
   return poly;
 }
 
+// -------------------- Distance to the domain boundary --------------------
+// Shortest distance from p to a single closed polyline (ring): the minimum
+// distance to any of its edges.
+double distanceToRing(const Vector2d& p, const std::vector<Vector2d>& ring)
+{
+  double best = std::numeric_limits<double>::max();
+  const size_t n = ring.size();
+  for (size_t i = 0; i < n; i++) {
+    const Vector2d& a = ring[i];
+    const Vector2d& b = ring[(i + 1) % n];
+    Vector2d ab = b - a;
+    double len2 = ab.squaredNorm();
+    double t = (len2 > 1e-18) ? std::clamp((p - a).dot(ab) / len2, 0.0, 1.0) : 0.0;
+    Vector2d closest = a + ab * t;
+    best = std::min(best, (p - closest).norm());
+  }
+  return best;
+}
+
+// Shortest distance from p to the domain boundary, i.e. to the nearest
+// point on the outer ring or on any hole ring.
+double distanceToBoundary(const Vector2d& p, const std::vector<Vector2d>& outer_uv,
+                          const std::vector<std::vector<Vector2d>>& holes_uv)
+{
+  double best = distanceToRing(p, outer_uv);
+  for (const auto& h : holes_uv) best = std::min(best, distanceToRing(p, h));
+  return best;
+}
+
+double smoothstep01(double x)
+{
+  x = std::clamp(x, 0.0, 1.0);
+  return x * x * (3.0 - 2.0 * x);
+}
+
+// -------------------- Boundary-edge encroachment test --------------------
+// A point p "encroaches" on a segment (a,b) if it lies inside that
+// segment's diametral circle - the (smallest possible) circle that passes
+// through a and b, centered at their midpoint. This is a standard,
+// precisely justified test from constrained-Delaunay mesh generation
+// (Ruppert/Chew): if a segment's diametral circle contains no other point,
+// that segment is *guaranteed* to survive as an edge of the (unconstrained)
+// Delaunay triangulation. Checking it reduces to a single sign: p sees a
+// and b at an obtuse angle, i.e. (a-p).(b-p) < 0.
+//
+// This is used below to keep interior grid points from being placed close
+// enough to any boundary-ring edge to threaten it - unlike a flat distance
+// threshold, it scales automatically with each edge's actual local length,
+// so it doesn't over-exclude where the ring is coarse and under-exclude
+// where it's fine.
+bool pointEncroachesEdge(const Vector2d& p, const Vector2d& a, const Vector2d& b)
+{
+  return (a - p).dot(b - p) < 0.0;
+}
+
+bool pointEncroachesBoundary(const Vector2d& p, const std::vector<Vector2d>& outer_uv,
+                             const std::vector<std::vector<Vector2d>>& holes_uv)
+{
+  auto checkRing = [&](const std::vector<Vector2d>& ring) {
+    const size_t n = ring.size();
+    for (size_t i = 0; i < n; i++) {
+      if (pointEncroachesEdge(p, ring[i], ring[(i + 1) % n])) return true;
+    }
+    return false;
+  };
+  if (checkRing(outer_uv)) return true;
+  for (const auto& h : holes_uv) {
+    if (checkRing(h)) return true;
+  }
+  return false;
+}
+
 // -------------------- Base surface: barycentric base position + normal --------------------
 // Gives any interior (u,v) query point a well-defined base 3D position and
 // face normal via barycentric interpolation over a coarse triangulation of
-// the boundary points. Built by the same Delaunay-plus-domain-filter
-// approach as the main mesh (see loft() below) - not by bridging the holes
-// into the outer contour and ear-clipping, which turned out to stall (see
-// the long comment at the loft() base-surface construction site for why).
+// the boundary points.
 struct LoftBaseSurface {
   std::vector<Vector2d> uv;     // 2D coordinates (boundary points only: outer + holes)
   std::vector<Vector3d> pos3d;  // parallel 3D positions
@@ -141,20 +189,16 @@ double hashNoise01(double seed)
 // Returns a copy of 'pts' with a tiny deterministic per-point offset. This
 // is ONLY meant to be fed into bowyerWatson() as topology input - the
 // original, unperturbed coordinates are what everything else (domain
-// membership tests, the final vertex positions) should keep using.
+// membership tests, the final vertex positions) keeps using.
 //
 // WHY THIS IS NEEDED: an axis-aligned regular grid (which is exactly what
 // the interior sampling below produces) is a classic pathological input for
 // Bowyer-Watson - every 2x2 grid cell's four corners are exactly cocircular,
-// so a plain incremental implementation constantly hits circumcircle ties.
-// Depending on how those ties break, this can corrupt the "boundary of the
-// bad-triangle cavity is a single closed loop" assumption the algorithm
-// relies on, which shows up as either wrong output or (with the retry/kept
-// bookkeeping used here) triangle counts that blow up point by point. A
-// small random perturbation, well above floating point noise but far below
-// anything visible in the final geometry, breaks the exact cocircularity
-// and avoids this entirely - a standard trick, sometimes called simulated
-// perturbation, for making incremental Delaunay implementations robust.
+// which can corrupt the incremental algorithm's "bad-triangle cavity is a
+// single closed loop" assumption. A small perturbation, well above floating
+// point noise but far below anything visible in the final geometry, avoids
+// this - a standard trick for making incremental Delaunay implementations
+// robust against structured input.
 std::vector<Vector2d> jitterForDelaunay(const std::vector<Vector2d>& pts, double domainScale)
 {
   std::vector<Vector2d> out;
@@ -175,18 +219,13 @@ struct DTriangle {
 
 // Delaunay triangulation of a plain 2D point set, no constraint edges.
 // 'pts' is left unmodified; returned indices refer into 'pts'.
-//
-// Includes defensive logging/bailout: if the running triangle count ever
-// grows far beyond the ~2*N that a healthy triangulation should have, that
-// means the algorithm has gone unstable (see jitterForDelaunay() above for
-// why that can happen) - we log a warning and bail out with an empty result
-// rather than spinning on an ever-growing triangle list.
 std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts)
 {
-  if (pts.size() < 3) {
-    return {};
-  }
+  if (pts.size() < 3) return {};
 
+  // Defensive bound: a healthy triangulation of N points has ~2N triangles.
+  // If jitterForDelaunay() somehow still leaves a numerically degenerate
+  // configuration, bail out rather than growing without limit.
   const size_t maxSaneTris = std::max<size_t>(200, pts.size() * 20);
 
   double minX = pts[0].x(), maxX = minX, minY = pts[0].y(), maxY = minY;
@@ -273,6 +312,8 @@ std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts)
     tris = std::move(kept);
 
     for (const auto& e : boundary) tris.push_back(makeCCW({e.first, e.second, pi}));
+
+    if (tris.size() > maxSaneTris) return {};
   }
 
   std::vector<DTriangle> result;
@@ -289,23 +330,18 @@ std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts)
 // grid points) below - both are "triangulate everything, then discard
 // what's outside the domain" in exactly the same way.
 std::vector<DTriangle> triangulateAndFilterToDomain(const std::vector<Vector2d>& pts,
-                                                    const Polygon2d& domain, double domainScale,
-                                                    const char *debugLabel, int *outRejectedCount)
+                                                    const Polygon2d& domain, double domainScale)
 {
   auto jittered = jitterForDelaunay(pts, domainScale);
   auto tris = bowyerWatson(jittered);
+
   std::vector<DTriangle> kept;
   kept.reserve(tris.size());
-  int rejected = 0;
   for (const auto& t : tris) {
     Vector2d centroid = (pts[t.a] + pts[t.b] + pts[t.c]) / 3.0;
-    if (!domain.point_inside(centroid)) {
-      rejected++;
-      continue;
-    }
+    if (!domain.point_inside(centroid)) continue;
     kept.push_back(t);
   }
-  if (outRejectedCount) *outRejectedCount = rejected;
   return kept;
 }
 
@@ -317,11 +353,7 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
                               double grid_spacing_uv,
                               const std::function<double(const Vector3d&)>& displacement)
 {
-  // NOTE ON LOG LEVELS: all diagnostic lines below intentionally use
-  // message_group::Warning (not ::Trace) so they show up in the console
-  // regardless of the verbosity setting, while this function is being
-  // hardened. Once loft() is confirmed solid, the noisier ones can be
-  // downgraded to ::Trace or ::Echo again.
+  if (outer.size() < 3 || grid_spacing_uv <= 0.0) return nullptr;
 
   // 1) Project the boundary rings into (u,v) space.
   std::vector<Vector2d> outer_uv;
@@ -345,21 +377,8 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
 
   Polygon2d domain = buildDomainPolygon(outer_uv, holes_uv);
 
-  // Sanity check hole membership: the centroid of a hole ring should
-  // normally be "outside" the material domain. (We deliberately do NOT test
-  // the outer ring's vertex-mean centroid here - for a ring/annulus-shaped
-  // cross-section, as with a vase wall, the mean of the outer boundary
-  // vertices can itself fall inside a hole, which would look like a
-  // point_inside() bug but isn't one.)
-  for (size_t hi = 0; hi < holes_uv.size(); hi++) {
-    if (holes_uv[hi].empty()) continue;
-    Vector2d holeCentroid(0, 0);
-    for (const auto& p : holes_uv[hi]) holeCentroid += p;
-    holeCentroid /= static_cast<double>(holes_uv[hi].size());
-  }
-
-  // uv bounding box - needed both for the base surface's jitter scale and
-  // for the interior sampling grid below, so compute it once, early.
+  // uv bounding box - needed for the base surface's jitter scale and the
+  // interior sampling grid below.
   double umin = outer_uv[0].x(), umax = umin, vmin = outer_uv[0].y(), vmax = vmin;
   for (const auto& p : outer_uv) {
     umin = std::min(umin, p.x());
@@ -370,28 +389,10 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
   double domainScale = std::max(umax - umin, vmax - vmin);
 
   // 2) Base surface: gives interior grid points (step 3) a well-defined 3D
-  //    base position + normal via barycentric interpolation.
-  //
-  //    EARLIER APPROACH (superseded): bridge each hole into the outer ring
-  //    with a "nearest point" slit, then ear-clip the resulting simple
-  //    polygon. This turned out to stall partway through on real models -
-  //    e.g. one run produced only 43 of the 72 triangles a 74-point simple
-  //    polygon should ear-clip into, leaving a large untriangulated gap
-  //    right around the hole (support points missing in a region whose
-  //    "incircle" was the hole). Root cause: the bridge/slit walks into the
-  //    hole and back out along the *same* line, so the merged polygon has
-  //    two exactly collinear, overlapping edges there. That degenerate
-  //    configuration is a known failure mode for naive O(n^2) ear-clipping
-  //    (candidate ears near the slit keep finding the "opposite side" of
-  //    the slit sitting exactly on/inside them and get rejected), and the
-  //    algorithm can stall with no valid ear left to clip.
-  //
-  //    CURRENT APPROACH: skip bridging/ear-clipping entirely and reuse the
-  //    same "unconstrained Delaunay + discard triangles outside the domain"
-  //    technique used for the final mesh in step 4. There is no bridge, so
-  //    there is nothing to be collinear/degenerate, and a hole is handled
-  //    exactly like the outer boundary - by filtering triangles whose
-  //    centroid falls outside the domain afterwards.
+  //    base position + normal via barycentric interpolation. Built by
+  //    triangulating just the boundary points (outer + holes) with the same
+  //    unconstrained-Delaunay-plus-domain-filter technique used for the
+  //    final mesh in step 4, then discarding triangles outside the domain.
   LoftBaseSurface base;
   {
     base.uv = outer_uv;
@@ -401,26 +402,27 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
       base.pos3d.insert(base.pos3d.end(), holes_pos[hi].begin(), holes_pos[hi].end());
     }
 
-    auto baseTris = triangulateAndFilterToDomain(base.uv, domain, domainScale, "base surface", nullptr);
+    auto baseTris = triangulateAndFilterToDomain(base.uv, domain, domainScale);
     base.tris.reserve(baseTris.size());
     for (const auto& t : baseTris) base.tris.push_back({t.a, t.b, t.c});
-
-    // Now that we have a real triangle of the domain, log a genuine
-    // known-inside point (its centroid) and confirm point_inside() agrees.
-    const Vector2d& ta = base.uv[base.tris[0][0]];
-    const Vector2d& tb = base.uv[base.tris[0][1]];
-    const Vector2d& tc = base.uv[base.tris[0][2]];
-    Vector2d knownInside = (ta + tb + tc) / 3.0;
+    if (base.tris.empty()) return nullptr;
   }
 
-  // 3) Combined point set: boundary points (real 3D position known) +
-  //    interior grid points (3D position/normal from the base surface,
-  //    displacement already applied).
+  // 3) Combined point set: boundary points (real 3D position known, NEVER
+  //    displaced - see below) + interior grid points (3D position/normal
+  //    from the base surface, displacement applied with a smooth falloff
+  //    towards the boundary).
   std::vector<Vector2d> allUV;
   std::vector<Vector3d> allPos;
   allUV.reserve(outer_uv.size() + 64);
   allPos.reserve(outer_uv.size() + 64);
 
+  // Boundary points (outer ring + hole rings) keep their exact input
+  // position. displacement() is intentionally never called for these - a
+  // texture/bump function must not be able to move a point that lies on the
+  // outer or inner (hole) contour, since those contours are what neighboring
+  // loft() calls (e.g. the next ring up/down a vase wall) rely on to line up
+  // exactly.
   for (size_t i = 0; i < outer_uv.size(); i++) {
     allUV.push_back(outer_uv[i]);
     allPos.push_back(outer_pos[i]);
@@ -434,63 +436,53 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
 
   int nu = std::max(2, static_cast<int>((umax - umin) / grid_spacing_uv) + 1);
   int nv = std::max(2, static_cast<int>((vmax - vmin) / grid_spacing_uv) + 1);
-  LOG(message_group::Warning, concatStr("loft(): interior grid ", nu, "x", nv, " candidates"));
 
-  int interiorAdded = 0;
-  int rejectedOutsideDomain = 0;
-  int rejectedNoBaseSample = 0;
+  // Interior grid points fade the displacement out smoothly as they
+  // approach the boundary, reaching exactly zero at 'blendDist' or closer.
+  // This isn't just cosmetic: without it, the row of interior points
+  // immediately next to the boundary gets the full displacement while the
+  // boundary itself (see above) gets none, producing a visible step right
+  // at the rim - which looks like the boundary itself got bumped even
+  // though, strictly, it never moved.
+  const double blendDist = std::max(2.0 * grid_spacing_uv, 1e-9);
+
   for (int iu = 0; iu < nu; iu++) {
     for (int iv = 0; iv < nv; iv++) {
       Vector2d p(umin + iu * grid_spacing_uv, vmin + iv * grid_spacing_uv);
-      if (!domain.point_inside(p)) {
-        rejectedOutsideDomain++;
-        continue;
-      }
+      if (!domain.point_inside(p)) continue;
+
+      // Protects the *topology* of the final mesh, not just the
+      // displacement: step 4's triangulation is an UNCONSTRAINED Delaunay
+      // triangulation, which has no obligation to keep a boundary ring's
+      // own short edges (e.g. between two adjacent points of 'outer' or a
+      // hole) as edges of the result. If an interior point lies inside a
+      // boundary edge's diametral circle, it can "steal" that edge (the
+      // empty-circumcircle rule prefers connecting to it instead),
+      // silently dropping the straight boundary edge and replacing it with
+      // thinner triangles that bulge slightly off the true boundary line.
+      // That breaks watertightness against any neighboring surface built
+      // from the same ring (e.g. the next segment of a vase wall, or a cap
+      // over the same hole). See pointEncroachesBoundary() above for the
+      // exact (and tight - it scales with each edge's own local length,
+      // not a fixed distance) test used here.
+      if (pointEncroachesBoundary(p, outer_uv, holes_uv)) continue;
+
       Vector3d pos, normal;
-      if (!base.sample(p, pos, normal)) {
-        rejectedNoBaseSample++;
-        continue;
-      }
-      double d = displacement(pos);
+      if (!base.sample(p, pos, normal)) continue;
+
+      double falloff = smoothstep01(distanceToBoundary(p, outer_uv, holes_uv) / blendDist);
+      double d = displacement(pos) * falloff;
       allUV.push_back(p);
       allPos.push_back(pos + normal * d);
-      interiorAdded++;
     }
-  }
-  LOG(message_group::Warning,
-      concatStr("loft(): interior grid: ", interiorAdded, " added, ", rejectedOutsideDomain,
-                " rejected by point_inside(), ", rejectedNoBaseSample, " rejected by base.sample() (of ",
-                nu, "x", nv, " candidates)"));
-  if (interiorAdded == 0 && rejectedOutsideDomain > 0 && rejectedNoBaseSample == 0) {
-    LOG(message_group::Warning,
-        "loft(): every interior candidate was rejected by point_inside() - "
-        "the domain polygon likely disagrees with the outer/hole winding "
-        "(see the sanity-check lines above), or grid_spacing_uv is too "
-        "coarse relative to the domain size.");
-  }
-  if (rejectedNoBaseSample > 0) {
-    LOG(message_group::Warning,
-        concatStr("loft(): ", rejectedNoBaseSample,
-                  " grid points were inside the domain but not covered "
-                  "by any base-surface triangle - the base surface triangulation may have gaps."));
   }
 
   // 4) Delaunay triangulation over the whole point set (boundary + interior
   //    grid), then discard triangles outside the domain (e.g. inside a
   //    hole, or outside the outer contour). Same helper as the base
   //    surface above.
-  LOG(
-    message_group::Warning,
-    concatStr("loft(): running final mesh Delaunay over ", allUV.size(), " combined points (",
-              outer_uv.size(), " outer + hole boundary points + ", interiorAdded, " interior points)"));
-  int rejectedByCentroid = 0;
-  auto finalTris =
-    triangulateAndFilterToDomain(allUV, domain, domainScale, "final mesh", &rejectedByCentroid);
-  if (finalTris.empty()) {
-    LOG(message_group::Warning,
-        "loft(): final mesh triangulation produced no triangles inside the domain.");
-    return nullptr;
-  }
+  auto finalTris = triangulateAndFilterToDomain(allUV, domain, domainScale);
+  if (finalTris.empty()) return nullptr;
 
   auto polyset = std::make_unique<PolySet>(3);
   polyset->setTriangular(true);
@@ -499,6 +491,5 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
   for (const auto& t : finalTris) {
     polyset->indices.push_back({t.a, t.b, t.c});
   }
-  LOG(message_group::Warning, concatStr("loft(): done, ", polyset->indices.size(), " triangles"));
   return polyset;
 }
