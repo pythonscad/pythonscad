@@ -2271,12 +2271,6 @@ Response GeometryEvaluator::visit(State& state, const LeafNode& node)
 {
   if (state.isPrefix()) {
     std::shared_ptr<const Geometry> geom;
-
-    const std::string& key = this->tree.getIdString(node);
-    bool cached = isSmartCached(node);
-    LOG(message_group::Trace, "LeafNode '%1$s' key=%2$s -> %3$s", node.name(), key,
-        cached ? "CACHE HIT" : "CACHE MISS");
-
     if (!isSmartCached(node)) {
       geom = node.createGeometry();
       assert(geom);
