@@ -1616,30 +1616,32 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
     break;
   }
   case OpenSCADOperator::CONCAT: {
+    PolySetBuilder builder;
+    bool any = false;
     for (const auto& item : children) {
       const auto ps = std::dynamic_pointer_cast<const PolySet>(item.second);
-      if (ps != nullptr) {
-        PolySetBuilder builder;
-        for (size_t i = 0; i < ps->indices.size(); i++) {
-          const auto& face = ps->indices[i];
-          builder.beginPolygon(face.size());
-          for (int ind : face) {
-            Vector3d pt = ps->vertices[ind];
-            pt[0] = concat_round(pt[0]);
-            pt[1] = concat_round(pt[1]);
-            pt[2] = concat_round(pt[2]);
-            builder.addVertex(pt);
-          }
-          if (ps->color_indices.size() > i) builder.endPolygon(ps->colors[ps->color_indices[i]]);
-          else builder.endPolygon();
+      if (ps == nullptr) continue;
+      any = true;
+      for (size_t i = 0; i < ps->indices.size(); i++) {
+        const auto& face = ps->indices[i];
+        builder.beginPolygon(face.size());
+        for (int ind : face) {
+          Vector3d pt = ps->vertices[ind];
+          pt[0] = concat_round(pt[0]);
+          pt[1] = concat_round(pt[1]);
+          pt[2] = concat_round(pt[2]);
+          builder.addVertex(pt);
         }
-        auto geom_u = builder.build();
-        std::shared_ptr<const Geometry> geom_s(geom_u.release());
-        return ResultObject::mutableResult(geom_s);
+        if (ps->color_indices.size() > i) builder.endPolygon(ps->colors[ps->color_indices[i]]);
+        else builder.endPolygon();
       }
     }
-    break;
+    if (!any) break;
+    auto geom_u = builder.build();
+    std::shared_ptr<const Geometry> geom_s(geom_u.release());
+    return ResultObject::mutableResult(geom_s);
   }
+
   case OpenSCADOperator::UNION: {
     const CsgOpNode *csgOpNode = dynamic_cast<const CsgOpNode *>(&node);
     Geometry::Geometries actualchildren;
@@ -2269,6 +2271,12 @@ Response GeometryEvaluator::visit(State& state, const LeafNode& node)
 {
   if (state.isPrefix()) {
     std::shared_ptr<const Geometry> geom;
+
+    const std::string& key = this->tree.getIdString(node);
+    bool cached = isSmartCached(node);
+    LOG(message_group::Trace, "LeafNode '%1$s' key=%2$s -> %3$s", node.name(), key,
+        cached ? "CACHE HIT" : "CACHE MISS");
+
     if (!isSmartCached(node)) {
       geom = node.createGeometry();
       assert(geom);
