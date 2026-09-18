@@ -41,6 +41,8 @@
 #endif
 #include "core/FreetypeRenderer.h"
 #include "core/TextNode.h"
+#include "core/LoftNode.h"
+#include <Tree.h>
 
 PyObject *python_edge(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -1470,5 +1472,121 @@ PyObject *python_organic(PyObject *obj, PyObject *args, PyObject *kwargs)
     return NULL;
   }
   node->d = d;
+  return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
+}
+
+static bool python_loft_ring_from_shape(PyObject *shape_obj, std::vector<Vector3d>& out)
+{
+  PyObject *dummydict = nullptr;
+  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(shape_obj, &dummydict);
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == nullptr) return false;
+
+  Tree tree(child, "");
+  GeometryEvaluator geomevaluator(tree);
+  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  if (PyErr_Occurred()) return false;  // falls die Auswertung selbst schon eine Python-Exception setzt
+
+  auto poly2d = std::dynamic_pointer_cast<const Polygon2d>(geom);
+  if (poly2d == nullptr) {
+    PyErr_SetString(PyExc_TypeError, "loft(): Objekt ist keine 2D-Form.");
+    return false;
+  }
+
+  const auto outlines = poly2d->untransformedOutlines();
+  if (outlines.empty()) {
+    PyErr_SetString(PyExc_TypeError, "loft(): 2D-Form hat keine Kontur.");
+    return false;
+  }
+  Transform3d trans = poly2d->getTransform3d();
+  const auto& outline = outlines[0];
+  out.reserve(out.size() + outline.vertices.size());
+  for (const auto& v : outline.vertices) {
+    out.push_back(trans * Vector3d(v[0], v[1], 0));
+  }
+  return true;
+}
+
+// Hilfsfunktion: eine Liste von [x,y,z]-Punkten ODER ein 2D-Shape-Objekt -> std::vector<Vector3d>
+static bool python_loft_parse_ring(PyObject *ring_obj, std::vector<Vector3d>& out)
+{
+  // Neu: akzeptiere ein PyOpenSCAD-2D-Objekt direkt (dessen Umfang wird verwendet)
+  if (PyObject_IsInstance(ring_obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
+    return python_loft_ring_from_shape(ring_obj, out);
+  }
+
+  // Bisheriges Verhalten: Liste von [x,y,z]-Punkten
+  out = python_to2dvarpointlist(ring_obj);
+  return true;
+}
+
+PyObject *python_loft(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  DECLARE_INSTANCE();
+
+  char *kwlist[] = {"outer", "proj", "grid_spacing_uv", "holes", "displacement", NULL};
+  PyObject *outer_obj = nullptr;
+  PyObject *holes_obj = nullptr;
+  PyObject *proj_obj = nullptr;
+  double grid_spacing_uv = 1.0;
+  PyObject *displacement_obj = nullptr;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OOd|OO", kwlist, &outer_obj, &proj_obj,
+                                   &grid_spacing_uv, &holes_obj, &displacement_obj)) {
+    PyErr_SetString(PyExc_TypeError,
+                    "Error during parsing loft(outer, proj, grid_spacing_uv, holes, displacement)");
+    return nullptr;
+  }
+
+  if (proj_obj->ob_type != &PyFunction_Type) {
+    PyErr_SetString(PyExc_TypeError, "loft(): proj muss eine Funktion sein.");
+    return nullptr;
+  }
+  if (displacement_obj != nullptr && displacement_obj->ob_type != &PyFunction_Type) {
+    PyErr_SetString(PyExc_TypeError, "loft(): displacement muss eine Funktion sein.");
+    return nullptr;
+  }
+
+  auto node = std::make_shared<LoftNode>(instance);
+
+  if (!python_loft_parse_ring(outer_obj, node->outer) || node->outer.size() < 3) {
+    PyErr_SetString(PyExc_TypeError,
+                    "loft(): outer muss eine Liste von mindestens 3 [x,y,z]-Punkten sein.");
+    return nullptr;
+  }
+
+  if (holes_obj != nullptr && holes_obj != Py_None) {
+    if (!python_is_sequence(holes_obj)) {
+      PyErr_SetString(PyExc_TypeError, "loft(): holes muss eine Liste von Punktlisten sein.");
+      return nullptr;
+    }
+    PyObject *holeseq = PySequence_Fast(holes_obj, "expected a list of rings");
+    Py_ssize_t nholes = PySequence_Fast_GET_SIZE(holeseq);
+    for (Py_ssize_t i = 0; i < nholes; i++) {
+      std::vector<Vector3d> hole;
+      if (!python_loft_parse_ring(PySequence_Fast_GET_ITEM(holeseq, i), hole)) {
+        Py_DECREF(holeseq);
+        PyErr_SetString(PyExc_TypeError, "loft(): jedes Loch muss eine Liste von [x,y,z]-Punkten sein.");
+        return nullptr;
+      }
+      node->holes.push_back(std::move(hole));
+    }
+    Py_DECREF(holeseq);
+  }
+
+  node->grid_spacing_uv = grid_spacing_uv;
+
+  Py_INCREF(proj_obj);
+  node->proj_func = (void *)proj_obj;
+  node->proj_func_hash = python_func_hash(proj_obj);
+
+  if (displacement_obj != nullptr) {
+    Py_INCREF(displacement_obj);
+    node->displacement_func = (void *)displacement_obj;
+    node->displacement_func_hash = python_func_hash(displacement_obj);
+  } else {
+    node->displacement_func_hash = "none";
+  }
+
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
 }
