@@ -27,7 +27,7 @@ permissions:
 jobs:
   resolve-targets:
     name: Resolve deploy targets
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       skip: ${{ steps.targets.outputs.skip }}
       targets: ${{ steps.targets.outputs.targets }}
@@ -69,7 +69,7 @@ jobs:
 
   deploy-website:
     name: Deploy ${{ matrix.target }} website
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: resolve-targets
     if: needs.resolve-targets.outputs.skip != 'true'
     concurrency:

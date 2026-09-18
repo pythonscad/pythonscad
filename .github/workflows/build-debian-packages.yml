@@ -25,7 +25,7 @@ permissions:
 jobs:
   prepare-matrix:
     name: Prepare build matrix from supported distributions
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -420,7 +420,7 @@ jobs:
   publish-apt-repo:
     name: Publish APT repository to SFTP
     needs: build-debian
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     if: github.event_name == 'release' || github.event.inputs.upload_to_release != ''
 
     steps:

@@ -29,7 +29,7 @@ jobs:
   build-linux:
     permissions:
       contents: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: Linux x86_64
     steps:
       - uses: actions/checkout@v7

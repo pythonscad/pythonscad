@@ -20,7 +20,7 @@ concurrency:
 jobs:
   prepare-release-builds:
     name: Prepare release build artifacts
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 180
     permissions:
       contents: read
