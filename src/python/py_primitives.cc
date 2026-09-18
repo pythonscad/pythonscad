@@ -42,6 +42,7 @@
 #include "core/FreetypeRenderer.h"
 #include "core/TextNode.h"
 #include "core/LoftNode.h"
+#include <Tree.h>
 
 PyObject *python_edge(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -1474,25 +1475,48 @@ PyObject *python_organic(PyObject *obj, PyObject *args, PyObject *kwargs)
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
 }
 
-// Hilfsfunktion: eine Liste von [x,y,z]-Punkten -> std::vector<Vector3d>
+static bool python_loft_ring_from_shape(PyObject *shape_obj, std::vector<Vector3d>& out)
+{
+  PyObject *dummydict = nullptr;
+  std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(shape_obj, &dummydict);
+  auto dummydict_owner = py_owned(dummydict);
+  if (child == nullptr) return false;
+
+  Tree tree(child, "");
+  GeometryEvaluator geomevaluator(tree);
+  std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
+  if (PyErr_Occurred()) return false;  // falls die Auswertung selbst schon eine Python-Exception setzt
+
+  auto poly2d = std::dynamic_pointer_cast<const Polygon2d>(geom);
+  if (poly2d == nullptr) {
+    PyErr_SetString(PyExc_TypeError, "loft(): Objekt ist keine 2D-Form.");
+    return false;
+  }
+
+  const auto outlines = poly2d->untransformedOutlines();
+  if (outlines.empty()) {
+    PyErr_SetString(PyExc_TypeError, "loft(): 2D-Form hat keine Kontur.");
+    return false;
+  }
+  Transform3d trans = poly2d->getTransform3d();
+  const auto& outline = outlines[0];
+  out.reserve(out.size() + outline.vertices.size());
+  for (const auto& v : outline.vertices) {
+    out.push_back(trans * Vector3d(v[0], v[1], 0));
+  }
+  return true;
+}
+
+// Hilfsfunktion: eine Liste von [x,y,z]-Punkten ODER ein 2D-Shape-Objekt -> std::vector<Vector3d>
 static bool python_loft_parse_ring(PyObject *ring_obj, std::vector<Vector3d>& out)
 {
-  if (!python_is_sequence(ring_obj)) return false;
-  PyObject *seq = PySequence_Fast(ring_obj, "expected a list of points");
-  if (seq == nullptr) return false;
-
-  Py_ssize_t n = PySequence_Fast_GET_SIZE(seq);
-  for (Py_ssize_t i = 0; i < n; i++) {
-    PyObject *element = PySequence_Fast_GET_ITEM(seq, i);
-    Vector3d point;
-    if (!python_is_sequence(element) ||
-        python_vectorval(element, 3, 3, &point[0], &point[1], &point[2], nullptr, nullptr)) {
-      Py_DECREF(seq);
-      return false;
-    }
-    out.push_back(point);
+  // Neu: akzeptiere ein PyOpenSCAD-2D-Objekt direkt (dessen Umfang wird verwendet)
+  if (PyObject_IsInstance(ring_obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
+    return python_loft_ring_from_shape(ring_obj, out);
   }
-  Py_DECREF(seq);
+
+  // Bisheriges Verhalten: Liste von [x,y,z]-Punkten
+  out = python_to2dvarpointlist(ring_obj);
   return true;
 }
 
