@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   pip-build-and-test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: pip install -e . and smoke test
 
     steps:

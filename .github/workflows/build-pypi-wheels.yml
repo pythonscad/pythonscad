@@ -49,7 +49,7 @@ concurrency:
 jobs:
   build-wheel-smoke:
     name: cp312 manylinux x86_64 wheel + smoke test
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       CIBW_BUILD: cp312-manylinux_x86_64
     steps:
