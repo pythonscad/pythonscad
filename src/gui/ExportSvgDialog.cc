@@ -33,11 +33,7 @@ ExportSvgDialog::ExportSvgDialog()
 
 int ExportSvgDialog::exec()
 {
-  bool showDialog = Settings::SettingsExportSvg::exportSvgAlwaysShowDialog.value();
-  if ((QApplication::keyboardModifiers() & Qt::ShiftModifier) != 0) {
-    showDialog = true;
-  }
-  return showDialog ? QDialog::exec() : QDialog::Accepted;
+  return QDialog::exec();
 }
 
 QColor ExportSvgDialog::getFillColor() const
