@@ -468,7 +468,7 @@ std::unique_ptr<PolySet> import_3mf(const std::string& filename, const Location&
       {
 #ifdef ENABLE_CGAL
         if (auto ps = PolySetUtils::getGeometryAsPolySet(
-              CGALUtils::applyUnion3D(*node, children.begin(), children.end()))) {
+              CGALUtils::applyUnion3D(children.begin(), children.end()))) {
           p = std::make_unique<PolySet>(*ps);
         } else {
           p = PolySet::createEmpty();
