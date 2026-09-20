@@ -374,8 +374,10 @@ msgstr "KI-Assistent"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:197
 msgid "Chat options"
-msgstr ""
+msgstr "Chat-Einstellungen"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:199
 msgid "☰"
 msgstr ""
@@ -398,7 +400,7 @@ msgstr "Senden"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:206
 msgid "Grab active 3D viewport frame and camera metadata"
-msgstr ""
+msgstr "Aktuelles Bild der 3D-Ansicht samt Kameradaten übernehmen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:208
 #, fuzzy
@@ -407,22 +409,24 @@ msgstr "&Vollbild"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:210
 msgid "Attach local image file"
-msgstr ""
+msgstr "Lokale Bilddatei anhängen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:212
 #: src/gui/ai/ChatWidget.cc:508
 msgid "Attach Image"
-msgstr ""
+msgstr "Bild anhängen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:214
 msgid ""
 "Agentic mode: allow the AI to call tools in multiple automatic turns per "
 "request"
 msgstr ""
+"Handelnder Modus: Die KI darf pro Anfrage mehrere Werkzeugaufrufe "
+"selbsttätig ausführen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:216
 msgid "Agentic"
-msgstr ""
+msgstr "Handelnd"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:399
 msgid "Color List"
@@ -515,6 +519,8 @@ msgstr "Auswahl"
 msgid "Reset background color"
 msgstr "Hintergrundfarbe zurücksetzen"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:435
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:439
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:451
@@ -555,14 +561,20 @@ msgstr "Als Vordergrund"
 msgid "As Background"
 msgstr "Als Hintergrund"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:443
 msgid "R:"
 msgstr "R:"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:444
 msgid "G:"
 msgstr "G:"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:445
 msgid "B:"
 msgstr "B:"
@@ -912,8 +924,8 @@ msgstr "Autor"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:582
 msgid ""
-"<html><head/><body><p>Set the direction of the largest page dimension.</p></"
-"body></html>"
+"<html><head/><body><p>Set the direction of the largest page "
+"dimension.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Richtung der größten Seitenabmessung festlegen.</p></"
 "body></html>"
@@ -962,8 +974,8 @@ msgstr "Design-Dateiname anzeigen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:598
 msgid ""
-"<html><head/><body><p>Include rulers on page to confirm 1:1 printing scale.</"
-"p></body></html>"
+"<html><head/><body><p>Include rulers on page to confirm 1:1 printing "
+"scale.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Lineale auf der Seite anzeigen, um den Druckmaßstab "
 "1:1 zu bestätigen.</p></body></html>"
@@ -974,8 +986,8 @@ msgstr "Maßstab anzeigen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:602
 msgid ""
-"<html><head/><body><p>Include a grid of the selected size on the page.</p></"
-"body></html>"
+"<html><head/><body><p>Include a grid of the selected size on the "
+"page.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Ein Raster der gewählten Größe auf der Seite anzeigen."
 "</p></body></html>"
@@ -984,30 +996,40 @@ msgstr ""
 msgid "Show Grid"
 msgstr "Raster anzeigen"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:605
 msgid "2mm"
 msgstr "2 mm"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:606
 msgid "2.5mm"
 msgstr "2,5 mm"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:607
 msgid "4mm"
 msgstr "4 mm"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:608
 msgid "5mm"
 msgstr "5 mm"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:609
 msgid "10mm"
 msgstr "10 mm"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:611
 msgid ""
-"<html><head/><body><p>Include text describing usage of scale.</p></body></"
-"html>"
+"<html><head/><body><p>Include text describing usage of "
+"scale.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Text zur Verwendung des Maßstabs anzeigen.</p></body></"
 "html>"
@@ -1023,8 +1045,8 @@ msgstr "Füllung und Kontur"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:616
 msgid ""
-"<html><head/><body><p>Enable filling of exported geometry with a color.</p></"
-"body></html>"
+"<html><head/><body><p>Enable filling of exported geometry with a "
+"color.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Füllung der exportierten Geometrie mit einer Farbe "
 "aktivieren.</p></body></html>"
@@ -1036,8 +1058,8 @@ msgstr "Geometrie füllen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:623
 msgid ""
-"<html><head/><body><p>Enable outline stroke for exported geometry.</p></"
-"body></html>"
+"<html><head/><body><p>Enable outline stroke for exported "
+"geometry.</p></body></html>"
 msgstr ""
 "<html><head/><body><p>Kontur für exportierte Geometrie aktivieren.</p></"
 "body></html>"
@@ -1109,6 +1131,8 @@ msgstr "Schriftstil anzeigen"
 msgid "Show Sample Text"
 msgstr "Beispieltext anzeigen"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:302
 msgid "ShowFileName"
 msgstr "Dateiname anzeigen"
@@ -1250,7 +1274,7 @@ msgstr "Ctrl+N"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1070
 #, fuzzy
 msgid "New &Window"
-msgstr "Neues Fenster"
+msgstr "Neues &Fenster"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1071
 msgid "&Open File..."
@@ -1263,7 +1287,7 @@ msgstr "Ctrl+O"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1075
 #, fuzzy
 msgid "Open in New Windo&w"
-msgstr "In neuem Fenster öffenen"
+msgstr "&In neuem Fenster öffnen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1076
 msgid "&Save"
@@ -1275,7 +1299,7 @@ msgstr "Ctrl+S"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1080
 msgid "Save &As..."
-msgstr "Speichern &Unter..."
+msgstr "Speichern &unter..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1082
 msgid "Ctrl+Shift+S"
@@ -1289,7 +1313,7 @@ msgstr "Kopie speichern …"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1085
 #, fuzzy
 msgid "S&ave All"
-msgstr "Alles Speichern"
+msgstr "&Alle speichern"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1086
 msgid "&Reload"
@@ -1310,7 +1334,7 @@ msgstr "Alt+F4"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1094
 msgid "&Quit"
-msgstr "Beenden"
+msgstr "B&eenden"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1096
 msgid "Ctrl+Q"
@@ -1354,7 +1378,7 @@ msgstr "Ctrl+C"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1117
 msgid "&Paste"
-msgstr "Einfügen"
+msgstr "&Einfügen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1119
 msgid "Ctrl+V"
@@ -1362,7 +1386,7 @@ msgstr "Ctrl+V"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1121
 msgid "&Indent"
-msgstr "Einzug er&höhen"
+msgstr "Einzu&g erhöhen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1123
 msgid "Ctrl+I"
@@ -1370,7 +1394,7 @@ msgstr "Ctrl+I"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1125
 msgid "C&omment"
-msgstr "K&ommentieren"
+msgstr "Ko&mmentieren"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1127
 msgid "Ctrl+D"
@@ -1378,7 +1402,7 @@ msgstr "Ctrl+D"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1129
 msgid "Unco&mment"
-msgstr "Kommentar ent&fernen"
+msgstr "K&ommentar entfernen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1131
 msgid "Ctrl+Shift+D"
@@ -1386,15 +1410,21 @@ msgstr "Ctrl+Shift+D"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1133
 msgid "Mo&ve Line Up"
-msgstr ""
+msgstr "Zeile nach o&ben"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1135
 #, fuzzy
 msgid "Ctrl+Alt+Up"
-msgstr "Ctrl+Alt+F"
+msgstr ""
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1137
 msgid "Mo&ve Line Down"
+msgstr "Zei&le nach unten"
+
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
+#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1075
+msgid "Ctrl+Alt+Down"
 msgstr ""
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1139
@@ -1405,7 +1435,7 @@ msgstr "Ctrl+Alt+F"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1141
 #, fuzzy
 msgid "Show &Next Tab"
-msgstr "Nächsten Reitern anzeigen"
+msgstr "Näc&hsten Reiter anzeigen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1143
 msgid "Ctrl+Tab"
@@ -1414,7 +1444,7 @@ msgstr "Ctrl+Tab"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1145
 #, fuzzy
 msgid "Show P&revious Tab"
-msgstr "Vorheriger Reiter"
+msgstr "&Vorherigen Reiter anzeigen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1147
 msgid "Ctrl+Shift+Tab"
@@ -1422,7 +1452,7 @@ msgstr "Ctrl+Shift+Tab"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1149
 msgid "Copy viewport ima&ge"
-msgstr "Viewport Bild kopieren"
+msgstr "Ansichtsbild kopieren"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1151
 msgid "Ctrl+Shift+C"
@@ -1430,7 +1460,7 @@ msgstr "Ctrl+Shift+C"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1153
 msgid "Copy viewport transl&ation"
-msgstr "Aktuelle Versch&iebung kopieren"
+msgstr "Aktuelle Verschiebung kopieren"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1155
 msgid "Ctrl+T"
@@ -1438,19 +1468,19 @@ msgstr "Ctrl+T"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1157
 msgid "Cop&y viewport rotation"
-msgstr "Aktuelle Ro&tation kopieren"
+msgstr "Aktuelle Rotation kopieren"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1158
 msgid "Copy vie&wport distance"
-msgstr "Aktuellen Abstand kopieren"
+msgstr "Aktuellen Abstand ko&pieren"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1159
 msgid "Copy vie&wport fov"
-msgstr "Viewport Sichtfeld kopieren"
+msgstr "Aktuelles Sichtfeld kopieren"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1160
 msgid "Increase Font &Size"
-msgstr "Font&größe erhöhen"
+msgstr "Schri&ftgröße erhöhen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1162
 msgid "Ctrl++"
@@ -1458,7 +1488,7 @@ msgstr "Ctrl++"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1164
 msgid "Decrease Font Si&ze"
-msgstr "Fontgröße &verringern"
+msgstr "S&chriftgröße verringern"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1166
 msgid "Ctrl+-"
@@ -1466,7 +1496,7 @@ msgstr "Ctrl+-"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1168
 msgid "&Reload and Preview"
-msgstr "Neu &laden und Vorschau"
+msgstr "&Neu laden und Vorschau"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1170
 msgid "F4"
@@ -1526,7 +1556,7 @@ msgstr "Geteiltes Design &laden"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1195
 msgid "&Check Validity"
-msgstr "&Design überprüfen"
+msgstr "&Gültigkeit prüfen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1196
 msgid "Display A&ST"
@@ -1619,7 +1649,7 @@ msgstr "F12"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1225
 #, fuzzy
 msgid "&Show Edges"
-msgstr "&Kanten anzeigen"
+msgstr "Kanten anze&igen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1227
 msgid "Ctrl+1"
@@ -1628,7 +1658,7 @@ msgstr "Ctrl+1"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1229
 #, fuzzy
 msgid "Show A&xes"
-msgstr "Koordinaten&achsen anzeigen"
+msgstr "&Koordinatenachsen anzeigen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1231
 msgid "Ctrl+2"
@@ -1646,7 +1676,7 @@ msgstr "Ctrl+3"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1237
 #, fuzzy
 msgid "Show Scale &Markers"
-msgstr "Achsen&einteilung anzeigen"
+msgstr "&Achseneinteilung anzeigen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1238
 msgid "&Top"
@@ -1722,7 +1752,7 @@ msgstr "Or&thogonal"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1272
 msgid "&About"
-msgstr "Über &OpenSCAD"
+msgstr "Üb&er OpenSCAD"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1273
 msgid "&Documentation"
@@ -1730,11 +1760,11 @@ msgstr "&Dokumentation"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1274
 msgid "&Offline Documentation"
-msgstr "Offline Dokumentation"
+msgstr "O&ffline-Dokumentation"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1275
 msgid "&Offline Cheat Sheet"
-msgstr "&Offline Befehlsübersicht"
+msgstr "&Offline-Befehlsübersicht"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1276
 msgid "Clear Recent"
@@ -1763,7 +1793,7 @@ msgstr ""
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1286
 msgid "&Close"
-msgstr "Schließen"
+msgstr "S&chließen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1288
 msgid "Ctrl+W"
@@ -1783,7 +1813,7 @@ msgstr "Ctrl+F"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1295
 msgid "Fin&d and Replace..."
-msgstr "Suchen und &Ersetzen..."
+msgstr "Suchen un&d Ersetzen..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1297
 msgid "Ctrl+Alt+F"
@@ -1791,7 +1821,7 @@ msgstr "Ctrl+Alt+F"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1299
 msgid "Find Ne&xt"
-msgstr "&Weiter suchen"
+msgstr "We&iter suchen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1301
 msgid "Ctrl+G"
@@ -1799,7 +1829,7 @@ msgstr "Ctrl+G"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1303
 msgid "Find Pre&vious"
-msgstr "Rüc&kwärts suchen"
+msgstr "Rückwär&ts suchen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1305
 msgid "Ctrl+Shift+G"
@@ -1807,7 +1837,7 @@ msgstr "Ctrl+Shift+G"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1307
 msgid "Use Se&lection for Find"
-msgstr "&Auswahl suchen"
+msgstr "A&uswahl suchen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1309
 msgid "Ctrl+E"
@@ -1824,7 +1854,7 @@ msgstr "Ctrl+Alt+E"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1315
 msgid "&Flush Caches"
-msgstr "&Cache leeren"
+msgstr "&Zwischenspeicher leeren"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1316
 msgid "&PythonSCAD Homepage"
@@ -1832,7 +1862,7 @@ msgstr "PythonSCAD &Homepage"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1317
 msgid "&Automatic Reload and Preview"
-msgstr "&Automatisch neu Laden und Vorschau"
+msgstr "&Automatisch neu laden und Vorschau"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1318
 msgid "Export as &Image..."
@@ -1861,7 +1891,7 @@ msgstr "Sicherungsdateien anzeigen"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1324
 #, fuzzy
 msgid "Reset &View"
-msgstr "Ans&icht zurücksetzen"
+msgstr "Ansi&cht zurücksetzen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1325
 msgid "Export as S&VG..."
@@ -1874,7 +1904,7 @@ msgstr "&3MF exportieren..."
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1327
 #, fuzzy
 msgid "Zoom &In"
-msgstr "Vergrößern"
+msgstr "Ver&größern"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1329
 msgid "Ctrl+]"
@@ -1883,7 +1913,7 @@ msgstr "Ctrl+]"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1331
 #, fuzzy
 msgid "&Zoom Out"
-msgstr "Verkleinern"
+msgstr "V&erkleinern"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1333
 msgid "Ctrl+["
@@ -1900,12 +1930,12 @@ msgstr "Ctrl+Shift+V"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1339
 msgid "Conv&ert Tabs to Spaces"
-msgstr "Tabs in Leerzeichen &umwandeln"
+msgstr "Tabs in Leerzeichen umwandeln"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1340
 #, fuzzy
 msgid "&Toggle Bookmark"
-msgstr "Marker umschalten"
+msgstr "Lesezeichen umschalten"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1342
 msgid "Ctrl+F2"
@@ -1914,7 +1944,7 @@ msgstr "Ctrl+F2"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1344
 #, fuzzy
 msgid "Jump to next &bookmark"
-msgstr "Zum nächsten Marker springen"
+msgstr "Zum nächsten Lesezeichen springen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1346
 msgid "F2"
@@ -1923,7 +1953,7 @@ msgstr "F2"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
 #, fuzzy
 msgid "Jump to &previous bookmark"
-msgstr "Zum vorherigen Marker springen"
+msgstr "Zum vorherigen Lesezeichen springen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
 msgid "Shift+F2"
@@ -1940,11 +1970,11 @@ msgstr "F11"
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
 #, fuzzy
 msgid "&Hide Editor toolbar"
-msgstr "Editor Symbolleiste ausblenden"
+msgstr "Editor-&Werkzeugleiste ausblenden"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1357
 msgid "U&nindent"
-msgstr "Einzug ver&mindern"
+msgstr "Ein&zug vermindern"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1359
 msgid "Ctrl+Shift+I"
@@ -1960,12 +1990,12 @@ msgstr "Python-&Spickzettel"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1363
 msgid "Export as PDF..."
-msgstr "&PDF exportieren..."
+msgstr "PD&F exportieren..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
 #, fuzzy
 msgid "Hide &3D View toolbar"
-msgstr "3D Symbolleiste ausblenden"
+msgstr "&3D-Werkzeugleiste ausblenden"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1365
 msgid "&Next Window\tCtrl+K"
@@ -2016,7 +2046,7 @@ msgstr "&Datei"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1382
 msgid "Recen&t Files"
-msgstr "Zuletzt benutze &Dateien"
+msgstr "&Zuletzt benutzte Dateien"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1383
 msgid "&Examples"
@@ -2034,7 +2064,7 @@ msgstr "&Bearbeiten"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1386
 msgid "&Design"
-msgstr "D&esign"
+msgstr "&Entwurf"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1387
 msgid "&View"
@@ -2148,27 +2178,17 @@ msgstr "OpenGL Warnung"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:77
 msgid ""
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/"
-"REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/"
-"css\">\n"
+"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; "
-"font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; "
-"margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></"
-"p></body></html>"
+"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></p></body></html>"
 msgstr ""
-"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/"
-"REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/"
-"css\">\n"
+"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; "
-"font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; "
-"margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></"
-"p></body></html>"
+"</style></head><body style=\" font-family:'Lucida Grande'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></p></body></html>"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_OpenCSGWarningDialog.h:82
 msgid "Show this message again"
@@ -2599,7 +2619,7 @@ msgstr "Zuletzt gesucht: "
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
 #, fuzzy
 msgid "Experimental Features"
-msgstr "Export Features"
+msgstr "Experimentelle Funktionen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
 msgid ""
@@ -2608,6 +2628,10 @@ msgid ""
 "you must assume that they may not be in their final form and may never "
 "appear in an OpenSCAD release in any form."
 msgstr ""
+"Diese Funktionen sind experimentell. Sie können sich ändern oder ohne "
+"Ankündigung ganz entfallen. Sie dürfen sie einschalten, benutzen und "
+"kommentieren, müssen aber davon ausgehen, dass sie noch nicht endgültig sind"
+" und möglicherweise nie in einer OpenSCAD-Veröffentlichung erscheinen."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
 msgid "General"
@@ -2910,15 +2934,15 @@ msgstr "Protokoll für HIDAPI einschalten (benötigt Neustart von PythonSCAD)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2827
 msgid "Network"
-msgstr ""
+msgstr "Netzwerk"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2828
 msgid "Custom CA certificates (PEM)"
-msgstr ""
+msgstr "Eigene CA-Zertifikate (PEM)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2830
 msgid "Skip TLS certificate verification (insecure)"
-msgstr ""
+msgstr "TLS-Zertifikatsprüfung überspringen (unsicher)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2831
 msgid "Network Import List"
@@ -2939,7 +2963,7 @@ msgstr "Dialogsichtbarkeit"
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2835
 #, fuzzy
 msgid "Always show Welcome screen"
-msgstr "Startbildschirm anzeigen"
+msgstr "Startbildschirm immer anzeigen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2836
 msgid "Always show PDF export dialog"
@@ -3074,6 +3098,8 @@ msgstr "Details"
 msgid "Distance"
 msgstr "Abstand"
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:278
 msgid "FOV"
 msgstr "FOV"
@@ -3162,18 +3188,16 @@ msgid "Thinking"
 msgstr "Denke"
 
 #: src/gui/ai/ChatWidget.cc:153
-#, fuzzy
 msgid "Export Chat..."
 msgstr "Als &STEP exportieren …"
 
 #: src/gui/ai/ChatWidget.cc:154
-#, fuzzy
 msgid "Import Chat..."
 msgstr "Als &STEP exportieren …"
 
 #: src/gui/ai/ChatWidget.cc:156
 msgid "Copy as Markdown"
-msgstr ""
+msgstr "Als Markdown kopieren"
 
 #: src/gui/ai/ChatWidget.cc:200 src/gui/ai/ChatWidget.cc:613
 msgid ""
@@ -3201,32 +3225,34 @@ msgid "Stop"
 msgstr "Stopp"
 
 #: src/gui/ai/ChatWidget.cc:481 src/gui/ai/ChatWidget.cc:488
-#, fuzzy
 msgid "Viewport Error"
 msgstr "&Ansichtsfenster-Steuerung"
 
 #: src/gui/ai/ChatWidget.cc:482
 msgid "Could not find active 3D Viewport to grab screen."
 msgstr ""
+"Es wurde keine aktive 3D-Ansicht gefunden, deren Bild übernommen werden "
+"könnte."
 
 #: src/gui/ai/ChatWidget.cc:488
 msgid "Failed to capture 3D viewport frame."
-msgstr ""
+msgstr "Das Bild der 3D-Ansicht konnte nicht übernommen werden."
 
 #: src/gui/ai/ChatWidget.cc:509
 msgid "Image Files (*.png *.jpg *.jpeg *.webp)"
-msgstr ""
+msgstr "Bilddateien (*.png *.jpg *.jpeg *.webp)"
 
 #: src/gui/ai/ChatWidget.cc:517
-#, fuzzy
 msgid "File Error"
-msgstr "Fehlerliste ausblenden"
+msgstr "Dateifehler"
 
 #: src/gui/ai/ChatWidget.cc:517
 #, fuzzy
 msgid "Could not open the selected image file."
 msgstr "Die Sitzung konnte nicht gespeichert werden."
 
+#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
+#. msgstr laesst gettext den Originaltext zurueckgeben.
 #: src/gui/ai/ChatWidget.cc:577
 msgid "[Img]"
 msgstr ""
@@ -3242,14 +3268,12 @@ msgid "Export Chat History"
 msgstr "Chatverlauf löschen"
 
 #: src/gui/ai/ChatWidget.cc:902 src/gui/ai/ChatWidget.cc:949
-#, fuzzy
 msgid "JSON Files (*.json)"
-msgstr "CSG Dateien (*.csg)"
+msgstr "JSON-Dateien (*.json)"
 
 #: src/gui/ai/ChatWidget.cc:938
-#, fuzzy
 msgid "Export Warning"
-msgstr "Image exportieren"
+msgstr "Warnung beim Exportieren"
 
 #: src/gui/ai/ChatWidget.cc:938
 #, fuzzy
@@ -3257,13 +3281,12 @@ msgid "Could not write to the chosen file."
 msgstr "Die Sitzung konnte nicht gespeichert werden."
 
 #: src/gui/ai/ChatWidget.cc:943
-#, fuzzy
 msgid "Export Successful"
-msgstr "Export Features"
+msgstr "Export erfolgreich"
 
 #: src/gui/ai/ChatWidget.cc:943
 msgid "Chat history exported successfully."
-msgstr ""
+msgstr "Der Chatverlauf wurde exportiert."
 
 #: src/gui/ai/ChatWidget.cc:949
 #, fuzzy
@@ -3272,9 +3295,8 @@ msgstr "Chatverlauf löschen"
 
 #: src/gui/ai/ChatWidget.cc:957 src/gui/ai/ChatWidget.cc:965
 #: src/gui/ai/ChatWidget.cc:970 src/gui/ai/ChatWidget.cc:1013
-#, fuzzy
 msgid "Import Warning"
-msgstr "OpenGL Warnung"
+msgstr "Warnung beim Einlesen"
 
 #: src/gui/ai/ChatWidget.cc:957
 #, fuzzy
@@ -3283,23 +3305,23 @@ msgstr "Die Sitzung konnte nicht gespeichert werden."
 
 #: src/gui/ai/ChatWidget.cc:971
 msgid "Selected file does not contain a valid chat history array."
-msgstr ""
+msgstr "Die gewählte Datei enthält keinen gültigen Chatverlauf."
 
 #: src/gui/ai/ChatWidget.cc:1016
 msgid "Import Successful"
-msgstr ""
+msgstr "Einlesen erfolgreich"
 
 #: src/gui/ai/ChatWidget.cc:1016
 msgid "Chat history imported successfully."
-msgstr ""
+msgstr "Der Chatverlauf wurde eingelesen."
 
 #: src/gui/ai/ChatWidget.cc:1051
 msgid "Chat Copied"
-msgstr ""
+msgstr "Chat kopiert"
 
 #: src/gui/ai/ChatWidget.cc:1052
 msgid "Chat conversation copied to clipboard as Markdown."
-msgstr ""
+msgstr "Der Chatverlauf wurde als Markdown in die Zwischenablage kopiert."
 
 #: src/gui/Animate.cc:207
 msgid "press to pause animation"
@@ -3374,7 +3396,8 @@ msgstr ""
 
 #: src/gui/input/AxisConfigWidget.h:92
 msgid ""
-"The DBUS driver is not for actual devices but for remote control, Linux only."
+"The DBUS driver is not for actual devices but for remote control, Linux "
+"only."
 msgstr "Der DBUS Treiber dient der Fernsteuerung, nur für Linux."
 
 #: src/gui/input/AxisConfigWidget.h:94
@@ -3393,11 +3416,11 @@ msgstr ""
 
 #: src/gui/input/AxisConfigWidget.h:98
 msgid ""
-"The Joystick driver uses the Linux joystick device (fixed to /dev/input/"
-"js0), Linux only."
+"The Joystick driver uses the Linux joystick device (fixed to "
+"/dev/input/js0), Linux only."
 msgstr ""
-"Der Joystick Treiber bedient die Linux Joystick Schnittstelle (/dev/input/"
-"js0), nur Linux."
+"Der Joystick Treiber bedient die Linux Joystick Schnittstelle "
+"(/dev/input/js0), nur Linux."
 
 #: src/gui/input/AxisConfigWidget.h:100
 msgid "The QGAMEPAD driver is for multiplattform Gamepad Support."
@@ -3542,11 +3565,11 @@ msgstr "&Konsole"
 
 #: src/gui/MainWindow.cc:5189
 msgid "C&ustomizer"
-msgstr "C&ustomizer"
+msgstr "&Anpassung"
 
 #: src/gui/MainWindow.cc:5190
 msgid "Error &Log"
-msgstr "Fehler&liste"
+msgstr "&Fehlerliste"
 
 #: src/gui/MainWindow.cc:5191
 msgid "&Animate"
@@ -3554,7 +3577,7 @@ msgstr "&Animation"
 
 #: src/gui/MainWindow.cc:5192
 msgid "&Font List"
-msgstr "&Fontliste"
+msgstr "&Schriftenliste"
 
 #: src/gui/MainWindow.cc:5193
 msgid "C&olor List"
@@ -3593,8 +3616,7 @@ msgid ""
 "A critical error was caught. The application may have become unstable:\n"
 "%1"
 msgstr ""
-"Ein kritischer Fehler wurde abgefangen. Die Anwendung könnte jetzt instabil "
-"laufen:\n"
+"Ein kritischer Fehler wurde abgefangen. Die Anwendung könnte jetzt instabil laufen:\n"
 "%1"
 
 #: src/gui/OpenSCADApp.cc:129
@@ -3662,11 +3684,11 @@ msgstr "KEINE"
 
 #: src/gui/Preferences.cc:1211
 msgid "Select CA certificate"
-msgstr ""
+msgstr "CA-Zertifikat auswählen"
 
 #: src/gui/Preferences.cc:1212
 msgid "Certificate files (*.pem *.crt *.cer);;All files (*)"
-msgstr ""
+msgstr "Zertifikatsdateien (*.pem *.crt *.cer);;Alle Dateien (*)"
 
 #: src/gui/Preferences.cc:1472
 msgid "Success: Server Version = %2, API Version = %1"
@@ -3703,12 +3725,10 @@ msgstr "Profil „%1“ löschen?"
 
 #: src/gui/QGLView.cc:194
 msgid ""
-"Warning: Missing OpenGL capabilities for OpenCSG - OpenCSG has been "
-"disabled.\n"
+"Warning: Missing OpenGL capabilities for OpenCSG - OpenCSG has been disabled.\n"
 "\n"
 msgstr ""
-"Achtung: Der Funktionsumfang des OpenGL Treibers reicht für die Vorschau "
-"nicht aus - OpenCSG wurde deaktiviert.\n"
+"Achtung: Der Funktionsumfang des OpenGL Treibers reicht für die Vorschau nicht aus - OpenCSG wurde deaktiviert.\n"
 "\n"
 
 #: src/gui/QGLView.cc:196
@@ -3717,8 +3737,7 @@ msgid ""
 "later.\n"
 "Your renderer information is as follows:\n"
 msgstr ""
-"Für die korrekte Anzeige der Vorschau benötigt OpenSCAD mindestens OpenGL "
-"2.0.\n"
+"Für die korrekte Anzeige der Vorschau benötigt OpenSCAD mindestens OpenGL 2.0.\n"
 "Informationen zum OpenGL Treiber:\n"
 
 #: src/gui/QGLView.cc:200
@@ -4318,22 +4337,21 @@ msgstr ""
 #~ "OpenSCAD.</p><p>Example:</p><pre style=\" margin-top:12px; margin-"
 #~ "bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-"
 #~ "indent:0px;\"><span style=\" font-family:'Courier New,courier';\">  "
-#~ "text(&quot;OpenSCAD&quot;, font = &quot;DejaVu Sans&quot;);</span></"
-#~ "pre><pre style=\" margin-top:0px; margin-bottom:12px; margin-left:0px; "
-#~ "margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" "
-#~ "font-family:'Courier New,courier';\">  text(&quot;OpenSCAD&quot;, font = "
+#~ "text(&quot;OpenSCAD&quot;, font = &quot;DejaVu Sans&quot;);</span></pre><pre"
+#~ " style=\" margin-top:0px; margin-bottom:12px; margin-left:0px; margin-"
+#~ "right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-"
+#~ "family:'Courier New,courier';\">  text(&quot;OpenSCAD&quot;, font = "
 #~ "&quot;Liberation Sans:style=Italic&quot;);</span></pre></body></html>"
 #~ msgstr ""
-#~ "<html><head/><body><p>Diese Liste zeigt die Fonts, die momentan mit "
-#~ "OpenSCAD registriert sind.</p><p>Beispiele:</p><pre style=\" margin-"
-#~ "top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-"
-#~ "indent:0; text-indent:0px;\"><span style=\" font-family:'Courier "
-#~ "New,courier';\">  text(&quot;OpenSCAD&quot;, font = &quot;DejaVu "
-#~ "Sans&quot;);</span></pre><pre style=\" margin-top:0px; margin-"
-#~ "bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-"
-#~ "indent:0px;\"><span style=\" font-family:'Courier New,courier';\">  "
-#~ "text(&quot;OpenSCAD&quot;, font = &quot;Liberation "
-#~ "Sans:style=Italic&quot;);</span></pre></body></html>"
+#~ "<html><head/><body><p>Diese Liste zeigt die Fonts, die momentan mit OpenSCAD"
+#~ " registriert sind.</p><p>Beispiele:</p><pre style=\" margin-top:12px; "
+#~ "margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; "
+#~ "text-indent:0px;\"><span style=\" font-family:'Courier New,courier';\">  "
+#~ "text(&quot;OpenSCAD&quot;, font = &quot;DejaVu Sans&quot;);</span></pre><pre"
+#~ " style=\" margin-top:0px; margin-bottom:12px; margin-left:0px; margin-"
+#~ "right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-"
+#~ "family:'Courier New,courier';\">  text(&quot;OpenSCAD&quot;, font = "
+#~ "&quot;Liberation Sans:style=Italic&quot;);</span></pre></body></html>"
 
 #~ msgid ""
 #~ "The document has been modified.\n"
@@ -4427,8 +4445,7 @@ msgstr ""
 #~ "Warning: You may experience OpenCSG rendering errors.\n"
 #~ "\n"
 #~ msgstr ""
-#~ "Achtung: Es können Darstellungsfehler beim Anzeigen der Vorschau "
-#~ "auftreten.\n"
+#~ "Achtung: Es können Darstellungsfehler beim Anzeigen der Vorschau auftreten.\n"
 #~ "\n"
 
 #~ msgid "save preset"
@@ -4450,8 +4467,8 @@ msgstr ""
 #~ msgstr "Änderungen an den aktuelle Voreinstellung nicht gespeichert"
 
 #~ msgid ""
-#~ "The changes on the current preset %1 are not saved yet. Do you really "
-#~ "want to reset this preset and lose your changes?"
+#~ "The changes on the current preset %1 are not saved yet. Do you really want "
+#~ "to reset this preset and lose your changes?"
 #~ msgstr ""
 #~ "Die Änderungen an der akutellen Voreinstellung %1 sind noch nicht "
 #~ "gespeichert.Möchten Sie die Änderungen wirklich zurücksetzen?"
@@ -4463,12 +4480,12 @@ msgstr ""
 #~ msgstr "JSON file ist nicht schreibbar"
 
 #~ msgid ""
-#~ "The current preset %1 contains changes, but is not saved yet. Do you "
-#~ "really want to change the preset and lose your changes?"
+#~ "The current preset %1 contains changes, but is not saved yet. Do you really "
+#~ "want to change the preset and lose your changes?"
 #~ msgstr ""
 #~ "Die Änderungen an der akutellen Voreinstellung %1 sind noch nicht "
-#~ "gespeichert.Möchten Sie wirklich die Voreinstellung wechseln und somit "
-#~ "Ihre Änderungen verlieren?"
+#~ "gespeichert.Möchten Sie wirklich die Voreinstellung wechseln und somit Ihre "
+#~ "Änderungen verlieren?"
 
 #~ msgid "Do you want to delete the current preset?"
 #~ msgstr "Möchten Sie die aktuelle Voreinstellung löschen?"
