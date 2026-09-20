@@ -201,6 +201,26 @@ void edgeControlPoints(const Vector3d& Pi, const Vector3d& Pj, const Vector3d& T
     outNearI = Pi - Ti * (L / 3.0);
     outNearJ = Pj + Tj * (L / 3.0);
   }
+
+  // -------- DEBUG: nur die ersten paar Kanten protokollieren --------
+  // Zeigt die eigentliche Rohdatenlage, mit der evalCubicTriangle() rechnet:
+  // Kantenlaenge, beide Tangenten und die daraus abgeleiteten
+  // Kontrollpunkte. Wenn Ti/Tj hier (fast) auf der Verbindungsgeraden
+  // Pj-Pi liegen, bleibt die Flaeche zwangslaeufig fast gerade - das ist
+  // dann kein Bug in evalCubicTriangle(), sondern eine Tangente, die
+  // schon nach der Vorzeichen-Normalisierung praktisch axial zeigt.
+  static int debugEdgeCount = 0;
+  if (debugEdgeCount < 10) {
+    debugEdgeCount++;
+    Vector3d chordDir = (L > 1e-12) ? (Pj - Pi) / L : Vector3d(0, 0, 0);
+    LOG(message_group::Warning,
+        "loft debug edge #%1$d: ring %2$d->%3$d  L=%4$f  chordDir=(%5$f,%6$f,%7$f)", debugEdgeCount,
+        ringI, ringJ, L, chordDir.x(), chordDir.y(), chordDir.z());
+    LOG(message_group::Warning, "loft debug edge #%1$d: Ti=(%2$f,%3$f,%4$f) dot(chordDir)=%5$f",
+        debugEdgeCount, Ti.x(), Ti.y(), Ti.z(), Ti.dot(chordDir));
+    LOG(message_group::Warning, "loft debug edge #%1$d: Tj=(%2$f,%3$f,%4$f) dot(chordDir)=%5$f",
+        debugEdgeCount, Tj.x(), Tj.y(), Tj.z(), Tj.dot(chordDir));
+  }
 }
 
 Vector3d evalCubicTriangle(const Vector3d& P1, const Vector3d& P2, const Vector3d& P3,
@@ -484,6 +504,18 @@ void normalizeTangentSigns(const std::vector<Vector3d>& outer_pos, std::vector<V
     if (flipped) {
       for (auto& n : ringNormal) n = -n;
     }
+    // -------- DEBUG --------
+    // 'dot' hier nahe 0 bedeutet: die Tangente steht (fast) senkrecht zur
+    // outer->hole-Achse - dann ist die Vorzeichenwahl praktisch eine
+    // Muenzwurf-Entscheidung und KEIN verlaesslicher Indikator, auf welcher
+    // Seite die Woelbung landet. Ein 'flipped=1' bei einer Konfiguration,
+    // die eigentlich keine ~180 Grad-Wende braucht, ist ein Hinweis, dass
+    // hier die axis-Heuristik die falsche Seite waehlt.
+    LOG(message_group::Warning,
+        "loft debug normalizeTangentSigns[%1$s]: avgTangent=(%2$f,%3$f,%4$f) axis=(%5$f,%6$f,%7$f) "
+        "dot=%8$f flipped=%9$d",
+        label, avgBefore.x(), avgBefore.y(), avgBefore.z(), axis.x(), axis.y(), axis.z(),
+        avgBefore.dot(axis), flipped ? 1 : 0);
   };
 
   flipRingIfNeeded(outer_normal, "outer");
@@ -534,6 +566,72 @@ std::function<Vector2d(const Vector3d&)> makePlaneProjection(const std::vector<V
   };
 }
 
+// -------------------- Degenerate-hole detection & local re-embedding --------------------
+//
+// A hole ring's projected shape can become degenerate (near-zero extent in
+// one direction) if its own boundary curve's natural spread doesn't align
+// with whatever directions the *shared* projection happens to keep - e.g.
+// a small hole drilled radially through a tube wall, when the tube itself
+// is (correctly, for the tube's own sake) projected top-down, dropping
+// exactly the axial coordinate the hole's own extent depends on. This is
+// not fixable by picking a "smarter" shared projection: a rotationally
+// symmetric outer/tube-partner ring and an arbitrarily oriented hole
+// fundamentally need different 2D treatment - see the discussion that led
+// here.
+//
+// The fix: only the TOPOLOGY actually matters for the Delaunay+domain-
+// filter approach below - which points bound which loop, and that loops
+// don't overlap - not that every ring share one single global projection
+// formula. So each hole is projected with the shared 'effectiveProj' as
+// usual, and only if THAT comes out degenerate, it is instead flattened
+// with its OWN local best-fit plane (same PCA technique as
+// makePlaneProjection(), just scoped to this one hole's own points) and
+// then placed at the position its centroid *would* have under the shared
+// projection - a single point is never degenerate, so this placement is
+// always well-defined even when the hole's full extent isn't.
+
+// True if 'uv's spread is too "flat" in one direction to form a sane
+// simple polygon: computes the 2x2 covariance matrix's eigenvalues
+// directly (no need to pull in Eigen for a 2x2) and checks their ratio.
+bool isDegenerate2D(const std::vector<Vector2d>& uv)
+{
+  if (uv.size() < 3) return true;
+  Vector2d c(0, 0);
+  for (const auto& p : uv) c += p;
+  c /= static_cast<double>(uv.size());
+
+  double sxx = 0, syy = 0, sxy = 0;
+  for (const auto& p : uv) {
+    Vector2d d = p - c;
+    sxx += d.x() * d.x();
+    syy += d.y() * d.y();
+    sxy += d.x() * d.y();
+  }
+  const double tr = sxx + syy;
+  const double det = sxx * syy - sxy * sxy;
+  const double disc = std::sqrt(std::max(0.0, tr * tr - 4 * det));
+  const double lambdaMax = (tr + disc) * 0.5;
+  const double lambdaMin = (tr - disc) * 0.5;
+  if (lambdaMax < 1e-18) return true;
+  const double aspectThreshold = 0.02;  // smaller/larger spread ratio
+  return (lambdaMin / lambdaMax) < aspectThreshold;
+}
+
+// Locally flattens 'pts' (a single hole ring's own 3D boundary points) via
+// its own best-fit plane, then places the result so its centroid sits at
+// 'placeAt' - wherever the *shared* projection maps this hole's centroid
+// to (see the long comment above). makePlaneProjection() already centers
+// its output on the input points' own centroid, so 'placeAt' is simply
+// added on top - no extra centroid bookkeeping needed here.
+std::vector<Vector2d> localHoleReembed(const std::vector<Vector3d>& pts, const Vector2d& placeAt)
+{
+  auto localProj = makePlaneProjection(pts);
+  std::vector<Vector2d> out;
+  out.reserve(pts.size());
+  for (const auto& p : pts) out.push_back(localProj(p) + placeAt);
+  return out;
+}
+
 // Picks a proj() automatically when the caller doesn't supply one (see the
 // long comment in loft.h). Decides between the "tube" (axial) and "panel"
 // (best-fit-plane) case by comparing how far each hole's centroid sits
@@ -544,6 +642,17 @@ std::function<Vector2d(const Vector3d&)> makePlaneProjection(const std::vector<V
 // close to the outer ring's own centroid (D small relative to R) mean
 // they're most likely cutouts within the same flat panel, so the
 // best-fit-plane projection is used instead.
+//
+// The axial direction itself is taken from the SINGLE FARTHEST hole only -
+// not an average over all of them. A tube/port call typically has exactly
+// one hole that's the genuine "other end" of the tube (large D), plus
+// possibly several small, much closer holes (perforations/mounting holes
+// through the wall, each individually handled by the degenerate-hole
+// fallback above regardless of their own orientation). Averaging every
+// hole's direction into the axis would let those close, off-axis holes tilt
+// the axis away from the true tube direction - exactly the "correct near
+// the holes, wrong on the far side" symptom this caused before switching to
+// max-distance-only.
 std::function<Vector2d(const Vector3d&)> computeAutoProj(const std::vector<Vector3d>& outer,
                                                          const std::vector<std::vector<Vector3d>>& holes)
 {
@@ -554,20 +663,27 @@ std::function<Vector2d(const Vector3d&)> computeAutoProj(const std::vector<Vecto
   if (R < 1e-9) R = 1.0;
 
   double maxD = 0.0;
-  Vector3d axisSum(0, 0, 0);
+  Vector3d axis(0, 0, 0);
   for (const auto& h : holes) {
     if (h.empty()) continue;
     Vector3d holeCentroid = centroid3D(h);
     Vector3d toHole = holeCentroid - outerCentroid;
     double d = toHole.norm();
-    maxD = std::max(maxD, d);
-    if (d > 1e-9) axisSum += toHole / d;
+    if (d > maxD) {
+      maxD = d;
+      axis = (d > 1e-9) ? (toHole / d) : Vector3d(0, 0, 0);
+    }
   }
 
-  const bool tubeLike = !holes.empty() && (maxD > 0.5 * R) && axisSum.squaredNorm() > 1e-9;
+  const bool tubeLike = !holes.empty() && (maxD > 0.5 * R) && axis.squaredNorm() > 1e-9;
+
+  // -------- DEBUG --------
+  LOG(message_group::Warning,
+      "loft debug auto proj: outerR=%1$f maxHoleCentroidDist=%2$f axis=(%3$f,%4$f,%5$f) -> %6$s", R,
+      maxD, axis.x(), axis.y(), axis.z(), tubeLike ? "axial (tube)" : "best-fit plane (panel)");
 
   if (tubeLike) {
-    return makeAxialProjection(axisSum);
+    return makeAxialProjection(axis);
   }
 
   std::vector<Vector3d> allPts = outer;
@@ -607,6 +723,45 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
     holes_uv.emplace_back();
     holes_uv.back().reserve(h.size());
     for (const auto& p : h) holes_uv.back().push_back(effectiveProj(p));
+  }
+
+  // 1a) Degenerate-hole fallback: a hole whose shape under the SHARED
+  // projection is too "flat" (see isDegenerate2D()) is re-flattened with
+  // its own local best-fit plane and placed at its centroid's position
+  // under the shared projection instead - see the long comment above
+  // localHoleReembed(). Holes that already project fine (the normal case,
+  // e.g. a genuine tube-partner ring) are left completely untouched.
+  for (size_t hi = 0; hi < holes_uv.size(); hi++) {
+    if (holes[hi].size() < 3 || !isDegenerate2D(holes_uv[hi])) continue;
+    Vector2d placeAt = effectiveProj(centroid3D(holes[hi]));
+    holes_uv[hi] = localHoleReembed(holes[hi], placeAt);
+    LOG(message_group::Warning,
+        "loft debug hole reembed: holes[%1$d] was degenerate under the shared projection - "
+        "flattened locally, placed at (%2$f,%3$f)",
+        (int)hi, placeAt.x(), placeAt.y());
+  }
+
+  // -------- DEBUG --------
+  // Rohe UV-Werte DIREKT nach proj(), noch vor jeder Umorientierung/
+  // Normalisierung. Wenn diese Zahlen sich zwischen zwei loft()-Aufrufen
+  // im selben Skript (gleiche 3D-Punkte, mathematisch fast identische
+  // proj()) unterscheiden, liefert proj() selbst unterschiedliche Werte -
+  // z.B. weil eine falsche/alte proj()-Closure aufgerufen wird (Python-
+  // Bindung/Cache-Verwechslung). Sind sie identisch, liegt die
+  // Abweichung NICHT an proj(), sondern irgendwo danach (Cache-Kollision
+  // via LoftNode::toString(), siehe Kommentar dort).
+  for (size_t i = 0; i < std::min<size_t>(3, outer_uv.size()); i++) {
+    LOG(message_group::Warning,
+        "loft debug raw uv: outer_uv[%1$d]=(%2$f,%3$f) from outer[%4$d]=(%5$f,%6$f,%7$f)", (int)i,
+        outer_uv[i].x(), outer_uv[i].y(), (int)i, outer[i].x(), outer[i].y(), outer[i].z());
+  }
+  for (size_t hi = 0; hi < holes_uv.size(); hi++) {
+    for (size_t i = 0; i < std::min<size_t>(3, holes_uv[hi].size()); i++) {
+      LOG(message_group::Warning,
+          "loft debug raw uv: holes_uv[%1$d][%2$d]=(%3$f,%4$f) from holes[%5$d][%6$d]=(%7$f,%8$f,%9$f)",
+          (int)hi, (int)i, holes_uv[hi][i].x(), holes_uv[hi][i].y(), (int)hi, (int)i, holes[hi][i].x(),
+          holes[hi][i].y(), holes[hi][i].z());
+    }
   }
 
   // 1b) Normalize winding: outer CCW, holes CW (see ensureOrientation()).
@@ -664,6 +819,24 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
     base.tris.reserve(baseTris.size());
     for (const auto& t : baseTris) base.tris.push_back({t.a, t.b, t.c});
     if (base.tris.empty()) return nullptr;
+
+    // -------- DEBUG --------
+    // "cross" = Dreiecke, die outer und mindestens ein Loch verbinden -
+    // NUR diese werden von evalCubicTriangle() gekruemmt. Ist crossRing
+    // hier 0 (oder sehr klein), gibt es schlicht keine Flaeche, an der
+    // ueberhaupt eine Woelbung sichtbar werden koennte - dann liegt das
+    // Problem VOR der Kruemmungsberechnung, in der UV-Domain/Projektion.
+    int crossRing = 0, sameRing = 0;
+    for (const auto& t : base.tris) {
+      int r0 = base.ringId[t[0]], r1 = base.ringId[t[1]], r2 = base.ringId[t[2]];
+      if (r0 == r1 && r1 == r2) sameRing++;
+      else crossRing++;
+    }
+    LOG(message_group::Warning,
+        "loft debug base surface: outer_pts=%1$d hole_pts_total=%2$d tris=%3$d crossRing=%4$d "
+        "sameRing=%5$d",
+        (int)outer_uv.size(), (int)(base.uv.size() - outer_uv.size()), (int)base.tris.size(), crossRing,
+        sameRing);
   }
 
   // 3) Combined point set: boundary points (real 3D position known, NEVER
@@ -750,11 +923,27 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
     }
   }
 
+  // -------- DEBUG --------
+  // Zeigt, wie viele der nu*nv Rasterpunkte tatsaechlich Flaeche wurden.
+  // sampleFailed > 0 heisst: ein Punkt lag laut domain.point_inside() IN
+  // der Domain, aber KEIN Dreieck von base.tris hat ihn eingeschlossen -
+  // typischerweise ein Randfall zwischen zwei UV-Domains (Rundungsfehler
+  // an der Grenze der coarsen Basistriangulierung, siehe LoftBaseSurface::sample()).
+  // Viele "outsideDomain" bei einer erwartet fast-vollen Flaeche deutet
+  // wieder auf das alte "Loch ausserhalb / proj() passt nicht"-Muster hin.
+  LOG(message_group::Warning,
+      "loft debug grid: nu=%1$d nv=%2$d candidates=%3$d outsideDomain=%4$d encroached=%5$d "
+      "sampleFailed=%6$d accepted=%7$d",
+      nu, nv, debugGridCandidates, debugGridOutsideDomain, debugGridEncroached, debugGridSampleFailed,
+      debugGridAccepted);
+
   // 4) Delaunay triangulation over the whole point set (boundary + interior
   //    grid), then discard triangles outside the domain (e.g. inside a
   //    hole, or outside the outer contour). Same helper as the base
   //    surface above.
   auto finalTris = triangulateAndFilterToDomain(allUV, domain, domainScale);
+  LOG(message_group::Warning, "loft debug final mesh: points=%1$d triangles=%2$d", (int)allPos.size(),
+      (int)finalTris.size());
   if (finalTris.empty()) return nullptr;
 
   auto polyset = std::make_unique<PolySet>(3);
