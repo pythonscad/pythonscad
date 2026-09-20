@@ -1111,7 +1111,7 @@ Value builtin_import(Arguments arguments, const Location& loc)
   std::string type = parameters.get("type", "");
   std::string raw_filename = parameters.get("file", "");
 
-  std::string file = lookup_file(raw_filename, loc.filePath().parent_path().string());
+  std::string file = lookup_file(raw_filename, loc.filePath().parent_path().string(), ".");
   if (!file.empty()) handle_dep(file);
 
   if (type.empty()) {

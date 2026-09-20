@@ -1419,12 +1419,6 @@ msgstr ""
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1137
 msgid "Mo&ve Line Down"
-msgstr "Zei&le nach unten"
-
-#. Tastenfolge, Objektname oder fester Wert - nicht uebersetzen. Ein leerer
-#. msgstr laesst gettext den Originaltext zurueckgeben.
-#: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1075
-msgid "Ctrl+Alt+Down"
 msgstr ""
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1139
