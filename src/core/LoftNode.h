@@ -22,6 +22,24 @@ public:
   std::vector<std::vector<Vector3d>> holes;
   double grid_spacing_uv = 1.0;
 
+  // Optionale Tangenten-/Verlassrichtung je Randpunkt (parallel zu 'outer'
+  // bzw. jedem Eintrag von 'holes'). Wird von python_loft_ring_from_shape()
+  // aus der Ebenennormale eines 2D-Shapes befuellt; bei einer reinen
+  // Punktliste bleiben die Arrays leer. Leer = altes rein lineares
+  // Verhalten, siehe geometry/loft.h.
+  std::vector<Vector3d> outer_normal;
+  std::vector<std::vector<Vector3d>> holes_normal;
+
+  // Ob die obigen Tangenten ueberhaupt angefordert wurden (Python:
+  // use_tangents=True). MUSS Teil von toString() sein: 'outer'/'holes'
+  // (die reinen 3D-Positionen) koennen fuer zwei Aufrufe identisch sein,
+  // waehrend outer_normal/holes_normal sich unterscheiden (einmal mit,
+  // einmal ohne Kruemmung angefordert) - ohne dieses Flag im Cache-Key
+  // wuerden solche zwei LoftNodes denselben Geometrie-Cache-Eintrag
+  // teilen und der falsche (linear statt gekruemmt, oder umgekehrt)
+  // koennte zurueckgegeben werden.
+  bool use_tangents = false;
+
   // Python-Funktionsobjekte (PyObject*), opak gehalten, damit dieser Header
   // kein Python.h braucht. Werden in LoftNode.cc korrekt refcounted.
   void *proj_func = nullptr;

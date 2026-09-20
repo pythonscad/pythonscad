@@ -25,6 +25,9 @@ LoftNode::LoftNode(const LoftNode& other) : LeafNode(other)
 {
   outer = other.outer;
   holes = other.holes;
+  outer_normal = other.outer_normal;
+  holes_normal = other.holes_normal;
+  use_tangents = other.use_tangents;
   grid_spacing_uv = other.grid_spacing_uv;
   proj_func_hash = other.proj_func_hash;
   displacement_func_hash = other.displacement_func_hash;
@@ -150,27 +153,50 @@ std::string LoftNode::toString() const
   uint64_t h = 1469598103934665603ULL;
   h = hashPoints(h, outer);
   for (const auto& hole : holes) h = hashPoints(h, hole);
+  // Tangenten mit in den Hash aufnehmen: 'outer'/'holes' (reine 3D-
+  // Positionen) koennen fuer zwei LoftNodes identisch sein, waehrend
+  // outer_normal/holes_normal (und damit das Ergebnis) sich unterscheiden
+  // - siehe Kommentar bei 'use_tangents' in LoftNode.h.
+  h = hashPoints(h, outer_normal);
+  for (const auto& hn : holes_normal) h = hashPoints(h, hn);
 
   std::ostringstream stream;
   stream << this->name() << "(outer_n=" << outer.size() << ", holes_n=" << holes.size()
          << ", points_hash=" << std::hex << h << std::dec << ", proj=" << proj_func_hash
          << ", displacement=" << displacement_func_hash << ", grid_spacing_uv=" << grid_spacing_uv
-         << ")";
+         << ", use_tangents=" << (use_tangents ? 1 : 0) << ")";
   return stream.str();
 }
 
 std::unique_ptr<const Geometry> LoftNode::createGeometry() const
 {
+  // -------- DEBUG --------
+  // toString() ist (laut eigenem Kommentar am Ende dieser Datei) genau
+  // die Grundlage fuer den Geometrie-Cache-Schluessel. Wenn zwei
+  // verschiedene loft()-Aufrufe im selben Skript hier denselben String
+  // ausgeben (z.B. weil proj_func_hash fuer zwei inhaltlich verschiedene,
+  // aber gleichnamige "proj"-Funktionen kollidiert), erklaert das eine
+  // Cache-Verwechslung zwischen den beiden Aufrufen vollstaendig.
+
   auto *proj_py = static_cast<PyObject *>(proj_func);
   auto *disp_py = static_cast<PyObject *>(displacement_func);
 
   bool failed = false;
 
-  auto projFn = [&](const Vector3d& p) -> Vector2d {
-    Vector2d out(0, 0);
-    if (!callProjFunc(proj_py, p, out)) failed = true;
-    return out;
-  };
+  // Kein proj() angegeben (proj_py == nullptr, z.B. loft() ohne proj-
+  // Argument aufgerufen) -> ein leeres std::function weitergeben, damit
+  // loft() selbst automatisch eine Projektion waehlt (siehe
+  // computeAutoProj() in geometry/loft.cc). NICHT hier schon irgendeine
+  // Fallback-Funktion aufrufen - ein leeres std::function ist das
+  // vereinbarte Signal fuer "bitte automatisch bestimmen".
+  std::function<Vector2d(const Vector3d&)> projFn;
+  if (proj_py != nullptr) {
+    projFn = [proj_py, &failed](const Vector3d& p) -> Vector2d {
+      Vector2d out(0, 0);
+      if (!callProjFunc(proj_py, p, out)) failed = true;
+      return out;
+    };
+  }
   auto dispFn = [&](const Vector3d& p) -> double {
     double out = 0.0;
     if (disp_py != nullptr) {
@@ -179,7 +205,7 @@ std::unique_ptr<const Geometry> LoftNode::createGeometry() const
     return out;
   };
 
-  auto result = loft(outer, holes, projFn, grid_spacing_uv, dispFn);
+  auto result = loft(outer, holes, projFn, grid_spacing_uv, dispFn, outer_normal, holes_normal);
 
   if (failed || result == nullptr) {
     LOG(message_group::Error, "loft(): Geometrieerzeugung fehlgeschlagen.");
