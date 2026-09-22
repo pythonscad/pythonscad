@@ -1,14 +1,23 @@
 name: Require Milestone
 
 on:
-  pull_request:
+  # Use pull_request_target so the workflow file always comes from the
+  # base branch. A PR that edits this file cannot weaken the gate.
+  # Safe here: no checkout of PR code; only reads event milestone fields.
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
     types: [opened, edited, reopened, synchronize, milestoned, demilestoned]
+  # Revalidate open PRs when a milestone is closed or renamed (those
+  # changes do not emit per-PR milestoned/demilestoned events).
+  milestone:
+    types: [closed, edited, opened]
 
 permissions:
   contents: read
+  pull-requests: read
+  checks: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.milestone.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -16,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate PR milestone
+        if: github.event_name == 'pull_request_target'
         env:
           MILESTONE_TITLE: ${{ github.event.pull_request.milestone.title }}
           MILESTONE_STATE: ${{ github.event.pull_request.milestone.state }}
@@ -40,3 +50,68 @@ jobs:
           fi
 
           echo "OK: open milestone '${MILESTONE_TITLE}'"
+
+      - name: Revalidate open PRs for changed milestone
+        if: github.event_name == 'milestone'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          MILESTONE_NUMBER: ${{ github.event.milestone.number }}
+          MILESTONE_TITLE: ${{ github.event.milestone.title }}
+          MILESTONE_STATE: ${{ github.event.milestone.state }}
+        run: |
+          set -euo pipefail
+
+          reason=""
+          conclusion="success"
+          summary="OK: open milestone '${MILESTONE_TITLE}'"
+
+          if [ "${MILESTONE_STATE}" != "open" ]; then
+            conclusion="failure"
+            reason="Milestone '${MILESTONE_TITLE}' is closed; use an open milestone."
+            summary="${reason}"
+          elif ! [[ "${MILESTONE_TITLE}" =~ v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            conclusion="failure"
+            reason="Milestone '${MILESTONE_TITLE}' must end with a version like v1.0 or v1.0.0."
+            summary="${reason}"
+          fi
+
+          mapfile -t PRS < <(gh pr list --repo "${REPO}" --state open \
+            --milestone "${MILESTONE_NUMBER}" --limit 100 \
+            --json number,headRefOid \
+            --jq '.[] | "\(.number)\t\(.headRefOid)"')
+
+          if [ "${#PRS[@]}" -eq 0 ]; then
+            echo "No open PRs assigned to milestone #${MILESTONE_NUMBER}."
+            exit 0
+          fi
+
+          failed=0
+          for entry in "${PRS[@]}"; do
+            pr_number="${entry%%$'\t'*}"
+            head_sha="${entry#*$'\t'}"
+            echo "Updating require-milestone check on PR #${pr_number} (${head_sha}) → ${conclusion}"
+
+            # Post a check run with the same name as this job so a required
+            # "require-milestone" status reflects the current milestone state.
+            gh api "repos/${REPO}/check-runs" \
+              -f name='require-milestone' \
+              -f head_sha="${head_sha}" \
+              -f status='completed' \
+              -f conclusion="${conclusion}" \
+              -f 'output[title]=Require Milestone' \
+              -f "output[summary]=${summary}" \
+              >/dev/null
+
+            if [ "${conclusion}" = "failure" ]; then
+              failed=1
+              echo "::warning::PR #${pr_number}: ${reason}"
+            fi
+          done
+
+          if [ "${failed}" -ne 0 ]; then
+            echo "::error::${reason}"
+            exit 1
+          fi
+
+          echo "Revalidated ${#PRS[@]} open PR(s) against open milestone '${MILESTONE_TITLE}'."
