@@ -421,7 +421,12 @@ HERE=\${SELF%/*}
 # Set up environment
 export PATH="\${HERE}/usr/bin:\${PATH}"
 export LD_LIBRARY_PATH="\${HERE}/usr/lib:\${LD_LIBRARY_PATH}"
-export PYTHONPATH="\${HERE}/usr/lib/python${PYTHON_VERSION}:\${HERE}/usr/lib/python${PYTHON_VERSION}/site-packages:\${PYTHONPATH}"
+# Include share/pythonscad/libraries/python so `from pythonscad import *`
+# resolves the pure-Python overlays when using usr/bin/pythonscad-python
+# (the C extension is registered via PyImport_AppendInittab in the binary).
+# Use \${PYTHONPATH:+:...} so an unset/empty PYTHONPATH does not append an
+# empty path element (which CPython treats as the current working directory).
+export PYTHONPATH="\${HERE}/usr/share/pythonscad/libraries/python:\${HERE}/usr/lib/python${PYTHON_VERSION}:\${HERE}/usr/lib/python${PYTHON_VERSION}/site-packages\${PYTHONPATH:+:\${PYTHONPATH}}"
 export PYTHONHOME="\${HERE}/usr"
 export QT_PLUGIN_PATH="\${HERE}/usr/plugins"
 export GIO_USE_VFS=local
