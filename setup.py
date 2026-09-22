@@ -331,7 +331,12 @@ def get_extra_defines():
 
 
 def detect_lib3mf():
-    """Detect lib3mf and return (sources, include_dirs, libraries, defines) or dummy fallback."""
+    """Detect lib3mf and return (sources, include_dirs, libraries, defines) or dummy fallback.
+
+    cibuildwheel builds must not fall back to the dummy stubs: those produce
+    empty ``.3mf`` files with no error (see issue #1025). Local editable /
+    source installs still allow the fallback for developers without lib3mf.
+    """
     # lib3mf v2 uses pkg-config name "lib3mf", v1 uses "lib3MF"
     for pkg_name in ("lib3mf", "lib3MF"):
         ver = pkg_config_version(pkg_name)
@@ -363,6 +368,13 @@ def detect_lib3mf():
 
         defines = [("ENABLE_LIB3MF", "1")]
         return sources, inc_dirs, libraries, defines
+
+    if os.environ.get("CIBUILDWHEEL") == "1":
+        raise RuntimeError(
+            "lib3mf not found during cibuildwheel build; refusing dummy 3MF stubs "
+            "(empty .3mf exports). Ensure install-deps-*.sh made lib3mf visible "
+            "to pkg-config. See issue #1025."
+        )
 
     print("lib3mf: not found, using dummy stubs")
     sources = ["src/io/export_3mf_dummy.cc", "src/io/import_3mf_dummy.cc"]
