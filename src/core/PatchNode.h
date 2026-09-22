@@ -6,13 +6,13 @@
 #include "core/node.h"
 #include "geometry/linalg.h"
 
-class LoftNode : public LeafNode
+class PatchNode : public LeafNode
 {
 public:
-  LoftNode(std::shared_ptr<const ModuleInstantiation> mi) : LeafNode(std::move(mi)) {}
-  LoftNode(const LoftNode& other);  // eigene Copy-Ctor: haelt proj_func/
-                                    // displacement_func korrekt am Leben (Py_XINCREF)
-  ~LoftNode() override;             // Py_XDECREF auf proj_func/displacement_func
+  PatchNode(std::shared_ptr<const ModuleInstantiation> mi) : LeafNode(std::move(mi)) {}
+  PatchNode(const PatchNode& other);  // eigene Copy-Ctor: haelt proj_func/
+                                      // displacement_func korrekt am Leben (Py_XINCREF)
+  ~PatchNode() override;              // Py_XDECREF auf proj_func/displacement_func
 
   std::string toString() const override;
   std::string name() const override { return "loft"; }
@@ -35,13 +35,13 @@ public:
   // (die reinen 3D-Positionen) koennen fuer zwei Aufrufe identisch sein,
   // waehrend outer_normal/holes_normal sich unterscheiden (einmal mit,
   // einmal ohne Kruemmung angefordert) - ohne dieses Flag im Cache-Key
-  // wuerden solche zwei LoftNodes denselben Geometrie-Cache-Eintrag
+  // wuerden solche zwei PatchNodes denselben Geometrie-Cache-Eintrag
   // teilen und der falsche (linear statt gekruemmt, oder umgekehrt)
   // koennte zurueckgegeben werden.
   bool use_tangents = false;
 
   // Python-Funktionsobjekte (PyObject*), opak gehalten, damit dieser Header
-  // kein Python.h braucht. Werden in LoftNode.cc korrekt refcounted.
+  // kein Python.h braucht. Werden in PatchNode.cc korrekt refcounted.
   void *proj_func = nullptr;
   void *displacement_func = nullptr;
 

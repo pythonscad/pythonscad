@@ -1,4 +1,4 @@
-#include "core/LoftNode.h"
+#include "core/PatchNode.h"
 
 #include <Python.h>
 
@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include "geometry/PolySet.h"
-#include "geometry/loft.h"
+#include "geometry/patch.h"
 #include "python/pyconversion.h"
 #include "python/pyopenscad.h"
 #include "utils/printutils.h"
@@ -14,14 +14,14 @@
 // ---------------------------------------------------------------------
 // Refcounting: proj_func/displacement_func werden hier (nicht am Aufrufort
 // in py_primitives.cc) ge-incref-t/decref-t, damit JEDER Weg, wie ein
-// LoftNode entsteht oder vergeht - auch ueber den generischen
-// Copy-Constructor-Klon-Pfad in node_clone.cc (NodeCloneFunc(LoftNode),
-// std::make_shared<LoftNode>(*node)) - automatisch korrekt behandelt wird.
+// PatchNode entsteht oder vergeht - auch ueber den generischen
+// Copy-Constructor-Klon-Pfad in node_clone.cc (NodeCloneFunc(PatchNode),
+// std::make_shared<PatchNode>(*node)) - automatisch korrekt behandelt wird.
 // (Siehe die SheetNode-Debugging-Historie: fehlendes INCREF fuehrte zu
 // Use-after-free, fehlendes INCREF beim Klonen zu Double-Free.)
 // ---------------------------------------------------------------------
 
-LoftNode::LoftNode(const LoftNode& other) : LeafNode(other)
+PatchNode::PatchNode(const PatchNode& other) : LeafNode(other)
 {
   outer = other.outer;
   holes = other.holes;
@@ -41,7 +41,7 @@ LoftNode::LoftNode(const LoftNode& other) : LeafNode(other)
   PyGILState_Release(gstate);
 }
 
-LoftNode::~LoftNode()
+PatchNode::~PatchNode()
 {
   PyGILState_STATE gstate = PyGILState_Ensure();
   Py_XDECREF(static_cast<PyObject *>(proj_func));
@@ -103,13 +103,13 @@ bool callProjFunc(PyObject *func, const Vector3d& p, Vector2d& out)
       out = Vector2d(x, y);
       ok = true;
     } else {
-      LOG(message_group::Error, "loft(): proj() muss einen 2er-Vektor [u,v] zurueckgeben.");
+      LOG(message_group::Error, "patch(): proj() muss einen 2er-Vektor [u,v] zurueckgeben.");
     }
     Py_DECREF(result);
   } else {
     std::string errorstr;
     python_catch_error(errorstr);
-    LOG(message_group::Error, "loft(): Fehler beim Aufruf von proj(): %1$s", errorstr.c_str());
+    LOG(message_group::Error, "patch(): Fehler beim Aufruf von proj(): %1$s", errorstr.c_str());
   }
 
   PyGILState_Release(gstate);
@@ -133,13 +133,13 @@ bool callDisplacementFunc(PyObject *func, const Vector3d& p, double& out)
       out = PyFloat_AsDouble(result);
       ok = true;
     } else {
-      LOG(message_group::Error, "loft(): displacement() muss eine Zahl zurueckgeben.");
+      LOG(message_group::Error, "patch(): displacement() muss eine Zahl zurueckgeben.");
     }
     Py_DECREF(result);
   } else {
     std::string errorstr;
     python_catch_error(errorstr);
-    LOG(message_group::Error, "loft(): Fehler beim Aufruf von displacement(): %1$s", errorstr.c_str());
+    LOG(message_group::Error, "patch(): Fehler beim Aufruf von displacement(): %1$s", errorstr.c_str());
   }
 
   PyGILState_Release(gstate);
@@ -148,15 +148,15 @@ bool callDisplacementFunc(PyObject *func, const Vector3d& p, double& out)
 
 }  // namespace
 
-std::string LoftNode::toString() const
+std::string PatchNode::toString() const
 {
   uint64_t h = 1469598103934665603ULL;
   h = hashPoints(h, outer);
   for (const auto& hole : holes) h = hashPoints(h, hole);
   // Tangenten mit in den Hash aufnehmen: 'outer'/'holes' (reine 3D-
-  // Positionen) koennen fuer zwei LoftNodes identisch sein, waehrend
+  // Positionen) koennen fuer zwei PatchNodes identisch sein, waehrend
   // outer_normal/holes_normal (und damit das Ergebnis) sich unterscheiden
-  // - siehe Kommentar bei 'use_tangents' in LoftNode.h.
+  // - siehe Kommentar bei 'use_tangents' in PatchNode.h.
   h = hashPoints(h, outer_normal);
   for (const auto& hn : holes_normal) h = hashPoints(h, hn);
 
@@ -168,12 +168,12 @@ std::string LoftNode::toString() const
   return stream.str();
 }
 
-std::unique_ptr<const Geometry> LoftNode::createGeometry() const
+std::unique_ptr<const Geometry> PatchNode::createGeometry() const
 {
   // -------- DEBUG --------
   // toString() ist (laut eigenem Kommentar am Ende dieser Datei) genau
   // die Grundlage fuer den Geometrie-Cache-Schluessel. Wenn zwei
-  // verschiedene loft()-Aufrufe im selben Skript hier denselben String
+  // verschiedene patch()-Aufrufe im selben Skript hier denselben String
   // ausgeben (z.B. weil proj_func_hash fuer zwei inhaltlich verschiedene,
   // aber gleichnamige "proj"-Funktionen kollidiert), erklaert das eine
   // Cache-Verwechslung zwischen den beiden Aufrufen vollstaendig.
@@ -183,10 +183,10 @@ std::unique_ptr<const Geometry> LoftNode::createGeometry() const
 
   bool failed = false;
 
-  // Kein proj() angegeben (proj_py == nullptr, z.B. loft() ohne proj-
+  // Kein proj() angegeben (proj_py == nullptr, z.B. patch() ohne proj-
   // Argument aufgerufen) -> ein leeres std::function weitergeben, damit
-  // loft() selbst automatisch eine Projektion waehlt (siehe
-  // computeAutoProj() in geometry/loft.cc). NICHT hier schon irgendeine
+  // patch() selbst automatisch eine Projektion waehlt (siehe
+  // computeAutoProj() in geometry/patch.cc). NICHT hier schon irgendeine
   // Fallback-Funktion aufrufen - ein leeres std::function ist das
   // vereinbarte Signal fuer "bitte automatisch bestimmen".
   std::function<Vector2d(const Vector3d&)> projFn;
@@ -205,10 +205,10 @@ std::unique_ptr<const Geometry> LoftNode::createGeometry() const
     return out;
   };
 
-  auto result = loft(outer, holes, projFn, grid_spacing_uv, dispFn, outer_normal, holes_normal);
+  auto result = patch(outer, holes, projFn, grid_spacing_uv, dispFn, outer_normal, holes_normal);
 
   if (failed || result == nullptr) {
-    LOG(message_group::Error, "loft(): Geometrieerzeugung fehlgeschlagen.");
+    LOG(message_group::Error, "patch(): Geometrieerzeugung fehlgeschlagen.");
     return std::make_unique<PolySet>(3);  // leeres, aber gueltiges Ergebnis statt Crash
   }
   return result;

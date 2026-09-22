@@ -41,7 +41,7 @@
 #endif
 #include "core/FreetypeRenderer.h"
 #include "core/TextNode.h"
-#include "core/LoftNode.h"
+#include "core/PatchNode.h"
 #include <Tree.h>
 
 PyObject *python_edge(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1480,24 +1480,24 @@ PyObject *python_organic(PyObject *obj, PyObject *args, PyObject *kwargs)
 // je Punkt die Tangenten-/Verlassrichtung der Form - schlicht die
 // Flaechennormale der 2D-Ebene, in Weltkoordinaten gedreht
 // (trans.linear() * (0,0,1)), normiert. Fuer ein flaches 2D-Shape ist das
-// an jedem Randpunkt derselbe Vektor; loft() nutzt ihn spaeter als
+// an jedem Randpunkt derselbe Vektor; patch() nutzt ihn spaeter als
 // Tangente fuer die kubische Verrundung zwischen zwei Ringen (siehe
-// geometry/loft.h/.cc).
+// geometry/patch.h/.cc).
 // 'want_normal' steuert, ob ueberhaupt eine Tangente berechnet wird - siehe
-// Aufrufer python_loft_parse_ring(). Bei false bleibt 'out_normal' fuer
-// diesen Ring komplett leer, und loft() faellt fuer ihn garantiert auf das
+// Aufrufer python_patch_parse_ring(). Bei false bleibt 'out_normal' fuer
+// diesen Ring komplett leer, und patch() faellt fuer ihn garantiert auf das
 // alte rein lineare/barycentrische Verhalten zurueck. Das ist WICHTIG:
 // die Ebenennormale eines 2D-Shapes ist nur dann eine sinnvolle
-// Lofting-Tangente, wenn die Fläche wirklich senkrecht zu dieser Ebene
+// Patching-Tangente, wenn die Fläche wirklich senkrecht zu dieser Ebene
 // "weggehen" soll (z.B. ein Rohrstutzen an einem Flansch). Fuer einen
 // gewoehnlichen Kegel/Trichter aus zwei unrotierten circle()s zeigt die
 // Ebenennormale beider Ringe schlicht (0,0,1) - das ist NICHT die
 // Richtung, in der die Kegelwand tatsaechlich verlaeuft, und wuerde eine
 // eigentlich gerade Wand faelschlich verbiegen ("Pickel"). Deshalb ist
 // die Tangentenauswertung strikt opt-in (siehe 'use_tangents' in
-// python_loft()) statt automatisch an jedem Shape zu haengen.
-static bool python_loft_ring_from_shape(PyObject *shape_obj, std::vector<Vector3d>& out,
-                                        std::vector<Vector3d>& out_normal, bool want_normal)
+// python_patch()) statt automatisch an jedem Shape zu haengen.
+static bool python_patch_ring_from_shape(PyObject *shape_obj, std::vector<Vector3d>& out,
+                                         std::vector<Vector3d>& out_normal, bool want_normal)
 {
   PyObject *dummydict = nullptr;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(shape_obj, &dummydict);
@@ -1511,13 +1511,13 @@ static bool python_loft_ring_from_shape(PyObject *shape_obj, std::vector<Vector3
 
   auto poly2d = std::dynamic_pointer_cast<const Polygon2d>(geom);
   if (poly2d == nullptr) {
-    PyErr_SetString(PyExc_TypeError, "loft(): Objekt ist keine 2D-Form.");
+    PyErr_SetString(PyExc_TypeError, "patch(): Objekt ist keine 2D-Form.");
     return false;
   }
 
   const auto outlines = poly2d->untransformedOutlines();
   if (outlines.empty()) {
-    PyErr_SetString(PyExc_TypeError, "loft(): 2D-Form hat keine Kontur.");
+    PyErr_SetString(PyExc_TypeError, "patch(): 2D-Form hat keine Kontur.");
     return false;
   }
   Transform3d trans = poly2d->getTransform3d();
@@ -1541,16 +1541,16 @@ static bool python_loft_ring_from_shape(PyObject *shape_obj, std::vector<Vector3
 
 // Hilfsfunktion: eine Liste von [x,y,z]-Punkten ODER ein 2D-Shape-Objekt -> std::vector<Vector3d>.
 // 'out_normal' wird NUR befuellt, wenn 'ring_obj' ein 2D-Shape UND
-// 'want_normal' true ist (siehe python_loft_ring_from_shape() oben); in
+// 'want_normal' true ist (siehe python_patch_ring_from_shape() oben); in
 // allen anderen Faellen (Punktliste, oder Shape ohne use_tangents=True)
-// bleibt es leer, d.h. loft() faellt fuer diesen Rand garantiert auf das
+// bleibt es leer, d.h. patch() faellt fuer diesen Rand garantiert auf das
 // alte rein lineare Verhalten zurueck.
-static bool python_loft_parse_ring(PyObject *ring_obj, std::vector<Vector3d>& out,
-                                   std::vector<Vector3d>& out_normal, bool want_normal)
+static bool python_patch_parse_ring(PyObject *ring_obj, std::vector<Vector3d>& out,
+                                    std::vector<Vector3d>& out_normal, bool want_normal)
 {
   // Neu: akzeptiere ein PyOpenSCAD-2D-Objekt direkt (dessen Umfang wird verwendet)
   if (PyObject_IsInstance(ring_obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
-    return python_loft_ring_from_shape(ring_obj, out, out_normal, want_normal);
+    return python_patch_ring_from_shape(ring_obj, out, out_normal, want_normal);
   }
 
   // Bisheriges Verhalten: Liste von [x,y,z]-Punkten - keine Tangenten.
@@ -1558,7 +1558,7 @@ static bool python_loft_parse_ring(PyObject *ring_obj, std::vector<Vector3d>& ou
   return true;
 }
 
-PyObject *python_loft(PyObject *self, PyObject *args, PyObject *kwargs)
+PyObject *python_patch(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE();
 
@@ -1567,7 +1567,7 @@ PyObject *python_loft(PyObject *self, PyObject *args, PyObject *kwargs)
   // andere (Projektion, Gitterfeinheit, Verformung, Kruemmung) ist
   // optional und hat einen sinnvollen Default. 'proj' und 'displacement'
   // bleiben trotzdem jederzeit per Keyword ansprechbar
-  // (loft(outer, proj=meineProj, ...)), auch wenn 'holes' davor steht.
+  // (patch(outer, proj=meineProj, ...)), auch wenn 'holes' davor steht.
   char *kwlist[] = {"outer", "holes", "proj", "grid_spacing_uv", "displacement", "use_tangents", NULL};
   PyObject *outer_obj = nullptr;
   PyObject *holes_obj = nullptr;
@@ -1576,21 +1576,21 @@ PyObject *python_loft(PyObject *self, PyObject *args, PyObject *kwargs)
   PyObject *displacement_obj = nullptr;
   PyObject *use_tangents_obj = nullptr;
 
-  // 'proj' ist OPTIONAL: weggelassen oder None -> loft() bestimmt die
+  // 'proj' ist OPTIONAL: weggelassen oder None -> patch() bestimmt die
   // Projektion selbst automatisch (siehe computeAutoProj() in
-  // geometry/loft.cc - unterscheidet "Tubus zwischen zwei Ports" von
+  // geometry/patch.cc - unterscheidet "Tubus zwischen zwei Ports" von
   // "Lochblech in einer Ebene"). Ein explizit angegebenes proj gewinnt
   // immer und wird unveraendert benutzt.
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OOdOO", kwlist, &outer_obj, &holes_obj, &proj_obj,
                                    &grid_spacing_uv, &displacement_obj, &use_tangents_obj)) {
     PyErr_SetString(PyExc_TypeError,
-                    "Error during parsing loft(outer, holes=None, proj=None, grid_spacing_uv=1.0, "
+                    "Error during parsing patch(outer, holes=None, proj=None, grid_spacing_uv=1.0, "
                     "displacement=None, use_tangents=False)");
     return nullptr;
   }
 
   // Nur wenn der Aufrufer EXPLIZIT use_tangents=True angibt, wird bei
-  // Shape-Randobjekten (siehe python_loft_ring_from_shape()) ueberhaupt
+  // Shape-Randobjekten (siehe python_patch_ring_from_shape()) ueberhaupt
   // eine Tangente aus der Ebenennormale abgeleitet und die kubische
   // Kruemmung aktiviert. Default (kein Argument, oder False) = exakt das
   // alte, rein lineare Verhalten - auch wenn outer/holes 2D-Shapes sind.
@@ -1599,28 +1599,28 @@ PyObject *python_loft(PyObject *self, PyObject *args, PyObject *kwargs)
 
   if (proj_obj != nullptr && proj_obj != Py_None && proj_obj->ob_type != &PyFunction_Type) {
     PyErr_SetString(PyExc_TypeError,
-                    "loft(): proj muss eine Funktion, None, oder weggelassen sein (fuer "
+                    "patch(): proj muss eine Funktion, None, oder weggelassen sein (fuer "
                     "automatische Projektion).");
     return nullptr;
   }
   if (displacement_obj != nullptr && displacement_obj->ob_type != &PyFunction_Type) {
-    PyErr_SetString(PyExc_TypeError, "loft(): displacement muss eine Funktion sein.");
+    PyErr_SetString(PyExc_TypeError, "patch(): displacement muss eine Funktion sein.");
     return nullptr;
   }
 
-  auto node = std::make_shared<LoftNode>(instance);
+  auto node = std::make_shared<PatchNode>(instance);
   node->use_tangents = use_tangents;
 
-  if (!python_loft_parse_ring(outer_obj, node->outer, node->outer_normal, use_tangents) ||
+  if (!python_patch_parse_ring(outer_obj, node->outer, node->outer_normal, use_tangents) ||
       node->outer.size() < 3) {
     PyErr_SetString(PyExc_TypeError,
-                    "loft(): outer muss eine Liste von mindestens 3 [x,y,z]-Punkten sein.");
+                    "patch(): outer muss eine Liste von mindestens 3 [x,y,z]-Punkten sein.");
     return nullptr;
   }
 
   if (holes_obj != nullptr && holes_obj != Py_None) {
     if (!python_is_sequence(holes_obj)) {
-      PyErr_SetString(PyExc_TypeError, "loft(): holes muss eine Liste von Punktlisten sein.");
+      PyErr_SetString(PyExc_TypeError, "patch(): holes muss eine Liste von Punktlisten sein.");
       return nullptr;
     }
     PyObject *holeseq = PySequence_Fast(holes_obj, "expected a list of rings");
@@ -1628,10 +1628,11 @@ PyObject *python_loft(PyObject *self, PyObject *args, PyObject *kwargs)
     for (Py_ssize_t i = 0; i < nholes; i++) {
       std::vector<Vector3d> hole;
       std::vector<Vector3d> hole_normal;
-      if (!python_loft_parse_ring(PySequence_Fast_GET_ITEM(holeseq, i), hole, hole_normal,
-                                  use_tangents)) {
+      if (!python_patch_parse_ring(PySequence_Fast_GET_ITEM(holeseq, i), hole, hole_normal,
+                                   use_tangents)) {
         Py_DECREF(holeseq);
-        PyErr_SetString(PyExc_TypeError, "loft(): jedes Loch muss eine Liste von [x,y,z]-Punkten sein.");
+        PyErr_SetString(PyExc_TypeError,
+                        "patch(): jedes Loch muss eine Liste von [x,y,z]-Punkten sein.");
         return nullptr;
       }
       node->holes.push_back(std::move(hole));
