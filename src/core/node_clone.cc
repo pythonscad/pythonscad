@@ -40,7 +40,7 @@
 #include "core/RoofNode.h"
 #include "core/RenderNode.h"
 #include "core/SkinNode.h"
-#include "core/LoftNode.h"
+#include "core/PatchNode.h"
 #include "core/SurfaceNode.h"
 #include "core/TextNode.h"
 #include "core/CgalAdvNode.h"
@@ -90,7 +90,7 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
                   NodeCloneFunc(SheetNode) NodeCloneFunc(TextNode) NodeCloneFunc(OffsetNode)
                     NodeCloneFunc(ProjectionNode) NodeCloneFunc(GroupNode) NodeCloneFunc(ImportNode)
                       NodeCloneFunc(ListNode) NodeCloneFunc(AbstractIntersectionNode)
-                        NodeCloneFunc(LoftNode)
+                        NodeCloneFunc(PatchNode)
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
                           NodeCloneFunc(RoofNode)
 #endif
@@ -112,7 +112,7 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
                   NodeCloneUse(SheetNode) NodeCloneUse(TextNode) NodeCloneUse(OffsetNode)
                     NodeCloneUse(ProjectionNode) NodeCloneUse(GroupNode) NodeCloneUse(ImportNode)
                       NodeCloneUse(ListNode) NodeCloneUse(AbstractIntersectionNode)
-                        NodeCloneUse(LoftNode)
+                        NodeCloneUse(PatchNode)
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
                           NodeCloneUse(RoofNode)
 #endif

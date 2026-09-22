@@ -1,4 +1,4 @@
-#include "geometry/loft.h"
+#include "geometry/patch.h"
 
 #include <algorithm>
 #include <array>
@@ -328,7 +328,7 @@ struct DTriangle {
 // their circumcircle) and (b) which of a bad triangle's edges are shared
 // with another bad triangle, by scanning the ENTIRE current triangle list
 // (and, for (b), the entire bad list again per edge) - O(n) work per point,
-// O(n^2) overall, the single biggest cost in the whole loft() pipeline for
+// O(n^2) overall, the single biggest cost in the whole patch() pipeline for
 // any nontrivial point count (confirmed by profiling the tube-with-holes
 // case, which is by far the largest point set this file builds).
 //
@@ -628,7 +628,7 @@ Vector3d centroid3D(const std::vector<Vector3d>& pts)
 // ring's average tangent vs. the outer->hole axis), not a per-point fix -
 // it assumes each ring's tangent field is already roughly consistent with
 // itself (true for a tangent derived from a single rigid 2D shape
-// transform, as produced by python_loft_ring_from_shape()).
+// transform, as produced by python_patch_ring_from_shape()).
 void normalizeTangentSigns(const std::vector<Vector3d>& outer_pos, std::vector<Vector3d>& outer_normal,
                            const std::vector<std::vector<Vector3d>>& holes_pos,
                            std::vector<std::vector<Vector3d>>& holes_normal)
@@ -828,7 +828,7 @@ bool findTubeAxis(const std::vector<Vector3d>& outer, const std::vector<std::vec
 }
 
 // Picks a proj() automatically when the caller doesn't supply one (see the
-// long comment in loft.h). Decides between the "tube" (axial) and "panel"
+// long comment in patch.h). Decides between the "tube" (axial) and "panel"
 // (best-fit-plane) case by comparing how far the tube-partner hole's
 // centroid sits from the outer ring's own centroid ('D', from
 // findTubeAxis()) against the outer ring's own characteristic size ('R'):
@@ -839,9 +839,9 @@ bool findTubeAxis(const std::vector<Vector3d>& outer, const std::vector<std::vec
 // the same flat panel, so the best-fit-plane projection is used instead.
 //
 // Only reached for the plain 2-ring tube case (a wall segment with no
-// extra holes) or the panel case - loft() itself intercepts the
+// extra holes) or the panel case - patch() itself intercepts the
 // tube-with-extra-holes case earlier and routes it to
-// loftTubeWithHoles() instead, which needs to know the axis before
+// patchTubeWithHoles() instead, which needs to know the axis before
 // picking a domain style at all (see the long comment there).
 std::function<Vector2d(const Vector3d&)> computeAutoProj(const std::vector<Vector3d>& outer,
                                                          const std::vector<std::vector<Vector3d>>& holes)
@@ -892,7 +892,7 @@ std::function<Vector2d(const Vector3d&)> computeAutoProj(const std::vector<Vecto
 
 // -------------------- Direct bridge between two disjoint rings --------------------
 //
-// Every OTHER construction in this file models a loft as "outer boundary's
+// Every OTHER construction in this file models a patch as "outer boundary's
 // own 2D area, with holes cut out of it" - a Polygon2d domain, triangulated
 // and filtered. That model is only sound when the outer ring's projected
 // shape genuinely CONTAINS the hole's (a true tube/annulus, as for a
@@ -906,7 +906,7 @@ std::function<Vector2d(const Vector3d&)> computeAutoProj(const std::vector<Vecto
 // degenerate check catches this); viewed along their shared normal (the
 // best-fit plane), they come out as two SEPARATE, non-overlapping disks,
 // not an annulus - a "cut this hole out of that area" domain has nothing
-// sensible to build there, which is why loft() ended up simply not
+// sensible to build there, which is why patch() ended up simply not
 // connecting the two rings at all (0 cross-ring triangles) instead of
 // forming a tube.
 //
@@ -915,7 +915,7 @@ std::function<Vector2d(const Vector3d&)> computeAutoProj(const std::vector<Vecto
 // the same kind of profile at the same point count - the motivating case,
 // two taps of a handle built the same way), and each matched pair is
 // connected by its own independent cubic Hermite curve using that point's
-// own position and (if supplied) tangent - the classic "loft between two
+// own position and (if supplied) tangent - the classic "patch between two
 // profile curves with end tangents" construction, the same one CAD tools
 // use for this exact case. The curves are sampled at a uniform resolution
 // along their own length and triangulated as a plain, regular quad-strip
@@ -933,11 +933,11 @@ std::function<Vector2d(const Vector3d&)> computeAutoProj(const std::vector<Vecto
 // own tangent directions (e.g. matching roty() signs between the two
 // rings so both tangents point outward the same way), not in a sign
 // heuristic here that has no reliable signal to work from.
-std::unique_ptr<PolySet> loftBridgeTwoRings(const std::vector<Vector3d>& ringA,
-                                            const std::vector<Vector3d>& ringB,
-                                            const std::vector<Vector3d>& tangentA,
-                                            const std::vector<Vector3d>& tangentB,
-                                            double grid_spacing_uv)
+std::unique_ptr<PolySet> patchBridgeTwoRings(const std::vector<Vector3d>& ringA,
+                                             const std::vector<Vector3d>& ringB,
+                                             const std::vector<Vector3d>& tangentA,
+                                             const std::vector<Vector3d>& tangentB,
+                                             double grid_spacing_uv)
 {
   const size_t n = ringA.size();
   if (n < 3 || ringB.size() != n) return nullptr;
@@ -1001,7 +1001,7 @@ std::unique_ptr<PolySet> loftBridgeTwoRings(const std::vector<Vector3d>& ringA,
 
 // -------------------- Tube-unroll domain (periodic u) --------------------
 //
-// Used only for a tube-shaped loft (outer ring + its genuine tube-partner
+// Used only for a tube-shaped patch (outer ring + its genuine tube-partner
 // hole, found by findTubeAxis()) that ALSO carries further holes needing a
 // real, non-degenerate 2D shape regardless of their own orientation - e.g.
 // a hole drilled straight through the tube's wall, pointing at the axis.
@@ -1025,7 +1025,7 @@ std::unique_ptr<PolySet> loftBridgeTwoRings(const std::vector<Vector3d>& ringA,
 // with only the EXTRA holes cut out of it as real hole loops. The two
 // rings still contribute their exact 3D boundary points to the base
 // surface and final mesh, same as any boundary ring elsewhere in this
-// file - concat() compatibility with neighboring loft() calls is
+// file - concat() compatibility with neighboring patch() calls is
 // unaffected.
 //
 // The other price is periodicity: u wraps around every 'period' units
@@ -1040,7 +1040,7 @@ std::unique_ptr<PolySet> loftBridgeTwoRings(const std::vector<Vector3d>& ringA,
 // Deliberately does not support outer_normal/holes_normal (curvature):
 // combining that with this periodic domain is a separate, bigger
 // undertaking not needed for the case that motivated this (a straight
-// mounting hole through an otherwise-straight tube wall) - loft() below
+// mounting hole through an otherwise-straight tube wall) - patch() below
 // only routes here when both are empty.
 struct TubeUnroll {
   Vector3d axisOrigin, axisDir, e1, e2;
@@ -1066,11 +1066,11 @@ Vector2d tubeUnrollProject(const TubeUnroll& tu, const Vector3d& p)
   return Vector2d(wrapToPeriod(u, tu.u0, period), v);
 }
 
-std::unique_ptr<PolySet> loftTubeWithHoles(const std::vector<Vector3d>& outer,
-                                           const std::vector<std::vector<Vector3d>>& holes,
-                                           int tubePartnerIdx, const Vector3d& axis,
-                                           double grid_spacing_uv,
-                                           const std::function<double(const Vector3d&)>& displacement)
+std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
+                                            const std::vector<std::vector<Vector3d>>& holes,
+                                            int tubePartnerIdx, const Vector3d& axis,
+                                            double grid_spacing_uv,
+                                            const std::function<double(const Vector3d&)>& displacement)
 {
   const std::vector<Vector3d>& partner = holes[tubePartnerIdx];
 
@@ -1416,25 +1416,25 @@ std::unique_ptr<PolySet> loftTubeWithHoles(const std::vector<Vector3d>& outer,
 
 }  // namespace
 
-std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
-                              const std::vector<std::vector<Vector3d>>& holes,
-                              const std::function<Vector2d(const Vector3d&)>& proj,
-                              double grid_spacing_uv,
-                              const std::function<double(const Vector3d&)>& displacement,
-                              const std::vector<Vector3d>& outer_normal,
-                              const std::vector<std::vector<Vector3d>>& holes_normal)
+std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
+                               const std::vector<std::vector<Vector3d>>& holes,
+                               const std::function<Vector2d(const Vector3d&)>& proj,
+                               double grid_spacing_uv,
+                               const std::function<double(const Vector3d&)>& displacement,
+                               const std::vector<Vector3d>& outer_normal,
+                               const std::vector<std::vector<Vector3d>>& holes_normal)
 {
   if (outer.size() < 3 || grid_spacing_uv <= 0.0) return nullptr;
 
   // -2) Two disjoint (non-nested) rings needing a direct bridge, not an
   // annulus: exactly one hole, matching the outer ring's own point count
-  // (see loftBridgeTwoRings() for why that's needed), and findTubeAxis()'s
+  // (see patchBridgeTwoRings() for why that's needed), and findTubeAxis()'s
   // distance heuristic says the two rings look connected along an axis,
   // but looking along that axis leaves the OUTER ring itself flat - the
   // same test computeAutoProj() uses to fall back to a best-fit plane,
   // except here that fallback wouldn't help either (it would put the two
   // rings as separate, non-nested disks - see the long comment on
-  // loftBridgeTwoRings() for exactly why the usual "outer disk with a
+  // patchBridgeTwoRings() for exactly why the usual "outer disk with a
   // hole cut out" domain has no sensible domain to build for that shape).
   // A handle spanning two side ports is the motivating case.
   if (!proj && holes.size() == 1 && holes[0].size() == outer.size()) {
@@ -1449,14 +1449,14 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
       if (isDegenerate2D(outerTrial, 0.04)) {
         static const std::vector<Vector3d> emptyTangent;
         const std::vector<Vector3d>& holeTangent = holes_normal.empty() ? emptyTangent : holes_normal[0];
-        auto result = loftBridgeTwoRings(outer, holes[0], outer_normal, holeTangent, grid_spacing_uv);
+        auto result = patchBridgeTwoRings(outer, holes[0], outer_normal, holeTangent, grid_spacing_uv);
         if (result) return result;
       }
     }
   }
 
   // -1) Tube-with-extra-holes fast path: only when the caller didn't force a
-  // projection and supplied no tangents (loftTubeWithHoles() doesn't support
+  // projection and supplied no tangents (patchTubeWithHoles() doesn't support
   // curvature - see its own long comment), and there's more than just the
   // tube's own two rings (outer + tube-partner) to deal with. findTubeAxis()
   // both confirms this really is a tube (vs. a flat panel with cutouts) and
@@ -1464,7 +1464,7 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
   // routed to the periodic tube-unroll domain instead of the ordinary
   // top-down axial projection, which would flatten any hole whose extent
   // runs along the dropped axis (e.g. an exactly radial mounting hole) into
-  // a zero-area line - see the long comment above loftTubeWithHoles().
+  // a zero-area line - see the long comment above patchTubeWithHoles().
   const bool noTangentsSupplied = !hasAnyTangent(outer_normal) && !hasAnyHoleTangent(holes_normal);
 
   if (!proj && noTangentsSupplied && holes.size() >= 2) {
@@ -1472,12 +1472,12 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
     Vector3d axis;
     double R;
     if (findTubeAxis(outer, holes, tubeIdx, axis, R)) {
-      auto result = loftTubeWithHoles(outer, holes, tubeIdx, axis, grid_spacing_uv, displacement);
+      auto result = patchTubeWithHoles(outer, holes, tubeIdx, axis, grid_spacing_uv, displacement);
       if (result) return result;
     }
   }
 
-  // 0) No proj() supplied -> pick one automatically (see loft.h / the long
+  // 0) No proj() supplied -> pick one automatically (see patch.h / the long
   // comment on computeAutoProj() above). An explicitly supplied proj is
   // always used as-is and never overridden. 'autoProj' is a named local so
   // that, when used, 'effectiveProj' binds to a real object with function
@@ -1581,7 +1581,7 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
   // position. displacement() is intentionally never called for these - a
   // texture/bump function must not be able to move a point that lies on the
   // outer or inner (hole) contour, since those contours are what neighboring
-  // loft() calls (e.g. the next ring up/down a vase wall) rely on to line up
+  // patch() calls (e.g. the next ring up/down a vase wall) rely on to line up
   // exactly. The same reasoning is why boundary points are exempt from
   // curvature above (they are stored raw in base.pos3d and only ever used
   // as fixed corner points of the cubic patch, never re-evaluated by it).

@@ -7,13 +7,13 @@
 #include "geometry/PolySet.h"
 #include "geometry/linalg.h"
 
-// Builds a lofted surface between an outer boundary ring and zero or more
+// Builds a patched surface between an outer boundary ring and zero or more
 // hole rings, all given as 3D point lists. 'proj' maps a 3D point to its
 // (u,v) parameterization used for triangulation; 'displacement' optionally
 // offsets interior (non-boundary) points along the local surface normal.
 //
 // 'proj' is OPTIONAL: pass a default-constructed (empty) std::function to
-// let loft() pick one automatically. It distinguishes two common cases:
+// let patch() pick one automatically. It distinguishes two common cases:
 //   - the hole(s) sit well away from the outer ring's own centroid relative
 //     to the outer ring's size (e.g. two ports/flanges connected by a
 //     tube) -> project onto the plane perpendicular to the axis connecting
@@ -30,10 +30,10 @@
 // ring tangent to the given direction, instead of the default flat/linear
 // barycentric blend. Leave both empty (the default) to keep the original,
 // purely linear behavior.
-std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
-                              const std::vector<std::vector<Vector3d>>& holes,
-                              const std::function<Vector2d(const Vector3d&)>& proj,
-                              double grid_spacing_uv,
-                              const std::function<double(const Vector3d&)>& displacement,
-                              const std::vector<Vector3d>& outer_normal = {},
-                              const std::vector<std::vector<Vector3d>>& holes_normal = {});
+std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
+                               const std::vector<std::vector<Vector3d>>& holes,
+                               const std::function<Vector2d(const Vector3d&)>& proj,
+                               double grid_spacing_uv,
+                               const std::function<double(const Vector3d&)>& displacement,
+                               const std::vector<Vector3d>& outer_normal = {},
+                               const std::vector<std::vector<Vector3d>>& holes_normal = {});
