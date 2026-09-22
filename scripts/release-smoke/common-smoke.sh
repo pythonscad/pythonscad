@@ -241,6 +241,42 @@ rs_smoke_binary() {
     "$testdir/repl-smoke.py" "$exe" --repl
   rs_file_nonempty "$testdir/repl-cube.stl" "$label: basic Python REPL"
 
+  # Standalone pythonscad-python runner must register the embedded _openscad
+  # module (issue #1031). Prefer a sibling shim; for AppImages extract once.
+  local python_shim=""
+  local shim_env=()
+  local exe_dir
+  exe_dir=$(dirname -- "$exe")
+  if [[ -x "$exe_dir/pythonscad-python" ]]; then
+    python_shim="$exe_dir/pythonscad-python"
+  elif [[ "$exe" == *.AppImage || "$exe" == *.appimage ]]; then
+    local extract_dir="$testdir/appimage-extract"
+    local squashfs="$extract_dir/squashfs-root"
+    rs_log "Smoke testing $label: extracting AppImage for pythonscad-python"
+    mkdir -p "$extract_dir"
+    rs_run_logged "$label: appimage extract" "$testdir/appimage-extract.log" \
+      bash -c 'cd "$1" && "$2" --appimage-extract' bash "$extract_dir" "$exe"
+    if [[ -x "$squashfs/usr/bin/pythonscad-python" ]]; then
+      python_shim="$squashfs/usr/bin/pythonscad-python"
+      # Match AppRun's library / Python env so the extracted shim can load.
+      shim_env=(
+        "LD_LIBRARY_PATH=$squashfs/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        "PYTHONHOME=$squashfs/usr"
+        "PYTHONPATH=$squashfs/usr/share/pythonscad/libraries/python${PYTHONPATH:+:$PYTHONPATH}"
+      )
+    fi
+  fi
+  if [[ -n "$python_shim" ]]; then
+    rs_log "Smoke testing $label: pythonscad-python import"
+    cat > "$testdir/shim-import.py" <<'PY'
+from pythonscad import *
+export(cube(10), "shim-cube.stl")
+PY
+    rs_run_logged_in_dir "$label: pythonscad-python import" "$testdir" \
+      "$testdir/shim-import.log" "" env "${shim_env[@]}" "$python_shim" "shim-import.py"
+    rs_file_nonempty "$testdir/shim-cube.stl" "$label: pythonscad-python import"
+  fi
+
   rs_log "Smoke testing $label: IPython"
   rs_run_logged_in_dir "$label: IPython" "$testdir" "$testdir/ipython.log" "" \
     "$exe" --ipython ipython-smoke.py

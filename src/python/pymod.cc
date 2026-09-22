@@ -138,6 +138,9 @@ int pythonRunModule(const std::string&, const std::string&, const std::vector<st
 }
 #else
 
+// Linked from pyopenscad.cc / pydata.cc. Same registrations as initPython().
+extern PyObject *PyInit_data(void);
+
 static int pythonRunCommand(const std::string& command, const std::vector<std::string>& args);
 
 static bool pythonAppendConfigArg(PyConfig& config, const std::string& arg, PyStatus& status)
@@ -152,9 +155,153 @@ static bool pythonAppendConfigArg(PyConfig& config, const std::string& arg, PySt
   return !PyStatus_Exception(status);
 }
 
+// pythonscad-python / --python-module / venv helpers never call initPython(),
+// so they must register the embedded C extensions before Py_Initialize*.
+// Without this, `import _openscad` fails even though PyInit__openscad is
+// linked into the binary (see https://github.com/pythonscad/pythonscad/issues/1031).
+static void pythonRegisterEmbeddedModules()
+{
+  PyImport_AppendInittab("_openscad", &PyInit__openscad);
+  PyImport_AppendInittab("libfive", &PyInit_data);
+}
+
+// Paths for the pure-Python openscad/pythonscad overlays. AppRun and the
+// Windows/macOS launchers do not always put these on PYTHONPATH, so the
+// standalone runner must add them itself (mirrors initPython).
+static std::string pythonOverlayLibraryPath()
+{
+#if defined(_WIN32)
+  constexpr char sepchar = ';';
+#else
+  constexpr char sepchar = ':';
+#endif
+  std::ostringstream stream;
+  std::string sep;
+
+  const auto resourceLibPath = fs::path(PlatformUtils::resourceBasePath()) / "libraries" / "python";
+  std::error_code ec;
+  if (fs::is_directory(resourceLibPath, ec) && !ec) {
+    const auto absolute = fs::absolute(resourceLibPath, ec);
+    if (!ec) {
+      stream << absolute.generic_string();
+      sep = sepchar;
+    }
+  }
+
+#if !defined(_WIN32)
+  {
+    const auto relativeOverlay =
+      fs::path(PlatformUtils::applicationPath()) / ".." / "libraries" / "python";
+    if (fs::is_directory(relativeOverlay, ec) && !ec) {
+      const auto absolute = fs::absolute(relativeOverlay, ec);
+      if (!ec) {
+        stream << sep << absolute.generic_string();
+        sep = sepchar;
+      }
+    }
+  }
+#else
+  {
+    const auto winOverlay = fs::path(PlatformUtils::applicationPath()) / "libraries" / "python";
+    if (fs::is_directory(winOverlay, ec) && !ec) {
+      const auto absolute = fs::absolute(winOverlay, ec);
+      if (!ec) {
+        stream << sep << absolute.generic_string();
+        sep = sepchar;
+      }
+    }
+  }
+#endif
+
+  return stream.str();
+}
+
+// Merge overlay paths with an existing PYTHONPATH fragment (Windows runtime
+// paths and/or the caller's PYTHONPATH env). Empty fragments are skipped.
+static std::string pythonMergedPythonPath(const std::string& existing)
+{
+#if defined(_WIN32)
+  constexpr char sepchar = ';';
+#else
+  constexpr char sepchar = ':';
+#endif
+  const auto overlays = pythonOverlayLibraryPath();
+  std::ostringstream stream;
+  std::string sep;
+  auto append = [&](const std::string& part) {
+    if (part.empty()) return;
+    stream << sep << part;
+    sep = sepchar;
+  };
+  append(overlays);
+  append(existing);
+  if (const char *envPath = std::getenv("PYTHONPATH")) {
+    append(envPath);
+  }
+  return stream.str();
+}
+
+static bool pythonApplyCommonConfig(PyConfig& config, PyStatus& status)
+{
+#if defined(_WIN32)
+  {
+    const auto applicationPath = fs::path(PlatformUtils::applicationPath()).generic_string();
+    status = PyConfig_SetBytesString(&config, &config.home, applicationPath.c_str());
+    if (PyStatus_Exception(status)) {
+      return false;
+    }
+  }
+#endif
+  {
+    const auto pythonPath = pythonMergedPythonPath(
+#if defined(_WIN32)
+      pythonWindowsRuntimePath()
+#else
+      std::string{}
+#endif
+    );
+    if (!pythonPath.empty()) {
+      status = PyConfig_SetBytesString(&config, &config.pythonpath_env, pythonPath.c_str());
+      if (PyStatus_Exception(status)) {
+        return false;
+      }
+    }
+  }
+  {
+    const auto baseExecutable = pythonShimExecutablePath();
+    std::error_code ec;
+    if (fs::exists(baseExecutable, ec)) {
+      status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
+      if (PyStatus_Exception(status)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+static bool pythonPreInitAndRegisterModules(PyStatus& status)
+{
+  PyPreConfig preconfig;
+  PyPreConfig_InitPythonConfig(&preconfig);
+  status = Py_PreInitialize(&preconfig);
+  if (PyStatus_Exception(status)) {
+    return false;
+  }
+  pythonRegisterEmbeddedModules();
+  return true;
+}
+
 int pythonRunArgs(int argc, char **argv)
 {
   PyStatus status;
+
+  if (!pythonPreInitAndRegisterModules(status)) {
+    if (PyStatus_IsExit(status)) {
+      return status.exitcode;
+    }
+    Py_ExitStatusException(status);
+  }
 
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
@@ -163,31 +310,8 @@ int pythonRunArgs(int argc, char **argv)
   if (PyStatus_Exception(status)) {
     goto fail;
   }
-#if defined(_WIN32)
-  {
-    const auto applicationPath = fs::path(PlatformUtils::applicationPath()).generic_string();
-    status = PyConfig_SetBytesString(&config, &config.home, applicationPath.c_str());
-    if (PyStatus_Exception(status)) {
-      goto fail;
-    }
-    const auto pythonPath = pythonWindowsRuntimePath();
-    if (!pythonPath.empty()) {
-      status = PyConfig_SetBytesString(&config, &config.pythonpath_env, pythonPath.c_str());
-      if (PyStatus_Exception(status)) {
-        goto fail;
-      }
-    }
-  }
-#endif
-  {
-    const auto baseExecutable = pythonShimExecutablePath();
-    std::error_code ec;
-    if (fs::exists(baseExecutable, ec)) {
-      status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
-      if (PyStatus_Exception(status)) {
-        goto fail;
-      }
-    }
+  if (!pythonApplyCommonConfig(config, status)) {
+    goto fail;
   }
 
   status = Py_InitializeFromConfig(&config);
@@ -303,41 +427,15 @@ static int pythonRunCommand(const std::string& command, const std::vector<std::s
   const auto name = PYTHON_EXECUTABLE_NAME;
   const auto exe = pythonShimExecutablePath();
 
-  PyPreConfig preconfig;
-  PyPreConfig_InitPythonConfig(&preconfig);
-
-  status = Py_PreInitialize(&preconfig);
-  if (PyStatus_Exception(status)) {
+  if (!pythonPreInitAndRegisterModules(status)) {
     Py_ExitStatusException(status);
   }
 
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
-#if defined(_WIN32)
-  {
-    const auto applicationPath = fs::path(PlatformUtils::applicationPath()).generic_string();
-    status = PyConfig_SetBytesString(&config, &config.home, applicationPath.c_str());
-    if (PyStatus_Exception(status)) {
-      goto done;
-    }
-    const auto pythonPath = pythonWindowsRuntimePath();
-    if (!pythonPath.empty()) {
-      status = PyConfig_SetBytesString(&config, &config.pythonpath_env, pythonPath.c_str());
-      if (PyStatus_Exception(status)) {
-        goto done;
-      }
-    }
-  }
-#endif
-  {
-    const auto baseExecutable = pythonShimExecutablePath();
-    std::error_code ec;
-    if (fs::exists(baseExecutable, ec)) {
-      status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
-      if (PyStatus_Exception(status)) {
-        goto done;
-      }
-    }
+
+  if (!pythonApplyCommonConfig(config, status)) {
+    goto done;
   }
 
   status = PyConfig_SetBytesString(&config, &config.program_name, name);
@@ -391,48 +489,22 @@ done:
   return status.exitcode;
 }
 
-int pythonRunModule(const std::string& appPath, const std::string& module,
+int pythonRunModule(const std::string& /*appPath*/, const std::string& module,
                     const std::vector<std::string>& args)
 {
   PyStatus status;
   const auto name = PYTHON_EXECUTABLE_NAME;
   const auto exe = pythonShimExecutablePath();
 
-  PyPreConfig preconfig;
-  PyPreConfig_InitPythonConfig(&preconfig);
-
-  status = Py_PreInitialize(&preconfig);
-  if (PyStatus_Exception(status)) {
+  if (!pythonPreInitAndRegisterModules(status)) {
     Py_ExitStatusException(status);
   }
 
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
-#if defined(_WIN32)
-  {
-    const auto applicationPath = fs::path(PlatformUtils::applicationPath()).generic_string();
-    status = PyConfig_SetBytesString(&config, &config.home, applicationPath.c_str());
-    if (PyStatus_Exception(status)) {
-      goto done;
-    }
-    const auto pythonPath = pythonWindowsRuntimePath();
-    if (!pythonPath.empty()) {
-      status = PyConfig_SetBytesString(&config, &config.pythonpath_env, pythonPath.c_str());
-      if (PyStatus_Exception(status)) {
-        goto done;
-      }
-    }
-  }
-#endif
-  {
-    const auto baseExecutable = pythonShimExecutablePath();
-    std::error_code ec;
-    if (fs::exists(baseExecutable, ec)) {
-      status = PyConfig_SetBytesString(&config, &config.base_executable, baseExecutable.c_str());
-      if (PyStatus_Exception(status)) {
-        goto done;
-      }
-    }
+
+  if (!pythonApplyCommonConfig(config, status)) {
+    goto done;
   }
 
   status = PyConfig_SetBytesString(&config, &config.program_name, name);
