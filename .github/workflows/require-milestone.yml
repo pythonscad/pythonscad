@@ -3,7 +3,7 @@ name: Require Milestone
 on:
   # Use pull_request_target so the workflow file always comes from the
   # base branch. A PR that edits this file cannot weaken the gate.
-  # Safe here: no checkout of PR code; only reads event milestone fields.
+  # Safe here: no checkout of PR code; only reads milestone fields via API.
   pull_request_target: # zizmor: ignore[dangerous-triggers]
     types: [opened, edited, reopened, synchronize, milestoned, demilestoned]
   # Revalidate open PRs when a milestone is closed or renamed (those
@@ -14,9 +14,14 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  issues: read
   checks: write
 
 concurrency:
+  # Key by PR when possible so a milestone revalidation and a PR event
+  # for the same PR cancel each other. Milestone-only runs still key by
+  # milestone number; the PR path always re-fetches live state so a
+  # leftover PR run cannot republish a stale green check.
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.milestone.number || github.ref }}
   cancel-in-progress: true
 
@@ -27,15 +32,28 @@ jobs:
       - name: Validate PR milestone
         if: github.event_name == 'pull_request_target'
         env:
-          MILESTONE_TITLE: ${{ github.event.pull_request.milestone.title }}
-          MILESTONE_STATE: ${{ github.event.pull_request.milestone.state }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
 
-          if [ -z "${MILESTONE_TITLE}" ]; then
+          # Always re-fetch live milestone state. The event payload can be
+          # stale if a concurrent milestone closed/edited run already ran,
+          # and a late PR-event completion must not republish a green check.
+          if ! MILESTONE_JSON=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" \
+            --jq 'if .milestone == null then empty else {title: .milestone.title, state: .milestone.state} end'); then
+            echo "::error::Failed to fetch PR #${PR_NUMBER} milestone state."
+            exit 1
+          fi
+
+          if [ -z "${MILESTONE_JSON}" ]; then
             echo "::error::PR must be assigned to a milestone before merge."
             exit 1
           fi
+
+          MILESTONE_TITLE=$(echo "${MILESTONE_JSON}" | jq -r .title)
+          MILESTONE_STATE=$(echo "${MILESTONE_JSON}" | jq -r .state)
 
           if [ "${MILESTONE_STATE}" != "open" ]; then
             echo "::error::Milestone '${MILESTONE_TITLE}' is closed; use an open milestone."
@@ -99,21 +117,27 @@ jobs:
 
             if ! head_sha=$(gh api "repos/${REPO}/pulls/${pr_number}" --jq .head.sha); then
               echo "::error::Failed to fetch head SHA for PR #${pr_number}."
-              exit 1
+              failed=1
+              continue
             fi
 
             echo "Updating require-milestone check on PR #${pr_number} (${head_sha}) → ${conclusion}"
 
             # Post a check run with the same name as this job so a required
             # "require-milestone" status reflects the current milestone state.
-            gh api "repos/${REPO}/check-runs" \
+            # Continue on per-PR failures so every affected PR is attempted.
+            if ! gh api "repos/${REPO}/check-runs" \
               -f name='require-milestone' \
               -f head_sha="${head_sha}" \
               -f status='completed' \
               -f conclusion="${conclusion}" \
               -f 'output[title]=Require Milestone' \
               -f "output[summary]=${summary}" \
-              >/dev/null
+              >/dev/null; then
+              echo "::error::Failed to post require-milestone check for PR #${pr_number}."
+              failed=1
+              continue
+            fi
 
             if [ "${conclusion}" = "failure" ]; then
               failed=1
@@ -122,7 +146,7 @@ jobs:
           done <<< "${PR_NUMBERS}"
 
           if [ "${failed}" -ne 0 ]; then
-            echo "::error::${reason}"
+            echo "::error::${reason:-One or more PR check updates failed.}"
             exit 1
           fi
 
