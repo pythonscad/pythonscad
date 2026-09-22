@@ -1,0 +1,222 @@
+name: Require Milestone
+
+on:
+  # Use pull_request_target so the workflow file always comes from the
+  # base branch. A PR that edits this file cannot weaken the gate.
+  # Safe here: no checkout of PR code; only reads milestone fields via API.
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
+    types: [opened, edited, reopened, synchronize, milestoned, demilestoned]
+  # Revalidate open PRs when a milestone is closed, renamed, or deleted
+  # (those changes do not emit per-PR milestoned/demilestoned events).
+  milestone:
+    types: [closed, edited, opened, deleted]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+  checks: write
+
+concurrency:
+  # Key by PR when possible so a milestone revalidation and a PR event
+  # for the same PR cancel each other. Milestone-only runs still key by
+  # milestone number; the PR path always re-fetches live state so a
+  # leftover PR run cannot republish a stale green check.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.milestone.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  require-milestone:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR milestone
+        if: github.event_name == 'pull_request_target'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          # pull_request_target associates the workflow job check with the
+          # base SHA; post an explicit check against the PR head so a
+          # required "require-milestone" status can gate the merge.
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          conclusion="success"
+          reason=""
+          summary=""
+
+          # Always re-fetch live milestone state. The event payload can be
+          # stale if a concurrent milestone closed/edited run already ran,
+          # and a late PR-event completion must not republish a green check.
+          if ! MILESTONE_JSON=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" \
+            --jq 'if .milestone == null then empty else {title: .milestone.title, state: .milestone.state} end'); then
+            conclusion="failure"
+            reason="Failed to fetch PR #${PR_NUMBER} milestone state."
+            summary="${reason}"
+          elif [ -z "${MILESTONE_JSON}" ]; then
+            conclusion="failure"
+            reason="PR must be assigned to a milestone before merge."
+            summary="${reason}"
+          else
+            MILESTONE_TITLE=$(echo "${MILESTONE_JSON}" | jq -r .title)
+            MILESTONE_STATE=$(echo "${MILESTONE_JSON}" | jq -r .state)
+
+            if [ "${MILESTONE_STATE}" != "open" ]; then
+              conclusion="failure"
+              reason="Milestone '${MILESTONE_TITLE}' is closed; use an open milestone."
+              summary="${reason}"
+            # Intentionally unanchored at the start so names like
+            # "Prominentio v1.1.0" match as well as bare "v1.1.0".
+            elif ! [[ "${MILESTONE_TITLE}" =~ v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+              conclusion="failure"
+              reason="Milestone '${MILESTONE_TITLE}' must end with a version like v1.0 or v1.0.0 (pattern: v[0-9]+\\.[0-9]+(\\.[0-9]+)?\$)."
+              summary="${reason}"
+            else
+              summary="OK: open milestone '${MILESTONE_TITLE}'"
+            fi
+          fi
+
+          if ! gh api "repos/${REPO}/check-runs" \
+            -f name='require-milestone' \
+            -f head_sha="${HEAD_SHA}" \
+            -f status='completed' \
+            -f conclusion="${conclusion}" \
+            -f 'output[title]=Require Milestone' \
+            -f "output[summary]=${summary}" \
+            >/dev/null; then
+            echo "::error::Failed to post require-milestone check for PR #${PR_NUMBER} (${HEAD_SHA})."
+            exit 1
+          fi
+
+          if [ "${conclusion}" = "failure" ]; then
+            echo "::error::${reason}"
+            exit 1
+          fi
+
+          echo "${summary}"
+
+      - name: Revalidate open PRs for changed milestone
+        if: github.event_name == 'milestone'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          MILESTONE_TITLE: ${{ github.event.milestone.title }}
+        run: |
+          set -euo pipefail
+
+          # Reconcile every open PR against its *live* milestone. Relying on
+          # this job's own conclusion cannot fail-close required checks —
+          # those are the per-head check runs we post below. Retries keep
+          # transient API errors from leaving a stale green check in place.
+
+          with_retries() {
+            local attempt=1
+            local max=5
+            local delay=2
+            while true; do
+              if "$@"; then
+                return 0
+              fi
+              if [ "${attempt}" -ge "${max}" ]; then
+                return 1
+              fi
+              echo "Retry ${attempt}/${max} failed for: $*" >&2
+              sleep "${delay}"
+              attempt=$((attempt + 1))
+              delay=$((delay * 2))
+            done
+          }
+
+          validate_milestone() {
+            local title="$1"
+            local state="$2"
+            if [ -z "${title}" ]; then
+              echo "PR must be assigned to a milestone before merge."
+              return 1
+            fi
+            if [ "${state}" != "open" ]; then
+              echo "Milestone '${title}' is closed; use an open milestone."
+              return 1
+            fi
+            # Intentionally unanchored at the start so names like
+            # "Prominentio v1.1.0" match as well as bare "v1.1.0".
+            if ! [[ "${title}" =~ v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+              echo "Milestone '${title}' must end with a version like v1.0 or v1.0.0."
+              return 1
+            fi
+            echo "OK: open milestone '${title}'"
+            return 0
+          }
+
+          post_check() {
+            local head_sha="$1"
+            local conclusion="$2"
+            local summary="$3"
+            gh api "repos/${REPO}/check-runs" \
+              -f name='require-milestone' \
+              -f head_sha="${head_sha}" \
+              -f status='completed' \
+              -f conclusion="${conclusion}" \
+              -f 'output[title]=Require Milestone' \
+              -f "output[summary]=${summary}" \
+              >/dev/null
+          }
+
+          list_open_prs() {
+            gh api --paginate \
+              "repos/${REPO}/pulls?state=open&per_page=100" \
+              --jq '.[].number'
+          }
+
+          if ! PR_NUMBERS=$(with_retries list_open_prs); then
+            echo "::error::Failed to list open PRs after retries (triggered by milestone '${MILESTONE_TITLE}')."
+            exit 1
+          fi
+
+          if [ -z "${PR_NUMBERS}" ]; then
+            echo "No open PRs to revalidate."
+            exit 0
+          fi
+
+          failed=0
+          count=0
+          while IFS= read -r pr_number; do
+            [ -z "${pr_number}" ] && continue
+            count=$((count + 1))
+
+            if ! pr_json=$(with_retries gh api "repos/${REPO}/pulls/${pr_number}"); then
+              echo "::error::Failed to fetch PR #${pr_number} after retries."
+              failed=1
+              continue
+            fi
+
+            head_sha=$(echo "${pr_json}" | jq -r .head.sha)
+            milestone_title=$(echo "${pr_json}" | jq -r '.milestone.title // empty')
+            milestone_state=$(echo "${pr_json}" | jq -r '.milestone.state // empty')
+
+            conclusion="success"
+            if ! summary=$(validate_milestone "${milestone_title}" "${milestone_state}"); then
+              conclusion="failure"
+            fi
+
+            echo "Updating require-milestone check on PR #${pr_number} (${head_sha}) → ${conclusion}"
+
+            if ! with_retries post_check "${head_sha}" "${conclusion}" "${summary}"; then
+              echo "::error::Failed to post require-milestone check for PR #${pr_number} after retries."
+              failed=1
+              continue
+            fi
+
+            if [ "${conclusion}" = "failure" ]; then
+              failed=1
+              echo "::warning::PR #${pr_number}: ${summary}"
+            fi
+          done <<< "${PR_NUMBERS}"
+
+          if [ "${failed}" -ne 0 ]; then
+            echo "::error::One or more PRs failed milestone validation or check updates."
+            exit 1
+          fi
+
+          echo "Reconciled require-milestone on ${count} open PR(s) after milestone '${MILESTONE_TITLE}' change."
