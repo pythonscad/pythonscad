@@ -19,37 +19,11 @@ import json
 import os
 from pathlib import Path
 import tempfile
-import time
 import zipfile
 
 import _openscad
 import openscad
 import pythonscad
-
-# region agent log
-_DEBUG_LOG = Path(__file__).resolve().parents[1] / ".cursor" / "debug-86d1cc.log"
-
-
-def _agent_log(hypothesis_id: str, location: str, message: str, data: dict) -> None:
-    """Append one NDJSON debug line when the session log path is writable."""
-    try:
-        _DEBUG_LOG.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            "sessionId": "86d1cc",
-            "runId": os.environ.get("PYTHONSCAD_DEBUG_RUN_ID", "smoke"),
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data,
-            "timestamp": int(time.time() * 1000),
-        }
-        with _DEBUG_LOG.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(payload) + "\n")
-    except OSError:
-        pass
-
-
-# endregion
 
 distribution = importlib.metadata.distribution("pythonscad")
 distribution_files = {
@@ -147,14 +121,6 @@ WORKDIR = _workdir.name
 def _assert_nonempty_3mf(path: str) -> None:
     """Fail loudly if 3MF export produced an empty/dummy file (issue #1025)."""
     size = os.path.getsize(path)
-    # region agent log
-    _agent_log(
-        "D",
-        "smoke-test-pip.py:_assert_nonempty_3mf",
-        "3mf export size check",
-        {"path": path, "size": size},
-    )
-    # endregion
     assert size > 0, (
         f"{path} is empty ({size} bytes); 3MF export appears disabled "
         "(lib3mf missing / dummy stubs). See issue #1025."
@@ -163,7 +129,7 @@ def _assert_nonempty_3mf(path: str) -> None:
     with zipfile.ZipFile(path) as zf:
         names = zf.namelist()
     assert any(
-        name.startswith("3D/") or name.endswith(".model") for name in names
+        name.startswith("3D/") and name.endswith(".model") for name in names
     ), f"{path} is missing a 3MF model payload; entries={names[:20]!r}"
 
 
