@@ -181,8 +181,11 @@ static std::string pythonOverlayLibraryPath()
   const auto resourceLibPath = fs::path(PlatformUtils::resourceBasePath()) / "libraries" / "python";
   std::error_code ec;
   if (fs::is_directory(resourceLibPath, ec) && !ec) {
-    stream << fs::absolute(resourceLibPath, ec).generic_string();
-    if (!ec) sep = sepchar;
+    const auto absolute = fs::absolute(resourceLibPath, ec);
+    if (!ec) {
+      stream << absolute.generic_string();
+      sep = sepchar;
+    }
   }
 
 #if !defined(_WIN32)
