@@ -222,6 +222,22 @@ function Invoke-SmokeTest {
         -LogFile (Join-Path $testdir 'repl.log')
     Assert-NonEmptyFile -Path (Join-Path $testdir 'repl-cube.stl')
 
+    # Standalone pythonscad-python.exe must register embedded _openscad (issue #1031).
+    $shimPath = Join-Path (Split-Path -Parent $ExecutablePath) 'pythonscad-python.exe'
+    if (Test-Path -LiteralPath $shimPath -PathType Leaf) {
+        Write-SmokeLog "Smoke testing $Label`: pythonscad-python import"
+        $shimScript = Join-Path $testdir 'shim-import.py'
+        @'
+from pythonscad import *
+export(cube(10), "shim-cube.stl")
+'@ | Set-Content -LiteralPath $shimScript -Encoding utf8
+        Invoke-PythonSCAD -ExecutablePath $shimPath `
+            -Arguments @('shim-import.py') `
+            -WorkingDirectory $testdir `
+            -LogFile (Join-Path $testdir 'shim-import.log')
+        Assert-NonEmptyFile -Path (Join-Path $testdir 'shim-cube.stl')
+    }
+
     Write-SmokeLog "Smoke testing $Label`: IPython"
     Invoke-PythonSCAD -ExecutablePath $ExecutablePath `
         -Arguments @('--ipython', 'ipython-smoke.py') `
