@@ -1055,14 +1055,37 @@ std::unique_ptr<PolySet> loftTubeWithHoles(const std::vector<Vector3d>& outer,
   // de-duplicates - but, unlike a plain remap-to-original-indices, keeps
   // each kept triangle's actual ghost-shifted uv alongside its original
   // indices (see PeriodicTri above).
+  //
+  // PERFORMANCE: bowyerWatson() below is an unconstrained, unaccelerated
+  // incremental Delaunay (no spatial grid/tree to localize the "which
+  // triangles does this new point invalidate" search) - it costs
+  // O(pointCount^2). Tripling EVERY point into 3 ghost copies (as a naive
+  // implementation of the ghost-copy trick would) needlessly cubes that
+  // already-expensive input for the (usually large) interior grid point
+  // set, even though only points actually near the seam can ever end up
+  // in a seam-crossing triangle. Ghosting only those - within 'margin' of
+  // either edge of the fundamental domain - keeps the overwhelming
+  // majority of points (everything away from the seam) at their single,
+  // real copy, which is the single biggest win available here without
+  // replacing bowyerWatson() itself with a spatially accelerated
+  // triangulator.
+  const double margin = std::min(0.5 * period, std::max(8.0 * grid_spacing_uv, 1e-6));
   auto triangulatePeriodic = [&](const std::vector<Vector2d>& uv) -> std::vector<PeriodicTri> {
     std::vector<Vector2d> ghostUV;
     std::vector<int> ghostSrc;
-    ghostUV.reserve(uv.size() * 3);
-    ghostSrc.reserve(uv.size() * 3);
-    for (int shift = -1; shift <= 1; shift++) {
-      for (size_t i = 0; i < uv.size(); i++) {
-        ghostUV.push_back(Vector2d(uv[i].x() + shift * period, uv[i].y()));
+    ghostUV.reserve(uv.size() + uv.size() / 4);
+    ghostSrc.reserve(ghostUV.capacity());
+    for (size_t i = 0; i < uv.size(); i++) {
+      ghostUV.push_back(uv[i]);
+      ghostSrc.push_back(static_cast<int>(i));
+      const double distToLow = uv[i].x() - tu.u0;
+      const double distToHigh = (tu.u0 + period) - uv[i].x();
+      if (distToLow < margin) {
+        ghostUV.push_back(Vector2d(uv[i].x() + period, uv[i].y()));
+        ghostSrc.push_back(static_cast<int>(i));
+      }
+      if (distToHigh < margin) {
+        ghostUV.push_back(Vector2d(uv[i].x() - period, uv[i].y()));
         ghostSrc.push_back(static_cast<int>(i));
       }
     }
