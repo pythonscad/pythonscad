@@ -5,13 +5,13 @@
 #include <cmath>
 #include <limits>
 #include <set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include <Eigen/Eigenvalues>
 
 #include "geometry/Polygon2d.h"
-#include "utils/printutils.h"
 
 namespace {
 
@@ -202,26 +202,6 @@ void edgeControlPoints(const Vector3d& Pi, const Vector3d& Pj, const Vector3d& T
     outNearI = Pi - Ti * (L / 3.0);
     outNearJ = Pj + Tj * (L / 3.0);
   }
-
-  // -------- DEBUG: nur die ersten paar Kanten protokollieren --------
-  // Zeigt die eigentliche Rohdatenlage, mit der evalCubicTriangle() rechnet:
-  // Kantenlaenge, beide Tangenten und die daraus abgeleiteten
-  // Kontrollpunkte. Wenn Ti/Tj hier (fast) auf der Verbindungsgeraden
-  // Pj-Pi liegen, bleibt die Flaeche zwangslaeufig fast gerade - das ist
-  // dann kein Bug in evalCubicTriangle(), sondern eine Tangente, die
-  // schon nach der Vorzeichen-Normalisierung praktisch axial zeigt.
-  static int debugEdgeCount = 0;
-  if (debugEdgeCount < 10) {
-    debugEdgeCount++;
-    Vector3d chordDir = (L > 1e-12) ? (Pj - Pi) / L : Vector3d(0, 0, 0);
-    LOG(message_group::Warning,
-        "loft debug edge #%1$d: ring %2$d->%3$d  L=%4$f  chordDir=(%5$f,%6$f,%7$f)", debugEdgeCount,
-        ringI, ringJ, L, chordDir.x(), chordDir.y(), chordDir.z());
-    LOG(message_group::Warning, "loft debug edge #%1$d: Ti=(%2$f,%3$f,%4$f) dot(chordDir)=%5$f",
-        debugEdgeCount, Ti.x(), Ti.y(), Ti.z(), Ti.dot(chordDir));
-    LOG(message_group::Warning, "loft debug edge #%1$d: Tj=(%2$f,%3$f,%4$f) dot(chordDir)=%5$f",
-        debugEdgeCount, Tj.x(), Tj.y(), Tj.z(), Tj.dot(chordDir));
-  }
 }
 
 Vector3d evalCubicTriangle(const Vector3d& P1, const Vector3d& P2, const Vector3d& P3,
@@ -330,19 +310,59 @@ std::vector<Vector2d> jitterForDelaunay(const std::vector<Vector2d>& pts, double
 }
 
 // -------------------- Unconstrained Bowyer-Watson Delaunay --------------------
+//
+// Each triangle also carries the index of its neighbor across each of its
+// three edges (-1 = none, i.e. the outer void beyond the super-triangle).
+// This adjacency is what lets point insertion below avoid ever scanning the
+// full triangle list (see the long comment on bowyerWatson() itself).
 struct DTriangle {
   int a, b, c;
+  int nab = -1, nbc = -1, nca = -1;  // neighbor across edge (a,b), (b,c), (c,a)
 };
 
 // Delaunay triangulation of a plain 2D point set, no constraint edges.
 // 'pts' is left unmodified; returned indices refer into 'pts'.
+//
+// PERFORMANCE: the original implementation of this function found, for
+// every inserted point, both (a) which triangles are "bad" (p lies inside
+// their circumcircle) and (b) which of a bad triangle's edges are shared
+// with another bad triangle, by scanning the ENTIRE current triangle list
+// (and, for (b), the entire bad list again per edge) - O(n) work per point,
+// O(n^2) overall, the single biggest cost in the whole loft() pipeline for
+// any nontrivial point count (confirmed by profiling the tube-with-holes
+// case, which is by far the largest point set this file builds).
+//
+// Neither of those scans is actually necessary. This version instead:
+//   1. Maintains triangle-to-triangle adjacency (the n?? fields above),
+//      updated incrementally as triangles are created/retired.
+//   2. Locates a triangle CONTAINING the new point via a "visibility walk":
+//      starting from a hint (the triangle created for the previous point -
+//      spatially close for every caller in this file, since points are
+//      always fed in as contiguous rings or row-by-row grids), repeatedly
+//      cross whichever edge the point lies on the far side of. A triangle
+//      containing p is always itself "bad" (p inside a triangle implies p
+//      inside that triangle's own circumcircle), so this both locates AND
+//      seeds the bad region in one step - expected O(sqrt(n)) or better for
+//      spatially coherent insertion order, instead of O(n).
+//   3. Flood-fills the rest of the bad region outward from that seed via
+//      adjacency (a bad triangle's neighbor is only worth visiting if it is
+//      ALSO bad), instead of testing every triangle in the mesh - cost
+//      proportional to the (small, roughly constant-size) bad region itself.
+//   4. Walks the bad region's boundary edges as a single ordered loop (using
+//      each edge's known adjacency, not a nested O(bad^2) shared-edge scan)
+//      to fan new triangles around the point and relink their neighbors.
+//
+// A full-scan fallback (walk failed, or landed on a dead end / numerical
+// tie) is kept for robustness - it only ever fires for the rare point where
+// the hint-based walk doesn't pan out, not on every insertion.
 std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts)
 {
   if (pts.size() < 3) return {};
 
-  // Defensive bound: a healthy triangulation of N points has ~2N triangles.
-  // If jitterForDelaunay() somehow still leaves a numerically degenerate
-  // configuration, bail out rather than growing without limit.
+  // Defensive bound: a healthy triangulation of N points has ~2N LIVE
+  // triangles (retired/"dead" ones are never removed from the underlying
+  // vector - see 'dead' below - so this tracks a running live count rather
+  // than the vector's own size, which also includes dead entries).
   const size_t maxSaneTris = std::max<size_t>(200, pts.size() * 20);
 
   double minX = pts[0].x(), maxX = minX, minY = pts[0].y(), maxY = minY;
@@ -371,8 +391,6 @@ std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts)
     return t;
   };
 
-  std::vector<DTriangle> tris = {makeCCW({i0, i1, i2})};
-
   auto inCircumcircle = [&](const DTriangle& t, const Vector2d& p) {
     const Vector2d &a = P[t.a], &b = P[t.b], &c = P[t.c];
     double ax = a.x() - p.x(), ay = a.y() - p.y();
@@ -383,60 +401,187 @@ std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts)
     return det > 1e-12;
   };
 
-  auto edgeOf = [](const DTriangle& t, int k) -> std::pair<int, int> {
-    if (k == 0) return {t.a, t.b};
-    if (k == 1) return {t.b, t.c};
-    return {t.c, t.a};
+  // > 0 iff p is strictly to the left of the directed edge a->b - i.e. on
+  // the "inside" side for a CCW triangle whose edge this is.
+  auto orient = [&](int a, int b, const Vector2d& p) {
+    return (P[b].x() - P[a].x()) * (p.y() - P[a].y()) - (p.x() - P[a].x()) * (P[b].y() - P[a].y());
   };
 
-  for (int pi = 0; pi < static_cast<int>(pts.size()); pi++) {
-    std::vector<DTriangle> bad;
-    for (const auto& t : tris)
-      if (inCircumcircle(t, P[pi])) bad.push_back(t);
-    if (bad.empty()) continue;  // point lies exactly on an existing circumcircle etc. - skip it
+  std::vector<DTriangle> tris;
+  std::vector<char> dead;
+  std::vector<int> visitedStamp;
+  size_t liveCount = 0;
 
-    std::vector<std::pair<int, int>> boundary;
-    for (size_t bi = 0; bi < bad.size(); bi++) {
-      for (int k = 0; k < 3; k++) {
-        auto e = edgeOf(bad[bi], k);
-        bool shared = false;
-        for (size_t bj = 0; bj < bad.size() && !shared; bj++) {
-          if (bi == bj) continue;
-          for (int k2 = 0; k2 < 3; k2++) {
-            auto e2 = edgeOf(bad[bj], k2);
-            if (e.first == e2.second && e.second == e2.first) {
-              shared = true;
-              break;
-            }
-          }
-        }
-        if (!shared) boundary.push_back(e);
+  auto addTriangle = [&](DTriangle t) -> int {
+    tris.push_back(t);
+    dead.push_back(0);
+    visitedStamp.push_back(-1);
+    liveCount++;
+    return static_cast<int>(tris.size()) - 1;
+  };
+
+  addTriangle(makeCCW({i0, i1, i2}));
+
+  // Visibility walk: from 'start', repeatedly cross whichever edge p lies
+  // outside of, towards p. Returns the (live) triangle containing p, or -1
+  // if the walk hits a dead end (dead triangle, or a boundary edge with no
+  // neighbor to cross to while still outside) - the caller falls back to a
+  // full scan in that case.
+  auto locate = [&](int start, const Vector2d& p) -> int {
+    if (start < 0 || static_cast<size_t>(start) >= tris.size()) return -1;
+    int t = start;
+    const int stepLimit = static_cast<int>(tris.size()) + 8;
+    for (int steps = 0; steps < stepLimit; steps++) {
+      if (t < 0 || dead[t]) return -1;
+      const DTriangle& tri = tris[t];
+      if (orient(tri.a, tri.b, p) < -1e-12) {
+        if (tri.nab < 0) return -1;
+        t = tri.nab;
+        continue;
       }
+      if (orient(tri.b, tri.c, p) < -1e-12) {
+        if (tri.nbc < 0) return -1;
+        t = tri.nbc;
+        continue;
+      }
+      if (orient(tri.c, tri.a, p) < -1e-12) {
+        if (tri.nca < 0) return -1;
+        t = tri.nca;
+        continue;
+      }
+      return t;
     }
+    return -1;
+  };
 
-    std::vector<DTriangle> kept;
-    kept.reserve(tris.size());
-    for (const auto& t : tris) {
-      bool isBad = false;
-      for (const auto& bt : bad) {
-        if (bt.a == t.a && bt.b == t.b && bt.c == t.c) {
-          isBad = true;
+  int hint = 0;
+  int stamp = 0;
+  std::vector<int> bad;
+  std::vector<int> stack;
+  struct BEdge {
+    int u, v, ext;
+  };
+  std::vector<BEdge> bedges;
+
+  for (int pi = 0; pi < static_cast<int>(pts.size()); pi++) {
+    const Vector2d& p = P[pi];
+
+    int seed = locate(hint, p);
+    if (seed < 0 || !inCircumcircle(tris[seed], p)) {
+      seed = -1;
+      for (size_t t = 0; t < tris.size(); t++) {
+        if (!dead[t] && inCircumcircle(tris[t], p)) {
+          seed = static_cast<int>(t);
           break;
         }
       }
-      if (!isBad) kept.push_back(t);
+      if (seed < 0) continue;  // point lies exactly on an existing circumcircle etc. - skip it
     }
-    tris = std::move(kept);
 
-    for (const auto& e : boundary) tris.push_back(makeCCW({e.first, e.second, pi}));
+    // Flood-fill the bad region outward from 'seed' via adjacency.
+    stamp++;
+    bad.clear();
+    stack.clear();
+    stack.push_back(seed);
+    visitedStamp[seed] = stamp;
+    while (!stack.empty()) {
+      int t = stack.back();
+      stack.pop_back();
+      bad.push_back(t);
+      const DTriangle& tri = tris[t];
+      const int nb[3] = {tri.nab, tri.nbc, tri.nca};
+      for (int n : nb) {
+        if (n < 0 || dead[n] || visitedStamp[n] == stamp) continue;
+        if (inCircumcircle(tris[n], p)) {
+          visitedStamp[n] = stamp;
+          stack.push_back(n);
+        }
+      }
+    }
+    auto isBad = [&](int t) { return t >= 0 && visitedStamp[t] == stamp; };
 
-    if (tris.size() > maxSaneTris) return {};
+    // Boundary edges of the (star-shaped) bad region, each directed as it
+    // appears in its own owning bad triangle (CCW), together with the
+    // external (non-bad) triangle - if any - to relink there.
+    bedges.clear();
+    for (int t : bad) {
+      const DTriangle& tri = tris[t];
+      if (!isBad(tri.nab)) bedges.push_back({tri.a, tri.b, tri.nab});
+      if (!isBad(tri.nbc)) bedges.push_back({tri.b, tri.c, tri.nbc});
+      if (!isBad(tri.nca)) bedges.push_back({tri.c, tri.a, tri.nca});
+    }
+
+    // Chain the boundary edges into a single ordered loop by vertex
+    // adjacency (edge (u,v) is followed by whichever edge starts at v) -
+    // O(boundary length) via a start-vertex lookup, no nested scan.
+    std::unordered_map<int, int> byStart;
+    byStart.reserve(bedges.size() * 2);
+    for (size_t i = 0; i < bedges.size(); i++) byStart[bedges[i].u] = static_cast<int>(i);
+
+    std::vector<BEdge> loop;
+    loop.reserve(bedges.size());
+    {
+      int cur = 0;
+      const int startU = bedges[0].u;
+      for (size_t k = 0; k < bedges.size(); k++) {
+        loop.push_back(bedges[cur]);
+        const int nextU = bedges[cur].v;
+        if (nextU == startU) break;
+        auto it = byStart.find(nextU);
+        if (it == byStart.end()) {
+          loop.clear();
+          break;
+        }
+        cur = it->second;
+      }
+    }
+    if (loop.size() != bedges.size()) {
+      // Defensive: the bad region's boundary wasn't a single simple loop
+      // (should not happen for a numerically healthy Delaunay bad region -
+      // see jitterForDelaunay() - but skip this point rather than risk
+      // building a corrupt mesh on some pathological numerical tie).
+      continue;
+    }
+
+    for (int t : bad) dead[t] = 1;
+    liveCount -= bad.size();
+
+    // Fan new triangles around p, one per boundary edge, and relink each
+    // one's three neighbors: the external triangle across its outer edge
+    // (found by matching vertex identity - robust regardless of which of
+    // a/b/c order that triangle happens to store them in), and its two
+    // fan-neighbors, found directly from the loop's own cyclic order.
+    const int k = static_cast<int>(loop.size());
+    std::vector<int> newIdx(k);
+    for (int i = 0; i < k; i++) newIdx[i] = addTriangle(makeCCW({loop[i].u, loop[i].v, pi}));
+
+    auto setNeighborForEdge = [&](DTriangle& t, int va, int vb, int nbIdx) {
+      if ((t.a == va && t.b == vb) || (t.a == vb && t.b == va)) t.nab = nbIdx;
+      else if ((t.b == va && t.c == vb) || (t.b == vb && t.c == va)) t.nbc = nbIdx;
+      else t.nca = nbIdx;
+    };
+
+    for (int i = 0; i < k; i++) {
+      DTriangle& nt = tris[newIdx[i]];
+      const int prev = (i - 1 + k) % k;
+      const int next = (i + 1) % k;
+      setNeighborForEdge(nt, loop[i].u, loop[i].v, loop[i].ext);
+      setNeighborForEdge(nt, loop[i].v, pi, newIdx[next]);
+      setNeighborForEdge(nt, pi, loop[i].u, newIdx[prev]);
+
+      if (loop[i].ext >= 0) setNeighborForEdge(tris[loop[i].ext], loop[i].v, loop[i].u, newIdx[i]);
+    }
+
+    hint = newIdx[0];
+    if (liveCount > maxSaneTris) return {};
   }
 
   std::vector<DTriangle> result;
-  result.reserve(tris.size());
-  for (const auto& t : tris) {
-    if (t.a < i0 && t.b < i0 && t.c < i0) result.push_back(t);
+  result.reserve(liveCount);
+  for (size_t t = 0; t < tris.size(); t++) {
+    if (dead[t]) continue;
+    const DTriangle& tt = tris[t];
+    if (tt.a < i0 && tt.b < i0 && tt.c < i0) result.push_back(tt);
   }
   return result;
 }
@@ -496,32 +641,18 @@ void normalizeTangentSigns(const std::vector<Vector3d>& outer_pos, std::vector<V
   if (axis.squaredNorm() < 1e-12) return;
   axis.normalize();
 
-  auto flipRingIfNeeded = [&](std::vector<Vector3d>& ringNormal, const char *label) {
+  auto flipRingIfNeeded = [&](std::vector<Vector3d>& ringNormal) {
     if (ringNormal.empty()) return;
     Vector3d avg(0, 0, 0);
     for (const auto& n : ringNormal) avg += n;
-    Vector3d avgBefore = avg;
-    bool flipped = avg.dot(axis) < 0;
-    if (flipped) {
+    if (avg.dot(axis) < 0) {
       for (auto& n : ringNormal) n = -n;
     }
-    // -------- DEBUG --------
-    // 'dot' hier nahe 0 bedeutet: die Tangente steht (fast) senkrecht zur
-    // outer->hole-Achse - dann ist die Vorzeichenwahl praktisch eine
-    // Muenzwurf-Entscheidung und KEIN verlaesslicher Indikator, auf welcher
-    // Seite die Woelbung landet. Ein 'flipped=1' bei einer Konfiguration,
-    // die eigentlich keine ~180 Grad-Wende braucht, ist ein Hinweis, dass
-    // hier die axis-Heuristik die falsche Seite waehlt.
-    LOG(message_group::Warning,
-        "loft debug normalizeTangentSigns[%1$s]: avgTangent=(%2$f,%3$f,%4$f) axis=(%5$f,%6$f,%7$f) "
-        "dot=%8$f flipped=%9$d",
-        label, avgBefore.x(), avgBefore.y(), avgBefore.z(), axis.x(), axis.y(), axis.z(),
-        avgBefore.dot(axis), flipped ? 1 : 0);
   };
 
-  flipRingIfNeeded(outer_normal, "outer");
+  flipRingIfNeeded(outer_normal);
   for (size_t hi = 0; hi < holes_normal.size(); hi++) {
-    flipRingIfNeeded(holes_normal[hi], "hole");
+    flipRingIfNeeded(holes_normal[hi]);
   }
 }
 
@@ -720,10 +851,6 @@ std::function<Vector2d(const Vector3d&)> computeAutoProj(const std::vector<Vecto
   double R;
   const bool tubeLike = findTubeAxis(outer, holes, tubeIdx, axis, R);
 
-  // -------- DEBUG --------
-  LOG(message_group::Warning, "loft debug auto proj: outerR=%1$f axis=(%2$f,%3$f,%4$f) -> %5$s", R,
-      axis.x(), axis.y(), axis.z(), tubeLike ? "axial (tube)" : "best-fit plane (panel)");
-
   // findTubeAxis()'s heuristic (hole far from the outer ring's own centroid
   // -> treat as a tube/port, view along the axis between them) only looks
   // at DISTANCE, not at whether the outer ring actually has any extent left
@@ -756,9 +883,6 @@ std::function<Vector2d(const Vector3d&)> computeAutoProj(const std::vector<Vecto
     if (!isDegenerate2D(outerTrial, 0.04)) {
       return axialProj;
     }
-    LOG(message_group::Warning,
-        "loft debug auto proj: axial view would flatten the OUTER ring itself too (rings are "
-        "coplanar with the chosen axis) - falling back to best-fit plane instead");
   }
 
   std::vector<Vector3d> allPts = outer;
@@ -872,8 +996,6 @@ std::unique_ptr<PolySet> loftBridgeTwoRings(const std::vector<Vector3d>& ringA,
     }
   }
 
-  LOG(message_group::Warning, "loft debug bridge: n=%1$d steps=%2$d points=%3$d triangles=%4$d", (int)n,
-      steps, (int)grid.size(), (int)polyset->indices.size());
   return polyset;
 }
 
@@ -1136,6 +1258,8 @@ std::unique_ptr<PolySet> loftTubeWithHoles(const std::vector<Vector3d>& outer,
     std::vector<Vector3d> pos3d;  // indexed by the ORIGINAL (non-ghost) point index
     std::vector<PeriodicTri> tris;
     double period = 0.0;
+    double u0 = 0.0;
+    double margin = 0.0;  // only points within this of a domain edge can ever need a shifted test
 
     bool sampleTriAt(const Vector2d& p, const PeriodicTri& t, Vector3d& outPos,
                      Vector3d& outNormal) const
@@ -1161,13 +1285,24 @@ std::unique_ptr<PolySet> loftTubeWithHoles(const std::vector<Vector3d>& outer,
       return true;
     }
 
+    // Only a query point actually near one of the fundamental domain's own
+    // edges can ever land inside a seam-crossing triangle's (necessarily
+    // nearby) locally contiguous uv footprint - a triangle far from the
+    // seam has an uv range far from p+-period regardless of p, so testing
+    // the shifted positions there can never succeed. Skipping those two
+    // extra attempts for the (overwhelming majority) of points that aren't
+    // near the seam turns the common case back into a single scan over
+    // 'tris' instead of three.
     bool sample(const Vector2d& p, Vector3d& outPos, Vector3d& outNormal) const
     {
       for (const auto& t : tris) {
-        for (int shift = -1; shift <= 1; shift++) {
-          Vector2d pShift(p.x() + shift * period, p.y());
-          if (sampleTriAt(pShift, t, outPos, outNormal)) return true;
-        }
+        if (sampleTriAt(p, t, outPos, outNormal)) return true;
+      }
+      const bool nearSeam = (p.x() - u0 < margin) || ((u0 + period) - p.x() < margin);
+      if (!nearSeam) return false;
+      for (const auto& t : tris) {
+        if (sampleTriAt(Vector2d(p.x() + period, p.y()), t, outPos, outNormal)) return true;
+        if (sampleTriAt(Vector2d(p.x() - period, p.y()), t, outPos, outNormal)) return true;
       }
       return false;
     }
@@ -1176,12 +1311,10 @@ std::unique_ptr<PolySet> loftTubeWithHoles(const std::vector<Vector3d>& outer,
   PeriodicBaseSurface base;
   base.pos3d = boundaryPos;
   base.period = period;
+  base.u0 = tu.u0;
+  base.margin = margin;
   base.tris = triangulatePeriodic(boundaryUV);
   if (base.tris.empty()) return nullptr;
-
-  LOG(message_group::Warning,
-      "loft debug tube-unroll: period=%1$f vmin=%2$f vmax=%3$f u0=%4$f base_tris=%5$d", period, vmin,
-      vmax, tu.u0, (int)base.tris.size());
 
   // Interior grid, sampled directly over the rectangle domain. Boundary-
   // edge encroachment protection (see pointEncroachesBoundary() elsewhere
@@ -1209,7 +1342,6 @@ std::unique_ptr<PolySet> loftTubeWithHoles(const std::vector<Vector3d>& outer,
     return false;
   };
 
-  int accepted = 0;
   for (int iu = 0; iu < nu; iu++) {
     for (int iv = 0; iv < nv; iv++) {
       Vector2d p(tu.u0 + iu * grid_spacing_uv, vmin + iv * grid_spacing_uv);
@@ -1221,12 +1353,8 @@ std::unique_ptr<PolySet> loftTubeWithHoles(const std::vector<Vector3d>& outer,
       double d = displacement(pos) * falloff;
       allUV.push_back(p);
       allPos.push_back(pos + normal * d);
-      accepted++;
     }
   }
-
-  LOG(message_group::Warning, "loft debug tube-unroll grid: nu=%1$d nv=%2$d accepted=%3$d", nu, nv,
-      accepted);
 
   // Collar points hugging each EXTRA hole's own boundary, one just outside
   // each of its ring vertices. Needed regardless of how fine grid_spacing_uv
@@ -1244,7 +1372,6 @@ std::unique_ptr<PolySet> loftTubeWithHoles(const std::vector<Vector3d>& outer,
   // (never larger than half the grid spacing, so it never collides with the
   // regular grid), giving the triangulation something close by to connect
   // to on every side of the hole instead of reaching across the gap.
-  int collarAdded = 0;
   for (size_t hi = 0; hi < holes.size(); hi++) {
     if (static_cast<int>(hi) == tubePartnerIdx || holes_uv[hi].size() < 3) continue;
     const auto& ring = holes_uv[hi];
@@ -1273,14 +1400,10 @@ std::unique_ptr<PolySet> loftTubeWithHoles(const std::vector<Vector3d>& outer,
       double d = displacement(pos) * falloff;
       allUV.push_back(p);
       allPos.push_back(pos + normal * d);
-      collarAdded++;
     }
   }
-  LOG(message_group::Warning, "loft debug tube-unroll collar: added=%1$d", collarAdded);
 
   auto finalTris = triangulatePeriodic(allUV);
-  LOG(message_group::Warning, "loft debug tube-unroll final mesh: points=%1$d triangles=%2$d",
-      (int)allPos.size(), (int)finalTris.size());
   if (finalTris.empty()) return nullptr;
 
   auto polyset = std::make_unique<PolySet>(3);
@@ -1324,14 +1447,10 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
       outerTrial.reserve(outer.size());
       for (const auto& p : outer) outerTrial.push_back(axialProj(p));
       if (isDegenerate2D(outerTrial, 0.04)) {
-        LOG(message_group::Warning,
-            "loft debug bridge: two disjoint (non-nested) rings detected - bridging directly "
-            "instead of building an outer/hole domain");
         static const std::vector<Vector3d> emptyTangent;
         const std::vector<Vector3d>& holeTangent = holes_normal.empty() ? emptyTangent : holes_normal[0];
         auto result = loftBridgeTwoRings(outer, holes[0], outer_normal, holeTangent, grid_spacing_uv);
         if (result) return result;
-        LOG(message_group::Warning, "loft debug bridge: loftBridgeTwoRings() failed, falling back");
       }
     }
   }
@@ -1348,19 +1467,6 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
   // a zero-area line - see the long comment above loftTubeWithHoles().
   const bool noTangentsSupplied = !hasAnyTangent(outer_normal) && !hasAnyHoleTangent(holes_normal);
 
-  // -------- DEBUG --------
-  // Always logged, regardless of which branch is taken below, so a run that
-  // unexpectedly ends up on the OLD (plain axial/panel) path shows exactly
-  // why: which of the three gate conditions failed. Without this, "the
-  // fast path didn't fire" was previously invisible unless it fired and then
-  // itself failed - if the gate check itself rejected the call, nothing at
-  // all was logged.
-  LOG(
-    message_group::Warning,
-    "loft debug tube-unroll gate: hasProj=%1$d noTangents=%2$d holes=%3$d -> %4$s", proj ? 1 : 0,
-    noTangentsSupplied ? 1 : 0, (int)holes.size(),
-    (!proj && noTangentsSupplied && holes.size() >= 2) ? "checking findTubeAxis" : "SKIPPED (old path)");
-
   if (!proj && noTangentsSupplied && holes.size() >= 2) {
     int tubeIdx;
     Vector3d axis;
@@ -1368,10 +1474,6 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
     if (findTubeAxis(outer, holes, tubeIdx, axis, R)) {
       auto result = loftTubeWithHoles(outer, holes, tubeIdx, axis, grid_spacing_uv, displacement);
       if (result) return result;
-      LOG(message_group::Warning,
-          "loft debug tube-unroll: loftTubeWithHoles() failed, falling back to the ordinary path");
-    } else {
-      LOG(message_group::Warning, "loft debug tube-unroll gate: findTubeAxis() said not tube-like");
     }
   }
 
@@ -1407,33 +1509,6 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
     if (holes[hi].size() < 3 || !isDegenerate2D(holes_uv[hi])) continue;
     Vector2d placeAt = effectiveProj(centroid3D(holes[hi]));
     holes_uv[hi] = localHoleReembed(holes[hi], placeAt);
-    LOG(message_group::Warning,
-        "loft debug hole reembed: holes[%1$d] was degenerate under the shared projection - "
-        "flattened locally, placed at (%2$f,%3$f)",
-        (int)hi, placeAt.x(), placeAt.y());
-  }
-
-  // -------- DEBUG --------
-  // Rohe UV-Werte DIREKT nach proj(), noch vor jeder Umorientierung/
-  // Normalisierung. Wenn diese Zahlen sich zwischen zwei loft()-Aufrufen
-  // im selben Skript (gleiche 3D-Punkte, mathematisch fast identische
-  // proj()) unterscheiden, liefert proj() selbst unterschiedliche Werte -
-  // z.B. weil eine falsche/alte proj()-Closure aufgerufen wird (Python-
-  // Bindung/Cache-Verwechslung). Sind sie identisch, liegt die
-  // Abweichung NICHT an proj(), sondern irgendwo danach (Cache-Kollision
-  // via LoftNode::toString(), siehe Kommentar dort).
-  for (size_t i = 0; i < std::min<size_t>(3, outer_uv.size()); i++) {
-    LOG(message_group::Warning,
-        "loft debug raw uv: outer_uv[%1$d]=(%2$f,%3$f) from outer[%4$d]=(%5$f,%6$f,%7$f)", (int)i,
-        outer_uv[i].x(), outer_uv[i].y(), (int)i, outer[i].x(), outer[i].y(), outer[i].z());
-  }
-  for (size_t hi = 0; hi < holes_uv.size(); hi++) {
-    for (size_t i = 0; i < std::min<size_t>(3, holes_uv[hi].size()); i++) {
-      LOG(message_group::Warning,
-          "loft debug raw uv: holes_uv[%1$d][%2$d]=(%3$f,%4$f) from holes[%5$d][%6$d]=(%7$f,%8$f,%9$f)",
-          (int)hi, (int)i, holes_uv[hi][i].x(), holes_uv[hi][i].y(), (int)hi, (int)i, holes[hi][i].x(),
-          holes[hi][i].y(), holes[hi][i].z());
-    }
   }
 
   // 1b) Normalize winding: outer CCW, holes CW (see ensureOrientation()).
@@ -1491,24 +1566,6 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
     base.tris.reserve(baseTris.size());
     for (const auto& t : baseTris) base.tris.push_back({t.a, t.b, t.c});
     if (base.tris.empty()) return nullptr;
-
-    // -------- DEBUG --------
-    // "cross" = Dreiecke, die outer und mindestens ein Loch verbinden -
-    // NUR diese werden von evalCubicTriangle() gekruemmt. Ist crossRing
-    // hier 0 (oder sehr klein), gibt es schlicht keine Flaeche, an der
-    // ueberhaupt eine Woelbung sichtbar werden koennte - dann liegt das
-    // Problem VOR der Kruemmungsberechnung, in der UV-Domain/Projektion.
-    int crossRing = 0, sameRing = 0;
-    for (const auto& t : base.tris) {
-      int r0 = base.ringId[t[0]], r1 = base.ringId[t[1]], r2 = base.ringId[t[2]];
-      if (r0 == r1 && r1 == r2) sameRing++;
-      else crossRing++;
-    }
-    LOG(message_group::Warning,
-        "loft debug base surface: outer_pts=%1$d hole_pts_total=%2$d tris=%3$d crossRing=%4$d "
-        "sameRing=%5$d",
-        (int)outer_uv.size(), (int)(base.uv.size() - outer_uv.size()), (int)base.tris.size(), crossRing,
-        sameRing);
   }
 
   // 3) Combined point set: boundary points (real 3D position known, NEVER
@@ -1541,8 +1598,6 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
 
   int nu = std::max(2, static_cast<int>((umax - umin) / grid_spacing_uv) + 1);
   int nv = std::max(2, static_cast<int>((vmax - vmin) / grid_spacing_uv) + 1);
-  int debugGridCandidates = 0, debugGridOutsideDomain = 0, debugGridEncroached = 0,
-      debugGridSampleFailed = 0, debugGridAccepted = 0;
 
   // Interior grid points fade the displacement out smoothly as they
   // approach the boundary, reaching exactly zero at 'blendDist' or closer.
@@ -1555,12 +1610,8 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
 
   for (int iu = 0; iu < nu; iu++) {
     for (int iv = 0; iv < nv; iv++) {
-      debugGridCandidates++;
       Vector2d p(umin + iu * grid_spacing_uv, vmin + iv * grid_spacing_uv);
-      if (!domain.point_inside(p)) {
-        debugGridOutsideDomain++;
-        continue;
-      }
+      if (!domain.point_inside(p)) continue;
 
       // Protects the *topology* of the final mesh, not just the
       // displacement: step 4's triangulation is an UNCONSTRAINED Delaunay
@@ -1576,46 +1627,23 @@ std::unique_ptr<PolySet> loft(const std::vector<Vector3d>& outer,
       // over the same hole). See pointEncroachesBoundary() above for the
       // exact (and tight - it scales with each edge's own local length,
       // not a fixed distance) test used here.
-      if (pointEncroachesBoundary(p, outer_uv, holes_uv)) {
-        debugGridEncroached++;
-        continue;
-      }
+      if (pointEncroachesBoundary(p, outer_uv, holes_uv)) continue;
 
       Vector3d pos, normal;
-      if (!base.sample(p, pos, normal)) {
-        debugGridSampleFailed++;
-        continue;
-      }
+      if (!base.sample(p, pos, normal)) continue;
 
       double falloff = smoothstep01(distanceToBoundary(p, outer_uv, holes_uv) / blendDist);
       double d = displacement(pos) * falloff;
       allUV.push_back(p);
       allPos.push_back(pos + normal * d);
-      debugGridAccepted++;
     }
   }
-
-  // -------- DEBUG --------
-  // Zeigt, wie viele der nu*nv Rasterpunkte tatsaechlich Flaeche wurden.
-  // sampleFailed > 0 heisst: ein Punkt lag laut domain.point_inside() IN
-  // der Domain, aber KEIN Dreieck von base.tris hat ihn eingeschlossen -
-  // typischerweise ein Randfall zwischen zwei UV-Domains (Rundungsfehler
-  // an der Grenze der coarsen Basistriangulierung, siehe LoftBaseSurface::sample()).
-  // Viele "outsideDomain" bei einer erwartet fast-vollen Flaeche deutet
-  // wieder auf das alte "Loch ausserhalb / proj() passt nicht"-Muster hin.
-  LOG(message_group::Warning,
-      "loft debug grid: nu=%1$d nv=%2$d candidates=%3$d outsideDomain=%4$d encroached=%5$d "
-      "sampleFailed=%6$d accepted=%7$d",
-      nu, nv, debugGridCandidates, debugGridOutsideDomain, debugGridEncroached, debugGridSampleFailed,
-      debugGridAccepted);
 
   // 4) Delaunay triangulation over the whole point set (boundary + interior
   //    grid), then discard triangles outside the domain (e.g. inside a
   //    hole, or outside the outer contour). Same helper as the base
   //    surface above.
   auto finalTris = triangulateAndFilterToDomain(allUV, domain, domainScale);
-  LOG(message_group::Warning, "loft debug final mesh: points=%1$d triangles=%2$d", (int)allPos.size(),
-      (int)finalTris.size());
   if (finalTris.empty()) return nullptr;
 
   auto polyset = std::make_unique<PolySet>(3);
