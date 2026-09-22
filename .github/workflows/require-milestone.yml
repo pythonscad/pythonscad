@@ -76,20 +76,32 @@ jobs:
             summary="${reason}"
           fi
 
-          mapfile -t PRS < <(gh pr list --repo "${REPO}" --state open \
-            --milestone "${MILESTONE_NUMBER}" --limit 100 \
-            --json number,headRefOid \
-            --jq '.[] | "\(.number)\t\(.headRefOid)"')
+          # Paginate fully via the Issues API (includes PRs). Capture exit
+          # status explicitly — process substitution would hide gh failures
+          # under set -e and incorrectly treat errors as "no PRs".
+          if ! PR_NUMBERS=$(gh api --paginate \
+            "repos/${REPO}/issues?milestone=${MILESTONE_NUMBER}&state=open&per_page=100" \
+            --jq '.[] | select(.pull_request != null) | .number'); then
+            echo "::error::Failed to list open PRs for milestone #${MILESTONE_NUMBER}."
+            exit 1
+          fi
 
-          if [ "${#PRS[@]}" -eq 0 ]; then
+          if [ -z "${PR_NUMBERS}" ]; then
             echo "No open PRs assigned to milestone #${MILESTONE_NUMBER}."
             exit 0
           fi
 
           failed=0
-          for entry in "${PRS[@]}"; do
-            pr_number="${entry%%$'\t'*}"
-            head_sha="${entry#*$'\t'}"
+          count=0
+          while IFS= read -r pr_number; do
+            [ -z "${pr_number}" ] && continue
+            count=$((count + 1))
+
+            if ! head_sha=$(gh api "repos/${REPO}/pulls/${pr_number}" --jq .head.sha); then
+              echo "::error::Failed to fetch head SHA for PR #${pr_number}."
+              exit 1
+            fi
+
             echo "Updating require-milestone check on PR #${pr_number} (${head_sha}) → ${conclusion}"
 
             # Post a check run with the same name as this job so a required
@@ -107,11 +119,11 @@ jobs:
               failed=1
               echo "::warning::PR #${pr_number}: ${reason}"
             fi
-          done
+          done <<< "${PR_NUMBERS}"
 
           if [ "${failed}" -ne 0 ]; then
             echo "::error::${reason}"
             exit 1
           fi
 
-          echo "Revalidated ${#PRS[@]} open PR(s) against open milestone '${MILESTONE_TITLE}'."
+          echo "Revalidated ${count} open PR(s) against open milestone '${MILESTONE_TITLE}'."
