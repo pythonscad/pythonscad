@@ -6,10 +6,10 @@ on:
   # Safe here: no checkout of PR code; only reads milestone fields via API.
   pull_request_target: # zizmor: ignore[dangerous-triggers]
     types: [opened, edited, reopened, synchronize, milestoned, demilestoned]
-  # Revalidate open PRs when a milestone is closed or renamed (those
-  # changes do not emit per-PR milestoned/demilestoned events).
+  # Revalidate open PRs when a milestone is closed, renamed, or deleted
+  # (those changes do not emit per-PR milestoned/demilestoned events).
   milestone:
-    types: [closed, edited, opened]
+    types: [closed, edited, opened, deleted]
 
 permissions:
   contents: read
@@ -74,6 +74,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
+          MILESTONE_ACTION: ${{ github.event.action }}
           MILESTONE_NUMBER: ${{ github.event.milestone.number }}
           MILESTONE_TITLE: ${{ github.event.milestone.title }}
           MILESTONE_STATE: ${{ github.event.milestone.state }}
@@ -84,7 +85,11 @@ jobs:
           conclusion="success"
           summary="OK: open milestone '${MILESTONE_TITLE}'"
 
-          if [ "${MILESTONE_STATE}" != "open" ]; then
+          if [ "${MILESTONE_ACTION}" = "deleted" ]; then
+            conclusion="failure"
+            reason="Milestone '${MILESTONE_TITLE}' was deleted; assign an open versioned milestone."
+            summary="${reason}"
+          elif [ "${MILESTONE_STATE}" != "open" ]; then
             conclusion="failure"
             reason="Milestone '${MILESTONE_TITLE}' is closed; use an open milestone."
             summary="${reason}"
@@ -94,18 +99,34 @@ jobs:
             summary="${reason}"
           fi
 
-          # Paginate fully via the Issues API (includes PRs). Capture exit
-          # status explicitly — process substitution would hide gh failures
-          # under set -e and incorrectly treat errors as "no PRs".
-          if ! PR_NUMBERS=$(gh api --paginate \
-            "repos/${REPO}/issues?milestone=${MILESTONE_NUMBER}&state=open&per_page=100" \
-            --jq '.[] | select(.pull_request != null) | .number'); then
-            echo "::error::Failed to list open PRs for milestone #${MILESTONE_NUMBER}."
-            exit 1
+          # After deletion the milestone number no longer lists former
+          # assignees, so fall back to open PRs that currently have no
+          # milestone (the set that lost their assignment).
+          if [ "${MILESTONE_ACTION}" = "deleted" ]; then
+            if ! PR_NUMBERS=$(gh api --paginate \
+              "repos/${REPO}/pulls?state=open&per_page=100" \
+              --jq '.[] | select(.milestone == null) | .number'); then
+              echo "::error::Failed to list open PRs after milestone deletion."
+              exit 1
+            fi
+          else
+            # Paginate fully via the Issues API (includes PRs). Capture exit
+            # status explicitly — process substitution would hide gh failures
+            # under set -e and incorrectly treat errors as "no PRs".
+            if ! PR_NUMBERS=$(gh api --paginate \
+              "repos/${REPO}/issues?milestone=${MILESTONE_NUMBER}&state=open&per_page=100" \
+              --jq '.[] | select(.pull_request != null) | .number'); then
+              echo "::error::Failed to list open PRs for milestone #${MILESTONE_NUMBER}."
+              exit 1
+            fi
           fi
 
           if [ -z "${PR_NUMBERS}" ]; then
-            echo "No open PRs assigned to milestone #${MILESTONE_NUMBER}."
+            if [ "${MILESTONE_ACTION}" = "deleted" ]; then
+              echo "No open PRs without a milestone after deleting '${MILESTONE_TITLE}'."
+            else
+              echo "No open PRs assigned to milestone #${MILESTONE_NUMBER}."
+            fi
             exit 0
           fi
 
