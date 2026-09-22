@@ -35,39 +35,66 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          # pull_request_target associates the workflow job check with the
+          # base SHA; post an explicit check against the PR head so a
+          # required "require-milestone" status can gate the merge.
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
+
+          conclusion="success"
+          reason=""
+          summary=""
 
           # Always re-fetch live milestone state. The event payload can be
           # stale if a concurrent milestone closed/edited run already ran,
           # and a late PR-event completion must not republish a green check.
           if ! MILESTONE_JSON=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" \
             --jq 'if .milestone == null then empty else {title: .milestone.title, state: .milestone.state} end'); then
-            echo "::error::Failed to fetch PR #${PR_NUMBER} milestone state."
+            conclusion="failure"
+            reason="Failed to fetch PR #${PR_NUMBER} milestone state."
+            summary="${reason}"
+          elif [ -z "${MILESTONE_JSON}" ]; then
+            conclusion="failure"
+            reason="PR must be assigned to a milestone before merge."
+            summary="${reason}"
+          else
+            MILESTONE_TITLE=$(echo "${MILESTONE_JSON}" | jq -r .title)
+            MILESTONE_STATE=$(echo "${MILESTONE_JSON}" | jq -r .state)
+
+            if [ "${MILESTONE_STATE}" != "open" ]; then
+              conclusion="failure"
+              reason="Milestone '${MILESTONE_TITLE}' is closed; use an open milestone."
+              summary="${reason}"
+            # Intentionally unanchored at the start so names like
+            # "Prominentio v1.1.0" match as well as bare "v1.1.0".
+            elif ! [[ "${MILESTONE_TITLE}" =~ v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+              conclusion="failure"
+              reason="Milestone '${MILESTONE_TITLE}' must end with a version like v1.0 or v1.0.0 (pattern: v[0-9]+\\.[0-9]+(\\.[0-9]+)?\$)."
+              summary="${reason}"
+            else
+              summary="OK: open milestone '${MILESTONE_TITLE}'"
+            fi
+          fi
+
+          if ! gh api "repos/${REPO}/check-runs" \
+            -f name='require-milestone' \
+            -f head_sha="${HEAD_SHA}" \
+            -f status='completed' \
+            -f conclusion="${conclusion}" \
+            -f 'output[title]=Require Milestone' \
+            -f "output[summary]=${summary}" \
+            >/dev/null; then
+            echo "::error::Failed to post require-milestone check for PR #${PR_NUMBER} (${HEAD_SHA})."
             exit 1
           fi
 
-          if [ -z "${MILESTONE_JSON}" ]; then
-            echo "::error::PR must be assigned to a milestone before merge."
+          if [ "${conclusion}" = "failure" ]; then
+            echo "::error::${reason}"
             exit 1
           fi
 
-          MILESTONE_TITLE=$(echo "${MILESTONE_JSON}" | jq -r .title)
-          MILESTONE_STATE=$(echo "${MILESTONE_JSON}" | jq -r .state)
-
-          if [ "${MILESTONE_STATE}" != "open" ]; then
-            echo "::error::Milestone '${MILESTONE_TITLE}' is closed; use an open milestone."
-            exit 1
-          fi
-
-          # Intentionally unanchored at the start so names like
-          # "Prominentio v1.1.0" match as well as bare "v1.1.0".
-          if ! [[ "${MILESTONE_TITLE}" =~ v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
-            echo "::error::Milestone '${MILESTONE_TITLE}' must end with a version like v1.0 or v1.0.0 (pattern: v[0-9]+\\.[0-9]+(\\.[0-9]+)?\$)."
-            exit 1
-          fi
-
-          echo "OK: open milestone '${MILESTONE_TITLE}'"
+          echo "${summary}"
 
       - name: Revalidate open PRs for changed milestone
         if: github.event_name == 'milestone'
