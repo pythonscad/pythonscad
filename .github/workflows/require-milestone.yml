@@ -1,0 +1,42 @@
+name: Require Milestone
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, milestoned, demilestoned]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  require-milestone:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR milestone
+        env:
+          MILESTONE_TITLE: ${{ github.event.pull_request.milestone.title }}
+          MILESTONE_STATE: ${{ github.event.pull_request.milestone.state }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${MILESTONE_TITLE}" ]; then
+            echo "::error::PR must be assigned to a milestone before merge."
+            exit 1
+          fi
+
+          if [ "${MILESTONE_STATE}" != "open" ]; then
+            echo "::error::Milestone '${MILESTONE_TITLE}' is closed; use an open milestone."
+            exit 1
+          fi
+
+          # Intentionally unanchored at the start so names like
+          # "Prominentio v1.1.0" match as well as bare "v1.1.0".
+          if ! [[ "${MILESTONE_TITLE}" =~ v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "::error::Milestone '${MILESTONE_TITLE}' must end with a version like v1.0 or v1.0.0 (pattern: v[0-9]+\\.[0-9]+(\\.[0-9]+)?\$)."
+            exit 1
+          fi
+
+          echo "OK: open milestone '${MILESTONE_TITLE}'"
