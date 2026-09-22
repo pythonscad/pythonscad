@@ -36,6 +36,10 @@
       <div class="func"><code><a href="../reference/sheet/#sheet">sheet</a>(func, imin, imax, ...)</code></div>
       <div>Generate a 3D surface from a Python function</div>
       <div><code>sheet(myfunc, 0, 10, 0, 10).show()</code></div>
+      <div class="func"><code><a href="../reference/patch/#patch">patch</a>(outer, holes, proj, grid_spacing_uv, displacement, use_tangents)</code></div>
+      <div>Build a surface from a boundary + holes; with concat(), an alternative to CSG for manifold objects</div>
+      <div><code>concat(patch(outer, holes=[hole]), handle).show()</code></div>
+
   </div>
 </div>
 

@@ -758,7 +758,7 @@ def _loft_func(loft_data: list, loft_height: float, h: float, rot: float) -> lis
     return pts
 
 
-def _loft_2shapes(
+def loft(
     shape1: PyOpenSCAD,
     shape2: PyOpenSCAD,
     height: float,
@@ -800,11 +800,3 @@ def _loft_2shapes(
     rot = rot * _math.pi / 180.0
     loft_data = _loft_prepare(shape1, shape2, n, rot)
     return lambda h: _loft_func(loft_data, height, h, rot)
-
-def loft(*args, **kwargs):
-    if len(args) >= 2 and isinstance(args[0], Openscad) and isinstance(args[1], Openscad):
-        return _loft_2shapes(*args, **kwargs)
-    try:
-        return _openscad_core.loft(*args, **kwargs)
-    except TypeError:
-        return _loft_2shapes(*args, **kwargs)
