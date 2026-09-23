@@ -1559,17 +1559,15 @@ add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-test
 # unnormalized check is required to protect the branding change.
 # PDF creator metadata only exists when Cairo >= 1.16 (see
 # export_pdf.cc); older supported Cairo builds intentionally omit it.
+# PDF Creator is read via pdfinfo or Ghostscript pdf_info.ps when
+# present so Cairo 1.16 Info encodings are covered.
 ###################################################
 set(_EXPORT_CREATOR_BRANDING_ARGS
   ${CMAKE_CURRENT_SOURCE_DIR}/test_export_creator_branding.py
   ${OPENSCAD_BINPATH}
   --pov-script ${TEST_SCAD_DIR}/pov/pov-export.scad
 )
-# PDF creator metadata exists for Cairo >= 1.16, but older 1.16 builds
-# encode the Info dict in a form our stdlib scanner cannot reliably
-# recover without pdfinfo. Require 1.18+ for the PDF leg; POV/3MF still
-# protect EXPORT_CREATOR on every platform.
-if (CAIRO_VERSION VERSION_GREATER_EQUAL "1.18.0")
+if (CAIRO_VERSION VERSION_GREATER_EQUAL "1.16.0")
   list(APPEND _EXPORT_CREATOR_BRANDING_ARGS
     --pdf-script ${TEST_SCAD_DIR}/export-creator/pdf.scad)
 endif()

@@ -316,6 +316,58 @@ EXPORT_CREATOR_OPENSCAD = b"OpenSCAD (https://www.openscad.org/)"
 EXPORT_CREATOR_PYTHONSCAD_PDF = EXPORT_CREATOR_PYTHONSCAD.replace(b"(", b"\\(").replace(b")", b"\\)")
 
 
+def _ghostscript_pdf_info_scripts():
+    import glob
+    patterns = [
+        "/usr/share/ghostscript/*/lib/pdf_info.ps",
+        "/usr/local/share/ghostscript/*/lib/pdf_info.ps",
+        "/opt/homebrew/share/ghostscript/*/lib/pdf_info.ps",
+        "/mingw64/share/ghostscript/*/lib/pdf_info.ps",
+        "/ucrt64/share/ghostscript/*/lib/pdf_info.ps",
+    ]
+    found = []
+    for pat in patterns:
+        found.extend(glob.glob(pat))
+    return sorted(found)
+
+
+def _pdf_creator_from_helper(path):
+    """Return Creator string from pdfinfo or Ghostscript pdf_info.ps, else None."""
+    import shutil
+    import subprocess
+    if shutil.which("pdfinfo"):
+        proc = subprocess.run(
+            ["pdfinfo", path],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        for ln in proc.stdout.splitlines():
+            if ln.startswith("Creator:"):
+                return ln.split(":", 1)[1].strip()
+    if not shutil.which("gs"):
+        return None
+    for script in _ghostscript_pdf_info_scripts():
+        proc = subprocess.run(
+            [
+                "gs",
+                "-q",
+                "-dNODISPLAY",
+                "-dNOSAFER",
+                "-dBATCH",
+                f"-sFile={path}",
+                script,
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        for ln in (proc.stdout or "").splitlines():
+            if ln.startswith("Creator:"):
+                return ln.split(":", 1)[1].strip()
+    return None
+
+
 def _blob_has_export_creator(blob):
     # Require the full EXPORT_CREATOR value (not a bare "PythonSCAD" token):
     # 3MF also embeds independent "PythonSCAD Model" names that must not
@@ -363,6 +415,17 @@ def assert_raw_export_creator(filename):
     """
     path = filename
     lower = path.lower()
+    if lower.endswith(".pdf"):
+        creator = _pdf_creator_from_helper(path)
+        expected = EXPORT_CREATOR_PYTHONSCAD.decode("ascii")
+        if creator is not None:
+            if expected in creator:
+                return
+            raise AssertionError(
+                f"{path}: PDF Creator metadata is {creator!r}, expected {expected!r}"
+            )
+        # Fall through to byte/stream scan when pdfinfo/gs are unavailable.
+
     if lower.endswith(".3mf"):
         from zipfile import ZipFile
         try:
@@ -374,24 +437,6 @@ def assert_raw_export_creator(filename):
     else:
         with open(path, "rb") as f:
             blob = f.read()
-
-    # Prefer pdfinfo for PDFs when present (handles compressed/UTF-16 Info).
-    if lower.endswith(".pdf"):
-        import shutil
-        import subprocess
-        if shutil.which("pdfinfo"):
-            proc = subprocess.run(
-                ["pdfinfo", path],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            creator_line = next(
-                (ln for ln in proc.stdout.splitlines() if ln.startswith("Creator:")),
-                "",
-            )
-            if EXPORT_CREATOR_PYTHONSCAD.decode("ascii") in creator_line:
-                return
 
     if not _blob_has_export_creator(blob):
         raise AssertionError(
