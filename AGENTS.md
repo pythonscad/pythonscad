@@ -19,8 +19,8 @@ upstream OpenSCAD while adding Python-specific features.
 ### Standard Build Process
 
 ```bash
-# Install dependencies (Linux/BSD)
-sudo ./scripts/get-dependencies.py --profile pythonscad-qt5
+# Install dependencies (Linux/BSD; Qt6 matches the default USE_QT6=ON)
+sudo ./scripts/get-dependencies.py --profile pythonscad-qt6
 
 # Configure and build
 mkdir build
@@ -32,6 +32,9 @@ make -j$(nproc)
 ./pythonscad
 ```
 
+For a Qt5 build, install `--profile pythonscad-qt5` and configure with
+`-DUSE_QT6=OFF`.
+
 ### Build Configuration Options
 
 Key CMake options (pass with `-D` flag):
@@ -40,7 +43,7 @@ Key CMake options (pass with `-D` flag):
 - `HEADLESS=ON/OFF` - Build without GUI
 - `EXPERIMENTAL=ON/OFF` - Enable experimental features (default: ON)
 - `ENABLE_PYTHON=ON/OFF` - Enable Python support (default: ON)
-- `USE_QT6=ON/OFF` - Use Qt6 instead of Qt5 (default: OFF on Linux, ON on macOS)
+- `USE_QT6=ON/OFF` - Use Qt6 instead of Qt5 (default: ON)
 - `ENABLE_CGAL=ON/OFF` - Enable CGAL geometry backend
 - `ENABLE_MANIFOLD=ON/OFF` - Enable Manifold geometry backend
 
@@ -55,12 +58,13 @@ ctest -R <regex>               # Run tests matching pattern (e.g., ctest -R dxf)
 ctest -C Heavy                 # Run time-consuming tests
 ctest -C Examples              # Test all examples
 ctest -C All                   # Run all tests
-
-# Run unit tests directly
-./OpenSCADUnitTests                           # Run all unit tests
-./OpenSCADUnitTests "*vector*"                # Run tests matching pattern
-./OpenSCADUnitTests -# #vector_math_test      # Run tests from specific file
 ```
+
+Catch2 sources live under `tests/`, but the `OpenSCADUnitTests` executable
+target is currently commented out in the root `CMakeLists.txt` and is **not**
+produced by a standard build. Prefer `ctest` for regression coverage. If you
+re-enable that target locally, quote Catch2 filter args so the shell does not
+treat `#` as a comment, e.g. `./OpenSCADUnitTests -# '#vector_math_test'`.
 
 ### Code Formatting
 
@@ -375,9 +379,11 @@ flags, platform exclusions, etc.).
 
 **Unit tests:**
 
-- Add to appropriate `*_test.cc` file in `tests/` or create new one
-- Uses Catch2 framework
-- Run specific test: `./OpenSCADUnitTests "test name"`
+- Add to an appropriate `*_test.cc` file in `tests/` or create a new one
+- Uses the Catch2 framework
+- The dedicated `OpenSCADUnitTests` binary is not built by default (target is
+  commented out in the root `CMakeLists.txt`); re-enable it locally if you need
+  to run Catch2 filters directly
 
 ## Platform-Specific Notes
 
