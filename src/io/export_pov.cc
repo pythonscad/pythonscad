@@ -68,18 +68,21 @@ void export_pov(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
     }
     output << ", <" << ps->vertices[polygon[0]].x() << ", " << ps->vertices[polygon[0]].y() << ", "
            << ps->vertices[polygon[0]].z() << ">";
+    // Prefer the scheme default; only override with a per-face color when it
+    // is valid. Unpainted geometry (e.g. SVG fill:none extruded) stores a
+    // default-constructed Color4f (r/g/b/a = -1); writing those raw values
+    // produces negative RGB and filter > 1 in POV-Ray.
     float r = exportInfo.defaultColor.r();
     float g = exportInfo.defaultColor.g();
     float b = exportInfo.defaultColor.b();
     float f = 0.;
     if (has_color) {
       auto color_index = ps->color_indices[polygon_index];
-      if (color_index >= 0) {
-        auto color = ps->colors[color_index];
-        r = color.r();
-        g = color.g();
-        b = color.b();
-        f = 1.0 - color.a();
+      if (color_index >= 0 && static_cast<size_t>(color_index) < ps->colors.size()) {
+        float a;
+        if (ps->colors[color_index].getRgba(r, g, b, a)) {
+          f = 1.0 - a;
+        }
       }
     }
     output << "\n";
