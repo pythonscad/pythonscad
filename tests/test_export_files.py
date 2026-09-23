@@ -190,7 +190,10 @@ _BINARY_SUFFIXES = frozenset({".stlbin"})
 
 def _post_process(path):
     """Normalize ``path`` in place based on its extension, if known."""
-    fn = _POST_PROCESSORS.get(Path(path).suffix.lower())
+    suffix = Path(path).suffix.lower()
+    if suffix in (".pov", ".3mf"):
+        tct.assert_raw_export_creator(str(path))
+    fn = _POST_PROCESSORS.get(suffix)
     if fn is not None:
         fn(str(path))
 

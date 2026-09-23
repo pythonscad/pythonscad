@@ -297,7 +297,7 @@ def post_process_3mf(filename):
     xml_content = re.sub(r' xmlns:v="[^"]*"', '', xml_content)
     xml_content = re.sub(r' xmlns:i="[^"]*"', '', xml_content)
     xml_content = re.sub(r'PythonSCAD Model', 'OpenSCAD Model', xml_content)
-    # Normalize Application metadata from EXPORT_CREATOR (Pov/PDF/3MF branding).
+    # Normalize Application metadata from EXPORT_CREATOR (POV/PDF/3MF branding).
     xml_content = re.sub(
         r'PythonSCAD \(https://pythonscad\.org/\)',
         'OpenSCAD (https://www.openscad.org/)',
@@ -307,6 +307,65 @@ def post_process_3mf(filename):
     xml_content = re.sub('\"/>', '\" />', xml_content)
     with open(filename, 'wb') as xml_file:
         xml_file.write(xml_content.encode('utf-8'))
+
+# Must match EXPORT_CREATOR in src/io/export.h. Goldens stay OpenSCAD-shaped;
+# regression drivers assert the raw PythonSCAD string *before* rewriting.
+EXPORT_CREATOR_PYTHONSCAD = b"PythonSCAD (https://pythonscad.org/)"
+EXPORT_CREATOR_OPENSCAD = b"OpenSCAD (https://www.openscad.org/)"
+# Cairo writes PDF literal strings with escaped parentheses.
+EXPORT_CREATOR_PYTHONSCAD_PDF = EXPORT_CREATOR_PYTHONSCAD.replace(b"(", b"\\(").replace(b")", b"\\)")
+
+
+def _blob_has_export_creator(blob):
+    if EXPORT_CREATOR_PYTHONSCAD in blob or EXPORT_CREATOR_PYTHONSCAD_PDF in blob:
+        return True
+    # PDF Info dict is often Flate-compressed (Cairo); scan inflated streams.
+    import zlib
+    pos = 0
+    while True:
+        m = re.search(br"stream\r?\n", blob[pos:])
+        if not m:
+            return False
+        start = pos + m.end()
+        endm = re.search(br"endstream", blob[start:])
+        if not endm:
+            return False
+        cand = blob[start : start + endm.start()].lstrip(b"\r\n")
+        try:
+            out = zlib.decompress(cand)
+        except Exception:
+            pos = start + endm.end()
+            continue
+        if EXPORT_CREATOR_PYTHONSCAD in out or EXPORT_CREATOR_PYTHONSCAD_PDF in out:
+            return True
+        pos = start + endm.end()
+
+
+def assert_raw_export_creator(filename):
+    """Fail if unnormalized export lacks the current PythonSCAD EXPORT_CREATOR.
+
+    Call this before branding normalizers so a revert to OpenSCAD cannot
+    pass by relying on OpenSCAD-shaped goldens alone.
+    """
+    path = filename
+    lower = path.lower()
+    if lower.endswith(".3mf"):
+        from zipfile import ZipFile
+        try:
+            blob = ZipFile(path).read("3D/3dmodel.model")
+        except KeyError as exc:
+            raise AssertionError(
+                f"{path}: missing 3D/3dmodel.model inside 3MF archive"
+            ) from exc
+    else:
+        with open(path, "rb") as f:
+            blob = f.read()
+    if not _blob_has_export_creator(blob):
+        raise AssertionError(
+            f"{path}: missing raw EXPORT_CREATOR "
+            f"{EXPORT_CREATOR_PYTHONSCAD.decode('ascii')!r}"
+        )
+
 
 def post_process_progname(filename):
     """Rewrite PythonSCAD branding to OpenSCAD-shaped goldens before compare.
@@ -323,10 +382,7 @@ def post_process_progname(filename):
     content = content.replace(b"PythonSCAD_Model", b"OpenSCAD_Model")
     content = content.replace(b"PythonSCAD Model", b"OpenSCAD Model")
     content = content.replace(b"PythonSCAD obj exporter", b"OpenSCAD obj exporter")
-    content = content.replace(
-        b"PythonSCAD (https://pythonscad.org/)",
-        b"OpenSCAD (https://www.openscad.org/)",
-    )
+    content = content.replace(EXPORT_CREATOR_PYTHONSCAD, EXPORT_CREATOR_OPENSCAD)
 
     with open(filename, "wb") as f:
         f.write(content)
@@ -519,6 +575,8 @@ if __name__ == '__main__':
 
     resultfile = run_test(options.testname, options.cmd, args[1:], options.stdin, options.stdout)
     if not resultfile: exit(1)
+    if options.suffix in ("pov", "3mf"):
+        assert_raw_export_creator(resultfile)
     if options.suffix == "3mf": post_process_3mf(resultfile)
     if options.suffix == "svg": post_process_progname(resultfile)
     if options.suffix == "stl": post_process_progname(resultfile)

@@ -1553,6 +1553,27 @@ add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-test
 add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-tests.scad FORMAT nefdbg)
 
 ###################################################
+# Raw EXPORT_CREATOR branding (POV / PDF / 3MF)
+#
+# Golden compares normalize PythonSCAD -> OpenSCAD, so a dedicated
+# unnormalized check is required to protect the branding change.
+###################################################
+set(_EXPORT_CREATOR_BRANDING_ARGS
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_export_creator_branding.py
+  ${OPENSCAD_BINPATH}
+  --pov-script ${TEST_SCAD_DIR}/pov/pov-export.scad
+  --pdf-script ${TEST_SCAD_DIR}/pdf/simple-pdf.scad
+)
+if (ENABLE_LIB3MF_TESTS)
+  list(APPEND _EXPORT_CREATOR_BRANDING_ARGS
+    --threemf-script ${TEST_SCAD_DIR}/3mf/3mf-export.scad)
+endif()
+add_test(NAME export-creator-branding CONFIGURATIONS Default
+  COMMAND ${Python3_EXECUTABLE} -Xutf8=1 ${_EXPORT_CREATOR_BRANDING_ARGS}
+)
+set_property(TEST export-creator-branding PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+
+###################################################
 # Python REPL / IPython smoke tests (issue ipython)
 #
 # These exercise the `--ipython` and `--repl` CLI flags by piping a
