@@ -43,6 +43,7 @@ PatchNode::PatchNode(const PatchNode& other) : LeafNode(other)
 
 PatchNode::~PatchNode()
 {
+  if (!Py_IsInitialized()) return;
   PyGILState_STATE gstate = PyGILState_Ensure();
   Py_XDECREF(static_cast<PyObject *>(proj_func));
   Py_XDECREF(static_cast<PyObject *>(displacement_func));
@@ -62,6 +63,9 @@ uint64_t fnv1a_mix(uint64_t h, const char *buf, size_t len)
 
 uint64_t hashPoints(uint64_t h, const std::vector<Vector3d>& pts)
 {
+  const uint64_t pointCount = pts.size();
+  h = fnv1a_mix(h, reinterpret_cast<const char *>(&pointCount), sizeof(pointCount));
+
   for (const auto& p : pts) {
     h = fnv1a_mix(h, reinterpret_cast<const char *>(p.data()), sizeof(double) * 3);
   }

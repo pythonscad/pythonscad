@@ -368,8 +368,8 @@ left at a right angle to its own plane.
     from pythonscad import *
 
     # A tapered tube wall between two circular rings
-    bottom_ring = circle(10).linear_extrude_points(z=0)
-    top_ring = circle(6).linear_extrude_points(z=30)
+    bottom_ring = circle(10)
+    top_ring = circle(6).up(30)
     patch(bottom_ring, holes=[top_ring]).show()
     ```
 

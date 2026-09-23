@@ -1624,6 +1624,7 @@ PyObject *python_patch(PyObject *self, PyObject *args, PyObject *kwargs)
       return nullptr;
     }
     PyObject *holeseq = PySequence_Fast(holes_obj, "expected a list of rings");
+    if (holeseq == nullptr) return nullptr;
     Py_ssize_t nholes = PySequence_Fast_GET_SIZE(holeseq);
     for (Py_ssize_t i = 0; i < nholes; i++) {
       std::vector<Vector3d> hole;
@@ -1633,6 +1634,12 @@ PyObject *python_patch(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_DECREF(holeseq);
         PyErr_SetString(PyExc_TypeError,
                         "patch(): jedes Loch muss eine Liste von [x,y,z]-Punkten sein.");
+        return nullptr;
+      }
+      if (hole.size() < 3) {
+        Py_DECREF(holeseq);
+        PyErr_SetString(PyExc_TypeError,
+                        "patch(): jedes Loch muss mindestens 3 [x,y,z]-Punkte enthalten.");
         return nullptr;
       }
       node->holes.push_back(std::move(hole));

@@ -15,7 +15,7 @@ public:
   ~PatchNode() override;              // Py_XDECREF auf proj_func/displacement_func
 
   std::string toString() const override;
-  std::string name() const override { return "loft"; }
+  std::string name() const override { return "patch"; }
   std::unique_ptr<const class Geometry> createGeometry() const override;
 
   std::vector<Vector3d> outer;
