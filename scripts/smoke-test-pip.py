@@ -19,6 +19,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import zipfile
 
 import _openscad
 import openscad
@@ -117,16 +118,44 @@ assert set(dir(pythonscad)) >= set(n for n in dir(openscad) if not n.startswith(
 _workdir = tempfile.TemporaryDirectory(prefix="pythonscad-pip-smoke-")
 WORKDIR = _workdir.name
 
+def _assert_nonempty_3mf(path: str) -> None:
+    """Fail loudly if 3MF export produced an empty/dummy file (issue #1025)."""
+    size = os.path.getsize(path)
+    assert size > 0, (
+        f"{path} is empty ({size} bytes); 3MF export appears disabled "
+        "(lib3mf missing / dummy stubs). See issue #1025."
+    )
+    assert zipfile.is_zipfile(path), f"{path} is not a zip/3MF container"
+    with zipfile.ZipFile(path) as zf:
+        infos = zf.infolist()
+        model_infos = [
+            info
+            for info in infos
+            if info.filename.startswith("3D/") and info.filename.endswith(".model")
+        ]
+        names = [info.filename for info in infos]
+    assert model_infos, (
+        f"{path} is missing a 3MF model payload; entries={names[:20]!r}"
+    )
+    assert any(info.file_size > 0 for info in model_infos), (
+        f"{path} has a zero-byte 3D/*.model payload"
+    )
+
+
 from openscad import *  # noqa: F401,F403,E402
 
 c = cube(5)
 c.show()
-export(c, os.path.join(WORKDIR, "pip-smoke-openscad.3mf"))
+openscad_3mf = os.path.join(WORKDIR, "pip-smoke-openscad.3mf")
+export(c, openscad_3mf)
+_assert_nonempty_3mf(openscad_3mf)
 
 from pythonscad import *  # noqa: F401,F403,E402
 
 c2 = cube(5)
 c2.show()
-export(c2, os.path.join(WORKDIR, "pip-smoke-pythonscad.3mf"))
+pythonscad_3mf = os.path.join(WORKDIR, "pip-smoke-pythonscad.3mf")
+export(c2, pythonscad_3mf)
+_assert_nonempty_3mf(pythonscad_3mf)
 
 print("smoke test OK")
