@@ -1567,7 +1567,7 @@ set(_EXPORT_CREATOR_BRANDING_ARGS
 )
 if (CAIRO_VERSION VERSION_GREATER_EQUAL "1.16.0")
   list(APPEND _EXPORT_CREATOR_BRANDING_ARGS
-    --pdf-script ${TEST_SCAD_DIR}/pdf/simple-pdf.scad)
+    --pdf-script ${TEST_SCAD_DIR}/pdf/creator-branding.scad)
 endif()
 if (ENABLE_LIB3MF_TESTS)
   list(APPEND _EXPORT_CREATOR_BRANDING_ARGS

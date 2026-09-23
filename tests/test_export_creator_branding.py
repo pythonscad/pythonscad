@@ -22,10 +22,11 @@ TIMEOUT_SECONDS = 120
 
 
 def _export(pythonscad: str, script: Path, out: Path) -> None:
+    # No --enable / --backend flags: branding must work on
+    # -DEXPERIMENTAL=OFF and -DENABLE_MANIFOLD=OFF builds too.
     proc = subprocess.run(
         [
             pythonscad,
-            "--enable=predictible-output",
             "-o",
             str(out),
             str(script),

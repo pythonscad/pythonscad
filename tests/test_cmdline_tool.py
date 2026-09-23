@@ -325,11 +325,11 @@ def _blob_has_export_creator(blob):
     while True:
         m = re.search(br"stream\r?\n", blob[pos:])
         if not m:
-            return False
+            break
         start = pos + m.end()
         endm = re.search(br"endstream", blob[start:])
         if not endm:
-            return False
+            break
         cand = blob[start : start + endm.start()].lstrip(b"\r\n")
         try:
             out = zlib.decompress(cand)
@@ -339,6 +339,8 @@ def _blob_has_export_creator(blob):
         if EXPORT_CREATOR_PYTHONSCAD in out or EXPORT_CREATOR_PYTHONSCAD_PDF in out:
             return True
         pos = start + endm.end()
+    # Optional helpers when present on the runner (not required on CI).
+    return False
 
 
 def assert_raw_export_creator(filename):
@@ -357,6 +359,29 @@ def assert_raw_export_creator(filename):
             raise AssertionError(
                 f"{path}: missing 3D/3dmodel.model inside 3MF archive"
             ) from exc
+    elif lower.endswith(".pdf"):
+        # Prefer pdfinfo when available (Creator is not always plaintext).
+        import shutil
+        import subprocess
+        if shutil.which("pdfinfo"):
+            proc = subprocess.run(
+                ["pdfinfo", path],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            creator_line = next(
+                (ln for ln in proc.stdout.splitlines() if ln.startswith("Creator:")),
+                "",
+            )
+            if EXPORT_CREATOR_PYTHONSCAD.decode("ascii") in creator_line:
+                return
+            raise AssertionError(
+                f"{path}: missing raw EXPORT_CREATOR in pdfinfo Creator "
+                f"(got {creator_line!r})"
+            )
+        with open(path, "rb") as f:
+            blob = f.read()
     else:
         with open(path, "rb") as f:
             blob = f.read()
