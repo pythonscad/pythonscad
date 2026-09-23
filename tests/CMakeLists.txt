@@ -311,6 +311,9 @@ if(NOT ENABLE_LIBFIVE)
   list(REMOVE_ITEM PYTHONSCAD_FILES "${TEST_PYTHONSCAD_DIR}/libfive-union-stairs.py")
   list(REMOVE_ITEM PYTHONSCAD_FILES "${TEST_PYTHONSCAD_DIR}/sdf.py")
 endif()
+# 2D CSG fillet regression (#1004): SVG export, no OpenGL required.
+list(REMOVE_ITEM PYTHONSCAD_FILES "${TEST_PYTHONSCAD_DIR}/issue-1004-2d-fillet.py")
+set(PYTHONSCAD_2D_SVG_FILES "${TEST_PYTHONSCAD_DIR}/issue-1004-2d-fillet.py")
 if(NOT MINGW)
   # GhostScript on MSYS2/MINGW can't handle the names.
   list(APPEND SCAD_PDF_FILES
@@ -1002,6 +1005,7 @@ list(APPEND EXPORT_3MF_TEST_FILES ${TEST_SCAD_DIR}/3mf/3mf-export.scad)
 list(APPEND EXPORT_3MF_LAZY_UNION_TEST_FILES ${TEST_SCAD_DIR}/experimental/lazyunion-color-cubes.scad)
 
 list(APPEND EXPORT_POV_TEST_FILES ${TEST_SCAD_DIR}/pov/pov-export.scad)
+list(APPEND EXPORT_POV_INVALID_COLOR_FILES ${TEST_SCAD_DIR}/pov/pov-export-invalid-color.scad)
 
 list(APPEND EXPORT_PARAM_TEST_FILES
   ${TEST_SCAD_DIR}/issues/issue6597.scad
@@ -1081,6 +1085,7 @@ add_cmdline_test(export-pov-rotate-2     EXPERIMENTAL OPENSCAD SUFFIX pov FILES 
 add_cmdline_test(export-pov-rotate-3     EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=0,0,0,0,0,90,140 --trust-python)
 add_cmdline_test(export-pov-distance-1   EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=0,0,0,0,0,0,100 --trust-python)
 add_cmdline_test(export-pov-all          EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=1,2,3,4,5,6,7 --trust-python)
+add_cmdline_test(export-pov-invalid-color EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_INVALID_COLOR_FILES} ARGS --enable=predictible-output --backend=manifold --trust-python)
 
 # Export parameters, observe exported files and console output
 add_cmdline_test(export-param            OPENSCAD SUFFIX json FILES ${EXPORT_PARAM_TEST_FILES} ARGS --export-format param)
@@ -1388,6 +1393,8 @@ add_cmdline_test(pythonscad          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PY
 # union(..., r=) fillets require full geometry evaluation; F5 preview must
 # still show them (issue #993). Share the --render expected image.
 add_cmdline_test(pythonscadpreview   EXPERIMENTAL OPENSCAD SUFFIX png FILES ${TEST_PYTHONSCAD_DIR}/issue-993-union-fillet.py EXPECTEDDIR pythonscad ARGS --trust-python)
+# 2D boolean seam fillets (issue #1004): validate via SVG (headless-safe).
+add_cmdline_test(pythonscad2d        EXPERIMENTAL OPENSCAD SUFFIX svg FILES ${PYTHONSCAD_2D_SVG_FILES} ARGS --render --trust-python)
 add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_FILES} ARGS --trust-python)
 # Same group name so goldens stay under tests/regression/pythonscadecho/.
 add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_EXPORT_FILES} ARGS --trust-python --render)
@@ -1865,11 +1872,12 @@ if(APPLE)
     foreach(TEST ${SVG_VIEWBOX_TESTS})
       disable_tests_safe(svgviewbox-${TEST}_viewbox-test)
     endforeach()
-    # Camera/imgstretch/preview PNG tests flake under Apple's software
-    # renderer, same as svgimport. Skip those prefixes wholesale.
+    # Camera/imgsize/imgstretch/preview PNG tests flake under Apple's
+    # software renderer, same as svgimport. Skip those prefixes wholesale.
+    # (openscad-img covers imgsize, imgstretch, and imgstretch2.)
     get_property(_apple_arm_ci_tests DIRECTORY PROPERTY TESTS)
     foreach(_t ${_apple_arm_ci_tests})
-      if(_t MATCHES "^(svgimport_|openscad-cam|openscad-imgstretch|preview-cgal_|preview-manifold_)")
+      if(_t MATCHES "^(svgimport_|openscad-cam|openscad-img|preview-cgal_|preview-manifold_)")
         disable_tests_safe(${_t})
       endif()
     endforeach()
@@ -1901,6 +1909,7 @@ if(NOT ENABLE_MANIFOLD)
     export-pov-rotate-3_pov-export
     export-pov-distance-1_pov-export
     export-pov-all_pov-export
+    export-pov-invalid-color_pov-export-invalid-color
     render-3mf-manifold_bad-stl-tardis
     render-3mf-manifold_bad-stl-wing
     render-3mf-manifold_issue904

@@ -57,9 +57,19 @@ std::string pythonShimExecutablePath()
 
 std::string venvBinDirFromSettings()
 {
-  const auto& venv = fs::path(SP::pythonVirtualEnv.value()) / "bin";
-  if (fs::is_directory(venv)) {
-    return venv.generic_string();
+  const auto venvRoot = fs::path(SP::pythonVirtualEnv.value());
+  if (venvRoot.empty()) {
+    return "";
+  }
+  // POSIX venvs use bin/; plain Windows venvs use Scripts/. Prefer bin/ when
+  // both exist (MSYS2), matching tests/cmake/ImageCompare.cmake. See #996.
+  const std::array<const char *, 2> candidates = {"bin", "Scripts"};
+  for (const char *name : candidates) {
+    const auto venv = venvRoot / name;
+    std::error_code ec;
+    if (fs::is_directory(venv, ec) && !ec) {
+      return venv.generic_string();
+    }
   }
   return "";
 }
