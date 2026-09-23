@@ -154,7 +154,7 @@ PyObject *python_oo_mesh(PyObject *obj, PyObject *args, PyObject *kwargs)
 PyObject *python_inside_core(PyObject *pyobj, PyObject *pypoint)
 {
   PyObject *dummydict = nullptr;
-  Vector3d vec3;
+  Vector3d vec3 = Vector3d::Zero();
   std::shared_ptr<AbstractNode> node = PyOpenSCADObjectToNode(pyobj, &dummydict);
   auto dummydict_owner = py_owned(dummydict);
   if (node == nullptr) {

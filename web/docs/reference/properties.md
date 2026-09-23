@@ -216,9 +216,12 @@ Check whether a given point is inside an object (2D or 3D).
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `obj` | solid | The 2D or 3D object to test against |
-| `point` | `[x, y]` or `[x, y, z]` | The point to test |
+| `point` | `[x, y]` or `[x, y, z]` | Point to test. Use 2 components for 2D objects; use 3 for 3D. Missing components default to `0`. Extra components beyond the object dimension are ignored for 2D. |
 
-**Returns:** `True` if the point is inside the object **or on its boundary** (edge or vertex for 2D; surface for 3D), `False` otherwise.
+**Returns:** `True` if the point is classified as inside, `False` otherwise.
+
+- **2D:** Points in the interior **or on the boundary** (edge or vertex) return `True`.
+- **3D:** Uses a ray-crossing test; points exactly on the surface are not guaranteed to return `True`.
 
 **Examples:**
 
