@@ -57,7 +57,7 @@ struct FileFormatInfo {
   std::string description;
 };
 
-constexpr inline auto EXPORT_CREATOR = "OpenSCAD (https://www.openscad.org/)";
+constexpr inline auto EXPORT_CREATOR = "PythonSCAD (https://pythonscad.org/)";
 
 namespace fileformat {
 

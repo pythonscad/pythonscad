@@ -297,12 +297,24 @@ def post_process_3mf(filename):
     xml_content = re.sub(r' xmlns:v="[^"]*"', '', xml_content)
     xml_content = re.sub(r' xmlns:i="[^"]*"', '', xml_content)
     xml_content = re.sub(r'PythonSCAD Model', 'OpenSCAD Model', xml_content)
+    # Normalize Application metadata from EXPORT_CREATOR (Pov/PDF/3MF branding).
+    xml_content = re.sub(
+        r'PythonSCAD \(https://pythonscad\.org/\)',
+        'OpenSCAD (https://www.openscad.org/)',
+        xml_content,
+    )
     # add tag end whitespace for lib3mf 2.0 output files
     xml_content = re.sub('\"/>', '\" />', xml_content)
     with open(filename, 'wb') as xml_file:
         xml_file.write(xml_content.encode('utf-8'))
 
 def post_process_progname(filename):
+    """Rewrite PythonSCAD branding to OpenSCAD-shaped goldens before compare.
+
+    STL/SVG/OBJ already emit PythonSCAD product strings; POV (and any other
+    text format using EXPORT_CREATOR) does too after the shared creator
+    constant was updated. Goldens stay OpenSCAD-branded for upstream sync.
+    """
     with open(filename, "rb") as f:
         content = f.read()
 
@@ -311,6 +323,10 @@ def post_process_progname(filename):
     content = content.replace(b"PythonSCAD_Model", b"OpenSCAD_Model")
     content = content.replace(b"PythonSCAD Model", b"OpenSCAD Model")
     content = content.replace(b"PythonSCAD obj exporter", b"OpenSCAD obj exporter")
+    content = content.replace(
+        b"PythonSCAD (https://pythonscad.org/)",
+        b"OpenSCAD (https://www.openscad.org/)",
+    )
 
     with open(filename, "wb") as f:
         f.write(content)
@@ -507,4 +523,5 @@ if __name__ == '__main__':
     if options.suffix == "svg": post_process_progname(resultfile)
     if options.suffix == "stl": post_process_progname(resultfile)
     if options.suffix == "obj": post_process_progname(resultfile)
+    if options.suffix == "pov": post_process_progname(resultfile)
     if not verification or not compare_with_expected(resultfile): exit(1)
