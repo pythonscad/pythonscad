@@ -57,9 +57,24 @@ std::string pythonShimExecutablePath()
 
 std::string venvBinDirFromSettings()
 {
-  const auto& venv = fs::path(SP::pythonVirtualEnv.value()) / "bin";
-  if (fs::is_directory(venv)) {
-    return venv.generic_string();
+  const auto venvRoot = fs::path(SP::pythonVirtualEnv.value());
+  if (venvRoot.empty()) {
+    return "";
+  }
+  // POSIX venvs use bin/; Windows venvs use Scripts/. MSYS2 / cross-platform
+  // layouts may provide either (or both), so try the platform-preferred name
+  // first and fall back to the other. See issue #996.
+#if defined(_WIN32)
+  const std::array<const char *, 2> candidates = {"Scripts", "bin"};
+#else
+  const std::array<const char *, 2> candidates = {"bin", "Scripts"};
+#endif
+  for (const char *name : candidates) {
+    const auto venv = venvRoot / name;
+    std::error_code ec;
+    if (fs::is_directory(venv, ec) && !ec) {
+      return venv.generic_string();
+    }
   }
   return "";
 }
