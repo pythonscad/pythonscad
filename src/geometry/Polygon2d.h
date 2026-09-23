@@ -23,6 +23,12 @@ struct Outline2d {
 };
 double outline_area(const Outline2d o);
 
+/*!
+   Classification of a 2D query point relative to a Polygon2d.
+   OnVertex is preferred over OnEdge when the point lies within eps of a corner.
+ */
+enum class PointLocation2d { Outside, Inside, OnEdge, OnVertex };
+
 class Polygon2d : public Geometry
 {
   enum class Transform3dState { NONE = 0, PENDING = 1, CACHED = 2 };
@@ -98,7 +104,18 @@ public:
   void setColorUndef(const Color4f& c);
   void stamp_color(const Polygon2d& src);
   void stamp_color(const Outline2d& src);
-  bool point_inside(const Vector2d& pt) const;
+
+  /*!
+     Classify @p pt relative to this polygon.
+     @param eps Distance tolerance in world units for vertex/edge hits.
+   */
+  [[nodiscard]] PointLocation2d point_location(const Vector2d& pt, double eps = 1e-4) const;
+
+  /*!
+     True if @p pt is inside the polygon or on its boundary (edge or vertex).
+     Equivalent to point_location(pt, eps) != PointLocation2d::Outside.
+   */
+  [[nodiscard]] bool point_inside(const Vector2d& pt, double eps = 1e-4) const;
 
 private:
   Outlines2d theoutlines;

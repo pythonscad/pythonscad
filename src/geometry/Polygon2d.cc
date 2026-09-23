@@ -1,5 +1,7 @@
 #include "geometry/Polygon2d.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <memory>
 #include <sstream>
@@ -469,26 +471,59 @@ void Polygon2d::stamp_color(const Outline2d& src)
   }
 }
 
-bool Polygon2d::point_inside(const Vector2d& pt) const
+PointLocation2d Polygon2d::point_location(const Vector2d& pt, double eps) const
 {
-  // polygons are clockwise
+  const double eps2 = eps * eps;
+  const auto& outs = outlines();
+
+  // Prefer OnVertex when the point is within eps of a corner.
+  for (const auto& outline : outs) {
+    for (const Vector2d& v : outline.vertices) {
+      if ((pt - v).squaredNorm() <= eps2) return PointLocation2d::OnVertex;
+    }
+  }
+
+  for (const auto& outline : outs) {
+    const auto& verts = outline.vertices;
+    const size_t n = verts.size();
+    if (n < 2) continue;
+    for (size_t i = 0; i < n; i++) {
+      const Vector2d& a = verts[i];
+      const Vector2d& b = verts[(i + 1) % n];
+      const Vector2d ab = b - a;
+      const double len2 = ab.squaredNorm();
+      double t = 0.0;
+      if (len2 > 1e-24) {
+        t = std::clamp((pt - a).dot(ab) / len2, 0.0, 1.0);
+      }
+      const Vector2d closest = a + t * ab;
+      if ((pt - closest).squaredNorm() <= eps2) return PointLocation2d::OnEdge;
+    }
+  }
+
+  // Even-odd ray cast over transform-aware outlines.
   int cuts = 0;
-  for (const auto& o : theoutlines) {
-    int n = o.vertices.size();
+  for (const auto& o : outs) {
+    const int n = static_cast<int>(o.vertices.size());
     for (int i = 0; i < n; i++) {
-      Vector2d p1 = o.vertices[i];
-      Vector2d p2 = o.vertices[(i + 1) % n];
-      if (fabs(p1[1] - p2[1]) > 1e-9) {         // not horizotal
-        if (pt[1] <= p1[1] && pt[1] > p2[1]) {  // p2 ... pt .. p1
-          double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
+      const Vector2d& p1 = o.vertices[i];
+      const Vector2d& p2 = o.vertices[(i + 1) % n];
+      if (std::fabs(p1[1] - p2[1]) > 1e-9) {
+        if (pt[1] <= p1[1] && pt[1] > p2[1]) {
+          const double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
           if (x > pt[0]) cuts++;
         }
-        if (pt[1] < p2[1] && pt[1] >= p1[1]) {  // p1 .. pt .. p2
-          double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
+        if (pt[1] < p2[1] && pt[1] >= p1[1]) {
+          const double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
           if (x > pt[0]) cuts++;
         }
       }
     }
   }
-  return cuts & 1;
+  return (cuts & 1) ? PointLocation2d::Inside : PointLocation2d::Outside;
+}
+
+bool Polygon2d::point_inside(const Vector2d& pt, double eps) const
+{
+  return point_location(pt, eps) != PointLocation2d::Outside;
 }

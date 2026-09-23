@@ -200,7 +200,7 @@ Get a list of edge solids from a face or 2D object.
 
 ## inside
 
-Check whether a given point is inside the solid.
+Check whether a given point is inside an object (2D or 3D).
 
 **Syntax:**
 
@@ -215,10 +215,10 @@ Check whether a given point is inside the solid.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `obj` | solid | The solid to test against |
-| `point` | `[x, y, z]` | The point to test |
+| `obj` | solid | The 2D or 3D object to test against |
+| `point` | `[x, y]` or `[x, y, z]` | The point to test |
 
-**Returns:** `True` if the point is inside the solid, `False` otherwise.
+**Returns:** `True` if the point is inside the object **or on its boundary** (edge or vertex for 2D; surface for 3D), `False` otherwise.
 
 **Examples:**
 
@@ -230,6 +230,12 @@ Check whether a given point is inside the solid.
     c = cube(10)
     print(c.inside([5, 5, 5]))   # True
     print(c.inside([15, 5, 5]))  # False
+
+    s = square(10, center=True)
+    print(s.inside([0, 0]))      # True (interior)
+    print(s.inside([5, 0]))      # True (on edge)
+    print(s.inside([5, 5]))      # True (on vertex)
+    print(s.inside([10, 10]))    # False
     ```
 
 ---

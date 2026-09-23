@@ -2,6 +2,8 @@
 
 Boolean operations combine multiple solids using constructive solid geometry (CSG).
 
+**PythonSCAD boolean fillets (`r`, `fn`):** On `union`, `difference`, and `intersection`, optional `r` / `fn` round only the **boolean seam** corners (edges created where operands meet). This works for 3D solids (Manifold backend) and 2D outlines (Clipper). Pre-existing corners that are not on a seam are left sharp — unlike `offset(r=...)`, which rounds every corner.
+
 ## union
 
 Combine multiple objects into one. The result contains all volume from all inputs.
@@ -20,24 +22,8 @@ Combine multiple objects into one. The result contains all volume from all input
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `obj1, obj2, ...` | solids | — | Objects to combine |
-| `r` | float | — | Fillet radius for newly created edges (PythonSCAD extension) |
+| `r` | float | — | Fillet radius for boolean seam edges (PythonSCAD extension) |
 | `fn` | int | — | Number of segments for fillet rounding (PythonSCAD extension) |
-
-**PythonSCAD extensions:**
-
-Specifying `r` and `fn` adds rounded fillets to the edges created by the boolean
-(3D Manifold meshes and 2D Clipper outlines):
-
-=== "Python"
-
-    ```python
-    from pythonscad import *
-
-    union(cube(10), sphere(7).right(5), r=1, fn=10).show()
-
-    # 2D: fillets only the boolean seam corners
-    union(square(10, center=True), square(10, center=True).rotz(45), r=1.4, fn=8).show()
-    ```
 
 **Examples:**
 
@@ -50,6 +36,12 @@ Specifying `r` and `fn` adds rounded fillets to the edges created by the boolean
 
     # Operator form
     (cube(10) | sphere(7)).show()
+
+    # Filleted seams (3D)
+    union(cube(10), sphere(7).right(5), r=1, fn=10).show()
+
+    # Filleted seams (2D)
+    union(square(10, center=True), square(10, center=True).rotz(45), r=1.4, fn=8).show()
     ```
 
 **OpenSCAD reference:** [union](https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/CSG_Modelling#union)
@@ -75,7 +67,7 @@ Subtract one or more objects from the first object.
 |-----------|------|---------|-------------|
 | `obj1` | solid | — | Base object |
 | `obj2, ...` | solids | — | Objects to subtract |
-| `r` | float | — | Fillet radius for newly created edges (PythonSCAD extension) |
+| `r` | float | — | Fillet radius for boolean seam edges (PythonSCAD extension) |
 | `fn` | int | — | Number of segments for fillet rounding (PythonSCAD extension) |
 
 **Examples:**
@@ -90,8 +82,11 @@ Subtract one or more objects from the first object.
     # Operator form
     (cube(10) - sphere(7)).show()
 
-    # With filleted edges
+    # Filleted seams (3D)
     difference(cube(10), cylinder(r=4, h=12, center=True), r=0.5, fn=8).show()
+
+    # Filleted seams (2D)
+    difference(square(10, center=True), square(10, center=True).rotz(45).back(10), r=1.4, fn=8).show()
     ```
 
 **OpenSCAD reference:** [difference](https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/CSG_Modelling#difference)
@@ -116,7 +111,7 @@ Keep only the volume that is common to all input objects.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `obj1, obj2, ...` | solids | — | Objects to intersect |
-| `r` | float | — | Fillet radius for newly created edges (PythonSCAD extension) |
+| `r` | float | — | Fillet radius for boolean seam edges (PythonSCAD extension) |
 | `fn` | int | — | Number of segments for fillet rounding (PythonSCAD extension) |
 
 **Examples:**
@@ -131,7 +126,7 @@ Keep only the volume that is common to all input objects.
     # Operator form
     (cube(10) & sphere(7)).show()
 
-    # With filleted edges (3D and 2D)
+    # Filleted seams (2D)
     intersection(square(10, center=True), square(10, center=True).rotz(45), r=1.4, fn=8).show()
     ```
 

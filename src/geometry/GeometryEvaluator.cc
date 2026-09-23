@@ -1521,29 +1521,6 @@ bool pointOnPolySetSurface(const PolySet& ps, const Vector3d& pt, double eps)
   return false;
 }
 
-bool pointOnPolygonBoundary(const Polygon2d& poly, const Vector2d& pt, double eps)
-{
-  const double eps2 = eps * eps;
-  for (const auto& outline : poly.outlines()) {
-    const auto& verts = outline.vertices;
-    const size_t n = verts.size();
-    if (n < 2) continue;
-    for (size_t i = 0; i < n; i++) {
-      const Vector2d& a = verts[i];
-      const Vector2d& b = verts[(i + 1) % n];
-      const Vector2d ab = b - a;
-      const double len2 = ab.squaredNorm();
-      double t = 0.0;
-      if (len2 > 1e-24) {
-        t = std::clamp((pt - a).dot(ab) / len2, 0.0, 1.0);
-      }
-      const Vector2d closest = a + t * ab;
-      if ((pt - closest).squaredNorm() <= eps2) return true;
-    }
-  }
-  return false;
-}
-
 // Replace a sharp corner with a circular fillet arc. Adapted from
 // PolygonNode::createGeometry_sub; r is clamped so the fillet fits both edges.
 void appendFilletedCorner2D(VectorOfVector2d& out, const Vector2d& ptprev, const Vector2d& ptcur,
@@ -1696,7 +1673,8 @@ std::unique_ptr<Polygon2d> addFillets2D(std::unique_ptr<Polygon2d> result,
       } else {
         for (size_t c = 0; c < children.size(); c++) {
           if (static_cast<int>(c) == owner || !children[c]) continue;
-          if (pointOnPolygonBoundary(*children[c], pt, kBoundaryEps)) {
+          const auto loc = children[c]->point_location(pt, kBoundaryEps);
+          if (loc == PointLocation2d::OnEdge || loc == PointLocation2d::OnVertex) {
             sel = true;
             break;
           }
