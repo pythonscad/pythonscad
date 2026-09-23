@@ -25,7 +25,8 @@ Combine multiple objects into one. The result contains all volume from all input
 
 **PythonSCAD extensions:**
 
-Specifying `r` and `fn` adds rounded fillets to the edges created by the union:
+Specifying `r` and `fn` adds rounded fillets to the edges created by the boolean
+(3D Manifold meshes and 2D Clipper outlines):
 
 === "Python"
 
@@ -33,6 +34,9 @@ Specifying `r` and `fn` adds rounded fillets to the edges created by the union:
     from pythonscad import *
 
     union(cube(10), sphere(7).right(5), r=1, fn=10).show()
+
+    # 2D: fillets only the boolean seam corners
+    union(square(10, center=True), square(10, center=True).rotz(45), r=1.4, fn=8).show()
     ```
 
 **Examples:**
@@ -103,15 +107,17 @@ Keep only the volume that is common to all input objects.
 === "Python"
 
     ```python
-    intersection(obj1, obj2, ...)
+    intersection(obj1, obj2, ..., r=None, fn=None)
     obj1 & obj2
     ```
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `obj1, obj2, ...` | solids | Objects to intersect |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `obj1, obj2, ...` | solids | — | Objects to intersect |
+| `r` | float | — | Fillet radius for newly created edges (PythonSCAD extension) |
+| `fn` | int | — | Number of segments for fillet rounding (PythonSCAD extension) |
 
 **Examples:**
 
@@ -124,6 +130,9 @@ Keep only the volume that is common to all input objects.
 
     # Operator form
     (cube(10) & sphere(7)).show()
+
+    # With filleted edges (3D and 2D)
+    intersection(square(10, center=True), square(10, center=True).rotz(45), r=1.4, fn=8).show()
     ```
 
 **OpenSCAD reference:** [intersection](https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/CSG_Modelling#intersection)
