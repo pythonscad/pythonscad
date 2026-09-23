@@ -317,18 +317,17 @@ EXPORT_CREATOR_PYTHONSCAD_PDF = EXPORT_CREATOR_PYTHONSCAD.replace(b"(", b"\\(").
 
 
 def _blob_has_export_creator(blob):
+    # Require the full EXPORT_CREATOR value (not a bare "PythonSCAD" token):
+    # 3MF also embeds independent "PythonSCAD Model" names that must not
+    # mask a reverted Application/Creator metadata string.
     needles = [
         EXPORT_CREATOR_PYTHONSCAD,
         EXPORT_CREATOR_PYTHONSCAD_PDF,
-        b"PythonSCAD",
-        b"pythonscad.org",
         # Cairo PDF metadata is often UTF-16 (with or without BOM).
         EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-be"),
         EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-le"),
         b"\xfe\xff" + EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-be"),
         b"\xff\xfe" + EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-le"),
-        "PythonSCAD".encode("utf-16-be"),
-        "pythonscad.org".encode("utf-16-be"),
     ]
     if any(n in blob for n in needles):
         return True
