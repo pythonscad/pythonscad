@@ -1557,13 +1557,18 @@ add_output_file_test(relative-output FILE ${TEST_SCAD_DIR}/3D/features/cube-test
 #
 # Golden compares normalize PythonSCAD -> OpenSCAD, so a dedicated
 # unnormalized check is required to protect the branding change.
+# PDF creator metadata only exists when Cairo >= 1.16 (see
+# export_pdf.cc); older supported Cairo builds intentionally omit it.
 ###################################################
 set(_EXPORT_CREATOR_BRANDING_ARGS
   ${CMAKE_CURRENT_SOURCE_DIR}/test_export_creator_branding.py
   ${OPENSCAD_BINPATH}
   --pov-script ${TEST_SCAD_DIR}/pov/pov-export.scad
-  --pdf-script ${TEST_SCAD_DIR}/pdf/simple-pdf.scad
 )
+if (CAIRO_VERSION VERSION_GREATER_EQUAL "1.16.0")
+  list(APPEND _EXPORT_CREATOR_BRANDING_ARGS
+    --pdf-script ${TEST_SCAD_DIR}/pdf/simple-pdf.scad)
+endif()
 if (ENABLE_LIB3MF_TESTS)
   list(APPEND _EXPORT_CREATOR_BRANDING_ARGS
     --threemf-script ${TEST_SCAD_DIR}/3mf/3mf-export.scad)

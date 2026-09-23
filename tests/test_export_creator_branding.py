@@ -26,7 +26,6 @@ def _export(pythonscad: str, script: Path, out: Path) -> None:
         [
             pythonscad,
             "--enable=predictible-output",
-            "--backend=manifold",
             "-o",
             str(out),
             str(script),
@@ -48,7 +47,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("pythonscad")
     parser.add_argument("--pov-script", type=Path, required=True)
-    parser.add_argument("--pdf-script", type=Path, required=True)
+    parser.add_argument("--pdf-script", type=Path, default=None,
+                        help="Optional; omit when Cairo < 1.16 (no PDF creator metadata).")
     parser.add_argument("--threemf-script", type=Path, default=None)
     args = parser.parse_args()
 
@@ -60,8 +60,9 @@ def main() -> int:
         tmpdir = Path(tmp)
         checks = [
             ("pov", args.pov_script, tmpdir / "out.pov"),
-            ("pdf", args.pdf_script, tmpdir / "out.pdf"),
         ]
+        if args.pdf_script is not None:
+            checks.append(("pdf", args.pdf_script, tmpdir / "out.pdf"))
         if args.threemf_script is not None:
             checks.append(("3mf", args.threemf_script, tmpdir / "out.3mf"))
 
