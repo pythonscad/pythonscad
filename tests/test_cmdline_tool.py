@@ -317,7 +317,20 @@ EXPORT_CREATOR_PYTHONSCAD_PDF = EXPORT_CREATOR_PYTHONSCAD.replace(b"(", b"\\(").
 
 
 def _blob_has_export_creator(blob):
-    if EXPORT_CREATOR_PYTHONSCAD in blob or EXPORT_CREATOR_PYTHONSCAD_PDF in blob:
+    needles = [
+        EXPORT_CREATOR_PYTHONSCAD,
+        EXPORT_CREATOR_PYTHONSCAD_PDF,
+        b"PythonSCAD",
+        b"pythonscad.org",
+        # Cairo PDF metadata is often UTF-16 (with or without BOM).
+        EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-be"),
+        EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-le"),
+        b"\xfe\xff" + EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-be"),
+        b"\xff\xfe" + EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-le"),
+        "PythonSCAD".encode("utf-16-be"),
+        "pythonscad.org".encode("utf-16-be"),
+    ]
+    if any(n in blob for n in needles):
         return True
     # PDF Info dict is often Flate-compressed (Cairo); scan inflated streams.
     import zlib
@@ -325,22 +338,22 @@ def _blob_has_export_creator(blob):
     while True:
         m = re.search(br"stream\r?\n", blob[pos:])
         if not m:
-            break
+            return False
         start = pos + m.end()
         endm = re.search(br"endstream", blob[start:])
         if not endm:
-            break
+            return False
         cand = blob[start : start + endm.start()].lstrip(b"\r\n")
-        try:
-            out = zlib.decompress(cand)
-        except Exception:
-            pos = start + endm.end()
-            continue
-        if EXPORT_CREATOR_PYTHONSCAD in out or EXPORT_CREATOR_PYTHONSCAD_PDF in out:
-            return True
+        outs = []
+        for wbits in (zlib.MAX_WBITS, -zlib.MAX_WBITS):
+            try:
+                outs.append(zlib.decompress(cand, wbits))
+            except Exception:
+                pass
+        for out in outs:
+            if any(n in out for n in needles):
+                return True
         pos = start + endm.end()
-    # Optional helpers when present on the runner (not required on CI).
-    return False
 
 
 def assert_raw_export_creator(filename):
@@ -359,8 +372,12 @@ def assert_raw_export_creator(filename):
             raise AssertionError(
                 f"{path}: missing 3D/3dmodel.model inside 3MF archive"
             ) from exc
-    elif lower.endswith(".pdf"):
-        # Prefer pdfinfo when available (Creator is not always plaintext).
+    else:
+        with open(path, "rb") as f:
+            blob = f.read()
+
+    # Prefer pdfinfo for PDFs when present (handles compressed/UTF-16 Info).
+    if lower.endswith(".pdf"):
         import shutil
         import subprocess
         if shutil.which("pdfinfo"):
@@ -376,15 +393,7 @@ def assert_raw_export_creator(filename):
             )
             if EXPORT_CREATOR_PYTHONSCAD.decode("ascii") in creator_line:
                 return
-            raise AssertionError(
-                f"{path}: missing raw EXPORT_CREATOR in pdfinfo Creator "
-                f"(got {creator_line!r})"
-            )
-        with open(path, "rb") as f:
-            blob = f.read()
-    else:
-        with open(path, "rb") as f:
-            blob = f.read()
+
     if not _blob_has_export_creator(blob):
         raise AssertionError(
             f"{path}: missing raw EXPORT_CREATOR "
