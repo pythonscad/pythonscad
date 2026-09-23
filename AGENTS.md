@@ -3,9 +3,9 @@
 Guidance for AI coding agents working in this repository.
 
 This file follows the cross-agent [AGENTS.md](https://agents.md/) convention
-(Agentic AI Foundation / Linux Foundation). Tools that look for
-vendor-specific names (for example Claude Code's `CLAUDE.md`) should use the
-symlinked `CLAUDE.md` → `AGENTS.md` in the repo root.
+(Agentic AI Foundation / Linux Foundation). The repo root also ships a
+git-tracked symlink `CLAUDE.md` → `AGENTS.md` so Claude Code and other tools
+that look for vendor-specific filenames pick up the same guidance.
 
 ## Project Overview
 
@@ -60,11 +60,13 @@ ctest -C Examples              # Test all examples
 ctest -C All                   # Run all tests
 ```
 
-Catch2 sources live under `tests/`, but the `OpenSCADUnitTests` executable
-target is currently commented out in the root `CMakeLists.txt` and is **not**
-produced by a standard build. Prefer `ctest` for regression coverage. If you
-re-enable that target locally, quote Catch2 filter args so the shell does not
-treat `#` as a comment, e.g. `./OpenSCADUnitTests -# '#vector_math_test'`.
+Catch2 unit-test sources live next to the code under `src/` (for example
+`src/core/*_test.cc`, `src/io/*_test.cc`, `src/utils/*_test.cc`), but the
+`OpenSCADUnitTests` executable target is currently commented out in the root
+`CMakeLists.txt` and is **not** produced by a standard build. Prefer `ctest`
+for regression coverage. If you re-enable that target locally, quote Catch2
+filter args so the shell does not treat `#` as a comment, e.g.
+`./OpenSCADUnitTests -# '#vector_math_test'`.
 
 ### Code Formatting
 
@@ -252,7 +254,7 @@ Python scripts use OpenSCAD as a library:
 
 ```python
 from pythonscad import *
-cube([10, 20, 30]).color("Tomato")
+c = cube([10, 20, 30]).color("Tomato")
 show(c)
 ```
 
@@ -379,7 +381,8 @@ flags, platform exclusions, etc.).
 
 **Unit tests:**
 
-- Add to an appropriate `*_test.cc` file in `tests/` or create a new one
+- Add to an appropriate `*_test.cc` next to the code under `src/` (e.g.
+  `src/core/`, `src/io/`, `src/utils/`) or create a new one there
 - Uses the Catch2 framework
 - The dedicated `OpenSCADUnitTests` binary is not built by default (target is
   commented out in the root `CMakeLists.txt`); re-enable it locally if you need
@@ -538,9 +541,10 @@ smoke testing, JavaScript API (`EmsInitPython` / `EmsEvaluatePython`), and known
 PythonSCAD uses automated semantic versioning via Release Please bot:
 
 - Version is determined from conventional commit messages
-- `feat:` commits bump minor version (in pre-1.0) or patch version
+- `feat:` commits bump patch version before 1.0, and minor version after 1.0
 - `fix:` commits bump patch version
-- `feat!:` or `BREAKING CHANGE:` bump major version (in pre-1.0: minor version)
+- `feat!:` or `BREAKING CHANGE:` bump minor version before 1.0, and major
+  version after 1.0
 - Release PR is auto-created when commits are merged to master
 - Merging Release PR creates git tag and GitHub release
 
