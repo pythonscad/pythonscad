@@ -1865,11 +1865,12 @@ if(APPLE)
     foreach(TEST ${SVG_VIEWBOX_TESTS})
       disable_tests_safe(svgviewbox-${TEST}_viewbox-test)
     endforeach()
-    # Camera/imgstretch/preview PNG tests flake under Apple's software
-    # renderer, same as svgimport. Skip those prefixes wholesale.
+    # Camera/imgsize/imgstretch/preview PNG tests flake under Apple's
+    # software renderer, same as svgimport. Skip those prefixes wholesale.
+    # (openscad-img covers imgsize, imgstretch, and imgstretch2.)
     get_property(_apple_arm_ci_tests DIRECTORY PROPERTY TESTS)
     foreach(_t ${_apple_arm_ci_tests})
-      if(_t MATCHES "^(svgimport_|openscad-cam|openscad-imgstretch|preview-cgal_|preview-manifold_)")
+      if(_t MATCHES "^(svgimport_|openscad-cam|openscad-img|preview-cgal_|preview-manifold_)")
         disable_tests_safe(${_t})
       endif()
     endforeach()
