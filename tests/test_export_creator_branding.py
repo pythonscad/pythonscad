@@ -21,16 +21,17 @@ import test_cmdline_tool as tct  # noqa: E402
 TIMEOUT_SECONDS = 120
 
 
-def _export(pythonscad: str, script: Path, out: Path) -> None:
+def _export(pythonscad: str, script: Path, out: Path, extra_args: list[str] | None = None) -> None:
     # No --enable / --backend flags: branding must work on
     # -DEXPERIMENTAL=OFF and -DENABLE_MANIFOLD=OFF builds too.
+    # Explicitly force metadata on so persisted user settings cannot
+    # omit Application/Creator fields under test.
+    cmd = [pythonscad, "-o", str(out)]
+    if extra_args:
+        cmd.extend(extra_args)
+    cmd.append(str(script))
     proc = subprocess.run(
-        [
-            pythonscad,
-            "-o",
-            str(out),
-            str(script),
-        ],
+        cmd,
         capture_output=True,
         text=True,
         timeout=TIMEOUT_SECONDS,
@@ -59,17 +60,27 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="export-creator-") as tmp:
         tmpdir = Path(tmp)
-        checks = [
-            ("pov", args.pov_script, tmpdir / "out.pov"),
+        checks: list[tuple[str, Path, Path, list[str]]] = [
+            ("pov", args.pov_script, tmpdir / "out.pov", []),
         ]
         if args.pdf_script is not None:
-            checks.append(("pdf", args.pdf_script, tmpdir / "out.pdf"))
+            checks.append((
+                "pdf",
+                args.pdf_script,
+                tmpdir / "out.pdf",
+                ["-O", "export-pdf/add-meta-data=true"],
+            ))
         if args.threemf_script is not None:
-            checks.append(("3mf", args.threemf_script, tmpdir / "out.3mf"))
+            checks.append((
+                "3mf",
+                args.threemf_script,
+                tmpdir / "out.3mf",
+                ["-O", "export-3mf/add-meta-data=true"],
+            ))
 
-        for label, script, out in checks:
+        for label, script, out, extra in checks:
             print(f"exporting {label} from {script.name} ...")
-            _export(args.pythonscad, script, out)
+            _export(args.pythonscad, script, out, extra)
             tct.assert_raw_export_creator(str(out))
             print(f"OK {label}: raw EXPORT_CREATOR present")
 

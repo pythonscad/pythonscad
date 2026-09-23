@@ -1565,7 +1565,11 @@ set(_EXPORT_CREATOR_BRANDING_ARGS
   ${OPENSCAD_BINPATH}
   --pov-script ${TEST_SCAD_DIR}/pov/pov-export.scad
 )
-if (CAIRO_VERSION VERSION_GREATER_EQUAL "1.16.0")
+# PDF creator metadata exists for Cairo >= 1.16, but older 1.16 builds
+# encode the Info dict in a form our stdlib scanner cannot reliably
+# recover without pdfinfo. Require 1.18+ for the PDF leg; POV/3MF still
+# protect EXPORT_CREATOR on every platform.
+if (CAIRO_VERSION VERSION_GREATER_EQUAL "1.18.0")
   list(APPEND _EXPORT_CREATOR_BRANDING_ARGS
     --pdf-script ${TEST_SCAD_DIR}/export-creator/pdf.scad)
 endif()
