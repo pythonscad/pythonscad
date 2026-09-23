@@ -1,5 +1,6 @@
 #include "geometry/GeometryEvaluator.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <iterator>
@@ -52,6 +53,7 @@
 #include "glview/RenderSettings.h"
 #include "utils/calc.h"
 #include "utils/degree_trig.h"
+#include "utils/hash.h"
 #include "utils/printutils.h"
 #include "core/ColorUtil.h"
 #include <unordered_map>
@@ -1519,7 +1521,198 @@ bool pointOnPolySetSurface(const PolySet& ps, const Vector3d& pt, double eps)
   return false;
 }
 
+bool pointOnPolygonBoundary(const Polygon2d& poly, const Vector2d& pt, double eps)
+{
+  const double eps2 = eps * eps;
+  for (const auto& outline : poly.outlines()) {
+    const auto& verts = outline.vertices;
+    const size_t n = verts.size();
+    if (n < 2) continue;
+    for (size_t i = 0; i < n; i++) {
+      const Vector2d& a = verts[i];
+      const Vector2d& b = verts[(i + 1) % n];
+      const Vector2d ab = b - a;
+      const double len2 = ab.squaredNorm();
+      double t = 0.0;
+      if (len2 > 1e-24) {
+        t = std::clamp((pt - a).dot(ab) / len2, 0.0, 1.0);
+      }
+      const Vector2d closest = a + t * ab;
+      if ((pt - closest).squaredNorm() <= eps2) return true;
+    }
+  }
+  return false;
+}
+
+// Replace a sharp corner with a circular fillet arc. Adapted from
+// PolygonNode::createGeometry_sub; r is clamped so the fillet fits both edges.
+void appendFilletedCorner2D(VectorOfVector2d& out, const Vector2d& ptprev, const Vector2d& ptcur,
+                            const Vector2d& ptnext, double r, int fn)
+{
+  Vector3d dir1(ptcur[0] - ptprev[0], ptcur[1] - ptprev[1], 0);
+  Vector3d dir2(ptnext[0] - ptcur[0], ptnext[1] - ptcur[1], 0);
+  const double len1 = dir1.head<2>().norm();
+  const double len2 = dir2.head<2>().norm();
+  if (len1 < 1e-12 || len2 < 1e-12 || std::fabs(r) < 1e-12) {
+    out.push_back(ptcur);
+    return;
+  }
+
+  const Vector3d cr = dir1.cross(dir2);
+  const double cross_z = cr[2];
+  const double sin_ang = std::fabs(cross_z) / (len1 * len2);
+  if (sin_ang < 1e-6) {
+    out.push_back(ptcur);
+    return;
+  }
+
+  auto try_fillet = [&](double radius) -> bool {
+    Vector3d n1(-dir1[1], dir1[0], 0);
+    Vector3d n2(-dir2[1], dir2[0], 0);
+    n1.normalize();
+    n2.normalize();
+    if (cross_z < 0) {
+      n1 = -n1;
+      n2 = -n2;
+    }
+    const Vector3d pprev(ptprev[0], ptprev[1], 0);
+    const Vector3d pnext(ptnext[0], ptnext[1], 0);
+    Vector3d res;
+    if (linsystem(dir1, cr, dir2, pnext + n2 * radius - pprev - n1 * radius, res, nullptr)) {
+      return false;
+    }
+    if (res[0] <= 1e-9 || res[0] >= 1.0 - 1e-9) return false;
+
+    Vector3d st = pprev + dir1 * res[0];
+    st[2] = 0;
+    const Vector3d cent = st + radius * n1;
+    const Vector3d en = cent - radius * n2;
+
+    // End point must lie on the outgoing edge.
+    const Vector2d en2 = en.head<2>();
+    const Vector2d along = en2 - ptcur;
+    const double t2 = along.dot(dir2.head<2>()) / (len2 * len2);
+    if (t2 <= 1e-9 || t2 >= 1.0 - 1e-9) return false;
+    if ((ptcur + t2 * dir2.head<2>() - en2).squaredNorm() > 1e-12) return false;
+
+    double ang_st = std::atan2(-n1[1], -n1[0]);
+    double ang_en = std::atan2(-n2[1], -n2[0]);
+    if (ang_en - ang_st > M_PI) ang_en -= 2 * M_PI;
+    if (ang_st - ang_en > M_PI) ang_st -= 2 * M_PI;
+
+    out.push_back(st.head<2>());
+    const int segs = std::max(fn, 1);
+    for (int j = 0; j < segs; j++) {
+      const double ang = ang_st + (ang_en - ang_st) * (j + 1) / (segs + 1);
+      out.emplace_back(cent[0] + radius * std::cos(ang), cent[1] + radius * std::sin(ang));
+    }
+    out.push_back(en.head<2>());
+    return true;
+  };
+
+  if (try_fillet(r)) return;
+
+  // Shrink radius so the fillet fits the shorter adjacent edge.
+  const double cos_a =
+    std::clamp(dir1.head<2>().normalized().dot(dir2.head<2>().normalized()), -1.0, 1.0);
+  const double turn_ang = std::atan2(sin_ang, cos_a);
+  if (turn_ang < 1e-6 || turn_ang > M_PI - 1e-6) {
+    out.push_back(ptcur);
+    return;
+  }
+  const double max_dist = std::min(len1, len2) * 0.49;
+  const double max_r = max_dist * std::tan(turn_ang / 2.0);
+  if (max_r < 1e-9 || !try_fillet(max_r)) {
+    out.push_back(ptcur);
+  }
+}
+
+Outline2d filletOutline2D(const Outline2d& outline, const std::vector<bool>& selected, double r, int fn)
+{
+  Outline2d result;
+  result.positive = outline.positive;
+  result.color = outline.color;
+  const auto& verts = outline.vertices;
+  const size_t n = verts.size();
+  if (n < 3 || selected.size() != n) {
+    result.vertices = verts;
+    return result;
+  }
+  for (size_t i = 0; i < n; i++) {
+    if (!selected[i]) {
+      result.vertices.push_back(verts[i]);
+      continue;
+    }
+    appendFilletedCorner2D(result.vertices, verts[(i + n - 1) % n], verts[i], verts[(i + 1) % n], r, fn);
+  }
+  return result;
+}
+
 }  // namespace
+
+std::unique_ptr<Polygon2d> addFillets2D(std::unique_ptr<Polygon2d> result,
+                                        const std::vector<std::shared_ptr<const Polygon2d>>& children,
+                                        double r, int fn)
+{
+  if (!result || children.empty() || r == 0) return result;
+
+  std::vector<std::unordered_set<Vector3d>> child_verts;
+  child_verts.reserve(children.size());
+  for (const auto& child : children) {
+    std::unordered_set<Vector3d> verts;
+    if (child) {
+      for (const auto& outline : child->outlines()) {
+        for (const Vector2d& pt : outline.vertices) {
+          verts.insert(createFilletRound(Vector3d(pt[0], pt[1], 0)));
+        }
+      }
+    }
+    child_verts.push_back(std::move(verts));
+  }
+
+  auto filleted = std::make_unique<Polygon2d>();
+  filleted->setSanitized(result->isSanitized());
+  filleted->setConvexity(result->getConvexity());
+  constexpr double kBoundaryEps = 1e-4;
+
+  for (const auto& outline : result->outlines()) {
+    const size_t n = outline.vertices.size();
+    std::vector<bool> selected(n, false);
+    for (size_t i = 0; i < n; i++) {
+      const Vector2d& pt = outline.vertices[i];
+      const Vector3d rounded = createFilletRound(Vector3d(pt[0], pt[1], 0));
+      int owner = -1;
+      int n_owners = 0;
+      for (size_t c = 0; c < child_verts.size(); c++) {
+        if (child_verts[c].count(rounded)) {
+          owner = static_cast<int>(c);
+          n_owners++;
+        }
+      }
+      bool sel = false;
+      if (n_owners != 1) {
+        // Boolean-created and shared child vertices both lie on the seam.
+        sel = true;
+      } else {
+        for (size_t c = 0; c < children.size(); c++) {
+          if (static_cast<int>(c) == owner || !children[c]) continue;
+          if (pointOnPolygonBoundary(*children[c], pt, kBoundaryEps)) {
+            sel = true;
+            break;
+          }
+        }
+      }
+      selected[i] = sel;
+    }
+    filleted->addOutline(filletOutline2D(outline, selected, std::fabs(r), fn));
+  }
+  for (const auto& pl : result->polylines()) {
+    filleted->addPolyline(pl);
+  }
+
+  // Arc insertion can leave near-collinear vertices; sanitize via Clipper.
+  return ClipperUtils::sanitize(*filleted);
+}
 
 std::unique_ptr<const Geometry> addFillets(std::shared_ptr<const Geometry> result,
                                            const Geometry::Geometries& children, double r, int fn)
@@ -2039,6 +2232,11 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyToChildren2D(const AbstractNo
     auto r1 = ClipperUtils::applyOffset(*pol, offNode->delta, offNode->join_type, offNode->miter_limit,
                                         arc_tolerance);
     return r1;
+  }
+
+  const CsgOpNode *csgOpNode = dynamic_cast<const CsgOpNode *>(&node);
+  if (csgOpNode != nullptr && csgOpNode->r != 0 && pol) {
+    return addFillets2D(std::move(pol), children, csgOpNode->r, csgOpNode->fn);
   }
   return pol;
 }

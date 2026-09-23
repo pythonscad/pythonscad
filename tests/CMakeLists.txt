@@ -311,6 +311,9 @@ if(NOT ENABLE_LIBFIVE)
   list(REMOVE_ITEM PYTHONSCAD_FILES "${TEST_PYTHONSCAD_DIR}/libfive-union-stairs.py")
   list(REMOVE_ITEM PYTHONSCAD_FILES "${TEST_PYTHONSCAD_DIR}/sdf.py")
 endif()
+# 2D CSG fillet regression (#1004): SVG export, no OpenGL required.
+list(REMOVE_ITEM PYTHONSCAD_FILES "${TEST_PYTHONSCAD_DIR}/issue-1004-2d-fillet.py")
+set(PYTHONSCAD_2D_SVG_FILES "${TEST_PYTHONSCAD_DIR}/issue-1004-2d-fillet.py")
 if(NOT MINGW)
   # GhostScript on MSYS2/MINGW can't handle the names.
   list(APPEND SCAD_PDF_FILES
@@ -1388,6 +1391,8 @@ add_cmdline_test(pythonscad          EXPERIMENTAL OPENSCAD SUFFIX png FILES ${PY
 # union(..., r=) fillets require full geometry evaluation; F5 preview must
 # still show them (issue #993). Share the --render expected image.
 add_cmdline_test(pythonscadpreview   EXPERIMENTAL OPENSCAD SUFFIX png FILES ${TEST_PYTHONSCAD_DIR}/issue-993-union-fillet.py EXPECTEDDIR pythonscad ARGS --trust-python)
+# 2D boolean seam fillets (issue #1004): validate via SVG (headless-safe).
+add_cmdline_test(pythonscad2d        EXPERIMENTAL OPENSCAD SUFFIX svg FILES ${PYTHONSCAD_2D_SVG_FILES} ARGS --render --trust-python)
 add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_FILES} ARGS --trust-python)
 # Same group name so goldens stay under tests/regression/pythonscadecho/.
 add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_EXPORT_FILES} ARGS --trust-python --render)
