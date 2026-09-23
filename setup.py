@@ -14,11 +14,30 @@ IS_DARWIN = sys.platform == "darwin"
 
 
 def apply_wheel_build_env():
-    """Load env written by cibuildwheel before-all hooks (needed on Windows)."""
+    """Load env written by cibuildwheel before-all hooks (needed on Windows).
+
+    ``python -m build`` isolates into an sdist extract that does not contain the
+    generated ``wheel-build-env.env`` (it is not in MANIFEST.in). Resolve the
+    file via ``CIBW_PROJECT_DIR`` / ``GITHUB_WORKSPACE`` as well as setup.py's
+    directory so pkg-config can see vcpkg's lib3mf during the wheel compile.
+    """
+    roots = []
     here = os.path.dirname(os.path.abspath(__file__))
-    env_file = os.path.join(here, "scripts", "cibuildwheel", "wheel-build-env.env")
-    if not os.path.isfile(env_file):
+    roots.append(here)
+    for key in ("CIBW_PROJECT_DIR", "GITHUB_WORKSPACE"):
+        root = os.environ.get(key)
+        if root:
+            roots.append(root)
+
+    env_file = None
+    for root in roots:
+        candidate = os.path.join(root, "scripts", "cibuildwheel", "wheel-build-env.env")
+        if os.path.isfile(candidate):
+            env_file = candidate
+            break
+    if env_file is None:
         return
+
     with open(env_file, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -37,6 +56,44 @@ def apply_wheel_build_env():
     if msys2_usr_bin and os.path.isdir(msys2_usr_bin):
         path = os.environ.get("PATH", "")
         os.environ["PATH"] = path + os.pathsep + msys2_usr_bin if path else msys2_usr_bin
+    print(f"wheel-build-env: loaded {env_file}")
+
+
+def _find_lib3mf_header_dir(header_name, path_suffixes, pkg_inc_dirs):
+    """Locate a lib3mf header directory.
+
+    pkg-config often strips system ``-I/usr/include`` from ``--cflags``, so the
+    Bindings/Cpp path must be rediscovered the same way FindLib3MF.cmake does
+    (HINTS + PATH_SUFFIXES). See issue #1025 / PR wheel CI failure.
+    """
+    candidates = []
+    for base in pkg_inc_dirs:
+        for suffix in path_suffixes:
+            candidates.append(os.path.join(base, suffix))
+        candidates.append(base)
+
+    fallback_roots = [
+        "/usr/include",
+        "/usr/local/include",
+        "/opt/homebrew/include",
+        "/opt/local/include",
+    ]
+    vcpkg_installed = get_vcpkg_installed_dir()
+    if vcpkg_installed:
+        fallback_roots.insert(0, os.path.join(vcpkg_installed, "include"))
+    for root in fallback_roots:
+        for suffix in path_suffixes:
+            candidates.append(os.path.join(root, suffix))
+        candidates.append(root)
+
+    seen = set()
+    for path in candidates:
+        if not path or path in seen:
+            continue
+        seen.add(path)
+        if os.path.isfile(os.path.join(path, header_name)):
+            return path
+    return None
 
 
 def get_version():
@@ -350,21 +407,37 @@ def detect_lib3mf():
 
         major = int(ver.split(".")[0])
         if major >= 2:
-            for base in list(inc_dirs):
-                cpp_bindings_dir = os.path.join(base, "Bindings", "Cpp")
-                if (cpp_bindings_dir not in inc_dirs and
-                        os.path.isfile(os.path.join(cpp_bindings_dir, "lib3mf_implicit.hpp"))):
-                    inc_dirs.append(cpp_bindings_dir)
+            cpp_bindings_dir = _find_lib3mf_header_dir(
+                "lib3mf_implicit.hpp", ("Bindings/Cpp", "lib3mf"), inc_dirs
+            )
+            if cpp_bindings_dir is None:
+                if os.environ.get("CIBUILDWHEEL") == "1":
+                    raise RuntimeError(
+                        f"lib3mf v{ver} found via pkg-config but lib3mf_implicit.hpp "
+                        "was not under Bindings/Cpp (pkg-config often strips "
+                        "-I/usr/include). See issue #1025."
+                    )
+                print(f"lib3mf: found v{ver} but Bindings/Cpp headers missing; skipping")
+                continue
+            if cpp_bindings_dir not in inc_dirs:
+                inc_dirs.append(cpp_bindings_dir)
             sources = ["src/io/export_3mf_v2.cc", "src/io/import_3mf_v2.cc"]
-            print(f"lib3mf: found v{ver} (v2 API)")
+            print(f"lib3mf: found v{ver} (v2 API) includes={cpp_bindings_dir}")
         else:
-            for base in list(inc_dirs):
-                legacy_dir = os.path.join(base, "lib3mf")
-                if (legacy_dir not in inc_dirs and
-                        os.path.isfile(os.path.join(legacy_dir, "Model", "COM", "NMR_DLLInterfaces.h"))):
-                    inc_dirs.append(legacy_dir)
+            legacy_dir = _find_lib3mf_header_dir(
+                "Model/COM/NMR_DLLInterfaces.h", ("lib3mf",), inc_dirs
+            )
+            if legacy_dir is None:
+                if os.environ.get("CIBUILDWHEEL") == "1":
+                    raise RuntimeError(
+                        f"lib3mf v{ver} found via pkg-config but v1 headers were not found"
+                    )
+                print(f"lib3mf: found v{ver} but v1 headers missing; skipping")
+                continue
+            if legacy_dir not in inc_dirs:
+                inc_dirs.append(legacy_dir)
             sources = ["src/io/export_3mf_v1.cc", "src/io/import_3mf_v1.cc"]
-            print(f"lib3mf: found v{ver} (v1 API)")
+            print(f"lib3mf: found v{ver} (v1 API) includes={legacy_dir}")
 
         defines = [("ENABLE_LIB3MF", "1")]
         return sources, inc_dirs, libraries, defines
@@ -373,7 +446,7 @@ def detect_lib3mf():
         raise RuntimeError(
             "lib3mf not found during cibuildwheel build; refusing dummy 3MF stubs "
             "(empty .3mf exports). Ensure install-deps-*.sh made lib3mf visible "
-            "to pkg-config. See issue #1025."
+            "to pkg-config (and wheel-build-env.env on Windows). See issue #1025."
         )
 
     print("lib3mf: not found, using dummy stubs")

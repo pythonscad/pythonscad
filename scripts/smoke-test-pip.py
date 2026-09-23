@@ -127,10 +127,19 @@ def _assert_nonempty_3mf(path: str) -> None:
     )
     assert zipfile.is_zipfile(path), f"{path} is not a zip/3MF container"
     with zipfile.ZipFile(path) as zf:
-        names = zf.namelist()
-    assert any(
-        name.startswith("3D/") and name.endswith(".model") for name in names
-    ), f"{path} is missing a 3MF model payload; entries={names[:20]!r}"
+        infos = zf.infolist()
+        model_infos = [
+            info
+            for info in infos
+            if info.filename.startswith("3D/") and info.filename.endswith(".model")
+        ]
+        names = [info.filename for info in infos]
+    assert model_infos, (
+        f"{path} is missing a 3MF model payload; entries={names[:20]!r}"
+    )
+    assert any(info.file_size > 0 for info in model_infos), (
+        f"{path} has a zero-byte 3D/*.model payload"
+    )
 
 
 from openscad import *  # noqa: F401,F403,E402
