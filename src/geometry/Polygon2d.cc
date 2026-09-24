@@ -421,7 +421,7 @@ void Polygon2d::stamp_color(const Polygon2d& src)
           if (k == i) continue;
           Vector2d pt = theoutlines[k].vertices[0];
           Polygon2d testpol(theoutlines[i]);
-          if (!testpol.point_inside(pt)) continue;
+          if (testpol.point_location(pt) < PointLocation2d::OnVertex) continue;
           theoutlines[k].color = src.theoutlines[j].color;
         }
       }
@@ -521,9 +521,4 @@ PointLocation2d Polygon2d::point_location(const Vector2d& pt, double eps) const
     }
   }
   return (cuts & 1) ? PointLocation2d::Inside : PointLocation2d::Outside;
-}
-
-bool Polygon2d::point_inside(const Vector2d& pt, double eps) const
-{
-  return point_location(pt, eps) != PointLocation2d::Outside;
 }

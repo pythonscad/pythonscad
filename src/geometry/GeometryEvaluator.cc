@@ -1674,7 +1674,8 @@ std::unique_ptr<Polygon2d> addFillets2D(std::unique_ptr<Polygon2d> result,
         for (size_t c = 0; c < children.size(); c++) {
           if (static_cast<int>(c) == owner || !children[c]) continue;
           const auto loc = children[c]->point_location(pt, kBoundaryEps);
-          if (loc == PointLocation2d::OnEdge || loc == PointLocation2d::OnVertex) {
+          // On the boundary of another child (vertex or edge), not the interior.
+          if (loc >= PointLocation2d::OnVertex && loc <= PointLocation2d::OnEdge) {
             sel = true;
             break;
           }

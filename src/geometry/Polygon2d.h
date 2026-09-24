@@ -25,9 +25,32 @@ double outline_area(const Outline2d o);
 
 /*!
    Classification of a 2D query point relative to a Polygon2d.
+
+   Values are ordered so the integer rank matches how many boundary dimensions
+   the point coincides with (0 = none / outside, 1 = vertex, 2 = edge), with
+   Inside as the top rank. That lets callers write comparisons such as
+   `loc >= PointLocation2d::OnVertex` (inside or on boundary) or
+   `loc >= PointLocation2d::OnEdge` (on edge or inside).
    OnVertex is preferred over OnEdge when the point lies within eps of a corner.
  */
-enum class PointLocation2d { Outside, Inside, OnEdge, OnVertex };
+enum class PointLocation2d : int { Outside = 0, OnVertex = 1, OnEdge = 2, Inside = 3 };
+
+constexpr bool operator<(PointLocation2d a, PointLocation2d b)
+{
+  return static_cast<int>(a) < static_cast<int>(b);
+}
+constexpr bool operator>(PointLocation2d a, PointLocation2d b)
+{
+  return static_cast<int>(a) > static_cast<int>(b);
+}
+constexpr bool operator<=(PointLocation2d a, PointLocation2d b)
+{
+  return static_cast<int>(a) <= static_cast<int>(b);
+}
+constexpr bool operator>=(PointLocation2d a, PointLocation2d b)
+{
+  return static_cast<int>(a) >= static_cast<int>(b);
+}
 
 class Polygon2d : public Geometry
 {
@@ -110,12 +133,6 @@ public:
      @param eps Distance tolerance in world units for vertex/edge hits.
    */
   [[nodiscard]] PointLocation2d point_location(const Vector2d& pt, double eps = 1e-4) const;
-
-  /*!
-     True if @p pt is inside the polygon or on its boundary (edge or vertex).
-     Equivalent to point_location(pt, eps) != PointLocation2d::Outside.
-   */
-  [[nodiscard]] bool point_inside(const Vector2d& pt, double eps = 1e-4) const;
 
 private:
   Outlines2d theoutlines;

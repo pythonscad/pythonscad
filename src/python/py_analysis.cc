@@ -171,7 +171,7 @@ PyObject *python_inside_core(PyObject *pyobj, PyObject *pypoint)
     auto geom = polygonnode->createGeometry();
     const Polygon2d poly2 = dynamic_cast<const Polygon2d&>(*geom);
     Vector2d vec2(vec3[0], vec3[1]);
-    if (poly2.point_inside(vec2)) Py_RETURN_TRUE;
+    if (poly2.point_location(vec2) >= PointLocation2d::OnVertex) Py_RETURN_TRUE;
     else Py_RETURN_FALSE;
   }
 
@@ -190,7 +190,7 @@ PyObject *python_inside_core(PyObject *pyobj, PyObject *pypoint)
   std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
   if (auto poly2 = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
     Vector2d vec2(vec3[0], vec3[1]);
-    if (poly2->point_inside(vec2)) Py_RETURN_TRUE;
+    if (poly2->point_location(vec2) >= PointLocation2d::OnVertex) Py_RETURN_TRUE;
     else Py_RETURN_FALSE;
   }
   if (ps != nullptr) {
