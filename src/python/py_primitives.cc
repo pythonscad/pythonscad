@@ -1475,27 +1475,25 @@ PyObject *python_organic(PyObject *obj, PyObject *args, PyObject *kwargs)
   return PyOpenSCADObjectFromNode(&PyOpenSCADType, node);
 }
 
-// 'out' bekommt die 3D-Weltkoordinaten des Umfangs von 'shape_obj' (via
-// dessen kumulativer Transformation). 'out_normal' bekommt, parallel dazu,
-// je Punkt die Tangenten-/Verlassrichtung der Form - schlicht die
-// Flaechennormale der 2D-Ebene, in Weltkoordinaten gedreht
-// (trans.linear() * (0,0,1)), normiert. Fuer ein flaches 2D-Shape ist das
-// an jedem Randpunkt derselbe Vektor; patch() nutzt ihn spaeter als
-// Tangente fuer die kubische Verrundung zwischen zwei Ringen (siehe
-// geometry/patch.h/.cc).
-// 'want_normal' steuert, ob ueberhaupt eine Tangente berechnet wird - siehe
-// Aufrufer python_patch_parse_ring(). Bei false bleibt 'out_normal' fuer
-// diesen Ring komplett leer, und patch() faellt fuer ihn garantiert auf das
-// alte rein lineare/barycentrische Verhalten zurueck. Das ist WICHTIG:
-// die Ebenennormale eines 2D-Shapes ist nur dann eine sinnvolle
-// Patching-Tangente, wenn die Fläche wirklich senkrecht zu dieser Ebene
-// "weggehen" soll (z.B. ein Rohrstutzen an einem Flansch). Fuer einen
-// gewoehnlichen Kegel/Trichter aus zwei unrotierten circle()s zeigt die
-// Ebenennormale beider Ringe schlicht (0,0,1) - das ist NICHT die
-// Richtung, in der die Kegelwand tatsaechlich verlaeuft, und wuerde eine
-// eigentlich gerade Wand faelschlich verbiegen ("Pickel"). Deshalb ist
-// die Tangentenauswertung strikt opt-in (siehe 'use_tangents' in
-// python_patch()) statt automatisch an jedem Shape zu haengen.
+// 'out' gets the 3D world coordinates of 'shape_obj''s outline (via its
+// cumulative transform). 'out_normal' gets, in parallel, per point, the
+// shape's tangent/departure direction - simply the 2D plane's face
+// normal, rotated into world coordinates (trans.linear() * (0,0,1)) and
+// normalized. For a flat 2D shape this is the same vector at every
+// boundary point; patch() later uses it as the tangent for the cubic
+// blend between two rings (see geometry/patch.h/.cc).
+// 'want_normal' controls whether a tangent is computed at all - see the
+// caller python_patch_parse_ring(). When false, 'out_normal' stays
+// completely empty for this ring, and patch() is guaranteed to fall back
+// to the old, purely linear/barycentric behavior for it. This matters:
+// a 2D shape's plane normal is only a sensible patching tangent when the
+// surface is really meant to "leave" perpendicular to that plane (e.g. a
+// pipe stub on a flange). For an ordinary cone/funnel made from two
+// unrotated circle()s, both rings' plane normal is simply (0,0,1) - that
+// is NOT the direction the cone's wall actually runs in, and would
+// wrongly bow an otherwise-straight wall ("pimple"). That's why tangent
+// evaluation is strictly opt-in (see 'use_tangents' in python_patch())
+// rather than automatically attached to every shape.
 static bool python_patch_ring_from_shape(PyObject *shape_obj, std::vector<Vector3d>& out,
                                          std::vector<Vector3d>& out_normal, bool want_normal)
 {
@@ -1507,17 +1505,17 @@ static bool python_patch_ring_from_shape(PyObject *shape_obj, std::vector<Vector
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
   std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
-  if (PyErr_Occurred()) return false;  // falls die Auswertung selbst schon eine Python-Exception setzt
+  if (PyErr_Occurred()) return false;  // in case the evaluation itself already set a Python exception
 
   auto poly2d = std::dynamic_pointer_cast<const Polygon2d>(geom);
   if (poly2d == nullptr) {
-    PyErr_SetString(PyExc_TypeError, "patch(): Objekt ist keine 2D-Form.");
+    PyErr_SetString(PyExc_TypeError, "patch(): object is not a 2D shape.");
     return false;
   }
 
   const auto outlines = poly2d->untransformedOutlines();
   if (outlines.empty()) {
-    PyErr_SetString(PyExc_TypeError, "patch(): 2D-Form hat keine Kontur.");
+    PyErr_SetString(PyExc_TypeError, "patch(): 2D shape has no outline.");
     return false;
   }
   Transform3d trans = poly2d->getTransform3d();
@@ -1539,21 +1537,21 @@ static bool python_patch_ring_from_shape(PyObject *shape_obj, std::vector<Vector
   return true;
 }
 
-// Hilfsfunktion: eine Liste von [x,y,z]-Punkten ODER ein 2D-Shape-Objekt -> std::vector<Vector3d>.
-// 'out_normal' wird NUR befuellt, wenn 'ring_obj' ein 2D-Shape UND
-// 'want_normal' true ist (siehe python_patch_ring_from_shape() oben); in
-// allen anderen Faellen (Punktliste, oder Shape ohne use_tangents=True)
-// bleibt es leer, d.h. patch() faellt fuer diesen Rand garantiert auf das
-// alte rein lineare Verhalten zurueck.
+// Helper: a list of [x,y,z] points OR a 2D shape object -> std::vector<Vector3d>.
+// 'out_normal' is filled ONLY when 'ring_obj' is a 2D shape AND
+// 'want_normal' is true (see python_patch_ring_from_shape() above); in
+// all other cases (point list, or a shape without use_tangents=True) it
+// stays empty, i.e. patch() is guaranteed to fall back to the old,
+// purely linear behavior for this boundary.
 static bool python_patch_parse_ring(PyObject *ring_obj, std::vector<Vector3d>& out,
                                     std::vector<Vector3d>& out_normal, bool want_normal)
 {
-  // Neu: akzeptiere ein PyOpenSCAD-2D-Objekt direkt (dessen Umfang wird verwendet)
+  // New: accept a PyOpenSCAD 2D object directly (its outline is used)
   if (PyObject_IsInstance(ring_obj, reinterpret_cast<PyObject *>(&PyOpenSCADType))) {
     return python_patch_ring_from_shape(ring_obj, out, out_normal, want_normal);
   }
 
-  // Bisheriges Verhalten: Liste von [x,y,z]-Punkten - keine Tangenten.
+  // Previous behavior: a list of [x,y,z] points - no tangents.
   out = python_to2dvarpointlist(ring_obj);
   return true;
 }
@@ -1562,12 +1560,12 @@ PyObject *python_patch(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   DECLARE_INSTANCE();
 
-  // Reihenfolge bewusst so gewaehlt, dass die zwei wirklich wichtigen
-  // Argumente (die Geometrie: 'outer' und 'holes') zuerst kommen; alles
-  // andere (Projektion, Gitterfeinheit, Verformung, Kruemmung) ist
-  // optional und hat einen sinnvollen Default. 'proj' und 'displacement'
-  // bleiben trotzdem jederzeit per Keyword ansprechbar
-  // (patch(outer, proj=meineProj, ...)), auch wenn 'holes' davor steht.
+  // Order deliberately chosen so the two truly important arguments (the
+  // geometry: 'outer' and 'holes') come first; everything else
+  // (projection, grid resolution, displacement, curvature) is optional
+  // and has a sensible default. 'proj' and 'displacement' remain
+  // addressable by keyword at any time regardless
+  // (patch(outer, proj=myProj, ...)), even though 'holes' comes before them.
   char *kwlist[] = {"outer", "holes", "proj", "grid_spacing_uv", "displacement", "use_tangents", NULL};
   PyObject *outer_obj = nullptr;
   PyObject *holes_obj = nullptr;
@@ -1576,11 +1574,11 @@ PyObject *python_patch(PyObject *self, PyObject *args, PyObject *kwargs)
   PyObject *displacement_obj = nullptr;
   PyObject *use_tangents_obj = nullptr;
 
-  // 'proj' ist OPTIONAL: weggelassen oder None -> patch() bestimmt die
-  // Projektion selbst automatisch (siehe computeAutoProj() in
-  // geometry/patch.cc - unterscheidet "Tubus zwischen zwei Ports" von
-  // "Lochblech in einer Ebene"). Ein explizit angegebenes proj gewinnt
-  // immer und wird unveraendert benutzt.
+  // 'proj' is OPTIONAL: omitted or None -> patch() determines the
+  // projection automatically itself (see computeAutoProj() in
+  // geometry/patch.cc - distinguishes "tube between two ports" from
+  // "perforated panel in one plane"). An explicitly given proj always
+  // wins and is used unchanged.
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OOdOO", kwlist, &outer_obj, &holes_obj, &proj_obj,
                                    &grid_spacing_uv, &displacement_obj, &use_tangents_obj)) {
     PyErr_SetString(PyExc_TypeError,
@@ -1589,22 +1587,22 @@ PyObject *python_patch(PyObject *self, PyObject *args, PyObject *kwargs)
     return nullptr;
   }
 
-  // Nur wenn der Aufrufer EXPLIZIT use_tangents=True angibt, wird bei
-  // Shape-Randobjekten (siehe python_patch_ring_from_shape()) ueberhaupt
-  // eine Tangente aus der Ebenennormale abgeleitet und die kubische
-  // Kruemmung aktiviert. Default (kein Argument, oder False) = exakt das
-  // alte, rein lineare Verhalten - auch wenn outer/holes 2D-Shapes sind.
-  // Das haelt z.B. einen simplen Kegel aus zwei circle()s unangetastet.
+  // Only when the caller EXPLICITLY passes use_tangents=True is a tangent
+  // derived from the plane normal for shape boundary objects at all (see
+  // python_patch_ring_from_shape()), enabling the cubic curvature.
+  // Default (no argument, or False) = exactly the old, purely linear
+  // behavior - even when outer/holes are 2D shapes. This keeps e.g. a
+  // simple cone made from two circle()s untouched.
   const bool use_tangents = (use_tangents_obj == Py_True);
 
   if (proj_obj != nullptr && proj_obj != Py_None && proj_obj->ob_type != &PyFunction_Type) {
     PyErr_SetString(PyExc_TypeError,
-                    "patch(): proj muss eine Funktion, None, oder weggelassen sein (fuer "
-                    "automatische Projektion).");
+                    "patch(): proj must be a function, None, or omitted (for "
+                    "automatic projection).");
     return nullptr;
   }
   if (displacement_obj != nullptr && displacement_obj->ob_type != &PyFunction_Type) {
-    PyErr_SetString(PyExc_TypeError, "patch(): displacement muss eine Funktion sein.");
+    PyErr_SetString(PyExc_TypeError, "patch(): displacement must be a function.");
     return nullptr;
   }
 
@@ -1613,14 +1611,13 @@ PyObject *python_patch(PyObject *self, PyObject *args, PyObject *kwargs)
 
   if (!python_patch_parse_ring(outer_obj, node->outer, node->outer_normal, use_tangents) ||
       node->outer.size() < 3) {
-    PyErr_SetString(PyExc_TypeError,
-                    "patch(): outer muss eine Liste von mindestens 3 [x,y,z]-Punkten sein.");
+    PyErr_SetString(PyExc_TypeError, "patch(): outer must be a list of at least 3 [x,y,z] points.");
     return nullptr;
   }
 
   if (holes_obj != nullptr && holes_obj != Py_None) {
     if (!python_is_sequence(holes_obj)) {
-      PyErr_SetString(PyExc_TypeError, "patch(): holes muss eine Liste von Punktlisten sein.");
+      PyErr_SetString(PyExc_TypeError, "patch(): holes must be a list of point lists.");
       return nullptr;
     }
     PyObject *holeseq = PySequence_Fast(holes_obj, "expected a list of rings");
@@ -1632,14 +1629,12 @@ PyObject *python_patch(PyObject *self, PyObject *args, PyObject *kwargs)
       if (!python_patch_parse_ring(PySequence_Fast_GET_ITEM(holeseq, i), hole, hole_normal,
                                    use_tangents)) {
         Py_DECREF(holeseq);
-        PyErr_SetString(PyExc_TypeError,
-                        "patch(): jedes Loch muss eine Liste von [x,y,z]-Punkten sein.");
+        PyErr_SetString(PyExc_TypeError, "patch(): each hole must be a list of [x,y,z] points.");
         return nullptr;
       }
       if (hole.size() < 3) {
         Py_DECREF(holeseq);
-        PyErr_SetString(PyExc_TypeError,
-                        "patch(): jedes Loch muss mindestens 3 [x,y,z]-Punkte enthalten.");
+        PyErr_SetString(PyExc_TypeError, "patch(): each hole must contain at least 3 [x,y,z] points.");
         return nullptr;
       }
       node->holes.push_back(std::move(hole));

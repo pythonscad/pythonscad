@@ -12,13 +12,13 @@
 #include "utils/printutils.h"
 
 // ---------------------------------------------------------------------
-// Refcounting: proj_func/displacement_func werden hier (nicht am Aufrufort
-// in py_primitives.cc) ge-incref-t/decref-t, damit JEDER Weg, wie ein
-// PatchNode entsteht oder vergeht - auch ueber den generischen
-// Copy-Constructor-Klon-Pfad in node_clone.cc (NodeCloneFunc(PatchNode),
-// std::make_shared<PatchNode>(*node)) - automatisch korrekt behandelt wird.
-// (Siehe die SheetNode-Debugging-Historie: fehlendes INCREF fuehrte zu
-// Use-after-free, fehlendes INCREF beim Klonen zu Double-Free.)
+// Refcounting: proj_func/displacement_func are incref'd/decref'd here
+// (not at the call site in py_primitives.cc), so that EVERY way a
+// PatchNode is created or destroyed - including via the generic
+// copy-constructor clone path in node_clone.cc (NodeCloneFunc(PatchNode),
+// std::make_shared<PatchNode>(*node)) - is handled correctly automatically.
+// (See the SheetNode debugging history: a missing INCREF led to
+// use-after-free, a missing INCREF on clone to double-free.)
 // ---------------------------------------------------------------------
 
 PatchNode::PatchNode(const PatchNode& other) : LeafNode(other)
@@ -72,10 +72,10 @@ uint64_t hashPoints(uint64_t h, const std::vector<Vector3d>& pts)
   return h;
 }
 
-// -------------------- GIL-sichere Python-Callback-Aufrufe --------------------
-// Konvention: proj(p) / displacement(p) bekommen jeweils EIN Argument -
-// eine 3-elementige Python-Liste [x,y,z] - wie in den zuvor besprochenen
-// Beispielen (proj_xy(p), lambda p: bump(p[0], p[1], p[2])).
+// -------------------- GIL-safe Python callback calls --------------------
+// Convention: proj(p) / displacement(p) each take ONE argument - a
+// 3-element Python list [x,y,z] - as in the examples discussed earlier
+// (proj_xy(p), lambda p: bump(p[0], p[1], p[2])).
 
 PyObject *pointToPyList(const Vector3d& p)
 {
@@ -107,13 +107,13 @@ bool callProjFunc(PyObject *func, const Vector3d& p, Vector2d& out)
       out = Vector2d(x, y);
       ok = true;
     } else {
-      LOG(message_group::Error, "patch(): proj() muss einen 2er-Vektor [u,v] zurueckgeben.");
+      LOG(message_group::Error, "patch(): proj() must return a 2-vector [u,v].");
     }
     Py_DECREF(result);
   } else {
     std::string errorstr;
     python_catch_error(errorstr);
-    LOG(message_group::Error, "patch(): Fehler beim Aufruf von proj(): %1$s", errorstr.c_str());
+    LOG(message_group::Error, "patch(): error calling proj(): %1$s", errorstr.c_str());
   }
 
   PyGILState_Release(gstate);
@@ -137,13 +137,13 @@ bool callDisplacementFunc(PyObject *func, const Vector3d& p, double& out)
       out = PyFloat_AsDouble(result);
       ok = true;
     } else {
-      LOG(message_group::Error, "patch(): displacement() muss eine Zahl zurueckgeben.");
+      LOG(message_group::Error, "patch(): displacement() must return a number.");
     }
     Py_DECREF(result);
   } else {
     std::string errorstr;
     python_catch_error(errorstr);
-    LOG(message_group::Error, "patch(): Fehler beim Aufruf von displacement(): %1$s", errorstr.c_str());
+    LOG(message_group::Error, "patch(): error calling displacement(): %1$s", errorstr.c_str());
   }
 
   PyGILState_Release(gstate);
@@ -157,10 +157,10 @@ std::string PatchNode::toString() const
   uint64_t h = 1469598103934665603ULL;
   h = hashPoints(h, outer);
   for (const auto& hole : holes) h = hashPoints(h, hole);
-  // Tangenten mit in den Hash aufnehmen: 'outer'/'holes' (reine 3D-
-  // Positionen) koennen fuer zwei PatchNodes identisch sein, waehrend
-  // outer_normal/holes_normal (und damit das Ergebnis) sich unterscheiden
-  // - siehe Kommentar bei 'use_tangents' in PatchNode.h.
+  // Fold the tangents into the hash too: 'outer'/'holes' (the plain 3D
+  // positions) can be identical across two PatchNodes while
+  // outer_normal/holes_normal (and hence the result) differ - see the
+  // comment on 'use_tangents' in PatchNode.h.
   h = hashPoints(h, outer_normal);
   for (const auto& hn : holes_normal) h = hashPoints(h, hn);
 
@@ -175,24 +175,24 @@ std::string PatchNode::toString() const
 std::unique_ptr<const Geometry> PatchNode::createGeometry() const
 {
   // -------- DEBUG --------
-  // toString() ist (laut eigenem Kommentar am Ende dieser Datei) genau
-  // die Grundlage fuer den Geometrie-Cache-Schluessel. Wenn zwei
-  // verschiedene patch()-Aufrufe im selben Skript hier denselben String
-  // ausgeben (z.B. weil proj_func_hash fuer zwei inhaltlich verschiedene,
-  // aber gleichnamige "proj"-Funktionen kollidiert), erklaert das eine
-  // Cache-Verwechslung zwischen den beiden Aufrufen vollstaendig.
+  // toString() is (per its own comment above) exactly the basis for the
+  // geometry cache key. If two different patch() calls in the same
+  // script produce the same string here (e.g. because proj_func_hash
+  // collides for two functionally different "proj" functions that
+  // happen to share a name), that fully explains a cache mix-up between
+  // the two calls.
 
   auto *proj_py = static_cast<PyObject *>(proj_func);
   auto *disp_py = static_cast<PyObject *>(displacement_func);
 
   bool failed = false;
 
-  // Kein proj() angegeben (proj_py == nullptr, z.B. patch() ohne proj-
-  // Argument aufgerufen) -> ein leeres std::function weitergeben, damit
-  // patch() selbst automatisch eine Projektion waehlt (siehe
-  // computeAutoProj() in geometry/patch.cc). NICHT hier schon irgendeine
-  // Fallback-Funktion aufrufen - ein leeres std::function ist das
-  // vereinbarte Signal fuer "bitte automatisch bestimmen".
+  // No proj() given (proj_py == nullptr, e.g. patch() called without a
+  // proj argument) -> pass along an empty std::function so patch()
+  // itself picks a projection automatically (see computeAutoProj() in
+  // geometry/patch.cc). Do NOT call any fallback function here already -
+  // an empty std::function is the agreed-upon signal for "please
+  // determine automatically".
   std::function<Vector2d(const Vector3d&)> projFn;
   if (proj_py != nullptr) {
     projFn = [proj_py, &failed](const Vector3d& p) -> Vector2d {
@@ -212,8 +212,8 @@ std::unique_ptr<const Geometry> PatchNode::createGeometry() const
   auto result = patch(outer, holes, projFn, grid_spacing_uv, dispFn, outer_normal, holes_normal);
 
   if (failed || result == nullptr) {
-    LOG(message_group::Error, "patch(): Geometrieerzeugung fehlgeschlagen.");
-    return std::make_unique<PolySet>(3);  // leeres, aber gueltiges Ergebnis statt Crash
+    LOG(message_group::Error, "patch(): geometry generation failed.");
+    return std::make_unique<PolySet>(3);  // empty but valid result instead of a crash
   }
   return result;
 }
