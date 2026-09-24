@@ -297,12 +297,161 @@ def post_process_3mf(filename):
     xml_content = re.sub(r' xmlns:v="[^"]*"', '', xml_content)
     xml_content = re.sub(r' xmlns:i="[^"]*"', '', xml_content)
     xml_content = re.sub(r'PythonSCAD Model', 'OpenSCAD Model', xml_content)
+    # Normalize Application metadata from EXPORT_CREATOR (POV/PDF/3MF branding).
+    xml_content = re.sub(
+        r'PythonSCAD \(https://pythonscad\.org/\)',
+        'OpenSCAD (https://www.openscad.org/)',
+        xml_content,
+    )
     # add tag end whitespace for lib3mf 2.0 output files
     xml_content = re.sub('\"/>', '\" />', xml_content)
     with open(filename, 'wb') as xml_file:
         xml_file.write(xml_content.encode('utf-8'))
 
+# Must match EXPORT_CREATOR in src/io/export.h. Goldens stay OpenSCAD-shaped;
+# regression drivers assert the raw PythonSCAD string *before* rewriting.
+EXPORT_CREATOR_PYTHONSCAD = b"PythonSCAD (https://pythonscad.org/)"
+EXPORT_CREATOR_OPENSCAD = b"OpenSCAD (https://www.openscad.org/)"
+# Cairo writes PDF literal strings with escaped parentheses.
+EXPORT_CREATOR_PYTHONSCAD_PDF = EXPORT_CREATOR_PYTHONSCAD.replace(b"(", b"\\(").replace(b")", b"\\)")
+
+
+def _ghostscript_pdf_info_scripts():
+    import glob
+    patterns = [
+        "/usr/share/ghostscript/*/lib/pdf_info.ps",
+        "/usr/local/share/ghostscript/*/lib/pdf_info.ps",
+        "/opt/homebrew/share/ghostscript/*/lib/pdf_info.ps",
+        "/mingw64/share/ghostscript/*/lib/pdf_info.ps",
+        "/ucrt64/share/ghostscript/*/lib/pdf_info.ps",
+    ]
+    found = []
+    for pat in patterns:
+        found.extend(glob.glob(pat))
+    return sorted(found)
+
+
+def _pdf_creator_from_helper(path):
+    """Return Creator string from pdfinfo or Ghostscript pdf_info.ps, else None."""
+    import shutil
+    import subprocess
+    if shutil.which("pdfinfo"):
+        proc = subprocess.run(
+            ["pdfinfo", path],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        for ln in proc.stdout.splitlines():
+            if ln.startswith("Creator:"):
+                return ln.split(":", 1)[1].strip()
+    if not shutil.which("gs"):
+        return None
+    for script in _ghostscript_pdf_info_scripts():
+        proc = subprocess.run(
+            [
+                "gs",
+                "-q",
+                "-dNODISPLAY",
+                "-dNOSAFER",
+                "-dBATCH",
+                f"-sFile={path}",
+                script,
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        for ln in (proc.stdout or "").splitlines():
+            if ln.startswith("Creator:"):
+                return ln.split(":", 1)[1].strip()
+    return None
+
+
+def _blob_has_export_creator(blob):
+    # Require the full EXPORT_CREATOR value (not a bare "PythonSCAD" token):
+    # 3MF also embeds independent "PythonSCAD Model" names that must not
+    # mask a reverted Application/Creator metadata string.
+    needles = [
+        EXPORT_CREATOR_PYTHONSCAD,
+        EXPORT_CREATOR_PYTHONSCAD_PDF,
+        # Cairo PDF metadata is often UTF-16 (with or without BOM).
+        EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-be"),
+        EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-le"),
+        b"\xfe\xff" + EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-be"),
+        b"\xff\xfe" + EXPORT_CREATOR_PYTHONSCAD.decode("ascii").encode("utf-16-le"),
+    ]
+    if any(n in blob for n in needles):
+        return True
+    # PDF Info dict is often Flate-compressed (Cairo); scan inflated streams.
+    import zlib
+    pos = 0
+    while True:
+        m = re.search(br"stream\r?\n", blob[pos:])
+        if not m:
+            return False
+        start = pos + m.end()
+        endm = re.search(br"endstream", blob[start:])
+        if not endm:
+            return False
+        cand = blob[start : start + endm.start()].lstrip(b"\r\n")
+        outs = []
+        for wbits in (zlib.MAX_WBITS, -zlib.MAX_WBITS):
+            try:
+                outs.append(zlib.decompress(cand, wbits))
+            except Exception:
+                pass
+        for out in outs:
+            if any(n in out for n in needles):
+                return True
+        pos = start + endm.end()
+
+
+def assert_raw_export_creator(filename):
+    """Fail if unnormalized export lacks the current PythonSCAD EXPORT_CREATOR.
+
+    Call this before branding normalizers so a revert to OpenSCAD cannot
+    pass by relying on OpenSCAD-shaped goldens alone.
+    """
+    path = filename
+    lower = path.lower()
+    if lower.endswith(".pdf"):
+        creator = _pdf_creator_from_helper(path)
+        expected = EXPORT_CREATOR_PYTHONSCAD.decode("ascii")
+        if creator is not None:
+            if expected in creator:
+                return
+            raise AssertionError(
+                f"{path}: PDF Creator metadata is {creator!r}, expected {expected!r}"
+            )
+        # Fall through to byte/stream scan when pdfinfo/gs are unavailable.
+
+    if lower.endswith(".3mf"):
+        from zipfile import ZipFile
+        try:
+            blob = ZipFile(path).read("3D/3dmodel.model")
+        except KeyError as exc:
+            raise AssertionError(
+                f"{path}: missing 3D/3dmodel.model inside 3MF archive"
+            ) from exc
+    else:
+        with open(path, "rb") as f:
+            blob = f.read()
+
+    if not _blob_has_export_creator(blob):
+        raise AssertionError(
+            f"{path}: missing raw EXPORT_CREATOR "
+            f"{EXPORT_CREATOR_PYTHONSCAD.decode('ascii')!r}"
+        )
+
+
 def post_process_progname(filename):
+    """Rewrite PythonSCAD branding to OpenSCAD-shaped goldens before compare.
+
+    STL/SVG/OBJ already emit PythonSCAD product strings; POV (and any other
+    text format using EXPORT_CREATOR) does too after the shared creator
+    constant was updated. Goldens stay OpenSCAD-branded for upstream sync.
+    """
     with open(filename, "rb") as f:
         content = f.read()
 
@@ -311,6 +460,7 @@ def post_process_progname(filename):
     content = content.replace(b"PythonSCAD_Model", b"OpenSCAD_Model")
     content = content.replace(b"PythonSCAD Model", b"OpenSCAD Model")
     content = content.replace(b"PythonSCAD obj exporter", b"OpenSCAD obj exporter")
+    content = content.replace(EXPORT_CREATOR_PYTHONSCAD, EXPORT_CREATOR_OPENSCAD)
 
     with open(filename, "wb") as f:
         f.write(content)
@@ -503,8 +653,11 @@ if __name__ == '__main__':
 
     resultfile = run_test(options.testname, options.cmd, args[1:], options.stdin, options.stdout)
     if not resultfile: exit(1)
+    if options.suffix in ("pov", "3mf"):
+        assert_raw_export_creator(resultfile)
     if options.suffix == "3mf": post_process_3mf(resultfile)
     if options.suffix == "svg": post_process_progname(resultfile)
     if options.suffix == "stl": post_process_progname(resultfile)
     if options.suffix == "obj": post_process_progname(resultfile)
+    if options.suffix == "pov": post_process_progname(resultfile)
     if not verification or not compare_with_expected(resultfile): exit(1)
