@@ -19,7 +19,7 @@ from pythonscad import MultiToolExporter, cube
 background = cube([20, 20, 4])
 star = cube([8, 8, 4]).translate([6, 6, 0])
 
-MultiToolExporter("", ".stl", items=[
+MultiToolExporter(items=[
     ("blue", background),
     ("red", star),
-]).export()
+]).export(suffix=".stl")

@@ -9,8 +9,8 @@ background = cube([20, 20, 4])
 slot = cube([2, 20, 4]).translate([9, 0, 0])
 star = cube([8, 8, 4]).translate([6, 6, 0])
 
-MultiToolExporter("", ".stl", items=[
+MultiToolExporter(items=[
     ("blue", background),
     ("red", star),
     ("slot", slot, False),
-]).export()
+]).export(suffix=".stl")
