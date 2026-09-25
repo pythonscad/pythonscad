@@ -134,8 +134,6 @@ public:
    */
   [[nodiscard]] PointLocation2d point_location(const Vector2d& pt, double eps = 1e-4) const;
 
-  bool point_inside(const Vector2d& pt) const;
-
 private:
   Outlines2d theoutlines;
   Outlines2d thepolylines;
