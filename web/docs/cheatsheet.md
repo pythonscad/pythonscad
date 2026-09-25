@@ -167,8 +167,8 @@
       <div>Subtract obj2 from obj1; optionally fillet with r</div>
       <div><code>difference(cube(10), sphere(7)).show()</code></div>
 
-      <div class="func"><code><a href="../reference/booleans/#intersection">intersection</a>(obj1, obj2)</code></div>
-      <div>Keep only the overlapping volume</div>
+      <div class="func"><code><a href="../reference/booleans/#intersection">intersection</a>(obj1, obj2, r, fn)</code></div>
+      <div>Keep only the overlapping volume; optionally fillet with r</div>
       <div><code>intersection(cube(10), sphere(7)).show()</code></div>
 
       <div class="func"><code><a href="../reference/booleans/#hull">hull</a>(obj1, obj2, ...)</code></div>

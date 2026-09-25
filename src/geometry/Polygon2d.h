@@ -23,6 +23,35 @@ struct Outline2d {
 };
 double outline_area(const Outline2d o);
 
+/*!
+   Classification of a 2D query point relative to a Polygon2d.
+
+   Values are ordered so the integer rank matches how many boundary dimensions
+   the point coincides with (0 = none / outside, 1 = vertex, 2 = edge), with
+   Inside as the top rank. That lets callers write comparisons such as
+   `loc >= PointLocation2d::OnVertex` (inside or on boundary) or
+   `loc >= PointLocation2d::OnEdge` (on edge or inside).
+   OnVertex is preferred over OnEdge when the point lies within eps of a corner.
+ */
+enum class PointLocation2d : int { Outside = 0, OnVertex = 1, OnEdge = 2, Inside = 3 };
+
+constexpr bool operator<(PointLocation2d a, PointLocation2d b)
+{
+  return static_cast<int>(a) < static_cast<int>(b);
+}
+constexpr bool operator>(PointLocation2d a, PointLocation2d b)
+{
+  return static_cast<int>(a) > static_cast<int>(b);
+}
+constexpr bool operator<=(PointLocation2d a, PointLocation2d b)
+{
+  return static_cast<int>(a) <= static_cast<int>(b);
+}
+constexpr bool operator>=(PointLocation2d a, PointLocation2d b)
+{
+  return static_cast<int>(a) >= static_cast<int>(b);
+}
+
 class Polygon2d : public Geometry
 {
   enum class Transform3dState { NONE = 0, PENDING = 1, CACHED = 2 };
@@ -98,7 +127,12 @@ public:
   void setColorUndef(const Color4f& c);
   void stamp_color(const Polygon2d& src);
   void stamp_color(const Outline2d& src);
-  bool point_inside(const Vector2d& pt) const;
+
+  /*!
+     Classify @p pt relative to this polygon.
+     @param eps Distance tolerance in world units for vertex/edge hits.
+   */
+  [[nodiscard]] PointLocation2d point_location(const Vector2d& pt, double eps = 1e-4) const;
 
 private:
   Outlines2d theoutlines;
