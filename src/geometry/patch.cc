@@ -320,8 +320,29 @@ struct DTriangle {
   int nab = -1, nbc = -1, nca = -1;  // neighbor across edge (a,b), (b,c), (c,a)
 };
 
-// Delaunay triangulation of a plain 2D point set, no constraint edges.
-// 'pts' is left unmodified; returned indices refer into 'pts'.
+// True if point p lies strictly inside the circumcircle of triangle (a,b,c).
+// A free function (no mesh state needed) so it can be shared between
+// bowyerWatson()'s own per-triangle test and its constrained-edge recovery
+// pass below, which evaluates candidate triangles that aren't part of the
+// mesh (yet, or at all).
+bool pointInCircumcircle(const Vector2d& a, const Vector2d& b, const Vector2d& c, const Vector2d& p)
+{
+  double ax = a.x() - p.x(), ay = a.y() - p.y();
+  double bx = b.x() - p.x(), by = b.y() - p.y();
+  double cx = c.x() - p.x(), cy = c.y() - p.y();
+  double det = (ax * ax + ay * ay) * (bx * cy - cx * by) - (bx * bx + by * by) * (ax * cy - cx * ay) +
+               (cx * cx + cy * cy) * (ax * by - bx * ay);
+  return det > 1e-12;
+}
+
+// Delaunay triangulation of a plain 2D point set. 'pts' is left unmodified;
+// returned indices refer into 'pts'.
+//
+// 'constraints' is an optional list of (pts-)index pairs that MUST end up
+// as real edges of the returned mesh, however the unconstrained Delaunay
+// insertion below would otherwise have triangulated that area - see the
+// long comment above the constrained-edge recovery pass, further down in
+// this function, for why that matters and how it's done.
 //
 // PERFORMANCE: the original implementation of this function found, for
 // every inserted point, both (a) which triangles are "bad" (p lies inside
@@ -355,7 +376,8 @@ struct DTriangle {
 // A full-scan fallback (walk failed, or landed on a dead end / numerical
 // tie) is kept for robustness - it only ever fires for the rare point where
 // the hint-based walk doesn't pan out, not on every insertion.
-std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts)
+std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts,
+                                    const std::vector<std::pair<int, int>>& constraints = {})
 {
   if (pts.size() < 3) return {};
 
@@ -392,13 +414,7 @@ std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts)
   };
 
   auto inCircumcircle = [&](const DTriangle& t, const Vector2d& p) {
-    const Vector2d &a = P[t.a], &b = P[t.b], &c = P[t.c];
-    double ax = a.x() - p.x(), ay = a.y() - p.y();
-    double bx = b.x() - p.x(), by = b.y() - p.y();
-    double cx = c.x() - p.x(), cy = c.y() - p.y();
-    double det = (ax * ax + ay * ay) * (bx * cy - cx * by) - (bx * bx + by * by) * (ax * cy - cx * ay) +
-                 (cx * cx + cy * cy) * (ax * by - bx * ay);
-    return det > 1e-12;
+    return pointInCircumcircle(P[t.a], P[t.b], P[t.c], p);
   };
 
   // > 0 iff p is strictly to the left of the directed edge a->b - i.e. on
@@ -576,6 +592,182 @@ std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts)
     if (liveCount > maxSaneTris) return {};
   }
 
+  // -------- Constrained edge recovery --------
+  //
+  // The insertion loop above produces an UNCONSTRAINED Delaunay
+  // triangulation: it is free to pick whichever edges are locally
+  // Delaunay-legal, with no knowledge that some of the input points form
+  // boundary rings whose consecutive points MUST end up connected by an
+  // actual mesh edge - concat() and a neighboring patch() call both rely
+  // on that boundary polyline being reproduced exactly, unmodified, so
+  // their shared points line up. For a concave or otherwise irregular
+  // ring, another point (from the same ring, a different ring, or the
+  // interior grid) can legitimately fall inside a boundary edge's
+  // diametral circle, so the unconstrained triangulation quietly
+  // "shortcuts" past it instead - silently breaking that promise.
+  // Centroid-based domain filtering (triangulateAndFilterToDomain()) does
+  // not fix this: it only decides which side of a boundary survives, it
+  // cannot restore an edge the triangulation never built in the first
+  // place.
+  //
+  // Each caller-supplied 'constraints' pair is recovered here by brute
+  // force: find every current mesh edge (p,q) that segment (u,v) properly
+  // crosses, remove the (at most two) triangles bordering each such edge,
+  // and re-triangulate the resulting "channel" polygon on either side of
+  // (u,v) so (u,v) itself becomes a real mesh edge. This only runs for the
+  // (typically small) set of ring segments that weren't already
+  // Delaunay-legal, not for every edge, and - unlike the insertion loop
+  // above - does not need triangle adjacency: at the point counts patch()
+  // deals with, a handful of full scans over the current triangle list is
+  // cheap next to the O(n) insertion work already done.
+  for (const auto& c : constraints) {
+    const int u = c.first;
+    const int v = c.second;
+    if (u == v) continue;
+    const Vector2d& pu = P[u];
+    const Vector2d& pv = P[v];
+
+    // Already present as some triangle's edge?
+    bool exists = false;
+    for (size_t t = 0; t < tris.size() && !exists; t++) {
+      if (dead[t]) continue;
+      const DTriangle& tt = tris[t];
+      const bool hasU = (tt.a == u || tt.b == u || tt.c == u);
+      const bool hasV = (tt.a == v || tt.b == v || tt.c == v);
+      if (hasU && hasV) exists = true;
+    }
+    if (exists) continue;
+
+    // Every live edge that (u,v) properly crosses (both endpoints
+    // strictly on opposite sides of it, and the crossing point strictly
+    // between u and v) - remembering each crossed edge's parameter along
+    // (u,v) is enough to recover correct visit order without walking
+    // triangle adjacency at all.
+    struct Crossing {
+      int p, q;
+      double t;
+    };
+    std::vector<Crossing> crossings;
+    std::set<std::pair<int, int>> seenEdges;
+    const Vector2d duv = pv - pu;
+
+    for (size_t ti = 0; ti < tris.size(); ti++) {
+      if (dead[ti]) continue;
+      const DTriangle& tt = tris[ti];
+      const int verts[3] = {tt.a, tt.b, tt.c};
+      for (int e = 0; e < 3; e++) {
+        const int p = verts[e];
+        const int q = verts[(e + 1) % 3];
+        if (p == u || p == v || q == u || q == v)
+          continue;  // touches an endpoint - not a proper crossing
+        const std::pair<int, int> key = (p < q) ? std::make_pair(p, q) : std::make_pair(q, p);
+        if (seenEdges.count(key)) continue;
+
+        // Segment-segment intersection: pu + t*duv == P[p] + s*(P[q]-P[p]).
+        const Vector2d dpq = P[q] - P[p];
+        const double denom = duv.x() * dpq.y() - duv.y() * dpq.x();
+        if (std::fabs(denom) < 1e-14) continue;  // parallel - can't properly cross
+        const Vector2d w = P[p] - pu;
+        const double t = (w.x() * dpq.y() - w.y() * dpq.x()) / denom;
+        const double s = (w.x() * duv.y() - w.y() * duv.x()) / denom;
+        const double eps = 1e-9;
+        if (t <= eps || t >= 1 - eps || s <= eps || s >= 1 - eps)
+          continue;  // not a proper interior crossing
+
+        seenEdges.insert(key);
+        crossings.push_back({p, q, t});
+      }
+    }
+    // (u,v) doesn't cross anything live - leave it. Shouldn't normally
+    // happen once 'exists' is false, but a numerically borderline case is
+    // safer left unenforced than forced.
+    if (crossings.empty()) continue;
+
+    // Every triangle touching a crossed edge lies inside the channel to
+    // be rebuilt.
+    std::set<int> removeSet;
+    for (const auto& cr : crossings) {
+      for (size_t ti = 0; ti < tris.size(); ti++) {
+        if (dead[ti]) continue;
+        const DTriangle& tt = tris[ti];
+        const bool hasP = (tt.a == cr.p || tt.b == cr.p || tt.c == cr.p);
+        const bool hasQ = (tt.a == cr.q || tt.b == cr.q || tt.c == cr.q);
+        if (hasP && hasQ) removeSet.insert(static_cast<int>(ti));
+      }
+    }
+
+    // Order crossings by how far along (u,v) they sit, then split their
+    // endpoints into the two chains either side of the segment - this
+    // directly gives each chain in correct geometric order without
+    // needing to walk triangle adjacency at all.
+    std::sort(crossings.begin(), crossings.end(),
+              [](const Crossing& a, const Crossing& b) { return a.t < b.t; });
+
+    std::vector<int> upper = {u}, lower = {u};
+    std::vector<char> added(P.size(), 0);
+    added[u] = added[v] = 1;
+    bool degenerate = false;
+    for (const auto& cr : crossings) {
+      for (int vx : {cr.p, cr.q}) {
+        if (added[vx]) continue;
+        added[vx] = 1;
+        const Vector2d d = P[vx] - pu;
+        const double side = duv.x() * d.y() - duv.y() * d.x();
+        if (side > 1e-12) upper.push_back(vx);
+        else if (side < -1e-12) lower.push_back(vx);
+        else degenerate = true;  // a vertex numerically on (u,v) itself - bail below
+      }
+    }
+    // A vertex landing (numerically) exactly on the segment, or either
+    // chain ending up without a single interior vertex despite triangles
+    // being marked for removal, means the corridor wasn't the simple
+    // shape this recovery assumes - safer to leave this one edge
+    // unenforced than to risk tearing a hole in the mesh.
+    if (degenerate || upper.size() < 2 || lower.size() < 2) continue;
+    upper.push_back(v);
+    lower.push_back(v);
+
+    for (int t : removeSet) {
+      dead[t] = 1;
+      liveCount--;
+    }
+
+    // Re-triangulate each chain: recursively split on the vertex whose
+    // circumcircle with the chain's current two ends excludes every other
+    // vertex still in the chain - the standard way to retriangulate the
+    // "pseudo-polygon" left behind by removing the triangles a segment
+    // crosses. Every recursive call adds a triangle carrying (u,v) itself
+    // (directly, or via one of its own sub-edges further down), so (u,v)
+    // ends up a real mesh edge regardless of which split point is chosen;
+    // the fallback below (no split vertex passes the empty-circumcircle
+    // test) only affects triangle shape, never correctness.
+    std::function<void(const std::vector<int>&, int, int)> triangulateChain =
+      [&](const std::vector<int>& chain, int lo, int hi) {
+        if (hi - lo < 2) return;
+        int best = lo + 1;
+        if (hi - lo > 2) {
+          for (int m = lo + 1; m < hi; m++) {
+            bool ok = true;
+            for (int k = lo + 1; k < hi && ok; k++) {
+              if (k == m) continue;
+              if (pointInCircumcircle(P[chain[lo]], P[chain[m]], P[chain[hi]], P[chain[k]])) ok = false;
+            }
+            if (ok) {
+              best = m;
+              break;
+            }
+          }
+        }
+        addTriangle(makeCCW({chain[lo], chain[best], chain[hi]}));
+        triangulateChain(chain, lo, best);
+        triangulateChain(chain, best, hi);
+      };
+    triangulateChain(upper, 0, static_cast<int>(upper.size()) - 1);
+    triangulateChain(lower, 0, static_cast<int>(lower.size()) - 1);
+
+    if (liveCount > maxSaneTris) return {};
+  }
+
   std::vector<DTriangle> result;
   result.reserve(liveCount);
   for (size_t t = 0; t < tris.size(); t++) {
@@ -586,16 +778,19 @@ std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts)
   return result;
 }
 
-// Runs bowyerWatson() on a jittered copy of 'pts', then keeps only the
-// triangles whose centroid is inside 'domain'. Shared between the base
-// surface (boundary points only) and the final mesh (boundary + interior
-// grid points) below - both are "triangulate everything, then discard
-// what's outside the domain" in exactly the same way.
-std::vector<DTriangle> triangulateAndFilterToDomain(const std::vector<Vector2d>& pts,
-                                                    const Polygon2d& domain, double domainScale)
+// Runs bowyerWatson() on a jittered copy of 'pts' (recovering 'constraints'
+// as real mesh edges - see bowyerWatson()'s own comment on that), then
+// keeps only the triangles whose centroid is inside 'domain'. Shared
+// between the base surface (boundary points only) and the final mesh
+// (boundary + interior grid points) below - both are "triangulate
+// everything, then discard what's outside the domain" in exactly the same
+// way, and both need their boundary rings' segments to survive intact.
+std::vector<DTriangle> triangulateAndFilterToDomain(
+  const std::vector<Vector2d>& pts, const Polygon2d& domain, double domainScale,
+  const std::vector<std::pair<int, int>>& constraints = {})
 {
   auto jittered = jitterForDelaunay(pts, domainScale);
-  auto tris = bowyerWatson(jittered);
+  auto tris = bowyerWatson(jittered, constraints);
 
   std::vector<DTriangle> kept;
   kept.reserve(tris.size());
@@ -605,6 +800,32 @@ std::vector<DTriangle> triangulateAndFilterToDomain(const std::vector<Vector2d>&
     kept.push_back(t);
   }
   return kept;
+}
+
+// Builds the consecutive-point-pair constraints for 'outer' followed by
+// each ring of 'holes', in exactly the point order LoftBaseSurface's
+// 'base.uv' and the final mesh's 'allUV' both lay their boundary points
+// out in (outer first, then each hole in turn) - so this one list of
+// index pairs is valid for triangulating either point set, as long as
+// interior points (which both callers only ever append AFTER all
+// boundary points) are added later.
+std::vector<std::pair<int, int>> buildRingConstraints(const std::vector<Vector2d>& outer_uv,
+                                                      const std::vector<std::vector<Vector2d>>& holes_uv)
+{
+  std::vector<std::pair<int, int>> constraints;
+  auto addRing = [&](size_t base, size_t n) {
+    if (n < 2) return;
+    for (size_t i = 0; i < n; i++) {
+      constraints.emplace_back(static_cast<int>(base + i), static_cast<int>(base + (i + 1) % n));
+    }
+  };
+  size_t offset = outer_uv.size();
+  addRing(0, outer_uv.size());
+  for (const auto& h : holes_uv) {
+    addRing(offset, h.size());
+    offset += h.size();
+  }
+  return constraints;
 }
 
 // Centroid of a list of 3D points (used only to establish a consistent
@@ -1528,6 +1749,15 @@ std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
 
   Polygon2d domain = buildDomainPolygon(outer_uv, holes_uv);
 
+  // Every ring's consecutive-point segments, as index-pair constraints for
+  // the Delaunay triangulations below (base surface and final mesh both
+  // lay their boundary points out outer-then-holes, in this same order -
+  // see buildRingConstraints()) - so both stitch to a neighboring patch()
+  // call along the exact input boundary, not whatever chord an
+  // unconstrained Delaunay triangulation would otherwise have preferred
+  // for a concave or irregular ring.
+  const auto ringConstraints = buildRingConstraints(outer_uv, holes_uv);
+
   // uv bounding box - needed for the base surface's jitter scale and the
   // interior sampling grid below.
   double umin = outer_uv[0].x(), umax = umin, vmin = outer_uv[0].y(), vmax = vmin;
@@ -1562,7 +1792,7 @@ std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
       base.ringId.insert(base.ringId.end(), holes_pos[hi].size(), static_cast<int>(hi) + 1);
     }
 
-    auto baseTris = triangulateAndFilterToDomain(base.uv, domain, domainScale);
+    auto baseTris = triangulateAndFilterToDomain(base.uv, domain, domainScale, ringConstraints);
     base.tris.reserve(baseTris.size());
     for (const auto& t : baseTris) base.tris.push_back({t.a, t.b, t.c});
     if (base.tris.empty()) return nullptr;
@@ -1642,8 +1872,11 @@ std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
   // 4) Delaunay triangulation over the whole point set (boundary + interior
   //    grid), then discard triangles outside the domain (e.g. inside a
   //    hole, or outside the outer contour). Same helper as the base
-  //    surface above.
-  auto finalTris = triangulateAndFilterToDomain(allUV, domain, domainScale);
+  //    surface above, and the same ring constraints (allUV lays its
+  //    boundary points out in the same outer-then-holes order as base.uv,
+  //    with only interior grid points appended after, so the index pairs
+  //    in 'ringConstraints' are valid here unchanged).
+  auto finalTris = triangulateAndFilterToDomain(allUV, domain, domainScale, ringConstraints);
   if (finalTris.empty()) return nullptr;
 
   auto polyset = std::make_unique<PolySet>(3);
