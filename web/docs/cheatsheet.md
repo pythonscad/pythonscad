@@ -170,8 +170,8 @@
       <div>Subtract obj2 from obj1; optionally fillet with r</div>
       <div><code>difference(cube(10), sphere(7)).show()</code></div>
 
-      <div class="func"><code><a href="../reference/booleans/#intersection">intersection</a>(obj1, obj2)</code></div>
-      <div>Keep only the overlapping volume</div>
+      <div class="func"><code><a href="../reference/booleans/#intersection">intersection</a>(obj1, obj2, r, fn)</code></div>
+      <div>Keep only the overlapping volume; optionally fillet with r</div>
       <div><code>intersection(cube(10), sphere(7)).show()</code></div>
 
       <div class="func"><code><a href="../reference/booleans/#hull">hull</a>(obj1, obj2, ...)</code></div>
@@ -403,9 +403,9 @@
       <div>Debug modifiers for visualization</div>
       <div><code>highlight(cube(5)).show()</code></div>
 
-      <div class="func"><code><a href="../reference/multitool/#multitoolexporter">MultiToolExporter</a>(prefix, suffix, mkdir, items)</code></div>
+      <div class="func"><code><a href="../reference/multitool/#multitoolexporter">MultiToolExporter</a>(items)</code></div>
       <div>Split a model into per-color/per-tool files, or one multi-object 3MF</div>
-      <div><code>MultiToolExporter("", "", items=[("r",red),("b",blue)]).export(single_file="m.3mf")</code></div>
+      <div><code>MultiToolExporter(items=[("r",red),("b",blue)]).export(single_file="m.3mf")</code></div>
   </div>
 </div>
 
@@ -414,7 +414,7 @@
 <div class="cheatsheet-section">
   <div class="cheatsheet-grid">
       <div class="func"><code><a href="../reference/io/#osimport">osimport</a>(file, ...)</code></div>
-      <div>Import geometry from file (STL, OFF, AMF, 3MF, SVG, DXF)</div>
+      <div>Import geometry from file (STL, OFF, OBJ, 3MF, STEP, DXF, SVG; NEF3/CDR when built in)</div>
       <div><code>osimport("model.stl").show()</code></div>
 
       <div class="func"><code><a href="../reference/io/#osimport">osimport</a>(file, split_by_color=True)</code></div>
@@ -434,8 +434,8 @@
       <div><code>scad("cube(10);")</code></div>
 
       <div class="func"><code><a href="../reference/io/#nimport">nimport</a>(url)</code></div>
-      <div>Import a model from a network URL (GUI only)</div>
-      <div><code>nimport("https://example.com/model.stl")</code></div>
+      <div>GUI only: download a remote <code>.py</code> module and <code>from … import *</code> (not for STL/geometry)</div>
+      <div><code>nimport("https://example.com/mylib.py"); make_widget().show()</code></div>
   </div>
 </div>
 

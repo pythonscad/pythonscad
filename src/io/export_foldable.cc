@@ -143,7 +143,8 @@ int plot_try(unsigned int refplate, unsigned int destplate, Vector2d px, Vector2
     for (unsigned int i = 0; i < n; i++) {
       Outline2d o;
       o.vertices = plate[j].bnd;
-      if (Polygon2d(o).point_inside(plate[destplate].pt[i])) success = 0;  // alle neue punkte
+      if (Polygon2d(o).point_location(plate[destplate].pt[i]) >= PointLocation2d::OnVertex)
+        success = 0;  // alle neue punkte
       if (j == refplate && i == destedge) {
       }  // joker
       else {
@@ -167,7 +168,7 @@ int plot_try(unsigned int refplate, unsigned int destplate, Vector2d px, Vector2
       for (unsigned int i = 0; i < plate[j].pt.size(); i++) {
         Outline2d o;
         o.vertices = plate[destplate].pt;
-        if (Polygon2d(o).point_inside(plate[j].pt[i])) success = 0;
+        if (Polygon2d(o).point_location(plate[j].pt[i]) >= PointLocation2d::OnVertex) success = 0;
       }
     }
   }

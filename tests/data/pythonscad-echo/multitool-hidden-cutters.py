@@ -17,7 +17,7 @@ blue = cube(10).right(5)
 green = cube(10).right(10)
 cutter = cube(4).right(2)
 
-exp = MultiToolExporter("p-", ".stl", items=[
+exp = MultiToolExporter(items=[
     ("red", red),
     ("blue", blue),
     ("slot", cutter, False),
@@ -47,16 +47,16 @@ try:
 except Exception as e:
     print(f"append export false ok: {type(e).__name__}")
 
-hidden_dup = MultiToolExporter("p-", ".stl", items=[
+hidden_dup = MultiToolExporter(items=[
     ("a", red),
     ("a", cutter, False),
     ("b", blue),
     ("a", green, False),
 ])
-hidden_dup._check_unique_filenames()
+hidden_dup._check_unique_filenames(prefix="p-", suffix=".stl")
 hidden_dup._check_unique_part_names()
 print("hidden duplicate names export: ok")
-duplicate = MultiToolExporter("p-", ".stl", items=[("a", red), ("a", blue)])
+duplicate = MultiToolExporter(items=[("a", red), ("a", blue)])
 duplicate._part = lambda _i: (_ for _ in ()).throw(RuntimeError("geometry built"))
 expect(
     "exportable duplicate names",
@@ -64,7 +64,7 @@ expect(
     ValueError,
 )
 
-all_hidden = MultiToolExporter("p-", ".stl", items=[
+all_hidden = MultiToolExporter(items=[
     ("only", red, False),
     ("also", blue, False),
 ])
@@ -90,7 +90,7 @@ def recording_export(obj, filename):
         export_calls.append((obj is not None, filename))
 pythonscad.export = recording_export
 try:
-    exp.export()
+    exp.export(prefix="p-", suffix=".stl")
     exp.export(single_file="assembly.3mf")
 finally:
     pythonscad.export = real_export
