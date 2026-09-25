@@ -37,8 +37,8 @@ and `dict(exporter.parts())`).
 ```
 
 so a typical use is `export(prefix="out/model-", suffix=".stl")`. Prefer
-passing `prefix` / `suffix` / `mkdir` to `export()`; constructor arguments
-for those remain supported but emit `DeprecationWarning`.
+passing `prefix` / `suffix` / `mkdir` to `export()`; constructor `prefix` /
+`suffix` remain supported but emit `DeprecationWarning`.
 
 **Cumulative-difference semantics:** for each index `i`, the geometry
 exported is
