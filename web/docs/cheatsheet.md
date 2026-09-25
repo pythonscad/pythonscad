@@ -411,7 +411,7 @@
 <div class="cheatsheet-section">
   <div class="cheatsheet-grid">
       <div class="func"><code><a href="../reference/io/#osimport">osimport</a>(file, ...)</code></div>
-      <div>Import geometry from file (STL, OFF, OBJ, 3MF, NEF3, STEP, DXF, SVG, CDR)</div>
+      <div>Import geometry from file (STL, OFF, OBJ, 3MF, STEP, DXF, SVG; NEF3/CDR when built in)</div>
       <div><code>osimport("model.stl").show()</code></div>
 
       <div class="func"><code><a href="../reference/io/#osimport">osimport</a>(file, split_by_color=True)</code></div>

@@ -50,8 +50,8 @@ Import geometry from a file. This is the PythonSCAD equivalent of OpenSCAD's `im
 
 **Supported formats** (by file extension):
 
-- **3D:** STL, OFF, OBJ, 3MF, NEF3, STEP / STP
-- **2D:** DXF, SVG, CDR
+- **3D:** STL, OFF, OBJ, 3MF, STEP / STP; NEF3 when the build includes CGAL
+- **2D:** DXF, SVG; CDR when the build includes optional CDR support (`ENABLE_CDR`)
 
 `osimport` does **not** load `.scad` or `.py` files — use [`osuse`](#osuse) or
 Python's `import` for those.
