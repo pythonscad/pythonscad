@@ -1,5 +1,21 @@
 # I/O and Integration
 
+## Choosing an import function
+
+PythonSCAD has several ways to pull in external content. They are **not**
+interchangeable — pick by what you are loading:
+
+| Goal | Function | Returns |
+|------|----------|---------|
+| Local mesh / 2D drawing (STL, 3MF, SVG, …) | [`osimport`](#osimport) | Geometry object (or color→object dict for SVG `split_by_color`) |
+| Local OpenSCAD library (`.scad` modules/functions/vars) | [`osuse`](#osuse) (prefer over deprecated [`osinclude`](#osinclude)) | Handle with attributes for modules, functions, and variables |
+| Remote **Python** library over HTTP(S) | [`nimport`](#nimport) (GUI only) | `None` — side effect is `from <module> import *` into the current namespace |
+| Local Python / PythonSCAD script | Ordinary Python `import` / `from … import …` | Whatever that module exports |
+
+Inline OpenSCAD snippets (not a file) use [`scad`](#scad).
+
+---
+
 ## osimport
 
 Import geometry from a file. This is the PythonSCAD equivalent of OpenSCAD's `import()` (renamed because `import` is a Python keyword).
@@ -32,7 +48,13 @@ Import geometry from a file. This is the PythonSCAD equivalent of OpenSCAD's `im
 | `fn`, `fa`, `fs` | float | global | Curve discretization; defaults to the global `fn`/`fa`/`fs` values |
 | `split_by_color` | bool | `False` | SVG only: return `{hex_color: 2D object}` instead of one merged object; raises `ValueError` for non-SVG input or when no colors match the SVG selection. |
 
-**Supported formats:** STL, OFF, AMF, 3MF (3D); DXF, SVG (2D)
+**Supported formats** (by file extension):
+
+- **3D:** STL, OFF, OBJ, 3MF, NEF3, STEP / STP
+- **2D:** DXF, SVG, CDR
+
+`osimport` does **not** load `.scad` or `.py` files — use [`osuse`](#osuse) or
+Python's `import` for those.
 
 **Examples:**
 
@@ -236,7 +258,27 @@ Execute inline OpenSCAD code from within a Python script.
 
 ## nimport
 
-Import a model from a network URL. This function is only available in GUI mode.
+Download a **Python** module from a network URL into the user library directory,
+then run `from <module_stem> import *` so its symbols appear in the current
+namespace. This is **not** a geometry importer — it does not load STL, 3MF,
+SVG, or other mesh/drawing files (use [`osimport`](#osimport) for those, after
+downloading the file yourself if needed).
+
+`nimport` is only available in **GUI** builds (it is omitted from headless /
+`OPENSCAD_NOGUI` builds). It returns `None`; useful results come from the
+imported module's exported names (for example a function or solid you then
+call or `.show()`).
+
+**Behavior:**
+
+1. Take the last path segment of `url` as the filename (e.g. `mylib.py`).
+2. Download it to the PythonSCAD user library path (skipped if this session
+   already downloaded the same URL and the file is still present).
+3. Execute `from <stem> import *` where `<stem>` is the filename without its
+   final extension.
+
+Preferences → Python can list default network-import URLs; new editor tabs
+pre-fill matching `nimport("…")` lines from that list.
 
 **Syntax:**
 
@@ -250,7 +292,7 @@ Import a model from a network URL. This function is only available in GUI mode.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `url` | string | URL of the model to download and import |
+| `url` | string | HTTP(S) URL of a `.py` module to download and star-import |
 
 **Examples:**
 
@@ -259,6 +301,10 @@ Import a model from a network URL. This function is only available in GUI mode.
     ```python
     from pythonscad import *
 
-    model = nimport("https://example.com/model.stl")
-    model.show()
+    # Remote library that defines e.g. make_widget() / WIDGET_SIZE
+    nimport("https://example.com/mylib.py")
+    make_widget().show()
     ```
+
+For a **local** PythonSCAD library on disk, prefer a normal Python import
+(with the file on `sys.path` or next to your script) instead of `nimport`.
