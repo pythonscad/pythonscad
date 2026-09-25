@@ -5,6 +5,8 @@ filename[1] override: p-blue.stl
 ctor empty strings warns: True
 ctor no-arg warns: False
 ctor legacy warns: True
+ctor mkdir warns: True
+ctor mkdir=False warns: True
 legacy filename[0]: p-red.stl
 legacy filename[1]: p-blue.stl
 part(last) is bare object: True

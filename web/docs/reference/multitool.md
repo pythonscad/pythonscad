@@ -38,7 +38,8 @@ and `dict(exporter.parts())`).
 
 so a typical use is `export(prefix="out/model-", suffix=".stl")`. Prefer
 passing `prefix` / `suffix` / `mkdir` to `export()`; constructor `prefix` /
-`suffix` remain supported but emit `DeprecationWarning`.
+`suffix` / `mkdir` remain supported but emit `DeprecationWarning` when
+explicitly passed (including `""` / `False`).
 
 **Cumulative-difference semantics:** for each index `i`, the geometry
 exported is
@@ -61,7 +62,7 @@ therefore claims everything that overlaps with it.
 === "Python"
 
     ```python
-    MultiToolExporter(prefix=None, suffix=None, mkdir=False, items=())
+    MultiToolExporter(prefix=None, suffix=None, mkdir=None, items=())
     ```
 
 **Parameters:**
@@ -70,7 +71,7 @@ therefore claims everything that overlaps with it.
 |-----------|---------------------------------|---------|----------------------------------------------------------------------------------------|
 | `prefix`  | `str` or `None`                 | `None`  | Default prepended to every per-file output filename. Prefer `export(prefix=...)`. Passing a value (including `""`) is deprecated. |
 | `suffix`  | `str` or `None`                 | `None`  | Default appended to every per-file output filename (typically the extension). Prefer `export(suffix=...)`. Passing a value (including `""`) is deprecated. |
-| `mkdir`   | `bool`                          | `False` | If `True`, create each output file's directory with `os.makedirs(..., exist_ok=True)`. Prefer `export(mkdir=...)`. See note below. |
+| `mkdir`   | `bool` or `None`                | `None`  | Default whether to create each output file's directory with `os.makedirs(..., exist_ok=True)`. Prefer `export(mkdir=...)`. Passing a value (including `False`) is deprecated. See note below. |
 | `items`   | iterable of `(name, object)` or `(name, object, export)` | `()` | Optional initial items, validated as if appended. `export` must be `bool` (`0`/`1` rejected). |
 
 When `mkdir=True`, filenames without a directory component (e.g.

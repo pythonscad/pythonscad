@@ -2,7 +2,8 @@
 
 Exercises:
   * no-arg constructor and ``items=`` seeding without prefix/suffix
-  * DeprecationWarning when constructor is given prefix/suffix (incl. ``""``)
+  * DeprecationWarning when constructor is given prefix/suffix/mkdir
+    (incl. ``""`` / ``False``); ``MultiToolExporter()`` does not warn
   * shape and name validation in ``append`` / ``extend`` / ``insert`` /
     ``__setitem__`` / ``__iadd__`` (``+=``)
   * ``_part(last)`` returning the underlying object as-is (no degenerate
@@ -60,6 +61,18 @@ with warnings.catch_warnings(record=True) as w_legacy:
     legacy = MultiToolExporter("p-", ".stl", items=[("red", red), ("blue", blue)])
 print("ctor legacy warns:", any(
     issubclass(w.category, DeprecationWarning) for w in w_legacy
+))
+with warnings.catch_warnings(record=True) as w_mkdir:
+    warnings.simplefilter("always", DeprecationWarning)
+    MultiToolExporter(mkdir=True)
+print("ctor mkdir warns:", any(
+    issubclass(w.category, DeprecationWarning) for w in w_mkdir
+))
+with warnings.catch_warnings(record=True) as w_mkdir_false:
+    warnings.simplefilter("always", DeprecationWarning)
+    MultiToolExporter(mkdir=False)
+print("ctor mkdir=False warns:", any(
+    issubclass(w.category, DeprecationWarning) for w in w_mkdir_false
 ))
 print("legacy filename[0]:", legacy._filename(0))
 print("legacy filename[1]:", legacy._filename(1))

@@ -259,11 +259,11 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
             typically the file extension, e.g. ``".stl"`` or ``".3mf"``.
             Prefer passing ``suffix`` to :meth:`export` instead of the
             constructor.
-        mkdir: If ``True``, the directory portion of each output filename is
-            created (with :func:`os.makedirs`) before exporting. Defaults to
+        mkdir: Default whether to create each output file's parent directory
+            (with :func:`os.makedirs`) before exporting. Defaults to
             ``False``. Filenames without a directory component are exported
             as-is, no error is raised. Prefer passing ``mkdir`` to
-            :meth:`export` when setting path layout at export time.
+            :meth:`export` instead of the constructor.
 
     Validation
     ----------
@@ -302,7 +302,7 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
         self,
         prefix: str | None = None,
         suffix: str | None = None,
-        mkdir: bool = False,
+        mkdir: bool | None = None,
         items: _typing.Iterable[_MultiToolExporterItem] = (),
     ):
         """Initialize a (possibly empty) MultiToolExporter.
@@ -315,8 +315,9 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
                 filename, usually the file extension. Optional; prefer
                 ``export(suffix=...)``. Passing a value (including ``""``)
                 emits :class:`DeprecationWarning`.
-            mkdir: If ``True``, create the output directory for each file
-                before exporting. Defaults to ``False``.
+            mkdir: Default whether to create output directories before
+                exporting. Optional; prefer ``export(mkdir=...)``. Passing
+                a value (including ``False``) emits :class:`DeprecationWarning`.
             items: Optional iterable of initial ``(name, object)`` or
                 ``(name, object, export)`` tuples (e.g. ``a_dict.items()``).
                 Each item is validated as if it were appended.
@@ -325,18 +326,19 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
             TypeError: If any item in ``items`` is not a valid 2- or 3-tuple.
             ValueError: If any name in ``items`` is empty.
         """
-        if prefix is not None or suffix is not None:
+        if prefix is not None or suffix is not None or mkdir is not None:
             _warnings.warn(
-                "Passing prefix/suffix to MultiToolExporter() is deprecated; "
-                "pass them to export() instead "
-                "(e.g. export(prefix=..., suffix=...) or export(single_file=...)).",
+                "Passing prefix/suffix/mkdir to MultiToolExporter() is "
+                "deprecated; pass them to export() instead "
+                "(e.g. export(prefix=..., suffix=..., mkdir=...) or "
+                "export(single_file=...)).",
                 DeprecationWarning,
                 stacklevel=2,
             )
         super().__init__()
         self.prefix = "" if prefix is None else prefix
         self.suffix = "" if suffix is None else suffix
-        self.mkdir = mkdir
+        self.mkdir = False if mkdir is None else mkdir
         for item in items:
             self.append(item)
 
