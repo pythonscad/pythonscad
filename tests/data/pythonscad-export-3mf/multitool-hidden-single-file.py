@@ -9,7 +9,7 @@ red_part = cube([6, 6, 4]).color("red")
 slot = cube([4, 4, 4]).translate([1, 1, 0])
 blue_part = cube([6, 6, 4]).translate([8, 0, 0]).color("blue")
 
-MultiToolExporter("", ".stl", items=[
+MultiToolExporter(items=[
     ("red", red_part),
     ("blue", blue_part),
     ("slot", slot, False),

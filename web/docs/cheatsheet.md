@@ -400,9 +400,9 @@
       <div>Debug modifiers for visualization</div>
       <div><code>highlight(cube(5)).show()</code></div>
 
-      <div class="func"><code><a href="../reference/multitool/#multitoolexporter">MultiToolExporter</a>(prefix, suffix, mkdir, items)</code></div>
+      <div class="func"><code><a href="../reference/multitool/#multitoolexporter">MultiToolExporter</a>(items)</code></div>
       <div>Split a model into per-color/per-tool files, or one multi-object 3MF</div>
-      <div><code>MultiToolExporter("", "", items=[("r",red),("b",blue)]).export(single_file="m.3mf")</code></div>
+      <div><code>MultiToolExporter(items=[("r",red),("b",blue)]).export(single_file="m.3mf")</code></div>
   </div>
 </div>
 

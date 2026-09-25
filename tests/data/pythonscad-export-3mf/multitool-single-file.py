@@ -9,7 +9,7 @@ from pythonscad import MultiToolExporter, cube
 red_part = cube([6, 6, 4]).color("red")
 blue_part = cube([6, 6, 4]).translate([8, 0, 0]).color("blue")
 
-MultiToolExporter("", ".stl", items=[
+MultiToolExporter(items=[
     ("red", red_part),
     ("blue", blue_part),
 ]).export(single_file="multitool.3mf")

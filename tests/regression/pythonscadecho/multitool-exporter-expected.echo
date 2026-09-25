@@ -1,6 +1,12 @@
 len: 2
-filename[0]: p-red.stl
-filename[1]: p-blue.stl
+filename[0] default: red
+filename[0] override: p-red.stl
+filename[1] override: p-blue.stl
+ctor empty strings warns: True
+ctor no-arg warns: False
+ctor legacy warns: True
+legacy filename[0]: p-red.stl
+legacy filename[1]: p-blue.stl
 part(last) is bare object: True
 parts len: 2
 parts names: ['red', 'blue']
@@ -29,4 +35,6 @@ export call: True nodir-green.stl
 export call: True tmp/.../x-a.3mf
 export call: True tmp/.../x-b.3mf
 export call: ['r', 'b'] tmp/.../parts.3mf
+export call: True legacy-a.stl
+export call: True legacy-b.stl
 

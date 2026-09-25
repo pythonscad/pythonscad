@@ -259,10 +259,10 @@ from pythonscad import *
 background = cube([200, 100, 1]).color("blue")
 star       = cylinder(r=20, h=2, fn=5).translate([100, 50, -0.5]).color("red")
 
-exporter = MultiToolExporter("out/flag-", ".stl", mkdir=True)
+exporter = MultiToolExporter()
 exporter.append(("blue", background))  # blue: rectangle minus the star area
 exporter.append(("red",  star))        # red: the star itself (later wins)
-exporter.export()
+exporter.export(prefix="out/flag-", suffix=".stl", mkdir=True)
 # writes out/flag-blue.stl and out/flag-red.stl
 
 # Or write one 3MF file with "blue" and "red" as separate named objects.

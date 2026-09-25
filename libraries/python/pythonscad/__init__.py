@@ -49,6 +49,7 @@ from ._vectors import (  # noqa: F401
 import math as _math
 import os as _os
 import sys as _sys
+import warnings as _warnings
 import collections.abc as _collections_abc
 import _openscad as _openscad_core
 
@@ -251,14 +252,18 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
     exportable and therefore "wins" everything that overlaps with it.
 
     Attributes:
-        prefix: String prepended to each output filename. Typically a path
-            and/or base name, e.g. ``"out/model-"``.
-        suffix: String appended to each output filename, typically the file
-            extension, e.g. ``".stl"`` or ``".3mf"``.
+        prefix: Default string prepended to each per-file output filename.
+            Typically a path and/or base name, e.g. ``"out/model-"``. Prefer
+            passing ``prefix`` to :meth:`export` instead of the constructor.
+        suffix: Default string appended to each per-file output filename,
+            typically the file extension, e.g. ``".stl"`` or ``".3mf"``.
+            Prefer passing ``suffix`` to :meth:`export` instead of the
+            constructor.
         mkdir: If ``True``, the directory portion of each output filename is
             created (with :func:`os.makedirs`) before exporting. Defaults to
             ``False``. Filenames without a directory component are exported
-            as-is, no error is raised.
+            as-is, no error is raised. Prefer passing ``mkdir`` to
+            :meth:`export` when setting path layout at export time.
 
     Validation
     ----------
@@ -282,11 +287,11 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
 
     Example:
         >>> # Append base/background parts first; later entries "win" overlap.
-        >>> exporter = MultiToolExporter("out/flag-", ".stl", mkdir=True)
+        >>> exporter = MultiToolExporter()
         >>> exporter.append(("base", base_geometry))
         >>> exporter.append(("overlay", overlay_geometry))
-        >>> exporter.export()  # writes out/flag-base.stl and out/flag-overlay.stl
-        >>> exporter.export(single_file="out/flag.3mf")  # writes one multi-object 3MF
+        >>> exporter.export(prefix="out/flag-", suffix=".stl", mkdir=True)
+        >>> exporter.export(single_file="out/flag.3mf")  # one multi-object 3MF
     """
 
     prefix: str
@@ -295,17 +300,21 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
 
     def __init__(
         self,
-        prefix: str,
-        suffix: str,
+        prefix: str | None = None,
+        suffix: str | None = None,
         mkdir: bool = False,
         items: _typing.Iterable[_MultiToolExporterItem] = (),
     ):
         """Initialize a (possibly empty) MultiToolExporter.
 
         Args:
-            prefix: String prepended to each output filename.
-            suffix: String appended to each output filename, usually the file
-                extension.
+            prefix: Default string prepended to each per-file output
+                filename. Optional; prefer ``export(prefix=...)``. Passing
+                a value (including ``""``) emits :class:`DeprecationWarning`.
+            suffix: Default string appended to each per-file output
+                filename, usually the file extension. Optional; prefer
+                ``export(suffix=...)``. Passing a value (including ``""``)
+                emits :class:`DeprecationWarning`.
             mkdir: If ``True``, create the output directory for each file
                 before exporting. Defaults to ``False``.
             items: Optional iterable of initial ``(name, object)`` or
@@ -316,9 +325,17 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
             TypeError: If any item in ``items`` is not a valid 2- or 3-tuple.
             ValueError: If any name in ``items`` is empty.
         """
+        if prefix is not None or suffix is not None:
+            _warnings.warn(
+                "Passing prefix/suffix to MultiToolExporter() is deprecated; "
+                "pass them to export() instead "
+                "(e.g. export(prefix=..., suffix=...) or export(single_file=...)).",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         super().__init__()
-        self.prefix = prefix
-        self.suffix = suffix
+        self.prefix = "" if prefix is None else prefix
+        self.suffix = "" if suffix is None else suffix
         self.mkdir = mkdir
         for item in items:
             self.append(item)
@@ -428,13 +445,28 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
         validated = [self._validate_item(item) for item in other]
         return super().__iadd__(validated)
 
-    def _filename(self, i: int) -> str:
-        """Return the output filename for part ``i``."""
-        return f"{self.prefix}{self[i][0]}{self.suffix}"
+    def _filename(
+        self,
+        i: int,
+        *,
+        prefix: str | None = None,
+        suffix: str | None = None,
+    ) -> str:
+        """Return the output filename for part ``i``.
 
-    def _ensure_parent_dir(self, filename: str) -> None:
+        When ``prefix`` / ``suffix`` are omitted, the instance defaults are
+        used (including the empty-string defaults from a no-arg constructor).
+        """
+        p = self.prefix if prefix is None else prefix
+        s = self.suffix if suffix is None else suffix
+        return f"{p}{self[i][0]}{s}"
+
+    def _ensure_parent_dir(
+        self, filename: str, *, mkdir: bool | None = None
+    ) -> None:
         """Create ``filename``'s parent directory if ``mkdir`` is enabled."""
-        if not self.mkdir:
+        do_mkdir = self.mkdir if mkdir is None else mkdir
+        if not do_mkdir:
             return
         directory = _os.path.dirname(filename)
         if directory:
@@ -450,7 +482,12 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
         rest = [item[1] for item in self[i:]]
         return rest[0] if len(rest) == 1 else difference(*rest)  # noqa: F405
 
-    def _check_unique_filenames(self) -> None:
+    def _check_unique_filenames(
+        self,
+        *,
+        prefix: str | None = None,
+        suffix: str | None = None,
+    ) -> None:
         """Raise :class:`ValueError` if any two items resolve to the same output path.
 
         The dedup key is the full output filename
@@ -467,7 +504,7 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
             if not self._item_export(self[i]):
                 continue
             name = self[i][0]
-            filename = self._filename(i)
+            filename = self._filename(i, prefix=prefix, suffix=suffix)
             key = _normalize_filename_key(filename)
             if key in seen:
                 prev_name, prev_filename = seen[key]
@@ -517,17 +554,27 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
             if self._item_export(self[i])
         ]
 
-    def export(self, single_file: str | None = None) -> None:
+    def export(
+        self,
+        single_file: str | None = None,
+        *,
+        prefix: str | None = None,
+        suffix: str | None = None,
+        mkdir: bool | None = None,
+    ) -> None:
         """Export parts to per-part files or a single multi-object 3MF.
 
         By default, exports each result of :meth:`parts` to
-        ``f"{prefix}{name}{suffix}"``. If ``single_file`` is given, exports
-        all parts into that one 3MF file using PythonSCAD's multi-object
-        ``export({"part": geometry}, "out.3mf")`` form.
+        ``f"{prefix}{name}{suffix}"``, using ``prefix`` / ``suffix`` /
+        ``mkdir`` from this call when given, otherwise the instance
+        defaults. If ``single_file`` is given, exports all parts into that
+        one 3MF file using PythonSCAD's multi-object
+        ``export({"part": geometry}, "out.3mf")`` form (``prefix`` /
+        ``suffix`` are unused in that path).
 
-        If :attr:`mkdir` is ``True``, the parent directory of each output
-        file is created beforehand (filenames without a directory component
-        are skipped silently).
+        If mkdir is enabled (via this call or :attr:`mkdir`), the parent
+        directory of each output file is created beforehand (filenames
+        without a directory component are skipped silently).
 
         Raises:
             ValueError: If two or more items would write to the same
@@ -536,6 +583,10 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
                 ``single_file`` is not a ``.3mf`` path, or when duplicate
                 part names would collide in the single-file export dict.
         """
+        use_prefix = self.prefix if prefix is None else prefix
+        use_suffix = self.suffix if suffix is None else suffix
+        use_mkdir = self.mkdir if mkdir is None else mkdir
+
         if single_file is not None:
             if _os.path.splitext(single_file)[1].casefold() != ".3mf":
                 raise ValueError(
@@ -546,7 +597,7 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
                 return
             self._check_unique_part_names()
             exportable_parts = self.parts()
-            self._ensure_parent_dir(single_file)
+            self._ensure_parent_dir(single_file, mkdir=use_mkdir)
             export_multi = _typing.cast(
                 _typing.Callable[[_typing.Mapping[str, _typing.Any], str], None],
                 globals()["export"],
@@ -554,14 +605,14 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
             export_multi(dict(exportable_parts), single_file)
             return
 
-        self._check_unique_filenames()
+        self._check_unique_filenames(prefix=use_prefix, suffix=use_suffix)
         export_one = _typing.cast(
             _typing.Callable[[_typing.Any, str], None],
             globals()["export"],
         )
         for name, geometry in self.parts():
-            filename = f"{self.prefix}{name}{self.suffix}"
-            self._ensure_parent_dir(filename)
+            filename = f"{use_prefix}{name}{use_suffix}"
+            self._ensure_parent_dir(filename, mkdir=use_mkdir)
             export_one(geometry, filename)
 
     def show(self) -> None:
