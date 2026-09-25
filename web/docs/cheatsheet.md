@@ -411,7 +411,7 @@
 <div class="cheatsheet-section">
   <div class="cheatsheet-grid">
       <div class="func"><code><a href="../reference/io/#osimport">osimport</a>(file, ...)</code></div>
-      <div>Import geometry from file (STL, OFF, AMF, 3MF, SVG, DXF)</div>
+      <div>Import geometry from file (STL, OFF, OBJ, 3MF, STEP, DXF, SVG; NEF3/CDR when built in)</div>
       <div><code>osimport("model.stl").show()</code></div>
 
       <div class="func"><code><a href="../reference/io/#osimport">osimport</a>(file, split_by_color=True)</code></div>
@@ -431,8 +431,8 @@
       <div><code>scad("cube(10);")</code></div>
 
       <div class="func"><code><a href="../reference/io/#nimport">nimport</a>(url)</code></div>
-      <div>Import a model from a network URL (GUI only)</div>
-      <div><code>nimport("https://example.com/model.stl")</code></div>
+      <div>GUI only: download a remote <code>.py</code> module and <code>from … import *</code> (not for STL/geometry)</div>
+      <div><code>nimport("https://example.com/mylib.py"); make_widget().show()</code></div>
   </div>
 </div>
 
