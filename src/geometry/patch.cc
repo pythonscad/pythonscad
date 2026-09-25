@@ -796,7 +796,7 @@ std::vector<DTriangle> triangulateAndFilterToDomain(
   kept.reserve(tris.size());
   for (const auto& t : tris) {
     Vector2d centroid = (pts[t.a] + pts[t.b] + pts[t.c]) / 3.0;
-    if (!domain.point_inside(centroid)) continue;
+    if (domain.point_location(centroid) < PointLocation2d::Inside) continue;
     kept.push_back(t);
   }
   return kept;
@@ -1440,7 +1440,7 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
     for (const auto& t : tris) {
       Vector2d centroid = (ghostUV[t.a] + ghostUV[t.b] + ghostUV[t.c]) / 3.0;
       if (centroid.x() < tu.u0 || centroid.x() >= tu.u0 + period) continue;
-      if (!domain.point_inside(centroid)) continue;
+      if (domain.point_location(centroid) < PointLocation2d::OnEdge) continue;
       std::array<int, 3> remapped = {ghostSrc[t.a], ghostSrc[t.b], ghostSrc[t.c]};
       std::array<int, 3> key = remapped;
       std::sort(key.begin(), key.end());
@@ -1566,7 +1566,7 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
   for (int iu = 0; iu < nu; iu++) {
     for (int iv = 0; iv < nv; iv++) {
       Vector2d p(tu.u0 + iu * grid_spacing_uv, vmin + iv * grid_spacing_uv);
-      if (!domain.point_inside(p)) continue;
+      if (domain.point_location(p) < PointLocation2d::OnEdge) continue;
       if (encroachesExtraHoles(p)) continue;
       Vector3d pos, normal;
       if (!base.sample(p, pos, normal)) continue;
@@ -1613,7 +1613,7 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
       double len = dir.norm();
       if (len < 1e-12) continue;
       Vector2d p = rp + (dir / len) * offset;
-      if (!domain.point_inside(p)) continue;
+      if (domain.point_location(p) < PointLocation2d::OnEdge) continue;
       if (encroachesExtraHoles(p)) continue;
       Vector3d pos, normal;
       if (!base.sample(p, pos, normal)) continue;
@@ -1841,7 +1841,7 @@ std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
   for (int iu = 0; iu < nu; iu++) {
     for (int iv = 0; iv < nv; iv++) {
       Vector2d p(umin + iu * grid_spacing_uv, vmin + iv * grid_spacing_uv);
-      if (!domain.point_inside(p)) continue;
+      if (domain.point_location(p) < PointLocation2d::OnEdge) continue;
 
       // Protects the *topology* of the final mesh, not just the
       // displacement: step 4's triangulation is an UNCONSTRAINED Delaunay
