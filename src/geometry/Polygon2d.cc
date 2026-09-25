@@ -522,3 +522,31 @@ PointLocation2d Polygon2d::point_location(const Vector2d& pt, double eps) const
   }
   return (cuts & 1) ? PointLocation2d::Inside : PointLocation2d::Outside;
 }
+
+bool Polygon2d::point_inside(const Vector2d& pt) const
+{
+  int cuts = 0;
+  for (const auto& o : theoutlines) {
+    int n = o.vertices.size();
+    for (int i = 0; i < n; i++) {
+      const Vector2d& p1 = o.vertices[i];
+      const Vector2d& p2 = o.vertices[(i + 1) % n];
+      // Standard PNPOLY-style edge test: a vertex is classified "above" pt
+      // using a single strict inequality regardless of edge direction.
+      // This makes a local y-extremum (the ray tangent to a peak/valley,
+      // e.g. the top/bottom of a circular hole) correctly net to ZERO
+      // crossings, while a "pass-through" vertex nets to exactly ONE - the
+      // previous asymmetric "p1 inclusive / p2 exclusive" convention got
+      // extrema wrong (netted to one spurious crossing there), flipping
+      // the inside/outside classification for every point on the ray
+      // beyond that vertex.
+      bool p1Above = p1[1] > pt[1];
+      bool p2Above = p2[1] > pt[1];
+      if (p1Above != p2Above) {
+        double x = p1[0] + (p2[0] - p1[0]) * (pt[1] - p1[1]) / (p2[1] - p1[1]);
+        if (x > pt[0]) cuts++;
+      }
+    }
+  }
+  return cuts & 1;
+}

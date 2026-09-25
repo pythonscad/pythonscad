@@ -1566,7 +1566,7 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
   for (int iu = 0; iu < nu; iu++) {
     for (int iv = 0; iv < nv; iv++) {
       Vector2d p(tu.u0 + iu * grid_spacing_uv, vmin + iv * grid_spacing_uv);
-      if (domain.point_location(p) < PointLocation2d::Inside, 0) continue;
+      if (!domain.point_inside(p)) continue;
       if (encroachesExtraHoles(p)) continue;
       Vector3d pos, normal;
       if (!base.sample(p, pos, normal)) continue;
