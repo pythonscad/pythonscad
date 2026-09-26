@@ -1158,7 +1158,8 @@ std::unique_ptr<PolySet> patchBridgeTwoRings(const std::vector<Vector3d>& ringA,
                                              const std::vector<Vector3d>& ringB,
                                              const std::vector<Vector3d>& tangentA,
                                              const std::vector<Vector3d>& tangentB,
-                                             double grid_spacing_uv)
+                                             double grid_spacing_uv,
+                                             const std::function<double(const Vector3d&)>& displacement)
 {
   const size_t n = ringA.size();
   if (n < 3 || ringB.size() != n) return nullptr;
@@ -1203,6 +1204,42 @@ std::unique_ptr<PolySet> patchBridgeTwoRings(const std::vector<Vector3d>& ringA,
   }
 
   auto idx = [n](int s, size_t i) { return s * static_cast<int>(n) + static_cast<int>(i); };
+
+  // Apply displacement() to the INTERIOR rows only (s in [1, steps-1]).
+  // The two boundary rows (s==0 / s==steps) are 'ringA'/'ringB' themselves
+  // and must keep their exact input positions for watertight stitching with
+  // whatever neighboring patch()/concat() call produced those rings - same
+  // convention as every other construction in this file. displacement() is
+  // evaluated on the plain (undisplaced) bridge surface built above, then
+  // pushed along that surface's own local normal, estimated per-vertex from
+  // its immediate neighbors (central differences along the ring direction
+  // and along the bridge direction, crossed) since there is no Delaunay
+  // triangle to take a face normal from here. The push fades to zero at
+  // both ends via the same smoothstep()/blendDist convention used for the
+  // interior-grid displacement elsewhere in this file, so the interior
+  // bulges smoothly out of the two unmodified boundary rows instead of
+  // meeting them with a visible kink.
+  if (displacement) {
+    const double blendDist = std::max(2.0 * grid_spacing_uv, 1e-9);
+    std::vector<Vector3d> displaced = grid;
+    for (int s = 1; s < steps; s++) {
+      const double t = static_cast<double>(s) / steps;
+      const double distToEnd = std::min(t, 1.0 - t) * maxLen;
+      const double falloff = smoothstep01(distToEnd / blendDist);
+      for (size_t i = 0; i < n; i++) {
+        const Vector3d& pos = grid[idx(s, i)];
+        const Vector3d tangentU = grid[idx(s, (i + 1) % n)] - grid[idx(s, (i + n - 1) % n)];
+        const Vector3d tangentV = grid[idx(s + 1, i)] - grid[idx(s - 1, i)];
+        Vector3d normal = tangentU.cross(tangentV);
+        const double nlen = normal.norm();
+        if (nlen < 1e-12) continue;  // degenerate local frame - leave this vertex undisplaced
+        normal /= nlen;
+        const double d = displacement(pos) * falloff;
+        displaced[idx(s, i)] = pos + normal * d;
+      }
+    }
+    grid = std::move(displaced);
+  }
 
   auto polyset = std::make_unique<PolySet>(3);
   polyset->setTriangular(true);
@@ -1566,7 +1603,7 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
   for (int iu = 0; iu < nu; iu++) {
     for (int iv = 0; iv < nv; iv++) {
       Vector2d p(tu.u0 + iu * grid_spacing_uv, vmin + iv * grid_spacing_uv);
-      if (domain.point_location(p, 0) < PointLocation2d::Outside) continue;
+      if (domain.point_location(p, 0) == PointLocation2d::Outside) continue;
       if (encroachesExtraHoles(p)) continue;
       Vector3d pos, normal;
       if (!base.sample(p, pos, normal)) continue;
@@ -1670,7 +1707,8 @@ std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
       if (isDegenerate2D(outerTrial, 0.04)) {
         static const std::vector<Vector3d> emptyTangent;
         const std::vector<Vector3d>& holeTangent = holes_normal.empty() ? emptyTangent : holes_normal[0];
-        auto result = patchBridgeTwoRings(outer, holes[0], outer_normal, holeTangent, grid_spacing_uv);
+        auto result =
+          patchBridgeTwoRings(outer, holes[0], outer_normal, holeTangent, grid_spacing_uv, displacement);
         if (result) return result;
       }
     }

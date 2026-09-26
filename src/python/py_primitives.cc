@@ -1514,8 +1514,10 @@ static bool python_patch_ring_from_shape(PyObject *shape_obj, std::vector<Vector
   }
 
   const auto outlines = poly2d->untransformedOutlines();
-  if (outlines.empty()) {
-    PyErr_SetString(PyExc_TypeError, "patch(): 2D shape has no outline.");
+  if (outlines.size() != 1 || outlines[0].vertices.size() < 3) {
+    PyErr_SetString(PyExc_TypeError,
+                    "patch(): 2D-shape must exactly have one outline with at least 3 points.");
+
     return false;
   }
   Transform3d trans = poly2d->getTransform3d();
