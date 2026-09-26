@@ -12,6 +12,7 @@
 #include <Eigen/Eigenvalues>
 
 #include "geometry/Polygon2d.h"
+#include "utils/printutils.h"
 
 namespace {
 
@@ -1685,17 +1686,28 @@ std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
   if (outer.size() < 3 || grid_spacing_uv <= 0.0) return nullptr;
 
   // -2) Two disjoint (non-nested) rings needing a direct bridge, not an
-  // annulus: exactly one hole, matching the outer ring's own point count
-  // (see patchBridgeTwoRings() for why that's needed), and findTubeAxis()'s
-  // distance heuristic says the two rings look connected along an axis,
-  // but looking along that axis leaves the OUTER ring itself flat - the
-  // same test computeAutoProj() uses to fall back to a best-fit plane,
-  // except here that fallback wouldn't help either (it would put the two
-  // rings as separate, non-nested disks - see the long comment on
-  // patchBridgeTwoRings() for exactly why the usual "outer disk with a
-  // hole cut out" domain has no sensible domain to build for that shape).
-  // A handle spanning two side ports is the motivating case.
-  if (!proj && holes.size() == 1 && holes[0].size() == outer.size()) {
+  // annulus: exactly one hole, and findTubeAxis()'s distance heuristic says
+  // the two rings look connected along an axis, but looking along that axis
+  // leaves the OUTER ring itself flat - the same test computeAutoProj()
+  // uses to fall back to a best-fit plane, except here that fallback
+  // wouldn't help either (it would put the two rings as separate,
+  // non-nested disks - see the long comment on patchBridgeTwoRings() for
+  // exactly why the usual "outer disk with a hole cut out" domain has no
+  // sensible domain to build for that shape). A handle spanning two side
+  // ports is the motivating case.
+  //
+  // This detection is deliberately independent of whether 'outer' and the
+  // hole have the same point count: it is what decides whether this is a
+  // bridge case AT ALL, and it must fire even when the counts differ, so
+  // that a mismatched pair is caught and rejected here rather than falling
+  // through to the polygon-with-holes path below. That path builds an
+  // ordinary "outer area minus hole" domain, which - for two disjoint
+  // rings like this - does not represent a bridge at all (see the comment
+  // above): it would silently triangulate two separate, non-overlapping
+  // disks under whatever projection computeAutoProj() picks, producing a
+  // disconnected or otherwise wrong surface with nothing to indicate that
+  // anything went wrong.
+  if (!proj && holes.size() == 1) {
     int tubeIdx;
     Vector3d axis;
     double R;
@@ -1705,6 +1717,26 @@ std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
       outerTrial.reserve(outer.size());
       for (const auto& p : outer) outerTrial.push_back(axialProj(p));
       if (isDegenerate2D(outerTrial, 0.04)) {
+        // Confirmed bridge case. patchBridgeTwoRings() matches the two
+        // rings up POINT-BY-POINT BY INDEX (see its own long comment) -
+        // that 1:1 correspondence is only meaningful when both rings have
+        // the same point count. Resampling one ring to the other's count
+        // would still have to invent that correspondence (which point of
+        // a resampled 64-point ring is "the same" as point 0 of a 32-point
+        // ring?) with no information to base it on beyond point order -
+        // silently guessing could easily twist or pinch the bridge into
+        // something worse than an outright failure. So this is rejected
+        // explicitly instead: detected here, rather than up front in
+        // python_patch(), because only patch() itself - via findTubeAxis()
+        // - knows this is a bridge case rather than an ordinary hole.
+        if (holes[0].size() != outer.size()) {
+          LOG(message_group::Error,
+              "patch(): direct bridge between two disjoint rings requires "
+              "'outer' and the hole to have the same number of points (got "
+              "%1$s and %2$s) - resample one of them to match.",
+              std::to_string(outer.size()), std::to_string(holes[0].size()));
+          return nullptr;
+        }
         static const std::vector<Vector3d> emptyTangent;
         const std::vector<Vector3d>& holeTangent = holes_normal.empty() ? emptyTangent : holes_normal[0];
         auto result =
