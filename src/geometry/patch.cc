@@ -1112,6 +1112,52 @@ std::function<Vector2d(const Vector3d&)> computeAutoProj(const std::vector<Vecto
   return makePlaneProjection(allPts);
 }
 
+// -------------------- Hole-containment check (bridge vs. panel hole) --------------------
+//
+// The bridge classification below (findTubeAxis()'s distance heuristic +
+// "the outer ring looks flat along that axis") is only a proxy for "these
+// are two genuinely disjoint rings" - it can also fire for an off-center
+// cutout that is perfectly ordinary (coplanar with 'outer', truly a hole
+// IN it), if that cutout happens to sit far enough from outer's centroid
+// to pass the distance threshold and the outer ring's own shape happens to
+// look "flat" along the outer-to-hole axis for unrelated reasons (e.g. an
+// elongated panel). Without this check, such a panel hole would be
+// mis-routed to patchBridgeTwoRings() - which does not model containment
+// at all, it just bridges two rings by index - producing a nonsensical
+// result instead of the ordinary "outer area minus hole" surface the
+// caller actually asked for.
+//
+// Decided independently of the axial projection used for the distance
+// heuristic: both rings are projected onto their OWN shared best-fit plane
+// (the same construction computeAutoProj() itself falls back to for a
+// flat panel), and the hole is considered "contained" - i.e. an ordinary
+// panel hole, NOT a bridge - when a strict majority of its own boundary
+// points land inside the outer ring's projected shape there. A majority
+// vote (rather than just the hole's centroid) is used because the hole
+// ring's own shape can be non-convex or eccentric enough that its centroid
+// alone is not a reliable proxy for "is this ring nested inside outer".
+bool holeContainedInBestFitPlane(const std::vector<Vector3d>& outer, const std::vector<Vector3d>& hole)
+{
+  if (hole.empty()) return false;
+
+  std::vector<Vector3d> allPts = outer;
+  allPts.insert(allPts.end(), hole.begin(), hole.end());
+  auto planeProj = makePlaneProjection(allPts);
+
+  Polygon2d outerPoly;
+  Outline2d o;
+  o.vertices.reserve(outer.size());
+  for (const auto& p : outer) o.vertices.push_back(planeProj(p));
+  o.positive = true;
+  outerPoly.addOutline(o);
+
+  size_t insideCount = 0;
+  for (const auto& p : hole) {
+    if (outerPoly.point_location(planeProj(p)) == PointLocation2d::Inside) insideCount++;
+  }
+  return insideCount * 2 > hole.size();  // strict majority
+}
+
 // -------------------- Direct bridge between two disjoint rings --------------------
 //
 // Every OTHER construction in this file models a patch as "outer boundary's
@@ -1696,17 +1742,21 @@ std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
   // sensible domain to build for that shape). A handle spanning two side
   // ports is the motivating case.
   //
-  // This detection is deliberately independent of whether 'outer' and the
-  // hole have the same point count: it is what decides whether this is a
-  // bridge case AT ALL, and it must fire even when the counts differ, so
-  // that a mismatched pair is caught and rejected here rather than falling
-  // through to the polygon-with-holes path below. That path builds an
-  // ordinary "outer area minus hole" domain, which - for two disjoint
-  // rings like this - does not represent a bridge at all (see the comment
-  // above): it would silently triangulate two separate, non-overlapping
-  // disks under whatever projection computeAutoProj() picks, producing a
-  // disconnected or otherwise wrong surface with nothing to indicate that
-  // anything went wrong.
+  // Both remaining checks are gates on whether this classification is even
+  // correct, not on how to carry it out, so they run before (and
+  // independently of) the point-count check patchBridgeTwoRings() itself
+  // needs:
+  //  - holeContainedInBestFitPlane(): the distance heuristic + "outer looks
+  //    flat along this axis" combination is only a PROXY for "these are
+  //    two disjoint rings" - it can also fire for an ordinary, merely
+  //    off-center coplanar cutout (see that function's own long comment).
+  //    Reject the bridge classification outright when the hole is actually
+  //    nested inside outer's own best-fit-plane shape; let it fall through
+  //    to the ordinary polygon-with-holes path below instead, which is
+  //    what an actual panel hole needs.
+  //  - the point-count check: patchBridgeTwoRings() matches the two rings
+  //    up point-by-point BY INDEX (see its own long comment), which is
+  //    only meaningful when both rings have the same point count.
   if (!proj && holes.size() == 1) {
     int tubeIdx;
     Vector3d axis;
@@ -1716,19 +1766,16 @@ std::unique_ptr<PolySet> patch(const std::vector<Vector3d>& outer,
       std::vector<Vector2d> outerTrial;
       outerTrial.reserve(outer.size());
       for (const auto& p : outer) outerTrial.push_back(axialProj(p));
-      if (isDegenerate2D(outerTrial, 0.04)) {
-        // Confirmed bridge case. patchBridgeTwoRings() matches the two
-        // rings up POINT-BY-POINT BY INDEX (see its own long comment) -
-        // that 1:1 correspondence is only meaningful when both rings have
-        // the same point count. Resampling one ring to the other's count
-        // would still have to invent that correspondence (which point of
-        // a resampled 64-point ring is "the same" as point 0 of a 32-point
-        // ring?) with no information to base it on beyond point order -
-        // silently guessing could easily twist or pinch the bridge into
-        // something worse than an outright failure. So this is rejected
-        // explicitly instead: detected here, rather than up front in
-        // python_patch(), because only patch() itself - via findTubeAxis()
-        // - knows this is a bridge case rather than an ordinary hole.
+      if (isDegenerate2D(outerTrial, 0.04) && !holeContainedInBestFitPlane(outer, holes[0])) {
+        // Confirmed bridge case: not an ordinary contained hole, so the
+        // only remaining question is whether patchBridgeTwoRings() can
+        // actually be run on it. Resampling one ring to the other's point
+        // count would still have to invent a point-by-point correspondence
+        // (which point of a resampled 64-point ring is "the same" as
+        // point 0 of a 32-point ring?) with no information to base it on
+        // beyond point order - silently guessing could easily twist or
+        // pinch the bridge into something worse than an outright failure.
+        // So a mismatch is rejected explicitly instead.
         if (holes[0].size() != outer.size()) {
           LOG(message_group::Error,
               "patch(): direct bridge between two disjoint rings requires "
