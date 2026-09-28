@@ -133,7 +133,7 @@ Extrude a 2D shape by rotating it around the Z axis.
 
     ```python
     rotate_extrude(obj, convexity=1, scale=1.0, angle=360, twist=None,
-                   origin=None, offset=None, v=None, method=None)
+                   origin=None, offset=None, v=None, method="centered")
     obj.rotate_extrude(...)
     ```
 
