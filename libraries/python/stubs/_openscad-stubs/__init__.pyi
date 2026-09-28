@@ -202,7 +202,7 @@ class PyOpenSCAD:
         STRAIGHT = "straight"
     def roof(
         self,
-        method: Optional[str] = None,
+        method: str = "voronoi",
         convexity: int = 2,
         fn: Optional[float] = None,
         fa: Optional[float] = None,
@@ -301,7 +301,7 @@ class PyOpenSCAD:
         origin: Optional[Vector2 | "npt.NDArray[np.float64]"] = None,
         offset: Optional[Vector2 | "npt.NDArray[np.float64]"] = None,
         v: Optional[Vector3 | "npt.NDArray[np.float64]"] = None,
-        method: Optional[str] = None,
+        method: str = "centered",
         fn: Optional[float] = None,
         fa: Optional[float] = None,
         fs: Optional[float] = None,
@@ -1157,7 +1157,7 @@ def rotate_extrude(
     origin: Optional[Vector2 | "npt.NDArray[np.float64]"] = None,
     offset: Optional[Vector2 | "npt.NDArray[np.float64]"] = None,
     v: Optional[Vector3 | "npt.NDArray[np.float64]"] = None,
-    method: Optional[str] = None,
+    method: str = "centered",
     fn: Optional[float] = None,
     fa: Optional[float] = None,
     fs: Optional[float] = None,
@@ -1325,7 +1325,7 @@ def fill(*objects: PyOpenSCADs) -> PyOpenSCAD:
 
 def roof(
     obj: PyOpenSCAD,
-    method: Optional[str] = None,
+    method: str = "voronoi",
     convexity: int = 2,
     fn: Optional[float] = None,
     fa: Optional[float] = None,
