@@ -16,7 +16,7 @@ Create a roof shape from a 2D polygon by lifting edges to form a peaked structur
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `obj` | 2D solid | — | The 2D polygon to create a roof from |
-| `method` | string | `None` | Roof generation method |
+| `method` | string | `"voronoi"` | Roof generation method: `"voronoi"` or `"straight"` |
 | `convexity` | int | `2` | Convexity for rendering |
 
 **Examples:**

@@ -149,7 +149,7 @@ Extrude a 2D shape by rotating it around the Z axis.
 | `origin` | `[x, y]` | `None` | Origin for twist/scale |
 | `offset` | `[x, y]` | `None` | Offset for the profile |
 | `v` | `[x, y, z]` | `None` | Translation per revolution for helix (PythonSCAD extension) |
-| `method` | string | `None` | Extrusion method |
+| `method` | string | `"centered"` | Helix pitch method: `"centered"` (use mid-X of the profile) or `"linear"` |
 | `fn`, `fa`, `fs` | | — | Curve discretization parameters |
 
 **PythonSCAD extensions:**
@@ -207,7 +207,8 @@ Extrude a 2D shape along an arbitrary 3D path. A 4th value in each path vertex s
 
     ```python
     path_extrude(obj, path, xdir=None, convexity=1, origin=None,
-                 scale=None, twist=None, closed=False, fn=-1, fa=-1, fs=-1)
+                 scale=None, twist=None, closed=False,
+                 allow_intersect=False, fn=-1, fa=-1, fs=-1)
     obj.path_extrude(path, ...)
     ```
 
@@ -223,6 +224,7 @@ Extrude a 2D shape along an arbitrary 3D path. A 4th value in each path vertex s
 | `scale` | `[x, y]` | `None` | Scale factor at the end |
 | `twist` | number or function | `None` | Twist angle or function |
 | `closed` | bool | `False` | Close the path into a loop |
+| `allow_intersect` | bool | `False` | When `False`, self-intersecting paths emit a warning that the result is unpredictable |
 | `fn`, `fa`, `fs` | float | `-1` | Curve discretization |
 
 **Examples:**

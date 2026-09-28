@@ -163,8 +163,8 @@ Project a 3D object onto the XY plane, producing a 2D shape.
 === "Python"
 
     ```python
-    projection(obj, cut=False, convexity=2)
-    obj.projection(cut=False, convexity=2)
+    projection(obj, cut=False, detail=False, convexity=2)
+    obj.projection(cut=False, detail=False, convexity=2)
     ```
 
 **Parameters:**
