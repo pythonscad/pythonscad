@@ -4,7 +4,6 @@
 #include <array>
 #include <cmath>
 #include <limits>
-#include <map>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -519,17 +518,6 @@ std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts,
   };
   std::vector<BEdge> bedges;
 
-  // -------- TEMPORARY DIAGNOSTIC 3: is the multi-loop path even reached? --------
-  // Counts, across this whole bowyerWatson() call: how many point insertions
-  // hit a self-touching ("pinched") bad-region boundary that needed MORE
-  // than one fan loop (multiLoopRecoveries - the new code path added to fix
-  // dropped points), and how many insertions still had to be skipped outright
-  // (droppedPoints - should now be 0, or at least much smaller than before).
-  // If multiLoopRecoveries stays 0 for this model, the "pinched boundary"
-  // theory was wrong and the missing triangles come from somewhere else.
-  int diagMultiLoopRecoveries = 0;
-  int diagDroppedPoints = 0;
-
   for (int pi = 0; pi < static_cast<int>(pts.size()); pi++) {
     const Vector2d& p = P[pi];
 
@@ -661,10 +649,8 @@ std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts,
       // skip this point rather than risk building a corrupt mesh (should be
       // rarer still than the single-loop case this replaces, and was always
       // the fallback behavior here).
-      diagDroppedPoints++;
       continue;
     }
-    if (boundaryLoops.size() > 1) diagMultiLoopRecoveries++;
 
     for (int t : bad) dead[t] = 1;
     liveCount -= bad.size();
@@ -702,12 +688,6 @@ std::vector<DTriangle> bowyerWatson(const std::vector<Vector2d>& pts,
 
     hint = firstNewIdx;
     if (liveCount > maxSaneTris) return {};
-  }
-
-  if (diagMultiLoopRecoveries > 0 || diagDroppedPoints > 0) {
-    LOG(message_group::Warning,
-        "patch() DIAG3: bowyerWatson pts=%1$s multiLoopRecoveries=%2$s droppedPoints=%3$s", pts.size(),
-        diagMultiLoopRecoveries, diagDroppedPoints);
   }
 
   // -------- Constrained edge recovery --------
@@ -1557,16 +1537,6 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
   // Domain: the rectangle itself (NOT outer_uv/holes_uv[tubePartnerIdx],
   // which are degenerate lines here - see the long comment above), with
   // only the extra holes cut out.
-  //
-  // NOTE: this used to work around a real bug in Polygon2d::point_location()
-  // itself (its even-odd ray casting miscounted a ray passing exactly
-  // through a hole ring's own v-extremum/tangent vertex, flipping
-  // inside/outside for everything further along that ray - see DIAG4).
-  // That is now fixed at the source, in Polygon2d.cc's point_location()
-  // (the first of its two half-open-interval conditions had its strictness
-  // swapped: '<=' and '>' need to be on the opposite sides), so this goes
-  // back to using the shared Polygon2d the same way every other caller
-  // does, instead of a local reimplementation.
   Polygon2d domain;
   {
     Outline2d rect;
@@ -1624,8 +1594,7 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
   // replacing bowyerWatson() itself with a spatially accelerated
   // triangulator.
   const double margin = std::min(0.5 * period, std::max(8.0 * grid_spacing_uv, 1e-6));
-  auto triangulatePeriodic = [&](const std::vector<Vector2d>& uv,
-                                 const char *diagLabel = nullptr) -> std::vector<PeriodicTri> {
+  auto triangulatePeriodic = [&](const std::vector<Vector2d>& uv) -> std::vector<PeriodicTri> {
     std::vector<Vector2d> ghostUV;
     std::vector<int> ghostSrc;
     ghostUV.reserve(uv.size() + uv.size() / 4);
@@ -1647,59 +1616,20 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
     auto jittered = jitterForDelaunay(ghostUV, domainScale, ghostSrc);
     auto tris = bowyerWatson(jittered);
 
-    // -------- TEMPORARY DIAGNOSTIC 4: which filter rejects triangles? --------
-    // Splits triangulatePeriodic()'s three rejection reasons apart instead of
-    // lumping them into one "not kept" outcome, and flags rejections that
-    // land in the suspect v-bands (near a hole's own vmin/vmax) but far in u
-    // from any actual hole - exactly the pattern DIAG2 keeps reporting.
-    int diagRejRange = 0, diagRejDomain = 0, diagRejDedup = 0, diagKept = 0;
-    int diagSuspiciousDomainRej = 0;
-    auto inSuspectBand = [](double v) {
-      auto near = [&](double c) { return std::fabs(v - c) <= 2.5; };
-      return near(19.5) || near(40.5) || near(59.5) || near(80.5);
-    };
-
     std::vector<PeriodicTri> kept;
     std::set<std::array<int, 3>> seen;
     for (const auto& t : tris) {
       Vector2d centroid = (ghostUV[t.a] + ghostUV[t.b] + ghostUV[t.c]) / 3.0;
-      if (centroid.x() < tu.u0 || centroid.x() >= tu.u0 + period) {
-        diagRejRange++;
-        continue;
-      }
-      if (domain.point_location(centroid) < PointLocation2d::OnEdge) {
-        diagRejDomain++;
-        if (inSuspectBand(centroid.y()) && std::fabs(centroid.x()) > 20.0) {
-          diagSuspiciousDomainRej++;
-          if (diagSuspiciousDomainRej <= 5 && diagLabel) {
-            LOG(message_group::Warning,
-                "patch() DIAG4[%1$s]: suspicious domain-rejected tri centroid=(%2$s,%3$s) "
-                "verts=(%4$s,%5$s,%6$s)",
-                diagLabel, centroid.x(), centroid.y(), ghostUV[t.a].x(), ghostUV[t.b].x(),
-                ghostUV[t.c].x());
-          }
-        }
-        continue;
-      }
+      if (centroid.x() < tu.u0 || centroid.x() >= tu.u0 + period) continue;
+      if (domain.point_location(centroid) < PointLocation2d::OnEdge) continue;
       std::array<int, 3> remapped = {ghostSrc[t.a], ghostSrc[t.b], ghostSrc[t.c]};
       std::array<int, 3> key = remapped;
       std::sort(key.begin(), key.end());
-      if (!seen.insert(key).second) {
-        diagRejDedup++;
-        continue;
-      }  // same triangle via another ghost band
-      diagKept++;
+      if (!seen.insert(key).second) continue;  // same triangle via another ghost band
       PeriodicTri pt;
       pt.idx = remapped;
       pt.uv = {ghostUV[t.a], ghostUV[t.b], ghostUV[t.c]};
       kept.push_back(pt);
-    }
-    if (diagLabel) {
-      LOG(message_group::Warning,
-          "patch() DIAG4[%1$s]: rawTris=%2$s kept=%3$s rejRange=%4$s rejDomain=%5$s rejDedup=%6$s "
-          "suspiciousDomainRej=%7$s",
-          diagLabel, tris.size(), diagKept, diagRejRange, diagRejDomain, diagRejDedup,
-          diagSuspiciousDomainRej);
     }
     return kept;
   };
@@ -1818,7 +1748,7 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
   base.period = period;
   base.u0 = tu.u0;
   base.margin = margin;
-  base.tris = triangulatePeriodic(baseUV, "base");
+  base.tris = triangulatePeriodic(baseUV);
   if (base.tris.empty()) return nullptr;
 
   // Interior grid, sampled directly over the rectangle domain.
@@ -1973,7 +1903,7 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
     }
   }
 
-  auto finalTris = triangulatePeriodic(allUV, "final");
+  auto finalTris = triangulatePeriodic(allUV);
   if (finalTris.empty()) return nullptr;
 
   auto polyset = std::make_unique<PolySet>(3);
@@ -1981,212 +1911,6 @@ std::unique_ptr<PolySet> patchTubeWithHoles(const std::vector<Vector3d>& outer,
   polyset->vertices = allPos;
   polyset->indices.reserve(finalTris.size());
   for (const auto& t : finalTris) polyset->indices.push_back({t.idx[0], t.idx[1], t.idx[2]});
-
-  // -------- TEMPORARY DIAGNOSTIC: mesh-quality report --------
-  // Not a fix - this only prints facts about the mesh patchTubeWithHoles()
-  // just built, so we can tell whether "missing triangles" means a genuine
-  // topological gap (an edge shared by 0 or >2 triangles instead of 1 or 2)
-  // or a degenerate/near-zero-area triangle (a fold, which renders as a
-  // sliver or a backface-culled "hole" even though the mesh is technically
-  // closed). Remove once the real cause is confirmed.
-  {
-    struct EdgeInfo {
-      int count = 0;
-    };
-    std::map<std::pair<int, int>, EdgeInfo> edgeCount;
-    auto addEdge = [&](int a, int b) {
-      const auto key = a < b ? std::make_pair(a, b) : std::make_pair(b, a);
-      edgeCount[key].count++;
-    };
-    int degenerateCount = 0;
-    double minArea = std::numeric_limits<double>::infinity();
-    double maxArea = 0.0;
-    for (const auto& t : finalTris) {
-      addEdge(t.idx[0], t.idx[1]);
-      addEdge(t.idx[1], t.idx[2]);
-      addEdge(t.idx[2], t.idx[0]);
-      const Vector3d& A = allPos[t.idx[0]];
-      const Vector3d& B = allPos[t.idx[1]];
-      const Vector3d& C = allPos[t.idx[2]];
-      const double area = 0.5 * (B - A).cross(C - A).norm();
-      minArea = std::min(minArea, area);
-      maxArea = std::max(maxArea, area);
-      if (area < 1e-9) degenerateCount++;
-    }
-    int badMultiplicity = 0;
-    std::vector<std::pair<int, int>> badEdgesSample;
-    for (const auto& kv : edgeCount) {
-      if (kv.second.count != 1 && kv.second.count != 2) {
-        badMultiplicity++;
-        if (badEdgesSample.size() < 20) badEdgesSample.push_back(kv.first);
-      }
-    }
-    LOG(message_group::Warning,
-        "patch() DIAG: tris=%1$s verts=%2$s degenerateTris(area<1e-9)=%3$s "
-        "minArea=%4$s maxArea=%5$s badMultiplicityEdges=%6$s",
-        finalTris.size(), allPos.size(), degenerateCount, minArea, maxArea, badMultiplicity);
-    for (const auto& e : badEdgesSample) {
-      const Vector3d& A = allPos[e.first];
-      const Vector3d& B = allPos[e.second];
-      LOG(message_group::Warning,
-          "patch() DIAG: bad edge (mult=%1$s) idx=(%2$s,%3$s) A=(%4$s,%5$s,%6$s) B=(%7$s,%8$s,%9$s)",
-          edgeCount[e].count, e.first, e.second, A.x(), A.y(), A.z(), B.x(), B.y(), B.z());
-    }
-    if (degenerateCount > 0) {
-      int shown = 0;
-      for (const auto& t : finalTris) {
-        const Vector3d& A = allPos[t.idx[0]];
-        const Vector3d& B = allPos[t.idx[1]];
-        const Vector3d& C = allPos[t.idx[2]];
-        const double area = 0.5 * (B - A).cross(C - A).norm();
-        if (area < 1e-9 && shown < 10) {
-          LOG(message_group::Warning,
-              "patch() DIAG: degenerate tri idx=(%1$s,%2$s,%3$s) A=(%4$s,%5$s,%6$s) "
-              "B=(%7$s,%8$s,%9$s) C=(%10$s,%11$s,%12$s)",
-              t.idx[0], t.idx[1], t.idx[2], A.x(), A.y(), A.z(), B.x(), B.y(), B.z(), C.x(), C.y(),
-              C.z());
-          shown++;
-        }
-      }
-    }
-  }
-  // -------- end diagnostic --------
-
-  // -------- TEMPORARY DIAGNOSTIC 2: true boundary-loop count --------
-  // badMultiplicityEdges above only catches a NON-manifold edge (shared by
-  // 0, 3, 4... triangles) - it can't tell a genuine boundary edge (shared
-  // by exactly 1 triangle, as every real hole rim's edges are) apart from
-  // a "fake" one that only has 1 triangle because its fellow triangle on
-  // the other side is simply MISSING from the mesh. Both look identical to
-  // an undirected edge-multiplicity count, which is exactly why that check
-  // came back clean despite visibly missing triangles.
-  //
-  // A DIRECTED edge count doesn't have that blind spot: two triangles that
-  // share an edge and are wound consistently contribute that edge in
-  // OPPOSITE directions (a->b from one, b->a from the other), which cancel
-  // exactly; only genuine boundary edges (and any edge missing its true
-  // neighbor) are left over. Chaining what's left into closed loops (same
-  // idea as mergeTrianglesSub() elsewhere in this codebase) tells us
-  // exactly how many boundary curves this mesh actually has - for this
-  // model that should be exactly 4 (outer ring, tube-partner ring, tap1,
-  // tap2). More than 4 means real gaps, and each extra loop's own vertex
-  // positions pinpoint exactly where.
-  {
-    std::map<std::pair<int, int>, int> posEdges;  // key: (a,b) with a<b, seen as a->b
-    std::map<std::pair<int, int>, int> negEdges;  // key: (a,b) with a<b, seen as b->a
-    for (const auto& t : finalTris) {
-      const int verts[3] = {t.idx[0], t.idx[1], t.idx[2]};
-      for (int k = 0; k < 3; k++) {
-        const int a = verts[k];
-        const int b = verts[(k + 1) % 3];
-        if (b > a) posEdges[{a, b}]++;
-        else if (a > b) negEdges[{b, a}]++;
-      }
-    }
-    std::set<std::pair<int, int>> allKeys;
-    for (const auto& kv : posEdges) allKeys.insert(kv.first);
-    for (const auto& kv : negEdges) allKeys.insert(kv.first);
-
-    std::unordered_map<int, std::vector<int>> chain;
-    int cancelled = 0, leftover = 0;
-    for (const auto& key : allKeys) {
-      const int p = posEdges.count(key) ? posEdges.at(key) : 0;
-      const int n = negEdges.count(key) ? negEdges.at(key) : 0;
-      const int net = p - n;
-      cancelled += std::min(p, n);
-      if (net > 0) {
-        for (int r = 0; r < net; r++) chain[key.first].push_back(key.second);
-        leftover += net;
-      } else if (net < 0) {
-        for (int r = 0; r < -net; r++) chain[key.second].push_back(key.first);
-        leftover += -net;
-      }
-    }
-
-    std::vector<std::vector<int>> loops;
-    while (!chain.empty()) {
-      const int start = chain.begin()->first;
-      int cur = start;
-      std::vector<int> loop = {cur};
-      int guard = 0;
-      while (true) {
-        auto it = chain.find(cur);
-        if (it == chain.end() || it->second.empty()) break;  // broken/open chain - stop this loop
-        const int nxt = it->second.back();
-        it->second.pop_back();
-        if (it->second.empty()) chain.erase(it);
-        loop.push_back(nxt);
-        if (nxt == start) break;
-        cur = nxt;
-        if (++guard > 200000) break;  // safety valve, shouldn't trigger
-      }
-      loops.push_back(loop);
-    }
-
-    // Label each vertex index by which boundary ring it belongs to (outer,
-    // one of the holes) or "interior" (a grid/collar point added later), so
-    // the small leftover loops below can be pinned to a UV location instead
-    // of only a 3D one.
-    std::vector<std::pair<size_t, size_t>> ringRanges;  // [start,end) into allUV/allPos
-    std::vector<std::string> ringNames;
-    {
-      size_t off = 0;
-      ringRanges.push_back({off, off + outer_uv.size()});
-      ringNames.push_back("outer");
-      off += outer_uv.size();
-      for (size_t hi = 0; hi < holes_uv.size(); hi++) {
-        ringRanges.push_back({off, off + holes_uv[hi].size()});
-        ringNames.push_back(static_cast<int>(hi) == tubePartnerIdx ? "tube-partner"
-                                                                   : ("hole" + std::to_string(hi)));
-        off += holes_uv[hi].size();
-      }
-    }
-    auto labelVertex = [&](int idx) -> std::string {
-      for (size_t r = 0; r < ringRanges.size(); r++) {
-        if (idx >= (int)ringRanges[r].first && idx < (int)ringRanges[r].second) {
-          return ringNames[r] + "#" + std::to_string(idx - ringRanges[r].first);
-        }
-      }
-      return "interior";
-    };
-
-    LOG(message_group::Warning,
-        "patch() DIAG2: directed boundary loops=%1$s (expect 4: outer/tube-partner/tap1/tap2) "
-        "cancelled edge-pairs=%2$s leftover directed edges=%3$s",
-        loops.size(), cancelled, leftover);
-    for (size_t li = 0; li < loops.size(); li++) {
-      const auto& loop = loops[li];
-      if (loop.size() > 60) {
-        LOG(message_group::Warning,
-            "patch() DIAG2: loop %1$s: %2$s vertices (large - likely a real ring)", li, loop.size());
-        continue;
-      }
-      Vector3d c(0, 0, 0);
-      Vector3d lo(1e300, 1e300, 1e300), hi(-1e300, -1e300, -1e300);
-      for (int idx : loop) {
-        const Vector3d& v = allPos[idx];
-        c += v;
-        lo = lo.cwiseMin(v);
-        hi = hi.cwiseMax(v);
-      }
-      c /= static_cast<double>(loop.size());
-      LOG(message_group::Warning,
-          "patch() DIAG2: loop %1$s: %2$s vertices (SMALL/suspicious) centroid=(%3$s,%4$s,%5$s) "
-          "bbox=[(%6$s,%7$s,%8$s)-(%9$s,%10$s,%11$s)]",
-          li, loop.size(), c.x(), c.y(), c.z(), lo.x(), lo.y(), lo.z(), hi.x(), hi.y(), hi.z());
-      if (loop.size() <= 20) {
-        std::string detail;
-        for (size_t k = 0; k + 1 < loop.size(); k++) {
-          int idx = loop[k];
-          const Vector2d& p = allUV[idx];
-          detail += " " + labelVertex(idx) + "(idx=" + std::to_string(idx) +
-                    ",u=" + std::to_string(p.x()) + ",v=" + std::to_string(p.y()) + ")";
-        }
-        LOG(message_group::Warning, "patch() DIAG2: loop %1$s verts:%2$s", li, detail);
-      }
-    }
-  }
-  // -------- end diagnostic 2 --------
 
   return polyset;
 }
