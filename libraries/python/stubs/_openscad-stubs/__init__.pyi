@@ -689,6 +689,7 @@ def polygon(
     points: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
     paths: Sequence[Sequence[int]] | "npt.NDArray[np.int64]" | None = None,
     convexity: int = 2,
+    *,
     fn: Optional[float] = None,
     fa: Optional[float] = None,
     fs: Optional[float] = None,

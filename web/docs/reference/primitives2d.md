@@ -107,7 +107,7 @@ Create a 2D polygon from a list of points.
 === "Python"
 
     ```python
-    polygon(points, paths=None, convexity=2, fn=None, fa=None, fs=None)
+    polygon(points, paths=None, convexity=2, *, fn=None, fa=None, fs=None)
     ```
 
 **Parameters:**
@@ -117,7 +117,7 @@ Create a 2D polygon from a list of points.
 | `points` | list of `[x, y]` or `[x, y, r]` | — | Vertex coordinates. Optional third value is a corner fillet radius (PythonSCAD extension) |
 | `paths` | list of index lists | `None` | Optional paths defining which points form each outline/hole. If omitted, points are connected in order |
 | `convexity` | int | `2` | Maximum number of front/back faces a ray can intersect |
-| `fn`, `fa`, `fs` | float | — | Curve discretization for corner fillets (same meaning as for `circle`) |
+| `fn`, `fa`, `fs` | float | — | Keyword-only controls for corner-fillet arc subdivision. Combined as lower bounds on the number of segments per fillet (not the same angle-scaled `$fn`/`$fa`/`$fs` rules used by `circle`) |
 
 **PythonSCAD extensions:**
 
