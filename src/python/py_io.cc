@@ -697,9 +697,13 @@ std::vector<std::string> nimport_downloaded;
 extern int curl_download(const std::string& url, const std::string& path, std::string *errmsg);
 PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  LOG(message_group::Deprecated,
-      "nimport() is deprecated and insecure for sharing libraries; publish/install a Python package "
-      "instead. See https://www.pythonscad.org/libraries/");
+  static const char *const nimport_deprecation_msg =
+    "nimport() is deprecated and insecure for sharing libraries; publish/install a Python package "
+    "instead. See https://www.pythonscad.org/libraries/";
+  LOG(message_group::Deprecated, "%1$s", nimport_deprecation_msg);
+  if (PyErr_WarnEx(PyExc_DeprecationWarning, nimport_deprecation_msg, 1) < 0) {
+    return nullptr;
+  }
   char *kwlist[] = {"url", NULL};
   const char *c_url = nullptr;
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist, &c_url)) {
