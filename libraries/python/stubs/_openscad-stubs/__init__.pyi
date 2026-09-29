@@ -373,12 +373,13 @@ class PyOpenSCAD:
         ...
 
     def projection(
-        self, cut: Optional[bool] = None, convexity: int = 2
+        self, cut: bool = False, detail: bool = False, convexity: int = 2
     ) -> "PyOpenSCAD":
         """Create a 2D projection from this 3D object.
 
         Args:
             cut: If True, creates a cross-section at z=0.
+            detail: If True (and ``cut`` is False), preserve more edges in the silhouette.
             convexity: Convexity parameter for rendering. Defaults to 2.
 
         Returns:
@@ -688,18 +689,24 @@ def polygon(
     points: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
     paths: Sequence[Sequence[int]] | "npt.NDArray[np.int64]" | None = None,
     convexity: int = 2,
+    fn: Optional[float] = None,
+    fa: Optional[float] = None,
+    fs: Optional[float] = None,
 ) -> PyOpenSCAD:
     """Create a polygon primitive.
 
     Args:
-        points: List of 2D coordinates defining the polygon vertices.
-                Each point must be a list of exactly 2 numbers [x, y].
-                Must contain at least one point.
+        points: List of coordinates defining the polygon vertices.
+                Each point is ``[x, y]`` or ``[x, y, r]`` where optional ``r``
+                fillets that corner. Must contain at least one point.
         paths: Optional list of paths, where each path is a list of indices
                into the points list. If specified, must contain at least one path.
                Used to define holes or complex polygons.
         convexity: Convexity parameter for rendering optimization. Must be >= 1.
                    Defaults to 2.
+        fn: Number of fragments for corner-fillet arcs.
+        fa: Minimum angle for each fillet-arc fragment.
+        fs: Minimum size for each fillet-arc fragment.
 
     Returns:
         A 2D geometric object.
@@ -709,7 +716,11 @@ def polygon(
 def polyline(
     points: Sequence[Sequence[float]] | "npt.NDArray[np.float64]",
 ) -> PyOpenSCAD:
-    """Create an open 2D polyline through ``points``."""
+    """Create an open polyline through ``points``.
+
+    Points are ``[x, y]`` (2D) or ``[x, y, z]``. If any point has a non-zero
+    ``z``, the result is a 3D polyline.
+    """
     ...
 
 def text(
@@ -1224,13 +1235,17 @@ def minkowski(obj1: PyOpenSCADs, obj2: PyOpenSCADs, convexity: int = 2) -> PyOpe
     ...
 
 def projection(
-    obj: PyOpenSCADs, cut: Optional[bool] = None, convexity: int = 2
+    obj: PyOpenSCADs,
+    cut: bool = False,
+    detail: bool = False,
+    convexity: int = 2,
 ) -> PyOpenSCAD:
     """Create a 2D projection from a 3D object.
 
     Args:
         obj: 3D object to project.
         cut: If True, creates a cross-section at z=0.
+        detail: If True (and ``cut`` is False), preserve more edges in the silhouette.
         convexity: Convexity parameter for rendering. Defaults to 2.
 
     Returns:
