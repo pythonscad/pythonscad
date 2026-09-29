@@ -224,7 +224,7 @@ Extrude a 2D shape along an arbitrary 3D path. A 4th value in each path vertex s
 | `scale` | `[x, y]` | `None` | Scale factor at the end |
 | `twist` | number or function | `None` | Twist angle or function |
 | `closed` | bool | `False` | Close the path into a loop |
-| `allow_intersect` | bool | `False` | When `False`, self-intersecting paths emit a warning that the result is unpredictable |
+| `allow_intersect` | bool | `False` | When `False`, warn if consecutive extruded profiles appear to collide (cross-section vertices behind the previous profile plane). This is not a full path self-intersection test |
 | `fn`, `fa`, `fs` | float | `-1` | Curve discretization |
 
 **Examples:**

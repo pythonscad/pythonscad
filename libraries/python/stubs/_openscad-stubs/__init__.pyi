@@ -379,7 +379,8 @@ class PyOpenSCAD:
 
         Args:
             cut: If True, creates a cross-section at z=0.
-            detail: If True (and ``cut`` is False), preserve more edges in the silhouette.
+            detail: If True (and ``cut`` is False), preserve more silhouette edges.
+                Honored only with the Manifold backend; ignored otherwise.
             convexity: Convexity parameter for rendering. Defaults to 2.
 
         Returns:
@@ -1246,7 +1247,8 @@ def projection(
     Args:
         obj: 3D object to project.
         cut: If True, creates a cross-section at z=0.
-        detail: If True (and ``cut`` is False), preserve more edges in the silhouette.
+        detail: If True (and ``cut`` is False), preserve more silhouette edges.
+            Honored only with the Manifold backend; ignored otherwise.
         convexity: Convexity parameter for rendering. Defaults to 2.
 
     Returns:
