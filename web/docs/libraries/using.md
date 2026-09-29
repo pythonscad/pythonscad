@@ -19,6 +19,10 @@ visible to your scripts.
    imports.
 3. Install packages into the same environment with that venv's `pip`.
 
+PythonSCAD looks for executables under either `bin/` or `Scripts/` in the
+selected venv (POSIX layouts and plain Windows venvs use one or the other;
+MSYS2 environments often use `bin/`). Use whichever directory exists:
+
 === "Linux / macOS"
 
     ```shell
@@ -26,11 +30,18 @@ visible to your scripts.
     path/to/your/.venv/bin/pip install pythonscad-pincutout
     ```
 
-=== "Windows"
+=== "Windows (Python.org / Store venv)"
 
     ```powershell
-    # From PowerShell, using the venv you selected in PythonSCAD:
+    # Typical native Windows venv layout:
     path\to\your\.venv\Scripts\pip.exe install pythonscad-pincutout
+    ```
+
+=== "Windows (MSYS2 / bin layout)"
+
+    ```bash
+    # Packaged MSYS2 builds often create a POSIX-style bin/ directory:
+    path/to/your/.venv/bin/pip install pythonscad-pincutout
     ```
 
 You can also activate the venv first (`source .venv/bin/activate` or
