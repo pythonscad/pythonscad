@@ -703,7 +703,6 @@ PyObject *python_nimport(PyObject *self, PyObject *args, PyObject *kwargs)
   static const char *const nimport_deprecation_msg =
     "nimport() is deprecated and insecure for sharing libraries; publish/install a Python package "
     "instead. See https://www.pythonscad.org/libraries/";
-  LOG(message_group::Deprecated, "%1$s", nimport_deprecation_msg);
   if (PyErr_WarnEx(PyExc_DeprecationWarning, nimport_deprecation_msg, 1) < 0) {
     return nullptr;
   }
