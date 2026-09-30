@@ -159,7 +159,10 @@ PyObject *python_oo_show(PyObject *obj, PyObject *args, PyObject *kwargs)
 
 PyObject *python_output(PyObject *obj, PyObject *args, PyObject *kwargs)
 {
-  LOG(message_group::Deprecated, "output is deprecated, please use show() instead");
+  if (PyErr_WarnEx(PyExc_DeprecationWarning, "output() is deprecated, please use show() instead", 1) <
+      0) {
+    return nullptr;
+  }
   return python_show(obj, args, kwargs);
 }
 
@@ -1194,7 +1197,10 @@ PyObject *python_osuse(PyObject *self, PyObject *args, PyObject *kwargs)
 
 PyObject *python_osinclude(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-  LOG(message_group::Deprecated, "osinclude  is deprecated, please use osuse() instead");
+  if (PyErr_WarnEx(PyExc_DeprecationWarning, "osinclude() is deprecated, please use osuse() instead",
+                   1) < 0) {
+    return nullptr;
+  }
   return python_osuse_include(1, self, args, kwargs);
 }
 

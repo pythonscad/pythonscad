@@ -1839,8 +1839,8 @@ stderr_bak = None\n\
       continue;
     }
     if (!command_output_str.empty()) {
-      if (i == 1) error += command_output_str; /* output to console */
-      else LOG(command_output_str.c_str());    /* error to LOG */
+      if (i == 1) LOG(message_group::Warning, "%1$s", command_output_str); /* output to console */
+      else LOG(command_output_str.c_str());                                /* error to LOG */
     }
   }
   PyRun_SimpleString(python_exit_code);
