@@ -454,6 +454,40 @@ struct Kernel {
     return behind_all(T.vi[best], T.vi[(best + 1) % 3]);
   }
 
+  static double area(const Poly& P, const Vector3d& n)
+  {
+    Vector3d a = Vector3d::Zero();
+    for (int i = 0; i < P.n; ++i) a += P.p[i].cross(P.p[(i + 1) % P.n]);
+    return 0.5 * a.dot(n);
+  }
+
+  // Shrink the hull input of a violating pair to the column between the two
+  // faces: the larger clipped face is cut down to the projection of the
+  // smaller one. Hulls of neighbouring pairs then tile instead of overlapping,
+  // which keeps the union of all hulls cheap. Oblique pairs without overlap
+  // in projection keep the full clipped faces.
+  void hullInput(const Tri& A, const Tri& B, Poly& PA, Poly& PB) const
+  {
+    const bool a_big = std::fabs(area(PA, A.n)) >= std::fabs(area(PB, B.n));
+    Poly& L = a_big ? PA : PB;
+    const Poly& Sm = a_big ? PB : PA;
+    const Tri& TL = a_big ? A : B;
+    if (Sm.n < 3) return;
+    Poly proj;
+    proj.n = Sm.n;
+    for (int i = 0; i < Sm.n; ++i) proj.p[i] = Sm.p[i] - TL.n * (TL.n.dot(Sm.p[i]) - TL.off);
+    const double ar = area(proj, TL.n);
+    if (std::fabs(ar) <= eps * eps) return;
+    const double sign = ar > 0 ? 1.0 : -1.0;
+    Poly cut = L;
+    for (int i = 0; i < proj.n && cut.n; ++i) {
+      const Vector3d& a = proj.p[i];
+      const Vector3d m = TL.n.cross(proj.p[(i + 1) % proj.n] - a) * sign;  // inward
+      clip(cut, m, -m.dot(a), eps);
+    }
+    if (cut.n >= 3) L = cut;
+  }
+
   bool test(int ia, int ib, Hit& h) const
   {
     const Tri& A = tris[ia];
@@ -635,6 +669,7 @@ Result run(std::shared_ptr<const PolySet> mesh, double d, const Options& opt, bo
           v.q = h.q;
           v.distance = h.dist;
           if (hulls) {
+            K.hullInput(tris[ia], tris[ib], h.PA, h.PB);
             v.hull_begin = (int)pool[w].size();
             v.hull_count = h.PA.n + h.PB.n;
             for (int k = 0; k < h.PA.n; ++k) pool[w].push_back(h.PA.p[k]);
@@ -721,11 +756,26 @@ std::shared_ptr<const Geometry> errorGeometry(const Result& res, Mode mode,
 {
 #ifdef ENABLE_MANIFOLD
   if (res.violations.empty()) return nullptr;
-  // most severe pairs first
+  // Every violating triangle contributes the hull to its nearest partner
+  // only. Between two curved surfaces each facet faces dozens of facets on
+  // the other side; the hulls of all those pairs cross the same thin web and
+  // their union explodes in complexity, while the nearest-partner hulls
+  // already cover the thin region.
+  const size_t ntri = res.tri_min_distance.size();
+  std::vector<int> best(ntri, -1);
+  for (int i = 0; i < (int)res.violations.size(); ++i) {
+    const Violation& v = res.violations[i];
+    if (v.hull_count < 4) continue;
+    for (int t : {v.tri_a, v.tri_b})
+      if (best[t] < 0 || v.distance < res.violations[best[t]].distance) best[t] = i;
+  }
+  std::sort(best.begin(), best.end());
+  best.erase(std::unique(best.begin(), best.end()), best.end());
   std::vector<const Violation *> order;
-  order.reserve(res.violations.size());
-  for (const auto& v : res.violations)
-    if (v.hull_count >= 4) order.push_back(&v);
+  order.reserve(best.size());
+  for (int i : best)
+    if (i >= 0) order.push_back(&res.violations[i]);
+  // most severe first when capped
   std::stable_sort(order.begin(), order.end(),
                    [](const Violation *a, const Violation *b) { return a->distance < b->distance; });
   if (order.size() > max_hulls) order.resize(max_hulls);
