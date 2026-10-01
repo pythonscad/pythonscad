@@ -773,6 +773,7 @@ if(ENABLE_PYTHON)
     src/python/py_extrude.cc
     src/python/py_csg.cc
     src/python/py_analysis.cc
+    src/python/py_drc.cc
     src/python/py_ops.cc
     src/python/py_io.cc
     src/python/pywidget_bridge.cc
@@ -786,6 +787,7 @@ if(ENABLE_PYTHON)
     src/core/PatchNode.cc
     src/core/DebugNode.cc
     src/core/RepairNode.cc
+    src/core/FacingCheckNode.cc
     src/core/OversampleNode.cc
 )
   if(ENABLE_LIBFIVE)
@@ -1652,6 +1654,7 @@ set(CORE_SOURCES
   src/geometry/linear_extrude.cc
   src/geometry/rotate_extrude.cc
   src/geometry/organic_resample.cc
+  src/geometry/facing_check.cc
   src/glview/Camera.cc
   src/glview/ColorMap.cc
   src/glview/CsgInfo.cc
