@@ -34,6 +34,7 @@
 #include "core/PullNode.h"
 #include "core/DebugNode.h"
 #include "core/RepairNode.h"
+#include "core/FacingCheckNode.h"
 #include "core/WrapNode.h"
 #include "core/OversampleNode.h"
 #include "core/FilletNode.h"
@@ -83,14 +84,14 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
     NodeCloneFunc(OrganicNode) NodeCloneFunc(CircleNode) NodeCloneFunc(PolygonNode)
       NodeCloneFunc(PolylineNode) NodeCloneFunc(SplineNode) NodeCloneFunc(TransformNode)
         NodeCloneFunc(PullNode) NodeCloneFunc(DebugNode) NodeCloneFunc(RepairNode)
-          NodeCloneFunc(WrapNode) NodeCloneFunc(ColorNode) NodeCloneFunc(OversampleNode)
-            NodeCloneFunc(FilletNode) NodeCloneFunc(RotateExtrudeNode) NodeCloneFunc(LinearExtrudeNode)
-              NodeCloneFunc(PathExtrudeNode) NodeCloneFunc(CsgOpNode) NodeCloneFunc(CgalAdvNode)
-                NodeCloneFunc(RenderNode) NodeCloneFunc(SkinNode) NodeCloneFunc(SurfaceNode)
-                  NodeCloneFunc(SheetNode) NodeCloneFunc(TextNode) NodeCloneFunc(OffsetNode)
-                    NodeCloneFunc(ProjectionNode) NodeCloneFunc(GroupNode) NodeCloneFunc(ImportNode)
-                      NodeCloneFunc(ListNode) NodeCloneFunc(AbstractIntersectionNode)
-                        NodeCloneFunc(PatchNode)
+          NodeCloneFunc(FacingCheckNode) NodeCloneFunc(WrapNode) NodeCloneFunc(ColorNode)
+            NodeCloneFunc(OversampleNode) NodeCloneFunc(FilletNode) NodeCloneFunc(RotateExtrudeNode)
+              NodeCloneFunc(LinearExtrudeNode) NodeCloneFunc(PathExtrudeNode) NodeCloneFunc(CsgOpNode)
+                NodeCloneFunc(CgalAdvNode) NodeCloneFunc(RenderNode) NodeCloneFunc(SkinNode)
+                  NodeCloneFunc(SurfaceNode) NodeCloneFunc(SheetNode) NodeCloneFunc(TextNode)
+                    NodeCloneFunc(OffsetNode) NodeCloneFunc(ProjectionNode) NodeCloneFunc(GroupNode)
+                      NodeCloneFunc(ImportNode) NodeCloneFunc(ListNode)
+                        NodeCloneFunc(AbstractIntersectionNode) NodeCloneFunc(PatchNode)
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
                           NodeCloneFunc(RoofNode)
 #endif
@@ -105,14 +106,14 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
     NodeCloneUse(EdgeNode) NodeCloneUse(SquareNode) NodeCloneUse(CircleNode) NodeCloneUse(PolygonNode)
       NodeCloneUse(PolylineNode) NodeCloneUse(SplineNode) NodeCloneUse(TransformNode)
         NodeCloneUse(OrganicNode) NodeCloneUse(PullNode) NodeCloneUse(DebugNode) NodeCloneUse(RepairNode)
-          NodeCloneUse(WrapNode) NodeCloneUse(ColorNode) NodeCloneUse(OversampleNode)
-            NodeCloneUse(FilletNode) NodeCloneUse(RotateExtrudeNode) NodeCloneUse(LinearExtrudeNode)
-              NodeCloneUse(PathExtrudeNode) NodeCloneUse(CsgOpNode) NodeCloneUse(CgalAdvNode)
-                NodeCloneUse(RenderNode) NodeCloneUse(SkinNode) NodeCloneUse(SurfaceNode)
-                  NodeCloneUse(SheetNode) NodeCloneUse(TextNode) NodeCloneUse(OffsetNode)
-                    NodeCloneUse(ProjectionNode) NodeCloneUse(GroupNode) NodeCloneUse(ImportNode)
-                      NodeCloneUse(ListNode) NodeCloneUse(AbstractIntersectionNode)
-                        NodeCloneUse(PatchNode)
+          NodeCloneUse(FacingCheckNode) NodeCloneUse(WrapNode) NodeCloneUse(ColorNode)
+            NodeCloneUse(OversampleNode) NodeCloneUse(FilletNode) NodeCloneUse(RotateExtrudeNode)
+              NodeCloneUse(LinearExtrudeNode) NodeCloneUse(PathExtrudeNode) NodeCloneUse(CsgOpNode)
+                NodeCloneUse(CgalAdvNode) NodeCloneUse(RenderNode) NodeCloneUse(SkinNode)
+                  NodeCloneUse(SurfaceNode) NodeCloneUse(SheetNode) NodeCloneUse(TextNode)
+                    NodeCloneUse(OffsetNode) NodeCloneUse(ProjectionNode) NodeCloneUse(GroupNode)
+                      NodeCloneUse(ImportNode) NodeCloneUse(ListNode)
+                        NodeCloneUse(AbstractIntersectionNode) NodeCloneUse(PatchNode)
 #if defined(ENABLE_EXPERIMENTAL) && defined(ENABLE_CGAL)
                           NodeCloneUse(RoofNode)
 #endif
