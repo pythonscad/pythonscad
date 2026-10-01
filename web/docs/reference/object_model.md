@@ -28,6 +28,8 @@ The following methods are available on every solid object:
 
 **Mesh ops:** `explode`, `oversample`, `debug`, `repair`, `fillet`, `separate`
 
+**Design rule checks:** `internal`, `external`
+
 **Display:** `show`, `export`, `render`, `projection`, `highlight`, `background`, `only`
 
 **Other:** `clone`, `hasattr`, `getattr`, `setattr`, `dict`, `_repr_mimebundle_`

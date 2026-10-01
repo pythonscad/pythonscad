@@ -878,6 +878,12 @@ PyMethodDef PyOpenSCADFunctions[] = {
    "Make a mesh watertight/manifold.\n"
    "repair(obj)\n"
    "repair(obj, color=\"red\")"},
+  {"internal", (PyCFunction)python_internal, METH_VARARGS | METH_KEYWORDS,
+   "Min wall thickness check between facing surfaces, returns the violating material.\n"
+   "internal(obj, d, angle=120, alpha=90, occlusion=True, report=False)"},
+  {"external", (PyCFunction)python_external, METH_VARARGS | METH_KEYWORDS,
+   "Min spacing check between facing surfaces, returns the violating air.\n"
+   "external(obj, d, other=None, angle=120, alpha=90, occlusion=True, report=False)"},
   {"fillet", (PyCFunction)python_fillet, METH_VARARGS | METH_KEYWORDS,
    "Round edges of a solid.\n"
    "fillet(obj, r=radius)\n"
@@ -1036,14 +1042,16 @@ PyMethodDef PyOpenSCADMethods[] = {
                         OO_METHOD_ENTRY(explode, "Explode a solid with a vector") OO_METHOD_ENTRY(
                           mesh, "Mesh Object") OO_METHOD_ENTRY(inside, "check if given point is inside")
                           OO_METHOD_ENTRY(bbox, "Evaluate Bound Box of object")
-                            OO_METHOD_ENTRY(faces, "Create Faces list")
-                              OO_METHOD_ENTRY(children, "Return Tupple from solid children")
-                                OO_METHOD_ENTRY(edges, "Create Edges list") OO_METHOD_ENTRY(
-                                  oversample, "Oversample Object") OO_METHOD_ENTRY(debug,
-                                                                                   "Debug Object Faces")
-                                  OO_METHOD_ENTRY(repair, "Make solid watertight") OO_METHOD_ENTRY(
-                                    fillet, "Fillet Object") OO_METHOD_ENTRY(align,
-                                                                             "Align Object to another")
+                            OO_METHOD_ENTRY(faces, "Create Faces list") OO_METHOD_ENTRY(
+                              children, "Return Tupple from solid children")
+                              OO_METHOD_ENTRY(edges, "Create Edges list") OO_METHOD_ENTRY(
+                                oversample, "Oversample Object") OO_METHOD_ENTRY(debug,
+                                                                                 "Debug Object Faces")
+                                OO_METHOD_ENTRY(repair, "Make solid watertight") OO_METHOD_ENTRY(
+                                  internal, "Min wall thickness check")
+                                  OO_METHOD_ENTRY(external, "Min spacing check") OO_METHOD_ENTRY(
+                                    fillet,
+                                    "Fillet Object") OO_METHOD_ENTRY(align, "Align Object to another")
 
                                     OO_METHOD_ENTRY(highlight, "Highlight Object")
                                       OO_METHOD_ENTRY(background, "Background Object") OO_METHOD_ENTRY(
