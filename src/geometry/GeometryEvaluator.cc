@@ -3815,10 +3815,12 @@ Response GeometryEvaluator::visit(State& state, const FacingCheckNode& node)
         LOG(message_group::Warning, node.modinst->location(), this->tree.getDocumentPath(),
             "%1$s: %2$d violations, minimum %3$g", node.toString(), res.violation_count,
             res.min_distance);
-        if (res.violations.size() > max_hulls) {
+        size_t bad_tris = 0;
+        for (double t : res.tri_min_distance) bad_tris += t < node.distance;
+        if (bad_tris > max_hulls) {
           LOG(message_group::Warning, node.modinst->location(), this->tree.getDocumentPath(),
-              "%1$s: error solid built from the %2$d most severe of %3$d violations", node.name(),
-              max_hulls, res.violations.size());
+              "%1$s: error solid shows the %2$d most severe of %3$d violating triangles", node.name(),
+              max_hulls, bad_tris);
         }
         geom = FacingCheck::errorGeometry(res, node.mode, bodies, max_hulls);
       }

@@ -87,8 +87,10 @@ Result check(const PolySet& ps, Mode mode, double distance, const Options& opt =
 Result checkBetween(const PolySet& a, const PolySet& b, double distance, const Options& opt = {});
 
 // Error solid: union of the violation hulls, clipped to the material
-// (Internal) or to the air (External) of 'bodies'. At most 'max_hulls' pairs
-// are used, the smallest distances first. Returns nullptr if the result is
+// (Internal) or to the air (External) of 'bodies'. Each violating triangle
+// contributes the hull to its nearest partner only (all pairs between two
+// curved surfaces would overlap heavily and make the union explode). At most
+// 'max_hulls' hulls are used, the smallest distances first. Returns nullptr if the result is
 // clean or no error volume remains (e.g. only zero-volume edge contacts).
 std::shared_ptr<const Geometry> errorGeometry(const Result& res, Mode mode,
                                               const std::vector<std::shared_ptr<const Geometry>>& bodies,
