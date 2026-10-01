@@ -90,10 +90,12 @@ Result checkBetween(const PolySet& a, const PolySet& b, double distance, const O
 // (Internal) or to the air (External) of 'bodies'. Each violating triangle
 // contributes the hull to its nearest partner only (all pairs between two
 // curved surfaces would overlap heavily and make the union explode). At most
-// 'max_hulls' hulls are used, the smallest distances first. Returns nullptr if the result is
-// clean or no error volume remains (e.g. only zero-volume edge contacts).
+// 'max_hulls' hulls are used, the smallest distances first. With grow > 0
+// every vertex is moved outwards by about 'grow' along its vertex normal
+// (cheap, not an exact offset) so the solid does not z-fight with the part. Returns nullptr if the
+// result is clean or no error volume remains (e.g. only zero-volume edge contacts).
 std::shared_ptr<const Geometry> errorGeometry(const Result& res, Mode mode,
                                               const std::vector<std::shared_ptr<const Geometry>>& bodies,
-                                              size_t max_hulls = 20000);
+                                              size_t max_hulls = 20000, double grow = 0);
 
 }  // namespace FacingCheck

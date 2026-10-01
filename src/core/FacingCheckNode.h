@@ -25,4 +25,5 @@ public:
   double min_angle = 120;
   double alpha = 90;
   bool occlusion = true;
+  double grow = -1;  // display offset of the error solid, < 0: automatic
 };
