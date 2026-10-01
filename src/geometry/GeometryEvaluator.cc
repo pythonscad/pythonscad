@@ -3822,7 +3822,14 @@ Response GeometryEvaluator::visit(State& state, const FacingCheckNode& node)
               "%1$s: error solid shows the %2$d most severe of %3$d violating triangles", node.name(),
               max_hulls, bad_tris);
         }
-        geom = FacingCheck::errorGeometry(res, node.mode, bodies, max_hulls);
+        double grow = node.grow;
+        if (grow < 0) {  // automatic: 0.1 % of the part size
+          BoundingBox bb;
+          for (const auto& g : bodies)
+            if (g) bb.extend(g->getBoundingBox());
+          grow = bb.isEmpty() ? 0.0 : 1e-3 * bb.sizes().norm();
+        }
+        geom = FacingCheck::errorGeometry(res, node.mode, bodies, max_hulls, grow);
       }
       if (!geom) geom = PolySet::createEmpty();
     } else {

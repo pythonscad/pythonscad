@@ -206,3 +206,22 @@ TEST_CASE("FacingCheck summary mode")
   CHECK(s.min_distance == full.min_distance);
   CHECK(s.tri_min_distance == full.tri_min_distance);
 }
+
+TEST_CASE("FacingCheck error solid grow lifts every face")
+{
+  auto ps = std::make_shared<PolySet>(3);
+  box(*ps, 0, 0, 0, 10, 10, 0.5);
+  const auto r = FacingCheck::check(*ps, Mode::Internal, 0.8);
+  const std::vector<std::shared_ptr<const Geometry>> bodies{ps};
+  const auto exact = FacingCheck::errorGeometry(r, Mode::Internal, bodies, 20000, 0.0);
+  const auto grown = FacingCheck::errorGeometry(r, Mode::Internal, bodies, 20000, 0.05);
+  REQUIRE(exact);
+  REQUIRE(grown);
+  const BoundingBox be = exact->getBoundingBox(), bg = grown->getBoundingBox();
+  for (int k = 0; k < 3; ++k) {
+    CHECK(be.min()[k] == Catch::Approx(0).margin(1e-9));
+    CHECK(bg.min()[k] <= -0.05 + 1e-9);  // every face moved out by at least grow
+    CHECK(bg.max()[k] >= be.max()[k] + 0.05 - 1e-9);
+    CHECK(bg.min()[k] >= -4 * 0.05 - 1e-9);  // capped
+  }
+}
