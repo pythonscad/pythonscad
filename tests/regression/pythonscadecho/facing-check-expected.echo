@@ -1,0 +1,28 @@
+WARNING: internal(d = 0.8, angle = 120, alpha = 90, occlusion = true, grow = 0): 4 violations, minimum 0.5
+WARNING: internal(d = 0.8, angle = 120, alpha = 90, occlusion = true, grow = 0.05): 4 violations, minimum 0.5
+WARNING: external(d = 0.5, angle = 120, alpha = 90, occlusion = true, grow = 0): 4 violations, minimum 0.4
+WARNING: internal(d = 1, angle = 120, alpha = 90, occlusion = true, grow = 0): 4 violations, minimum 0
+plate internal 0.8 (True, 0.5)
+plate internal 0.3 (False, None)
+plate external 0.8 (False, None)
+plate error solid ([0.0, 0.0, 0.0], [10.0, 10.0, 0.5])
+plate error solid grown ([-0.121, -0.05, -0.05], [10.171, 10.1, 0.6])
+gap inside a (True, 0.3)
+gap a-b (True, 0.4)
+gap a-b 0.35 (False, None)
+gap a-b error solid ([2.3, 0.0, 0.0], [0.4, 1.0, 1.0])
+tube wall (True, 0.4994)
+tube hole projecting (True, 8.9892)
+tube hole oblique (True, 7.7196)
+tube hole angle 175 (True, 8.9892)
+wedge (True, 0.0)
+wedge angle 170 (False, None)
+wedge error solid ([-0.502, 4.975, 0.0], [1.005, 5.025, 5.0])
+step (False, None)
+step no occlusion (True, 2.2361)
+step no occlusion projecting (False, None)
+offset plates alpha 90 (True, 0.3606)
+offset plates alpha 45 (True, 0.3606)
+offset plates alpha 30 (False, None)
+offset plates alpha 0 (False, None)
+clean (False, None)
