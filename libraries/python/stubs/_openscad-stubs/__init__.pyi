@@ -512,14 +512,15 @@ class PyOpenSCAD:
         angle: float = 120,
         alpha: float = 90,
         occlusion: bool = True,
+        grow: Optional[float] = None,
         report: Literal[False] = False,
     ) -> Self: ...
     @overload
     def internal(
-        self, d: float, angle: float = 120, alpha: float = 90, occlusion: bool = True, *, report: Literal[True]
+        self, d: float, angle: float = 120, alpha: float = 90, occlusion: bool = True, grow: Optional[float] = None, *, report: Literal[True]
     ) -> dict[str, Any]: ...
     def internal(self, d: float, angle: float = 120, alpha: float = 90, occlusion: bool = True,
-                 report: bool = False) -> Union[Self, dict[str, Any]]:
+                 grow: Optional[float] = None, report: bool = False) -> Union[Self, dict[str, Any]]:
         """Minimum wall thickness check, see :func:`internal`."""
         ...
 
@@ -531,6 +532,7 @@ class PyOpenSCAD:
         angle: float = 120,
         alpha: float = 90,
         occlusion: bool = True,
+        grow: Optional[float] = None,
         report: Literal[False] = False,
     ) -> Self: ...
     @overload
@@ -541,11 +543,12 @@ class PyOpenSCAD:
         angle: float = 120,
         alpha: float = 90,
         occlusion: bool = True,
+        grow: Optional[float] = None,
         *,
         report: Literal[True],
     ) -> dict[str, Any]: ...
     def external(self, d: float, other: Optional["PyOpenSCAD"] = None, angle: float = 120, alpha: float = 90,
-                 occlusion: bool = True, report: bool = False) -> Union[Self, dict[str, Any]]:
+                 occlusion: bool = True, grow: Optional[float] = None, report: bool = False) -> Union[Self, dict[str, Any]]:
         """Minimum spacing check, see :func:`external`."""
         ...
 
@@ -1908,15 +1911,16 @@ def internal(
     angle: float = 120,
     alpha: float = 90,
     occlusion: bool = True,
+    grow: Optional[float] = None,
     report: Literal[False] = False,
 ) -> PyOpenSCAD: ...
 @overload
 def internal(
-    obj: PyOpenSCADs, d: float, angle: float = 120, alpha: float = 90, occlusion: bool = True, *,
+    obj: PyOpenSCADs, d: float, angle: float = 120, alpha: float = 90, occlusion: bool = True, grow: Optional[float] = None, *,
     report: Literal[True]
 ) -> dict[str, Any]: ...
 def internal(obj: PyOpenSCADs, d: float, angle: float = 120, alpha: float = 90, occlusion: bool = True,
-             report: bool = False) -> Union[PyOpenSCAD, dict[str, Any]]:
+             grow: Optional[float] = None, report: bool = False) -> Union[PyOpenSCAD, dict[str, Any]]:
     """Minimum wall thickness check between facing surfaces (3D DRC INTERNAL).
 
     Pairs of faces whose normals are at least ``angle`` degrees apart and
@@ -1930,6 +1934,9 @@ def internal(obj: PyOpenSCADs, d: float, angle: float = 120, alpha: float = 90, 
         alpha: 0 measures strictly perpendicular (projecting), larger values
             allow oblique measurement up to that angle, >= 90 any direction.
         occlusion: Ignore pairs measured through air (e.g. across a step).
+        grow: Lift the error solid off the part by about this distance so
+            both can be shown without z-fighting. Default: 0.1 % of the part
+            size, 0 disables it.
         report: Evaluate immediately and return ``{"count": n, "min": d}``
             (``min`` is None when clean) instead of the error solid.
 
@@ -1946,15 +1953,16 @@ def external(
     angle: float = 120,
     alpha: float = 90,
     occlusion: bool = True,
+    grow: Optional[float] = None,
     report: Literal[False] = False,
 ) -> PyOpenSCAD: ...
 @overload
 def external(
     obj: PyOpenSCADs, d: float, other: Optional[PyOpenSCADs] = None, angle: float = 120, alpha: float = 90,
-    occlusion: bool = True, *, report: Literal[True]
+    occlusion: bool = True, grow: Optional[float] = None, *, report: Literal[True]
 ) -> dict[str, Any]: ...
 def external(obj: PyOpenSCADs, d: float, other: Optional[PyOpenSCADs] = None, angle: float = 120,
-             alpha: float = 90, occlusion: bool = True, report: bool = False) -> Union[PyOpenSCAD, dict[str, Any]]:
+             alpha: float = 90, occlusion: bool = True, grow: Optional[float] = None, report: bool = False) -> Union[PyOpenSCAD, dict[str, Any]]:
     """Minimum spacing check between facing surfaces (3D DRC EXTERNAL).
 
     Args:
@@ -1966,6 +1974,7 @@ def external(obj: PyOpenSCADs, d: float, other: Optional[PyOpenSCADs] = None, an
         alpha: 0 measures strictly perpendicular (projecting), larger values
             allow oblique measurement up to that angle, >= 90 any direction.
         occlusion: Ignore pairs measured through material.
+        grow: Display offset of the error solid, as for :func:`internal`.
         report: Evaluate immediately and return ``{"count": n, "min": d}``.
 
     Returns:

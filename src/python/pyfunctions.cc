@@ -880,10 +880,10 @@ PyMethodDef PyOpenSCADFunctions[] = {
    "repair(obj, color=\"red\")"},
   {"internal", (PyCFunction)python_internal, METH_VARARGS | METH_KEYWORDS,
    "Min wall thickness check between facing surfaces, returns the violating material.\n"
-   "internal(obj, d, angle=120, alpha=90, occlusion=True, report=False)"},
+   "internal(obj, d, angle=120, alpha=90, occlusion=True, grow=None, report=False)"},
   {"external", (PyCFunction)python_external, METH_VARARGS | METH_KEYWORDS,
    "Min spacing check between facing surfaces, returns the violating air.\n"
-   "external(obj, d, other=None, angle=120, alpha=90, occlusion=True, report=False)"},
+   "external(obj, d, other=None, angle=120, alpha=90, occlusion=True, grow=None, report=False)"},
   {"fillet", (PyCFunction)python_fillet, METH_VARARGS | METH_KEYWORDS,
    "Round edges of a solid.\n"
    "fillet(obj, r=radius)\n"
