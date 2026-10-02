@@ -878,6 +878,9 @@ PyMethodDef PyOpenSCADFunctions[] = {
    "Make a mesh watertight/manifold.\n"
    "repair(obj)\n"
    "repair(obj, color=\"red\")"},
+  {"check", (PyCFunction)python_check, METH_VARARGS | METH_KEYWORDS,
+   "Generic Design Rule Check (internal implementation).\n"
+   "Not meant to be called directly; use internal(), external(), slope(), overhang(), draft() instead."},
   {"fillet", (PyCFunction)python_fillet, METH_VARARGS | METH_KEYWORDS,
    "Round edges of a solid.\n"
    "fillet(obj, r=radius)\n"
@@ -1036,31 +1039,39 @@ PyMethodDef PyOpenSCADMethods[] = {
                         OO_METHOD_ENTRY(explode, "Explode a solid with a vector") OO_METHOD_ENTRY(
                           mesh, "Mesh Object") OO_METHOD_ENTRY(inside, "check if given point is inside")
                           OO_METHOD_ENTRY(bbox, "Evaluate Bound Box of object")
-                            OO_METHOD_ENTRY(faces, "Create Faces list")
-                              OO_METHOD_ENTRY(children, "Return Tupple from solid children")
-                                OO_METHOD_ENTRY(edges, "Create Edges list") OO_METHOD_ENTRY(
-                                  oversample, "Oversample Object") OO_METHOD_ENTRY(debug,
-                                                                                   "Debug Object Faces")
-                                  OO_METHOD_ENTRY(repair, "Make solid watertight") OO_METHOD_ENTRY(
-                                    fillet, "Fillet Object") OO_METHOD_ENTRY(align,
-                                                                             "Align Object to another")
+                            OO_METHOD_ENTRY(faces, "Create Faces list") OO_METHOD_ENTRY(
+                              children, "Return Tupple from solid children")
+                              OO_METHOD_ENTRY(edges, "Create Edges list") OO_METHOD_ENTRY(
+                                oversample, "Oversample Object") OO_METHOD_ENTRY(debug,
+                                                                                 "Debug Object Faces")
+                                OO_METHOD_ENTRY(repair, "Make solid watertight") OO_METHOD_ENTRY(
+                                  internal, "Min wall thickness check")
+                                  OO_METHOD_ENTRY(external, "Min spacing check") OO_METHOD_ENTRY(
+                                    slope, "Face angle check") OO_METHOD_ENTRY(overhang,
+                                                                               "Overhang check")
+                                    OO_METHOD_ENTRY(draft, "Draft and undercut check") OO_METHOD_ENTRY(
+                                      select, "Spatial relationship filtering")
+                                      OO_METHOD_ENTRY(fillet, "Fillet Object") OO_METHOD_ENTRY(
+                                        align, "Align Object to another")
 
-                                    OO_METHOD_ENTRY(highlight, "Highlight Object")
-                                      OO_METHOD_ENTRY(background, "Background Object") OO_METHOD_ENTRY(
-                                        only, "Only Object") OO_METHOD_ENTRY(show, "Show Object")
-                                        OO_METHOD_ENTRY(projection, "Projection Object")
-                                          OO_METHOD_ENTRY(pull, "Pull Obejct apart") OO_METHOD_ENTRY(
-                                            wrap, "Wrap object around a cylinder or 2D outline")
-                                            OO_METHOD_ENTRY(render, "Render Object")
-                                              OO_METHOD_ENTRY(clone, "Clone Object") OO_METHOD_ENTRY(
-                                                hasattr, "Check if an attribute exists")
-                                                OO_METHOD_ENTRY(setattr, "Sets an attribute on a solid")
-                                                  OO_METHOD_ENTRY(getattr,
-                                                                  "Gets an attribute from a solid")
-                                                    OO_METHOD_ENTRY(_repr_mimebundle_,
-                                                                    "Jupyter display hook")
-                                                      OO_METHOD_ENTRY(dict, "return all dictionary"){
-                                                        NULL, NULL, 0, NULL}};
+                                        OO_METHOD_ENTRY(highlight, "Highlight Object") OO_METHOD_ENTRY(
+                                          background,
+                                          "Background Object") OO_METHOD_ENTRY(only, "Only Object")
+                                          OO_METHOD_ENTRY(show, "Show Object")
+                                            OO_METHOD_ENTRY(projection, "Projection Object")
+                                              OO_METHOD_ENTRY(pull, "Pull Obejct apart") OO_METHOD_ENTRY(
+                                                wrap, "Wrap object around a cylinder or 2D outline")
+                                                OO_METHOD_ENTRY(render, "Render Object")
+                                                  OO_METHOD_ENTRY(clone, "Clone Object") OO_METHOD_ENTRY(
+                                                    hasattr, "Check if an attribute exists")
+                                                    OO_METHOD_ENTRY(setattr,
+                                                                    "Sets an attribute on a solid")
+                                                      OO_METHOD_ENTRY(getattr,
+                                                                      "Gets an attribute from a solid")
+                                                        OO_METHOD_ENTRY(_repr_mimebundle_,
+                                                                        "Jupyter display hook")
+                                                          OO_METHOD_ENTRY(dict, "return all dictionary"){
+                                                            NULL, NULL, 0, NULL}};
 
 PyNumberMethods PyOpenSCADNumbers = {
   python_nb_add,        // binaryfunc nb_add
