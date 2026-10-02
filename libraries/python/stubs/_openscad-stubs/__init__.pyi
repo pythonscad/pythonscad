@@ -552,6 +552,36 @@ class PyOpenSCAD:
         """Minimum spacing check, see :func:`external`."""
         ...
 
+    def slope(
+        self,
+        dir: Vector3 = [0, 0, 1],
+        min: Optional[float] = None,
+        max: Optional[float] = None,
+        undercut: bool = False,
+        grow: Optional[float] = None,
+        report: bool = False,
+    ) -> Union[Self, dict[str, Any]]:
+        """Face angle check against a direction, see :func:`slope`."""
+        ...
+
+    def overhang(
+        self, angle: float = 45, dir: Vector3 = [0, 0, 1], grow: Optional[float] = None, report: bool = False
+    ) -> Union[Self, dict[str, Any]]:
+        """Overhang check for 3D printing, see :func:`overhang`."""
+        ...
+
+    def draft(
+        self,
+        angle: float = 2,
+        dir: Vector3 = [0, 0, 1],
+        parting: Optional[float] = None,
+        undercut: bool = True,
+        grow: Optional[float] = None,
+        report: bool = False,
+    ) -> Union[Self, dict[str, Any]]:
+        """Draft angle and undercut check, see :func:`draft`."""
+        ...
+
     def wrap(
         self,
         target: Optional[PyOpenSCAD] = None,
@@ -1904,81 +1934,24 @@ def repair(obj: PyOpenSCADs, color: Optional[Color] = None) -> PyOpenSCAD:
     """
     ...
 
-@overload
-def internal(
+def check(
     obj: PyOpenSCADs,
-    d: float,
-    angle: float = 120,
+    type_str: str,
+    distance: float = 0,
+    min_deg: float = -90,
+    max_deg: float = 90,
+    angle_param: float = 120,
     alpha: float = 90,
-    occlusion: bool = True,
-    grow: Optional[float] = None,
-    report: Literal[False] = False,
-) -> PyOpenSCAD: ...
-@overload
-def internal(
-    obj: PyOpenSCADs, d: float, angle: float = 120, alpha: float = 90, occlusion: bool = True, grow: Optional[float] = None, *,
-    report: Literal[True]
-) -> dict[str, Any]: ...
-def internal(obj: PyOpenSCADs, d: float, angle: float = 120, alpha: float = 90, occlusion: bool = True,
-             grow: Optional[float] = None, report: bool = False) -> Union[PyOpenSCAD, dict[str, Any]]:
-    """Minimum wall thickness check between facing surfaces (3D DRC INTERNAL).
-
-    Pairs of faces whose normals are at least ``angle`` degrees apart and
-    that lie behind each other are measured exactly through the material.
-
-    Args:
-        obj: Object to check.
-        d: Minimum allowed wall thickness.
-        angle: Minimum angle between the face normals (90 < angle <= 180).
-            With 120, wedges sharper than 60 degrees count as thin.
-        alpha: 0 measures strictly perpendicular (projecting), larger values
-            allow oblique measurement up to that angle, >= 90 any direction.
-        occlusion: Ignore pairs measured through air (e.g. across a step).
-        grow: Lift the error solid off the part by about this distance so
-            both can be shown without z-fighting. Default: 0.1 % of the part
-            size, 0 disables it.
-        report: Evaluate immediately and return ``{"count": n, "min": d}``
-            (``min`` is None when clean) instead of the error solid.
-
-    Returns:
-        The material thinner than ``d`` (empty if clean), or the report dict.
-    """
-    ...
-
-@overload
-def external(
-    obj: PyOpenSCADs,
-    d: float,
+    occlusion: int = 1,
+    check_options: Optional[dict[str, Any]] = None,
     other: Optional[PyOpenSCADs] = None,
-    angle: float = 120,
-    alpha: float = 90,
-    occlusion: bool = True,
     grow: Optional[float] = None,
-    report: Literal[False] = False,
-) -> PyOpenSCAD: ...
-@overload
-def external(
-    obj: PyOpenSCADs, d: float, other: Optional[PyOpenSCADs] = None, angle: float = 120, alpha: float = 90,
-    occlusion: bool = True, grow: Optional[float] = None, *, report: Literal[True]
-) -> dict[str, Any]: ...
-def external(obj: PyOpenSCADs, d: float, other: Optional[PyOpenSCADs] = None, angle: float = 120,
-             alpha: float = 90, occlusion: bool = True, grow: Optional[float] = None, report: bool = False) -> Union[PyOpenSCAD, dict[str, Any]]:
-    """Minimum spacing check between facing surfaces (3D DRC EXTERNAL).
+    report: bool = False,
+) -> Union[PyOpenSCAD, dict[str, Any]]:
+    """Generic Design Rule Check (internal C implementation).
 
-    Args:
-        obj: Object to check. Gaps inside it are checked, also between
-            separate bodies it contains.
-        d: Minimum allowed gap.
-        other: If given, only gaps between ``obj`` and ``other`` are checked.
-        angle: Minimum angle between the face normals (90 < angle <= 180).
-        alpha: 0 measures strictly perpendicular (projecting), larger values
-            allow oblique measurement up to that angle, >= 90 any direction.
-        occlusion: Ignore pairs measured through material.
-        grow: Display offset of the error solid, as for :func:`internal`.
-        report: Evaluate immediately and return ``{"count": n, "min": d}``.
-
-    Returns:
-        The air narrower than ``d`` (empty if clean), or the report dict.
+    Not meant to be called directly; use internal(), external(), slope(),
+    overhang(), draft() from the pythonscad module instead.
     """
     ...
 
