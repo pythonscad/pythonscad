@@ -787,7 +787,7 @@ if(ENABLE_PYTHON)
     src/core/PatchNode.cc
     src/core/DebugNode.cc
     src/core/RepairNode.cc
-    src/core/FacingCheckNode.cc
+    src/core/CheckNode.cc
     src/core/OversampleNode.cc
 )
   if(ENABLE_LIBFIVE)
@@ -1655,6 +1655,8 @@ set(CORE_SOURCES
   src/geometry/rotate_extrude.cc
   src/geometry/organic_resample.cc
   src/geometry/facing_check.cc
+  src/geometry/drc_mesh.cc
+  src/geometry/slope_check.cc
   src/glview/Camera.cc
   src/glview/ColorMap.cc
   src/glview/CsgInfo.cc
