@@ -1,10 +1,10 @@
 #include "geometry/select_check.h"
 
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <set>
 #include <vector>
-#include <map>
 
 #include "geometry/Geometry.h"
 #include "geometry/PolySet.h"
@@ -29,80 +29,18 @@ bool boundingBoxesSeparated(const PolySet& part, const PolySet& B)
   return false;
 }
 
-// Test if a single point is inside a closed mesh using ray casting
+// Test if a single point is inside a closed mesh
 // Returns: 1 if inside, -1 if outside, 0 if on boundary (uncertain)
+// Uses the built-in PolySet::point_inside() which is well-tested
 int pointInMesh(const Vector3d& p, const PolySet& mesh)
 {
-  // Use ray casting along Z axis
-  // Count intersections with mesh triangles
-  // Odd count = inside, even count = outside
-
-  int intersection_count = 0;
-  const auto& vertices = mesh.vertices;
-  const auto& indices = mesh.indices;  // PolygonIndices = std::vector<IndexedFace>
-
-  // Defensive checks for empty mesh
-  if (vertices.empty() || indices.empty()) {
+  if (mesh.vertices.empty() || mesh.indices.empty()) {
     return -1;  // Empty mesh = outside
   }
 
-  // Cast a ray from point in +Z direction
-  Vector3d ray_start = p;
-  Vector3d ray_dir = Vector3d(0, 0, 1);
-
-  for (const auto& face : indices) {
-    if (face.size() < 3) continue;
-
-    // Triangle fan triangulation from first vertex (fan apex = vertex 0)
-    // This creates proper triangles: (0,1,2), (0,2,3), (0,3,4), etc.
-    int v0_idx = face[0];
-    if (v0_idx < 0 || v0_idx >= (int)vertices.size()) {
-      continue;  // Skip face if apex is invalid
-    }
-
-    // Test ray-triangle intersection for each triangle in fan
-    for (size_t i = 1; i + 1 < face.size(); ++i) {
-      int v1_idx = face[i];
-      int v2_idx = face[i + 1];
-
-      if (v1_idx < 0 || v1_idx >= (int)vertices.size() || v2_idx < 0 || v2_idx >= (int)vertices.size()) {
-        continue;
-      }
-
-      const Vector3d& v0 = vertices[v0_idx];
-      const Vector3d& v1 = vertices[v1_idx];
-      const Vector3d& v2 = vertices[v2_idx];
-
-      // Möller–Trumbore ray-triangle intersection
-      const double EPSILON = 1e-8;
-      Vector3d edge1 = v1 - v0;
-      Vector3d edge2 = v2 - v0;
-      Vector3d h = ray_dir.cross(edge2);
-      double a = edge1.dot(h);
-
-      if (std::abs(a) < EPSILON) continue;  // Ray parallel to triangle
-
-      double f = 1.0 / a;
-      Vector3d s = ray_start - v0;
-      double u = f * s.dot(h);
-
-      if (u < 0.0 || u > 1.0) continue;
-
-      Vector3d q = s.cross(edge1);
-      double v = f * ray_dir.dot(q);
-
-      if (v < 0.0 || u + v > 1.0) continue;
-
-      double t = f * edge2.dot(q);
-
-      if (t > EPSILON) {  // Intersection in front of ray
-        intersection_count++;
-      }
-    }
-  }
-
-  // Odd = inside, even = outside
-  return (intersection_count % 2 == 1) ? 1 : -1;
+  // Use the existing PolySet::point_inside() function
+  bool is_inside = mesh.point_inside(p);
+  return is_inside ? 1 : -1;
 }
 
 // Check if all vertices of part are inside B
@@ -187,11 +125,23 @@ bool straddleCheck(const PolySet& part, const PolySet& B)
   return has_inside && has_outside;
 }
 
+// A connected component extracted from a PolySet.
+// - test_mesh holds its own local vertex array with indices remapped to be
+//   local to that array, so it is a valid standalone closed mesh suitable
+//   for bounding-box and point_inside() queries.
+// - original_faces holds the same faces but with the original (global)
+//   vertex indices into the source PolySet, so matched parts can be
+//   reassembled into output geometry that shares the source vertex array.
+struct Part {
+  std::shared_ptr<PolySet> test_mesh;
+  PolygonIndices original_faces;
+};
+
 // Helper function to separate a PolySet into connected components
 // Each component is identified by grouping faces that share vertices
-std::vector<std::shared_ptr<PolySet>> separateParts(const PolySet& ps)
+std::vector<Part> separateParts(const PolySet& ps)
 {
-  std::vector<std::shared_ptr<PolySet>> parts;
+  std::vector<Part> parts;
 
   if (ps.indices.empty()) {
     return parts;  // Empty polyhedron
@@ -213,22 +163,25 @@ std::vector<std::shared_ptr<PolySet>> separateParts(const PolySet& ps)
     if (assigned[i]) continue;
 
     // Start a new component with this face
-    auto component = std::make_shared<PolySet>(ps.getDimension());
-    // Deep copy vertices to ensure they outlive the original polyset
-    // This prevents use-after-free if ps is temporary
-    component->vertices = ps.vertices;
+    PolygonIndices original_faces;  // faces with original (global) vertex indices
 
     // BFS to find all connected faces
     std::vector<size_t> queue;
     queue.push_back(i);
     assigned[i] = true;
+    std::set<int> used_vertex_indices;  // Track which vertices are used
 
     while (!queue.empty()) {
       size_t curr_idx = queue.back();
       queue.pop_back();
 
       const auto& curr_face = ps.indices[curr_idx];
-      component->indices.push_back(curr_face);
+      original_faces.push_back(curr_face);
+
+      // Track vertices used by this face
+      for (int vertex_idx : curr_face) {
+        used_vertex_indices.insert(vertex_idx);
+      }
 
       // Find neighboring faces that share vertices (using pre-built map)
       std::set<size_t> neighbors;  // Use set to avoid duplicates
@@ -250,9 +203,31 @@ std::vector<std::shared_ptr<PolySet>> separateParts(const PolySet& ps)
       }
     }
 
-    if (!component->indices.empty()) {
-      parts.push_back(component);
+    if (original_faces.empty()) continue;
+
+    // Build the local test mesh: extract only the vertices used by this
+    // component and remap indices to be local to this component.
+    auto test_mesh = std::make_shared<PolySet>(ps.getDimension());
+
+    std::map<int, int> old_to_new_idx;  // Mapping from old vertex index to new
+    int new_idx = 0;
+    for (int old_idx : used_vertex_indices) {
+      old_to_new_idx[old_idx] = new_idx;
+      test_mesh->vertices.push_back(ps.vertices[old_idx]);
+      new_idx++;
     }
+
+    test_mesh->indices = original_faces;  // copy, then remap in place
+    for (auto& face : test_mesh->indices) {
+      for (int& v_idx : face) {
+        v_idx = old_to_new_idx[v_idx];
+      }
+    }
+
+    Part part;
+    part.test_mesh = test_mesh;
+    part.original_faces = std::move(original_faces);
+    parts.push_back(std::move(part));
   }
 
   return parts;
@@ -276,21 +251,24 @@ Result check(const PolySet& A, const PolySet& B, const Options& opt)
   // Test each part against B
   // Collect parts that MATCH the relation (not violations)
   auto matched_polysets = std::make_shared<PolySet>(A.getDimension());
-  matched_polysets->vertices = A.vertices;  // Use original vertex list
+  matched_polysets->vertices = A.vertices;  // Use original vertex list, since
+                                            // original_faces below reference
+                                            // indices into this array.
 
   size_t matched_count = 0;
 
   for (size_t i = 0; i < parts.size(); ++i) {
-    const auto& part = *parts[i];
+    const auto& part = parts[i];
+    const PolySet& test_mesh = *part.test_mesh;
     bool matches = false;
 
     switch (opt.relation) {
-    case Relation::Inside:      matches = insideCheck(part, B); break;
-    case Relation::NotInside:   matches = !insideCheck(part, B); break;
-    case Relation::Outside:     matches = outsideCheck(part, B); break;
-    case Relation::NotOutside:  matches = !outsideCheck(part, B); break;
-    case Relation::Straddle:    matches = straddleCheck(part, B); break;
-    case Relation::NotStraddle: matches = !straddleCheck(part, B); break;
+    case Relation::Inside:      matches = insideCheck(test_mesh, B); break;
+    case Relation::NotInside:   matches = !insideCheck(test_mesh, B); break;
+    case Relation::Outside:     matches = outsideCheck(test_mesh, B); break;
+    case Relation::NotOutside:  matches = !outsideCheck(test_mesh, B); break;
+    case Relation::Straddle:    matches = straddleCheck(test_mesh, B); break;
+    case Relation::NotStraddle: matches = !straddleCheck(test_mesh, B); break;
     }
 
     // Collect information about this part
@@ -299,12 +277,13 @@ Result check(const PolySet& A, const PolySet& B, const Options& opt)
     info.matches = matches;
     result.parts.push_back(info);
 
-    // If part matches the relation, add its faces to the result solid
+    // If part matches the relation, add its faces to the result solid.
+    // Use original_faces (global indices into A.vertices), not the
+    // test_mesh's locally-remapped indices.
     if (matches) {
       matched_count++;
-      // Append this part's faces to the matched solid
-      matched_polysets->indices.insert(matched_polysets->indices.end(), part.indices.begin(),
-                                       part.indices.end());
+      matched_polysets->indices.insert(matched_polysets->indices.end(), part.original_faces.begin(),
+                                       part.original_faces.end());
     } else {
       // Count non-matching parts (for DRC violation reporting)
       result.count++;
