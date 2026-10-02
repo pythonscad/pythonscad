@@ -3789,13 +3789,18 @@ Response GeometryEvaluator::visit(State& state, const CheckNode& node)
   constexpr size_t max_hulls = 20000;
   std::shared_ptr<const Geometry> geom;
   std::vector<std::shared_ptr<const Geometry>> bodies;
-  if (node.type == CheckNode::Type::External && node.children.size() == 2) {
-    for (const auto& item : collectChildren3D(node)) bodies.push_back(item.second);
+  if ((node.type == CheckNode::Type::External || node.type == CheckNode::Type::Select) &&
+      node.children.size() == 2) {
+    // Sammle die zwei children separat (nicht UNION!)
+    for (const auto& item : collectChildren3D(node)) {
+      bodies.push_back(item.second);
+    }
   } else {
     const std::shared_ptr<const Geometry> body =
       applyToChildren3D(node, OpenSCADOperator::UNION).constptr();
     if (body) bodies.push_back(body);
   }
+
   BoundingBox bb;
   for (const auto& g : bodies)
     if (g) bb.extend(g->getBoundingBox());

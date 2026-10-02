@@ -411,7 +411,8 @@ PyObject *python_oo_select(PyObject *self, PyObject *args, PyObject *kwargs)
   }
 
   // For normal mode, create a CheckNode and return it wrapped as PyOpenSCAD
-  auto node = std::make_shared<CheckNode>(nullptr);
+  DECLARE_INSTANCE();
+  auto node = std::make_shared<CheckNode>(instance);
   node->type = CheckNode::Type::Select;
   node->select_relation = relation;
   node->children.push_back(self_node);
