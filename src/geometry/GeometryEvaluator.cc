@@ -31,6 +31,7 @@
 #include "geometry/facing_check.h"
 #include <sstream>
 #include "geometry/slope_check.h"
+#include "geometry/select_check.h"
 #include "core/WrapNode.h"
 #include "glview/ColorMap.h"
 #include "geometry/Barcode1d.h"
@@ -3837,7 +3838,23 @@ Response GeometryEvaluator::visit(State& state, const CheckNode& node)
       }
       geom = FacingCheck::errorGeometry(res, node.facingMode(), bodies, max_hulls, grow);
     }
-  } else if (bodies.size() == 1) {
+  } else if (node.type == CheckNode::Type::Select && bodies.size() == 2) {
+    // select: spatial relationship filtering
+    const auto a = PolySetUtils::getGeometryAsPolySet(bodies[0]);
+    const auto b = PolySetUtils::getGeometryAsPolySet(bodies[1]);
+    if (a && b) {
+      SelectCheck::Options opt;
+      opt.relation = node.select_relation;
+      const SelectCheck::Result res = SelectCheck::check(*a, *b, opt);
+      if (res.clean()) {
+        LOG(message_group::NONE, "%1$s: passed (all parts match relation)", node.toString());
+      } else {
+        LOG(message_group::Warning, node.modinst->location(), this->tree.getDocumentPath(),
+            "%1$s: %2$d part(s) do not match relation", node.toString(), res.count);
+        geom = res.error_solid;
+      }
+    }
+  } else if (node.type == CheckNode::Type::Slope && bodies.size() == 1) {
     // slope / overhang / draft: face angle window and undercuts
     const auto ps = PolySetUtils::getGeometryAsPolySet(bodies[0]);
     if (ps) {
