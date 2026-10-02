@@ -1050,26 +1050,28 @@ PyMethodDef PyOpenSCADMethods[] = {
                                     slope, "Face angle check") OO_METHOD_ENTRY(overhang,
                                                                                "Overhang check")
                                     OO_METHOD_ENTRY(draft, "Draft and undercut check") OO_METHOD_ENTRY(
-                                      fillet, "Fillet Object") OO_METHOD_ENTRY(align,
-                                                                               "Align Object to another")
+                                      select, "Spatial relationship filtering")
+                                      OO_METHOD_ENTRY(fillet, "Fillet Object") OO_METHOD_ENTRY(
+                                        align, "Align Object to another")
 
-                                      OO_METHOD_ENTRY(highlight, "Highlight Object")
-                                        OO_METHOD_ENTRY(background, "Background Object") OO_METHOD_ENTRY(
-                                          only, "Only Object") OO_METHOD_ENTRY(show, "Show Object")
-                                          OO_METHOD_ENTRY(projection, "Projection Object")
-                                            OO_METHOD_ENTRY(pull, "Pull Obejct apart") OO_METHOD_ENTRY(
-                                              wrap, "Wrap object around a cylinder or 2D outline")
-                                              OO_METHOD_ENTRY(render, "Render Object")
-                                                OO_METHOD_ENTRY(clone, "Clone Object") OO_METHOD_ENTRY(
-                                                  hasattr, "Check if an attribute exists")
-                                                  OO_METHOD_ENTRY(setattr,
-                                                                  "Sets an attribute on a solid")
-                                                    OO_METHOD_ENTRY(getattr,
-                                                                    "Gets an attribute from a solid")
-                                                      OO_METHOD_ENTRY(_repr_mimebundle_,
-                                                                      "Jupyter display hook")
-                                                        OO_METHOD_ENTRY(dict, "return all dictionary"){
-                                                          NULL, NULL, 0, NULL}};
+                                        OO_METHOD_ENTRY(highlight, "Highlight Object") OO_METHOD_ENTRY(
+                                          background,
+                                          "Background Object") OO_METHOD_ENTRY(only, "Only Object")
+                                          OO_METHOD_ENTRY(show, "Show Object")
+                                            OO_METHOD_ENTRY(projection, "Projection Object")
+                                              OO_METHOD_ENTRY(pull, "Pull Obejct apart") OO_METHOD_ENTRY(
+                                                wrap, "Wrap object around a cylinder or 2D outline")
+                                                OO_METHOD_ENTRY(render, "Render Object")
+                                                  OO_METHOD_ENTRY(clone, "Clone Object") OO_METHOD_ENTRY(
+                                                    hasattr, "Check if an attribute exists")
+                                                    OO_METHOD_ENTRY(setattr,
+                                                                    "Sets an attribute on a solid")
+                                                      OO_METHOD_ENTRY(getattr,
+                                                                      "Gets an attribute from a solid")
+                                                        OO_METHOD_ENTRY(_repr_mimebundle_,
+                                                                        "Jupyter display hook")
+                                                          OO_METHOD_ENTRY(dict, "return all dictionary"){
+                                                            NULL, NULL, 0, NULL}};
 
 PyNumberMethods PyOpenSCADNumbers = {
   python_nb_add,        // binaryfunc nb_add

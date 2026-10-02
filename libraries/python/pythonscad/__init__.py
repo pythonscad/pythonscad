@@ -1033,3 +1033,25 @@ def draft(obj: PyOpenSCAD, angle: float = 2,
         grow=grow,
         report=int(report)
     )
+
+
+def select(obj: PyOpenSCAD, other: PyOpenSCAD, relation: str = "inside",
+           report: bool = False) -> _typing.Union[PyOpenSCAD, dict]:
+    """Filter parts based on spatial relationship to another solid.
+
+    Args:
+        obj: Solid to filter (will be separated into individual parts)
+        other: Reference solid to test against
+        relation: Spatial relation to test. One of:
+            "inside" - parts completely inside other
+            "not_inside" - parts NOT completely inside other
+            "outside" - parts completely outside other
+            "not_outside" - parts NOT completely outside other
+            "straddle" - parts crossing other's boundary
+            "not_straddle" - parts NOT crossing other's boundary
+        report: If True, return {"count": n} instead of error solid
+
+    Returns:
+        Error solid showing parts that violate the relation, or report dict if report=True
+    """
+    return obj.select(other, relation=relation, report=int(report))
