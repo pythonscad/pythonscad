@@ -34,7 +34,7 @@
 #include "core/PullNode.h"
 #include "core/DebugNode.h"
 #include "core/RepairNode.h"
-#include "core/FacingCheckNode.h"
+#include "core/CheckNode.h"
 #include "core/WrapNode.h"
 #include "core/OversampleNode.h"
 #include "core/FilletNode.h"
@@ -84,7 +84,7 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
     NodeCloneFunc(OrganicNode) NodeCloneFunc(CircleNode) NodeCloneFunc(PolygonNode)
       NodeCloneFunc(PolylineNode) NodeCloneFunc(SplineNode) NodeCloneFunc(TransformNode)
         NodeCloneFunc(PullNode) NodeCloneFunc(DebugNode) NodeCloneFunc(RepairNode)
-          NodeCloneFunc(FacingCheckNode) NodeCloneFunc(WrapNode) NodeCloneFunc(ColorNode)
+          NodeCloneFunc(CheckNode) NodeCloneFunc(WrapNode) NodeCloneFunc(ColorNode)
             NodeCloneFunc(OversampleNode) NodeCloneFunc(FilletNode) NodeCloneFunc(RotateExtrudeNode)
               NodeCloneFunc(LinearExtrudeNode) NodeCloneFunc(PathExtrudeNode) NodeCloneFunc(CsgOpNode)
                 NodeCloneFunc(CgalAdvNode) NodeCloneFunc(RenderNode) NodeCloneFunc(SkinNode)
@@ -106,7 +106,7 @@ NodeCloneFunc(CubeNode) NodeCloneFunc(SphereNode) NodeCloneFunc(CylinderNode)
     NodeCloneUse(EdgeNode) NodeCloneUse(SquareNode) NodeCloneUse(CircleNode) NodeCloneUse(PolygonNode)
       NodeCloneUse(PolylineNode) NodeCloneUse(SplineNode) NodeCloneUse(TransformNode)
         NodeCloneUse(OrganicNode) NodeCloneUse(PullNode) NodeCloneUse(DebugNode) NodeCloneUse(RepairNode)
-          NodeCloneUse(FacingCheckNode) NodeCloneUse(WrapNode) NodeCloneUse(ColorNode)
+          NodeCloneUse(CheckNode) NodeCloneUse(WrapNode) NodeCloneUse(ColorNode)
             NodeCloneUse(OversampleNode) NodeCloneUse(FilletNode) NodeCloneUse(RotateExtrudeNode)
               NodeCloneUse(LinearExtrudeNode) NodeCloneUse(PathExtrudeNode) NodeCloneUse(CsgOpNode)
                 NodeCloneUse(CgalAdvNode) NodeCloneUse(RenderNode) NodeCloneUse(SkinNode)

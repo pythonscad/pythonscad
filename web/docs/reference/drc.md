@@ -1,17 +1,22 @@
 # Design Rule Checks
 
-`internal()` and `external()` check a solid for walls that are too thin and
-gaps that are too narrow. They are the 3D counterpart of the `INTERNAL` and
-`EXTERNAL` rules known from chip layout DRC, and are useful wherever a
-process has a minimum wall thickness or clearance: 3D printing, die casting,
-injection molding, CNC.
+Design rule checks find the places where a part cannot be manufactured.
+They are the 3D counterpart of the rules known from chip layout DRC:
 
-Both return an **error solid**: the material (`internal`) or the air
-(`external`) that violates the rule. It is empty when the design is clean, so
-it can be colored and shown on top of the part, subtracted, measured or
-exported like any other object. A summary is written to the console.
+| Function | Checks | DRC rule |
+|----------|--------|----------|
+| `internal()` | minimum wall thickness | `INTERNAL` |
+| `external()` | minimum gap | `EXTERNAL` |
+| `slope()` | face angle against a direction | `ANGLE` |
+| `overhang()` | overhangs for 3D printing | |
+| `draft()` | draft angle and undercuts for molding and casting | |
 
-**How it measures:** two faces "face" each other when their normals are at
+All of them return an **error solid**: the region that violates the rule,
+empty when the design is clean. It can be colored and shown on top of the
+part, subtracted, measured or exported like any other object. A summary is
+written to the console.
+
+**How internal and external measure:** two faces "face" each other when their normals are at
 least `angle` degrees apart and each lies behind the other one. Both faces
 are clipped exactly to the part that is closer than `d`, and the exact
 distance between them is computed (vertex to face and edge to edge). There is
@@ -96,6 +101,115 @@ Minimum spacing, measured through the air.
     show([a, b, gap.color("red")])
     print(a.external(0.5, other=b, report=True))   # min ≈ 0.3
     ```
+
+---
+
+## slope
+
+Face angle check against a direction, the 3D counterpart of an `ANGLE` rule.
+For every face the angle `beta = asin(n · dir)` is computed:
+
+| beta | Face |
+|------|------|
+| `0` | parallel to `dir`, e.g. a vertical wall when `dir` points up |
+| `90` | looks along `dir` (top face) |
+| `-90` | looks against `dir` (bottom face) |
+
+Faces outside `[min, max]` are violations. `overhang` and `draft` are the
+same test with fixed windows.
+
+**Syntax:**
+
+=== "Python"
+
+    ```python
+    slope(obj, dir=[0,0,1], min=None, max=None, undercut=False, grow=None, report=False)
+    obj.slope(dir=[0,0,1], min=None, max=None, undercut=False, grow=None, report=False)
+    ```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dir` | vector | `[0,0,1]` | Reference direction |
+| `min`, `max` | float | `-90`, `90` | Allowed range of `beta` in degrees |
+| `undercut` | bool | `False` | Also report faces looking along `dir` that are hidden behind other material in that direction |
+| `grow`, `report` | | | As for `internal`. The report is `{"count", "angle", "undercut", "worst"}` |
+
+---
+
+## overhang
+
+Overhang check for 3D printing: faces that look down more than `angle`
+degrees away from the vertical. Faces on the build plate (the lowest level
+along `dir`) are ignored.
+
+=== "Python"
+
+    ```python
+    overhang(obj, angle=45, dir=[0,0,1], grow=None, report=False)
+    obj.overhang(angle=45, dir=[0,0,1], grow=None, report=False)
+    ```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `angle` | float | `45` | Largest allowed overhang, measured from the vertical |
+| `dir` | vector | `[0,0,1]` | Build direction |
+
+In the report, `worst` is the largest overhang angle found.
+
+=== "Python"
+
+    ```python
+    from pythonscad import *
+
+    mushroom = cylinder(h=10, r=2) | cylinder(h=3, r=8).translate([0, 0, 10])
+    show([mushroom.color("lightgray", 0.3), mushroom.overhang().color("red")])
+    print(mushroom.overhang(report=True))   # worst: 90.0, the underside of the cap
+    ```
+
+---
+
+## draft
+
+Draft and undercut check for molding and casting (sand casting, die
+casting, injection molding). The part is pulled out of a two-part mold:
+the upper half along `dir`, the lower half along `-dir`.
+
+Two kinds of errors are reported:
+
+- **Angle:** a face has less than `angle` degrees of draft towards its mold
+  half. Faces that lean the wrong way (negative draft) are local undercuts.
+- **Undercut:** a face has a correct angle but is hidden behind other
+  material along its pull direction, e.g. the inner faces of a C-profile
+  lying on its side. The error solid then shows the trapped sand between
+  the face and the material in front of it.
+
+=== "Python"
+
+    ```python
+    draft(obj, angle=2, dir=[0,0,1], parting=None, undercut=True, grow=None, report=False)
+    obj.draft(angle=2, dir=[0,0,1], parting=None, undercut=True, grow=None, report=False)
+    ```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `angle` | float | `2` | Minimum draft angle in degrees |
+| `dir` | vector | `[0,0,1]` | Pull direction of the upper mold half |
+| `parting` | float | `None` | Position of a flat parting plane along `dir`. Faces above it belong to the upper half, faces below to the lower half; faces crossing it are split. `None`: free parting line, every face belongs to the half it looks at |
+| `undercut` | bool | `True` | Detect undercuts |
+
+=== "Python"
+
+    ```python
+    from pythonscad import *
+
+    C = cube([20, 20, 3]) | cube([20, 20, 3]).translate([0, 0, 10]) | cube([3, 20, 13])
+    print(C.draft(-0.5, report=True))                # 4 undercut faces
+    print(C.draft(-0.5, dir=[1, 0, 0], report=True)) # pulled sideways: clean
+    show([C.color("lightgray", 0.3), C.draft(-0.5).color("red")])
+    ```
+
+`angle=-0.5` in the example allows the vertical walls, so only the undercut
+remains.
 
 ---
 

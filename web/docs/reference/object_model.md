@@ -28,7 +28,7 @@ The following methods are available on every solid object:
 
 **Mesh ops:** `explode`, `oversample`, `debug`, `repair`, `fillet`, `separate`
 
-**Design rule checks:** `internal`, `external`
+**Design rule checks:** `internal`, `external`, `slope`, `overhang`, `draft`
 
 **Display:** `show`, `export`, `render`, `projection`, `highlight`, `background`, `only`
 
