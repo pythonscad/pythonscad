@@ -200,6 +200,7 @@ PyObject *python_oo_external(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_oo_slope(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_oo_overhang(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_oo_draft(PyObject *self, PyObject *args, PyObject *kwargs);
+PyObject *python_oo_select(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_oo_repair(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_fillet(PyObject *self, PyObject *args, PyObject *kwargs);
 PyObject *python_oo_fillet(PyObject *obj, PyObject *args, PyObject *kwargs);

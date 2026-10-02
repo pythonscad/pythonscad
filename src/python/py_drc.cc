@@ -20,6 +20,7 @@
 #include <CheckNode.h>
 #include "geometry/facing_check.h"
 #include "geometry/slope_check.h"
+#include "geometry/select_check.h"
 #include "pyfunctions.h"
 
 namespace {
@@ -332,6 +333,90 @@ PyObject *python_oo_draft(PyObject *self, PyObject *args, PyObject *kwargs)
   opt.parting = given ? SlopeCheck::Parting::Plane : SlopeCheck::Parting::Free;
   opt.undercut = undercut != 0;
   return python_slope_core(self, opt, grow, report);
+}
+
+// Object-oriented select check: obj.select(other, relation)
+// relation: "inside", "not_inside", "outside", "not_outside", "straddle", "not_straddle"
+PyObject *python_oo_select(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"other", "relation", "report", NULL};
+  PyObject *other_obj = nullptr;
+  const char *relation_str = "inside";
+  int report = 0;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|sp", kwlist, &other_obj, &relation_str, &report)) {
+    PyErr_SetString(PyExc_TypeError, "error during parsing select()\n");
+    return nullptr;
+  }
+
+  // Parse relation string
+  SelectCheck::Relation relation = SelectCheck::Relation::Inside;
+  if (std::strcmp(relation_str, "inside") == 0) {
+    relation = SelectCheck::Relation::Inside;
+  } else if (std::strcmp(relation_str, "not_inside") == 0) {
+    relation = SelectCheck::Relation::NotInside;
+  } else if (std::strcmp(relation_str, "outside") == 0) {
+    relation = SelectCheck::Relation::Outside;
+  } else if (std::strcmp(relation_str, "not_outside") == 0) {
+    relation = SelectCheck::Relation::NotOutside;
+  } else if (std::strcmp(relation_str, "straddle") == 0) {
+    relation = SelectCheck::Relation::Straddle;
+  } else if (std::strcmp(relation_str, "not_straddle") == 0) {
+    relation = SelectCheck::Relation::NotStraddle;
+  } else {
+    PyErr_SetString(PyExc_ValueError,
+                    "select(): invalid relation (must be inside, not_inside, outside, not_outside, "
+                    "straddle, or not_straddle)\n");
+    return nullptr;
+  }
+
+  // Convert self and other to nodes
+  PyTypeObject *type = PyOpenSCADObjectType(self);
+  PyObject *dummydict = nullptr;
+  std::shared_ptr<AbstractNode> self_node = PyOpenSCADObjectToNodeMulti(self, &dummydict);
+  auto dummydict_owner = py_owned(dummydict);
+  if (self_node == nullptr) {
+    return propagate_or_typeerror("Invalid type for Object in select()\n");
+  }
+
+  dummydict = nullptr;
+  std::shared_ptr<AbstractNode> other_node = PyOpenSCADObjectToNodeMulti(other_obj, &dummydict);
+  auto dummydict_owner2 = py_owned(dummydict);
+  if (other_node == nullptr) {
+    return propagate_or_typeerror("Invalid type for other in select()\n");
+  }
+
+  // For report mode, evaluate directly and return stats
+  if (report) {
+    auto self_ps = evaluateToPolySet(self_node);
+    auto other_ps = evaluateToPolySet(other_node);
+
+    if (!self_ps || !other_ps) {
+      return propagate_or_typeerror("Unable to evaluate objects to PolySet in select()\n");
+    }
+
+    SelectCheck::Options opt;
+    opt.relation = relation;
+    SelectCheck::Result res = SelectCheck::check(*self_ps, *other_ps, opt);
+
+    PyObject *report_dict = PyDict_New();
+    if (!report_dict) return nullptr;
+    auto dict_owner = py_owned(report_dict);
+
+    PyObject *count = PyLong_FromSize_t(res.count);
+    PyDict_SetItemString(report_dict, "count", count);
+    Py_DECREF(count);
+
+    return dict_owner.release();
+  }
+
+  // For normal mode, create a CheckNode and return it wrapped as PyOpenSCAD
+  auto node = std::make_shared<CheckNode>(nullptr);
+  node->type = CheckNode::Type::Select;
+  node->select_relation = relation;
+  node->children.push_back(self_node);
+  node->children.push_back(other_node);
+  return PyOpenSCADObjectFromNode(type, node);
 }
 
 // Generic check() entry point from Python.

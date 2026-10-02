@@ -1,0 +1,18 @@
+WARNING: draft(dir = [0, 0, 1], min = -0.5, max = 90, parting = free, undercut = true, skip_base = false, grow = 0): 4 faces, 0 out of angle, 4 undercut
+WARNING: draft(dir = [0, 0, 1], min = 2, max = 90, parting = free, undercut = true, skip_base = false, grow = 0): 8 faces, 8 out of angle (worst 0 deg), 0 undercut
+cube overhang (0, 0, 0, None)
+cube draft (8, 8, 0, 0.0)
+taper5 draft2 (0, 0, 0, None)
+taper5 draft10 (128, 128, 0, 4.99)
+taper5 upside down draft2 (0, 0, 0, None)
+cone30 overhang45 (0, 0, 0, None)
+cone60 overhang45 (128, 128, 0, 59.97)
+mushroom overhang (128, 128, 0, 90.0)
+mushroom draft (0, 0, 0, None)
+C draft free (4, 0, 4, None)
+C draft no undercut (0, 0, 0, None)
+C draft parting 6.5 (4, 4, 0, -90.0)
+C draft pull x (0, 0, 0, None)
+C trapped volume ([3.0, 0.0, 3.0], [17.0, 20.0, 7.0])
+cube draft skin ([0.0, 0.0, 0.0], [10.0, 10.0, 10.0])
+slope window (4, 4, 0, 90.0)

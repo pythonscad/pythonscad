@@ -1678,6 +1678,7 @@ set(CORE_SOURCES
   src/geometry/facing_check.cc
   src/geometry/drc_mesh.cc
   src/geometry/slope_check.cc
+  src/geometry/select_check.cc
   src/glview/Camera.cc
   src/glview/ColorMap.cc
   src/glview/CsgInfo.cc
