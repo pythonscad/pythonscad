@@ -781,6 +781,7 @@ if(ENABLE_PYTHON)
     src/python/pyconversion.cc
     src/python/python_runtime.cc
     src/geometry/patch.cc
+  src/geometry/select_check.cc
     src/core/node_clone.cc
     src/core/PullNode.cc
     src/core/WrapNode.cc
@@ -1678,7 +1679,6 @@ set(CORE_SOURCES
   src/geometry/facing_check.cc
   src/geometry/drc_mesh.cc
   src/geometry/slope_check.cc
-  src/geometry/select_check.cc
   src/glview/Camera.cc
   src/glview/ColorMap.cc
   src/glview/CsgInfo.cc
