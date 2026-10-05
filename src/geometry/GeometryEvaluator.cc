@@ -27,6 +27,11 @@
 #include "core/PullNode.h"
 #include "core/DebugNode.h"
 #include "core/RepairNode.h"
+#include "core/CheckNode.h"
+#include "geometry/facing_check.h"
+#include <sstream>
+#include "geometry/slope_check.h"
+#include "geometry/select_check.h"
 #include "core/WrapNode.h"
 #include "glview/ColorMap.h"
 #include "geometry/Barcode1d.h"
@@ -3763,6 +3768,118 @@ Response GeometryEvaluator::visit(State& state, const RepairNode& node)
       node.progress_report();
     }
   }
+  return Response::ContinueTraversal;
+}
+
+/*!
+   Design rule checks (CheckNode): internal(), external(), slope(),
+   overhang(), draft(). A summary is logged, the geometry is the error solid
+   of the check, empty if the design is clean.
+ */
+Response GeometryEvaluator::visit(State& state, const CheckNode& node)
+{
+  if (state.isPrefix() && isSmartCached(node)) return Response::PruneTraversal;
+  if (!state.isPostfix()) return Response::ContinueTraversal;
+  if (isSmartCached(node)) {
+    addToParent(state, node, smartCacheGet(node, false));
+    node.progress_report();
+    return Response::ContinueTraversal;
+  }
+
+  constexpr size_t max_hulls = 20000;
+  std::shared_ptr<const Geometry> geom;
+  std::vector<std::shared_ptr<const Geometry>> bodies;
+  if ((node.type == CheckNode::Type::External || node.type == CheckNode::Type::Select) &&
+      node.children.size() == 2) {
+    // Sammle die zwei children separat (nicht UNION!)
+    for (const auto& item : collectChildren3D(node)) {
+      bodies.push_back(item.second);
+    }
+  } else {
+    const std::shared_ptr<const Geometry> body =
+      applyToChildren3D(node, OpenSCADOperator::UNION).constptr();
+    if (body) bodies.push_back(body);
+  }
+
+  BoundingBox bb;
+  for (const auto& g : bodies)
+    if (g) bb.extend(g->getBoundingBox());
+  const double diag = bb.isEmpty() ? 0.0 : bb.sizes().norm();
+  const double grow = node.grow >= 0 ? node.grow : 1e-3 * diag;  // automatic: 0.1 % of the part size
+
+  if (node.isFacing()) {
+    // internal / external: facing surfaces closer than d
+    FacingCheck::Options opt;
+    opt.min_angle_deg = node.min_angle;
+    opt.alpha_deg = node.alpha;
+    opt.occlusion = node.occlusion;
+    FacingCheck::Result res;
+    bool checked = false;
+    if (bodies.size() == 2) {
+      const auto a = bodies[0] ? PolySetUtils::getGeometryAsPolySet(bodies[0]) : nullptr;
+      const auto b = bodies[1] ? PolySetUtils::getGeometryAsPolySet(bodies[1]) : nullptr;
+      if (a && b) {
+        res = FacingCheck::checkBetween(*a, *b, node.distance, opt);
+        checked = true;
+      }
+    } else if (bodies.size() == 1) {
+      const auto ps = PolySetUtils::getGeometryAsPolySet(bodies[0]);
+      if (ps) {
+        res = FacingCheck::check(*ps, node.facingMode(), node.distance, opt);
+        checked = true;
+      }
+    }
+    if (checked && res.clean()) {
+      LOG(message_group::NONE, "%1$s: passed", node.toString());
+    } else if (checked) {
+      LOG(message_group::Warning, node.modinst->location(), this->tree.getDocumentPath(),
+          "%1$s: %2$d violations, minimum %3$g", node.toString(), res.violation_count, res.min_distance);
+      size_t bad_tris = 0;
+      for (double t : res.tri_min_distance) bad_tris += t < node.distance;
+      if (bad_tris > max_hulls) {
+        LOG(message_group::Warning, node.modinst->location(), this->tree.getDocumentPath(),
+            "%1$s: error solid shows the %2$d most severe of %3$d violating triangles", node.name(),
+            max_hulls, bad_tris);
+      }
+      geom = FacingCheck::errorGeometry(res, node.facingMode(), bodies, max_hulls, grow);
+    }
+  } else if (node.type == CheckNode::Type::Select && bodies.size() == 2) {
+    // select: spatial relationship filtering
+    const auto a = PolySetUtils::getGeometryAsPolySet(bodies[0]);
+    const auto b = PolySetUtils::getGeometryAsPolySet(bodies[1]);
+    if (a && b) {
+      SelectCheck::Options opt;
+      opt.relation = node.select_relation;
+      const SelectCheck::Result res = SelectCheck::check(*a, *b, opt);
+      if (res.clean()) {
+        LOG(message_group::NONE, "%1$s: passed (all parts match relation)", node.toString());
+      } else {
+        LOG(message_group::Warning, node.modinst->location(), this->tree.getDocumentPath(),
+            "%1$s: %2$d part(s) do not match relation", node.toString(), res.count);
+        geom = res.error_solid;
+      }
+    }
+  } else if (node.type == CheckNode::Type::Slope && bodies.size() == 1) {
+    // slope / overhang / draft: face angle window and undercuts
+    const auto ps = PolySetUtils::getGeometryAsPolySet(bodies[0]);
+    if (ps) {
+      const SlopeCheck::Result res = SlopeCheck::check(*ps, node.slope);
+      if (res.clean()) {
+        LOG(message_group::NONE, "%1$s: passed", node.toString());
+      } else {
+        std::ostringstream msg;
+        msg << res.count << " faces, " << res.angle_count << " out of angle";
+        if (res.angle_count) msg << " (worst " << std::round(res.worst_deg * 100) / 100 + 0.0 << " deg)";
+        msg << ", " << res.undercut_count << " undercut";
+        LOG(message_group::Warning, node.modinst->location(), this->tree.getDocumentPath(), "%1$s: %2$s",
+            node.toString(), msg.str());
+        geom = SlopeCheck::errorGeometry(res, bodies[0], 5e-3 * diag, grow, max_hulls);
+      }
+    }
+  }
+  if (!geom) geom = PolySet::createEmpty();
+  addToParent(state, node, geom);
+  node.progress_report();
   return Response::ContinueTraversal;
 }
 
