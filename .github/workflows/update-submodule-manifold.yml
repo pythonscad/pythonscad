@@ -37,21 +37,19 @@ jobs:
       - name: Get current submodule commit
         id: get-current-submodule
         run: |
-          git submodule update --init --recursive --remote "$SUBMODULE_PATH"
-          CURRENT_COMMIT=$(git submodule status "$SUBMODULE_PATH" | awk '{print $1}' | tr -d '-')
+          git submodule update --init --recursive "$SUBMODULE_PATH"
+          CURRENT_COMMIT=$(git -C "$SUBMODULE_PATH" rev-parse HEAD)
           echo "current_commit=$CURRENT_COMMIT" >> "$GITHUB_OUTPUT"
 
       - name: Compare releases
         id: compare-releases
         run: |
-          if [ "$LATEST_RELEASE" != "$CURRENT_COMMIT" ]; then
-            echo "New release detected: $LATEST_RELEASE (current: $CURRENT_COMMIT)"
-            echo "new_release_available=true" >> "$GITHUB_OUTPUT"
-            echo "release_tag=$LATEST_RELEASE" >> "$GITHUB_OUTPUT"
-          else
-            echo "No new release detected."
-            echo "new_release_available=false" >> "$GITHUB_OUTPUT"
-          fi
+          git -C "$SUBMODULE_PATH" fetch --tags origin
+          scripts/ci/compare-git-release.sh \
+            --git-dir "$SUBMODULE_PATH" \
+            --tag "$LATEST_RELEASE" \
+            --current-commit "$CURRENT_COMMIT" \
+            --output "$GITHUB_OUTPUT"
         env:
           LATEST_RELEASE: ${{ steps.get-latest-release.outputs.latest_release }}
           CURRENT_COMMIT: ${{ steps.get-current-submodule.outputs.current_commit }}

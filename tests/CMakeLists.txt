@@ -1705,6 +1705,19 @@ if(ENABLE_PYTHON)
   set_property(TEST ipython-precedence PROPERTY SKIP_REGULAR_EXPRESSION "^SKIP-")
 endif()
 
+# Host-side check for the delayed-release SHA compare used by
+# .github/workflows/update-submodule-manifold.yml. Independent of
+# ENABLE_PYTHON: it only needs bash, git, and the helper script.
+if(Python3_EXECUTABLE)
+  add_test(NAME compare-git-release CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_compare_git_release.py
+      ${CMAKE_SOURCE_DIR}/scripts/ci/compare-git-release.sh
+  )
+  set_property(TEST compare-git-release PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  set_property(TEST compare-git-release PROPERTY SKIP_REGULAR_EXPRESSION "^SKIP")
+endif()
+
 if(NOT ENABLE_LIBFIVE)
   message(STATUS "LIBFIVE is not enabled. Skipping related tests.")
   disable_tests_safe(
