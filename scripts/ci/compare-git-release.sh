@@ -2,8 +2,10 @@
 # Compare a delayed upstream release tag with the submodule HEAD.
 #
 # Used by .github/workflows/update-submodule-manifold.yml. Tag comparison
-# peels annotated tags to the underlying commit SHA (`tag^{commit}`) so a
-# submodule already at that commit is not treated as a new release.
+# peels annotated tags to the underlying commit SHA (`git rev-list -n1`,
+# equivalent to `tag^{commit}` but without caret/brace syntax that cmd.exe
+# and Git-for-Windows wrappers mangle) so a submodule already at that
+# commit is not treated as a new release.
 #
 # Usage:
 #   compare-git-release.sh --git-dir DIR --tag TAG --current-commit SHA
@@ -70,7 +72,7 @@ if [ -z "$GIT_DIR" ] || [ -z "$CURRENT" ]; then
   usage
 fi
 
-LATEST_COMMIT=$(git -C "$GIT_DIR" rev-parse "${TAG}^{commit}")
+LATEST_COMMIT=$(git -C "$GIT_DIR" rev-list -n 1 "$TAG")
 emit "latest_commit=${LATEST_COMMIT}"
 
 if [ "$LATEST_COMMIT" != "$CURRENT" ]; then
