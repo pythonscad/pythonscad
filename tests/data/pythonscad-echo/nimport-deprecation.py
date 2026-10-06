@@ -3,17 +3,18 @@
 Headless builds omit nimport; this file is excluded from the echo suite when
 HEADLESS=ON (see tests/CMakeLists.txt).
 
-Uses a non-HTTP(S) URL so curl_download rejects it immediately (protocols are
-restricted to http/https), after the deprecation path runs, without depending
-on a writable user library directory or network reachability.
+Uses a URL whose last path segment is empty, so the destination is the user
+library *directory* itself. QFile::WriteOnly then fails before any file is
+created or truncated (curl_download opens the path before applying its
+http/https-only protocol filter).
 """
 
 import warnings
 
 from openscad import nimport
 
-# curl_download only allows http/https; ftp is rejected before any connect.
-URL = "ftp://example.com/nimport_deprecation_fixture.py"
+# Trailing slash -> empty filename -> destination is the library directory.
+URL = "ftp://example.com/"
 
 with warnings.catch_warnings(record=True) as caught:
     warnings.simplefilter("always", DeprecationWarning)
