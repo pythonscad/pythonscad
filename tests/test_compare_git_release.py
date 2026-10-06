@@ -88,7 +88,9 @@ def main() -> int:
             "-m",
             "annotated release",
         )
-        peeled = _run_git(repo, "rev-parse", "v1.0.0^{commit}")
+        # rev-list peels annotated tags without ^{commit}, which cmd.exe
+        # and Git-for-Windows wrappers strip to `v1.0.0^commit`.
+        peeled = _run_git(repo, "rev-list", "-n", "1", "v1.0.0")
         assert peeled == first, (peeled, first)
 
         empty = _compare(script, repo, "", first)
