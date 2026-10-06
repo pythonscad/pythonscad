@@ -83,12 +83,6 @@
         "qt5-qtmultimedia"
       ]
     },
-    "macos": {
-      "extends": null,
-      "packages": [
-        "qt@5"
-      ]
-    },
     "mageia": {
       "extends": null,
       "packages": [
