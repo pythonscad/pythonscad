@@ -83,6 +83,11 @@
         "qt5-qtmultimedia"
       ]
     },
+    "macos": {
+      "extends": null,
+      "unsupported": true,
+      "unsupported_message": "macOS builds are Qt6-only; use --profile pythonscad-qt6"
+    },
     "mageia": {
       "extends": null,
       "packages": [

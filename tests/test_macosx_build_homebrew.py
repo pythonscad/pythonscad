@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""macOS Homebrew dependency installs must be Qt6-only."""
+"""macOS Homebrew / get-dependencies installs must be Qt6-only."""
 from __future__ import annotations
 
-import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -23,6 +23,22 @@ def _formula_loop(script: str) -> list[str]:
     return match.group(1).split()
 
 
+def _list_packages(root: Path, *profiles: str, distro: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(root / "scripts" / "get-dependencies.py"),
+            "--distro",
+            distro,
+            "--list",
+            *[arg for profile in profiles for arg in ("--profile", profile)],
+        ],
+        capture_output=True,
+        text=True,
+        cwd=str(root),
+    )
+
+
 def main() -> int:
     root = _repo_root()
     script_path = root / "scripts" / "macosx-build-homebrew.sh"
@@ -37,14 +53,25 @@ def main() -> int:
     assert "qscintilla2" in formulas, formulas
     assert "qt5" not in formulas, formulas
 
-    qt5_profile = json.loads(
-        (root / "scripts" / "deps" / "profiles" / "qt5.json").read_text(
-            encoding="utf-8"
+    rejected = _list_packages(root, "pythonscad-qt5", distro="macos")
+    if rejected.returncode == 0:
+        raise AssertionError(
+            "pythonscad-qt5 --distro macos --list should fail\n"
+            f"stdout:\n{rejected.stdout}\nstderr:\n{rejected.stderr}"
         )
-    )
-    assert "macos" not in qt5_profile.get("distros", {}), (
-        "qt5 profile still lists macOS packages"
-    )
+    err = rejected.stderr + rejected.stdout
+    assert "Qt6-only" in err, err
+
+    also_rejected = _list_packages(root, "qt5", distro="macos")
+    assert also_rejected.returncode != 0, also_rejected.stdout
+    assert "Qt6-only" in (also_rejected.stderr + also_rejected.stdout)
+
+    allowed = _list_packages(root, "pythonscad-qt6", distro="macos")
+    if allowed.returncode != 0:
+        raise AssertionError(
+            "pythonscad-qt6 --distro macos --list should succeed\n"
+            f"stdout:\n{allowed.stdout}\nstderr:\n{allowed.stderr}"
+        )
 
     print("PASS")
     return 0
