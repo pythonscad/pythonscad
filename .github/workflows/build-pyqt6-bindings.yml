@@ -222,13 +222,22 @@ jobs:
           pip install --upgrade pip
           pip install -r scripts/ci/pyqt6-build-requirements.txt
 
-          # Only the modules PythonSCAD forms/editor actually need. Building
-          # all ~40 PyQt6 modules (WebEngine, Quick3D, Multimedia, ...) takes
-          # hours on the Intel runner. Both macOS legs must build the same set,
-          # the release workflow lipo-merges them module by module.
-          PYQT_MODULES=(QtCore QtGui QtWidgets QtSvg QtSvgWidgets QtPrintSupport QtOpenGL QtOpenGLWidgets)
+          # Only build the modules PythonSCAD forms/editor actually need
+          # (QtCore QtGui QtWidgets QtSvg QtSvgWidgets QtPrintSupport QtOpenGL
+          # QtOpenGLWidgets). Building all PyQt6 modules (WebEngine, Quick3D,
+          # Multimedia, ...) takes hours on the Intel runner. Both macOS legs
+          # must build the same set, the release workflow lipo-merges them
+          # module by module.
+          # Use --disable, NOT --enable: sip-build treats --enable'd bindings as
+          # buildable and skips their config tests, so features Qt lacks on
+          # macOS (Vulkan, X11, Wayland) are not disabled and QtGui fails.
+          PYQT_SKIP=(QtNetwork QtQml QtDBus QtDesigner QtHelp QtQuick QtQuick3D
+            QtQuickWidgets QtSql QtTest QtXml QtMultimedia QtMultimediaWidgets
+            QtPositioning QtRemoteObjects QtSensors QtSerialPort QtWebChannel
+            QtWebSockets QtBluetooth QtNfc QtPdf QtPdfWidgets QtSpatialAudio
+            QtTextToSpeech QtStateMachine QAxContainer)
           ENABLE_ARGS=()
-          for m in "${PYQT_MODULES[@]}"; do ENABLE_ARGS+=(--enable "$m"); done
+          for m in "${PYQT_SKIP[@]}"; do ENABLE_ARGS+=(--disable "$m"); done
 
           QMAKE="$(brew --prefix qt)/bin/qmake"
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
