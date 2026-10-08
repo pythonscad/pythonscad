@@ -15,25 +15,12 @@ on:
       - 'scripts/ci/pyqt6_smoke_test.py'
       - 'scripts/ci/resolve_pyqt6_version.py'
       - 'scripts/deps/profiles/**'
-  pull_request:
-    branches: [master]
-    paths:
-      - '.github/workflows/build-pyqt6-bindings.yml'
-      - 'scripts/ci/fetch_pyqt6_bindings.sh'
-      - 'scripts/ci/patch_pyqt6_free_operators.py'
-      - 'scripts/ci/patch_pyqtbuild_win32_pythonlib.py'
-      - 'scripts/ci/pyqt6-build-requirements.txt'
-      - 'scripts/ci/pyqt6-versions.json'
-      - 'scripts/ci/pyqt6_artifact.py'
-      - 'scripts/ci/pyqt6_smoke_test.py'
-      - 'scripts/ci/resolve_pyqt6_version.py'
-      - 'scripts/deps/profiles/**'
   schedule:
     - cron: '17 4 * * 1'
 
 concurrency:
-  group: pyqt6-bindings-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: pyqt6-bindings
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -42,7 +29,7 @@ jobs:
   build-linux:
     permissions:
       contents: write
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     name: Linux x86_64
     steps:
       - uses: actions/checkout@v7
@@ -159,7 +146,6 @@ jobs:
           QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
 
       - name: Publish immutable bindings release
-        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
@@ -187,9 +173,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-15
+          - runner: macos-15-intel
+            arch: x86_64
+            profile: macos-15-intel-homebrew-qt6
+          - runner: macos-14
             arch: arm64
-            profile: macos-15-homebrew-qt6
+            profile: macos-14-homebrew-qt6
     runs-on: ${{ matrix.runner }}
     name: macOS ${{ matrix.arch }} (Homebrew Qt6)
     steps:
@@ -198,8 +187,32 @@ jobs:
           submodules: 'recursive'
           persist-credentials: false
 
+      # Homebrew moved Intel macOS to Tier 3 in September 2026: current
+      # homebrew-core no longer carries x86_64 bottles, so Qt & co. would be
+      # built from source. Freeze homebrew-core at a snapshot that still has
+      # them (keep in sync with build-macos-release.yml).
+      - name: Freeze homebrew-core to last snapshot with Intel bottles
+        if: matrix.arch == 'x86_64'
+        env:
+          HOMEBREW_CORE_SNAPSHOT: "2026-08-15"
+        run: |
+          {
+            echo "HOMEBREW_NO_INSTALL_FROM_API=1"
+            echo "HOMEBREW_NO_AUTO_UPDATE=1"
+            echo "DEPS_EXTRA_ARGS=--no-update"
+          } >> "$GITHUB_ENV"
+          CORE="$(brew --repository)/Library/Taps/homebrew/homebrew-core"
+          rm -rf "$CORE"
+          git clone --quiet --filter=tree:0 --no-checkout \
+            https://github.com/Homebrew/homebrew-core "$CORE"
+          REV="$(git -C "$CORE" rev-list -1 --before="$HOMEBREW_CORE_SNAPSHOT" origin/HEAD)"
+          echo "Using homebrew-core $REV (before $HOMEBREW_CORE_SNAPSHOT)"
+          git -C "$CORE" -c advice.detachedHead=false checkout --quiet "$REV"
+
       - name: Install Qt6
-        run: ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
+        run: |
+          # shellcheck disable=SC2086  # DEPS_EXTRA_ARGS is a flag list
+          ./scripts/get-dependencies.py --yes ${DEPS_EXTRA_ARGS:-} --profile pythonscad-qt6
 
       - name: Build PyQt6 bindings
         run: |
@@ -208,6 +221,14 @@ jobs:
           source /tmp/pyqt-build-venv/bin/activate
           pip install --upgrade pip
           pip install -r scripts/ci/pyqt6-build-requirements.txt
+
+          # Only the modules PythonSCAD forms/editor actually need. Building
+          # all ~40 PyQt6 modules (WebEngine, Quick3D, Multimedia, ...) takes
+          # hours on the Intel runner. Both macOS legs must build the same set,
+          # the release workflow lipo-merges them module by module.
+          PYQT_MODULES=(QtCore QtGui QtWidgets QtSvg QtSvgWidgets QtPrintSupport QtOpenGL QtOpenGLWidgets)
+          ENABLE_ARGS=()
+          for m in "${PYQT_MODULES[@]}"; do ENABLE_ARGS+=(--enable "$m"); done
 
           QMAKE="$(brew --prefix qt)/bin/qmake"
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
@@ -223,7 +244,7 @@ jobs:
           EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
           cd "$EXTRACTED_DIR"
 
-          sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
+          sip-build --qmake="$QMAKE" --confirm-license --verbose "${ENABLE_ARGS[@]}" --target-dir=/tmp/pyqt-staging
           cd build
           make -j"$(sysctl -n hw.ncpu)"
           make INSTALL_ROOT=/tmp/pyqt-install-root install
@@ -248,21 +269,22 @@ jobs:
             exit 1
           fi
           ACTUAL_ARCHS=$(lipo -archs "$SIP_SO")
-          SIP_OUT="/tmp/pyqt-out/PyQt6/$(basename "$SIP_SO")"
-          if [ "$ACTUAL_ARCHS" = "${{ matrix.arch }}" ]; then
-            cp "$SIP_SO" "$SIP_OUT"
-          else
-            case " $ACTUAL_ARCHS " in
-              *" ${{ matrix.arch }} "*)
-                # Wheel is universal2 - thin it down to just this leg.
-                lipo -thin "${{ matrix.arch }}" "$SIP_SO" -output "$SIP_OUT"
-                ;;
-              *)
-                echo "ERROR: PyQt6-sip .so ('$ACTUAL_ARCHS') does not contain '${{ matrix.arch }}'" >&2
-                exit 1
-                ;;
-            esac
-          fi
+          case " $ACTUAL_ARCHS " in
+            *" ${{ matrix.arch }} "*)
+              # Wheel is universal2 (or already single-arch) - thin it down
+              # to just this leg's architecture so the per-arch tree stays
+              # single-arch, matching everything else fetch_pyqt6_bindings.sh
+              # / the merge job expects.
+              lipo -thin "${{ matrix.arch }}" "$SIP_SO" \
+                -output /tmp/pyqt-out/PyQt6/$(basename "$SIP_SO")
+              ;;
+            *)
+              echo "ERROR: PyQt6-sip .so ('$ACTUAL_ARCHS') does not contain '${{ matrix.arch }}'" >&2
+              exit 1
+              ;;
+          esac
+
+          cp "$SIP_SO" /tmp/pyqt-out/PyQt6/
 
           echo "$QT_VERSION" > /tmp/pyqt-out/QT_VERSION.txt
           echo "$PYQT_VERSION" > /tmp/pyqt-out/PYQT_VERSION.txt
@@ -312,7 +334,6 @@ jobs:
           QT_QPA_PLATFORM=offscreen python3 scripts/ci/pyqt6_smoke_test.py /tmp/pyqt-out
 
       - name: Publish immutable bindings release
-        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
@@ -503,7 +524,6 @@ jobs:
             "$PYTHON_EMBED_EXE" scripts/ci/pyqt6_smoke_test.py "$PYQT_OUT_WIN"
 
       - name: Publish immutable bindings release
-        if: github.event_name != 'pull_request'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
