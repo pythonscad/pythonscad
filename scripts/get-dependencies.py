@@ -159,15 +159,6 @@ def resolve_packages(cfg: dict, distro: DistroInfo) -> List[str]:
     if distro.id not in distros:
         raise SystemExit(f"Unsupported / unknown distro '{distro.id}'. Supported: {', '.join(sorted(distros))}")
 
-    distro_cfg = distros[distro.id]
-    if distro_cfg.get("unsupported"):
-        raise SystemExit(
-            distro_cfg.get(
-                "unsupported_message",
-                f"This profile does not support distro '{distro.id}'",
-            )
-        )
-
     # Inheritance chain
     chain = []
     cur = distro.id
@@ -218,7 +209,9 @@ def resolve_packages(cfg: dict, distro: DistroInfo) -> List[str]:
     return ordered
 
 
-def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_yes: bool) -> List[List[str]]:
+def build_commands(
+    cfg: dict, distro: DistroInfo, packages: List[str], assume_yes: bool, update: bool = True
+) -> List[List[str]]:
     d = cfg["distros"][distro.id]
     mgr = d.get("manager")
     # Inherit package manager from ancestors if not defined locally (avoids duplication)
@@ -283,7 +276,10 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
                 trusted.append(["brew", "trust", cmd[-1]])
         cmds.clear()
         cmds.extend(trusted)
-        cmds.append(["brew", "update"])
+        # --no-update lets CI keep a frozen Homebrew snapshot (e.g. Intel macOS,
+        # where current homebrew-core no longer ships x86_64 bottles).
+        if update:
+            cmds.append(["brew", "update"])
         cmds.append(["brew", "install", *packages])
     elif mgr == "zypper":
         if assume_yes:
@@ -478,6 +474,11 @@ def main():
         help="Run only this distro's pre_commands, then exit (for CI steps that must run after the package manager itself has been set up).",
     )
     parser.add_argument(
+        "--no-update",
+        action="store_true",
+        help="Do not refresh the package index before installing (currently honoured for Homebrew).",
+    )
+    parser.add_argument(
         "--output-env",
         metavar="FILE",
         help="Append PACKAGES=<space-separated list> to FILE (for CI integration, e.g. $GITHUB_ENV)",
@@ -546,7 +547,7 @@ def main():
             print("Aborted.")
             return 0
 
-    cmds = build_commands(cfg, distro, packages, assume_yes=args.yes)
+    cmds = build_commands(cfg, distro, packages, assume_yes=args.yes, update=not args.no_update)
     run_commands(cmds, dry_run=args.dry_run)
     print("Done.")
     return 0
