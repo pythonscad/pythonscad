@@ -244,7 +244,15 @@ jobs:
           EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
           cd "$EXTRACTED_DIR"
 
-          sip-build --qmake="$QMAKE" --confirm-license --verbose "${ENABLE_ARGS[@]}" --target-dir=/tmp/pyqt-staging
+          # --no-make: sip-build would otherwise run a serial `make` itself,
+          # so the parallel make below did nothing (QtCore alone took ~26 min
+          # on the Intel runner).
+          # PyQt_Vulkan: the config test finds vulkan.h, but the module
+          # compile does not, which breaks QtGui with "no member named
+          # 'QVulkanLayer'". PythonSCAD does not use Vulkan from Python.
+          sip-build --qmake="$QMAKE" --confirm-license --verbose --no-make \
+            --disabled-feature PyQt_Vulkan \
+            "${ENABLE_ARGS[@]}" --target-dir=/tmp/pyqt-staging
           cd build
           make -j"$(sysctl -n hw.ncpu)"
           make INSTALL_ROOT=/tmp/pyqt-install-root install
