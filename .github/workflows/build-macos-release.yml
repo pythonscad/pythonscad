@@ -57,7 +57,7 @@ jobs:
       - name: Work around broken hashicorp tap on GitHub runners
         run: brew untap hashicorp/tap 2>/dev/null || true
 
-      - name: Freeze homebrew-core to last snapshot with Intel bottles
+      - name: Freeze homebrew-core to last snapshot with bottles
         run: |
           CORE="$(brew --repository)/Library/Taps/homebrew/homebrew-core"
           rm -rf "$CORE"
@@ -236,6 +236,14 @@ jobs:
     runs-on: macos-14
     name: macOS arm64 Build
     timeout-minutes: 90
+    env:
+      # Same snapshot as the Intel job: current homebrew-core no longer has
+      # arm64_sonoma (macos-14) bottles for everything, so without it brew
+      # builds openssl, cmake, llvm, ... from source and the job times out.
+      # It also keeps both architectures on identical dependency versions.
+      HOMEBREW_CORE_SNAPSHOT: "2026-08-15"
+      HOMEBREW_NO_INSTALL_FROM_API: 1
+      HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -259,6 +267,18 @@ jobs:
       - name: Work around broken hashicorp tap on GitHub runners
         run: brew untap hashicorp/tap 2>/dev/null || true
 
+      - name: Freeze homebrew-core to last snapshot with bottles
+        run: |
+          CORE="$(brew --repository)/Library/Taps/homebrew/homebrew-core"
+          rm -rf "$CORE"
+          # Commits only (tree:0); checkout lazily fetches just the one tree.
+          git clone --quiet --filter=tree:0 --no-checkout \
+            https://github.com/Homebrew/homebrew-core "$CORE"
+          REV="$(git -C "$CORE" rev-list -1 --before="$HOMEBREW_CORE_SNAPSHOT" origin/HEAD)"
+          echo "Using homebrew-core $REV (before $HOMEBREW_CORE_SNAPSHOT)"
+          git -C "$CORE" -c advice.detachedHead=false checkout --quiet "$REV"
+          brew config | grep -i core || true
+
       - name: Workaround for python3 linking issue
         run: |
           brew unlink python3
@@ -268,7 +288,7 @@ jobs:
         env:
           HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
         run: |
-          ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
+          ./scripts/get-dependencies.py --yes --no-update --profile pythonscad-qt6
 
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:

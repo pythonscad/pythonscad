@@ -187,12 +187,12 @@ jobs:
           submodules: 'recursive'
           persist-credentials: false
 
-      # Homebrew moved Intel macOS to Tier 3 in September 2026: current
-      # homebrew-core no longer carries x86_64 bottles, so Qt & co. would be
-      # built from source. Freeze homebrew-core at a snapshot that still has
-      # them (keep in sync with build-macos-release.yml).
-      - name: Freeze homebrew-core to last snapshot with Intel bottles
-        if: matrix.arch == 'x86_64'
+      # Homebrew moved Intel macOS to Tier 3 in September 2026 and current
+      # homebrew-core also lacks arm64_sonoma (macos-14) bottles for parts of
+      # the dependency tree, so brew would build Qt, openssl, llvm, ... from
+      # source. Freeze homebrew-core on both legs at a snapshot that still has
+      # the bottles (keep in sync with build-macos-release.yml).
+      - name: Freeze homebrew-core to last snapshot with bottles
         env:
           HOMEBREW_CORE_SNAPSHOT: "2026-08-15"
         run: |
