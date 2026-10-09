@@ -1,11 +1,16 @@
-# PythonSCAD
+---
+hide:
+  - navigation
+  - toc
+---
 
-<p class="hero-tagline">The simplicity of OpenSCAD.<br>The full power of Python.</p>
+# The simplicity of OpenSCAD. The full power of Python. { .hero-title }
 
-PythonSCAD is a script-based 3D modeler with a full GUI. Write parametric,
-engineering-oriented models in real Python, see them live, and export to STL,
-3MF, and other formats for 3D printing and manufacturing — with fillets, SDFs,
-and the whole pip ecosystem that plain OpenSCAD can't offer.
+<div class="hero" markdown>
+<div class="hero-text" markdown>
+
+Write parametric 3D models in real Python, see them live, and export them for
+3D printing and manufacturing.
 
 <div id="hero-download" class="hero-download">
   <div class="hero-download-fallback">
@@ -33,15 +38,20 @@ and the whole pip ecosystem that plain OpenSCAD can't offer.
   <div class="hero-download-enhanced" hidden></div>
 </div>
 
-[Try in browser](https://www.pythonscad.org/playground/){ .md-button .md-button--primary target="_blank" rel="noopener" aria-label="Try in browser (opens in a new tab)" }
-[Get started](get_started.md){ .md-button }
-[Tutorial](tutorial/getting_started.md){ .md-button }
-[All downloads](downloads.md)
+<p class="hero-secondary">
+  <a class="md-button" href="https://www.pythonscad.org/playground/" target="_blank" rel="noopener"
+     aria-label="Try in browser, no install needed (opens in a new tab)">Try in browser ↗</a>
+  <span class="hero-secondary-links">
+    No install needed &middot; <a href="get_started/">Get started</a> &middot; <a href="tutorial/getting_started/">Tutorial</a>
+  </span>
+</p>
 
-No install required — the [in-browser Playground](https://www.pythonscad.org/playground/)
-runs the full PythonSCAD kernel via WebAssembly.
+</div>
+<div class="hero-media" markdown>
 
 ![Step-by-step: building a camera housing in the PythonSCAD GUI](pictures/box_anim.gif)
+</div>
+</div>
 
 ## What you get on top of OpenSCAD
 
@@ -87,8 +97,9 @@ runs the full PythonSCAD kernel via WebAssembly.
 
     **The whole pip ecosystem**
 
-    Any Python package is one `import` away: this QR code comes straight from
-    the `pyqrcode` package.
+    pip is Python's free package library with hundreds of thousands of ready-made
+    add-ons. One `pip install` and they work in your model: this QR code comes
+    straight from the `pyqrcode` package.
 
     [:octicons-arrow-right-24: Example script](examples/qrcode.txt)
 
@@ -193,7 +204,7 @@ slots, in each of them.
 | :material-web: **Runs in your browser** | The full kernel compiled to WebAssembly. Try it without installing anything. [Open the Playground ↗](https://www.pythonscad.org/playground/){ target="_blank" rel="noopener" } |
 | :material-notebook-outline: **Jupyter notebooks** | Model, document, and iterate inside a notebook next to your analysis. [Jupyter setup](jupyter.md) |
 | :material-bookshelf: **Your OpenSCAD libraries** | Load existing `.scad` libraries such as MCAD with `osuse()` and call their modules from Python. [osuse](reference/io.md#osuse) |
-| :material-file-chart-outline: **Read any data format** | Parse CSV, JSON, or even chip layouts (GDS) with plain Python and turn the data into geometry. [GDS example](examples/read_gds.txt) |
+| :material-file-chart-outline: **Read any data format** | Import STL, 3MF, OBJ, DXF, parse CSV, JSON, or even chip layouts (GDS) with plain Python and turn the data into geometry. [GDS example](examples/read_gds.txt) |
 | :material-anchor: **Handles and align** | Attach named reference frames to parts and assemble them with `align()` instead of computing transformations by hand. [Handles](reference/align.md) |
 
 </div>
