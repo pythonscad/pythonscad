@@ -1,5 +1,8 @@
 site_name: PythonSCAD
 site_url: https://www.pythonscad.org/
+
+extra:
+  test_site: false
 repo_url: https://github.com/pythonscad/pythonscad/
 repo_name: pythonscad/pythonscad
 theme:
@@ -48,7 +51,7 @@ nav:
   - Downloads: downloads.md
   - Release Notes:
       - Overview: releases/index.md
-      - PythonSCAD v1.1.1: releases/PythonSCAD v1.1.1.md
+      - PythonSCAD v1.1.2: releases/PythonSCAD v1.1.2.md
       - PythonSCAD v1.0.0: releases/PythonSCAD v1.0.0.md
       - PythonSCAD v0.20.0: releases/PythonSCAD v0.20.0.md
       - PythonSCAD v0.18.0: releases/PythonSCAD v0.18.0.md
@@ -103,6 +106,7 @@ nav:
   - Resources: resources.md
   - Jupyter Setup: jupyter.md
   - Contact: contact.md
+  - Imprint: imprint.md
 
 markdown_extensions:
   - admonition
@@ -117,3 +121,7 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg

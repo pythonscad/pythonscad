@@ -1,3 +1,19 @@
+.test-site-banner {
+  margin: 0;
+  padding: 0.75em 1.25em;
+  background-color: #ffeb3b;
+  color: #1a1a1a;
+  border-bottom: 2px solid #f9a825;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.test-site-banner code {
+  background-color: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+
 .md-grid {
   max-width: initial;
 }
@@ -111,4 +127,137 @@
     background-color: var(--md-default-fg-color--lightest, #f5f5f5);
     font-size: 0.9em;
     opacity: 0.95;
+}
+
+/* Homepage: tagline under the title */
+.hero-tagline {
+    margin: -0.5em 0 1em 0;
+    font-size: 1.6em;
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--md-primary-fg-color);
+}
+[data-md-color-scheme="slate"] .hero-tagline {
+    color: var(--md-accent-fg-color);
+}
+
+/* Homepage: feature cards with screenshots (own grid, independent of the
+   Material version), as many columns as fit, images capped in height */
+.md-typeset .feature-cards > ul {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    margin: 1em 0;
+    padding: 0;
+    list-style: none;
+}
+.md-typeset .feature-cards > ul > li {
+    margin: 0;
+    padding: 0 0.8rem 0.6rem 0.8rem;
+    border: 0.05rem solid var(--md-default-fg-color--lightest);
+    border-radius: 0.2rem;
+    overflow: hidden;
+}
+.md-typeset .feature-cards > ul > li > p:first-child {
+    margin: 0 -0.8rem 0.6rem -0.8rem;
+}
+.md-typeset .feature-cards img {
+    display: block;
+    width: 100%;
+    height: 9rem;
+    object-fit: cover;
+    object-position: center;
+    background-color: #ffffe5;
+}
+@media screen and (max-width: 60em) {
+    .md-typeset .feature-cards > ul { grid-template-columns: repeat(2, 1fr); }
+}
+@media screen and (max-width: 30em) {
+    .md-typeset .feature-cards > ul { grid-template-columns: 1fr; }
+}
+/* GUI screenshots: show the 3D view, not the editor */
+.feature-cards img.shot {
+    object-position: 80% 35%;
+}
+
+/* Homepage: comparison table, highlight the PythonSCAD column */
+.compare-table th:last-child,
+.compare-table td:last-child {
+    background-color: rgba(83, 109, 254, 0.08);
+}
+.compare-table th:last-child {
+    color: var(--md-primary-fg-color);
+}
+[data-md-color-scheme="slate"] .compare-table th:last-child {
+    color: var(--md-accent-fg-color);
+}
+[data-md-color-scheme="slate"] .compare-table th:last-child,
+[data-md-color-scheme="slate"] .compare-table td:last-child {
+    background-color: rgba(83, 109, 254, 0.15);
+}
+
+/* Homepage: "Made for real workflows" as a compact, full-width list */
+.md-typeset .workflow-table .md-typeset__table {
+    display: block;
+    width: 100%;
+}
+.md-typeset .workflow-table table:not([class]) {
+    display: table;
+    width: 100%;
+    border: none;
+    font-size: 0.75rem;
+}
+.md-typeset .workflow-table table:not([class]) thead {
+    display: none;
+}
+.md-typeset .workflow-table table:not([class]) td {
+    padding: 0.6em 1em;
+    vertical-align: baseline;
+    border-top: 0.05rem solid var(--md-default-fg-color--lightest);
+}
+.md-typeset .workflow-table table:not([class]) tr:first-child td {
+    border-top: none;
+}
+.md-typeset .workflow-table table:not([class]) td:first-child {
+    width: 16em;
+    font-weight: 600;
+}
+.md-typeset .workflow-table td:first-child .twemoji {
+    color: var(--md-primary-fg-color);
+    margin-right: 0.4em;
+}
+[data-md-color-scheme="slate"] .md-typeset .workflow-table td:first-child .twemoji {
+    color: var(--md-accent-fg-color);
+}
+.md-typeset .workflow-table td:last-child a {
+    margin-left: 0.3em;
+    white-space: nowrap;
+}
+.md-typeset .workflow-table td:last-child a::after {
+    content: " →";
+}
+.md-typeset .workflow-table td:last-child a[target="_blank"]::after {
+    content: "";
+}
+.md-typeset .workflow-table table:not([class]) tbody tr:hover {
+    background-color: transparent;
+    box-shadow: none;
+}
+@media screen and (max-width: 45em) {
+    .md-typeset .workflow-table table:not([class]) tr,
+    .md-typeset .workflow-table table:not([class]) td {
+        display: block;
+        width: auto;
+    }
+    .md-typeset .workflow-table table:not([class]) td {
+        border-top: none;
+        padding: 0.15em 0;
+    }
+    .md-typeset .workflow-table table:not([class]) tr {
+        padding: 0.7em 0;
+        border-top: 0.05rem solid var(--md-default-fg-color--lightest);
+    }
+    .md-typeset .workflow-table table:not([class]) tr:first-child {
+        border-top: none;
+    }
 }
