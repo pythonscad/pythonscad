@@ -1,0 +1,23 @@
+from pythonscad import *
+from math import sin, cos, radians
+
+# Cabinet knob: radius profile along the height (z, r)
+profile = [(0, 8), (8, 7), (14, 12), (19, 14), (23, 12), (25.5, 5)]
+
+def radius(z):  # linear interpolation along the profile
+    for (z0, r0), (z1, r1) in zip(profile, profile[1:]):
+        if z <= z1:
+            return r0 + (r1 - r0) * (z - z0) / (z1 - z0)
+
+# Spread points on a golden-angle spiral, like seeds in a sunflower
+n = 160
+pts = []
+for i in range(n):
+    z = 25.5 * i / (n - 1)
+    a = radians(137.5 * i)
+    pts.append([radius(z) * cos(a), radius(z) * sin(a), z])
+
+# organic() wraps the point cloud into a smooth, watertight solid
+knob = organic(pts, 1.5)
+knob -= cylinder(d=3.5, h=12, fn=24) - [0, 0, 1]   # pilot hole for a screw
+knob.show()
