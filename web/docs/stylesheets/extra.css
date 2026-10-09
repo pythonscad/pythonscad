@@ -164,9 +164,11 @@
 .md-typeset .feature-cards img {
     display: block;
     width: 100%;
-    height: 9rem;
-    object-fit: cover;
+    height: 10rem;
+    object-fit: contain;          /* show the whole picture, no cropping */
     object-position: center;
+    padding: 0.4rem;
+    box-sizing: border-box;
     background-color: #ffffe5;
 }
 @media screen and (max-width: 60em) {
@@ -174,10 +176,6 @@
 }
 @media screen and (max-width: 30em) {
     .md-typeset .feature-cards > ul { grid-template-columns: 1fr; }
-}
-/* GUI screenshots: show the 3D view, not the editor */
-.feature-cards img.shot {
-    object-position: 80% 35%;
 }
 
 /* Homepage: comparison table, highlight the PythonSCAD column */
