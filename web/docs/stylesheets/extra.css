@@ -129,17 +129,45 @@
     opacity: 0.95;
 }
 
-/* Homepage: tagline under the title */
-.hero-tagline {
-    margin: -0.5em 0 1em 0;
-    font-size: 1.6em;
-    line-height: 1.3;
-    font-weight: 600;
-    color: var(--md-primary-fg-color);
+/* Homepage hero: tagline as the title, text left and animation right */
+.md-typeset .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+    margin-bottom: 1.5rem;
 }
-[data-md-color-scheme="slate"] .hero-tagline {
-    color: var(--md-accent-fg-color);
+@media screen and (max-width: 45em) {
+    .md-typeset .hero { grid-template-columns: 1fr; gap: 1rem; }
 }
+.md-typeset .hero-text > :first-child { margin-top: 0; }
+.md-typeset h1.hero-title {
+    margin: 0 0 1.2rem 0;
+    font-size: 1.9em;
+    line-height: 1.25;
+    font-weight: 400;
+    letter-spacing: normal;
+    color: var(--md-default-fg-color--light);
+}
+.md-typeset .hero-text > p:first-of-type {
+    font-size: 1.1em;
+}
+.md-typeset .hero-media img {
+    display: block;
+    width: 100%;
+    border-radius: 0.3rem;
+    box-shadow: var(--md-shadow-z2);
+}
+.md-typeset .hero-secondary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5em 1em;
+    margin: 0;
+}
+.md-typeset .hero-secondary .md-button { margin: 0; }
+.md-typeset .hero-secondary-links { opacity: 0.85; }
+.md-typeset .hero .hero-download { margin-top: 0; }
 
 /* Homepage: feature cards with screenshots (own grid, independent of the
    Material version), as many columns as fit, images capped in height */
@@ -177,7 +205,6 @@
 @media screen and (max-width: 30em) {
     .md-typeset .feature-cards > ul { grid-template-columns: 1fr; }
 }
-
 /* Homepage: comparison table, highlight the PythonSCAD column */
 .compare-table th:last-child,
 .compare-table td:last-child {
@@ -258,4 +285,14 @@
     .md-typeset .workflow-table table:not([class]) tr:first-child {
         border-top: none;
     }
+}
+
+/* Homepage (sidebars hidden): keep a comfortable reading width on wide screens */
+.md-content__inner:has(.hero) {
+    max-width: min(68rem, calc(100% - 2.4rem));
+    margin-left: auto;
+    margin-right: auto;
+}
+@media screen and (max-width: 30em) {
+    .md-typeset h1.hero-title { font-size: 1.5em; }
 }
