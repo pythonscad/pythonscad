@@ -23,7 +23,7 @@ executors:
       xcode: 26.1
   python-executor:
     docker:
-      - image: cimg/python:3.14
+      - image: cimg/python:3.15
 
 commands:
   # Provides OPENSCAD_VERSION and OPENSCAD_COMMIT
