@@ -13,6 +13,9 @@ updates:
     ignore:
       - dependency-name: "takanome-dev/assign-issue-action"
         versions: ["<2.4"]
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   # Bump hook revs in `.pre-commit-config.yaml` (and any hook
   # `additional_dependencies`, e.g. commitlint's npm packages).
@@ -29,7 +32,7 @@ updates:
     labels:
       - "dependencies"
     commit-message:
-      prefix: "build(deps)"
+      prefix: "chore"
       include: "scope"
 
   # Python dependencies are declared in pyproject.toml and locked in
@@ -61,7 +64,7 @@ updates:
     labels:
       - "dependencies"
     commit-message:
-      prefix: "build(deps)"
+      prefix: "chore"
       include: "scope"
 
   - package-ecosystem: "uv"
@@ -71,7 +74,7 @@ updates:
     labels:
       - "dependencies"
     commit-message:
-      prefix: "build(deps)"
+      prefix: "chore"
       include: "scope"
 
   # WASM sysroot: Emscripten base image (FROM/ARG tags) in docker/wasm/sysroot.dockerfile.
@@ -82,7 +85,7 @@ updates:
     labels:
       - "dependencies"
     commit-message:
-      prefix: "build(deps)"
+      prefix: "chore"
       include: "scope"
 
   # WASM sysroot: pinned pip build tools copied into sysroot.dockerfile.
@@ -93,7 +96,7 @@ updates:
     labels:
       - "dependencies"
     commit-message:
-      prefix: "build(deps)"
+      prefix: "chore"
       include: "scope"
 
   # wasm-test notebook: vendored three.js ES modules (vendor/three.module.min.js
@@ -105,5 +108,5 @@ updates:
     labels:
       - "dependencies"
     commit-message:
-      prefix: "build(deps)"
+      prefix: "chore"
       include: "scope"
