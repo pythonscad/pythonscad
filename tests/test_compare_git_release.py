@@ -8,11 +8,80 @@ compared as tag names).
 """
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+
+def _is_wsl_bash_stub(path: Path) -> bool:
+    """True for the Windows System32/SysWOW64 WSL launcher bash.exe.
+
+    GitHub-hosted Windows runners ship that stub with no distro installed.
+    CreateProcess also prefers System32 for bare ``bash``, so callers must
+    spawn an absolute path to a real Bash (MSYS2 / Git for Windows).
+    """
+    try:
+        resolved = path.resolve()
+    except OSError:
+        return False
+    if resolved.name.lower() not in ("bash", "bash.exe"):
+        return False
+    return any(part.lower() in ("system32", "syswow64") for part in resolved.parts)
+
+
+def _bash_works(path: str) -> bool:
+    try:
+        proc = subprocess.run(
+            [path, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return proc.returncode == 0 and "GNU bash" in (proc.stdout + proc.stderr)
+
+
+def _find_bash() -> str | None:
+    candidates: list[Path] = []
+    for name in ("bash", "bash.exe"):
+        found = shutil.which(name)
+        if found:
+            candidates.append(Path(found))
+
+    if sys.platform == "win32":
+        msystem_prefix = os.environ.get("MSYSTEM_PREFIX")
+        if msystem_prefix:
+            candidates.append(Path(msystem_prefix).parent / "usr" / "bin" / "bash.exe")
+        program_files = Path(os.environ.get("ProgramFiles", r"C:\Program Files"))
+        candidates.extend(
+            [
+                Path(r"C:\msys64\usr\bin\bash.exe"),
+                program_files / "Git" / "bin" / "bash.exe",
+                program_files / "Git" / "usr" / "bin" / "bash.exe",
+            ]
+        )
+    else:
+        candidates.extend([Path("/usr/bin/bash"), Path("/bin/bash")])
+
+    seen: set[str] = set()
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve(strict=True)
+        except OSError:
+            continue
+        key = str(resolved).lower()
+        if key in seen or _is_wsl_bash_stub(resolved):
+            continue
+        seen.add(key)
+        path = str(resolved)
+        if _bash_works(path):
+            return path
+    return None
 
 
 def _run_git(repo: Path, *args: str) -> str:
@@ -34,10 +103,10 @@ def _init_repo() -> Path:
     return repo
 
 
-def _compare(script: Path, repo: Path, tag: str, current: str) -> dict[str, str]:
+def _compare(bash: str, script: Path, repo: Path, tag: str, current: str) -> dict[str, str]:
     proc = subprocess.run(
         [
-            "bash",
+            bash,
             str(script),
             "--git-dir",
             str(repo),
@@ -73,8 +142,9 @@ def main() -> int:
         print(f"script not found: {script}", file=sys.stderr)
         return 2
 
-    if shutil.which("bash") is None or shutil.which("git") is None:
-        print("SKIP: bash or git not on PATH")
+    bash = _find_bash()
+    if bash is None or shutil.which("git") is None:
+        print("SKIP: usable bash or git not on PATH")
         return 0
 
     repo = _init_repo()
@@ -93,14 +163,14 @@ def main() -> int:
         peeled = _run_git(repo, "rev-list", "-n", "1", "v1.0.0")
         assert peeled == first, (peeled, first)
 
-        empty = _compare(script, repo, "", first)
+        empty = _compare(bash, script, repo, "", first)
         assert empty.get("new_release_available") == "false", empty
         assert "latest_commit" not in empty, empty
 
-        null = _compare(script, repo, "null", first)
+        null = _compare(bash, script, repo, "null", first)
         assert null.get("new_release_available") == "false", null
 
-        matching = _compare(script, repo, "v1.0.0", first)
+        matching = _compare(bash, script, repo, "v1.0.0", first)
         assert matching.get("new_release_available") == "false", matching
         assert matching.get("latest_commit") == first, matching
 
@@ -110,7 +180,7 @@ def main() -> int:
         second = _run_git(repo, "rev-parse", "HEAD")
         assert second != first
 
-        mismatched = _compare(script, repo, "v1.0.0", second)
+        mismatched = _compare(bash, script, repo, "v1.0.0", second)
         assert mismatched.get("new_release_available") == "true", mismatched
         assert mismatched.get("latest_commit") == first, mismatched
         assert mismatched.get("release_tag") == "v1.0.0", mismatched
