@@ -163,11 +163,32 @@ void StepKernel::build_tri_body(const char *name, std::vector<Vector3d> vertices
 
   auto manif_solid = new ManifoldSolid(entities, 0, closed_shell);
 
-  auto shape_repr = new ShapeRepresentation(entities, name);
-  auto adv_brep_shape_pres = new AdvancesBrepRepresentation(entities, name, manif_solid);
+  // unit context: PythonSCAD geometry is in millimeters
+  auto length_unit = new LengthUnit(entities, "MILLI");
+  auto plane_angle_unit = new PlaneAngleUnit(entities);
+  auto solid_angle_unit = new SolidAngleUnit(entities);
+  auto geom_context = new GeometricRepresentationContext(
+    entities, {length_unit, plane_angle_unit, solid_angle_unit}, 3);
+
+  // SHAPE_REPRESENTATION needs at least one item: the global origin placement
+  auto origin_point = new Point(entities, Vector3d(0, 0, 0));
+  auto origin_z = new Direction(entities, Vector3d(0, 0, 1));
+  auto origin_x = new Direction(entities, Vector3d(1, 0, 0));
+  auto origin_axis = new Axis2Placement(entities, origin_z, origin_x, origin_point);
+
+  auto shape_repr = new ShapeRepresentation(entities, name, {origin_axis}, geom_context);
+  auto adv_brep_shape_pres = new AdvancesBrepRepresentation(entities, name, manif_solid, geom_context);
   auto shape_repr_rel = new ShapeRepresentationRelationShip(entities, shape_repr, adv_brep_shape_pres);
 
-  auto product_def = new ProductDefinition(entities);
+  // product structure (AP214)
+  auto app_ctx = new ApplicationContext(entities);
+  new ApplicationProtocolDefinition(entities, app_ctx);
+  auto product_ctx = new ProductContext(entities, app_ctx);
+  auto product = new Product(entities, name, name, {product_ctx});
+  new ProductRelatedProductCategory(entities, {product});
+  auto product_def_formation = new ProductDefinitionFormation(entities, product);
+  auto product_def_ctx = new ProductDefinitionContext(entities, app_ctx);
+  auto product_def = new ProductDefinition(entities, product_def_formation, product_def_ctx);
   auto product_def_shape = new ProductDefinitionShape(entities, product_def);
   auto shape_def_repr = new ShapeDefinition_Representation(entities, product_def_shape, shape_repr);
 }

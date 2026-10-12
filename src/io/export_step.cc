@@ -63,10 +63,11 @@ void export_step(const std::shared_ptr<const Geometry>& geom, std::ostream& outp
   // header info
   output << "ISO-10303-21;\n";
   output << "HEADER;\n";
-  output << "FILE_DESCRIPTION(('STP203'),'2;1');\n";
+  output << "FILE_DESCRIPTION(('PythonSCAD Model'),'2;1');\n";
   output << "FILE_NAME('" << exportInfo.sourceFilePath << "','" << iso_time.str() << "',('" << author
          << "'),('" << org << "'),' ','pythonscad',' ');\n";
-  output << "FILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));\n";
+  // AP214: matches the PRODUCT_CONTEXT / PRODUCT_DEFINITION_CONTEXT entities written by StepKernel
+  output << "FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));\n";
   output << "ENDSEC; \n";
 
   // data section
