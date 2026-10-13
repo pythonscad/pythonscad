@@ -821,9 +821,9 @@ public:
   class ApplicationContext : public Entity
   {
   public:
-    ApplicationContext(std::vector<Entity *>& ent_list,
-                       const std::string& application_in =
-                         "core data for automotive mechanical design processes")
+    ApplicationContext(
+      std::vector<Entity *>& ent_list,
+      const std::string& application_in = "core data for automotive mechanical design processes")
       : Entity(ent_list), application(application_in)
     {
     }
@@ -884,8 +884,9 @@ public:
   class Product : public Entity
   {
   public:
-    Product(std::vector<Entity *>& ent_list, const std::string& product_id_in, const std::string& name_in,
-            std::vector<ProductContext *> contexts_in, const std::string& description_in = "")
+    Product(std::vector<Entity *>& ent_list, const std::string& product_id_in,
+            const std::string& name_in, std::vector<ProductContext *> contexts_in,
+            const std::string& description_in = "")
       : Entity(ent_list),
         product_id(product_id_in),
         name(name_in),
@@ -986,8 +987,8 @@ public:
 
     virtual void serialize(std::ostream& stream_in)
     {
-      stream_in << "#" << id << " = PRODUCT_DEFINITION(" << stepString(def_id) << ",'',#" << formation->id
-                << ",#" << context->id << ");\n";
+      stream_in << "#" << id << " = PRODUCT_DEFINITION(" << stepString(def_id) << ",'',#"
+                << formation->id << ",#" << context->id << ");\n";
     }
 
     virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
@@ -1030,7 +1031,8 @@ public:
   public:
     // prefix: SI prefix enum without dots ("MILLI", "CENTI", ...) or "" for none ($)
     // si_name: SI unit name enum without dots ("METRE", "RADIAN", ...)
-    NamedUnit(std::vector<Entity *>& ent_list, const std::string& prefix_in, const std::string& si_name_in)
+    NamedUnit(std::vector<Entity *>& ent_list, const std::string& prefix_in,
+              const std::string& si_name_in)
       : Entity(ent_list), prefix(prefix_in), si_name(si_name_in)
     {
     }
@@ -1044,7 +1046,8 @@ public:
   protected:
     std::string siUnitArgs() const
     {
-      return "SI_UNIT(" + (prefix.empty() ? std::string("$") : "." + prefix + ".") + ",." + si_name + ".)";
+      return "SI_UNIT(" + (prefix.empty() ? std::string("$") : "." + prefix + ".") + ",." + si_name +
+             ".)";
     }
   };
 
@@ -1179,8 +1182,8 @@ public:
 
     virtual void serialize(std::ostream& stream_in)
     {
-      stream_in << "#" << id << " = ADVANCED_BREP_SHAPE_REPRESENTATION(" << stepString(name) << ",(#" << solid->id
-                << "),#" << context->id << ");\n";
+      stream_in << "#" << id << " = ADVANCED_BREP_SHAPE_REPRESENTATION(" << stepString(name) << ",(#"
+                << solid->id << "),#" << context->id << ");\n";
     }
 
     virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
