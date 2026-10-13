@@ -33,9 +33,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 #include <sstream>
 #include <map>
 #include <iomanip>  // put_time
-StepKernel::StepKernel() {}
+StepKernel::StepKernel()
+{
+}
 
-StepKernel::~StepKernel() {}
+StepKernel::~StepKernel()
+{
+}
 
 StepKernel::EdgeCurve *StepKernel::create_line_edge_curve(StepKernel::Vertex *vert1,
                                                           StepKernel::Vertex *vert2, bool dir)
@@ -167,8 +171,8 @@ void StepKernel::build_tri_body(const char *name, std::vector<Vector3d> vertices
   auto length_unit = new LengthUnit(entities, "MILLI");
   auto plane_angle_unit = new PlaneAngleUnit(entities);
   auto solid_angle_unit = new SolidAngleUnit(entities);
-  auto geom_context = new GeometricRepresentationContext(
-    entities, {length_unit, plane_angle_unit, solid_angle_unit}, 3);
+  auto geom_context =
+    new GeometricRepresentationContext(entities, {length_unit, plane_angle_unit, solid_angle_unit}, 3);
 
   // SHAPE_REPRESENTATION needs at least one item: the global origin placement
   auto origin_point = new Point(entities, Vector3d(0, 0, 0));
