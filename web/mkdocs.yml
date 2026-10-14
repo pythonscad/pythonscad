@@ -99,6 +99,7 @@ nav:
       - Align and Handles: reference/align.md
       - Roof: reference/roof.md
       - Fillet: reference/fillet.md
+      - Organic: reference/organic.md
       - Mesh Operations: reference/repair.md
       - GUI and Utility: reference/gui.md
   - Examples: examples.md
@@ -121,6 +122,3 @@ markdown_extensions:
   - pymdownx.snippets
   - attr_list
   - md_in_html
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
