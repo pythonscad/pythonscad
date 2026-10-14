@@ -795,18 +795,207 @@ public:
     double length;
     Direction *dir;
   };
+  // ---------------------------------------------------------------------------
+  // Product structure (ISO 10303-41, AP214 automotive_design)
+  //
+  //   APPLICATION_CONTEXT <- APPLICATION_PROTOCOL_DEFINITION
+  //        ^         ^
+  //        |         +-- PRODUCT_CONTEXT <- PRODUCT <- PRODUCT_RELATED_PRODUCT_CATEGORY
+  //        |                                   ^
+  //        |                     PRODUCT_DEFINITION_FORMATION
+  //        |                                   ^
+  //        +-- PRODUCT_DEFINITION_CONTEXT <- PRODUCT_DEFINITION <- PRODUCT_DEFINITION_SHAPE
+  // ---------------------------------------------------------------------------
+
+  // STEP string literal: quote and double embedded apostrophes
+  static std::string stepString(const std::string& s)
+  {
+    std::string out = "'";
+    for (char c : s) {
+      if (c == '\'') out += "''";
+      else out += c;
+    }
+    return out + "'";
+  }
+
+  class ApplicationContext : public Entity
+  {
+  public:
+    ApplicationContext(
+      std::vector<Entity *>& ent_list,
+      const std::string& application_in = "core data for automotive mechanical design processes")
+      : Entity(ent_list), application(application_in)
+    {
+    }
+    virtual ~ApplicationContext() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = APPLICATION_CONTEXT(" << stepString(application) << ");\n";
+    }
+    virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
+
+    std::string application;
+  };
+
+  class ApplicationProtocolDefinition : public Entity
+  {
+  public:
+    ApplicationProtocolDefinition(std::vector<Entity *>& ent_list, ApplicationContext *app_ctx_in,
+                                  const std::string& schema_in = "automotive_design", int year_in = 2000)
+      : Entity(ent_list), app_ctx(app_ctx_in), schema(schema_in), year(year_in)
+    {
+    }
+    virtual ~ApplicationProtocolDefinition() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = APPLICATION_PROTOCOL_DEFINITION('international standard',"
+                << stepString(schema) << "," << year << ",#" << app_ctx->id << ");\n";
+    }
+    virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
+
+    ApplicationContext *app_ctx;
+    std::string schema;
+    int year;
+  };
+
+  class ProductContext : public Entity
+  {
+  public:
+    ProductContext(std::vector<Entity *>& ent_list, ApplicationContext *app_ctx_in,
+                   const std::string& discipline_in = "mechanical")
+      : Entity(ent_list), app_ctx(app_ctx_in), discipline(discipline_in)
+    {
+    }
+    virtual ~ProductContext() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = PRODUCT_CONTEXT('',#" << app_ctx->id << "," << stepString(discipline)
+                << ");\n";
+    }
+    virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
+
+    ApplicationContext *app_ctx;
+    std::string discipline;
+  };
+
+  class Product : public Entity
+  {
+  public:
+    Product(std::vector<Entity *>& ent_list, const std::string& product_id_in,
+            const std::string& name_in, std::vector<ProductContext *> contexts_in,
+            const std::string& description_in = "")
+      : Entity(ent_list),
+        product_id(product_id_in),
+        name(name_in),
+        description(description_in),
+        contexts(std::move(contexts_in))
+    {
+    }
+    virtual ~Product() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = PRODUCT(" << stepString(product_id) << "," << stepString(name) << ","
+                << stepString(description) << ",(";
+      for (size_t i = 0; i < contexts.size(); i++) stream_in << (i ? "," : "") << "#" << contexts[i]->id;
+      stream_in << "));\n";
+    }
+    virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
+
+    std::string product_id;
+    std::string name;
+    std::string description;
+    std::vector<ProductContext *> contexts;
+  };
+
+  class ProductRelatedProductCategory : public Entity
+  {
+  public:
+    ProductRelatedProductCategory(std::vector<Entity *>& ent_list, std::vector<Product *> products_in,
+                                  const std::string& name_in = "part")
+      : Entity(ent_list), name(name_in), products(std::move(products_in))
+    {
+    }
+    virtual ~ProductRelatedProductCategory() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = PRODUCT_RELATED_PRODUCT_CATEGORY(" << stepString(name) << ",$,(";
+      for (size_t i = 0; i < products.size(); i++) stream_in << (i ? "," : "") << "#" << products[i]->id;
+      stream_in << "));\n";
+    }
+    virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
+
+    std::string name;
+    std::vector<Product *> products;
+  };
+
+  class ProductDefinitionFormation : public Entity
+  {
+  public:
+    ProductDefinitionFormation(std::vector<Entity *>& ent_list, Product *product_in,
+                               const std::string& formation_id_in = "")
+      : Entity(ent_list), product(product_in), formation_id(formation_id_in)
+    {
+    }
+    virtual ~ProductDefinitionFormation() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = PRODUCT_DEFINITION_FORMATION(" << stepString(formation_id) << ",'',#"
+                << product->id << ");\n";
+    }
+    virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
+
+    Product *product;
+    std::string formation_id;
+  };
+
+  class ProductDefinitionContext : public Entity
+  {
+  public:
+    ProductDefinitionContext(std::vector<Entity *>& ent_list, ApplicationContext *app_ctx_in,
+                             const std::string& life_cycle_stage_in = "design")
+      : Entity(ent_list), app_ctx(app_ctx_in), life_cycle_stage(life_cycle_stage_in)
+    {
+    }
+    virtual ~ProductDefinitionContext() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = PRODUCT_DEFINITION_CONTEXT('part definition',#" << app_ctx->id << ","
+                << stepString(life_cycle_stage) << ");\n";
+    }
+    virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
+
+    ApplicationContext *app_ctx;
+    std::string life_cycle_stage;
+  };
+
   class ProductDefinition : public Entity
   {
   public:
-    ProductDefinition(std::vector<Entity *>& ent_list) : Entity(ent_list) {}
+    ProductDefinition(std::vector<Entity *>& ent_list, ProductDefinitionFormation *formation_in,
+                      ProductDefinitionContext *context_in, const std::string& def_id_in = "design")
+      : Entity(ent_list), def_id(def_id_in), formation(formation_in), context(context_in)
+    {
+    }
     virtual ~ProductDefinition() {}
 
     virtual void serialize(std::ostream& stream_in)
     {
-      stream_in << "#" << id << " = PRODUCT_DEFINITION('', '');\n";
+      stream_in << "#" << id << " = PRODUCT_DEFINITION(" << stepString(def_id) << ",'',#"
+                << formation->id << ",#" << context->id << ");\n";
     }
 
     virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
+
+    std::string def_id;
+    ProductDefinitionFormation *formation;
+    ProductDefinitionContext *context;
   };
   class ProductDefinitionShape : public Entity
   {
@@ -828,10 +1017,112 @@ public:
     ProductDefinition *prod;
   };
 
+  // ---------------------------------------------------------------------------
+  // Units and representation context (ISO 10303-41 / -43)
+  //
+  // All unit entities are complex (multi-leaf) instances and must be written
+  // as "#id = ( A() B() C() );" with the partial entities in alphabetical
+  // order (ISO 10303-21, 11.2.5.5).
+  // ---------------------------------------------------------------------------
+
+  // Common base of all SI based named units: carries the SI_UNIT attributes.
+  class NamedUnit : public Entity
+  {
+  public:
+    // prefix: SI prefix enum without dots ("MILLI", "CENTI", ...) or "" for none ($)
+    // si_name: SI unit name enum without dots ("METRE", "RADIAN", ...)
+    NamedUnit(std::vector<Entity *>& ent_list, const std::string& prefix_in,
+              const std::string& si_name_in)
+      : Entity(ent_list), prefix(prefix_in), si_name(si_name_in)
+    {
+    }
+    virtual ~NamedUnit() {}
+
+    virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
+
+    std::string prefix;
+    std::string si_name;
+
+  protected:
+    std::string siUnitArgs() const
+    {
+      return "SI_UNIT(" + (prefix.empty() ? std::string("$") : "." + prefix + ".") + ",." + si_name +
+             ".)";
+    }
+  };
+
+  class LengthUnit : public NamedUnit
+  {
+  public:
+    LengthUnit(std::vector<Entity *>& ent_list, const std::string& prefix_in = "MILLI")
+      : NamedUnit(ent_list, prefix_in, "METRE")
+    {
+    }
+    virtual ~LengthUnit() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = ( LENGTH_UNIT() NAMED_UNIT(*) " << siUnitArgs() << " );\n";
+    }
+  };
+
+  class PlaneAngleUnit : public NamedUnit
+  {
+  public:
+    PlaneAngleUnit(std::vector<Entity *>& ent_list) : NamedUnit(ent_list, "", "RADIAN") {}
+    virtual ~PlaneAngleUnit() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = ( NAMED_UNIT(*) PLANE_ANGLE_UNIT() " << siUnitArgs() << " );\n";
+    }
+  };
+
+  class SolidAngleUnit : public NamedUnit
+  {
+  public:
+    SolidAngleUnit(std::vector<Entity *>& ent_list) : NamedUnit(ent_list, "", "STERADIAN") {}
+    virtual ~SolidAngleUnit() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = ( NAMED_UNIT(*) " << siUnitArgs() << " SOLID_ANGLE_UNIT() );\n";
+    }
+  };
+
+  // Complex instance of
+  //   GEOMETRIC_REPRESENTATION_CONTEXT + GLOBAL_UNIT_ASSIGNED_CONTEXT + REPRESENTATION_CONTEXT
+  // Referenced as context_of_items by every shape representation.
+  class GeometricRepresentationContext : public Entity
+  {
+  public:
+    GeometricRepresentationContext(std::vector<Entity *>& ent_list, std::vector<NamedUnit *> units_in,
+                                   int dimension_in = 3)
+      : Entity(ent_list), units(std::move(units_in)), dimension(dimension_in)
+    {
+    }
+    virtual ~GeometricRepresentationContext() {}
+
+    virtual void serialize(std::ostream& stream_in)
+    {
+      stream_in << "#" << id << " = ( GEOMETRIC_REPRESENTATION_CONTEXT(" << dimension << ") "
+                << "GLOBAL_UNIT_ASSIGNED_CONTEXT((";
+      for (size_t i = 0; i < units.size(); i++) stream_in << (i ? "," : "") << "#" << units[i]->id;
+      stream_in << ")) REPRESENTATION_CONTEXT('','" << dimension << "D') );\n";
+    }
+
+    virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
+
+    std::vector<NamedUnit *> units;
+    int dimension;
+  };
+
   class ShapeRepresentation : public Entity
   {
   public:
-    ShapeRepresentation(std::vector<Entity *>& ent_list, const char *name_in) : Entity(ent_list)
+    ShapeRepresentation(std::vector<Entity *>& ent_list, const char *name_in,
+                        std::vector<Entity *> items_in, GeometricRepresentationContext *context_in)
+      : Entity(ent_list), items(std::move(items_in)), context(context_in)
     {
       name = strdup(name_in);
     }
@@ -839,12 +1130,16 @@ public:
 
     virtual void serialize(std::ostream& stream_in)
     {
-      stream_in << "#" << id << " = SHAPE_REPRESENTATION('" << name << "');\n";
+      stream_in << "#" << id << " = SHAPE_REPRESENTATION(" << stepString(name) << ",(";
+      for (size_t i = 0; i < items.size(); i++) stream_in << (i ? "," : "") << "#" << items[i]->id;
+      stream_in << "),#" << context->id << ");\n";
     }
 
     virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
 
     char *name;
+    std::vector<Entity *> items;
+    GeometricRepresentationContext *context;
   };
   class ShapeDefinition_Representation : public Entity
   {
@@ -876,23 +1171,25 @@ public:
   {
   public:
     AdvancesBrepRepresentation(std::vector<Entity *>& ent_list, const char *name_in,
-                               ManifoldSolid *solid_in)
+                               ManifoldSolid *solid_in, GeometricRepresentationContext *context_in)
       : Entity(ent_list)
     {
       name = strdup(name_in);
       solid = solid_in;
+      context = context_in;
     }
     virtual ~AdvancesBrepRepresentation() {}
 
     virtual void serialize(std::ostream& stream_in)
     {
-      stream_in << "#" << id << " = ADVANCED_BREP_SHAPE_REPRESENTATION('" << name << "',(#" << solid->id
-                << "),);\n";
+      stream_in << "#" << id << " = ADVANCED_BREP_SHAPE_REPRESENTATION(" << stepString(name) << ",(#"
+                << solid->id << "),#" << context->id << ");\n";
     }
 
     virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args) {}
     char *name;
     ManifoldSolid *solid;
+    GeometricRepresentationContext *context;
     double length;
   };
 
