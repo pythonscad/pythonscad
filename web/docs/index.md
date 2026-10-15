@@ -53,64 +53,74 @@ Write parametric 3D models in real Python, see them live, and export them for
 </div>
 </div>
 
+## A fork, and a superset of OpenSCAD
+
+PythonSCAD is a fork of [OpenSCAD](https://openscad.org) that stays closely
+synced with upstream. Everything OpenSCAD can do, PythonSCAD can do too: your
+`.scad` files, libraries, and habits carry over unchanged.
+
+On top of that, it adds features that don't fit OpenSCAD's deliberately minimal
+design: a full programming language, fillets, SDFs, point-cloud surfaces, and
+more. Those live here, so you don't have to choose between the two.
+
 ## What you get on top of OpenSCAD
 
 <div class="feature-cards" markdown>
 
--   ![Two solids joined with a smooth fillet](pictures/fillet.png){ loading=lazy }
+- ![Two solids joined with a smooth fillet](pictures/fillet.png){ loading=lazy }
 
-    **Fillets and rounded seams**
+  **Fillets and rounded seams**
 
-    Round edges with `fillet()`, or round only the seams of a boolean with
-    `union(a, b, r=2)`.
+  Round edges with `fillet()`, or round only the seams of a boolean with
+  `union(a, b, r=2)`.
 
-    [:octicons-arrow-right-24: fillet](reference/fillet.md)
+  [fillet](reference/fillet.md)
 
--   ![Profile swept along a 3D path](pictures/path_extrude.png){ loading=lazy }
+- ![Profile swept along a 3D path](pictures/path_extrude.png){ loading=lazy }
 
-    **Sweep along any path**
+  **Sweep along any path**
 
-    `path_extrude()` sweeps a profile along a 3D path, with twist, scaling, and
-    rounded corners.
+  `path_extrude()` sweeps a profile along a 3D path, with twist, scaling, and
+  rounded corners.
 
-    [:octicons-arrow-right-24: path_extrude](reference/extrusions.md#path_extrude)
+  [path_extrude](reference/extrusions.md#path_extrude)
 
--   ![Sphere and box blended smoothly with SDFs](pictures/sdf.png){ loading=lazy }
+- ![Sphere and box blended smoothly with SDFs](pictures/sdf.png){ loading=lazy }
 
-    **SDF and implicit modeling**
+  **SDF and implicit modeling**
 
-    Built-in libfive for smooth blends and organic shapes that plain CSG
-    cannot produce.
+  Built-in libfive for smooth blends and organic shapes that plain CSG
+  cannot produce.
 
-    [:octicons-arrow-right-24: F-Rep / SDF](reference/frep.md)
+  [F-Rep / SDF](reference/frep.md)
 
--   ![Gyroid lattice generated from a formula](pictures/gyroid.png){ loading=lazy }
+- ![Gyroid lattice generated from a formula](pictures/gyroid.png){ loading=lazy }
 
-    **Lattices from a formula**
+  **Lattices from a formula**
 
-    Write a gyroid or any other implicit surface as a single math expression
-    and get a printable lattice.
+  Write a gyroid or any other implicit surface as a single math expression
+  and get a printable lattice.
 
-    [:octicons-arrow-right-24: Gyroid example](examples/gyroid.txt)
+  [Gyroid example](examples/gyroid.txt)
 
--   ![QR code generated as a 3D model in the PythonSCAD GUI](pictures/qrcode.png){ .shot loading=lazy }
+- ![QR code generated as a 3D model in the PythonSCAD GUI](pictures/qrcode.png){ .shot loading=lazy }
 
-    **The whole pip ecosystem**
+  **The whole pip ecosystem**
 
-    pip is Python's free package library with hundreds of thousands of ready-made
-    add-ons. One `pip install` and they work in your model: this QR code comes
-    straight from the `pyqrcode` package.
+  pip is Python's free package library with hundreds of thousands of ready-made
+  add-ons. One `pip install` and they work in your model: this QR code comes
+  straight from the `pyqrcode` package.
 
-    [:octicons-arrow-right-24: Example script](examples/qrcode.txt)
+  [Example script](examples/qrcode.txt)
 
--   ![Smooth cabinet knob generated from a point cloud](pictures/organic_knob.png){ loading=lazy }
+- ![Smooth cabinet knob generated from a point cloud](pictures/organic_knob.png){ loading=lazy }
 
-    **Shapes from a point cloud**
+  **Shapes from a point cloud**
 
-    `organic()` wraps a cloud of points into a smooth, watertight solid —
-    sketch a knob, a grip, or a figure from a few coordinates.
+  `organic()` wraps a cloud of points into a smooth, watertight solid —
+  sketch a knob, a grip, or a figure from a few coordinates.
 
-    [:octicons-arrow-right-24: Knob example](examples/organic_knob.txt)
+  [:octicons-arrow-right-24: Knob example](examples/organic_knob.txt)
 
 </div>
 
