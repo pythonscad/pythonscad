@@ -169,27 +169,24 @@
 .md-typeset .hero-secondary-links { opacity: 0.85; }
 .md-typeset .hero .hero-download { margin-top: 0; }
 
-/* Homepage: feature cards with screenshots (own grid, independent of the
-   Material version), as many columns as fit, images capped in height */
-.md-typeset .feature-cards > ul {
+/* Homepage: feature cards with screenshots (one <div class="feature-card"> each),
+   three per row on wide screens, images shown whole */
+.md-typeset .feature-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.6rem;
     margin: 1em 0;
-    padding: 0;
-    list-style: none;
 }
-.md-typeset .feature-cards > ul > li {
-    margin: 0;
+.md-typeset .feature-card {
     padding: 0 0.8rem 0.6rem 0.8rem;
     border: 0.05rem solid var(--md-default-fg-color--lightest);
     border-radius: 0.2rem;
     overflow: hidden;
 }
-.md-typeset .feature-cards > ul > li > p:first-child {
+.md-typeset .feature-card > p:first-child {
     margin: 0 -0.8rem 0.6rem -0.8rem;
 }
-.md-typeset .feature-cards img {
+.md-typeset .feature-card img {
     display: block;
     width: 100%;
     height: 10rem;
@@ -199,11 +196,20 @@
     box-sizing: border-box;
     background-color: #ffffe5;
 }
+.md-typeset .feature-card h3 {
+    margin: 0 0 0.5em 0;
+    font-size: 1em;
+    font-weight: 700;
+    letter-spacing: normal;
+}
+.md-typeset .feature-card > p:last-child > a:only-child::before {
+    content: "→ ";
+}
 @media screen and (max-width: 60em) {
-    .md-typeset .feature-cards > ul { grid-template-columns: repeat(2, 1fr); }
+    .md-typeset .feature-cards { grid-template-columns: repeat(2, 1fr); }
 }
 @media screen and (max-width: 30em) {
-    .md-typeset .feature-cards > ul { grid-template-columns: 1fr; }
+    .md-typeset .feature-cards { grid-template-columns: 1fr; }
 }
 /* Homepage: comparison table, highlight the PythonSCAD column */
 .compare-table th:last-child,

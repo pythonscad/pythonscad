@@ -4,6 +4,8 @@ hide:
   - toc
 ---
 
+<!-- markdownlint-disable MD033 -->
+
 # The simplicity of OpenSCAD. The full power of Python. { .hero-title }
 
 <div class="hero" markdown>
@@ -50,6 +52,7 @@ Write parametric 3D models in real Python, see them live, and export them for
 <div class="hero-media" markdown>
 
 ![Step-by-step: building a camera housing in the PythonSCAD GUI](pictures/box_anim.gif)
+
 </div>
 </div>
 
@@ -63,72 +66,97 @@ On top of that, it adds features that don't fit OpenSCAD's deliberately minimal
 design: a full programming language, fillets, SDFs, point-cloud surfaces, and
 more. Those live here, so you don't have to choose between the two.
 
-## What you get on top of OpenSCAD
+## What  PythonSCAD adds
 
 <div class="feature-cards" markdown>
 
-- ![Two solids joined with a smooth fillet](pictures/fillet.png){ loading=lazy }
+<div class="feature-card" markdown>
 
-  **Fillets and rounded seams**
+![Two solids joined with a smooth fillet](pictures/fillet.png){ loading=lazy }
 
-  Round edges with `fillet()`, or round only the seams of a boolean with
-  `union(a, b, r=2)`.
+### Fillets and rounded seams
 
-  [fillet](reference/fillet.md)
+Round edges with `fillet()`, or round only the seams of a boolean with
+`union(a, b, r=2)`.
 
-- ![Profile swept along a 3D path](pictures/path_extrude.png){ loading=lazy }
+[fillet](reference/fillet.md)
 
-  **Sweep along any path**
+</div>
 
-  `path_extrude()` sweeps a profile along a 3D path, with twist, scaling, and
-  rounded corners.
+<div class="feature-card" markdown>
 
-  [path_extrude](reference/extrusions.md#path_extrude)
+![Profile swept along a 3D path](pictures/path_extrude.png){ loading=lazy }
 
-- ![Sphere and box blended smoothly with SDFs](pictures/sdf.png){ loading=lazy }
+### Sweep along any path
 
-  **SDF and implicit modeling**
+`path_extrude()` sweeps a profile along a 3D path, with twist, scaling, and
+rounded corners.
 
-  Built-in libfive for smooth blends and organic shapes that plain CSG
-  cannot produce.
+[path_extrude](reference/extrusions.md#path_extrude)
 
-  [F-Rep / SDF](reference/frep.md)
+</div>
 
-- ![Gyroid lattice generated from a formula](pictures/gyroid.png){ loading=lazy }
+<div class="feature-card" markdown>
 
-  **Lattices from a formula**
+![Sphere and box blended smoothly with SDFs](pictures/sdf.png){ loading=lazy }
 
-  Write a gyroid or any other implicit surface as a single math expression
-  and get a printable lattice.
+### SDF and implicit modeling
 
-  [Gyroid example](examples/gyroid.txt)
+Built-in libfive for smooth blends and organic shapes that plain CSG
+cannot produce.
 
-- ![QR code generated as a 3D model in the PythonSCAD GUI](pictures/qrcode.png){ .shot loading=lazy }
+[F-Rep / SDF](reference/frep.md)
 
-  **The whole pip ecosystem**
+</div>
 
-  pip is Python's free package library with hundreds of thousands of ready-made
-  add-ons. One `pip install` and they work in your model: this QR code comes
-  straight from the `pyqrcode` package.
+<div class="feature-card" markdown>
 
-  [Example script](examples/qrcode.txt)
+![Gyroid lattice generated from a formula](pictures/gyroid.png){ loading=lazy }
 
-- ![Smooth cabinet knob generated from a point cloud](pictures/organic_knob.png){ loading=lazy }
+### Lattices from a formula
 
-  **Shapes from a point cloud**
+Write a gyroid or any other implicit surface as a single math expression
+and get a printable lattice.
 
-  `organic()` wraps a cloud of points into a smooth, watertight solid —
-  sketch a knob, a grip, or a figure from a few coordinates.
+[Gyroid example](examples/gyroid.txt)
 
-  [:octicons-arrow-right-24: Knob example](examples/organic_knob.txt)
+</div>
+
+<div class="feature-card" markdown>
+
+![QR code generated as a 3D model in the PythonSCAD GUI](pictures/qrcode.png){ loading=lazy }
+
+### The whole pip ecosystem
+
+pip is Python's free package library with hundreds of thousands of ready-made
+add-ons. One `pip install` and they work in your model: this QR code comes
+straight from the `pyqrcode` package.
+
+[Example script](examples/qrcode.txt)
+
+</div>
+
+<div class="feature-card" markdown>
+
+![Smooth cabinet knob generated from a point cloud](pictures/organic_knob.png){ loading=lazy }
+
+### Shapes from a point cloud
+
+`organic()` wraps a cloud of points into a smooth, watertight solid —
+sketch a knob, a grip, or a figure from a few coordinates.
+
+[Knob example](examples/organic_knob.txt)
+
+</div>
 
 </div>
 
 ## One app, three languages
 
 PythonSCAD runs your model in whichever language you prefer: plain Python,
-classic OpenSCAD `.scad` code, or build123d once you import its module. Here is the same desk organizer, sized automatically from a list of
-slots, in each of them.
+classic OpenSCAD `.scad` code, or build123d once you import its module. Here
+is the same desk organizer, sized automatically from a list of slots, in each
+of them.
 
 === "Python"
 
@@ -210,12 +238,12 @@ slots, in each of them.
 <div class="workflow-table" markdown>
 
 | | |
-|---|---|
-| :material-web: **Runs in your browser** | The full kernel compiled to WebAssembly. Try it without installing anything. [Open the Playground ↗](https://www.pythonscad.org/playground/){ target="_blank" rel="noopener" } |
-| :material-notebook-outline: **Jupyter notebooks** | Model, document, and iterate inside a notebook next to your analysis. [Jupyter setup](jupyter.md) |
-| :material-bookshelf: **Your OpenSCAD libraries** | Load existing `.scad` libraries such as MCAD with `osuse()` and call their modules from Python. [osuse](reference/io.md#osuse) |
-| :material-file-chart-outline: **Read any data format** | Import STL, 3MF, OBJ, DXF, parse CSV, JSON, or even chip layouts (GDS) with plain Python and turn the data into geometry. [GDS example](examples/read_gds.txt) |
-| :material-anchor: **Handles and align** | Attach named reference frames to parts and assemble them with `align()` instead of computing transformations by hand. [Handles](reference/align.md) |
+| --- | --- |
+| **Runs in your browser** | The full kernel compiled to WebAssembly. Try it without installing anything. [Open the Playground ↗](https://www.pythonscad.org/playground/){ target="_blank" rel="noopener" } |
+| **Jupyter notebooks** | Model, document, and iterate inside a notebook next to your analysis. [Jupyter setup](jupyter.md) |
+| **Your OpenSCAD libraries** | Load existing `.scad` libraries such as MCAD with `osuse()` and call their modules from Python. [osuse](reference/io.md#osuse) |
+| **Read any data format** | Import STL, 3MF, OBJ, DXF, parse CSV, JSON, or even chip layouts (GDS) with plain Python and turn the data into geometry. [GDS example](examples/read_gds.txt) |
+| **Handles and align** | Attach named reference frames to parts and assemble them with `align()` instead of computing transformations by hand. [Handles](reference/align.md) |
 
 </div>
 
@@ -224,10 +252,10 @@ slots, in each of them.
 <div class="compare-table" markdown>
 
 | | OpenSCAD | CadQuery / build123d | **PythonSCAD** |
-|---|:---:|:---:|:---:|
+| --- | :---: | :---: | :---: |
 | Languages | OpenSCAD language | Python | **Python, OpenSCAD, build123d** |
 | Variables, classes, dicts, file I/O | limited | ✓ | **✓** |
-| pip packages (NumPy, qrcode, …) | – | ✓ | **✓** |
+| pip packages (free Python add-ons: NumPy, qrcode, …) | – | ✓ | **✓** |
 | Edge fillets | workarounds | ✓ | **✓** |
 | Reuse existing `.scad` libraries | ✓ | – | **✓** |
 | Built-in editor, live preview, customizer | ✓ | separate tools | **✓** |
