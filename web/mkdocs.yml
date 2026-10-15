@@ -38,7 +38,7 @@ theme:
         name: Switch to dark mode
 
 extra_css:
-  - stylesheets/extra.css?v=3
+  - stylesheets/extra.css?v=6
 
 extra_javascript:
   - javascript/downloads-common.js
