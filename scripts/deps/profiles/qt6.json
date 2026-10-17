@@ -76,7 +76,8 @@
         "brew tap-new local/pinned-qt",
         "curl -sSL https://raw.githubusercontent.com/Homebrew/homebrew-core/21ce42536b29140bf08d18b6847bc5528c46d33b/Formula/q/qt.rb -o {tap_repo}/Formula/qt.rb",
         "brew install local/pinned-qt/qt",
-        "brew pin local/pinned-qt/qt"
+        "brew pin local/pinned-qt/qt",
+        "brew pin qtbase"
       ],
       "packages": [
         "qscintilla2"

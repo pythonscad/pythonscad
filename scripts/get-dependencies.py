@@ -270,6 +270,11 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
     elif mgr == "brew":
         if shutil.which("brew") is None:
             raise SystemExit("Homebrew not found. Install from https://brew.sh first.")
+        # Supported Homebrew switch: skip the "upgrade dependents" pass so a
+        # later install does not cascade-upgrade pinned kegs. Pair with
+        # `brew pin qtbase` in qt6.json and the qscintilla2 special-case below
+        # (#1132 / #1134).
+        os.environ.setdefault("HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK", "1")
         # Homebrew 6.0+ requires taps to be explicitly trusted before formulae
         # from them can be installed. Insert `brew trust <tap>` after each
         # `brew tap <tap>` pre-command; run_commands() skips these on older
@@ -284,7 +289,20 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         cmds.clear()
         cmds.extend(trusted)
         cmds.append(["brew", "update"])
-        cmds.append(["brew", "install", *packages])
+        # qscintilla2 depends on latest qtbase. With qtbase pinned to 6.11,
+        # a normal `brew install qscintilla2` refuses ("You must brew unpin
+        # qtbase"). Install everything else first, then pour qscintilla2
+        # without resolving/upgrading that dependency. Keep it in `packages`
+        # so profile merges still schedule it (#1134 Copilot review).
+        brew_pkgs = list(packages)
+        qscintilla = None
+        if "qscintilla2" in brew_pkgs:
+            brew_pkgs = [p for p in brew_pkgs if p != "qscintilla2"]
+            qscintilla = "qscintilla2"
+        if brew_pkgs:
+            cmds.append(["brew", "install", *brew_pkgs])
+        if qscintilla is not None:
+            cmds.append(["brew", "install", "--ignore-dependencies", qscintilla])
     elif mgr == "zypper":
         if assume_yes:
             cmds.append(["zypper", "--non-interactive", "install", *packages])
@@ -341,15 +359,76 @@ def run_commands(cmds: List[List[str]], dry_run: bool):
             if debug_result.stderr:
                 print(f"STDERR:\n{debug_result.stderr}", file=sys.stderr)
 
-            # Check if this is a brew command where all packages are already installed
-            # Brew returns exit code 1 when packages are already installed, which is not a real error
-            if cmd[0] == 'brew' and 'install' in cmd:
-                stderr_lower = debug_result.stderr.lower()
-                if 'already installed' in stderr_lower or 'up-to-date' in stderr_lower:
-                    print(f"Note: Packages are already installed, treating as success", file=sys.stderr)
+            # Brew returns exit code 1 when every requested keg is already
+            # installed. Only treat that as success when stderr has no real
+            # failure (e.g. pinned dependency blocking install — #1132/#1134).
+            if cmd[0] == "brew" and "install" in cmd:
+                stderr_lower = (debug_result.stderr or "").lower()
+                fatal_markers = (
+                    "you must `brew unpin",
+                    "you must brew unpin",
+                    "conflict between",
+                    "cannot install",
+                    "no available formula",
+                    "error:",
+                )
+                if any(m in stderr_lower for m in fatal_markers):
+                    raise subprocess.CalledProcessError(result.returncode, cmd)
+                if "already installed" in stderr_lower or "up-to-date" in stderr_lower:
+                    print(
+                        "Note: Packages are already installed, treating as success",
+                        file=sys.stderr,
+                    )
                     continue
 
             raise subprocess.CalledProcessError(result.returncode, cmd)
+
+
+# Distro keys whose values are ordered command lists. When combining profiles
+# these must be appended (union), not overwritten — otherwise a later profile's
+# empty `post_commands: []` drops e.g. a QScintilla install from an earlier one.
+_COMMAND_LIST_KEYS = ("pre_commands", "post_commands")
+
+
+def _merge_distro_props(target: dict, source: dict, *, override: bool) -> None:
+    """Merge non-package distro fields into *target*.
+
+    Packages are handled by the caller. Command-list keys (pre/post_commands)
+    are ALWAYS unioned in order, regardless of `override` — never replaced
+    wholesale. `override` only governs scalar keys (e.g. `manager`,
+    `unsupported_message`): True means the current/later profile wins,
+    False means the parent only fills gaps (setdefault).
+
+    Earlier revisions replaced the whole command list whenever `override`
+    was True, which silently dropped an earlier profile's install commands
+    (e.g. the Qt tap/pin sequence) when a later profile in
+    `--profile qt6 --profile pythonscad` contributed its own, shorter,
+    inherited `pre_commands` for the same distro. Unioning unconditionally
+    fixes that while still being a no-op when both sides already agree
+    (exact-string commands dedupe).
+    """
+    for key, value in source.items():
+        if key == "packages":
+            continue
+        if key in _COMMAND_LIST_KEYS and isinstance(value, list):
+            if not value:
+                # Keep any commands already contributed by an earlier profile.
+                target.setdefault(key, [])
+                continue
+            existing = target.get(key)
+            if not isinstance(existing, list):
+                existing = []
+            seen = set(existing)
+            merged = list(existing)
+            for cmd in value:
+                if cmd not in seen:
+                    merged.append(cmd)
+                    seen.add(cmd)
+            target[key] = merged
+        elif override:
+            target[key] = value
+        else:
+            target.setdefault(key, value)
 
 
 def load_profile_with_inheritance(profile_name: str, loaded_profiles: set = None) -> dict:
@@ -394,10 +473,7 @@ def load_profile_with_inheritance(profile_name: str, loaded_profiles: set = None
                     merged_distro.setdefault("packages", []).append(pkg)
                     seen.add(pkg)
 
-            # Copy other properties from parent (manager, pre_commands, etc.)
-            for key, value in distro_data.items():
-                if key != "packages":
-                    merged_distro.setdefault(key, value)
+            _merge_distro_props(merged_distro, distro_data, override=False)
 
     # Now merge current profile's packages
     for distro_name, distro_data in profile_cfg.get("distros", {}).items():
@@ -414,10 +490,8 @@ def load_profile_with_inheritance(profile_name: str, loaded_profiles: set = None
                 merged_distro.setdefault("packages", []).append(pkg)
                 seen.add(pkg)
 
-        # Copy/override other properties from current profile
-        for key, value in distro_data.items():
-            if key != "packages":
-                merged_distro[key] = value
+        # Current profile wins on scalars; command lists are still unioned.
+        _merge_distro_props(merged_distro, distro_data, override=True)
 
     return merged_cfg
 
@@ -451,10 +525,7 @@ def load_multiple_profiles(profile_names: list) -> dict:
                     final_distro.setdefault("packages", []).append(pkg)
                     seen.add(pkg)
 
-            # Copy/override other properties from this profile
-            for key, value in distro_data.items():
-                if key != "packages":
-                    final_distro[key] = value
+            _merge_distro_props(final_distro, distro_data, override=True)
 
     final_cfg["active_profiles"] = active_profiles
     return final_cfg
