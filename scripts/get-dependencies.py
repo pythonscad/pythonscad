@@ -270,11 +270,11 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
     elif mgr == "brew":
         if shutil.which("brew") is None:
             raise SystemExit("Homebrew not found. Install from https://brew.sh first.")
-        # Keep pinned Qt (and other pinned kegs) from being pulled forward when a
-        # later formula (e.g. qscintilla2) upgrades a shared dependency like md4c.
-        # Without this, Homebrew may cascade-upgrade qtbase 6.11 → 6.12 and break
-        # the PyQt6 bindings pin in scripts/ci/pyqt6-versions.json (#1132).
-        os.environ.setdefault("HOMEBREW_NO_INSTALLED_DEPENDENTS_AUTO_UPDATE", "1")
+        # Supported Homebrew switch: skip the "upgrade dependents" pass so a
+        # later install does not cascade-upgrade pinned kegs. Pair with
+        # `brew pin qtbase` in qt6.json and the qscintilla2 special-case below
+        # (#1132 / #1134).
+        os.environ.setdefault("HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK", "1")
         # Homebrew 6.0+ requires taps to be explicitly trusted before formulae
         # from them can be installed. Insert `brew trust <tap>` after each
         # `brew tap <tap>` pre-command; run_commands() skips these on older
@@ -289,7 +289,20 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         cmds.clear()
         cmds.extend(trusted)
         cmds.append(["brew", "update"])
-        cmds.append(["brew", "install", *packages])
+        # qscintilla2 depends on latest qtbase. With qtbase pinned to 6.11,
+        # a normal `brew install qscintilla2` refuses ("You must brew unpin
+        # qtbase"). Install everything else first, then pour qscintilla2
+        # without resolving/upgrading that dependency. Keep it in `packages`
+        # so profile merges still schedule it (#1134 Copilot review).
+        brew_pkgs = list(packages)
+        qscintilla = None
+        if "qscintilla2" in brew_pkgs:
+            brew_pkgs = [p for p in brew_pkgs if p != "qscintilla2"]
+            qscintilla = "qscintilla2"
+        if brew_pkgs:
+            cmds.append(["brew", "install", *brew_pkgs])
+        if qscintilla is not None:
+            cmds.append(["brew", "install", "--ignore-dependencies", qscintilla])
     elif mgr == "zypper":
         if assume_yes:
             cmds.append(["zypper", "--non-interactive", "install", *packages])
@@ -371,6 +384,44 @@ def run_commands(cmds: List[List[str]], dry_run: bool):
             raise subprocess.CalledProcessError(result.returncode, cmd)
 
 
+# Distro keys whose values are ordered command lists. When combining profiles
+# these must be appended (union), not overwritten — otherwise a later profile's
+# empty `post_commands: []` drops e.g. a QScintilla install from an earlier one.
+_COMMAND_LIST_KEYS = ("pre_commands", "post_commands")
+
+
+def _merge_distro_props(target: dict, source: dict, *, override: bool) -> None:
+    """Merge non-package distro fields into *target*.
+
+    Packages are handled by the caller. Command-list keys are special:
+    a non-empty list replaces (override) or fills (setdefault) the target;
+    an explicit empty list never wipes a previously merged non-empty list
+    (that was dropping QScintilla when combining ``qt6`` + ``pythonscad``).
+    Other keys use setdefault (override=False) or assignment (True).
+    """
+    for key, value in source.items():
+        if key == "packages":
+            continue
+        if key in _COMMAND_LIST_KEYS and isinstance(value, list):
+            if not value:
+                # Keep any commands already contributed by an earlier profile.
+                target.setdefault(key, [])
+                continue
+            if override or key not in target or not target.get(key):
+                target[key] = list(value)
+            else:
+                existing = target[key]
+                seen = set(existing)
+                for cmd in value:
+                    if cmd not in seen:
+                        existing.append(cmd)
+                        seen.add(cmd)
+        elif override:
+            target[key] = value
+        else:
+            target.setdefault(key, value)
+
+
 def load_profile_with_inheritance(profile_name: str, loaded_profiles: set = None) -> dict:
     """Load a profile and all its inherited profiles recursively."""
     if loaded_profiles is None:
@@ -413,10 +464,7 @@ def load_profile_with_inheritance(profile_name: str, loaded_profiles: set = None
                     merged_distro.setdefault("packages", []).append(pkg)
                     seen.add(pkg)
 
-            # Copy other properties from parent (manager, pre_commands, etc.)
-            for key, value in distro_data.items():
-                if key != "packages":
-                    merged_distro.setdefault(key, value)
+            _merge_distro_props(merged_distro, distro_data, override=False)
 
     # Now merge current profile's packages
     for distro_name, distro_data in profile_cfg.get("distros", {}).items():
@@ -433,10 +481,8 @@ def load_profile_with_inheritance(profile_name: str, loaded_profiles: set = None
                 merged_distro.setdefault("packages", []).append(pkg)
                 seen.add(pkg)
 
-        # Copy/override other properties from current profile
-        for key, value in distro_data.items():
-            if key != "packages":
-                merged_distro[key] = value
+        # Current profile wins on scalars; command lists are still unioned.
+        _merge_distro_props(merged_distro, distro_data, override=True)
 
     return merged_cfg
 
@@ -470,10 +516,7 @@ def load_multiple_profiles(profile_names: list) -> dict:
                     final_distro.setdefault("packages", []).append(pkg)
                     seen.add(pkg)
 
-            # Copy/override other properties from this profile
-            for key, value in distro_data.items():
-                if key != "packages":
-                    final_distro[key] = value
+            _merge_distro_props(final_distro, distro_data, override=True)
 
     final_cfg["active_profiles"] = active_profiles
     return final_cfg
