@@ -79,8 +79,9 @@
         "brew pin local/pinned-qt/qt",
         "brew pin qtbase"
       ],
-      "packages": [
-        "qscintilla2"
+      "packages": [],
+      "post_commands": [
+        "brew install --ignore-dependencies qscintilla2"
       ]
     },
     "mageia": {

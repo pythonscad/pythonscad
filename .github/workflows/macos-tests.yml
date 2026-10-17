@@ -68,6 +68,17 @@ jobs:
         HOMEBREW_NO_INSTALLED_DEPENDENTS_AUTO_UPDATE: 1
       run: |
         ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
+        # Fail early if the pin did not stick (qmake must stay on a mapped minor).
+        QT_VER="$("$(brew --prefix qtbase)/bin/qmake" -query QT_VERSION)"
+        echo "qtbase qmake reports: $QT_VER"
+        case "$QT_VER" in
+          6.11.*) ;;
+          *)
+            echo "ERROR: expected pinned Qt 6.11.x, got $QT_VER" >&2
+            exit 1
+            ;;
+        esac
+        brew list --versions qscintilla2
     - name: Install Python test dependencies (IPython + pexpect for --ipython tests)
       run: |
         # Homebrew Python on macOS is "externally managed" (PEP 668),
