@@ -46,7 +46,8 @@ fi
 echo "Using requirements file: $REQUIREMENTS_FILE (Python $PY_MAJOR_MINOR)"
 pip install -r "$REQUIREMENTS_FILE"
 mkdir -p /tmp/pyqt-src && cd /tmp/pyqt-src
-read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$PROJECT_ROOT/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+RESOLVED=$(python3 "$PROJECT_ROOT/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")
+read -r PYQT_VERSION PYQT_SDIST_URL <<< "$RESOLVED"
 echo "Selected PyQt6 version: $PYQT_VERSION"
 curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
 tar xzf PyQt6.tar.gz

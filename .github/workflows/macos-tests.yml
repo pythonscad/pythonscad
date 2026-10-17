@@ -63,6 +63,9 @@ jobs:
     - name: Install dependencies
       env:
         HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+        # Prevent qscintilla2 / shared deps from cascade-upgrading pinned qtbase
+        # (6.11 → 6.12), which breaks the PyQt6 bindings version map (#1132).
+        HOMEBREW_NO_INSTALLED_DEPENDENTS_AUTO_UPDATE: 1
       run: |
         ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
     - name: Install Python test dependencies (IPython + pexpect for --ipython tests)

@@ -270,6 +270,11 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
     elif mgr == "brew":
         if shutil.which("brew") is None:
             raise SystemExit("Homebrew not found. Install from https://brew.sh first.")
+        # Keep pinned Qt (and other pinned kegs) from being pulled forward when a
+        # later formula (e.g. qscintilla2) upgrades a shared dependency like md4c.
+        # Without this, Homebrew may cascade-upgrade qtbase 6.11 → 6.12 and break
+        # the PyQt6 bindings pin in scripts/ci/pyqt6-versions.json (#1132).
+        os.environ.setdefault("HOMEBREW_NO_INSTALLED_DEPENDENTS_AUTO_UPDATE", "1")
         # Homebrew 6.0+ requires taps to be explicitly trusted before formulae
         # from them can be installed. Insert `brew trust <tap>` after each
         # `brew tap <tap>` pre-command; run_commands() skips these on older
