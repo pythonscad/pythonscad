@@ -96,10 +96,16 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON -DENABLE_LIBFIVE=ON
+        # TEMPORARY (#1133): AddressSanitizer build to locate the heap corruption.
+        ASAN_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g"
+        cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON -DENABLE_LIBFIVE=ON \
+          -DCMAKE_C_FLAGS="$ASAN_FLAGS" -DCMAKE_CXX_FLAGS="$ASAN_FLAGS" \
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" -DCMAKE_SHARED_LINKER_FLAGS="-fsanitize=address" \
+          -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address"
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         make -j$NUMCPU
     - name: Run macOS sanity check
+      continue-on-error: true  # TEMPORARY (#1133): ASan runtime dylib is not a system lib
       run: |
         # Run sanity check to validate deployment targets of bundled libraries.
         # Skip architecture and minos checks: test builds are single-arch and
@@ -109,6 +115,7 @@ jobs:
           --skip-deployment-target-check \
           build/pythonscad.app/Contents/MacOS/pythonscad
     - name: Verify Python setup
+      continue-on-error: true  # TEMPORARY (#1133)
       run: |
         echo "=== Checking pythonscad-python symlink ==="
         ls -l build/pythonscad.app/Contents/MacOS/pythonscad-python
@@ -126,10 +133,14 @@ jobs:
     - name: Run Test Suite
       # Disable pdf export test on macOS because Cairo >= 1.18 on Homebrew uses the
       # Quartz backend which doesn't have the Liberation Sans font we use.
+      # TEMPORARY (#1133): only the Python CLI tests, under ASan. PYTHONMALLOC=malloc
+      # routes CPython allocations through malloc so ASan tracks Python objects too.
+      env:
+        PYTHONMALLOC: malloc
+        ASAN_OPTIONS: detect_leaks=0:detect_container_overflow=0:halt_on_error=1:print_stacktrace=1:symbolize=1
       run: |
         cd build
-        export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
-        ctest -j$NUMCPU -E pdfexporttest --output-on-failure
+        ctest -R 'repl-smoke|ipython-smoke|ipython-fallback|python-sibling-import-cli|python-vectors' --output-on-failure
     - name: Upload Test Result Report
       uses: actions/upload-artifact@v7
       if: ${{ always() }}
