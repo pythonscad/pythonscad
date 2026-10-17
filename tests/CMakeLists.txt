@@ -1610,6 +1610,9 @@ if(ENABLE_PYTHON)
       ${OPENSCAD_BINPATH}
   )
   set_property(TEST ipython-smoke PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  # Interactive --ipython / --repl + geometry has crashed under parallel ctest
+  # on macos-26 (SIGSEGV/SIGBUS; see #1133). Run these smoke tests alone.
+  set_property(TEST ipython-smoke PROPERTY RUN_SERIAL TRUE)
 
   # `ipython-fallback` self-skips by printing a single "SKIP" line
   # when it cannot force the missing-IPython scenario (e.g. when
@@ -1632,6 +1635,7 @@ if(ENABLE_PYTHON)
       ${OPENSCAD_BINPATH}
   )
   set_property(TEST repl-smoke PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  set_property(TEST repl-smoke PROPERTY RUN_SERIAL TRUE)
 
   add_test(NAME version-helpers CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1

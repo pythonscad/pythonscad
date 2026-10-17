@@ -57,8 +57,10 @@ def main() -> int:
     print(proc.stderr, file=sys.stderr)
 
     if proc.returncode != 0:
+        # Negative codes are usually -signal (e.g. -11 = SIGSEGV, -10 = SIGBUS).
+        detail = f" (signal {-proc.returncode})" if proc.returncode < 0 else ""
         print(
-            f"FAIL: pythonscad --repl exited with {proc.returncode}",
+            f"FAIL: pythonscad --repl exited with {proc.returncode}{detail}",
             file=sys.stderr,
         )
         return 1
