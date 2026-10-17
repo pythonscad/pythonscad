@@ -315,9 +315,12 @@ PyObject *python_lv_binop_int(PyObject *arg1, PyObject *arg2, libfive::Opcode::O
   return PyDataObjectFromTree(&PyDataType, res);
 }
 
-libfive::Tree lv_x = libfive::Tree::X();
-libfive::Tree lv_y = libfive::Tree::Y();
-libfive::Tree lv_z = libfive::Tree::Z();
+// Intentionally leaked: ~Tree() relies on libfive-internal statics, and at
+// exit() their destruction order relative to ours is unspecified. On macOS
+// this crashed every --repl/--ipython shutdown with SIGBUS/SIGSEGV (#1133).
+static libfive::Tree& lv_x = *new libfive::Tree(libfive::Tree::X());
+static libfive::Tree& lv_y = *new libfive::Tree(libfive::Tree::Y());
+static libfive::Tree& lv_z = *new libfive::Tree(libfive::Tree::Z());
 PyObject *python_lv_x(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   return python_lv_void_int(self, args, kwargs, &lv_x);
