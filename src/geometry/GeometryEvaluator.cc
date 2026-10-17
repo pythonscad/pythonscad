@@ -3003,20 +3003,17 @@ Response GeometryEvaluator::visit(State& state, const RotateExtrudeNode& node)
 
 static int pullObject_calccut(const PullNode& node, Vector3d p1, Vector3d p2, Vector3d& r)
 {
-  Vector3d dir = p2 - p1;
-  Vector3d res;
-  Vector3d v1, v2;
-  Vector3d z(0, 0, 1);
-  v1 = node.dir.cross(dir);
-  if (v1.norm() < 0.001) {
-    v1 = Vector3d(dir[1], dir[2], dir[2]);
-    v1 = node.dir.cross(v1);
-  }
-  v2 = node.dir.cross(v1);
-  if (linsystem(dir, v1, v2, node.anchor - p1, res, nullptr)) return 1;
-
-  if (res[0] < 0 || res[0] > 1) return 1;
-  r = p1 + dir * res[0];
+  // Intersect edge p1→p2 with the plane through node.anchor with normal node.dir.
+  // The previous cross-product/linsystem formulation became singular precisely when
+  // the edge was parallel to node.dir (well-defined plane hits), and the fallback
+  // Vector3d(dir[1], dir[2], dir[2]) was zero for X-aligned edges — dropping faces.
+  // Callers only ask for straddling edges, so accept any finite t in [0,1]; a hard
+  // abs(denom) cutoff would still drop valid near-parallel crossings.
+  Vector3d edge = p2 - p1;
+  double denom = edge.dot(node.dir);
+  double t = (node.anchor - p1).dot(node.dir) / denom;
+  if (!std::isfinite(t) || t < 0.0 || t > 1.0) return 1;
+  r = p1 + edge * t;
   return 0;
 }
 static void pullObject_addtri(PolySetBuilder& builder, Vector3d a, Vector3d b, Vector3d c)
@@ -3041,7 +3038,7 @@ static std::unique_ptr<PolySet> pullObject(const PullNode& node, const PolySet *
 
     for (int j = 0; j < 3; j++) {
       Vector3d pt = ps_tess->vertices[pol[j]];
-      float dist = (pt - node.anchor).dot(node.dir);
+      double dist = (pt - node.anchor).dot(node.dir);
       if (dist > 0) {
         upper++;
         highind += j;
