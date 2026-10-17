@@ -393,11 +393,19 @@ _COMMAND_LIST_KEYS = ("pre_commands", "post_commands")
 def _merge_distro_props(target: dict, source: dict, *, override: bool) -> None:
     """Merge non-package distro fields into *target*.
 
-    Packages are handled by the caller. Command-list keys are special:
-    a non-empty list replaces (override) or fills (setdefault) the target;
-    an explicit empty list never wipes a previously merged non-empty list
-    (that was dropping QScintilla when combining ``qt6`` + ``pythonscad``).
-    Other keys use setdefault (override=False) or assignment (True).
+    Packages are handled by the caller. Command-list keys (pre/post_commands)
+    are ALWAYS unioned in order, regardless of `override` — never replaced
+    wholesale. `override` only governs scalar keys (e.g. `manager`,
+    `unsupported_message`): True means the current/later profile wins,
+    False means the parent only fills gaps (setdefault).
+
+    Earlier revisions replaced the whole command list whenever `override`
+    was True, which silently dropped an earlier profile's install commands
+    (e.g. the Qt tap/pin sequence) when a later profile in
+    `--profile qt6 --profile pythonscad` contributed its own, shorter,
+    inherited `pre_commands` for the same distro. Unioning unconditionally
+    fixes that while still being a no-op when both sides already agree
+    (exact-string commands dedupe).
     """
     for key, value in source.items():
         if key == "packages":
@@ -407,15 +415,16 @@ def _merge_distro_props(target: dict, source: dict, *, override: bool) -> None:
                 # Keep any commands already contributed by an earlier profile.
                 target.setdefault(key, [])
                 continue
-            if override or key not in target or not target.get(key):
-                target[key] = list(value)
-            else:
-                existing = target[key]
-                seen = set(existing)
-                for cmd in value:
-                    if cmd not in seen:
-                        existing.append(cmd)
-                        seen.add(cmd)
+            existing = target.get(key)
+            if not isinstance(existing, list):
+                existing = []
+            seen = set(existing)
+            merged = list(existing)
+            for cmd in value:
+                if cmd not in seen:
+                    merged.append(cmd)
+                    seen.add(cmd)
+            target[key] = merged
         elif override:
             target[key] = value
         else:
