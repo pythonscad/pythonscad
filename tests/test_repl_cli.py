@@ -21,14 +21,23 @@ import sys
 # --repl drops the user into an empty `__main__` namespace; the user
 # is responsible for importing whatever they need. The explicit
 # `from pythonscad import cube` line below is the contract under test.
-# Importing `ctypes` exercises CPython's Windows sysconfig path, which
-# used to fail in packaged MSYS2 builds when `sys._is_mingw` was missing.
-SCRIPT = (
-    "import ctypes, sysconfig\n"
-    "from pythonscad import cube\n"
-    "c = cube([1, 1, 1])\n"
-    "print('OK', type(c).__name__)\n"
+#
+# On Windows only, also import `ctypes`/`sysconfig` to exercise CPython's
+# Windows sysconfig path (used to fail in packaged MSYS2 builds when
+# `sys._is_mingw` was missing). Keep that off non-Windows: on macos-26
+# Homebrew Python 3.15, `import ctypes, sysconfig` under --repl SIGBUS
+# inside `_buffered_init` / mimalloc (#1133). Cube import alone is fine.
+_SCRIPT_LINES = []
+if sys.platform == "win32":
+    _SCRIPT_LINES.append("import ctypes, sysconfig")
+_SCRIPT_LINES.extend(
+    [
+        "from pythonscad import cube",
+        "c = cube([1, 1, 1])",
+        "print('OK', type(c).__name__)",
+    ]
 )
+SCRIPT = "\n".join(_SCRIPT_LINES) + "\n"
 
 TIMEOUT_SECONDS = 60
 
