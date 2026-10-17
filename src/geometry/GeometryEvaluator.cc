@@ -3007,11 +3007,12 @@ static int pullObject_calccut(const PullNode& node, Vector3d p1, Vector3d p2, Ve
   // The previous cross-product/linsystem formulation became singular precisely when
   // the edge was parallel to node.dir (well-defined plane hits), and the fallback
   // Vector3d(dir[1], dir[2], dir[2]) was zero for X-aligned edges — dropping faces.
+  // Callers only ask for straddling edges, so accept any finite t in [0,1]; a hard
+  // abs(denom) cutoff would still drop valid near-parallel crossings.
   Vector3d edge = p2 - p1;
   double denom = edge.dot(node.dir);
-  if (std::abs(denom) < 1e-12) return 1;
   double t = (node.anchor - p1).dot(node.dir) / denom;
-  if (t < 0.0 || t > 1.0) return 1;
+  if (!std::isfinite(t) || t < 0.0 || t > 1.0) return 1;
   r = p1 + edge * t;
   return 0;
 }
