@@ -143,6 +143,15 @@ std::string parameterShapeSignature(const ParameterObjects& parameters)
       }
       break;
     }
+    case ParameterObject::ParameterType::Custom: {
+      // Custom widgets are keyed by customTypeName; include default JSON so a
+      // changed factory default forces a Customizer rebuild (#1139).
+      const auto *p = static_cast<const CustomParameter *>(parameter.get());
+      appendString(out, p->customTypeName);
+      out << '\x1f';
+      appendString(out, p->defaultValue.dump());
+      break;
+    }
     }
     out << '\x1e';
   }
