@@ -505,6 +505,83 @@ class PyOpenSCAD:
         """Split a compound object into connected parts."""
         ...
 
+    @overload
+    def internal(
+        self,
+        d: float,
+        angle: float = 120,
+        alpha: float = 90,
+        occlusion: bool = True,
+        grow: Optional[float] = None,
+        report: Literal[False] = False,
+    ) -> Self: ...
+    @overload
+    def internal(
+        self, d: float, angle: float = 120, alpha: float = 90, occlusion: bool = True, grow: Optional[float] = None, *, report: Literal[True]
+    ) -> dict[str, Any]: ...
+    def internal(self, d: float, angle: float = 120, alpha: float = 90, occlusion: bool = True,
+                 grow: Optional[float] = None, report: bool = False) -> Union[Self, dict[str, Any]]:
+        """Minimum wall thickness check, see :func:`internal`."""
+        ...
+
+    @overload
+    def external(
+        self,
+        d: float,
+        other: Optional["PyOpenSCAD"] = None,
+        angle: float = 120,
+        alpha: float = 90,
+        occlusion: bool = True,
+        grow: Optional[float] = None,
+        report: Literal[False] = False,
+    ) -> Self: ...
+    @overload
+    def external(
+        self,
+        d: float,
+        other: Optional["PyOpenSCAD"] = None,
+        angle: float = 120,
+        alpha: float = 90,
+        occlusion: bool = True,
+        grow: Optional[float] = None,
+        *,
+        report: Literal[True],
+    ) -> dict[str, Any]: ...
+    def external(self, d: float, other: Optional["PyOpenSCAD"] = None, angle: float = 120, alpha: float = 90,
+                 occlusion: bool = True, grow: Optional[float] = None, report: bool = False) -> Union[Self, dict[str, Any]]:
+        """Minimum spacing check, see :func:`external`."""
+        ...
+
+    def slope(
+        self,
+        dir: Vector3 = [0, 0, 1],
+        min: Optional[float] = None,
+        max: Optional[float] = None,
+        undercut: bool = False,
+        grow: Optional[float] = None,
+        report: bool = False,
+    ) -> Union[Self, dict[str, Any]]:
+        """Face angle check against a direction, see :func:`slope`."""
+        ...
+
+    def overhang(
+        self, angle: float = 45, dir: Vector3 = [0, 0, 1], grow: Optional[float] = None, report: bool = False
+    ) -> Union[Self, dict[str, Any]]:
+        """Overhang check for 3D printing, see :func:`overhang`."""
+        ...
+
+    def draft(
+        self,
+        angle: float = 2,
+        dir: Vector3 = [0, 0, 1],
+        parting: Optional[float] = None,
+        undercut: bool = True,
+        grow: Optional[float] = None,
+        report: bool = False,
+    ) -> Union[Self, dict[str, Any]]:
+        """Draft angle and undercut check, see :func:`draft`."""
+        ...
+
     def wrap(
         self,
         target: Optional[PyOpenSCAD] = None,
@@ -1854,6 +1931,27 @@ def repair(obj: PyOpenSCADs, color: Optional[Color] = None) -> PyOpenSCAD:
 
     Returns:
         The repaired object.
+    """
+    ...
+
+def check(
+    obj: PyOpenSCADs,
+    type_str: str,
+    distance: float = 0,
+    min_deg: float = -90,
+    max_deg: float = 90,
+    angle_param: float = 120,
+    alpha: float = 90,
+    occlusion: int = 1,
+    check_options: Optional[dict[str, Any]] = None,
+    other: Optional[PyOpenSCADs] = None,
+    grow: Optional[float] = None,
+    report: bool = False,
+) -> Union[PyOpenSCAD, dict[str, Any]]:
+    """Generic Design Rule Check (internal C implementation).
+
+    Not meant to be called directly; use internal(), external(), slope(),
+    overhang(), draft() from the pythonscad module instead.
     """
     ...
 
