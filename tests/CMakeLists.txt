@@ -1705,6 +1705,19 @@ if(ENABLE_PYTHON)
   set_property(TEST ipython-precedence PROPERTY SKIP_REGULAR_EXPRESSION "^SKIP-")
 endif()
 
+# Host-side check for the delayed-release SHA compare used by
+# .github/workflows/update-submodule-manifold.yml. Independent of
+# ENABLE_PYTHON: it only needs bash, git, and the helper script.
+if(Python3_EXECUTABLE)
+  add_test(NAME compare-git-release CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_compare_git_release.py
+      ${CMAKE_SOURCE_DIR}/scripts/ci/compare-git-release.sh
+  )
+  set_property(TEST compare-git-release PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  set_property(TEST compare-git-release PROPERTY SKIP_REGULAR_EXPRESSION "^SKIP")
+endif()
+
 # Host-side check that the macOS Homebrew dep script (and the qt5
 # get-dependencies profile) stay Qt6-only on macOS.
 if(Python3_EXECUTABLE)
@@ -1713,6 +1726,17 @@ if(Python3_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/test_macosx_build_homebrew.py
   )
   set_property(TEST macosx-build-homebrew-qt6 PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+endif()
+
+# Host-side check that scripts/get-dependencies.py never drops a profile's
+# pre_commands/post_commands (e.g. the macOS Qt tap/pin sequence) when
+# combining profiles, regardless of combination order (#1134).
+if(Python3_EXECUTABLE)
+  add_test(NAME get-dependencies-profile-merge CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_get_dependencies_profile_merge.py
+  )
+  set_property(TEST get-dependencies-profile-merge PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 endif()
 
 if(NOT ENABLE_LIBFIVE)

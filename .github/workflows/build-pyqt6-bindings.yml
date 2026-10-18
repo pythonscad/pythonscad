@@ -79,7 +79,8 @@ jobs:
           MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
 
           mkdir -p src && cd src
-          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          RESOLVED=$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$RESOLVED"
           echo "Selected PyQt6 version: $PYQT_VERSION"
           curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
 
@@ -199,6 +200,9 @@ jobs:
           persist-credentials: false
 
       - name: Install Qt6
+        env:
+          # Keep pinned qtbase from cascading when installing qscintilla2 (#1132).
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
         run: ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
 
       - name: Build PyQt6 bindings
@@ -209,13 +213,16 @@ jobs:
           pip install --upgrade pip
           pip install -r scripts/ci/pyqt6-build-requirements.txt
 
-          QMAKE="$(brew --prefix qt)/bin/qmake"
+          # Prefer qtbase's qmake: the meta `qt` keg is a thin umbrella and
+          # `brew --prefix qt` can drift if core formulae were upgraded.
+          QMAKE="$(brew --prefix qtbase)/bin/qmake"
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
           echo "Detected Qt version: $QT_VERSION"
           MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
 
           mkdir -p src && cd src
-          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          RESOLVED=$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$RESOLVED"
           echo "Selected PyQt6 version: $PYQT_VERSION"
           curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
 
@@ -277,7 +284,7 @@ jobs:
         run: |
           set -euo pipefail
           source /tmp/pyqt-build-venv/bin/activate
-          QMAKE="$(brew --prefix qt)/bin/qmake"
+          QMAKE="$(brew --prefix qtbase)/bin/qmake"
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
           QT_MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
           PYQT_VERSION=$(cat /tmp/pyqt-out/PYQT_VERSION.txt)
@@ -401,7 +408,8 @@ jobs:
           MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
 
           mkdir -p src && cd src
-          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")"
+          RESOLVED=$(python3 "$GITHUB_WORKSPACE/scripts/ci/resolve_pyqt6_version.py" "$MAJOR_MINOR")
+          read -r PYQT_VERSION PYQT_SDIST_URL <<< "$RESOLVED"
           echo "Selected PyQt6 version: $PYQT_VERSION"
           curl -L -o PyQt6.tar.gz "$PYQT_SDIST_URL"
 
