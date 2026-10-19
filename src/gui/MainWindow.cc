@@ -6001,9 +6001,7 @@ void MainWindow::openRemainingFiles(const QStringList& filenames)
 
 void MainWindow::changeEvent(QEvent *event)
 {
-  if (event->type() == QEvent::ThemeChange) {
-    setGlobalTheme();
-  } else if (event->type() == QEvent::WindowStateChange) {
+  if (event->type() == QEvent::WindowStateChange) {
     viewActionFullScreen->blockSignals(true);
     viewActionFullScreen->setChecked(isFullScreen());
     viewActionFullScreen->blockSignals(false);
