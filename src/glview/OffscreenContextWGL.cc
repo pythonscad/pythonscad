@@ -48,18 +48,21 @@ std::shared_ptr<OffscreenContext> CreateOffscreenContextWGL(size_t width, size_t
 {
   auto ctx = std::make_shared<OffscreenContextWGL>(width, height);
 
+  HINSTANCE hInstance = GetModuleHandleA(nullptr);
   WNDCLASSEXA wndClass = {.cbSize = sizeof(WNDCLASSEXA),
                           .style = CS_OWNDC,
                           .lpfnWndProc = &DefWindowProcA,
-                          .hInstance = GetModuleHandleA(nullptr),
+                          .hInstance = hInstance,
                           .lpszClassName = "OffscreenClass"};
   // FIXME: Check for ERROR_CLASS_ALREADY_EXISTS ?
   RegisterClassExA(&wndClass);
   // Create the window. Position and size it.
   // Style the window and remove the caption bar (WS_POPUP)
+  // Pass the same hInstance used for RegisterClassExA — required for
+  // application-defined window classes (see CreateWindowEx docs).
   ctx->window =
     CreateWindowExA(0, "OffscreenClass", "offscreen", WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP,
-                    CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, 0, 0);
+                    CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, hInstance, 0);
 
   if (!ctx->window) {
     std::cerr << "CreateWindowEx() failed: " << GetLastError() << std::endl;
