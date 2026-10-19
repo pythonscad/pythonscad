@@ -2575,23 +2575,31 @@ static void run_basic_python_repl(void)
   pymain_run_interactive_hook();
   // TTY → interactive >>> loop; pipe/file → exec the whole script once
   // (same contract as non-tty PyRun_SimpleFile).
-  // Flush after a piped exec: with a non-tty stdout Python fully-buffers
-  // TextIOWrapper, and we return without Py_Finalize, so unflushed prints
-  // would otherwise be lost (CI smokes capture stdout for the OK marker).
+  // Run the bootstrap inside a function so its `sys`/`code` locals cannot
+  // be clobbered by a piped user script that assigns those names in
+  // `__main__` (PyRun_SimpleString shares that dict). Flush in `finally`
+  // after a piped exec: non-tty stdout is fully buffered and we return
+  // without Py_Finalize, so prints before an exception would otherwise
+  // be lost (CI smokes capture stdout for the OK marker).
   static const char *boot =
-    "import code, sys\n"
-    "_ns = sys.modules['__main__'].__dict__\n"
-    "if sys.stdin.isatty():\n"
-    "    code.interact(local=_ns)\n"
-    "else:\n"
-    "    _src = sys.stdin.read()\n"
-    "    if _src:\n"
-    "        exec(compile(_src, '<stdin>', 'exec'), _ns)\n"
-    "    try:\n"
-    "        sys.stdout.flush()\n"
-    "        sys.stderr.flush()\n"
-    "    except Exception:\n"
-    "        pass\n";
+    "def _pythonscad_run_basic_repl():\n"
+    "    import code, sys\n"
+    "    _ns = sys.modules['__main__'].__dict__\n"
+    "    if sys.stdin.isatty():\n"
+    "        code.interact(local=_ns)\n"
+    "    else:\n"
+    "        _src = sys.stdin.read()\n"
+    "        try:\n"
+    "            if _src:\n"
+    "                exec(compile(_src, '<stdin>', 'exec'), _ns)\n"
+    "        finally:\n"
+    "            try:\n"
+    "                sys.stdout.flush()\n"
+    "                sys.stderr.flush()\n"
+    "            except Exception:\n"
+    "                pass\n"
+    "_pythonscad_run_basic_repl()\n"
+    "del _pythonscad_run_basic_repl\n";
   if (PyRun_SimpleString(boot) != 0) {
     // Exception already printed by PyRun_SimpleString; clear so callers
     // that fall through (e.g. ipython fallback) do not inherit it.
