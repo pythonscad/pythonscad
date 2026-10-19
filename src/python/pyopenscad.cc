@@ -30,6 +30,7 @@
 #include <atomic>
 #include <cctype>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <sstream>
 #include <string>
@@ -2637,6 +2638,22 @@ static void run_basic_python_repl(void)
   }
 }
 
+// On Apple, prefer the system malloc for CPython's memory domains when
+// the user has not already set PYTHONMALLOC. Homebrew Python 3.15 links
+// libmimalloc; under --repl/--ipython, `import ctypes` can SIGBUS/SIGSEGV
+// inside `_buffered_init` with that allocator (#1138, #1149). Must run
+// before Py_Initialize / Py_PreInitialize. No-op on free-threaded builds
+// where mimalloc is required.
+static void prefer_system_malloc_for_embedded_python(void)
+{
+#if defined(__APPLE__) && !defined(Py_GIL_DISABLED)
+  if (std::getenv("PYTHONMALLOC") == nullptr) {
+    // setenv(..., 0) does not overwrite an existing value.
+    (void)setenv("PYTHONMALLOC", "malloc", 0);
+  }
+#endif
+}
+
 // Open the basic embedded CPython REPL on stdin. Reachable explicitly
 // via `--repl` and as the fallback path of `ipython()` when IPython is
 // not installed. The user namespace is empty on entry; the user is
@@ -2651,6 +2668,7 @@ int repl(void)
   // CRT-orphaned ones GUI-subsystem children get on Windows.
   windows_reattach_console_for_repl();
 #endif
+  prefer_system_malloc_for_embedded_python();
   initPython(PlatformUtils::applicationPath(), "", nullptr);
   if (!Py_IsInitialized()) {
     fprintf(stderr,
@@ -2730,6 +2748,7 @@ int ipython(const std::vector<std::string>& args)
   // fallback below inherits a working console when IPython is missing.
   windows_reattach_console_for_repl();
 #endif
+  prefer_system_malloc_for_embedded_python();
   initPython(PlatformUtils::applicationPath(), "", nullptr);
   if (!Py_IsInitialized()) {
     fprintf(stderr,
