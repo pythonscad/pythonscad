@@ -2572,7 +2572,11 @@ static void windows_reattach_console_for_repl(void)
 // gate it behind that check.
 static void run_basic_python_repl(void)
 {
-  pymain_run_interactive_hook();
+  // Only enable readline / __interactivehook__ on a real TTY. CPython's
+  // own non-interactive SimpleFile path skips the hook; loading it for
+  // piped CI scripts has been implicated in flaky SIGBUS under Homebrew
+  // Python 3.15 + ctypes (#1138).
+  //
   // TTY → interactive >>> loop; pipe/file → exec the whole script once
   // (same contract as non-tty PyRun_SimpleFile).
   // Run the bootstrap inside a function so its `sys`/`code` locals cannot
@@ -2581,6 +2585,32 @@ static void run_basic_python_repl(void)
   // after a piped exec: non-tty stdout is fully buffered and we return
   // without Py_Finalize, so prints before an exception would otherwise
   // be lost (CI smokes capture stdout for the OK marker).
+  int is_tty = 0;
+  {
+    PyObject *sysmod = PyImport_ImportModule("sys");
+    if (sysmod != nullptr) {
+      PyObject *stdin_obj = PyObject_GetAttrString(sysmod, "stdin");
+      if (stdin_obj != nullptr) {
+        PyObject *r = PyObject_CallMethod(stdin_obj, "isatty", nullptr);
+        if (r != nullptr) {
+          is_tty = PyObject_IsTrue(r);
+          Py_DECREF(r);
+        } else {
+          PyErr_Clear();
+        }
+        Py_DECREF(stdin_obj);
+      } else {
+        PyErr_Clear();
+      }
+      Py_DECREF(sysmod);
+    } else {
+      PyErr_Clear();
+    }
+  }
+  if (is_tty) {
+    pymain_run_interactive_hook();
+  }
+
   static const char *boot =
     "def _pythonscad_run_basic_repl():\n"
     "    import code, sys\n"
