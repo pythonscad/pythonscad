@@ -1633,6 +1633,14 @@ if(ENABLE_PYTHON)
   )
   set_property(TEST repl-smoke PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 
+  # Serialize interactive CLI smokes: concurrent --repl/--ipython
+  # pythonscad processes have been associated with flaky SIGBUS/SIGSEGV
+  # under Homebrew Python 3.15 on macos-26 (#1138 / #1149).
+  set_tests_properties(ipython-smoke ipython-fallback repl-smoke
+    PROPERTIES RUN_SERIAL TRUE
+    RESOURCE_LOCK "pythonscad_interactive_cli"
+  )
+
   add_test(NAME version-helpers CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_version_helpers.py

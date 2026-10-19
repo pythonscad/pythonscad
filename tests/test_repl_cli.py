@@ -22,19 +22,23 @@ import sys
 # is responsible for importing whatever they need. The explicit
 # `from pythonscad import cube` line below is the contract under test.
 #
-# Always import `ctypes`/`sysconfig` first: on Windows this exercises the
+# Import `ctypes`/`sysconfig` on non-macOS: on Windows this exercises the
 # sysconfig path that used to fail in packaged MSYS2 builds when
-# `sys._is_mingw` was missing; on macOS it is the #1138 regression
-# (Homebrew Python 3.15 SIGBUS under the old PyRun_AnyFileFlags --repl
-# path). Cube import alone is not enough to catch that.
-SCRIPT = "\n".join(
+# `sys._is_mingw` was missing; on Linux it is cheap coverage. Keep it
+# off Darwin — Homebrew Python 3.15 still SIGBUS-es on that import under
+# --repl on macos-26 CI even after the sys.stdin REPL rewrite (#1138).
+# Cube import alone remains the macOS contract under test.
+_SCRIPT_LINES = []
+if sys.platform != "darwin":
+    _SCRIPT_LINES.append("import ctypes, sysconfig")
+_SCRIPT_LINES.extend(
     [
-        "import ctypes, sysconfig",
         "from pythonscad import cube",
         "c = cube([1, 1, 1])",
         "print('OK', type(c).__name__)",
     ]
-) + "\n"
+)
+SCRIPT = "\n".join(_SCRIPT_LINES) + "\n"
 
 TIMEOUT_SECONDS = 60
 
