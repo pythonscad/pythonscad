@@ -2561,12 +2561,42 @@ static void windows_reattach_console_for_repl(void)
 // pollute `dir()` with a couple hundred names regardless of what the
 // user actually intended to use.
 //
+// Drive the session through Python's already-initialized `sys.stdin`
+// rather than `PyRun_AnyFileFlags(stdin)`. The latter builds a second
+// buffered reader on the same C FILE*, which SIGBUS-es inside
+// `_buffered_init` on Homebrew Python 3.15 (mimalloc-backed) when the
+// session later imports ctypes/sysconfig (#1138). `--ipython` already
+// avoids that path and works; match that IO model here.
+//
 // This helper assumes Py_IsInitialized() is already true; callers must
 // gate it behind that check.
 static void run_basic_python_repl(void)
 {
   pymain_run_interactive_hook();
-  PyRun_AnyFileFlags(stdin, "<stdin>", nullptr);
+  // TTY → interactive >>> loop; pipe/file → exec the whole script once
+  // (same contract as non-tty PyRun_SimpleFile).
+  // Flush after a piped exec: with a non-tty stdout Python fully-buffers
+  // TextIOWrapper, and we return without Py_Finalize, so unflushed prints
+  // would otherwise be lost (CI smokes capture stdout for the OK marker).
+  static const char *boot =
+    "import code, sys\n"
+    "_ns = sys.modules['__main__'].__dict__\n"
+    "if sys.stdin.isatty():\n"
+    "    code.interact(local=_ns)\n"
+    "else:\n"
+    "    _src = sys.stdin.read()\n"
+    "    if _src:\n"
+    "        exec(compile(_src, '<stdin>', 'exec'), _ns)\n"
+    "    try:\n"
+    "        sys.stdout.flush()\n"
+    "        sys.stderr.flush()\n"
+    "    except Exception:\n"
+    "        pass\n";
+  if (PyRun_SimpleString(boot) != 0) {
+    // Exception already printed by PyRun_SimpleString; clear so callers
+    // that fall through (e.g. ipython fallback) do not inherit it.
+    PyErr_Clear();
+  }
 }
 
 // Open the basic embedded CPython REPL on stdin. Reachable explicitly
