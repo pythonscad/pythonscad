@@ -1613,8 +1613,9 @@ PyObject *python_patch(PyObject *self, PyObject *args, PyObject *kwargs)
                     "automatic projection).");
     return nullptr;
   }
-  if (displacement_obj != nullptr && displacement_obj->ob_type != &PyFunction_Type) {
-    PyErr_SetString(PyExc_TypeError, "patch(): displacement must be a function.");
+  if (displacement_obj != nullptr && displacement_obj != Py_None &&
+      displacement_obj->ob_type != &PyFunction_Type) {
+    PyErr_SetString(PyExc_TypeError, "patch(): displacement must be a function, None, or omitted.");
     return nullptr;
   }
 
@@ -1665,7 +1666,7 @@ PyObject *python_patch(PyObject *self, PyObject *args, PyObject *kwargs)
     node->proj_func_hash = "auto";
   }
 
-  if (displacement_obj != nullptr) {
+  if (displacement_obj != nullptr && displacement_obj != Py_None) {
     Py_INCREF(displacement_obj);
     node->displacement_func = (void *)displacement_obj;
     node->displacement_func_hash = python_func_hash(displacement_obj);
