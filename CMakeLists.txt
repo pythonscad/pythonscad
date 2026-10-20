@@ -2489,6 +2489,10 @@ endif()
 configure_file(doc/pythonscad.1.in doc/pythonscad.1)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in ${CMAKE_CURRENT_LIST_DIR}/pythonscad.appdata.xml.in2)
 configure_file(${RESOURCE_DIR}/icons/pythonscad.desktop.in ${RESOURCE_DIR}/icons/pythonscad.desktop)
+# System default for .scad (application/x-openscad). Installed as the standard
+# mimeapps.list name under applications/ so GLib/xdg pick it up; never lists
+# text/x-python so .py defaults stay with the user's IDE/editor.
+configure_file(${RESOURCE_DIR}/icons/pythonscad-mimeapps.list.in ${RESOURCE_DIR}/icons/pythonscad-mimeapps.list)
 configure_file(${RESOURCE_DIR}/common.qrc.in ${RESOURCE_DIR}/common.qrc)
 configure_file(${RESOURCE_DIR}/mac.qrc.in ${RESOURCE_DIR}/mac.qrc)
 
@@ -2706,6 +2710,7 @@ if(NOT APPLE OR APPLE_UNIX)
       install(FILES ${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.so DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications RENAME org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop)
+    install(FILES ${RESOURCE_DIR}/icons/pythonscad-mimeapps.list DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications RENAME mimeapps.list)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.xml DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages RENAME ${EXECUTABLE_NAME}.xml)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad-48.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/48x48/apps RENAME pythonscad.png)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad-64.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/64x64/apps RENAME pythonscad.png)

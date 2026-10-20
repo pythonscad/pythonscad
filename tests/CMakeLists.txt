@@ -1721,6 +1721,16 @@ if(ENABLE_PYTHON)
   set_property(TEST ipython-precedence PROPERTY SKIP_REGULAR_EXPRESSION "^SKIP-")
 endif()
 
+# Host-side check that desktop/MIME/appdata/plist/MSIX association metadata
+# keeps .scad as default-eligible and .py as Open With only (no custom *.py MIME).
+if(Python3_EXECUTABLE)
+  add_test(NAME file-associations CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_file_associations.py
+  )
+  set_property(TEST file-associations PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+endif()
+
 # Host-side check for the delayed-release SHA compare used by
 # .github/workflows/update-submodule-manifold.yml. Independent of
 # ENABLE_PYTHON: it only needs bash, git, and the helper script.

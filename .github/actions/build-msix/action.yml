@@ -145,6 +145,32 @@ runs:
         $ve.SetAttribute("Square150x150Logo", "Assets\logo.png")
         $ve.SetAttribute("Square44x44Logo", "Assets\logo.png")
         $app.AppendChild($ve) | Out-Null
+
+        # File associations: .scad as a primary design type (eligible as default);
+        # .py as a supported handler so PythonSCAD appears under Open With without
+        # post-install scripting that forces the .py default away from IDEs.
+        $exts = $doc.CreateElement("Extensions", $ns)
+        foreach ($assoc in @(
+            @{ Name = "scad"; DisplayName = "PythonSCAD Design"; FileType = ".scad" },
+            @{ Name = "py"; DisplayName = "PythonSCAD Python File"; FileType = ".py" }
+        )) {
+          $ext = $doc.CreateElement("Extension", $nsUap)
+          $ext.SetAttribute("Category", "windows.fileTypeAssociation")
+          $fta = $doc.CreateElement("FileTypeAssociation", $nsUap)
+          $fta.SetAttribute("Name", $assoc.Name)
+          $dn = $doc.CreateElement("DisplayName", $nsUap); $dn.InnerText = $assoc.DisplayName
+          $fta.AppendChild($dn) | Out-Null
+          $logo = $doc.CreateElement("Logo", $nsUap); $logo.InnerText = "Assets\logo.png"
+          $fta.AppendChild($logo) | Out-Null
+          $sft = $doc.CreateElement("SupportedFileTypes", $nsUap)
+          $ft = $doc.CreateElement("FileType", $nsUap); $ft.InnerText = $assoc.FileType
+          $sft.AppendChild($ft) | Out-Null
+          $fta.AppendChild($sft) | Out-Null
+          $ext.AppendChild($fta) | Out-Null
+          $exts.AppendChild($ext) | Out-Null
+        }
+        $app.AppendChild($exts) | Out-Null
+
         $apps.AppendChild($app) | Out-Null
         $pkg.AppendChild($apps) | Out-Null
 
