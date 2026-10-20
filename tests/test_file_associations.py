@@ -75,10 +75,28 @@ def check_merge_script() -> None:
         assert "text/x-python=code.desktop;" in text
         assert "application/x-openscad=org.pythonscad.pythonscad.desktop;" in text
         assert "openscad.desktop" not in text
+
+        # Multi-handler value: remove only our exact desktop ID.
+        path.write_text(
+            "[Default Applications]\n"
+            "application/x-openscad=openscad.desktop;org.pythonscad.pythonscad.desktop;\n"
+            "text/x-python=code.desktop;\n",
+            encoding="utf-8",
+        )
         mod.remove(path, "org.pythonscad.pythonscad.desktop", "application/x-openscad")
         text = path.read_text(encoding="utf-8")
+        assert "application/x-openscad=openscad.desktop;" in text
+        assert "org.pythonscad.pythonscad.desktop" not in text
         assert "text/x-python=code.desktop;" in text
-        assert "application/x-openscad=" not in text
+        # Must not match a different desktop ID that merely contains ours as a substring.
+        path.write_text(
+            "[Default Applications]\n"
+            "application/x-openscad=custom-org.pythonscad.pythonscad.desktop;\n",
+            encoding="utf-8",
+        )
+        mod.remove(path, "org.pythonscad.pythonscad.desktop", "application/x-openscad")
+        text = path.read_text(encoding="utf-8")
+        assert "application/x-openscad=custom-org.pythonscad.pythonscad.desktop;" in text
 
 
 def check_appdata() -> None:

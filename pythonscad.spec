@@ -107,6 +107,11 @@ modern features.
 %install
 %cmake_install
 
+# cmake install merges into applications/mimeapps.list under the buildroot for
+# prefix/AppImage installs. Packaging must not ship that shared file — %post
+# merges on the target system instead.
+rm -f %{buildroot}%{_datadir}/applications/mimeapps.list
+
 # Remove RPATH from all binaries and libraries
 # This ensures clean packaging without RPATH warnings
 find %{buildroot} -type f \( -name "*.so*" -o -perm /111 \) -exec chrpath --delete {} \; 2>/dev/null || true

@@ -49,10 +49,16 @@ def _default_apps(sections: list[tuple[str | None, list[str]]]) -> list[str]:
     return sections[-1][1]
 
 
+def _desktop_ids(value: str) -> list[str]:
+    """Split a mimeapps value into desktop IDs (trailing ';' optional)."""
+    return [part for part in value.split(";") if part]
+
+
 def merge(path: pathlib.Path, desktop_id: str, mime_type: str) -> None:
     text = path.read_text(encoding="utf-8") if path.is_file() else ""
     sections = _parse(text)
     lines = _default_apps(sections)
+    # Take over as the sole default for this MIME type (product policy for .scad).
     entry = f"{mime_type}={desktop_id};"
     key = f"{mime_type}="
     replaced = False
@@ -75,10 +81,16 @@ def remove(path: pathlib.Path, desktop_id: str, mime_type: str) -> None:
         if name != "Default Applications":
             continue
         keep: list[str] = []
+        key = f"{mime_type}="
         for line in lines:
-            if line.startswith(f"{mime_type}=") and desktop_id in line.split("=", 1)[1]:
+            if not line.startswith(key) or line.lstrip().startswith("#"):
+                keep.append(line)
                 continue
-            keep.append(line)
+            ids = _desktop_ids(line.split("=", 1)[1])
+            ids = [d for d in ids if d != desktop_id]
+            if ids:
+                keep.append(f"{mime_type}={';'.join(ids)};")
+            # else: drop the key entirely when no handlers remain
         lines[:] = keep
     path.write_text(_serialize(sections), encoding="utf-8")
 

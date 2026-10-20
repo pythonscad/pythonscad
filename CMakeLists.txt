@@ -2681,6 +2681,8 @@ if(NOT APPLE OR APPLE_UNIX)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications RENAME org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop)
     # Merge only application/x-openscad into the shared mimeapps.list — never
     # overwrite the whole file (preserves IDE defaults for text/x-python, etc.).
+    # Use a host python3 independent of ENABLE_PYTHON / find_package(Python3).
+    find_program(PYTHONSCAD_HOST_PYTHON3 NAMES python3 python REQUIRED)
     install(PROGRAMS ${CMAKE_SOURCE_DIR}/scripts/merge-mimeapps-default.py
             DESTINATION ${OPENSCAD_INSTALL_RESOURCEDIR})
     install(CODE "
@@ -2691,7 +2693,7 @@ if(NOT APPLE OR APPLE_UNIX)
         set(_merge_py \"${CMAKE_SOURCE_DIR}/scripts/merge-mimeapps-default.py\")
       endif()
       execute_process(
-        COMMAND \"${Python3_EXECUTABLE}\" \"\${_merge_py}\" merge
+        COMMAND \"${PYTHONSCAD_HOST_PYTHON3}\" \"\${_merge_py}\" merge
                 \"\${_mimeapps}\"
                 \"org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop\"
                 \"application/x-openscad\"
