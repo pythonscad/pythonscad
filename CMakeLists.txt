@@ -2702,16 +2702,30 @@ if(NOT APPLE OR APPLE_UNIX)
       if(NOT EXISTS \"\${_merge_py}\")
         set(_merge_py \"${CMAKE_SOURCE_DIR}/scripts/merge-mimeapps-default.py\")
       endif()
-      execute_process(
-        COMMAND \"${PYTHONSCAD_HOST_PYTHON3}\" \"\${_merge_py}\" merge
-                \"\${_mimeapps}\"
-                \"org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop\"
-                \"application/x-openscad\"
-        RESULT_VARIABLE _mimeapps_rv
-        ERROR_VARIABLE _mimeapps_err
-      )
-      if(NOT _mimeapps_rv EQUAL 0)
-        message(FATAL_ERROR \"Failed to merge mimeapps.list default: \${_mimeapps_err}\")
+      # Direct prefix installs merge immediately. DESTDIR staging (CPack DEB/RPM,
+      # distro package builds) skips writing the shared mimeapps.list so packages
+      # do not ship/own it — those paths merge in %post / postinst instead.
+      # AppImage sets PYTHONSCAD_MERGE_MIMEAPPS=1 to keep the AppDir default.
+      set(_do_merge TRUE)
+      if(NOT \"\$ENV{DESTDIR}\" STREQUAL \"\")
+        if(NOT \"\$ENV{PYTHONSCAD_MERGE_MIMEAPPS}\" STREQUAL \"1\")
+          set(_do_merge FALSE)
+        endif()
+      endif()
+      if(_do_merge)
+        execute_process(
+          COMMAND \"${PYTHONSCAD_HOST_PYTHON3}\" \"\${_merge_py}\" merge
+                  \"\${_mimeapps}\"
+                  \"org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop\"
+                  \"application/x-openscad\"
+          RESULT_VARIABLE _mimeapps_rv
+          ERROR_VARIABLE _mimeapps_err
+        )
+        if(NOT _mimeapps_rv EQUAL 0)
+          message(FATAL_ERROR \"Failed to merge mimeapps.list default: \${_mimeapps_err}\")
+        endif()
+      else()
+        message(STATUS \"Skipping mimeapps.list merge under DESTDIR (set PYTHONSCAD_MERGE_MIMEAPPS=1 to force)\")
       endif()
     ")
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.xml DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages RENAME ${EXECUTABLE_NAME}.xml)

@@ -126,6 +126,16 @@ def check_msix_action() -> None:
     # Both associations must be constructed in the manifest builder.
     assert "PythonSCAD Design" in text
     assert "PythonSCAD Python File" in text
+    # UAP FileTypeAssociation.Name must be 3–100 characters (not "py").
+    assert 'Name = "python"' in text
+    assert 'Name = "py"' not in text
+
+
+def check_destdir_merge_guard() -> None:
+    cmake = _read("CMakeLists.txt")
+    assert "PYTHONSCAD_MERGE_MIMEAPPS" in cmake
+    appimage = _read("scripts/create_appimage.sh")
+    assert "PYTHONSCAD_MERGE_MIMEAPPS=1" in appimage
 
 
 def main() -> int:
@@ -137,6 +147,7 @@ def main() -> int:
         check_appdata,
         check_info_plist,
         check_msix_action,
+        check_destdir_merge_guard,
     )
     failures = 0
     for check in checks:

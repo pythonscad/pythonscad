@@ -152,7 +152,8 @@ runs:
         $exts = $doc.CreateElement("Extensions", $ns)
         foreach ($assoc in @(
             @{ Name = "scad"; DisplayName = "PythonSCAD Design"; FileType = ".scad" },
-            @{ Name = "py"; DisplayName = "PythonSCAD Python File"; FileType = ".py" }
+            # Name must be 3–100 chars (UAP FileTypeAssociation schema); keep extension .py.
+            @{ Name = "python"; DisplayName = "PythonSCAD Python File"; FileType = ".py" }
         )) {
           $ext = $doc.CreateElement("Extension", $nsUap)
           $ext.SetAttribute("Category", "windows.fileTypeAssociation")
