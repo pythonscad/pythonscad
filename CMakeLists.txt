@@ -2713,8 +2713,18 @@ if(NOT APPLE OR APPLE_UNIX)
     install(PROGRAMS ${CMAKE_SOURCE_DIR}/scripts/merge-mimeapps-default.py
             DESTINATION ${OPENSCAD_INSTALL_RESOURCEDIR})
     install(CODE "
-      set(_mimeapps \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}/applications/mimeapps.list\")
-      set(_merge_py \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${OPENSCAD_INSTALL_RESOURCEDIR}/merge-mimeapps-default.py\")
+      # Resolve dataroot/resource dirs against install-time prefix only when relative
+      # (absolute CMAKE_INSTALL_DATAROOTDIR must not get CMAKE_INSTALL_PREFIX prepended).
+      set(_dataroot \"${CMAKE_INSTALL_DATAROOTDIR}\")
+      if(NOT IS_ABSOLUTE \"\${_dataroot}\")
+        set(_dataroot \"\${CMAKE_INSTALL_PREFIX}/\${_dataroot}\")
+      endif()
+      set(_resourcedir \"${OPENSCAD_INSTALL_RESOURCEDIR}\")
+      if(NOT IS_ABSOLUTE \"\${_resourcedir}\")
+        set(_resourcedir \"\${CMAKE_INSTALL_PREFIX}/\${_resourcedir}\")
+      endif()
+      set(_mimeapps \"\$ENV{DESTDIR}\${_dataroot}/applications/mimeapps.list\")
+      set(_merge_py \"\$ENV{DESTDIR}\${_resourcedir}/merge-mimeapps-default.py\")
       # Prefer the just-installed copy; fall back to the source tree during DESTDIR installs.
       if(NOT EXISTS \"\${_merge_py}\")
         set(_merge_py \"${CMAKE_SOURCE_DIR}/scripts/merge-mimeapps-default.py\")
