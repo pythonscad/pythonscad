@@ -273,15 +273,22 @@ fi
 info "Using desktop file: ${DESKTOP_FILE}"
 
 # File associations installed via cmake (desktop MimeType, shared-mime-info,
-# and system default for application/x-openscad). Fail early if packaging
-# dropped them so AppImage desktop integration cannot advertise .scad/.py.
+# and a merged application/x-openscad default in mimeapps.list). Fail early
+# if packaging dropped them so AppImage desktop integration cannot advertise
+# .scad/.py.
 MIME_PACKAGE="${APPDIR}/usr/share/mime/packages/pythonscad.xml"
 MIMEAPPS_LIST="${APPDIR}/usr/share/applications/mimeapps.list"
 if [ ! -f "${MIME_PACKAGE}" ]; then
     die "MIME package not found at ${MIME_PACKAGE}"
 fi
 if [ ! -f "${MIMEAPPS_LIST}" ]; then
-    die "mimeapps.list not found at ${MIMEAPPS_LIST}"
+    die "mimeapps.list not found at ${MIMEAPPS_LIST} (cmake merge step missing?)"
+fi
+if ! grep -q '^application/x-openscad=org\.pythonscad\.pythonscad\.desktop;' "${MIMEAPPS_LIST}"; then
+    die "mimeapps.list missing application/x-openscad default for PythonSCAD"
+fi
+if grep -q '^text/x-python=' "${MIMEAPPS_LIST}"; then
+    die "mimeapps.list must not set a text/x-python default"
 fi
 if ! grep -q 'MimeType=.*application/x-openscad' "${DESKTOP_FILE}"; then
     die "Desktop file missing application/x-openscad MimeType"

@@ -121,15 +121,29 @@ find %{buildroot} -type f \( -name "*.so*" -o -perm /111 \) -exec chrpath --dele
 %{_datadir}/pythonscad/
 %{_datadir}/icons/hicolor/*/apps/pythonscad.png
 %{_datadir}/applications/org.pythonscad.pythonscad.desktop
-%{_datadir}/applications/mimeapps.list
+%{_datadir}/pythonscad/merge-mimeapps-default.py
 %{_datadir}/mime/packages/pythonscad.xml
 %{_datadir}/metainfo/org.pythonscad.PythonSCAD.appdata.xml
 %{_mandir}/man1/pythonscad.1*
 
 %post
 /sbin/ldconfig
+# Merge .scad default only; do not own or replace the shared mimeapps.list.
+python3 %{_datadir}/pythonscad/merge-mimeapps-default.py merge \
+  %{_datadir}/applications/mimeapps.list \
+  org.pythonscad.pythonscad.desktop \
+  application/x-openscad || :
 update-desktop-database &> /dev/null || :
 update-mime-database %{_datadir}/mime &> /dev/null || :
+
+%preun
+if [ "$1" -eq 0 ]; then
+  # Full uninstall (script still on disk in %preun): drop only our .scad default.
+  python3 %{_datadir}/pythonscad/merge-mimeapps-default.py remove \
+    %{_datadir}/applications/mimeapps.list \
+    org.pythonscad.pythonscad.desktop \
+    application/x-openscad || :
+fi
 
 %postun
 /sbin/ldconfig
