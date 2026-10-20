@@ -184,9 +184,10 @@ cmake .. \
 info "Building PythonSCAD (using ${NUM_JOBS} jobs)..."
 make -j"${NUM_JOBS}" || die "Build failed"
 
-# Install to AppDir
+# Install to AppDir. PYTHONSCAD_MERGE_MIMEAPPS=1 opts into writing the shared
+# mimeapps.list under DESTDIR (skipped for CPack/distro staging by default).
 info "Installing to AppDir..."
-make install DESTDIR="${APPDIR}" || die "Installation to AppDir failed"
+PYTHONSCAD_MERGE_MIMEAPPS=1 make install DESTDIR="${APPDIR}" || die "Installation to AppDir failed"
 
 # Return to project root
 cd "${PROJECT_ROOT}"
