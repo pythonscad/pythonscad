@@ -272,6 +272,25 @@ if [ ! -f "${DESKTOP_FILE}" ]; then
 fi
 info "Using desktop file: ${DESKTOP_FILE}"
 
+# File associations installed via cmake (desktop MimeType, shared-mime-info,
+# and system default for application/x-openscad). Fail early if packaging
+# dropped them so AppImage desktop integration cannot advertise .scad/.py.
+MIME_PACKAGE="${APPDIR}/usr/share/mime/packages/pythonscad.xml"
+MIMEAPPS_LIST="${APPDIR}/usr/share/applications/mimeapps.list"
+if [ ! -f "${MIME_PACKAGE}" ]; then
+    die "MIME package not found at ${MIME_PACKAGE}"
+fi
+if [ ! -f "${MIMEAPPS_LIST}" ]; then
+    die "mimeapps.list not found at ${MIMEAPPS_LIST}"
+fi
+if ! grep -q 'MimeType=.*application/x-openscad' "${DESKTOP_FILE}"; then
+    die "Desktop file missing application/x-openscad MimeType"
+fi
+if ! grep -q 'MimeType=.*text/x-python' "${DESKTOP_FILE}"; then
+    die "Desktop file missing text/x-python MimeType"
+fi
+info "Verified desktop/MIME/mimeapps file associations in AppDir"
+
 # Bundle dependencies with linuxdeploy
 info "Bundling Qt dependencies with linuxdeploy..."
 
