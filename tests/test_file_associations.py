@@ -44,6 +44,41 @@ def check_mimeapps() -> None:
     assert "[Default Applications]" in text
     assert "application/x-openscad=org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop;" in text
     assert "text/x-python" not in text
+    cmake = _read("CMakeLists.txt")
+    # Must merge into shared mimeapps.list, never install(FILES ... RENAME mimeapps.list).
+    assert "merge-mimeapps-default.py" in cmake
+    assert "RENAME mimeapps.list" not in cmake
+
+
+def check_merge_script() -> None:
+    import tempfile
+
+    script = ROOT / "scripts" / "merge-mimeapps-default.py"
+    assert script.is_file()
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("merge_mimeapps_default", script)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = pathlib.Path(tmp) / "mimeapps.list"
+        path.write_text(
+            "[Default Applications]\n"
+            "text/x-python=code.desktop;\n"
+            "application/x-openscad=openscad.desktop;\n",
+            encoding="utf-8",
+        )
+        mod.merge(path, "org.pythonscad.pythonscad.desktop", "application/x-openscad")
+        text = path.read_text(encoding="utf-8")
+        assert "text/x-python=code.desktop;" in text
+        assert "application/x-openscad=org.pythonscad.pythonscad.desktop;" in text
+        assert "openscad.desktop" not in text
+        mod.remove(path, "org.pythonscad.pythonscad.desktop", "application/x-openscad")
+        text = path.read_text(encoding="utf-8")
+        assert "text/x-python=code.desktop;" in text
+        assert "application/x-openscad=" not in text
 
 
 def check_appdata() -> None:
@@ -80,6 +115,7 @@ def main() -> int:
         check_desktop,
         check_mime_xml,
         check_mimeapps,
+        check_merge_script,
         check_appdata,
         check_info_plist,
         check_msix_action,
