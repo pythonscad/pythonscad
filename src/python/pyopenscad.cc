@@ -30,6 +30,7 @@
 #include <atomic>
 #include <cctype>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <sstream>
 #include <string>
@@ -2561,12 +2562,96 @@ static void windows_reattach_console_for_repl(void)
 // pollute `dir()` with a couple hundred names regardless of what the
 // user actually intended to use.
 //
+// Drive the session through Python's already-initialized `sys.stdin`
+// rather than `PyRun_AnyFileFlags(stdin)`. The latter builds a second
+// buffered reader on the same C FILE*, which SIGBUS-es inside
+// `_buffered_init` on Homebrew Python 3.15 (mimalloc-backed) when the
+// session later imports ctypes/sysconfig (#1138). `--ipython` already
+// avoids that path and works; match that IO model here.
+//
 // This helper assumes Py_IsInitialized() is already true; callers must
 // gate it behind that check.
 static void run_basic_python_repl(void)
 {
-  pymain_run_interactive_hook();
-  PyRun_AnyFileFlags(stdin, "<stdin>", nullptr);
+  // Only enable readline / __interactivehook__ on a real TTY. CPython's
+  // own non-interactive SimpleFile path skips the hook; loading it for
+  // piped CI scripts has been implicated in flaky SIGBUS under Homebrew
+  // Python 3.15 + ctypes (#1138).
+  //
+  // TTY → interactive >>> loop; pipe/file → exec the whole script once
+  // (same contract as non-tty PyRun_SimpleFile).
+  // Run the bootstrap inside a function so its `sys`/`code` locals cannot
+  // be clobbered by a piped user script that assigns those names in
+  // `__main__` (PyRun_SimpleString shares that dict). Flush in `finally`
+  // after a piped exec: non-tty stdout is fully buffered and we return
+  // without Py_Finalize, so prints before an exception would otherwise
+  // be lost (CI smokes capture stdout for the OK marker).
+  int is_tty = 0;
+  {
+    PyObject *sysmod = PyImport_ImportModule("sys");
+    if (sysmod != nullptr) {
+      PyObject *stdin_obj = PyObject_GetAttrString(sysmod, "stdin");
+      if (stdin_obj != nullptr) {
+        PyObject *r = PyObject_CallMethod(stdin_obj, "isatty", nullptr);
+        if (r != nullptr) {
+          is_tty = PyObject_IsTrue(r);
+          Py_DECREF(r);
+        } else {
+          PyErr_Clear();
+        }
+        Py_DECREF(stdin_obj);
+      } else {
+        PyErr_Clear();
+      }
+      Py_DECREF(sysmod);
+    } else {
+      PyErr_Clear();
+    }
+  }
+  if (is_tty) {
+    pymain_run_interactive_hook();
+  }
+
+  static const char *boot =
+    "def _pythonscad_run_basic_repl():\n"
+    "    import code, sys\n"
+    "    _ns = sys.modules['__main__'].__dict__\n"
+    "    if sys.stdin.isatty():\n"
+    "        code.interact(local=_ns)\n"
+    "    else:\n"
+    "        _src = sys.stdin.read()\n"
+    "        try:\n"
+    "            if _src:\n"
+    "                exec(compile(_src, '<stdin>', 'exec'), _ns)\n"
+    "        finally:\n"
+    "            try:\n"
+    "                sys.stdout.flush()\n"
+    "                sys.stderr.flush()\n"
+    "            except Exception:\n"
+    "                pass\n"
+    "_pythonscad_run_basic_repl()\n"
+    "del _pythonscad_run_basic_repl\n";
+  if (PyRun_SimpleString(boot) != 0) {
+    // Exception already printed by PyRun_SimpleString; clear so callers
+    // that fall through (e.g. ipython fallback) do not inherit it.
+    PyErr_Clear();
+  }
+}
+
+// On Apple, prefer the system malloc for CPython's memory domains when
+// the user has not already set PYTHONMALLOC. Homebrew Python 3.15 links
+// libmimalloc; under --repl/--ipython, `import ctypes` can SIGBUS/SIGSEGV
+// inside `_buffered_init` with that allocator (#1138, #1149). Must run
+// before Py_Initialize / Py_PreInitialize. No-op on free-threaded builds
+// where mimalloc is required.
+static void prefer_system_malloc_for_embedded_python(void)
+{
+#if defined(__APPLE__) && !defined(Py_GIL_DISABLED)
+  if (std::getenv("PYTHONMALLOC") == nullptr) {
+    // setenv(..., 0) does not overwrite an existing value.
+    (void)setenv("PYTHONMALLOC", "malloc", 0);
+  }
+#endif
 }
 
 // Open the basic embedded CPython REPL on stdin. Reachable explicitly
@@ -2583,6 +2668,7 @@ int repl(void)
   // CRT-orphaned ones GUI-subsystem children get on Windows.
   windows_reattach_console_for_repl();
 #endif
+  prefer_system_malloc_for_embedded_python();
   initPython(PlatformUtils::applicationPath(), "", nullptr);
   if (!Py_IsInitialized()) {
     fprintf(stderr,
@@ -2662,6 +2748,7 @@ int ipython(const std::vector<std::string>& args)
   // fallback below inherits a working console when IPython is missing.
   windows_reattach_console_for_repl();
 #endif
+  prefer_system_malloc_for_embedded_python();
   initPython(PlatformUtils::applicationPath(), "", nullptr);
   if (!Py_IsInitialized()) {
     fprintf(stderr,

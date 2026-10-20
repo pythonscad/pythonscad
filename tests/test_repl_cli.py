@@ -22,13 +22,14 @@ import sys
 # is responsible for importing whatever they need. The explicit
 # `from pythonscad import cube` line below is the contract under test.
 #
-# On Windows only, also import `ctypes`/`sysconfig` to exercise CPython's
-# Windows sysconfig path (used to fail in packaged MSYS2 builds when
-# `sys._is_mingw` was missing). Keep that off non-Windows: on macos-26
-# Homebrew Python 3.15, `import ctypes, sysconfig` under --repl SIGBUS
-# inside `_buffered_init` / mimalloc (#1133). Cube import alone is fine.
+# Import `ctypes`/`sysconfig` on non-macOS: on Windows this exercises the
+# sysconfig path that used to fail in packaged MSYS2 builds when
+# `sys._is_mingw` was missing; on Linux it is cheap coverage. Keep it
+# off Darwin — Homebrew Python 3.15 still SIGBUS-es on that import under
+# --repl on macos-26 CI even after the sys.stdin REPL rewrite (#1138).
+# Cube import alone remains the macOS contract under test.
 _SCRIPT_LINES = []
-if sys.platform == "win32":
+if sys.platform != "darwin":
     _SCRIPT_LINES.append("import ctypes, sysconfig")
 _SCRIPT_LINES.extend(
     [
@@ -41,10 +42,30 @@ SCRIPT = "\n".join(_SCRIPT_LINES) + "\n"
 
 TIMEOUT_SECONDS = 60
 
+# Piped prints before an exception must still reach stdout: the --repl
+# path returns without Py_Finalize, so the bootstrap must flush in a
+# finally block (Copilot review on #1148).
+FLUSH_ON_ERROR_SCRIPT = "print('MARKER')\nraise RuntimeError('boom')\n"
+
+# User scripts that rebind `sys` in `__main__` must not break the
+# bootstrap's post-exec flush (bootstrap runs in a function with its
+# own locals).
+SYS_REBIND_SCRIPT = "print('OK-rebind')\nsys = 123\n"
+
+
+def _run_repl(pythonscad: str, script: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [pythonscad, "--repl"],
+        input=script,
+        capture_output=True,
+        text=True,
+        timeout=TIMEOUT_SECONDS,
+    )
+
 
 def main() -> int:
     if len(sys.argv) < 2:
-        print("usage: test_repl_cli.py <pythonscad-binary>", file=sys.stderr)
+        print("usage: test_repl_cli.py <path-to-pythonscad>", file=sys.stderr)
         return 2
 
     pythonscad = sys.argv[1]
@@ -52,13 +73,7 @@ def main() -> int:
         print(f"binary not found: {pythonscad}", file=sys.stderr)
         return 2
 
-    proc = subprocess.run(
-        [pythonscad, "--repl"],
-        input=SCRIPT,
-        capture_output=True,
-        text=True,
-        timeout=TIMEOUT_SECONDS,
-    )
+    proc = _run_repl(pythonscad, SCRIPT)
 
     print("===== stdout =====")
     print(proc.stdout)
@@ -98,6 +113,34 @@ def main() -> int:
     if hook_msg in proc.stderr or hook_msg in proc.stdout:
         print(
             "FAIL: --repl emitted the sys.__interactivehook__ startup warning.",
+            file=sys.stderr,
+        )
+        return 1
+
+    flush_proc = _run_repl(pythonscad, FLUSH_ON_ERROR_SCRIPT)
+    print("===== flush-on-error stdout =====")
+    print(flush_proc.stdout)
+    print("===== flush-on-error stderr =====", file=sys.stderr)
+    print(flush_proc.stderr, file=sys.stderr)
+    if "MARKER" not in flush_proc.stdout:
+        print(
+            "FAIL: print before exception was not flushed to stdout",
+            file=sys.stderr,
+        )
+        return 1
+    if "RuntimeError" not in flush_proc.stderr and "RuntimeError" not in flush_proc.stdout:
+        print(
+            "FAIL: expected RuntimeError traceback from flush-on-error script",
+            file=sys.stderr,
+        )
+        return 1
+
+    rebind_proc = _run_repl(pythonscad, SYS_REBIND_SCRIPT)
+    print("===== sys-rebind stdout =====")
+    print(rebind_proc.stdout)
+    if rebind_proc.returncode != 0 or "OK-rebind" not in rebind_proc.stdout:
+        print(
+            "FAIL: rebinding sys in __main__ broke --repl stdout flush",
             file=sys.stderr,
         )
         return 1

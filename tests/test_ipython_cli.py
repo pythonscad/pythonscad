@@ -28,11 +28,13 @@ import tempfile
 # would either no-op or trip IPython's "Use exit()..." advisory message,
 # both of which make the test less deterministic.
 #
-# On Windows only, import `ctypes`/`sysconfig` to exercise CPython's
+# On Windows only, also import `ctypes`/`sysconfig` to exercise CPython's
 # Windows sysconfig path (used to fail in packaged MSYS2 builds when
-# `sys._is_mingw` was missing). Keep that off non-Windows: on macos-26
-# Homebrew Python 3.15, `import ctypes, sysconfig` under --repl SIGBUS
-# inside `_buffered_init` / mimalloc (#1133). Cube import alone is fine.
+# `sys._is_mingw` was missing). Keep that off macOS: Homebrew Python
+# 3.15 under `--ipython` still SIGSEGV-s with that import on macos-26
+# CI (separate from the --repl SIGBUS fixed in #1138 / #1148; tracked
+# as #1149). The --repl regression is covered by
+# tests/test_repl_cli.py, which imports ctypes on all platforms.
 #
 # The trailing `import IPython; print('IPYTHON_VERSION ...')` line is
 # the deterministic IPython fingerprint we assert on below. Earlier
