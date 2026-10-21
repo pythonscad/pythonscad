@@ -98,6 +98,32 @@ def check_merge_script() -> None:
         text = path.read_text(encoding="utf-8")
         assert "application/x-openscad=custom-org.pythonscad.pythonscad.desktop;" in text
 
+        # Whitespace around '=' and desktop IDs: merge replaces, remove strips ours only.
+        path.write_text(
+            "[Default Applications]\n"
+            "text/x-python = code.desktop;\n"
+            "application/x-openscad = openscad.desktop;\n",
+            encoding="utf-8",
+        )
+        mod.merge(path, "org.pythonscad.pythonscad.desktop", "application/x-openscad")
+        text = path.read_text(encoding="utf-8")
+        assert "text/x-python = code.desktop;" in text
+        assert "application/x-openscad=org.pythonscad.pythonscad.desktop;" in text
+        assert text.count("application/x-openscad") == 1
+        assert "openscad.desktop" not in text
+
+        path.write_text(
+            "[Default Applications]\n"
+            "text/x-python = code.desktop;\n"
+            "application/x-openscad = openscad.desktop ; org.pythonscad.pythonscad.desktop ;\n",
+            encoding="utf-8",
+        )
+        mod.remove(path, "org.pythonscad.pythonscad.desktop", "application/x-openscad")
+        text = path.read_text(encoding="utf-8")
+        assert "text/x-python = code.desktop;" in text
+        assert "application/x-openscad=openscad.desktop;" in text
+        assert "org.pythonscad.pythonscad.desktop" not in text
+
 
 def check_appdata() -> None:
     text = _read("pythonscad.appdata.xml.in")
