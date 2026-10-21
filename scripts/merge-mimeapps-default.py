@@ -20,8 +20,10 @@ def _parse(text: str) -> list[tuple[str | None, list[str]]]:
     sections: list[tuple[str | None, list[str]]] = [(None, [])]
     for raw in text.splitlines():
         line = raw.rstrip("\n")
-        if line.startswith("[") and line.endswith("]") and len(line) > 2:
-            sections.append((line[1:-1], []))
+        # Strip surrounding whitespace so "[Default Applications] " is a header.
+        header = line.strip()
+        if header.startswith("[") and header.endswith("]") and len(header) > 2:
+            sections.append((header[1:-1].strip(), []))
         else:
             sections[-1][1].append(line)
     return sections

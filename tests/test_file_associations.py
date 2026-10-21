@@ -124,6 +124,32 @@ def check_merge_script() -> None:
         assert "application/x-openscad=openscad.desktop;" in text
         assert "org.pythonscad.pythonscad.desktop" not in text
 
+        # Trailing whitespace on section headers must not move entries into the wrong section.
+        path.write_text(
+            "[Default Applications]\n"
+            "text/x-python=code.desktop;\n"
+            "[Added Associations] \n"
+            "image/png=eog.desktop;\n",
+            encoding="utf-8",
+        )
+        mod.merge(path, "org.pythonscad.pythonscad.desktop", "application/x-openscad")
+        text = path.read_text(encoding="utf-8")
+        default_block = text.split("[Added Associations]", 1)[0]
+        assert "application/x-openscad=org.pythonscad.pythonscad.desktop;" in default_block
+        assert "image/png=eog.desktop;" in text
+        path.write_text(
+            "[Default Applications] \n"
+            "application/x-openscad=openscad.desktop;org.pythonscad.pythonscad.desktop;\n"
+            "[Added Associations]\n"
+            "image/png=eog.desktop;\n",
+            encoding="utf-8",
+        )
+        mod.remove(path, "org.pythonscad.pythonscad.desktop", "application/x-openscad")
+        text = path.read_text(encoding="utf-8")
+        assert "application/x-openscad=openscad.desktop;" in text
+        assert "org.pythonscad.pythonscad.desktop" not in text
+        assert "image/png=eog.desktop;" in text
+
 
 def check_appdata() -> None:
     text = _read("pythonscad.appdata.xml.in")
@@ -155,6 +181,9 @@ def check_msix_action() -> None:
     # UAP FileTypeAssociation.Name must be 3–100 characters (not "py").
     assert 'Name = "python"' in text
     assert 'Name = "py"' not in text
+    # .py must stay Open With only.
+    assert "AllowSilentDefaultTakeOver" in text
+    assert "desktop2" in text
 
 
 def check_destdir_merge_guard() -> None:
@@ -162,6 +191,13 @@ def check_destdir_merge_guard() -> None:
     assert "PYTHONSCAD_MERGE_MIMEAPPS" in cmake
     appimage = _read("scripts/create_appimage.sh")
     assert "PYTHONSCAD_MERGE_MIMEAPPS=1" in appimage
+    # CPack DEB/RPM must register .scad defaults via lifecycle hooks + python3.
+    assert "CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA" in cmake
+    assert "CPACK_RPM_POST_INSTALL_SCRIPT_FILE" in cmake
+    assert 'CPACK_DEBIAN_PACKAGE_DEPENDS "python3"' in cmake
+    assert 'CPACK_RPM_PACKAGE_REQUIRES "python3"' in cmake
+    assert (ROOT / "cmake/cpack/mimeapps-postinst.sh.in").is_file()
+    assert (ROOT / "cmake/cpack/mimeapps-prerm.sh.in").is_file()
 
 
 def main() -> int:
