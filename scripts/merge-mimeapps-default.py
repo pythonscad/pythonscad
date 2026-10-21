@@ -51,7 +51,16 @@ def _default_apps(sections: list[tuple[str | None, list[str]]]) -> list[str]:
 
 def _desktop_ids(value: str) -> list[str]:
     """Split a mimeapps value into desktop IDs (trailing ';' optional)."""
-    return [part for part in value.split(";") if part]
+    return [part.strip() for part in value.split(";") if part.strip()]
+
+
+def _split_mime_line(line: str) -> tuple[str, str] | None:
+    """Return (stripped_key, raw_value) for a non-comment key=value line."""
+    stripped = line.lstrip()
+    if not stripped or stripped.startswith("#") or "=" not in line:
+        return None
+    key, value = line.split("=", 1)
+    return key.strip(), value
 
 
 def merge(path: pathlib.Path, desktop_id: str, mime_type: str) -> None:
@@ -60,10 +69,13 @@ def merge(path: pathlib.Path, desktop_id: str, mime_type: str) -> None:
     lines = _default_apps(sections)
     # Take over as the sole default for this MIME type (product policy for .scad).
     entry = f"{mime_type}={desktop_id};"
-    key = f"{mime_type}="
     replaced = False
     for i, line in enumerate(lines):
-        if line.startswith(key) and not line.lstrip().startswith("#"):
+        parsed = _split_mime_line(line)
+        if parsed is None:
+            continue
+        key, _value = parsed
+        if key == mime_type:
             lines[i] = entry
             replaced = True
             break
@@ -81,13 +93,16 @@ def remove(path: pathlib.Path, desktop_id: str, mime_type: str) -> None:
         if name != "Default Applications":
             continue
         keep: list[str] = []
-        key = f"{mime_type}="
         for line in lines:
-            if not line.startswith(key) or line.lstrip().startswith("#"):
+            parsed = _split_mime_line(line)
+            if parsed is None:
                 keep.append(line)
                 continue
-            ids = _desktop_ids(line.split("=", 1)[1])
-            ids = [d for d in ids if d != desktop_id]
+            key, value = parsed
+            if key != mime_type:
+                keep.append(line)
+                continue
+            ids = [d for d in _desktop_ids(value) if d != desktop_id]
             if ids:
                 keep.append(f"{mime_type}={';'.join(ids)};")
             # else: drop the key entirely when no handlers remain
