@@ -1,0 +1,14 @@
+#!/bin/sh
+# CPack DEB prerm / RPM %preun: drop only our .scad default entry.
+set -e
+# DEB: only on remove. RPM: only when $1 == 0 (last packaged instance).
+if [ -n "${1:-}" ]; then
+  case "$1" in
+    remove|0) ;;
+    *) exit 0 ;;
+  esac
+fi
+python3 "@CPACK_MIMEAPPS_MERGE_SCRIPT@" remove \
+  "@CPACK_MIMEAPPS_LIST@" \
+  "@CPACK_MIMEAPPS_DESKTOP_ID@" \
+  application/x-openscad || true

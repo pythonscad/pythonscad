@@ -2681,8 +2681,13 @@ if(NOT APPLE OR APPLE_UNIX)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications RENAME org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop)
     # Merge only application/x-openscad into the shared mimeapps.list — never
     # overwrite the whole file (preserves IDE defaults for text/x-python, etc.).
-    # Use a host python3 independent of ENABLE_PYTHON / find_package(Python3).
-    find_program(PYTHONSCAD_HOST_PYTHON3 NAMES python3 python REQUIRED)
+    # Prefer an already-discovered interpreter; otherwise find a host python3
+    # independent of ENABLE_PYTHON / find_package(Python3).
+    if(Python3_EXECUTABLE)
+      set(PYTHONSCAD_HOST_PYTHON3 "${Python3_EXECUTABLE}")
+    else()
+      find_program(PYTHONSCAD_HOST_PYTHON3 NAMES python3 python REQUIRED)
+    endif()
     install(PROGRAMS ${CMAKE_SOURCE_DIR}/scripts/merge-mimeapps-default.py
             DESTINATION ${OPENSCAD_INSTALL_RESOURCEDIR})
     install(CODE "
@@ -2840,6 +2845,8 @@ elseif(UNIX AND NOT APPLE)
   set(CPACK_RPM_PACKAGE_GROUP  "PythonSCAD designers")
   set(CPACK_RPM_PACKAGE_VENDOR "PythonSCAD designers")
   set(CPACK_RPM_PACKAGE_DESCRIPTION "PythonSCAD RPM Package")
+  # Runtime python3 for mimeapps merge hooks (script ships in the package).
+  set(CPACK_RPM_PACKAGE_REQUIRES "python3")
 
   set(CPACK_DEBIAN_PACKAGE_NAME "pythonscad")
   set(CPACK_DEBIAN_FILE_NAME "pythonscad-${OPENSCAD_YEAR}${OPENSCAD_MONTH}${OPENSCAD_DAY}.x86_64.deb")
@@ -2851,7 +2858,34 @@ elseif(UNIX AND NOT APPLE)
   set(CPACK_DEBIAN_ARCHIVE_TYPE  "gnutar")
   set(CPACK_DEBIAN_COMPRESSION_TYPE "gzip")
   set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-  set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "python3")
+
+  # CPack does not use debian/pythonscad.postinst or pythonscad.spec; wire the
+  # same merge/remove helpers so DEB/RPM packages still register .scad defaults
+  # without shipping the shared applications/mimeapps.list.
+  if(IS_ABSOLUTE "${CMAKE_INSTALL_DATAROOTDIR}")
+    set(_cpack_dataroot "${CMAKE_INSTALL_DATAROOTDIR}")
+  else()
+    set(_cpack_dataroot "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}")
+  endif()
+  if(IS_ABSOLUTE "${OPENSCAD_INSTALL_RESOURCEDIR}")
+    set(_cpack_resourcedir "${OPENSCAD_INSTALL_RESOURCEDIR}")
+  else()
+    set(_cpack_resourcedir "${CMAKE_INSTALL_PREFIX}/${OPENSCAD_INSTALL_RESOURCEDIR}")
+  endif()
+  set(CPACK_MIMEAPPS_LIST "${_cpack_dataroot}/applications/mimeapps.list")
+  set(CPACK_MIMEAPPS_MERGE_SCRIPT "${_cpack_resourcedir}/merge-mimeapps-default.py")
+  set(CPACK_MIMEAPPS_DESKTOP_ID "org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop")
+  # Basenames must be postinst/prerm for CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA.
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/cpack-debian")
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/cpack/mimeapps-postinst.sh.in"
+                 "${CMAKE_BINARY_DIR}/cpack-debian/postinst" @ONLY)
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/cpack/mimeapps-prerm.sh.in"
+                 "${CMAKE_BINARY_DIR}/cpack-debian/prerm" @ONLY)
+  set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+      "${CMAKE_BINARY_DIR}/cpack-debian/postinst;${CMAKE_BINARY_DIR}/cpack-debian/prerm")
+  set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_BINARY_DIR}/cpack-debian/postinst")
+  set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE "${CMAKE_BINARY_DIR}/cpack-debian/prerm")
 
 endif()
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
