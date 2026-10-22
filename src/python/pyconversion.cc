@@ -174,10 +174,15 @@ int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y
   if (vec == nullptr) return 1;
   if (flags != nullptr) *flags = 0;
   if (vec->ob_type == &PyOpenSCADVectorType) {
+    // Mirror the sequence path: honor dim against min/max, only write
+    // components that exist, and leave caller defaults for absent axes
+    // (e.g. scale Z stays 1 when given a 2D size vector).
     PyOpenSCADVectorObject *v = (PyOpenSCADVectorObject *)vec;
-    *x = v->v[0];
-    *y = v->v[1];
-    *z = v->v[2];
+    const int size = v->dim;
+    if (size < minval || size > maxval) return 1;
+    if (size >= 1 && x != nullptr) *x = v->v[0];
+    if (size >= 2 && y != nullptr) *y = v->v[1];
+    if (size >= 3 && z != nullptr) *z = v->v[2];
     return 0;
   }
   if (python_is_sequence(vec)) {
@@ -497,7 +502,12 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
         PyObject *item = PySequence_Fast_GET_ITEM(seq, j);
         if (item->ob_type == &PyOpenSCADVectorType) {
           PyOpenSCADVectorObject *obj = (PyOpenSCADVectorObject *)item;
-          for (int i = 0; i < 3; i++) result[i] = obj->v[i];
+          if (obj->dim < mindim || obj->dim > maxdim) {
+            PyErr_Format(PyExc_TypeError, "expected a vector with %d to %d elements", mindim, maxdim);
+            Py_DECREF(seq);
+            return results;
+          }
+          for (int i = 0; i < obj->dim && i < 3; i++) result[i] = obj->v[i];
         } else {
           PyObject *inner = PySequence_Fast(item, "expected a vector");
           if (inner == nullptr) {
@@ -552,7 +562,11 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
   }
   if (vec->ob_type == &PyOpenSCADVectorType) {
     PyOpenSCADVectorObject *obj = (PyOpenSCADVectorObject *)vec;
-    for (int i = 0; i < 3; i++) result[i] = obj->v[i];
+    if (obj->dim < mindim || obj->dim > maxdim) {
+      PyErr_Format(PyExc_TypeError, "expected a vector with %d to %d elements", mindim, maxdim);
+      return results;
+    }
+    for (int i = 0; i < obj->dim && i < 3; i++) result[i] = obj->v[i];
     results.push_back(result);
   }
   return results;

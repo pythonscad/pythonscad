@@ -15,3 +15,9 @@ print(c3.position)
 # 2D size scalar multiply
 s = square([10, 20])
 print(s.size * 2)
+
+# 2D size/position must work as scale/extrude args (sequence + omitted-Z).
+# scale() defaults missing Z to 1 — must not flatten the cube.
+print(cube(1).scale(square([2, 3]).size).size)
+sq = square([10, 20])
+print(sq.linear_extrude(5, origin=sq.position).size)
