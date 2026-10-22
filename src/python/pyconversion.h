@@ -4,7 +4,7 @@ int python_tomatrix(PyObject *pyt, Matrix4d& mat);
 int python_tovector(PyObject *pyt, Vector3d& vec);
 std::vector<Vector3d> python_to2dvarpointlist(PyObject *pypoints);
 std::vector<std::vector<size_t>> python_to2dintlist(PyObject *pypaths);
-PyObject *python_fromvector(const Vector3d vec);
+PyObject *python_fromvector(const Vector3d vec, int dim);
 PyObject *python_from2dvarpointlist(const std::vector<Vector3d>& ptlist);
 PyObject *python_from3dpointlist(const std::vector<Vector3d>& ptlist);
 PyObject *python_from2dint(const std::vector<std::vector<size_t>>& intlist);

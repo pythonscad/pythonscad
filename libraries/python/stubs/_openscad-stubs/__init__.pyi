@@ -1805,7 +1805,7 @@ def size(obj: PyOpenSCADs) -> Optional[Union[Vector2, Vector3]]:
     """Get the size dimensions of an object's bounding box."""
     ...
 
-def position(obj: PyOpenSCADs) -> Optional[Vector3]:
+def position(obj: PyOpenSCADs) -> Optional[Union[Vector2, Vector3]]:
     """Get the minimum corner of an object's bounding box."""
     ...
 

@@ -299,12 +299,15 @@ int python_tovector(PyObject *pyt, Vector3d& vec)
   return rc;
 }
 
-PyObject *python_fromvector(const Vector3d vec)
+PyObject *python_fromvector(const Vector3d vec, int dim)
 {
+  if (dim != 2 && dim != 3) dim = 3;
   PyOpenSCADVectorObject *pyvec =
     (PyOpenSCADVectorObject *)PyOpenSCADVectorType.tp_alloc(&PyOpenSCADVectorType, 0);
-  if (pyvec)
-    for (int i = 0; i < 3; i++) pyvec->v[i] = vec[i];
+  if (pyvec) {
+    for (int i = 0; i < 3; i++) pyvec->v[i] = (i < dim) ? vec[i] : 0.0;
+    pyvec->dim = dim;
+  }
   return (PyObject *)pyvec;
 }
 
