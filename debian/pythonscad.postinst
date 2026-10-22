@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+# Merge .scad default only; do not own or replace the shared mimeapps.list.
+if [ "$1" = "configure" ]; then
+  python3 /usr/share/pythonscad/merge-mimeapps-default.py merge \
+    /usr/share/applications/mimeapps.list \
+    org.pythonscad.pythonscad.desktop \
+    application/x-openscad || true
+  update-desktop-database >/dev/null 2>&1 || true
+  update-mime-database /usr/share/mime >/dev/null 2>&1 || true
+fi
+
+#DEBHELPER#

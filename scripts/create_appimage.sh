@@ -183,9 +183,10 @@ cmake .. \
 info "Building PythonSCAD (using ${NUM_JOBS} jobs)..."
 make -j"${NUM_JOBS}" || die "Build failed"
 
-# Install to AppDir
+# Install to AppDir. PYTHONSCAD_MERGE_MIMEAPPS=1 opts into writing the shared
+# mimeapps.list under DESTDIR (skipped for CPack/distro staging by default).
 info "Installing to AppDir..."
-make install DESTDIR="${APPDIR}" || die "Installation to AppDir failed"
+PYTHONSCAD_MERGE_MIMEAPPS=1 make install DESTDIR="${APPDIR}" || die "Installation to AppDir failed"
 
 # Return to project root
 cd "${PROJECT_ROOT}"
@@ -271,6 +272,32 @@ if [ ! -f "${DESKTOP_FILE}" ]; then
     die "Desktop file not found at ${DESKTOP_FILE}"
 fi
 info "Using desktop file: ${DESKTOP_FILE}"
+
+# File associations installed via cmake (desktop MimeType, shared-mime-info,
+# and a merged application/x-openscad default in mimeapps.list). Fail early
+# if packaging dropped them so AppImage desktop integration cannot advertise
+# .scad/.py.
+MIME_PACKAGE="${APPDIR}/usr/share/mime/packages/pythonscad.xml"
+MIMEAPPS_LIST="${APPDIR}/usr/share/applications/mimeapps.list"
+if [ ! -f "${MIME_PACKAGE}" ]; then
+    die "MIME package not found at ${MIME_PACKAGE}"
+fi
+if [ ! -f "${MIMEAPPS_LIST}" ]; then
+    die "mimeapps.list not found at ${MIMEAPPS_LIST} (cmake merge step missing?)"
+fi
+if ! grep -q '^application/x-openscad=org\.pythonscad\.pythonscad\.desktop;' "${MIMEAPPS_LIST}"; then
+    die "mimeapps.list missing application/x-openscad default for PythonSCAD"
+fi
+if grep -q '^text/x-python=' "${MIMEAPPS_LIST}"; then
+    die "mimeapps.list must not set a text/x-python default"
+fi
+if ! grep -q 'MimeType=.*application/x-openscad' "${DESKTOP_FILE}"; then
+    die "Desktop file missing application/x-openscad MimeType"
+fi
+if ! grep -q 'MimeType=.*text/x-python' "${DESKTOP_FILE}"; then
+    die "Desktop file missing text/x-python MimeType"
+fi
+info "Verified desktop/MIME/mimeapps file associations in AppDir"
 
 # Bundle dependencies with linuxdeploy
 info "Bundling Qt dependencies with linuxdeploy..."

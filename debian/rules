@@ -30,5 +30,12 @@ override_dh_auto_configure:
 override_dh_auto_build:
 	dh_auto_build -- -j$(shell nproc)
 
+override_dh_auto_install:
+	dh_auto_install
+	# cmake install merges into applications/mimeapps.list under the package
+	# staging dir for prefix/AppImage installs. Do not ship that shared file —
+	# debian/pythonscad.postinst merges on the target system instead.
+	rm -f debian/pythonscad/usr/share/applications/mimeapps.list
+
 override_dh_shlibdeps:
 	dh_shlibdeps -l$(CURDIR)/debian/pythonscad/usr/lib

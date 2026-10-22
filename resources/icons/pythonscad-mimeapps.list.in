@@ -1,0 +1,2 @@
+[Default Applications]
+application/x-openscad=org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop;

@@ -107,6 +107,11 @@ modern features.
 %install
 %cmake_install
 
+# cmake install merges into applications/mimeapps.list under the buildroot for
+# prefix/AppImage installs. Packaging must not ship that shared file — %post
+# merges on the target system instead.
+rm -f %{buildroot}%{_datadir}/applications/mimeapps.list
+
 # Remove RPATH from all binaries and libraries
 # This ensures clean packaging without RPATH warnings
 find %{buildroot} -type f \( -name "*.so*" -o -perm /111 \) -exec chrpath --delete {} \; 2>/dev/null || true
@@ -121,14 +126,29 @@ find %{buildroot} -type f \( -name "*.so*" -o -perm /111 \) -exec chrpath --dele
 %{_datadir}/pythonscad/
 %{_datadir}/icons/hicolor/*/apps/pythonscad.png
 %{_datadir}/applications/org.pythonscad.pythonscad.desktop
+%{_datadir}/pythonscad/merge-mimeapps-default.py
 %{_datadir}/mime/packages/pythonscad.xml
 %{_datadir}/metainfo/org.pythonscad.PythonSCAD.appdata.xml
 %{_mandir}/man1/pythonscad.1*
 
 %post
 /sbin/ldconfig
+# Merge .scad default only; do not own or replace the shared mimeapps.list.
+python3 %{_datadir}/pythonscad/merge-mimeapps-default.py merge \
+  %{_datadir}/applications/mimeapps.list \
+  org.pythonscad.pythonscad.desktop \
+  application/x-openscad || :
 update-desktop-database &> /dev/null || :
 update-mime-database %{_datadir}/mime &> /dev/null || :
+
+%preun
+if [ "$1" -eq 0 ]; then
+  # Full uninstall (script still on disk in %preun): drop only our .scad default.
+  python3 %{_datadir}/pythonscad/merge-mimeapps-default.py remove \
+    %{_datadir}/applications/mimeapps.list \
+    org.pythonscad.pythonscad.desktop \
+    application/x-openscad || :
+fi
 
 %postun
 /sbin/ldconfig
