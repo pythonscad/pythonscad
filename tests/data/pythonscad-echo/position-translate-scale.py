@@ -12,9 +12,11 @@ c3 = cylinder(r=10, h=5)
 c3 = c3.translate(c3.position * -1)
 print(c3.position)
 
-# 2D size scalar multiply
+# 2D size scalar multiply / divide / unary minus
 s = square([10, 20])
 print(s.size * 2)
+print(s.size / 2)
+print(-(square([10, 20]).translate([3, 4]).position))
 
 # 2D size/position must work as scale/extrude args (sequence + omitted-Z).
 # scale() defaults missing Z to 1 — must not flatten the cube.

@@ -241,10 +241,44 @@ PyObject *PyOpenSCADVector_multiply(PyObject *a, PyObject *b)
   return PyOpenSCADVector_sub(a, b, 3);
 }
 
+PyObject *PyOpenSCADVector_true_divide(PyObject *a, PyObject *b)
+{
+  if (!PyObject_TypeCheck(a, &PyOpenSCADVectorType)) {
+    Py_RETURN_NOTIMPLEMENTED;
+  }
+  double scale;
+  if (python_numberval(b, &scale, nullptr, 0)) {
+    Py_RETURN_NOTIMPLEMENTED;
+  }
+  if (scale == 0.0) {
+    PyErr_SetString(PyExc_ZeroDivisionError, "vector division by zero");
+    return nullptr;
+  }
+  PyOpenSCADVectorObject *v1 = (PyOpenSCADVectorObject *)a;
+  PyOpenSCADVectorObject *result = PyOpenSCADVector_alloc_result(v1->dim);
+  if (!result) return nullptr;
+  for (int i = 0; i < v1->dim; i++) result->v[i] = v1->v[i] / scale;
+  return (PyObject *)result;
+}
+
+PyObject *PyOpenSCADVector_negative(PyObject *a)
+{
+  if (!PyObject_TypeCheck(a, &PyOpenSCADVectorType)) {
+    Py_RETURN_NOTIMPLEMENTED;
+  }
+  PyOpenSCADVectorObject *v1 = (PyOpenSCADVectorObject *)a;
+  PyOpenSCADVectorObject *result = PyOpenSCADVector_alloc_result(v1->dim);
+  if (!result) return nullptr;
+  for (int i = 0; i < v1->dim; i++) result->v[i] = -v1->v[i];
+  return (PyObject *)result;
+}
+
 static PyNumberMethods PyOpenSCADVector_number_methods = {
   .nb_add = PyOpenSCADVector_add,
   .nb_subtract = PyOpenSCADVector_subtract,
   .nb_multiply = PyOpenSCADVector_multiply,
+  .nb_negative = PyOpenSCADVector_negative,
+  .nb_true_divide = PyOpenSCADVector_true_divide,
 };
 
 static PyObject *PyOpenSCADVector_repr(PyOpenSCADVectorObject *self)
