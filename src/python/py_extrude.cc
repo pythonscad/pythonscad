@@ -77,7 +77,8 @@ PyObject *rotate_extrude_core(PyObject *obj, int convexity, double scale, double
     } else node->twist = PyFloat_AsDouble(twist);
   }
 
-  // origin/offset accept a list/tuple/NumPy 2-vector.
+  // origin/offset accept a list/tuple/NumPy/PyOpenSCADVector 2-vector.
+  // Reject scalars (python_is_sequence is false for numbers).
   double ox, oy;
   if (origin != NULL && origin != Py_None) {
     if (!python_is_sequence(origin) ||
