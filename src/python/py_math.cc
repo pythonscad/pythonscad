@@ -401,8 +401,33 @@ static Py_ssize_t PyOpenSCADVector_length(PyObject *obj)
   return ((PyOpenSCADVectorObject *)obj)->dim;
 }
 
+static PyObject *PyOpenSCADVector_item(PyObject *obj, Py_ssize_t i)
+{
+  PyOpenSCADVectorObject *self = (PyOpenSCADVectorObject *)obj;
+  if (i < 0 || i >= self->dim) {
+    PyErr_SetString(PyExc_IndexError, "vector index out of range");
+    return nullptr;
+  }
+  return PyFloat_FromDouble(self->v[i]);
+}
+
 PyMappingMethods PyOpenSCADVectorMapping = {PyOpenSCADVector_length, PyOpenSCADVector__getitem__,
                                             PyOpenSCADVector__setitem__};
+
+// Classic initializer (not designated) so sq_item is reliably wired for
+// PySequence_Check / PySequence_Fast across compilers.
+static PySequenceMethods PyOpenSCADVectorSequence = {
+  PyOpenSCADVector_length, /* sq_length */
+  nullptr,                 /* sq_concat */
+  nullptr,                 /* sq_repeat — must stay null so v * n is nb_multiply */
+  PyOpenSCADVector_item,   /* sq_item */
+  nullptr,                 /* was_sq_slice */
+  nullptr,                 /* sq_ass_item */
+  nullptr,                 /* was_sq_ass_slice */
+  nullptr,                 /* sq_contains */
+  nullptr,                 /* sq_inplace_concat */
+  nullptr,                 /* sq_inplace_repeat */
+};
 
 PyTypeObject PyOpenSCADVectorType = [] {
   PyTypeObject type = {PyVarObject_HEAD_INIT(NULL, 0)};
@@ -411,6 +436,7 @@ PyTypeObject PyOpenSCADVectorType = [] {
   type.tp_itemsize = 0;
   type.tp_repr = (reprfunc)PyOpenSCADVector_repr;
   type.tp_as_number = &PyOpenSCADVector_number_methods;
+  type.tp_as_sequence = &PyOpenSCADVectorSequence;
   type.tp_as_mapping = &PyOpenSCADVectorMapping;
   type.tp_flags = Py_TPFLAGS_DEFAULT;
   type.tp_iter = PyOpenSCADVectorType_iter;

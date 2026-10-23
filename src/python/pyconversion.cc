@@ -129,6 +129,9 @@ bool python_is_sequence(PyObject *o)
   if (PyUnicode_Check(o) || PyBytes_Check(o) || PyByteArray_Check(o)) return false;
   if (PyDict_Check(o)) return false;
   if (PyObject_TypeCheck(o, &PyOpenSCADType)) return false;
+  // Native vectors are coordinate sequences (dim 2 or 3), even when they
+  // also expose mapping/number slots.
+  if (o->ob_type == &PyOpenSCADVectorType) return true;
   return PyList_Check(o) || PyTuple_Check(o) || PySequence_Check(o);
 }
 
@@ -197,18 +200,21 @@ int python_vectorval(PyObject *vec, int minval, int maxval, double *x, double *y
       return 1;
     }
     int rc = 0;
-    if (size >= 1) rc = python_numberval(PySequence_Fast_GET_ITEM(seq, 0), x, flags, 1);
-    if (!rc && size >= 2) rc = python_numberval(PySequence_Fast_GET_ITEM(seq, 1), y, flags, 2);
-    if (!rc && size >= 3) rc = python_numberval(PySequence_Fast_GET_ITEM(seq, 2), z, flags, 4);
-    if (!rc && size >= 4 && w != NULL)
+    if (size >= 1 && x != nullptr) rc = python_numberval(PySequence_Fast_GET_ITEM(seq, 0), x, flags, 1);
+    if (!rc && size >= 2 && y != nullptr)
+      rc = python_numberval(PySequence_Fast_GET_ITEM(seq, 1), y, flags, 2);
+    if (!rc && size >= 3 && z != nullptr)
+      rc = python_numberval(PySequence_Fast_GET_ITEM(seq, 2), z, flags, 4);
+    if (!rc && size >= 4 && w != nullptr)
       rc = python_numberval(PySequence_Fast_GET_ITEM(seq, 3), w, flags, 8);
     Py_DECREF(seq);
     return rc ? 1 : 0;
   }
   if (!python_numberval(vec, x, nullptr, 0)) {
-    *y = *x;
-    *z = *x;
-    if (w != NULL) *w = *x;
+    // Scalar broadcast — only write outputs the caller provided.
+    if (y != nullptr) *y = *x;
+    if (z != nullptr) *z = *x;
+    if (w != nullptr) *w = *x;
     return 0;
   }
   return 1;
@@ -480,6 +486,19 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
 {
   std::vector<Vector3d> results;
   if (vec == nullptr) return results;
+  // Handle native vectors before the sequence path so a dim-N vector is not
+  // misread as a length-N list of scalars via PySequence_Fast.
+  if (vec->ob_type == &PyOpenSCADVectorType) {
+    PyOpenSCADVectorObject *obj = (PyOpenSCADVectorObject *)vec;
+    if (obj->dim < mindim || obj->dim > maxdim) {
+      PyErr_Format(PyExc_TypeError, "expected a vector with %d to %d elements", mindim, maxdim);
+      return results;
+    }
+    Vector3d result(0, 0, 0);
+    for (int i = 0; i < obj->dim && i < 3; i++) result[i] = obj->v[i];
+    results.push_back(result);
+    return results;
+  }
   if (python_is_sequence(vec)) {
     PyObject *seq = PySequence_Fast(vec, "expected a vector or list of vectors");
     if (seq == nullptr) {
@@ -557,16 +576,6 @@ std::vector<Vector3d> python_vectors(PyObject *vec, int mindim, int maxdim, int 
   if (!python_numberval(vec, &result[0], nullptr, 0)) {
     result[1] = result[0];
     result[2] = result[0];
-    results.push_back(result);
-    return results;
-  }
-  if (vec->ob_type == &PyOpenSCADVectorType) {
-    PyOpenSCADVectorObject *obj = (PyOpenSCADVectorObject *)vec;
-    if (obj->dim < mindim || obj->dim > maxdim) {
-      PyErr_Format(PyExc_TypeError, "expected a vector with %d to %d elements", mindim, maxdim);
-      return results;
-    }
-    for (int i = 0; i < obj->dim && i < 3; i++) result[i] = obj->v[i];
     results.push_back(result);
   }
   return results;

@@ -21,3 +21,14 @@ print(s.size * 2)
 print(cube(1).scale(square([2, 3]).size).size)
 sq = square([10, 20])
 print(sq.linear_extrude(5, origin=sq.position).size)
+
+# Native vectors are sequences for polygon points and solid-minus-vector translate
+print(polygon([[0, 0], sq.size, [0, 20]]).size)
+print((sq - sq.position).position)
+
+# Scalar extrude args must TypeError (not crash)
+try:
+    square(1).linear_extrude(5, scale=2)
+    print("scalar-scale-ok")
+except TypeError:
+    print("scalar-scale-typeerror")

@@ -596,8 +596,14 @@ PyObject *python_nb_or(PyObject *arg1, PyObject *arg2)
 PyObject *python_nb_subtract(PyObject *arg1, PyObject *arg2)
 {
   double dmy;
-  // A list/tuple/NumPy vector on the RHS means "translate by -vector";
-  // anything else is treated as a solid to subtract.
+  // A list/tuple/NumPy/PyOpenSCADVector on the RHS means "translate by
+  // -vector"; anything else is treated as a solid to subtract.
+  // Native vectors are handled first: they are sequences, but the
+  // PySequence_Fast "first element looks numeric" probe below is aimed at
+  // plain lists and is the wrong dispatch for PyOpenSCADVector.
+  if (arg2 != nullptr && arg2->ob_type == &PyOpenSCADVectorType) {
+    return python_nb_sub_vec3(arg1, arg2, 2);
+  }
   if (python_is_sequence(arg2)) {
     PyObject *seq = PySequence_Fast(arg2, "expected a vector");
     if (seq == NULL) {
