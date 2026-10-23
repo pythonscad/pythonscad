@@ -1494,6 +1494,14 @@ if (ENABLE_LIB3MF_TESTS)
         EXPERIMENTAL
         FILES ${PYTHONSCAD_EXPORT_3MF_FILES}
     )
+    # Not globbed with the group above: lib3mf 2 only welds coincident
+    # vertices when predictible-output is on, and lib3mf 1 always does.
+    # The flag keeps the golden the same on both backends.
+    add_export_files_test(pythonscad-export-3mf-degenerate
+        EXPERIMENTAL
+        FILES "${CCSD}/data/pythonscad-3mf-degenerate/degenerate-triangle.py"
+        ARGS --enable=predictible-output
+    )
 endif()
 add_export_files_test(pythonscad-export-obj
     EXPERIMENTAL
