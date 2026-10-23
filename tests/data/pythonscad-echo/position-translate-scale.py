@@ -32,3 +32,14 @@ try:
     print("scalar-scale-ok")
 except TypeError:
     print("scalar-scale-typeerror")
+
+# Iterator protocol: nested iter(it) must not crash, and repeated list()
+# must not leak refs to the vector (refcount returns to baseline).
+v = cube(1).position
+it = iter(v)
+print(list(it) == list(v) and list(iter(it)) == [])
+import sys
+base = sys.getrefcount(v)
+for _ in range(50):
+    list(v)
+print(sys.getrefcount(v) == base)

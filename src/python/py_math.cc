@@ -352,7 +352,7 @@ PyObject *PyOpenSCADVectorType_iter(PyObject *self)
   if (iter == nullptr) {
     return nullptr;
   }
-  Py_INCREF(iter);
+  // PyObject_New already returns an owned reference; do not INCREF iter.
 
   Py_INCREF(self);
   iter->container = self;
@@ -391,8 +391,10 @@ PyTypeObject PyOpenSCADVectorIterType = [] {
   type.tp_basicsize = sizeof(PyOpenSCADVectorIter);
   type.tp_dealloc = (destructor)PyOpenSCADVectorIter_dealloc;
   type.tp_flags = Py_TPFLAGS_DEFAULT;
-  type.tp_iter = PyOpenSCADVectorType_iter;
-  type.tp_iternext = PyOpenSCADVectorType_iternext;  // <-- __next__ Implementierung
+  // Iterators must return self from tp_iter; re-entering the vector
+  // factory would wrap an iterator as the next iterator's container.
+  type.tp_iter = PyObject_SelfIter;
+  type.tp_iternext = PyOpenSCADVectorType_iternext;
   return type;
 }();
 

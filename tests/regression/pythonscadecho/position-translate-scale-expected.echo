@@ -6,3 +6,5 @@ vector(10,20,5)
 vector(10,20)
 vector(0,0)
 scalar-scale-typeerror
+True
+True
