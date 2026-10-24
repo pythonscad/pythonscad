@@ -16,6 +16,7 @@ SCHEMA_VERSION = 1
 IDENTITY_INPUTS = (
     ".github/workflows/build-pyqt6-bindings.yml",
     "scripts/ci/patch_pyqt6_free_operators.py",
+    "scripts/ci/patch_pyqt6_removed_qt_apis.py",
     "scripts/ci/patch_pyqtbuild_win32_pythonlib.py",
     "scripts/ci/pyqt6-build-requirements.txt",
     "scripts/ci/pyqt6-versions.json",
