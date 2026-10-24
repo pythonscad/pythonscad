@@ -101,6 +101,8 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <iomanip>
+#include <locale>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -120,6 +122,7 @@
 #include "core/SourceFileCache.h"
 #include "core/customizer/CommentParser.h"
 #include "core/node.h"
+#include "core/DragPatch.h"
 #include "core/parsersettings.h"
 #include "core/progress.h"
 #include "geometry/Geometry.h"
@@ -768,152 +771,96 @@ void MainWindow::toolTipShow(QPoint pt, QString msg)
   QToolTip::showText(pos, msg, this);
 }
 
-void MainWindow::dragPoint(Vector3d pt, Vector3d newpt)
+void MainWindow::dragPoint(Vector3d pt, Vector3d newpt, Vector3d dir)
 {
   if (this->rootNode == nullptr) return;
-  dragResult.anchor[0] = NAN;
-  this->rootNode->dragPoint(pt, newpt, dragResult);
-  if (!isnan(dragResult.anchor[0])) {
-    SelectedObject obj = {
-      .type = SelectionType::SELECTION_POINT,
-    };
-    obj.pt.push_back(dragResult.anchor);
-    qglview->shown_obj = std::make_shared<SelectedObject>(obj);
+  if (!dragActive) {
+    // Start of a new gesture: wait for a running compile/render to finish
+    // before touching the node tree (the worker thread may still read it).
+    dragActive = true;
+    dragKeepView = true;
+    dragBeginPending = true;
+    dragEndRequested = false;
+    dragResult = DragResult();
   }
-
-  if (GuiLocker::isLocked()) return;
-  GuiLocker::lock();
-  compileDone(true);
+  dragPendingPt = pt;
+  dragPendingNewPt = newpt;
+  dragPendingDir = dir;
+  dragPending = true;
+  // Coalesce mouse events: at most one re-evaluation per timer period, always
+  // with the newest position. Events are no longer dropped while the GUI is locked.
+  if (!dragTimer->isActive()) dragTimer->start(20);
 }
 
-void MainWindow::dragPointEnd(Vector3d pt)
+void MainWindow::dragPointEnd(Vector3d /*pt*/)
 {
-  std::string sourcecode = std::string(this->lastCompiledDoc.toUtf8().constData());
-  const char *sourcecode_c = this->lastCompiledDoc.toUtf8().constData();
-  const char *ptr = sourcecode_c;
+  if (!dragActive) return;
+  dragEndRequested = true;
+  if (!dragTimer->isActive()) dragTimer->start(0);
+}
 
-  // search all occurences of function
-  while (ptr != nullptr) {
-    const char *funcstart = strstr(ptr, dragResult.modname.c_str());
-    if (funcstart != nullptr) {
-      ptr = funcstart + dragResult.modname.size();
-      int par = 0;
-      int par_present = 0;
-      std::vector<const char *> arg_bounds;
-      std::vector<char> stack;
-      do {
-        switch (*ptr) {  // TODO improve " '
-        case '(':
-          stack.push_back('(');
-          par_present = 1;
-          if (stack.size() == 1) arg_bounds.push_back(ptr + 1);
-          break;
-        case '[':
-          stack.push_back('[');
-          par_present = 1;
-          if (stack.size() == 1) arg_bounds.push_back(ptr + 1);
-          break;
-        case ',':
-          if (stack.size() == 1) {
-            arg_bounds.push_back(ptr);
-            arg_bounds.push_back(ptr + 1);
-          }
-          break;
-        case ')':
-          if (stack.size() > 0 && stack[stack.size() - 1] == '(') {
-            if (stack.size() == 1) arg_bounds.push_back(ptr);
-            stack.pop_back();
-          }
-          break;
-        case ']':
-          if (stack.size() > 0 && stack[stack.size() - 1] == '[') {
-            if (stack.size() == 1) arg_bounds.push_back(ptr);
-            stack.pop_back();
-          }
-          break;
-        case '\0': return;  // premature end of code
-        }
-        ptr++;
-      } while (stack.size() > 0 || !par_present);
-      // extract all arguments
-      std::vector<std::string> args;
-      for (int i = 0; i < arg_bounds.size(); i += 2) {
-        std::string arg =
-          sourcecode.substr(arg_bounds[i] - sourcecode_c, arg_bounds[i + 1] - arg_bounds[i]);
-        args.push_back(arg);
-      }
-
-      // go thorugh all mods now
-      bool valid = true;  // check that all mods are ok
-      for (auto& mod : dragResult.mods) {
-        // search for named parameter
-        const char *parstart, *parend;
-        int parindex = -1;
-        for (int i = 0; i < args.size(); i++) {
-          const char *arg_c = args[i].c_str();
-          const char *tmp = strchr(arg_c, '=');
-          if (tmp != nullptr && strncmp(arg_c, mod.name.c_str(), tmp - arg_c) == 0) {
-            parindex = i;
-            parstart = arg_bounds[2 * parindex] + mod.name.size();
-            parend = arg_bounds[2 * parindex + 1];
-          }
-        }
-        if (parindex == -1) {
-          parindex = mod.index;
-          parstart = arg_bounds[2 * parindex];
-          parend = arg_bounds[2 * parindex + 1];
-        }
-        if (mod.arrinfo.size() > 0) {
-          std::vector<int> arrstack;
-          const char *arrptr = parstart;
-          const char *arrstart = nullptr, *arrend = nullptr;
-          do {
-            if (arrstack == mod.arrinfo) {
-              if (arrstart == nullptr) arrstart = arrptr;
-              arrend = arrptr;
-            }
-            switch (*arrptr) {
-            case '[': arrstack.push_back(0); break;
-            case ',':
-              if (arrstack.size() > 0) {
-                arrstack[arrstack.size() - 1]++;
-              }
-              break;
-            case ']':
-              if (arrstack.size() > 0) {
-                arrstack.pop_back();
-              }
-              break;
-            case '\0': return;  // premature end of code
-            }
-            arrptr++;
-          } while (arrptr < parend);
-          if (arrstart == nullptr) {
-            printf("Arr index not found!\n");
-            valid = false;
-            continue;
-          }
-          parstart = arrstart;
-          parend = arrend;
-        }  // arrinfo
-        if (*parstart == '\"' && parend[-1] == '\"') {
-          // valid parameter
-          std::string arg = sourcecode.substr(parstart - sourcecode_c, parend - parstart);
-          // created patched sourcecode
-          std::stringstream ss;
-          setlocale(LC_ALL, "C");
-          std::string newval = boost::lexical_cast<std::string>(mod.value);
-          ss << sourcecode.substr(0, parstart - sourcecode_c) << "\"" << newval << "\""
-             << sourcecode.substr(parend - sourcecode_c);
-          std::string sourcecode_mod = ss.str();
-          // cruel problems when trying to udpate more than one paramter at once
-          activeEditor->setText(QString(sourcecode_mod.c_str()));
-          return;
-
-        } else valid = false;
-      }  // all mnods
-    } else ptr = nullptr;  // no more function name
+void MainWindow::dragProcess()
+{
+  if (!dragActive) return;
+  if (GuiLocker::isLocked()) {  // previous compile/render still running
+    dragTimer->start(20);
+    return;
   }
+  if (this->rootNode == nullptr) {
+    dragActive = false;
+    return;
+  }
+  if (dragBeginPending) {
+    this->rootNode->dragBegin();
+    dragBeginPending = false;
+  }
+  if (dragPending) {
+    dragPending = false;
+    dragResult.anchor[0] = NAN;
+    this->rootNode->dragPoint(dragPendingPt, dragPendingNewPt, dragPendingDir, dragResult);
+    if (!dragEndRequested) {
+      if (!std::isnan(dragResult.anchor[0])) {
+        SelectedObject obj = {
+          .type = SelectionType::SELECTION_POINT,
+        };
+        obj.pt.push_back(dragResult.anchor);
+        qglview->drag_obj = std::make_shared<SelectedObject>(obj);
+        qglview->update();
+      }
+      GuiLocker::lock();
+      compileDone(true);
+      return;
+    }
+  }
+  if (dragEndRequested) dragFinish();
+}
+
+void MainWindow::dragFinish()
+{
+  dragActive = false;
+  dragEndRequested = false;
+  qglview->drag_obj = nullptr;
+  qglview->update();
+
+  const std::string sourcecode = std::string(this->lastCompiledDoc.toUtf8().constData());
+  std::string patched;
+  if (applyDragResult(sourcecode, dragResult, patched)) {
+    int line = 0, col = 0;
+    activeEditor->getCursorPosition(&line, &col);
+    const int firstLine = activeEditor->firstVisibleLine();
+    activeEditor->setText(QString::fromUtf8(patched.c_str()));
+    activeEditor->setCursorPosition(line, col);
+    activeEditor->setFirstVisibleLine(firstLine);
+  } else if (!dragResult.mods.empty()) {
+    LOG(message_group::UI_Warning,
+        "Drag: could not find the dragged value in the source (mark it as string, e.g. \"10\").");
+  }
+  dragResult = DragResult();
+
+  // Re-evaluate the script so the node tree matches the source again. This also
+  // makes the next drag work without pressing F5/F6 manually.
+  if (dragLastWasRender) on_designActionRender_triggered();
+  else actionRenderPreview();
 }
 
 void MainWindow::addKeyboardShortCut(const QList<QAction *>& actions)
@@ -1392,6 +1339,7 @@ void MainWindow::compileEnded()
 {
   clearCurrentOutput();
   GuiLocker::unlock();
+  if (!dragActive) dragKeepView = false;  // the recompile after a drag is done
   if (designActionAutoReload->isChecked()) autoReloadTimer->start();
 #ifdef ENABLE_GUI_TESTS
   emit compilationDone(this->rootFile.get());
@@ -1416,8 +1364,10 @@ void MainWindow::instantiateRoot()
 {
   // Go on and instantiate root_node, then call the continuation slot
 
-  // Invalidate renderers before we kill the CSG tree
-  this->qglview->setRenderer(nullptr);
+  // Invalidate renderers before we kill the CSG tree.
+  // While dragging, keep showing the old image until the new one is ready
+  // (the view holds a shared_ptr, so the old renderer stays valid) -> no flicker.
+  if (!dragKeepView) this->qglview->setRenderer(nullptr);
 #ifdef ENABLE_OPENCSG
   this->previewRenderer = nullptr;
 #endif
@@ -2562,6 +2512,7 @@ void MainWindow::csgReloadRender()
 
 void MainWindow::prepareCompile(const char *afterCompileSlot, bool procevents, bool preview)
 {
+  if (!dragActive) dragLastWasRender = !preview;
   setCurrentOutput();
   autoReloadTimer->stop();
   LOG(" ");
@@ -2728,7 +2679,7 @@ void MainWindow::cgalRender()
     return;
   }
 
-  this->qglview->setRenderer(nullptr);
+  if (!dragKeepView) this->qglview->setRenderer(nullptr);
   this->geomRenderer = nullptr;
   rootGeom.reset();
   geometrySourceEditor_ = nullptr;
@@ -5576,6 +5527,9 @@ void MainWindow::setup3DView()
   connect(this->qglview, &QGLView::toolTipShow, this, &MainWindow::toolTipShow);
   connect(this->qglview, &QGLView::dragPoint, this, &MainWindow::dragPoint);
   connect(this->qglview, &QGLView::dragPointEnd, this, &MainWindow::dragPointEnd);
+  dragTimer = new QTimer(this);
+  dragTimer->setSingleShot(true);
+  connect(dragTimer, &QTimer::timeout, this, &MainWindow::dragProcess);
   connect(this->qglview, &QGLView::initialized, this, &MainWindow::updateViewModeAfterGLInit);
 }
 

@@ -266,110 +266,198 @@ TransformNode::TransformNode(std::shared_ptr<const ModuleInstantiation> mi, std:
 {
 }
 
-std::shared_ptr<const Geometry> TransformNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
-                                                         DragResult& result)
+void TransformNode::dragBegin()
 {
-  if (!(dragflags & 0x80)) {
-    matrix_ = matrix;
-    dragflags |= 0x80;
-  }
-  Transform3d invmat = matrix_.inverse();
-  Vector3d pt_tran = invmat * pt;
-  Vector3d newpt_tran = invmat * newpt;
-  std::shared_ptr<PolySet> result_geom = nullptr;
+  matrix_ = matrix;
+  drag_init = true;
+  drag_axis = -1;
+  drag_prev_angle = NAN;
+  AbstractNode::dragBegin();
+}
 
-  result_geom = std::make_shared<PolySet>(3);
-  for (size_t i = 0; i < children.size(); i++) {
-    auto& child = children[i];
-    int fresh = std::isnan(result.anchor[0]);
-    std::shared_ptr<const Geometry> child_geom = child->dragPoint(pt_tran, newpt_tran, result);
+namespace {
+
+constexpr double DRAG_TOL = 1e-3;
+constexpr double DRAG_SNAP = 0.1;  // translate grid
+constexpr double DRAG_SNAP_SCALE = 0.01;
+constexpr double DRAG_SNAP_ANGLE = 1;  // degrees
+
+DragMod transformMod(const std::string& name, std::vector<int> arrinfo, double value)
+{
+  DragMod mod;
+  mod.name = name;
+  mod.index = 1;  // translate(obj, v), rotate(obj, a, ...), scale(obj, v)
+  mod.arrinfo = std::move(arrinfo);
+  mod.value = value;
+  return mod;
+}
+
+Matrix3d eulerMatrix(const Vector3d& e)
+{
+  return (Eigen::AngleAxisd(e[2] * M_PI / 180, Vector3d::UnitZ()) *
+          Eigen::AngleAxisd(e[1] * M_PI / 180, Vector3d::UnitY()) *
+          Eigen::AngleAxisd(e[0] * M_PI / 180, Vector3d::UnitX()))
+    .toRotationMatrix();
+}
+
+/// Choose the angle closest to prev (360 degree periods), so a drag can turn
+/// past +-180 degrees and even several times around without jumping.
+double unwrapAngle(double angle, double prev)
+{
+  if (std::isnan(prev)) return angle;
+  return angle + 360 * std::round((prev - angle) / 360);
+}
+
+}  // namespace
+
+/*!
+  Drag of a point which belongs to a child of this transform.
+
+  translate: the point moves along the marked axes (line, plane or screen plane).
+  scale:     like translate; the factor is new position / old position per axis.
+  rotate:    the point moves on a circle around the rotation axis. The mouse ray
+             is intersected with the plane of that circle and the angle is
+             measured from the point's position at angle 0. This is absolute
+             (no accumulation of errors); only the previous angle is kept to
+             continue smoothly beyond +-180 degrees.
+ */
+std::shared_ptr<const Geometry> TransformNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
+                                                         const Vector3d& dir, DragResult& result)
+{
+  if (!drag_init) dragBegin();
+  const Transform3d invmat = matrix_.inverse();
+  const Vector3d pt_tran = invmat * pt;
+  const Vector3d newpt_tran = invmat * newpt;
+  const Vector3d dir_tran = invmat.linear() * dir;
+
+  // The innermost draggable node wins: give the children the first chance.
+  auto result_geom = std::make_shared<PolySet>(3);
+  bool child_claimed = false, found = false;
+  for (auto& child : children) {
+    const bool fresh = std::isnan(result.anchor[0]);
+    auto child_geom = child->dragPoint(pt_tran, newpt_tran, dir_tran, result);
     if (fresh && !std::isnan(result.anchor[0])) {
       result.anchor = matrix * result.anchor;
+      child_claimed = true;
     }
-    std::shared_ptr<const PolySet> ps = nullptr;
-    ps = std::dynamic_pointer_cast<const PolySet>(child_geom);
+    auto ps = std::dynamic_pointer_cast<const PolySet>(child_geom);
     if (ps == nullptr) continue;
-    bool found = false;
-    if (dragflags) {
-      for (const auto& v : ps->vertices) {
-        if ((v - pt_tran).norm() < 1e-3) {
-          found = true;
-          break;
-        }
-      }
+    for (const auto& v : ps->vertices) {
+      if (!found && (v - pt_tran).norm() < DRAG_TOL) found = true;
+      result_geom->vertices.push_back(matrix_ * v);
     }
-    if (_name == "rotate") {
-      if (dragflags && found) {
-        result.modname = "rotate";
-        result.mods.clear();
-        double sx = 0, sy = 0, sz = 0;
-        double cx = 1, cy = 1, cz = 1;
-
-        if (dragflags & 1) {
-          double newang = atan2(newpt_tran[2], newpt_tran[1]);
-          cx = cos(newang);
-          sx = sin(newang);
-        }
-        if (dragflags & 2) {
-          double newang = atan2(newpt_tran[2], newpt_tran[0]);
-          cy = cos(newang);
-          sy = sin(newang);
-        }
-        if (dragflags & 4) {
-          double newang = atan2(newpt_tran[1], newpt_tran[0]);
-          cz = cos(newang);
-          sz = sin(newang);
-        }
-
-        Matrix3d M;
-        M << cy * cz, cz * sx * sy - cx * sz, cx * cz * sy + sx * sz, cy * sz, cx * cz + sx * sy * sz,
-          -cz * sx + cx * sy * sz, -sy, cy * sx, cx * cy;
-        matrix = matrix_;
-        matrix.rotate(M);
-        result.anchor = matrix * pt_tran;
-        if (dragflags & 1) {
-          DragMod mod;
-          mod.index = 0;
-          mod.name = "angle";
-          mod.arrinfo.push_back(0);
-          double newang = atan2(matrix(2, 0), matrix(1, 0));
-          mod.value = newang * 180 / M_PI;
-          result.mods.push_back(mod);
-        }
-        if (dragflags & 2) {
-          DragMod mod;
-          mod.index = 0;
-          mod.name = "angle";
-          mod.arrinfo.push_back(1);
-          double newang = atan2(matrix(2, 0), matrix(0, 0));
-          mod.value = newang * 180 / M_PI;
-          result.mods.push_back(mod);
-        }
-        if (dragflags & 4) {
-          DragMod mod;
-          mod.index = 0;
-          mod.name = "angle";
-          mod.arrinfo.push_back(2);
-          double newang = atan2(matrix(1, 0), matrix(0, 0));
-          mod.value = newang * 180 / M_PI;
-          result.mods.push_back(mod);
-        }
-      }
-    }
-    if (_name == "translate") {
-      if (dragflags && found) {
-        Vector3d tranvect(0, 0, 0);
-        for (i = 0; i < 3; i++)
-          if (dragflags & (1 << i)) tranvect[i] = newpt_tran[i] - pt_tran[i];
-
-        matrix = matrix_;
-        matrix.translate(tranvect);
-        result.anchor = matrix * pt_tran;
-      }
-    }
-    result_geom->vertices = ps->vertices;  // TODO concatenate vertices
-    result_geom->transform(matrix_);
   }
+  if (child_claimed || !found || !(dragflags & 15)) return result_geom;
+
+  std::vector<DragMod> mods;
+  if (_name == "translate") {
+    // in parent coordinates the translation simply adds
+    const Vector3d target = dragConstrain(pt, newpt, dir, dragflags);
+    const Vector3d v0 = matrix_.translation();
+    Vector3d v = v0;
+    for (int k = 0; k < 3; k++) {
+      if (!(dragflags & (1 << k))) continue;
+      v[k] = dragSnap(v0[k] + target[k] - pt[k], DRAG_SNAP);
+      mods.push_back(transformMod("v", {k}, v[k]));
+    }
+    matrix = matrix_;
+    matrix.translation() = v;
+  } else if (_name == "scale") {
+    const Vector3d s0 = matrix_.linear().diagonal();
+    Vector3d s = s0;
+    if (dragflags & 8) {  // scale(marked(2)): uniform factor along the line origin -> point
+      Vector3d target;
+      if (!dragRayLine(newpt, dir, Vector3d::Zero(), pt, target)) target = newpt;
+      if (pt.norm() > DRAG_TOL) {
+        const double f = dragSnap(s0[0] * target.dot(pt) / pt.dot(pt), DRAG_SNAP_SCALE);
+        if (f != 0) {
+          s = Vector3d(f, f, f);
+          mods.push_back(transformMod("v", {}, f));
+        }
+      }
+    } else {
+      int mask = 0;  // axes which can change: marked and point not on the plane
+      for (int k = 0; k < 3; k++)
+        if ((dragflags & (1 << k)) && fabs(pt_tran[k]) > DRAG_TOL) mask |= 1 << k;
+      const Vector3d target = dragConstrain(pt, newpt, dir, mask);
+      for (int k = 0; k < 3; k++) {
+        if (!(mask & (1 << k))) continue;
+        const double f = dragSnap(target[k] / pt_tran[k], DRAG_SNAP_SCALE);
+        if (f == 0) continue;
+        s[k] = f;
+        mods.push_back(transformMod("v", {k}, f));
+      }
+    }
+    matrix = matrix_;
+    matrix.linear() = s.asDiagonal();
+  } else if (_name == "rotate") {
+    Vector3d axis_parent;  // rotation axis in parent coordinates
+    Vector3d zero_parent;  // grabbed point at angle 0 of the dragged axis
+    Matrix3d after = Matrix3d::Identity();
+    double angle0 = NAN;
+    if (!std::isnan(rot_euler[0]) && (dragflags & 7)) {
+      if (drag_axis < 0) {
+        // several marked angles: use the axis we look along most, its circle is
+        // seen most face-on and is the easiest to follow with the mouse
+        double best = -1;
+        for (int k = 0; k < 3; k++) {
+          if (!(dragflags & (1 << k))) continue;
+          Matrix3d a = Matrix3d::Identity();
+          if (k == 0) a = eulerMatrix(Vector3d(0, rot_euler[1], rot_euler[2]));
+          if (k == 1) a = eulerMatrix(Vector3d(0, 0, rot_euler[2]));
+          const double score = fabs((a * Vector3d::Unit(k)).normalized().dot(dir.normalized()));
+          if (score > best) {
+            best = score;
+            drag_axis = k;
+          }
+        }
+      }
+      const int k = drag_axis;
+      Vector3d before_e(0, 0, 0), after_e(0, 0, 0);
+      for (int j = 0; j < k; j++) before_e[j] = rot_euler[j];
+      for (int j = k + 1; j < 3; j++) after_e[j] = rot_euler[j];
+      after = eulerMatrix(after_e);
+      axis_parent = after * Vector3d::Unit(k);
+      zero_parent = after * (eulerMatrix(before_e) * pt_tran);
+      angle0 = rot_euler[k];
+    } else if (!std::isnan(rot_angle) && (dragflags & 8)) {
+      axis_parent = rot_axis.normalized();
+      zero_parent = pt_tran;
+      angle0 = rot_angle;
+    }
+    if (!std::isnan(angle0)) {
+      // The circle lies in the plane through the grabbed point, normal to the axis.
+      Vector3d target;
+      if (!dragRayPlane(newpt, dir, pt, axis_parent, target)) {
+        target = newpt - axis_parent.normalized() * axis_parent.normalized().dot(newpt - pt);
+      }
+      double angle = dragAngleAbout(axis_parent, zero_parent, target);
+      if (!std::isnan(angle)) {
+        angle = unwrapAngle(angle, std::isnan(drag_prev_angle) ? angle0 : drag_prev_angle);
+        drag_prev_angle = angle;
+        angle = dragSnap(angle, DRAG_SNAP_ANGLE);
+        Matrix3d M;
+        if (!std::isnan(rot_euler[0]) && (dragflags & 7)) {
+          Vector3d e = rot_euler;
+          e[drag_axis] = angle;
+          M = eulerMatrix(e);
+          mods.push_back(transformMod("a", {drag_axis}, angle));
+        } else {
+          M = Eigen::AngleAxisd(angle * M_PI / 180, rot_axis.normalized()).toRotationMatrix();
+          mods.push_back(transformMod("a", {}, angle));
+        }
+        matrix = matrix_;
+        matrix.linear() = M;
+      }
+    }
+  }
+  if (mods.empty()) return result_geom;
+
+  result.modname = _name;
+  result.mods = mods;
+  result.objFirst = true;
+  result.line = py_line;
+  result.anchor = matrix * pt_tran;
   return result_geom;
 }
 

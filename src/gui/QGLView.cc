@@ -411,6 +411,11 @@ void QGLView::mouseMoveEvent(QMouseEvent *event)
       mouseDraggedSel = findObject(mouseDraggedPoint.x(), mouseDraggedPoint.y());
       if (mouseDraggedSel != nullptr && mouseDraggedSel->type != SelectionType::SELECTION_POINT)
         mouseDraggedSel = nullptr;
+      if (mouseDraggedSel != nullptr) {
+        // show the grabbed point right away, MainWindow moves it along with the drag
+        drag_obj = std::make_shared<SelectedObject>(*mouseDraggedSel);
+        update();
+      }
     }
     if (mouseDraggedSel != nullptr) {
       int viewport[4] = {0, 0, 0, 0};
@@ -421,10 +426,16 @@ void QGLView::mouseMoveEvent(QMouseEvent *event)
                  this->modelview, this->projection, viewport, &viewcoord[0], &viewcoord[1],
                  &viewcoord[2]);
 
-      Vector3d newpos;
+      Vector3d newpos, nearpos, farpos;
       gluUnProject(viewcoord[0] + drag_x, viewcoord[1] + drag_y, viewcoord[2], this->modelview,
                    this->projection, viewport, &newpos[0], &newpos[1], &newpos[2]);
-      emit dragPoint(mouseDraggedSel->pt[0], newpos);
+      // viewing ray through the mouse pixel, lets the nodes intersect it with the
+      // line or plane the grabbed point can actually move in
+      gluUnProject(viewcoord[0] + drag_x, viewcoord[1] + drag_y, 0, this->modelview, this->projection,
+                   viewport, &nearpos[0], &nearpos[1], &nearpos[2]);
+      gluUnProject(viewcoord[0] + drag_x, viewcoord[1] + drag_y, 1, this->modelview, this->projection,
+                   viewport, &farpos[0], &farpos[1], &farpos[2]);
+      emit dragPoint(mouseDraggedSel->pt[0], newpos, farpos - nearpos);
     }
     return;
   }
@@ -514,8 +525,11 @@ void QGLView::mouseReleaseEvent(QMouseEvent *event)
 {
   mouse_drag_active = false;
   releaseMouse();
+  if (drag_obj != nullptr) {
+    drag_obj = nullptr;
+    update();
+  }
   if (mouseDraggedSel != nullptr) {
-    shown_obj = nullptr;
     emit dragPointEnd(mouseDraggedSel->pt[0]);
   }
   mouseDraggedSel = nullptr;

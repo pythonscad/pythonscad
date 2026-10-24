@@ -31,6 +31,7 @@
 #include "pyopenscad.h"
 #include "pyfunctions.h"
 #include "pyconversion.h"
+#include "pydata.h"
 #include "GeometryEvaluator.h"
 #include "TransformNode.h"
 #include "utils/degree_trig.h"
@@ -57,7 +58,7 @@ PyObject *python_number_scale(PyObject *pynum, Vector3d scalevec, int vecs)
   return nullptr;
 }
 
-PyObject *python_scale_sub(PyObject *obj, Vector3d scalevec)
+PyObject *python_scale_sub(PyObject *obj, Vector3d scalevec, int dragflags)
 {
   PyObject *mat = python_number_scale(obj, scalevec, 4);
   if (mat != nullptr) return mat;
@@ -71,6 +72,7 @@ PyObject *python_scale_sub(PyObject *obj, Vector3d scalevec)
   auto child_dict = py_owned(child_dict_raw);
   if (child == NULL) return propagate_or_typeerror("Invalid type for Object in scale");
   node->matrix.scale(scalevec);
+  node->dragflags = dragflags;
   node->setPyName(child->getPyName());
   node->children.push_back(child);
   PyObject *pyresult = PyOpenSCADObjectFromNode(type, node);
@@ -96,7 +98,15 @@ PyObject *python_scale_sub(PyObject *obj, Vector3d scalevec)
 PyObject *python_scale_core(PyObject *obj, PyObject *val_v)
 {
   double x = 1, y = 1, z = 1;
-  if (python_vectorval(val_v, 2, 3, &x, &y, &z)) {
+  int dragflags = 0;
+  if (val_v != nullptr && (val_v->ob_type == &PyDataType || PyUnicode_Check(val_v))) {
+    // scalar marked factor: scale(obj, marked(2)) or scale(obj, "2")
+    if (python_numberval(val_v, &x, &dragflags, 8)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid vector specifiaction in scale, use 1 to 3 ordinates.");
+      return NULL;
+    }
+    y = z = x;
+  } else if (python_vectorval(val_v, 2, 3, &x, &y, &z, nullptr, &dragflags)) {
     PyErr_SetString(PyExc_TypeError, "Invalid vector specifiaction in scale, use 1 to 3 ordinates.");
     return NULL;
   }
@@ -110,7 +120,7 @@ PyObject *python_scale_core(PyObject *obj, PyObject *val_v)
     }
   }
 
-  return python_scale_sub(obj, scalevec);
+  return python_scale_sub(obj, scalevec, dragflags);
 }
 
 PyObject *python_scale(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -204,6 +214,12 @@ PyObject *python_rotate_sub(PyObject *obj, Vector3d vec3, double angle, PyObject
   DECLARE_INSTANCE();
   auto node = std::make_shared<TransformNode>(instance, "rotate");
   node->dragflags = dragflags;
+  // keep the arguments, dragging rotates along the real circle
+  if (isnan(angle)) node->rot_euler = vec3;
+  else {
+    node->rot_axis = vec3;
+    node->rot_angle = angle;
+  }
 
   PyObject *child_dict_raw = nullptr;
   std::shared_ptr<AbstractNode> child = PyOpenSCADObjectToNodeMulti(obj, &child_dict_raw);
@@ -267,7 +283,7 @@ PyObject *python_rotate_core(PyObject *obj, PyObject *val_a, PyObject *val_v, Py
       return nullptr;
     }
     return python_rotate_sub(obj, vec3, NAN, ref, dragflags);
-  } else if (val_a != nullptr && val_v != nullptr && !python_numberval(val_a, &angle, nullptr, 0) &&
+  } else if (val_a != nullptr && val_v != nullptr && !python_numberval(val_a, &angle, &dragflags, 8) &&
              python_tovector(val_v, vec3) == 0) {
     return python_rotate_sub(obj, vec3, angle, ref, dragflags);
   }

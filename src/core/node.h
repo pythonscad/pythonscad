@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <cstddef>
 #include <deque>
 #include <memory>
@@ -10,6 +11,7 @@
 
 #include "core/AST.h"
 #include "core/BaseVisitable.h"
+#include "core/DragResult.h"
 #include "core/ModuleInstantiation.h"
 #include "geometry/linalg.h"
 #include "geometry/Geometry.h"
@@ -22,22 +24,6 @@ void progress_report_prep(const std::shared_ptr<AbstractNode>& root,
                           void (*f)(const std::shared_ptr<const AbstractNode>& node, void *vp, int mark),
                           void *vp);
 void progress_report_fin();
-class DragMod
-{
-public:
-  std::string name;
-  int index;
-  std::vector<int> arrinfo;
-  double value;
-};
-
-class DragResult
-{
-public:
-  Vector3d anchor;
-  std::string modname;
-  std::vector<DragMod> mods;
-};
 /*!
 
    The node tree is the result of evaluation of a module instantiation
@@ -94,18 +80,46 @@ public:
 
   std::shared_ptr<AbstractNode> clone(void);
   void dump_counts(int indent, int use_cnt);
+  /// Line of the python script statement which created this node (0 = unknown).
+  /// Lets the drag code patch exactly this call, not the first look-alike.
+  int py_line = 0;
 #ifdef ENABLE_PYTHON
   std::string py_name;
   void setPyName(const std::string& name);
   std::string getPyName(void);
 #endif
-  virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& delta,
-                                                    DragResult& result)
+  /*! Called once at the start of every interactive drag gesture, before the
+      first dragPoint(). Nodes snapshot their pre-drag state here so that a
+      second drag on the same (not re-evaluated) tree compares against the
+      current values instead of the values of the very first drag.
+      The default implementation just forwards to all children. */
+  virtual void dragBegin()
   {
-    printf("drag Point on AbstractNode\n");
-    return nullptr;
+    for (auto& child : children) child->dragBegin();
   }
+
+  /*! Default: pass the drag through to all children, so that draggable
+      primitives inside wrapper nodes (color(), render(), ...) still react.
+      Nodes which change coordinates (transforms) or own parameters override this. */
+  virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& newpt,
+                                                    const Vector3d& dir, DragResult& result)
+  {
+    return dragPointChildren(pt, newpt, dir, result);
+  }
+
+  /*! Forward a drag to all children and return their vertices collected in one
+      PolySet (only vertices are needed by the callers for hit testing). */
+  std::shared_ptr<const Geometry> dragPointChildren(const Vector3d& pt, const Vector3d& newpt,
+                                                    const Vector3d& dir, DragResult& result);
 };
+
+/*! Snap a dragged length/angle to a grid, so the live view and the value
+    written back into the source agree and no 12.300000000000001 appears. */
+inline double dragSnap(double value, double step)
+{
+  if (step <= 0) return value;
+  return std::round(value / step) * step;
+}
 
 class AbstractIntersectionNode : public AbstractNode
 {
