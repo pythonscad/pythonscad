@@ -11,6 +11,7 @@
 
 #include "core/AST.h"
 #include "core/BaseVisitable.h"
+#include "core/DragResult.h"
 #include "core/ModuleInstantiation.h"
 #include "geometry/linalg.h"
 #include "geometry/Geometry.h"
@@ -23,22 +24,6 @@ void progress_report_prep(const std::shared_ptr<AbstractNode>& root,
                           void (*f)(const std::shared_ptr<const AbstractNode>& node, void *vp, int mark),
                           void *vp);
 void progress_report_fin();
-class DragMod
-{
-public:
-  std::string name;
-  int index;
-  std::vector<int> arrinfo;
-  double value;
-};
-
-class DragResult
-{
-public:
-  Vector3d anchor;
-  std::string modname;
-  std::vector<DragMod> mods;
-};
 /*!
 
    The node tree is the result of evaluation of a module instantiation

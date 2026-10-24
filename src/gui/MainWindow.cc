@@ -122,6 +122,7 @@
 #include "core/SourceFileCache.h"
 #include "core/customizer/CommentParser.h"
 #include "core/node.h"
+#include "core/DragPatch.h"
 #include "core/parsersettings.h"
 #include "core/progress.h"
 #include "geometry/Geometry.h"
@@ -770,159 +771,6 @@ void MainWindow::toolTipShow(QPoint pt, QString msg)
   QToolTip::showText(pos, msg, this);
 }
 
-namespace {
-
-/// One text replacement [start, end) -> text in the source code.
-struct DragEdit {
-  size_t start;
-  size_t end;
-  std::string text;
-};
-
-bool isIdentChar(char c)
-{
-  return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
-}
-
-void trimSpan(const std::string& src, size_t& start, size_t& end)
-{
-  while (start < end && std::isspace(static_cast<unsigned char>(src[start]))) start++;
-  while (end > start && std::isspace(static_cast<unsigned char>(src[end - 1]))) end--;
-}
-
-/// Format a dragged value without float noise (12.300000000000001 -> 12.3).
-std::string formatDragValue(double value)
-{
-  value = std::round(value * 1e4) / 1e4;
-  if (value == 0) value = 0;  // no "-0"
-  std::ostringstream ss;
-  ss.imbue(std::locale::classic());
-  ss << std::setprecision(10) << value;
-  return ss.str();
-}
-
-/// Split the top level arguments of a call starting at '(' at position open.
-/// Returns false if the call is not terminated. Strings are skipped properly.
-bool splitCallArgs(const std::string& src, size_t open, std::vector<std::pair<size_t, size_t>>& args,
-                   size_t& close)
-{
-  std::vector<char> stack;
-  size_t argstart = open + 1;
-  for (size_t i = open; i < src.size(); i++) {
-    const char c = src[i];
-    if (c == '"' || c == '\'') {
-      const size_t q = src.find(c, i + 1);
-      if (q == std::string::npos) return false;
-      i = q;
-      continue;
-    }
-    if (c == '#') {  // python comment until end of line
-      const size_t nl = src.find('\n', i);
-      if (nl == std::string::npos) return false;
-      i = nl;
-      continue;
-    }
-    if (c == '(' || c == '[' || c == '{') stack.push_back(c);
-    else if (c == ')' || c == ']' || c == '}') {
-      if (stack.empty()) return false;
-      stack.pop_back();
-      if (stack.empty()) {
-        if (i > argstart) args.emplace_back(argstart, i);
-        close = i;
-        return true;
-      }
-    } else if (c == ',' && stack.size() == 1) {
-      args.emplace_back(argstart, i);
-      argstart = i + 1;
-    }
-  }
-  return false;
-}
-
-/// Inside [start,end) (a list literal) descend to the element given by path.
-bool findListElement(const std::string& src, size_t& start, size_t& end, const std::vector<int>& path)
-{
-  for (int index : path) {
-    trimSpan(src, start, end);
-    if (start >= end || (src[start] != '[' && src[start] != '(')) return false;
-    std::vector<std::pair<size_t, size_t>> elems;
-    size_t close;
-    if (!splitCallArgs(src, start, elems, close) || close >= end) return false;
-    if (index < 0 || index >= static_cast<int>(elems.size())) return false;
-    start = elems[index].first;
-    end = elems[index].second;
-  }
-  trimSpan(src, start, end);
-  return start < end;
-}
-
-/// Try to compute all edits for one call of `name` whose '(' is at position open.
-bool editsForCall(const std::string& src, size_t open, const DragResult& result,
-                  std::vector<DragEdit>& edits)
-{
-  std::vector<std::pair<size_t, size_t>> args;
-  size_t close;
-  if (!splitCallArgs(src, open, args, close)) return false;
-
-  std::vector<DragEdit> local;
-  for (const auto& mod : result.mods) {
-    size_t vstart = std::string::npos, vend = std::string::npos;
-    // named parameter?  name = value
-    for (const auto& arg : args) {
-      size_t s = arg.first, e = arg.second;
-      trimSpan(src, s, e);
-      if (src.compare(s, mod.name.size(), mod.name) != 0) continue;
-      size_t k = s + mod.name.size();
-      while (k < e && std::isspace(static_cast<unsigned char>(src[k]))) k++;
-      if (k < e && src[k] == '=' && (k + 1 >= e || src[k + 1] != '=')) {
-        vstart = k + 1;
-        vend = e;
-      }
-    }
-    // positional parameter
-    if (vstart == std::string::npos) {
-      if (mod.index < 0 || mod.index >= static_cast<int>(args.size())) return false;
-      vstart = args[mod.index].first;
-      vend = args[mod.index].second;
-    }
-    if (!findListElement(src, vstart, vend, mod.arrinfo)) return false;
-    // only values marked as draggable (written as string) are patched
-    const char q = src[vstart];
-    if (vend - vstart < 2 || (q != '"' && q != '\'') || src[vend - 1] != q) return false;
-    local.push_back({vstart + 1, vend - 1, formatDragValue(mod.value)});
-  }
-  edits = std::move(local);
-  return !edits.empty();
-}
-
-/// Patch all mods of the drag result into src. Returns false if no matching call was found.
-bool applyDragResult(const std::string& src, const DragResult& result, std::string& out)
-{
-  if (result.modname.empty() || result.mods.empty()) return false;
-  size_t pos = 0;
-  while ((pos = src.find(result.modname, pos)) != std::string::npos) {
-    const size_t after = pos + result.modname.size();
-    const bool word_start = pos == 0 || !isIdentChar(src[pos - 1]);
-    size_t open = after;
-    while (open < src.size() && std::isspace(static_cast<unsigned char>(src[open]))) open++;
-    pos = after;
-    if (!word_start || open >= src.size() || src[open] != '(') continue;
-    if (after < src.size() && isIdentChar(src[after])) continue;
-
-    std::vector<DragEdit> edits;
-    if (!editsForCall(src, open, result, edits)) continue;
-    // apply back to front so earlier offsets stay valid
-    std::sort(edits.begin(), edits.end(),
-              [](const DragEdit& a, const DragEdit& b) { return a.start > b.start; });
-    out = src;
-    for (const auto& e : edits) out.replace(e.start, e.end - e.start, e.text);
-    return true;
-  }
-  return false;
-}
-
-}  // namespace
-
 void MainWindow::dragPoint(Vector3d pt, Vector3d newpt)
 {
   if (this->rootNode == nullptr) return;
@@ -976,6 +824,7 @@ void MainWindow::dragProcess()
         };
         obj.pt.push_back(dragResult.anchor);
         qglview->shown_obj = std::make_shared<SelectedObject>(obj);
+        qglview->update();
       }
       GuiLocker::lock();
       compileDone(true);
@@ -990,6 +839,7 @@ void MainWindow::dragFinish()
   dragActive = false;
   dragEndRequested = false;
   qglview->shown_obj = nullptr;
+  qglview->update();
 
   const std::string sourcecode = std::string(this->lastCompiledDoc.toUtf8().constData());
   std::string patched;
@@ -2924,7 +2774,7 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
     owner->contentsRendered = false;
     clearPendingAfterRender();
   }
-  this->qglview->shown_obj = nullptr;
+  if (!dragActive) this->qglview->shown_obj = nullptr;  // keep the drag marker visible
   compileEnded();
   if (root_geom && pendingAfterRender_ != PendingAfterRender::None) {
     // Continue Export / Print after GuiLocker is released by compileEnded().

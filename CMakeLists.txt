@@ -1625,6 +1625,7 @@ set(CORE_SOURCES
   src/core/customizer/ParameterSet.cc
   src/core/function.cc
   src/core/module.cc
+  src/core/DragPatch.cc
   src/core/node.cc
   src/core/parsersettings.cc
   src/core/primitives.cc

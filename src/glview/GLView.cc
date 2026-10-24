@@ -271,9 +271,7 @@ void GLView::paintGL()
   glLineWidth(2);
   glColor3d(1.0, 0.0, 0.0);
 
-  glColor3f(0, 1, 0);
   Vector3d eyedir(this->modelview[2], this->modelview[6], this->modelview[10]);
-  if (shown_obj != nullptr) showObject(*shown_obj, eyedir);
 #ifdef ENABLE_PYTHON
   if (this->handle_mode) {
     glColor3f(0, 0, 1);
@@ -299,6 +297,14 @@ void GLView::paintGL()
   glColor3f(1, 0, 0);
   for (const SelectedObject& obj : this->selected_obj) {
     showObject(obj, eyedir);
+  }
+  // Draw the hovered/dragged marker last and without depth test: it sits exactly
+  // on a vertex of the model and was hidden or z-fighting ("blinking") before.
+  if (shown_obj != nullptr) {
+    glDisable(GL_DEPTH_TEST);
+    glColor3f(0, 1, 0);
+    showObject(*shown_obj, eyedir);
+    glEnable(GL_DEPTH_TEST);
   }
   glDisable(GL_LIGHTING);
   if (showaxes) GLView::showSmallaxes(axescolor);
