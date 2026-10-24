@@ -8,6 +8,7 @@ on:
       - '.github/workflows/build-pyqt6-bindings.yml'
       - 'scripts/ci/fetch_pyqt6_bindings.sh'
       - 'scripts/ci/patch_pyqt6_free_operators.py'
+      - 'scripts/ci/patch_pyqt6_python315.py'
       - 'scripts/ci/patch_pyqt6_removed_qt_apis.py'
       - 'scripts/ci/patch_pyqtbuild_win32_pythonlib.py'
       - 'scripts/ci/pyqt6-build-requirements.txt'
@@ -22,6 +23,7 @@ on:
       - '.github/workflows/build-pyqt6-bindings.yml'
       - 'scripts/ci/fetch_pyqt6_bindings.sh'
       - 'scripts/ci/patch_pyqt6_free_operators.py'
+      - 'scripts/ci/patch_pyqt6_python315.py'
       - 'scripts/ci/patch_pyqt6_removed_qt_apis.py'
       - 'scripts/ci/patch_pyqtbuild_win32_pythonlib.py'
       - 'scripts/ci/pyqt6-build-requirements.txt'
@@ -92,6 +94,8 @@ jobs:
 
           # Older PyQt6 sdists may reference Qt APIs removed in newer Qt minors.
           python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_removed_qt_apis.py" sip/ "$QT_VERSION"
+          # ...and C-API calls removed in newer Python versions.
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_python315.py" .
 
           sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
@@ -237,6 +241,8 @@ jobs:
 
           # Older PyQt6 sdists may reference Qt APIs removed in newer Qt minors.
           python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_removed_qt_apis.py" sip/ "$QT_VERSION"
+          # ...and C-API calls removed in newer Python versions.
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_python315.py" .
 
           sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
@@ -430,6 +436,8 @@ jobs:
 
           # Older PyQt6 sdists may reference Qt APIs removed in newer Qt minors.
           python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_removed_qt_apis.py" sip/ "$QT_VERSION"
+          # ...and C-API calls removed in newer Python versions.
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_python315.py" .
 
           mkdir -p /tmp/pyqt-staging
           WIN_STAGING_DIR=$(cygpath -w /tmp/pyqt-staging)
