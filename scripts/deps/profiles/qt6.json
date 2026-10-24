@@ -73,15 +73,11 @@
       "extends": null,
       "pre_commands": [
         "brew tap openscad/homebrew-tap",
-        "brew tap-new local/pinned-qt",
-        "curl -sSL https://raw.githubusercontent.com/Homebrew/homebrew-core/21ce42536b29140bf08d18b6847bc5528c46d33b/Formula/q/qt.rb -o {tap_repo}/Formula/qt.rb",
-        "brew install local/pinned-qt/qt",
-        "brew pin local/pinned-qt/qt",
-        "brew pin qtbase"
+        "python3 {script_dir}/brew-vendor-qt.py --tap local/pinned-qt --commit 21ce42536b29140bf08d18b6847bc5528c46d33b qtbase qt5compat qtmultimedia qtsvg qscintilla2",
+        "brew install local/pinned-qt/qtbase local/pinned-qt/qt5compat local/pinned-qt/qtmultimedia local/pinned-qt/qtsvg local/pinned-qt/qscintilla2",
+        "brew pin local/pinned-qt/qtbase"
       ],
-      "packages": [
-        "qscintilla2"
-      ]
+      "packages": []
     },
     "mageia": {
       "extends": null,

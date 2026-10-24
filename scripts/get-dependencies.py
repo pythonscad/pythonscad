@@ -47,6 +47,7 @@ import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -236,13 +237,11 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         raise SystemExit(f"No package manager defined for {distro.id} (and none found in its inheritance chain)")
 
     pre_cmds = [cmd.split() for cmd in d.get("pre_commands", [])]
-    # Allow pre_commands to reference the live Homebrew prefix, since
-    # pre_commands are plain argv lists (no shell, no $() expansion) and
-    # the prefix differs between Apple Silicon (/opt/homebrew) and Intel
-    # (/usr/local) runners.
-    if mgr == "brew" and any("{tap_repo}" in c for c in d.get("pre_commands", [])):
-        tap_repo = subprocess.check_output(["brew", "--repository", "local/pinned-qt"], text=True).strip()
-        pre_cmds = [[tok.replace("{tap_repo}", tap_repo) for tok in cmd] for cmd in pre_cmds]
+    # pre_commands are plain argv lists (no shell, no $() expansion), so
+    # allow them to reference helper scripts next to this one regardless of
+    # the caller's working directory.
+    script_dir = str(Path(__file__).resolve().parent)
+    pre_cmds = [[tok.replace("{script_dir}", script_dir) for tok in cmd] for cmd in pre_cmds]
 
     cmds: List[List[str]] = []
     cmds.extend(pre_cmds)
@@ -271,9 +270,8 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         if shutil.which("brew") is None:
             raise SystemExit("Homebrew not found. Install from https://brew.sh first.")
         # Supported Homebrew switch: skip the "upgrade dependents" pass so a
-        # later install does not cascade-upgrade pinned kegs. Pair with
-        # `brew pin qtbase` in qt6.json and the qscintilla2 special-case below
-        # (#1132 / #1134).
+        # later install does not cascade-upgrade pinned kegs. Pairs with the
+        # vendored local/pinned-qt formulae in qt6.json (#1132 / #1134).
         os.environ.setdefault("HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK", "1")
         # Homebrew 6.0+ requires taps to be explicitly trusted before formulae
         # from them can be installed. Insert `brew trust <tap>` after each
@@ -289,20 +287,8 @@ def build_commands(cfg: dict, distro: DistroInfo, packages: List[str], assume_ye
         cmds.clear()
         cmds.extend(trusted)
         cmds.append(["brew", "update"])
-        # qscintilla2 depends on latest qtbase. With qtbase pinned to 6.11,
-        # a normal `brew install qscintilla2` refuses ("You must brew unpin
-        # qtbase"). Install everything else first, then pour qscintilla2
-        # without resolving/upgrading that dependency. Keep it in `packages`
-        # so profile merges still schedule it (#1134 Copilot review).
-        brew_pkgs = list(packages)
-        qscintilla = None
-        if "qscintilla2" in brew_pkgs:
-            brew_pkgs = [p for p in brew_pkgs if p != "qscintilla2"]
-            qscintilla = "qscintilla2"
-        if brew_pkgs:
-            cmds.append(["brew", "install", *brew_pkgs])
-        if qscintilla is not None:
-            cmds.append(["brew", "install", "--ignore-dependencies", qscintilla])
+        if packages:
+            cmds.append(["brew", "install", *packages])
     elif mgr == "zypper":
         if assume_yes:
             cmds.append(["zypper", "--non-interactive", "install", *packages])

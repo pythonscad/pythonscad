@@ -36,10 +36,7 @@ def main() -> int:
     # pythonscad profiles for the macos distro.
     required_pre_commands = {
         "brew tap openscad/homebrew-tap",
-        "brew tap-new local/pinned-qt",
-        "brew install local/pinned-qt/qt",
-        "brew pin local/pinned-qt/qt",
-        "brew pin qtbase",
+        "brew pin local/pinned-qt/qtbase",
     }
 
     combinations = [
@@ -65,10 +62,30 @@ def main() -> int:
             )
             return 1
 
-        packages = macos.get("packages", [])
-        if "qscintilla2" not in packages:
+        # The pinned Qt stack (including qscintilla2) must be vendored and
+        # installed from the local tap, never from homebrew/core, otherwise
+        # Homebrew pulls in the newest Qt (#1132).
+        pre_commands_list = macos.get("pre_commands", [])
+        vendor = [c for c in pre_commands_list if "brew-vendor-qt.py" in c]
+        install = [c for c in pre_commands_list if c.startswith("brew install local/pinned-qt/")]
+        if not vendor or not install:
             print(
-                f"FAIL: profiles {profiles} dropped qscintilla2 from macos packages: {packages}",
+                f"FAIL: profiles {profiles} lost the vendored Qt pre_commands: {pre_commands_list}",
+                file=sys.stderr,
+            )
+            return 1
+        for formula in ("qtbase", "qscintilla2"):
+            if formula not in vendor[0].split() or f"local/pinned-qt/{formula}" not in install[0].split():
+                print(
+                    f"FAIL: profiles {profiles} do not vendor+install pinned {formula}",
+                    file=sys.stderr,
+                )
+                return 1
+        packages = macos.get("packages", [])
+        unpinned = [p for p in packages if p == "qt" or p.startswith("qt") or p == "qscintilla2"]
+        if unpinned:
+            print(
+                f"FAIL: profiles {profiles} install Qt from homebrew/core: {unpinned}",
                 file=sys.stderr,
             )
             return 1

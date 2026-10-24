@@ -70,7 +70,7 @@ jobs:
         run: |
           ./scripts/ci/fetch_pyqt6_bindings.sh \
             macos-arm64 macos-15-homebrew-qt6 \
-            "$(brew --prefix qt)/bin/qmake" "$(which python3)" libraries/python
+            "$(brew --prefix qtbase)/bin/qmake" "$(which python3)" libraries/python
 
       - name: Build arm64 Application
         env:
