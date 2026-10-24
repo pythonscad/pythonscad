@@ -302,8 +302,11 @@ void GLView::paintGL()
   // on a vertex of the model and were hidden or z-fighting ("blinking") before.
   if (shown_obj != nullptr || drag_obj != nullptr) {
     glDisable(GL_DEPTH_TEST);
-    glColor3f(0, 1, 0);
+    glColor3f(0, 1, 0);  // measurement hover marker
     if (shown_obj != nullptr) showObject(*shown_obj, eyedir);
+    // Drag handle: azure blue. Clearly differs from the measurement green, the
+    // red selection and from the yellow/green model colors of the default schemes.
+    glColor3f(0.0f, 0.6f, 1.0f);
     if (drag_obj != nullptr) showObject(*drag_obj, eyedir);
     glEnable(GL_DEPTH_TEST);
   }
