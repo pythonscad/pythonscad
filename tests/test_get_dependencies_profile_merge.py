@@ -36,10 +36,6 @@ def main() -> int:
     # pythonscad profiles for the macos distro.
     required_pre_commands = {
         "brew tap openscad/homebrew-tap",
-        "brew tap-new local/pinned-qt",
-        "brew install local/pinned-qt/qt",
-        "brew pin local/pinned-qt/qt",
-        "brew pin qtbase",
     }
 
     combinations = [
@@ -66,12 +62,13 @@ def main() -> int:
             return 1
 
         packages = macos.get("packages", [])
-        if "qscintilla2" not in packages:
-            print(
-                f"FAIL: profiles {profiles} dropped qscintilla2 from macos packages: {packages}",
-                file=sys.stderr,
-            )
-            return 1
+        for required in ("qt", "qscintilla2"):
+            if required not in packages:
+                print(
+                    f"FAIL: profiles {profiles} dropped {required} from macos packages: {packages}",
+                    file=sys.stderr,
+                )
+                return 1
 
     print("PASS")
     return 0
