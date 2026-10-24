@@ -66,7 +66,7 @@ public:
   std::string name() const override { return "cube"; }
   std::unique_ptr<const Geometry> createGeometry() const override;
   virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& delta,
-                                                    DragResult& result) override;
+                                                    const Vector3d& dir, DragResult& result) override;
   void dragBegin() override;
 
   double dim[3] = {1, 1, 1};
@@ -89,7 +89,7 @@ public:
   std::string name() const override { return "sphere"; }
   std::unique_ptr<const Geometry> createGeometry() const override;
   virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& delta,
-                                                    DragResult& result) override;
+                                                    const Vector3d& dir, DragResult& result) override;
 
   CurveDiscretizer discretizer;
   double r = 1;
@@ -131,7 +131,7 @@ public:
   std::string name() const override { return "cylinder"; }
   std::unique_ptr<const Geometry> createGeometry() const override;
   virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& delta,
-                                                    DragResult& result) override;
+                                                    const Vector3d& dir, DragResult& result) override;
 
   CurveDiscretizer discretizer;
   double r1 = 1, r2 = 1, h = 1;
@@ -155,7 +155,7 @@ public:
   std::vector<IndexedFace> faces;
   int convexity = 1;
   virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& delta,
-                                                    DragResult& result) override;
+                                                    const Vector3d& dir, DragResult& result) override;
   void dragBegin() override { points_ = points; }
   std::vector<Vector3d> points_;       // points at drag start
   std::vector<int> point_dragflags;    // per point: bit 0..2 x,y,z marked (empty = none)

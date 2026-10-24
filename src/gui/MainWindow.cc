@@ -771,7 +771,7 @@ void MainWindow::toolTipShow(QPoint pt, QString msg)
   QToolTip::showText(pos, msg, this);
 }
 
-void MainWindow::dragPoint(Vector3d pt, Vector3d newpt)
+void MainWindow::dragPoint(Vector3d pt, Vector3d newpt, Vector3d dir)
 {
   if (this->rootNode == nullptr) return;
   if (!dragActive) {
@@ -785,6 +785,7 @@ void MainWindow::dragPoint(Vector3d pt, Vector3d newpt)
   }
   dragPendingPt = pt;
   dragPendingNewPt = newpt;
+  dragPendingDir = dir;
   dragPending = true;
   // Coalesce mouse events: at most one re-evaluation per timer period, always
   // with the newest position. Events are no longer dropped while the GUI is locked.
@@ -816,7 +817,7 @@ void MainWindow::dragProcess()
   if (dragPending) {
     dragPending = false;
     dragResult.anchor[0] = NAN;
-    this->rootNode->dragPoint(dragPendingPt, dragPendingNewPt, dragResult);
+    this->rootNode->dragPoint(dragPendingPt, dragPendingNewPt, dragPendingDir, dragResult);
     if (!dragEndRequested) {
       if (!std::isnan(dragResult.anchor[0])) {
         SelectedObject obj = {

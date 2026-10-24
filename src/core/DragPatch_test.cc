@@ -200,3 +200,45 @@ TEST_CASE("applyDragResult patches polyhedron points", "[core][drag]")
     CHECK_FALSE(applyDragResult("polyhedron([[0,0,0],[1,0,0],[0,1,0]], f)", r, out));
   }
 }
+
+TEST_CASE("applyDragResult patches transforms in function and method form", "[core][drag]")
+{
+  DragResult r;
+  r.objFirst = true;
+
+  SECTION("translate")
+  {
+    r.modname = "translate";
+    r.mods = {mod("v", 1, {0}, 12), mod("v", 1, {2}, -3)};
+    CHECK(patched("c = cube(5).translate([marked(10), 0, \"0\"])", r) ==
+          "c = cube(5).translate([marked(12), 0, \"-3\"])");
+    CHECK(patched("c = translate(cube(5), [marked(10), 0, \"0\"])", r) ==
+          "c = translate(cube(5), [marked(12), 0, \"-3\"])");
+    CHECK(patched("c = pythonscad.translate(cube(5), [marked(10), 0, \"0\"])", r) ==
+          "c = pythonscad.translate(cube(5), [marked(12), 0, \"-3\"])");
+    CHECK(patched("c = cube(5).translate(v=[marked(10), 0, \"0\"])", r) ==
+          "c = cube(5).translate(v=[marked(12), 0, \"-3\"])");
+  }
+
+  SECTION("rotate euler angle and axis-angle form")
+  {
+    r.modname = "rotate";
+    r.mods = {mod("a", 1, {2}, 135)};
+    CHECK(patched("cube(5).rotate([0, 0, marked(90)])", r) == "cube(5).rotate([0, 0, marked(135)])");
+    CHECK(patched("rotate(cube(5), [0, 0, \"90\"])", r) == "rotate(cube(5), [0, 0, \"135\"])");
+    r.mods = {mod("a", 1, {}, -45)};
+    CHECK(patched("cube(5).rotate(marked(30), [1, 1, 0])", r) ==
+          "cube(5).rotate(marked(-45), [1, 1, 0])");
+    CHECK(patched("cube(5).rotate(a=\"30\", v=[1, 1, 0])", r) ==
+          "cube(5).rotate(a=\"-45\", v=[1, 1, 0])");
+  }
+
+  SECTION("scale vector and scalar")
+  {
+    r.modname = "scale";
+    r.mods = {mod("v", 1, {1}, 2.5)};
+    CHECK(patched("scale(cube(5), [1, marked(2), 1])", r) == "scale(cube(5), [1, marked(2.5), 1])");
+    r.mods = {mod("v", 1, {}, 0.75)};
+    CHECK(patched("cube(5).scale(marked(1))", r) == "cube(5).scale(marked(0.75))");
+  }
+}

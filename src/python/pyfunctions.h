@@ -293,7 +293,7 @@ PyObject *python_fromvector(const Vector3d vec, int dim = 3);
 // Transform helper functions
 PyObject *python_translate_sub(PyObject *obj, Vector3d translatevec, int dragflags);
 PyObject *python_rotate_sub(PyObject *obj, Vector3d vec3, double angle, int dragflags);
-PyObject *python_scale_sub(PyObject *obj, Vector3d scalevec);
+PyObject *python_scale_sub(PyObject *obj, Vector3d scalevec, int dragflags = 0);
 PyObject *python_mirror_sub(PyObject *obj, Matrix4d& m);
 PyObject *python_multmatrix_sub(PyObject *pyobj, PyObject *pymat, int div);
 

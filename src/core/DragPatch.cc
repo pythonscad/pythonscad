@@ -207,7 +207,7 @@ bool findMarkedNumber(const std::string& src, size_t& start, size_t& end)
 }
 
 /// Compute all edits for one call whose '(' is at src[open]; all mods must match.
-bool editsForCall(const std::string& src, size_t open, const DragResult& result,
+bool editsForCall(const std::string& src, size_t open, bool method, const DragResult& result,
                   std::vector<DragEdit>& edits)
 {
   std::vector<Span> args;
@@ -221,9 +221,11 @@ bool editsForCall(const std::string& src, size_t open, const DragResult& result,
       if (namedArgValue(src, arg.first, arg.second, mod.name, vstart, vend)) break;
     }
     if (vstart == std::string::npos) {  // positional
-      if (mod.index < 0 || mod.index >= static_cast<int>(args.size())) return false;
-      vstart = args[mod.index].first;
-      vend = args[mod.index].second;
+      // obj.translate(v) has no obj argument, translate(obj, v) has
+      const int index = mod.index - ((result.objFirst && method) ? 1 : 0);
+      if (index < 0 || index >= static_cast<int>(args.size())) return false;
+      vstart = args[index].first;
+      vend = args[index].second;
     }
     if (!findListElement(src, open, vstart, vend, mod.arrinfo)) return false;
     if (!findMarkedNumber(src, vstart, vend)) return false;
@@ -261,8 +263,16 @@ bool applyDragResult(const std::string& src, const DragResult& result, std::stri
     pos = after;
     if (!word_start || !word_end || open >= src.size() || src[open] != '(') continue;
 
+    size_t before = pos - result.modname.size();  // pos already points behind the name
+    while (before > 0 && isSpace(src[before - 1])) before--;
+    const bool method = before > 0 && src[before - 1] == '.';
+
     std::vector<DragEdit> edits;
-    if (!editsForCall(src, open, result, edits)) continue;
+    // "a.translate(" is a method call, but "pythonscad.translate(" is a module
+    // qualified function: if the method reading does not fit, try the other one
+    if (!editsForCall(src, open, method, result, edits) &&
+        !(method && editsForCall(src, open, false, result, edits)))
+      continue;
     // apply back to front so earlier offsets stay valid
     std::sort(edits.begin(), edits.end(),
               [](const DragEdit& a, const DragEdit& b) { return a.start > b.start; });

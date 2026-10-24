@@ -486,7 +486,8 @@ PyObject *python_nb_sub_vec3(PyObject *arg1, PyObject *arg2,
       nodes.push_back(node);
     }
     if (nodes.size() == 1) {
-      nodes[0]->dragflags = dragflags;
+      // translate via "obj - v" negates the vector, dragging would move the wrong way
+      if (mode != 2) nodes[0]->dragflags = dragflags;
       PyObject *pyresult = PyOpenSCADObjectFromNode(type, nodes[0]);
       if (child_dict.get() != nullptr) {
         PyObject *key, *value;

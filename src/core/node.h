@@ -99,15 +99,15 @@ public:
       primitives inside wrapper nodes (color(), render(), ...) still react.
       Nodes which change coordinates (transforms) or own parameters override this. */
   virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& newpt,
-                                                    DragResult& result)
+                                                    const Vector3d& dir, DragResult& result)
   {
-    return dragPointChildren(pt, newpt, result);
+    return dragPointChildren(pt, newpt, dir, result);
   }
 
   /*! Forward a drag to all children and return their vertices collected in one
       PolySet (only vertices are needed by the callers for hit testing). */
   std::shared_ptr<const Geometry> dragPointChildren(const Vector3d& pt, const Vector3d& newpt,
-                                                    DragResult& result);
+                                                    const Vector3d& dir, DragResult& result);
 };
 
 /*! Snap a dragged length/angle to a grid, so the live view and the value

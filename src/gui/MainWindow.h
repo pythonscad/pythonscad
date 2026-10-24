@@ -469,7 +469,7 @@ public slots:
   void jumpToLine(int, int);
   void openFileFromPath(const QString&, int);
   void toolTipShow(QPoint, QString msg);
-  void dragPoint(Vector3d pt, Vector3d newpt);
+  void dragPoint(Vector3d pt, Vector3d newpt, Vector3d dir);
   void dragPointEnd(Vector3d pt);
   void dragProcess();
 
@@ -552,6 +552,7 @@ private:
   bool dragLastWasRender{false};  // last compile was F6 (else F5)
   Vector3d dragPendingPt;
   Vector3d dragPendingNewPt;
+  Vector3d dragPendingDir;
   EditorInterface *renderedEditor{
     nullptr};  // stores pointer to editor which has been most recently rendered
   /// Editor whose F6 geometry is currently in rootGeom (export ownership).

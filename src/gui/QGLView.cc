@@ -426,10 +426,16 @@ void QGLView::mouseMoveEvent(QMouseEvent *event)
                  this->modelview, this->projection, viewport, &viewcoord[0], &viewcoord[1],
                  &viewcoord[2]);
 
-      Vector3d newpos;
+      Vector3d newpos, nearpos, farpos;
       gluUnProject(viewcoord[0] + drag_x, viewcoord[1] + drag_y, viewcoord[2], this->modelview,
                    this->projection, viewport, &newpos[0], &newpos[1], &newpos[2]);
-      emit dragPoint(mouseDraggedSel->pt[0], newpos);
+      // viewing ray through the mouse pixel, lets the nodes intersect it with the
+      // line or plane the grabbed point can actually move in
+      gluUnProject(viewcoord[0] + drag_x, viewcoord[1] + drag_y, 0, this->modelview, this->projection,
+                   viewport, &nearpos[0], &nearpos[1], &nearpos[2]);
+      gluUnProject(viewcoord[0] + drag_x, viewcoord[1] + drag_y, 1, this->modelview, this->projection,
+                   viewport, &farpos[0], &farpos[1], &farpos[2]);
+      emit dragPoint(mouseDraggedSel->pt[0], newpos, farpos - nearpos);
     }
     return;
   }
