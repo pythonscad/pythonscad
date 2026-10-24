@@ -25,6 +25,7 @@
  */
 
 #include "core/node.h"
+#include "geometry/PolySet.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -219,3 +220,17 @@ std::string AbstractNode::getPyName(void)
   return this->py_name;
 }
 #endif
+
+std::shared_ptr<const Geometry> AbstractNode::dragPointChildren(const Vector3d& pt,
+                                                                const Vector3d& newpt,
+                                                                DragResult& result)
+{
+  auto result_geom = std::make_shared<PolySet>(3);
+  for (auto& child : children) {
+    auto child_geom = child->dragPoint(pt, newpt, result);
+    auto ps = std::dynamic_pointer_cast<const PolySet>(child_geom);
+    if (ps == nullptr) continue;
+    result_geom->vertices.insert(result_geom->vertices.end(), ps->vertices.begin(), ps->vertices.end());
+  }
+  return result_geom;
+}

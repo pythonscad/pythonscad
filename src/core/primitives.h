@@ -67,6 +67,7 @@ public:
   std::unique_ptr<const Geometry> createGeometry() const override;
   virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& delta,
                                                     DragResult& result) override;
+  void dragBegin() override;
 
   double dim[3] = {1, 1, 1};
   int dragflags = 0;  // X, Y, Z

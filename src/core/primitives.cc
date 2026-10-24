@@ -148,34 +148,65 @@ std::unique_ptr<const Geometry> CubeNode::createGeometry() const
   return ps;
 }
 
+void CubeNode::dragBegin()
+{
+  for (int i = 0; i < 3; i++) dim_[i] = dim[i];
+}
+
 std::shared_ptr<const Geometry> CubeNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
                                                     DragResult& result)
 {
-  if (dim_[0] == 0) {
-    dim_[0] = dim[0];
-    dim_[1] = dim[1];
-    dim_[2] = dim[2];
-  }
-  if (dragflags) {
-    result.modname = "cube";
-    result.mods.clear();
-  }
+  // Fallback if dragBegin() was not called (e.g. external callers).
+  if (dim_[0] == 0) dragBegin();
+  if (!dragflags) return createGeometry();
+
+  constexpr double tol = 1e-3;
+  constexpr double min_dim = 1e-2;
+  constexpr double snap = 0.1;
+
+  // The picked point must be a corner of *this* cube (in pre-drag size),
+  // otherwise another object was hit and we must not touch the result.
+  // lo/hi per axis depend on center: 1 -> [0,d], 0 -> [-d/2,d/2], -1 -> [-d,0]
   for (int i = 0; i < 3; i++) {
-    if (dragflags & (1 << i)) {
-      if (center[i] == 1 && fabs(pt[i] - dim_[i]) < 1e-3) {
-        this->dim[i] = newpt[i];
-        DragMod mod;
-        mod.index = 0;
-        mod.name = "size";
-        mod.arrinfo.push_back(i);
-        mod.value = newpt[i];
-        result.mods.push_back(mod);
-      }
+    double lo = 0, hi = 0;
+    if (center[i] > 0) hi = dim_[i];
+    else if (center[i] < 0) lo = -dim_[i];
+    else {
+      lo = -dim_[i] / 2;
+      hi = dim_[i] / 2;
     }
-    if (dragflags & (1 << i) && pt[i] != 0) result.anchor[i] = newpt[i];
-    else result.anchor[i] = pt[i];
+    if (fabs(pt[i] - lo) > tol && fabs(pt[i] - hi) > tol) return createGeometry();
   }
-  return std::shared_ptr<const Geometry>(std::move(createGeometry()));
+
+  std::vector<DragMod> mods;
+  Vector3d anchor = pt;
+  for (int i = 0; i < 3; i++) {
+    if (!(dragflags & (1 << i))) continue;
+    double newdim = NAN;
+    if (center[i] > 0 && fabs(pt[i] - dim_[i]) < tol) newdim = newpt[i];
+    else if (center[i] < 0 && fabs(pt[i] + dim_[i]) < tol) newdim = -newpt[i];
+    else if (center[i] == 0 && fabs(fabs(pt[i]) - dim_[i] / 2) < tol) newdim = 2 * fabs(newpt[i]);
+    if (std::isnan(newdim)) continue;  // the fixed face of this axis was picked
+
+    newdim = std::max(dragSnap(newdim, snap), min_dim);
+    this->dim[i] = newdim;
+    if (center[i] > 0) anchor[i] = newdim;
+    else if (center[i] < 0) anchor[i] = -newdim;
+    else anchor[i] = (pt[i] < 0 ? -newdim : newdim) / 2;
+
+    DragMod mod;
+    mod.index = 0;
+    mod.name = "size";
+    mod.arrinfo.push_back(i);
+    mod.value = newdim;
+    mods.push_back(mod);
+  }
+  if (!mods.empty()) {
+    result.modname = "cube";
+    result.mods = mods;
+    result.anchor = anchor;
+  }
+  return createGeometry();
 }
 
 static std::shared_ptr<AbstractNode> builtin_cube(const std::shared_ptr<const ModuleInstantiation>& inst,

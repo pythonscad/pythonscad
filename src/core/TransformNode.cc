@@ -266,12 +266,22 @@ TransformNode::TransformNode(std::shared_ptr<const ModuleInstantiation> mi, std:
 {
 }
 
+void TransformNode::dragBegin()
+{
+  matrix_ = matrix;
+  drag_init = true;
+  AbstractNode::dragBegin();
+}
+
 std::shared_ptr<const Geometry> TransformNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
                                                          DragResult& result)
 {
-  if (!(dragflags & 0x80)) {
+  // Previously this used bit 0x80 of dragflags as "initialized" marker. That made
+  // dragflags non-zero for every transform after the first drag, so a
+  // non-draggable rotate() around a draggable cube cleared the cube's result.
+  if (!drag_init) {
     matrix_ = matrix;
-    dragflags |= 0x80;
+    drag_init = true;
   }
   Transform3d invmat = matrix_.inverse();
   Vector3d pt_tran = invmat * pt;
@@ -359,8 +369,8 @@ std::shared_ptr<const Geometry> TransformNode::dragPoint(const Vector3d& pt, con
     if (_name == "translate") {
       if (dragflags && found) {
         Vector3d tranvect(0, 0, 0);
-        for (i = 0; i < 3; i++)
-          if (dragflags & (1 << i)) tranvect[i] = newpt_tran[i] - pt_tran[i];
+        for (int j = 0; j < 3; j++)
+          if (dragflags & (1 << j)) tranvect[j] = newpt_tran[j] - pt_tran[j];
 
         matrix = matrix_;
         matrix.translate(tranvect);

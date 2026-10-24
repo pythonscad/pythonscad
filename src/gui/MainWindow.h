@@ -471,6 +471,7 @@ public slots:
   void toolTipShow(QPoint, QString msg);
   void dragPoint(Vector3d pt, Vector3d newpt);
   void dragPointEnd(Vector3d pt);
+  void dragProcess();
 
   void viewModeRender();
 #ifdef ENABLE_OPENCSG
@@ -541,6 +542,16 @@ private:
   GeometryWorker *geometryWorker;
   QMutex consolemutex;
   DragResult dragResult;
+  void dragFinish();
+  QTimer *dragTimer{nullptr};
+  bool dragActive{false};         // a drag gesture is in progress
+  bool dragKeepView{false};       // keep old image until the post-drag compile is done
+  bool dragBeginPending{false};   // dragBegin() not yet sent to the node tree
+  bool dragPending{false};        // a mouse position waits to be applied
+  bool dragEndRequested{false};   // mouse released, finish after pending work
+  bool dragLastWasRender{false};  // last compile was F6 (else F5)
+  Vector3d dragPendingPt;
+  Vector3d dragPendingNewPt;
   EditorInterface *renderedEditor{
     nullptr};  // stores pointer to editor which has been most recently rendered
   /// Editor whose F6 geometry is currently in rootGeom (export ownership).

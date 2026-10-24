@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <cstddef>
 #include <deque>
 #include <memory>
@@ -99,13 +100,38 @@ public:
   void setPyName(const std::string& name);
   std::string getPyName(void);
 #endif
-  virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& delta,
+  /*! Called once at the start of every interactive drag gesture, before the
+      first dragPoint(). Nodes snapshot their pre-drag state here so that a
+      second drag on the same (not re-evaluated) tree compares against the
+      current values instead of the values of the very first drag.
+      The default implementation just forwards to all children. */
+  virtual void dragBegin()
+  {
+    for (auto& child : children) child->dragBegin();
+  }
+
+  /*! Default: pass the drag through to all children, so that draggable
+      primitives inside wrapper nodes (color(), render(), ...) still react.
+      Nodes which change coordinates (transforms) or own parameters override this. */
+  virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& newpt,
                                                     DragResult& result)
   {
-    printf("drag Point on AbstractNode\n");
-    return nullptr;
+    return dragPointChildren(pt, newpt, result);
   }
+
+  /*! Forward a drag to all children and return their vertices collected in one
+      PolySet (only vertices are needed by the callers for hit testing). */
+  std::shared_ptr<const Geometry> dragPointChildren(const Vector3d& pt, const Vector3d& newpt,
+                                                    DragResult& result);
 };
+
+/*! Snap a dragged length/angle to a grid, so the live view and the value
+    written back into the source agree and no 12.300000000000001 appears. */
+inline double dragSnap(double value, double step)
+{
+  if (step <= 0) return value;
+  return std::round(value / step) * step;
+}
 
 class AbstractIntersectionNode : public AbstractNode
 {
