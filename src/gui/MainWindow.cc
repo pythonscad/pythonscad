@@ -823,7 +823,7 @@ void MainWindow::dragProcess()
           .type = SelectionType::SELECTION_POINT,
         };
         obj.pt.push_back(dragResult.anchor);
-        qglview->shown_obj = std::make_shared<SelectedObject>(obj);
+        qglview->drag_obj = std::make_shared<SelectedObject>(obj);
         qglview->update();
       }
       GuiLocker::lock();
@@ -838,7 +838,7 @@ void MainWindow::dragFinish()
 {
   dragActive = false;
   dragEndRequested = false;
-  qglview->shown_obj = nullptr;
+  qglview->drag_obj = nullptr;
   qglview->update();
 
   const std::string sourcecode = std::string(this->lastCompiledDoc.toUtf8().constData());
@@ -2774,7 +2774,7 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
     owner->contentsRendered = false;
     clearPendingAfterRender();
   }
-  if (!dragActive) this->qglview->shown_obj = nullptr;  // keep the drag marker visible
+  this->qglview->shown_obj = nullptr;
   compileEnded();
   if (root_geom && pendingAfterRender_ != PendingAfterRender::None) {
     // Continue Export / Print after GuiLocker is released by compileEnded().

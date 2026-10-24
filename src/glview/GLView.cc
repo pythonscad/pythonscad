@@ -298,12 +298,13 @@ void GLView::paintGL()
   for (const SelectedObject& obj : this->selected_obj) {
     showObject(obj, eyedir);
   }
-  // Draw the hovered/dragged marker last and without depth test: it sits exactly
-  // on a vertex of the model and was hidden or z-fighting ("blinking") before.
-  if (shown_obj != nullptr) {
+  // Draw the hovered/dragged markers last and without depth test: they sit exactly
+  // on a vertex of the model and were hidden or z-fighting ("blinking") before.
+  if (shown_obj != nullptr || drag_obj != nullptr) {
     glDisable(GL_DEPTH_TEST);
     glColor3f(0, 1, 0);
-    showObject(*shown_obj, eyedir);
+    if (shown_obj != nullptr) showObject(*shown_obj, eyedir);
+    if (drag_obj != nullptr) showObject(*drag_obj, eyedir);
     glEnable(GL_DEPTH_TEST);
   }
   glDisable(GL_LIGHTING);

@@ -413,7 +413,7 @@ void QGLView::mouseMoveEvent(QMouseEvent *event)
         mouseDraggedSel = nullptr;
       if (mouseDraggedSel != nullptr) {
         // show the grabbed point right away, MainWindow moves it along with the drag
-        shown_obj = std::make_shared<SelectedObject>(*mouseDraggedSel);
+        drag_obj = std::make_shared<SelectedObject>(*mouseDraggedSel);
         update();
       }
     }
@@ -519,8 +519,11 @@ void QGLView::mouseReleaseEvent(QMouseEvent *event)
 {
   mouse_drag_active = false;
   releaseMouse();
+  if (drag_obj != nullptr) {
+    drag_obj = nullptr;
+    update();
+  }
   if (mouseDraggedSel != nullptr) {
-    shown_obj = nullptr;
     emit dragPointEnd(mouseDraggedSel->pt[0]);
   }
   mouseDraggedSel = nullptr;
