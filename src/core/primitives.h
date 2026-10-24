@@ -70,7 +70,8 @@ public:
   void dragBegin() override;
 
   double dim[3] = {1, 1, 1};
-  int dragflags = 0;  // X, Y, Z
+  // drag flags: bit 0..2 size[0..2] marked, bit 3 scalar size marked
+  int dragflags = 0;
   double dim_[3] = {0, 0, 0};
   int center[3] = {1, 1, 1};  // -1 means negative side, 0 means centered, 1 means positive side
 };
@@ -96,13 +97,27 @@ public:
   void *r_func = nullptr;
   std::string func_hash;
 #endif
-  int dragflags = 0;  // r
+  void dragBegin() override { r_ = r; }
+  double r_ = 0;      // radius at drag start
+  int dragflags = 0;  // bit 0: r marked, bit 1: d marked
   // "orig": rings of latitude; "octa": subdivided octahedron, see createGeometryOcta()
   std::string style = "orig";
 
 private:
   std::unique_ptr<PolySet> createGeometryOrig(int num_fragments) const;
   std::unique_ptr<PolySet> createGeometryOcta(int num_fragments) const;
+};
+
+// CylinderNode::dragflags: which python parameter was given as marked value
+enum CylinderDragFlags {
+  CYL_DRAG_R = 1,
+  CYL_DRAG_H = 2,
+  CYL_DRAG_R1 = 4,
+  CYL_DRAG_R2 = 8,
+  CYL_DRAG_D = 16,
+  CYL_DRAG_D1 = 32,
+  CYL_DRAG_D2 = 64,
+  CYL_DRAG_ANGLE = 128,
 };
 
 class CylinderNode : public LeafNode
@@ -122,7 +137,10 @@ public:
   double r1 = 1, r2 = 1, h = 1;
   double angle = 360;
   bool center = false;
-  int dragflags = 0;  // r, h
+  void dragBegin() override;
+  double r1_ = 0, r2_ = 0, h_ = 0, angle_ = 360;  // values at drag start
+  // drag flags, see the CYL_DRAG_* constants in primitives.cc
+  int dragflags = 0;
 };
 
 class PolyhedronNode : public LeafNode
@@ -136,6 +154,11 @@ public:
   std::vector<Vector3d> points;
   std::vector<IndexedFace> faces;
   int convexity = 1;
+  virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& delta,
+                                                    DragResult& result) override;
+  void dragBegin() override { points_ = points; }
+  std::vector<Vector3d> points_;       // points at drag start
+  std::vector<int> point_dragflags;    // per point: bit 0..2 x,y,z marked (empty = none)
   std::vector<int32_t> color_indices;  // when present, must be same size as faces
   std::vector<Color4f> colors;
 };

@@ -102,7 +102,14 @@ PyObject *python_cube(PyObject *self, PyObject *args, PyObject *kwargs)
     return NULL;
   }
 
-  if (size != NULL) {
+  if (size != NULL && (size->ob_type == &PyDataType || PyUnicode_Check(size))) {
+    // scalar marked size: cube(marked(10)) or cube("10")
+    if (python_numberval(size, &(node->dim[0]), &(node->dragflags), 8)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid Cube dimensions");
+      return NULL;
+    }
+    node->dim[1] = node->dim[2] = node->dim[0];
+  } else if (size != NULL) {
     if (python_vectorval(size, 3, 3, &(node->dim[0]), &(node->dim[1]), &(node->dim[2]), nullptr,
                          &(node->dragflags))) {
       PyErr_SetString(PyExc_TypeError, "Invalid Cube dimensions");
@@ -471,13 +478,19 @@ PyObject *python_sphere(PyObject *self, PyObject *args, PyObject *kwargs)
   double r = NAN;
   PyObject *rp = nullptr;
   double d = NAN;
+  PyObject *dp = nullptr;
   const char *style = nullptr;
 
   double vr = 1;
 
   auto discretizer = CreateCurveDiscretizer(kwargs);
   auto node = std::make_shared<SphereNode>(instance, discretizer);
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Ods", kwlist, &rp, &d, &style)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OOs", kwlist, &rp, &dp, &style)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing sphere(r|d, style)");
+    return NULL;
+  }
+  // d may be a marked value ("10", marked(10)) to make it draggable
+  if (dp != nullptr && python_numberval(dp, &d, &(node->dragflags), 2)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing sphere(r|d, style)");
     return NULL;
   }
@@ -537,13 +550,15 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
   double d1 = NAN;
   double d2 = NAN;
   double angle = NAN;
+  PyObject *r1_ = nullptr, *r2_ = nullptr, *d_ = nullptr, *d1_ = nullptr, *d2_ = nullptr,
+           *angle_ = nullptr;
 
   PyObject *center = NULL;
   double vr1 = 1, vr2 = 1, vh = 1;
 
   auto discretizer = CreateCurveDiscretizer(kwargs);
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OddOOdddd", kwlist, &h_, &r1, &r2, &center, &r_, &d,
-                                   &d1, &d2, &angle)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OOOOOOOOO", kwlist, &h_, &r1_, &r2_, &center, &r_,
+                                   &d_, &d1_, &d2_, &angle_)) {
     PyErr_SetString(PyExc_TypeError, "Error during parsing cylinder(h,r|r1+r2|d1+d2)");
     return NULL;
   }
@@ -551,8 +566,23 @@ PyObject *python_cylinder(PyObject *self, PyObject *args, PyObject *kwargs)
   double h = NAN;
 
   auto node = std::make_shared<CylinderNode>(instance, discretizer);
-  python_numberval(r_, &r, &(node->dragflags), 1);
-  python_numberval(h_, &h, &(node->dragflags), 2);
+  python_numberval(r_, &r, &(node->dragflags), CYL_DRAG_R);
+  python_numberval(h_, &h, &(node->dragflags), CYL_DRAG_H);
+  // These used to be parsed as plain doubles; as objects they may also be
+  // marked values ("10", marked(10)), which makes them draggable.
+  const struct {
+    PyObject *obj;
+    double *val;
+    int flag;
+  } numeric_args[] = {{r1_, &r1, CYL_DRAG_R1}, {r2_, &r2, CYL_DRAG_R2},
+                      {d_, &d, CYL_DRAG_D},    {d1_, &d1, CYL_DRAG_D1},
+                      {d2_, &d2, CYL_DRAG_D2}, {angle_, &angle, CYL_DRAG_ANGLE}};
+  for (const auto& arg : numeric_args) {
+    if (arg.obj != nullptr && python_numberval(arg.obj, arg.val, &(node->dragflags), arg.flag)) {
+      PyErr_SetString(PyExc_TypeError, "Error during parsing cylinder(h,r|r1+r2|d1+d2)");
+      return NULL;
+    }
+  }
 
   if (h <= 0) {
     PyErr_SetString(PyExc_TypeError, "Cylinder height must be positive");
@@ -655,13 +685,15 @@ PyObject *python_polyhedron(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     for (Py_ssize_t i = 0; i < npoints; i++) {
       element = PySequence_Fast_GET_ITEM(seq, i);
+      int pointflags = 0;  // marked coordinates make the vertex draggable
       if (!python_is_sequence(element) ||
-          python_vectorval(element, 3, 3, &point[0], &point[1], &point[2], nullptr, nullptr)) {
+          python_vectorval(element, 3, 3, &point[0], &point[1], &point[2], nullptr, &pointflags)) {
         Py_DECREF(seq);
         PyErr_SetString(PyExc_TypeError, "Coordinate must exactly contain 3 numbers");
         return NULL;
       }
       node->points.push_back(point);
+      node->point_dragflags.push_back(pointflags);
     }
     Py_DECREF(seq);
   } else {

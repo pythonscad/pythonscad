@@ -113,3 +113,90 @@ TEST_CASE("applyDragResult refuses unmarked or unknown values", "[core][drag]")
   DragResult empty;
   CHECK_FALSE(applyDragResult("cube([\"1\",\"2\",\"3\"])", empty, out));
 }
+
+TEST_CASE("applyDragResult handles scalar parameters", "[core][drag]")
+{
+  SECTION("cube with scalar size")
+  {
+    DragResult r;
+    r.modname = "cube";
+    r.mods = {mod("size", 0, {}, 12)};
+    CHECK(patched("cube(marked(10), center=True)", r) == "cube(marked(12), center=True)");
+    CHECK(patched("cube(\"10\")", r) == "cube(\"12\")");
+  }
+
+  SECTION("sphere r and d")
+  {
+    DragResult r;
+    r.modname = "sphere";
+    r.mods = {mod("r", 0, {}, 7.5)};
+    CHECK(patched("sphere(marked(5))", r) == "sphere(marked(7.5))");
+    CHECK(patched("sphere(r=\"5\", fn=40)", r) == "sphere(r=\"7.5\", fn=40)");
+    r.mods = {mod("d", 1, {}, 15)};
+    CHECK(patched("sphere(d=marked(10))", r) == "sphere(d=marked(15))");
+  }
+
+  SECTION("cylinder: named r1/r2 are not confused with r")
+  {
+    DragResult r;
+    r.modname = "cylinder";
+    r.mods = {mod("h", 0, {}, 20), mod("r2", 2, {}, 3)};
+    CHECK(patched("cylinder(marked(10), r1=5, r2=marked(5), r=1)", r) ==
+          "cylinder(marked(20), r1=5, r2=marked(3), r=1)");
+    r.mods = {mod("angle", 8, {}, 270)};
+    CHECK(patched("cylinder(h=10, r=5, angle=\"90\")", r) == "cylinder(h=10, r=5, angle=\"270\")");
+  }
+}
+
+TEST_CASE("applyDragResult patches polyhedron points", "[core][drag]")
+{
+  DragResult r;
+  r.modname = "polyhedron";
+  r.mods = {mod("points", 0, {2, 0}, 1.5), mod("points", 0, {2, 2}, -2)};
+
+  SECTION("literal point list")
+  {
+    CHECK(patched("polyhedron([[0,0,0],[1,0,0],[marked(0),1,\"0\"],[0,0,1]], faces)", r) ==
+          "polyhedron([[0,0,0],[1,0,0],[marked(1.5),1,\"-2\"],[0,0,1]], faces)");
+  }
+
+  SECTION("point list in a variable, multi line")
+  {
+    const std::string src =
+      "pts = [\n"
+      "  [0, 0, 0],\n"
+      "  [1, 0, 0],\n"
+      "  [marked(0), 1, marked(0)],  # apex\n"
+      "]\n"
+      "show(polyhedron(pts, [[0,1,2]]))\n";
+    const std::string expected =
+      "pts = [\n"
+      "  [0, 0, 0],\n"
+      "  [1, 0, 0],\n"
+      "  [marked(1.5), 1, marked(-2)],  # apex\n"
+      "]\n"
+      "show(polyhedron(pts, [[0,1,2]]))\n";
+    CHECK(patched(src, r) == expected);
+  }
+
+  SECTION("single point in a variable, latest assignment before the call wins")
+  {
+    const std::string src =
+      "p = [0, 0, 0]\n"
+      "p = [marked(0), 1, \"0\"]\n"
+      "polyhedron(points=[[0,0,0],[1,0,0],p], faces=f)\n"
+      "p = [9, 9, 9]\n";
+    const std::string expected =
+      "p = [0, 0, 0]\n"
+      "p = [marked(1.5), 1, \"-2\"]\n"
+      "polyhedron(points=[[0,0,0],[1,0,0],p], faces=f)\n"
+      "p = [9, 9, 9]\n";
+    CHECK(patched(src, r) == expected);
+  }
+
+  SECTION("unmarked point is refused")
+  {
+    std::string out;
+    CHECK_FALSE(applyDragResult("polyhedron([[0,0,0],[1,0,0],[0,1,0]], f)", r, out));
+  }
+}

@@ -76,10 +76,63 @@ bool splitBracket(const std::string& src, size_t open, std::vector<Span>& elems,
   return false;
 }
 
+/// If [start,end) is a plain variable name, replace the span by the right hand
+/// side of the last "name = ..." assignment before limit (at the start of a line).
+/// This lets e.g. polyhedron(pts, faces) patch the list assigned to pts.
+void resolveVariable(const std::string& src, size_t limit, size_t& start, size_t& end)
+{
+  for (int hop = 0; hop < 8; hop++) {  // follow a = b chains, but never loop forever
+    trimSpan(src, start, end);
+    if (start >= end || !(std::isalpha(static_cast<unsigned char>(src[start])) || src[start] == '_'))
+      return;
+    for (size_t k = start; k < end; k++) {
+      if (!isIdentChar(src[k])) return;  // not a bare identifier
+    }
+    const std::string name = src.substr(start, end - start);
+
+    bool found = false;
+    size_t pos = std::min(limit, start);
+    while (pos > 0 && !found) {
+      const size_t hit = src.rfind(name, pos - 1);
+      if (hit == std::string::npos) break;
+      pos = hit;
+      // must start a line (after indentation) and be followed by a single '='
+      size_t ls = hit;
+      while (ls > 0 && (src[ls - 1] == ' ' || src[ls - 1] == '\t')) ls--;
+      if (ls > 0 && src[ls - 1] != '\n') continue;
+      size_t k = hit + name.size();
+      if (k < src.size() && isIdentChar(src[k])) continue;
+      while (k < src.size() && (src[k] == ' ' || src[k] == '\t')) k++;
+      if (k >= src.size() || src[k] != '=' || (k + 1 < src.size() && src[k + 1] == '=')) continue;
+      k++;
+      while (k < src.size() && (src[k] == ' ' || src[k] == '\t')) k++;
+      if (k >= src.size()) return;
+      size_t rhs_end;
+      if (src[k] == '[' || src[k] == '(') {
+        std::vector<Span> dummy;
+        size_t close;
+        if (!splitBracket(src, k, dummy, close)) return;
+        rhs_end = close + 1;
+      } else {
+        rhs_end = src.find_first_of("#\n", k);
+        if (rhs_end == std::string::npos) rhs_end = src.size();
+      }
+      start = k;
+      end = rhs_end;
+      limit = hit;
+      found = true;
+    }
+    if (!found) return;
+  }
+}
+
 /// Inside [start,end) (a list literal) descend to the element given by path.
-bool findListElement(const std::string& src, size_t& start, size_t& end, const std::vector<int>& path)
+/// Variables are followed to their assignment before limit.
+bool findListElement(const std::string& src, size_t limit, size_t& start, size_t& end,
+                     const std::vector<int>& path)
 {
   for (int index : path) {
+    resolveVariable(src, limit, start, end);
     trimSpan(src, start, end);
     if (start >= end || (src[start] != '[' && src[start] != '(')) return false;
     std::vector<Span> elems;
@@ -89,6 +142,7 @@ bool findListElement(const std::string& src, size_t& start, size_t& end, const s
     start = elems[index].first;
     end = elems[index].second;
   }
+  resolveVariable(src, limit, start, end);
   trimSpan(src, start, end);
   return start < end;
 }
@@ -171,9 +225,12 @@ bool editsForCall(const std::string& src, size_t open, const DragResult& result,
       vstart = args[mod.index].first;
       vend = args[mod.index].second;
     }
-    if (!findListElement(src, vstart, vend, mod.arrinfo)) return false;
+    if (!findListElement(src, open, vstart, vend, mod.arrinfo)) return false;
     if (!findMarkedNumber(src, vstart, vend)) return false;
-    local.push_back({vstart, vend, formatDragValue(mod.value)});
+    // two mods may resolve to the same text (e.g. a shared variable): patch once
+    bool duplicate = false;
+    for (const auto& e : local) duplicate |= e.start == vstart;
+    if (!duplicate) local.push_back({vstart, vend, formatDragValue(mod.value)});
   }
   edits = std::move(local);
   return !edits.empty();
