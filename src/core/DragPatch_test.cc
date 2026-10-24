@@ -242,3 +242,34 @@ TEST_CASE("applyDragResult patches transforms in function and method form", "[co
     CHECK(patched("cube(5).scale(marked(1))", r) == "cube(5).scale(marked(0.75))");
   }
 }
+
+TEST_CASE("applyDragResult prefers the call on the line of the dragged node", "[core][drag]")
+{
+  const std::string src =
+    "A = \"10\"\n"
+    "B = \"20\"\n"
+    "upper = cube([8, 8, A])\n"
+    "lower = cube([8, 8, B])\n";
+  DragResult r;
+  r.modname = "cube";
+  r.mods = {mod("size", 0, {2}, 33)};
+
+  SECTION("without line the first matching call wins")
+  {
+    CHECK(patched(src, r).find("A = \"33\"") != std::string::npos);
+  }
+
+  SECTION("with line the call on that line wins")
+  {
+    r.line = 4;
+    const auto out = patched(src, r);
+    CHECK(out.find("B = \"33\"") != std::string::npos);
+    CHECK(out.find("A = \"10\"") != std::string::npos);
+  }
+
+  SECTION("wrong line falls back to the whole file")
+  {
+    r.line = 1;
+    CHECK(patched(src, r).find("A = \"33\"") != std::string::npos);
+  }
+}

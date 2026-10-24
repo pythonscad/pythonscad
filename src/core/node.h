@@ -80,6 +80,9 @@ public:
 
   std::shared_ptr<AbstractNode> clone(void);
   void dump_counts(int indent, int use_cnt);
+  /// Line of the python script statement which created this node (0 = unknown).
+  /// Lets the drag code patch exactly this call, not the first look-alike.
+  int py_line = 0;
 #ifdef ENABLE_PYTHON
   std::string py_name;
   void setPyName(const std::string& name);

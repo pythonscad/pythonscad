@@ -243,6 +243,7 @@ std::shared_ptr<const Geometry> CubeNode::dragPoint(const Vector3d& pt, const Ve
     anchor[i] = on_hi[i] ? hi : lo;
   }
   result.modname = "cube";
+  result.line = py_line;
   result.mods = mods;
   result.anchor = anchor;
   return createGeometry();
@@ -559,6 +560,7 @@ std::shared_ptr<const Geometry> SphereNode::dragPoint(const Vector3d& pt, const 
   if (dragflags & 1) result.mods.push_back(makeDragMod("r", 0, {}, r));
   else result.mods.push_back(makeDragMod("d", 1, {}, 2 * r));
   result.modname = "sphere";
+  result.line = py_line;
   result.anchor = pt.normalized() * r;
   return createGeometry();
 }
@@ -766,6 +768,7 @@ std::shared_ptr<const Geometry> CylinderNode::dragPoint(const Vector3d& pt, cons
     anchor[1] = nr * sin(a);
   }
   result.modname = "cylinder";
+  result.line = py_line;
   result.mods = mods;
   result.anchor = anchor;
   return createGeometry();
@@ -924,6 +927,7 @@ std::shared_ptr<const Geometry> PolyhedronNode::dragPoint(const Vector3d& pt, co
       mods.push_back(makeDragMod("points", 0, {static_cast<int>(i), k}, points[i][k]));
     }
     result.modname = "polyhedron";
+    result.line = py_line;
     result.mods = mods;
     result.anchor = points[i];
     break;

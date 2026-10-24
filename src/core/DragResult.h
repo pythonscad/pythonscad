@@ -26,6 +26,8 @@ public:
   /// DragMod::index counts the object as first argument (translate(obj, v)).
   /// For the method form obj.translate(v) the patcher subtracts one.
   bool objFirst = false;
+  /// Script line of the dragged call (AbstractNode::py_line), 0 if unknown.
+  int line = 0;
 };
 
 /*

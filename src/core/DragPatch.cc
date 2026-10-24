@@ -250,11 +250,15 @@ std::string formatDragValue(double value)
   return ss.str();
 }
 
-bool applyDragResult(const std::string& src, const DragResult& result, std::string& out)
+namespace {
+
+/// Try every call of result.modname whose name starts in [from, to).
+bool patchFirstMatchingCall(const std::string& src, const DragResult& result, size_t from, size_t to,
+                            std::string& out)
 {
-  if (result.modname.empty() || result.mods.empty()) return false;
-  size_t pos = 0;
-  while ((pos = src.find(result.modname, pos)) != std::string::npos) {
+  size_t pos = from;
+  while ((pos = src.find(result.modname, pos)) != std::string::npos && pos < to) {
+    const size_t name_start = pos;
     const size_t after = pos + result.modname.size();
     const bool word_start = pos == 0 || !isIdentChar(src[pos - 1]);
     const bool word_end = after >= src.size() || !isIdentChar(src[after]);
@@ -263,7 +267,7 @@ bool applyDragResult(const std::string& src, const DragResult& result, std::stri
     pos = after;
     if (!word_start || !word_end || open >= src.size() || src[open] != '(') continue;
 
-    size_t before = pos - result.modname.size();  // pos already points behind the name
+    size_t before = name_start;
     while (before > 0 && isSpace(src[before - 1])) before--;
     const bool method = before > 0 && src[before - 1] == '.';
 
@@ -281,4 +285,28 @@ bool applyDragResult(const std::string& src, const DragResult& result, std::stri
     return true;
   }
   return false;
+}
+
+}  // namespace
+
+bool applyDragResult(const std::string& src, const DragResult& result, std::string& out)
+{
+  if (result.modname.empty() || result.mods.empty()) return false;
+
+  // The node knows the script line of its call: look there first, so the right
+  // one of several similar calls (e.g. two cube([..]) arms) is patched.
+  if (result.line > 0) {
+    size_t line_start = 0;
+    for (int l = 1; l < result.line && line_start != std::string::npos; l++) {
+      line_start = src.find('\n', line_start);
+      if (line_start != std::string::npos) line_start++;
+    }
+    if (line_start != std::string::npos) {
+      size_t line_end = src.find('\n', line_start);
+      if (line_end == std::string::npos) line_end = src.size();
+      if (patchFirstMatchingCall(src, result, line_start, line_end, out)) return true;
+    }
+  }
+  // unknown or not found on that line (e.g. call spread over several lines)
+  return patchFirstMatchingCall(src, result, 0, std::string::npos, out);
 }

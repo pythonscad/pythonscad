@@ -456,6 +456,7 @@ std::shared_ptr<const Geometry> TransformNode::dragPoint(const Vector3d& pt, con
   result.modname = _name;
   result.mods = mods;
   result.objFirst = true;
+  result.line = py_line;
   result.anchor = matrix * pt_tran;
   return result_geom;
 }
