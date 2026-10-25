@@ -401,6 +401,10 @@ jobs:
 
           "$GITHUB_WORKSPACE/scripts/prepare-msys2-python.sh" \
             ucrt "$PYTHON_VERSION" "$GITHUB_WORKSPACE/python_mingw"
+          PYTHON_DLL_VER="${PYTHON_VERSION//./}"
+          "$GITHUB_WORKSPACE/scripts/libpython_patch.sh" \
+            "$DEST_PATH/python${PYTHON_DLL_VER}.dll" \
+            "$GITHUB_WORKSPACE/python_mingw/ucrt64/lib/libpython${PYTHON_VERSION}.dll.a"
           cp "$GITHUB_WORKSPACE/python_mingw/ucrt64/lib/libpython${PYTHON_VERSION}.dll.a" \
             "/ucrt64/lib/libpython${PYTHON_VERSION}.dll.a"
 

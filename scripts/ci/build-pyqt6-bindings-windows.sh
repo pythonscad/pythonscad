@@ -7,6 +7,8 @@
 set -euo pipefail
 
 output_parent="${1:?Usage: $0 <output-parent>}"
+mkdir -p "$output_parent"
+output_parent="$(cd "$output_parent" && pwd)"
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 PYTHON_VERSION=$(python --version | cut -d' ' -f2 | cut -d'.' -f1,2)
