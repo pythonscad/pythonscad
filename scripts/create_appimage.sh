@@ -341,10 +341,10 @@ fi
 if [ "${QT_VERSION}" = "6" ]; then
     # PyQt6 is imported, so linuxdeploy never sees it. Copy the build
     # machine's python3-pyqt6, which is built against this image's Qt
-    # and libpython, onto the PYTHONPATH AppRun already exports.
-    PYQT_SRC=$(python3 -c 'import os, PyQt6; print(os.path.dirname(PyQt6.__file__))') \
+    # and libpython, onto the embedded interpreter's search path.
+    PYQT_SRC=$(python3 -c 'import PyQt6; print(next(iter(PyQt6.__path__)))') \
         || die "python3-pyqt6 is not installed; the Qt6 AppImage bundles the build machine's copy"
-    PYQT_DEST="${PYTHON_LIB_DIR}/site-packages/PyQt6"
+    PYQT_DEST="${PYTHON_LIB_DIR}/PyQt6"
     mkdir -p "${PYQT_DEST}"
     cp -a "${PYQT_SRC}/." "${PYQT_DEST}/"
     info "Bundled PyQt6 from ${PYQT_SRC}"
