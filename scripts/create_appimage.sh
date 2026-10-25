@@ -338,6 +338,43 @@ if [ ! -d "${PYTHON_LIB_DIR}" ]; then
     fi
 fi
 
+if [ "${QT_VERSION}" = "6" ]; then
+    # PyQt6 is imported, so linuxdeploy never sees it. Copy the build
+    # machine's python3-pyqt6, which is built against this image's Qt
+    # and libpython, onto the embedded interpreter's search path.
+    PYQT_SRC=$(python3 -c 'import PyQt6; print(next(iter(PyQt6.__path__)))') \
+        || die "python3-pyqt6 is not installed; the Qt6 AppImage bundles the build machine's copy"
+    PYQT_DEST="${PYTHON_LIB_DIR}/PyQt6"
+    mkdir -p "${PYQT_DEST}"
+    cp -a "${PYQT_SRC}/." "${PYQT_DEST}/"
+    info "Bundled PyQt6 from ${PYQT_SRC}"
+
+    bundle_pyqt_deps() {
+        local so="$1"
+        local lib base
+        while read -r lib; do
+            [ -n "${lib}" ] && [ -f "${lib}" ] || continue
+            base=$(basename "${lib}")
+            case "${base}" in
+                ld-linux*.so* | libanl.so* | libc.so* | libdl.so* | libgcc_s.so* | \
+                    libm.so* | libnss_*.so* | libpthread.so* | libresolv.so* | \
+                    librt.so* | libstdc++.so* | libthread_db.so* | libutil.so*)
+                    continue
+                    ;;
+            esac
+            if [ ! -e "${APPDIR}/usr/lib/${base}" ]; then
+                cp -L -- "${lib}" "${APPDIR}/usr/lib/${base}"
+            fi
+        done < <(ldd "${so}" 2>/dev/null | awk '/=>/ { print $3 }')
+    }
+    # Two passes pick up libraries pulled in by the ones copied on the first pass.
+    for _pass in 1 2; do
+        while IFS= read -r -d '' so; do
+            bundle_pyqt_deps "${so}"
+        done < <(find "${PYQT_DEST}" -type f -name '*.so' -print0)
+    done
+fi
+
 # Ensure Python shared library is included
 info "Copying Python shared libraries..."
 PYTHON_SO="libpython${PYTHON_VERSION}.so"
