@@ -11,9 +11,15 @@
 
 #include "version.h"
 
-std::string PlatformUtils::pathSeparatorChar() { return ":"; }
+std::string PlatformUtils::pathSeparatorChar()
+{
+  return ":";
+}
 
-std::string PlatformUtils::userDocumentsPath() { return documentsPath(); }
+std::string PlatformUtils::userDocumentsPath()
+{
+  return documentsPath();
+}
 
 std::string PlatformUtils::documentsPath()
 {
@@ -34,6 +40,20 @@ std::string PlatformUtils::userConfigPath()
   }
   return std::string([[appSupportDir path] UTF8String]) + std::string("/") +
          PlatformUtils::OPENSCAD_FOLDER_NAME;
+}
+
+std::string PlatformUtils::pythonUserConfigPath()
+{
+  NSError *error = nullptr;
+  NSURL *appSupportDir = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory
+                                                                inDomain:NSUserDomainMask
+                                                       appropriateForURL:nil
+                                                                  create:YES
+                                                                   error:&error];
+  if (error) {
+    return "";
+  }
+  return std::string([[appSupportDir path] UTF8String]) + std::string("/PythonSCAD");
 }
 
 unsigned long PlatformUtils::stackLimit()
@@ -98,4 +118,6 @@ const std::string PlatformUtils::sysinfo(bool extended)
   return result.str();
 }
 
-void PlatformUtils::ensureStdIO(void) {}
+void PlatformUtils::ensureStdIO(void)
+{
+}

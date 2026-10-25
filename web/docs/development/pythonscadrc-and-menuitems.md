@@ -11,10 +11,13 @@ commands to PythonSCAD's menus.
 
 ## Where It Lives and When It Runs
 
-PythonSCAD looks for `.pythonscadrc` at startup and, if found, runs its
-contents in the same Python namespace that your scripts run in. This happens
-once per session — editing the file while PythonSCAD is already running has
-no effect until you restart.
+PythonSCAD looks for `.pythonscadrc` in `~/.config/PythonSCAD/` at startup
+and, if found, runs its contents in the same Python namespace that your
+scripts run in. This happens once per session — editing the file while
+PythonSCAD is already running has no effect until you restart. On macOS the
+directory is `~/Library/Application Support/PythonSCAD`, and on Windows it
+is `%LOCALAPPDATA%\PythonSCAD`. There is no fallback to an OpenSCAD config
+directory.
 
 A minimal `.pythonscadrc`:
 
