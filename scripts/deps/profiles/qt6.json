@@ -128,7 +128,8 @@
         "qscintilla-qt6:p",
         "qt6-5compat:p",
         "qt6-multimedia:p",
-        "qt6-svg:p"
+        "qt6-svg:p",
+        "tools:p"
       ]
     }
   }
