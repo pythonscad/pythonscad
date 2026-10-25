@@ -91,6 +91,7 @@ jobs:
           -DCMAKE_PREFIX_PATH="${QT_PREFIX};/opt/homebrew"
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         make -j$NUMCPU
+        "$QT_PREFIX/bin/macdeployqt" pythonscad.app -no-strip
     - name: Run macOS sanity check
       run: |
         # Run sanity check to validate deployment targets of bundled libraries.
