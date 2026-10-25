@@ -32,6 +32,19 @@ bsdtar -xf "$package_filename"
 # Keep the output directory clean
 rm -f "$package_filename"
 
-"${script_dir}/libpython_patch.sh"
+# The package already contains an import library for libpython3.X.dll, which
+# is the DLL MXE ships. When gendef and dlltool are available, regenerate
+# that library from the DLL so the two cannot drift.
+dll=$(find "$output_dir" -type f \( -name 'libpython3.*.dll' -o -name 'python3*.dll' \) | head -1)
+archive=$(find "$output_dir" -type f -name 'libpython3.*.dll.a' | head -1)
+if [[ -z "$dll" || -z "$archive" ]]; then
+  echo "ERROR: could not find the MSYS2 Python DLL and import library under $output_dir" >&2
+  exit 1
+fi
+if command -v gendef >/dev/null 2>&1 && command -v dlltool >/dev/null 2>&1; then
+  "${script_dir}/libpython_patch.sh" "$dll" "$archive"
+else
+  echo "gendef/dlltool not found; keeping the import library shipped in the MSYS2 package"
+fi
 
-echo "MSYS2 python extracted and patched in: $output_dir"
+echo "MSYS2 python extracted in: $output_dir"
