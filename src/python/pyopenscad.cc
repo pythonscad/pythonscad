@@ -24,6 +24,8 @@
  *
  */
 #include <Python.h>
+// PyFrame_GetBack() is declared here up to Python 3.10; Python.h has it from 3.11 on
+#include <frameobject.h>
 #include "genlang/genlang.h"
 #include <algorithm>
 #include <array>
