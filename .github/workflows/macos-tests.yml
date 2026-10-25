@@ -66,12 +66,7 @@ jobs:
         HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       run: |
         ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
-        # Fail early if Homebrew moved to a Qt minor that has no PyQt6
-        # mapping yet (see scripts/ci/pyqt6-versions.json).
-        QT_VER="$("$(brew --prefix qtbase)/bin/qmake" -query QT_VERSION)"
-        echo "qtbase qmake reports: $QT_VER"
-        python3 scripts/ci/resolve_pyqt6_version.py "${QT_VER%.*}" --version-only
-        brew list --versions qscintilla2
+        test -x "$(tr -d '\n' < third_party/macos-pyqt6-qt/prefix)/bin/qmake"
     - name: Install Python test dependencies (IPython + pexpect for --ipython tests)
       run: |
         # Homebrew Python on macOS is "externally managed" (PEP 668),
@@ -91,7 +86,9 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON -DENABLE_LIBFIVE=ON
+        QT_PREFIX="$(tr -d '\n' < ../third_party/macos-pyqt6-qt/prefix)"
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON -DENABLE_LIBFIVE=ON \
+          -DCMAKE_PREFIX_PATH="${QT_PREFIX};/opt/homebrew"
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         make -j$NUMCPU
     - name: Run macOS sanity check
