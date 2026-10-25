@@ -170,6 +170,8 @@ pythonscad.appdata.xml.in2
 .clangd
 python_mingw/
 python_embed/
+third_party/macos-pyqt6-qt/
+libraries/python/PyQt6/
 artifacts/
 
 # Python pip build artifacts

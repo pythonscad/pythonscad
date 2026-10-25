@@ -1333,6 +1333,12 @@ BISON_TARGET(comment_parser src/core/customizer/comment_parser.y ${OPENSCAD_LIB_
 ADD_FLEX_BISON_DEPENDENCY(comment_lexer comment_parser)
 
 if(NOT HEADLESS)
+  if(APPLE AND USE_QT6 AND EXISTS "${CMAKE_SOURCE_DIR}/third_party/macos-pyqt6-qt/prefix")
+    file(STRINGS "${CMAKE_SOURCE_DIR}/third_party/macos-pyqt6-qt/prefix" PYQT6_QT_PREFIX LIMIT_COUNT 1)
+    if(EXISTS "${PYQT6_QT_PREFIX}")
+      list(PREPEND CMAKE_PREFIX_PATH "${PYQT6_QT_PREFIX}")
+    endif()
+  endif()
   if (APPLE AND EXISTS /usr/local/opt/qt)
     list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt")
   endif()

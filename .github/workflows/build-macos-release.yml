@@ -64,14 +64,6 @@ jobs:
         with:
           enable-cache: false
 
-      - name: Fetch compatible PyQt6 bindings
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          ./scripts/ci/fetch_pyqt6_bindings.sh \
-            macos-arm64 macos-15-homebrew-qt6 \
-            "$(brew --prefix qt)/bin/qmake" "$(which python3)" libraries/python
-
       - name: Build arm64 Application
         env:
           NUMCPU: 4
@@ -82,10 +74,11 @@ jobs:
 
           # Configure CMake for arm64 only (NOT universal)
           # On Apple Silicon, Homebrew prefix is /opt/homebrew
+          QT_PREFIX="$(tr -d '\n' < ../third_party/macos-pyqt6-qt/prefix)"
           cmake .. \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_PREFIX_PATH="/opt/homebrew" \
+            -DCMAKE_PREFIX_PATH="${QT_PREFIX};/opt/homebrew" \
             -DENABLE_TESTS=OFF \
             -DEXPERIMENTAL=ON \
             -DSNAPSHOT=ON \
@@ -114,8 +107,9 @@ jobs:
           VERSION=$(git describe --tags --always --dirty)
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$APP_BUNDLE/Contents/Info.plist"
 
-          # Bundle Qt frameworks
-          macdeployqt "$APP_BUNDLE" -no-strip
+          # Bundle the Qt frameworks from the PyQt6 wheel prefix.
+          QT_PREFIX="$(tr -d '\n' < ../third_party/macos-pyqt6-qt/prefix)"
+          "$QT_PREFIX/bin/macdeployqt" "$APP_BUNDLE" -no-strip
 
           # Homebrew Python keeps an absolute LC_ID_DYLIB. Point the
           # bundled copy at @rpath, then rewrite dependents that still
