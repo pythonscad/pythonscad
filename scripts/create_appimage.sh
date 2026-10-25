@@ -54,7 +54,8 @@ DIST_DIR="${PROJECT_ROOT}/dist"
 TOOLS_DIR="${DIST_DIR}/tools"
 APPDIR="${DIST_DIR}/AppDir"
 NUM_JOBS="${NUM_JOBS:-$(nproc)}"
-QT_VERSION="${QT_VERSION:-6}"  # Default to Qt6, can be overridden with QT_VERSION=5
+# Release CI ships Qt6 only. QT_VERSION=5 remains available for local builds.
+QT_VERSION="${QT_VERSION:-6}"
 
 # Auto-detect architecture if not specified
 if [ -z "${ARCH:-}" ]; then

@@ -97,7 +97,7 @@ if [[ "$skip_download" == "0" ]]; then
     [[ -n "$run_id" && "$run_id" != "null" ]] || rs_die "no successful build-appimage.yml run found"
   fi
   rs_log "Downloading AppImage artifacts from run $run_id"
-  rs_download_run_artifact "$repo" "$run_id" 'pythonscad-qt*-x86_64-appimage' "$artifact_dir"
+  rs_download_run_artifact "$repo" "$run_id" 'pythonscad-qt6-x86_64-appimage' "$artifact_dir"
 else
   rs_log "Using existing AppImage artifacts in $artifact_dir"
 fi
