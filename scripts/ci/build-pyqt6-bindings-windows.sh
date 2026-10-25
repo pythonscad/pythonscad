@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Compile PyQt6 against the MSYS2 UCRT64 Qt and the python.org embeddable
-# runtime. Only the Qt modules the application imports are built.
+# runtime.
 #
 # Usage: build-pyqt6-bindings-windows.sh <output-parent>
 # The PyQt6 package is written to <output-parent>/PyQt6.
@@ -50,11 +50,10 @@ python3 "$root/scripts/ci/patch_pyqt6_python315.py" .
 
 mkdir -p /tmp/pyqt-staging
 win_staging=$(cygpath -w /tmp/pyqt-staging)
-# QtCore, QtGui and QtWidgets are what forms and the customizer use.
-# QtSvg covers color and icon helpers. Leaving the rest out keeps a
-# cache miss closer to ten minutes than forty.
+# Do not restrict modules with --enable. PyQt-builder skips its Qt feature
+# probes in that mode; on Windows that leaves PyQt_Wayland enabled and emits
+# bindings for QNativeInterface::QWaylandApplication, which Qt does not expose.
 sip-build --qmake="$QMAKE" --confirm-license --verbose \
-  --enable QtCore --enable QtGui --enable QtWidgets --enable QtSvg \
   --target-dir="$win_staging"
 cd build
 mingw32-make -j"$(nproc)"

@@ -11,6 +11,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class WindowsPythonPackagingTests(unittest.TestCase):
+    def test_pyqt_build_keeps_platform_feature_probes_enabled(self):
+        script = (ROOT / "scripts/ci/build-pyqt6-bindings-windows.sh").read_text()
+        command = script.split("sip-build ", 1)[1].split("\ncd build", 1)[0]
+        self.assertNotIn("--enable", command)
+
     def test_import_library_uses_shipped_dll(self):
         with tempfile.TemporaryDirectory(prefix="python packaging ") as directory:
             root = Path(directory)
