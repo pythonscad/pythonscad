@@ -1364,7 +1364,16 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       // If neither exists, leave config.executable unset — CPython will probe
       // using its own heuristics, guided by pythonpath_env set above.
 #else
-      PyConfig_SetBytesString(&config, &config.executable, (binDir + "/python").c_str());
+      // A local build directory has no python binary next to the executable.
+      // Pointing config.executable at that missing path stops CPython from
+      // discovering the interpreter it was linked against, including distro
+      // site-packages such as PyQt6. A venv still wins: its bin/python exists.
+      const auto pythonPath = fs::path(binDir) / "python";
+      std::error_code ec;
+      if (fs::exists(pythonPath, ec)) {
+        const auto pythonExe = pythonPath.generic_string();
+        PyConfig_SetBytesString(&config, &config.executable, pythonExe.c_str());
+      }
 #endif
     }
 #endif
