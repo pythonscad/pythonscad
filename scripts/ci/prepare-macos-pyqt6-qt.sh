@@ -17,6 +17,8 @@ fi
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 dest="$root/third_party/macos-pyqt6-qt"
 versions_file="$root/scripts/ci/pyqt6-versions.json"
+bootstrap_requirements="$root/scripts/ci/macos-qt-bootstrap-requirements.txt"
+runtime_requirements="$root/scripts/ci/macos-pyqt-runtime-requirements.txt"
 
 pyqt_version=$(python3 - "$versions_file" <<'PY'
 import json, sys
@@ -40,8 +42,12 @@ mkdir -p "$dest/wheels"
 python3 -m venv "$dest/venv"
 # shellcheck disable=SC1091
 source "$dest/venv/bin/activate"
-python -m pip install --upgrade pip aqtinstall
-python -m pip download "PyQt6==${pyqt_version}" "PyQt6-sip==13.13.0" \
+python -m pip install --require-hashes -r "$bootstrap_requirements"
+if ! grep -q "^pyqt6==${pyqt_version} " "$runtime_requirements"; then
+  echo "ERROR: macOS PyQt lock does not match PyQt6 $pyqt_version" >&2
+  exit 1
+fi
+python -m pip download --require-hashes -r "$runtime_requirements" \
   --only-binary=:all: -d "$dest/wheels"
 
 unpack="$dest/unpacked"
@@ -90,9 +96,11 @@ if [[ -d "$wheel_qt/plugins" ]]; then
 fi
 
 qsci_version=2.14.1
+qsci_sha256=dfe13c6acc9d85dfcba76ccc8061e71a223957a6c02f3c343b30a9d43a4cdd4d
 qsci_tar="$dest/QScintilla_src-${qsci_version}.tar.gz"
 curl -fsSL -o "$qsci_tar" \
   "https://www.riverbankcomputing.com/static/Downloads/QScintilla/${qsci_version}/QScintilla_src-${qsci_version}.tar.gz"
+echo "$qsci_sha256  $qsci_tar" | shasum -a 256 -c -
 tar -C "$dest" -xzf "$qsci_tar"
 (
   cd "$dest/QScintilla_src-${qsci_version}/src"

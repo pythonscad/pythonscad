@@ -1,0 +1,2 @@
+# Bootstrap tool for downloading the pinned official Qt SDK.
+aqtinstall==3.3.0

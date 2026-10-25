@@ -7,6 +7,8 @@ on:
     paths:
       - '.github/workflows/build-pyqt6-bindings.yml'
       - 'scripts/ci/fetch_pyqt6_bindings.sh'
+      - 'scripts/ci/macos-*-requirements.*'
+      - 'scripts/ci/prepare-macos-pyqt6-qt.sh'
       - 'scripts/ci/patch_pyqt6_free_operators.py'
       - 'scripts/ci/patch_pyqt6_python315.py'
       - 'scripts/ci/patch_pyqt6_removed_qt_apis.py'
@@ -22,6 +24,8 @@ on:
     paths:
       - '.github/workflows/build-pyqt6-bindings.yml'
       - 'scripts/ci/fetch_pyqt6_bindings.sh'
+      - 'scripts/ci/macos-*-requirements.*'
+      - 'scripts/ci/prepare-macos-pyqt6-qt.sh'
       - 'scripts/ci/patch_pyqt6_free_operators.py'
       - 'scripts/ci/patch_pyqt6_python315.py'
       - 'scripts/ci/patch_pyqt6_removed_qt_apis.py'

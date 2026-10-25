@@ -1,0 +1,3 @@
+# Runtime bindings and Qt frameworks copied into macOS builds.
+PyQt6==6.11.0
+PyQt6-sip==13.13.0
