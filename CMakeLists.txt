@@ -914,18 +914,16 @@ if(ENABLE_PYTHON)
       SET(PYTHON_MINGW_ARCHIVE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/lib/libpython${PYTHON_MINGW_VERSION}.dll.a")
       SET(PYTHON_MINGW_INCLUDE "/${CALLSTACK}64/include/python${PYTHON_MINGW_VERSION}")
 
-      # Copy MSYS2 Python to local directory for patching
-      # Use bash to ensure Unix commands work in MSYS2 environment
+      # Copy MSYS2 Python headers. The import library is generated from the
+      # embeddable DLL once that archive has been downloaded.
       add_custom_command(
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/prepare-msys2-python.sh
                 "${CALLSTACK}"
                 "${PYTHON_MINGW_VERSION}"
                 "${PYTHON_MINGW_DEVPATH}"
-        OUTPUT ${PYTHON_MINGW_ARCHIVE}
+        OUTPUT ${PYTHON_MINGW_DEVPATH}/.headers-ready
       )
-      add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
-      add_dependencies(OpenSCADPy tgt_python_mingw)
 
       # Get the full Python version for embed downloads (e.g., 3.13.2)
       # Check if PYTHON_FULL_VERSION env var is set (from CI), otherwise try to detect
@@ -962,6 +960,21 @@ if(ENABLE_PYTHON)
     )
     add_custom_target(tgt_python_embed DEPENDS ${PYTHON_EMBED_SHLIB})
     add_dependencies(OpenSCADPy tgt_python_embed)
+
+    if(NOT MXECROSS)
+      # Import library for the DLL this build ships (python3XY.dll), not for
+      # MSYS2's libpython3.X.dll.
+      add_custom_command(
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh
+                "${PYTHON_EMBED_SHLIB}"
+                "${PYTHON_MINGW_ARCHIVE}"
+        DEPENDS ${PYTHON_EMBED_SHLIB} ${PYTHON_MINGW_DEVPATH}/.headers-ready
+        OUTPUT ${PYTHON_MINGW_ARCHIVE}
+      )
+      add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
+      add_dependencies(OpenSCADPy tgt_python_mingw)
+    endif()
 
     target_include_directories(OpenSCADPy SYSTEM PRIVATE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/include/python${PYTHON_MINGW_VERSION}")
     target_link_libraries(OpenSCADPy PRIVATE "${PYTHON_MINGW_ARCHIVE}")
@@ -2530,9 +2543,9 @@ if(NOT APPLE OR APPLE_UNIX)
 	      install(DIRECTORY "${PYTHON_MINGW_DEVPATH}/${PYTHON_MINGW_REPODIR}/lib/"
 	              DESTINATION "lib")
 	    else()
-	      # For native MSYS2 Windows builds, the patched MSYS2 import
-	      # library links PythonSCAD against python.org's embeddable
-	      # runtime DLL (python3XY.dll). Ship the matching embeddable
+	      # For native MSYS2 Windows builds, an import library generated
+	      # from python.org's embeddable DLL (python3XY.dll) is what the
+	      # link uses. Ship that same embeddable
 	      # stdlib zip and extension modules, not MSYS2's
 	      # lib/python3.X tree whose extension suffixes target
 	      # libpython3.X.dll.
