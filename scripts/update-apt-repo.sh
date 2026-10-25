@@ -333,11 +333,6 @@ sudo apt install pythonscad</code></pre>
             <p>Support until July 2026</p>
         </div>
         <div class="distro-card">
-            <h3>Debian 11 (Bullseye)</h3>
-            <p><strong>Codename:</strong> <code>bullseye</code></p>
-            <p>Long-term support until August 2026</p>
-        </div>
-        <div class="distro-card">
             <h3>Debian 12 (Bookworm)</h3>
             <p><strong>Codename:</strong> <code>bookworm</code></p>
             <p>Long-term support until June 2028</p>
@@ -373,7 +368,6 @@ sudo apt install pythonscad</code></pre>
         <li><a href="pool/noble/main/p/pythonscad/">Ubuntu 24.04 (noble)</a></li>
         <li><a href="pool/oracular/main/p/pythonscad/">Ubuntu 24.10 (oracular)</a></li>
         <li><a href="pool/questing/main/p/pythonscad/">Ubuntu 25.10 (questing)</a></li>
-        <li><a href="pool/bullseye/main/p/pythonscad/">Debian 11 (bullseye)</a></li>
         <li><a href="pool/bookworm/main/p/pythonscad/">Debian 12 (bookworm)</a></li>
         <li><a href="pool/trixie/main/p/pythonscad/">Debian 13 (trixie)</a></li>
     </ul>

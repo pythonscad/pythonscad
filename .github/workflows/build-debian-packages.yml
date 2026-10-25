@@ -145,8 +145,8 @@ jobs:
           sudo apt-get update
 
           # Determine Qt profile based on distribution version
-          # Older distros (Ubuntu 22.04, Debian 11) use Qt5, newer use Qt6
-          if [ "$MATRIX_DISTRO" = "jammy" ] || [ "$MATRIX_DISTRO" = "bullseye" ]; then
+          # Older distros (Ubuntu 22.04) use Qt5, newer use Qt6
+          if [ "$MATRIX_DISTRO" = "jammy" ]; then
             QT_PROFILE="pythonscad-qt5"
           else
             QT_PROFILE="pythonscad-qt6"
@@ -168,7 +168,7 @@ jobs:
             libssl-dev
 
       - name: Cache PyQt6 bindings (amd64 native)
-        if: matrix.arch == 'amd64' && !matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        if: matrix.arch == 'amd64' && !matrix.docker_image && matrix.distro != 'jammy'
         # Release/workflow_dispatch only (no pull_request), so PRs cannot poison this cache.
         uses: actions/cache@v6 # zizmor: ignore[cache-poisoning]
         with:
@@ -176,7 +176,7 @@ jobs:
           key: pyqt6-bindings-deb-${{ matrix.runner }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
 
       - name: Build PyQt6 bindings (amd64 native)
-        if: matrix.arch == 'amd64' && !matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        if: matrix.arch == 'amd64' && !matrix.docker_image && matrix.distro != 'jammy'
         run: |
           sudo apt-get install -y qt6-base-dev-tools
           test -d libraries/python/PyQt6 || sudo ./scripts/ci/build-pyqt6-bindings-linux.sh
@@ -193,8 +193,8 @@ jobs:
           apt-get install -y git python3
 
           # Determine Qt profile based on distribution version
-          # Older distros (Ubuntu 22.04, Debian 11) use Qt5, newer use Qt6
-          if [ "$MATRIX_DISTRO" = "jammy" ] || [ "$MATRIX_DISTRO" = "bullseye" ]; then
+          # Older distros (Ubuntu 22.04) use Qt5, newer use Qt6
+          if [ "$MATRIX_DISTRO" = "jammy" ]; then
             QT_PROFILE="pythonscad-qt5"
           else
             QT_PROFILE="pythonscad-qt6"
@@ -216,7 +216,7 @@ jobs:
             libssl-dev
 
       - name: Cache PyQt6 bindings (amd64 container)
-        if: matrix.arch == 'amd64' && matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        if: matrix.arch == 'amd64' && matrix.docker_image && matrix.distro != 'jammy'
         # Release/workflow_dispatch only (no pull_request), so PRs cannot poison this cache.
         uses: actions/cache@v6 # zizmor: ignore[cache-poisoning]
         with:
@@ -224,7 +224,7 @@ jobs:
           key: pyqt6-bindings-deb-${{ matrix.docker_image }}-${{ hashFiles('scripts/ci/pyqt6-build-requirements.txt', 'scripts/ci/resolve_pyqt6_version.py') }}
 
       - name: Build PyQt6 bindings (amd64 container)
-        if: matrix.arch == 'amd64' && matrix.docker_image && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        if: matrix.arch == 'amd64' && matrix.docker_image && matrix.distro != 'jammy'
         run: |
           apt-get install -y qt6-base-dev-tools
           test -d libraries/python/PyQt6 || ./scripts/ci/build-pyqt6-bindings-linux.sh
@@ -244,14 +244,14 @@ jobs:
           OUTPUT_DIR: /tmp/debs
           DEBIAN_DISTRO: ${{ matrix.distro }}
           # Set Qt version for older distros
-          USE_QT6: ${{ (matrix.distro == 'jammy' || matrix.distro == 'bullseye') && 'OFF' || 'ON' }}
+          USE_QT6: ${{ matrix.distro == 'jammy' && 'OFF' || 'ON' }}
         run: |
           mkdir -p "$OUTPUT_DIR"
           chmod +x ./scripts/build-debian-package.sh
           ./scripts/build-debian-package.sh
 
       - name: Cache PyQt6 bindings (arm64)
-        if: matrix.arch == 'arm64' && matrix.distro != 'jammy' && matrix.distro != 'bullseye'
+        if: matrix.arch == 'arm64' && matrix.distro != 'jammy'
         # Release/workflow_dispatch only (no pull_request), so PRs cannot poison this cache.
         uses: actions/cache@v6 # zizmor: ignore[cache-poisoning]
         with:
@@ -267,7 +267,7 @@ jobs:
           DEB_SIGNING_KEY: ${{ secrets.DEB_SIGNING_KEY }}
         run: |
           # Determine Qt profile based on distribution version
-          if [ "$MATRIX_DISTRO" = "jammy" ] || [ "$MATRIX_DISTRO" = "bullseye" ]; then
+          if [ "$MATRIX_DISTRO" = "jammy" ]; then
             QT_PROFILE="pythonscad-qt5"
             USE_QT6="OFF"
           else
