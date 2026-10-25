@@ -222,9 +222,8 @@ jobs:
           pip install --upgrade pip
           pip install -r scripts/ci/pyqt6-build-requirements.txt
 
-          # Prefer qtbase's qmake: the meta `qt` keg is a thin umbrella and
-          # `brew --prefix qt` can drift if core formulae were upgraded.
-          QMAKE="$(brew --prefix qtbase)/bin/qmake"
+          QT_PREFIX="$(tr -d '\n' < "$GITHUB_WORKSPACE/third_party/macos-pyqt6-qt/prefix")"
+          QMAKE="$QT_PREFIX/bin/qmake"
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
           echo "Detected Qt version: $QT_VERSION"
           MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
@@ -298,7 +297,8 @@ jobs:
         run: |
           set -euo pipefail
           source /tmp/pyqt-build-venv/bin/activate
-          QMAKE="$(brew --prefix qtbase)/bin/qmake"
+          QT_PREFIX="$(tr -d '\n' < "$GITHUB_WORKSPACE/third_party/macos-pyqt6-qt/prefix")"
+          QMAKE="$QT_PREFIX/bin/qmake"
           QT_VERSION=$("$QMAKE" -query QT_VERSION)
           QT_MAJOR_MINOR=$(echo "$QT_VERSION" | cut -d. -f1,2)
           PYQT_VERSION=$(cat /tmp/pyqt-out/PYQT_VERSION.txt)
