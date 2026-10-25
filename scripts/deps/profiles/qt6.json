@@ -74,9 +74,9 @@
       "pre_commands": [
         "brew tap openscad/homebrew-tap"
       ],
-      "packages": [
-        "qt",
-        "qscintilla2"
+      "packages": [],
+      "post_commands": [
+        "bash scripts/ci/prepare-macos-pyqt6-qt.sh"
       ]
     },
     "mageia": {
