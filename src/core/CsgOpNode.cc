@@ -70,11 +70,11 @@ std::string CsgOpNode::toString() const
 }
 
 std::shared_ptr<const Geometry> CsgOpNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
-                                                     DragResult& result)
+                                                     const Vector3d& dir, DragResult& result)
 {
   std::shared_ptr<PolySet> result_geom = std::make_shared<PolySet>(3);
   for (auto& child : children) {
-    std::shared_ptr<const Geometry> child_geom = child->dragPoint(pt, newpt, result);
+    std::shared_ptr<const Geometry> child_geom = child->dragPoint(pt, newpt, dir, result);
     if (child_geom == nullptr) continue;
     std::shared_ptr<const PolySet> ps = std::dynamic_pointer_cast<const PolySet>(child_geom);
     if (ps == nullptr) continue;

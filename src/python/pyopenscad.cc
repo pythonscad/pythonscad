@@ -24,6 +24,8 @@
  *
  */
 #include <Python.h>
+// PyFrame_GetBack() is declared here up to Python 3.10; Python.h has it from 3.11 on
+#include <frameobject.h>
 #include "genlang/genlang.h"
 #include <algorithm>
 #include <array>
@@ -335,8 +337,52 @@ static PyObject *PyOpenSCADObject_new(PyTypeObject *type, PyObject *args, PyObje
  *  allocates a new PyOpenSCAD to store an existing OpenSCAD Abstract Node
  */
 
+/*!
+  Line of the user's script which is executing right now: the innermost frame
+  whose file is the file of the outermost frame (the script itself). For a node
+  created inside a function of the script this is the line in that function.
+  Returns 0 outside of python execution.
+ */
+static int python_script_line()
+{
+  PyFrameObject *frame = PyEval_GetFrame();  // borrowed
+  if (frame == nullptr) return 0;
+  Py_INCREF(frame);
+  std::vector<std::pair<std::string, int>> stack;
+  while (frame != nullptr) {
+    std::string filename;
+    PyCodeObject *code = PyFrame_GetCode(frame);
+    PyObject *fn = PyObject_GetAttrString(reinterpret_cast<PyObject *>(code), "co_filename");
+    if (fn != nullptr && PyUnicode_Check(fn)) {
+      const char *utf8 = PyUnicode_AsUTF8(fn);
+      if (utf8 != nullptr) filename = utf8;
+    }
+    if (PyErr_Occurred()) PyErr_Clear();
+    Py_XDECREF(fn);
+    Py_DECREF(code);
+    stack.emplace_back(filename, PyFrame_GetLineNumber(frame));
+    PyFrameObject *back = PyFrame_GetBack(frame);
+    Py_DECREF(frame);
+    frame = back;
+  }
+  for (const auto& entry : stack) {
+    if (entry.first == stack.back().first) return entry.second;
+  }
+  return 0;
+}
+
+/// Give node and its fresh helper children (e.g. the translates around
+/// rotate(ref=...)) the current script line, see AbstractNode::py_line.
+static void python_stamp_line(AbstractNode *node, int line)
+{
+  if (node == nullptr || node->py_line != 0) return;
+  node->py_line = line;
+  for (const auto& child : node->children) python_stamp_line(child.get(), line);
+}
+
 PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<AbstractNode>& node)
 {
+  if (node != nullptr && node->py_line == 0) python_stamp_line(node.get(), python_script_line());
   PyOpenSCADObject *self;
   self = reinterpret_cast<PyOpenSCADObject *>(type->tp_new(type, nullptr, nullptr));
   if (self != nullptr) {

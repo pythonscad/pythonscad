@@ -148,34 +148,105 @@ std::unique_ptr<const Geometry> CubeNode::createGeometry() const
   return ps;
 }
 
-std::shared_ptr<const Geometry> CubeNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
-                                                    DragResult& result)
+void CubeNode::dragBegin()
 {
-  if (dim_[0] == 0) {
-    dim_[0] = dim[0];
-    dim_[1] = dim[1];
-    dim_[2] = dim[2];
-  }
-  if (dragflags) {
-    result.modname = "cube";
-    result.mods.clear();
-  }
+  for (int i = 0; i < 3; i++) dim_[i] = dim[i];
+}
+
+namespace {
+constexpr double DRAG_TOL = 1e-3;    // vertex hit tolerance
+constexpr double DRAG_MIN = 1e-2;    // smallest size/height after a drag
+constexpr double DRAG_SNAP = 0.1;    // grid for lengths
+constexpr double DRAG_SNAP_ANG = 1;  // grid for angles in degrees
+
+DragMod makeDragMod(const std::string& name, int index, std::vector<int> arrinfo, double value)
+{
+  DragMod mod;
+  mod.name = name;
+  mod.index = index;
+  mod.arrinfo = std::move(arrinfo);
+  mod.value = value;
+  return mod;
+}
+
+// face interval of a cube axis: center 1 -> [0,d], 0 -> [-d/2,d/2], -1 -> [-d,0]
+void cubeAxisRange(int center, double d, double& lo, double& hi)
+{
+  lo = (center > 0) ? 0 : (center < 0 ? -d : -d / 2);
+  hi = (center > 0) ? d : (center < 0 ? 0 : d / 2);
+}
+}  // namespace
+
+std::shared_ptr<const Geometry> CubeNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
+                                                    const Vector3d& dir, DragResult& result)
+{
+  // Fallback if dragBegin() was not called (e.g. external callers).
+  if (dim_[0] == 0) dragBegin();
+  if (!dragflags) return createGeometry();
+
+  // The picked point must be a corner of *this* cube (in pre-drag size),
+  // otherwise another object was hit and we must not touch the result.
+  bool on_hi[3];
   for (int i = 0; i < 3; i++) {
-    if (dragflags & (1 << i)) {
-      if (center[i] == 1 && fabs(pt[i] - dim_[i]) < 1e-3) {
-        this->dim[i] = newpt[i];
-        DragMod mod;
-        mod.index = 0;
-        mod.name = "size";
-        mod.arrinfo.push_back(i);
-        mod.value = newpt[i];
-        result.mods.push_back(mod);
-      }
-    }
-    if (dragflags & (1 << i) && pt[i] != 0) result.anchor[i] = newpt[i];
-    else result.anchor[i] = pt[i];
+    double lo, hi;
+    cubeAxisRange(center[i], dim_[i], lo, hi);
+    const bool at_lo = fabs(pt[i] - lo) < DRAG_TOL, at_hi = fabs(pt[i] - hi) < DRAG_TOL;
+    if (!at_lo && !at_hi) return createGeometry();
+    on_hi[i] = at_hi;
   }
-  return std::shared_ptr<const Geometry>(std::move(createGeometry()));
+
+  // Axes which can change: marked and the picked corner not on the fixed face
+  // (e.g. the origin face of center=1). The corner moves only along those axes,
+  // so follow the mouse ray on that line / plane instead of the screen plane.
+  int mask = 0;
+  for (int i = 0; i < 3; i++) {
+    const bool movable = center[i] == 0 || (center[i] > 0) == on_hi[i];
+    if (movable && (dragflags & ((1 << i) | 8))) mask |= 1 << i;
+  }
+  const Vector3d target = (dragflags & 8) ? newpt : dragConstrain(pt, newpt, dir, mask);
+
+  // Size each axis would get from the mouse position, NAN if it cannot change.
+  double cand[3];
+  for (int i = 0; i < 3; i++) {
+    cand[i] = NAN;
+    if (!(mask & (1 << i))) continue;
+    if (center[i] > 0) cand[i] = target[i];
+    else if (center[i] < 0) cand[i] = -target[i];
+    else cand[i] = 2 * fabs(target[i]);
+  }
+
+  std::vector<DragMod> mods;
+  if (dragflags & 8) {
+    // cube(marked(10)): one value for all edges, follow the axis moved most
+    int best = -1;
+    for (int i = 0; i < 3; i++) {
+      if (std::isnan(cand[i])) continue;
+      if (best < 0 || fabs(cand[i] - dim_[i]) > fabs(cand[best] - dim_[best])) best = i;
+    }
+    if (best < 0) return createGeometry();
+    const double s = std::max(dragSnap(cand[best], DRAG_SNAP), DRAG_MIN);
+    for (int i = 0; i < 3; i++) dim[i] = s;
+    mods.push_back(makeDragMod("size", 0, {}, s));
+  } else {
+    for (int i = 0; i < 3; i++) {
+      if (!(dragflags & (1 << i)) || std::isnan(cand[i])) continue;
+      dim[i] = std::max(dragSnap(cand[i], DRAG_SNAP), DRAG_MIN);
+      mods.push_back(makeDragMod("size", 0, {i}, dim[i]));
+    }
+  }
+  if (mods.empty()) return createGeometry();
+
+  Vector3d anchor;
+  for (int i = 0; i < 3; i++) {
+    double lo, hi;
+    cubeAxisRange(center[i], dim[i], lo, hi);
+    anchor[i] = on_hi[i] ? hi : lo;
+  }
+  result.modname = "cube";
+  result.line = py_line;
+  result.mods = mods;
+  result.anchor = anchor;
+  return createGeometry();
 }
 
 static std::shared_ptr<AbstractNode> builtin_cube(const std::shared_ptr<const ModuleInstantiation>& inst,
@@ -473,12 +544,25 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
 }
 
 std::shared_ptr<const Geometry> SphereNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
-                                                      DragResult& result)
+                                                      const Vector3d& dir, DragResult& result)
 {
-  if (dragflags & 1) {
-    r = newpt.norm();
-  }
-  return std::shared_ptr<const Geometry>(std::move(createGeometry()));
+  if (r_ == 0) dragBegin();
+#ifdef ENABLE_PYTHON
+  if (r_func != nullptr) return createGeometry();  // radius given as function
+#endif
+  if (!(dragflags & 3)) return createGeometry();
+  // only react on vertices of this sphere
+  if (fabs(pt.norm() - r_) > DRAG_TOL * std::max(1.0, r_)) return createGeometry();
+  if (newpt.norm() < DRAG_MIN) return createGeometry();
+
+  r = std::max(dragSnap(newpt.norm(), DRAG_SNAP / 2), DRAG_MIN);
+  result.mods.clear();
+  if (dragflags & 1) result.mods.push_back(makeDragMod("r", 0, {}, r));
+  else result.mods.push_back(makeDragMod("d", 1, {}, 2 * r));
+  result.modname = "sphere";
+  result.line = py_line;
+  result.anchor = pt.normalized() * r;
+  return createGeometry();
 }
 
 static std::shared_ptr<AbstractNode> builtin_sphere(
@@ -581,19 +665,113 @@ std::unique_ptr<const Geometry> CylinderNode::createGeometry() const
   return polyset;
 }
 
-std::shared_ptr<const Geometry> CylinderNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
-                                                        DragResult& result)
+void CylinderNode::dragBegin()
 {
-  Vector3d x_ = newpt;
-  if (dragflags & 2) {
-    h = x_[2];
+  r1_ = r1;
+  r2_ = r2;
+  h_ = h;
+  angle_ = angle;
+}
+
+/*!
+  Which parameter changes depends on the grabbed vertex:
+  - a vertex of the bottom ring:  r1 / d1, else r / d
+  - a vertex of the top ring:     r2 / d2, else r / d
+  - top face (center=false) or any face (center=true): h
+  - the vertex at the end of the arc of a partial cylinder: angle
+ */
+std::shared_ptr<const Geometry> CylinderNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
+                                                        const Vector3d& dir, DragResult& result)
+{
+  if (h_ == 0) dragBegin();
+  if (!dragflags) return createGeometry();
+
+  const double tol = DRAG_TOL * std::max(1.0, std::max(h_, std::max(r1_, r2_)));
+  const double z1 = center ? -h_ / 2 : 0, z2 = center ? h_ / 2 : h_;
+  const bool on_bottom = fabs(pt[2] - z1) < tol, on_top = fabs(pt[2] - z2) < tol;
+  if (!on_bottom && !on_top) return createGeometry();
+  const double rho = Vector2d(pt[0], pt[1]).norm();
+  const double ring_r = on_top ? r2_ : r1_;
+  const bool on_ring = fabs(rho - ring_r) < tol && ring_r > 0;
+  if (!on_ring && rho > tol) return createGeometry();  // not a vertex of this cylinder
+
+  std::vector<DragMod> mods;
+  // The grabbed vertex moves vertically for h and horizontally for r and angle.
+  // Follow the mouse ray on that line / plane, not in the screen plane.
+  const Vector3d zaxis(0, 0, 1);
+  Vector3d hpt, rpt;
+  if (!dragRayLine(newpt, dir, pt, zaxis, hpt)) hpt = newpt;
+  if (!dragRayPlane(newpt, dir, pt, zaxis, rpt)) rpt = newpt;
+
+  // height
+  if (dragflags & CYL_DRAG_H) {
+    double newh = NAN;
+    if (center) newh = 2 * fabs(hpt[2]);
+    else if (on_top) newh = hpt[2];
+    if (!std::isnan(newh)) {
+      h = std::max(dragSnap(newh, DRAG_SNAP), DRAG_MIN);
+      mods.push_back(makeDragMod("h", 0, {}, h));
+    }
   }
-  x_[2] = 0;
-  if (dragflags & 1) {
-    r1 = x_.norm();
-    r2 = x_.norm();
+
+  // opening angle: grab the vertex at the end of the arc
+  bool angle_dragged = false;
+  if (on_ring && (dragflags & CYL_DRAG_ANGLE) && angle_ < 360) {
+    const double phi = atan2(pt[1], pt[0]) * 180 / M_PI;
+    double phi_pos = phi < 0 ? phi + 360 : phi;
+    if (fabs(phi_pos - angle_) * M_PI / 180 * ring_r < tol) {
+      double newang = atan2(rpt[1], rpt[0]) * 180 / M_PI;
+      if (newang <= 0) newang += 360;
+      angle = std::clamp(dragSnap(newang, DRAG_SNAP_ANG), DRAG_SNAP_ANG, 360.0);
+      mods.push_back(makeDragMod("angle", 8, {}, angle));
+      angle_dragged = true;
+    }
   }
-  return std::shared_ptr<const Geometry>(std::move(createGeometry()));
+
+  // radius
+  if (on_ring && !angle_dragged) {
+    const double newr = std::max(dragSnap(Vector2d(rpt[0], rpt[1]).norm(), DRAG_SNAP / 2), 0.0);
+    if (on_bottom && (dragflags & CYL_DRAG_R1)) {
+      r1 = newr;
+      mods.push_back(makeDragMod("r1", 1, {}, newr));
+    } else if (on_bottom && (dragflags & CYL_DRAG_D1)) {
+      r1 = newr;
+      mods.push_back(makeDragMod("d1", 6, {}, 2 * newr));
+    } else if (on_top && (dragflags & CYL_DRAG_R2)) {
+      r2 = newr;
+      mods.push_back(makeDragMod("r2", 2, {}, newr));
+    } else if (on_top && (dragflags & CYL_DRAG_D2)) {
+      r2 = newr;
+      mods.push_back(makeDragMod("d2", 7, {}, 2 * newr));
+    } else if (dragflags & CYL_DRAG_R) {
+      r1 = r2 = newr;
+      mods.push_back(makeDragMod("r", 4, {}, newr));
+    } else if (dragflags & CYL_DRAG_D) {
+      r1 = r2 = newr;
+      mods.push_back(makeDragMod("d", 5, {}, 2 * newr));
+    }
+    if (r1 <= 0 && r2 <= 0) {  // keep at least one radius
+      if (on_bottom) r1 = DRAG_SNAP / 2;
+      else r2 = DRAG_SNAP / 2;
+      mods.back().value = mods.back().name[0] == 'd' ? DRAG_SNAP : DRAG_SNAP / 2;
+    }
+  }
+  if (mods.empty()) return createGeometry();
+
+  // new position of the grabbed vertex
+  const double nz1 = center ? -h / 2 : 0, nz2 = center ? h / 2 : h;
+  Vector3d anchor(0, 0, on_top ? nz2 : nz1);
+  if (on_ring) {
+    const double nr = on_top ? r2 : r1;
+    const double a = angle_dragged ? angle * M_PI / 180 : atan2(pt[1], pt[0]);
+    anchor[0] = nr * cos(a);
+    anchor[1] = nr * sin(a);
+  }
+  result.modname = "cylinder";
+  result.line = py_line;
+  result.mods = mods;
+  result.anchor = anchor;
+  return createGeometry();
 }
 
 static std::shared_ptr<AbstractNode> builtin_cylinder(
@@ -729,6 +907,32 @@ std::unique_ptr<const Geometry> PolyhedronNode::createGeometry() const
   p->colors = this->colors;
   p->color_indices = this->color_indices;
   return p;
+}
+
+std::shared_ptr<const Geometry> PolyhedronNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
+                                                          const Vector3d& dir, DragResult& result)
+{
+  if (point_dragflags.empty()) return createGeometry();
+  if (points_.size() != points.size()) dragBegin();
+
+  // grabbed vertex = first point at pt that has a marked coordinate
+  for (size_t i = 0; i < points_.size() && i < point_dragflags.size(); i++) {
+    const int flags = point_dragflags[i];
+    if (!flags || (points_[i] - pt).norm() > DRAG_TOL) continue;
+    std::vector<DragMod> mods;
+    const Vector3d target = dragConstrain(points_[i], newpt, dir, flags);
+    for (int k = 0; k < 3; k++) {
+      if (!(flags & (1 << k))) continue;
+      points[i][k] = dragSnap(target[k], DRAG_SNAP);
+      mods.push_back(makeDragMod("points", 0, {static_cast<int>(i), k}, points[i][k]));
+    }
+    result.modname = "polyhedron";
+    result.line = py_line;
+    result.mods = mods;
+    result.anchor = points[i];
+    break;
+  }
+  return createGeometry();
 }
 
 static std::shared_ptr<AbstractNode> builtin_polyhedron(
