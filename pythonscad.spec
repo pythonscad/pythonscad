@@ -54,6 +54,10 @@ BuildRequires:  qscintilla-qt6-devel
 BuildRequires:  chrpath
 
 Requires:       python3
+# Rocky Linux 9 does not ship python3-pyqt6. Fedora does.
+%if 0%{?fedora}
+Requires:       python3-pyqt6
+%endif
 Requires:       qt6-qtbase
 Requires:       qt6-qtmultimedia
 Requires:       qt6-qtsvg
