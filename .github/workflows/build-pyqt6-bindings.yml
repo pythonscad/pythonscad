@@ -8,6 +8,8 @@ on:
       - '.github/workflows/build-pyqt6-bindings.yml'
       - 'scripts/ci/fetch_pyqt6_bindings.sh'
       - 'scripts/ci/patch_pyqt6_free_operators.py'
+      - 'scripts/ci/patch_pyqt6_python315.py'
+      - 'scripts/ci/patch_pyqt6_removed_qt_apis.py'
       - 'scripts/ci/patch_pyqtbuild_win32_pythonlib.py'
       - 'scripts/ci/pyqt6-build-requirements.txt'
       - 'scripts/ci/pyqt6-versions.json'
@@ -21,6 +23,8 @@ on:
       - '.github/workflows/build-pyqt6-bindings.yml'
       - 'scripts/ci/fetch_pyqt6_bindings.sh'
       - 'scripts/ci/patch_pyqt6_free_operators.py'
+      - 'scripts/ci/patch_pyqt6_python315.py'
+      - 'scripts/ci/patch_pyqt6_removed_qt_apis.py'
       - 'scripts/ci/patch_pyqtbuild_win32_pythonlib.py'
       - 'scripts/ci/pyqt6-build-requirements.txt'
       - 'scripts/ci/pyqt6-versions.json'
@@ -87,6 +91,11 @@ jobs:
           tar xzf PyQt6.tar.gz
           EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
           cd "$EXTRACTED_DIR"
+
+          # Older PyQt6 sdists may reference Qt APIs removed in newer Qt minors.
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_removed_qt_apis.py" sip/ "$QT_VERSION"
+          # ...and C-API calls removed in newer Python versions.
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_python315.py" .
 
           sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
@@ -229,6 +238,11 @@ jobs:
           tar xzf PyQt6.tar.gz
           EXTRACTED_DIR=$(tar tzf PyQt6.tar.gz | sed -n '1p' | cut -d/ -f1)
           cd "$EXTRACTED_DIR"
+
+          # Older PyQt6 sdists may reference Qt APIs removed in newer Qt minors.
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_removed_qt_apis.py" sip/ "$QT_VERSION"
+          # ...and C-API calls removed in newer Python versions.
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_python315.py" .
 
           sip-build --qmake="$QMAKE" --confirm-license --verbose --target-dir=/tmp/pyqt-staging
           cd build
@@ -419,6 +433,11 @@ jobs:
 
           # known patch sip files for windows
           python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_free_operators.py" sip/
+
+          # Older PyQt6 sdists may reference Qt APIs removed in newer Qt minors.
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_removed_qt_apis.py" sip/ "$QT_VERSION"
+          # ...and C-API calls removed in newer Python versions.
+          python3 "$GITHUB_WORKSPACE/scripts/ci/patch_pyqt6_python315.py" .
 
           mkdir -p /tmp/pyqt-staging
           WIN_STAGING_DIR=$(cygpath -w /tmp/pyqt-staging)
