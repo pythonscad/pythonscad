@@ -63,16 +63,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo -E ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
-        sudo apt-get install -y wget file libfuse2
-
-    - name: Fetch compatible PyQt6 bindings
-      if: matrix.arch == 'x86_64'
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        ./scripts/ci/fetch_pyqt6_bindings.sh \
-          linux-x86_64 ubuntu-24.04-qt6 "$(which qmake6)" "$(which python3)" \
-          libraries/python
+        sudo apt-get install -y wget file libfuse2 python3-pyqt6
 
     - uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
       with:
@@ -103,7 +94,7 @@ jobs:
           bash -c '
             set -e
             apt-get update
-            apt-get install -y git python3 wget file libfuse2
+            apt-get install -y git python3 wget file libfuse2 python3-pyqt6
             ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
             chmod +x ./scripts/create_appimage.sh
             ./scripts/create_appimage.sh
