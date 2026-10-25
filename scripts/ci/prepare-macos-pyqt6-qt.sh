@@ -60,7 +60,7 @@ qt_version=$(python3 -c 'import plistlib,sys; print(plistlib.load(open(sys.argv[
 echo "PyQt6 $pyqt_version ships Qt $qt_version"
 
 aqt install-qt mac desktop "$qt_version" clang_64 \
-  -m qtmultimedia qtsvg qt5compat qttools \
+  -m qtmultimedia qt5compat \
   -O "$dest/aqt"
 prefix=$(find "$dest/aqt" -type f -path '*/bin/qmake' | head -1)
 prefix=$(dirname "$(dirname "$prefix")")
