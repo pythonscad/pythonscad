@@ -77,8 +77,9 @@ built tree, keyed by the Qt version, the Python version, and the hashes of
 `scripts/ci/pyqt6-versions.json` and
 `scripts/ci/pyqt6-build-requirements.txt`. A cache miss rebuilds. GitHub
 drops an unused cache entry after 7 days, so the first build of a later
-release compiles again. The SIP build is limited to QtCore, QtGui,
-QtWidgets and QtSvg.
+release compiles again. The SIP build keeps PyQt's complete module and
+platform feature probes enabled so unsupported Windows features are excluded
+correctly.
 
 The link uses an import library generated with `gendef` and `dlltool` from
 the embeddable `python3XY.dll` (`scripts/libpython_patch.sh`), which is the
@@ -139,8 +140,7 @@ macOS do not.
 3. Rewrite the SIP files to drop free comparison operators
    (`scripts/ci/patch_pyqt6_free_operators.py`) and patch pyqtbuild's Python
    library lookup (`scripts/ci/patch_pyqtbuild_win32_pythonlib.py`).
-4. Run `sip-build` for QtCore, QtGui, QtWidgets and QtSvg, then `make` and
-   `make install`.
+4. Run `sip-build` with its full feature probes, then `make` and `make install`.
 5. Copy the resulting `PyQt6` package out, and add the `PyQt6-sip` extension
    module installed separately from the pinned requirement.
 6. Verify with `objdump` that `QtCore` links against `python3XY.dll`.
