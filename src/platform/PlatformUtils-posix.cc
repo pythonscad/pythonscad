@@ -122,6 +122,15 @@ std::string PlatformUtils::userConfigPath()
   return "";
 }
 
+std::string PlatformUtils::pythonUserConfigPath()
+{
+  const fs::path config_path{getXdgConfigDir() / "PythonSCAD"};
+  if (config_path.empty()) {
+    return "";
+  }
+  return config_path.generic_string();
+}
+
 unsigned long PlatformUtils::stackLimit()
 {
 #ifndef __EMSCRIPTEN__

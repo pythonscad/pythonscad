@@ -115,6 +115,16 @@ std::string PlatformUtils::userConfigPath()
   return retval + std::string("/") + PlatformUtils::OPENSCAD_FOLDER_NAME;
 }
 
+std::string PlatformUtils::pythonUserConfigPath()
+{
+  const std::string retval = getFolderPath(CSIDL_LOCAL_APPDATA);
+  if (retval.empty()) {
+    LOG(message_group::Error, "Could not find Local AppData location");
+    return "";
+  }
+  return retval + std::string("/PythonSCAD");
+}
+
 unsigned long PlatformUtils::stackLimit()
 {
   return STACK_LIMIT_DEFAULT;
