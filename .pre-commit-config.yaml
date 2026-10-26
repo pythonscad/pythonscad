@@ -59,7 +59,7 @@ repos:
       hooks:
           - id: commitlint
             stages: [commit-msg]
-            additional_dependencies: ["@commitlint/config-conventional@21.2.3"]
+            additional_dependencies: ["@commitlint/config-conventional@21.2.4"]
     - repo: https://github.com/astral-sh/ruff-pre-commit
       rev: v0.17.1
       hooks:
@@ -120,7 +120,7 @@ repos:
             files: ^(CHANGELOG\.md|pythonscad\.appdata\.xml\.in)$
             pass_filenames: false
     - repo: https://github.com/zizmorcore/zizmor-pre-commit
-      rev: v1.31.0
+      rev: v1.31.1
       hooks:
           # Security audits for GitHub Actions workflows and composite
           # actions. Catches template/expression injection from
