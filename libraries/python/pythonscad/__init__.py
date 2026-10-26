@@ -853,3 +853,205 @@ def loft(
     rot = rot * _math.pi / 180.0
     loft_data = _loft_prepare(shape1, shape2, n, rot)
     return lambda h: _loft_func(loft_data, height, h, rot)
+
+
+# ---- Design Rule Checks (DRC) ----
+
+def internal(obj: PyOpenSCAD, d: float, angle: float = 120, alpha: float = 90,
+             occlusion: bool = True, grow: _typing.Optional[float] = None,
+             report: bool = False) -> _typing.Union[PyOpenSCAD, dict]:
+    """Minimum wall thickness check between facing surfaces.
+
+    Args:
+        obj: Solid to check
+        d: Minimum allowed wall thickness
+        angle: Minimum angle between face normals (90, 180], default 120
+        alpha: Measurement direction control (0-90), default 90
+        occlusion: Ignore pairs with connecting line through air, default True
+        grow: Lift error solid by this distance, None for automatic
+        report: If True, return {"count": n, "min": d or None}
+
+    Returns:
+        Error solid showing violations, or report dict if report=True
+    """
+    return _openscad_core.check(
+        obj, "internal",
+        distance=d,
+        angle_param=angle,
+        alpha=alpha,
+        occlusion=int(occlusion),
+        check_options=None,
+        other=None,
+        grow=grow,
+        report=int(report)
+    )
+
+
+def external(obj: PyOpenSCAD, d: float, other: _typing.Optional[PyOpenSCAD] = None,
+             angle: float = 120, alpha: float = 90, occlusion: bool = True,
+             grow: _typing.Optional[float] = None, report: bool = False) -> _typing.Union[PyOpenSCAD, dict]:
+    """Minimum spacing check between facing surfaces.
+
+    Args:
+        obj: Solid to check (gaps inside it or between it and other)
+        d: Minimum allowed gap
+        other: If given, only check gaps between obj and other
+        angle: Minimum angle between face normals (90, 180], default 120
+        alpha: Measurement direction control (0-90), default 90
+        occlusion: Ignore pairs with connecting line through air, default True
+        grow: Lift error solid by this distance, None for automatic
+        report: If True, return {"count": n, "min": d or None}
+
+    Returns:
+        Error solid showing violations, or report dict if report=True
+    """
+    return _openscad_core.check(
+        obj, "external",
+        distance=d,
+        angle_param=angle,
+        alpha=alpha,
+        occlusion=int(occlusion),
+        check_options=None,
+        other=other,
+        grow=grow,
+        report=int(report)
+    )
+
+
+def slope(obj: PyOpenSCAD, dir: _typing.Optional[_typing.Sequence[float]] = None,
+          min: _typing.Optional[float] = None, max: _typing.Optional[float] = None,
+          undercut: bool = False, grow: _typing.Optional[float] = None,
+          report: bool = False) -> _typing.Union[PyOpenSCAD, dict]:
+    """Face angle check against a direction.
+
+    Args:
+        obj: Solid to check
+        dir: Reference direction [0,0,1]
+        min: Minimum allowed angle in degrees (-90 to 90), default -90
+        max: Maximum allowed angle in degrees (-90 to 90), default 90
+        undercut: Detect faces hidden along pull direction, default False
+        grow: Lift error solid by this distance, None for automatic
+        report: If True, return {"count": n, "angle": m, "undercut": k, "worst": angle or None}
+
+    Returns:
+        Error solid showing violations, or report dict if report=True
+    """
+    if dir is None:
+        dir = [0, 0, 1]
+    if min is None:
+        min = -90
+    if max is None:
+        max = 90
+    check_options = {
+        "dir": dir,
+        "min_deg": min,
+        "max_deg": max,
+        "parting": 0,
+        "parting_pos": 0,
+        "undercut": undercut,
+        "skip_base": False,
+    }
+    return _openscad_core.check(
+        obj, "slope",
+        check_options=check_options,
+        other=None,
+        grow=grow,
+        report=int(report)
+    )
+
+
+def overhang(obj: PyOpenSCAD, angle: float = 45,
+             dir: _typing.Optional[_typing.Sequence[float]] = None,
+             grow: _typing.Optional[float] = None, report: bool = False) -> _typing.Union[PyOpenSCAD, dict]:
+    """Overhang check for 3D printing.
+
+    Args:
+        obj: Solid to check
+        angle: Maximum allowed overhang from vertical (0-90), default 45
+        dir: Build direction [0,0,1]
+        grow: Lift error solid by this distance, None for automatic
+        report: If True, return {"count": n, "angle": m, "undercut": 0, "worst": angle or None}
+
+    Returns:
+        Error solid showing overhangs, or report dict if report=True
+    """
+    if dir is None:
+        dir = [0, 0, 1]
+    check_options = {
+        "dir": dir,
+        "min_deg": -angle,
+        "max_deg": 90,
+        "parting": 0,
+        "parting_pos": 0,
+        "undercut": False,
+        "skip_base": True,
+    }
+    return _openscad_core.check(
+        obj, "slope",
+        check_options=check_options,
+        other=None,
+        grow=grow,
+        report=int(report)
+    )
+
+
+def draft(obj: PyOpenSCAD, angle: float = 2,
+          dir: _typing.Optional[_typing.Sequence[float]] = None,
+          parting: _typing.Optional[float] = None, undercut: bool = True,
+          grow: _typing.Optional[float] = None, report: bool = False) -> _typing.Union[PyOpenSCAD, dict]:
+    """Draft angle and undercut check for molding and casting.
+
+    Args:
+        obj: Solid to check
+        angle: Minimum draft angle in degrees (-90 to 90), default 2
+        dir: Pull direction of upper mold half [0,0,1]
+        parting: Position of flat parting plane along dir, None for free parting
+        undercut: Detect faces hidden along pull direction, default True
+        grow: Lift error solid by this distance, None for automatic
+        report: If True, return {"count": n, "angle": m, "undercut": k, "worst": angle or None}
+
+    Returns:
+        Error solid showing violations, or report dict if report=True
+    """
+    if dir is None:
+        dir = [0, 0, 1]
+    parting_mode = 2 if parting is not None else 1  # 1=Free, 2=Plane, 0=None
+    parting_pos = parting if parting is not None else 0
+    check_options = {
+        "dir": dir,
+        "min_deg": angle,
+        "max_deg": 90,
+        "parting": parting_mode,
+        "parting_pos": parting_pos,
+        "undercut": undercut,
+        "skip_base": False,
+    }
+    return _openscad_core.check(
+        obj, "slope",
+        check_options=check_options,
+        other=None,
+        grow=grow,
+        report=int(report)
+    )
+
+
+def select(obj: PyOpenSCAD, other: PyOpenSCAD, relation: str = "inside",
+           report: bool = False) -> _typing.Union[PyOpenSCAD, dict]:
+    """Filter parts based on spatial relationship to another solid.
+
+    Args:
+        obj: Solid to filter (will be separated into individual parts)
+        other: Reference solid to test against
+        relation: Spatial relation to test. One of:
+            "inside" - parts completely inside other
+            "not_inside" - parts NOT completely inside other
+            "outside" - parts completely outside other
+            "not_outside" - parts NOT completely outside other
+            "straddle" - parts crossing other's boundary
+            "not_straddle" - parts NOT crossing other's boundary
+        report: If True, return {"count": n} instead of error solid
+
+    Returns:
+        Error solid showing parts that violate the relation, or report dict if report=True
+    """
+    return obj.select(other, relation=relation, report=int(report))
