@@ -90,7 +90,7 @@ ready to assign to different tool heads in a slicer:
     export(solids, "watermelon.3mf")
     ```
 
-When previewing the same same-height extrusions with
+When previewing same-height extrusions with
 [`MultiToolExporter`](multitool.md#preview-artifacts), use
 `exporter.show(render=True)` to avoid F5 coplanar-face artifacts.
 
