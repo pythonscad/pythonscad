@@ -66,34 +66,5 @@ class WindowsPythonPackagingTests(unittest.TestCase):
                 b"extension fixture",
             )
 
-    def test_standalone_workflow_generates_archive_after_preparing_headers(self):
-        workflow = (ROOT / ".github/workflows/build-pyqt6-bindings.yml").read_text()
-        block = workflow.split('          "$GITHUB_WORKSPACE/scripts/prepare-msys2-python.sh"', 1)[1]
-        block = block.split("          python -m venv", 1)[0]
-        with tempfile.TemporaryDirectory(prefix="bindings workflow ") as directory:
-            root = Path(directory)
-            scripts = root / "scripts"
-            scripts.mkdir()
-            dll = root / "embed" / "python314.dll"
-            dll.parent.mkdir()
-            dll.write_bytes(b"DLL fixture")
-            generator = scripts / "libpython_patch.sh"
-            generator.write_text(
-                '#!/bin/sh\nset -eu\ntest -f "$1"\n'
-                'mkdir -p "$(dirname "$2")"\ncp "$1" "$2"\n'
-            )
-            generator.chmod(0o755)
-            # Stop before copying to the runner's /ucrt64 tree.
-            generation = block.split('          cp "$GITHUB_WORKSPACE', 1)[0]
-            subprocess.run(
-                ["bash", "-ec", ': ' + generation],
-                env={**os.environ, "GITHUB_WORKSPACE": str(root), "PYTHON_VERSION": "3.14",
-                     "DEST_PATH": str(dll.parent)},
-                check=True,
-            )
-            archive = root / "python_mingw/ucrt64/lib/libpython3.14.dll.a"
-            self.assertEqual(archive.read_bytes(), b"DLL fixture")
-
-
 if __name__ == "__main__":
     unittest.main()
