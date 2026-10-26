@@ -1753,14 +1753,13 @@ if(Python3_EXECUTABLE AND UNIX)
   set_property(TEST windows-python-packaging PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 endif()
 
-# Host-side check that the macOS Homebrew dep script (and the qt5
-# get-dependencies profile) stay Qt6-only on macOS.
+# Host-side checks for the macOS Homebrew dependency and release policies.
 if(Python3_EXECUTABLE)
-  add_test(NAME macosx-build-homebrew-qt6 CONFIGURATIONS Default
+  add_test(NAME macosx-build-policy CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_macosx_build_homebrew.py
   )
-  set_property(TEST macosx-build-homebrew-qt6 PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  set_property(TEST macosx-build-policy PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 endif()
 
 # Host-side check that scripts/get-dependencies.py never drops a profile's

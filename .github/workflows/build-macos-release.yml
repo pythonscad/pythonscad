@@ -20,9 +20,15 @@ permissions:
 
 jobs:
   build-arm64:
-    runs-on: macos-26
+    # Build releases on the oldest macOS version still receiving Apple
+    # security updates. Homebrew bottles inherit the runner's minimum OS, so
+    # building on a newer runner would silently raise the packaged app's
+    # deployment floor.
+    runs-on: macos-15
     name: macOS arm64 Build and Package
     timeout-minutes: 150
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '15.0'
     permissions:
       contents: write
     steps:
@@ -78,6 +84,7 @@ jobs:
           cmake .. \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET" \
             -DCMAKE_PREFIX_PATH="${QT_PREFIX};/opt/homebrew" \
             -DENABLE_TESTS=OFF \
             -DEXPERIMENTAL=ON \
