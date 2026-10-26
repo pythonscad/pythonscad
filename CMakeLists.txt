@@ -2886,19 +2886,26 @@ elseif(UNIX AND NOT APPLE)
   set(CPACK_DEBIAN_COMPRESSION_TYPE "gzip")
   set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
   set(CPACK_DEBIAN_PACKAGE_DEPENDS "python3")
+  set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION ON)
 
   # CPack does not use debian/pythonscad.postinst or pythonscad.spec; wire the
   # same merge/remove helpers so DEB/RPM packages still register .scad defaults
   # without shipping the shared applications/mimeapps.list.
+  # CPack packages under /usr by default, independently of the configure-time
+  # CMAKE_INSTALL_PREFIX (normally /usr/local). Generate maintainer-script
+  # paths for the actual package prefix and honor an explicit override.
+  if(NOT DEFINED CPACK_PACKAGING_INSTALL_PREFIX)
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+  endif()
   if(IS_ABSOLUTE "${CMAKE_INSTALL_DATAROOTDIR}")
     set(_cpack_dataroot "${CMAKE_INSTALL_DATAROOTDIR}")
   else()
-    set(_cpack_dataroot "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}")
+    set(_cpack_dataroot "${CPACK_PACKAGING_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}")
   endif()
   if(IS_ABSOLUTE "${OPENSCAD_INSTALL_RESOURCEDIR}")
     set(_cpack_resourcedir "${OPENSCAD_INSTALL_RESOURCEDIR}")
   else()
-    set(_cpack_resourcedir "${CMAKE_INSTALL_PREFIX}/${OPENSCAD_INSTALL_RESOURCEDIR}")
+    set(_cpack_resourcedir "${CPACK_PACKAGING_INSTALL_PREFIX}/${OPENSCAD_INSTALL_RESOURCEDIR}")
   endif()
   set(CPACK_MIMEAPPS_LIST "${_cpack_dataroot}/applications/mimeapps.list")
   set(CPACK_MIMEAPPS_MERGE_SCRIPT "${_cpack_resourcedir}/merge-mimeapps-default.py")

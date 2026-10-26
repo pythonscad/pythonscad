@@ -196,6 +196,10 @@ def check_destdir_merge_guard() -> None:
     assert "CPACK_RPM_POST_INSTALL_SCRIPT_FILE" in cmake
     assert 'CPACK_DEBIAN_PACKAGE_DEPENDS "python3"' in cmake
     assert 'CPACK_RPM_PACKAGE_REQUIRES "python3"' in cmake
+    assert "CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION ON" in cmake
+    assert 'set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")' in cmake
+    assert '${CPACK_PACKAGING_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}' in cmake
+    assert '${CPACK_PACKAGING_INSTALL_PREFIX}/${OPENSCAD_INSTALL_RESOURCEDIR}' in cmake
     assert (ROOT / "cmake/cpack/mimeapps-postinst.sh.in").is_file()
     assert (ROOT / "cmake/cpack/mimeapps-prerm.sh.in").is_file()
 
