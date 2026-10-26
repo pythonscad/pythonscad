@@ -14,7 +14,6 @@ from pythonscad import (
     editor_get_call_args,
     editor_replace_call_args,
     mainwindow_ptr,
-    show,
     text,
 )
 from pyscadforms import parse_arguments
@@ -84,7 +83,7 @@ class badge:
     def __new__(cls, label=_DEFAULT_LABEL, radius=_DEFAULT_RADIUS):
         disc = cylinder(r=radius, h=2, center=True)
         glyph = text(label, size=radius / 3, halign="center", valign="center")
-        show(disc + glyph.linear_extrude(3).translate([0, 0, -1]))
+        return disc + glyph.linear_extrude(3).translate([0, 0, -1])
 
 
 def setup():

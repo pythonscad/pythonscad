@@ -37,9 +37,9 @@ Choosing it opens a message box parented to the main window. That exercises
 
 `.pythonscadrc` is loaded by the GUI only. `pythonscad file.py` on the command
 line never reads it, so the menu entry and the calltip dialog exist only in
-the application window. `badge.py` defines its own `badge` for exactly that
-reason: the command line has no editor and no startup file, but the geometry
-should still render.
+the application window. `badge.py` defines a fallback `badge` only when the
+startup class is absent. The command line can therefore render the geometry
+without replacing the interactive class in the GUI.
 
 ```bash
 pythonscad --trust-python -o badge.stl badge.py
@@ -48,8 +48,8 @@ pythonscad --trust-python -o badge.stl badge.py
 ## Try the editor form
 
 Open `badge.py` from this directory in the GUI. The `badge` you get there is
-the one from `.pythonscadrc`, which shadows the function defined in the
-script.
+the class from `.pythonscadrc`; the script sees that name and leaves it in
+place.
 
 1. Put the cursor inside the parentheses of `badge("PythonSCAD", 30)`.
 2. The calltip shows `badge(label=..., radius=...)` with an arrow at the end.
