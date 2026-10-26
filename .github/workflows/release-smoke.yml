@@ -134,6 +134,7 @@ jobs:
             -v "$RUNNER_TEMP/appimage-artifacts:/artifacts" \
             -w /workspace \
             -e DEBIAN_FRONTEND=noninteractive \
+            -e LIBGL_ALWAYS_SOFTWARE=1 \
             "ubuntu:$UBUNTU_VERSION" \
             bash -c '
               set -euo pipefail
@@ -141,7 +142,8 @@ jobs:
               apt-get install -y --no-install-recommends \
                 libgl1 libegl1 libopengl0 libxkbcommon0 libdbus-1-3 \
                 libfontconfig1 libx11-6 libxcb1 libglib2.0-0 \
-                libusb-1.0-0 xvfb xauth
+                libusb-1.0-0 xvfb xauth \
+                libgl1-mesa-dri libglx-mesa0 libegl-mesa0
               xvfb-run -a scripts/release-smoke/test-appimages.sh \
                 --skip-download --artifact-dir /artifacts
             '
