@@ -70,15 +70,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Smoke test AppImages
-        if: runner.os == 'Linux'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          scripts/release-smoke/test-appimages.sh \
-            --repo "$GITHUB_REPOSITORY" \
-            --ref "$GITHUB_REF_NAME"
-
       - name: Smoke test Linux packages
         if: runner.os == 'Linux'
         env:
@@ -106,3 +97,50 @@ jobs:
           powershell -ExecutionPolicy Bypass -File scripts/release-smoke/test-windows.ps1 `
             --repo "$env:GITHUB_REPOSITORY" `
             --ref "$env:GITHUB_REF_NAME"
+
+  appimage-smoke:
+    name: AppImage smoke tests (Ubuntu ${{ matrix.ubuntu }})
+    needs: prepare-release-builds
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ['24.04', '26.04', '26.10']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download AppImage
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source scripts/release-smoke/common-smoke.sh
+          run_id=$(rs_latest_successful_run "$GITHUB_REPOSITORY" build-appimage.yml "$GITHUB_REF_NAME")
+          [[ -n "$run_id" && "$run_id" != "null" ]] || rs_die "no successful AppImage build found"
+          rs_download_run_artifact "$GITHUB_REPOSITORY" "$run_id" \
+            pythonscad-qt6-x86_64-appimage "$RUNNER_TEMP/appimage-artifacts"
+
+      - name: Smoke test on Ubuntu
+        env:
+          UBUNTU_VERSION: ${{ matrix.ubuntu }}
+        run: |
+          # Containers test each userspace/glibc version without depending
+          # on native runner availability (in particular Ubuntu 26.10).
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            -v "$RUNNER_TEMP/appimage-artifacts:/artifacts" \
+            -w /workspace \
+            -e DEBIAN_FRONTEND=noninteractive \
+            "ubuntu:$UBUNTU_VERSION" \
+            bash -c '
+              set -euo pipefail
+              apt-get update -qq
+              apt-get install -y --no-install-recommends \
+                libgl1 libegl1 libopengl0 libxkbcommon0 libdbus-1-3 \
+                libfontconfig1 libx11-6 libxcb1 libglib2.0-0
+              scripts/release-smoke/test-appimages.sh \
+                --skip-download --artifact-dir /artifacts
+            '
