@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+# Drop only our application/x-openscad default before package files are removed.
+if [ "$1" = "remove" ]; then
+  python3 /usr/share/pythonscad/merge-mimeapps-default.py remove \
+    /usr/share/applications/mimeapps.list \
+    org.pythonscad.pythonscad.desktop \
+    application/x-openscad || true
+fi
+
+#DEBHELPER#
