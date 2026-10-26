@@ -140,7 +140,8 @@ jobs:
               apt-get update -qq
               apt-get install -y --no-install-recommends \
                 libgl1 libegl1 libopengl0 libxkbcommon0 libdbus-1-3 \
-                libfontconfig1 libx11-6 libxcb1 libglib2.0-0
-              scripts/release-smoke/test-appimages.sh \
+                libfontconfig1 libx11-6 libxcb1 libglib2.0-0 \
+                libusb-1.0-0 xvfb xauth
+              xvfb-run -a scripts/release-smoke/test-appimages.sh \
                 --skip-download --artifact-dir /artifacts
             '
