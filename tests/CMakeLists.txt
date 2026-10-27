@@ -1769,6 +1769,11 @@ if(RELEASE_SMOKE_POWERSHELL)
 endif()
 
 if(Python3_EXECUTABLE AND UNIX)
+  add_test(NAME linux-smoke-ownership CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_linux_smoke_ownership.py
+  )
+  set_property(TEST linux-smoke-ownership PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
   add_test(NAME release-smoke-dispatch CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_release_smoke_dispatch.py
