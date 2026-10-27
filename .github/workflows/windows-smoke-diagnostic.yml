@@ -43,11 +43,12 @@ jobs:
             --workdir D:/smoke-mesa --keep-workdir
           exit $LASTEXITCODE
 
-      - name: Upload diagnostic logs
+      - name: Print diagnostic logs
         if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: windows-smoke-renderer-logs
-          path: |
-            D:/smoke-baseline/smoke-*/
-            D:/smoke-mesa/smoke-*/
+        shell: pwsh
+        run: |
+          Get-ChildItem D:/smoke-baseline,D:/smoke-mesa -Recurse -Filter '*.log' |
+            ForEach-Object {
+              Write-Output "Log: $($_.FullName)"
+              Get-Content -LiteralPath $_.FullName
+            }
