@@ -267,3 +267,34 @@ export(cube(10), "shim-cube.stl")
 
     Write-SmokeLog "Smoke testing $Label`: OK"
 }
+
+function Get-LatestSuccessfulRun {
+    param(
+        [Parameter(Mandatory = $true)][string]$Repo,
+        [Parameter(Mandatory = $true)][string]$Workflow,
+        [string]$Ref
+    )
+
+    # Filter through gh itself. Windows PowerShell's native argument passing
+    # strips embedded JSON/jq quotes before gh can see them.
+    $ghArgs = @(
+        'run', 'list',
+        '--repo', $Repo,
+        '--workflow', $Workflow,
+        '--status', 'success',
+        '--limit', '1',
+        '--json', 'databaseId'
+    )
+    if ($Ref) {
+        $ghArgs += @('--branch', $Ref)
+    }
+    $runJson = & gh @ghArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to query $Workflow runs (gh exit code $LASTEXITCODE)"
+    }
+    $runs = @($runJson | ConvertFrom-Json)
+    if ($runs.Count -eq 0 -or -not $runs[0].databaseId) {
+        throw "No successful $Workflow run found for ref '$Ref'"
+    }
+    [string]$runs[0].databaseId
+}

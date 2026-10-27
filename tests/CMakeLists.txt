@@ -1745,7 +1745,20 @@ if(Python3_EXECUTABLE)
 endif()
 
 # Exercise Windows packaging script contracts using host-side tool fixtures.
+find_program(RELEASE_SMOKE_POWERSHELL NAMES pwsh powershell)
+if(RELEASE_SMOKE_POWERSHELL)
+  add_test(NAME windows-smoke-run-lookup CONFIGURATIONS Default
+    COMMAND ${RELEASE_SMOKE_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_lookup.ps1
+  )
+endif()
+
 if(Python3_EXECUTABLE AND UNIX)
+  add_test(NAME release-smoke-dispatch CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_release_smoke_dispatch.py
+  )
+  set_property(TEST release-smoke-dispatch PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
   add_test(NAME windows-python-packaging CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_python_packaging.py
