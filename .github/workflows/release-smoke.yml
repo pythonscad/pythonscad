@@ -108,7 +108,7 @@ jobs:
   appimage-smoke:
     name: AppImage smoke tests (Ubuntu ${{ matrix.ubuntu }})
     needs: prepare-release-builds
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
