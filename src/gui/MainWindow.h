@@ -241,6 +241,9 @@ public:
   void compileCSGThread();
   void csgRenderFinished();
   void showFind(bool doFindAndReplace);
+  void setFindState(int state);
+  void refreshFindIndicators();
+  int findState = 0;  // Window-wide search panel state (TabManager::FIND_HIDDEN).
 
 private:
   [[nodiscard]] QString getCurrentFileName() const;

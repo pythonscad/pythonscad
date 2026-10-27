@@ -21,7 +21,9 @@ void UXTest::restoreWindowInitialState()
   QString filename = fixturePath("basic-ux/default.scad");
   window->tabManager->open(filename);
 
-  while (window->tabCount > 1) {
+  auto *initialEditor = window->activeEditor;
+  while (window->tabManager->count() > 1) {
+    if (window->activeEditor == initialEditor) window->tabManager->nextTab();
     window->tabManager->closeCurrentTab();
   }
 

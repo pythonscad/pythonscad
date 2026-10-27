@@ -584,7 +584,6 @@ TabManager::TabManager(MainWindow *o, const QString& filename)
           &TabManager::showTabHeaderContextMenu);
 
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::stopAnimation);
-  connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::updateFindState);
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::tabSwitched);
 
   connect(parent->editActionZoomTextIn, &QAction::triggered, this, &TabManager::zoomIn);
@@ -629,6 +628,7 @@ void TabManager::tabSwitched(int x)
 
   editor = (EditorInterface *)tabWidget->widget(x);
   parent->activeEditor = editor;
+  parent->refreshFindIndicators();
   parent->parameterDock->setWidget(editor->parameterWidget);
 
   parent->editActionUndo->setEnabled(editor->canUndo());
@@ -1131,13 +1131,6 @@ void TabManager::stopAnimation()
   parent->animateWidget->e_tval->setText("");
 }
 
-void TabManager::updateFindState()
-{
-  if (editor->findState == TabManager::FIND_REPLACE_VISIBLE) parent->showFind(true);
-  else if (editor->findState == TabManager::FIND_VISIBLE) parent->showFind(false);
-  else parent->hideFind();
-}
-
 void TabManager::onTabModified(EditorInterface *edt)
 {
   bumpSessionDirtyGeneration();
@@ -1619,7 +1612,6 @@ void TabManager::saveSession(const QString& path)
     obj.insert(QStringLiteral("cursorLine"), cursorLine);
     obj.insert(QStringLiteral("cursorColumn"), cursorColumn);
     obj.insert(QStringLiteral("firstVisibleLine"), edt->firstVisibleLine());
-    obj.insert(QStringLiteral("findState"), edt->findState);
     const QByteArray customizerState = edt->parameterWidget->getSessionState();
     if (!customizerState.isEmpty()) {
       obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
@@ -1647,6 +1639,7 @@ void TabManager::saveSession(const QString& path)
   }
   if (parent) {
     QJsonObject findPanel;
+    findPanel.insert(QStringLiteral("state"), parent->findState);
     findPanel.insert(QStringLiteral("text"), parent->findInputField->text());
     findPanel.insert(QStringLiteral("replaceText"), parent->replaceInputField->text());
     win.insert(QStringLiteral("findPanel"), findPanel);
@@ -1710,7 +1703,6 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       obj.insert(QStringLiteral("cursorLine"), cursorLine);
       obj.insert(QStringLiteral("cursorColumn"), cursorColumn);
       obj.insert(QStringLiteral("firstVisibleLine"), edt->firstVisibleLine());
-      obj.insert(QStringLiteral("findState"), edt->findState);
       const QByteArray customizerState = edt->parameterWidget->getSessionState();
       if (!customizerState.isEmpty()) {
         obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
@@ -1738,6 +1730,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
     }
     if (mainWin) {
       QJsonObject findPanel;
+      findPanel.insert(QStringLiteral("state"), mainWin->findState);
       findPanel.insert(QStringLiteral("text"), mainWin->findInputField->text());
       findPanel.insert(QStringLiteral("replaceText"), mainWin->replaceInputField->text());
       win.insert(QStringLiteral("findPanel"), findPanel);
@@ -1971,7 +1964,6 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     const int cursorLine = obj.value(QStringLiteral("cursorLine")).toInt(-1);
     const int cursorColumn = obj.value(QStringLiteral("cursorColumn")).toInt(-1);
     const int firstVisibleLine = obj.value(QStringLiteral("firstVisibleLine")).toInt(-1);
-    int findState = obj.value(QStringLiteral("findState")).toInt(TabManager::FIND_HIDDEN);
     const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
     std::optional<int> sessionLanguage;
     if (obj.contains(QStringLiteral("language"))) {
@@ -2036,10 +2028,6 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     if (obj.contains(QStringLiteral("lastExport"))) {
       applyLastExportFromJson(edt, obj.value(QStringLiteral("lastExport")).toObject());
     }
-    if (findState < TabManager::FIND_HIDDEN || findState > TabManager::FIND_REPLACE_VISIBLE) {
-      findState = TabManager::FIND_HIDDEN;
-    }
-    edt->findState = findState;
     if (cursorLine >= 0 && cursorColumn >= 0) {
       edt->setCursorPosition(cursorLine, cursorColumn);
     }
@@ -2091,7 +2079,10 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     parent->replaceInputField->setText(findPanel.value(QStringLiteral("replaceText")).toString());
   }
 
-  updateFindState();
+  // Older sessions kept visibility on each tab; migrate the active tab only.
+  const int legacyState =
+    tabs[currentIndex].toObject().value(QStringLiteral("findState")).toInt(TabManager::FIND_HIDDEN);
+  parent->setFindState(findPanel.value(QStringLiteral("state")).toInt(legacyState));
 
   if (!viewState.isEmpty() && parent && parent->qglview) {
     double x = 0.0;

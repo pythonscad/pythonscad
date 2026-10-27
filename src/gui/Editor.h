@@ -124,7 +124,6 @@ private:
 
 public:
   bool contentsRendered;  // Set if the source code has changes since the last render (F6)
-  int findState;
   QString filepath;
   /// True after loading from an existing file on disk or a successful save to this path.
   bool diskBacked = false;

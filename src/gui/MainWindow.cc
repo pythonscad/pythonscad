@@ -70,6 +70,7 @@
 #include <QScreen>
 #include <QSettings>  //Include QSettings for direct operations on settings arrays
 #include <QSignalMapper>
+#include <QSignalBlocker>
 #include <QSoundEffect>
 #include <QSplitter>
 #include <QStandardPaths>
@@ -2032,46 +2033,45 @@ QList<double> MainWindow::getRotation() const
 
 void MainWindow::hideFind()
 {
-  find_panel->hide();
-  if (activeEditor) {
-    activeEditor->findState = TabManager::FIND_HIDDEN;
-  }
-  editActionFindNext->setEnabled(false);
-  editActionFindPrevious->setEnabled(false);
-  const int findCount =
-    (activeEditor) ? activeEditor->updateFindIndicators(this->findInputField->text(), false) : 0;
-  this->findInputField->setFindCount(findCount);
-  this->processEvents();
+  setFindState(TabManager::FIND_HIDDEN);
 }
 
-// Prepare the UI for the find (and replace if requested)
-// Among other thing it makes the text field and replacement field visible and well as it configures the
-// activeEditor to appropriate search mode.
+void MainWindow::refreshFindIndicators()
+{
+  const int count = activeEditor ? activeEditor->updateFindIndicators(
+                                     findInputField->text(), findState != TabManager::FIND_HIDDEN)
+                                 : 0;
+  findInputField->setFindCount(count);
+}
+
+// Apply shared panel state without changing the query, selection, or keyboard focus.
+void MainWindow::setFindState(int state)
+{
+  if (state < TabManager::FIND_HIDDEN || state > TabManager::FIND_REPLACE_VISIBLE) {
+    state = TabManager::FIND_HIDDEN;
+  }
+  if (findState != state) TabManager::bumpSessionDirtyGeneration();
+  findState = state;
+  const bool visible = state != TabManager::FIND_HIDDEN;
+  const bool replace = state == TabManager::FIND_REPLACE_VISIBLE;
+  const QSignalBlocker blocker(findTypeComboBox);
+  findTypeComboBox->setCurrentIndex(replace ? 1 : 0);
+  replaceInputField->setVisible(replace);
+  replaceButton->setVisible(replace);
+  replaceAllButton->setVisible(replace);
+  find_panel->setVisible(visible);
+  editActionFindNext->setEnabled(visible);
+  editActionFindPrevious->setEnabled(visible);
+  refreshFindIndicators();
+}
+
 void MainWindow::showFind(bool doFindAndReplace)
 {
-  findInputField->setFindCount(activeEditor->updateFindIndicators(findInputField->text()));
-  processEvents();
-
-  if (doFindAndReplace) {
-    findTypeComboBox->setCurrentIndex(1);
-    replaceInputField->show();
-    replaceButton->show();
-    replaceAllButton->show();
-    activeEditor->findState = TabManager::FIND_REPLACE_VISIBLE;
-  } else {
-    findTypeComboBox->setCurrentIndex(0);
-    replaceInputField->hide();
-    replaceButton->hide();
-    replaceAllButton->hide();
-    activeEditor->findState = TabManager::FIND_VISIBLE;
-  }
-
-  find_panel->show();
-  editActionFindNext->setEnabled(true);
-  editActionFindPrevious->setEnabled(true);
+  if (!activeEditor) return;
   if (!activeEditor->selectedText().isEmpty()) {
     findInputField->setText(activeEditor->selectedText());
   }
+  setFindState(doFindAndReplace ? TabManager::FIND_REPLACE_VISIBLE : TabManager::FIND_VISIBLE);
   findInputField->setFocus();
   findInputField->selectAll();
 }
@@ -2098,7 +2098,7 @@ void MainWindow::on_editActionFindAndReplace_triggered()
 void MainWindow::actionSelectFind(int type)
 {
   // If type is one, then we shows the find and replace UI component
-  showFind(type == 1);
+  setFindState(type == 1 ? TabManager::FIND_REPLACE_VISIBLE : TabManager::FIND_VISIBLE);
 }
 
 void MainWindow::replace()
@@ -5769,6 +5769,10 @@ void MainWindow::setupMenusAndActions()
   connect(this->findTypeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &MainWindow::actionSelectFind);
   connect(this->findInputField, &QWordSearchField::textChanged, this, &MainWindow::findString);
+  connect(this->findInputField, &QWordSearchField::textChanged, this,
+          [] { TabManager::bumpSessionDirtyGeneration(); });
+  connect(this->replaceInputField, &QLineEdit::textChanged, this,
+          [] { TabManager::bumpSessionDirtyGeneration(); });
   connect(this->findInputField, &QWordSearchField::returnPressed, this->findNextButton,
           [this] { this->findNextButton->animateClick(); });
   find_panel->installEventFilter(this);
