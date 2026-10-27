@@ -42,6 +42,7 @@
 #include <functional>
 #include <sstream>
 #include <vector>
+#include <utility>
 
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS) && !defined(Q_OS_WASM)
 #include <unistd.h>
@@ -651,7 +652,25 @@ void TabManager::tabSwitched(int x)
 void TabManager::closeTabRequested(int x)
 {
   assert(tabWidget != nullptr);
-  if (!maybeSave(x)) return;
+  // The worker and reentrant parsing code may still use the editor/customizer
+  // and preview tree. Request cancellation, but defer destruction until idle.
+  if (GuiLocker::isLocked()) {
+    auto *closingEditor = qobject_cast<EditorInterface *>(tabWidget->widget(x));
+    if (!closingEditor) return;
+    parent->cancelRenderForEditor(closingEditor);
+    if (!pendingTabCloses.contains(closingEditor)) {
+      const bool startTimer = pendingTabCloses.isEmpty();
+      pendingTabCloses.append(closingEditor);
+      if (startTimer) QTimer::singleShot(50, this, &TabManager::finishPendingTabCloses);
+    }
+    return;
+  }
+  {
+    // A save dialog runs a nested event loop. Do not let auto-reload start a
+    // new render between the idle check above and destruction below.
+    const GuiLocker lock;
+    if (!maybeSave(x)) return;
+  }
 
   auto *closingEditor = qobject_cast<EditorInterface *>(tabWidget->widget(x));
   assert(closingEditor != nullptr);
@@ -666,12 +685,34 @@ void TabManager::closeTabRequested(int x)
   delete closingEditor;
 }
 
+void TabManager::finishPendingTabCloses()
+{
+  if (GuiLocker::isLocked()) {
+    QTimer::singleShot(50, this, &TabManager::finishPendingTabCloses);
+    return;
+  }
+  // Resolve indices only now: tabs may have moved or another close may have
+  // removed a queued editor in the meantime.
+  const auto pending = std::exchange(pendingTabCloses, {});
+  for (const auto& editor : pending) {
+    if (!editor) continue;
+    const int index = tabWidget->indexOf(editor);
+    if (index < 0) continue;
+    if (tabWidget->count() == 1) {
+      closeCurrentTab();
+      return;
+    }
+    closeTabRequested(index);
+  }
+}
+
 void TabManager::closeCurrentTab()
 {
   assert(tabWidget != nullptr);
 
   /* Close tab or close the current window if only one tab is open. */
-  if (tabWidget->count() > 1) this->closeTabRequested(tabWidget->currentIndex());
+  if (tabWidget->count() > 1 || GuiLocker::isLocked())
+    this->closeTabRequested(tabWidget->currentIndex());
   else {
     parent->close();
     if (use_gvim) this->closeTabRequested(tabWidget->currentIndex());  // ** MCH **

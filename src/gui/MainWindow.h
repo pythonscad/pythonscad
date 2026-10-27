@@ -16,6 +16,7 @@
 #include <QMutex>
 #include <QObject>
 #include <QPoint>
+#include <QPointer>
 #include <QShortcut>
 #include <QSignalMapper>
 #include <QSoundEffect>
@@ -27,6 +28,7 @@
 #include <QUrl>
 #include <QWidget>
 #include <ctime>
+#include <atomic>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -235,6 +237,7 @@ public:
   CSGTreeEvaluator *csgrenderer;
   bool isLightTheme();
   void compileCSG();
+  void cancelRenderForEditor(EditorInterface *editor);
   void compileCSGThread();
   void csgRenderFinished();
   void showFind(bool doFindAndReplace);
@@ -557,6 +560,8 @@ private:
     nullptr};  // stores pointer to editor which has been most recently rendered
   /// Editor whose F6 geometry is currently in rootGeom (export ownership).
   EditorInterface *geometrySourceEditor_{nullptr};
+  QPointer<EditorInterface> compilingEditor;
+  std::atomic<bool> renderCancelRequested{false};
   time_t includesMTime{0};  // latest include mod time
   time_t depsMTime{0};      // latest dependency mod time
   /// Last directory used for any export in this process (not persisted).

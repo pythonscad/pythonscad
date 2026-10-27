@@ -1,7 +1,9 @@
 #pragma once
 
 #include <QJsonObject>
+#include <QList>
 #include <QObject>
+#include <QPointer>
 #include <QSet>
 #include <cstddef>
 #include <functional>
@@ -125,6 +127,8 @@ private:
   MainWindow *parent;
   QTabWidget *tabWidget;
   bool use_gvim = false;
+  QList<QPointer<EditorInterface>> pendingTabCloses;
+  void finishPendingTabCloses();
 
   bool maybeSave(int);
   /// Tab title for message boxes (no `&` doubling; see getEditorTabName for QTabWidget labels).

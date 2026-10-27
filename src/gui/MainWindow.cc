@@ -1059,12 +1059,13 @@ void MainWindow::showProgress()
 
 void MainWindow::report_func(const std::shared_ptr<const AbstractNode>&, void *vp, int mark)
 {
+  auto thisp = static_cast<MainWindow *>(vp);
+  if (thisp->renderCancelRequested.load()) throw ProgressCancelException();
   // limit to progress bar update calls to 5 per second
   static const qint64 MIN_TIMEOUT = 200;
   if (progressThrottle->hasExpired(MIN_TIMEOUT)) {
     progressThrottle->start();
 
-    auto thisp = static_cast<MainWindow *>(vp);
     auto v = static_cast<int>((mark * 1000.0) / progress_report_count);
     auto permille = v < 1000 ? v : 999;
     if (permille > thisp->progresswidget->value()) {
@@ -1270,13 +1271,17 @@ void MainWindow::updateCompileResult()
 
 void MainWindow::compileDone(bool didchange)
 {
+  if (renderCancelRequested.load()) {
+    compileEnded();
+    return;
+  }
   OpenSCAD::hardwarnings = GlobalPreferences::inst()->getValue("advanced/enableHardwarnings").toBool();
   try {
     const char *callslot;
     if (didchange) {
       instantiateRoot();
       updateCompileResult();
-      callslot = afterCompileSlot;
+      callslot = renderCancelRequested.load() ? "compileEnded" : afterCompileSlot;
     } else {
       callslot = "compileEnded";
     }
@@ -1335,8 +1340,16 @@ void MainWindow::selectPreviewViewMode()
 #endif
 }
 
+void MainWindow::cancelRenderForEditor(EditorInterface *editor)
+{
+  if (compilingEditor != editor) return;
+  renderCancelRequested.store(true);
+  clearPendingAfterRender();
+}
+
 void MainWindow::compileEnded()
 {
+  compilingEditor.clear();
   clearCurrentOutput();
   GuiLocker::unlock();
   if (!dragActive) dragKeepView = false;  // the recompile after a drag is done
@@ -1450,6 +1463,10 @@ void MainWindow::compileCSG()
     assert(this->rootNode);
     LOG("Compiling design (CSG Products generation)...");
     this->processEvents();
+    if (renderCancelRequested.load()) {
+      compileEnded();
+      return;
+    }
 
     // Main CSG evaluation
     this->progresswidget = new ProgressWidget(this);
@@ -1494,6 +1511,13 @@ void MainWindow::compileCSGDone()
   try {
     progress_report_fin();
     updateStatusBar(nullptr);
+
+    if (renderCancelRequested.load()) {
+      delete this->csgrenderer;
+      this->csgrenderer = nullptr;
+      compileEnded();
+      return;
+    }
 
     LOG("Compiling design (CSG Products normalization)...");
     this->processEvents();
@@ -2492,6 +2516,8 @@ void MainWindow::actionReloadRenderPreview()
 {
   if (GuiLocker::isLocked()) return;
   GuiLocker::lock();
+  compilingEditor = activeEditor;
+  renderCancelRequested.store(false);
   autoReloadTimer->stop();
   setCurrentOutput();
 
@@ -2512,6 +2538,8 @@ void MainWindow::csgReloadRender()
 
 void MainWindow::prepareCompile(const char *afterCompileSlot, bool procevents, bool preview)
 {
+  compilingEditor = activeEditor;
+  renderCancelRequested.store(false);
   if (!dragActive) dragLastWasRender = !preview;
   setCurrentOutput();
   autoReloadTimer->stop();
@@ -2563,6 +2591,10 @@ void MainWindow::csgRender()
 
 void MainWindow::csgRenderFinished()
 {
+  if (renderCancelRequested.load()) {
+    compileEnded();
+    return;
+  }
   // Go to non-CGAL view mode
   if (viewActionThrownTogether->isChecked()) {
     viewModeThrownTogether();
@@ -2706,7 +2738,7 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
   // instantiateRoot() recorded the editor that started this render. Prefer that
   // over activeEditor — the user can switch tabs while geometry is computing.
   EditorInterface *const owner = renderedEditor;
-  if (!owner) {
+  if (!owner || renderCancelRequested.load()) {
     LOG(message_group::UI_Warning,
         "Render finished after the source tab was closed; discarding geometry.");
     this->rootGeom.reset();
@@ -3209,6 +3241,7 @@ void MainWindow::showLanguageMenu()
 
 void MainWindow::exceptionCleanup()
 {
+  compilingEditor.clear();
   LOG("Execution aborted");
   LOG(" ");
   GuiLocker::unlock();
@@ -3217,6 +3250,7 @@ void MainWindow::exceptionCleanup()
 
 void MainWindow::UnknownExceptionCleanup(std::string msg)
 {
+  compilingEditor.clear();
   auto guard = scopedSetCurrentOutput();  // we need to show this error
   if (msg.size() == 0) {
     LOG(message_group::Error, "Compilation aborted by unknown exception");
