@@ -1751,6 +1751,12 @@ if(RELEASE_SMOKE_POWERSHELL)
     COMMAND ${RELEASE_SMOKE_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
       ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_lookup.ps1
   )
+  if(Python3_EXECUTABLE)
+    add_test(NAME windows-smoke-input CONFIGURATIONS Default
+      COMMAND ${RELEASE_SMOKE_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_input.ps1 ${Python3_EXECUTABLE}
+    )
+  endif()
 endif()
 
 if(Python3_EXECUTABLE AND UNIX)

@@ -95,13 +95,17 @@ function Invoke-PythonSCAD {
     $psi.RedirectStandardError = $true
     if ($InputFile) {
         $psi.RedirectStandardInput = $true
+        # Windows PowerShell's default pipe writer can emit a UTF-8 BOM.
+        # Python compiles piped REPL text as a string, so that BOM is code.
+        $psi.StandardInputEncoding = [System.Text.UTF8Encoding]::new($false)
+        $psi.Environment['PYTHONIOENCODING'] = 'utf-8'
     }
 
     $process = [System.Diagnostics.Process]::Start($psi)
     $stdoutTask = $process.StandardOutput.ReadToEndAsync()
     $stderrTask = $process.StandardError.ReadToEndAsync()
     if ($InputFile) {
-        $inputText = Get-Content -LiteralPath $InputFile -Raw
+        $inputText = Get-Content -LiteralPath $InputFile -Raw -Encoding UTF8
         $process.StandardInput.Write($inputText)
         $process.StandardInput.Close()
     }
