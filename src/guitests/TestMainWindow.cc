@@ -16,7 +16,7 @@ void TestMainWindow::checkOpenTabPropagateToWindow()
   window->tabManager->open(filename);
 
   // The window title must also have the name of open file
-  QCOMPARE(window->windowTitle(), QFileInfo(filename).fileName());
+  QCOMPARE(window->windowTitle(), QFileInfo(filename).absoluteFilePath());
 
   filename = fixturePath("basic-ux/empty2.scad");
 
@@ -24,7 +24,7 @@ void TestMainWindow::checkOpenTabPropagateToWindow()
   window->tabManager->open(filename);
 
   // The window title must also have the name of open file
-  QCOMPARE(window->windowTitle(), QFileInfo(filename).fileName());
+  QCOMPARE(window->windowTitle(), QFileInfo(filename).absoluteFilePath());
 }
 
 void TestMainWindow::checkSaveToShouldUpdateWindowTitle()

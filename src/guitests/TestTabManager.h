@@ -8,4 +8,8 @@ private slots:
   void initTestCase();
   void checkOpenClose();
   void checkReOpen();
+  void checkCloseDuringCompilation();
+  void checkCancelRenderingTab_data();
+  void checkCancelRenderingTab();
+  void checkCloseLastRenderingTab();
 };
