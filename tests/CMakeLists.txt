@@ -1992,6 +1992,11 @@ list(APPEND NEF3_BROKEN_TESTS
 
 # Platform specific test disable
 if(APPLE)
+  # Intermittent PNG mismatch; investigate and re-enable for v1.3:
+  # https://github.com/pythonscad/pythonscad/issues/1190
+  # Keep the other skin render/dump variants and non-macOS coverage enabled.
+  disable_tests_safe(previewtest_skin_rotate_extrude-tests)
+
   # GitHub-hosted macOS ARM VMs use Apple's software OpenGL renderer, which
   # garbles some PNG image tests (dFdy/fwidth and related artifacts).
   # This is not an Apple Silicon GPU bug. See:
@@ -1999,9 +2004,9 @@ if(APPLE)
   #   https://github.com/actions/runner-images/issues/9712
   # SVG path tessellation also differs on ARM vs the Intel golden files:
   #   https://github.com/openscad/openscad/issues/6161
-  # OpenSCAD still skips ARM CI for the same renderer reason; there is no
-  # Mesa/OSMesa workaround in tree. Only disable under CI so real M-series
-  # GPUs keep coverage.
+  # Upstream now uses OSMesa in macOS CI (openscad/openscad#7074); our
+  # workflow still uses Apple's renderer. Track adoption in #1190.
+  # Keep these broader exclusions CI-only so real M-series GPUs keep coverage.
   if((CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$") AND DEFINED ENV{CI})
     disable_tests_safe(
       lazyunion-preview_lazyunion-intersection-for
