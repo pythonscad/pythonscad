@@ -5,6 +5,65 @@
     ":semanticCommits",
     ":semanticCommitTypeAll(chore)"
   ],
+  "git-submodules": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description":
+        "Review all submodule updates weekly; never merge native dependency changes automatically.",
+      "matchManagers": [
+        "git-submodules"
+      ],
+      "schedule": [
+        "before 6am on monday"
+      ],
+      "labels": [
+        "dependencies",
+        "build"
+      ],
+      "assignees": [
+        "nomike"
+      ],
+      "automerge": false
+    },
+    {
+      "matchManagers": [
+        "git-submodules"
+      ],
+      "matchDepNames": [
+        "submodules/OpenCSG"
+      ],
+      "versioning": "regex:^opencsg-(?<major>\\d+)-(?<minor>\\d+)-(?<patch>\\d+)-release$"
+    },
+    {
+      "matchManagers": [
+        "git-submodules"
+      ],
+      "matchDepNames": [
+        "submodules/Clipper2"
+      ],
+      "versioning": "regex:^Clipper2_(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "description":
+        "Only advance release-tagged dependencies to newer versions, never repin an existing tag (Clipper2 currently includes post-release fixes).",
+      "matchManagers": [
+        "git-submodules"
+      ],
+      "matchDepNames": [
+        "submodules/mimalloc",
+        "submodules/manifold",
+        "submodules/OpenCSG",
+        "submodules/Clipper2"
+      ],
+      "matchUpdateTypes": [
+        "digest",
+        "pinDigest"
+      ],
+      "enabled": false
+    }
+  ],
   "customManagers": [
     {
       "customType": "regex",

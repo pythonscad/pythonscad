@@ -173,6 +173,25 @@ git push origin "$TAG"
 
 ## 5 Troubleshooting
 
+### Automated submodule updates
+
+Renovate checks every submodule in `.gitmodules` weekly and opens reviewable
+dependency PRs. It tracks `master` commits for libfive, MCAD, and
+sanitizers-cmake, which do not have a suitable current release-tag stream.
+mimalloc and Manifold follow semantic version tags; OpenCSG and Clipper2 use
+their upstream release-tag naming schemes. These updates are not auto-merged.
+
+For release-tagged modules, `.gitmodules` uses `branch` to record the version
+Renovate should follow. This is Renovate's documented tag-tracking convention:
+Git itself still checks out the exact gitlink SHA during normal
+`git submodule update --init --recursive`. Do not use `git submodule update
+--remote` for those modules, because Git expects `branch` to name a branch.
+
+Existing release tags are not repinned automatically. In particular, the
+Clipper2 gitlink currently includes fixes after `Clipper2_2.0.1`; enabling
+automation must not roll it back to that older tag. A future newer release
+can still update both its version and gitlink through a reviewed PR.
+
 ### 5.1 If a PR’s mergeCommit is missing
 
 Sometimes PR metadata can be odd depending on merge mode or repo settings.
