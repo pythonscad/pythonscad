@@ -1,23 +1,30 @@
 [submodule "libraries/MCAD"]
 	path = libraries/MCAD
 	url = https://github.com/openscad/MCAD.git
+	branch = master
 [submodule "mimalloc"]
 	path = submodules/mimalloc
 	url = https://github.com/microsoft/mimalloc.git
+	branch = v3.3.2
 [submodule "submodules/manifold"]
 	path = submodules/manifold
 	url = https://github.com/elalish/manifold.git
+	branch = v3.5.3
 	ignore = dirty
 [submodule "submodules/libfive"]
 	path = submodules/libfive
 	url = https://github.com/libfive/libfive.git
+	branch = master
 	ignore = dirty
 [submodule "sanitizers-cmake"]
 	path = submodules/sanitizers-cmake
 	url = https://github.com/arsenm/sanitizers-cmake.git
+	branch = master
 [submodule "OpenCSG"]
 	path = submodules/OpenCSG
 	url = https://github.com/floriankirsch/OpenCSG.git
+	branch = opencsg-1-8-2-release
 [submodule "Clipper2"]
 	path = submodules/Clipper2
 	url = https://github.com/AngusJohnson/Clipper2.git
+	branch = Clipper2_2.0.1
