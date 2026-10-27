@@ -21,7 +21,9 @@ permissions:
 jobs:
   build-appimage:
     name: Build AppImage (${{ matrix.arch }})
-    runs-on: ubuntu-26.04
+    # Build against the oldest supported AppImage runtime's glibc.
+    # Ubuntu 22.04 users are covered by the native Debian package.
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     strategy:
