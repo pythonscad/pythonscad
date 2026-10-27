@@ -16,7 +16,7 @@ class DispatchTests(unittest.TestCase):
         if version.returncode:
             raise unittest.SkipTest("release build tracking requires Bash 4 or newer")
 
-    def run_dispatch(self, conclusion):
+    def run_dispatch(self, conclusion, commit="a" * 40):
         root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as directory:
             gh = Path(directory) / "gh"
@@ -24,11 +24,14 @@ class DispatchTests(unittest.TestCase):
 import os
 import sys
 args = sys.argv[1:]
-if args[:2] == ["workflow", "run"]:
+if args[:1] == ["api"]:
+    print("a" * 40)
+elif args[:2] == ["workflow", "run"]:
     pass
 elif args[:2] == ["run", "list"]:
     workflows = ["build-appimage.yml", "build-debian-packages.yml", "build-rpm-packages.yml",
                  "build-windows-native.yml", "build-macos-release.yml"]
+    assert args[args.index("--commit") + 1] == "a" * 40
     print(1000 + workflows.index(args[args.index("--workflow") + 1]))
 elif args[:2] == ["run", "view"]:
     print("completed\\t" + os.environ["TEST_CONCLUSION"] + "\\thttps://example.test/run\\tBuild")
@@ -40,7 +43,7 @@ else:
             gh.chmod(0o755)
             result = subprocess.run(
                 ["bash", str(root / "scripts/release-smoke/trigger-release-builds.sh"),
-                 "--repo", "owner/repo", "--ref", "master", "--wait"],
+                 "--repo", "owner/repo", "--ref", "master", "--commit", commit, "--wait"],
                 env={**os.environ, "PATH": directory + os.pathsep + os.environ["PATH"],
                      "TEST_CONCLUSION": conclusion},
                 capture_output=True, text=True, timeout=15,
@@ -60,6 +63,12 @@ else:
         self.assertNotIn("CANCELLED 1000", result.stdout)
         for run_id in range(1001, 1005):
             self.assertIn(f"CANCELLED {run_id}", result.stdout)
+
+    def test_branch_moved_since_smoke_run_started(self):
+        result = self.run_dispatch("success", commit="b" * 40)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("dispatch ref master points to", result.stderr)
+        self.assertNotIn("Dispatching", result.stdout)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,9 @@ permissions:
   contents: read
   actions: read
 
+env:
+  RELEASE_SMOKE_COMMIT: ${{ github.sha }}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -22,6 +25,12 @@ jobs:
     name: Prepare release build artifacts
     runs-on: ubuntu-26.04
     timeout-minutes: 180
+    outputs:
+      appimage: ${{ steps.select.outputs.appimage }}
+      debian: ${{ steps.select.outputs.debian }}
+      rpm: ${{ steps.select.outputs.rpm }}
+      windows: ${{ steps.select.outputs.windows }}
+      macos: ${{ steps.select.outputs.macos }}
     permissions:
       contents: read
       actions: write
@@ -39,12 +48,27 @@ jobs:
           scripts/release-smoke/trigger-release-builds.sh \
             --repo "$GITHUB_REPOSITORY" \
             --ref "$GITHUB_REF_NAME" \
+            --commit "$RELEASE_SMOKE_COMMIT" \
             --wait
 
       - name: Use existing release build artifacts
         if: ${{ !inputs.trigger_release_builds }}
         run: |
-          echo "Using latest successful release build artifacts for $GITHUB_REF_NAME"
+          echo "Using release build artifacts for exact commit $RELEASE_SMOKE_COMMIT"
+
+      - name: Pin matching release build runs
+        id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source scripts/release-smoke/common-smoke.sh
+          for entry in appimage:build-appimage.yml debian:build-debian-packages.yml rpm:build-rpm-packages.yml windows:build-windows-native.yml macos:build-macos-release.yml; do
+            name=${entry%%:*}
+            workflow=${entry#*:}
+            run_id=$(rs_latest_successful_run "$GITHUB_REPOSITORY" "$workflow" "$GITHUB_REF_NAME" "$RELEASE_SMOKE_COMMIT")
+            echo "$name=$run_id" >> "$GITHUB_OUTPUT"
+            echo "$name: run $run_id, commit $RELEASE_SMOKE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          done
 
   release-smoke:
     name: ${{ matrix.name }}
@@ -74,19 +98,23 @@ jobs:
         if: runner.os == 'Linux'
         env:
           GH_TOKEN: ${{ github.token }}
+          DEB_RUN_ID: ${{ needs.prepare-release-builds.outputs.debian }}
+          RPM_RUN_ID: ${{ needs.prepare-release-builds.outputs.rpm }}
         run: |
           scripts/release-smoke/test-linux-packages.sh \
             --repo "$GITHUB_REPOSITORY" \
-            --ref "$GITHUB_REF_NAME"
+            --ref "$GITHUB_REF_NAME" \
+            --deb-run-id "$DEB_RUN_ID" --rpm-run-id "$RPM_RUN_ID"
 
       - name: Smoke test macOS DMG
         if: runner.os == 'macOS'
         env:
           GH_TOKEN: ${{ github.token }}
+          MACOS_RUN_ID: ${{ needs.prepare-release-builds.outputs.macos }}
         run: |
           scripts/release-smoke/test-macos.sh \
             --repo "$GITHUB_REPOSITORY" \
-            --ref "$GITHUB_REF_NAME"
+            --ref "$GITHUB_REF_NAME" --run-id "$MACOS_RUN_ID"
 
       - name: Install Mesa for Windows smoke tests
         if: runner.os == 'Windows'
@@ -99,11 +127,12 @@ jobs:
         if: runner.os == 'Windows'
         env:
           GH_TOKEN: ${{ github.token }}
+          WINDOWS_RUN_ID: ${{ needs.prepare-release-builds.outputs.windows }}
         shell: pwsh
         run: |
           powershell -ExecutionPolicy Bypass -File scripts/release-smoke/test-windows.ps1 `
             --repo "$env:GITHUB_REPOSITORY" `
-            --ref "$env:GITHUB_REF_NAME"
+            --ref "$env:GITHUB_REF_NAME" --run-id "$env:WINDOWS_RUN_ID"
 
   appimage-smoke:
     name: AppImage smoke tests (Ubuntu ${{ matrix.ubuntu }})
@@ -123,11 +152,11 @@ jobs:
       - name: Download AppImage
         env:
           GH_TOKEN: ${{ github.token }}
+          APPIMAGE_RUN_ID: ${{ needs.prepare-release-builds.outputs.appimage }}
         run: |
           source scripts/release-smoke/common-smoke.sh
-          run_id=$(rs_latest_successful_run "$GITHUB_REPOSITORY" build-appimage.yml "$GITHUB_REF_NAME")
-          [[ -n "$run_id" && "$run_id" != "null" ]] || rs_die "no successful AppImage build found"
-          rs_download_run_artifact "$GITHUB_REPOSITORY" "$run_id" \
+          rs_validate_run_commit "$GITHUB_REPOSITORY" "$APPIMAGE_RUN_ID" "$RELEASE_SMOKE_COMMIT"
+          rs_download_run_artifact "$GITHUB_REPOSITORY" "$APPIMAGE_RUN_ID" \
             pythonscad-qt6-x86_64-appimage "$RUNNER_TEMP/appimage-artifacts"
 
       - name: Smoke test on Ubuntu

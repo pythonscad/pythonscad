@@ -21,6 +21,7 @@ Options:
   --ref <branch-or-tag>        Ref to dispatch. Defaults to the release-please
                                branch when it exists, otherwise master.
   --upload-to-release <tag>    Pass upload_to_release to packaging workflows.
+  --commit <sha>               Expected source SHA (default: resolved dispatch ref).
   --wait                       Wait until all dispatched workflows finish.
   --dry-run                    Print workflow dispatch commands without running them.
   --help                       Show this help.
@@ -36,6 +37,7 @@ EOF
 
 repo=""
 ref=""
+commit=""
 upload_to_release=""
 wait_for_runs=0
 dry_run=0
@@ -45,6 +47,11 @@ while (($#)); do
     --repo)
       repo=${2:-}
       [[ -n "$repo" ]] || rs_die "--repo requires a value"
+      shift 2
+      ;;
+    --commit)
+      commit=${2:-}
+      [[ -n "$commit" ]] || rs_die "--commit requires a value"
       shift 2
       ;;
     --ref)
@@ -95,6 +102,11 @@ case "$ref" in
     ;;
 esac
 
+resolved_commit=$(gh api "repos/${repo}/commits/${ref}" --jq .sha)
+commit=$(rs_expected_commit "${commit:-$resolved_commit}")
+[[ "$resolved_commit" == "$commit" ]] ||
+  rs_die "dispatch ref $ref points to $resolved_commit, expected $commit; restart from the intended commit"
+
 workflows=(
   build-appimage.yml
   build-debian-packages.yml
@@ -111,6 +123,8 @@ find_dispatched_run_id() {
     --repo "$repo" \
     --workflow "$workflow" \
     --event workflow_dispatch \
+    --branch "$ref" \
+    --commit "$commit" \
     --limit 20 \
     --json 'databaseId,createdAt,headBranch' \
     --jq "map(select(.createdAt >= \"$created_after\" and .headBranch == \"$ref\")) | sort_by(.createdAt) | .[0].databaseId // \"\""
@@ -194,6 +208,7 @@ wait_for_workflows() {
 
 rs_log "Repository: $repo"
 rs_log "Ref: $ref"
+rs_log "Commit: $commit"
 if [[ -n "$upload_to_release" ]]; then
   rs_log "upload_to_release: $upload_to_release"
 fi

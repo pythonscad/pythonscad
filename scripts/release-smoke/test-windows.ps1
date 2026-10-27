@@ -13,6 +13,7 @@ MSIX artifacts are intentionally ignored for now.
 Options:
   --repo <owner/name>          GitHub repository to query. Defaults to current repo.
   --ref <branch-or-tag>        Branch used for latest-run filtering.
+  --commit <sha>               Required source SHA (default: checkout HEAD).
   --run-id <id>                Use a specific build-windows-native.yml run.
   --workdir <path>             Working directory. Defaults to a temp directory.
   --keep-workdir               Keep temporary files after the run.
@@ -34,6 +35,7 @@ function Get-SmokeOption {
     $options = [ordered]@{
         Repo = ''
         Ref = ''
+        Commit = ''
         RunId = ''
         Workdir = ''
         KeepWorkdir = $false
@@ -51,6 +53,11 @@ function Get-SmokeOption {
                 $i++
                 if ($i -ge $Arguments.Count) { throw '--repo requires a value' }
                 $options.Repo = $Arguments[$i]
+            }
+            '--commit' {
+                $i++
+                if ($i -ge $Arguments.Count) { throw '--commit requires a value' }
+                $options.Commit = $Arguments[$i]
             }
             '--ref' {
                 $i++
@@ -190,9 +197,11 @@ try {
         }
 
         $runId = $options.RunId
+        $commit = Get-ExpectedSmokeCommit $options.Commit
         if (-not $runId) {
-            $runId = Get-LatestSuccessfulRun -Repo $repo -Workflow 'build-windows-native.yml' -Ref $options.Ref
+            $runId = Get-LatestSuccessfulRun -Repo $repo -Workflow 'build-windows-native.yml' -Ref $options.Ref -Commit $commit
         }
+        Assert-SmokeRunCommit -Repo $repo -RunId $runId -Commit $commit
         Write-SmokeLog "Downloading Windows artifacts from run $runId"
         & gh run download $runId --repo $repo --dir $artifactDir
     } else {
