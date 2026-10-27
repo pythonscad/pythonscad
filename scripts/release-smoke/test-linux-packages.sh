@@ -15,7 +15,8 @@ Download and smoke test x86_64/amd64 .deb and .rpm package artifacts in Docker.
 
 Options:
   --repo <owner/name>       GitHub repository to query. Defaults to current repo.
-  --ref <branch-or-tag>     Branch used for latest-run filtering.
+  --ref <branch-or-tag>     Branch used for run filtering.
+  --commit <sha>            Required source SHA (default: checkout HEAD).
   --run-id <id>             Use the same workflow run id for both package types.
   --deb-run-id <id>         Use a specific build-debian-packages.yml run.
   --rpm-run-id <id>         Use a specific build-rpm-packages.yml run.
@@ -29,6 +30,7 @@ EOF
 
 repo=""
 ref=""
+commit=""
 deb_run_id=""
 rpm_run_id=""
 workdir_arg=""
@@ -41,6 +43,11 @@ while (($#)); do
     --repo)
       repo=${2:-}
       [[ -n "$repo" ]] || rs_die "--repo requires a value"
+      shift 2
+      ;;
+    --commit)
+      commit=${2:-}
+      [[ -n "$commit" ]] || rs_die "--commit requires a value"
       shift 2
       ;;
     --ref)
@@ -111,18 +118,22 @@ fi
 
 if [[ "$skip_download" == "0" ]]; then
   rs_require_command gh
+  commit=$(rs_expected_commit "$commit")
   if [[ -z "$repo" ]]; then
     repo=$(rs_repo_default)
   fi
 
   if [[ -z "$deb_run_id" ]]; then
-    deb_run_id=$(rs_latest_successful_run "$repo" build-debian-packages.yml "$ref")
+    deb_run_id=$(rs_latest_successful_run "$repo" build-debian-packages.yml "$ref" "$commit")
     [[ -n "$deb_run_id" && "$deb_run_id" != "null" ]] || rs_die "no successful build-debian-packages.yml run found"
   fi
   if [[ -z "$rpm_run_id" ]]; then
-    rpm_run_id=$(rs_latest_successful_run "$repo" build-rpm-packages.yml "$ref")
+    rpm_run_id=$(rs_latest_successful_run "$repo" build-rpm-packages.yml "$ref" "$commit")
     [[ -n "$rpm_run_id" && "$rpm_run_id" != "null" ]] || rs_die "no successful build-rpm-packages.yml run found"
   fi
+
+  rs_validate_run_commit "$repo" "$deb_run_id" "$commit"
+  rs_validate_run_commit "$repo" "$rpm_run_id" "$commit"
 
   rs_log "Downloading Debian package artifacts from run $deb_run_id"
   rs_download_run_artifact "$repo" "$deb_run_id" 'pythonscad-*-deb' "$artifact_dir/deb"

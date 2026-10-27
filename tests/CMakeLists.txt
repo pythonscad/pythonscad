@@ -1779,6 +1779,11 @@ if(Python3_EXECUTABLE AND UNIX)
       ${CMAKE_CURRENT_SOURCE_DIR}/test_release_smoke_dispatch.py
   )
   set_property(TEST release-smoke-dispatch PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  add_test(NAME release-smoke-run-lookup CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_release_smoke_lookup.py
+  )
+  set_property(TEST release-smoke-run-lookup PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
   add_test(NAME windows-python-packaging CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_python_packaging.py
