@@ -1751,9 +1751,29 @@ if(RELEASE_SMOKE_POWERSHELL)
     COMMAND ${RELEASE_SMOKE_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
       ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_lookup.ps1
   )
+  if(Python3_EXECUTABLE)
+    add_test(NAME windows-smoke-input CONFIGURATIONS Default
+      COMMAND ${RELEASE_SMOKE_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_input.ps1 ${Python3_EXECUTABLE}
+    )
+    if(WIN32)
+      find_program(RELEASE_SMOKE_LEGACY_POWERSHELL NAMES powershell)
+      if(RELEASE_SMOKE_LEGACY_POWERSHELL)
+        add_test(NAME windows-smoke-input-legacy CONFIGURATIONS Default
+          COMMAND ${RELEASE_SMOKE_LEGACY_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
+            ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_input.ps1 ${Python3_EXECUTABLE}
+        )
+      endif()
+    endif()
+  endif()
 endif()
 
 if(Python3_EXECUTABLE AND UNIX)
+  add_test(NAME linux-smoke-ownership CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_linux_smoke_ownership.py
+  )
+  set_property(TEST linux-smoke-ownership PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
   add_test(NAME release-smoke-dispatch CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_release_smoke_dispatch.py

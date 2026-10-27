@@ -95,13 +95,28 @@ function Invoke-PythonSCAD {
     $psi.RedirectStandardError = $true
     if ($InputFile) {
         $psi.RedirectStandardInput = $true
+        $psi.Environment['PYTHONIOENCODING'] = 'utf-8'
     }
 
-    $process = [System.Diagnostics.Process]::Start($psi)
+    # .NET Framework constructs an auto-flushing stdin writer during Start,
+    # using Console.InputEncoding. If it has a BOM, the bytes are already in
+    # the pipe before the caller can access StandardInput. Select BOM-free
+    # UTF-8 while creating that writer, then restore the parent's encoding.
+    $previousInputEncoding = [Console]::InputEncoding
+    try {
+        if ($InputFile) {
+            [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+        }
+        $process = [System.Diagnostics.Process]::Start($psi)
+    } finally {
+        if ($InputFile) {
+            [Console]::InputEncoding = $previousInputEncoding
+        }
+    }
     $stdoutTask = $process.StandardOutput.ReadToEndAsync()
     $stderrTask = $process.StandardError.ReadToEndAsync()
     if ($InputFile) {
-        $inputText = Get-Content -LiteralPath $InputFile -Raw
+        $inputText = Get-Content -LiteralPath $InputFile -Raw -Encoding UTF8
         $process.StandardInput.Write($inputText)
         $process.StandardInput.Close()
     }

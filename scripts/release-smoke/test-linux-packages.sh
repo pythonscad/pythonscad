@@ -260,9 +260,13 @@ run_deb_package_test() {
     -v "$SCRIPT_DIR:/release-smoke:ro" \
     -e DEBIAN_FRONTEND=noninteractive \
     -e PACKAGE_FILE="$package_file" \
+    -e SMOKE_UID="$(id -u)" -e SMOKE_GID="$(id -g)" \
     "$image" \
     bash -c '
       set -euo pipefail
+      # Package installation needs root; return output ownership to the
+      # invoking user before the host cleans up or retains diagnostic logs.
+      trap '\''status=$?; chown -R "$SMOKE_UID:$SMOKE_GID" /tmp/pythonscad-smoke; exit "$status"'\'' EXIT
       apt-get update
       cd /tmp
       apt-get install -y ./pythonscad-package.deb
@@ -287,9 +291,11 @@ run_rpm_package_test() {
     -v "$smoke_dir:/tmp/pythonscad-smoke" \
     -v "$SCRIPT_DIR:/release-smoke:ro" \
     -e PACKAGE_FILE="$package_file" \
+    -e SMOKE_UID="$(id -u)" -e SMOKE_GID="$(id -g)" \
     "$image" \
     bash -c '
       set -euo pipefail
+      trap '\''status=$?; chown -R "$SMOKE_UID:$SMOKE_GID" /tmp/pythonscad-smoke; exit "$status"'\'' EXIT
       if command -v dnf >/dev/null 2>&1; then
         dnf install -y --nogpgcheck /tmp/pythonscad-package.rpm
       else

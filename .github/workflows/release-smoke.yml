@@ -88,6 +88,13 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --ref "$GITHUB_REF_NAME"
 
+      - name: Install Mesa for Windows smoke tests
+        if: runner.os == 'Windows'
+        uses: ssciwr/setup-mesa-dist-win@v3
+        with:
+          version: '22.1.7'
+          build-type: 'release-mingw'
+
       - name: Smoke test Windows packages
         if: runner.os == 'Windows'
         env:
