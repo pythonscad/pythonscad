@@ -174,7 +174,7 @@ wait_for_workflows() {
 
       if [[ "$status" == "completed" ]]; then
         completed[$workflow]=1
-        ((remaining -= 1))
+        remaining=$((remaining - 1))
         rs_log "Finished $workflow_name ($workflow): ${conclusion:-unknown} - $url"
         if [[ "$conclusion" != "success" ]]; then
           cancel_unfinished_workflows "$workflow"

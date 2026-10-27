@@ -28,36 +28,6 @@ function Get-DefaultRepo {
     (& gh repo view --json nameWithOwner --jq .nameWithOwner).Trim()
 }
 
-function Get-LatestSuccessfulRun {
-    param(
-        [Parameter(Mandatory = $true)][string]$Repo,
-        [Parameter(Mandatory = $true)][string]$Workflow,
-        [string]$Ref
-    )
-
-    $ghArgs = @(
-        'run', 'list',
-        '--repo', $Repo,
-        '--workflow', $Workflow,
-        '--status', 'success',
-        '--json', 'databaseId,headBranch'
-    )
-    if ($Ref) {
-        if ($Ref -match '["\\\r\n]') {
-            throw '--ref contains characters that cannot be used in GitHub Actions jq filters'
-        }
-        $jq = 'map(select(.headBranch == "' + $Ref + '")) | .[0].databaseId // ""'
-        $ghArgs += @('--limit', '50', '--jq', $jq)
-    } else {
-        $ghArgs += @('--limit', '1', '--jq', '.[0].databaseId')
-    }
-    $runId = (& gh @ghArgs).Trim()
-    if (-not $runId -or $runId -eq 'null') {
-        throw "No successful $Workflow run found"
-    }
-    $runId
-}
-
 function Get-SmokeOption {
     param([string[]]$Arguments)
 
