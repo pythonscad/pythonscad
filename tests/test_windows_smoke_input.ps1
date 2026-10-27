@@ -7,8 +7,8 @@ $directory = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetR
 New-Item -ItemType Directory -Path $directory | Out-Null
 $previousEncoding = [Console]::InputEncoding
 try {
-    # Reproduce the Windows PowerShell default that gives pipe writers a BOM,
-    # even when this regression test runs under PowerShell 7 on another OS.
+    # Exercise the BOM-producing console encoding used by Windows PowerShell.
+    # PowerShell 7 also checks the UTF-8 source round trip on other hosts.
     [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($true)
     $inputFile = Join-Path $directory 'input.py'
     $logFile = Join-Path $directory 'output.log'

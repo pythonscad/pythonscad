@@ -1756,6 +1756,15 @@ if(RELEASE_SMOKE_POWERSHELL)
       COMMAND ${RELEASE_SMOKE_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
         ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_input.ps1 ${Python3_EXECUTABLE}
     )
+    if(WIN32)
+      find_program(RELEASE_SMOKE_LEGACY_POWERSHELL NAMES powershell)
+      if(RELEASE_SMOKE_LEGACY_POWERSHELL)
+        add_test(NAME windows-smoke-input-legacy CONFIGURATIONS Default
+          COMMAND ${RELEASE_SMOKE_LEGACY_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
+            ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_input.ps1 ${Python3_EXECUTABLE}
+        )
+      endif()
+    endif()
   endif()
 endif()
 

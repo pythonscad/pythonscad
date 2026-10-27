@@ -98,18 +98,27 @@ function Invoke-PythonSCAD {
         $psi.Environment['PYTHONIOENCODING'] = 'utf-8'
     }
 
-    $process = [System.Diagnostics.Process]::Start($psi)
+    # .NET Framework constructs an auto-flushing stdin writer during Start,
+    # using Console.InputEncoding. If it has a BOM, the bytes are already in
+    # the pipe before the caller can access StandardInput. Select BOM-free
+    # UTF-8 while creating that writer, then restore the parent's encoding.
+    $previousInputEncoding = [Console]::InputEncoding
+    try {
+        if ($InputFile) {
+            [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+        }
+        $process = [System.Diagnostics.Process]::Start($psi)
+    } finally {
+        if ($InputFile) {
+            [Console]::InputEncoding = $previousInputEncoding
+        }
+    }
     $stdoutTask = $process.StandardOutput.ReadToEndAsync()
     $stderrTask = $process.StandardError.ReadToEndAsync()
     if ($InputFile) {
         $inputText = Get-Content -LiteralPath $InputFile -Raw -Encoding UTF8
-        # Windows PowerShell's default StreamWriter can emit a UTF-8 BOM.
-        # Send bytes directly: StandardInputEncoding is unavailable in its
-        # .NET Framework runtime. Close the pipe without flushing that writer.
-        $inputBytes = [System.Text.UTF8Encoding]::new($false).GetBytes($inputText)
-        $inputStream = $process.StandardInput.BaseStream
-        $inputStream.Write($inputBytes, 0, $inputBytes.Length)
-        $inputStream.Close()
+        $process.StandardInput.Write($inputText)
+        $process.StandardInput.Close()
     }
     $process.WaitForExit()
     $stdout = $stdoutTask.Result

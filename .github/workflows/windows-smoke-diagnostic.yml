@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Test BOM-free pipe encoding with Windows PowerShell
+      - name: Test BOM-free pipe encoding with Windows PowerShell 5.1
         shell: pwsh
         run: |
           powershell -ExecutionPolicy Bypass -File tests/test_windows_smoke_input.ps1 `
