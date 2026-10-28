@@ -3009,6 +3009,10 @@ static int pullObject_calccut(const PullNode& node, Vector3d p1, Vector3d p2, Ve
   // Vector3d(dir[1], dir[2], dir[2]) was zero for X-aligned edges — dropping faces.
   // Callers only ask for straddling edges, so accept any finite t in [0,1]; a hard
   // abs(denom) cutoff would still drop valid near-parallel crossings.
+  // Adjacent triangles traverse their shared edge in opposite directions. Use
+  // the same endpoint order so their cut vertices agree exactly, including for
+  // imported meshes with non-integral coordinates.
+  if ((p2 - p1).dot(node.dir) < 0) std::swap(p1, p2);
   Vector3d edge = p2 - p1;
   double denom = edge.dot(node.dir);
   double t = (node.anchor - p1).dot(node.dir) / denom;
@@ -3019,14 +3023,16 @@ static int pullObject_calccut(const PullNode& node, Vector3d p1, Vector3d p2, Ve
 static void pullObject_addtri(PolySetBuilder& builder, Vector3d a, Vector3d b, Vector3d c)
 {
   builder.beginPolygon(3);
-  builder.addVertex(c);
-  builder.addVertex(b);
   builder.addVertex(a);
+  builder.addVertex(b);
+  builder.addVertex(c);
 }
 
 static std::unique_ptr<PolySet> pullObject(const PullNode& node, const PolySet *ps)
 {
-  PolySetBuilder builder(0, 0, 3, true);
+  // Pulling can preserve cavities or introduce concavities. Declaring this convex
+  // makes backend conversion replace the surface with its convex hull.
+  PolySetBuilder builder(0, 0, 3, unknown);
   auto ps_tess = PolySetUtils::tessellate_faces(*ps);
   for (unsigned int i = 0; i < ps_tess->indices.size(); i++) {
     auto& pol = ps_tess->indices[i];
@@ -3095,7 +3101,7 @@ static std::unique_ptr<PolySet> pullObject(const PullNode& node, const PolySet *
     case 3:
       builder.beginPolygon(3);
       for (int j = 0; j < 3; j++) {
-        Vector3d pt = ps_tess->vertices[pol[2 - j]] + node.dir;
+        Vector3d pt = ps_tess->vertices[pol[j]] + node.dir;
         builder.addVertex(pt);
       }
       break;
