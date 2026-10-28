@@ -5359,6 +5359,7 @@ void MainWindow::setupStatusBar()
   // tabSwitched -> onLanguageActiveChanged -> updateLanguageLabel() which
   // dereferences these pointers.
   this->languageLabel = nullptr;
+  this->versionLabel = nullptr;
   // Remove ugly frames in the QStatusBar when using additional widgets.
   const auto stylesheet = QString(R"(
     QStatusBar::item {
@@ -5367,7 +5368,6 @@ void MainWindow::setupStatusBar()
   )");
   this->statusBar()->setStyleSheet(stylesheet);
   updateStatusBar(nullptr);
-  this->versionLabel = nullptr;
 }
 
 /**
