@@ -2,7 +2,9 @@
 
 #include "geometry/brep/BRepGeometry.h"
 
+#include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -17,6 +19,9 @@
 #include <BRep_Builder.hxx>
 #include <IFSelect_ReturnStatus.hxx>
 #include <Interface_Static.hxx>
+#include <BRepGProp.hxx>
+#include <GProp_GProps.hxx>
+#include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
 #include <Standard_Failure.hxx>
 #include <TopoDS_Compound.hxx>
@@ -54,6 +59,49 @@ bool collectShapes(const std::shared_ptr<const Geometry>& geom,
   return false;
 }
 
+double volumeOf(const TopoDS_Shape& shape)
+{
+  GProp_GProps props;
+  BRepGProp::VolumeProperties(shape, props);
+  return props.Mass();
+}
+
+/// Read the written file back and compare its volume with the solid it was made
+/// from. OCCT's STEP writer can silently drop parts of a solid in degenerate
+/// configurations (see ExactShape::genericAxes()); a mesh export is better than
+/// an exact file that is wrong.
+enum class Roundtrip { Ok, Mismatch, Unreadable };
+
+/// Read the written file back and compare its volume with the solid it was made
+/// from. OCCT's STEP translation can silently keep the wrong side of a face in
+/// degenerate configurations (see ExactShapeUtils::splitClosedFaces()).
+Roundtrip checkRoundtrip(const TopoDS_Shape& shape, const std::string& file, double& actual)
+{
+  STEPControl_Reader reader;
+  if (reader.ReadFile(file.c_str()) != IFSelect_RetDone || reader.TransferRoots() == 0) {
+    return Roundtrip::Unreadable;
+  }
+  const double expected = volumeOf(shape);
+  actual = volumeOf(reader.OneShape());
+  return std::abs(actual - expected) <= 1e-6 * std::max(1.0, std::abs(expected)) ? Roundtrip::Ok
+                                                                                 : Roundtrip::Mismatch;
+}
+
+bool writeStepFile(const TopoDS_Shape& shape, const std::string& file, const ExportInfo& exportInfo)
+{
+  STEPControl_Writer writer;
+  Interface_Static::SetCVal("write.step.schema", "AP214IS");
+  Interface_Static::SetCVal("write.step.unit", "MM");
+  if (!exportInfo.title.empty()) {
+    Interface_Static::SetCVal("write.step.product.name", exportInfo.title.c_str());
+  }
+  return writer.Transfer(shape, STEPControl_AsIs) == IFSelect_RetDone &&
+         writer.Write(file.c_str()) == IFSelect_RetDone;
+}
+
+/// Write shape as STEP and verify the file by reading it back. If the check fails,
+/// retry once with closed faces split; if that fails too, return false so the
+/// caller exports the mesh instead of an exact file that is wrong.
 /// OCCT's STEP writer only writes to a file name (stream output appeared in 7.7),
 /// so go through a temporary file to stay compatible with older distro packages.
 bool writeStepToStream(const TopoDS_Shape& shape, std::ostream& output, const ExportInfo& exportInfo)
@@ -68,17 +116,27 @@ bool writeStepToStream(const TopoDS_Shape& shape, std::ostream& output, const Ex
 
   bool ok = false;
   try {
-    STEPControl_Writer writer;
-    Interface_Static::SetCVal("write.step.schema", "AP214IS");
-    Interface_Static::SetCVal("write.step.unit", "MM");
-    if (!exportInfo.title.empty()) {
-      Interface_Static::SetCVal("write.step.product.name", exportInfo.title.c_str());
+    const double expected = volumeOf(shape);
+    double actual = expected;
+    Roundtrip result = Roundtrip::Unreadable;
+    for (int attempt = 0; attempt < 2 && result != Roundtrip::Ok; ++attempt) {
+      const TopoDS_Shape candidate = attempt == 0 ? shape : ExactShapeUtils::splitClosedFaces(shape);
+      if (!writeStepFile(candidate, tmpfile.string(), exportInfo)) break;
+      result = checkRoundtrip(candidate, tmpfile.string(), actual);
     }
-    if (writer.Transfer(shape, STEPControl_AsIs) == IFSelect_RetDone &&
-        writer.Write(tmpfile.string().c_str()) == IFSelect_RetDone) {
+    if (result == Roundtrip::Ok) {
       std::ifstream in(tmpfile, std::ios::binary);
       output << in.rdbuf();
       ok = in.good() || in.eof();
+    } else if (result == Roundtrip::Mismatch) {
+      LOG(
+        message_group::Warning,
+        "STEP export: exact file failed the self check (volume %1$.6g instead of %2$.6g), exporting as "
+        "mesh",
+        actual, expected);
+    } else {
+      LOG(message_group::Warning,
+          "STEP export: exact file could not be written or read back, exporting as mesh");
     }
   } catch (const Standard_Failure& e) {
     LOG(message_group::Error, "STEP export failed: %1$s",
