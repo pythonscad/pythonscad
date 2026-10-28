@@ -55,4 +55,15 @@ private:
   std::unique_ptr<Impl> impl_;
 };
 
+namespace ExactShapeUtils {
+/**
+ * Split closed (periodic) faces such as a full sphere or cylinder into several
+ * non-closed faces. Used as a fallback for STEP export: on a closed surface a
+ * single boundary loop is ambiguous, and when the loop runs through a pole
+ * (e.g. a sphere centered on the edge of a plate) OCCT's STEP translation keeps
+ * the wrong side of it. Returns shape unchanged if splitting fails.
+ */
+TopoDS_Shape splitClosedFaces(const TopoDS_Shape& shape);
+}  // namespace ExactShapeUtils
+
 #endif  // ENABLE_OCCT

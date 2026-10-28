@@ -101,6 +101,14 @@ CASES = [
         "show(union(sphere(6), cube(10, center=True), cylinder(h=30, r=2, center=True)))",
         expect(SPHERICAL_SURFACE=EXACT, CYLINDRICAL_SURFACE=EXACT, MANIFOLD_SOLID_BREP=1),
     ),
+    (
+        # Spheres centred on the edges/corner of a plate: OCCT's STEP translation keeps the
+        # wrong side of the closed sphere face here; the exporter must detect that and retry
+        # with split faces instead of falling back to the mesh or writing a wrong file.
+        "spheres-on-plate-edges",
+        "show(union(cube([60, 60, 5]), *[sphere(3).translate([20*i, 20*j, 5]) for i in range(3) for j in range(3)]))",
+        expect(SPHERICAL_SURFACE=(9, None), MANIFOLD_SOLID_BREP=1),
+    ),
     ("mixed-falls-back-to-mesh", f"show(sphere(5) | {TETRA})", MESH),
     (
         "mixed-boolean-poisons-parent",

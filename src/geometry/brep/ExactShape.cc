@@ -21,6 +21,7 @@
 #include <BRepPrimAPI_MakeCone.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
+#include <ShapeUpgrade_ShapeDivideClosed.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
 #include <Standard_Failure.hxx>
 #include <TopTools_ListOfShape.hxx>
@@ -240,6 +241,18 @@ std::shared_ptr<const ExactShape> ExactShape::boolean(
       }
     });
   });
+}
+
+TopoDS_Shape ExactShapeUtils::splitClosedFaces(const TopoDS_Shape& shape)
+{
+  try {
+    ShapeUpgrade_ShapeDivideClosed divide(shape);
+    divide.SetNbSplitPoints(5);
+    divide.Perform();
+    return divide.Result();
+  } catch (const Standard_Failure&) {
+    return shape;
+  }
 }
 
 #endif  // ENABLE_OCCT
