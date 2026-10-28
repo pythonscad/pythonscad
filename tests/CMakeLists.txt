@@ -1398,6 +1398,13 @@ add_cmdline_test(pythonscadpreview   EXPERIMENTAL OPENSCAD SUFFIX png FILES ${TE
 # 2D boolean seam fillets (issue #1004): validate via SVG (headless-safe).
 add_cmdline_test(pythonscad2d        EXPERIMENTAL OPENSCAD SUFFIX svg FILES ${PYTHONSCAD_2D_SVG_FILES} ARGS --render --trust-python)
 add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_FILES} ARGS --trust-python)
+# The convexity regression needs CGAL explicitly: Manifold can accept a valid
+# mesh without consulting its convexity flag. Reuse the default echo golden.
+if(ENABLE_CGAL)
+  add_cmdline_test(pythonscadecho-cgal EXPERIMENTAL OPENSCAD SUFFIX echo
+    FILES ${TEST_PYTHONSCAD_ECHO_DIR}/pull-render-cavities.py
+    EXPECTEDDIR pythonscadecho ARGS --trust-python --backend=cgal)
+endif()
 # nimport download logs include machine-local library paths; keep the portable
 # DEPRECATED line + script prints in the golden file.
 if(NOT HEADLESS)
