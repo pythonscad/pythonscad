@@ -1782,35 +1782,41 @@ void MainWindow::writeBackup(QFile *file)
 
 void MainWindow::saveBackup()
 {
-  auto path = PlatformUtils::backupPath();
-  if ((!fs::exists(path)) && (!PlatformUtils::createBackupPath())) {
-    LOG(message_group::UI_Warning, "Cannot create backup path: %1$s", path);
-    return;
-  }
+  // There is a good argument that the management of the temporary file name belongs
+  // in EditorInterface, since that's where it lives and where the path of the file
+  // lives.  However, all management of EditorInterface::filepath appears to be in
+  // MainWindow and TabManager, *not* in EditorInterface, so I'm leaving the temporary
+  // file management here.
+  if (!activeEditor->tempFile) {
+    auto path = PlatformUtils::backupPath();
+    if ((!fs::exists(path)) && (!PlatformUtils::createBackupPath())) {
+      LOG(message_group::UI_Warning, "Cannot create backup path: %1$s", path);
+      return;
+    }
 
-  auto backupPath = QString::fromLocal8Bit(path.c_str());
-  if (!backupPath.endsWith("/")) backupPath.append("/");
+    auto backupPath = QString::fromLocal8Bit(path.c_str());
+    if (!backupPath.endsWith("/")) backupPath.append("/");
 
-  QString basename = "unsaved";
-  if (!activeEditor->filepath.isEmpty()) {
-    auto fileInfo = QFileInfo(activeEditor->filepath);
-    basename = fileInfo.baseName();
-  }
+    QString basename = "unsaved";
+    if (!activeEditor->filepath.isEmpty()) {
+      auto fileInfo = QFileInfo(activeEditor->filepath);
+      basename = fileInfo.baseName();
+    }
 
-  if (!this->tempFile) {
 #ifdef ENABLE_PYTHON
     const QString suffix = currentLanguage == LANG_PYTHON ? "py" : "scad";
 #else
     const QString suffix = "scad";
 #endif
-    this->tempFile = new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
+    activeEditor->tempFile =
+      new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
   }
 
-  if ((!this->tempFile->isOpen()) && (!this->tempFile->open())) {
+  if ((!activeEditor->tempFile->isOpen()) && (!activeEditor->tempFile->open())) {
     LOG(message_group::UI_Warning, "Failed to create backup file");
     return;
   }
-  return writeBackup(this->tempFile);
+  return writeBackup(activeEditor->tempFile);
 }
 
 void MainWindow::on_fileActionSave_triggered()
@@ -5090,9 +5096,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
   auto windowState = saveState();
   UIUtils::dumpSaveState(windowState);
   settings.setValue("window/state", windowState);
-  if (this->tempFile) {
-    delete this->tempFile;
-    this->tempFile = nullptr;
+  if (activeEditor->tempFile) {
+    delete activeEditor->tempFile;
+    activeEditor->tempFile = nullptr;
   }
 
   // Disable invokeMethod calls for consoleOutput during shutdown,
