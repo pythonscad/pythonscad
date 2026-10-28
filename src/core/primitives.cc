@@ -543,7 +543,7 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
 #ifdef ENABLE_OCCT
   // Keep the classic tessellation as the mesh, so results stay bit-identical,
   // and carry the exact sphere along for consumers that want it (STEP export).
-  return BRepUtils::createSphere(std::move(mesh), r);
+  return BRepUtils::attachExact(std::move(mesh), ExactShape::sphere(r));
 #else
   return mesh;
 #endif

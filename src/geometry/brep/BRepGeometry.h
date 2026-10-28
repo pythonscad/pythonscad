@@ -7,31 +7,41 @@
 #include <ostream>
 #include <string>
 
+#include "core/enums.h"
+#include "geometry/Geometry.h"
 #include "geometry/PolySet.h"
+#include "geometry/brep/ExactShape.h"
 
-class TopoDS_Shape;
 struct ExportInfo;
 
 /**
- * A PolySet that additionally carries an exact B-Rep shape (OpenCASCADE).
+ * Interface of geometries that carry an exact solid next to their mesh.
  *
- * The PolySet part is the classic OpenSCAD tessellation (honouring $fn/$fa/$fs),
- * so every existing consumer (renderer, Manifold/CGAL booleans, STL/3MF export,
- * DRC checks, ...) keeps working unchanged and produces bit-identical results.
- *
- * The exact shape is only used where it is explicitly asked for, e.g. by the
- * STEP exporter. It survives copy() and transform(); any operation that builds
- * a new geometry (union, difference, extrude, ...) naturally yields a plain
- * PolySet again and the exact information is dropped.
- *
- * Code that edits the vertices of a copy directly (bypassing transform()) would
- * make mesh and shape disagree. isConsistent() detects that via a fingerprint
- * of the mesh, so consumers can fall back to the mesh in that case.
+ * The mesh stays the source of truth for everything mesh based (rendering,
+ * mesh booleans, STL/3MF, DRC, ...). The exact solid is only read where it is
+ * explicitly asked for, e.g. by the STEP exporter.
  */
-class BRepGeometry : public PolySet
+class ExactCarrier
 {
 public:
-  BRepGeometry(PolySet mesh, std::shared_ptr<const TopoDS_Shape> shape);
+  virtual ~ExactCarrier() = default;
+  /// The exact solid, or nullptr if it cannot be trusted to describe the mesh anymore.
+  [[nodiscard]] virtual std::shared_ptr<const ExactShape> exactShape() const = 0;
+};
+
+/**
+ * A PolySet that additionally carries an exact solid.
+ *
+ * The PolySet part is the classic OpenSCAD tessellation (honouring $fn/$fa/$fs),
+ * so every existing consumer keeps working unchanged and produces bit-identical
+ * results. The exact solid follows copy() and transform(). Code that edits the
+ * vertices directly (bypassing transform()) would make mesh and solid disagree;
+ * a fingerprint of the mesh detects that and the exact solid is then ignored.
+ */
+class BRepGeometry : public PolySet, public ExactCarrier
+{
+public:
+  BRepGeometry(PolySet mesh, std::shared_ptr<const ExactShape> exact);
 
   [[nodiscard]] std::unique_ptr<Geometry> copy() const override;
   [[nodiscard]] size_t memsize() const override;
@@ -39,28 +49,44 @@ public:
   // resize() is inherited from PolySet and routed through transform()
   void transform(const Transform3d& mat) override;
 
-  /// True if an exact shape is present (a degenerate transform, e.g. scale 0, drops it)
-  [[nodiscard]] bool hasShape() const { return shape_ != nullptr; }
-  /// Exact shape; only valid if hasShape()
-  [[nodiscard]] const TopoDS_Shape& shape() const { return *shape_; }
-  /// True if the exact shape can be trusted to describe the same object as the mesh
-  [[nodiscard]] bool isConsistent() const;
+  [[nodiscard]] std::shared_ptr<const ExactShape> exactShape() const override;
 
 private:
   [[nodiscard]] size_t meshFingerprint() const;
 
-  std::shared_ptr<const TopoDS_Shape> shape_;
+  std::shared_ptr<const ExactShape> exact_;
   size_t fingerprint_ = 0;
 };
 
 namespace BRepUtils {
 
-/// Wrap an already tessellated sphere mesh together with an exact sphere of radius r at the origin.
-std::unique_ptr<const Geometry> createSphere(std::unique_ptr<PolySet> mesh, double r);
+/// Attach an exact solid to a freshly built primitive mesh.
+std::unique_ptr<const Geometry> attachExact(std::unique_ptr<PolySet> mesh,
+                                            std::shared_ptr<const ExactShape> exact);
+
+/// The exact solid of geom, if it has a trustworthy one.
+std::shared_ptr<const ExactShape> exactOf(const Geometry *geom);
 
 /**
- * Write geom as exact STEP if it consists only of consistent BRepGeometry objects
- * (a single one, or a GeometryList of them). Returns false without writing anything
+ * geom converted to another representation of the same solid (e.g. Manifold ->
+ * PolySet, or a tessellation): if src carries an exact solid, return converted
+ * with that solid attached, else converted unchanged.
+ */
+std::shared_ptr<const Geometry> carryExact(const Geometry& src,
+                                           std::shared_ptr<const Geometry> converted);
+std::shared_ptr<const PolySet> carryExact(const Geometry& src, std::shared_ptr<const PolySet> converted);
+
+/**
+ * Attach the exact boolean of the children to result, the mesh result of the
+ * same operation. Returns result unchanged unless all relevant children are
+ * exact. Handles UNION, DIFFERENCE and INTERSECTION.
+ */
+std::shared_ptr<const Geometry> attachBoolean(OpenSCADOperator op, const Geometry::Geometries& children,
+                                              std::shared_ptr<const Geometry> result);
+
+/**
+ * Write geom as exact STEP if it consists only of exact geometry (a single
+ * object, or a GeometryList of them). Returns false without writing anything
  * otherwise, so the caller can fall back to the mesh based exporter.
  */
 bool exportStepExact(const std::shared_ptr<const Geometry>& geom, std::ostream& output,

@@ -2092,7 +2092,8 @@ if (ENABLE_OCCT)
   # Exact B-Rep geometry (BRepGeometry) and exact STEP export.
   find_package(OpenCASCADE CONFIG REQUIRED)
   message(STATUS "OpenCASCADE: ${OpenCASCADE_VERSION}")
-  set(OCCT_TOOLKITS TKernel TKMath TKG2d TKG3d TKGeomBase TKGeomAlgo TKBRep TKTopAlgo TKPrim TKXSBase)
+  set(OCCT_TOOLKITS TKernel TKMath TKG2d TKG3d TKGeomBase TKGeomAlgo TKBRep TKTopAlgo TKPrim
+    TKBO TKBool TKShHealing TKXSBase)
   if (TARGET TKDESTEP)
     # OCCT >= 7.8 bundles all STEP toolkits into TKDESTEP
     list(APPEND OCCT_TOOLKITS TKDESTEP)
@@ -2102,7 +2103,7 @@ if (ENABLE_OCCT)
   target_include_directories(OpenSCADLibInternal SYSTEM PUBLIC ${OpenCASCADE_INCLUDE_DIR})
   target_link_libraries(OpenSCADLibInternal PUBLIC ${OCCT_TOOLKITS})
   target_compile_definitions(OpenSCADLibInternal PUBLIC ENABLE_OCCT)
-  list(APPEND Sources src/geometry/brep/BRepGeometry.cc)
+  list(APPEND Sources src/geometry/brep/BRepGeometry.cc src/geometry/brep/ExactShape.cc)
 endif()
 list(APPEND Sources
   src/openscad.cc
