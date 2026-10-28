@@ -51,6 +51,9 @@
 #include "geometry/PolySet.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/linalg.h"
+#ifdef ENABLE_OCCT
+#include "geometry/brep/BRepGeometry.h"
+#endif
 #include "utils/calc.h"
 #include "utils/degree_trig.h"
 #include "utils/printutils.h"
@@ -536,11 +539,14 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
   }
 #endif
 
-  if (style == "octa") {
-    return createGeometryOcta(num_fragments);
-  } else {
-    return createGeometryOrig(num_fragments);
-  }
+  auto mesh = (style == "octa") ? createGeometryOcta(num_fragments) : createGeometryOrig(num_fragments);
+#ifdef ENABLE_OCCT
+  // Keep the classic tessellation as the mesh, so results stay bit-identical,
+  // and carry the exact sphere along for consumers that want it (STEP export).
+  return BRepUtils::createSphere(std::move(mesh), r);
+#else
+  return mesh;
+#endif
 }
 
 std::shared_ptr<const Geometry> SphereNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
