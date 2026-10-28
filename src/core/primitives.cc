@@ -148,7 +148,12 @@ std::unique_ptr<const Geometry> CubeNode::createGeometry() const
     {2, 0, 4, 6},  // left
   };
 
+#ifdef ENABLE_OCCT
+  return BRepUtils::attachExact(std::move(ps), ExactShape::box({coord1[0], coord1[1], coord1[2]},
+                                                               {coord2[0], coord2[1], coord2[2]}));
+#else
   return ps;
+#endif
 }
 
 void CubeNode::dragBegin()
@@ -668,7 +673,11 @@ std::unique_ptr<const Geometry> CylinderNode::createGeometry() const
     }
   }
 
+#ifdef ENABLE_OCCT
+  return BRepUtils::attachExact(std::move(polyset), ExactShape::cylinder(r1, r2, z1, z2, this->angle));
+#else
   return polyset;
+#endif
 }
 
 void CylinderNode::dragBegin()
