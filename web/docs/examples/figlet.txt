@@ -11,4 +11,4 @@ for y in range(len(lines)):
             bits.append(bit.translate([x, -y, 0]))
 ring = union(bits).rotate_extrude()
 ring -= cube([100, 100, 100]).down(50)
-output(ring)
+show(ring)
