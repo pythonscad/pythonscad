@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Exact (B-Rep) STEP export of spheres, only registered with ENABLE_OCCT.
+"""Exact (B-Rep) STEP export, only registered with ENABLE_OCCT.
 
-Checks that a sphere is written with an analytic SPHERICAL_SURFACE instead of
-a faceted mesh, that transforms keep it exact, and that models mixing exact
-and mesh geometry still fall back to the mesh-based STEP writer.
+Checks that primitives are written with analytic surfaces instead of a faceted
+mesh, that transforms and booleans keep them exact, and that models mixing
+exact and mesh geometry still fall back to the mesh-based STEP writer.
 """
 from __future__ import annotations
 
@@ -15,57 +15,114 @@ import tempfile
 
 TIMEOUT_SECONDS = 120
 
+
+def count(text: str, entity: str) -> int:
+    # Also matches entities inside complex instances such as
+    # "#22 = ( BOUNDED_SURFACE() B_SPLINE_SURFACE(...) RATIONAL_B_SPLINE_SURFACE(...) ... )"
+    return len(re.findall(r"(?<![A-Z0-9_])" + entity + r"\s*\(", text))
+
+
+def expect(**want):
+    """Build a checker: entity=n means exactly n, entity=(lo, hi) a range (hi None = open)."""
+
+    def check(text: str) -> str | None:
+        errors = []
+        for entity, n in want.items():
+            have = count(text, entity)
+            lo, hi = n if isinstance(n, tuple) else (n, n)
+            if have < lo or (hi is not None and have > hi):
+                errors.append(f"{entity}: expected {n}, got {have}")
+        return "; ".join(errors) or None
+
+    return check
+
+
+EXACT = (1, None)  # at least one
+NONE = 0
+
+# Faceted fallback marker: the mesh writer emits lots of planar faces and no curved surfaces.
+MESH = expect(SPHERICAL_SURFACE=NONE, CYLINDRICAL_SURFACE=NONE, ADVANCED_FACE=(10, None))
+
+TETRA = "polyhedron([[0,0,0],[4,0,0],[0,4,0],[0,0,4]], [[0,1,2],[0,3,1],[0,2,3],[1,3,2]])"
+
 CASES = [
-    # name, script body, predicate(step_text) -> error message or None
-    (
-        "plain-sphere",
-        "show(sphere(10))",
-        lambda t: None
-        if "SPHERICAL_SURFACE" in t and count(t, "ADVANCED_FACE") <= 2
-        else "expected one analytic SPHERICAL_SURFACE",
-    ),
-    (
-        "sphere-fn-independent",
-        "show(sphere(10, fn=6))",
-        lambda t: None
-        if "SPHERICAL_SURFACE" in t and count(t, "ADVANCED_FACE") <= 2
-        else "coarse $fn must not change the exact export",
-    ),
+    # name, script body, checker
+    ("sphere", "show(sphere(10))", expect(SPHERICAL_SURFACE=1, MANIFOLD_SOLID_BREP=1)),
+    ("sphere-fn-independent", "show(sphere(10, fn=6))", expect(SPHERICAL_SURFACE=1, ADVANCED_FACE=1)),
     (
         "rotated-translated-sphere",
         "show(sphere(5).rotate([30, 40, 50]).translate([10, 20, 30]))",
-        lambda t: None
-        if "SPHERICAL_SURFACE" in t
-        else "similarity transforms must keep the SPHERICAL_SURFACE",
+        expect(SPHERICAL_SURFACE=1),
     ),
     (
         "nonuniform-scale",
         "show(sphere(5).scale([2, 1, 1]))",
-        lambda t: None
-        if "SPHERICAL_SURFACE" not in t and "B_SPLINE_SURFACE" in t
-        else "non-uniform scale should give an exact B-spline ellipsoid",
+        expect(SPHERICAL_SURFACE=NONE, RATIONAL_B_SPLINE_SURFACE=EXACT),
+    ),
+    ("cube", "show(cube([10, 20, 30]))", expect(PLANE=6, ADVANCED_FACE=6, MANIFOLD_SOLID_BREP=1)),
+    ("cube-center", "show(cube(10, center=True))", expect(PLANE=6, ADVANCED_FACE=6)),
+    ("cylinder", "show(cylinder(h=10, r=3, fn=5))", expect(CYLINDRICAL_SURFACE=1, PLANE=2)),
+    ("cone", "show(cylinder(h=10, r1=4, r2=2))", expect(CONICAL_SURFACE=1, PLANE=2)),
+    ("pointed-cone", "show(cylinder(h=10, r1=4, r2=0))", expect(CONICAL_SURFACE=1, PLANE=1)),
+    (
+        "cylinder-sector",
+        "show(cylinder(h=10, r=5, angle=90))",
+        expect(CYLINDRICAL_SURFACE=1, PLANE=4, ADVANCED_FACE=5),
     ),
     (
-        "mixed-falls-back-to-mesh",
-        "show(sphere(5) | cube(4))",
-        lambda t: None
-        if "SPHERICAL_SURFACE" not in t and count(t, "ADVANCED_FACE") > 10
-        else "boolean results are meshes and must use the faceted writer",
+        "difference",
+        "show(sphere(10) - cube(10))",
+        expect(SPHERICAL_SURFACE=EXACT, PLANE=3, MANIFOLD_SOLID_BREP=1),
+    ),
+    (
+        "intersection",
+        "show(sphere(7) & cube(10, center=True))",
+        expect(SPHERICAL_SURFACE=EXACT, PLANE=6, MANIFOLD_SOLID_BREP=1),
+    ),
+    (
+        # touching cubes fuse into one box: coplanar faces must be merged
+        "union-merges-faces",
+        "show(cube(10) | cube(10).translate([10, 0, 0]))",
+        expect(PLANE=6, ADVANCED_FACE=6, MANIFOLD_SOLID_BREP=1),
+    ),
+    (
+        "drilled-plate",
+        "show(cube([30, 20, 5]) - cylinder(h=20, r=3, center=True).translate([15, 10, 0]))",
+        expect(CYLINDRICAL_SURFACE=1, PLANE=6, MANIFOLD_SOLID_BREP=1),
+    ),
+    (
+        "transformed-boolean",
+        "show((cube(10) - sphere(4).translate([10, 10, 10])).rotate([0, 0, 45]).translate([5, 0, 0]))",
+        expect(SPHERICAL_SURFACE=EXACT, PLANE=6),
+    ),
+    (
+        # sphere pokes through all six cube faces; regression for an OCCT edge-unification bug
+        "union-of-three",
+        "show(union(sphere(6), cube(10, center=True), cylinder(h=30, r=2, center=True)))",
+        expect(SPHERICAL_SURFACE=EXACT, CYLINDRICAL_SURFACE=EXACT, MANIFOLD_SOLID_BREP=1),
+    ),
+    ("mixed-falls-back-to-mesh", f"show(sphere(5) | {TETRA})", MESH),
+    (
+        "mixed-boolean-poisons-parent",
+        f"show((sphere(5) | {TETRA}) - cube(2))",
+        MESH,
     ),
 ]
 
+# Same models, but written through the Python export() call (allownef=false path)
+EXPORT_CASES = [
+    ("export-call-sphere", "sphere(10)", expect(SPHERICAL_SURFACE=1)),
+    ("export-call-difference", "sphere(10) - cube(10)", expect(SPHERICAL_SURFACE=EXACT, PLANE=3)),
+]
 
-def count(text: str, entity: str) -> int:
-    return len(re.findall(r"=\s*" + entity + r"\s*\(", text))
 
-
-def run_case(pythonscad: str, workdir: str, name: str, body: str) -> tuple[str | None, str]:
+def run(pythonscad: str, workdir: str, name: str, script_text: str, out: str) -> tuple[str | None, str]:
     script = os.path.join(workdir, f"{name}.py")
-    out = os.path.join(workdir, f"{name}.step")
     with open(script, "w", encoding="utf-8") as f:
-        f.write("from pythonscad import *\n" + body + "\n")
+        f.write(script_text)
+    target = os.path.join(workdir, f"{name}-render.step")
     proc = subprocess.run(
-        [pythonscad, "--trust-python", "-o", out, script],
+        [pythonscad, "--trust-python", "-o", target, script],
         capture_output=True,
         text=True,
         timeout=TIMEOUT_SECONDS,
@@ -74,7 +131,7 @@ def run_case(pythonscad: str, workdir: str, name: str, body: str) -> tuple[str |
     if proc.returncode != 0:
         return None, log + f"\nexit code {proc.returncode}"
     if not os.path.isfile(out):
-        return None, log + "\nno output file"
+        return None, log + f"\nno output file {out}"
     with open(out, encoding="utf-8", errors="replace") as f:
         return f.read(), log
 
@@ -90,8 +147,17 @@ def main() -> int:
 
     failures = 0
     with tempfile.TemporaryDirectory() as workdir:
+        jobs = []
         for name, body, check in CASES:
-            text, log = run_case(pythonscad, workdir, name, body)
+            out = os.path.join(workdir, f"{name}-render.step")
+            jobs.append((name, f"from pythonscad import *\n{body}\n", out, check))
+        for name, obj, check in EXPORT_CASES:
+            out = os.path.join(workdir, f"{name}.step")
+            script = f"from pythonscad import *\nexport({obj}, {out!r})\nshow(cube(1))\n"
+            jobs.append((name, script, out, check))
+
+        for name, script, out, check in jobs:
+            text, log = run(pythonscad, workdir, name, script, out)
             error = "export failed" if text is None else check(text)
             if error:
                 failures += 1

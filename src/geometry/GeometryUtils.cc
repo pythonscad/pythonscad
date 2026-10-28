@@ -27,6 +27,9 @@
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/ManifoldGeometry.h"
 #include "geometry/manifold/manifoldutils.h"
+#ifdef ENABLE_OCCT
+#include "geometry/brep/BRepGeometry.h"
+#endif
 #endif
 
 static void *stdAlloc(void *userData, unsigned int size)
@@ -536,7 +539,11 @@ std::shared_ptr<const Geometry> GeometryUtils::getBackendSpecificGeometry(
       if (mani == nullptr) {
         mani = std::make_shared<ManifoldGeometry>();
       }
+#ifdef ENABLE_OCCT
+      return BRepUtils::carryExact(*ps, std::shared_ptr<const Geometry>(mani));
+#else
       return mani;
+#endif
     } else if (auto mani = std::dynamic_pointer_cast<const ManifoldGeometry>(geom)) {
       return geom;
     } else {

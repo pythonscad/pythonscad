@@ -23,6 +23,9 @@
 #include "geometry/manifold/ManifoldGeometry.h"
 #endif
 #include "src/core/ColorUtil.h"
+#ifdef ENABLE_OCCT
+#include "geometry/brep/BRepGeometry.h"
+#endif
 
 namespace PolySetUtils {
 
@@ -202,7 +205,12 @@ std::shared_ptr<const PolySet> getGeometryAsPolySet(const std::shared_ptr<const 
 #endif
 #ifdef ENABLE_MANIFOLD
   if (auto mani = std::dynamic_pointer_cast<const ManifoldGeometry>(geom)) {
+#ifdef ENABLE_OCCT
+    // Keep an exact solid (e.g. of a boolean result) attached through the conversion
+    return BRepUtils::carryExact(*mani, std::shared_ptr<const PolySet>(mani->toPolySet()));
+#else
     return mani->toPolySet();
+#endif
   }
 #endif
   return nullptr;
