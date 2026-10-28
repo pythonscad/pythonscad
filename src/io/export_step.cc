@@ -33,10 +33,17 @@
 #include <src/utils/hash.h>
 #include <src/geometry/PolySetUtils.h>
 #include <src/geometry/GeometryEvaluator.h>
+#ifdef ENABLE_OCCT
+#include "geometry/brep/BRepGeometry.h"
+#endif
 
 void export_step(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                  const ExportInfo& exportInfo)
 {
+#ifdef ENABLE_OCCT
+  // Exact path: if the model consists only of B-Rep geometry, write analytic surfaces.
+  if (BRepUtils::exportStepExact(geom, output, exportInfo)) return;
+#endif
   auto ps = PolySetUtils::getGeometryAsPolySet(geom);
   if (ps == nullptr) return;
 
