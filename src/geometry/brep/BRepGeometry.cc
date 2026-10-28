@@ -3,7 +3,6 @@
 #include "geometry/brep/BRepGeometry.h"
 
 #include <atomic>
-#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -15,9 +14,6 @@
 
 #include <boost/functional/hash.hpp>
 
-#include <BRepBuilderAPI_GTransform.hxx>
-#include <BRepBuilderAPI_Transform.hxx>
-#include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRep_Builder.hxx>
 #include <IFSelect_ReturnStatus.hxx>
 #include <Interface_Static.hxx>
@@ -25,59 +21,18 @@
 #include <Standard_Failure.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Shape.hxx>
-#include <gp_GTrsf.hxx>
-#include <gp_Mat.hxx>
-#include <gp_Trsf.hxx>
-#include <gp_XYZ.hxx>
 
 #include "geometry/Geometry.h"
 #include "io/export.h"
 #include "utils/printutils.h"
+#ifdef ENABLE_MANIFOLD
+#include "geometry/brep/BRepManifoldGeometry.h"
+#endif
 
 namespace {
 
-/// Apply an OpenSCAD affine transform to an OCCT shape.
-/// Similarities (rotation, translation, uniform scale, mirror) keep the analytic
-/// surfaces; anything else (non-uniform scale, shear) converts them to B-splines,
-/// which is still exact, just no longer e.g. a SPHERICAL_SURFACE.
-/// Returns nullptr if OCCT cannot represent the transform (e.g. scale 0).
-std::shared_ptr<const TopoDS_Shape> transformShape(const TopoDS_Shape& shape, const Transform3d& mat)
-{
-  const Eigen::Matrix3d lin = mat.linear();
-  const Eigen::Vector3d tr = mat.translation();
-
-  const Eigen::Matrix3d ltl = lin.transpose() * lin;
-  const double s2 = ltl.trace() / 3.0;
-  const bool similarity =
-    s2 > 0 && (ltl - s2 * Eigen::Matrix3d::Identity()).norm() <= 1e-9 * std::max(1.0, s2);
-
-  try {
-    if (similarity) {
-      gp_Trsf trsf;
-      trsf.SetValues(lin(0, 0), lin(0, 1), lin(0, 2), tr[0],  //
-                     lin(1, 0), lin(1, 1), lin(1, 2), tr[1],  //
-                     lin(2, 0), lin(2, 1), lin(2, 2), tr[2]);
-      BRepBuilderAPI_Transform op(shape, trsf, /*copy*/ true);
-      if (!op.IsDone()) return nullptr;
-      return std::make_shared<const TopoDS_Shape>(op.Shape());
-    }
-    if (std::abs(lin.determinant()) < 1e-12) return nullptr;
-    gp_GTrsf gtrsf;
-    gtrsf.SetVectorialPart(gp_Mat(lin(0, 0), lin(0, 1), lin(0, 2),  //
-                                  lin(1, 0), lin(1, 1), lin(1, 2),  //
-                                  lin(2, 0), lin(2, 1), lin(2, 2)));
-    gtrsf.SetTranslationPart(gp_XYZ(tr[0], tr[1], tr[2]));
-    BRepBuilderAPI_GTransform op(shape, gtrsf, /*copy*/ true);
-    if (!op.IsDone()) return nullptr;
-    return std::make_shared<const TopoDS_Shape>(op.Shape());
-  } catch (const Standard_Failure& e) {
-    LOG(message_group::Warning, "B-Rep transform failed (%1$s), keeping mesh only",
-        e.GetMessageString() ? e.GetMessageString() : "unknown error");
-    return nullptr;
-  }
-}
-
-/// Collect the exact shapes of geom. Fails if any part is not a consistent BRepGeometry.
+/// Collect the exact shapes of geom (evaluating them). Fails if any non-empty part
+/// has no exact solid, or if OpenCASCADE could not compute it.
 bool collectShapes(const std::shared_ptr<const Geometry>& geom,
                    std::vector<const TopoDS_Shape *>& shapes, bool& anyExact)
 {
@@ -89,10 +44,10 @@ bool collectShapes(const std::shared_ptr<const Geometry>& geom,
     }
     return ok;
   }
-  if (const auto brep = std::dynamic_pointer_cast<const BRepGeometry>(geom)) {
-    if (brep->hasShape() && brep->isConsistent()) {
-      anyExact = true;
-      shapes.push_back(&brep->shape());
+  if (const auto exact = BRepUtils::exactOf(geom.get())) {
+    anyExact = true;
+    if (const TopoDS_Shape *s = exact->shape()) {
+      shapes.push_back(s);
       return true;
     }
   }
@@ -136,8 +91,8 @@ bool writeStepToStream(const TopoDS_Shape& shape, std::ostream& output, const Ex
 
 }  // namespace
 
-BRepGeometry::BRepGeometry(PolySet mesh, std::shared_ptr<const TopoDS_Shape> shape)
-  : PolySet(std::move(mesh)), shape_(std::move(shape))
+BRepGeometry::BRepGeometry(PolySet mesh, std::shared_ptr<const ExactShape> exact)
+  : PolySet(std::move(mesh)), exact_(std::move(exact))
 {
   fingerprint_ = meshFingerprint();
 }
@@ -149,30 +104,29 @@ std::unique_ptr<Geometry> BRepGeometry::copy() const
 
 size_t BRepGeometry::memsize() const
 {
-  // The shape is shared between copies and small for primitives; count a nominal size.
-  return PolySet::memsize() + sizeof(*this) - sizeof(PolySet) + (shape_ ? 1024 : 0);
+  return PolySet::memsize() + sizeof(*this) - sizeof(PolySet);
 }
 
 std::string BRepGeometry::dump() const
 {
   std::ostringstream out;
-  out << "BRepGeometry:\n exact shape: " << (hasShape() ? "yes" : "no") << "\n" << PolySet::dump();
+  out << "BRepGeometry:\n exact solid: " << (exactShape() ? "yes" : "no") << "\n" << PolySet::dump();
   return out.str();
 }
 
 void BRepGeometry::transform(const Transform3d& mat)
 {
-  // Only follow the transform with the shape if it still describes this mesh.
-  const bool wasConsistent = isConsistent();
+  // Only follow the transform with the solid if it still describes this mesh.
+  auto exact = exactShape();
   PolySet::transform(mat);
-  if (shape_ && wasConsistent) shape_ = transformShape(*shape_, mat);
-  else shape_.reset();
+  exact_ = ExactShape::transformed(std::move(exact), mat);
   fingerprint_ = meshFingerprint();
 }
 
-bool BRepGeometry::isConsistent() const
+std::shared_ptr<const ExactShape> BRepGeometry::exactShape() const
 {
-  return meshFingerprint() == fingerprint_;
+  if (!exact_ || meshFingerprint() != fingerprint_) return nullptr;
+  return exact_;
 }
 
 size_t BRepGeometry::meshFingerprint() const
@@ -192,17 +146,83 @@ size_t BRepGeometry::meshFingerprint() const
 
 namespace BRepUtils {
 
-std::unique_ptr<const Geometry> createSphere(std::unique_ptr<PolySet> mesh, double r)
+void logWarning(const std::string& msg)
 {
-  std::shared_ptr<const TopoDS_Shape> shape;
-  try {
-    shape = std::make_shared<const TopoDS_Shape>(BRepPrimAPI_MakeSphere(r).Shape());
-  } catch (const Standard_Failure& e) {
-    LOG(message_group::Warning, "Could not create exact sphere (%1$s), using mesh only",
-        e.GetMessageString() ? e.GetMessageString() : "unknown error");
-    return mesh;
+  LOG(message_group::Warning, "%1$s", msg);
+}
+
+std::unique_ptr<const Geometry> attachExact(std::unique_ptr<PolySet> mesh,
+                                            std::shared_ptr<const ExactShape> exact)
+{
+  if (!mesh || !exact || mesh->isEmpty()) return mesh;
+  return std::make_unique<BRepGeometry>(std::move(*mesh), std::move(exact));
+}
+
+std::shared_ptr<const ExactShape> exactOf(const Geometry *geom)
+{
+  const auto *carrier = dynamic_cast<const ExactCarrier *>(geom);
+  return carrier ? carrier->exactShape() : nullptr;
+}
+
+namespace {
+
+std::shared_ptr<const Geometry> wrap(const std::shared_ptr<const Geometry>& geom,
+                                     std::shared_ptr<const ExactShape> exact)
+{
+  if (!geom || !exact || dynamic_cast<const ExactCarrier *>(geom.get())) return geom;
+#ifdef ENABLE_MANIFOLD
+  if (const auto *mani = dynamic_cast<const ManifoldGeometry *>(geom.get())) {
+    return std::make_shared<const BRepManifoldGeometry>(*mani, std::move(exact));
   }
-  return std::make_unique<BRepGeometry>(std::move(*mesh), std::move(shape));
+#endif
+  if (const auto *ps = dynamic_cast<const PolySet *>(geom.get())) {
+    return std::make_shared<const BRepGeometry>(*ps, std::move(exact));
+  }
+  return geom;  // e.g. CGAL Nef polyhedra: no exact companion (yet)
+}
+
+}  // namespace
+
+std::shared_ptr<const Geometry> carryExact(const Geometry& src,
+                                           std::shared_ptr<const Geometry> converted)
+{
+  return wrap(converted, exactOf(&src));
+}
+
+std::shared_ptr<const PolySet> carryExact(const Geometry& src, std::shared_ptr<const PolySet> converted)
+{
+  return std::static_pointer_cast<const PolySet>(wrap(converted, exactOf(&src)));
+}
+
+std::shared_ptr<const Geometry> attachBoolean(OpenSCADOperator op, const Geometry::Geometries& children,
+                                              std::shared_ptr<const Geometry> result)
+{
+  if (!result || result->isEmpty()) return result;
+  if (op != OpenSCADOperator::UNION && op != OpenSCADOperator::DIFFERENCE &&
+      op != OpenSCADOperator::INTERSECTION) {
+    return result;
+  }
+
+  // Same child semantics as the mesh booleans: union and difference ignore empty
+  // children (except an empty first child of a difference, which empties the
+  // result), intersection with an empty child is empty.
+  std::vector<std::shared_ptr<const ExactShape>> exactChildren;
+  bool first = true;
+  for (const auto& item : children) {
+    const Geometry *g = item.second.get();
+    const bool empty = g == nullptr || g->isEmpty();
+    if (empty) {
+      if (op == OpenSCADOperator::INTERSECTION) return result;
+      if (op == OpenSCADOperator::DIFFERENCE && first) return result;
+      first = false;
+      continue;
+    }
+    first = false;
+    auto exact = exactOf(g);
+    if (!exact) return result;  // a mesh-only child: the result is mesh-only too
+    exactChildren.push_back(std::move(exact));
+  }
+  return wrap(result, ExactShape::boolean(op, std::move(exactChildren)));
 }
 
 bool exportStepExact(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
@@ -213,7 +233,8 @@ bool exportStepExact(const std::shared_ptr<const Geometry>& geom, std::ostream& 
   if (!collectShapes(geom, shapes, anyExact) || shapes.empty()) {
     if (anyExact) {
       LOG(message_group::Warning,
-          "STEP export: model mixes exact and mesh geometry, exporting everything as mesh");
+          "STEP export: model is not completely exact (mesh-only parts or failed exact computation), "
+          "exporting everything as mesh");
     }
     return false;
   }
