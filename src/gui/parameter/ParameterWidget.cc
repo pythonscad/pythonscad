@@ -34,6 +34,7 @@
 #include <QLayoutItem>
 #include <QLineEdit>
 #include <QMenu>
+#include <QFile>
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QString>
@@ -266,6 +267,11 @@ void ParameterWidget::saveFile(const QString& scadFile)
 
   cleanSets();
   sets.writeFile(jsonFile.toStdString());
+}
+
+void ParameterWidget::removeBackupFile(const QString& scadFile)
+{
+  QFile::remove(getJsonFile(scadFile));
 }
 
 void ParameterWidget::saveBackupFile(const QString& scadFile)

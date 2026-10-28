@@ -144,6 +144,7 @@ void OpenSCADApp::setRenderBackend3D(RenderBackend3D backend)
   RenderSettings::inst()->backend3D = backend;
   CGALCache::instance()->clear();
   GeometryCache::instance()->clear();
+  emit backend3DChanged();
 }
 
 static bool isSystemDarkTheme()

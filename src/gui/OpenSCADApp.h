@@ -38,6 +38,9 @@ public:
 private:
   QProgressDialog *fontCacheDialog{nullptr};
   QPalette themePalette;
+
+signals:
+  void backend3DChanged();
 };
 
 #define scadApp (static_cast<OpenSCADApp *>(QCoreApplication::instance()))
