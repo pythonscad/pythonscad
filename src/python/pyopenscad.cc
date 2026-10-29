@@ -24,8 +24,9 @@
  *
  */
 #include <Python.h>
-// PyFrame_GetBack() is declared here up to Python 3.10; Python.h has it from 3.11 on
-#include <frameobject.h>
+#if PY_VERSION_HEX < 0x030B0000
+#error "PythonSCAD requires Python 3.11 or newer"
+#endif
 #include "genlang/genlang.h"
 #include <algorithm>
 #include <array>
@@ -2415,42 +2416,6 @@ static PyModuleDef OpenSCADModule = {PyModuleDef_HEAD_INIT,
                                      nullptr,
                                      nullptr};
 
-#if PY_VERSION_HEX < 0x030A0000
-// Polyfill for `PyModule_AddObjectRef`, which CPython only added in 3.10.
-// RHEL/EL 9 ships Python 3.9, so we have to emulate it there. This is a
-// near-verbatim port of CPython's upstream implementation
-// in `Python/modsupport.c` (the body of the function below matches
-// the 3.10+ source line for line, only reformatted to project style),
-// so the validation surface (TypeError on a non-module first arg,
-// SystemError on a NULL value with no pending exception, SystemError
-// on a module with no `__dict__`) and the no-steal reference semantics
-// match the 3.10+ symbol exactly.
-static int PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value)
-{
-  if (!PyModule_Check(mod)) {
-    PyErr_SetString(PyExc_TypeError,
-                    "PyModule_AddObjectRef() first argument "
-                    "must be a module");
-    return -1;
-  }
-  if (!value) {
-    if (!PyErr_Occurred()) {
-      PyErr_SetString(PyExc_SystemError,
-                      "PyModule_AddObjectRef() must be called "
-                      "with an exception raised if value is NULL");
-    }
-    return -1;
-  }
-
-  PyObject *dict = PyModule_GetDict(mod);
-  if (dict == nullptr) {
-    PyErr_Format(PyExc_SystemError, "module '%s' has no __dict__", PyModule_GetName(mod));
-    return -1;
-  }
-  return PyDict_SetItemString(dict, name, value);
-}
-#endif
-
 // Sole init entry point for the `_openscad` extension module.  This
 // function is called both for the embedded interpreter (registered via
 // `PyImport_AppendInittab("_openscad", ...)` in `initPython`) and for
@@ -2474,8 +2439,7 @@ PyMODINIT_FUNC PyInit__openscad(void)
   PyObject *m = PyModule_Create(&OpenSCADModule);
   if (m == nullptr) return nullptr;
 
-  // Use `PyModule_AddObjectRef` (CPython >=3.10, polyfilled above for
-  // older Pythons) instead of the legacy `Py_INCREF` + `PyModule_AddObject`
+  // Use `PyModule_AddObjectRef` instead of the legacy `Py_INCREF` + `PyModule_AddObject`
   // pair: the legacy API only steals the reference on success, so a
   // failure left the manual `Py_INCREF` leaking and the module
   // half-initialised. `PyModule_AddObjectRef` never steals, making the

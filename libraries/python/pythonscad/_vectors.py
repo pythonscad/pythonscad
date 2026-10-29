@@ -28,14 +28,7 @@ Public names: :data:`Vector1`, :data:`Vector2`, :data:`Vector3`,
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
-else:
-    # Keep runtime annotation introspection working on Python 3.10 without
-    # importing typing_extensions solely for this typing-only construct.
-    Self = Any
+from typing import TYPE_CHECKING, Any, Iterable, Self
 
 try:  # NumPy is an optional runtime dependency.
     import numpy as _np

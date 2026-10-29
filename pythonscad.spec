@@ -3,6 +3,14 @@
 
 %global debug_package %{nil}
 
+%if 0%{?rhel} == 9
+%global pythonscad_python python3.11
+%global pythonscad_python_version 3.11
+%else
+%global pythonscad_python python3
+%global pythonscad_python_version %{python3_version}
+%endif
+
 # Filter out automatic requires for libfive which is bundled
 %global __requires_exclude ^(libfive\\.so)\\(
 
@@ -21,8 +29,8 @@ BuildRequires:  make
 BuildRequires:  git
 BuildRequires:  flex
 BuildRequires:  bison
-BuildRequires:  python3-devel
-BuildRequires:  python3-setuptools
+BuildRequires:  %{pythonscad_python}-devel
+BuildRequires:  %{pythonscad_python}-setuptools
 BuildRequires:  nettle-devel >= 3.4
 BuildRequires:  nettle
 BuildRequires:  boost-devel >= 1.35
@@ -53,7 +61,7 @@ BuildRequires:  qt6-qt5compat-devel
 BuildRequires:  qscintilla-qt6-devel
 BuildRequires:  chrpath
 
-Requires:       python3
+Requires:       %{pythonscad_python} >= 3.11
 # Rocky Linux 9 does not ship python3-pyqt6. Fedora does.
 %if 0%{?fedora}
 Requires:       python3-pyqt6
@@ -97,7 +105,7 @@ modern features.
     -DBUILD_SHARED_LIBS=OFF \
     -DEXPERIMENTAL=ON \
     -DENABLE_PYTHON=ON \
-    -DPYTHON_VERSION=%{python3_version} \
+    -DPYTHON_VERSION=%{pythonscad_python_version} \
     -DENABLE_LIBFIVE=ON \
     -DUSE_QT6=ON \
     -DENABLE_TESTS=OFF \
