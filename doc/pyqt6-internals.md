@@ -96,7 +96,7 @@ plugins with the wheel's. QScintilla is built from source against that
 prefix. Homebrew still supplies CGAL, Boost, OpenCSG and the other non-Qt
 libraries. The bindings themselves come from the wheel and are copied to
 `libraries/python/PyQt6`. The wheel is `abi3`, so the CPython bundled in
-the `.app` has to be 3.10 or newer, which the Homebrew Python already is.
+the `.app` has to be 3.11 or newer, which the Homebrew Python already is.
 
 ## How versions are chosen
 

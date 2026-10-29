@@ -1798,6 +1798,14 @@ if(Python3_EXECUTABLE AND UNIX)
   set_property(TEST windows-python-packaging PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 endif()
 
+# Enforce the supported Python version policy in package metadata.
+if(Python3_EXECUTABLE)
+  add_test(NAME python-version-policy CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_python_version_policy.py
+  )
+endif()
+
 # Host-side checks for the macOS Homebrew dependency and release policies.
 if(Python3_EXECUTABLE)
   add_test(NAME macosx-build-policy CONFIGURATIONS Default

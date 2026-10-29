@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Python interface to OpenSCAD — script-based 3D modeling with Python as a native language"
 readme = "README.md"
 license = "GPL-2.0-or-later"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     { name = "Guenther Sohler", email = "guenther.sohler@gmail.com" },
 ]
@@ -24,7 +24,6 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -40,13 +39,8 @@ classifiers = [
 # IPython 9.x requires `psutil>=7`. Windows native bundles vend
 # psutil from MSYS2 pacman; see scripts/bundle-ipython-msys2.py.
 #
-# IPython 9.x itself requires Python 3.11+. Binary bundles always
-# ship IPython 9 (see dependency-groups.bundle). The pip wheel keeps
-# IPython 8.x on Python 3.10 via environment markers below.
-dependencies = [
-    "ipython>=9,<10; python_version>='3.11'",
-    "ipython>=8,<9; python_version<'3.11'",
-]
+# Python 3.11+ uses IPython 9 in wheels and binary bundles.
+dependencies = ["ipython>=9,<10"]
 
 [dependency-groups]
 # Runtime deps for self-contained binary releases (embedded CPython 3.11+).
@@ -77,7 +71,7 @@ Issues = "https://github.com/pythonscad/pythonscad/issues"
 Changelog = "https://github.com/pythonscad/pythonscad/blob/master/CHANGELOG.md"
 
 [tool.cibuildwheel]
-build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
+build = "cp311-* cp312-* cp313-* cp314-*"
 skip = ["*-musllinux*", "*-win32*", "*-win_arm64*", "*-macosx_x86_64*", "*-macosx_universal2*", "cp*t-*"]
 manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
