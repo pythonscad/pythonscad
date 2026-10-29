@@ -157,6 +157,6 @@ while True:
     else:
         print("Unknown record type %d" % (rtyp))
 if topcell in cells:
-    output(union(cells[topcell]))
+    show(union(cells[topcell]))
 else:
     print("topcell not found")
