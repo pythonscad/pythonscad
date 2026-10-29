@@ -74,8 +74,6 @@ std::unique_ptr<PolySet> tessellate_faces(const PolySet& polyset)
   auto result = std::make_unique<PolySet>(3, polyset.convexValue());
   result->setConvexity(polyset.getConvexity());
   result->setTriangular(true);
-  result->curves = polyset.curves;
-  result->surfaces = polyset.surfaces;
   result->setManifold(polyset.isManifold());
   result->polylines = polyset.polylines;
   // ideally this should not require a copy...

@@ -33,8 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 #include <sstream>
 #include <math.h>
 #include "src/geometry/GeometryUtils.h"
-#include <src/geometry/Curve.h>
-#include <src/geometry/Surface.h>
 
 class StepKernel
 {
@@ -1265,8 +1263,6 @@ public:
                                                bool dir);
 
   void build_tri_body(const char *name, std::vector<Vector3d> tris, std::vector<IndexedFace> faces,
-                      const std::vector<std::shared_ptr<Curve>>& curves,
-                      const std::vector<std::shared_ptr<Surface>> surfaces,
                       const std::vector<int>& faceParents, double tol);
   EdgeCurve *get_line_from_map(Vector3d p0, Vector3d p1,
                                std::map<std::tuple<double, double, double, double, double, double>,
