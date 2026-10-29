@@ -77,24 +77,6 @@ void import_shell(PolySetBuilder& builder, StepKernel& sk, StepKernel::Shell *sh
           double r = circ->r;
           Vector3d cent = circ->axis->point->pt;
 
-          auto curve = std::make_shared<ArcCurve>(cent, zdir, r);
-
-          int ind = builder.vertexIndex(pt1->pt);
-          stub.push_back(ind);
-          arc_ends.push_back(ind);
-          curve->start = ind;
-
-          for (int i = 1; i < fn; i++) {
-            double ang = startang + (endang - startang) * i / (double)fn;
-            Vector3d pt = cent + xdir * r * cos(ang) + ydir * r * sin(ang);
-            stub.push_back(builder.vertexIndex(pt));
-          }
-          ind = builder.vertexIndex(pt2->pt);
-          stub.push_back(ind);
-          arc_ends.push_back(ind);
-          curve->end = ind;
-
-          builder.addCurve(curve);
 
         } else if (scurve != nullptr) {
           stub.push_back(builder.vertexIndex(pt1->pt));
@@ -176,9 +158,6 @@ void import_shell(PolySetBuilder& builder, StepKernel& sk, StepKernel::Shell *sh
           else if (combined[i] == arc_ends[2]) pos.push_back(i);
           else if (combined[i] == arc_ends[3]) pos.push_back(i);
         }
-        auto cyl = std::make_shared<CylinderSurface>(cyl_surf->axis->point->pt, cyl_surf->axis->dir1->pt,
-                                                     cyl_surf->r);
-        builder.addSurface(cyl);
         int bstart = pos[0];
         int bend = pos[3];
         while (bstart + 1 < bend - 1) {
