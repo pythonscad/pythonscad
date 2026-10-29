@@ -22,11 +22,13 @@
 #include <BRep_Builder.hxx>
 #include <IFSelect_ReturnStatus.hxx>
 #include <Interface_Static.hxx>
+#include <APIHeaderSection_MakeHeader.hxx>
 #include <BRepGProp.hxx>
 #include <GProp_GProps.hxx>
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
 #include <Standard_Failure.hxx>
+#include <TCollection_HAsciiString.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Shape.hxx>
 
@@ -104,8 +106,17 @@ bool writeStepFile(const TopoDS_Shape& shape, const std::string& file, const Exp
   if (!exportInfo.title.empty()) {
     Interface_Static::SetCVal("write.step.product.name", exportInfo.title.c_str());
   }
-  return writer.Transfer(shape, STEPControl_AsIs) == IFSelect_RetDone &&
-         writer.Write(file.c_str()) == IFSelect_RetDone;
+  if (writer.Transfer(shape, STEPControl_AsIs) != IFSelect_RetDone) return false;
+
+  // Same header as the faceted exporter instead of OCCT's "Open CASCADE Model"
+  APIHeaderSection_MakeHeader header(writer.Model());
+  header.SetDescriptionValue(1, new TCollection_HAsciiString("PythonSCAD Model"));
+  header.SetName(new TCollection_HAsciiString(exportInfo.sourceFilePath.c_str()));
+  header.SetAuthorValue(1, new TCollection_HAsciiString(""));
+  header.SetOrganizationValue(1, new TCollection_HAsciiString(""));
+  header.SetOriginatingSystem(new TCollection_HAsciiString(EXPORT_CREATOR));
+
+  return writer.Write(file.c_str()) == IFSelect_RetDone;
 }
 
 /// Write shape as STEP and verify the file by reading it back. If the check fails,

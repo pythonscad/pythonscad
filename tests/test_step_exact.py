@@ -290,6 +290,8 @@ def main() -> int:
         for name, script, out, check in jobs:
             text, log = run(pythonscad, workdir, name, script, out)
             error = "export failed" if text is None else check(text)
+            if not error and "FILE_DESCRIPTION(('PythonSCAD Model')" not in text:
+                error = "header does not describe the file as 'PythonSCAD Model'"
             if error:
                 failures += 1
                 print(f"FAIL {name}: {error}\n{log}", file=sys.stderr)
