@@ -36,6 +36,43 @@
   </screenshots>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.2.0" date="2026-10-29">
+      <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.2.0</url>
+      <description>
+        <p>Features:</p>
+        <ul>
+          <li>add patch(): boundary+holes surface builder (tube, panel, and ring-bridge modes)</li>
+          <li>color-schemes: add Nord color schemes</li>
+          <li>gui: drag rotate, scale and translate along the real path</li>
+          <li>gui: drag sphere, cylinder, polyhedron and scalar cube size</li>
+          <li>gui: drag supports marked() values, visible drag marker</li>
+          <li>gui: fullscreen toggle and unified window geometry persistence</li>
+          <li>gui: GIMP-style Export and Export as</li>
+          <li>PyQt6 connector, bundled bindings, editor forms, and pyscadforms library</li>
+          <li>python: deprecate nimport and document package-based libraries</li>
+          <li>python: export multi-object 3MF from Python designs</li>
+          <li>python: make MultiToolExporter prefix/suffix optional</li>
+          <li>python: remember the script line of each node for dragging</li>
+          <li>and more</li>
+        </ul>
+        <p>Bug fixes:</p>
+        <ul>
+          <li>appimage: build on Ubuntu 24.04 and test supported runtimes</li>
+          <li>appimage: preserve runtime staging and system libraries</li>
+          <li>appimage: stage PyQt6 on embedded Python search path</li>
+          <li>build: install Qt6 only via macOS Homebrew</li>
+          <li>chore: a</li>
+          <li>chore: add missed file</li>
+          <li>chore: add proper step units</li>
+          <li>chore: add propert step units</li>
+          <li>chore: added test</li>
+          <li>chore: applied patch</li>
+          <li>chore: compiles</li>
+          <li>chore: ctests clean</li>
+          <li>and more</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.1.2" date="2026-07-16">
       <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.1.2</url>
       <description>
