@@ -66,6 +66,8 @@
 #include <vector>
 
 #include "Feature.h"
+#include "geometry/GeometryCache.h"
+#include "geometry/cgal/CGALCache.h"
 #include "OctoPrintApiKeyDialog.h"
 #include "core/Settings.h"
 #include "geometry/GeometryCache.h"
@@ -593,6 +595,13 @@ void Preferences::featuresCheckBoxToggled(bool state)
   if (feature == &Feature::ExperimentalAiFeatures) {
     this->prefsActionAI->setVisible(state);
   }
+#ifdef ENABLE_OCCT
+  if (feature == &Feature::ExperimentalOcct) {
+    // Cached geometry was built with or without exact solids; rebuild it all.
+    GeometryCache::instance()->clear();
+    CGALCache::instance()->clear();
+  }
+#endif
   emit ExperimentalChanged();
 }
 

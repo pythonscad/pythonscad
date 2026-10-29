@@ -30,6 +30,7 @@
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Shape.hxx>
 
+#include "Feature.h"
 #include "core/AST.h"
 #include "core/CurveDiscretizer.h"
 #include "geometry/Geometry.h"
@@ -215,10 +216,15 @@ void logWarning(const std::string& msg)
   LOG(message_group::Warning, "%1$s", msg);
 }
 
+bool enabled()
+{
+  return Feature::ExperimentalOcct.is_enabled();
+}
+
 std::unique_ptr<const Geometry> attachExact(std::unique_ptr<PolySet> mesh,
                                             std::shared_ptr<const ExactShape> exact)
 {
-  if (!mesh || !exact || mesh->isEmpty()) return mesh;
+  if (!enabled() || !mesh || !exact || mesh->isEmpty()) return mesh;
   return std::make_unique<BRepGeometry>(std::move(*mesh), std::move(exact));
 }
 
@@ -261,7 +267,7 @@ std::shared_ptr<const PolySet> carryExact(const Geometry& src, std::shared_ptr<c
 std::shared_ptr<const Geometry> attachBoolean(OpenSCADOperator op, const Geometry::Geometries& children,
                                               std::shared_ptr<const Geometry> result)
 {
-  if (!result || result->isEmpty()) return result;
+  if (!enabled() || !result || result->isEmpty()) return result;
   if (op != OpenSCADOperator::UNION && op != OpenSCADOperator::DIFFERENCE &&
       op != OpenSCADOperator::INTERSECTION) {
     return result;
@@ -292,6 +298,7 @@ std::shared_ptr<const Geometry> attachBoolean(OpenSCADOperator op, const Geometr
 std::unique_ptr<Geometry> importStep(const std::string& filename, const CurveDiscretizer& discretizer,
                                      const Location& loc)
 {
+  if (!enabled()) return nullptr;  // silently use the built-in importer
   TopoDS_Shape shape;
   std::string error;
   if (!ExactShapeUtils::readStep(filename, shape, error)) {
@@ -353,6 +360,7 @@ std::unique_ptr<Geometry> importStep(const std::string& filename, const CurveDis
 bool exportStepExact(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                      const ExportInfo& exportInfo)
 {
+  if (!enabled()) return false;
   std::vector<const TopoDS_Shape *> shapes;
   bool anyExact = false;
   if (!collectShapes(geom, shapes, anyExact) || shapes.empty()) {

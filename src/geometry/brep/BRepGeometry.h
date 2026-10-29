@@ -62,6 +62,11 @@ private:
 
 namespace BRepUtils {
 
+/// True if exact geometry is switched on (experimental feature "occt", off by default).
+/// When off, no exact solids are created or imported and STEP export is faceted,
+/// exactly as in a build without OpenCASCADE.
+bool enabled();
+
 /// Attach an exact solid to a freshly built primitive mesh.
 std::unique_ptr<const Geometry> attachExact(std::unique_ptr<PolySet> mesh,
                                             std::shared_ptr<const ExactShape> exact);
