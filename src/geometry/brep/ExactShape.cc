@@ -21,7 +21,21 @@
 #include <BRepPrimAPI_MakeCone.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
+#include <BRepBndLib.hxx>
+#include <BRepGProp.hxx>
+#include <Bnd_Box.hxx>
+#include <BRepMesh_IncrementalMesh.hxx>
+#include <BRep_Tool.hxx>
+#include <GProp_GProps.hxx>
+#include <IFSelect_ReturnStatus.hxx>
+#include <Poly_Triangulation.hxx>
+#include <STEPControl_Reader.hxx>
 #include <ShapeUpgrade_ShapeDivideClosed.hxx>
+#include <TopAbs.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopLoc_Location.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Face.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
 #include <Standard_Failure.hxx>
 #include <TopTools_ListOfShape.hxx>
@@ -188,6 +202,12 @@ std::shared_ptr<const ExactShape> ExactShape::cylinder(double r1, double r2, dou
   });
 }
 
+std::shared_ptr<const ExactShape> ExactShape::fromShape(const TopoDS_Shape& shape)
+{
+  auto stored = std::make_shared<const TopoDS_Shape>(shape);
+  return makeNode("import", [stored] { return stored; });
+}
+
 std::shared_ptr<const ExactShape> ExactShape::transformed(std::shared_ptr<const ExactShape> child,
                                                           const Transform3d& mat)
 {
@@ -253,6 +273,82 @@ TopoDS_Shape ExactShapeUtils::splitClosedFaces(const TopoDS_Shape& shape)
   } catch (const Standard_Failure&) {
     return shape;
   }
+}
+
+bool ExactShapeUtils::readStep(const std::string& filename, TopoDS_Shape& shape, std::string& error)
+{
+  try {
+    STEPControl_Reader reader;
+    if (reader.ReadFile(filename.c_str()) != IFSelect_RetDone) {
+      error = "cannot read file";
+      return false;
+    }
+    if (reader.TransferRoots() == 0) {
+      error = "no transferable geometry";
+      return false;
+    }
+    shape = reader.OneShape();
+    if (shape.IsNull()) {
+      error = "empty shape";
+      return false;
+    }
+    return true;
+  } catch (const Standard_Failure& e) {
+    error = e.GetMessageString() ? e.GetMessageString() : "unknown error";
+  }
+  return false;
+}
+
+double ExactShapeUtils::boundingDiagonal(const TopoDS_Shape& shape)
+{
+  Bnd_Box box;
+  BRepBndLib::Add(shape, box);
+  if (box.IsVoid()) return 0;
+  double x0, y0, z0, x1, y1, z1;
+  box.Get(x0, y0, z0, x1, y1, z1);
+  return std::sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + (z1 - z0) * (z1 - z0));
+}
+
+void ExactShapeUtils::solidInfo(const TopoDS_Shape& shape, int& solids, double& volume)
+{
+  solids = 0;
+  for (TopExp_Explorer ex(shape, TopAbs_SOLID); ex.More(); ex.Next()) ++solids;
+  GProp_GProps props;
+  BRepGProp::VolumeProperties(shape, props);
+  volume = props.Mass();
+}
+
+bool ExactShapeUtils::triangulate(const TopoDS_Shape& shape, double linearDeflection,
+                                  double angularDeflection, Triangulation& result)
+{
+  try {
+    BRepMesh_IncrementalMesh mesher(shape, linearDeflection, /*isRelative*/ Standard_False,
+                                    angularDeflection, /*isInParallel*/ Standard_True);
+    if (!mesher.IsDone()) return false;
+  } catch (const Standard_Failure&) {
+    return false;
+  }
+
+  for (TopExp_Explorer ex(shape, TopAbs_FACE); ex.More(); ex.Next()) {
+    const TopoDS_Face& face = TopoDS::Face(ex.Current());
+    TopLoc_Location location;
+    const Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, location);
+    if (tri.IsNull()) return false;  // a face BRepMesh could not handle: no closed mesh
+    const gp_Trsf trsf = location.Transformation();
+    const bool reversed = face.Orientation() == TopAbs_REVERSED;
+    const int base = static_cast<int>(result.vertices.size());
+    for (int i = 1; i <= tri->NbNodes(); ++i) {
+      const gp_Pnt p = tri->Node(i).Transformed(trsf);
+      result.vertices.emplace_back(p.X(), p.Y(), p.Z());
+    }
+    for (int i = 1; i <= tri->NbTriangles(); ++i) {
+      int a, b, c;
+      tri->Triangle(i).Get(a, b, c);
+      if (reversed) std::swap(b, c);
+      result.triangles.push_back({base + a - 1, base + b - 1, base + c - 1});
+    }
+  }
+  return !result.triangles.empty();
 }
 
 #endif  // ENABLE_OCCT

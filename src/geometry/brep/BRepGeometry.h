@@ -13,6 +13,8 @@
 #include "geometry/brep/ExactShape.h"
 
 struct ExportInfo;
+class CurveDiscretizer;
+class Location;
 
 /**
  * Interface of geometries that carry an exact solid next to their mesh.
@@ -83,6 +85,16 @@ std::shared_ptr<const PolySet> carryExact(const Geometry& src, std::shared_ptr<c
  */
 std::shared_ptr<const Geometry> attachBoolean(OpenSCADOperator op, const Geometry::Geometries& children,
                                               std::shared_ptr<const Geometry> result);
+
+/**
+ * Import a STEP file with OpenCASCADE. Solids keep their exact shape (so a STEP
+ * export writes them exactly again) and get a triangle mesh for everything mesh
+ * based; its fineness follows $fn/$fa/$fs like a circle of the model's size.
+ * Returns nullptr if OpenCASCADE cannot read the file, so the caller can fall
+ * back to the built-in importer.
+ */
+std::unique_ptr<Geometry> importStep(const std::string& filename, const CurveDiscretizer& discretizer,
+                                     const Location& loc);
 
 /**
  * Write geom as exact STEP if it consists only of exact geometry (a single

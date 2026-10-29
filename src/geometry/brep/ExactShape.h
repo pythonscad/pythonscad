@@ -2,7 +2,9 @@
 
 #ifdef ENABLE_OCCT
 
+#include <array>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "core/enums.h"
@@ -37,6 +39,8 @@ public:
   /// restricted to the sector 0..angle degrees around +z (angle in (0, 360])
   static std::shared_ptr<const ExactShape> cylinder(double r1, double r2, double z1, double z2,
                                                     double angle);
+  /// An already computed solid, e.g. read from a STEP file
+  static std::shared_ptr<const ExactShape> fromShape(const TopoDS_Shape& shape);
   /// child transformed by mat
   static std::shared_ptr<const ExactShape> transformed(std::shared_ptr<const ExactShape> child,
                                                        const Transform3d& mat);
@@ -64,6 +68,32 @@ namespace ExactShapeUtils {
  * the wrong side of it. Returns shape unchanged if splitting fails.
  */
 TopoDS_Shape splitClosedFaces(const TopoDS_Shape& shape);
+
+/**
+ * Read a STEP file with OpenCASCADE's reader (units converted to mm).
+ * Returns false and sets error if the file cannot be read or holds no geometry.
+ */
+bool readStep(const std::string& filename, TopoDS_Shape& shape, std::string& error);
+
+/// Length of the diagonal of the bounding box of shape (0 if empty)
+double boundingDiagonal(const TopoDS_Shape& shape);
+
+/// Number of solids in shape and their total volume
+void solidInfo(const TopoDS_Shape& shape, int& solids, double& volume);
+
+/// A triangle mesh of a shape. Triangles are oriented counter-clockwise seen from
+/// outside, like OpenSCAD's PolySets.
+struct Triangulation {
+  std::vector<Vector3d> vertices;
+  std::vector<std::array<int, 3>> triangles;
+};
+
+/**
+ * Triangulate shape with BRepMesh. linearDeflection is the maximum chord distance
+ * in mm, angularDeflection the maximum angle between adjacent segments in radians.
+ */
+bool triangulate(const TopoDS_Shape& shape, double linearDeflection, double angularDeflection,
+                 Triangulation& result);
 }  // namespace ExactShapeUtils
 
 #endif  // ENABLE_OCCT

@@ -5,7 +5,10 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <array>
+#include <cmath>
 #include <filesystem>
+#include <map>
 #include <fstream>
 #include <functional>
 #include <sstream>
@@ -27,7 +30,10 @@
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Shape.hxx>
 
+#include "core/AST.h"
+#include "core/CurveDiscretizer.h"
 #include "geometry/Geometry.h"
+#include "geometry/PolySetBuilder.h"
 #include "io/export.h"
 #include "utils/printutils.h"
 #ifdef ENABLE_MANIFOLD
@@ -281,6 +287,67 @@ std::shared_ptr<const Geometry> attachBoolean(OpenSCADOperator op, const Geometr
     exactChildren.push_back(std::move(exact));
   }
   return wrap(result, ExactShape::boolean(op, std::move(exactChildren)));
+}
+
+std::unique_ptr<Geometry> importStep(const std::string& filename, const CurveDiscretizer& discretizer,
+                                     const Location& loc)
+{
+  TopoDS_Shape shape;
+  std::string error;
+  if (!ExactShapeUtils::readStep(filename, shape, error)) {
+    LOG(message_group::Warning, loc, "",
+        "OpenCASCADE could not import STEP file '%1$s' (%2$s), trying the built-in importer", filename,
+        error);
+    return nullptr;
+  }
+
+  // Mesh as fine as OpenSCAD would make a circle of the model's size: the angle
+  // between segments (curvature) and the chord error that goes with it.
+  const double diag = ExactShapeUtils::boundingDiagonal(shape);
+  const double r = std::max(diag / 2, 1e-6);
+  const int segments = std::max(3, discretizer.getCircularSegmentCount(r).value_or(30));
+  const double angular = 2 * M_PI / segments;
+  const double linear = std::max(r * (1 - std::cos(M_PI / segments)), 1e-4 * r);
+
+  ExactShapeUtils::Triangulation tri;
+  if (!ExactShapeUtils::triangulate(shape, linear, angular, tri)) {
+    LOG(message_group::Warning, loc, "",
+        "OpenCASCADE could not triangulate STEP file '%1$s', trying the built-in importer", filename);
+    return nullptr;
+  }
+
+  // Faces are meshed separately; weld the vertices they share along their edges.
+  const double grid = 1e-9 * std::max(1.0, diag);
+  std::map<std::array<long long, 3>, int> welded;
+  std::vector<int> remap(tri.vertices.size());
+  std::vector<Vector3d> vertices;
+  for (size_t i = 0; i < tri.vertices.size(); ++i) {
+    const auto& v = tri.vertices[i];
+    const std::array<long long, 3> key{std::llround(v[0] / grid), std::llround(v[1] / grid),
+                                       std::llround(v[2] / grid)};
+    auto [it, inserted] = welded.emplace(key, static_cast<int>(vertices.size()));
+    if (inserted) vertices.push_back(v);
+    remap[i] = it->second;
+  }
+  PolySetBuilder builder(static_cast<int>(vertices.size()), static_cast<int>(tri.triangles.size()));
+  for (const auto& t : tri.triangles) {
+    const int a = remap[t[0]], b = remap[t[1]], c = remap[t[2]];
+    if (a == b || b == c || a == c) continue;  // degenerate after welding
+    builder.appendPolygon(std::vector<Vector3d>{vertices[a], vertices[b], vertices[c]});
+  }
+  std::unique_ptr<PolySet> mesh = builder.build();
+  mesh->setTriangular(true);
+
+  int solids = 0;
+  double volume = 0;
+  ExactShapeUtils::solidInfo(shape, solids, volume);
+  if (solids == 0 || volume <= 0) {
+    LOG(message_group::Warning, loc, "",
+        "STEP file '%1$s' contains no solids, imported as surface mesh without exact geometry",
+        filename);
+    return mesh;
+  }
+  return std::make_unique<BRepGeometry>(std::move(*mesh), ExactShape::fromShape(shape));
 }
 
 bool exportStepExact(const std::shared_ptr<const Geometry>& geom, std::ostream& output,

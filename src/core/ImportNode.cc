@@ -60,6 +60,9 @@
 #include "utils/printutils.h"
 namespace fs = std::filesystem;
 #include <boost/assign/std/vector.hpp>
+#ifdef ENABLE_OCCT
+#include "geometry/brep/BRepGeometry.h"
+#endif
 using namespace boost::assign;  // bring 'operator+=()' into scope
 
 static std::shared_ptr<AbstractNode> do_import(const std::shared_ptr<const ModuleInstantiation>& inst,
@@ -210,6 +213,11 @@ std::unique_ptr<const Geometry> ImportNode::createGeometry() const
     break;
   }
   case ImportType::STEP: {
+#ifdef ENABLE_OCCT
+    // OpenCASCADE reads any STEP geometry (curved surfaces included) and keeps it exact
+    g = BRepUtils::importStep(this->filename, this->discretizer, loc);
+    if (g) break;
+#endif
     g = import_step(this->filename, loc);
     break;
   }
