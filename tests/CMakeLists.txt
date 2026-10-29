@@ -1663,6 +1663,14 @@ if(ENABLE_PYTHON)
   )
   set_property(TEST version-helpers PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 
+  # Number format of the faceted STEP writer (StepKernel); used with and without OpenCASCADE.
+  add_test(NAME step-faceted-format CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_step_faceted.py
+      ${OPENSCAD_BINPATH}
+  )
+  set_property(TEST step-faceted-format PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+
   # Exact B-Rep STEP export (BRepGeometry, OpenCASCADE). Only meaningful when
   # the exact geometry kernel is compiled in.
   if (ENABLE_OCCT)
