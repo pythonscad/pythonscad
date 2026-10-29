@@ -7,6 +7,7 @@ exact and mesh geometry still fall back to the mesh-based STEP writer.
 """
 from __future__ import annotations
 
+import math
 import os
 import re
 import subprocess
@@ -117,11 +118,42 @@ CASES = [
     ),
 ]
 
+# STEP import through OpenCASCADE: (name, model written to STEP first, script using it as {src}, checker)
+IMPORT_CASES = [
+    ("import-reexport", "sphere(10) - cube(10)", "show(osimport({src}))", expect(SPHERICAL_SURFACE=EXACT, PLANE=3)),
+    (
+        "import-boolean",
+        "sphere(10) - cube(10)",
+        "show(osimport({src}) - cube(6, center=True))",
+        expect(SPHERICAL_SURFACE=EXACT, PLANE=(6, None), MANIFOLD_SOLID_BREP=1),
+    ),
+    # a faceted file from the mesh writer becomes an exact planar solid
+    ("import-faceted", TETRA, "show(osimport({src}))", expect(PLANE=4, MANIFOLD_SOLID_BREP=1)),
+]
+
+# Imported STEP rendered as mesh: (name, model, fn, exact volume, max relative error, min triangles)
+IMPORT_MESH_CASES = [
+    ("import-mesh-coarse", "sphere(10) - cube(10)", 8, 4 / 3 * math.pi * 1000 * 7 / 8, 0.15, 50),
+    ("import-mesh-fine", "sphere(10) - cube(10)", 64, 4 / 3 * math.pi * 1000 * 7 / 8, 0.005, 2000),
+]
+
 # Same models, but written through the Python export() call (allownef=false path)
 EXPORT_CASES = [
     ("export-call-sphere", "sphere(10)", expect(SPHERICAL_SURFACE=1)),
     ("export-call-difference", "sphere(10) - cube(10)", expect(SPHERICAL_SURFACE=EXACT, PLANE=3)),
 ]
+
+
+def stl_volume(text: str) -> tuple[float, int]:
+    """Volume and triangle count of an ASCII STL."""
+    v = [tuple(map(float, m)) for m in re.findall(r"vertex\s+(\S+)\s+(\S+)\s+(\S+)", text)]
+    volume = 0.0
+    for i in range(0, len(v) - 2, 3):
+        a, b, c = v[i : i + 3]
+        volume += (
+            a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0])
+        ) / 6
+    return volume, len(v) // 3
 
 
 def run(pythonscad: str, workdir: str, name: str, script_text: str, out: str) -> tuple[str | None, str]:
@@ -163,6 +195,34 @@ def main() -> int:
             out = os.path.join(workdir, f"{name}.step")
             script = f"from pythonscad import *\nexport({obj}, {out!r})\nshow(cube(1))\n"
             jobs.append((name, script, out, check))
+
+        for name, model, body, check in IMPORT_CASES:
+            src = os.path.join(workdir, f"{name}-source.step")
+            text, log = run(pythonscad, workdir, f"{name}-source", f"from pythonscad import *\nexport({model}, {src!r})\nshow(cube(1))\n", src)
+            if text is None:
+                failures += 1
+                print(f"FAIL {name}: writing the source file failed\n{log}", file=sys.stderr)
+                continue
+            out = os.path.join(workdir, f"{name}-render.step")
+            jobs.append((name, "from pythonscad import *\n" + body.format(src=repr(src)) + "\n", out, check))
+
+        for name, model, fn, exact, tolerance, min_triangles in IMPORT_MESH_CASES:
+            src = os.path.join(workdir, f"{name}-source.step")
+            text, log = run(pythonscad, workdir, f"{name}-source", f"from pythonscad import *\nexport({model}, {src!r})\nshow(cube(1))\n", src)
+            stl = os.path.join(workdir, f"{name}.stl")
+            script = f"from pythonscad import *\nexport(osimport({src!r}, fn={fn}), {stl!r})\nshow(cube(1))\n"
+            mesh, log2 = run(pythonscad, workdir, name, script, stl) if text is not None else (None, log)
+            if mesh is None:
+                failures += 1
+                print(f"FAIL {name}: export failed\n{log2}", file=sys.stderr)
+                continue
+            volume, triangles = stl_volume(mesh)
+            error = abs(volume - exact) / exact
+            if error > tolerance or triangles < min_triangles:
+                failures += 1
+                print(f"FAIL {name}: volume {volume:.2f} vs {exact:.2f} ({error:.2%}), {triangles} triangles", file=sys.stderr)
+            else:
+                print(f"ok   {name} (volume error {error:.2%}, {triangles} triangles)")
 
         for name, script, out, check in jobs:
             text, log = run(pythonscad, workdir, name, script, out)
