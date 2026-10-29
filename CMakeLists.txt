@@ -82,6 +82,7 @@ set(ENABLE_HIDAPI "AUTO" CACHE STRING "Enable support for HIDAPI input driver")
 set_property(CACHE ENABLE_HIDAPI PROPERTY STRINGS "AUTO" "ON" "OFF")
 option(ENABLE_CGAL "Enable CGAL." ON)
 option(ENABLE_MANIFOLD "Enable Manifold." ON)
+option(ENABLE_OCCT "Enable exact B-Rep geometry via OpenCASCADE (experimental)." OFF)
 option(ALLOW_BUNDLED_HIDAPI "Allow usage of bundled HIDAPI library (Windows only)." OFF)
 option(ENABLE_PYTHON "Enable experimental Python Interpreter" ON)
 option(PYTHON_VERSION "Specify Exact Python Version" "")
@@ -1664,8 +1665,6 @@ set(CORE_SOURCES
   src/geometry/GeometryUtils.cc
   src/geometry/PolySet.cc
   src/geometry/PolySetBuilder.cc
-  src/geometry/Curve.cc
-  src/geometry/Surface.cc
   src/geometry/PolySetUtils.cc
   src/geometry/Polygon2d.cc
   src/geometry/Barcode1d.cc
@@ -2086,6 +2085,23 @@ if (ENABLE_CGAL)
 endif()
 if (ENABLE_MANIFOLD AND ENABLE_CGAL)
   list(APPEND Sources ${MANIFOLD_CGAL_SOURCES})
+endif()
+if (ENABLE_OCCT)
+  # Exact B-Rep geometry (BRepGeometry) and exact STEP export.
+  find_package(OpenCASCADE CONFIG REQUIRED)
+  message(STATUS "OpenCASCADE: ${OpenCASCADE_VERSION}")
+  set(OCCT_TOOLKITS TKernel TKMath TKG2d TKG3d TKGeomBase TKGeomAlgo TKBRep TKTopAlgo TKPrim
+    TKBO TKBool TKShHealing TKMesh TKOffset TKXSBase)
+  if (TARGET TKDESTEP)
+    # OCCT >= 7.8 bundles all STEP toolkits into TKDESTEP
+    list(APPEND OCCT_TOOLKITS TKDESTEP)
+  else()
+    list(APPEND OCCT_TOOLKITS TKSTEP TKSTEPBase TKSTEPAttr TKSTEP209)
+  endif()
+  target_include_directories(OpenSCADLibInternal SYSTEM PUBLIC ${OpenCASCADE_INCLUDE_DIR})
+  target_link_libraries(OpenSCADLibInternal PUBLIC ${OCCT_TOOLKITS})
+  target_compile_definitions(OpenSCADLibInternal PUBLIC ENABLE_OCCT)
+  list(APPEND Sources src/geometry/brep/BRepGeometry.cc src/geometry/brep/ExactShape.cc)
 endif()
 list(APPEND Sources
   src/openscad.cc

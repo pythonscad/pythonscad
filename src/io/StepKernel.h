@@ -32,9 +32,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 #include <algorithm>
 #include <sstream>
 #include <math.h>
+#include <cmath>
+#include <cstdio>
 #include "src/geometry/GeometryUtils.h"
-#include <src/geometry/Curve.h>
-#include <src/geometry/Surface.h>
+
+/**
+ * Format a number as an ISO 10303-21 REAL: always with a decimal point and an
+ * upper case exponent ("10." instead of "10", "1.E-05" instead of "1e-05"),
+ * locale independent and with 15 significant digits so coordinates survive
+ * the round trip. Plain ostream output violates the first and truncates to 6.
+ */
+inline std::string stepReal(double v)
+{
+  if (!std::isfinite(v) || v == 0.0) return "0.";
+  char buf[40];
+  std::snprintf(buf, sizeof(buf), "%.15G", v);
+  std::string s(buf);
+  std::replace(s.begin(), s.end(), ',', '.');  // in case a locale sneaked in
+  const auto e = s.find('E');
+  std::string mantissa = s.substr(0, e);
+  const std::string exponent = e == std::string::npos ? "" : s.substr(e);
+  if (mantissa.find('.') == std::string::npos) mantissa += '.';
+  return mantissa + exponent;
+}
 
 class StepKernel
 {
@@ -92,8 +112,8 @@ public:
 
     virtual void serialize(std::ostream& stream_in)
     {
-      stream_in << "#" << id << " = DIRECTION('" << label << "', (" << pt[0] << ", " << pt[1] << ", "
-                << pt[2] << "));\n";
+      stream_in << "#" << id << " = DIRECTION('" << label << "', (" << stepReal(pt[0]) << ", "
+                << stepReal(pt[1]) << ", " << stepReal(pt[2]) << "));\n";
     }
 
     virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args)
@@ -123,8 +143,8 @@ public:
 
     virtual void serialize(std::ostream& stream_in)
     {
-      stream_in << "#" << id << " = CARTESIAN_POINT('" << label << "', (" << pt[0] << "," << pt[1] << ","
-                << pt[2] << "));\n";
+      stream_in << "#" << id << " = CARTESIAN_POINT('" << label << "', (" << stepReal(pt[0]) << ","
+                << stepReal(pt[1]) << "," << stepReal(pt[2]) << "));\n";
     }
     virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args)
     {
@@ -232,18 +252,18 @@ public:
     }
 
     CylindricalSurface(std::vector<Entity *>& ent_list, std::string name, Axis2Placement *axis_in,
-                       double r)
+                       double r_in)
       : SurfaceType(ent_list)
     {
       axis = axis_in;
+      r = r_in;
     }
     virtual ~CylindricalSurface() {}
 
     virtual void serialize(std::ostream& stream_in)
     {
-      stream_in << "#" << id << " = CYLINDRICAL_SURFACE('" << label << "',#" << axis->id << ");\n";
-      stream_in << "#" << id << " = CYLINDRICAL_SURFACE('" << label << "',#" << axis->id << "," << r
-                << ");\n";
+      stream_in << "#" << id << " = CYLINDRICAL_SURFACE('" << label << "',#" << axis->id << ","
+                << stepReal(r) << ");\n";
     }
     virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args)
     {
@@ -276,17 +296,19 @@ public:
       r = 0;
     }
 
-    Circle(std::vector<Entity *>& ent_list, std::string name, Axis2Placement *axis_in, double r)
+    Circle(std::vector<Entity *>& ent_list, std::string name, Axis2Placement *axis_in, double r_in)
       : RoundType(ent_list)
     {
       axis = axis_in;
+      r = r_in;
     }
     virtual ~Circle() {}
 
     virtual void serialize(std::ostream& stream_in)
     {
       stream_in << "#" << id << " = CIRCLE('" << label << "',#" << axis->id << ");\n";
-      stream_in << "#" << id << " = CIRCLE('" << label << "',#" << axis->id << "," << r << ");\n";
+      stream_in << "#" << id << " = CIRCLE('" << label << "',#" << axis->id << "," << stepReal(r)
+                << ");\n";
     }
     virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args)
     {
@@ -776,7 +798,8 @@ public:
 
     virtual void serialize(std::ostream& stream_in)
     {
-      stream_in << "#" << id << " = VECTOR('" << label << "',#" << dir->id << "," << length << ");\n";
+      stream_in << "#" << id << " = VECTOR('" << label << "',#" << dir->id << "," << stepReal(length)
+                << ");\n";
     }
 
     virtual void parse_args(std::map<int, Entity *>& ent_map, std::string args)
@@ -1265,8 +1288,6 @@ public:
                                                bool dir);
 
   void build_tri_body(const char *name, std::vector<Vector3d> tris, std::vector<IndexedFace> faces,
-                      const std::vector<std::shared_ptr<Curve>>& curves,
-                      const std::vector<std::shared_ptr<Surface>> surfaces,
                       const std::vector<int>& faceParents, double tol);
   EdgeCurve *get_line_from_map(Vector3d p0, Vector3d p1,
                                std::map<std::tuple<double, double, double, double, double, double>,

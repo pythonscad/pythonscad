@@ -56,6 +56,12 @@ const Feature Feature::ExperimentalUnicodeIdentifiers(
   "unicode-identifiers",
   "Allow non-ASCII characters in identifiers, following Unicode Standard Annex #31.");
 
+#ifdef ENABLE_OCCT
+const Feature Feature::ExperimentalOcct(
+  "occt",
+  "Exact B-Rep geometry with OpenCASCADE: sphere, cube, cylinder and their booleans are exported as "
+  "exact STEP, and STEP files are imported through OpenCASCADE (changing it flushes the caches).");
+#endif
 #ifdef ENABLE_PYTHON
 const Feature Feature::ExperimentalPythonEngine(
   "python-engine", "Enable experimental Python Engine (implies risk of malicious scripts downloaded).");

@@ -51,6 +51,9 @@
 #include "geometry/PolySet.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/linalg.h"
+#ifdef ENABLE_OCCT
+#include "geometry/brep/BRepGeometry.h"
+#endif
 #include "utils/calc.h"
 #include "utils/degree_trig.h"
 #include "utils/printutils.h"
@@ -145,7 +148,12 @@ std::unique_ptr<const Geometry> CubeNode::createGeometry() const
     {2, 0, 4, 6},  // left
   };
 
+#ifdef ENABLE_OCCT
+  return BRepUtils::attachExact(std::move(ps), ExactShape::box({coord1[0], coord1[1], coord1[2]},
+                                                               {coord2[0], coord2[1], coord2[2]}));
+#else
   return ps;
+#endif
 }
 
 void CubeNode::dragBegin()
@@ -536,11 +544,14 @@ std::unique_ptr<const Geometry> SphereNode::createGeometry() const
   }
 #endif
 
-  if (style == "octa") {
-    return createGeometryOcta(num_fragments);
-  } else {
-    return createGeometryOrig(num_fragments);
-  }
+  auto mesh = (style == "octa") ? createGeometryOcta(num_fragments) : createGeometryOrig(num_fragments);
+#ifdef ENABLE_OCCT
+  // Keep the classic tessellation as the mesh, so results stay bit-identical,
+  // and carry the exact sphere along for consumers that want it (STEP export).
+  return BRepUtils::attachExact(std::move(mesh), ExactShape::sphere(r));
+#else
+  return mesh;
+#endif
 }
 
 std::shared_ptr<const Geometry> SphereNode::dragPoint(const Vector3d& pt, const Vector3d& newpt,
@@ -662,7 +673,11 @@ std::unique_ptr<const Geometry> CylinderNode::createGeometry() const
     }
   }
 
+#ifdef ENABLE_OCCT
+  return BRepUtils::attachExact(std::move(polyset), ExactShape::cylinder(r1, r2, z1, z2, this->angle));
+#else
   return polyset;
+#endif
 }
 
 void CylinderNode::dragBegin()
@@ -1070,7 +1085,11 @@ std::unique_ptr<const Geometry> SquareNode::createGeometry() const
   Outline2d o;
   o.vertices = {v1, {v2[0], v1[1]}, v2, {v1[0], v2[1]}};
   o.color = *OpenSCAD::parse_color("#f9d72c");
+#ifdef ENABLE_OCCT
+  return BRepUtils::attachExact2D(std::make_unique<Polygon2d>(o), ExactShape::rect2d(v1, v2));
+#else
   return std::make_unique<Polygon2d>(o);
+#endif
 }
 
 static std::shared_ptr<AbstractNode> builtin_square(
@@ -1135,7 +1154,12 @@ std::unique_ptr<const Geometry> CircleNode::createGeometry() const
     o.vertices[i] = {this->r * cos_degrees(phi), this->r * sin_degrees(phi)};
   }
   o.color = *OpenSCAD::parse_color("#f9d72c");
+#ifdef ENABLE_OCCT
+  return BRepUtils::attachExact2D(std::make_unique<Polygon2d>(o),
+                                  ExactShape::circle2d(this->r, this->angle));
+#else
   return std::make_unique<Polygon2d>(o);
+#endif
 }
 
 static std::shared_ptr<AbstractNode> builtin_circle(

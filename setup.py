@@ -752,8 +752,6 @@ def main():
               "src/geometry/PolySet.cc",
               "src/geometry/PolySetBuilder.cc",
               "src/geometry/PolySetUtils.cc",
-              "src/geometry/Surface.cc",
-              "src/geometry/Curve.cc",
               "src/geometry/ClipperUtils.cc",
               "src/geometry/linalg.cc",
               "src/geometry/manifold/ManifoldGeometry.cc",

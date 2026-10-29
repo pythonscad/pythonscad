@@ -1663,6 +1663,25 @@ if(ENABLE_PYTHON)
   )
   set_property(TEST version-helpers PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 
+  # Number format of the faceted STEP writer (StepKernel); used with and without OpenCASCADE.
+  add_test(NAME step-faceted-format CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_step_faceted.py
+      ${OPENSCAD_BINPATH}
+  )
+  set_property(TEST step-faceted-format PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+
+  # Exact B-Rep STEP export (BRepGeometry, OpenCASCADE). Only meaningful when
+  # the exact geometry kernel is compiled in.
+  if (ENABLE_OCCT)
+    add_test(NAME step-exact-export CONFIGURATIONS Default
+      COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_step_exact.py
+        ${OPENSCAD_BINPATH}
+    )
+    set_property(TEST step-exact-export PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  endif()
+
   # Coverage for the C++ Python-object type-conversion helpers in
   # src/python/pyconversion.cc, driven through their Python API entry points
   # with list/tuple/numpy/scalar/error variants. Self-skips without numpy.
