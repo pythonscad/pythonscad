@@ -34,6 +34,7 @@ public:
                                                   int mouse_x, int mouse_y, double tolerance) override;
 
 private:
+  bool colors_dirty_ = false;
   void addGeometry(const std::shared_ptr<const class Geometry>& geom);
   void createPolySetStates(const ShaderUtils::ShaderInfo *shaderinfo);
   void createPolygonStates();

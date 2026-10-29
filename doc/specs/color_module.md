@@ -41,7 +41,7 @@
   * Valid RGB or valid alpha must not be changed. Every uncolored RGB or alpha must be changed to valid values.
   * For preview and render, the software should use the current color scheme.
   * For export, the software may use the current color scheme or the one at the time of rendering, but must make the same decision for all exporters.
-* If the color scheme is changed, the viewport must be updated to the new color scheme.  Uncolored portions of the model may be updated to the new color scheme.
+* If the color scheme is changed, the viewport must be updated to the new color scheme.  Uncolored portions of the model must be updated to the new color scheme without reevaluating the script. Explicit colors must be preserved.
 * The negative color shall use valid parts (RGB or alpha) of the color of the face from the removal geometry causing the new face; for an invalid RGB or alpha, uncolored negative shall be used.
 * Any of RGBA missing from a color in the color scheme shall use the maximum value from the full range of intensity for the corresponding valid definition when reifying an uncolored face.
 
@@ -57,3 +57,12 @@
   * A string `"#hexvalue"` in either RGB or RGBA format, and the values must all be given as one or two hexadecimal digits: `#rgb`, `#rgba`, `#rrggbb`, or `#rrggbbaa`.
   * A string `"colorname"` where colorname is from the World Wide Web Consortium's [SVG color list](http://www.w3.org/TR/css3-color/) and is used for RGB; or `"transparent"`, which has RGBA of `[0,0,0,0]`.
   * `undef`
+
+## Cached geometry and theme changes
+
+Mesh palettes preserve unpainted material and cut-surface roles instead of storing
+colors from the viewport theme. Renderers resolve these roles when preparing display
+buffers, and rebuild those buffers during the next paint after a theme change.
+Color-capable model exporters resolve the same roles against their export settings.
+The bundled themes use matching F5/F6 colors for solid and cut surfaces; cut surfaces
+and 2D geometry may still have distinct colors from solid material.

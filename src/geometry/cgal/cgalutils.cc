@@ -25,8 +25,6 @@
 #include "geometry/Reindexer.h"
 #include "geometry/cgal/cgal.h"
 #include "geometry/linalg.h"
-#include "glview/ColorMap.h"
-#include "glview/RenderSettings.h"
 #include "utils/degree_trig.h"
 #include "utils/printutils.h"
 #ifdef ENABLE_MANIFOLD
@@ -408,9 +406,8 @@ std::unique_ptr<PolySet> createPolySetFromNefPolyhedron3(const CGAL_Nef_polyhedr
 
   auto polyset = PolySet::createEmpty();
   polyset->colors.reserve(2);
-  auto colorScheme = ColorMap::instance().findColorScheme(RenderSettings::inst()->colorscheme);
-  polyset->colors.push_back(ColorMap::getColor(*colorScheme, RenderColor::CGAL_FACE_FRONT_COLOR));
-  polyset->colors.push_back(ColorMap::getColor(*colorScheme, RenderColor::CGAL_FACE_BACK_COLOR));
+  polyset->colors.push_back(Color4f());
+  polyset->colors.push_back(Color4f::defaultCutout());
 
   polyset->vertices.reserve(verts.size());
   for (const auto& v : verts) {

@@ -44,7 +44,8 @@
 // first line, the docs above show that wrong in the first
 // example.
 
-void export_off(const std::shared_ptr<const Geometry>& geom, std::ostream& output)
+void export_off(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
+                const ExportInfo& exportInfo)
 {
   auto ps = PolySetUtils::getGeometryAsPolySet(geom);
   if (Feature::ExperimentalPredictibleOutput.is_enabled()) {
@@ -67,7 +68,8 @@ void export_off(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
     if (has_color) {
       auto color_index = ps->color_indices[i];
       if (color_index >= 0) {
-        auto color = ps->colors[color_index];
+        auto color =
+          ps->colors[color_index].resolved(exportInfo.defaultColor, exportInfo.defaultCutoutColor());
         int r, g, b, a;
         if (!color.getRgba(r, g, b, a)) {
           LOG(message_group::Error, "Invalid color in OFF export");

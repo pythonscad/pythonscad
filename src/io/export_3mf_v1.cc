@@ -185,7 +185,7 @@ bool handle_triangle_color(PLib3MFPropertyHandler *propertyhandler, const std::u
       }
     }
   } else if (ctx.usecolors) {
-    const auto& col = ps->colors[color_index];
+    const auto col = ps->colors[color_index].resolved(ctx.defaultColor, ctx.info.defaultCutoutColor());
     if (lib3mf_propertyhandler_setsinglecolorfloatrgba(propertyhandler, triangle_index, col.r(), col.g(),
                                                        col.b(), col.a()) != LIB3MF_OK) {
       export_3mf_error("Can't set triangle color.", ctx.model);
@@ -321,7 +321,8 @@ bool append_polyset(const std::shared_ptr<const PolySet>& ps, const Export3mfPar
     // material table maintained in the export context.
     materialMap.reserve(sorted_ps->colors.size());
     for (const auto& color : sorted_ps->colors) {
-      materialMap.push_back(materialFunc(ctx, color));
+      materialMap.push_back(
+        materialFunc(ctx, color.resolved(ctx.defaultColor, ctx.info.defaultCutoutColor())));
     }
   }
 
