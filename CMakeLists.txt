@@ -2091,7 +2091,7 @@ if (ENABLE_OCCT)
   find_package(OpenCASCADE CONFIG REQUIRED)
   message(STATUS "OpenCASCADE: ${OpenCASCADE_VERSION}")
   set(OCCT_TOOLKITS TKernel TKMath TKG2d TKG3d TKGeomBase TKGeomAlgo TKBRep TKTopAlgo TKPrim
-    TKBO TKBool TKShHealing TKMesh TKXSBase)
+    TKBO TKBool TKShHealing TKMesh TKOffset TKXSBase)
   if (TARGET TKDESTEP)
     # OCCT >= 7.8 bundles all STEP toolkits into TKDESTEP
     list(APPEND OCCT_TOOLKITS TKDESTEP)

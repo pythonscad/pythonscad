@@ -15,6 +15,23 @@
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepBuilderAPI_GTransform.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepBuilderAPI_MakeVertex.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
+#include <BRepOffsetAPI_ThruSections.hxx>
+#include <BRepPrimAPI_MakePrism.hxx>
+#include <BRepPrimAPI_MakeRevol.hxx>
+#include <BRepTools.hxx>
+#include <BRep_Builder.hxx>
+#include <GC_MakeArcOfCircle.hxx>
+#include <GC_MakeCircle.hxx>
+#include <Geom_TrimmedCurve.hxx>
+#include <ShapeFix_Face.hxx>
+#include <TopoDS_Compound.hxx>
+#include <TopoDS_Wire.hxx>
+#include <gp_Circ.hxx>
 #include <BRepCheck_Analyzer.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
@@ -91,6 +108,106 @@ ShapePtr guarded(const std::string& what, const std::function<TopoDS_Shape()>& f
     BRepUtils::logWarning("Exact geometry: " + what + " failed (" + e.what() + ")");
   }
   return nullptr;
+}
+
+/// Make a solid (or compound of solids) point outwards: some sweeps come out
+/// inside-out depending on the direction of the profile normal and the sweep.
+TopoDS_Shape orientOutwards(TopoDS_Shape shape)
+{
+  GProp_GProps props;
+  BRepGProp::VolumeProperties(shape, props);
+  if (props.Mass() < 0) shape.Reverse();
+  return shape;
+}
+
+/// Valid solid with positive volume, or a null shape
+TopoDS_Shape checkedSolid(const TopoDS_Shape& shape)
+{
+  if (shape.IsNull()) return {};
+  TopoDS_Shape oriented = orientOutwards(shape);
+  if (!BRepCheck_Analyzer(oriented).IsValid()) return {};
+  GProp_GProps props;
+  BRepGProp::VolumeProperties(oriented, props);
+  return props.Mass() > 0 ? oriented : TopoDS_Shape();
+}
+
+double signedArea(const std::vector<Vector2d>& o)
+{
+  double a = 0;
+  for (size_t i = 0, n = o.size(); i < n; ++i) {
+    const auto& p = o[i];
+    const auto& q = o[(i + 1) % n];
+    a += p[0] * q[1] - q[0] * p[1];
+  }
+  return a / 2;
+}
+
+bool pointInOutline(const Vector2d& pt, const std::vector<Vector2d>& o)
+{
+  bool inside = false;
+  for (size_t i = 0, j = o.size() - 1; i < o.size(); j = i++) {
+    if ((o[i][1] > pt[1]) != (o[j][1] > pt[1]) &&
+        pt[0] < (o[j][0] - o[i][0]) * (pt[1] - o[i][1]) / (o[j][1] - o[i][1]) + o[i][0]) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+TopoDS_Wire polygonWire(const std::vector<Vector2d>& outline)
+{
+  BRepBuilderAPI_MakePolygon poly;
+  for (const auto& v : outline) poly.Add(gp_Pnt(v[0], v[1], 0));
+  poly.Close();
+  if (!poly.IsDone()) return {};
+  return poly.Wire();
+}
+
+/// All faces of shape, or the shape itself if it is a face
+std::vector<TopoDS_Face> facesOf(const TopoDS_Shape& shape)
+{
+  std::vector<TopoDS_Face> faces;
+  for (TopExp_Explorer ex(shape, TopAbs_FACE); ex.More(); ex.Next())
+    faces.push_back(TopoDS::Face(ex.Current()));
+  return faces;
+}
+
+TopoDS_Shape compoundOf(const std::vector<TopoDS_Shape>& shapes)
+{
+  if (shapes.size() == 1) return shapes.front();
+  TopoDS_Compound compound;
+  BRep_Builder builder;
+  builder.MakeCompound(compound);
+  for (const auto& s : shapes) builder.Add(compound, s);
+  return compound;
+}
+
+gp_Trsf toTrsf(const Transform3d& mat)
+{
+  const Eigen::Matrix3d lin = mat.linear();
+  const Eigen::Vector3d tr = mat.translation();
+  gp_Trsf trsf;
+  trsf.SetValues(lin(0, 0), lin(0, 1), lin(0, 2), tr[0], lin(1, 0), lin(1, 1), lin(1, 2), tr[1],
+                 lin(2, 0), lin(2, 1), lin(2, 2), tr[2]);
+  return trsf;
+}
+
+/// Ruled loft from wire to the same wire scaled by s about origin and moved by height
+TopoDS_Shape loftWire(const TopoDS_Wire& wire, const gp_Pnt& origin, double s, const gp_Vec& height)
+{
+  BRepOffsetAPI_ThruSections loft(/*isSolid*/ Standard_True, /*ruled*/ Standard_True);
+  loft.AddWire(wire);
+  if (s == 0) {
+    loft.AddVertex(BRepBuilderAPI_MakeVertex(origin.Translated(height)).Vertex());
+  } else {
+    gp_Trsf scaling;
+    scaling.SetScale(origin, s);
+    gp_Trsf move;
+    move.SetTranslation(height);
+    loft.AddWire(TopoDS::Wire(BRepBuilderAPI_Transform(wire, move * scaling, true).Shape()));
+  }
+  loft.Build();
+  return loft.IsDone() ? loft.Shape() : TopoDS_Shape();
 }
 
 /// Apply an OpenSCAD affine transform. Similarities (rotation, translation, uniform
@@ -198,6 +315,143 @@ std::shared_ptr<const ExactShape> ExactShape::cylinder(double r1, double r2, dou
       const double rad = std::min(angle, 360.0) * M_PI / 180.0;
       if (r1 == r2) return BRepPrimAPI_MakeCylinder(axes, r1, h, rad).Shape();
       return BRepPrimAPI_MakeCone(axes, r1, r2, h, rad).Shape();
+    });
+  });
+}
+
+std::shared_ptr<const ExactShape> ExactShape::circle2d(double r, double angle)
+{
+  return makeNode("circle", [r, angle] {
+    return guarded("circle", [&]() -> TopoDS_Shape {
+      const gp_Circ circ(gp_Ax2(gp::Origin(), gp::DZ(), gp::DX()), r);
+      if (angle >= 360) {
+        return BRepBuilderAPI_MakeFace(BRepBuilderAPI_MakeWire(BRepBuilderAPI_MakeEdge(circ)).Wire())
+          .Face();
+      }
+      const double a = angle * M_PI / 180;
+      const gp_Pnt c = gp::Origin(), p0(r, 0, 0), p1(r * std::cos(a), r * std::sin(a), 0);
+      BRepBuilderAPI_MakeWire wire;
+      wire.Add(BRepBuilderAPI_MakeEdge(c, p0).Edge());
+      wire.Add(BRepBuilderAPI_MakeEdge(GC_MakeArcOfCircle(circ, 0, a, true).Value()).Edge());
+      wire.Add(BRepBuilderAPI_MakeEdge(p1, c).Edge());
+      return BRepBuilderAPI_MakeFace(wire.Wire(), /*OnlyPlane*/ true).Face();
+    });
+  });
+}
+
+std::shared_ptr<const ExactShape> ExactShape::rect2d(const Vector2d& p1, const Vector2d& p2)
+{
+  return polygons2d({{p1, {p2[0], p1[1]}, p2, {p1[0], p2[1]}}});
+}
+
+std::shared_ptr<const ExactShape> ExactShape::polygons2d(std::vector<std::vector<Vector2d>> outlines)
+{
+  return makeNode("polygon", [outlines = std::move(outlines)] {
+    return guarded("polygon", [&]() -> TopoDS_Shape {
+      // Material outlines (counter-clockwise) each become a face; every hole goes
+      // to the smallest material outline that contains it.
+      std::vector<size_t> material, holes;
+      std::vector<double> area(outlines.size());
+      for (size_t i = 0; i < outlines.size(); ++i) {
+        if (outlines[i].size() < 3) continue;
+        area[i] = signedArea(outlines[i]);
+        if (area[i] > 0) material.push_back(i);
+        else if (area[i] < 0) holes.push_back(i);
+      }
+      std::vector<std::vector<size_t>> holesOf(outlines.size());
+      for (size_t h : holes) {
+        size_t best = outlines.size();
+        for (size_t m : material) {
+          if (area[m] <= -area[h]) continue;
+          if (!pointInOutline(outlines[h][0], outlines[m])) continue;
+          if (best == outlines.size() || area[m] < area[best]) best = m;
+        }
+        if (best != outlines.size()) holesOf[best].push_back(h);
+      }
+      std::vector<TopoDS_Shape> faces;
+      for (size_t m : material) {
+        const TopoDS_Wire outer = polygonWire(outlines[m]);
+        if (outer.IsNull()) return {};
+        BRepBuilderAPI_MakeFace face(outer, /*OnlyPlane*/ true);
+        for (size_t h : holesOf[m]) {
+          const TopoDS_Wire inner = polygonWire(outlines[h]);
+          if (inner.IsNull()) return {};
+          face.Add(inner);
+        }
+        if (!face.IsDone()) return {};
+        ShapeFix_Face fix(face.Face());
+        fix.FixOrientation();
+        fix.Perform();
+        faces.push_back(fix.Face());
+      }
+      if (faces.empty()) return {};
+      return compoundOf(faces);
+    });
+  });
+}
+
+std::shared_ptr<const ExactShape> ExactShape::prism(std::shared_ptr<const ExactShape> profile,
+                                                    const Transform3d& placement, const Vector3d& base,
+                                                    const Vector3d& height, double scale)
+{
+  if (!profile) return nullptr;
+  return makeNode(
+    "linear_extrude", [profile = std::move(profile), placement, base, height, scale]() -> ShapePtr {
+      const TopoDS_Shape *p = profile->shape();
+      if (!p) return nullptr;
+      return guarded("linear_extrude", [&]() -> TopoDS_Shape {
+        gp_Trsf move;
+        move.SetTranslation(gp_Vec(base[0], base[1], base[2]));
+        const gp_Trsf trsf = move * toTrsf(placement);
+        const gp_Vec h(height[0], height[1], height[2]);
+        std::vector<TopoDS_Shape> solids;
+        for (const TopoDS_Face& face : facesOf(*p)) {
+          const TopoDS_Face placed = TopoDS::Face(BRepBuilderAPI_Transform(face, trsf, true).Shape());
+          if (scale == 1) {
+            BRepPrimAPI_MakePrism prism(placed, h);
+            if (!prism.IsDone()) return {};
+            solids.push_back(prism.Shape());
+            continue;
+          }
+          // Scaled: loft the outer boundary and cut lofts of the holes out of it.
+          const gp_Pnt origin = gp::Origin().Transformed(trsf);
+          const TopoDS_Wire outer = BRepTools::OuterWire(placed);
+          TopoDS_Shape solid = checkedSolid(loftWire(outer, origin, scale, h));
+          if (solid.IsNull()) return {};
+          for (TopExp_Explorer w(placed, TopAbs_WIRE); w.More(); w.Next()) {
+            const TopoDS_Wire wire = TopoDS::Wire(w.Current());
+            if (wire.IsSame(outer)) continue;
+            const TopoDS_Shape hole = checkedSolid(loftWire(wire, origin, scale, h));
+            if (hole.IsNull()) return {};
+            solid = runBoolean(BRepAlgoAPI_Cut(), solid, {std::make_shared<const TopoDS_Shape>(hole)});
+            if (solid.IsNull()) return {};
+          }
+          solids.push_back(solid);
+        }
+        if (solids.empty()) return {};
+        return checkedSolid(compoundOf(solids));
+      });
+    });
+}
+
+std::shared_ptr<const ExactShape> ExactShape::revolve(std::shared_ptr<const ExactShape> profile,
+                                                      double start, double angle)
+{
+  if (!profile) return nullptr;
+  return makeNode("rotate_extrude", [profile = std::move(profile), start, angle]() -> ShapePtr {
+    const TopoDS_Shape *p = profile->shape();
+    if (!p) return nullptr;
+    return guarded("rotate_extrude", [&]() -> TopoDS_Shape {
+      // profile x stays the radius, profile y becomes z
+      gp_Trsf upright;
+      upright.SetRotation(gp::OX(), M_PI / 2);
+      const TopoDS_Shape placed = BRepBuilderAPI_Transform(*p, upright, true).Shape();
+      const double a = std::max(-360.0, std::min(360.0, angle)) * M_PI / 180;
+      BRepPrimAPI_MakeRevol revol(placed, gp::OZ(), a);
+      if (!revol.IsDone()) return {};
+      gp_Trsf turn;
+      turn.SetRotation(gp::OZ(), start * M_PI / 180);
+      return checkedSolid(BRepBuilderAPI_Transform(revol.Shape(), turn, true).Shape());
     });
   });
 }

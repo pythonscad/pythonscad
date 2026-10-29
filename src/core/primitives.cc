@@ -1085,7 +1085,11 @@ std::unique_ptr<const Geometry> SquareNode::createGeometry() const
   Outline2d o;
   o.vertices = {v1, {v2[0], v1[1]}, v2, {v1[0], v2[1]}};
   o.color = *OpenSCAD::parse_color("#f9d72c");
+#ifdef ENABLE_OCCT
+  return BRepUtils::attachExact2D(std::make_unique<Polygon2d>(o), ExactShape::rect2d(v1, v2));
+#else
   return std::make_unique<Polygon2d>(o);
+#endif
 }
 
 static std::shared_ptr<AbstractNode> builtin_square(
@@ -1150,7 +1154,12 @@ std::unique_ptr<const Geometry> CircleNode::createGeometry() const
     o.vertices[i] = {this->r * cos_degrees(phi), this->r * sin_degrees(phi)};
   }
   o.color = *OpenSCAD::parse_color("#f9d72c");
+#ifdef ENABLE_OCCT
+  return BRepUtils::attachExact2D(std::make_unique<Polygon2d>(o),
+                                  ExactShape::circle2d(this->r, this->angle));
+#else
   return std::make_unique<Polygon2d>(o);
+#endif
 }
 
 static std::shared_ptr<AbstractNode> builtin_circle(

@@ -110,6 +110,56 @@ CASES = [
         "show(union(cube([60, 60, 5]), *[sphere(3).translate([20*i, 20*j, 5]) for i in range(3) for j in range(3)]))",
         expect(SPHERICAL_SURFACE=(9, None), MANIFOLD_SOLID_BREP=1),
     ),
+    # --- linear_extrude / rotate_extrude ---
+    ("extrude-circle", "show(linear_extrude(circle(5), height=10))", expect(CYLINDRICAL_SURFACE=1, PLANE=2)),
+    (
+        "extrude-ring-centered",
+        "show(linear_extrude(circle(5) - circle(3), height=4, center=True))",
+        expect(CYLINDRICAL_SURFACE=2, PLANE=2, MANIFOLD_SOLID_BREP=1),
+    ),
+    (
+        "extrude-polygon",
+        "show(linear_extrude(polygon([[0,0],[10,0],[10,10],[5,4],[0,10]]), height=2))",
+        expect(PLANE=7, CYLINDRICAL_SURFACE=NONE, MANIFOLD_SOLID_BREP=1),
+    ),
+    ("extrude-sector", "show(linear_extrude(circle(5, angle=90), height=3))", expect(CYLINDRICAL_SURFACE=1, PLANE=4)),
+    (
+        "extrude-2d-boolean",
+        "show(linear_extrude(square([20, 10]) - circle(2).translate([5, 5, 0]), height=4))",
+        expect(CYLINDRICAL_SURFACE=1, PLANE=6),
+    ),
+    ("extrude-placed-in-3d", "show(linear_extrude(circle(3).rotate([90, 0, 0]), height=5))", expect(CYLINDRICAL_SURFACE=1)),
+    (
+        "extrude-ellipse",
+        "show(linear_extrude(circle(3).scale([2, 1, 1]), height=5))",
+        # a non-uniform scale turns the circle into an exact rational B-spline (caps included)
+        expect(RATIONAL_B_SPLINE_CURVE=EXACT, MANIFOLD_SOLID_BREP=1),
+    ),
+    ("extrude-cone", "show(linear_extrude(circle(5), height=10, scale=[0, 0]))", expect(CONICAL_SURFACE=1, PLANE=1)),
+    (
+        "extrude-frustum",
+        "show(linear_extrude(square(4, center=True), height=6, scale=[0.5, 0.5]))",
+        # the loft stores its (planar) side faces as ruled B-spline surfaces
+        expect(PLANE=2, ADVANCED_FACE=6, MANIFOLD_SOLID_BREP=1),
+    ),
+    (
+        "extrude-then-boolean",
+        "show(linear_extrude(circle(5), height=10) - sphere(4).translate([0, 0, 10]))",
+        expect(CYLINDRICAL_SURFACE=1, SPHERICAL_SURFACE=EXACT, MANIFOLD_SOLID_BREP=1),
+    ),
+    ("extrude-twist-falls-back", "show(linear_extrude(square(4), height=5, twist=90))", MESH),
+    ("extrude-nonuniform-scale-falls-back", "show(linear_extrude(circle(5), height=5, scale=[0.5, 1]))", MESH),
+    ("rotate-torus", "show(rotate_extrude(circle(2).translate([5, 0, 0])))", expect(TOROIDAL_SURFACE=1)),
+    (
+        "rotate-partial",
+        "show(rotate_extrude(circle(2).translate([5, 0, 0]), angle=180))",
+        expect(TOROIDAL_SURFACE=1, PLANE=2, MANIFOLD_SOLID_BREP=1),
+    ),
+    (
+        "rotate-half-disk-is-sphere",
+        "show(rotate_extrude(circle(5, angle=180).rotate([0, 0, -90])))",
+        expect(SPHERICAL_SURFACE=1, MANIFOLD_SOLID_BREP=1),
+    ),
     ("mixed-falls-back-to-mesh", f"show(sphere(5) | {TETRA})", MESH),
     (
         "mixed-boolean-poisons-parent",

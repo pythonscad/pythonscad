@@ -33,6 +33,8 @@
 #include "Feature.h"
 #include "core/AST.h"
 #include "core/CurveDiscretizer.h"
+#include "core/LinearExtrudeNode.h"
+#include "core/RotateExtrudeNode.h"
 #include "geometry/Geometry.h"
 #include "geometry/PolySetBuilder.h"
 #include "io/export.h"
@@ -209,6 +211,47 @@ size_t BRepGeometry::meshFingerprint() const
   return seed;
 }
 
+ExactPolygon2d::ExactPolygon2d(Polygon2d polygon, std::shared_ptr<const ExactShape> exact)
+  : Polygon2d(std::move(polygon)), exact_(std::move(exact))
+{
+  fingerprint_ = outlineFingerprint();
+}
+
+std::unique_ptr<Geometry> ExactPolygon2d::copy() const
+{
+  return std::make_unique<ExactPolygon2d>(*this);
+}
+
+size_t ExactPolygon2d::memsize() const
+{
+  return Polygon2d::memsize() + sizeof(*this) - sizeof(Polygon2d);
+}
+
+std::shared_ptr<const ExactShape> ExactPolygon2d::exactShape() const
+{
+  if (!exact_ || outlineFingerprint() != fingerprint_) return nullptr;
+  return exact_;
+}
+
+void ExactPolygon2d::setExact(std::shared_ptr<const ExactShape> exact)
+{
+  exact_ = std::move(exact);
+  fingerprint_ = outlineFingerprint();
+}
+
+size_t ExactPolygon2d::outlineFingerprint() const
+{
+  size_t seed = untransformedOutlines().size();
+  for (const auto& o : untransformedOutlines()) {
+    boost::hash_combine(seed, o.vertices.size());
+    for (const auto& v : o.vertices) {
+      boost::hash_combine(seed, v[0]);
+      boost::hash_combine(seed, v[1]);
+    }
+  }
+  return seed;
+}
+
 namespace BRepUtils {
 
 void logWarning(const std::string& msg)
@@ -293,6 +336,152 @@ std::shared_ptr<const Geometry> attachBoolean(OpenSCADOperator op, const Geometr
     exactChildren.push_back(std::move(exact));
   }
   return wrap(result, ExactShape::boolean(op, std::move(exactChildren)));
+}
+
+// --- 2D -----------------------------------------------------------------------
+
+namespace {
+
+bool hasPlacement(const Polygon2d& p)
+{
+  return !p.getTransform3d().matrix().isIdentity(0);
+}
+
+/// The profile of poly in its local frame: the exact profile if it has one, else
+/// the outlines as polygons (exact for straight edges, always matching the mesh).
+std::shared_ptr<const ExactShape> profileOf(const Polygon2d& poly, bool transformedOutlines)
+{
+  if (!transformedOutlines || !hasPlacement(poly)) {
+    if (auto exact = exactOf(&poly)) return exact;
+  }
+  std::vector<std::vector<Vector2d>> outlines;
+  const auto& source = transformedOutlines ? poly.outlines() : poly.untransformedOutlines();
+  for (const auto& o : source) {
+    outlines.emplace_back(o.vertices.begin(), o.vertices.end());
+  }
+  return ExactShape::polygons2d(std::move(outlines));
+}
+
+std::unique_ptr<Geometry> wrapMesh(std::unique_ptr<Geometry> mesh,
+                                   std::shared_ptr<const ExactShape> exact)
+{
+  if (!mesh || !exact || mesh->isEmpty()) return mesh;
+  auto *ps = dynamic_cast<PolySet *>(mesh.get());
+  if (!ps || dynamic_cast<ExactCarrier *>(mesh.get())) return mesh;
+  return std::make_unique<BRepGeometry>(std::move(*ps), std::move(exact));
+}
+
+}  // namespace
+
+std::unique_ptr<const Geometry> attachExact2D(std::unique_ptr<Polygon2d> polygon,
+                                              std::shared_ptr<const ExactShape> exact)
+{
+  if (!enabled() || !polygon || !exact || polygon->isEmpty()) return polygon;
+  return std::make_unique<ExactPolygon2d>(std::move(*polygon), std::move(exact));
+}
+
+std::unique_ptr<Polygon2d> carryExact2D(const Polygon2d& src, std::unique_ptr<Polygon2d> converted)
+{
+  if (!converted || dynamic_cast<ExactCarrier *>(converted.get())) return converted;
+  if (hasPlacement(src) != hasPlacement(*converted) ||
+      !src.getTransform3d().isApprox(converted->getTransform3d())) {
+    return converted;
+  }
+  auto exact = exactOf(&src);
+  if (!exact) return converted;
+  return std::make_unique<ExactPolygon2d>(std::move(*converted), std::move(exact));
+}
+
+void transform2d(Polygon2d& polygon, const Transform3d& mat)
+{
+  auto *carrier = dynamic_cast<ExactPolygon2d *>(&polygon);
+  if (!carrier) {
+    polygon.transform3d(mat);
+    return;
+  }
+  // Polygon2d::transform3d either transforms the outlines in their plane (then the
+  // profile must follow) or only records a 3D placement (then it stays as it is).
+  auto exact = carrier->exactShape();
+  const size_t before = carrier->outlineFingerprint();
+  polygon.transform3d(mat);
+  if (!exact) {
+    carrier->setExact(nullptr);
+  } else if (carrier->outlineFingerprint() != before) {
+    carrier->setExact(ExactShape::transformed(exact, mat));
+  } else {
+    carrier->setExact(exact);
+  }
+}
+
+std::unique_ptr<Polygon2d> attachBoolean2D(OpenSCADOperator op,
+                                           const std::vector<std::shared_ptr<const Polygon2d>>& children,
+                                           std::unique_ptr<Polygon2d> result)
+{
+  if (!enabled() || !result || result->isEmpty() || hasPlacement(*result)) return result;
+  if (op != OpenSCADOperator::UNION && op != OpenSCADOperator::DIFFERENCE &&
+      op != OpenSCADOperator::INTERSECTION) {
+    return result;
+  }
+  std::vector<std::shared_ptr<const ExactShape>> profiles;
+  bool first = true;
+  bool anyExact = false;
+  for (const auto& child : children) {
+    const bool empty = !child || child->isEmpty();
+    if (empty) {
+      if (op == OpenSCADOperator::INTERSECTION) return result;
+      if (op == OpenSCADOperator::DIFFERENCE && first) return result;
+      first = false;
+      continue;
+    }
+    first = false;
+    // Clipper combined the placed outlines; only combine exact profiles in the plain frame.
+    if (hasPlacement(*child)) return result;
+    anyExact |= exactOf(child.get()) != nullptr;
+    profiles.push_back(profileOf(*child, false));
+  }
+  // Without any curved exact child the result outlines are as exact as it gets.
+  if (!anyExact) return result;
+  return std::make_unique<ExactPolygon2d>(std::move(*result),
+                                          ExactShape::boolean(op, std::move(profiles)));
+}
+
+// --- extrusions -------------------------------------------------------------------
+
+std::unique_ptr<Geometry> linearExtrude(const LinearExtrudeNode& node, const Polygon2d& poly,
+                                        std::unique_ptr<Geometry> mesh)
+{
+  if (!enabled() || !mesh || mesh->isEmpty()) return mesh;
+#ifdef ENABLE_PYTHON
+  if (node.profile_func != nullptr || node.twist_func != nullptr) return mesh;
+#endif
+  if (node.twist != 0 || node.scale_x != node.scale_y || node.scale_x < 0) return mesh;
+  if (std::fabs(node.height[2]) < 1e-6) return mesh;
+
+  // Same placement and direction as extrudePolygon()
+  const Transform3d& placement = poly.getTransform3d();
+  Vector3d height;
+  if (node.has_heightvector) height = node.height;
+  else
+    height = Vector3d(placement(0, 2), placement(1, 2), placement(2, 2)).normalized() * node.height[2];
+  const Vector3d base = node.center ? Vector3d(-height / 2.0) : Vector3d::Zero();
+
+  return wrapMesh(std::move(mesh),
+                  ExactShape::prism(profileOf(poly, false), placement, base, height, node.scale_x));
+}
+
+std::unique_ptr<Geometry> rotateExtrude(const RotateExtrudeNode& node, const Polygon2d& poly,
+                                        std::unique_ptr<Geometry> mesh)
+{
+  if (!enabled() || !mesh || mesh->isEmpty()) return mesh;
+#ifdef ENABLE_PYTHON
+  if (node.profile_func != nullptr || node.twist_func != nullptr) return mesh;
+#endif
+  if (node.twist != 0 || node.v.norm() != 0 || node.offset_x != 0 || node.offset_y != 0 ||
+      node.origin_x != 0 || node.origin_y != 0) {
+    return mesh;
+  }
+  // rotatePolygon() works on the placed outlines, so does the exact profile
+  return wrapMesh(std::move(mesh), ExactShape::revolve(profileOf(poly, true), node.start, node.angle));
 }
 
 std::unique_ptr<Geometry> importStep(const std::string& filename, const CurveDiscretizer& discretizer,

@@ -15,6 +15,8 @@
 struct ExportInfo;
 class CurveDiscretizer;
 class Location;
+class LinearExtrudeNode;
+class RotateExtrudeNode;
 
 /**
  * Interface of geometries that carry an exact solid next to their mesh.
@@ -60,6 +62,31 @@ private:
   size_t fingerprint_ = 0;
 };
 
+/**
+ * A Polygon2d that additionally carries an exact profile: planar face(s) in the
+ * plane z = 0, in the same local frame as untransformedOutlines(). A pending 3D
+ * placement (getTransform3d()) applies to both alike. Like BRepGeometry, a
+ * fingerprint of the outlines detects changes that bypass BRepUtils::transform2d();
+ * the exact profile is then ignored and the outlines are used instead.
+ */
+class ExactPolygon2d : public Polygon2d, public ExactCarrier
+{
+public:
+  ExactPolygon2d(Polygon2d polygon, std::shared_ptr<const ExactShape> exact);
+
+  [[nodiscard]] std::unique_ptr<Geometry> copy() const override;
+  [[nodiscard]] size_t memsize() const override;
+  [[nodiscard]] std::shared_ptr<const ExactShape> exactShape() const override;
+
+  /// Replace the exact profile after the outlines were changed on purpose
+  void setExact(std::shared_ptr<const ExactShape> exact);
+  [[nodiscard]] size_t outlineFingerprint() const;
+
+private:
+  std::shared_ptr<const ExactShape> exact_;
+  size_t fingerprint_ = 0;
+};
+
 namespace BRepUtils {
 
 /// True if exact geometry is switched on (experimental feature "occt", off by default).
@@ -90,6 +117,34 @@ std::shared_ptr<const PolySet> carryExact(const Geometry& src, std::shared_ptr<c
  */
 std::shared_ptr<const Geometry> attachBoolean(OpenSCADOperator op, const Geometry::Geometries& children,
                                               std::shared_ptr<const Geometry> result);
+
+// --- 2D -----------------------------------------------------------------------
+
+/// Attach an exact profile to a freshly built 2D primitive.
+std::unique_ptr<const Geometry> attachExact2D(std::unique_ptr<Polygon2d> polygon,
+                                              std::shared_ptr<const ExactShape> exact);
+
+/// converted is src reshaped without changing the region (e.g. sanitized, copied):
+/// attach src's exact profile to it if both share the same frame.
+std::unique_ptr<Polygon2d> carryExact2D(const Polygon2d& src, std::unique_ptr<Polygon2d> converted);
+
+/// polygon.transform3d(mat), keeping an exact profile in step with the outlines.
+void transform2d(Polygon2d& polygon, const Transform3d& mat);
+
+/// Attach the exact 2D boolean of the children to result (UNION, DIFFERENCE, INTERSECTION).
+std::unique_ptr<Polygon2d> attachBoolean2D(OpenSCADOperator op,
+                                           const std::vector<std::shared_ptr<const Polygon2d>>& children,
+                                           std::unique_ptr<Polygon2d> result);
+
+// --- extrusions -------------------------------------------------------------------
+
+/// Attach the exact linear extrusion of poly to mesh, the mesh extrusion of it,
+/// if the extrusion is one OpenCASCADE can represent exactly.
+std::unique_ptr<Geometry> linearExtrude(const LinearExtrudeNode& node, const Polygon2d& poly,
+                                        std::unique_ptr<Geometry> mesh);
+/// Same for rotate_extrude.
+std::unique_ptr<Geometry> rotateExtrude(const RotateExtrudeNode& node, const Polygon2d& poly,
+                                        std::unique_ptr<Geometry> mesh);
 
 /**
  * Import a STEP file with OpenCASCADE. Solids keep their exact shape (so a STEP

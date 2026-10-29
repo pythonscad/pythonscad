@@ -39,6 +39,30 @@ public:
   /// restricted to the sector 0..angle degrees around +z (angle in (0, 360])
   static std::shared_ptr<const ExactShape> cylinder(double r1, double r2, double z1, double z2,
                                                     double angle);
+  // --- 2D profiles: planar faces in the plane z = 0 -------------------------
+  /// Disk of radius r around the origin, or the sector 0..angle degrees (angle in (0, 360])
+  static std::shared_ptr<const ExactShape> circle2d(double r, double angle);
+  /// Axis aligned rectangle between the corners p1 and p2
+  static std::shared_ptr<const ExactShape> rect2d(const Vector2d& p1, const Vector2d& p2);
+  /// Face(s) bounded by polygon outlines, as in a sanitized Polygon2d: counter-clockwise
+  /// outlines are material, clockwise ones are holes of the smallest outline containing them.
+  /// Exact for straight edges; the fallback for profiles without exact data.
+  static std::shared_ptr<const ExactShape> polygons2d(std::vector<std::vector<Vector2d>> outlines);
+
+  // --- sweeps of 2D profiles ---------------------------------------------------
+  /**
+   * Linear extrusion: profile (in the plane z = 0) is placed by placement, moved by base and
+   * swept along height. scale != 1 shrinks/grows the top uniformly about the profile origin
+   * (a ruled loft; 0 gives a point).
+   */
+  static std::shared_ptr<const ExactShape> prism(std::shared_ptr<const ExactShape> profile,
+                                                 const Transform3d& placement, const Vector3d& base,
+                                                 const Vector3d& height, double scale);
+  /// Revolution of profile (x = radius, y = height) around +z, starting at start degrees from +x
+  /// and sweeping angle degrees (negative: clockwise)
+  static std::shared_ptr<const ExactShape> revolve(std::shared_ptr<const ExactShape> profile,
+                                                   double start, double angle);
+
   /// An already computed solid, e.g. read from a STEP file
   static std::shared_ptr<const ExactShape> fromShape(const TopoDS_Shape& shape);
   /// child transformed by mat
