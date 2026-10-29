@@ -141,6 +141,16 @@ int pythonCreateVenv(const std::string&)
   __builtin_trap();
   __builtin_unreachable();
 }
+std::vector<std::string> pythonCreateVenvArgs(const std::string&)
+{
+  __builtin_trap();
+  __builtin_unreachable();
+}
+int pythonFinishVenv(const std::string&)
+{
+  __builtin_trap();
+  __builtin_unreachable();
+}
 int pythonRunModule(const std::string&, const std::string&, const std::vector<std::string>&)
 {
   __builtin_trap();
@@ -344,10 +354,8 @@ fail:
   Py_ExitStatusException(status);
 }
 
-int pythonCreateVenv(const std::string& path)
-{
 #if defined(_WIN32)
-  static const char *const hiddenVenvCommand = R"PYTHON(
+static const char *const pythonHiddenVenvCommand = R"PYTHON(
 import os
 import subprocess
 import sys
@@ -371,14 +379,21 @@ class PythonSCADEnvBuilder(venv.EnvBuilder):
 
 PythonSCADEnvBuilder(with_pip=True, scm_ignore_files=frozenset(["git"])).create(sys.argv[1])
 )PYTHON";
-  int result = pythonRunCommand(hiddenVenvCommand, {path});
-#else
-  int result = pythonRunModule("", "venv", {path});
 #endif
-  if (result != 0) {
-    return result;
-  }
 
+std::vector<std::string> pythonCreateVenvArgs(const std::string& path)
+{
+#if defined(_WIN32)
+  return {"-c", pythonHiddenVenvCommand, path};
+#else
+  return {"-m", "venv", path};
+#endif
+}
+
+// Fix-ups after the venv module has created the environment. Safe to call
+// from the GUI process: it only touches the file system.
+int pythonFinishVenv(const std::string& path)
+{
 #if defined(_WIN32)
   {
     const auto scriptsDir = fs::path{path} / "Scripts";
@@ -429,6 +444,22 @@ PythonSCADEnvBuilder(with_pip=True, scm_ignore_files=frozenset(["git"])).create(
   }
 
   return 0;
+}
+
+// In-process variant. Only valid while the embedded interpreter has NOT been
+// initialized yet (CLI use). The GUI must run the shim as a subprocess
+// instead, see MainWindow::on_fileActionPythonCreateVenv_triggered (#1215).
+int pythonCreateVenv(const std::string& path)
+{
+#if defined(_WIN32)
+  int result = pythonRunCommand(pythonHiddenVenvCommand, {path});
+#else
+  int result = pythonRunModule("", "venv", {path});
+#endif
+  if (result != 0) {
+    return result;
+  }
+  return pythonFinishVenv(path);
 }
 
 static int pythonRunCommand(const std::string& command, const std::vector<std::string>& args)
