@@ -162,6 +162,21 @@ void checkGeometry()
   auto ps = triangles();
   auto tessellated = PolySetUtils::tessellate_faces(*ps);
   require(tessellated->colors == ps->colors, "Tessellation lost symbolic colors");
+  auto red = triangles();
+  red->setColor(Color4f(255, 0, 0));
+  auto blue = triangles();
+  blue->setColor(Color4f(0, 0, 255));
+  PolySetBuilder append_builder;
+  append_builder.appendPolySet(*red);
+  append_builder.appendPolySet(*blue);
+  auto appended = append_builder.build();
+  require(appended->color_indices.size() == appended->indices.size(),
+          "Appending meshes duplicated face color indices");
+  for (size_t i = 0; i < appended->indices.size(); ++i) {
+    const auto expected = i < red->indices.size() ? Color4f(255, 0, 0) : Color4f(0, 0, 255);
+    require(appended->colors.at(appended->color_indices[i]) == expected,
+            "Appending meshes lost explicit face colors");
+  }
   PolySetBuilder builder;
   builder.beginPolygon(3);
   builder.addVertex(Vector3d(0, 0, 0));

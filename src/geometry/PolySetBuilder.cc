@@ -174,7 +174,7 @@ void PolySetBuilder::endPolygon(const Color4f& color)
       } else {
         color_indices_.push_back(it - colors_.begin());
       }
-    } else if (!color_indices_.empty()) {
+    } else if (!color_indices_.empty() && color_indices_.size() < indices_.size()) {
       color_indices_.push_back(-1);
     }
   }
