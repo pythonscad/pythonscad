@@ -443,7 +443,12 @@ class PythonSCADEnvBuilder(venv.EnvBuilder):
                                  "An internet connection is needed to set up pip in the virtual environment.\n")
                 raise
             # pip can run directly from its wheel and install itself from it.
-            self._call_new_python(context, os.path.join(wheel, "pip"), "install",
+            # Run it like "python -m pip": on Windows pip refuses to modify
+            # itself when sys.argv[0] is named "pip" (protect_pip_from_
+            # modification_on_windows), which is the case for "<wheel>/pip".
+            runner = ("import runpy, sys; sys.path.insert(0, sys.argv.pop(1)); "
+                      "runpy.run_module('pip', run_name='__main__', alter_sys=True)")
+            self._call_new_python(context, "-c", runner, wheel, "install",
                                   "--no-cache-dir", "--no-index", wheel,
                                   stderr=subprocess.STDOUT)
         print("pip installed into the virtual environment.", flush=True)
