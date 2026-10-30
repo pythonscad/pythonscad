@@ -30,6 +30,12 @@ if(TARGET OpenSCADLibInternal AND NOT NULLGL AND NOT CMAKE_SYSTEM_NAME STREQUAL 
   get_target_property(_RENDER_COLOR_CXX_STANDARD OpenSCADLibInternal CXX_STANDARD)
   set_target_properties(render-color-scheme-test PROPERTIES
     CXX_STANDARD ${_RENDER_COLOR_CXX_STANDARD} CXX_STANDARD_REQUIRED ON)
+  if(WIN32)
+    # Share the application's staged Python/libfive DLLs and software OpenGL runtime.
+    add_dependencies(render-color-scheme-test OpenSCADExe)
+    set_target_properties(render-color-scheme-test PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY "$<TARGET_FILE_DIR:OpenSCADExe>")
+  endif()
   add_test(NAME render-color-scheme CONFIGURATIONS Default
     COMMAND render-color-scheme-test ${CMAKE_SOURCE_DIR})
   if(EXPERIMENTAL)
