@@ -21,6 +21,8 @@ enable_testing()
 if(TARGET OpenSCADLibInternal AND NOT NULLGL AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   add_executable(render-color-scheme-test render_color_scheme_test.cc)
   target_link_libraries(render-color-scheme-test PRIVATE OpenSCADLibInternal svg)
+  # The inherited Windows resource file resolves scripts/winmanifest.xml from the repo root.
+  target_include_directories(render-color-scheme-test PRIVATE ${CMAKE_SOURCE_DIR})
   # Python support changes node layouts but its definition is private to the library.
   # Match all library definitions so the native test uses the same class ABI.
   target_compile_definitions(render-color-scheme-test PRIVATE
