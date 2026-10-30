@@ -9,7 +9,6 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include "src/core/ColorUtil.h"
 #include <glview/RenderSettings.h>
 
 #include "clipper2/clipper.h"
@@ -600,7 +599,6 @@ std::unique_ptr<Polygon2d> applyMinkowski(const std::vector<std::shared_ptr<cons
   Clipper2Lib::PolyTree64 polytree;
   clipper.Execute(Clipper2Lib::ClipType::Union, Clipper2Lib::FillRule::NonZero, polytree);
   auto result = toPolygon2d(polytree, scale_bits);
-  result->setColor(*OpenSCAD::parse_color("#f9d72c"));
   return result;
 }
 

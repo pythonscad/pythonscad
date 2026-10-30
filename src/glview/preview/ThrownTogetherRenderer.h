@@ -59,12 +59,14 @@ public:
                          std::shared_ptr<CSGProducts> highlight_products,
                          std::shared_ptr<CSGProducts> background_products);
   ~ThrownTogetherRenderer() override = default;
+  void setColorScheme(const ColorScheme& cs) override;
   void prepare(const ShaderUtils::ShaderInfo *shaderinfo = nullptr) override;
   void draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo = nullptr) const override;
 
   BoundingBox getBoundingBox() const override;
 
 private:
+  bool colors_dirty_ = false;
   void renderCSGProducts(const std::shared_ptr<CSGProducts>& products, bool showedges = false,
                          const ShaderUtils::ShaderInfo *shaderinfo = nullptr,
                          bool highlight_mode = false, bool background_mode = false,

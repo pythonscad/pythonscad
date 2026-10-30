@@ -7,6 +7,7 @@
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/exceptions.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <list>
@@ -16,7 +17,6 @@
 #include "geometry/Polygon2d.h"
 #include "geometry/cgal/cgalutils.h"
 #include "utils/printutils.h"
-#include "src/core/ColorUtil.h"
 
 namespace CGALUtils {
 
@@ -154,13 +154,14 @@ std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d&
     }
   }
 
-  Color4f color = *OpenSCAD::parse_color("#f9d72c");
-  polyset->colors.clear();
-
-  int colorind = polyset->colors.size();  // 0
-  polyset->colors.push_back(color);
-  for (int i = 0; i < polyset->indices.size(); i++)  // create a set of undefined color
-    polyset->color_indices.push_back(colorind);
+  // Leave unpainted faces unresolved. A uniform explicit outline color still
+  // belongs to the model, rather than to the active viewport theme.
+  const auto& outlines = in3d ? polygon2d.untransformedOutlines() : polygon2d.outlines();
+  if (!outlines.empty() && std::all_of(outlines.begin(), outlines.end(), [&](const auto& outline) {
+        return outline.color == outlines.front().color;
+      })) {
+    polyset->setColor(outlines.front().color.unpaintedIfFullyTransparent());
+  }
   return polyset;
 }
 

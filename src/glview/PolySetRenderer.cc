@@ -113,6 +113,7 @@ void PolySetRenderer::setColorScheme(const ColorScheme& cs)
   Renderer::setColorScheme(cs);
   colormap_[ColorMode::CGAL_FACE_2D_COLOR] = ColorMap::getColor(cs, RenderColor::CGAL_FACE_2D_COLOR);
   colormap_[ColorMode::CGAL_EDGE_2D_COLOR] = ColorMap::getColor(cs, RenderColor::CGAL_EDGE_2D_COLOR);
+  colors_dirty_ = true;
 }
 
 void PolySetRenderer::createPolySetStates(const ShaderUtils::ShaderInfo *shaderinfo)
@@ -132,12 +133,12 @@ void PolySetRenderer::createPolySetStates(const ShaderUtils::ShaderInfo *shaderi
 
   for (const auto& polyset : this->polysets_) {
     Color4f color;
-    if (!polyset->colors.empty()) color = polyset->colors[0];
     getShaderColor(ColorMode::MATERIAL, color, color);
     add_shader_pointers(vbo_builder, shaderinfo);
 
     vbo_builder.writeSurface();
-    vbo_builder.create_surface(*polyset, Transform3d::Identity(), color, enable_barycentric, false);
+    vbo_builder.create_surface(*polyset, Transform3d::Identity(), color, enable_barycentric, false,
+                               colormap_.at(ColorMode::CUTOUT));
   }
 
   vbo_builder.createInterleavedVBOs();
@@ -220,6 +221,12 @@ void PolySetRenderer::createPolygonEdgeStates()
 
 void PolySetRenderer::prepare(const ShaderUtils::ShaderInfo *shaderinfo)
 {
+  if (colors_dirty_) {
+    polyset_vertex_state_containers_.clear();
+    polygon_vertex_state_containers_.clear();
+    colors_dirty_ = false;
+  }
+
   if (polyset_vertex_state_containers_.empty() && polygon_vertex_state_containers_.empty()) {
     if (!this->polysets_.empty() && !this->polygons_.empty()) {
       LOG(message_group::Error, "PolySetRenderer::prepare() called with both polysets and polygons");
