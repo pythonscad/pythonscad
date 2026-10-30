@@ -66,3 +66,6 @@ buffers, and rebuild those buffers during the next paint after a theme change.
 Color-capable model exporters resolve the same roles against their export settings.
 The bundled themes use matching F5/F6 colors for solid and cut surfaces; cut surfaces
 and 2D geometry may still have distinct colors from solid material.
+
+Unpainted 2D outlines use the SVG export fill options instead of carrying a
+synthetic yellow fill. Explicit outline colors continue to override those options.
