@@ -356,12 +356,59 @@ fail:
 
 #if defined(_WIN32)
 static const char *const pythonHiddenVenvCommand = R"PYTHON(
+import hashlib
+import importlib.util
+import json
 import os
 import subprocess
 import sys
+import tempfile
+import urllib.request
 import venv
 
+# The python.org embeddable runtime shipped on Windows has no ensurepip.
+# In that case create the venv without pip and bootstrap pip from PyPI;
+# a venv is only useful for installing packages from the net anyway (#1215).
+HAVE_ENSUREPIP = importlib.util.find_spec("ensurepip") is not None
+PIP_INDEX_URL = "https://pypi.org/pypi/pip/json"
+
+def _download_pip_wheel(dest_dir):
+    with urllib.request.urlopen(PIP_INDEX_URL, timeout=60) as resp:
+        meta = json.load(resp)
+    wheels = [u for u in meta.get("urls", [])
+              if u.get("packagetype") == "bdist_wheel" and u["filename"].endswith("-py3-none-any.whl")]
+    if not wheels:
+        raise RuntimeError("No pip wheel found on PyPI")
+    info = wheels[0]
+    target = os.path.join(dest_dir, info["filename"])
+    sha = hashlib.sha256()
+    with urllib.request.urlopen(info["url"], timeout=120) as resp, open(target, "wb") as fh:
+        for chunk in iter(lambda: resp.read(1 << 16), b""):
+            sha.update(chunk)
+            fh.write(chunk)
+    expected = info.get("digests", {}).get("sha256")
+    if expected and sha.hexdigest() != expected:
+        raise RuntimeError("Checksum mismatch for downloaded " + info["filename"])
+    return target
+
 class PythonSCADEnvBuilder(venv.EnvBuilder):
+    def post_setup(self, context):
+        if HAVE_ENSUREPIP:
+            return
+        print("ensurepip is not available, downloading pip from PyPI...", flush=True)
+        with tempfile.TemporaryDirectory(prefix="pythonscad-pip-") as tmp:
+            try:
+                wheel = _download_pip_wheel(tmp)
+            except Exception as e:
+                sys.stderr.write("Could not download pip from " + PIP_INDEX_URL + ": " + str(e) + "\n"
+                                 "An internet connection is needed to set up pip in the virtual environment.\n")
+                raise
+            # pip can run directly from its wheel and install itself from it.
+            self._call_new_python(context, os.path.join(wheel, "pip"), "install",
+                                  "--no-cache-dir", "--no-index", wheel,
+                                  stderr=subprocess.STDOUT)
+        print("pip installed into the virtual environment.", flush=True)
+
     def _call_new_python(self, context, *py_args, **kwargs):
         args = [context.env_exec_cmd, *py_args]
         kwargs["env"] = env = os.environ.copy()
@@ -385,7 +432,7 @@ class PythonSCADEnvBuilder(venv.EnvBuilder):
                 sys.stderr.write(out)
             raise
 
-PythonSCADEnvBuilder(with_pip=True, scm_ignore_files=frozenset(["git"])).create(sys.argv[1])
+PythonSCADEnvBuilder(with_pip=HAVE_ENSUREPIP, scm_ignore_files=frozenset(["git"])).create(sys.argv[1])
 )PYTHON";
 #endif
 

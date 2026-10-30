@@ -1955,10 +1955,15 @@ void MainWindow::on_fileActionPythonCreateVenv_triggered()
     result = proc.exitCode();
   }
   const auto output = QString::fromLocal8Bit(proc.readAll()).trimmed();
+  if (!output.isEmpty()) {
+    if (result == 0) {
+      LOG("%1$s", output.toStdString());
+    } else {
+      LOG(message_group::Error, "%1$s", output.toStdString());
+    }
+  }
   if (result == 0) {
     result = pythonFinishVenv(path);
-  } else if (!output.isEmpty()) {
-    LOG(message_group::Error, "%1$s", output.toStdString());
   }
   progress.close();
 
