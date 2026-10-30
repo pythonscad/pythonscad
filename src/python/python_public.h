@@ -72,6 +72,8 @@ extern std::string commandline_commands;
 
 int pythonRunArgs(int argc, char **argv);
 int pythonCreateVenv(const std::string& path);
+std::vector<std::string> pythonCreateVenvArgs(const std::string& path);
+int pythonFinishVenv(const std::string& path);
 int pythonRunModule(const std::string& appPath, const std::string& module,
                     const std::vector<std::string>& args);
 std::string pythonShimExecutablePath();

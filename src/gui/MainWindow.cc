@@ -65,6 +65,7 @@
 #include <QMimeData>
 #include <QMutexLocker>
 #include <QPoint>
+#include <QEventLoop>
 #include <QProcess>
 #include <QProgressDialog>
 #include <QScreen>
@@ -1915,7 +1916,55 @@ void MainWindow::on_fileActionPythonCreateVenv_triggered()
   progress.setMinimumDuration(0);
   progress.show();
   QApplication::processEvents();
-  int result = pythonCreateVenv(path);
+
+  // Run venv creation in a separate pythonscad-python process. Doing it in
+  // the GUI process re-initializes (and finalizes) the embedded interpreter;
+  // once Python is already running (e.g. .pythonscadrc or a previous render)
+  // PyImport_AppendInittab() aborts the whole application (#1215).
+  QProcess proc;
+  QStringList procArgs;
+  for (const auto& arg : pythonCreateVenvArgs(path)) {
+    procArgs << QString::fromStdString(arg);
+  }
+  auto procEnv = QProcessEnvironment::systemEnvironment();
+  procEnv.remove("PYTHONHOME");
+  procEnv.remove("PYTHONPATH");
+  procEnv.insert("PYTHONSCAD_HIDE_CONSOLE_SUBPROCESSES", "1");
+  proc.setProcessEnvironment(procEnv);
+  proc.setProcessChannelMode(QProcess::MergedChannels);
+#ifdef _WIN32
+  proc.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *a) {
+    a->flags |= CREATE_NO_WINDOW;
+  });
+#endif
+  QEventLoop loop;
+  connect(&proc, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), &loop, &QEventLoop::quit);
+  connect(&proc, &QProcess::errorOccurred, &loop, [&loop](QProcess::ProcessError err) {
+    if (err == QProcess::FailedToStart) loop.quit();
+  });
+  proc.start(QString::fromStdString(pythonShimExecutablePath()), procArgs);
+  if (proc.state() != QProcess::NotRunning) {
+    loop.exec();
+  }
+
+  int result = 1;
+  if (proc.error() == QProcess::FailedToStart) {
+    LOG(message_group::Error, "Could not start '%1$s': %2$s", pythonShimExecutablePath(),
+        proc.errorString().toStdString());
+  } else if (proc.exitStatus() == QProcess::NormalExit) {
+    result = proc.exitCode();
+  }
+  const auto output = QString::fromLocal8Bit(proc.readAll()).trimmed();
+  if (!output.isEmpty()) {
+    if (result == 0) {
+      LOG("%1$s", output.toStdString());
+    } else {
+      LOG(message_group::Error, "%1$s", output.toStdString());
+    }
+  }
+  if (result == 0) {
+    result = pythonFinishVenv(path);
+  }
   progress.close();
 
   if (result == 0) {
@@ -1927,7 +1976,8 @@ void MainWindow::on_fileActionPythonCreateVenv_triggered()
                              QMessageBox::Ok);
   } else {
     LOG("Python virtual environment creation failed.");
-    QMessageBox::critical(this, _("Create Virtual Environment"), "Virtual environment creation failed.",
+    QMessageBox::critical(this, _("Create Virtual Environment"),
+                          "Virtual environment creation failed. See the console for details.",
                           QMessageBox::Ok);
   }
 #endif  // ifdef ENABLE_PYTHON
