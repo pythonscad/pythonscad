@@ -375,7 +375,15 @@ class PythonSCADEnvBuilder(venv.EnvBuilder):
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         startupinfo.wShowWindow = 0
         kwargs["startupinfo"] = startupinfo
-        subprocess.check_output(args, **kwargs)
+        try:
+            subprocess.check_output(args, **kwargs)
+        except subprocess.CalledProcessError as e:
+            out = e.output
+            if isinstance(out, bytes):
+                out = out.decode(errors="replace")
+            if out:
+                sys.stderr.write(out)
+            raise
 
 PythonSCADEnvBuilder(with_pip=True, scm_ignore_files=frozenset(["git"])).create(sys.argv[1])
 )PYTHON";
