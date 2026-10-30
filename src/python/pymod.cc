@@ -367,9 +367,10 @@ import urllib.request
 import venv
 
 # The python.org embeddable runtime shipped on Windows has no ensurepip.
-# In that case create the venv without pip and bootstrap pip from PyPI;
-# a venv is only useful for installing packages from the net anyway (#1215).
-HAVE_ENSUREPIP = importlib.util.find_spec("ensurepip") is not None
+# Whether the interpreter *inside* the new venv can import it may differ from
+# this process (different sys.path), so probe the venv interpreter itself and
+# bootstrap pip from PyPI if needed. A venv is only useful for installing
+# packages from the net anyway (#1215).
 PIP_INDEX_URL = "https://pypi.org/pypi/pip/json"
 
 def _download_pip_wheel(dest_dir):
@@ -392,8 +393,46 @@ def _download_pip_wheel(dest_dir):
     return target
 
 class PythonSCADEnvBuilder(venv.EnvBuilder):
+    def _subprocess_kwargs(self, context):
+        kwargs = {}
+        kwargs["env"] = env = os.environ.copy()
+        env["VIRTUAL_ENV"] = context.env_dir
+        env["PYTHONSCAD_HIDE_CONSOLE_SUBPROCESSES"] = "1"
+        env.pop("PYTHONHOME", None)
+        env.pop("PYTHONPATH", None)
+        kwargs["cwd"] = context.env_dir
+        kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = 0
+        kwargs["startupinfo"] = startupinfo
+        return kwargs
+
+    def _call_new_python(self, context, *py_args, **kwargs):
+        args = [context.env_exec_cmd, *py_args]
+        kwargs.update(self._subprocess_kwargs(context))
+        try:
+            subprocess.check_output(args, **kwargs)
+        except subprocess.CalledProcessError as e:
+            out = e.output
+            if isinstance(out, bytes):
+                out = out.decode(errors="replace")
+            if out:
+                sys.stderr.write(out)
+            raise
+
+    def _new_python_has_module(self, context, module):
+        code = ("import importlib.util, sys; "
+                "sys.exit(0 if importlib.util.find_spec(%r) else 1)" % module)
+        result = subprocess.run([context.env_exec_cmd, "-c", code],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                **self._subprocess_kwargs(context))
+        return result.returncode == 0
+
     def post_setup(self, context):
-        if HAVE_ENSUREPIP:
+        if self._new_python_has_module(context, "ensurepip"):
+            self._call_new_python(context, "-m", "ensurepip", "--upgrade", "--default-pip",
+                                  stderr=subprocess.STDOUT)
             return
         print("ensurepip is not available, downloading pip from PyPI...", flush=True)
         with tempfile.TemporaryDirectory(prefix="pythonscad-pip-") as tmp:
@@ -409,30 +448,8 @@ class PythonSCADEnvBuilder(venv.EnvBuilder):
                                   stderr=subprocess.STDOUT)
         print("pip installed into the virtual environment.", flush=True)
 
-    def _call_new_python(self, context, *py_args, **kwargs):
-        args = [context.env_exec_cmd, *py_args]
-        kwargs["env"] = env = os.environ.copy()
-        env["VIRTUAL_ENV"] = context.env_dir
-        env["PYTHONSCAD_HIDE_CONSOLE_SUBPROCESSES"] = "1"
-        env.pop("PYTHONHOME", None)
-        env.pop("PYTHONPATH", None)
-        kwargs["cwd"] = context.env_dir
-        kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        startupinfo.wShowWindow = 0
-        kwargs["startupinfo"] = startupinfo
-        try:
-            subprocess.check_output(args, **kwargs)
-        except subprocess.CalledProcessError as e:
-            out = e.output
-            if isinstance(out, bytes):
-                out = out.decode(errors="replace")
-            if out:
-                sys.stderr.write(out)
-            raise
-
-PythonSCADEnvBuilder(with_pip=HAVE_ENSUREPIP, scm_ignore_files=frozenset(["git"])).create(sys.argv[1])
+# pip is set up in post_setup() above, never via venv's own ensurepip call.
+PythonSCADEnvBuilder(with_pip=False, scm_ignore_files=frozenset(["git"])).create(sys.argv[1])
 )PYTHON";
 #endif
 
