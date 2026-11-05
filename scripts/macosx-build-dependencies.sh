@@ -271,7 +271,7 @@ build_qt6()
   IFS=. read -r -a v <<< "$version" # Split into array
   rm -rf "qt-everywhere-src-$version"
   if [ ! -f "qt-everywhere-opensource-src-$version.tar.xz" ]; then
-    curl -LO --insecure "https://download.qt.io/official_releases/qt/${v[0]}.${v[1]}/$version/single/qt-everywhere-opensource-src-$version.tar.xz"
+    curl -LO --insecure "https://download.qt.io/archive/qt/${v[0]}.${v[1]}/$version/single/qt-everywhere-opensource-src-$version.tar.xz"
   fi
   tar xjf "qt-everywhere-opensource-src-$version.tar.xz"
   cd "qt-everywhere-src-$version"
@@ -635,11 +635,12 @@ build_zstd()
     -DCMAKE_OSX_DEPLOYMENT_TARGET=$MAC_OSX_VERSION_MIN \
     -DZSTD_BUILD_SHARED=ON \
     -DZSTD_BUILD_STATIC=OFF \
+    -DZSTD_BUILD_PROGRAMS=OFF \
     -DCMAKE_BUILD_TYPE=Release
   make -j"$NUMCPU"
   make install
 
-  install_name_tool -id @rpath/libzstd.dylib "$DEPLOYDIR/lib/libzstd."*.dylib
+  install_name_tool -id @rpath/libzstd.dylib "$DEPLOYDIR/lib/libzstd.$version.dylib"
 }
 
 build_brotli()
@@ -648,7 +649,7 @@ build_brotli()
   cd "$BASEDIR/src"
   rm -rf "brotli-$version"
   if [ ! -f "brotli-$version.tar.gz" ]; then
-    curl -LO "https://github.com/google/brotli/archive/refs/tags/v$version.tar.gz" -o "brotli-$version.tar.gz"
+    curl -L "https://github.com/google/brotli/archive/refs/tags/v$version.tar.gz" -o "brotli-$version.tar.gz"
   fi
   tar xzf "brotli-$version.tar.gz"
   cd "brotli-$version"
@@ -708,6 +709,8 @@ build_curl()
     ../configure --prefix="$DEPLOYDIR" \
       --with-openssl="$DEPLOYDIR" \
       --without-librtmp \
+      --with-ca-bundle=/etc/ssl/cert.pem \
+      ac_cv_func_pipe2=no \
       CFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -I$DEPLOYDIR/include" \
       CPPFLAGS="-I$DEPLOYDIR/include" \
       LDFLAGS="-arch $arch -mmacos-version-min=$MAC_OSX_VERSION_MIN -L$DEPLOYDIR/lib" \
@@ -730,6 +733,9 @@ build_curl()
   fi
 
   install_name_tool -id @rpath/libcurl.dylib "$DEPLOYDIR/lib/libcurl.dylib"
+  # DYLD_LIBRARY_PATH is stripped by SIP for /bin/bash, so the curl binary (which
+  # is first in PATH for later downloads) needs its own rpath to find libpsl etc.
+  install_name_tool -add_rpath @executable_path/../lib "$DEPLOYDIR/bin/curl"
 }
 
 build_boost()
