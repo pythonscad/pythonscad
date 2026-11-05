@@ -1,0 +1,108 @@
+# Fix pre-commit formatting errors on demand.
+#
+# Two ways to start it:
+#  1. Actions tab -> "pre-commit fix" -> "Run workflow"
+#     (choose branch, optionally a single hook id)
+#  2. Comment on a PR:  /format            -> all hooks
+#                       /format clang-format -> only that hook
+#
+# Note: commits pushed with GITHUB_TOKEN do not start other workflows.
+# Push to forks is not possible -> only works for branches in this repo.
+
+name: pre-commit fix
+
+on:
+  workflow_dispatch:
+    inputs:
+      hook:
+        description: "Hook id (empty = all hooks)"
+        required: false
+        default: ""
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: pre-commit-fix-${{ github.event.issue.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fix:
+    # Manual start, or "/format" comment on a PR by someone with write access
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request &&
+       startsWith(github.event.comment.body, '/format') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+                github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine branch and hook
+        id: params
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          INPUT_HOOK: ${{ github.event.inputs.hook }}
+          COMMENT: ${{ github.event.comment.body }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "branch=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            hook="$INPUT_HOOK"
+          else
+            pr=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")
+            head_repo=$(echo "$pr" | jq -r '.head.repo.full_name')
+            if [ "$head_repo" != "$GITHUB_REPOSITORY" ]; then
+              echo "::error::PR comes from a fork ($head_repo), cannot push there."
+              exit 1
+            fi
+            echo "branch=$(echo "$pr" | jq -r '.head.ref')" >> "$GITHUB_OUTPUT"
+            # second word of the comment = hook id (optional)
+            hook=$(echo "$COMMENT" | head -n1 | awk '{print $2}')
+          fi
+          # only allow sane hook ids
+          if [ -n "$hook" ] && ! echo "$hook" | grep -Eq '^[A-Za-z0-9_.-]+$'; then
+            echo "::error::Invalid hook id: $hook"
+            exit 1
+          fi
+          echo "hook=$hook" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.params.outputs.branch }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit
+        env:
+          HOOK: ${{ steps.params.outputs.hook }}
+        # pre-commit exits 1 when it modified files -> that is expected here
+        run: pre-commit run $HOOK --all-files --show-diff-on-failure || true
+
+      - name: Commit and push fixes
+        env:
+          BRANCH: ${{ steps.params.outputs.branch }}
+          HOOK: ${{ steps.params.outputs.hook }}
+        run: |
+          if git diff --quiet; then
+            echo "Nothing to fix."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "style: apply pre-commit fixes${HOOK:+ ($HOOK)}"
+          git push origin "HEAD:${BRANCH}"
+
+      - name: Report remaining errors
+        env:
+          HOOK: ${{ steps.params.outputs.hook }}
+        # second run shows what the hooks could not fix automatically
+        run: pre-commit run $HOOK --all-files
