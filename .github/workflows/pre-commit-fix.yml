@@ -1,0 +1,132 @@
+# Fix pre-commit formatting errors on demand.
+#
+# Started only by a comment on a PR:
+#   /format               -> all hooks
+#   /format clang-format  -> only that hook
+#
+# Only files changed relative to master are touched (same scope as the
+# diff-scoped step in pre-commit.yml), so the legacy formatting backlog
+# tracked in #613 is not swept into a PR.
+#
+# Notes:
+#  - Commits pushed with GITHUB_TOKEN do not start other workflows, so
+#    the PR checks are not re-run automatically afterwards.
+#  - Pushing to forks is not possible -> only branches in this repo.
+
+name: pre-commit fix
+
+on:
+  # Gated below: only "/format" comments on PRs by OWNER/MEMBER/COLLABORATOR,
+  # and only for branches of this repository (fork PRs are rejected).
+  issue_comment: # zizmor: ignore[dangerous-triggers]
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pre-commit-fix-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  fix:
+    if: >
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/format') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+               github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Determine branch and hook
+        id: params
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMENT: ${{ github.event.comment.body }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          pr=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")
+          head_repo=$(echo "$pr" | jq -r '.head.repo.full_name')
+          if [ "$head_repo" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::PR comes from a fork ($head_repo), cannot push there."
+            exit 1
+          fi
+          branch=$(echo "$pr" | jq -r '.head.ref')
+          # second word of the comment = hook id (optional)
+          hook=$(echo "$COMMENT" | head -n1 | awk '{print $2}')
+          if [ "$branch" = "$DEFAULT_BRANCH" ]; then
+            echo "::error::Refusing to push fixes directly to $DEFAULT_BRANCH."
+            exit 1
+          fi
+          # only allow sane hook ids
+          if [ -n "$hook" ] && ! echo "$hook" | grep -Eq '^[A-Za-z0-9_.-]+$'; then
+            echo "::error::Invalid hook id: $hook"
+            exit 1
+          fi
+          {
+            echo "branch=$branch"
+            echo "hook=$hook"
+            echo "base=$DEFAULT_BRANCH"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.params.outputs.branch }}
+          # merge-base with master is needed for the diff-scoped run
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+          cache: pip
+
+      - name: Cache pre-commit hook environments
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit on changed files
+        id: run
+        env:
+          HOOK: ${{ steps.params.outputs.hook }}
+          BASE: ${{ steps.params.outputs.base }}
+        run: |
+          merge_base=$(git merge-base "origin/$BASE" HEAD)
+          echo "merge_base=$merge_base" >> "$GITHUB_OUTPUT"
+          # pre-commit exits 1 when it modified files -> expected here
+          # shellcheck disable=SC2086
+          pre-commit run $HOOK --from-ref "$merge_base" --to-ref HEAD \
+            --show-diff-on-failure || true
+
+      - name: Commit and push fixes
+        env:
+          BRANCH: ${{ steps.params.outputs.branch }}
+          HOOK: ${{ steps.params.outputs.hook }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "Nothing to fix."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "style: apply pre-commit fixes${HOOK:+ ($HOOK)}"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "HEAD:${BRANCH}"
+
+      - name: Report remaining errors
+        env:
+          HOOK: ${{ steps.params.outputs.hook }}
+          MERGE_BASE: ${{ steps.run.outputs.merge_base }}
+        # second run shows what the hooks could not fix automatically
+        run: |
+          # shellcheck disable=SC2086
+          pre-commit run $HOOK --from-ref "$MERGE_BASE" --to-ref HEAD
