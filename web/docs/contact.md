@@ -5,7 +5,10 @@
 Connect with the PythonSCAD community:
 
 - **Subreddit**: Join discussions at [r/openpythonscad](http://reddit.com/r/openpythonscad)
-- **Google Group**: Participate in our [mailing list](https://groups.google.com/g/pythonscad)
+- **Google Group**: Participate in our [mailing list](https://groups.google.com/g/pythonscad).
+  No Google account? Send an empty mail to
+  [pythonscad+subscribe@googlegroups.com](mailto:pythonscad+subscribe@googlegroups.com)
+  and confirm the reply.
 - **GitHub**: Report issues and contribute at [github.com/pythonscad/pythonscad](https://github.com/pythonscad/pythonscad)
 
 ## Feedback
