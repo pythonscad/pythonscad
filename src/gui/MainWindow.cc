@@ -1933,9 +1933,8 @@ void MainWindow::on_fileActionPythonCreateVenv_triggered()
   proc.setProcessEnvironment(procEnv);
   proc.setProcessChannelMode(QProcess::MergedChannels);
 #ifdef _WIN32
-  proc.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *a) {
-    a->flags |= CREATE_NO_WINDOW;
-  });
+  proc.setCreateProcessArgumentsModifier(
+    [](QProcess::CreateProcessArguments *a) { a->flags |= CREATE_NO_WINDOW; });
 #endif
   QEventLoop loop;
   connect(&proc, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), &loop, &QEventLoop::quit);
