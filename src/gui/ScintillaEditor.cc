@@ -1211,8 +1211,23 @@ bool ScintillaEditor::eventFilter(QObject *obj, QEvent *e)
     }
     return false;
   } else if (obj == qsci) {
+    if (e->type() == QEvent::ShortcutOverride) {
+      // Keep Alt+Up/Down in the editor so that it decides between changing the
+      // number under the cursor and preview object navigation.
+      auto *keyEvent = static_cast<QKeyEvent *>(e);
+      if (isAltUpDown(keyEvent)) {
+        e->accept();
+        return true;
+      }
+    }
     if (e->type() == QEvent::KeyPress || e->type() == QEvent::KeyRelease) {
       auto *keyEvent = static_cast<QKeyEvent *>(e);
+      if (isPreviewObjectNavigationKey(keyEvent)) {
+        if (e->type() == QEvent::KeyPress) {
+          emit previewObjectNavigationRequest(keyEvent->key() == Qt::Key_Down ? 1 : -1);
+        }
+        return true;
+      }
 
       PRINTDB("%10s - modifiers: %s %s %s %s %s %s",
               (e->type() == QEvent::KeyPress ? "KeyPress" : "KeyRelease") %
@@ -1237,6 +1252,73 @@ bool ScintillaEditor::eventFilter(QObject *obj, QEvent *e)
   } else return EditorInterface::eventFilter(obj, e);
 
   return false;
+}
+
+bool ScintillaEditor::isAltUpDown(const QKeyEvent *keyEvent)
+{
+  if (keyEvent->key() != Qt::Key_Up && keyEvent->key() != Qt::Key_Down) return false;
+  auto modifiers = keyEvent->modifiers();
+  // Qt marks arrow keys with KeypadModifier on macOS.
+  modifiers.setFlag(Qt::KeypadModifier, false);
+  return modifiers == Qt::AltModifier;
+}
+
+bool ScintillaEditor::isPreviewObjectNavigationKey(const QKeyEvent *keyEvent) const
+{
+  if (!isAltUpDown(keyEvent)) return false;
+#ifndef Q_OS_MACOS
+  // Off macOS plain Alt+Up/Down also changes the number under the cursor (see
+  // handleKeyEventNavigateNumber()). A number at the cursor wins.
+  if (keyEvent->modifiers() == Qt::AltModifier && cursorIsOnNumber()) return false;
+#endif
+  return true;
+}
+
+// Mirrors the checks of modifyNumber(): true if Alt+Up/Down would change a number.
+bool ScintillaEditor::cursorIsOnNumber() const
+{
+  int line, index;
+  qsci->getCursorPosition(&line, &index);
+  const auto text = qsci->text(line);
+  const auto begin = text.left(index).indexOf(QRegularExpression(R"([-+]?\d*\.?\d*$)"));
+  if (begin < 0) return false;
+  if (begin > 0) {
+    QRegularExpression rx(QRegularExpression::anchoredPattern(QString("[_a-zA-Z]")));
+    if (rx.match(text.mid(begin - 1, 1)).hasMatch()) return false;
+  }
+  auto end = text.indexOf(QRegularExpression("[^0-9.]"), index);
+  if (end < 0) end = text.length();
+  const auto nr = text.mid(begin, end - begin);
+  if (!(nr.contains(QRegularExpression(R"(^[-+]?\d*\.?\d+$)")) &&
+        nr.contains(QRegularExpression("\\d")))) {
+    return false;
+  }
+  const auto curpos = index - begin;
+  return !(curpos == 0 || (curpos == 1 && (nr[0] == '+' || nr[0] == '-')));
+}
+
+// The caret is put at the start of the selection: there Alt+Up/Down never
+// changes a number, so preview object navigation keeps working.
+void ScintillaEditor::selectRange(int lineFrom, int colFrom, int lineTo, int colTo)
+{
+  qsci->ensureLineVisible(std::max(lineFrom - setCursorPositionVisibleLines, 0));
+  qsci->ensureLineVisible(std::min(lineTo + setCursorPositionVisibleLines, qsci->lines() - 1));
+  qsci->setSelection(lineTo, colTo, lineFrom, colFrom);
+}
+
+void ScintillaEditor::selectLine(int line)
+{
+  if (line < 0 || line >= qsci->lines()) return;
+  qsci->ensureLineVisible(std::max(line - setCursorPositionVisibleLines, 0));
+  qsci->ensureLineVisible(std::min(line + setCursorPositionVisibleLines, qsci->lines() - 1));
+  const auto start = qsci->SendScintilla(QsciScintilla::SCI_POSITIONFROMLINE, line);
+  const auto end = qsci->SendScintilla(QsciScintilla::SCI_GETLINEENDPOSITION, line);
+  qsci->SendScintilla(QsciScintilla::SCI_SETSEL, end, start);  // anchor = end, caret = start
+}
+
+void ScintillaEditor::clearSelection()
+{
+  qsci->selectAll(false);
 }
 
 bool ScintillaEditor::handleKeyEventBlockMove(QKeyEvent *keyEvent)

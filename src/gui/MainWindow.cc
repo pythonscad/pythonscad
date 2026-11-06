@@ -106,6 +106,7 @@
 #include <locale>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -1376,6 +1377,10 @@ std::shared_ptr<AbstractNode> MainWindow::instantiateRootFromSource(SourceFile *
 
 void MainWindow::instantiateRoot()
 {
+  // The previous tree goes away; navigation always refers to the latest preview.
+  // Its renderers are replaced below, so there is no need to restore the plain preview.
+  previewObjectHighlightActive = false;
+  invalidatePreviewObjectNavigation();
   // Go on and instantiate root_node, then call the continuation slot
 
   // Invalidate renderers before we kill the CSG tree.
@@ -1393,6 +1398,7 @@ void MainWindow::instantiateRoot()
   this->csgRoot.reset();
   this->normalizedRoot.reset();
   this->rootProduct.reset();
+  this->designHighlightTerms.clear();
 
   this->rootNode.reset();
   this->tree.setRoot(nullptr);
@@ -1546,14 +1552,17 @@ void MainWindow::compileCSGDone()
       this->processEvents();
 
       this->highlightsProducts = std::make_shared<CSGProducts>();
+      this->designHighlightTerms.clear();
       for (const auto& highlight_term : highlight_terms) {
         auto nterm = normalizer.normalize(highlight_term);
         if (nterm) {
           this->highlightsProducts->import(nterm);
+          this->designHighlightTerms.push_back(nterm);
         }
       }
     } else {
       this->highlightsProducts.reset();
+      this->designHighlightTerms.clear();
     }
 
     const auto& background_terms = this->csgrenderer->getBackgroundNodes();
@@ -1580,12 +1589,12 @@ void MainWindow::compileCSGDone()
 #ifdef ENABLE_OPENCSG
     else {
       LOG("Normalized tree has %1$d elements!", (this->rootProduct ? this->rootProduct->size() : 0));
-      this->previewRenderer = std::make_shared<OpenCSGRenderer>(
-        this->rootProduct, this->highlightsProducts, this->backgroundProducts);
     }
 #endif  // ifdef ENABLE_OPENCSG
-    this->thrownTogetherRenderer = std::make_shared<ThrownTogetherRenderer>(
-      this->rootProduct, this->highlightsProducts, this->backgroundProducts);
+    refreshPreviewRenderers(this->highlightsProducts);
+    previewObjectNavigation.reset(this->rootNode);
+    designActionNextPreviewObject->setEnabled(previewObjectNavigation.size() > 0);
+    designActionPreviousPreviewObject->setEnabled(previewObjectNavigation.size() > 0);
     LOG("Compile and preview finished.");
     renderStatistic.printRenderingTime();
     this->processEvents();
@@ -1594,6 +1603,302 @@ void MainWindow::compileCSGDone()
   }
   delete this->csgrenderer;
   csgRenderFinished();
+}
+
+/*
+ * Preview object navigation
+ * =========================
+ *
+ * After an F5 preview the user can step through the objects of the design with
+ * Alt+Down / Alt+Up (Option+Down / Option+Up on macOS). Each step selects one
+ * source line in the editor and highlights all objects that line created in
+ * the 3D view, so the user can find which code describes which part of the
+ * model. This is especially useful for Python designs, where objects are built
+ * by function calls spread over the script and imported modules, often in
+ * loops that create many objects from a single line.
+ *
+ * Design constraints:
+ *  - Navigation is read-only. The source text, the AST and the evaluated node
+ *    tree are never changed; only the editor selection and the renderers are.
+ *    The highlight therefore cannot be implemented by setting the `#` tag on
+ *    the node's ModuleInstantiation (it is shared and const), but by
+ *    re-running CSGTreeEvaluator with a "highlight this node index" parameter.
+ *  - Navigation always refers to the latest preview. The object list
+ *    (PreviewObjectNavigator) is built in compileCSGDone() and dropped as soon
+ *    as the preview may no longer match the source, see
+ *    invalidatePreviewObjectNavigation().
+ *  - The object order and the selection rules (which nodes count as objects)
+ *    live in core/PreviewObjectNavigator.h so that they can be unit tested
+ *    without a GUI; this file only connects them to the editor and renderers.
+ *
+ * State (see MainWindow.h): previewObjectNavigation (line groups + position),
+ * previewObjectEditor (editor holding our selection), previewObjectHighlightActive
+ * (renderers currently show a navigation highlight) and selectingPreviewObject
+ * (re-entrancy guard, see navigatePreviewObject()).
+ */
+
+/*!
+  (Re)create the OpenCSG and ThrownTogether preview renderers for the current
+  rootProduct/backgroundProducts with the given highlight products.
+
+  compileCSGDone() uses it with the design's own `#` highlights, preview object
+  navigation with the highlights of a re-evaluation that also marks the
+  selected object. Keeping both in one place guarantees that both paths apply
+  the same rules, e.g. that OpenCSG is disabled above the "openCSGLimit"
+  preference (ThrownTogether is then the fallback, see viewModePreview()).
+
+  The caller is responsible for handing the new renderer to the view, normally
+  via selectPreviewViewMode().
+ */
+void MainWindow::refreshPreviewRenderers(const std::shared_ptr<CSGProducts>& highlights)
+{
+#ifdef ENABLE_OPENCSG
+  const auto limit = GlobalPreferences::inst()->getValue("advanced/openCSGLimit").toUInt();
+  if (this->rootProduct && this->rootProduct->size() > limit) {
+    this->previewRenderer = nullptr;
+  } else {
+    this->previewRenderer =
+      std::make_shared<OpenCSGRenderer>(this->rootProduct, highlights, this->backgroundProducts);
+  }
+#endif
+  this->thrownTogetherRenderer =
+    std::make_shared<ThrownTogetherRenderer>(this->rootProduct, highlights, this->backgroundProducts);
+}
+
+/*!
+  Drop the currently selected preview object but keep the object list, so the
+  next Alt+Down starts again at the first object and Alt+Up at the last one.
+
+  If a navigation highlight is shown, the renderers are rebuilt with only the
+  design's own `#` highlights, i.e. the view returns to the plain preview.
+
+  clearEditorSelection: also remove the selection from the editor. Only the
+  explicit "Clear Preview Object Selection" action asks for this. Automatic
+  resets (new preview, edit, closed tab) leave the editor alone: by then the
+  user may already have moved the cursor or selected text themselves, and
+  removing that would be surprising.
+ */
+void MainWindow::clearPreviewObjectSelection(bool clearEditorSelection)
+{
+  if (previewObjectEditor && clearEditorSelection) previewObjectEditor->clearSelection();
+  previewObjectEditor.clear();
+  previewObjectNavigation.rewind();
+  designActionClearPreviewObject->setEnabled(false);
+  if (previewObjectHighlightActive) {
+    previewObjectHighlightActive = false;
+    // Without a tree (e.g. the rendered tab is being closed) there is nothing to
+    // show; the caller resets the renderers anyway.
+    if (this->rootNode) {
+      refreshPreviewRenderers(this->highlightsProducts);
+      selectPreviewViewMode();
+    }
+  }
+}
+
+/*!
+  Forget the object list of the last preview because it may no longer match
+  what the user sees or edits. Called from:
+   - instantiateRoot(): a new preview/render replaces the node tree; the list
+     is rebuilt for F5 in compileCSGDone(), F6 leaves navigation disabled,
+   - editorContentChanged(): the source was edited, so node locations may point
+     to wrong lines (unless the change is our own, see selectingPreviewObject),
+   - onTabManagerAboutToCloseEditor(): the previewed editor or the editor
+     holding our selection goes away; previewObjectEditor must not dangle.
+  The Next/Previous actions are disabled until the next successful preview.
+ */
+void MainWindow::invalidatePreviewObjectNavigation()
+{
+  clearPreviewObjectSelection(false);
+  previewObjectNavigation.clear();
+  designActionNextPreviewObject->setEnabled(false);
+  designActionPreviousPreviewObject->setEnabled(false);
+}
+
+/*
+ * Menu actions of the Design menu. Their Alt+Down / Alt+Up shortcuts handle the
+ * keys while the focus is outside of the editor (3D view, console, ...). Inside
+ * the editor ScintillaEditor intercepts the keys itself (it has to decide
+ * between this navigation and its "change the number under the cursor"
+ * feature) and calls navigatePreviewObject() via its
+ * previewObjectNavigationRequest signal, see TabManager::createTab().
+ */
+void MainWindow::on_designActionNextPreviewObject_triggered()
+{
+  navigatePreviewObject(1);
+}
+
+void MainWindow::on_designActionPreviousPreviewObject_triggered()
+{
+  navigatePreviewObject(-1);
+}
+
+void MainWindow::on_designActionClearPreviewObject_triggered()
+{
+  if (!GuiLocker::isLocked()) clearPreviewObjectSelection(true);
+}
+
+/*!
+  Select the next (direction > 0) or previous (direction < 0) source line of the
+  last preview, highlight every object that line created in the 3D view and
+  select the line in the editor. Right after a preview +1 selects the first line
+  and -1 the last one; the position is clamped at both ends
+  (PreviewObjectNavigator::step()).
+
+  One step covers one source line, not one object: a line in a loop can create
+  hundreds of objects, and as the editor can only show the line, stepping
+  through its instances one by one would make navigation unusable. Showing all
+  of them at once also answers the user's actual question, "what does this
+  line produce?". See PreviewObjectNavigator for the grouping rules.
+
+  The highlight reuses the existing preview machinery instead of drawing a
+  separate overlay: the cached node tree is evaluated again by CSGTreeEvaluator
+  with previewHighlightIndices set to the group's objects. For those nodes the
+  evaluator behaves as if they carried the `#` modifier, so the result looks
+  and works exactly like a user-written `#` (correct transformation, CSG
+  context, both renderers), while the AST and the tree stay unchanged. The
+  design's own `#` modifiers are ignored in that evaluation and drawn from the
+  terms kept at F5 instead; evaluated together, the `#` merge rules could join
+  the selection with an unrelated `#` object and highlight a whole body. Geometry
+  comes from the GeometryCache filled by the preview, so this is cheap compared
+  to F5, also for large groups.
+ */
+void MainWindow::navigatePreviewObject(int direction)
+{
+  // A running compile/render owns the tree and the renderers.
+  if (GuiLocker::isLocked()) return;
+  if (!this->rootNode || !renderedEditor || previewObjectNavigation.size() == 0) {
+    statusBar()->showMessage(_("Press F5 to preview before navigating objects."), 5000);
+    return;
+  }
+
+  const auto *group = previewObjectNavigation.step(direction);
+  if (!group || group->nodes.empty()) return;
+  // All members share the source line; the first one stands for the group.
+  const auto& node = group->nodes.front();
+
+  auto outputGuard = scopedSetCurrentOutput();
+  // Selecting the source may open a file in a new tab or switch tabs, which
+  // emits the editor content-changed signal. editorContentChanged() would treat
+  // that as an edit and invalidate the navigation we are in the middle of; the
+  // flag tells it that the change is ours. The guard resets it on every exit
+  // path, including exceptions.
+  selectingPreviewObject = true;
+  struct ResetFlag {
+    bool& flag;
+    ~ResetFlag() { flag = false; }
+  } resetFlag{selectingPreviewObject};
+
+  try {
+    GeometryEvaluator geometryEvaluator(this->tree);
+    CSGTreeEvaluator evaluator(
+      this->tree, &geometryEvaluator,
+      std::unordered_set<int>(group->highlightIndices.begin(), group->highlightIndices.end()));
+    evaluator.buildCSGTree(*this->rootNode);
+    // Same normalization as compileCSGDone() applies to the design's own
+    // highlights. With a navigation set the evaluator ignores the design's `#`
+    // modifiers (otherwise the selection could merge with an unrelated `#`
+    // object and spread to the whole body), so the design's own terms, kept by
+    // compileCSGDone(), are added separately and stay visible while navigating.
+    const size_t normalizelimit =
+      2ul * GlobalPreferences::inst()->getValue("advanced/openCSGLimit").toUInt();
+    CSGTreeNormalizer normalizer(normalizelimit);
+    auto highlights = std::make_shared<CSGProducts>();
+    for (const auto& term : evaluator.getHighlightNodes()) {
+      if (auto normalized = normalizer.normalize(term)) highlights->import(normalized);
+    }
+    for (const auto& term : this->designHighlightTerms) highlights->import(term);
+
+    selectPreviewObjectSource(*node);
+
+    refreshPreviewRenderers(highlights);
+    previewObjectHighlightActive = true;
+    designActionClearPreviewObject->setEnabled(true);
+    selectPreviewViewMode();
+    // Position, node type, number of objects and file:line, so the selection is
+    // understandable even if the editor dock is small or the line is scrolled
+    // out of view. The count tells the user that more than one object lit up.
+    const auto& location = node->modinst->location();
+    const QString what = group->nodes.size() == 1 ? QString::fromStdString(node->verbose_name())
+                                                  : QString(_("%1 objects (%2, ...)"))
+                                                      .arg(group->nodes.size())
+                                                      .arg(QString::fromStdString(node->verbose_name()));
+    statusBar()->showMessage(QString(_("Preview line %1 of %2: %3 (%4:%5)"))
+                               .arg(previewObjectNavigation.currentPosition() + 1)
+                               .arg(previewObjectNavigation.size())
+                               .arg(what)
+                               .arg(QString::fromStdString(location.filePath().filename().string()))
+                               .arg(location.firstLine()),
+                             5000);
+  } catch (const std::exception& error) {
+    // E.g. a geometry evaluation failure. Navigation is a viewing aid; report
+    // it and keep the current preview instead of letting the exception escape
+    // the Qt slot.
+    LOG(message_group::Error, "Cannot highlight preview object: %1$s", error.what());
+  }
+}
+
+/*!
+  Show the source of `node` in an editor and select it. Only the selection
+  changes; the text is never modified. For a group of objects from one line,
+  `node` is the group's first member; all members share the file and line.
+
+  The location is node->modinst->location(). For SCAD it comes from the
+  parser. For Python it is the call site captured when the node was created
+  (currentPythonLocation(), registered as genlang_location_provider), which
+  requires the script to be compiled under its real file name, see
+  evaluatePython() in parseDocument().
+ */
+void MainWindow::selectPreviewObjectSource(const AbstractNode& node)
+{
+  const auto& location = node.modinst->location();
+  const QString file = QString::fromStdString(location.fileName());
+  const QFileInfo fileInfo(file);
+
+  // Objects created in another file (a function in an imported .py module, a
+  // used SCAD library) are shown in that file's tab, opened if needed.
+  // findEditorForFile() compares canonical paths, so the same file reached
+  // through a symlink (e.g. /tmp vs /private/tmp on macOS) does not get a second
+  // tab. Unsaved documents have no real file; their objects belong to the
+  // previewed editor.
+  EditorInterface *sourceEditor = renderedEditor;
+  if (!file.isEmpty() && fileInfo.isFile()) {
+    sourceEditor = tabManager->findEditorForFile(file);
+    if (sourceEditor) {
+      tabManager->setCurrentEditor(sourceEditor);
+    } else {
+      tabManager->open(fileInfo.absoluteFilePath());
+      sourceEditor = activeEditor;  // open() makes the new tab the active editor
+    }
+  } else {
+    tabManager->setCurrentEditor(renderedEditor);
+  }
+  if (!sourceEditor) return;
+
+  // Exactly one editor holds a navigation selection at a time; moving to an
+  // object in another file removes the stale selection from the previous tab.
+  if (previewObjectEditor && previewObjectEditor != sourceEditor) previewObjectEditor->clearSelection();
+  previewObjectEditor = sourceEditor;
+  if (!editorDock->isVisible()) editorDock->show();
+
+  // Both selection helpers put the caret at the start of the selection. On
+  // Linux/Windows Alt+Up/Down changes a number under the caret, so a caret at
+  // the end of the line (e.g. after "cube(10)") could turn the next navigation
+  // key press into an edit of the source.
+  if (fileInfo.suffix().compare(QStringLiteral("py"), Qt::CaseInsensitive) == 0) {
+    // A Python location is a single line: the call that created the node. Do
+    // not use getCodeLocation() here. It widens the range to cover the
+    // descendants, and Python operands are usually created before the
+    // operation, on earlier lines (`a = cube(); b = ...; show(a | b)`), so a
+    // union would then start at, and appear to point to, its first operand.
+    sourceEditor->selectLine(location.firstLine() - 1);
+  } else {
+    // SCAD: select the whole statement, including the children of the
+    // module instantiation, the same range the 3D-view click selection uses.
+    int firstLine = location.firstLine(), firstColumn = location.firstColumn();
+    int lastLine = location.lastLine(), lastColumn = location.lastColumn();
+    node.getCodeLocation(0, 0, &firstLine, &firstColumn, &lastLine, &lastColumn, 0);
+    sourceEditor->selectRange(firstLine - 1, firstColumn - 1, lastLine - 1, lastColumn - 1);
+  }
 }
 
 void MainWindow::on_fileActionOpen_triggered()
@@ -2297,6 +2602,8 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
   const QByteArray pathNative = editor->filepath.toLocal8Bit();
   const std::string trustPathId(pathUtf8.constData(), static_cast<size_t>(pathUtf8.size()));
   const char *fnameNative = editor->filepath.isEmpty() ? "" : pathNative.constData();
+  // Python code objects carry this name; it becomes the source location of the created nodes.
+  const std::string pythonFilename = editor->filepath.isEmpty() ? "<string>" : trustPathId;
 
   // Use this editor's text, not lastCompiledDoc (only updated in parseTopLevelDocument()).
   auto fulltext_py = std::string(documentUtf8.constData(), static_cast<size_t>(documentUtf8.size()));
@@ -2332,7 +2639,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
         std::string par_text = fulltext_py.substr(0, evalEnd);
         //
         // add parameters as annotation in AST
-        auto error = evaluatePython(par_text, true);  // run dummy
+        auto error = evaluatePython(par_text, true, pythonFilename);  // run dummy
         if (!customizer_parameters.empty()) {
           this->rootFile->scope->assignments = customizer_parameters;
           CommentParser::collectParameters(fulltext_py, this->rootFile.get(), '#');  // add annotations
@@ -2348,7 +2655,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
       const size_t evalEnd = findLastAddParameterEvaluationEnd(fulltext_py);
       if (evalEnd != std::string::npos) {
         std::string par_text = fulltext_py.substr(0, evalEnd);
-        auto error = evaluatePython(par_text, true);  // run dummy
+        auto error = evaluatePython(par_text, true, pythonFilename);  // run dummy
         if (!customizer_parameters.empty()) {
           SourceFile *paramRoot = nullptr;
           const bool paramParseOk = parse(paramRoot, "", fnameNative, fnameNative, false);
@@ -2386,7 +2693,7 @@ std::shared_ptr<SourceFile> MainWindow::parseDocument(EditorInterface *editor,
       const auto& v = Settings::SettingsPython::pythonVirtualEnv.value();
       LOG("Running %1$s in venv '%2$s'.", python_version(), v);
     }
-    auto error = evaluatePython(fulltext_py, pythonDryRunFullScript);
+    auto error = evaluatePython(fulltext_py, pythonDryRunFullScript, pythonFilename);
     if (!error.empty()) LOG(message_group::Error, Location::NONE, "", error.c_str());
     finishPython();
 
@@ -4430,6 +4737,8 @@ void MainWindow::editorContentChanged()
 
   auto current_doc = activeEditor->toPlainText();
   if (current_doc != lastCompiledDoc) {
+    // The preview no longer matches the source; opening a file for navigation does not count.
+    if (!selectingPreviewObject) invalidatePreviewObjectNavigation();
     animateWidget->editorContentChanged();
 
     // removes the live selection feedbacks in both the 3d view and editor.
@@ -4801,6 +5110,9 @@ QString MainWindow::getDockBaseName(const QString& title) const
 
 void MainWindow::onTabManagerAboutToCloseEditor(EditorInterface *closingEditor)
 {
+  if (closingEditor == renderedEditor || closingEditor == previewObjectEditor) {
+    invalidatePreviewObjectNavigation();
+  }
   // Drop F6 mesh ownership if the tab that produced rootGeom is closing.
   if (closingEditor == geometrySourceEditor_) {
     geometrySourceEditor_ = nullptr;
