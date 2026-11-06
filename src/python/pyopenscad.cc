@@ -371,6 +371,89 @@ static int python_script_line()
   return 0;
 }
 
+/// UTF-8 co_filename of a frame's code object ("" if unavailable).
+static std::string python_frame_filename(PyFrameObject *frame)
+{
+  std::string filename;
+  PyCodeObject *code = PyFrame_GetCode(frame);
+  PyObject *fn = PyObject_GetAttrString(reinterpret_cast<PyObject *>(code), "co_filename");
+  if (fn != nullptr && PyUnicode_Check(fn)) {
+    const char *utf8 = PyUnicode_AsUTF8(fn);
+    if (utf8 != nullptr) filename = utf8;
+  }
+  if (PyErr_Occurred()) PyErr_Clear();
+  Py_XDECREF(fn);
+  Py_DECREF(code);
+  return filename;
+}
+
+/// Directories of the already imported pure-Python overlay packages
+/// (`openscad`, `pythonscad`). Their helpers (e.g. rounded_cube) create nodes
+/// on behalf of the user, so their frames are not the "caller".
+static std::vector<fs::path> python_overlay_dirs()
+{
+  std::vector<fs::path> dirs;
+  PyObject *modules = PyImport_GetModuleDict();  // borrowed
+  for (const char *name : {"openscad", "pythonscad"}) {
+    PyObject *mod = PyDict_GetItemString(modules, name);  // borrowed
+    if (mod == nullptr || !PyModule_Check(mod)) continue;
+    PyObject *file = PyModule_GetFilenameObject(mod);
+    if (file != nullptr) {
+      const char *utf8 = PyUnicode_AsUTF8(file);
+      if (utf8 != nullptr) dirs.push_back(fs::path(utf8).parent_path().lexically_normal());
+    }
+    Py_XDECREF(file);
+    if (PyErr_Occurred()) PyErr_Clear();
+  }
+  return dirs;
+}
+
+Location currentPythonLocation()
+{
+  if (!Py_IsInitialized() || !PyGILState_Check()) return Location::NONE;
+  PyFrameObject *frame = PyEval_GetFrame();  // borrowed
+  if (frame == nullptr) return Location::NONE;
+
+  // Never disturb an exception that is currently being raised/propagated.
+  PyObject *excType, *excValue, *excTraceback;
+  PyErr_Fetch(&excType, &excValue, &excTraceback);
+
+  Location result = Location::NONE;
+  std::vector<fs::path> overlayDirs;
+  bool overlayDirsLoaded = false;
+  Py_INCREF(frame);
+  while (frame != nullptr) {
+    const std::string filename = python_frame_filename(frame);
+    bool skip = filename.empty() || filename[0] == '<';
+    fs::path path;
+    if (!skip) {
+      std::error_code error;
+      path = fs::absolute(fs::path(filename), error);
+      if (error) path = fs::path(filename);
+      path = path.lexically_normal();
+      if (!overlayDirsLoaded) {
+        overlayDirs = python_overlay_dirs();
+        overlayDirsLoaded = true;
+      }
+      skip = std::find(overlayDirs.begin(), overlayDirs.end(), path.parent_path()) != overlayDirs.end();
+    }
+    if (!skip) {
+      const int line = PyFrame_GetLineNumber(frame);
+      if (line > 0) {
+        result = Location(line, 1, line, 1, std::make_shared<fs::path>(std::move(path)));
+      }
+      Py_DECREF(frame);
+      break;
+    }
+    PyFrameObject *back = PyFrame_GetBack(frame);
+    Py_DECREF(frame);
+    frame = back;
+  }
+
+  PyErr_Restore(excType, excValue, excTraceback);
+  return result;
+}
+
 /// Give node and its fresh helper children (e.g. the translates around
 /// rotate(ref=...)) the current script line, see AbstractNode::py_line.
 static void python_stamp_line(AbstractNode *node, int line)
@@ -1789,7 +1872,7 @@ void finishPython(void)
 
 int debug_num, debug_cnt;  // Hidden debug aid
 
-std::string evaluatePython(const std::string& code, bool dry_run)
+std::string evaluatePython(const std::string& code, bool dry_run, const std::string& filename)
 {
   std::string error;
   genlang_result_node = nullptr;
@@ -1864,8 +1947,15 @@ stderr_bak = None\n\
   python_orphan_objs.clear();
 #endif
   PyObjectUniquePtr result(nullptr, &PyObjectDeleter);
-  result.reset(PyRun_String(code.c_str(), Py_file_input, pythonInitDict.get(),
-                            pythonInitDict.get())); /* actual code is run here */
+  // Compile with the real file name so frames, tracebacks and the node source
+  // locations (see currentPythonLocation) refer to the user's file.
+  PyObjectUniquePtr compiled(
+    Py_CompileString(code.c_str(), filename.empty() ? "<string>" : filename.c_str(), Py_file_input),
+    &PyObjectDeleter);
+  if (compiled != nullptr) {
+    result.reset(PyEval_EvalCode(compiled.get(), pythonInitDict.get(),
+                                 pythonInitDict.get())); /* actual code is run here */
+  }
 
   if (result == nullptr) {
     error = "";
@@ -2464,6 +2554,8 @@ static int PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *valu
 extern PyTypeObject PyOpenSCADVectorIterType;
 PyMODINIT_FUNC PyInit__openscad(void)
 {
+  // Nodes created from now on remember the Python call site that created them.
+  genlang_location_provider = &currentPythonLocation;
   if (PyType_Ready(&PyOpenSCADType) < 0) return nullptr;
   if (PyType_Ready(&PyOpenSCADVectorType) < 0) return nullptr;
   if (PyType_Ready(&PyOpenSCADItemRefType) < 0) return nullptr;

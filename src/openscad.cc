@@ -619,11 +619,18 @@ int cmdline(const CommandLine& cmd)
   }
 
   std::string text_py = text;
+  // Compile the design under its absolute path so node source locations name the real file.
+  std::string python_filename = "<string>";
+  if (python_active) {
+    std::error_code ec;
+    const auto absolute = fs::absolute(fs::path(cmd.filename), ec);
+    python_filename = ec ? cmd.filename : absolute.generic_string();
+  }
   if (python_active) {
     if (cmd.animate.frames == 0) {
       initPython("", cmd.filename, &render_variables);
       auto error = evaluatePython(commandline_commands);
-      error += evaluatePython(text_py);
+      error += evaluatePython(text_py, false, python_filename);
       finishPython();
       if (error.size() > 0) LOG(error.c_str());
     }
@@ -683,7 +690,7 @@ int cmdline(const CommandLine& cmd)
         initPython(PlatformUtils::applicationPath(), cmd.filename, &render_variables);
         auto error = evaluatePython(commandline_commands);
         if (error.size() > 0) LOG(error.c_str());
-        error = evaluatePython(text_py);
+        error = evaluatePython(text_py, false, python_filename);
         if (error.size() > 0) LOG(error.c_str());
         finishPython();
       }

@@ -36,6 +36,7 @@
 #include <vector>
 
 #include "core/Context.h"
+#include "core/PreviewObjectNavigator.h"
 #include "core/SourceFile.h"
 #include "glview/Camera.h"
 #include "glview/Renderer.h"
@@ -142,6 +143,11 @@ private:
   void clearAllSelectionIndicators();
   void setSelectionIndicatorStatus(EditorInterface *editor, int nodeIndex,
                                    EditorSelectionIndicatorStatus status);
+  // Preview object navigation (Alt+Down / Alt+Up after F5).
+  void refreshPreviewRenderers(const std::shared_ptr<CSGProducts>& highlights);
+  void selectPreviewObjectSource(const AbstractNode& node);
+  void clearPreviewObjectSelection(bool clearEditorSelection);
+  void invalidatePreviewObjectNavigation();
 
   void setupWindow();
   void setupCoreSubsystems();
@@ -400,7 +406,12 @@ protected:
 public slots:
   void actionRenderPreview();
   void on_designActionPreview_triggered();
+  // direction: +1 next (first right after a preview), -1 previous (last right after a preview)
+  void navigatePreviewObject(int direction);
 private slots:
+  void on_designActionNextPreviewObject_triggered();
+  void on_designActionPreviousPreviewObject_triggered();
+  void on_designActionClearPreviewObject_triggered();
   void csgRender();
   void csgReloadRender();
   void on_designAction3DPrint_triggered();
@@ -539,8 +550,15 @@ private:
   std::shared_ptr<CSGNode> normalizedRoot;  // Normalized CSG tree
   std::shared_ptr<CSGProducts> rootProduct;
   std::shared_ptr<CSGProducts> highlightsProducts;
+  // The design's own normalized `#` terms (the source of highlightsProducts),
+  // kept so preview object navigation can draw them next to its own highlight.
+  std::vector<std::shared_ptr<CSGNode>> designHighlightTerms;
   std::shared_ptr<CSGProducts> backgroundProducts;
   int currentlySelectedObject{-1};
+  PreviewObjectNavigator previewObjectNavigation;
+  QPointer<EditorInterface> previewObjectEditor;  // editor holding the navigation selection
+  bool previewObjectHighlightActive{false};
+  bool selectingPreviewObject{false};  // our own selection/tab change must not invalidate
 
   char const *afterCompileSlot;
   bool procevents{false};

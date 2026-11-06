@@ -58,6 +58,9 @@ public:
 
   void getCursorPosition(int *line, int *col) const override;
   void setCursorPosition(int line, int col) override;
+  void selectRange(int lineFrom, int colFrom, int lineTo, int colTo) override;
+  void selectLine(int line) override;
+  void clearSelection() override;
   int firstVisibleLine() const override;
   void setFirstVisibleLine(int line) override;
   void setSelectionIndicatorStatus(EditorSelectionIndicatorStatus satuts, int level, int lineFrom,
@@ -88,6 +91,9 @@ private:
   bool eventFilter(QObject *obj, QEvent *event) override;
   void changeEvent(QEvent *event) override;
   bool handleKeyEventNavigateNumber(QKeyEvent *);
+  static bool isAltUpDown(const QKeyEvent *keyEvent);
+  bool isPreviewObjectNavigationKey(const QKeyEvent *keyEvent) const;
+  bool cursorIsOnNumber() const;
   bool handleWheelEventNavigateNumber(QWheelEvent *);
   bool handleKeyEventBlockCopy(QKeyEvent *);
   bool handleKeyEventBlockMove(QKeyEvent *);
@@ -107,6 +113,8 @@ private:
 
 signals:
   void previewRequest();
+  // Alt+Down (+1) / Alt+Up (-1): step through the objects of the last preview.
+  void previewObjectNavigationRequest(int direction);
   void hyperlinkIndicatorClicked(int val);
   void uriDropped(const QUrl&);
 
