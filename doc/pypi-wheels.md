@@ -13,10 +13,10 @@ versioned artifact: users only need `pip install pythonscad`.
 
 | Platform tag | GitHub Actions runner | Python ABIs |
 | ------------ | --------------------- | ------------- |
-| `manylinux_2_28_x86_64` | `ubuntu-24.04` | cp310–cp314 |
-| `manylinux_2_28_aarch64` | `ubuntu-24.04-arm` | cp310–cp314 |
-| `macosx_15_0_arm64` | `macos-15` | cp310–cp314 |
-| `win_amd64` | `windows-2022` | cp310–cp314 |
+| `manylinux_2_28_x86_64` | `ubuntu-24.04` | cp311–cp314 |
+| `manylinux_2_28_aarch64` | `ubuntu-24.04-arm` | cp311–cp314 |
+| `macosx_15_0_arm64` | `macos-15` | cp311–cp314 |
+| `win_amd64` | `windows-2022` | cp311–cp314 |
 
 One manylinux wheel covers all glibc-based Linux distributions (Debian,
 Ubuntu, Fedora, RHEL/Rocky, etc.) that meet the `manylinux_2_28` baseline.
