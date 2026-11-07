@@ -347,16 +347,12 @@ void dump(int idx, shape *s)
 
 shapes_list_t *libsvg_read_file(const char *filename, void *context)
 {
-  shape_list = new shapes_list_t();
-  use_cloned_shape_count = 0;
+  auto shapes = std::make_unique<shapes_list_t>();
+  shape_list = shapes.get();
   try {
     streamFile(filename, context);
   } catch (...) {
-    delete shape_list;
     shape_list = nullptr;
-    stack.clear();
-    in_defs = false;
-    use_cloned_shape_count = 0;
     throw;
   }
 
