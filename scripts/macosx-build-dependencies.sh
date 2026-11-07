@@ -44,7 +44,7 @@ PACKAGES=(
     "boost 1.92.0 1"
 
     # https://gitlab.com/libeigen/eigen/-/releases
-    "eigen 3.4.1"
+    "eigen 5.0.1"
 
     # https://gmplib.org/#STATUS
     "gmp 6.3.0"
@@ -86,7 +86,7 @@ PACKAGES=(
     "libgraphite2 1.3.15"
 
     # https://github.com/harfbuzz/harfbuzz/releases
-    "harfbuzz 11.4.1 1"
+    "harfbuzz 15.0.0"
 
     # https://github.com/openssl/openssl/releases
     "openssl 3.6.5"
@@ -95,22 +95,22 @@ PACKAGES=(
     "libzip 1.12.1"
 
     # https://www.freedesktop.org/wiki/Software/fontconfig/
-    "fontconfig 2.18.2"
+    "fontconfig 2.18.3"
 
     # https://github.com/libusb/hidapi/releases
     "hidapi 0.15.0"
 
     # https://github.com/3MFConsortium/lib3mf/releases
-    "lib3mf 2.4.1 1"
+    "lib3mf 2.5.0"
 
     # https://github.com/PCRE2Project/pcre2/releases
     "pcre2 10.49"
 
     # https://gitlab.gnome.org/GNOME/glib/-/releases
-    "glib2 2.85.0"
+    "glib2 2.90.1"
 
     # https://gitlab.freedesktop.org/pixman/pixman/-/tags
-    "pixman 0.46.4"
+    "pixman 0.46.4 1"
 
     # https://www.cairographics.org/news/
     "cairo 1.18.0"
@@ -119,22 +119,22 @@ PACKAGES=(
     "cgal 6.2.1"
 
     # https://download.qt.io/archive/qt/6.8/
-    "qt6 6.8.4 1"
+    "qt6 6.8.5"
 
     # https://opencsg.org/news.html
     "opencsg 1.8.2"
 
     # https://riverbankcomputing.com/software/qscintilla/download
-    "qscintilla 2.14.1 1"
+    "qscintilla 2.14.1 2"
 
     # https://github.com/uxlfoundation/oneTBB/releases
-    "onetbb 2022.3.0"
+    "onetbb 2023.2.0"
 
     # https://github.com/PolyClipping/Clipper2/releases
     "clipper2 2.0.1"
 
     # https://github.com/elalish/manifold/releases
-    "manifold 3.5.4"
+    "manifold 3.5.4 1"
 )
 DEPLOY_PACKAGES=(
     # https://github.com/sparkle-project/Sparkle/releases
