@@ -31,5 +31,3 @@ echo(import("../../json/leading-data.json"));
 
 // Test that a file with trailing whitespace succeeds.
 echo(import("../../json/trailing-whitespace.json"));
-
-
