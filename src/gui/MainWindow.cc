@@ -193,6 +193,9 @@
 #endif
 
 #ifdef ENABLE_PYTHON
+#include "nettle/base64.h"
+#include "nettle/sha2.h"
+#include "nettle/version.h"
 #include "python/python_public.h"
 static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *stream)
 {
