@@ -28,9 +28,13 @@ import tempfile
 # would either no-op or trip IPython's "Use exit()..." advisory message,
 # both of which make the test less deterministic.
 #
-# The leading `import ctypes, sysconfig` line exercises CPython's
-# Windows sysconfig path, which used to fail in packaged MSYS2 builds
-# when `sys._is_mingw` was missing.
+# On Windows only, also import `ctypes`/`sysconfig` to exercise CPython's
+# Windows sysconfig path (used to fail in packaged MSYS2 builds when
+# `sys._is_mingw` was missing). Keep that off macOS: Homebrew Python
+# 3.15 under `--ipython` still SIGSEGV-s with that import on macos-26
+# CI (separate from the --repl SIGBUS fixed in #1138 / #1148; tracked
+# as #1149). The --repl regression is covered by
+# tests/test_repl_cli.py, which imports ctypes on all platforms.
 #
 # The trailing `import IPython; print('IPYTHON_VERSION ...')` line is
 # the deterministic IPython fingerprint we assert on below. Earlier
@@ -44,21 +48,26 @@ import tempfile
 # fails loudly (ImportError) if we somehow ended up in the basic
 # REPL fallback - in which case the existing fallback diagnostic on
 # stderr still drives us down the SKIP-fingerprint branch instead.
-SCRIPT = (
-    "import ctypes, sysconfig\n"
-    "from pythonscad import cube\n"
-    "c = cube([1, 1, 1])\n"
-    "print('OK', type(c).__name__)\n"
-    # One-liner so it works in both real IPython (multi-line block
-    # detection) and the basic Python REPL (multi-line blocks need a
-    # blank line to close, which would force a fragile "blank line
-    # consumed by IPython's auto-magic" workaround). On hosts without
-    # IPython this falls into the `except` branch and prints nothing,
-    # leaving stdout free of a ModuleNotFoundError traceback that
-    # would otherwise pollute CI logs in the fallback path.
-    "try: import IPython; print('IPYTHON_VERSION', IPython.__version__)\n"
-    "except ModuleNotFoundError: pass\n"
+_SCRIPT_LINES = []
+if sys.platform == "win32":
+    _SCRIPT_LINES.append("import ctypes, sysconfig")
+_SCRIPT_LINES.extend(
+    [
+        "from pythonscad import cube",
+        "c = cube([1, 1, 1])",
+        "print('OK', type(c).__name__)",
+        # One-liner so it works in both real IPython (multi-line block
+        # detection) and the basic Python REPL (multi-line blocks need a
+        # blank line to close, which would force a fragile "blank line
+        # consumed by IPython's auto-magic" workaround). On hosts without
+        # IPython this falls into the `except` branch and prints nothing,
+        # leaving stdout free of a ModuleNotFoundError traceback that
+        # would otherwise pollute CI logs in the fallback path.
+        "try: import IPython; print('IPYTHON_VERSION', IPython.__version__)",
+        "except ModuleNotFoundError: pass",
+    ]
 )
+SCRIPT = "\n".join(_SCRIPT_LINES) + "\n"
 
 TIMEOUT_SECONDS = 60
 
@@ -103,8 +112,10 @@ def main() -> int:
     print(proc.stderr, file=sys.stderr)
 
     if proc.returncode != 0:
+        # Negative codes are usually -signal (e.g. -11 = SIGSEGV, -10 = SIGBUS).
+        detail = f" (signal {-proc.returncode})" if proc.returncode < 0 else ""
         print(
-            f"FAIL: pythonscad --ipython exited with {proc.returncode}",
+            f"FAIL: pythonscad --ipython exited with {proc.returncode}{detail}",
             file=sys.stderr,
         )
         return 1

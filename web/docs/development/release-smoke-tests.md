@@ -36,6 +36,19 @@ Install the tools needed for the platform you are testing:
 The scripts download artifacts from GitHub Actions by default. They can also run
 against already-downloaded deployables with `--skip-download --artifact-dir`.
 
+Downloaded builds must match the source commit being tested. Platform scripts
+default to the checkout's full HEAD SHA; use `--commit <full-sha>` to test a
+specific source revision. Even explicit `--run-id` values are checked against
+that SHA. `--skip-download` uses local files without claiming their provenance.
+
+The Actions smoke workflow pins all five successful build run IDs in its
+preparation job, requiring their source SHA to equal the smoke run's SHA.
+If matching builds do not exist, it fails with instructions to trigger fresh
+release builds; it never falls back to an older successful commit. Enable
+`trigger_release_builds` to build the selected revision first. If the branch
+has moved since the smoke workflow started, restart the workflow on the desired
+revision rather than testing packages from a different commit.
+
 ## Trigger Build Workflows
 
 From a Linux checkout, dispatch all packaging workflows:

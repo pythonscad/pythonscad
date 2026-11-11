@@ -1,10 +1,17 @@
-# PythonSCAD
+---
+hide:
+  - toc
+---
 
-**Design precise 3D models with Python.**
+<!-- markdownlint-disable MD033 -->
 
-PythonSCAD is a script-based 3D modeling application with a full GUI. Write
-parametric, engineering-oriented models in Python, preview them live, and export
-to STL, 3MF, and other formats for 3D printing and manufacturing.
+# The simplicity of OpenSCAD. The full power of Python. { .hero-title }
+
+<div class="hero" markdown>
+<div class="hero-text" markdown>
+
+Write parametric 3D models in real Python, see them live, and export them for
+3D printing and manufacturing.
 
 <div id="hero-download" class="hero-download">
   <div class="hero-download-fallback">
@@ -32,15 +39,234 @@ to STL, 3MF, and other formats for 3D printing and manufacturing.
   <div class="hero-download-enhanced" hidden></div>
 </div>
 
-[Try in browser ↗](https://www.pythonscad.org/playground/){ .md-button .md-button--primary target="_blank" rel="noopener" aria-label="Try in browser (opens in a new tab)" }
-[Get started](get_started.md){ .md-button }
-[Tutorial](tutorial/getting_started.md){ .md-button }
-[All downloads](downloads.md)
+<p class="hero-secondary">
+  <a class="md-button" href="https://www.pythonscad.org/playground/" target="_blank" rel="noopener"
+     aria-label="Try in browser, no install needed (opens in a new tab)">Try in browser ↗</a>
+  <span class="hero-secondary-links">
+    No install needed &middot; <a href="get_started/">Get started</a> &middot; <a href="tutorial/getting_started/">Tutorial</a>
+  </span>
+</p>
 
-No install required — the [in-browser Playground](https://www.pythonscad.org/playground/)
-runs the full PythonSCAD kernel via WebAssembly.
+</div>
+<div class="hero-media" markdown>
 
 ![Step-by-step: building a camera housing in the PythonSCAD GUI](pictures/box_anim.gif)
+
+</div>
+</div>
+
+## A fork, and a superset of OpenSCAD
+
+PythonSCAD is a fork of [OpenSCAD](https://openscad.org) that stays closely
+synced with upstream. Everything OpenSCAD can do, PythonSCAD can do too: your
+`.scad` files, libraries, and habits carry over unchanged.
+
+On top of that, it adds features that don't fit OpenSCAD's deliberately minimal
+design: a full programming language, fillets, SDFs, point-cloud surfaces, and
+more. Those live here, so you don't have to choose between the two.
+
+## What  PythonSCAD adds
+
+<div class="feature-cards" markdown>
+
+<div class="feature-card" markdown>
+
+![Two solids joined with a smooth fillet](pictures/fillet.png){ loading=lazy }
+
+### Fillets and rounded seams
+
+Round edges with `fillet()`, or round only the seams of a boolean with
+`union(a, b, r=2)`.
+
+[fillet](reference/fillet.md)
+
+</div>
+
+<div class="feature-card" markdown>
+
+![Profile swept along a 3D path](pictures/path_extrude.png){ loading=lazy }
+
+### Sweep along any path
+
+`path_extrude()` sweeps a profile along a 3D path, with twist, scaling, and
+rounded corners.
+
+[path_extrude](reference/extrusions.md#path_extrude)
+
+</div>
+
+<div class="feature-card" markdown>
+
+![Sphere and box blended smoothly with SDFs](pictures/sdf.png){ loading=lazy }
+
+### SDF and implicit modeling
+
+Built-in libfive for smooth blends and organic shapes that plain CSG
+cannot produce.
+
+[F-Rep / SDF](reference/frep.md)
+
+</div>
+
+<div class="feature-card" markdown>
+
+![Gyroid lattice generated from a formula](pictures/gyroid.png){ loading=lazy }
+
+### Lattices from a formula
+
+Write a gyroid or any other implicit surface as a single math expression
+and get a printable lattice.
+
+[Gyroid example](examples/gyroid.txt)
+
+</div>
+
+<div class="feature-card" markdown>
+
+![QR code generated as a 3D model in the PythonSCAD GUI](pictures/qrcode.png){ loading=lazy }
+
+### The whole pip ecosystem
+
+pip is Python's free package library with hundreds of thousands of ready-made
+add-ons. One `pip install` and they work in your model: this QR code comes
+straight from the `pyqrcode` package.
+
+[Example script](examples/qrcode.txt)
+
+</div>
+
+<div class="feature-card" markdown>
+
+![Smooth cabinet knob generated from a point cloud](pictures/organic_knob.png){ loading=lazy }
+
+### Shapes from a point cloud
+
+`organic()` wraps a cloud of points into a smooth, watertight solid —
+sketch a knob, a grip, or a figure from a few coordinates.
+
+[Knob example](examples/organic_knob.txt)
+
+</div>
+
+</div>
+
+## One app, three languages
+
+PythonSCAD runs your model in whichever language you prefer: plain Python,
+classic OpenSCAD `.scad` code, or build123d once you import its module. Here
+is the same desk organizer, sized automatically from a list of slots, in each
+of them.
+
+=== "Python"
+
+    ```python
+    from pythonscad import *
+
+    # A desk organizer, sized from your own data
+    slots = {"pens": 14, "markers": 18, "ruler": 30}
+    wall = 6
+
+    length = sum(slots.values()) + wall * (len(slots) + 1)
+    tray = cube([length, 40, 20]).fillet(2, fn=8)
+
+    x = wall
+    for name, width in slots.items():
+        tray -= cube([width, 40 - 2 * wall, 20]) + [x, wall, 4]
+        x += width + wall
+
+    tray.show()
+    ```
+
+    Ordinary Python: a dictionary, a `for` loop, `sum()`, and a one-line
+    `fillet()`.
+
+=== "OpenSCAD"
+
+    ```openscad
+    slots = [14, 18, 30];   // no dictionaries: the names are gone
+    wall = 6;
+
+    // no built-in sum(): write a recursive helper
+    function sum(v, i = 0) = i < len(v) ? v[i] + sum(v, i + 1) : 0;
+    function pos(i) = wall + sum([for (j = [0:1:i-1]) slots[j]]) + i * wall;
+    length = sum(slots) + wall * (len(slots) + 1);
+
+    difference() {
+      // no fillet(): approximate with a (slow) minkowski sum
+      translate([2, 2, 2])
+        minkowski() { cube([length - 4, 36, 16]); sphere(2, $fn = 16); }
+      for (i = [0 : len(slots) - 1])
+        translate([pos(i), wall, 4]) cube([slots[i], 40 - 2 * wall, 20]);
+    }
+    ```
+
+    Existing `.scad` files open and render as they always did, but plain
+    OpenSCAD needs workarounds for the sum and the rounded edges.
+
+=== "build123d"
+
+    ```python
+    from pythonscad import *
+    from build123d import *
+    from pybuild123d import build123d   # ships with PythonSCAD
+
+    @build123d   # turns the B-rep result into a PythonSCAD solid
+    def organizer(slots, wall=6):
+        length = sum(slots.values()) + wall * (len(slots) + 1)
+        with BuildPart() as tray:
+            Box(length, 40, 20, align=Align.MIN)
+            fillet(tray.edges(), radius=2)
+            x = wall
+            for width in slots.values():
+                with Locations((x, wall, 4)):
+                    Box(width, 40 - 2 * wall, 20,
+                        align=Align.MIN, mode=Mode.SUBTRACT)
+                x += width + wall
+        return tray
+
+    organizer({"pens": 14, "markers": 18, "ruler": 30}).show()
+    ```
+
+    Install `build123d` with pip, and its models appear in the PythonSCAD
+    viewer, ready to combine with everything else.
+
+<!-- TODO: add a GUI screenshot of the organizer, e.g. pictures/organizer.png -->
+
+## Made for real workflows
+
+<div class="workflow-table" markdown>
+
+| | |
+| --- | --- |
+| **Runs in your browser** | The full kernel compiled to WebAssembly. Try it without installing anything. [Open the Playground ↗](https://www.pythonscad.org/playground/){ target="_blank" rel="noopener" } |
+| **Jupyter notebooks** | Model, document, and iterate inside a notebook next to your analysis. [Jupyter setup](jupyter.md) |
+| **Your OpenSCAD libraries** | Load existing `.scad` libraries such as MCAD with `osuse()` and call their modules from Python. [osuse](reference/io.md#osuse) |
+| **Read any data format** | Import STL, 3MF, OBJ, DXF, parse CSV, JSON, or even chip layouts (GDS) with plain Python and turn the data into geometry. [GDS example](examples/read_gds.txt) |
+| **Handles and align** | Attach named reference frames to parts and assemble them with `align()` instead of computing transformations by hand. [Handles](reference/align.md) |
+
+</div>
+
+## How does it compare?
+
+<div class="compare-table" markdown>
+
+| | OpenSCAD | CadQuery / build123d | **PythonSCAD** |
+| --- | :---: | :---: | :---: |
+| Languages | OpenSCAD language | Python | **Python, OpenSCAD, build123d** |
+| Variables, classes, dicts, file I/O | limited | ✓ | **✓** |
+| pip packages (free Python add-ons: NumPy, qrcode, …) | – | ✓ | **✓** |
+| Edge fillets | workarounds | ✓ | **✓** |
+| Reuse existing `.scad` libraries | ✓ | – | **✓** |
+| Built-in editor, live preview, customizer | ✓ | separate tools | **✓** |
+| SDF / implicit modeling | – | – | **✓** |
+| Runs in the browser | ✓ | – | **✓** |
+| Geometry kernel | mesh | B-rep (STEP export) | mesh |
+
+</div>
+
+Need exact B-rep geometry and STEP files for mechanical CAD exchange? CadQuery
+and build123d are great choices. Want OpenSCAD's quick, script-to-print
+workflow with a real programming language behind it? That's PythonSCAD.
 
 ## Is PythonSCAD for you?
 
@@ -48,57 +274,25 @@ runs the full PythonSCAD kernel via WebAssembly.
 
 - think in code and want precise, repeatable parametric models
 - already know Python — or want to **learn Python or programming** through something tangible
+- have OpenSCAD designs and libraries but keep hitting the limits of its language
 - need models for 3D printing, CNC, or engineering workflows
-- want the full Python ecosystem: pip packages, your IDE, Jupyter notebooks
 
 ### Probably not the right tool if you…
 
 - need organic sculpting, animation, or VFX → [Blender](https://www.blender.org/)
 - prefer click-to-design CAD → [FreeCAD](https://www.freecad.org/)
 
-## Why PythonSCAD?
-
-- **Python-native** — write `.py` scripts directly in the app; no external code generator
-- **Instant visual feedback** — see your code become a 3D model as you work; export and **3D-print something you wrote**
-- **Rewarding for learners** — a few lines of Python can produce a useful physical object, which makes programming feel concrete
-- **Live preview** — interactive 3D view, customizer, and export in one desktop app
-- **Powerful geometry** — booleans, extrusions, fillets, surfaces, and more
-- **Cross-platform** — Windows, Linux, macOS, plus a browser WebAssembly build
-- **Open and extensible** — open source; integrate libraries, scripts, and tooling you already use
-
-## From code to model
-
-=== "Python"
-
-    ```python
-    from pythonscad import *
-
-    c = cube([10, 20, 30]).color("Tomato")
-    show(c)
-    ```
-
-=== "OpenSCAD"
-
-    ```python
-    from openscad import *
-
-    c = cube([10, 20, 30]).color("Tomato")
-    show(c)
-    ```
-
-![Example model rendered in PythonSCAD](pictures/red-box-example.png)
-
-Browse the [Examples gallery](examples.md) for QR codes, gyroids, GDS import, and more.
-
 ## Learn more
 
 1. [Download](downloads.md) for your platform — or use the button above
 2. [Installation](installation.md) — APT/YUM repos, AppImage, PyPI, and build options
 3. [Getting Started tutorial](tutorial/getting_started.md) — hands-on walkthrough
-4. [Cheat sheet](cheatsheet.md) and [API reference](reference/primitives3d.md)
+4. [Coming from OpenSCAD?](tutorial/from_openscad.md) — what changes and what stays
+5. [Cheat sheet](cheatsheet.md), [Examples gallery](examples.md), and [API reference](reference/primitives3d.md)
 
 ## Community
 
+- [PyForge](https://pyforge.zima.digirent.nl) — share and remix PythonSCAD designs
 - [r/OpenPythonSCAD](https://www.reddit.com/r/OpenPythonSCAD/)
 - [Google Group](https://groups.google.com/g/pythonscad)
 - [Community wiki](http://old.reddit.com/r/openpythonscad/wiki/index)

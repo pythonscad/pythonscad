@@ -119,7 +119,7 @@ signals:
   void doRightClick(QPoint screen_coordinate);
   void doLeftClick(QPoint screen_coordinate);
   void toolTipShow(QPoint, QString msg);
-  void dragPoint(Vector3d pt, Vector3d newpt);
+  void dragPoint(Vector3d pt, Vector3d newpt, Vector3d dir);
   void dragPointEnd(Vector3d pt);
   void initialized();
 };

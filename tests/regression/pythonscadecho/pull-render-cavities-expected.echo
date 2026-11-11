@@ -1,0 +1,7 @@
+pull [4, 0, 0] closed, oriented, cavity preserved
+pull [0, 4, 0] closed, oriented, cavity preserved
+pull [0, 0, 4] closed, oriented, cavity preserved
+fractional pull [4, 0, 0] closed, oriented, cavity preserved
+fractional pull [0, 4, 0] closed, oriented, cavity preserved
+fractional pull [0, 0, 4] closed, oriented, cavity preserved
+

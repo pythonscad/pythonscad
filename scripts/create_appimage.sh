@@ -54,7 +54,8 @@ DIST_DIR="${PROJECT_ROOT}/dist"
 TOOLS_DIR="${DIST_DIR}/tools"
 APPDIR="${DIST_DIR}/AppDir"
 NUM_JOBS="${NUM_JOBS:-$(nproc)}"
-QT_VERSION="${QT_VERSION:-6}"  # Default to Qt6, can be overridden with QT_VERSION=5
+# Release CI ships Qt6 only. QT_VERSION=5 remains available for local builds.
+QT_VERSION="${QT_VERSION:-6}"
 
 # Auto-detect architecture if not specified
 if [ -z "${ARCH:-}" ]; then
@@ -183,9 +184,10 @@ cmake .. \
 info "Building PythonSCAD (using ${NUM_JOBS} jobs)..."
 make -j"${NUM_JOBS}" || die "Build failed"
 
-# Install to AppDir
+# Install to AppDir. PYTHONSCAD_MERGE_MIMEAPPS=1 opts into writing the shared
+# mimeapps.list under DESTDIR (skipped for CPack/distro staging by default).
 info "Installing to AppDir..."
-make install DESTDIR="${APPDIR}" || die "Installation to AppDir failed"
+PYTHONSCAD_MERGE_MIMEAPPS=1 make install DESTDIR="${APPDIR}" || die "Installation to AppDir failed"
 
 # Return to project root
 cd "${PROJECT_ROOT}"
@@ -272,6 +274,32 @@ if [ ! -f "${DESKTOP_FILE}" ]; then
 fi
 info "Using desktop file: ${DESKTOP_FILE}"
 
+# File associations installed via cmake (desktop MimeType, shared-mime-info,
+# and a merged application/x-openscad default in mimeapps.list). Fail early
+# if packaging dropped them so AppImage desktop integration cannot advertise
+# .scad/.py.
+MIME_PACKAGE="${APPDIR}/usr/share/mime/packages/pythonscad.xml"
+MIMEAPPS_LIST="${APPDIR}/usr/share/applications/mimeapps.list"
+if [ ! -f "${MIME_PACKAGE}" ]; then
+    die "MIME package not found at ${MIME_PACKAGE}"
+fi
+if [ ! -f "${MIMEAPPS_LIST}" ]; then
+    die "mimeapps.list not found at ${MIMEAPPS_LIST} (cmake merge step missing?)"
+fi
+if ! grep -q '^application/x-openscad=org\.pythonscad\.pythonscad\.desktop;' "${MIMEAPPS_LIST}"; then
+    die "mimeapps.list missing application/x-openscad default for PythonSCAD"
+fi
+if grep -q '^text/x-python=' "${MIMEAPPS_LIST}"; then
+    die "mimeapps.list must not set a text/x-python default"
+fi
+if ! grep -q 'MimeType=.*application/x-openscad' "${DESKTOP_FILE}"; then
+    die "Desktop file missing application/x-openscad MimeType"
+fi
+if ! grep -q 'MimeType=.*text/x-python' "${DESKTOP_FILE}"; then
+    die "Desktop file missing text/x-python MimeType"
+fi
+info "Verified desktop/MIME/mimeapps file associations in AppDir"
+
 # Bundle dependencies with linuxdeploy
 info "Bundling Qt dependencies with linuxdeploy..."
 
@@ -335,6 +363,43 @@ if [ ! -d "${PYTHON_LIB_DIR}" ]; then
     if [ -d "/usr/lib/python${PYTHON_VERSION}" ]; then
         cp -r "/usr/lib/python${PYTHON_VERSION}"/* "${PYTHON_LIB_DIR}/" || true
     fi
+fi
+
+if [ "${QT_VERSION}" = "6" ]; then
+    # PyQt6 is imported, so linuxdeploy never sees it. Copy the build
+    # machine's python3-pyqt6, which is built against this image's Qt
+    # and libpython, onto the embedded interpreter's search path.
+    PYQT_SRC=$(python3 -c 'import PyQt6; print(next(iter(PyQt6.__path__)))') \
+        || die "python3-pyqt6 is not installed; the Qt6 AppImage bundles the build machine's copy"
+    PYQT_DEST="${PYTHON_LIB_DIR}/PyQt6"
+    mkdir -p "${PYQT_DEST}"
+    cp -a "${PYQT_SRC}/." "${PYQT_DEST}/"
+    info "Bundled PyQt6 from ${PYQT_SRC}"
+
+    bundle_pyqt_deps() {
+        local so="$1"
+        local lib base
+        while read -r lib; do
+            [ -n "${lib}" ] && [ -f "${lib}" ] || continue
+            base=$(basename "${lib}")
+            case "${base}" in
+                ld-linux*.so* | libanl.so* | libc.so* | libdl.so* | libgcc_s.so* | \
+                    libm.so* | libnss_*.so* | libpthread.so* | libresolv.so* | \
+                    librt.so* | libstdc++.so* | libthread_db.so* | libutil.so*)
+                    continue
+                    ;;
+            esac
+            if [ ! -e "${APPDIR}/usr/lib/${base}" ]; then
+                cp -L -- "${lib}" "${APPDIR}/usr/lib/${base}"
+            fi
+        done < <(ldd "${so}" 2>/dev/null | awk '/=>/ { print $3 }')
+    }
+    # Two passes pick up libraries pulled in by the ones copied on the first pass.
+    for _pass in 1 2; do
+        while IFS= read -r -d '' so; do
+            bundle_pyqt_deps "${so}"
+        done < <(find "${PYQT_DEST}" -type f -name '*.so' -print0)
+    done
 fi
 
 # Ensure Python shared library is included

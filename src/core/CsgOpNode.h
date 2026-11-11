@@ -20,5 +20,5 @@ public:
   std::string toString() const override;
   std::string name() const override;
   virtual std::shared_ptr<const Geometry> dragPoint(const Vector3d& pt, const Vector3d& delta,
-                                                    DragResult& result) override;
+                                                    const Vector3d& dir, DragResult& result) override;
 };

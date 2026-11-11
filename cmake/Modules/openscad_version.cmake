@@ -15,6 +15,7 @@ if ("${OPENSCAD_VERSION}" STREQUAL "")
     if (GIT_RESULT EQUAL 0 AND NOT "${GIT_VERSION}" STREQUAL "")
       # Remove leading 'v' if present
       string(REGEX REPLACE "^v" "" OPENSCAD_VERSION "${GIT_VERSION}")
+      string(REGEX REPLACE "-[0-9]+-g[0-9a-f]+" "" OPENSCAD_VERSION "${OPENSCAD_VERSION}")
       message(STATUS "Detected version from git: ${OPENSCAD_VERSION}")
     endif()
   endif()

@@ -58,23 +58,39 @@ rs_repo_default() {
   gh repo view --json nameWithOwner --jq .nameWithOwner
 }
 
+rs_expected_commit() {
+  local commit=${1:-${RELEASE_SMOKE_COMMIT:-}}
+  if [[ -z "$commit" ]]; then
+    commit=$(git -C "$(dirname "${BASH_SOURCE[0]}")/../.." rev-parse HEAD)
+  fi
+  [[ "$commit" =~ ^[0-9a-fA-F]{40}$ ]] || rs_die "expected a full 40-character source commit SHA"
+  printf '%s\n' "$commit"
+}
+
+rs_validate_run_commit() {
+  local repo=$1 run_id=$2 commit=$3
+  local actual
+  actual=$(gh run view "$run_id" --repo "$repo" --json headSha --jq .headSha)
+  [[ "$actual" == "$commit" ]] || rs_die "run $run_id was built from $actual, expected $commit"
+}
+
 rs_latest_successful_run() {
   local repo=$1
   local workflow=$2
   local ref=${3:-}
+  local commit
+  commit=$(rs_expected_commit "${4:-}")
   local args=(run list --repo "$repo" --workflow "$workflow" --status success
-    --json 'databaseId,headBranch')
+    --commit "$commit" --limit 1 --json databaseId --jq '.[0].databaseId // ""')
   if [[ -n "$ref" ]]; then
-    case "$ref" in
-      *\"*|*\\*|*$'\n'*|*$'\r'*)
-        rs_die "--ref contains characters that cannot be used in GitHub Actions jq filters"
-        ;;
-    esac
-    args+=(--limit 50 --jq "map(select(.headBranch == \"$ref\")) | .[0].databaseId // \"\"")
-  else
-    args+=(--limit 1 --jq '.[0].databaseId')
+    args+=(--branch "$ref")
   fi
-  gh "${args[@]}"
+  local run_id
+  run_id=$(gh "${args[@]}")
+  [[ -n "$run_id" && "$run_id" != "null" ]] ||
+    rs_die "no successful $workflow build for commit $commit (ref '$ref'); trigger fresh release builds"
+  rs_validate_run_commit "$repo" "$run_id" "$commit"
+  printf '%s\n' "$run_id"
 }
 
 rs_download_run_artifact() {

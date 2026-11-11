@@ -16,3 +16,5 @@ colored_parts: dict[str, Openscad] = osimport(
 exporter = MultiToolExporter()
 exporter.extend(colored_parts.items())
 exporter.export(prefix="out/watermelon-", suffix=".stl", mkdir=True)
+exporter.show()
+exporter.show(render=True)

@@ -90,6 +90,10 @@ ready to assign to different tool heads in a slicer:
     export(solids, "watermelon.3mf")
     ```
 
+When previewing same-height extrusions with
+[`MultiToolExporter`](multitool.md#preview-artifacts), use
+`exporter.show(render=True)` to avoid F5 coplanar-face artifacts.
+
 **OpenSCAD reference:** [import](https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Importing_Geometry#import)
 
 ---

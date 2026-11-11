@@ -7,5 +7,12 @@ class TestTabManager : public UXTest
 private slots:
   void initTestCase();
   void checkOpenClose();
+  void checkWindowWideSearch();
+  void checkSearchSession_data();
+  void checkSearchSession();
   void checkReOpen();
+  void checkCloseDuringCompilation();
+  void checkCancelRenderingTab_data();
+  void checkCancelRenderingTab();
+  void checkCloseLastRenderingTab();
 };

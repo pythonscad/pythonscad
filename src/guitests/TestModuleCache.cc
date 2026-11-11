@@ -3,6 +3,7 @@
 #include <QString>
 #include <QStringList>
 #include <QTest>
+#include <QSignalSpy>
 #include <memory>
 
 #include "core/node.h"
@@ -27,24 +28,30 @@ void TestModuleCache::testBasicCache()
 
   QString filename = QString::fromStdString("test-tmp.scad");
   SourceFile *previousFile{nullptr};
-  SourceFile *currentFile{nullptr};
-  connect(window, &MainWindow::compilationDone,
-          [&currentFile](SourceFile *file) { currentFile = file; });
+  QSignalSpy compiled(window, &MainWindow::compilationDone);
 
   window->designActionAutoReload->setChecked(false);  // Disable auto-reload  & preview
   window->tabManager->open(filename);                 // Open use.scad
   window->actionReloadRenderPreview();                // F5
+  QTRY_VERIFY_WITH_TIMEOUT(!compiled.isEmpty(), 30000);
+  auto *currentFile = window->rootFile.get();
 
   QVERIFY2(currentFile != nullptr, "The file 'test-tmp.scad' should be loaded.");
   previousFile = currentFile;  // save the loaded Source from the
 
+  compiled.clear();
   window->actionReloadRenderPreview();
+  QTRY_VERIFY_WITH_TIMEOUT(!compiled.isEmpty(), 30000);
+  currentFile = window->rootFile.get();
   QVERIFY2(previousFile == currentFile,
            "The file should be the same as the file cache should have done its work.");
   sleep(1);
 
   touchFile(filename);
+  compiled.clear();
   window->actionReloadRenderPreview();
+  QTRY_VERIFY_WITH_TIMEOUT(!compiled.isEmpty(), 30000);
+  currentFile = window->rootFile.get();
   QVERIFY2(
     previousFile != currentFile,
     "The file should *not* be the same as the file cache should have detected the timestamp change.");
@@ -62,8 +69,11 @@ void TestModuleCache::testMCAD()
   restoreWindowInitialState();
 
   QString filename = fixturePath("modulecache-tests/use-mcad.scad");
+  window->designActionAutoReload->setChecked(false);
+  QSignalSpy compiled(window, &MainWindow::compilationDone);
   window->tabManager->open(filename);   // Open use-mcad.scad
   window->actionReloadRenderPreview();  // F5
+  QTRY_VERIFY_WITH_TIMEOUT(!compiled.isEmpty(), 30000);
 
   auto node = window->instantiateRootFromSource(window->rootFile.get());
   QVERIFY2(node->verbose_name().empty(), "Root node name must be empty");

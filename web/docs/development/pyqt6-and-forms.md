@@ -1,22 +1,21 @@
 # PyQt6 and Forms in PythonSCAD
 
-PythonSCAD's Qt6 AppImage, macOS, and Windows packages ship with a prebuilt
-copy of PyQt6, ready to import from any script or from `.pythonscadrc` — no
-separate installation or build step is needed. This page covers where it
-comes from, how to reach the running application window from Python, and how
-to build a basic dialog.
+The Qt6 AppImage, the macOS app and the Windows installer can
+`import PyQt6` without a separate install. Debian and Fedora packages use
+the distro's `python3-pyqt6` instead, which the package manager installs
+with PythonSCAD. This page covers where it comes from, how to reach the
+running application window from Python, and how to build a basic dialog.
 
-Qt5 packages do not include PyQt bindings, so the dialog and interactive-form
-features described here are unavailable in those builds. The rest of
-PythonSCAD continues to work normally.
+The Ubuntu 22.04 package is Qt5 and has no PyQt. Rocky Linux 9's
+repositories do not ship `python3-pyqt6`, so that package has no PyQt
+either. Dialogs, forms and custom widgets are unavailable on those two
+packages. The rest of PythonSCAD continues to work normally.
 
 ## Where PyQt6 Comes From
 
-PyQt6 is built for each supported platform and architecture against the exact
-Qt6 and Python ABI PythonSCAD itself uses, and shipped inside supported Qt6
-portable installations under
-`libraries/python/PyQt6`. It is available the moment PythonSCAD starts —
-there is nothing to install, and no internet access is required at runtime.
+Portable Qt6 builds carry a PyQt6 that was built against the same Qt the
+application links. On Debian and Fedora it is the distro package. It is
+available as soon as PythonSCAD starts.
 
 ```python
 from PyQt6 import QtWidgets
@@ -26,19 +25,12 @@ This works out of the box in any script, and in `.pythonscadrc`.
 
 ### Build-system lifecycle
 
-The compiled bindings are published in this repository as immutable,
-content-addressed dependency releases. Their identity includes the platform,
-architecture, complete Qt and pinned PyQt versions, Python version and SOABI,
-and the binding builder inputs. Packaging jobs derive that identity from
-their own toolchain, download only the exact matching archive, and validate
-its embedded manifest before packaging it.
-
-The `Build PyQt6 Bindings (Qt6)` workflow runs when its builder inputs change
-and as a weekly compatibility canary. It can also be dispatched manually.
-Existing dependency releases are never overwritten. If a packaging job says
-that no compatible artifact exists, run that workflow on the default branch
-before retrying the package. When support moves to a new Qt minor version,
-first add its reviewed PyQt version to `scripts/ci/pyqt6-versions.json`.
+Debian and Fedora declare a dependency on `python3-pyqt6`. The AppImage
+copies the build runner's `python3-pyqt6` into the image. macOS links the
+Qt frameworks inside the PyPI PyQt6 wheel and ships that wheel's bindings.
+Windows compiles PyQt6 in the release workflow and caches the result. When
+Windows support moves to a new Qt minor, add its reviewed PyQt version to
+`scripts/ci/pyqt6-versions.json` first.
 
 ## One Application, Not Two
 

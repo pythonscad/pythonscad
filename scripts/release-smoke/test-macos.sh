@@ -14,7 +14,8 @@ Download, mount, and smoke test the latest macOS DMG artifact.
 
 Options:
   --repo <owner/name>       GitHub repository to query. Defaults to current repo.
-  --ref <branch-or-tag>     Branch used for latest-run filtering.
+  --ref <branch-or-tag>     Branch used for run filtering.
+  --commit <sha>            Required source SHA (default: checkout HEAD).
   --run-id <id>             Use a specific build-macos-release.yml run.
   --workdir <path>          Working directory. Defaults to a temp directory.
   --keep-workdir            Keep temporary files after the run.
@@ -26,6 +27,7 @@ EOF
 
 repo=""
 ref=""
+commit=""
 run_id=""
 workdir_arg=""
 keep_workdir=0
@@ -39,6 +41,11 @@ while (($#)); do
     --repo)
       repo=${2:-}
       [[ -n "$repo" ]] || rs_die "--repo requires a value"
+      shift 2
+      ;;
+    --commit)
+      commit=${2:-}
+      [[ -n "$commit" ]] || rs_die "--commit requires a value"
       shift 2
       ;;
     --ref)
@@ -117,14 +124,16 @@ fi
 
 if [[ "$skip_download" == "0" ]]; then
   rs_require_command gh
+  commit=$(rs_expected_commit "$commit")
   if [[ -z "$repo" ]]; then
     repo=$(rs_repo_default)
   fi
 
   if [[ -z "$run_id" ]]; then
-    run_id=$(rs_latest_successful_run "$repo" build-macos-release.yml "$ref")
+    run_id=$(rs_latest_successful_run "$repo" build-macos-release.yml "$ref" "$commit")
     [[ -n "$run_id" && "$run_id" != "null" ]] || rs_die "no successful build-macos-release.yml run found"
   fi
+  rs_validate_run_commit "$repo" "$run_id" "$commit"
   rs_log "Downloading macOS DMG artifact from run $run_id"
   rs_download_run_artifact "$repo" "$run_id" 'PythonSCAD-*' "$artifact_dir"
 else

@@ -28,12 +28,8 @@ jobs:
         # Intel (macos-15-intel) is no longer usable: Homebrew 6.0 dropped Intel
         # bottles (Tier 3, Sep 2026), so installs compile from source and hit
         # the 90-minute job timeout. See #1026.
-        # ARM GitHub-hosted VMs use Apple's software OpenGL renderer, which
-        # garbles some PNG image tests. See:
-        #   https://github.com/openscad/openscad/issues/5201
-        #   https://github.com/actions/runner-images/issues/9712
-        # Those tests (plus ARM SVG/#6161 and two ARM-CI-only flakes) are
-        # disabled in tests/CMakeLists.txt when APPLE+arm64 and ENV{CI}.
+        # Use upstream's OSMesa backend for offscreen CI rendering rather
+        # than Apple's software renderer (openscad/openscad#7074).
     runs-on:  ${{ matrix.os }}
     name: ${{ matrix.os }} qt6
     # If it's not done in 90 minutes, something is wrong.
@@ -66,17 +62,8 @@ jobs:
         HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       run: |
         ./scripts/get-dependencies.py --yes --profile pythonscad-qt6
-        # Fail early if the pin did not stick (qmake must stay on a mapped minor).
-        QT_VER="$("$(brew --prefix qtbase)/bin/qmake" -query QT_VERSION)"
-        echo "qtbase qmake reports: $QT_VER"
-        case "$QT_VER" in
-          6.11.*) ;;
-          *)
-            echo "ERROR: expected pinned Qt 6.11.x, got $QT_VER" >&2
-            exit 1
-            ;;
-        esac
-        brew list --versions qscintilla2
+        brew install openscad/homebrew-tap/osmesa
+        test -x "$(tr -d '\n' < third_party/macos-pyqt6-qt/prefix)/bin/qmake"
     - name: Install Python test dependencies (IPython + pexpect for --ipython tests)
       run: |
         # Homebrew Python on macOS is "externally managed" (PEP 668),
@@ -96,9 +83,28 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON -DENABLE_LIBFIVE=ON
+        QT_PREFIX="$(tr -d '\n' < ../third_party/macos-pyqt6-qt/prefix)"
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=OFF -DEXPERIMENTAL=ON -DSNAPSHOT=ON -DUSE_CCACHE=OFF -DUSE_BUILTIN_OPENCSG=ON -DENABLE_LIBFIVE=ON \
+          -DCMAKE_PREFIX_PATH="${QT_PREFIX};/opt/homebrew" \
+          -DENABLE_OSMESA=ON -DDEFAULT_OFFSCREEN_CONTEXT=osmesa
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
         make -j$NUMCPU
+        "$QT_PREFIX/bin/macdeployqt" pythonscad.app -no-strip
+    - name: Verify OSMesa offscreen rendering
+      run: |
+        build/pythonscad.app/Contents/MacOS/pythonscad --info > /tmp/pythonscad-gl-info.txt 2>&1
+        cat /tmp/pythonscad-gl-info.txt
+        grep -F 'GL context creator: OSMesa' /tmp/pythonscad-gl-info.txt
+        # The regression stays enabled with the replacement renderer (#1190).
+        cd build
+        ctest --show-only=json-v1 -R '^previewtest_skin_rotate_extrude-tests$' > /tmp/skin-tests.json
+        python3 - <<'PY'
+        import json
+        with open('/tmp/skin-tests.json') as stream:
+            tests = json.load(stream)['tests']
+        assert len(tests) == 1, tests
+        assert not any(p['name'] == 'DISABLED' and p['value'] for p in tests[0]['properties']), tests
+        PY
     - name: Run macOS sanity check
       run: |
         # Run sanity check to validate deployment targets of bundled libraries.
@@ -126,13 +132,10 @@ jobs:
     - name: Run Test Suite
       # Disable pdf export test on macOS because Cairo >= 1.18 on Homebrew uses the
       # Quartz backend which doesn't have the Liberation Sans font we use.
-      # Also exclude repl/ipython smokes on macos-26: they still SIGBUS/SIGSEGV
-      # when importing cube under --repl/--ipython even with qtbase pinned at
-      # 6.11 (#1133). Tracked separately from this Qt-pin PR (#1132 / #1134).
       run: |
         cd build
         export NUMCPU=$(($(sysctl -n hw.ncpu) * 3 / 2))
-        ctest -j$NUMCPU -E 'pdfexporttest|repl-smoke|ipython-smoke' --output-on-failure
+        ctest -j$NUMCPU -E pdfexporttest --output-on-failure
     - name: Upload Test Result Report
       uses: actions/upload-artifact@v7
       if: ${{ always() }}

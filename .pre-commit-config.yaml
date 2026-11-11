@@ -37,14 +37,18 @@ repos:
           # The whitespace and EOF fixers must not touch those files,
           # otherwise they desynchronize from the freshly-generated
           # output the tests compare against.
+          # tests/data/ holds input fixtures that are intentionally
+          # malformed or whitespace-sensitive (e.g. json/leading-data.json,
+          # json/trailing-whitespace.json). Their exact bytes are part of
+          # the test, so no formatter may touch them.
           - id: trailing-whitespace
-            exclude: ^tests/regression/
+            exclude: ^tests/(regression|data)/
           - id: end-of-file-fixer
-            exclude: ^tests/regression/
+            exclude: ^tests/(regression|data)/
           - id: check-yaml
           - id: detect-private-key
     - repo: https://github.com/pre-commit/mirrors-clang-format
-      rev: "v23.1.3"
+      rev: "v23.1.5"
       hooks:
           # clang-format's default file types include JavaScript, so without
           # an exclude it reformats the vendored, pre-minified three.js bundles
@@ -53,15 +57,15 @@ repos:
           # broken). These are third-party build artifacts we ship verbatim.
           - id: clang-format
             args: ["--style=file"]
-            exclude: ^wasm-test/vendor/
+            exclude: ^(wasm-test/vendor|tests/data)/
     - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
       rev: v9.27.0
       hooks:
           - id: commitlint
             stages: [commit-msg]
-            additional_dependencies: ["@commitlint/config-conventional@21.2.3"]
+            additional_dependencies: ["@commitlint/config-conventional@21.2.4"]
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.16.10
+      rev: v0.17.3
       hooks:
           # Validate Python stub files programmatically instead of
           # eyeballing them. Scoped to the stubs tree so that the rest of
@@ -120,7 +124,7 @@ repos:
             files: ^(CHANGELOG\.md|pythonscad\.appdata\.xml\.in)$
             pass_filenames: false
     - repo: https://github.com/zizmorcore/zizmor-pre-commit
-      rev: v1.30.1
+      rev: v1.32.0
       hooks:
           # Security audits for GitHub Actions workflows and composite
           # actions. Catches template/expression injection from

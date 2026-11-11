@@ -36,10 +36,6 @@ def main() -> int:
     # pythonscad profiles for the macos distro.
     required_pre_commands = {
         "brew tap openscad/homebrew-tap",
-        "brew tap-new local/pinned-qt",
-        "brew install local/pinned-qt/qt",
-        "brew pin local/pinned-qt/qt",
-        "brew pin qtbase",
     }
 
     combinations = [
@@ -65,10 +61,12 @@ def main() -> int:
             )
             return 1
 
-        packages = macos.get("packages", [])
-        if "qscintilla2" not in packages:
+        post_commands = set(macos.get("post_commands", []))
+        required_post_command = "bash scripts/ci/prepare-macos-pyqt6-qt.sh"
+        if required_post_command not in post_commands:
             print(
-                f"FAIL: profiles {profiles} dropped qscintilla2 from macos packages: {packages}",
+                f"FAIL: profiles {profiles} dropped the macOS Qt preparation command: "
+                f"{macos.get('post_commands')}",
                 file=sys.stderr,
             )
             return 1

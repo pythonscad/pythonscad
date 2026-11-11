@@ -6,6 +6,6 @@ Comment=Script-based 3D modeling app with Python support
 Icon=pythonscad
 Exec=${EXECUTABLE_NAME} %f
 StartupWMClass=PythonSCAD
-MimeType=application/x-openscad;
+MimeType=application/x-openscad;text/x-python;application/x-python;
 Categories=Graphics;3DGraphics;Engineering;
 Keywords=3d;solid;geometry;csg;model;stl;

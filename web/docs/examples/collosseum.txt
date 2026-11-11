@@ -36,4 +36,4 @@ negatives = lv_union(inn, lv_union(lv_union(door, window), notbuilt))
 collosseum = lv_union(lv_difference(out, negatives) - 0.1, lv_difference(cyl, notbuilt))
 fobj = frep(collosseum, [-15, -15, -1], [15, 15, 8], 40)
 
-output(fobj)
+show(fobj)

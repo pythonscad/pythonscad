@@ -34,6 +34,7 @@
 #include <QLayoutItem>
 #include <QLineEdit>
 #include <QMenu>
+#include <QFile>
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QString>
@@ -141,6 +142,15 @@ std::string parameterShapeSignature(const ParameterObjects& parameters)
         }
         out << ',';
       }
+      break;
+    }
+    case ParameterObject::ParameterType::Custom: {
+      // Custom widgets are keyed by customTypeName; include default JSON so a
+      // changed factory default forces a Customizer rebuild (#1139).
+      const auto *p = static_cast<const CustomParameter *>(parameter.get());
+      appendString(out, p->customTypeName);
+      out << '\x1f';
+      appendString(out, p->defaultValue.dump());
       break;
     }
     }
@@ -257,6 +267,11 @@ void ParameterWidget::saveFile(const QString& scadFile)
 
   cleanSets();
   sets.writeFile(jsonFile.toStdString());
+}
+
+void ParameterWidget::removeBackupFile(const QString& scadFile)
+{
+  QFile::remove(getJsonFile(scadFile));
 }
 
 void ParameterWidget::saveBackupFile(const QString& scadFile)

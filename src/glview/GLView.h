@@ -80,6 +80,9 @@ public:
   GLdouble projection[16];
   std::vector<SelectedObject> selected_obj;
   std::shared_ptr<SelectedObject> shown_obj;
+  /// Grabbed point of an interactive drag. Separate from shown_obj, which the
+  /// measurement code clears on every render.
+  std::shared_ptr<SelectedObject> drag_obj;
 
 #ifdef ENABLE_OPENCSG
   bool is_opencsg_capable;

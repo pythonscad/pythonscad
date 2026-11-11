@@ -617,15 +617,23 @@ class MultiToolExporter(list[_MultiToolExporterItem]):
             self._ensure_parent_dir(filename, mkdir=use_mkdir)
             export_one(geometry, filename)
 
-    def show(self) -> None:
+    def show(self, render: bool = False) -> None:
         """Display each part in the PythonSCAD preview.
 
         Iterates :meth:`parts` and passes each computed geometry to
         :func:`show`, producing a layered preview equivalent to what
         :meth:`export` would write to disk.
+
+        When ``render`` is true, each part is shown as
+        ``geometry.render()``, i.e. evaluated to a mesh instead of being
+        previewed as a CSG tree. Use this for same-height multi-tool parts:
+        OpenCSG previews a ``difference`` whose cutters share the part's
+        top and bottom planes with coplanar-face artifacts (holes that look
+        see-through, flickering caps). Rendering costs one geometry
+        evaluation per part but shows exactly what :meth:`export` writes.
         """
         for _name, geometry in self.parts():
-            show(geometry)  # noqa: F405
+            show(geometry.render() if render else geometry)  # noqa: F405
 
 
 @_typing.overload

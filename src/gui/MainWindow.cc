@@ -65,11 +65,13 @@
 #include <QMimeData>
 #include <QMutexLocker>
 #include <QPoint>
+#include <QEventLoop>
 #include <QProcess>
 #include <QProgressDialog>
 #include <QScreen>
 #include <QSettings>  //Include QSettings for direct operations on settings arrays
 #include <QSignalMapper>
+#include <QSignalBlocker>
 #include <QSoundEffect>
 #include <QSplitter>
 #include <QStandardPaths>
@@ -101,6 +103,8 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <iomanip>
+#include <locale>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -120,6 +124,7 @@
 #include "core/SourceFileCache.h"
 #include "core/customizer/CommentParser.h"
 #include "core/node.h"
+#include "core/DragPatch.h"
 #include "core/parsersettings.h"
 #include "core/progress.h"
 #include "geometry/Geometry.h"
@@ -189,6 +194,9 @@
 #endif
 
 #ifdef ENABLE_PYTHON
+#include "nettle/base64.h"
+#include "nettle/sha2.h"
+#include "nettle/version.h"
 #include "python/python_public.h"
 static size_t curl_download_write(void *ptr, size_t size, size_t nmemb, void *stream)
 {
@@ -565,7 +573,7 @@ void add_menuitem_trampoline(const char *menuname, const char *itemname, const c
 
 std::string MainWindow::loadInitFile(void)
 {
-  std::string path = lookup_file(".pythonscadrc", PlatformUtils::userConfigPath(), ".");
+  std::string path = lookup_file(".pythonscadrc", PlatformUtils::pythonUserConfigPath(), "");
   if (path.size() == 0) return "";
   std::ifstream fh(path);
 
@@ -768,152 +776,96 @@ void MainWindow::toolTipShow(QPoint pt, QString msg)
   QToolTip::showText(pos, msg, this);
 }
 
-void MainWindow::dragPoint(Vector3d pt, Vector3d newpt)
+void MainWindow::dragPoint(Vector3d pt, Vector3d newpt, Vector3d dir)
 {
   if (this->rootNode == nullptr) return;
-  dragResult.anchor[0] = NAN;
-  this->rootNode->dragPoint(pt, newpt, dragResult);
-  if (!isnan(dragResult.anchor[0])) {
-    SelectedObject obj = {
-      .type = SelectionType::SELECTION_POINT,
-    };
-    obj.pt.push_back(dragResult.anchor);
-    qglview->shown_obj = std::make_shared<SelectedObject>(obj);
+  if (!dragActive) {
+    // Start of a new gesture: wait for a running compile/render to finish
+    // before touching the node tree (the worker thread may still read it).
+    dragActive = true;
+    dragKeepView = true;
+    dragBeginPending = true;
+    dragEndRequested = false;
+    dragResult = DragResult();
   }
-
-  if (GuiLocker::isLocked()) return;
-  GuiLocker::lock();
-  compileDone(true);
+  dragPendingPt = pt;
+  dragPendingNewPt = newpt;
+  dragPendingDir = dir;
+  dragPending = true;
+  // Coalesce mouse events: at most one re-evaluation per timer period, always
+  // with the newest position. Events are no longer dropped while the GUI is locked.
+  if (!dragTimer->isActive()) dragTimer->start(20);
 }
 
-void MainWindow::dragPointEnd(Vector3d pt)
+void MainWindow::dragPointEnd(Vector3d /*pt*/)
 {
-  std::string sourcecode = std::string(this->lastCompiledDoc.toUtf8().constData());
-  const char *sourcecode_c = this->lastCompiledDoc.toUtf8().constData();
-  const char *ptr = sourcecode_c;
+  if (!dragActive) return;
+  dragEndRequested = true;
+  if (!dragTimer->isActive()) dragTimer->start(0);
+}
 
-  // search all occurences of function
-  while (ptr != nullptr) {
-    const char *funcstart = strstr(ptr, dragResult.modname.c_str());
-    if (funcstart != nullptr) {
-      ptr = funcstart + dragResult.modname.size();
-      int par = 0;
-      int par_present = 0;
-      std::vector<const char *> arg_bounds;
-      std::vector<char> stack;
-      do {
-        switch (*ptr) {  // TODO improve " '
-        case '(':
-          stack.push_back('(');
-          par_present = 1;
-          if (stack.size() == 1) arg_bounds.push_back(ptr + 1);
-          break;
-        case '[':
-          stack.push_back('[');
-          par_present = 1;
-          if (stack.size() == 1) arg_bounds.push_back(ptr + 1);
-          break;
-        case ',':
-          if (stack.size() == 1) {
-            arg_bounds.push_back(ptr);
-            arg_bounds.push_back(ptr + 1);
-          }
-          break;
-        case ')':
-          if (stack.size() > 0 && stack[stack.size() - 1] == '(') {
-            if (stack.size() == 1) arg_bounds.push_back(ptr);
-            stack.pop_back();
-          }
-          break;
-        case ']':
-          if (stack.size() > 0 && stack[stack.size() - 1] == '[') {
-            if (stack.size() == 1) arg_bounds.push_back(ptr);
-            stack.pop_back();
-          }
-          break;
-        case '\0': return;  // premature end of code
-        }
-        ptr++;
-      } while (stack.size() > 0 || !par_present);
-      // extract all arguments
-      std::vector<std::string> args;
-      for (int i = 0; i < arg_bounds.size(); i += 2) {
-        std::string arg =
-          sourcecode.substr(arg_bounds[i] - sourcecode_c, arg_bounds[i + 1] - arg_bounds[i]);
-        args.push_back(arg);
-      }
-
-      // go thorugh all mods now
-      bool valid = true;  // check that all mods are ok
-      for (auto& mod : dragResult.mods) {
-        // search for named parameter
-        const char *parstart, *parend;
-        int parindex = -1;
-        for (int i = 0; i < args.size(); i++) {
-          const char *arg_c = args[i].c_str();
-          const char *tmp = strchr(arg_c, '=');
-          if (tmp != nullptr && strncmp(arg_c, mod.name.c_str(), tmp - arg_c) == 0) {
-            parindex = i;
-            parstart = arg_bounds[2 * parindex] + mod.name.size();
-            parend = arg_bounds[2 * parindex + 1];
-          }
-        }
-        if (parindex == -1) {
-          parindex = mod.index;
-          parstart = arg_bounds[2 * parindex];
-          parend = arg_bounds[2 * parindex + 1];
-        }
-        if (mod.arrinfo.size() > 0) {
-          std::vector<int> arrstack;
-          const char *arrptr = parstart;
-          const char *arrstart = nullptr, *arrend = nullptr;
-          do {
-            if (arrstack == mod.arrinfo) {
-              if (arrstart == nullptr) arrstart = arrptr;
-              arrend = arrptr;
-            }
-            switch (*arrptr) {
-            case '[': arrstack.push_back(0); break;
-            case ',':
-              if (arrstack.size() > 0) {
-                arrstack[arrstack.size() - 1]++;
-              }
-              break;
-            case ']':
-              if (arrstack.size() > 0) {
-                arrstack.pop_back();
-              }
-              break;
-            case '\0': return;  // premature end of code
-            }
-            arrptr++;
-          } while (arrptr < parend);
-          if (arrstart == nullptr) {
-            printf("Arr index not found!\n");
-            valid = false;
-            continue;
-          }
-          parstart = arrstart;
-          parend = arrend;
-        }  // arrinfo
-        if (*parstart == '\"' && parend[-1] == '\"') {
-          // valid parameter
-          std::string arg = sourcecode.substr(parstart - sourcecode_c, parend - parstart);
-          // created patched sourcecode
-          std::stringstream ss;
-          setlocale(LC_ALL, "C");
-          std::string newval = boost::lexical_cast<std::string>(mod.value);
-          ss << sourcecode.substr(0, parstart - sourcecode_c) << "\"" << newval << "\""
-             << sourcecode.substr(parend - sourcecode_c);
-          std::string sourcecode_mod = ss.str();
-          // cruel problems when trying to udpate more than one paramter at once
-          activeEditor->setText(QString(sourcecode_mod.c_str()));
-          return;
-
-        } else valid = false;
-      }  // all mnods
-    } else ptr = nullptr;  // no more function name
+void MainWindow::dragProcess()
+{
+  if (!dragActive) return;
+  if (GuiLocker::isLocked()) {  // previous compile/render still running
+    dragTimer->start(20);
+    return;
   }
+  if (this->rootNode == nullptr) {
+    dragActive = false;
+    return;
+  }
+  if (dragBeginPending) {
+    this->rootNode->dragBegin();
+    dragBeginPending = false;
+  }
+  if (dragPending) {
+    dragPending = false;
+    dragResult.anchor[0] = NAN;
+    this->rootNode->dragPoint(dragPendingPt, dragPendingNewPt, dragPendingDir, dragResult);
+    if (!dragEndRequested) {
+      if (!std::isnan(dragResult.anchor[0])) {
+        SelectedObject obj = {
+          .type = SelectionType::SELECTION_POINT,
+        };
+        obj.pt.push_back(dragResult.anchor);
+        qglview->drag_obj = std::make_shared<SelectedObject>(obj);
+        qglview->update();
+      }
+      GuiLocker::lock();
+      compileDone(true);
+      return;
+    }
+  }
+  if (dragEndRequested) dragFinish();
+}
+
+void MainWindow::dragFinish()
+{
+  dragActive = false;
+  dragEndRequested = false;
+  qglview->drag_obj = nullptr;
+  qglview->update();
+
+  const std::string sourcecode = std::string(this->lastCompiledDoc.toUtf8().constData());
+  std::string patched;
+  if (applyDragResult(sourcecode, dragResult, patched)) {
+    int line = 0, col = 0;
+    activeEditor->getCursorPosition(&line, &col);
+    const int firstLine = activeEditor->firstVisibleLine();
+    activeEditor->setText(QString::fromUtf8(patched.c_str()));
+    activeEditor->setCursorPosition(line, col);
+    activeEditor->setFirstVisibleLine(firstLine);
+  } else if (!dragResult.mods.empty()) {
+    LOG(message_group::UI_Warning,
+        "Drag: could not find the dragged value in the source (mark it as string, e.g. \"10\").");
+  }
+  dragResult = DragResult();
+
+  // Re-evaluate the script so the node tree matches the source again. This also
+  // makes the next drag work without pressing F5/F6 manually.
+  if (dragLastWasRender) on_designActionRender_triggered();
+  else actionRenderPreview();
 }
 
 void MainWindow::addKeyboardShortCut(const QList<QAction *>& actions)
@@ -1021,10 +973,10 @@ void MainWindow::loadDesignSettings()
   GeometryCache::instance()->setMaxSizeMB(polySetCacheSizeMB);
   auto cgalCacheSizeMB = GlobalPreferences::inst()->getValue("advanced/cgalCacheSizeMB").toUInt();
   CGALCache::instance()->setMaxSizeMB(cgalCacheSizeMB);
-  auto backend3D =
-    GlobalPreferences::inst()->getValue("advanced/renderBackend3D").toString().toStdString();
-  RenderSettings::inst()->backend3D =
-    renderBackend3DFromString(backend3D).value_or(DEFAULT_RENDERING_BACKEND_3D);
+  scadApp->setRenderBackend3D(
+    renderBackend3DFromString(
+      GlobalPreferences::inst()->getValue("advanced/renderBackend3D").toString().toStdString())
+      .value_or(DEFAULT_RENDERING_BACKEND_3D));
 }
 
 void MainWindow::updateUndockMode(bool undockMode)
@@ -1112,12 +1064,13 @@ void MainWindow::showProgress()
 
 void MainWindow::report_func(const std::shared_ptr<const AbstractNode>&, void *vp, int mark)
 {
+  auto thisp = static_cast<MainWindow *>(vp);
+  if (thisp->renderCancelRequested.load()) throw ProgressCancelException();
   // limit to progress bar update calls to 5 per second
   static const qint64 MIN_TIMEOUT = 200;
   if (progressThrottle->hasExpired(MIN_TIMEOUT)) {
     progressThrottle->start();
 
-    auto thisp = static_cast<MainWindow *>(vp);
     auto v = static_cast<int>((mark * 1000.0) / progress_report_count);
     auto permille = v < 1000 ? v : 999;
     if (permille > thisp->progresswidget->value()) {
@@ -1323,13 +1276,17 @@ void MainWindow::updateCompileResult()
 
 void MainWindow::compileDone(bool didchange)
 {
+  if (renderCancelRequested.load()) {
+    compileEnded();
+    return;
+  }
   OpenSCAD::hardwarnings = GlobalPreferences::inst()->getValue("advanced/enableHardwarnings").toBool();
   try {
     const char *callslot;
     if (didchange) {
       instantiateRoot();
       updateCompileResult();
-      callslot = afterCompileSlot;
+      callslot = renderCancelRequested.load() ? "compileEnded" : afterCompileSlot;
     } else {
       callslot = "compileEnded";
     }
@@ -1388,10 +1345,19 @@ void MainWindow::selectPreviewViewMode()
 #endif
 }
 
+void MainWindow::cancelRenderForEditor(EditorInterface *editor)
+{
+  if (compilingEditor != editor) return;
+  renderCancelRequested.store(true);
+  clearPendingAfterRender();
+}
+
 void MainWindow::compileEnded()
 {
+  compilingEditor.clear();
   clearCurrentOutput();
   GuiLocker::unlock();
+  if (!dragActive) dragKeepView = false;  // the recompile after a drag is done
   if (designActionAutoReload->isChecked()) autoReloadTimer->start();
 #ifdef ENABLE_GUI_TESTS
   emit compilationDone(this->rootFile.get());
@@ -1416,8 +1382,10 @@ void MainWindow::instantiateRoot()
 {
   // Go on and instantiate root_node, then call the continuation slot
 
-  // Invalidate renderers before we kill the CSG tree
-  this->qglview->setRenderer(nullptr);
+  // Invalidate renderers before we kill the CSG tree.
+  // While dragging, keep showing the old image until the new one is ready
+  // (the view holds a shared_ptr, so the old renderer stays valid) -> no flicker.
+  if (!dragKeepView) this->qglview->setRenderer(nullptr);
 #ifdef ENABLE_OPENCSG
   this->previewRenderer = nullptr;
 #endif
@@ -1500,6 +1468,10 @@ void MainWindow::compileCSG()
     assert(this->rootNode);
     LOG("Compiling design (CSG Products generation)...");
     this->processEvents();
+    if (renderCancelRequested.load()) {
+      compileEnded();
+      return;
+    }
 
     // Main CSG evaluation
     this->progresswidget = new ProgressWidget(this);
@@ -1544,6 +1516,13 @@ void MainWindow::compileCSGDone()
   try {
     progress_report_fin();
     updateStatusBar(nullptr);
+
+    if (renderCancelRequested.load()) {
+      delete this->csgrenderer;
+      this->csgrenderer = nullptr;
+      compileEnded();
+      return;
+    }
 
     LOG("Compiling design (CSG Products normalization)...");
     this->processEvents();
@@ -1807,35 +1786,41 @@ void MainWindow::writeBackup(QFile *file)
 
 void MainWindow::saveBackup()
 {
-  auto path = PlatformUtils::backupPath();
-  if ((!fs::exists(path)) && (!PlatformUtils::createBackupPath())) {
-    LOG(message_group::UI_Warning, "Cannot create backup path: %1$s", path);
-    return;
-  }
+  // There is a good argument that the management of the temporary file name belongs
+  // in EditorInterface, since that's where it lives and where the path of the file
+  // lives.  However, all management of EditorInterface::filepath appears to be in
+  // MainWindow and TabManager, *not* in EditorInterface, so I'm leaving the temporary
+  // file management here.
+  if (!activeEditor->tempFile) {
+    auto path = PlatformUtils::backupPath();
+    if ((!fs::exists(path)) && (!PlatformUtils::createBackupPath())) {
+      LOG(message_group::UI_Warning, "Cannot create backup path: %1$s", path);
+      return;
+    }
 
-  auto backupPath = QString::fromLocal8Bit(path.c_str());
-  if (!backupPath.endsWith("/")) backupPath.append("/");
+    auto backupPath = QString::fromLocal8Bit(path.c_str());
+    if (!backupPath.endsWith("/")) backupPath.append("/");
 
-  QString basename = "unsaved";
-  if (!activeEditor->filepath.isEmpty()) {
-    auto fileInfo = QFileInfo(activeEditor->filepath);
-    basename = fileInfo.baseName();
-  }
+    QString basename = "unsaved";
+    if (!activeEditor->filepath.isEmpty()) {
+      auto fileInfo = QFileInfo(activeEditor->filepath);
+      basename = fileInfo.baseName();
+    }
 
-  if (!this->tempFile) {
 #ifdef ENABLE_PYTHON
     const QString suffix = currentLanguage == LANG_PYTHON ? "py" : "scad";
 #else
     const QString suffix = "scad";
 #endif
-    this->tempFile = new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
+    activeEditor->tempFile =
+      new QTemporaryFile(backupPath.append(basename + "-backup-XXXXXXXX." + suffix));
   }
 
-  if ((!this->tempFile->isOpen()) && (!this->tempFile->open())) {
+  if ((!activeEditor->tempFile->isOpen()) && (!activeEditor->tempFile->open())) {
     LOG(message_group::UI_Warning, "Failed to create backup file");
     return;
   }
-  return writeBackup(this->tempFile);
+  return writeBackup(activeEditor->tempFile);
 }
 
 void MainWindow::on_fileActionSave_triggered()
@@ -1934,7 +1919,54 @@ void MainWindow::on_fileActionPythonCreateVenv_triggered()
   progress.setMinimumDuration(0);
   progress.show();
   QApplication::processEvents();
-  int result = pythonCreateVenv(path);
+
+  // Run venv creation in a separate pythonscad-python process. Doing it in
+  // the GUI process re-initializes (and finalizes) the embedded interpreter;
+  // once Python is already running (e.g. .pythonscadrc or a previous render)
+  // PyImport_AppendInittab() aborts the whole application (#1215).
+  QProcess proc;
+  QStringList procArgs;
+  for (const auto& arg : pythonCreateVenvArgs(path)) {
+    procArgs << QString::fromStdString(arg);
+  }
+  auto procEnv = QProcessEnvironment::systemEnvironment();
+  procEnv.remove("PYTHONHOME");
+  procEnv.remove("PYTHONPATH");
+  procEnv.insert("PYTHONSCAD_HIDE_CONSOLE_SUBPROCESSES", "1");
+  proc.setProcessEnvironment(procEnv);
+  proc.setProcessChannelMode(QProcess::MergedChannels);
+#ifdef _WIN32
+  proc.setCreateProcessArgumentsModifier(
+    [](QProcess::CreateProcessArguments *a) { a->flags |= CREATE_NO_WINDOW; });
+#endif
+  QEventLoop loop;
+  connect(&proc, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), &loop, &QEventLoop::quit);
+  connect(&proc, &QProcess::errorOccurred, &loop, [&loop](QProcess::ProcessError err) {
+    if (err == QProcess::FailedToStart) loop.quit();
+  });
+  proc.start(QString::fromStdString(pythonShimExecutablePath()), procArgs);
+  if (proc.state() != QProcess::NotRunning) {
+    loop.exec();
+  }
+
+  int result = 1;
+  if (proc.error() == QProcess::FailedToStart) {
+    LOG(message_group::Error, "Could not start '%1$s': %2$s", pythonShimExecutablePath(),
+        proc.errorString().toStdString());
+  } else if (proc.exitStatus() == QProcess::NormalExit) {
+    result = proc.exitCode();
+  }
+  const auto output = QString::fromLocal8Bit(proc.readAll()).trimmed();
+  if (!output.isEmpty()) {
+    if (result == 0) {
+      LOG("%1$s", output.toStdString());
+    } else {
+      LOG(message_group::Error, "%1$s", output.toStdString());
+    }
+  }
+  if (result == 0) {
+    result = pythonFinishVenv(path);
+  }
   progress.close();
 
   if (result == 0) {
@@ -1946,7 +1978,8 @@ void MainWindow::on_fileActionPythonCreateVenv_triggered()
                              QMessageBox::Ok);
   } else {
     LOG("Python virtual environment creation failed.");
-    QMessageBox::critical(this, _("Create Virtual Environment"), "Virtual environment creation failed.",
+    QMessageBox::critical(this, _("Create Virtual Environment"),
+                          "Virtual environment creation failed. See the console for details.",
                           QMessageBox::Ok);
   }
 #endif  // ifdef ENABLE_PYTHON
@@ -2058,46 +2091,45 @@ QList<double> MainWindow::getRotation() const
 
 void MainWindow::hideFind()
 {
-  find_panel->hide();
-  if (activeEditor) {
-    activeEditor->findState = TabManager::FIND_HIDDEN;
-  }
-  editActionFindNext->setEnabled(false);
-  editActionFindPrevious->setEnabled(false);
-  const int findCount =
-    (activeEditor) ? activeEditor->updateFindIndicators(this->findInputField->text(), false) : 0;
-  this->findInputField->setFindCount(findCount);
-  this->processEvents();
+  setFindState(TabManager::FIND_HIDDEN);
 }
 
-// Prepare the UI for the find (and replace if requested)
-// Among other thing it makes the text field and replacement field visible and well as it configures the
-// activeEditor to appropriate search mode.
+void MainWindow::refreshFindIndicators()
+{
+  const int count = activeEditor ? activeEditor->updateFindIndicators(
+                                     findInputField->text(), findState != TabManager::FIND_HIDDEN)
+                                 : 0;
+  findInputField->setFindCount(count);
+}
+
+// Apply shared panel state without changing the query, selection, or keyboard focus.
+void MainWindow::setFindState(int state)
+{
+  if (state < TabManager::FIND_HIDDEN || state > TabManager::FIND_REPLACE_VISIBLE) {
+    state = TabManager::FIND_HIDDEN;
+  }
+  if (findState != state) TabManager::bumpSessionDirtyGeneration();
+  findState = state;
+  const bool visible = state != TabManager::FIND_HIDDEN;
+  const bool replace = state == TabManager::FIND_REPLACE_VISIBLE;
+  const QSignalBlocker blocker(findTypeComboBox);
+  findTypeComboBox->setCurrentIndex(replace ? 1 : 0);
+  replaceInputField->setVisible(replace);
+  replaceButton->setVisible(replace);
+  replaceAllButton->setVisible(replace);
+  find_panel->setVisible(visible);
+  editActionFindNext->setEnabled(visible);
+  editActionFindPrevious->setEnabled(visible);
+  refreshFindIndicators();
+}
+
 void MainWindow::showFind(bool doFindAndReplace)
 {
-  findInputField->setFindCount(activeEditor->updateFindIndicators(findInputField->text()));
-  processEvents();
-
-  if (doFindAndReplace) {
-    findTypeComboBox->setCurrentIndex(1);
-    replaceInputField->show();
-    replaceButton->show();
-    replaceAllButton->show();
-    activeEditor->findState = TabManager::FIND_REPLACE_VISIBLE;
-  } else {
-    findTypeComboBox->setCurrentIndex(0);
-    replaceInputField->hide();
-    replaceButton->hide();
-    replaceAllButton->hide();
-    activeEditor->findState = TabManager::FIND_VISIBLE;
-  }
-
-  find_panel->show();
-  editActionFindNext->setEnabled(true);
-  editActionFindPrevious->setEnabled(true);
+  if (!activeEditor) return;
   if (!activeEditor->selectedText().isEmpty()) {
     findInputField->setText(activeEditor->selectedText());
   }
+  setFindState(doFindAndReplace ? TabManager::FIND_REPLACE_VISIBLE : TabManager::FIND_VISIBLE);
   findInputField->setFocus();
   findInputField->selectAll();
 }
@@ -2124,7 +2156,7 @@ void MainWindow::on_editActionFindAndReplace_triggered()
 void MainWindow::actionSelectFind(int type)
 {
   // If type is one, then we shows the find and replace UI component
-  showFind(type == 1);
+  setFindState(type == 1 ? TabManager::FIND_REPLACE_VISIBLE : TabManager::FIND_VISIBLE);
 }
 
 void MainWindow::replace()
@@ -2542,6 +2574,8 @@ void MainWindow::actionReloadRenderPreview()
 {
   if (GuiLocker::isLocked()) return;
   GuiLocker::lock();
+  compilingEditor = activeEditor;
+  renderCancelRequested.store(false);
   autoReloadTimer->stop();
   setCurrentOutput();
 
@@ -2562,6 +2596,9 @@ void MainWindow::csgReloadRender()
 
 void MainWindow::prepareCompile(const char *afterCompileSlot, bool procevents, bool preview)
 {
+  compilingEditor = activeEditor;
+  renderCancelRequested.store(false);
+  if (!dragActive) dragLastWasRender = !preview;
   setCurrentOutput();
   autoReloadTimer->stop();
   LOG(" ");
@@ -2612,6 +2649,10 @@ void MainWindow::csgRender()
 
 void MainWindow::csgRenderFinished()
 {
+  if (renderCancelRequested.load()) {
+    compileEnded();
+    return;
+  }
   // Go to non-CGAL view mode
   if (viewActionThrownTogether->isChecked()) {
     viewModeThrownTogether();
@@ -2728,7 +2769,7 @@ void MainWindow::cgalRender()
     return;
   }
 
-  this->qglview->setRenderer(nullptr);
+  if (!dragKeepView) this->qglview->setRenderer(nullptr);
   this->geomRenderer = nullptr;
   rootGeom.reset();
   geometrySourceEditor_ = nullptr;
@@ -2755,7 +2796,7 @@ void MainWindow::actionRenderDone(const std::shared_ptr<const Geometry>& root_ge
   // instantiateRoot() recorded the editor that started this render. Prefer that
   // over activeEditor — the user can switch tabs while geometry is computing.
   EditorInterface *const owner = renderedEditor;
-  if (!owner) {
+  if (!owner || renderCancelRequested.load()) {
     LOG(message_group::UI_Warning,
         "Render finished after the source tab was closed; discarding geometry.");
     this->rootGeom.reset();
@@ -3162,12 +3203,10 @@ void MainWindow::updateStatusBar(ProgressWidget *progressWidget)
         new QLabel("PythonSCAD " + QString::fromStdString(std::string(openscad_displayversionnumber)));
       sb->addPermanentWidget(this->versionLabel);
     }
+    updateBackend3DLabel();  // shows if appropriate
   } else {
-    if (this->versionLabel != nullptr) {
-      sb->removeWidget(this->versionLabel);
-      delete this->versionLabel;
-      this->versionLabel = nullptr;
-    }
+    versionLabel->hide();
+    backend3DLabel.hide();
     sb->addPermanentWidget(progressWidget);
   }
 
@@ -3258,6 +3297,7 @@ void MainWindow::showLanguageMenu()
 
 void MainWindow::exceptionCleanup()
 {
+  compilingEditor.clear();
   LOG("Execution aborted");
   LOG(" ");
   GuiLocker::unlock();
@@ -3266,6 +3306,7 @@ void MainWindow::exceptionCleanup()
 
 void MainWindow::UnknownExceptionCleanup(std::string msg)
 {
+  compilingEditor.clear();
   auto guard = scopedSetCurrentOutput();  // we need to show this error
   if (msg.size() == 0) {
     LOG(message_group::Error, "Compilation aborted by unknown exception");
@@ -5107,9 +5148,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
   auto windowState = saveState();
   UIUtils::dumpSaveState(windowState);
   settings.setValue("window/state", windowState);
-  if (this->tempFile) {
-    delete this->tempFile;
-    this->tempFile = nullptr;
+  if (activeEditor->tempFile) {
+    delete activeEditor->tempFile;
+    activeEditor->tempFile = nullptr;
   }
 
   // Disable invokeMethod calls for consoleOutput during shutdown,
@@ -5370,6 +5411,7 @@ void MainWindow::setupStatusBar()
   // tabSwitched -> onLanguageActiveChanged -> updateLanguageLabel() which
   // dereferences these pointers.
   this->languageLabel = nullptr;
+  this->versionLabel = nullptr;
   // Remove ugly frames in the QStatusBar when using additional widgets.
   const auto stylesheet = QString(R"(
     QStatusBar::item {
@@ -5378,7 +5420,6 @@ void MainWindow::setupStatusBar()
   )");
   this->statusBar()->setStyleSheet(stylesheet);
   updateStatusBar(nullptr);
-  this->versionLabel = nullptr;
 }
 
 /**
@@ -5576,6 +5617,9 @@ void MainWindow::setup3DView()
   connect(this->qglview, &QGLView::toolTipShow, this, &MainWindow::toolTipShow);
   connect(this->qglview, &QGLView::dragPoint, this, &MainWindow::dragPoint);
   connect(this->qglview, &QGLView::dragPointEnd, this, &MainWindow::dragPointEnd);
+  dragTimer = new QTimer(this);
+  dragTimer->setSingleShot(true);
+  connect(dragTimer, &QTimer::timeout, this, &MainWindow::dragProcess);
   connect(this->qglview, &QGLView::initialized, this, &MainWindow::updateViewModeAfterGLInit);
 }
 
@@ -5781,6 +5825,10 @@ void MainWindow::setupMenusAndActions()
   connect(this->findTypeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &MainWindow::actionSelectFind);
   connect(this->findInputField, &QWordSearchField::textChanged, this, &MainWindow::findString);
+  connect(this->findInputField, &QWordSearchField::textChanged, this,
+          [] { TabManager::bumpSessionDirtyGeneration(); });
+  connect(this->replaceInputField, &QLineEdit::textChanged, this,
+          [] { TabManager::bumpSessionDirtyGeneration(); });
   connect(this->findInputField, &QWordSearchField::returnPressed, this->findNextButton,
           [this] { this->findNextButton->animateClick(); });
   find_panel->installEventFilter(this);
@@ -6001,12 +6049,22 @@ void MainWindow::openRemainingFiles(const QStringList& filenames)
 
 void MainWindow::changeEvent(QEvent *event)
 {
-  if (event->type() == QEvent::ThemeChange) {
-    setGlobalTheme();
-  } else if (event->type() == QEvent::WindowStateChange) {
+  if (event->type() == QEvent::WindowStateChange) {
     viewActionFullScreen->blockSignals(true);
     viewActionFullScreen->setChecked(isFullScreen());
     viewActionFullScreen->blockSignals(false);
   }
   QMainWindow::changeEvent(event);
+}
+
+void MainWindow::updateBackend3DLabel()
+{
+  RenderBackend3D backend = RenderSettings::inst()->backend3D;
+
+  if (backend == DEFAULT_RENDERING_BACKEND_3D) {
+    backend3DLabel.hide();
+  } else {
+    backend3DLabel.setText(QString::fromStdString(renderBackend3DToString(backend)));
+    backend3DLabel.show();
+  }
 }

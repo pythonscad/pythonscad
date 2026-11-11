@@ -60,19 +60,6 @@
     {
       "family": "debian",
       "name": "Debian",
-      "version": "11",
-      "codename": "bullseye",
-      "lts": true,
-      "eol_date": "2026-08",
-      "runner": null,
-      "docker_image": "debian@sha256:cf7b10d27ddb50e2089cc618dc274ae57de64eb1468fa5e46155c99a5a8dc824",
-      "architectures": [
-        "amd64"
-      ]
-    },
-    {
-      "family": "debian",
-      "name": "Debian",
       "version": "12",
       "codename": "bookworm",
       "lts": true,

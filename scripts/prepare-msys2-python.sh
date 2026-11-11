@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Prepare MSYS2-installed Python headers/libs into a local folder for patching.
+# Copy MSYS2 Python headers into a local folder. The import library is
+# generated separately from the embeddable python3XY.dll.
 # Intended for native MSYS2 Windows builds (not MXE cross-compilation).
 #
 # Usage:
@@ -13,8 +14,6 @@ set -euo pipefail
 callstack="${1:?Usage: $0 <callstack> <python_version_minor> <output_dir>}"
 python_minor="${2:?Missing python version (major.minor)}"
 output_dir="${3:?Missing output directory}"
-
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 system_lib="/${callstack}64/lib/libpython${python_minor}.dll.a"
 system_include="/${callstack}64/include/python${python_minor}"
@@ -29,13 +28,10 @@ if [[ ! -d "$system_include" ]]; then
 fi
 
 rm -rf "$output_dir"
-mkdir -p "$output_dir/${callstack}64/lib" "$output_dir/${callstack}64/include"
+mkdir -p "$output_dir/${callstack}64/include"
 
-cp -r "$system_lib" "$output_dir/${callstack}64/lib/"
 cp -r "$system_include" "$output_dir/${callstack}64/include/"
+# The import library is generated later from the embeddable python3XY.dll.
+touch "$output_dir/.headers-ready"
 
-cd "$output_dir"
-
-"${script_dir}/libpython_patch.sh"
-
-echo "MSYS2 python copied and patched in: $output_dir"
+echo "MSYS2 Python headers copied to: $output_dir"

@@ -38,7 +38,7 @@ theme:
         name: Switch to dark mode
 
 extra_css:
-  - stylesheets/extra.css
+  - stylesheets/extra.css?v=6
 
 extra_javascript:
   - javascript/downloads-common.js
@@ -108,6 +108,7 @@ nav:
       - Align and Handles: reference/align.md
       - Roof: reference/roof.md
       - Fillet: reference/fillet.md
+      - Organic: reference/organic.md
       - Mesh Operations: reference/repair.md
       - Design Rule Checks: reference/drc.md
       - GUI and Utility: reference/gui.md
@@ -131,3 +132,4 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - attr_list
+  - md_in_html

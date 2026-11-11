@@ -95,13 +95,28 @@ function Invoke-PythonSCAD {
     $psi.RedirectStandardError = $true
     if ($InputFile) {
         $psi.RedirectStandardInput = $true
+        $psi.Environment['PYTHONIOENCODING'] = 'utf-8'
     }
 
-    $process = [System.Diagnostics.Process]::Start($psi)
+    # .NET Framework constructs an auto-flushing stdin writer during Start,
+    # using Console.InputEncoding. If it has a BOM, the bytes are already in
+    # the pipe before the caller can access StandardInput. Select BOM-free
+    # UTF-8 while creating that writer, then restore the parent's encoding.
+    $previousInputEncoding = [Console]::InputEncoding
+    try {
+        if ($InputFile) {
+            [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+        }
+        $process = [System.Diagnostics.Process]::Start($psi)
+    } finally {
+        if ($InputFile) {
+            [Console]::InputEncoding = $previousInputEncoding
+        }
+    }
     $stdoutTask = $process.StandardOutput.ReadToEndAsync()
     $stderrTask = $process.StandardError.ReadToEndAsync()
     if ($InputFile) {
-        $inputText = Get-Content -LiteralPath $InputFile -Raw
+        $inputText = Get-Content -LiteralPath $InputFile -Raw -Encoding UTF8
         $process.StandardInput.Write($inputText)
         $process.StandardInput.Close()
     }
@@ -266,4 +281,60 @@ export(cube(10), "shim-cube.stl")
     }
 
     Write-SmokeLog "Smoke testing $Label`: OK"
+}
+
+function Get-ExpectedSmokeCommit {
+    param([string]$Commit)
+    if (-not $Commit) { $Commit = $env:RELEASE_SMOKE_COMMIT }
+    if (-not $Commit) {
+        $Commit = & git -C (Join-Path $PSScriptRoot '../..') rev-parse HEAD
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot determine checkout commit' }
+    }
+    if ($Commit -notmatch '^[0-9a-fA-F]{40}$') { throw 'Expected a full 40-character source commit SHA' }
+    $Commit
+}
+
+function Assert-SmokeRunCommit {
+    param([string]$Repo, [string]$RunId, [string]$Commit)
+    # Parse JSON in PowerShell to avoid legacy native-argument quoting issues.
+    $runJson = & gh run view $RunId --repo $Repo --json headSha
+    if ($LASTEXITCODE -ne 0) { throw "Failed to query run $RunId" }
+    $actual = ($runJson | ConvertFrom-Json).headSha
+    if ($actual -cne $Commit) { throw "Run $RunId was built from $actual, expected $Commit" }
+}
+
+function Get-LatestSuccessfulRun {
+    param(
+        [Parameter(Mandatory = $true)][string]$Repo,
+        [Parameter(Mandatory = $true)][string]$Workflow,
+        [string]$Ref,
+        [string]$Commit
+    )
+
+    # Filter through gh itself. Windows PowerShell's native argument passing
+    # strips embedded JSON/jq quotes before gh can see them.
+    $Commit = Get-ExpectedSmokeCommit $Commit
+    $ghArgs = @(
+        'run', 'list',
+        '--repo', $Repo,
+        '--workflow', $Workflow,
+        '--status', 'success',
+        '--commit', $Commit,
+        '--limit', '1',
+        '--json', 'databaseId'
+    )
+    if ($Ref) {
+        $ghArgs += @('--branch', $Ref)
+    }
+    $runJson = & gh @ghArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to query $Workflow runs (gh exit code $LASTEXITCODE)"
+    }
+    $runs = @($runJson | ConvertFrom-Json)
+    if ($runs.Count -eq 0 -or -not $runs[0].databaseId) {
+        throw "No successful $Workflow run found for commit $Commit (ref '$Ref'); trigger fresh release builds"
+    }
+    $runId = [string]$runs[0].databaseId
+    Assert-SmokeRunCommit -Repo $Repo -RunId $runId -Commit $Commit
+    $runId
 }

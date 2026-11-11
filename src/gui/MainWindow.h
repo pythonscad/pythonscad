@@ -16,17 +16,18 @@
 #include <QMutex>
 #include <QObject>
 #include <QPoint>
+#include <QPointer>
 #include <QShortcut>
 #include <QSignalMapper>
 #include <QSoundEffect>
 #include <QString>
 #include <QStringList>
-#include <QTemporaryFile>
 #include <QTime>
 #include <QTimer>
 #include <QUrl>
 #include <QWidget>
 #include <ctime>
+#include <atomic>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -128,6 +129,8 @@ public:
   ~MainWindow() override;
 
 private:
+  QLabel backend3DLabel;
+
   RubberBandManager rubberBandManager;
 
   std::vector<std::pair<Dock *, QString>> docks;
@@ -178,6 +181,7 @@ private slots:
   void openCSGSettingsChanged();
   void consoleOutput(const Message& msgObj);
   void setSelection(int index);
+  void updateBackend3DLabel();
 
   // implements the actions to be done when the selection menu is closing
   // the seclection menu is the one that show up when right click on the geometry in the 3d view.
@@ -235,9 +239,13 @@ public:
   CSGTreeEvaluator *csgrenderer;
   bool isLightTheme();
   void compileCSG();
+  void cancelRenderForEditor(EditorInterface *editor);
   void compileCSGThread();
   void csgRenderFinished();
   void showFind(bool doFindAndReplace);
+  void setFindState(int state);
+  void refreshFindIndicators();
+  int findState = 0;  // Window-wide search panel state (TabManager::FIND_HIDDEN).
 
 private:
   [[nodiscard]] QString getCurrentFileName() const;
@@ -469,8 +477,9 @@ public slots:
   void jumpToLine(int, int);
   void openFileFromPath(const QString&, int);
   void toolTipShow(QPoint, QString msg);
-  void dragPoint(Vector3d pt, Vector3d newpt);
+  void dragPoint(Vector3d pt, Vector3d newpt, Vector3d dir);
   void dragPointEnd(Vector3d pt);
+  void dragProcess();
 
   void viewModeRender();
 #ifdef ENABLE_OPENCSG
@@ -535,16 +544,28 @@ private:
 
   char const *afterCompileSlot;
   bool procevents{false};
-  QTemporaryFile *tempFile{nullptr};
   ProgressWidget *progresswidget{nullptr};
   CSGWorker *csgworker;
   GeometryWorker *geometryWorker;
   QMutex consolemutex;
   DragResult dragResult;
+  void dragFinish();
+  QTimer *dragTimer{nullptr};
+  bool dragActive{false};         // a drag gesture is in progress
+  bool dragKeepView{false};       // keep old image until the post-drag compile is done
+  bool dragBeginPending{false};   // dragBegin() not yet sent to the node tree
+  bool dragPending{false};        // a mouse position waits to be applied
+  bool dragEndRequested{false};   // mouse released, finish after pending work
+  bool dragLastWasRender{false};  // last compile was F6 (else F5)
+  Vector3d dragPendingPt;
+  Vector3d dragPendingNewPt;
+  Vector3d dragPendingDir;
   EditorInterface *renderedEditor{
     nullptr};  // stores pointer to editor which has been most recently rendered
   /// Editor whose F6 geometry is currently in rootGeom (export ownership).
   EditorInterface *geometrySourceEditor_{nullptr};
+  QPointer<EditorInterface> compilingEditor;
+  std::atomic<bool> renderCancelRequested{false};
   time_t includesMTime{0};  // latest include mod time
   time_t depsMTime{0};      // latest dependency mod time
   /// Last directory used for any export in this process (not persisted).
@@ -569,7 +590,6 @@ private:
   QMetaObject::Connection editorTrustConnection;
 #endif
   QSoundEffect *renderCompleteSoundEffect;
-  std::vector<std::unique_ptr<QTemporaryFile>> allTempFiles;
 
   void resetMeasurementsState(bool enable, const QString& tooltipMessage);
   QActionGroup *measurementGroup;

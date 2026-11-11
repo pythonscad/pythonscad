@@ -36,6 +36,12 @@ std::string documentsPath();
 std::string userPath(const std::string& name);
 std::string pythonUserPath(const std::string& name);
 std::string userDocumentsPath();
+/**
+ * Directory for .pythonscadrc. On Linux this is $XDG_CONFIG_HOME/PythonSCAD
+ * (default ~/.config/PythonSCAD). userConfigPath() stays on the OpenSCAD
+ * folder name.
+ */
+std::string pythonUserConfigPath();
 std::string resourceBasePath();
 fs::path resourcePath(const std::string& resource);
 std::string userLibraryPath();

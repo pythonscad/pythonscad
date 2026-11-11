@@ -919,6 +919,18 @@ add_cmdline_test(csgterm      OPENSCAD SUFFIX term FILES
 
 add_cmdline_test(echo         OPENSCAD SUFFIX echo FILES ${ECHO_FILES})
 
+# Unicode identifiers, NFC normalization, and the identifier security profile
+# are supported independently of experimental features.
+add_cmdline_test(echo OPENSCAD SUFFIX echo FILES ${TEST_SCAD_DIR}/misc/unicode-identifiers.scad)
+add_cmdline_test(echo OPENSCAD SUFFIX echo FILES ${TEST_CUSTOMIZER_DIR}/unicode-identifiers-parameters.scad ARGS -p ${TEST_CUSTOMIZER_DIR}/unicode-identifiers-parameters.json -P decomposedKeys)
+# Following -P argument: NFC: U+0047, U+0072, U+00F6, U+00DF; UTF-8: 47 72 C3 B6 C3 9F
+# JSON set name: NFD: U+0047, U+0072, U+006F, U+0308, U+00DF; UTF-8: 47 72 6F CC 88 C3 9F
+add_cmdline_test(echo-unicode-set-name-nfd OPENSCAD SUFFIX echo FILES ${TEST_CUSTOMIZER_DIR}/unicode-identifiers-parameters.scad EXPECTEDDIR echo ARGS -p ${TEST_CUSTOMIZER_DIR}/unicode-identifiers-parameters.json -P "Größ")
+# Following -P argument: NFD: U+0048, U+006F, U+0308, U+0068, U+0065; UTF-8: 48 6F CC 88 68 65
+# JSON set name: NFC: U+0048, U+00F6, U+0068, U+0065; UTF-8: 48 C3 B6 68 65
+add_cmdline_test(echo-unicode-set-name-nfc OPENSCAD SUFFIX echo FILES ${TEST_CUSTOMIZER_DIR}/unicode-identifiers-parameters.scad EXPECTEDDIR echo ARGS -p ${TEST_CUSTOMIZER_DIR}/unicode-identifiers-parameters.json -P "Höhe")
+add_failing_test(parsererrors SUFFIX csg FILES ${TEST_SCAD_DIR}/misc/unicode-identifiers-fail.scad ARGS --retval=1)
+
 # trace-usermodule-parameters is on by default,
 # but can generate very long outputs and potentially
 # unstable outputs, when combined with recursive tests.
@@ -1398,6 +1410,13 @@ add_cmdline_test(pythonscadpreview   EXPERIMENTAL OPENSCAD SUFFIX png FILES ${TE
 # 2D boolean seam fillets (issue #1004): validate via SVG (headless-safe).
 add_cmdline_test(pythonscad2d        EXPERIMENTAL OPENSCAD SUFFIX svg FILES ${PYTHONSCAD_2D_SVG_FILES} ARGS --render --trust-python)
 add_cmdline_test(pythonscadecho      EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${PYTHONSCAD_ECHO_FILES} ARGS --trust-python)
+# The convexity regression needs CGAL explicitly: Manifold can accept a valid
+# mesh without consulting its convexity flag. Reuse the default echo golden.
+if(ENABLE_CGAL)
+  add_cmdline_test(pythonscadecho-cgal EXPERIMENTAL OPENSCAD SUFFIX echo
+    FILES ${TEST_PYTHONSCAD_ECHO_DIR}/pull-render-cavities.py
+    EXPECTEDDIR pythonscadecho ARGS --trust-python --backend=cgal)
+endif()
 # nimport download logs include machine-local library paths; keep the portable
 # DEPRECATED line + script prints in the golden file.
 if(NOT HEADLESS)
@@ -1494,6 +1513,14 @@ if (ENABLE_LIB3MF_TESTS)
         EXPERIMENTAL
         FILES ${PYTHONSCAD_EXPORT_3MF_FILES}
     )
+    # Not globbed with the group above: lib3mf 2 only welds coincident
+    # vertices when predictible-output is on, and lib3mf 1 always does.
+    # The flag keeps the golden the same on both backends.
+    add_export_files_test(pythonscad-export-3mf-degenerate
+        EXPERIMENTAL
+        FILES "${CCSD}/data/pythonscad-3mf-degenerate/degenerate-triangle.py"
+        ARGS --enable=predictible-output
+    )
 endif()
 add_export_files_test(pythonscad-export-obj
     EXPERIMENTAL
@@ -1507,13 +1534,6 @@ add_export_files_test(pythonscad-export-pov
     EXPERIMENTAL
     FILES ${PYTHONSCAD_EXPORT_POV_FILES}
 )
-
-#
-# --enable=unicode-identifiers tests
-#
-add_cmdline_test(echo EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${TEST_SCAD_DIR}/misc/unicode-identifiers.scad ARGS --enable=unicode-identifiers)
-add_cmdline_test(echo EXPERIMENTAL OPENSCAD SUFFIX echo FILES ${TEST_CUSTOMIZER_DIR}/unicode-identifiers-parameters.scad ARGS --enable=unicode-identifiers -p ${TEST_CUSTOMIZER_DIR}/unicode-identifiers-parameters.json -P decomposedKeys)
-add_failing_test(parsererrors SUFFIX stl FILES ${TEST_SCAD_DIR}/misc/unicode-identifiers-fail.scad ARGS --retval=1 --enable=unicode-identifiers)
 
 #
 # --enable=discretization-by-error tests
@@ -1530,6 +1550,16 @@ if (ENABLE_MANIFOLD_TESTS)
 endif()
 add_cmdline_test(dump-discretization-by-error EXPERIMENTAL OPENSCAD FILES ${EXPERIMENTAL_DISCRETIZATION_FILES} EXPECTEDDIR dump-discretization-by-error SUFFIX csg ARGS --enable=discretization-by-error)
 
+
+##################################
+# Multiple output files per call #
+##################################
+# The echo export installs an output handler which must not outlive the export,
+# otherwise the exports that follow it crash (issue #5614).
+
+add_test(NAME multiple-outputs_echo-stl_run CONFIGURATIONS Default COMMAND ${OPENSCAD_BINPATH} ${TEST_SCAD_DIR}/3D/features/cube-tests.scad -o multiple-outputs.echo -o multiple-outputs.stl)
+add_test(NAME multiple-outputs_echo-stl_check CONFIGURATIONS Default COMMAND ${CMAKE_COMMAND} -E cat multiple-outputs.stl)
+set_tests_properties(multiple-outputs_echo-stl_check PROPERTIES DEPENDS multiple-outputs_echo-stl_run)
 
 ############################
 # Relative filenames tests #
@@ -1633,6 +1663,14 @@ if(ENABLE_PYTHON)
   )
   set_property(TEST repl-smoke PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 
+  # Serialize interactive CLI smokes: concurrent --repl/--ipython
+  # pythonscad processes have been associated with flaky SIGBUS/SIGSEGV
+  # under Homebrew Python 3.15 on macos-26 (#1138 / #1149).
+  set_tests_properties(ipython-smoke ipython-fallback repl-smoke
+    PROPERTIES RUN_SERIAL TRUE
+    RESOURCE_LOCK "pythonscad_interactive_cli"
+  )
+
   add_test(NAME version-helpers CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_version_helpers.py
@@ -1705,6 +1743,16 @@ if(ENABLE_PYTHON)
   set_property(TEST ipython-precedence PROPERTY SKIP_REGULAR_EXPRESSION "^SKIP-")
 endif()
 
+# Host-side check that desktop/MIME/appdata/plist/MSIX association metadata
+# keeps .scad as default-eligible and .py as Open With only (no custom *.py MIME).
+if(Python3_EXECUTABLE)
+  add_test(NAME file-associations CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_file_associations.py
+  )
+  set_property(TEST file-associations PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+endif()
+
 # Host-side check for the delayed-release SHA compare used by
 # .github/workflows/update-submodule-manifold.yml. Independent of
 # ENABLE_PYTHON: it only needs bash, git, and the helper script.
@@ -1718,14 +1766,60 @@ if(Python3_EXECUTABLE)
   set_property(TEST compare-git-release PROPERTY SKIP_REGULAR_EXPRESSION "^SKIP")
 endif()
 
-# Host-side check that the macOS Homebrew dep script (and the qt5
-# get-dependencies profile) stay Qt6-only on macOS.
+# Exercise Windows packaging script contracts using host-side tool fixtures.
+find_program(RELEASE_SMOKE_POWERSHELL NAMES pwsh powershell)
+if(RELEASE_SMOKE_POWERSHELL)
+  add_test(NAME windows-smoke-run-lookup CONFIGURATIONS Default
+    COMMAND ${RELEASE_SMOKE_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_lookup.ps1
+  )
+  if(Python3_EXECUTABLE)
+    add_test(NAME windows-smoke-input CONFIGURATIONS Default
+      COMMAND ${RELEASE_SMOKE_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_input.ps1 ${Python3_EXECUTABLE}
+    )
+    if(WIN32)
+      find_program(RELEASE_SMOKE_LEGACY_POWERSHELL NAMES powershell)
+      if(RELEASE_SMOKE_LEGACY_POWERSHELL)
+        add_test(NAME windows-smoke-input-legacy CONFIGURATIONS Default
+          COMMAND ${RELEASE_SMOKE_LEGACY_POWERSHELL} -NoProfile -ExecutionPolicy Bypass -File
+            ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_smoke_input.ps1 ${Python3_EXECUTABLE}
+        )
+      endif()
+    endif()
+  endif()
+endif()
+
+if(Python3_EXECUTABLE AND UNIX)
+  add_test(NAME linux-smoke-ownership CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_linux_smoke_ownership.py
+  )
+  set_property(TEST linux-smoke-ownership PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  add_test(NAME release-smoke-dispatch CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_release_smoke_dispatch.py
+  )
+  set_property(TEST release-smoke-dispatch PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  add_test(NAME release-smoke-run-lookup CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_release_smoke_lookup.py
+  )
+  set_property(TEST release-smoke-run-lookup PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  add_test(NAME windows-python-packaging CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_windows_python_packaging.py
+  )
+  set_property(TEST windows-python-packaging PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+endif()
+
+# Host-side checks for the macOS Homebrew dependency and release policies.
 if(Python3_EXECUTABLE)
-  add_test(NAME macosx-build-homebrew-qt6 CONFIGURATIONS Default
+  add_test(NAME macosx-build-policy CONFIGURATIONS Default
     COMMAND ${Python3_EXECUTABLE} -Xutf8=1
       ${CMAKE_CURRENT_SOURCE_DIR}/test_macosx_build_homebrew.py
   )
-  set_property(TEST macosx-build-homebrew-qt6 PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+  set_property(TEST macosx-build-policy PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 endif()
 
 # Host-side check that scripts/get-dependencies.py never drops a profile's
@@ -1737,6 +1831,15 @@ if(Python3_EXECUTABLE)
       ${CMAKE_CURRENT_SOURCE_DIR}/test_get_dependencies_profile_merge.py
   )
   set_property(TEST get-dependencies-profile-merge PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+endif()
+
+# Host-side check for the platform-specific PythonSCAD startup-file location.
+if(Python3_EXECUTABLE)
+  add_test(NAME pythonscadrc-config-path CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_pythonscadrc_config_path.py
+  )
+  set_property(TEST pythonscadrc-config-path PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 endif()
 
 if(NOT ENABLE_LIBFIVE)

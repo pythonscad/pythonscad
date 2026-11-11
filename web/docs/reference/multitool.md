@@ -88,7 +88,7 @@ is created and no error is raised.
 | `parts()`         | Return computed `(name, geometry)` pairs for exportable items only. Useful for lower-level `dict(exporter.parts())` 3MF export. |
 | `export(prefix=..., suffix=..., mkdir=...)` | Write each exportable part to its own file. Path layout args override instance defaults for this call. Raises `ValueError` if any two exportable items would write to the same output path. |
 | `export(single_file="out/model.3mf")` | Write exportable parts into one 3MF file. No-ops when all hidden. Raises `ValueError` for non-`.3mf` paths or duplicate exportable names. |
-| `show()`          | Render each exportable part into the preview viewport (same cumulative-difference semantics as `export`).                           |
+| `show(render=False)` | Render each exportable part into the preview viewport (same cumulative-difference semantics as `export`). With `render=True`, each part is evaluated to a mesh first — see [Preview artifacts](#preview-artifacts). |
 
 **Validation:**
 
@@ -174,6 +174,28 @@ Previewing the same split inside the GUI without writing files:
     exporter.append(("blue", blue))
     exporter.show()
     ```
+
+### Preview artifacts {#preview-artifacts}
+
+Every part except the last is a `difference` of its object minus all later
+objects. When the parts have the same height (for example several colors
+extruded to the same `H`), the cutters share the part's top and bottom
+planes. F5 (OpenCSG) previews such a `difference` with the classic
+coplanar-face artifacts: holes look see-through (lettering cut into a rim
+loses its top) and the caps flicker. Offsetting parts does not help, because
+the coplanar faces are inside each part's own `difference`.
+
+Pass `render=True` to evaluate each part to a mesh before showing it:
+
+=== "Python"
+
+    ```python
+    exporter.show(render=True)
+    ```
+
+The preview then shows exactly the flush solids that `export()` writes, at
+the cost of one geometry evaluation per part. `parts()` and `export()` are
+unaffected.
 
 ### Single-file 3MF export
 

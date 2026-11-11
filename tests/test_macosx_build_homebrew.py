@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""macOS Homebrew / get-dependencies installs must be Qt6-only."""
+"""Contracts for macOS Homebrew dependencies and release compatibility."""
 from __future__ import annotations
 
 import re
@@ -72,6 +72,16 @@ def main() -> int:
             "pythonscad-qt6 --distro macos --list should succeed\n"
             f"stdout:\n{allowed.stdout}\nstderr:\n{allowed.stderr}"
         )
+
+    workflow = (root / ".github" / "workflows" / "build-macos-release.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "runs-on: macos-15" in workflow
+    assert "MACOSX_DEPLOYMENT_TARGET: '15.0'" in workflow
+    assert '-DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET"' in workflow
+
+    sanity_check = (root / "scripts" / "macosx-sanity-check.py").read_text(encoding="utf-8")
+    assert "macos_version_min = '15.0'" in sanity_check
 
     print("PASS")
     return 0

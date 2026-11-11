@@ -27,6 +27,7 @@ struct PyOpenSCADBoundMemberObject {
 
 typedef struct {
   PyObject_HEAD double v[3];
+  int dim;  // 2 or 3; trailing components beyond dim are zero
 } PyOpenSCADVectorObject;
 
 void PyObjectDeleter(PyObject *pObject);

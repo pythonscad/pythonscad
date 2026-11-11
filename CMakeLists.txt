@@ -588,7 +588,10 @@ macro(find_graphics)
       set(GLEW_SOURCES src/glview/glew-utils.cc)
     endif()
 
-    find_package(OpenGL REQUIRED QUIET)
+    find_package(OpenGL QUIET COMPONENTS OpenGL)
+    if (NOT (OpenGL_FOUND OR OpenGL_OpenGL_FOUND))
+      message(FATAL_ERROR "OpenGL not found")
+    endif()
     target_link_libraries(OpenSCADLibInternal PUBLIC ${OPENGL_LIBRARIES})
     message(STATUS "OpenGL: ${OPENGL_LIBRARIES}")
   endif()
@@ -914,18 +917,16 @@ if(ENABLE_PYTHON)
       SET(PYTHON_MINGW_ARCHIVE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/lib/libpython${PYTHON_MINGW_VERSION}.dll.a")
       SET(PYTHON_MINGW_INCLUDE "/${CALLSTACK}64/include/python${PYTHON_MINGW_VERSION}")
 
-      # Copy MSYS2 Python to local directory for patching
-      # Use bash to ensure Unix commands work in MSYS2 environment
+      # Copy MSYS2 Python headers. The import library is generated from the
+      # embeddable DLL once that archive has been downloaded.
       add_custom_command(
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/prepare-msys2-python.sh
                 "${CALLSTACK}"
                 "${PYTHON_MINGW_VERSION}"
                 "${PYTHON_MINGW_DEVPATH}"
-        OUTPUT ${PYTHON_MINGW_ARCHIVE}
+        OUTPUT ${PYTHON_MINGW_DEVPATH}/.headers-ready
       )
-      add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
-      add_dependencies(OpenSCADPy tgt_python_mingw)
 
       # Get the full Python version for embed downloads (e.g., 3.13.2)
       # Check if PYTHON_FULL_VERSION env var is set (from CI), otherwise try to detect
@@ -962,6 +963,21 @@ if(ENABLE_PYTHON)
     )
     add_custom_target(tgt_python_embed DEPENDS ${PYTHON_EMBED_SHLIB})
     add_dependencies(OpenSCADPy tgt_python_embed)
+
+    if(NOT MXECROSS)
+      # Import library for the DLL this build ships (python3XY.dll), not for
+      # MSYS2's libpython3.X.dll.
+      add_custom_command(
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpython_patch.sh
+                "${PYTHON_EMBED_SHLIB}"
+                "${PYTHON_MINGW_ARCHIVE}"
+        DEPENDS ${PYTHON_EMBED_SHLIB} ${PYTHON_MINGW_DEVPATH}/.headers-ready
+        OUTPUT ${PYTHON_MINGW_ARCHIVE}
+      )
+      add_custom_target(tgt_python_mingw DEPENDS ${PYTHON_MINGW_ARCHIVE})
+      add_dependencies(OpenSCADPy tgt_python_mingw)
+    endif()
 
     target_include_directories(OpenSCADPy SYSTEM PRIVATE "${PYTHON_MINGW_DEVPATH}/${CALLSTACK}64/include/python${PYTHON_MINGW_VERSION}")
     target_link_libraries(OpenSCADPy PRIVATE "${PYTHON_MINGW_ARCHIVE}")
@@ -1320,6 +1336,12 @@ BISON_TARGET(comment_parser src/core/customizer/comment_parser.y ${OPENSCAD_LIB_
 ADD_FLEX_BISON_DEPENDENCY(comment_lexer comment_parser)
 
 if(NOT HEADLESS)
+  if(APPLE AND USE_QT6 AND EXISTS "${CMAKE_SOURCE_DIR}/third_party/macos-pyqt6-qt/prefix")
+    file(STRINGS "${CMAKE_SOURCE_DIR}/third_party/macos-pyqt6-qt/prefix" PYQT6_QT_PREFIX LIMIT_COUNT 1)
+    if(EXISTS "${PYQT6_QT_PREFIX}")
+      list(PREPEND CMAKE_PREFIX_PATH "${PYQT6_QT_PREFIX}")
+    endif()
+  endif()
   if (APPLE AND EXISTS /usr/local/opt/qt)
     list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt")
   endif()
@@ -1625,6 +1647,7 @@ set(CORE_SOURCES
   src/core/customizer/ParameterSet.cc
   src/core/function.cc
   src/core/module.cc
+  src/core/DragPatch.cc
   src/core/node.cc
   src/core/parsersettings.cc
   src/core/primitives.cc
@@ -2161,7 +2184,7 @@ file(GLOB_RECURSE TEST_SOURCES
   "src/utils/*_test.cc"
   "src/core/*_test.cc"
   "src/io/*_test.cc"
-  "src/geometry/*_test.cc"
+  "src/libsvg/*_test.cc"
 )
 file(GLOB_RECURSE GUI_TEST_SOURCES
   "src/gui/*_test.cc"
@@ -2321,6 +2344,10 @@ if (USE_QT6)
   endif()
   if(MXECROSS)
     target_link_libraries(OpenSCADLibInternal PUBLIC Qt6::QSvgPlugin)
+    # Issue #7105 / PR #7118
+    # We need to research why libmp3lame has this as a dependency, and why we're pulling in an
+    # MP3 library in the first place.
+    target_link_libraries(OpenSCADLibInternal PUBLIC mpg123 shlwapi)
   endif()
 else()
   if(NOT HEADLESS)
@@ -2528,9 +2555,9 @@ if(NOT APPLE OR APPLE_UNIX)
 	      install(DIRECTORY "${PYTHON_MINGW_DEVPATH}/${PYTHON_MINGW_REPODIR}/lib/"
 	              DESTINATION "lib")
 	    else()
-	      # For native MSYS2 Windows builds, the patched MSYS2 import
-	      # library links PythonSCAD against python.org's embeddable
-	      # runtime DLL (python3XY.dll). Ship the matching embeddable
+	      # For native MSYS2 Windows builds, an import library generated
+	      # from python.org's embeddable DLL (python3XY.dll) is what the
+	      # link uses. Ship that same embeddable
 	      # stdlib zip and extension modules, not MSYS2's
 	      # lib/python3.X tree whose extension suffixes target
 	      # libpython3.X.dll.
@@ -2685,6 +2712,60 @@ if(NOT APPLE OR APPLE_UNIX)
       install(FILES ${CMAKE_BINARY_DIR}/submodules/libfive/libfive/src/libfive.so DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications RENAME org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop)
+    # Merge only application/x-openscad into the shared mimeapps.list — never
+    # overwrite the whole file (preserves IDE defaults for text/x-python, etc.).
+    # Prefer an already-discovered interpreter; otherwise find a host python3
+    # independent of ENABLE_PYTHON / find_package(Python3).
+    if(Python3_EXECUTABLE)
+      set(PYTHONSCAD_HOST_PYTHON3 "${Python3_EXECUTABLE}")
+    else()
+      find_program(PYTHONSCAD_HOST_PYTHON3 NAMES python3 python REQUIRED)
+    endif()
+    install(PROGRAMS ${CMAKE_SOURCE_DIR}/scripts/merge-mimeapps-default.py
+            DESTINATION ${OPENSCAD_INSTALL_RESOURCEDIR})
+    install(CODE "
+      # Resolve dataroot/resource dirs against install-time prefix only when relative
+      # (absolute CMAKE_INSTALL_DATAROOTDIR must not get CMAKE_INSTALL_PREFIX prepended).
+      set(_dataroot \"${CMAKE_INSTALL_DATAROOTDIR}\")
+      if(NOT IS_ABSOLUTE \"\${_dataroot}\")
+        set(_dataroot \"\${CMAKE_INSTALL_PREFIX}/\${_dataroot}\")
+      endif()
+      set(_resourcedir \"${OPENSCAD_INSTALL_RESOURCEDIR}\")
+      if(NOT IS_ABSOLUTE \"\${_resourcedir}\")
+        set(_resourcedir \"\${CMAKE_INSTALL_PREFIX}/\${_resourcedir}\")
+      endif()
+      set(_mimeapps \"\$ENV{DESTDIR}\${_dataroot}/applications/mimeapps.list\")
+      set(_merge_py \"\$ENV{DESTDIR}\${_resourcedir}/merge-mimeapps-default.py\")
+      # Prefer the just-installed copy; fall back to the source tree during DESTDIR installs.
+      if(NOT EXISTS \"\${_merge_py}\")
+        set(_merge_py \"${CMAKE_SOURCE_DIR}/scripts/merge-mimeapps-default.py\")
+      endif()
+      # Direct prefix installs merge immediately. DESTDIR staging (CPack DEB/RPM,
+      # distro package builds) skips writing the shared mimeapps.list so packages
+      # do not ship/own it — those paths merge in %post / postinst instead.
+      # AppImage sets PYTHONSCAD_MERGE_MIMEAPPS=1 to keep the AppDir default.
+      set(_do_merge TRUE)
+      if(NOT \"\$ENV{DESTDIR}\" STREQUAL \"\")
+        if(NOT \"\$ENV{PYTHONSCAD_MERGE_MIMEAPPS}\" STREQUAL \"1\")
+          set(_do_merge FALSE)
+        endif()
+      endif()
+      if(_do_merge)
+        execute_process(
+          COMMAND \"${PYTHONSCAD_HOST_PYTHON3}\" \"\${_merge_py}\" merge
+                  \"\${_mimeapps}\"
+                  \"org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop\"
+                  \"application/x-openscad\"
+          RESULT_VARIABLE _mimeapps_rv
+          ERROR_VARIABLE _mimeapps_err
+        )
+        if(NOT _mimeapps_rv EQUAL 0)
+          message(FATAL_ERROR \"Failed to merge mimeapps.list default: \${_mimeapps_err}\")
+        endif()
+      else()
+        message(STATUS \"Skipping mimeapps.list merge under DESTDIR (set PYTHONSCAD_MERGE_MIMEAPPS=1 to force)\")
+      endif()
+    ")
     install(FILES ${RESOURCE_DIR}/icons/pythonscad.xml DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages RENAME ${EXECUTABLE_NAME}.xml)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad-48.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/48x48/apps RENAME pythonscad.png)
     install(FILES ${RESOURCE_DIR}/icons/pythonscad-64.png DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/64x64/apps RENAME pythonscad.png)
@@ -2797,6 +2878,8 @@ elseif(UNIX AND NOT APPLE)
   set(CPACK_RPM_PACKAGE_GROUP  "PythonSCAD designers")
   set(CPACK_RPM_PACKAGE_VENDOR "PythonSCAD designers")
   set(CPACK_RPM_PACKAGE_DESCRIPTION "PythonSCAD RPM Package")
+  # Runtime python3 for mimeapps merge hooks (script ships in the package).
+  set(CPACK_RPM_PACKAGE_REQUIRES "python3")
 
   set(CPACK_DEBIAN_PACKAGE_NAME "pythonscad")
   set(CPACK_DEBIAN_FILE_NAME "pythonscad-${OPENSCAD_YEAR}${OPENSCAD_MONTH}${OPENSCAD_DAY}.x86_64.deb")
@@ -2808,7 +2891,41 @@ elseif(UNIX AND NOT APPLE)
   set(CPACK_DEBIAN_ARCHIVE_TYPE  "gnutar")
   set(CPACK_DEBIAN_COMPRESSION_TYPE "gzip")
   set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-  set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "python3")
+  set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION ON)
+
+  # CPack does not use debian/pythonscad.postinst or pythonscad.spec; wire the
+  # same merge/remove helpers so DEB/RPM packages still register .scad defaults
+  # without shipping the shared applications/mimeapps.list.
+  # CPack packages under /usr by default, independently of the configure-time
+  # CMAKE_INSTALL_PREFIX (normally /usr/local). Generate maintainer-script
+  # paths for the actual package prefix and honor an explicit override.
+  if(NOT DEFINED CPACK_PACKAGING_INSTALL_PREFIX)
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+  endif()
+  if(IS_ABSOLUTE "${CMAKE_INSTALL_DATAROOTDIR}")
+    set(_cpack_dataroot "${CMAKE_INSTALL_DATAROOTDIR}")
+  else()
+    set(_cpack_dataroot "${CPACK_PACKAGING_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAROOTDIR}")
+  endif()
+  if(IS_ABSOLUTE "${OPENSCAD_INSTALL_RESOURCEDIR}")
+    set(_cpack_resourcedir "${OPENSCAD_INSTALL_RESOURCEDIR}")
+  else()
+    set(_cpack_resourcedir "${CPACK_PACKAGING_INSTALL_PREFIX}/${OPENSCAD_INSTALL_RESOURCEDIR}")
+  endif()
+  set(CPACK_MIMEAPPS_LIST "${_cpack_dataroot}/applications/mimeapps.list")
+  set(CPACK_MIMEAPPS_MERGE_SCRIPT "${_cpack_resourcedir}/merge-mimeapps-default.py")
+  set(CPACK_MIMEAPPS_DESKTOP_ID "org.pythonscad.pythonscad${SUFFIX_WITH_DASH}.desktop")
+  # Basenames must be postinst/prerm for CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA.
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/cpack-debian")
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/cpack/mimeapps-postinst.sh.in"
+                 "${CMAKE_BINARY_DIR}/cpack-debian/postinst" @ONLY)
+  configure_file("${CMAKE_SOURCE_DIR}/cmake/cpack/mimeapps-prerm.sh.in"
+                 "${CMAKE_BINARY_DIR}/cpack-debian/prerm" @ONLY)
+  set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+      "${CMAKE_BINARY_DIR}/cpack-debian/postinst;${CMAKE_BINARY_DIR}/cpack-debian/prerm")
+  set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_BINARY_DIR}/cpack-debian/postinst")
+  set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE "${CMAKE_BINARY_DIR}/cpack-debian/prerm")
 
 endif()
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")

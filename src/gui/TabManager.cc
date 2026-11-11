@@ -42,6 +42,7 @@
 #include <functional>
 #include <sstream>
 #include <vector>
+#include <utility>
 
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS) && !defined(Q_OS_WASM)
 #include <unistd.h>
@@ -583,7 +584,6 @@ TabManager::TabManager(MainWindow *o, const QString& filename)
           &TabManager::showTabHeaderContextMenu);
 
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::stopAnimation);
-  connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::updateFindState);
   connect(tabWidget, &QTabWidget::currentChanged, this, &TabManager::tabSwitched);
 
   connect(parent->editActionZoomTextIn, &QAction::triggered, this, &TabManager::zoomIn);
@@ -628,6 +628,7 @@ void TabManager::tabSwitched(int x)
 
   editor = (EditorInterface *)tabWidget->widget(x);
   parent->activeEditor = editor;
+  parent->refreshFindIndicators();
   parent->parameterDock->setWidget(editor->parameterWidget);
 
   parent->editActionUndo->setEnabled(editor->canUndo());
@@ -651,7 +652,25 @@ void TabManager::tabSwitched(int x)
 void TabManager::closeTabRequested(int x)
 {
   assert(tabWidget != nullptr);
-  if (!maybeSave(x)) return;
+  // The worker and reentrant parsing code may still use the editor/customizer
+  // and preview tree. Request cancellation, but defer destruction until idle.
+  if (GuiLocker::isLocked()) {
+    auto *closingEditor = qobject_cast<EditorInterface *>(tabWidget->widget(x));
+    if (!closingEditor) return;
+    parent->cancelRenderForEditor(closingEditor);
+    if (!pendingTabCloses.contains(closingEditor)) {
+      const bool startTimer = pendingTabCloses.isEmpty();
+      pendingTabCloses.append(closingEditor);
+      if (startTimer) QTimer::singleShot(50, this, &TabManager::finishPendingTabCloses);
+    }
+    return;
+  }
+  {
+    // A save dialog runs a nested event loop. Do not let auto-reload start a
+    // new render between the idle check above and destruction below.
+    const GuiLocker lock;
+    if (!maybeSave(x)) return;
+  }
 
   auto *closingEditor = qobject_cast<EditorInterface *>(tabWidget->widget(x));
   assert(closingEditor != nullptr);
@@ -666,12 +685,34 @@ void TabManager::closeTabRequested(int x)
   delete closingEditor;
 }
 
+void TabManager::finishPendingTabCloses()
+{
+  if (GuiLocker::isLocked()) {
+    QTimer::singleShot(50, this, &TabManager::finishPendingTabCloses);
+    return;
+  }
+  // Resolve indices only now: tabs may have moved or another close may have
+  // removed a queued editor in the meantime.
+  const auto pending = std::exchange(pendingTabCloses, {});
+  for (const auto& editor : pending) {
+    if (!editor) continue;
+    const int index = tabWidget->indexOf(editor);
+    if (index < 0) continue;
+    if (tabWidget->count() == 1) {
+      closeCurrentTab();
+      return;
+    }
+    closeTabRequested(index);
+  }
+}
+
 void TabManager::closeCurrentTab()
 {
   assert(tabWidget != nullptr);
 
   /* Close tab or close the current window if only one tab is open. */
-  if (tabWidget->count() > 1) this->closeTabRequested(tabWidget->currentIndex());
+  if (tabWidget->count() > 1 || GuiLocker::isLocked())
+    this->closeTabRequested(tabWidget->currentIndex());
   else {
     parent->close();
     if (use_gvim) this->closeTabRequested(tabWidget->currentIndex());  // ** MCH **
@@ -1090,13 +1131,6 @@ void TabManager::stopAnimation()
   parent->animateWidget->e_tval->setText("");
 }
 
-void TabManager::updateFindState()
-{
-  if (editor->findState == TabManager::FIND_REPLACE_VISIBLE) parent->showFind(true);
-  else if (editor->findState == TabManager::FIND_VISIBLE) parent->showFind(false);
-  else parent->hideFind();
-}
-
 void TabManager::onTabModified(EditorInterface *edt)
 {
   bumpSessionDirtyGeneration();
@@ -1200,6 +1234,8 @@ void TabManager::openTabFile(const QString& filename)
   auto [fname, fpath] = getEditorTabNameWithModifier(editor);
   setEditorTabName(fname, fpath, editor);
   parent->setWindowTitle(fname);
+  editor->clearTemporaryFile();
+
   emit editorContentReloaded(editor);
 }
 
@@ -1578,7 +1614,6 @@ void TabManager::saveSession(const QString& path)
     obj.insert(QStringLiteral("cursorLine"), cursorLine);
     obj.insert(QStringLiteral("cursorColumn"), cursorColumn);
     obj.insert(QStringLiteral("firstVisibleLine"), edt->firstVisibleLine());
-    obj.insert(QStringLiteral("findState"), edt->findState);
     const QByteArray customizerState = edt->parameterWidget->getSessionState();
     if (!customizerState.isEmpty()) {
       obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
@@ -1606,6 +1641,7 @@ void TabManager::saveSession(const QString& path)
   }
   if (parent) {
     QJsonObject findPanel;
+    findPanel.insert(QStringLiteral("state"), parent->findState);
     findPanel.insert(QStringLiteral("text"), parent->findInputField->text());
     findPanel.insert(QStringLiteral("replaceText"), parent->replaceInputField->text());
     win.insert(QStringLiteral("findPanel"), findPanel);
@@ -1669,7 +1705,6 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       obj.insert(QStringLiteral("cursorLine"), cursorLine);
       obj.insert(QStringLiteral("cursorColumn"), cursorColumn);
       obj.insert(QStringLiteral("firstVisibleLine"), edt->firstVisibleLine());
-      obj.insert(QStringLiteral("findState"), edt->findState);
       const QByteArray customizerState = edt->parameterWidget->getSessionState();
       if (!customizerState.isEmpty()) {
         obj.insert(QStringLiteral("customizerState"), QString::fromUtf8(customizerState));
@@ -1697,6 +1732,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
     }
     if (mainWin) {
       QJsonObject findPanel;
+      findPanel.insert(QStringLiteral("state"), mainWin->findState);
       findPanel.insert(QStringLiteral("text"), mainWin->findInputField->text());
       findPanel.insert(QStringLiteral("replaceText"), mainWin->replaceInputField->text());
       win.insert(QStringLiteral("findPanel"), findPanel);
@@ -1930,7 +1966,6 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     const int cursorLine = obj.value(QStringLiteral("cursorLine")).toInt(-1);
     const int cursorColumn = obj.value(QStringLiteral("cursorColumn")).toInt(-1);
     const int firstVisibleLine = obj.value(QStringLiteral("firstVisibleLine")).toInt(-1);
-    int findState = obj.value(QStringLiteral("findState")).toInt(TabManager::FIND_HIDDEN);
     const QByteArray customizerState = obj.value(QStringLiteral("customizerState")).toString().toUtf8();
     std::optional<int> sessionLanguage;
     if (obj.contains(QStringLiteral("language"))) {
@@ -1995,10 +2030,6 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     if (obj.contains(QStringLiteral("lastExport"))) {
       applyLastExportFromJson(edt, obj.value(QStringLiteral("lastExport")).toObject());
     }
-    if (findState < TabManager::FIND_HIDDEN || findState > TabManager::FIND_REPLACE_VISIBLE) {
-      findState = TabManager::FIND_HIDDEN;
-    }
-    edt->findState = findState;
     if (cursorLine >= 0 && cursorColumn >= 0) {
       edt->setCursorPosition(cursorLine, cursorColumn);
     }
@@ -2050,7 +2081,10 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     parent->replaceInputField->setText(findPanel.value(QStringLiteral("replaceText")).toString());
   }
 
-  updateFindState();
+  // Older sessions kept visibility on each tab; migrate the active tab only.
+  const int legacyState =
+    tabs[currentIndex].toObject().value(QStringLiteral("findState")).toInt(TabManager::FIND_HIDDEN);
+  parent->setFindState(findPanel.value(QStringLiteral("state")).toInt(legacyState));
 
   if (!viewState.isEmpty() && parent && parent->qglview) {
     double x = 0.0;
@@ -2284,6 +2318,7 @@ bool TabManager::saveAs(EditorInterface *edt, const QString& filepath)
     auto [fname, fpath] = getEditorTabNameWithModifier(edt);
     setEditorTabName(fname, fpath, edt);
     parent->setWindowTitle(fname);
+    edt->clearTemporaryFile();
   }
   return saveOk;
 }

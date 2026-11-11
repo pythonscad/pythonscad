@@ -4,6 +4,7 @@
 #include <QScrollBar>
 #include <QString>
 #include <QStringList>
+#include <QTemporaryFile>
 #include <QTextEdit>
 #include <QWidget>
 #include <memory>
@@ -23,6 +24,17 @@ class EditorInterface : public QWidget
   Q_OBJECT
 public:
   EditorInterface(QWidget *parent) : QWidget(parent) {}
+  virtual ~EditorInterface() { clearTemporaryFile(); }
+
+  void clearTemporaryFile()
+  {
+    if (this->tempFile) {
+      parameterWidget->removeBackupFile(this->tempFile->fileName());
+      delete this->tempFile;
+      this->tempFile = nullptr;
+    }
+  }
+
   QSize sizeHint() const override
   {
     QSize size;
@@ -124,7 +136,6 @@ private:
 
 public:
   bool contentsRendered;  // Set if the source code has changes since the last render (F6)
-  int findState;
   QString filepath;
   /// True after loading from an existing file on disk or a successful save to this path.
   bool diskBacked = false;
@@ -147,4 +158,5 @@ public:
   std::optional<LastExport> lastExport;
   /// Session-only metadata changed since the canonical session file was saved.
   bool sessionMetadataModified = false;
+  QTemporaryFile *tempFile{nullptr};
 };

@@ -1,6 +1,7 @@
 #include "UXTest.h"
 
 #include <QString>
+#include <QTest>
 
 #include "platform/PlatformUtils.h"
 
@@ -16,10 +17,13 @@ void UXTest::setWindow(MainWindow *window_)
 
 void UXTest::restoreWindowInitialState()
 {
+  QTRY_VERIFY_WITH_TIMEOUT(!GuiLocker::isLocked(), 30000);
   QString filename = fixturePath("basic-ux/default.scad");
   window->tabManager->open(filename);
 
-  while (window->tabCount > 1) {
+  auto *initialEditor = window->activeEditor;
+  while (window->tabManager->count() > 1) {
+    if (window->activeEditor == initialEditor) window->tabManager->nextTab();
     window->tabManager->closeCurrentTab();
   }
 

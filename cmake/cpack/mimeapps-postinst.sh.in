@@ -1,0 +1,15 @@
+#!/bin/sh
+# CPack DEB postinst / RPM %post: merge .scad default only.
+set -e
+# DEB: only on configure. RPM passes a numeric install count — always merge.
+if [ -n "${1:-}" ] && [ "$1" != "configure" ]; then
+  case "$1" in
+    *[!0-9]*) exit 0 ;;
+  esac
+fi
+python3 "@CPACK_MIMEAPPS_MERGE_SCRIPT@" merge \
+  "@CPACK_MIMEAPPS_LIST@" \
+  "@CPACK_MIMEAPPS_DESKTOP_ID@" \
+  application/x-openscad || true
+update-desktop-database >/dev/null 2>&1 || true
+update-mime-database "$(dirname "@CPACK_MIMEAPPS_LIST@")/../mime" >/dev/null 2>&1 || true

@@ -72,15 +72,11 @@
     "macos": {
       "extends": null,
       "pre_commands": [
-        "brew tap openscad/homebrew-tap",
-        "brew tap-new local/pinned-qt",
-        "curl -sSL https://raw.githubusercontent.com/Homebrew/homebrew-core/21ce42536b29140bf08d18b6847bc5528c46d33b/Formula/q/qt.rb -o {tap_repo}/Formula/qt.rb",
-        "brew install local/pinned-qt/qt",
-        "brew pin local/pinned-qt/qt",
-        "brew pin qtbase"
+        "brew tap openscad/homebrew-tap"
       ],
-      "packages": [
-        "qscintilla2"
+      "packages": [],
+      "post_commands": [
+        "bash scripts/ci/prepare-macos-pyqt6-qt.sh"
       ]
     },
     "mageia": {
@@ -132,7 +128,8 @@
         "qscintilla-qt6:p",
         "qt6-5compat:p",
         "qt6-multimedia:p",
-        "qt6-svg:p"
+        "qt6-svg:p",
+        "tools:p"
       ]
     }
   }

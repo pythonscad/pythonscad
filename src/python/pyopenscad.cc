@@ -24,12 +24,15 @@
  *
  */
 #include <Python.h>
+// PyFrame_GetBack() is declared here up to Python 3.10; Python.h has it from 3.11 on
+#include <frameobject.h>
 #include "genlang/genlang.h"
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <cctype>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <sstream>
 #include <string>
@@ -334,8 +337,52 @@ static PyObject *PyOpenSCADObject_new(PyTypeObject *type, PyObject *args, PyObje
  *  allocates a new PyOpenSCAD to store an existing OpenSCAD Abstract Node
  */
 
+/*!
+  Line of the user's script which is executing right now: the innermost frame
+  whose file is the file of the outermost frame (the script itself). For a node
+  created inside a function of the script this is the line in that function.
+  Returns 0 outside of python execution.
+ */
+static int python_script_line()
+{
+  PyFrameObject *frame = PyEval_GetFrame();  // borrowed
+  if (frame == nullptr) return 0;
+  Py_INCREF(frame);
+  std::vector<std::pair<std::string, int>> stack;
+  while (frame != nullptr) {
+    std::string filename;
+    PyCodeObject *code = PyFrame_GetCode(frame);
+    PyObject *fn = PyObject_GetAttrString(reinterpret_cast<PyObject *>(code), "co_filename");
+    if (fn != nullptr && PyUnicode_Check(fn)) {
+      const char *utf8 = PyUnicode_AsUTF8(fn);
+      if (utf8 != nullptr) filename = utf8;
+    }
+    if (PyErr_Occurred()) PyErr_Clear();
+    Py_XDECREF(fn);
+    Py_DECREF(code);
+    stack.emplace_back(filename, PyFrame_GetLineNumber(frame));
+    PyFrameObject *back = PyFrame_GetBack(frame);
+    Py_DECREF(frame);
+    frame = back;
+  }
+  for (const auto& entry : stack) {
+    if (entry.first == stack.back().first) return entry.second;
+  }
+  return 0;
+}
+
+/// Give node and its fresh helper children (e.g. the translates around
+/// rotate(ref=...)) the current script line, see AbstractNode::py_line.
+static void python_stamp_line(AbstractNode *node, int line)
+{
+  if (node == nullptr || node->py_line != 0) return;
+  node->py_line = line;
+  for (const auto& child : node->children) python_stamp_line(child.get(), line);
+}
+
 PyObject *PyOpenSCADObjectFromNode(PyTypeObject *type, const std::shared_ptr<AbstractNode>& node)
 {
+  if (node != nullptr && node->py_line == 0) python_stamp_line(node.get(), python_script_line());
   PyOpenSCADObject *self;
   self = reinterpret_cast<PyOpenSCADObject *>(type->tp_new(type, nullptr, nullptr));
   if (self != nullptr) {
@@ -1363,7 +1410,26 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
       // If neither exists, leave config.executable unset — CPython will probe
       // using its own heuristics, guided by pythonpath_env set above.
 #else
-      PyConfig_SetBytesString(&config, &config.executable, (binDir + "/python").c_str());
+      // A local build directory has no python binary next to the executable.
+      // Pointing config.executable at that missing path stops CPython from
+      // discovering the interpreter it was linked against, including distro
+      // site-packages such as PyQt6. A venv still wins: its bin/python exists.
+      const auto pythonPath = fs::path(binDir) / "python";
+      std::error_code ec;
+      if (fs::exists(pythonPath, ec)) {
+        const auto pythonExe = pythonPath.generic_string();
+        status = PyConfig_SetBytesString(&config, &config.executable, pythonExe.c_str());
+        if (PyStatus_Exception(status)) {
+          alreadyTried = true;
+          PyConfig_Clear(&config);
+          LOG(message_group::Error, "Failed to configure Python executable '%1$s': %2$s", pythonExe,
+              status.err_msg != nullptr ? status.err_msg : "unknown error");
+          return;
+        }
+      } else if (ec) {
+        LOG(message_group::Error, "Failed to inspect Python executable '%1$s': %2$s",
+            pythonPath.generic_string(), ec.message());
+      }
 #endif
     }
 #endif
@@ -2351,8 +2417,8 @@ static PyModuleDef OpenSCADModule = {PyModuleDef_HEAD_INIT,
 
 #if PY_VERSION_HEX < 0x030A0000
 // Polyfill for `PyModule_AddObjectRef`, which CPython only added in 3.10.
-// Debian bullseye and RHEL/EL 9 ship Python 3.9, so we have to emulate it
-// there. This is a near-verbatim port of CPython's upstream implementation
+// RHEL/EL 9 ships Python 3.9, so we have to emulate it there. This is a
+// near-verbatim port of CPython's upstream implementation
 // in `Python/modsupport.c` (the body of the function below matches
 // the 3.10+ source line for line, only reformatted to project style),
 // so the validation surface (TypeError on a non-module first arg,
@@ -2561,12 +2627,96 @@ static void windows_reattach_console_for_repl(void)
 // pollute `dir()` with a couple hundred names regardless of what the
 // user actually intended to use.
 //
+// Drive the session through Python's already-initialized `sys.stdin`
+// rather than `PyRun_AnyFileFlags(stdin)`. The latter builds a second
+// buffered reader on the same C FILE*, which SIGBUS-es inside
+// `_buffered_init` on Homebrew Python 3.15 (mimalloc-backed) when the
+// session later imports ctypes/sysconfig (#1138). `--ipython` already
+// avoids that path and works; match that IO model here.
+//
 // This helper assumes Py_IsInitialized() is already true; callers must
 // gate it behind that check.
 static void run_basic_python_repl(void)
 {
-  pymain_run_interactive_hook();
-  PyRun_AnyFileFlags(stdin, "<stdin>", nullptr);
+  // Only enable readline / __interactivehook__ on a real TTY. CPython's
+  // own non-interactive SimpleFile path skips the hook; loading it for
+  // piped CI scripts has been implicated in flaky SIGBUS under Homebrew
+  // Python 3.15 + ctypes (#1138).
+  //
+  // TTY → interactive >>> loop; pipe/file → exec the whole script once
+  // (same contract as non-tty PyRun_SimpleFile).
+  // Run the bootstrap inside a function so its `sys`/`code` locals cannot
+  // be clobbered by a piped user script that assigns those names in
+  // `__main__` (PyRun_SimpleString shares that dict). Flush in `finally`
+  // after a piped exec: non-tty stdout is fully buffered and we return
+  // without Py_Finalize, so prints before an exception would otherwise
+  // be lost (CI smokes capture stdout for the OK marker).
+  int is_tty = 0;
+  {
+    PyObject *sysmod = PyImport_ImportModule("sys");
+    if (sysmod != nullptr) {
+      PyObject *stdin_obj = PyObject_GetAttrString(sysmod, "stdin");
+      if (stdin_obj != nullptr) {
+        PyObject *r = PyObject_CallMethod(stdin_obj, "isatty", nullptr);
+        if (r != nullptr) {
+          is_tty = PyObject_IsTrue(r);
+          Py_DECREF(r);
+        } else {
+          PyErr_Clear();
+        }
+        Py_DECREF(stdin_obj);
+      } else {
+        PyErr_Clear();
+      }
+      Py_DECREF(sysmod);
+    } else {
+      PyErr_Clear();
+    }
+  }
+  if (is_tty) {
+    pymain_run_interactive_hook();
+  }
+
+  static const char *boot =
+    "def _pythonscad_run_basic_repl():\n"
+    "    import code, sys\n"
+    "    _ns = sys.modules['__main__'].__dict__\n"
+    "    if sys.stdin.isatty():\n"
+    "        code.interact(local=_ns)\n"
+    "    else:\n"
+    "        _src = sys.stdin.read()\n"
+    "        try:\n"
+    "            if _src:\n"
+    "                exec(compile(_src, '<stdin>', 'exec'), _ns)\n"
+    "        finally:\n"
+    "            try:\n"
+    "                sys.stdout.flush()\n"
+    "                sys.stderr.flush()\n"
+    "            except Exception:\n"
+    "                pass\n"
+    "_pythonscad_run_basic_repl()\n"
+    "del _pythonscad_run_basic_repl\n";
+  if (PyRun_SimpleString(boot) != 0) {
+    // Exception already printed by PyRun_SimpleString; clear so callers
+    // that fall through (e.g. ipython fallback) do not inherit it.
+    PyErr_Clear();
+  }
+}
+
+// On Apple, prefer the system malloc for CPython's memory domains when
+// the user has not already set PYTHONMALLOC. Homebrew Python 3.15 links
+// libmimalloc; under --repl/--ipython, `import ctypes` can SIGBUS/SIGSEGV
+// inside `_buffered_init` with that allocator (#1138, #1149). Must run
+// before Py_Initialize / Py_PreInitialize. No-op on free-threaded builds
+// where mimalloc is required.
+static void prefer_system_malloc_for_embedded_python(void)
+{
+#if defined(__APPLE__) && !defined(Py_GIL_DISABLED)
+  if (std::getenv("PYTHONMALLOC") == nullptr) {
+    // setenv(..., 0) does not overwrite an existing value.
+    (void)setenv("PYTHONMALLOC", "malloc", 0);
+  }
+#endif
 }
 
 // Open the basic embedded CPython REPL on stdin. Reachable explicitly
@@ -2583,6 +2733,7 @@ int repl(void)
   // CRT-orphaned ones GUI-subsystem children get on Windows.
   windows_reattach_console_for_repl();
 #endif
+  prefer_system_malloc_for_embedded_python();
   initPython(PlatformUtils::applicationPath(), "", nullptr);
   if (!Py_IsInitialized()) {
     fprintf(stderr,
@@ -2662,6 +2813,7 @@ int ipython(const std::vector<std::string>& args)
   // fallback below inherits a working console when IPython is missing.
   windows_reattach_console_for_repl();
 #endif
+  prefer_system_malloc_for_embedded_python();
   initPython(PlatformUtils::applicationPath(), "", nullptr);
   if (!Py_IsInitialized()) {
     fprintf(stderr,

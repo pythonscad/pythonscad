@@ -315,9 +315,14 @@ PyObject *python_lv_binop_int(PyObject *arg1, PyObject *arg2, libfive::Opcode::O
   return PyDataObjectFromTree(&PyDataType, res);
 }
 
-libfive::Tree lv_x = libfive::Tree::X();
-libfive::Tree lv_y = libfive::Tree::Y();
-libfive::Tree lv_z = libfive::Tree::Z();
+// Intentionally leaked (never destroyed). ~Tree() depends on libfive.dylib
+// internal statics; destruction order vs. this executable's globals is
+// unspecified and can SIGBUS at exit() under allocator stress. Defensive
+// hardening only — the #1133 CI failure was the smoke scripts' ctypes
+// import under --repl on Homebrew Python 3.15, not these globals.
+static libfive::Tree& lv_x = *new libfive::Tree(libfive::Tree::X());
+static libfive::Tree& lv_y = *new libfive::Tree(libfive::Tree::Y());
+static libfive::Tree& lv_z = *new libfive::Tree(libfive::Tree::Z());
 PyObject *python_lv_x(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   return python_lv_void_int(self, args, kwargs, &lv_x);
