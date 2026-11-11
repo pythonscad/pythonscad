@@ -220,16 +220,16 @@ std::ostream& operator<<(std::ostream& stream, const QuotedString& s)
 Value Value::clone() const
 {
   switch (this->type()) {
-  case Type::UNDEFINED: return {};
-  case Type::BOOL:      return std::get<bool>(this->value);
-  case Type::NUMBER:    return std::get<double>(this->value);
-  case Type::STRING:    return std::get<str_utf8_wrapper>(this->value).clone();
-  case Type::RANGE:     return std::get<RangePtr>(this->value).clone();
+  case Type::UNDEFINED:   return {};
+  case Type::BOOL:        return std::get<bool>(this->value);
+  case Type::NUMBER:      return std::get<double>(this->value);
+  case Type::STRING:      return std::get<str_utf8_wrapper>(this->value).clone();
+  case Type::RANGE:       return std::get<RangePtr>(this->value).clone();
   case Type::PYTHONCLASS: return std::get<PythonClassPtr>(this->value).clone();
-  case Type::VECTOR:    return std::get<VectorType>(this->value).clone();
-  case Type::OBJECT:    return std::get<ObjectType>(this->value).clone();
-  case Type::FUNCTION:  return std::get<FunctionPtr>(this->value).clone();
-  default:              assert(false && "unknown Value variant type"); return {};
+  case Type::VECTOR:      return std::get<VectorType>(this->value).clone();
+  case Type::OBJECT:      return std::get<ObjectType>(this->value).clone();
+  case Type::FUNCTION:    return std::get<FunctionPtr>(this->value).clone();
+  default:                assert(false && "unknown Value variant type"); return {};
   }
 }
 
@@ -241,16 +241,16 @@ Value Value::undef(const std::string& why)
 std::string Value::typeName(Type type)
 {
   switch (type) {
-  case Type::UNDEFINED: return "undefined";
-  case Type::BOOL:      return "bool";
-  case Type::NUMBER:    return "number";
-  case Type::STRING:    return "string";
-  case Type::VECTOR:    return "vector";
-  case Type::RANGE:     return "range";
+  case Type::UNDEFINED:   return "undefined";
+  case Type::BOOL:        return "bool";
+  case Type::NUMBER:      return "number";
+  case Type::STRING:      return "string";
+  case Type::VECTOR:      return "vector";
+  case Type::RANGE:       return "range";
   case Type::PYTHONCLASS: return "pythonclass";
-  case Type::OBJECT:    return "object";
-  case Type::FUNCTION:  return "function";
-  default:              assert(false && "unknown Value variant type"); return "<unknown>";
+  case Type::OBJECT:      return "object";
+  case Type::FUNCTION:    return "function";
+  default:                assert(false && "unknown Value variant type"); return "<unknown>";
   }
 }
 
@@ -808,14 +808,20 @@ Value ObjectType::operator==(const ObjectType& other) const
     return false;
   }
 
+  // Note that we only need to test whether all of the values in A are present and equal in B.
+  // We have already checked that they have the same number of values, so if B has a value not
+  // in A then A must have a value not in B.
   for (size_t i = 0; i < this->ptr->values.size(); i++) {
-    auto key_the_same = this->ptr->keys[i] != other.ptr->keys[i];
-    if (key_the_same) {
+    std::string k = this->ptr->keys[i];
+    if (!other.contains(k)) {
       return false;
     }
-
-    auto value_the_same = this->ptr->values[i] != other.ptr->values[i];
-    if (value_the_same.toBool()) {
+    Value result = ((*this)[k] == other[k]);
+    if (result.isUndefined()) {
+      result.toUndef().append(STR("in object comparison at key ", k));
+      return result;
+    }
+    if (!result.toBool()) {
       return false;
     }
   }

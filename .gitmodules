@@ -5,11 +5,11 @@
 [submodule "mimalloc"]
 	path = submodules/mimalloc
 	url = https://github.com/microsoft/mimalloc.git
-	branch = v3.3.2
+	branch = v3.6.1
 [submodule "submodules/manifold"]
 	path = submodules/manifold
 	url = https://github.com/elalish/manifold.git
-	branch = v3.5.3
+	branch = v3.5.4
 	ignore = dirty
 [submodule "submodules/libfive"]
 	path = submodules/libfive
