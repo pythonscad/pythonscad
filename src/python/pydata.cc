@@ -550,7 +550,7 @@ PyObject *PyDataObject_call_module(PyObject *self, PyObject *args, PyObject *kwa
         poly_asslist.push_back(ass_faces);
 
         auto poly_modinst =
-          std::make_shared<ModuleInstantiation>("polyhedron", poly_asslist, Location::NONE);
+          std::make_shared<ModuleInstantiation>("polyhedron", poly_asslist, currentPythonLocation());
         modinsts.push_back(poly_modinst);
       }
     } else {
@@ -583,7 +583,7 @@ PyObject *PyDataObject_call_module(PyObject *self, PyObject *args, PyObject *kwa
   }
 
   std::shared_ptr<ModuleInstantiation> modinst =
-    std::make_shared<ModuleInstantiation>(modulename, pargs, Location::NONE);
+    std::make_shared<ModuleInstantiation>(modulename, pargs, currentPythonLocation());
   modinst->scope->moduleInstantiations = modinsts;
 
   std::ostringstream stream;
