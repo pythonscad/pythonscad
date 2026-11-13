@@ -1600,7 +1600,7 @@ def version_num() -> int:
     ...
 
 def fragments() -> int:
-    """Outputs number of fragments needed for a cirlce with fn, fa, fs.""
+    """Outputs number of fragments needed for a cirlce with fn, fa, fs."""
     ...
 
 def version_string() -> str:
