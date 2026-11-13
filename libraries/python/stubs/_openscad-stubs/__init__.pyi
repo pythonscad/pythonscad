@@ -1599,6 +1599,10 @@ def version_num() -> int:
     """Outputs PythonSCAD semantic version as major * 1000000 + minor * 1000 + patch."""
     ...
 
+def fragments() -> int:
+    """Outputs number of fragments needed for a cirlce with fn, fa, fs.""
+    ...
+
 def version_string() -> str:
     """Outputs the full PythonSCAD version string."""
     ...
