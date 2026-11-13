@@ -118,7 +118,9 @@ const std::string PlatformUtils::sysinfo(bool extended)
   return result.str();
 }
 
-void PlatformUtils::ensureStdIO(void) {}
+void PlatformUtils::ensureStdIO(void)
+{
+}
 
 FILE *PlatformUtils::fopen(const fs::path& path, const char *mode)
 {
