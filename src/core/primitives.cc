@@ -72,40 +72,6 @@ static void generate_circle(InsertIterator iter, double r, double z, double angl
   }
 }
 
-/**
- * Return a radius value by looking up both a diameter and radius variable.
- * The diameter has higher priority, so if found an additionally set radius
- * value is ignored.
- *
- * @param parameters parameters with variable values.
- * @param inst containing instantiation.
- * @param radius_var name of the variable to lookup for the radius value.
- * @param diameter_var name of the variable to lookup for the diameter value.
- * @return radius value of type Value::Type::NUMBER or Value::Type::UNDEFINED if both
- *         variables are invalid or not set.
- */
-static Value lookup_radius(const Parameters& parameters,
-                           const std::shared_ptr<const ModuleInstantiation>& inst,
-                           const std::string& diameter_var, const std::string& radius_var)
-{
-  const auto& d = parameters[diameter_var];
-  const auto& r = parameters[radius_var];
-  const auto r_defined = (r.type() == Value::Type::NUMBER);
-
-  if (d.type() == Value::Type::NUMBER) {
-    if (r_defined) {
-      LOG(message_group::Warning, inst->location(), parameters.documentRoot(),
-          "Ignoring radius variable %1$s as diameter %2$s is defined too.", quoteVar(radius_var),
-          quoteVar(diameter_var));
-    }
-    return d.toDouble() / 2.0;
-  } else if (r_defined) {
-    return r.clone();
-  } else {
-    return Value::undefined.clone();
-  }
-}
-
 std::unique_ptr<const Geometry> CubeNode::createGeometry() const
 {
   if (this->dim[0] <= 0 || !std::isfinite(this->dim[0]) || this->dim[1] <= 0 ||
@@ -778,6 +744,7 @@ static std::shared_ptr<AbstractNode> builtin_cylinder(
   Parameters parameters =
     Parameters::parse(std::move(arguments), inst->location(), {"h", "r1", "r2", "center", "angle"},
                       {"r", "d", "d1", "d2"});
+  parameters.set_caller("cylinder");
 
   auto node = std::make_shared<CylinderNode>(inst, CurveDiscretizer(parameters, inst->location()));
   if (parameters["h"].type() == Value::Type::NUMBER) {
@@ -1144,6 +1111,7 @@ static std::shared_ptr<AbstractNode> builtin_circle(
 {
   Parameters parameters =
     Parameters::parse(std::move(arguments), inst->location(), {"r"}, {"d", "angle"});
+  parameters.set_caller("circle");
   auto node = std::make_shared<CircleNode>(inst, CurveDiscretizer(parameters, inst->location()));
 
   std::string dr_var;
