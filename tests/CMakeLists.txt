@@ -405,6 +405,9 @@ list(APPEND ECHO_FILES ${FUNCTION_FILES} ${MISC_FILES} ${REDEFINITION_FILES}
   ${TEST_SCAD_DIR}/3D/features/rotate-parameters.scad
   ${TEST_SCAD_DIR}/3D/features/linear_extrude-parameter-tests.scad
   ${TEST_SCAD_DIR}/3D/features/sphere-octa-tests.scad
+  ${TEST_SCAD_DIR}/json/import-json.scad
+  ${TEST_SCAD_DIR}/json/import-json-array.scad
+  ${TEST_SCAD_DIR}/json/import-json-relative-path.scad
   ${TEST_SCAD_DIR}/misc/expression-evaluation-tests.scad
   ${TEST_SCAD_DIR}/misc/echo-tests.scad
   ${TEST_SCAD_DIR}/misc/assert-fail1-test.scad
