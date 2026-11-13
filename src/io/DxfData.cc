@@ -586,6 +586,5 @@ std::unique_ptr<Polygon2d> DxfData::toPolygon2d() const
     }
     poly->addOutline(outline);
   }
-  poly->setColor(*OpenSCAD::parse_color("#f9d72c"));
   return poly;
 }

@@ -22,7 +22,6 @@
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/ManifoldGeometry.h"
 #endif
-#include "src/core/ColorUtil.h"
 
 namespace PolySetUtils {
 
@@ -40,7 +39,6 @@ std::unique_ptr<Polygon2d> project(const PolySet& ps)
       pt = ps.vertices[v];
       outline.vertices.emplace_back(pt[0], pt[1]);
     }
-    outline.color = *OpenSCAD::parse_color("#f9d72c");
     poly->addOutline(outline);
   }
   return poly;

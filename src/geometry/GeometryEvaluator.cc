@@ -28,7 +28,6 @@
 #include "core/DebugNode.h"
 #include "core/RepairNode.h"
 #include "core/WrapNode.h"
-#include "glview/ColorMap.h"
 #include "geometry/Barcode1d.h"
 #include "core/State.h"
 #include "core/TextNode.h"
@@ -1804,7 +1803,8 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
           pt[2] = concat_round(pt[2]);
           builder.addVertex(pt);
         }
-        if (ps->color_indices.size() > i) builder.endPolygon(ps->colors[ps->color_indices[i]]);
+        if (ps->color_indices.size() > i && ps->color_indices[i] >= 0)
+          builder.endPolygon(ps->colors[ps->color_indices[i]]);
         else builder.endPolygon();
       }
     }
@@ -3602,8 +3602,7 @@ static std::unique_ptr<PolySet> debugObject(const DebugNode& node, const PolySet
   *psx = *ps;
 
   if (psx->color_indices.size() < psx->indices.size()) {
-    auto cs = ColorMap::instance().defaultColorScheme();
-    Color4f def_color = ColorMap::getColor(cs, RenderColor::OPENCSG_FACE_FRONT_COLOR);
+    Color4f def_color;
     int defind = psx->colors.size();
     psx->colors.push_back(def_color);
     while (psx->color_indices.size() < psx->indices.size()) {
@@ -3830,7 +3829,7 @@ std::shared_ptr<Polygon2d> createDetailProjection(const std::shared_ptr<const Ge
   std::vector<Vector4d> normals, new_normals;
   std::vector<int> face_parents;
 
-  auto defcolor = *OpenSCAD::parse_color("#f9d72c");
+  Color4f defcolor;
   normals = calcTriangleNormals(ps->vertices, ps->indices);
   std::vector<IndexedColorFace> colorIndices;
   for (int i = 0; i < ps->indices.size(); i++) {

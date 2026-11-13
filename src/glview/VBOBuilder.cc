@@ -428,7 +428,8 @@ void VBOBuilder::create_triangle(const Color4f& color, const Vector3d& p0, const
 // This will usually create a new VertexState and append it to our
 // vertex states
 void VBOBuilder::create_surface(const PolySet& ps, const Transform3d& m, const Color4f& default_color,
-                                bool enable_barycentric, bool force_default_color)
+                                bool enable_barycentric, bool force_default_color,
+                                const Color4f& cutout_color)
 {
   const std::shared_ptr<VertexData> vertex_data = data();
 
@@ -452,10 +453,9 @@ void VBOBuilder::create_surface(const PolySet& ps, const Transform3d& m, const C
   for (size_t i = 0, n = ps.indices.size(); i < n; i++) {
     const auto& poly = ps.indices[i];
     const size_t color_index = has_colors && i < ps.color_indices.size() ? ps.color_indices[i] : -1;
-    const auto& color = !force_default_color && color_index >= 0 && color_index < ps.colors.size() &&
-                            ps.colors[color_index].isValid()
-                          ? ps.colors[color_index]
-                          : default_color;
+    const auto color = !force_default_color && color_index < ps.colors.size()
+                         ? ps.colors[color_index].resolved(default_color, cutout_color)
+                         : default_color;
     if (poly.size() == 3) {
       const Vector3d p0 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(0)], m);
       const Vector3d p1 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(1)], m);
@@ -593,9 +593,9 @@ void VBOBuilder::create_polygons(const PolySet& ps, const Transform3d& m, const 
 
   for (int i = 0; i < ps.indices.size(); i++) {
     const auto& poly = ps.indices[i];
-    Color4f tcolor;
-    if (i < ps.color_indices.size() && ps.colors.size() > 0) tcolor = ps.colors[ps.color_indices[i]];
-    else tcolor = color;
+    const size_t color_index = i < ps.color_indices.size() ? ps.color_indices[i] : -1;
+    const auto tcolor =
+      color_index < ps.colors.size() ? ps.colors[color_index].resolved(color, color) : color;
     if (poly.size() == 3) {
       const Vector3d p0 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(0)], m);
       const Vector3d p1 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(1)], m);

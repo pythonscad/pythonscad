@@ -59,8 +59,6 @@ void DrawingCallback::finish_glyph()
     this->polygon = nullptr;
   }
   if (this->polygon) {
-    Color4f col = *OpenSCAD::parse_color("#f9d72c");
-    polygon->setColor(col);
     this->polygons.push_back(this->polygon);
     this->polygon = nullptr;
   }

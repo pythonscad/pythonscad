@@ -28,7 +28,6 @@
 #ifdef ENABLE_CGAL
 #include "geometry/cgal/cgalutils.h"
 #endif
-#include "src/core/ColorUtil.h"
 
 using Error = manifold::Manifold::Error;
 
@@ -57,7 +56,7 @@ std::shared_ptr<ManifoldGeometry> createManifoldFromTriangularPolySet(const Poly
   for (size_t i = 0, n = ps.indices.size(); i < n; i++) {
     auto color_index = i < ps.color_indices.size() ? ps.color_indices[i] : -1;
     std::optional<Color4f> color;
-    if (color_index >= 0) {
+    if (color_index >= 0 && ps.colors[color_index] != Color4f()) {
       color = ps.colors[color_index];
     }
     colorToFaceIndices[color].push_back(i);
@@ -215,7 +214,6 @@ Polygon2d polygonsToPolygon2d(const manifold::Polygons& polygons)
     for (const auto& v : polygon) {
       outline.vertices.emplace_back(v[0], v[1]);
     }
-    outline.color = *OpenSCAD::parse_color("#f9d72c");
     poly2d.addOutline(std::move(outline));
   }
   return poly2d;

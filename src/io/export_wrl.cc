@@ -34,7 +34,8 @@
 #include "io/export.h"
 #include "utils/printutils.h"
 
-void export_wrl(const std::shared_ptr<const Geometry>& geom, std::ostream& output)
+void export_wrl(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
+                const ExportInfo& exportInfo)
 {
   // FIXME: In lazy union mode, should we export multiple IndexedFaceSets?
   auto ps = PolySetUtils::getGeometryAsPolySet(geom);
@@ -85,7 +86,7 @@ void export_wrl(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
     output << "colorPerVertex FALSE\n\n";
     output << "color Color { color [\n";
     for (size_t i = 0; i < ps->colors.size(); ++i) {
-      auto color = ps->colors[i];
+      auto color = ps->colors[i].resolved(exportInfo.defaultColor, exportInfo.defaultCutoutColor());
       float r, g, b, a;
       if (!color.getRgba(r, g, b, a)) {
         LOG(message_group::Error, "Invalid color in WRL export");

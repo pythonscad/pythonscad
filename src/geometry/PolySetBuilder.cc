@@ -163,7 +163,7 @@ void PolySetBuilder::endPolygon(const Color4f& color)
   if (current_polygon_.size() >= 3) {
     indices_.push_back(current_polygon_);
 
-    if (color.isValid()) {
+    if (color != Color4f()) {
       if (color_indices_.empty() && indices_.size() > 1) {
         color_indices_.resize(indices_.size() - 1, -1);
       }
@@ -174,6 +174,8 @@ void PolySetBuilder::endPolygon(const Color4f& color)
       } else {
         color_indices_.push_back(it - colors_.begin());
       }
+    } else if (!color_indices_.empty() && color_indices_.size() < indices_.size()) {
+      color_indices_.push_back(-1);
     }
   }
   current_polygon_.clear();
