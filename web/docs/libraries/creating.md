@@ -31,7 +31,7 @@ name = "pythonscad-mywidget"   # pip / PyPI name
 version = "0.1.0"
 description = "Reusable PythonSCAD widget"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "BSD-3-Clause"
 dependencies = [
   "pythonscad>=1.1.0",

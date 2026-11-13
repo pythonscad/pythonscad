@@ -6,7 +6,7 @@
     "../../libraries/python"
   ],
   "stubPath": "../../libraries/python/stubs",
-  "pythonVersion": "3.10",
+  "pythonVersion": "3.11",
   "typeCheckingMode": "strict",
   "reportMissingTypeStubs": "error",
   "reportUnknownVariableType": "none"
