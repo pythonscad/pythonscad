@@ -240,6 +240,43 @@ PyObject *python_osversion_string(PyObject *self, PyObject *args, PyObject *kwar
   return PyUnicode_FromString(version.c_str());
 }
 
+PyObject *python_fragments(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  char *kwlist[] = {"r", "d", "angle", NULL};
+  double r = NAN;
+  double d = NAN;
+  double angle = NAN;
+  double vr = 1;
+
+  auto discretizer = CreateCurveDiscretizer(kwargs);
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ddd", kwlist, &r, &d, &angle)) {
+    PyErr_SetString(PyExc_TypeError, "Error during parsing fragments(r|d)");
+    return NULL;
+  }
+
+  if (!isnan(r)) {
+    if (r <= 0) {
+      PyErr_SetString(PyExc_TypeError, "Parameter r must be positive");
+      return NULL;
+    }
+    vr = r;
+    if (!isnan(d)) {
+      PyErr_SetString(PyExc_TypeError, "Cant specify r and d at the same time for circle");
+      return NULL;
+    }
+  }
+  if (!isnan(d)) {
+    if (d <= 0) {
+      PyErr_SetString(PyExc_TypeError, "Parameter d must be positive");
+      return NULL;
+    }
+    vr = d / 2.0;
+  }
+
+  long fragments = discretizer.getCircularSegmentCount(vr).value_or(3);
+  return PyLong_FromLongLong(fragments);
+}
+
 PyObject *python_oo_hasattr(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   char *keyword = NULL;
@@ -913,6 +950,9 @@ PyMethodDef PyOpenSCADFunctions[] = {
   {"version_string", (PyCFunction)python_osversion_string, METH_VARARGS | METH_KEYWORDS,
    "PythonSCAD version as a string.\n"
    "version_string()"},
+  {"fragments", (PyCFunction)python_fragments, METH_VARARGS | METH_KEYWORDS,
+   "Calculates, home many fragments a circle would have.\n"
+   "fragments(d, r, fn, fa, fs)"},
   {"_register_parameter", (PyCFunction)python_register_parameter, METH_VARARGS | METH_KEYWORDS,
    "Internal pure Customizer parameter registration helper."},
   {"add_parameter", (PyCFunction)python_add_parameter, METH_VARARGS | METH_KEYWORDS,
