@@ -24,7 +24,6 @@
  *
  */
 #include <cassert>
-#include <clocale>
 #include <cmath>
 #include <memory>
 #include <ostream>
@@ -125,7 +124,6 @@ static void append_svg(const std::shared_ptr<const Geometry>& geom, std::ostream
 void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                 const ExportInfo& exportInfo)
 {
-  setlocale(LC_NUMERIC, "C");  // Ensure radix is . (not ,) in output
   BoundingBox bbox = geom->getBoundingBox();
   const ExportSvgOptions *options;
   const ExportSvgOptions defaultSvgOptions;
@@ -153,5 +151,4 @@ void export_svg(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
          << "<title>PythonSCAD Model</title>\n";
   append_svg(geom, output, exportInfo);
   output << "</svg>\n";
-  setlocale(LC_NUMERIC, "");  // Set default locale
 }

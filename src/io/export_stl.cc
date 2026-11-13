@@ -29,7 +29,6 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <clocale>
 #include <cstddef>
 #include <cstdint>
 #include <ios>
