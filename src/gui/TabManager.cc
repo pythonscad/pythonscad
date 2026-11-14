@@ -112,6 +112,39 @@ QString normalizedSessionFilepathForJson(const QString& filepath)
   return filepath;
 }
 
+/**
+ * Selected customizer preset name from a session customizerState blob.
+ * Returns empty for design default / unreadable state.
+ */
+QString selectedPresetNameFromCustomizerState(const QByteArray& customizerState)
+{
+  if (customizerState.isEmpty()) {
+    return {};
+  }
+  const QJsonDocument doc = QJsonDocument::fromJson(customizerState);
+  if (!doc.isObject()) {
+    return {};
+  }
+  const QJsonObject root = doc.object();
+  const int currentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
+  if (currentIndex <= 0) {
+    return {};
+  }
+  const QByteArray setsUtf8 = root.value(QStringLiteral("setsJson")).toString().toUtf8();
+  if (setsUtf8.isEmpty()) {
+    return {};
+  }
+  ParameterSets sets;
+  if (!sets.readFromString(
+        std::string(reinterpret_cast<const char *>(setsUtf8.constData()), setsUtf8.size()))) {
+    return {};
+  }
+  if (static_cast<size_t>(currentIndex) > sets.size()) {
+    return {};
+  }
+  return QString::fromStdString(sets[static_cast<size_t>(currentIndex) - 1].name());
+}
+
 QString exportFormatIdentifier(FileFormat format)
 {
 #ifdef ENABLE_CGAL
@@ -1621,6 +1654,9 @@ void TabManager::saveSession(const QString& path)
     if (!sessionPath.isEmpty()) {
       obj.insert(QStringLiteral("diskIdentity"),
                  QString::fromStdString(MainWindow::autoReloadIdentityForPath(sessionPath)));
+      // Persist the watched fingerprint as-is (including empty = companion was absent).
+      obj.insert(QStringLiteral("jsonDiskIdentity"),
+                 QString::fromStdString(edt->parameterWidget->getJsonAutoReloadId()));
     }
     insertLastExportIntoTabObject(obj, edt);
     tabs.append(obj);
@@ -1712,6 +1748,8 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
       if (!sessionPath.isEmpty()) {
         obj.insert(QStringLiteral("diskIdentity"),
                    QString::fromStdString(MainWindow::autoReloadIdentityForPath(sessionPath)));
+        obj.insert(QStringLiteral("jsonDiskIdentity"),
+                   QString::fromStdString(edt->parameterWidget->getJsonAutoReloadId()));
       }
       insertLastExportIntoTabObject(obj, edt);
       tabs.append(obj);
@@ -1801,6 +1839,10 @@ bool TabManager::migrateSession(QJsonObject& root, int fromVersion)
     }
     case 5: {
       // v5 -> v6: optional per-window windowGeometry (saveGeometry() base64 payload).
+      break;
+    }
+    case 6: {
+      // v6 -> v7: optional per-tab jsonDiskIdentity (companion customizer .json mtime+size).
       break;
     }
     default:
@@ -2027,6 +2069,35 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     }
     setTabSessionData(edt, filepath, content, contentModified, parameterModified, customizerState,
                       sessionLanguage, tabDiskBacked);
+    if (!filepath.isEmpty() && !isSessionLaunchTokenPath(filepath) && tabDiskBacked) {
+      if (!parameterModified) {
+        // Clean customizer: disk companion JSON is source of truth (mirrors clean design
+        // content reload). Embedded setsJson may be empty/stale from older sessions.
+        const QString selectedName = selectedPresetNameFromCustomizerState(customizerState);
+        edt->parameterWidget->resetForNewDocument();
+        edt->parameterWidget->readFile(filepath);
+        edt->parameterWidget->selectPresetByName(selectedName);
+        edt->parameterWidget->setModified(false);
+      } else {
+        // Dirty customizer: keep session state; if companion JSON changed since save,
+        // seed the fingerprint with the saved id so the next poll prompts to reload.
+        // Distinguish a missing field (legacy session) from a present empty fingerprint
+        // (companion was absent when the session was saved).
+        const std::string currentJsonId =
+          MainWindow::autoReloadIdentityForPath(ParameterWidget::companionJsonPath(filepath));
+        if (obj.contains(QStringLiteral("jsonDiskIdentity"))) {
+          const std::string savedJsonId =
+            obj.value(QStringLiteral("jsonDiskIdentity")).toString().toStdString();
+          if (savedJsonId != currentJsonId) {
+            edt->parameterWidget->setJsonAutoReloadId(savedJsonId);
+          } else {
+            edt->parameterWidget->setJsonAutoReloadId(currentJsonId);
+          }
+        } else {
+          edt->parameterWidget->primeJsonAutoReloadId(filepath);
+        }
+      }
+    }
     if (obj.contains(QStringLiteral("lastExport"))) {
       applyLastExportFromJson(edt, obj.value(QStringLiteral("lastExport")).toObject());
     }
