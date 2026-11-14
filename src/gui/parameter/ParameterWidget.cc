@@ -340,9 +340,13 @@ void ParameterWidget::rebuildPresetCombo(const QString& selectedName)
 
   int idx = 0;
   if (!selectedName.isEmpty()) {
-    const int found = comboBoxPreset->findText(selectedName);
-    if (found > 0) {
-      idx = found;
+    // Skip index 0 (<design default>); findText() would match the placeholder first if a
+    // user preset reused that label.
+    for (int i = 1; i < comboBoxPreset->count(); ++i) {
+      if (comboBoxPreset->itemText(i) == selectedName) {
+        idx = i;
+        break;
+      }
     }
   }
   comboBoxPreset->setCurrentIndex(idx);
