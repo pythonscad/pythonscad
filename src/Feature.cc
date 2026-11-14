@@ -49,6 +49,12 @@ const Feature Feature::ExperimentalAiFeatures("ai-features",
                                               "Enable AI features (Note: AI integration is under "
                                               "development and does not connect to external APIs yet).");
 
+#ifdef ENABLE_OCCT
+const Feature Feature::ExperimentalOcct(
+  "occt",
+  "Exact B-Rep geometry with OpenCASCADE: sphere, cube, cylinder and their booleans are exported as "
+  "exact STEP, and STEP files are imported through OpenCASCADE (changing it flushes the caches).");
+#endif
 #ifdef ENABLE_PYTHON
 const Feature Feature::ExperimentalPythonEngine(
   "python-engine", "Enable experimental Python Engine (implies risk of malicious scripts downloaded).");

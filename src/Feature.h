@@ -22,6 +22,10 @@ public:
   static const Feature ExperimentalVectorSwizzle;
   static const Feature ExperimentalDiscretizationByError;
   static const Feature ExperimentalAiFeatures;
+  static const Feature ExperimentalUnicodeIdentifiers;
+#ifdef ENABLE_OCCT
+  static const Feature ExperimentalOcct;
+#endif
 #ifdef ENABLE_PYTHON
   static const Feature ExperimentalPythonEngine;
   static const Feature ExperimentalAddParameterPureFunction;

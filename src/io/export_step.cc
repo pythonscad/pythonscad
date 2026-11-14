@@ -33,10 +33,17 @@
 #include <src/utils/hash.h>
 #include <src/geometry/PolySetUtils.h>
 #include <src/geometry/GeometryEvaluator.h>
+#ifdef ENABLE_OCCT
+#include "geometry/brep/BRepGeometry.h"
+#endif
 
 void export_step(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
                  const ExportInfo& exportInfo)
 {
+#ifdef ENABLE_OCCT
+  // Exact path: if the model consists only of B-Rep geometry, write analytic surfaces.
+  if (BRepUtils::exportStepExact(geom, output, exportInfo)) return;
+#endif
   auto ps = PolySetUtils::getGeometryAsPolySet(geom);
   if (ps == nullptr) return;
 
@@ -51,7 +58,7 @@ void export_step(const std::shared_ptr<const Geometry>& geom, std::ostream& outp
 
   StepKernel sk;
 
-  sk.build_tri_body(exportInfo.title.c_str(), ps->vertices, indicesNew, ps->curves, ps->surfaces,
+  sk.build_tri_body(exportInfo.title.c_str(), ps->vertices, indicesNew, 
                     faceParents, 1e-5);
   std::time_t tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   struct std::tm *ptm = std::localtime(&tt);
