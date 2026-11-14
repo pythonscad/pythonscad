@@ -222,7 +222,7 @@ public:
   /// Write window geometry to the active persistence store (session or QSettings).
   void persistWindowGeometry();
 
-  /// Mtime+size fingerprint for auto-reload (empty if path missing or stat fails).
+  /// Millisecond-mtime+size fingerprint for auto-reload (empty if path missing or stat fails).
   static std::string autoReloadIdentityForPath(const QString& filepath);
 
   bool fileChangedOnDisk();

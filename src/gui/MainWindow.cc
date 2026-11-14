@@ -2047,7 +2047,11 @@ void MainWindow::on_fileActionReload_triggered()
     fileChangedOnDisk();                  // force cached autoReloadId to update
     (void)tabManager->refreshDocument();  // ignore errors opening the file
   }
-  maybeReloadCompanionJson();
+  // JSON-only reloads update widgets and consume the fingerprint; schedule a preview
+  // so the model matches (subsequent auto-reload polls will not see another change).
+  if (maybeReloadCompanionJson()) {
+    actionRenderPreview();
+  }
 }
 
 void MainWindow::on_editActionCopyVPT_triggered()
@@ -2316,7 +2320,9 @@ std::string MainWindow::autoReloadIdentityForPath(const QString& filepath)
   if (filepath.isEmpty()) return {};
   const QFileInfo fi(filepath);
   if (!fi.exists() || !fi.isFile()) return {};
-  const qint64 mtime = fi.lastModified().toSecsSinceEpoch();
+  // Millisecond mtime so same-second, same-length edits (e.g. "10" -> "20") still
+  // change the fingerprint for both design files and companion customizer JSON.
+  const qint64 mtime = fi.lastModified().toMSecsSinceEpoch();
   const qint64 size = fi.size();
   const QString identity = QString::number(static_cast<qulonglong>(mtime), 16) + "." +
                            QString::number(static_cast<qulonglong>(size), 16);
