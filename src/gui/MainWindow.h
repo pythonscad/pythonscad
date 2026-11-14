@@ -224,6 +224,9 @@ public:
 
   /// Millisecond-mtime+size fingerprint for auto-reload (empty if path missing or stat fails).
   static std::string autoReloadIdentityForPath(const QString& filepath);
+  /// True when \a saved and \a current refer to the same on-disk revision, including legacy
+  /// second-precision session fingerprints compared against millisecond identities.
+  static bool autoReloadIdentityMatches(const std::string& saved, const std::string& current);
 
   bool fileChangedOnDisk();
 

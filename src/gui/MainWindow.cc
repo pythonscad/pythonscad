@@ -102,9 +102,11 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <cstdint>
 #include <memory>
 #include <iomanip>
 #include <locale>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -2327,6 +2329,45 @@ std::string MainWindow::autoReloadIdentityForPath(const QString& filepath)
   const QString identity = QString::number(static_cast<qulonglong>(mtime), 16) + "." +
                            QString::number(static_cast<qulonglong>(size), 16);
   return identity.toStdString();
+}
+
+bool MainWindow::autoReloadIdentityMatches(const std::string& saved, const std::string& current)
+{
+  if (saved.empty() || current.empty()) {
+    return false;
+  }
+  if (saved == current) {
+    return true;
+  }
+
+  const auto parse = [](const std::string& id) -> std::optional<std::pair<uint64_t, uint64_t>> {
+    const auto dot = id.find('.');
+    if (dot == std::string::npos || dot == 0 || dot + 1 >= id.size()) {
+      return std::nullopt;
+    }
+    try {
+      const uint64_t mtime = std::stoull(id.substr(0, dot), nullptr, 16);
+      const uint64_t size = std::stoull(id.substr(dot + 1), nullptr, 16);
+      return std::make_pair(mtime, size);
+    } catch (const std::exception&) {
+      return std::nullopt;
+    }
+  };
+
+  const auto savedParts = parse(saved);
+  const auto currentParts = parse(current);
+  if (!savedParts || !currentParts) {
+    return false;
+  }
+  if (savedParts->second != currentParts->second) {
+    return false;
+  }
+  if (savedParts->first == currentParts->first) {
+    return true;
+  }
+  // Legacy sessions stored whole-second mtimes; current fingerprints use milliseconds.
+  return savedParts->first == currentParts->first / 1000 ||
+         currentParts->first == savedParts->first / 1000;
 }
 
 bool MainWindow::fileChangedOnDisk()

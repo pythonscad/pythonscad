@@ -2088,10 +2088,11 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
         if (obj.contains(QStringLiteral("jsonDiskIdentity"))) {
           const std::string savedJsonId =
             obj.value(QStringLiteral("jsonDiskIdentity")).toString().toStdString();
-          if (savedJsonId != currentJsonId) {
-            edt->parameterWidget->setJsonAutoReloadId(savedJsonId);
-          } else {
+          if (MainWindow::autoReloadIdentityMatches(savedJsonId, currentJsonId)) {
             edt->parameterWidget->setJsonAutoReloadId(currentJsonId);
+          } else {
+            // Genuine change (or empty saved id): keep saved fingerprint so the next poll prompts.
+            edt->parameterWidget->setJsonAutoReloadId(savedJsonId);
           }
         } else {
           edt->parameterWidget->primeJsonAutoReloadId(filepath);
@@ -2130,7 +2131,9 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
     const QString savedId = ti < diskIdentityAtSave.size() ? diskIdentityAtSave[ti] : QString();
     if (!savedId.isEmpty()) {
       const std::string savedStd = savedId.toStdString();
-      if (savedStd != currentId) {
+      // Legacy sessions used second-precision mtimes; match those against msec identities
+      // so an untouched file does not false-trigger the external-change dialog.
+      if (!MainWindow::autoReloadIdentityMatches(savedStd, currentId)) {
         syncEdt->autoReloadId = savedStd;
         continue;
       }
