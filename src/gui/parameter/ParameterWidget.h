@@ -61,6 +61,8 @@ private:
   int savedScrollValue = 0;
   /// mtime+size fingerprint of the companion .json (empty if missing / never primed).
   std::string jsonAutoReloadId;
+  /// True while resetForNewDocument() runs processEvents(); blocks re-entrant setParameters().
+  bool resettingForNewDocument = false;
 
 public:
   ParameterWidget(QWidget *parent = nullptr);

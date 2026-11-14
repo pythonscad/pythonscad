@@ -192,6 +192,10 @@ ParameterWidget::ParameterWidget(QWidget *parent) : QWidget(parent)
 
 void ParameterWidget::resetForNewDocument()
 {
+  // Block re-entrant setParameters() while processEvents() drains deferred widget
+  // deletions — otherwise a concurrent parse refills parameters and the following
+  // readFile() assert fails (session restore).
+  resettingForNewDocument = true;
   pendingSessionState.clear();
   invalidJsonFile.clear();
   source.clear();
@@ -218,12 +222,17 @@ void ParameterWidget::resetForNewDocument()
   }
   QCoreApplication::processEvents();
 
+  // Belt-and-suspenders: discard anything that slipped past the guard.
+  oldParameters = std::move(this->parameters);
+  widgets.clear();
   sets.clear();
+  parameterShape.clear();
 
   comboBoxPreset->clear();
   comboBoxPreset->addItem(_("<design default>"));
   comboBoxPreset->setCurrentIndex(0);
   updateSetEditability();
+  resettingForNewDocument = false;
 }
 
 // Call after resetForNewDocument() if setParameters() may have run already; otherwise only before the
@@ -400,6 +409,9 @@ QString ParameterWidget::currentPresetName() const
 
 void ParameterWidget::setParameters(const SourceFile *sourceFile, const std::string& source)
 {
+  if (resettingForNewDocument) {
+    return;
+  }
   this->source = source;
 
   // Build the incoming set first so its shape can be compared with what is on screen. This
