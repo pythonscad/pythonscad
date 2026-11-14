@@ -112,39 +112,6 @@ QString normalizedSessionFilepathForJson(const QString& filepath)
   return filepath;
 }
 
-/**
- * Selected customizer preset name from a session customizerState blob.
- * Returns empty for design default / unreadable state.
- */
-QString selectedPresetNameFromCustomizerState(const QByteArray& customizerState)
-{
-  if (customizerState.isEmpty()) {
-    return {};
-  }
-  const QJsonDocument doc = QJsonDocument::fromJson(customizerState);
-  if (!doc.isObject()) {
-    return {};
-  }
-  const QJsonObject root = doc.object();
-  const int currentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
-  if (currentIndex <= 0) {
-    return {};
-  }
-  const QByteArray setsUtf8 = root.value(QStringLiteral("setsJson")).toString().toUtf8();
-  if (setsUtf8.isEmpty()) {
-    return {};
-  }
-  ParameterSets sets;
-  if (!sets.readFromString(
-        std::string(reinterpret_cast<const char *>(setsUtf8.constData()), setsUtf8.size()))) {
-    return {};
-  }
-  if (static_cast<size_t>(currentIndex) > sets.size()) {
-    return {};
-  }
-  return QString::fromStdString(sets[static_cast<size_t>(currentIndex) - 1].name());
-}
-
 QString exportFormatIdentifier(FileFormat format)
 {
 #ifdef ENABLE_CGAL
@@ -2086,7 +2053,8 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
         if (!parameterModified) {
           // Clean customizer: disk companion JSON is source of truth (mirrors clean design
           // content reload). Embedded setsJson may be empty/stale from older sessions.
-          const QString selectedName = selectedPresetNameFromCustomizerState(customizerState);
+          const QString selectedName =
+            ParameterWidget::selectedPresetNameFromSessionState(customizerState);
           edt->parameterWidget->resetForNewDocument();
           edt->parameterWidget->readFile(filepath);
           edt->parameterWidget->selectPresetByName(selectedName);

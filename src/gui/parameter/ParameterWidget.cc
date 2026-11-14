@@ -359,33 +359,24 @@ bool ParameterWidget::reloadSetsFromDisk(const QString& scadFile)
   // recover that name before discarding the snapshot.
   QString selectedName = currentPresetName();
   if (selectedName.isEmpty() && !pendingSessionState.isEmpty()) {
-    const QJsonDocument doc = QJsonDocument::fromJson(pendingSessionState);
-    if (doc.isObject()) {
-      const QJsonObject root = doc.object();
-      const int currentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
-      if (currentIndex > 0) {
-        ParameterSets pendingSets;
-        const QByteArray setsUtf8 = root.value(QStringLiteral("setsJson")).toString().toUtf8();
-        if (!setsUtf8.isEmpty() &&
-            pendingSets.readFromString(std::string(setsUtf8.constData(), setsUtf8.size())) &&
-            static_cast<size_t>(currentIndex) <= pendingSets.size()) {
-          selectedName =
-            QString::fromStdString(pendingSets[static_cast<size_t>(currentIndex) - 1].name());
-        }
-      }
-    }
+    selectedName = selectedPresetNameFromSessionState(pendingSessionState);
   }
-
-  sets.clear();
-  pendingSessionState.clear();
 
   const QString jsonFile = getJsonFile(scadFile);
-  if (!std::filesystem::exists(jsonFile.toStdString()) || this->sets.readFile(jsonFile.toStdString())) {
-    this->invalidJsonFile = QString();
-  } else {
-    this->invalidJsonFile = jsonFile;
+  ParameterSets newSets;
+  if (std::filesystem::exists(jsonFile.toStdString())) {
+    if (!newSets.readFile(jsonFile.toStdString())) {
+      // Keep prior presets; mark the sidecar unreadable for the next save prompt.
+      this->invalidJsonFile = jsonFile;
+      primeJsonAutoReloadId(scadFile);
+      return false;
+    }
   }
+  // Missing companion → empty preset list (same as a successful empty read).
 
+  this->invalidJsonFile = QString();
+  this->sets = std::move(newSets);
+  pendingSessionState.clear();
   rebuildPresetCombo(selectedName);
   setModified(false);
   primeJsonAutoReloadId(scadFile);
@@ -405,6 +396,35 @@ QString ParameterWidget::currentPresetName() const
     return {};
   }
   return comboBoxPreset->itemText(idx);
+}
+
+QString ParameterWidget::selectedPresetNameFromSessionState(const QByteArray& customizerState)
+{
+  if (customizerState.isEmpty()) {
+    return {};
+  }
+  const QJsonDocument doc = QJsonDocument::fromJson(customizerState);
+  if (!doc.isObject()) {
+    return {};
+  }
+  const QJsonObject root = doc.object();
+  const int currentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
+  if (currentIndex <= 0) {
+    return {};
+  }
+  const QByteArray setsUtf8 = root.value(QStringLiteral("setsJson")).toString().toUtf8();
+  if (setsUtf8.isEmpty()) {
+    return {};
+  }
+  ParameterSets pendingSets;
+  if (!pendingSets.readFromString(
+        std::string(reinterpret_cast<const char *>(setsUtf8.constData()), setsUtf8.size()))) {
+    return {};
+  }
+  if (static_cast<size_t>(currentIndex) > pendingSets.size()) {
+    return {};
+  }
+  return QString::fromStdString(pendingSets[static_cast<size_t>(currentIndex) - 1].name());
 }
 
 void ParameterWidget::setParameters(const SourceFile *sourceFile, const std::string& source)

@@ -90,11 +90,14 @@ public:
   bool jsonFileChangedOnDisk(const QString& scadFile);
   /// Re-read companion JSON into the preset combo, preserving selection by preset name.
   /// Returns true if the sidecar was reloaded (caller may need to recompile).
+  /// On parse failure, keeps prior presets and returns false.
   bool reloadSetsFromDisk(const QString& scadFile);
   /// Select a named preset if present; otherwise fall back to design default.
   void selectPresetByName(const QString& name);
   /// Preset name for the current combo selection (empty for design default).
   QString currentPresetName() const;
+  /// Named preset from a session \c customizerState blob (empty for design default / unreadable).
+  static QString selectedPresetNameFromSessionState(const QByteArray& customizerState);
 
 public slots:
   void setModified(bool modified = true);
