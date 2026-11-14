@@ -2053,6 +2053,8 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
         if (!parameterModified) {
           // Clean customizer: disk companion JSON is source of truth (mirrors clean design
           // content reload). Embedded setsJson may be empty/stale from older sessions.
+          // customizerState only carries currentIndex + setsJson (see getSessionState);
+          // group expand/scroll are not session-persisted, so resetting the widget is fine.
           const QString selectedName =
             ParameterWidget::selectedPresetNameFromSessionState(customizerState);
           edt->parameterWidget->resetForNewDocument();

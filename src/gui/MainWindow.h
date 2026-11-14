@@ -259,8 +259,9 @@ private:
   bool checkEditorModified();
   bool checkParameterSetsModified();
   /// Reload companion customizer JSON when its fingerprint changes (prompt if dirty).
+  /// When \a force is true (File → Reload), skip the fingerprint check and reload from disk.
   /// Returns true when presets were reloaded so the caller can force a recompile.
-  bool maybeReloadCompanionJson();
+  bool maybeReloadCompanionJson(bool force = false);
   QString dumpCSGTree(const std::shared_ptr<AbstractNode>& root);
 
   // Opens an independent windows with a text area showing the text given in argument

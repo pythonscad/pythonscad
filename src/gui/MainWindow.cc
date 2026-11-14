@@ -2049,9 +2049,9 @@ void MainWindow::on_fileActionReload_triggered()
     fileChangedOnDisk();                  // force cached autoReloadId to update
     (void)tabManager->refreshDocument();  // ignore errors opening the file
   }
-  // JSON-only reloads update widgets and consume the fingerprint; schedule a preview
-  // so the model matches (subsequent auto-reload polls will not see another change).
-  if (maybeReloadCompanionJson()) {
+  // Always re-read companion JSON on File → Reload (like refreshDocument for the design),
+  // even if an earlier auto-reload prompt was declined and the fingerprint already matches.
+  if (maybeReloadCompanionJson(/*force=*/true)) {
     actionRenderPreview();
   }
 }
@@ -2634,13 +2634,16 @@ bool MainWindow::checkParameterSetsModified()
   return ret == QMessageBox::Yes;
 }
 
-bool MainWindow::maybeReloadCompanionJson()
+bool MainWindow::maybeReloadCompanionJson(bool force)
 {
   if (!activeEditor || activeEditor->filepath.isEmpty() || !activeEditor->diskBacked) {
     return false;
   }
   auto *parameterWidget = activeEditor->parameterWidget;
-  if (!parameterWidget->jsonFileChangedOnDisk(activeEditor->filepath)) {
+  // Auto-reload advances the fingerprint before prompting (same as fileChangedOnDisk for
+  // designs). Declining means "ignore this disk version until it changes again"; File →
+  // Reload uses force=true to bypass the fingerprint and offer disk presets again.
+  if (!force && !parameterWidget->jsonFileChangedOnDisk(activeEditor->filepath)) {
     return false;
   }
   if (!checkParameterSetsModified()) {
