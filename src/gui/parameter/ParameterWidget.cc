@@ -345,7 +345,28 @@ void ParameterWidget::rebuildPresetCombo(const QString& selectedName)
 
 bool ParameterWidget::reloadSetsFromDisk(const QString& scadFile)
 {
-  const QString selectedName = currentPresetName();
+  // Prefer the live combo selection. If widgets are still at design default but a
+  // pending session snapshot holds a named preset (dirty untrusted Python tab),
+  // recover that name before discarding the snapshot.
+  QString selectedName = currentPresetName();
+  if (selectedName.isEmpty() && !pendingSessionState.isEmpty()) {
+    const QJsonDocument doc = QJsonDocument::fromJson(pendingSessionState);
+    if (doc.isObject()) {
+      const QJsonObject root = doc.object();
+      const int currentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
+      if (currentIndex > 0) {
+        ParameterSets pendingSets;
+        const QByteArray setsUtf8 = root.value(QStringLiteral("setsJson")).toString().toUtf8();
+        if (!setsUtf8.isEmpty() &&
+            pendingSets.readFromString(std::string(setsUtf8.constData(), setsUtf8.size())) &&
+            static_cast<size_t>(currentIndex) <= pendingSets.size()) {
+          selectedName =
+            QString::fromStdString(pendingSets[static_cast<size_t>(currentIndex) - 1].name());
+        }
+      }
+    }
+  }
+
   sets.clear();
   pendingSessionState.clear();
 
