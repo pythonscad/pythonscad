@@ -1654,11 +1654,9 @@ void TabManager::saveSession(const QString& path)
     if (!sessionPath.isEmpty()) {
       obj.insert(QStringLiteral("diskIdentity"),
                  QString::fromStdString(MainWindow::autoReloadIdentityForPath(sessionPath)));
+      // Persist the watched fingerprint as-is (including empty = companion was absent).
       obj.insert(QStringLiteral("jsonDiskIdentity"),
-                 QString::fromStdString(edt->parameterWidget->getJsonAutoReloadId().empty()
-                                          ? MainWindow::autoReloadIdentityForPath(
-                                              ParameterWidget::companionJsonPath(sessionPath))
-                                          : edt->parameterWidget->getJsonAutoReloadId()));
+                 QString::fromStdString(edt->parameterWidget->getJsonAutoReloadId()));
     }
     insertLastExportIntoTabObject(obj, edt);
     tabs.append(obj);
@@ -1751,10 +1749,7 @@ bool TabManager::saveGlobalSession(const QString& path, QString *error, bool sho
         obj.insert(QStringLiteral("diskIdentity"),
                    QString::fromStdString(MainWindow::autoReloadIdentityForPath(sessionPath)));
         obj.insert(QStringLiteral("jsonDiskIdentity"),
-                   QString::fromStdString(edt->parameterWidget->getJsonAutoReloadId().empty()
-                                            ? MainWindow::autoReloadIdentityForPath(
-                                                ParameterWidget::companionJsonPath(sessionPath))
-                                            : edt->parameterWidget->getJsonAutoReloadId()));
+                   QString::fromStdString(edt->parameterWidget->getJsonAutoReloadId()));
       }
       insertLastExportIntoTabObject(obj, edt);
       tabs.append(obj);
@@ -2086,11 +2081,18 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
       } else {
         // Dirty customizer: keep session state; if companion JSON changed since save,
         // seed the fingerprint with the saved id so the next poll prompts to reload.
-        const QString savedJsonId = obj.value(QStringLiteral("jsonDiskIdentity")).toString();
+        // Distinguish a missing field (legacy session) from a present empty fingerprint
+        // (companion was absent when the session was saved).
         const std::string currentJsonId =
           MainWindow::autoReloadIdentityForPath(ParameterWidget::companionJsonPath(filepath));
-        if (!savedJsonId.isEmpty() && savedJsonId.toStdString() != currentJsonId) {
-          edt->parameterWidget->setJsonAutoReloadId(savedJsonId.toStdString());
+        if (obj.contains(QStringLiteral("jsonDiskIdentity"))) {
+          const std::string savedJsonId =
+            obj.value(QStringLiteral("jsonDiskIdentity")).toString().toStdString();
+          if (savedJsonId != currentJsonId) {
+            edt->parameterWidget->setJsonAutoReloadId(savedJsonId);
+          } else {
+            edt->parameterWidget->setJsonAutoReloadId(currentJsonId);
+          }
         } else {
           edt->parameterWidget->primeJsonAutoReloadId(filepath);
         }

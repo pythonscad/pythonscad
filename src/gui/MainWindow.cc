@@ -1153,7 +1153,11 @@ void MainWindow::compile(bool reload, bool forcedone)
         }
       }
       // Companion customizer JSON is independent of the design text; refresh when it changes.
-      maybeReloadCompanionJson();
+      // Force a recompile so widget values from a JSON-only change reach the preview
+      // (autoPreview is blocked while GuiLocker is held on this path).
+      if (maybeReloadCompanionJson()) {
+        shouldcompiletoplevel = true;
+      }
     } else {
       shouldcompiletoplevel = true;
     }
@@ -2583,19 +2587,19 @@ bool MainWindow::checkParameterSetsModified()
   return ret == QMessageBox::Yes;
 }
 
-void MainWindow::maybeReloadCompanionJson()
+bool MainWindow::maybeReloadCompanionJson()
 {
   if (!activeEditor || activeEditor->filepath.isEmpty() || !activeEditor->diskBacked) {
-    return;
+    return false;
   }
   auto *parameterWidget = activeEditor->parameterWidget;
   if (!parameterWidget->jsonFileChangedOnDisk(activeEditor->filepath)) {
-    return;
+    return false;
   }
   if (!checkParameterSetsModified()) {
-    return;
+    return false;
   }
-  parameterWidget->reloadSetsFromDisk(activeEditor->filepath);
+  return parameterWidget->reloadSetsFromDisk(activeEditor->filepath);
 }
 
 void MainWindow::on_designActionReloadAndPreview_triggered()

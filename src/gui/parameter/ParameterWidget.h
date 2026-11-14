@@ -87,7 +87,8 @@ public:
   /// Like design-file \c fileChangedOnDisk: updates the fingerprint and returns true on change.
   bool jsonFileChangedOnDisk(const QString& scadFile);
   /// Re-read companion JSON into the preset combo, preserving selection by preset name.
-  void reloadSetsFromDisk(const QString& scadFile);
+  /// Returns true if the sidecar was reloaded (caller may need to recompile).
+  bool reloadSetsFromDisk(const QString& scadFile);
   /// Select a named preset if present; otherwise fall back to design default.
   void selectPresetByName(const QString& name);
   /// Preset name for the current combo selection (empty for design default).

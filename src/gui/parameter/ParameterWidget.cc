@@ -284,8 +284,9 @@ void ParameterWidget::saveBackupFile(const QString& scadFile)
     return;
   }
 
+  // Do not touch jsonAutoReloadId: backups use a temporary path and must not replace
+  // the fingerprint used to watch the design's real companion JSON.
   sets.writeFile(getJsonFile(scadFile).toStdString());
-  primeJsonAutoReloadId(scadFile);
 }
 
 QString ParameterWidget::companionJsonPath(const QString& scadFile)
@@ -318,6 +319,9 @@ void ParameterWidget::rebuildPresetCombo(const QString& selectedName)
     QObject::disconnect(comboBoxPreset->lineEdit(), &QLineEdit::textEdited, this,
                         &ParameterWidget::onSetNameChanged);
   }
+  // Force non-editable before rebuild so updateSetEditability() reinstalls the
+  // rename handler when a named preset remains selected.
+  comboBoxPreset->setEditable(false);
 
   comboBoxPreset->clear();
   comboBoxPreset->addItem(_("<design default>"));
@@ -339,10 +343,11 @@ void ParameterWidget::rebuildPresetCombo(const QString& selectedName)
   loadSet(static_cast<size_t>(idx));
 }
 
-void ParameterWidget::reloadSetsFromDisk(const QString& scadFile)
+bool ParameterWidget::reloadSetsFromDisk(const QString& scadFile)
 {
   const QString selectedName = currentPresetName();
   sets.clear();
+  pendingSessionState.clear();
 
   const QString jsonFile = getJsonFile(scadFile);
   if (!std::filesystem::exists(jsonFile.toStdString()) || this->sets.readFile(jsonFile.toStdString())) {
@@ -354,7 +359,8 @@ void ParameterWidget::reloadSetsFromDisk(const QString& scadFile)
   rebuildPresetCombo(selectedName);
   setModified(false);
   primeJsonAutoReloadId(scadFile);
-  autoPreview(true);
+  // Preview is scheduled by the caller when needed; GuiLocker may block autoPreview here.
+  return true;
 }
 
 void ParameterWidget::selectPresetByName(const QString& name)
@@ -803,6 +809,12 @@ QString ParameterWidget::getJsonFile(const QString& scadFile)
 // or that cannot be parsed as such.
 void ParameterWidget::cleanSets()
 {
+  // Before declarations are parsed (e.g. inactive restored tab), wiping unknown keys
+  // would erase every preset override and risk writing an empty companion JSON.
+  if (parameters.empty()) {
+    return;
+  }
+
   std::map<std::string, ParameterObject *> namedParameters;
   for (const auto& parameter : parameters) {
     namedParameters[parameter->name()] = parameter.get();
