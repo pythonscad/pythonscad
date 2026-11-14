@@ -254,6 +254,9 @@ private:
   void updateCompileResult();
   void compile(bool reload, bool forcedone = false);
   bool checkEditorModified();
+  bool checkParameterSetsModified();
+  /// Reload companion customizer JSON when its fingerprint changes (prompt if dirty).
+  void maybeReloadCompanionJson();
   QString dumpCSGTree(const std::shared_ptr<AbstractNode>& root);
 
   // Opens an independent windows with a text area showing the text given in argument

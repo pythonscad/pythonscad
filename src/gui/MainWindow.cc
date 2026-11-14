@@ -1152,6 +1152,8 @@ void MainWindow::compile(bool reload, bool forcedone)
           shouldcompiletoplevel = true;
         }
       }
+      // Companion customizer JSON is independent of the design text; refresh when it changes.
+      maybeReloadCompanionJson();
     } else {
       shouldcompiletoplevel = true;
     }
@@ -2041,6 +2043,7 @@ void MainWindow::on_fileActionReload_triggered()
     fileChangedOnDisk();                  // force cached autoReloadId to update
     (void)tabManager->refreshDocument();  // ignore errors opening the file
   }
+  maybeReloadCompanionJson();
 }
 
 void MainWindow::on_editActionCopyVPT_triggered()
@@ -2532,6 +2535,7 @@ void MainWindow::checkAutoReload()
       if (fileChangedOnDisk() && checkEditorModified()) {
         tabManager->refreshDocument();
       }
+      maybeReloadCompanionJson();
       return;
     }
 #endif
@@ -2563,6 +2567,35 @@ bool MainWindow::checkEditorModified()
     }
   }
   return true;
+}
+
+bool MainWindow::checkParameterSetsModified()
+{
+  if (!activeEditor || !activeEditor->parameterWidget->isModified()) {
+    return true;
+  }
+  auto ret = QMessageBox::warning(
+    this, _("Application"),
+    _("The customizer presets file has changed on disk, but this tab has unsaved preset edits.\n"
+      "Reloading will discard your preset changes.\n\n"
+      "Do you really want to reload the presets?"),
+    QMessageBox::Yes | QMessageBox::No);
+  return ret == QMessageBox::Yes;
+}
+
+void MainWindow::maybeReloadCompanionJson()
+{
+  if (!activeEditor || activeEditor->filepath.isEmpty() || !activeEditor->diskBacked) {
+    return;
+  }
+  auto *parameterWidget = activeEditor->parameterWidget;
+  if (!parameterWidget->jsonFileChangedOnDisk(activeEditor->filepath)) {
+    return;
+  }
+  if (!checkParameterSetsModified()) {
+    return;
+  }
+  parameterWidget->reloadSetsFromDisk(activeEditor->filepath);
 }
 
 void MainWindow::on_designActionReloadAndPreview_triggered()

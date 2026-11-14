@@ -59,6 +59,8 @@ private:
   // UI state captured before a teardown and reapplied by rebuildWidgets().
   std::map<QString, bool> savedGroupStates;
   int savedScrollValue = 0;
+  /// mtime+size fingerprint of the companion .json (empty if missing / never primed).
+  std::string jsonAutoReloadId;
 
 public:
   ParameterWidget(QWidget *parent = nullptr);
@@ -75,6 +77,21 @@ public:
   void applyParameters(SourceFile *sourceFile);
   bool childHasFocus();
   bool isModified() const { return modified; }
+
+  /// Companion customizer JSON path for a design file (same basename, .json extension).
+  static QString companionJsonPath(const QString& scadFile);
+  /// Refresh \c jsonAutoReloadId from the companion file's current mtime+size.
+  void primeJsonAutoReloadId(const QString& scadFile);
+  void setJsonAutoReloadId(std::string id) { jsonAutoReloadId = std::move(id); }
+  const std::string& getJsonAutoReloadId() const { return jsonAutoReloadId; }
+  /// Like design-file \c fileChangedOnDisk: updates the fingerprint and returns true on change.
+  bool jsonFileChangedOnDisk(const QString& scadFile);
+  /// Re-read companion JSON into the preset combo, preserving selection by preset name.
+  void reloadSetsFromDisk(const QString& scadFile);
+  /// Select a named preset if present; otherwise fall back to design default.
+  void selectPresetByName(const QString& name);
+  /// Preset name for the current combo selection (empty for design default).
+  QString currentPresetName() const;
 
 public slots:
   void setModified(bool modified = true);
@@ -115,5 +132,6 @@ protected:
                                                 DescriptionStyle descriptionStyle);
   void captureUiState();
   QString getJsonFile(const QString& scadFile);
+  void rebuildPresetCombo(const QString& selectedName);
   void cleanSets();
 };

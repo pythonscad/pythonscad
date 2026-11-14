@@ -54,6 +54,7 @@
 #include <vector>
 
 #include "core/customizer/ParameterObject.h"
+#include "gui/MainWindow.h"
 #include "gui/Preferences.h"
 #include "gui/parameter/GroupWidget.h"
 #include "gui/parameter/ParameterCheckBox.h"
@@ -197,6 +198,7 @@ void ParameterWidget::resetForNewDocument()
   parameterShape.clear();
   savedGroupStates.clear();
   savedScrollValue = 0;
+  jsonAutoReloadId.clear();
   setModified(false);
 
   if (comboBoxPreset->isEditable() && comboBoxPreset->lineEdit()) {
@@ -242,6 +244,7 @@ void ParameterWidget::readFile(const QString& scadFile)
   for (const auto& set : this->sets) {
     comboBoxPreset->addItem(QString::fromStdString(set.name()));
   }
+  primeJsonAutoReloadId(scadFile);
 }
 
 // Write the json file if the parameter sets are not empty.
@@ -267,6 +270,7 @@ void ParameterWidget::saveFile(const QString& scadFile)
 
   cleanSets();
   sets.writeFile(jsonFile.toStdString());
+  primeJsonAutoReloadId(scadFile);
 }
 
 void ParameterWidget::removeBackupFile(const QString& scadFile)
@@ -281,6 +285,90 @@ void ParameterWidget::saveBackupFile(const QString& scadFile)
   }
 
   sets.writeFile(getJsonFile(scadFile).toStdString());
+  primeJsonAutoReloadId(scadFile);
+}
+
+QString ParameterWidget::companionJsonPath(const QString& scadFile)
+{
+  std::filesystem::path p = scadFile.toStdString();
+  return QString::fromStdString(p.replace_extension(".json").string());
+}
+
+void ParameterWidget::primeJsonAutoReloadId(const QString& scadFile)
+{
+  jsonAutoReloadId = MainWindow::autoReloadIdentityForPath(getJsonFile(scadFile));
+}
+
+bool ParameterWidget::jsonFileChangedOnDisk(const QString& scadFile)
+{
+  if (scadFile.isEmpty()) {
+    return false;
+  }
+  const std::string newid = MainWindow::autoReloadIdentityForPath(getJsonFile(scadFile));
+  if (newid != jsonAutoReloadId) {
+    jsonAutoReloadId = newid;
+    return true;
+  }
+  return false;
+}
+
+void ParameterWidget::rebuildPresetCombo(const QString& selectedName)
+{
+  if (comboBoxPreset->isEditable() && comboBoxPreset->lineEdit()) {
+    QObject::disconnect(comboBoxPreset->lineEdit(), &QLineEdit::textEdited, this,
+                        &ParameterWidget::onSetNameChanged);
+  }
+
+  comboBoxPreset->clear();
+  comboBoxPreset->addItem(_("<design default>"));
+  for (const auto& set : this->sets) {
+    comboBoxPreset->addItem(QString::fromStdString(set.name()));
+  }
+
+  int idx = 0;
+  if (!selectedName.isEmpty()) {
+    for (int i = 1; i < comboBoxPreset->count(); ++i) {
+      if (comboBoxPreset->itemText(i) == selectedName) {
+        idx = i;
+        break;
+      }
+    }
+  }
+  comboBoxPreset->setCurrentIndex(idx);
+  updateSetEditability();
+  loadSet(static_cast<size_t>(idx));
+}
+
+void ParameterWidget::reloadSetsFromDisk(const QString& scadFile)
+{
+  const QString selectedName = currentPresetName();
+  sets.clear();
+
+  const QString jsonFile = getJsonFile(scadFile);
+  if (!std::filesystem::exists(jsonFile.toStdString()) || this->sets.readFile(jsonFile.toStdString())) {
+    this->invalidJsonFile = QString();
+  } else {
+    this->invalidJsonFile = jsonFile;
+  }
+
+  rebuildPresetCombo(selectedName);
+  setModified(false);
+  primeJsonAutoReloadId(scadFile);
+  autoPreview(true);
+}
+
+void ParameterWidget::selectPresetByName(const QString& name)
+{
+  rebuildPresetCombo(name);
+}
+
+QString ParameterWidget::currentPresetName() const
+{
+  const int idx = comboBoxPreset->currentIndex();
+  if (idx <= 0) {
+    return {};
+  }
+  return comboBoxPreset->itemText(idx);
 }
 
 void ParameterWidget::setParameters(const SourceFile *sourceFile, const std::string& source)
@@ -708,8 +796,7 @@ ParameterVirtualWidget *ParameterWidget::createParameterWidget(ParameterObject *
 
 QString ParameterWidget::getJsonFile(const QString& scadFile)
 {
-  std::filesystem::path p = scadFile.toStdString();
-  return QString::fromStdString(p.replace_extension(".json").string());
+  return companionJsonPath(scadFile);
 }
 
 // Remove set values that do not correspond to a parameter,
