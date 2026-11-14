@@ -110,6 +110,7 @@ nav:
       - Fillet: reference/fillet.md
       - Organic: reference/organic.md
       - Mesh Operations: reference/repair.md
+      - Design Rule Checks: reference/drc.md
       - GUI and Utility: reference/gui.md
   - Examples: examples.md
   - Cheat-Sheet: cheatsheet.md
