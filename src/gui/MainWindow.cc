@@ -2636,6 +2636,14 @@ bool MainWindow::checkParameterSetsModified()
 
 bool MainWindow::maybeReloadCompanionJson(bool force)
 {
+  // Nested event loops from the dirty-Customizer dialog must not re-enter (auto-reload
+  // timer → second conflict dialog), especially on the force path which has not advanced
+  // the fingerprint yet.
+  static bool reentering = false;
+  if (reentering) {
+    return false;
+  }
+
   if (!activeEditor || activeEditor->filepath.isEmpty() || !activeEditor->diskBacked) {
     return false;
   }
@@ -2646,10 +2654,21 @@ bool MainWindow::maybeReloadCompanionJson(bool force)
   if (!force && !parameterWidget->jsonFileChangedOnDisk(activeEditor->filepath)) {
     return false;
   }
-  if (!checkParameterSetsModified()) {
-    return false;
+
+  const bool timerWasActive = autoReloadTimer && autoReloadTimer->isActive();
+  if (autoReloadTimer) {
+    autoReloadTimer->stop();
   }
-  return parameterWidget->reloadSetsFromDisk(activeEditor->filepath);
+  reentering = true;
+  bool reloaded = false;
+  if (checkParameterSetsModified()) {
+    reloaded = parameterWidget->reloadSetsFromDisk(activeEditor->filepath);
+  }
+  reentering = false;
+  if (timerWasActive && designActionAutoReload->isChecked() && autoReloadTimer) {
+    autoReloadTimer->start();
+  }
+  return reloaded;
 }
 
 void MainWindow::on_designActionReloadAndPreview_triggered()
