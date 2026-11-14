@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenSCAD 2018.08.15\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-27 07:10+0200\n"
+"POT-Creation-Date: 2026-11-15 00:54+0100\n"
 "PO-Revision-Date: 2018-11-11 13:00+0200\n"
 "Last-Translator: Kyrylo Romanenko <romanenko-kv@hotmail.com>\n"
 "Language-Team: Ukrainian\n"
@@ -101,7 +101,7 @@ msgstr "Зберігати картинки"
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:852
 #: build/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:362
 #: build/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:214
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2626
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2613
 msgid "Preferences"
 msgstr "Налаштування"
 
@@ -253,7 +253,7 @@ msgid "TextLabel"
 msgstr "Текстова мітка"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:901
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2617
 msgid "Update"
 msgstr "Оновлення"
 
@@ -407,7 +407,9 @@ msgstr "Додати зображення"
 msgid ""
 "Agentic mode: allow the AI to call tools in multiple automatic turns per "
 "request"
-msgstr "Агентний режим: дозволити ШІ викликати інструменти за кілька автоматичних кроків на запит"
+msgstr ""
+"Агентний режим: дозволити ШІ викликати інструменти за кілька автоматичних "
+"кроків на запит"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:216
 msgid "Agentic"
@@ -447,20 +449,20 @@ msgstr "Назва кольору"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:418
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:309
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2688
-#: src/core/Settings.cc:161 src/core/Settings.cc:520
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2675
+#: src/core/Settings.cc:161 src/core/Settings.cc:519
 msgid "Fixed"
 msgstr "Фіксований"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:419
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:310
-#: src/core/Settings.cc:521
+#: src/core/Settings.cc:520
 msgid "Wildcard"
 msgstr "Маска"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:420
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:311
-#: src/core/Settings.cc:522
+#: src/core/Settings.cc:521
 msgid "RegExp"
 msgstr "RegExp"
 
@@ -481,17 +483,17 @@ msgid "Alphabetically"
 msgstr "За алфавітом"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:426
-#: src/core/Settings.cc:532
+#: src/core/Settings.cc:531
 msgid "By color"
 msgstr "За кольором"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:427
-#: src/core/Settings.cc:533
+#: src/core/Settings.cc:532
 msgid "By color warmth"
 msgstr "За теплотою кольору"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:428
-#: src/core/Settings.cc:534
+#: src/core/Settings.cc:533
 msgid "By lightness"
 msgstr "За яскравістю"
 
@@ -522,9 +524,9 @@ msgstr "Скинути колір тла"
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:217
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:220
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:177
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2764
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2829
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2758
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2816
 msgid "..."
 msgstr "..."
 
@@ -569,7 +571,7 @@ msgid "Clear console"
 msgstr "Очистити консоль"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Console.h:46
-#: src/gui/TabManager.cc:2120
+#: src/gui/TabManager.cc:2186
 msgid "Save As..."
 msgstr "Зберегти &як..."
 
@@ -650,7 +652,7 @@ msgid "Unit"
 msgstr "Одиниця"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:462
-#: src/core/Settings.cc:455
+#: src/core/Settings.cc:454
 msgid "Micron"
 msgstr "Мікрон"
 
@@ -659,17 +661,17 @@ msgid "Millimeter (default)"
 msgstr "Міліметр (типовий)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:464
-#: src/core/Settings.cc:457
+#: src/core/Settings.cc:456
 msgid "Centimeter"
 msgstr "Сантиметр"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:465
-#: src/core/Settings.cc:458
+#: src/core/Settings.cc:457
 msgid "Meter"
 msgstr "Метр"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:466
-#: src/core/Settings.cc:459
+#: src/core/Settings.cc:458
 msgid "Inch"
 msgstr "Дюйм"
 
@@ -686,7 +688,7 @@ msgid "Use colors from model and color scheme"
 msgstr "Використовувати кольори з моделі та колірної схеми"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:473
-#: src/core/Settings.cc:448
+#: src/core/Settings.cc:447
 msgid "No colors"
 msgstr "Без кольорів"
 
@@ -785,8 +787,8 @@ msgstr "Завжди показувати діалог"
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:221
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:109
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:185
-#: src/gui/MainWindow.cc:3562 src/gui/MainWindow.cc:3595
-#: src/gui/MainWindow.cc:3654 src/gui/UnsavedChangesDialog.cc:60
+#: src/gui/MainWindow.cc:3723 src/gui/MainWindow.cc:3756
+#: src/gui/MainWindow.cc:3817 src/gui/UnsavedChangesDialog.cc:60
 #: src/openscad_gui.cc:196 src/openscad_gui.cc:871
 msgid "Cancel"
 msgstr "Скасувати"
@@ -795,12 +797,12 @@ msgstr "Скасувати"
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:190
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:634
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:222
-#: src/gui/MainWindow.cc:3553 src/gui/MainWindow.cc:3586
-#: src/gui/MainWindow.cc:3620 src/gui/MainWindow.cc:3641
-#: src/gui/MainWindow.cc:3673 src/gui/MainWindow.cc:3680
-#: src/gui/MainWindow.cc:3994 src/gui/MainWindow.cc:4135
-#: src/gui/MainWindow.cc:4139 src/gui/MainWindow.cc:4163
-#: src/gui/MainWindow.cc:4178 src/gui/MainWindow.cc:4193
+#: src/gui/MainWindow.cc:3714 src/gui/MainWindow.cc:3747
+#: src/gui/MainWindow.cc:3783 src/gui/MainWindow.cc:3804
+#: src/gui/MainWindow.cc:3836 src/gui/MainWindow.cc:3843
+#: src/gui/MainWindow.cc:4157 src/gui/MainWindow.cc:4298
+#: src/gui/MainWindow.cc:4302 src/gui/MainWindow.cc:4326
+#: src/gui/MainWindow.cc:4341 src/gui/MainWindow.cc:4356
 msgid "Export"
 msgstr "&Експорт"
 
@@ -849,37 +851,37 @@ msgid "Page Size"
 msgstr "Розмір сторінки"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
-#: src/core/Settings.cc:400
+#: src/core/Settings.cc:399
 msgid "A6 (105 x 148 mm)"
 msgstr "A6 (105 × 148 мм)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:556
-#: src/core/Settings.cc:401
+#: src/core/Settings.cc:400
 msgid "A5 (148 x 210 mm)"
 msgstr "A5 (148 × 210 мм)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
-#: src/core/Settings.cc:402
+#: src/core/Settings.cc:401
 msgid "A4 (210x297 mm)"
 msgstr "A4 (210 × 297 мм)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:558
-#: src/core/Settings.cc:403
+#: src/core/Settings.cc:402
 msgid "A3 (297x420 mm)"
 msgstr "A3 (297 × 420 мм)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:559
-#: src/core/Settings.cc:404
+#: src/core/Settings.cc:403
 msgid "Letter (8.5x11 in)"
 msgstr "Letter (8,5 × 11 дюйм.)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:560
-#: src/core/Settings.cc:405
+#: src/core/Settings.cc:404
 msgid "Legal (8.5x14 in)"
 msgstr "Legal (8,5 × 14 дюйм.)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
-#: src/core/Settings.cc:406
+#: src/core/Settings.cc:405
 msgid "Tabloid (11x17 in)"
 msgstr "Tabloid (11 × 17 дюйм.)"
 
@@ -916,12 +918,12 @@ msgid "Page Orientation"
 msgstr "Орієнтація сторінки"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:585
-#: src/core/Settings.cc:410
+#: src/core/Settings.cc:409
 msgid "Portrait (Vertical)"
 msgstr "Книжкова (вертикальна)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:587
-#: src/core/Settings.cc:411
+#: src/core/Settings.cc:410
 msgid "Landscape (Horizontal)"
 msgstr "Альбомна (горизонтальна)"
 
@@ -934,7 +936,7 @@ msgstr ""
 "геометрії.</p></body></html>"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:591
-#: src/core/Settings.cc:412
+#: src/core/Settings.cc:411
 msgid "Auto"
 msgstr "Авто"
 
@@ -1138,7 +1140,7 @@ msgid "Font path"
 msgstr "Шлях до шрифту"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:319
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2687
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2674
 msgid "Style"
 msgstr "Стиль"
 
@@ -1228,7 +1230,7 @@ msgid "Select Design"
 msgstr "Обрати дизайн"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1065
-#: src/gui/MainWindow.cc:5246
+#: src/gui/MainWindow.cc:5432
 msgid "Welcome..."
 msgstr "Ласкаво просимо…"
 
@@ -1289,7 +1291,7 @@ msgid "Ctrl+R"
 msgstr "Ctrl+R"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1090
-#: src/gui/MainWindow.cc:5247
+#: src/gui/MainWindow.cc:5433
 msgid "Close &Window"
 msgstr "Закрити &вікно"
 
@@ -1406,7 +1408,8 @@ msgid "Ctrl+Shift+Tab"
 msgstr "Ctrl+Shift+Tab"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1149
-msgid "Copy viewport ima&ge"
+#, fuzzy
+msgid "Copy Viewport Ima&ge"
 msgstr "Копіювати &зображення видового екрана"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1151
@@ -1414,7 +1417,8 @@ msgid "Ctrl+Shift+C"
 msgstr "Ctrl+Shift+C"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1153
-msgid "Copy viewport transl&ation"
+#, fuzzy
+msgid "Copy Viewport Transl&ation"
 msgstr "Копіювати &переміщення видового екрана"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1155
@@ -1422,15 +1426,18 @@ msgid "Ctrl+T"
 msgstr "Ctrl+T"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1157
-msgid "Cop&y viewport rotation"
+#, fuzzy
+msgid "Cop&y Viewport Rotation"
 msgstr "Ко&піювати обертання видового екрана"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1158
-msgid "Copy vie&wport distance"
+#, fuzzy
+msgid "Copy Vie&wport Distance"
 msgstr "Копіювати &відстань видового екрана"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1159
-msgid "Copy vie&wport fov"
+#, fuzzy
+msgid "Copy Vie&wport FOV"
 msgstr "Копіювати поле &зору видового екрана"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1160
@@ -1530,7 +1537,7 @@ msgid "Display CSG Pr&oducts"
 msgstr "Показати пр&одукти CSG…"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
-#: src/gui/MainWindow.cc:3910
+#: src/gui/MainWindow.cc:4073
 msgid "&Export..."
 msgstr "&Експорт..."
 
@@ -1791,7 +1798,8 @@ msgid "Ctrl+E"
 msgstr "Ctrl+E"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
-msgid "J&ump to next error"
+#, fuzzy
+msgid "J&ump to Next Error"
 msgstr "Перейти до наступної помилки"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1313
@@ -1819,7 +1827,8 @@ msgid "Export as &CSG..."
 msgstr "Експортувати у &CSG..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1320
-msgid "&Library info"
+#, fuzzy
+msgid "&Library Info"
 msgstr "Інформація про &бібліотеку"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1321
@@ -1883,7 +1892,8 @@ msgid "Ctrl+F2"
 msgstr "Ctrl+F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1344
-msgid "Jump to next &bookmark"
+#, fuzzy
+msgid "Jump to Next &Bookmark"
 msgstr "Перейти до наступної закладки"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1346
@@ -1891,7 +1901,8 @@ msgid "F2"
 msgstr "F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
-msgid "Jump to &previous bookmark"
+#, fuzzy
+msgid "Jump to &Previous Bookmark"
 msgstr "Перейти до попередньої закладки"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
@@ -1907,7 +1918,8 @@ msgid "F11"
 msgstr "F11"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
-msgid "&Hide Editor toolbar"
+#, fuzzy
+msgid "&Hide Editor Toolbar"
 msgstr "Сховати панель інструментів редактора"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1357
@@ -1931,7 +1943,8 @@ msgid "Export as PDF..."
 msgstr "Експортувати у PDF…"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
-msgid "Hide &3D View toolbar"
+#, fuzzy
+msgid "Hide &3D View Toolbar"
 msgstr "Сховати панель інструментів 3D-виду"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1365
@@ -1988,7 +2001,7 @@ msgid "&Examples"
 msgstr "&Приклади"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1384
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2641
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2628
 #: src/gui/Editor.cc:206 src/gui/Editor.cc:211 examples
 msgid "Python"
 msgstr "Python"
@@ -2155,7 +2168,7 @@ msgid "Form"
 msgstr "Форма"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterDescriptionWidget.h:99
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2765
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
 msgid "Parameter"
 msgstr "Параметр"
 
@@ -2180,8 +2193,9 @@ msgid "Description Only"
 msgstr "Тільки опис"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:161
-#: src/gui/parameter/ParameterWidget.cc:212
-#: src/gui/parameter/ParameterWidget.cc:340
+#: src/gui/parameter/ParameterWidget.cc:232
+#: src/gui/parameter/ParameterWidget.cc:336
+#: src/gui/parameter/ParameterWidget.cc:504
 msgid "<design default>"
 msgstr "<типові значення дизайну>"
 
@@ -2209,452 +2223,456 @@ msgstr "-"
 msgid "More actions"
 msgstr "Більше дій"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2627
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2614
 msgid "3D View"
 msgstr "3D вид"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2628
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2615
 msgctxt "preferences"
 msgid "Advanced"
 msgstr "Поглиблене"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2629
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2616
 msgid "Editor"
 msgstr "Редактор"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2631
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2618
 msgid "Experimental"
 msgstr "Експериментальні"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2633
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2620
 msgid "Enable/Disable experimental features"
 msgstr "Увімкнути/Вимкнути експериментальні можливості"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2635
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2622
 msgid "Axes"
 msgstr "Осі"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2637
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2624
 msgid "Input driver configuration and Axis mapping"
 msgstr "Налаштування драйвера вводу та призначення осей"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2639
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2626
 msgid "Buttons"
 msgstr "Кнопки"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2640
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2627
 msgid "Mouse"
 msgstr "Миша"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2643
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
 msgid "Python Settings"
 msgstr "Налаштування Python"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2645
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2632
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:178
-#: src/gui/MainWindow.cc:3553 src/gui/MainWindow.cc:3586
-#: src/gui/MainWindow.cc:3641
+#: src/gui/MainWindow.cc:3714 src/gui/MainWindow.cc:3747
+#: src/gui/MainWindow.cc:3804
 msgid "3D Print"
 msgstr "3D-друк"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2647
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2634
 msgid "3D Printing Services"
 msgstr "Сервіси 3D-друку"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2649
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2636
 msgid "Dialogs"
 msgstr "Діалоги"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2650
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2637
 msgid "AI"
 msgstr "ШІ"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2652
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2639
 msgid "AI and LLM configurations"
 msgstr "Налаштування ШІ та LLM"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2654
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2641
 msgid "Directory of the output file"
 msgstr "Тека вихідного файлу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2655
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2642
 msgid "Extension of the output file without leading dot"
 msgstr "Розширення вихідного файлу без початкової крапки"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2656
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2643
 msgid "Full path to the main source file"
 msgstr "Повний шлях до головного вихідного файлу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2657
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2644
 msgid "Directory of the main source file"
 msgstr "Тека головного вихідного файлу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2658
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2645
 msgid "Full path to the output file"
 msgstr "Повний шлях до вихідного файлу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2646
 msgid "Color scheme:"
 msgstr "Схема кольорів:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2647
 msgid "Show Warnings and Errors in 3D View"
 msgstr "Показувати попередження та помилки у 3D виді"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2648
 msgid "mouse centric zoom"
 msgstr "Масштабування відносно миші"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2649
 msgid "Number Scroll"
 msgstr "Зміна числа"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2650
 #: src/core/Settings.cc:198
 msgid "Alt"
 msgstr "Alt"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2651
 #: src/core/Settings.cc:199
 msgid "Left Mouse Button"
 msgstr "Ліва кнопка миші"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2652
 #: src/core/Settings.cc:200
 msgid "Either"
 msgstr "Будь-яка"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2667
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2654
 msgid "Step Size"
 msgstr "Розмір кроку"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2655
 msgid "Number Scroll Via Mouse Wheel"
 msgstr "Зміна числа колесом миші"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2656
 msgid "Modifier For Wheel Scroll "
 msgstr "Модифікатор прокрутки колесом "
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2657
 msgid "Autocomplete"
 msgstr "Автодоповнення"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2658
 msgid " Include defined modules"
 msgstr " Включати визначені модулі"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
 msgid "Character Threshold"
 msgstr "Поріг символів"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2673
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
 msgid " Include defined functions"
 msgstr " Включати визначені функції"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2674
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
 msgid "Enable Autocompletion"
 msgstr "Увімкнути автодоповнення"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2675
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
 msgid " Include defined variables"
 msgstr " Включати визначені змінні"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2676
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
 msgid "Mode"
 msgstr "Режим"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2677
-#: src/core/Settings.cc:541
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
+#: src/core/Settings.cc:540
 msgid "Parsed File Mode"
 msgstr "Режим розібраного файлу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2678
-#: src/core/Settings.cc:542
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
+#: src/core/Settings.cc:541
 msgid "Regex Input Text Mode"
 msgstr "Режим введення тексту RegEx"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2680
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2705
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2667
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2692
 msgid "Line wrap"
 msgstr "Згортання рядків"
 
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2681
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2694
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2700
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2687
 #: src/core/Settings.cc:45 src/core/Settings.cc:155 src/core/Settings.cc:166
 #: src/core/Settings.cc:172 src/gui/input/ButtonConfigWidget.cc:248
 msgid "None"
 msgstr "Нема"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2682
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
 #: src/core/Settings.cc:156
 msgid "Wrap at character boundaries"
 msgstr "Згортати на межах знаків"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2683
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
 #: src/core/Settings.cc:157
 msgid "Wrap at word boundaries"
 msgstr "Згортати на межах слів"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2685
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
 msgid "Line wrap indentation"
 msgstr "Відступ згортання рядків"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2686
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2673
 msgid "Line wrap visualization"
 msgstr "Візуалізація згортання рядків"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2689
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2676
 #: src/core/Settings.cc:161
 msgid "Same"
 msgstr "Такий самий"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2690
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2677
 #: src/core/Settings.cc:161
 msgid "Indented"
 msgstr "З відступом"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2692
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2724
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2679
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2711
 #: src/core/Settings.cc:189
 msgid "Indent"
 msgstr "Відступ"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2693
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2680
 msgid "Start"
 msgstr "Початок"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2682
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2688
 #: src/core/Settings.cc:167 src/core/Settings.cc:173
 msgid "Text"
 msgstr "Текст"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2696
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2702
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2683
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2689
 #: src/core/Settings.cc:168 src/core/Settings.cc:174
 msgid "Border"
 msgstr "Межа"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2703
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2684
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2690
 #: src/core/Settings.cc:169 src/core/Settings.cc:175
 msgid "Margin"
 msgstr "Поле"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2699
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2686
 msgid "End"
 msgstr "Кінець"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2706
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2693
 msgid "Display"
 msgstr "Показ"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2707
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2694
 msgid "Highlight current line"
 msgstr "Підсвічувати поточний рядок"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2708
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
 msgid "Display Line Numbers"
 msgstr "Показувати номери рядків"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2696
 msgid "Enable brace matching"
 msgstr "Увімкнути парні дужки"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2710
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2805
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2807
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2776
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
 msgid "Font"
 msgstr "Шрифт"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2711
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2698
 msgid "Color syntax highlighting"
 msgstr "Кольорова підсвітка синтаксису"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2712
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2699
 msgid "Ctrl/Cmd-Mouse-wheel zooms text"
 msgstr "Ctrl/Cmd-колесо масштабує текст"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2713
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2700
 msgid "Use gvim as editor (requires restart)"
 msgstr "Використовувати gvim як редактор (потребує перезапуску)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2714
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
 msgid "Indentation"
 msgstr "Відступи"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2715
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2702
 msgid "Auto Indent"
 msgstr "Автовідступи"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2716
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2703
 msgid "Backspace unindents"
 msgstr "Backspace відміняє відступ"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2717
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2704
 msgid "Indent using"
 msgstr "Робити відступи"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2718
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2705
 #: src/core/Settings.cc:187
 msgid "Spaces"
 msgstr "Пробілами"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2719
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2706
 #: src/core/Settings.cc:187
 msgid "Tabs"
 msgstr "Табуляцією"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2721
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2708
 msgid "Indentation width"
 msgstr "Ширина відступу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2722
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
 msgid "Tab width"
 msgstr "Ширина табуляції"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2723
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2710
 msgid "Tab key function"
 msgstr "Клавіша Tab виконує"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2725
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2712
 #: src/core/Settings.cc:190
 msgid "Insert Tab"
 msgstr "Ставить табуляцію"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2727
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2714
 msgid "Show whitespace"
 msgstr "Показувати пробіл"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2728
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2715
 #: src/core/Settings.cc:178
 msgid "Never"
 msgstr "Ніколи"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2729
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2716
 #: src/core/Settings.cc:179
 msgid "Always"
 msgstr "Завжди"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2730
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2717
 msgid "Only after indentation"
 msgstr "Тільки після відступу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2732
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2719
 msgid "Size"
 msgstr "Розмір"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2733
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2720
 msgid "Automatically check for updates"
 msgstr "Автоматично перевіряти оновлення"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2734
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2721
 msgid "Include development snapshots"
 msgstr "Включити розробницькі збірки"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2735
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2722
 msgid "Check Now"
 msgstr "Перевірити зараз"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2736
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2723
 msgid "Last checked: "
 msgstr "Останнього разу перевірено:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2724
 msgid "Experimental Features"
 msgstr "Експериментальні функції"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2725
 msgid ""
 "These features are experimental.  They may change or be removed entirely "
 "without notice. You may enable them and use them and comment on them, but "
 "you must assume that they may not be in their final form and may never "
 "appear in an OpenSCAD release in any form."
-msgstr "Ці функції є експериментальними. Вони можуть змінитися або бути повністю вилучені без попередження. Ви можете вмикати, використовувати й коментувати їх, але мусите виходити з того, що вони можуть ще не мати остаточного вигляду і можуть ніколи не з’явитися в жодному випуску OpenSCAD."
+msgstr ""
+"Ці функції є експериментальними. Вони можуть змінитися або бути повністю "
+"вилучені без попередження. Ви можете вмикати, використовувати й коментувати "
+"їх, але мусите виходити з того, що вони можуть ще не мати остаточного "
+"вигляду і можуть ніколи не з’явитися в жодному випуску OpenSCAD."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2726
 msgid "General"
 msgstr "Загальні"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2740
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2727
 msgid "Default Print Service"
 msgstr "Типовий сервіс друку"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2741
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2728
 msgid "Enable remote print services"
 msgstr "Увімкнути віддалені сервіси друку"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2742
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2729
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:181
-#: src/gui/Preferences.cc:652
+#: src/gui/Preferences.cc:655
 msgid "OctoPrint"
 msgstr "OctoPrint"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2743
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2730
 msgid "URL"
 msgstr "URL"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2744
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2849
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2731
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2835
 msgid "API Key"
 msgstr "Ключ API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2745
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2746
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2732
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2733
 msgid "Load"
 msgstr "Завантажити"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2748
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2735
 msgid "Check"
 msgstr "Перевірити"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2749
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2736
 msgid "Slicing Profile"
 msgstr "Профіль нарізки"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2750
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
 msgid "Slicing Engine"
 msgstr "Рушій нарізки"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2757
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2744
 msgid "File Format"
 msgstr "Формат файлу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
 msgid "Action"
 msgstr "Дія"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2753
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2740
 msgid "Request"
 msgstr "Запит"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2741
 msgid "Show"
 msgstr "Показати"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2755
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2742
 msgid "Note: The API key is stored unencrypted in the application settings."
 msgstr ""
 "Примітка: ключ API зберігається незашифрованим у налаштуваннях програми."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2756
-#: src/gui/Preferences.cc:653
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2743
+#: src/gui/Preferences.cc:656
 msgid "Local Application"
 msgstr "Локальна програма"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2758
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2745
 msgid "File"
 msgstr "Файл"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2763
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2750
 msgid "Executable"
 msgstr "Виконуваний файл"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2767
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
 msgid ""
 "Directory for storing the exported file, leave empty to use the default "
 "system location."
@@ -2662,275 +2680,271 @@ msgstr ""
 "Тека для збереження експортованого файлу; залиште порожнім, щоб використати "
 "типове системне розташування."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2770
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2757
 msgid "Temp Dir"
 msgstr "Тимчасова тека"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2759
 msgid "3D Preview (OpenCSG)"
 msgstr "3D-попередній перегляд (OpenCSG)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2760
 msgid "Show capability warning"
 msgstr "Показувати попередження про здатності"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2761
 msgid "Turn off rendering at "
 msgstr "Вимкнути рендеринг на "
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2775
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2762
 msgid "elements"
 msgstr "елементів"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2776
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2763
 msgid "Force Goldfeather"
 msgstr "Примусово вмикати Goldfeather"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2764
 msgid "3D Rendering"
 msgstr "3D-рендеринг"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2778
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2765
 msgid "Backend"
 msgstr "Backend"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2779
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2766
 msgid "CGAL Cache size"
 msgstr "Розмір кешу CGAL"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2780
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2767
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2769
 msgid "MB"
 msgstr "МБ"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2781
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2768
 msgid "PolySet Cache size"
 msgstr "Розмір кешу PolySet"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2770
 msgid "User Interface"
 msgstr "Інтерфейс користувача"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
 msgid "GUI theme"
 msgstr "Тема інтерфейсу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
 msgid "Light"
 msgstr "Світла"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
 msgid "Dark"
 msgstr "Темна"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
 msgid "Auto (follow system)"
 msgstr "Авто (за системою)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
 msgid "Enable docking helper widgets in different places"
 msgstr "Увімкнути докування допоміжних віджетів у різних місцях"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2778
 msgid "Enable undocking of helper widgets to separate windows"
 msgstr "Дозволити відстикування допоміжних віджетів у окремі вікна"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2779
 msgid "Enable user interface localization (requires restart of PythonSCAD)"
 msgstr "Увімкнути локалізацію інтерфейсу (потребує перезапуску PythonSCAD)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2780
 msgid "Bring window to front after automatic reload"
 msgstr "Піднести вікно на передній план після автоматичного перевантаження"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2781
 msgid "Play sound notification on render complete"
 msgstr "Програвати звукове оповіщення по завершенні рендерингу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
 msgid "Play sound when render completion time is at least"
 msgstr "Програвати звук, коли час завершення рендерингу становить щонайменше"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
 msgid "sec"
 msgstr "с"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
-#: src/gui/Preferences.cc:448
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
+#: src/gui/Preferences.cc:453
 msgid "When launching another instance with files:"
 msgstr "При запуску іншого екземпляра з файлами:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
-#: src/gui/Preferences.cc:450
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
+#: src/gui/Preferences.cc:455
 msgid "Enable session management (save/restore tabs on quit, requires restart)"
 msgstr ""
 "Увімкнути керування сеансами (збереження/відновлення вкладок при виході, "
 "потребує перезапуску)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
-#: src/gui/Preferences.cc:452
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
+#: src/gui/Preferences.cc:457
 msgid "Autosave session in background for crash recovery"
 msgstr "Автозбереження сеансу у фоні для відновлення після збою"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
-#: src/gui/Preferences.cc:453
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
+#: src/gui/Preferences.cc:458
 msgid "Autosave interval:"
 msgstr "Інтервал автозбереження:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
 msgid "Console"
 msgstr "Консоль"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
 msgid "Clear console before Preview/Render"
 msgstr "Очищати консоль перед переглядом/рендерингом"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
 msgid "Maximum lines for Console to keep:"
 msgstr "Максимальна кількість рядків у консолі:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2804
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
 msgid "(0 for unlimited)"
 msgstr "(0 — необмежено)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2806
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
 msgid "Customizer"
 msgstr "Кастомайзер"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2808
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
 msgid "OpenSCAD Language Features"
 msgstr "Можливості мови OpenSCAD"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2809
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
 msgid "Warnings"
 msgstr "Попередження"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2810
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
 msgid "Stop on the first warning"
 msgstr "Зупинятися на першому попередженні"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2811
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
 msgid "Check the parameter range for builtin modules"
 msgstr "Перевіряти діапазон параметрів вбудованих модулів"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2812
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
 msgid "Warn when there is a parameter mismatch in user module calls"
 msgstr ""
 "Попереджати про невідповідність параметрів у викликах користувацьких модулів"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2813
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
 msgid "Trace"
 msgstr "Trace"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2814
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
 msgid "Trace depth:"
 msgstr "Глибина trace:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2815
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
 msgid "(max. number or trace messages)"
 msgstr "(макс. кількість повідомлень trace)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2816
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
 msgid "Show parameters of usermodule calls in trace"
 msgstr "Показувати параметри викликів usermodule у trace"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2817
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2804
 msgid "Render Summary"
 msgstr "Підсумок рендерингу"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2818
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2805
 msgid "Camera"
 msgstr "Камера"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2819
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2806
 msgid "Bounding Box"
 msgstr "Обмежувальний прямокутник"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2820
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2807
 msgid "Measurements: Area"
 msgstr "Вимірювання: площа"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2821
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2808
 msgid "Measurements: Volume"
 msgstr "Вимірювання: об'єм"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2822
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2809
 msgid "Export Features"
 msgstr "Можливості експорту"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2823
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2810
 msgid "Toolbar Export 3D"
 msgstr "Панель інструментів: експорт 3D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2824
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2811
 msgid "Toolbar Export 2D"
 msgstr "Панель інструментів: експорт 2D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2825
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2812
 msgid "Debugging"
 msgstr "Налагодження"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2826
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2813
 msgid "Enable tracing of HIDAPI events (requires restart of PythonSCAD)"
 msgstr "Увімкнути трасування подій HIDAPI (потребує перезапуску PythonSCAD)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2827
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2814
 msgid "Network"
 msgstr "Мережа"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2828
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2815
 msgid "Custom CA certificates (PEM)"
 msgstr "Власні сертифікати ЦС (PEM)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2830
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2817
 msgid "Skip TLS certificate verification (insecure)"
 msgstr "Пропустити перевірку TLS-сертифіката (небезпечно)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2831
-msgid "Network Import List"
-msgstr "Список мережевого імпорту"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2832
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2818
 msgid "Globally trust Python designs"
 msgstr "Глобально довіряти Python-дизайнам"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2833
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2819
 msgid "Really (very dangerous)"
 msgstr "Справді (дуже небезпечно)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2834
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2820
 msgid "Dialog visibility"
 msgstr "Видимість діалогів"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2835
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2821
 msgid "Always show Welcome screen"
 msgstr "Показувати вікно привітання"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2836
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2822
 msgid "Always show PDF export dialog"
 msgstr "Завжди показувати діалог експорту PDF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2837
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2823
 msgid "Always show 3MF export dialog"
 msgstr "Завжди показувати діалог експорту 3MF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2838
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2824
 msgid "Always show SVG export dialog"
 msgstr "Завжди показувати діалог експорту SVG"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2839
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2825
 msgid "Always show GCODE export dialog"
 msgstr "Завжди показувати діалог експорту GCODE"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2840
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2826
 msgid "Always show Print Service dialog"
 msgstr "Завжди показувати діалог сервісу друку"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2841
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2827
 msgid "AI Preferences"
 msgstr "Налаштування ШІ"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2842
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2828
 msgid ""
 "AI assistant integration is active. Configure your connection profiles and "
 "parameters below."
@@ -2938,47 +2952,47 @@ msgstr ""
 "Інтеграцію ШІ-асистента увімкнено. Налаштуйте профілі підключення та "
 "параметри нижче."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2843
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2829
 msgid "Profiles"
 msgstr "Профілі"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2844
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2830
 msgid "Active Profile"
 msgstr "Активний профіль"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2845
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2831
 msgid "New Profile"
 msgstr "Новий профіль"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2846
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2832
 msgid "Delete"
 msgstr "Видалити"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2847
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2833
 msgid "API Configuration"
 msgstr "Налаштування API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2848
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2834
 msgid "API Endpoint"
 msgstr "Кінцева точка API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2850
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2836
 msgid "System Prompt / Instructions"
 msgstr "Системний промпт / інструкції"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2851
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2837
 msgid "Default User Prompt"
 msgstr "Типовий промпт користувача"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2852
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2838
 msgid "API Parameters"
 msgstr "Параметри API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2853
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2839
 msgid "Add Parameter"
 msgstr "Додати параметр"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2854
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2840
 msgid "Remove Parameter"
 msgstr "Видалити параметр"
 
@@ -3080,31 +3094,31 @@ msgstr "Завантажити, нарізати та обрати для дру
 msgid "Upload, Slice & Start printing"
 msgstr "Завантажити, нарізати та розпочати друк"
 
-#: src/core/Settings.cc:447
+#: src/core/Settings.cc:446
 msgid "Use colors from model"
 msgstr "Використовувати кольори з моделі"
 
-#: src/core/Settings.cc:449
+#: src/core/Settings.cc:448
 msgid "Use selected color only"
 msgstr "Використовувати лише обраний колір"
 
-#: src/core/Settings.cc:456
+#: src/core/Settings.cc:455
 msgid "Millimeter"
 msgstr "Міліметр"
 
-#: src/core/Settings.cc:460
+#: src/core/Settings.cc:459
 msgid "Feet"
 msgstr "Фути"
 
-#: src/core/Settings.cc:468
+#: src/core/Settings.cc:467
 msgid "Color"
 msgstr "Колір"
 
-#: src/core/Settings.cc:469
+#: src/core/Settings.cc:468
 msgid "Base Material"
 msgstr "Базовий матеріал"
 
-#: src/core/Settings.cc:531
+#: src/core/Settings.cc:530
 msgid "Alphabetical"
 msgstr "За алфавітом"
 
@@ -3355,22 +3369,22 @@ msgstr "Драйвер QGAMEPAD забезпечує підтримку гейм
 msgid "Toggle Perspective"
 msgstr "Перемкнути перспективу"
 
-#: src/gui/MainWindow.cc:1296
+#: src/gui/MainWindow.cc:1259
 msgid "Compile error."
 msgstr "Помилка компіляції."
 
-#: src/gui/MainWindow.cc:1299
+#: src/gui/MainWindow.cc:1262
 msgid "Error while compiling '%1'."
 msgstr "Помилка під час компіляції '%1'."
 
-#: src/gui/MainWindow.cc:1304
+#: src/gui/MainWindow.cc:1267
 msgid "Compilation generated %1 warning."
 msgid_plural "Compilation generated %1 warnings."
 msgstr[0] "Компіляція видала %1 попередження."
 msgstr[1] "Компіляція видала %1 попереджень."
 msgstr[2] "Компіляція видала %1 попереджень."
 
-#: src/gui/MainWindow.cc:1317
+#: src/gui/MainWindow.cc:1280
 msgid ""
 " For details see the <a href=\"#errorlog\">error log</a> and <a "
 "href=\"#console\">console window</a>."
@@ -3378,15 +3392,15 @@ msgstr ""
 " Докладніше дивіться <a href=\"#errorlog\">журнал помилок</a> та <a "
 "href=\"#console\">вікно консолі</a>."
 
-#: src/gui/MainWindow.cc:1678 src/gui/TabManager.cc:489
+#: src/gui/MainWindow.cc:1667 src/gui/TabManager.cc:482
 msgid "Session Save"
 msgstr "Збереження сеансу"
 
-#: src/gui/MainWindow.cc:1679
+#: src/gui/MainWindow.cc:1668
 msgid "Could not save the session."
 msgstr "Не вдалося зберегти сеанс."
 
-#: src/gui/MainWindow.cc:1680
+#: src/gui/MainWindow.cc:1669
 msgid ""
 "%1\n"
 "\n"
@@ -3396,23 +3410,23 @@ msgstr ""
 "\n"
 "%2"
 
-#: src/gui/MainWindow.cc:1681
+#: src/gui/MainWindow.cc:1670
 msgid "Try Again"
 msgstr "Спробувати знову"
 
-#: src/gui/MainWindow.cc:1683
+#: src/gui/MainWindow.cc:1672
 msgid "Quit Without Saving"
 msgstr "Вийти без збереження"
 
-#: src/gui/MainWindow.cc:1684
+#: src/gui/MainWindow.cc:1673
 msgid "Keep Open"
 msgstr "Залишити відкритим"
 
-#: src/gui/MainWindow.cc:1870
+#: src/gui/MainWindow.cc:1865
 msgid "Revoke All Trusted Designs"
 msgstr "Скасувати довіру для всіх дизайнів"
 
-#: src/gui/MainWindow.cc:1871
+#: src/gui/MainWindow.cc:1866
 msgid ""
 "This will revoke trust for all Python designs.\n"
 "\n"
@@ -3422,26 +3436,26 @@ msgstr ""
 "\n"
 "Ви впевнені?"
 
-#: src/gui/MainWindow.cc:1913 src/gui/MainWindow.cc:1920
-#: src/gui/MainWindow.cc:1929 src/gui/MainWindow.cc:1942
-#: src/gui/MainWindow.cc:1947
+#: src/gui/MainWindow.cc:1908 src/gui/MainWindow.cc:1915
+#: src/gui/MainWindow.cc:1924 src/gui/MainWindow.cc:1984
+#: src/gui/MainWindow.cc:1989
 msgid "Create Virtual Environment"
 msgstr "Створити віртуальне середовище"
 
-#: src/gui/MainWindow.cc:1927
+#: src/gui/MainWindow.cc:1922
 msgid "Creating Python virtual environment. Please wait..."
 msgstr "Створення віртуального середовища Python. Зачекайте…"
 
-#: src/gui/MainWindow.cc:1964
+#: src/gui/MainWindow.cc:2007
 msgid "Select Virtual Environment"
 msgstr "Обрати віртуальне середовище"
 
-#: src/gui/MainWindow.cc:2522 src/gui/TabManager.cc:440
-#: src/gui/TabManager.cc:554
+#: src/gui/MainWindow.cc:2611 src/gui/MainWindow.cc:2636
+#: src/gui/TabManager.cc:441 src/gui/TabManager.cc:547
 msgid "Application"
 msgstr "Програма"
 
-#: src/gui/MainWindow.cc:2523
+#: src/gui/MainWindow.cc:2612
 msgid ""
 "The file has changed on disk, but this tab has unsaved edits.\n"
 "Reloading will discard your changes.\n"
@@ -3453,79 +3467,104 @@ msgstr ""
 "\n"
 "Справді перезавантажити файл?"
 
-#: src/gui/MainWindow.cc:3182
+#: src/gui/MainWindow.cc:2630
+msgid ""
+"You have unsaved customizer preset edits.\n"
+"Reloading will discard your preset changes.\n"
+"\n"
+"Do you really want to reload the presets?"
+msgstr ""
+"У вас є незбережені зміни пресетів кастомайзера.\n"
+"Перезавантаження скасує зміни пресетів.\n"
+"\n"
+"Справді перезавантажити пресети?"
+
+#: src/gui/MainWindow.cc:2633
+msgid ""
+"The customizer presets file has changed on disk, but this tab has unsaved "
+"preset edits.\n"
+"Reloading will discard your preset changes.\n"
+"\n"
+"Do you really want to reload the presets?"
+msgstr ""
+"Файл пресетів кастомайзера змінився на диску, але ця вкладка має незбережені зміни пресетів.\n"
+"Перезавантаження скасує зміни пресетів.\n"
+"\n"
+"Справді перезавантажити пресети?"
+
+#: src/gui/MainWindow.cc:3341
 msgid "Click to change language"
 msgstr "Натисніть, щоб змінити мову"
 
-#: src/gui/MainWindow.cc:3227
+#: src/gui/MainWindow.cc:3386
 msgid "Auto-detect from file extension"
 msgstr "Автовизначення за розширенням файлу"
 
-#: src/gui/MainWindow.cc:3554
+#: src/gui/MainWindow.cc:3715
 msgid "The design has not been rendered yet (F6)."
 msgstr "Дизайн ще не було відрендерено (F6)."
 
-#: src/gui/MainWindow.cc:3555
+#: src/gui/MainWindow.cc:3716
 msgid "Render the design and print, or cancel."
 msgstr "Відрендерити дизайн і надрукувати, або скасувати."
 
-#: src/gui/MainWindow.cc:3556
+#: src/gui/MainWindow.cc:3717
 msgid "Render the design and export, or cancel."
 msgstr "Відрендерити дизайн і експортувати, або скасувати."
 
-#: src/gui/MainWindow.cc:3561 src/gui/MainWindow.cc:3594
-#: src/gui/MainWindow.cc:3653
+#: src/gui/MainWindow.cc:3722 src/gui/MainWindow.cc:3755
+#: src/gui/MainWindow.cc:3816
 msgid "Render and Print"
 msgstr "Рендер і друк"
 
-#: src/gui/MainWindow.cc:3561 src/gui/MainWindow.cc:3594
-#: src/gui/MainWindow.cc:3653
+#: src/gui/MainWindow.cc:3722 src/gui/MainWindow.cc:3755
+#: src/gui/MainWindow.cc:3816
 msgid "Render and Export"
 msgstr "Рендер і експорт"
 
-#: src/gui/MainWindow.cc:3579 src/gui/UnsavedChangesDialog.cc:105
+#: src/gui/MainWindow.cc:3740 src/gui/UnsavedChangesDialog.cc:105
 #: src/gui/UnsavedChangesDialog.cc:121
 msgid "Untitled"
 msgstr "Без назви"
 
-#: src/gui/MainWindow.cc:3587
+#: src/gui/MainWindow.cc:3748
 msgid "The current render belongs to a different tab (%1)."
 msgstr "Поточний рендер належить іншій вкладці (%1)."
 
-#: src/gui/MainWindow.cc:3588
+#: src/gui/MainWindow.cc:3749
 msgid "Use that tab's render, render this tab first, or cancel."
 msgstr ""
 "Використати рендер тієї вкладки, спочатку відрендерити цю, або скасувати."
 
-#: src/gui/MainWindow.cc:3589
+#: src/gui/MainWindow.cc:3750
 msgid "Export that tab's render, render this tab first, or cancel."
 msgstr ""
 "Експортувати рендер тієї вкладки, спочатку відрендерити цю, або скасувати."
 
-#: src/gui/MainWindow.cc:3592
+#: src/gui/MainWindow.cc:3753
 msgid "Use Other Tab's Render"
 msgstr "Використати рендер іншої вкладки"
 
-#: src/gui/MainWindow.cc:3592
+#: src/gui/MainWindow.cc:3753
 msgid "Export Other Tab's Render"
 msgstr "Експортувати рендер іншої вкладки"
 
-#: src/gui/MainWindow.cc:3620
+#: src/gui/MainWindow.cc:3783
 msgid "Nothing to export! Try rendering first (press F6)"
 msgstr "Нічого експортувати! Спочатку виконайте рендер (F6)"
 
-#: src/gui/MainWindow.cc:3642
+#: src/gui/MainWindow.cc:3805
 msgid "The design has changed since it was last rendered (F6)."
 msgstr "Дизайн змінився після останнього рендеру (F6)."
 
-#: src/gui/MainWindow.cc:3644
+#: src/gui/MainWindow.cc:3807
 msgid ""
 "Print the last rendered geometry, render the current design first, or cancel."
 msgstr ""
 "Надрукуйте останню відрендерену геометрію, спочатку виконайте рендер "
 "поточного дизайну або скасуйте."
 
-#: src/gui/MainWindow.cc:3645
+#: src/gui/MainWindow.cc:3808
 msgid ""
 "Export the last rendered geometry, render the current design first, or "
 "cancel."
@@ -3533,43 +3572,43 @@ msgstr ""
 "Експортуйте останню відрендерену геометрію, спочатку виконайте рендер "
 "поточного дизайну або скасуйте."
 
-#: src/gui/MainWindow.cc:3651
+#: src/gui/MainWindow.cc:3814
 msgid "Use Previous"
 msgstr "Використати попереднє"
 
-#: src/gui/MainWindow.cc:3651
+#: src/gui/MainWindow.cc:3814
 msgid "Export Previous"
 msgstr "Експортувати попереднє"
 
-#: src/gui/MainWindow.cc:3674
+#: src/gui/MainWindow.cc:3837
 msgid "Current top level object is not a %1D object."
 msgstr "Поточний об’єкт верхнього рівня не є %1D-об’єктом."
 
-#: src/gui/MainWindow.cc:3680
+#: src/gui/MainWindow.cc:3843
 msgid "Current top level object is empty."
 msgstr "Поточний об’єкт верхнього рівня порожній."
 
-#: src/gui/MainWindow.cc:3773
+#: src/gui/MainWindow.cc:3936
 msgid "ASCII STL"
 msgstr "ASCII STL"
 
-#: src/gui/MainWindow.cc:3775
+#: src/gui/MainWindow.cc:3938
 msgid "Binary STL"
 msgstr "Двійковий STL"
 
-#: src/gui/MainWindow.cc:3822
+#: src/gui/MainWindow.cc:3985
 msgid "By Extension (*.*)"
 msgstr "За розширенням (*.*)"
 
-#: src/gui/MainWindow.cc:3908
+#: src/gui/MainWindow.cc:4071
 msgid "E&xport to %1"
 msgstr "&Експорт у %1"
 
-#: src/gui/MainWindow.cc:3994
+#: src/gui/MainWindow.cc:4157
 msgid "Nothing to export. Please try compiling first."
 msgstr "Нічого експортувати. Спочатку скомпілюйте."
 
-#: src/gui/MainWindow.cc:4164 src/gui/MainWindow.cc:4179
+#: src/gui/MainWindow.cc:4327 src/gui/MainWindow.cc:4342
 msgid ""
 "The given filename does not have any known file extension. Please enter a "
 "known file extension or select a file format from the file format list."
@@ -3577,7 +3616,7 @@ msgstr ""
 "Вказана назва файлу не має відомого розширення. Введіть відоме розширення "
 "або виберіть формат зі списку."
 
-#: src/gui/MainWindow.cc:4192 src/gui/TabManager.cc:404
+#: src/gui/MainWindow.cc:4355 src/gui/TabManager.cc:405
 msgid ""
 "%1 already exists.\n"
 "Do you want to replace it?"
@@ -3585,39 +3624,39 @@ msgstr ""
 "%1 вже існує.\n"
 "Перезаписати?"
 
-#: src/gui/MainWindow.cc:4681 src/gui/MainWindow.cc:5572
+#: src/gui/MainWindow.cc:4844 src/gui/MainWindow.cc:5769
 msgid "&AI Chat"
 msgstr "ШІ-&чат"
 
-#: src/gui/MainWindow.cc:5564
+#: src/gui/MainWindow.cc:5761
 msgid "&Editor"
 msgstr "&Редактор"
 
-#: src/gui/MainWindow.cc:5565
+#: src/gui/MainWindow.cc:5762
 msgid "&Console"
 msgstr "&Консоль"
 
-#: src/gui/MainWindow.cc:5566
+#: src/gui/MainWindow.cc:5763
 msgid "C&ustomizer"
 msgstr "К&астомайзер"
 
-#: src/gui/MainWindow.cc:5567
+#: src/gui/MainWindow.cc:5764
 msgid "Error &Log"
 msgstr "Журнал &помилок"
 
-#: src/gui/MainWindow.cc:5568
+#: src/gui/MainWindow.cc:5765
 msgid "&Animate"
 msgstr "&Анімація"
 
-#: src/gui/MainWindow.cc:5569
+#: src/gui/MainWindow.cc:5766
 msgid "&Font List"
 msgstr "Список &шрифтів"
 
-#: src/gui/MainWindow.cc:5570
+#: src/gui/MainWindow.cc:5767
 msgid "C&olor List"
 msgstr "С&писок кольорів"
 
-#: src/gui/MainWindow.cc:5571
+#: src/gui/MainWindow.cc:5768
 msgid "&Viewport Control"
 msgstr "&Керування видовим екраном"
 
@@ -3661,97 +3700,97 @@ msgstr ""
 "Конфігуратор шрифтів має оновити свій кеш.\n"
 "Це може зайняти до кількох хвилин."
 
-#: src/gui/parameter/ParameterWidget.cc:168
+#: src/gui/parameter/ParameterWidget.cc:179
 msgid "Collapse All"
 msgstr "Згорнути все"
 
-#: src/gui/parameter/ParameterWidget.cc:171
+#: src/gui/parameter/ParameterWidget.cc:182
 msgid "Expand All"
 msgstr "Розгорнути все"
 
-#: src/gui/parameter/ParameterWidget.cc:248
+#: src/gui/parameter/ParameterWidget.cc:270
 msgid "Saving presets"
 msgstr "Пресети записуються"
 
-#: src/gui/parameter/ParameterWidget.cc:249
+#: src/gui/parameter/ParameterWidget.cc:271
 msgid "%1 was found, but was unreadable. Do you want to overwrite %1?"
 msgstr "%1 було знайдено, але не читається. Бажаєте переписати %1?"
 
-#: src/gui/parameter/ParameterWidget.cc:454
+#: src/gui/parameter/ParameterWidget.cc:618
 msgid "Create new set of parameter"
 msgstr "Створити новий набір параметрів"
 
-#: src/gui/parameter/ParameterWidget.cc:454
+#: src/gui/parameter/ParameterWidget.cc:618
 msgid "Enter name of the parameter set"
 msgstr "Введіть назву набору параметрів"
 
-#: src/gui/parameter/ParameterWidget.cc:510
+#: src/gui/parameter/ParameterWidget.cc:674
 msgid "New set "
 msgstr "Новий набір "
 
-#: src/gui/Preferences.cc:295
+#: src/gui/Preferences.cc:300
 msgid "Parameter Key"
 msgstr "Ключ параметра"
 
-#: src/gui/Preferences.cc:295
+#: src/gui/Preferences.cc:300
 msgid "Parameter Value"
 msgstr "Значення параметра"
 
-#: src/gui/Preferences.cc:311 src/gui/Preferences.cc:316
+#: src/gui/Preferences.cc:316 src/gui/Preferences.cc:321
 msgid "Ollama Local"
 msgstr "Ollama локально"
 
-#: src/gui/Preferences.cc:454
+#: src/gui/Preferences.cc:459
 msgid " seconds"
 msgstr " секунд"
 
-#: src/gui/Preferences.cc:481 src/gui/Preferences.cc:486
-#: src/gui/Preferences.cc:1495 src/gui/Preferences.cc:1534
+#: src/gui/Preferences.cc:484 src/gui/Preferences.cc:489
+#: src/gui/Preferences.cc:1491 src/gui/Preferences.cc:1530
 msgid "<Default>"
 msgstr "<Типовий>"
 
-#: src/gui/Preferences.cc:651
+#: src/gui/Preferences.cc:654
 msgid "NONE"
 msgstr "НІЧОГО"
 
-#: src/gui/Preferences.cc:1217
+#: src/gui/Preferences.cc:1220
 msgid "Select CA certificate"
 msgstr "Вибрати сертифікат ЦС"
 
-#: src/gui/Preferences.cc:1218
+#: src/gui/Preferences.cc:1221
 msgid "Certificate files (*.pem *.crt *.cer);;All files (*)"
 msgstr "Файли сертифікатів (*.pem *.crt *.cer);;Усі файли (*)"
 
-#: src/gui/Preferences.cc:1478
+#: src/gui/Preferences.cc:1474
 msgid "Success: Server Version = %2, API Version = %1"
 msgstr "Успіх: версія сервера = %2, версія API = %1"
 
-#: src/gui/Preferences.cc:1480 src/gui/Preferences.cc:1505
-#: src/gui/Preferences.cc:1544
+#: src/gui/Preferences.cc:1476 src/gui/Preferences.cc:1501
+#: src/gui/Preferences.cc:1540
 msgid "Error"
 msgstr "Помилка"
 
-#: src/gui/Preferences.cc:1621
+#: src/gui/Preferences.cc:1617
 msgid "New AI Profile"
 msgstr "Новий профіль ШІ"
 
-#: src/gui/Preferences.cc:1621
+#: src/gui/Preferences.cc:1617
 msgid "Profile name:"
 msgstr "Назва профілю:"
 
-#: src/gui/Preferences.cc:1626
+#: src/gui/Preferences.cc:1622
 msgid "Duplicate Profile"
 msgstr "Дублювати профіль"
 
-#: src/gui/Preferences.cc:1626
+#: src/gui/Preferences.cc:1622
 msgid "A profile with that name already exists."
 msgstr "Профіль з такою назвою вже існує."
 
-#: src/gui/Preferences.cc:1688
+#: src/gui/Preferences.cc:1684
 msgid "Delete AI Profile"
 msgstr "Видалити профіль ШІ"
 
-#: src/gui/Preferences.cc:1689
+#: src/gui/Preferences.cc:1685
 msgid "Delete profile \"%1\"?"
 msgstr "Видалити профіль «%1»?"
 
@@ -3795,31 +3834,31 @@ msgstr ""
 "%2 (%3)\n"
 "Версія OpenGL %4\n"
 
-#: src/gui/ScintillaEditor.cc:203
+#: src/gui/ScintillaEditor.cc:202
 msgid "This Python design is not trusted. Execution is disabled."
 msgstr "Цьому Python-дизайну не довіряють. Виконання вимкнено."
 
-#: src/gui/ScintillaEditor.cc:207
+#: src/gui/ScintillaEditor.cc:206
 msgid "Trust Design"
 msgstr "Довіряти дизайну"
 
-#: src/gui/TabManager.cc:371
+#: src/gui/TabManager.cc:372
 msgid "Python script (*.py)"
 msgstr "Python-скрипт (*.py)"
 
-#: src/gui/TabManager.cc:374 src/gui/TabManager.cc:379
+#: src/gui/TabManager.cc:375 src/gui/TabManager.cc:380
 msgid "OpenSCAD script (*.scad)"
 msgstr "OpenSCAD-скрипт (*.scad)"
 
-#: src/gui/TabManager.cc:382
+#: src/gui/TabManager.cc:383
 msgid "All files (*)"
 msgstr "Усі файли (*)"
 
-#: src/gui/TabManager.cc:441
+#: src/gui/TabManager.cc:442
 msgid "Cannot open design file \"%1\": path is a directory."
 msgstr "Не вдалося відкрити файл дизайну «%1»: шлях є текою."
 
-#: src/gui/TabManager.cc:490
+#: src/gui/TabManager.cc:483
 msgid ""
 "Could not write session file:\n"
 "%1\n"
@@ -3835,11 +3874,11 @@ msgstr ""
 "\n"
 "Зміни сеансу можуть бути втрачені."
 
-#: src/gui/TabManager.cc:499
+#: src/gui/TabManager.cc:492
 msgid "Unable to create the session directory."
 msgstr "Не вдалося створити теку сеансу."
 
-#: src/gui/TabManager.cc:555
+#: src/gui/TabManager.cc:548
 msgid ""
 "The file \"%1\" does not exist.\n"
 "\n"
@@ -3849,45 +3888,45 @@ msgstr ""
 "\n"
 "Створити його?"
 
-#: src/gui/TabManager.cc:1054
+#: src/gui/TabManager.cc:1079
 msgid "Copy file name"
 msgstr "Копіювати ім'я файлу"
 
-#: src/gui/TabManager.cc:1060
+#: src/gui/TabManager.cc:1085
 msgid "Copy full path"
 msgstr "Копіювати повний шлях"
 
-#: src/gui/TabManager.cc:1066
+#: src/gui/TabManager.cc:1091
 msgid "Open Folder"
 msgstr "Відкрити теку"
 
-#: src/gui/TabManager.cc:1071
+#: src/gui/TabManager.cc:1096
 msgid "Close Tab"
 msgstr "Закрити вкладку"
 
-#: src/gui/TabManager.cc:1076
+#: src/gui/TabManager.cc:1101
 msgid "Close All But This Tab"
 msgstr "Закрити всі вкладки, крім цієї"
 
-#: src/gui/TabManager.cc:1372
+#: src/gui/TabManager.cc:1378
 msgid "Do you want to save the changes you made to %1?"
 msgstr "Зберегти зміни у %1?"
 
-#: src/gui/TabManager.cc:1373
+#: src/gui/TabManager.cc:1379
 msgid "Your changes will be lost if you don't save them."
 msgstr "Ваші зміни буде втрачено, якщо не зберегти їх."
 
-#: src/gui/TabManager.cc:1378
+#: src/gui/TabManager.cc:1384
 msgid "Don't save"
 msgstr "Не зберігати"
 
-#: src/gui/TabManager.cc:1860 src/gui/TabManager.cc:1889
-#: src/gui/TabManager.cc:1896 src/gui/TabManager.cc:1924
-#: src/gui/TabManager.cc:2115
+#: src/gui/TabManager.cc:1875 src/gui/TabManager.cc:1904
+#: src/gui/TabManager.cc:1911 src/gui/TabManager.cc:1939
+#: src/gui/TabManager.cc:2181
 msgid "Session Restore"
 msgstr "Відновлення сеансу"
 
-#: src/gui/TabManager.cc:1861
+#: src/gui/TabManager.cc:1876
 msgid ""
 "The session file was created by a newer version of PythonSCAD (session "
 "version %1, but this build only supports up to version %2)."
@@ -3895,7 +3934,7 @@ msgstr ""
 "Файл сеансу створено новішою версією PythonSCAD (версія сеансу %1, але ця "
 "збірка підтримує лише до версії %2)."
 
-#: src/gui/TabManager.cc:1866
+#: src/gui/TabManager.cc:1881
 msgid ""
 "Exit to keep the session file for use with a newer PythonSCAD, or discard it "
 "to start fresh here.\n"
@@ -3909,15 +3948,15 @@ msgstr ""
 "Файл сеансу:\n"
 "%1"
 
-#: src/gui/TabManager.cc:1869
+#: src/gui/TabManager.cc:1884
 msgid "Exit"
 msgstr "Вийти"
 
-#: src/gui/TabManager.cc:1870
+#: src/gui/TabManager.cc:1885
 msgid "Discard session"
 msgstr "Відкинути сеанс"
 
-#: src/gui/TabManager.cc:1890
+#: src/gui/TabManager.cc:1905
 msgid ""
 "Could not open the session file for reading:\n"
 "%1\n"
@@ -3933,7 +3972,7 @@ msgstr ""
 "\n"
 "Починаємо новий сеанс."
 
-#: src/gui/TabManager.cc:1897
+#: src/gui/TabManager.cc:1912
 msgid ""
 "The session file is corrupt or unreadable:\n"
 "%1\n"
@@ -3947,7 +3986,7 @@ msgstr ""
 "Файл не видалено — ви можете перевірити його вручну.\n"
 "Починаємо новий сеанс."
 
-#: src/gui/TabManager.cc:1925
+#: src/gui/TabManager.cc:1940
 msgid ""
 "The session file uses an old format (version %1) that cannot be migrated to "
 "the current format (version %2). Starting with a fresh session."
@@ -3955,11 +3994,11 @@ msgstr ""
 "Файл сеансу використовує старий формат (версія %1), який не можна перенести "
 "до поточного формату (версія %2). Починаємо новий сеанс."
 
-#: src/gui/TabManager.cc:2116
+#: src/gui/TabManager.cc:2182
 msgid "%1 file(s) could not be found on disk."
 msgstr "На диску не знайдено %1 файл(ів)."
 
-#: src/gui/TabManager.cc:2118
+#: src/gui/TabManager.cc:2184
 msgid ""
 "The session contents were restored, but the file paths are stale.\n"
 "Use Save As to pick a new location."
@@ -3967,23 +4006,23 @@ msgstr ""
 "Вміст сеансу відновлено, але шляхи до файлів застаріли.\n"
 "Скористайтеся «Зберегти як», щоб обрати нове розташування."
 
-#: src/gui/TabManager.cc:2121
+#: src/gui/TabManager.cc:2187
 msgid "Dismiss"
 msgstr "Закрити"
 
-#: src/gui/TabManager.cc:2234 src/gui/TabManager.cc:2386
+#: src/gui/TabManager.cc:2300 src/gui/TabManager.cc:2453
 msgid "Failed to open file for writing"
 msgstr "Неможливо відкрити файл для запису"
 
-#: src/gui/TabManager.cc:2274 src/gui/TabManager.cc:2400
+#: src/gui/TabManager.cc:2340 src/gui/TabManager.cc:2467
 msgid "Error saving design"
 msgstr "Помилка при збереженні дизайну"
 
-#: src/gui/TabManager.cc:2286
+#: src/gui/TabManager.cc:2352
 msgid "Save File"
 msgstr "Збереги файл"
 
-#: src/gui/TabManager.cc:2363
+#: src/gui/TabManager.cc:2430
 msgid "Save A Copy"
 msgstr "Зберегти копію"
 
@@ -4042,12 +4081,12 @@ msgstr "надмірні значення можуть спричинити ди
 msgid "negative distances are not supported"
 msgstr "від'ємні відстані не підтримуються"
 
-#: src/io/export.cc:298
+#: src/io/export.cc:304
 #, c-format
 msgid "Can't open file \"%1$s\" for export"
 msgstr "Не вдалося відкрити файл «%1$s» для експорту"
 
-#: src/io/export.cc:314
+#: src/io/export.cc:320
 #, c-format
 msgid "\"%1$s\" write error. (Disk full?)"
 msgstr "Помилка запису «%1$s». (Диск переповнено?)"
@@ -4189,6 +4228,9 @@ msgstr ""
 "PythonSCAD — також чудовий спосіб вивчити програмування: кілька рядків "
 "Python можуть дати модель, яку можна потримати в руках після 3D-друку. "
 "OpenSCAD-скрипти підтримуються поряд із рідним Python."
+
+#~ msgid "Network Import List"
+#~ msgstr "Список мережевого імпорту"
 
 #~ msgid "micron"
 #~ msgstr "мікрон"
