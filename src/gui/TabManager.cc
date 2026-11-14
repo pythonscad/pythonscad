@@ -1966,7 +1966,7 @@ bool TabManager::restoreSession(const QString& path, int windowIndex)
   // resetForNewDocument() drains deleteLater via processEvents(). Pause auto-reload and
   // hold GuiLocker so a nested timer cannot compile an intermediate tab (wrong 3D preview
   // while the restored active tab is something else).
-  const bool autoReloadWasActive = parent->designActionAutoReload->isChecked();
+  const bool autoReloadWasActive = parent->autoReloadTimer && parent->autoReloadTimer->isActive();
   if (parent->autoReloadTimer) {
     parent->autoReloadTimer->stop();
   }

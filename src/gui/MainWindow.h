@@ -257,7 +257,8 @@ private:
   void updateCompileResult();
   void compile(bool reload, bool forcedone = false);
   bool checkEditorModified();
-  bool checkParameterSetsModified();
+  /// Prompt when Customizer is dirty. \a userInitiatedReload selects File → Reload wording.
+  bool checkParameterSetsModified(bool userInitiatedReload = false);
   /// Reload companion customizer JSON when its fingerprint changes (prompt if dirty).
   /// When \a force is true (File → Reload), skip the fingerprint check and reload from disk.
   /// Returns true when presets were reloaded so the caller can force a recompile.

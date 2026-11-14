@@ -2620,17 +2620,20 @@ bool MainWindow::checkEditorModified()
   return true;
 }
 
-bool MainWindow::checkParameterSetsModified()
+bool MainWindow::checkParameterSetsModified(bool userInitiatedReload)
 {
   if (!activeEditor || !activeEditor->parameterWidget->isModified()) {
     return true;
   }
-  auto ret = QMessageBox::warning(
-    this, _("Application"),
-    _("The customizer presets file has changed on disk, but this tab has unsaved preset edits.\n"
-      "Reloading will discard your preset changes.\n\n"
-      "Do you really want to reload the presets?"),
-    QMessageBox::Yes | QMessageBox::No);
+  const QString message =
+    userInitiatedReload
+      ? _("You have unsaved customizer preset edits.\n"
+          "Reloading will discard your preset changes.\n\n"
+          "Do you really want to reload the presets?")
+      : _("The customizer presets file has changed on disk, but this tab has unsaved preset edits.\n"
+          "Reloading will discard your preset changes.\n\n"
+          "Do you really want to reload the presets?");
+  auto ret = QMessageBox::warning(this, _("Application"), message, QMessageBox::Yes | QMessageBox::No);
   return ret == QMessageBox::Yes;
 }
 
@@ -2661,8 +2664,12 @@ bool MainWindow::maybeReloadCompanionJson(bool force)
   }
   reentering = true;
   bool reloaded = false;
-  if (checkParameterSetsModified()) {
+  if (checkParameterSetsModified(force)) {
     reloaded = parameterWidget->reloadSetsFromDisk(activeEditor->filepath);
+  } else if (force) {
+    // Declined File → Reload: adopt the current disk fingerprint so auto-reload does not
+    // immediately re-prompt for the same revision.
+    parameterWidget->primeJsonAutoReloadId(activeEditor->filepath);
   }
   reentering = false;
   if (timerWasActive && designActionAutoReload->isChecked() && autoReloadTimer) {

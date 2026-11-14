@@ -340,11 +340,9 @@ void ParameterWidget::rebuildPresetCombo(const QString& selectedName)
 
   int idx = 0;
   if (!selectedName.isEmpty()) {
-    for (int i = 1; i < comboBoxPreset->count(); ++i) {
-      if (comboBoxPreset->itemText(i) == selectedName) {
-        idx = i;
-        break;
-      }
+    const int found = comboBoxPreset->findText(selectedName);
+    if (found > 0) {
+      idx = found;
     }
   }
   comboBoxPreset->setCurrentIndex(idx);
