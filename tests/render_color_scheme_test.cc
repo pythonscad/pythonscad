@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "Feature.h"
 #include "core/CSGNode.h"
@@ -17,6 +18,7 @@
 #include "core/TransformNode.h"
 #include "glview/RenderSettings.h"
 #include "geometry/GeometryEvaluator.h"
+#include "geometry/ClipperUtils.h"
 #include "core/primitives.h"
 #include "geometry/PolySet.h"
 #include "geometry/PolySetBuilder.h"
@@ -142,7 +144,7 @@ void checkPolygonRenderer(OffscreenView& view, Renderer& renderer, const std::st
 }
 
 #ifdef ENABLE_MANIFOLD
-void checkProjectedCutout(OffscreenView& view)
+std::shared_ptr<const Polygon2d> projectedCutout(bool recessed)
 {
   auto outer = std::make_shared<CubeNode>(std::make_shared<ModuleInstantiation>("cube"));
   auto inner = std::make_shared<CubeNode>(std::make_shared<ModuleInstantiation>("cube"));
@@ -150,6 +152,7 @@ void checkProjectedCutout(OffscreenView& view)
     outer->dim[i] = 2;
     outer->center[i] = inner->center[i] = 0;
   }
+  inner->dim[0] = inner->dim[1] = recessed ? 1 : 4;
   inner->dim[2] = 2;
   auto translate =
     std::make_shared<TransformNode>(std::make_shared<ModuleInstantiation>("translate"), "translate");
@@ -174,6 +177,12 @@ void checkProjectedCutout(OffscreenView& view)
   bool has_cutout = false;
   for (const auto& outline : polygon->outlines()) has_cutout |= outline.color.isDefaultCutout();
   require(has_cutout, "Detail projection lost the upward cut-surface role");
+  return polygon;
+}
+
+void checkPolygonSamples(OffscreenView& view, const std::shared_ptr<const Polygon2d>& polygon,
+                         const Color4f& side, const Color4f& center, const std::string& context)
+{
   PolySetRenderer polyset_renderer(polygon);
   CGALRenderer cgal_renderer(polygon);
   for (Renderer *renderer :
@@ -181,12 +190,35 @@ void checkProjectedCutout(OffscreenView& view)
     RenderColorScheme cornfield;
     renderer->setColorScheme(cornfield.colorScheme());
     draw(view, *renderer);
-    expectPixel(20, ColorMap::getColor(cornfield.colorScheme(), RenderColor::OPENCSG_FACE_FRONT_COLOR),
-                "Projected material");
-    expectPixel(60, ColorMap::getColor(cornfield.colorScheme(), RenderColor::OPENCSG_FACE_BACK_COLOR),
-                "Projected cut surface");
+    expectPixel(20, side, context + " side");
+    expectPixel(60, center, context + " center");
   }
 }
+
+void checkProjectedCutout(OffscreenView& view)
+{
+  auto polygon = projectedCutout(true);
+  auto cut_only = projectedCutout(false);
+  auto offset = std::shared_ptr<const Polygon2d>(
+    ClipperUtils::applyOffset(*cut_only, 0.1, Clipper2Lib::JoinType::Miter, 2, 0.01));
+  require(offset && !offset->isEmpty(), "Offset lost the projected face");
+  for (const auto& outline : offset->outlines())
+    require(outline.color.isDefaultCutout(), "Offset lost the projected cut-surface role");
+
+  RenderColorScheme cornfield;
+  const auto material =
+    ColorMap::getColor(cornfield.colorScheme(), RenderColor::OPENCSG_FACE_FRONT_COLOR);
+  const auto cutout = ColorMap::getColor(cornfield.colorScheme(), RenderColor::OPENCSG_FACE_BACK_COLOR);
+  const auto previous_backend = RenderSettings::inst()->backend3D;
+  std::vector<RenderBackend3D> triangulators = {RenderBackend3D::ManifoldBackend};
+  for (auto backend : triangulators) {
+    RenderSettings::inst()->backend3D = backend;
+    checkPolygonSamples(view, polygon, material, cutout, "Projected cut surface");
+    checkPolygonSamples(view, offset, cutout, cutout, "Offset projected cut surface");
+  }
+  RenderSettings::inst()->backend3D = previous_backend;
+}
+
 #endif
 
 void checkExports(const std::string& root)
