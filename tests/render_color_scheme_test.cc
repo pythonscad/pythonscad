@@ -120,14 +120,17 @@ void checkRenderer(OffscreenView& view, Renderer& renderer, const std::string& n
 
 void checkPolygonRenderer(OffscreenView& view, Renderer& renderer, const std::string& root)
 {
-  for (const auto *theme : {"tomorrow-night", "nord-dark", "tomorrow-night"}) {
-    RenderColorScheme scheme(std::filesystem::path(root) / "color-schemes/render" /
-                             (std::string(theme) + ".json"));
+  for (const auto *theme : {"Cornfield", "tomorrow-night", "nord-dark", "Cornfield"}) {
+    RenderColorScheme scheme =
+      std::string(theme) == "Cornfield"
+        ? RenderColorScheme()
+        : RenderColorScheme(std::filesystem::path(root) / "color-schemes/render" /
+                            (std::string(theme) + ".json"));
     require(scheme.valid(), "Cannot load polygon test theme");
     auto& cs = scheme.colorScheme();
     renderer.setColorScheme(cs);
     draw(view, renderer);
-    expectPixel(60, ColorMap::getColor(cs, RenderColor::CGAL_FACE_2D_COLOR), "2D default");
+    expectPixel(60, ColorMap::getColor(cs, RenderColor::OPENCSG_FACE_FRONT_COLOR), "2D default");
   }
 }
 

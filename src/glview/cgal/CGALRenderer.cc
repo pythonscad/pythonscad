@@ -187,7 +187,8 @@ void CGALRenderer::createPolygonSurfaceStates()
 
   for (const auto& [polygon, polyset] : this->polygons_) {
     Color4f color;
-    getColorSchemeColor(ColorMode::CGAL_FACE_2D_COLOR, color);
+    // Use the same material default as preview for uncolored 2D faces.
+    getColorSchemeColor(ColorMode::MATERIAL, color);
     vbo_builder.create_polygons(*polyset, Transform3d::Identity(), color);
   }
 

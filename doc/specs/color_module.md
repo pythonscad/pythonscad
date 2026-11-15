@@ -64,8 +64,8 @@ Mesh palettes preserve unpainted material and cut-surface roles instead of stori
 colors from the viewport theme. Renderers resolve these roles when preparing display
 buffers, and rebuild those buffers during the next paint after a theme change.
 Color-capable model exporters resolve the same roles against their export settings.
-The bundled themes use matching F5/F6 colors for solid and cut surfaces; cut surfaces
-and 2D geometry may still have distinct colors from solid material.
+The bundled themes use matching F5/F6 colors for solid and cut surfaces. Unpainted
+2D faces use the same material color as preview; cut surfaces may use a distinct color.
 
 Unpainted 2D outlines use the SVG export fill options instead of carrying a
 synthetic yellow fill. Explicit outline colors continue to override those options.
