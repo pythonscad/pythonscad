@@ -572,7 +572,8 @@ void VBOBuilder::create_edges(const Polygon2d& polygon, const Transform3d& m, co
   }
 }
 
-void VBOBuilder::create_polygons(const PolySet& ps, const Transform3d& m, const Color4f& color)
+void VBOBuilder::create_polygons(const PolySet& ps, const Transform3d& m, const Color4f& color,
+                                 const Color4f& cutout_color)
 {
   assert(ps.getDimension() == 2);
   const std::shared_ptr<VertexData> vertex_data = data();
@@ -596,7 +597,7 @@ void VBOBuilder::create_polygons(const PolySet& ps, const Transform3d& m, const 
     const auto& poly = ps.indices[i];
     const auto color_index = i < ps.color_indices.size() ? ps.color_indices[i] : -1;
     const auto tcolor = color_index >= 0 && static_cast<size_t>(color_index) < ps.colors.size()
-                          ? ps.colors[color_index].resolved(color, color)
+                          ? ps.colors[color_index].resolved(color, cutout_color)
                           : color;
     if (poly.size() == 3) {
       const Vector3d p0 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(0)], m);

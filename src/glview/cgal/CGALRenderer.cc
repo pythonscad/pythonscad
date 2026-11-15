@@ -189,7 +189,8 @@ void CGALRenderer::createPolygonSurfaceStates()
     Color4f color;
     // Use the same material default as preview for uncolored 2D faces.
     getColorSchemeColor(ColorMode::MATERIAL, color);
-    vbo_builder.create_polygons(*polyset, Transform3d::Identity(), color);
+    vbo_builder.create_polygons(*polyset, Transform3d::Identity(), color,
+                                colormap_.at(ColorMode::CUTOUT));
   }
 
   vbo_builder.createInterleavedVBOs();

@@ -13,6 +13,9 @@
 #include "core/CSGNode.h"
 #include "core/CsgOpNode.h"
 #include "core/Tree.h"
+#include "core/ProjectionNode.h"
+#include "core/TransformNode.h"
+#include "glview/RenderSettings.h"
 #include "geometry/GeometryEvaluator.h"
 #include "core/primitives.h"
 #include "geometry/PolySet.h"
@@ -137,6 +140,54 @@ void checkPolygonRenderer(OffscreenView& view, Renderer& renderer, const std::st
     expectPixel(60, ColorMap::getColor(cs, RenderColor::OPENCSG_FACE_FRONT_COLOR), "2D default");
   }
 }
+
+#ifdef ENABLE_MANIFOLD
+void checkProjectedCutout(OffscreenView& view)
+{
+  auto outer = std::make_shared<CubeNode>(std::make_shared<ModuleInstantiation>("cube"));
+  auto inner = std::make_shared<CubeNode>(std::make_shared<ModuleInstantiation>("cube"));
+  for (int i = 0; i < 3; ++i) {
+    outer->dim[i] = 2;
+    outer->center[i] = inner->center[i] = 0;
+  }
+  inner->dim[2] = 2;
+  auto translate =
+    std::make_shared<TransformNode>(std::make_shared<ModuleInstantiation>("translate"), "translate");
+  translate->matrix = Transform3d::Identity();
+  translate->matrix.translation().z() = 1;
+  translate->children = {inner};
+  auto difference = std::make_shared<CsgOpNode>(std::make_shared<ModuleInstantiation>("difference"),
+                                                OpenSCADOperator::DIFFERENCE);
+  difference->children = {outer, translate};
+  auto projection =
+    std::make_shared<ProjectionNode>(std::make_shared<ModuleInstantiation>("projection"));
+  projection->detail_mode = true;
+  projection->children = {difference};
+  Tree tree(projection);
+  GeometryEvaluator evaluator(tree);
+  const auto previous_backend = RenderSettings::inst()->backend3D;
+  RenderSettings::inst()->backend3D = RenderBackend3D::ManifoldBackend;
+  auto polygon =
+    std::dynamic_pointer_cast<const Polygon2d>(evaluator.evaluateGeometry(*projection, false));
+  RenderSettings::inst()->backend3D = previous_backend;
+  require(polygon && !polygon->isEmpty(), "Detail projection lost geometry");
+  bool has_cutout = false;
+  for (const auto& outline : polygon->outlines()) has_cutout |= outline.color.isDefaultCutout();
+  require(has_cutout, "Detail projection lost the upward cut-surface role");
+  PolySetRenderer polyset_renderer(polygon);
+  CGALRenderer cgal_renderer(polygon);
+  for (Renderer *renderer :
+       {static_cast<Renderer *>(&polyset_renderer), static_cast<Renderer *>(&cgal_renderer)}) {
+    RenderColorScheme cornfield;
+    renderer->setColorScheme(cornfield.colorScheme());
+    draw(view, *renderer);
+    expectPixel(20, ColorMap::getColor(cornfield.colorScheme(), RenderColor::OPENCSG_FACE_FRONT_COLOR),
+                "Projected material");
+    expectPixel(60, ColorMap::getColor(cornfield.colorScheme(), RenderColor::OPENCSG_FACE_BACK_COLOR),
+                "Projected cut surface");
+  }
+}
+#endif
 
 void checkExports(const std::string& root)
 {
@@ -309,6 +360,9 @@ int main(int argc, char **argv)
     checkExports(root);
     checkUnpaintedExports(root);
     OffscreenView view(size, size);
+#ifdef ENABLE_MANIFOLD
+    checkProjectedCutout(view);
+#endif
     auto ps = triangles();
     PolySetRenderer manifold_renderer(ps);
     checkRenderer(view, manifold_renderer, "PolySet", root);
