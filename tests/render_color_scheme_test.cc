@@ -1,4 +1,5 @@
 // Exercise theme changes on existing renderers and geometry, without script reevaluation.
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <filesystem>
@@ -142,6 +143,52 @@ void checkPolygonRenderer(OffscreenView& view, Renderer& renderer, const std::st
     expectPixel(60, ColorMap::getColor(cs, RenderColor::OPENCSG_FACE_FRONT_COLOR), "2D default");
   }
 }
+
+#ifdef ENABLE_CGAL
+void checkCGALRegionVertices()
+{
+  const Color4f red(255, 0, 0), blue(0, 0, 255);
+  const auto rectangle = [](double x, double y, double width, double height, const Color4f& color) {
+    Outline2d outline;
+    outline.vertices = {{x, y}, {x + width, y}, {x + width, y + height}, {x, y + height}};
+    outline.color = color;
+    return outline;
+  };
+  Polygon2d overlap;
+  overlap.addOutline(rectangle(0, 0, 10, 10, red));
+  overlap.addOutline(rectangle(2, 2, 1, 1, blue));
+  auto minimal = CGALUtils::createTriangulatedPolySetFromPolygon2d(overlap, false);
+  require(minimal && minimal->indices.size() == 4,
+          "CGAL inserted unrelated interior vertices into a color region");
+
+  Polygon2d adjacent;
+  adjacent.addOutline(rectangle(0, 0, 1, 1, red));
+  Outline2d neighbor;
+  neighbor.vertices = {{1, 0}, {2, 0}, {2, 1}, {1, 1}, {1, 0.5}};
+  neighbor.color = blue;
+  adjacent.addOutline(neighbor);
+  auto shared = CGALUtils::createTriangulatedPolySetFromPolygon2d(adjacent, false);
+  require(shared != nullptr, "CGAL lost adjacent color regions");
+  size_t left_faces = 0;
+  bool has_split = false;
+  for (size_t i = 0; i < shared->indices.size(); ++i) {
+    if (shared->colors.at(shared->color_indices.at(i)) != red) continue;
+    ++left_faces;
+    const auto& face = shared->indices[i];
+    has_split |= std::find(face.begin(), face.end(), 8) != face.end();
+  }
+  require(left_faces == 3 && has_split, "CGAL lost a shared-boundary split point");
+
+  Polygon2d many_colors;
+  for (int i = 0; i < 500; ++i) {
+    many_colors.addOutline(rectangle(i * 3, 0, 1, 1, Color4f(float(i + 1) / 501, 0.25f, 0.5f, 1.0f)));
+  }
+  auto many = CGALUtils::createTriangulatedPolySetFromPolygon2d(many_colors, false);
+  require(
+    many && many->vertices.size() == 2000 && many->indices.size() == 1000 && many->colors.size() == 500,
+    "CGAL did not preserve 500 independent color regions");
+}
+#endif
 
 #ifdef ENABLE_MANIFOLD
 std::shared_ptr<const Polygon2d> projectedCutout(bool recessed)
@@ -429,6 +476,9 @@ int main(int argc, char **argv)
             "A deleted custom theme did not fall back to Cornfield");
     require(&colors.colorSchemeOrDefault("Tomorrow Night") == colors.findColorScheme("Tomorrow Night"),
             "An available custom theme was replaced by the fallback");
+#ifdef ENABLE_CGAL
+    checkCGALRegionVertices();
+#endif
     checkGeometry();
     checkExports(root);
     checkUnpaintedExports(root);
