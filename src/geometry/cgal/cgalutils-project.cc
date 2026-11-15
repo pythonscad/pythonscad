@@ -40,7 +40,6 @@ static void add_outline_to_poly(
 
   if (!outline.vertices.empty()) {
     outline.positive = positive;
-    outline.color = *OpenSCAD::parse_color("#f9d72c");
     poly.addOutline(outline);
   }
 }

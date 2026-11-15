@@ -171,6 +171,12 @@ const ColorScheme *ColorMap::findColorScheme(const std::string& name) const
   return nullptr;
 }
 
+const ColorScheme& ColorMap::colorSchemeOrDefault(const std::string& name) const
+{
+  const auto *scheme = findColorScheme(name);
+  return scheme ? *scheme : defaultColorScheme();
+}
+
 void ColorMap::dump() const
 {
   PRINTD("Listing available color schemes...");

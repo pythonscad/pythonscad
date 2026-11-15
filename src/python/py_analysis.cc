@@ -33,6 +33,8 @@
 #include <PolySetUtils.h>
 #include <primitives.h>
 #include "pyfunctions.h"
+#include "glview/ColorMap.h"
+#include "glview/RenderSettings.h"
 
 PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
 {
@@ -42,6 +44,9 @@ PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
   if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in mesh \n");
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
+  const auto& scheme = ColorMap::instance().colorSchemeOrDefault(RenderSettings::inst()->colorscheme);
+  const auto material = ColorMap::getColor(scheme, RenderColor::CGAL_FACE_FRONT_COLOR);
+  const auto cutout = ColorMap::getColor(scheme, RenderColor::CGAL_FACE_BACK_COLOR);
   std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
   std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
 
@@ -70,11 +75,12 @@ PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
       // Now create Python Color array
       PyObject *colorarr = PyList_New(ps->colors.size());
       for (unsigned int i = 0; i < ps->colors.size(); i++) {
+        const auto resolved = ps->colors[i].resolved(material, cutout);
         PyObject *color = PyList_New(4);
-        PyList_SetItem(color, 0, PyFloat_FromDouble(ps->colors[i].r()));
-        PyList_SetItem(color, 1, PyFloat_FromDouble(ps->colors[i].g()));
-        PyList_SetItem(color, 2, PyFloat_FromDouble(ps->colors[i].b()));
-        PyList_SetItem(color, 3, PyFloat_FromDouble(ps->colors[i].a()));
+        PyList_SetItem(color, 0, PyFloat_FromDouble(resolved.r()));
+        PyList_SetItem(color, 1, PyFloat_FromDouble(resolved.g()));
+        PyList_SetItem(color, 2, PyFloat_FromDouble(resolved.b()));
+        PyList_SetItem(color, 3, PyFloat_FromDouble(resolved.a()));
         PyList_SetItem(colorarr, i, color);
       }
 
@@ -106,11 +112,12 @@ PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
       PyObject *pyth_outline = PyList_New(items);
       int ind = 0;
       if (color) {
+        const auto resolved = outline.color.resolved(material, cutout);
         PyObject *pyth_col = PyList_New(4);
-        PyList_SetItem(pyth_col, 0, PyFloat_FromDouble(outline.color.r()));
-        PyList_SetItem(pyth_col, 1, PyFloat_FromDouble(outline.color.g()));
-        PyList_SetItem(pyth_col, 2, PyFloat_FromDouble(outline.color.b()));
-        PyList_SetItem(pyth_col, 3, PyFloat_FromDouble(outline.color.a()));
+        PyList_SetItem(pyth_col, 0, PyFloat_FromDouble(resolved.r()));
+        PyList_SetItem(pyth_col, 1, PyFloat_FromDouble(resolved.g()));
+        PyList_SetItem(pyth_col, 2, PyFloat_FromDouble(resolved.b()));
+        PyList_SetItem(pyth_col, 3, PyFloat_FromDouble(resolved.a()));
         PyList_SetItem(pyth_outline, ind++, pyth_col);
       }
       for (unsigned int j = 0; j < outline.vertices.size(); j++) {

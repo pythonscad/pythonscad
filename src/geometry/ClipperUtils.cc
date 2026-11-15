@@ -9,7 +9,6 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include "src/core/ColorUtil.h"
 #include <glview/RenderSettings.h>
 
 #include "clipper2/clipper.h"
@@ -439,7 +438,7 @@ std::unique_ptr<Polygon2d> apply(const std::vector<std::shared_ptr<const Polygon
 {
   const int scale_bits = scaleBitsFromPrecision();
 #ifdef ENABLE_MANIFOLD
-  // only create colored data for manifold, cgal tessellator cannot handle it later
+  // Use the colored-region union path for the Manifold backend.
 
   if (RenderSettings::inst()->backend3D == RenderBackend3D::ManifoldBackend) {
     if (clipType == Clipper2Lib::ClipType::Union) {
@@ -600,7 +599,6 @@ std::unique_ptr<Polygon2d> applyMinkowski(const std::vector<std::shared_ptr<cons
   Clipper2Lib::PolyTree64 polytree;
   clipper.Execute(Clipper2Lib::ClipType::Union, Clipper2Lib::FillRule::NonZero, polytree);
   auto result = toPolygon2d(polytree, scale_bits);
-  result->setColor(*OpenSCAD::parse_color("#f9d72c"));
   return result;
 }
 

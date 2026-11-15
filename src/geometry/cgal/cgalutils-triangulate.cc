@@ -7,16 +7,26 @@
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/exceptions.h>
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/index/rtree.hpp>
+
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cmath>
+#include <iterator>
+#include <map>
+#include <unordered_map>
 #include <list>
 #include <memory>
+#include <vector>
 
 #include "geometry/PolySetBuilder.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/cgal/cgalutils.h"
 #include "utils/printutils.h"
-#include "src/core/ColorUtil.h"
 
 namespace CGALUtils {
 
@@ -106,61 +116,119 @@ std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d&
   auto polyset = std::make_unique<PolySet>(2);
   polyset->setTriangular(true);
 
-  Polygon2DCGAL::CDT cdt;  // Uses a constrained Delaunay triangulator.
+  const auto& outlines = in3d ? polygon2d.untransformedOutlines() : polygon2d.outlines();
+  std::unordered_map<Color4f, size_t> region_lookup;
+  std::vector<std::vector<size_t>> regions;
+  for (size_t i = 0; i < outlines.size(); ++i) {
+    const auto [it, inserted] = region_lookup.emplace(outlines[i].color, regions.size());
+    if (inserted) {
+      regions.emplace_back();
+      polyset->colors.push_back(outlines[i].color.unpaintedIfFullyTransparent());
+    }
+    regions[it->second].push_back(i);
+  }
 
-  try {
-    // Adds all vertices, and add all contours as constraints.
-    for (const auto& outline : in3d ? polygon2d.untransformedOutlines() : polygon2d.outlines()) {
-      Polygon2DCGAL::CDT::Vertex_handle prev;
-      for (size_t i = 0; i <= outline.vertices.size(); i++) {
-        const int idx = i % outline.vertices.size();
-        const auto& v = outline.vertices[idx];
-        auto curr = cdt.insert({v[0], v[1]});
-        // FIXME: We need be make sure that client relying on vertex indices being
-        // maintained also skips coincident vertices the same way.
-        if (curr != prev) {
-          // Don't add the first vertex twice
-          if (i < outline.vertices.size()) {
-            polyset->vertices.emplace_back(v[0], v[1], 0.0);
-            curr->info().id = polyset->vertices.size() - 1;
+  // Keep the source vertex order independently of the per-color triangulations.
+  // Repeated coordinates retain their last source index, as in the original CDT.
+  std::vector<std::vector<size_t>> source_vertices(outlines.size());
+  std::map<Polygon2DCGAL::Point, size_t, Polygon2DCGAL::K::Less_xy_2> source_indices;
+  for (size_t i = 0; i < outlines.size(); ++i) {
+    auto& indices = source_vertices[i];
+    for (const auto& point : outlines[i].vertices) {
+      if (!std::isfinite(point[0]) || !std::isfinite(point[1])) {
+        LOG("CGAL error in Polygon2d::tesselate(): non-finite vertex");
+        return nullptr;
+      }
+      if (!indices.empty() && polyset->vertices[indices.back()].head<2>() == point) continue;
+      const auto index = polyset->vertices.size();
+      polyset->vertices.emplace_back(point[0], point[1], 0.0);
+      indices.push_back(index);
+      if (regions.size() > 1) source_indices[{point[0], point[1]}] = index;
+    }
+  }
+
+  namespace bg = boost::geometry;
+  namespace bgi = boost::geometry::index;
+  using SpatialPoint = bg::model::d2::point_xy<double>;
+  using SpatialBox = bg::model::box<SpatialPoint>;
+  using SpatialVertex = std::pair<SpatialPoint, size_t>;
+  std::vector<SpatialVertex> spatial_vertices;
+  spatial_vertices.reserve(source_indices.size());
+  for (const auto& [point, index] : source_indices) {
+    spatial_vertices.emplace_back(SpatialPoint(point.x(), point.y()), index);
+  }
+  const bgi::rtree<SpatialVertex, bgi::quadratic<16>> point_index(spatial_vertices);
+  const auto point_at = [&](size_t index) {
+    const auto& v = polyset->vertices[index];
+    return Polygon2DCGAL::Point(v[0], v[1]);
+  };
+  const auto less = Polygon2DCGAL::K().less_xy_2_object();
+
+  // Each color has its own contours and holes. Unrelated interior vertices must
+  // not be reinserted for each color, but shared boundary split points must be.
+  for (size_t color_index = 0; color_index < regions.size(); ++color_index) {
+    Polygon2DCGAL::CDT cdt;
+    try {
+      for (const auto outline_index : regions[color_index]) {
+        const auto& indices = source_vertices[outline_index];
+        if (regions.size() == 1) {
+          // Preserve the inexpensive original path for ordinary uncolored models.
+          Polygon2DCGAL::CDT::Vertex_handle first, prev;
+          for (const auto index : indices) {
+            auto curr = cdt.insert(point_at(index));
+            curr->info().id = static_cast<int>(index);
+            if (first == nullptr) first = curr;
+            if (prev != nullptr && prev != curr) cdt.insert_constraint(prev, curr);
+            prev = curr;
           }
-          if (prev != nullptr) cdt.insert_constraint(prev, curr);
-          prev = curr;
+          if (prev != nullptr && prev != first) cdt.insert_constraint(prev, first);
+          continue;
+        }
+        for (size_t i = 0; i < indices.size(); ++i) {
+          const auto a = point_at(indices[i]);
+          const auto b = point_at(indices[(i + 1) % indices.size()]);
+          if (a == b) continue;
+          const Polygon2DCGAL::K::Segment_2 segment(a, b);
+          const SpatialBox box(SpatialPoint(std::min(a.x(), b.x()), std::min(a.y(), b.y())),
+                               SpatialPoint(std::max(a.x(), b.x()), std::max(a.y(), b.y())));
+          std::vector<SpatialVertex> boundary;
+          point_index.query(bgi::intersects(box), std::back_inserter(boundary));
+          boundary.erase(
+            std::remove_if(boundary.begin(), boundary.end(),
+                           [&](const auto& v) { return !segment.has_on(point_at(v.second)); }),
+            boundary.end());
+          const bool forward = less(a, b);
+          std::sort(boundary.begin(), boundary.end(), [&](const auto& left, const auto& right) {
+            return forward ? less(point_at(left.second), point_at(right.second))
+                           : less(point_at(right.second), point_at(left.second));
+          });
+          Polygon2DCGAL::CDT::Vertex_handle prev;
+          for (const auto& [_, index] : boundary) {
+            auto curr = cdt.insert(point_at(index));
+            curr->info().id = static_cast<int>(index);
+            if (prev != nullptr && prev != curr) cdt.insert_constraint(prev, curr);
+            prev = curr;
+          }
         }
       }
+    } catch (const CGAL::Precondition_exception& e) {
+      LOG("CGAL error in Polygon2d::tesselate(): %1$s", e.what());
+      return nullptr;
     }
 
-  } catch (const CGAL::Precondition_exception& e) {
-    LOG("CGAL error in Polygon2d::tesselate(): %1$s", e.what());
-    return nullptr;
-  }
-
-  // To extract triangles which is part of our polygon, we need to filter away
-  // triangles inside holes.
-  mark_domains(cdt);
-  for (auto fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
-    if (fit->info().in_domain()) {
-      // If this assert hits, it means that the polygon2d somehow contains
-      // self-intersecting or intersecting constraints. This shouldn't happen
-      // since Clipper guarantees no overlaps, but could happen if we lose
-      // precision from converting from Clipper's coordinate space (int64) to Polygon2's (double).
-      // One possible workaround is to reduce Clipper's precision further,
-      // see https://github.com/openscad/openscad/issues/5253.
-      assert(fit->vertex(0)->info().id != -1);
-      assert(fit->vertex(1)->info().id != -1);
-      assert(fit->vertex(2)->info().id != -1);
-      polyset->indices.push_back(
-        {fit->vertex(0)->info().id, fit->vertex(1)->info().id, fit->vertex(2)->info().id});
+    mark_domains(cdt);
+    for (auto fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+      if (fit->info().in_domain()) {
+        // Intersecting constraints would add vertices without source indices.
+        assert(fit->vertex(0)->info().id != -1);
+        assert(fit->vertex(1)->info().id != -1);
+        assert(fit->vertex(2)->info().id != -1);
+        polyset->indices.push_back(
+          {fit->vertex(0)->info().id, fit->vertex(1)->info().id, fit->vertex(2)->info().id});
+        polyset->color_indices.push_back(color_index);
+      }
     }
   }
-
-  Color4f color = *OpenSCAD::parse_color("#f9d72c");
-  polyset->colors.clear();
-
-  int colorind = polyset->colors.size();  // 0
-  polyset->colors.push_back(color);
-  for (int i = 0; i < polyset->indices.size(); i++)  // create a set of undefined color
-    polyset->color_indices.push_back(colorind);
   return polyset;
 }
 

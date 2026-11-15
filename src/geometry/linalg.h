@@ -63,6 +63,19 @@ public:
   Color4f(int r, int g, int b, int a = 255) { setRgba(r, g, b, a); }
   Color4f(float r = -1.0f, float g = -1.0f, float b = -1.0f, float a = -1.0f) : color_(r, g, b, a) {}
 
+  // Like the unpainted (-1) sentinel, this carries no explicit RGBA color.
+  // Preserve the cut-surface role through mesh operations until display time.
+  [[nodiscard]] static Color4f defaultCutout() { return Color4f(-2.0f, -2.0f, -2.0f, -2.0f); }
+  [[nodiscard]] bool isDefaultCutout() const { return *this == defaultCutout(); }
+
+  [[nodiscard]] Color4f resolved(const Color4f& material, const Color4f& cutout) const
+  {
+    Color4f result = isDefaultCutout() ? cutout : material;
+    if (hasRgb()) result.setRgb(r(), g(), b());
+    if (hasAlpha()) result.setAlpha(a());
+    return result;
+  }
+
   [[nodiscard]] bool isValid() const { return color_.minCoeff() >= 0.0f; }
   [[nodiscard]] bool hasRgb() const
   {

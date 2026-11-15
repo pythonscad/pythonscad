@@ -121,7 +121,6 @@ public:
 
     librevenge::RVNGPropertyList::Iter it(propList);
     Outline2d outl;
-    outl.color = *OpenSCAD::parse_color("#f9d72c");
 
     for (it.rewind(); it.next();) {
       if (it.child() != nullptr) {

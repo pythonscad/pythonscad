@@ -80,6 +80,7 @@ public:
   [[nodiscard]] const char *defaultColorSchemeName() const;
   [[nodiscard]] const ColorScheme& defaultColorScheme() const;
   [[nodiscard]] const ColorScheme *findColorScheme(const std::string& name) const;
+  [[nodiscard]] const ColorScheme& colorSchemeOrDefault(const std::string& name) const;
   [[nodiscard]] std::list<std::string> colorSchemeNames(bool guiOnly = false) const;
 
   static Color4f getColor(const ColorScheme& cs, const RenderColor rc);

@@ -16,6 +16,34 @@ option(USE_IMAGE_COMPARE_PY "Use built-in image_compare.py" ON)
 project(OpenSCADTests)
 enable_testing()
 
+# A dedicated GL harness is needed to change schemes on the same live renderer.
+# Separate CLI PNG exports cannot detect stale vertex buffers (issues #1203/#1204).
+if(TARGET OpenSCADLibInternal AND NOT NULLGL AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  add_executable(render-color-scheme-test render_color_scheme_test.cc)
+  target_link_libraries(render-color-scheme-test PRIVATE OpenSCADLibInternal svg)
+  # The inherited Windows resource file resolves scripts/winmanifest.xml from the repo root.
+  target_include_directories(render-color-scheme-test PRIVATE ${CMAKE_SOURCE_DIR})
+  # Python support changes node layouts but its definition is private to the library.
+  # Match all library definitions so the native test uses the same class ABI.
+  target_compile_definitions(render-color-scheme-test PRIVATE
+    "$<TARGET_PROPERTY:OpenSCADLibInternal,COMPILE_DEFINITIONS>")
+  get_target_property(_RENDER_COLOR_CXX_STANDARD OpenSCADLibInternal CXX_STANDARD)
+  set_target_properties(render-color-scheme-test PROPERTIES
+    CXX_STANDARD ${_RENDER_COLOR_CXX_STANDARD} CXX_STANDARD_REQUIRED ON)
+  if(WIN32)
+    # Share the application's staged Python/libfive DLLs and software OpenGL runtime.
+    add_dependencies(render-color-scheme-test OpenSCADExe)
+    set_target_properties(render-color-scheme-test PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY "$<TARGET_FILE_DIR:OpenSCADExe>")
+  endif()
+  add_test(NAME render-color-scheme CONFIGURATIONS Default
+    COMMAND render-color-scheme-test ${CMAKE_SOURCE_DIR})
+  if(EXPERIMENTAL)
+    add_test(NAME render-color-scheme-indexing CONFIGURATIONS Default
+      COMMAND render-color-scheme-test ${CMAKE_SOURCE_DIR} --indexing)
+  endif()
+endif()
+
 # Very commonly used cmake-provided paths
 set(CBD ${CMAKE_BINARY_DIR}) # build top level
 set(CSD ${CMAKE_SOURCE_DIR}) # project top level

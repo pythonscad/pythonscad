@@ -128,11 +128,10 @@ void CGALRenderer::setColorScheme(const ColorScheme& cs)
   Renderer::setColorScheme(cs);
   colormap_[ColorMode::CGAL_FACE_2D_COLOR] = ColorMap::getColor(cs, RenderColor::CGAL_FACE_2D_COLOR);
   colormap_[ColorMode::CGAL_EDGE_2D_COLOR] = ColorMap::getColor(cs, RenderColor::CGAL_EDGE_2D_COLOR);
-#ifdef ENABLE_CGAL
-  this->polyhedrons_.clear();  // Mark as dirty
-#endif
-  vertex_state_containers_.clear();  // Mark as dirty
   PRINTD("setColorScheme done");
+  // Nef buffers also read CGAL face colors directly from the scheme.
+  colors_dirty_ = colors_dirty_ || cs != applied_colorscheme_;
+  applied_colorscheme_ = cs;
 }
 
 void CGALRenderer::createPolySetStates()
@@ -155,7 +154,8 @@ void CGALRenderer::createPolySetStates()
     Color4f color;
     getColorSchemeColor(ColorMode::MATERIAL, color);
     vbo_builder.writeSurface();
-    vbo_builder.create_surface(*polyset, Transform3d::Identity(), color, false);
+    vbo_builder.create_surface(*polyset, Transform3d::Identity(), color, false, false,
+                               colormap_.at(ColorMode::CUTOUT));
   }
 
   vbo_builder.createInterleavedVBOs();
@@ -189,8 +189,10 @@ void CGALRenderer::createPolygonSurfaceStates()
 
   for (const auto& [polygon, polyset] : this->polygons_) {
     Color4f color;
-    getColorSchemeColor(ColorMode::CGAL_FACE_2D_COLOR, color);
-    vbo_builder.create_polygons(*polyset, Transform3d::Identity(), color);
+    // Use the same material default as preview for uncolored 2D faces.
+    getColorSchemeColor(ColorMode::MATERIAL, color);
+    vbo_builder.create_polygons(*polyset, Transform3d::Identity(), color,
+                                colormap_.at(ColorMode::CUTOUT));
   }
 
   vbo_builder.createInterleavedVBOs();
@@ -240,6 +242,14 @@ void CGALRenderer::createPolygonEdgeStates()
 
 void CGALRenderer::prepare(const ShaderUtils::ShaderInfo * /*shaderinfo*/)
 {
+  if (colors_dirty_) {
+    vertex_state_containers_.clear();
+#ifdef ENABLE_CGAL
+    polyhedrons_.clear();
+#endif
+    colors_dirty_ = false;
+  }
+
   PRINTD("prepare()");
   if (!vertex_state_containers_.size()) {
     if (!this->polysets_.empty() && !this->polygons_.empty()) {

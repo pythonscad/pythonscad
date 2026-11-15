@@ -139,7 +139,7 @@ void handle_triangle_color(const std::shared_ptr<const PolySet>& ps, ExportConte
     return;
   }
 
-  const Color4f col = ps->colors[color_index];
+  const Color4f col = ps->colors[color_index].resolved(ctx.selectedColor, ctx.info.defaultCutoutColor());
   const auto col_it = ctx.materialColors.find(col);
 
   Lib3MF_uint32 col_idx = 0;

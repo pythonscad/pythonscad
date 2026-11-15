@@ -323,6 +323,12 @@ struct ExportInfo {
   const Color4f defaultColor;
   const ColorScheme *colorScheme;
 
+  Color4f defaultCutoutColor() const
+  {
+    const auto& scheme = colorScheme ? *colorScheme : ColorMap::instance().defaultColorScheme();
+    return ColorMap::getColor(scheme, RenderColor::CGAL_FACE_BACK_COLOR);
+  }
+
   std::shared_ptr<const ExportPdfOptions> optionsPdf;
   std::shared_ptr<const Export3mfOptions> options3mf;
   std::shared_ptr<const ExportSvgOptions> optionsSvg;
@@ -370,8 +376,10 @@ void export_stl(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
 void export_3mf(const std::vector<struct Export3mfPartInfo>& infos, std::ostream& output,
                 const ExportInfo& exportInfo);
 void export_obj(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
-void export_off(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
-void export_wrl(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
+void export_off(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
+                const ExportInfo& exportInfo);
+void export_wrl(const std::shared_ptr<const Geometry>& geom, std::ostream& output,
+                const ExportInfo& exportInfo);
 void export_ps(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_amf(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
 void export_dxf(const std::shared_ptr<const Geometry>& geom, std::ostream& output);
