@@ -44,9 +44,9 @@ PyObject *python_mesh_core(PyObject *obj, bool tessellate, bool color)
   if (child == NULL) return propagate_or_typeerror("Invalid type for  Object in mesh \n");
   Tree tree(child, "");
   GeometryEvaluator geomevaluator(tree);
-  const auto *scheme = ColorMap::instance().findColorScheme(RenderSettings::inst()->colorscheme);
-  const auto material = ColorMap::getColor(*scheme, RenderColor::CGAL_FACE_FRONT_COLOR);
-  const auto cutout = ColorMap::getColor(*scheme, RenderColor::CGAL_FACE_BACK_COLOR);
+  const auto& scheme = ColorMap::instance().colorSchemeOrDefault(RenderSettings::inst()->colorscheme);
+  const auto material = ColorMap::getColor(scheme, RenderColor::CGAL_FACE_FRONT_COLOR);
+  const auto cutout = ColorMap::getColor(scheme, RenderColor::CGAL_FACE_BACK_COLOR);
   std::shared_ptr<const Geometry> geom = geomevaluator.evaluateGeometry(*tree.root(), true);
   std::shared_ptr<const PolySet> ps = PolySetUtils::getGeometryAsPolySet(geom);
 

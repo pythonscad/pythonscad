@@ -300,6 +300,11 @@ int main(int argc, char **argv)
                 ColorMap::getColor(cs, RenderColor::CGAL_FACE_BACK_COLOR),
               std::string(name) + ": F5/F6 cutout defaults differ");
     }
+    auto& colors = ColorMap::instance();
+    require(&colors.colorSchemeOrDefault("__deleted_custom_theme__") == &colors.defaultColorScheme(),
+            "A deleted custom theme did not fall back to Cornfield");
+    require(&colors.colorSchemeOrDefault("Tomorrow Night") == colors.findColorScheme("Tomorrow Night"),
+            "An available custom theme was replaced by the fallback");
     checkGeometry();
     checkExports(root);
     checkUnpaintedExports(root);
