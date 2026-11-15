@@ -369,7 +369,7 @@ msgstr "Chattalternativ"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:199
 msgid "☰"
-msgstr ""
+msgstr "☰"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:201
 #: src/gui/ai/ChatWidget.cc:140
@@ -807,41 +807,40 @@ msgid "Export"
 msgstr "E&xportera"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:179
-#, fuzzy
 msgid "Export GCODE Options"
-msgstr "Alternativ för PDF-export"
+msgstr "Alternativ för GCODE-export"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:180
 msgid "Laser Power and Speed"
-msgstr ""
+msgstr "Lasereffekt och hastighet"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:181
 msgid "Laser Speed:"
-msgstr ""
+msgstr "Laserhastighet:"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:182
 msgid "Laser Power:"
-msgstr ""
+msgstr "Lasereffekt:"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:183
 msgid "Laser Mode:"
-msgstr ""
+msgstr "Laserläge:"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:184
 msgid "Constant Power"
-msgstr ""
+msgstr "Konstant effekt"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:185
 msgid "Dynamic Power"
-msgstr ""
+msgstr "Dynamisk effekt"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:187
 msgid "Init Code:"
-msgstr ""
+msgstr "Startkod:"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:188
 msgid "Exit Code:"
-msgstr ""
+msgstr "Avslutningskod:"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:550
 msgid "Export PDF Options"
@@ -1008,161 +1007,137 @@ msgstr ""
 "p></body></html>"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:613
-#, fuzzy
 msgid "Show Scale Usage"
-msgstr "Visa skala"
+msgstr "Visa skalanvändning"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:614
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:203
 msgid "Fill and Stroke"
-msgstr ""
+msgstr "Fyllning och kontur"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:616
-#, fuzzy
 msgid ""
 "<html><head/><body><p>Enable filling of exported geometry with a color.</p></"
 "body></html>"
-msgstr ""
-"<html><head/><body><p>Inkludera ett rutnät av den valda storleken på sidan.</"
-"p></body></html>"
+msgstr "<html><head/><body><p>Aktivera färgfyllning av exporterad geometri.</p></body></html>"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:618
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:207
 msgid "Fill Geometry"
-msgstr ""
+msgstr "Fyll geometri"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:623
-#, fuzzy
 msgid ""
 "<html><head/><body><p>Enable outline stroke for exported geometry.</p></"
 "body></html>"
-msgstr ""
-"<html><head/><body><p>Inkludera designens filnamn på sidan.</p></body></html>"
+msgstr "<html><head/><body><p>Aktivera konturlinje för exporterad geometri.</p></body></html>"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:625
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:214
 msgid "Stroke Outline"
-msgstr ""
+msgstr "Rita kontur"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:629
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:218
 msgid "Stroke Width:"
-msgstr ""
+msgstr "Linjebredd:"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:630
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:219
-#, fuzzy
 msgid " mm"
-msgstr "2 mm"
+msgstr " mm"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:202
-#, fuzzy
 msgid "Export SVG Options"
-msgstr "Alternativ för 3MF-export"
+msgstr "Alternativ för SVG-export"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:205
 msgid "Enable filling of exported geometry with a color."
-msgstr ""
+msgstr "Aktivera färgfyllning av exporterad geometri."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:212
 msgid "Enable outline stroke for exported geometry."
-msgstr ""
+msgstr "Aktivera konturlinje för exporterad geometri."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:291
-#, fuzzy
 msgid "Font List"
 msgstr "Teckensnittslista"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:293
-#, fuzzy
 msgid "Open Font Folder"
-msgstr "Öppna mapp"
+msgstr "Öppna teckensnittsmapp"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:294
-#, fuzzy
 msgid "Copy Font Folder"
-msgstr "Öppna mapp"
+msgstr "Kopiera teckensnittsmapp"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:295
-#, fuzzy
 msgid "Copy Full Path to Font"
-msgstr "Kopiera fullständig sökväg"
+msgstr "Kopiera fullständig sökväg till teckensnitt"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:296
-#, fuzzy
 msgid "Copy Font Style"
-msgstr "Typsnittstil"
+msgstr "Kopiera teckensnittsstil"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:297
-#, fuzzy
 msgid "Copy Font Name"
-msgstr "Kopiera färgnamn"
+msgstr "Kopiera teckensnittsnamn"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:298
-#, fuzzy
 msgid "Show Font Name"
-msgstr "Formaterat teckensnittsnamn"
+msgstr "Visa teckensnittsnamn"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:299
-#, fuzzy
 msgid "Show Styled Font Name"
-msgstr "Formaterat teckensnittsnamn"
+msgstr "Visa formaterat teckensnittsnamn"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:300
-#, fuzzy
 msgid "Show Font Style"
-msgstr "Typsnittstil"
+msgstr "Visa teckensnittsstil"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:301
-#, fuzzy
 msgid "Show Sample Text"
-msgstr "Återställ exempeltext"
+msgstr "Visa exempeltext"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:302
-#, fuzzy
 msgid "ShowFileName"
-msgstr "Visa designens filnamn"
+msgstr "Visa filnamn"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:303
-#, fuzzy
 msgid "Show File Path"
-msgstr "Filsökväg"
+msgstr "Visa filsökväg"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:304
-#, fuzzy
 msgid "Reset Columns"
-msgstr "Återställ trim"
+msgstr "Återställ kolumner"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:307
 msgid "Any"
-msgstr ""
+msgstr "Alla"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:313
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:317
 #: src/gui/FontList.cc:402
-#, fuzzy
 msgid "Font name"
-msgstr "Filnamn"
+msgstr "Teckensnittsnamn"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:314
 #: src/gui/FontList.cc:406
-#, fuzzy
 msgid "Sample text"
-msgstr "Återställ exempeltext"
+msgstr "Exempeltext"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:315
 msgid "Chars"
-msgstr ""
+msgstr "Tecken"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:318
-#, fuzzy
 msgid "Font path"
-msgstr "Filsökväg"
+msgstr "Teckensnittssökväg"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:319
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2674
 msgid "Style"
-msgstr ""
+msgstr "Stil"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:293
 msgid "Welcome to PythonSCAD"
@@ -1198,7 +1173,6 @@ msgid "Open Example"
 msgstr "Öppna exempel"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:304
-#, fuzzy
 msgid ""
 "<html><head/><body>\n"
 "\t\t<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
@@ -1210,17 +1184,7 @@ msgid ""
 "</body></html>\n"
 "\n"
 "\n"
-msgstr ""
-"<html><head/><body>\n"
-"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
-"weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span "
-"style=\"color: green;\">OpenSCAD</span></p>\n"
-"<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-"
-"weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: "
-"2em;\">Programmerarens solida 3D CAD-modellerare</p>\n"
-"</body></html>\n"
-"\n"
-"\n"
+msgstr "<html><head/><body>\n\t\t<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: bold; padding-bottom: 0; margin-bottom: 0; font-size: 22pt;\"><span style=\"color: __PYTHON_BRAND_COLOR__;\">Python</span>SCAD</p>\n<p style=\"font-family: 'Open Sans', 'Droid Sans', 'sans-serif'; font-weight: normal; font-size: 14pt; padding-top: 0; margin-top: 0; margin-left: 2em;\">Skriptbaserat 3D-modelleringsprogram med Python-stöd</p>\n</body></html>\n\n\n"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_LaunchingScreen.h:311
 msgid "Don't show again"
@@ -1244,17 +1208,16 @@ msgstr "&Ok"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_LoadShareDesignDialog.h:62
 msgid "Loading a shared Design from pythonscad.org"
-msgstr ""
+msgstr "Läser in en delad design från pythonscad.org"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_LoadShareDesignDialog.h:63
-#, fuzzy
 msgid "Select Design"
-msgstr "Markering"
+msgstr "Välj design"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1065
 #: src/gui/MainWindow.cc:5432
 msgid "Welcome..."
-msgstr ""
+msgstr "Välkommen..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1066
 msgid "&New File"
@@ -1314,14 +1277,12 @@ msgstr "Ctrl+R"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1090
 #: src/gui/MainWindow.cc:5433
-#, fuzzy
 msgid "Close &Window"
-msgstr "Nytt fönster"
+msgstr "Stäng &fönster"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1092
-#, fuzzy
 msgid "Alt+F4"
-msgstr "Ctrl+Alt+F"
+msgstr "Alt+F4"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1094
 msgid "&Quit"
@@ -1432,7 +1393,6 @@ msgid "Ctrl+Shift+Tab"
 msgstr "Ctrl+Shift+Tab"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1149
-#, fuzzy
 msgid "Copy Viewport Ima&ge"
 msgstr "Kopiera vyfältets &bild"
 
@@ -1441,26 +1401,22 @@ msgid "Ctrl+Shift+C"
 msgstr "Ctrl+Shift+C"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1153
-#, fuzzy
 msgid "Copy Viewport Transl&ation"
-msgstr "Kopiera vyfältets översättnin&g"
+msgstr "Kopiera vyfältets &förskjutning"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1155
 msgid "Ctrl+T"
 msgstr "Ctrl+T"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1157
-#, fuzzy
 msgid "Cop&y Viewport Rotation"
 msgstr "Kopiera vyfältets r&otation"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1158
-#, fuzzy
 msgid "Copy Vie&wport Distance"
 msgstr "Kopiera vy&fältets avstånd"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1159
-#, fuzzy
 msgid "Copy Vie&wport FOV"
 msgstr "Kopiera vyfältets s&ynfält"
 
@@ -1530,16 +1486,15 @@ msgstr "A"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1192
 msgid "Find Handle"
-msgstr ""
+msgstr "Hitta handtag"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1193
-#, fuzzy
 msgid "&Share Design"
-msgstr "&Design"
+msgstr "&Dela design"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1194
 msgid "&Load shared Design"
-msgstr ""
+msgstr "&Läs in delad design"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1195
 msgid "&Check Validity"
@@ -1551,7 +1506,7 @@ msgstr "Visa A&ST..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1197
 msgid "Display Python conversion"
-msgstr ""
+msgstr "Visa Python-konvertering"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1198
 msgid "Display CSG &Tree"
@@ -1563,18 +1518,16 @@ msgstr "Visa CSG-pr&odukter..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
 #: src/gui/MainWindow.cc:4073
-#, fuzzy
 msgid "&Export..."
-msgstr "Exportera chatt …"
+msgstr "&Exportera..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1202
 msgid "F7"
 msgstr "F7"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1204
-#, fuzzy
 msgid "Export &as..."
-msgstr "Exportera som PDF..."
+msgstr "Exportera &som..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1206
 msgid "Ctrl+F7"
@@ -1605,19 +1558,16 @@ msgid "Export as &WRL..."
 msgstr "Exportera som &WRL..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1214
-#, fuzzy
 msgid "Export as &Foldable PS..."
-msgstr "Exportera som &bild..."
+msgstr "Exportera som &vikbar PS..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1215
-#, fuzzy
 msgid "Export as &Step..."
-msgstr "Exportera som &CSG..."
+msgstr "Exportera som &STEP..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1216
-#, fuzzy
 msgid "Export as &GCode..."
-msgstr "Exportera som &CSG..."
+msgstr "Exportera som &GCode..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1217
 msgid "P&review"
@@ -1761,20 +1711,19 @@ msgstr "Exportera som &DXF..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1278
 msgid "&Trust Current Design"
-msgstr ""
+msgstr "&Lita på aktuell design"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1280
 msgid "Toggle trust for the active saved Python design"
-msgstr ""
+msgstr "Växla tillit för den aktiva sparade Python-designen"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1282
-#, fuzzy
 msgid "&Revoke Trust for All Python Designs..."
-msgstr "Återkalla betrodda Python-filer"
+msgstr "&Återkalla tillit för alla Python-designer..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1284
 msgid "Revoke trust for all Python designs and clear the trust store"
-msgstr ""
+msgstr "Återkalla tillit för alla Python-designer och töm tillitslagret"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1286
 msgid "&Close"
@@ -1829,7 +1778,6 @@ msgid "Ctrl+E"
 msgstr "Ctrl+E"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
-#, fuzzy
 msgid "J&ump to Next Error"
 msgstr "Hoppa till nästa fel"
 
@@ -1858,22 +1806,20 @@ msgid "Export as &CSG..."
 msgstr "Exportera som &CSG..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1320
-#, fuzzy
 msgid "&Library Info"
 msgstr "&Biblioteksinfo"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1321
 msgid "Report issue..."
-msgstr ""
+msgstr "Rapportera problem..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1322
 msgid "Show &Library Folder"
 msgstr "Visa &biblioteksmapp..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1323
-#, fuzzy
 msgid "Show Backup Files"
-msgstr "Visa detaljer"
+msgstr "Visa säkerhetskopior"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1324
 msgid "Reset &View"
@@ -1924,7 +1870,6 @@ msgid "Ctrl+F2"
 msgstr "Ctrl+F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1344
-#, fuzzy
 msgid "Jump to Next &Bookmark"
 msgstr "Hoppa till nästa bokmärke"
 
@@ -1933,7 +1878,6 @@ msgid "F2"
 msgstr "F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
-#, fuzzy
 msgid "Jump to &Previous Bookmark"
 msgstr "Hoppa till föregående bokmärke"
 
@@ -1942,16 +1886,14 @@ msgid "Shift+F2"
 msgstr "Skift+F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1352
-#, fuzzy
 msgid "&Full Screen"
-msgstr "Analysera skärmen"
+msgstr "&Helskärm"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1354
 msgid "F11"
 msgstr "F11"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
-#, fuzzy
 msgid "&Hide Editor Toolbar"
 msgstr "Dölj redigeringsverktygsfält"
 
@@ -1968,16 +1910,14 @@ msgid "&Cheat Sheet"
 msgstr "&Fusklapp"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1362
-#, fuzzy
 msgid "&Python Cheat Sheet"
-msgstr "&Fusklapp"
+msgstr "&Fusklapp för Python"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1363
 msgid "Export as PDF..."
 msgstr "Exportera som PDF..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
-#, fuzzy
 msgid "Hide &3D View Toolbar"
 msgstr "Dölj verktygsfält för 3D-vy"
 
@@ -2010,14 +1950,12 @@ msgid "Ctrl+J"
 msgstr "Ctrl+J"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1376
-#, fuzzy
 msgid "Create Virtual &Environment..."
-msgstr "Skapa virtuell miljö"
+msgstr "Skapa virtuell &miljö..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1377
-#, fuzzy
 msgid "&Select Virtual Environment..."
-msgstr "Välj virtuell miljö"
+msgstr "&Välj virtuell miljö..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1378
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:107
@@ -2298,7 +2236,7 @@ msgstr "Mus"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
 msgid "Python Settings"
-msgstr ""
+msgstr "Python-inställningar"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2632
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:178
@@ -2530,7 +2468,7 @@ msgstr "Ctrl/Cmd-Mushjulet zoomar texten"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2700
 msgid "Use gvim as editor (requires restart)"
-msgstr ""
+msgstr "Använd gvim som redigerare (kräver omstart)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
 msgid "Indentation"
@@ -2766,20 +2704,19 @@ msgstr "Användargränssnitt"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
 msgid "GUI theme"
-msgstr ""
+msgstr "Tema för gränssnittet"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
-#, fuzzy
 msgid "Light"
-msgstr "&Höger"
+msgstr "Ljust"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
 msgid "Dark"
-msgstr ""
+msgstr "Mörkt"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
 msgid "Auto (follow system)"
-msgstr ""
+msgstr "Auto (följ systemet)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
 msgid "Enable docking helper widgets in different places"
@@ -2813,22 +2750,22 @@ msgstr "s"
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
 #: src/gui/Preferences.cc:453
 msgid "When launching another instance with files:"
-msgstr ""
+msgstr "När en annan instans startas med filer:"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
 #: src/gui/Preferences.cc:455
 msgid "Enable session management (save/restore tabs on quit, requires restart)"
-msgstr ""
+msgstr "Aktivera sessionshantering (spara/återställ flikar vid avslut, kräver omstart)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
 #: src/gui/Preferences.cc:457
 msgid "Autosave session in background for crash recovery"
-msgstr ""
+msgstr "Spara sessionen automatiskt i bakgrunden för återställning efter krasch"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
 #: src/gui/Preferences.cc:458
 msgid "Autosave interval:"
-msgstr ""
+msgstr "Intervall för autosparande:"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
 msgid "Console"
@@ -2904,9 +2841,8 @@ msgid "Measurements: Area"
 msgstr "Mätningar: Yta"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2808
-#, fuzzy
 msgid "Measurements: Volume"
-msgstr "Mätningar: Yta"
+msgstr "Mätningar: Volym"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2809
 msgid "Export Features"
@@ -2942,11 +2878,11 @@ msgstr "Hoppa över TLS-certifikatverifiering (osäkert)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2818
 msgid "Globally trust Python designs"
-msgstr ""
+msgstr "Lita globalt på Python-designer"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2819
 msgid "Really (very dangerous)"
-msgstr ""
+msgstr "Verkligen (mycket farligt)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2820
 msgid "Dialog visibility"
@@ -2969,9 +2905,8 @@ msgid "Always show SVG export dialog"
 msgstr "Visa alltid dialogrutan för PDF-export"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2825
-#, fuzzy
 msgid "Always show GCODE export dialog"
-msgstr "Visa alltid dialogrutan för PDF-export"
+msgstr "Visa alltid dialogrutan för GCODE-export"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2826
 msgid "Always show Print Service dialog"
@@ -3051,20 +2986,19 @@ msgstr "%v / %m"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:86
 msgid "Sharing Design on pythonscad.org"
-msgstr ""
+msgstr "Delar design på pythonscad.org"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:87
-#, fuzzy
 msgid "Design name"
-msgstr "Konstruktör"
+msgstr "Designnamn"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:88
 msgid "Author name(optional)"
-msgstr ""
+msgstr "Författarnamn (valfritt)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ShareDesignDialog.h:89
 msgid "Publish on pythonscad.org"
-msgstr ""
+msgstr "Publicera på pythonscad.org"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ViewportControl.h:271
 msgid "Aspect Ratio"
@@ -3109,13 +3043,12 @@ msgid "After indentation"
 msgstr "Efter indragning"
 
 #: src/core/Settings.cc:212
-#, fuzzy
 msgid "Open in new window"
 msgstr "Öppna i nytt fönster"
 
 #: src/core/Settings.cc:213
 msgid "Reuse active window"
-msgstr ""
+msgstr "Återanvänd aktivt fönster"
 
 #: src/core/Settings.cc:224
 msgid "Upload only"
@@ -3240,7 +3173,7 @@ msgstr "Kunde inte öppna den valda bildfilen."
 
 #: src/gui/ai/ChatWidget.cc:577
 msgid "[Img]"
-msgstr ""
+msgstr "[Img]"
 
 #: src/gui/ai/ChatWidget.cc:582
 msgid "Remove attachment"
@@ -3325,22 +3258,19 @@ msgstr "Spara konsolens innehåll"
 
 #: src/gui/Editor.cc:206
 msgid "The active design is not a Python design."
-msgstr ""
+msgstr "Den aktiva designen är inte en Python-design."
 
 #: src/gui/Editor.cc:212
 msgid ""
 "Untitled buffers are already trusted. Save to a file if you need a "
 "persistent trust entry."
-msgstr ""
+msgstr "Dokument utan titel är redan betrodda. Spara till en fil om du behöver en beständig tillitspost."
 
 #: src/gui/Export3mfDialog.cc:80
-#, fuzzy
 msgid ""
 "This PythonSCAD build uses lib3mf version 1. Setting the decimal precision "
 "for export needs version 2 or later."
-msgstr ""
-"Den här OpenSCAD-versionen använder lib3mf version 1. Att ange "
-"decimalprecision för export kräver version 2 eller senare."
+msgstr "Den här PythonSCAD-versionen använder lib3mf version 1. Att ange decimalprecision för export kräver version 2 eller senare."
 
 #: src/gui/ExternalToolInterface.cc:188
 msgid "Exported design exceeds the service upload limit of (%1 MB)."
@@ -3435,44 +3365,41 @@ msgstr ""
 
 #: src/gui/MainWindow.cc:1667 src/gui/TabManager.cc:482
 msgid "Session Save"
-msgstr ""
+msgstr "Spara session"
 
 #: src/gui/MainWindow.cc:1668
-#, fuzzy
 msgid "Could not save the session."
-msgstr "Kunde inte öppna den valda filen."
+msgstr "Det gick inte att spara sessionen."
 
 #: src/gui/MainWindow.cc:1669
 msgid ""
 "%1\n"
 "\n"
 "%2"
-msgstr ""
+msgstr "%1\n\n%2"
 
 #: src/gui/MainWindow.cc:1670
 msgid "Try Again"
-msgstr ""
+msgstr "Försök igen"
 
 #: src/gui/MainWindow.cc:1672
 msgid "Quit Without Saving"
-msgstr ""
+msgstr "Avsluta utan att spara"
 
 #: src/gui/MainWindow.cc:1673
-#, fuzzy
 msgid "Keep Open"
-msgstr "Öppna"
+msgstr "Håll öppet"
 
 #: src/gui/MainWindow.cc:1865
-#, fuzzy
 msgid "Revoke All Trusted Designs"
-msgstr "Återkalla betrodda Python-filer"
+msgstr "Återkalla tillit för alla designer"
 
 #: src/gui/MainWindow.cc:1866
 msgid ""
 "This will revoke trust for all Python designs.\n"
 "\n"
 "Are you sure?"
-msgstr ""
+msgstr "Detta återkallar tilliten för alla Python-designer.\n\nÄr du säker?"
 
 #: src/gui/MainWindow.cc:1908 src/gui/MainWindow.cc:1915
 #: src/gui/MainWindow.cc:1924 src/gui/MainWindow.cc:1984
@@ -3482,7 +3409,7 @@ msgstr "Skapa virtuell miljö"
 
 #: src/gui/MainWindow.cc:1922
 msgid "Creating Python virtual environment. Please wait..."
-msgstr ""
+msgstr "Skapar virtuell Python-miljö. Vänta..."
 
 #: src/gui/MainWindow.cc:2007
 msgid "Select Virtual Environment"
@@ -3499,7 +3426,7 @@ msgid ""
 "Reloading will discard your changes.\n"
 "\n"
 "Do you really want to reload the file?"
-msgstr ""
+msgstr "Filen har ändrats på disken, men den här fliken har osparade ändringar.\nOm du läser in filen på nytt förloras dina ändringar.\n\nVill du verkligen läsa in filen på nytt?"
 
 #: src/gui/MainWindow.cc:2630
 msgid ""
@@ -3528,34 +3455,33 @@ msgstr ""
 
 #: src/gui/MainWindow.cc:3341
 msgid "Click to change language"
-msgstr ""
+msgstr "Klicka för att byta språk"
 
 #: src/gui/MainWindow.cc:3386
 msgid "Auto-detect from file extension"
-msgstr ""
+msgstr "Identifiera automatiskt från filändelsen"
 
 #: src/gui/MainWindow.cc:3715
 msgid "The design has not been rendered yet (F6)."
-msgstr ""
+msgstr "Designen har inte renderats ännu (F6)."
 
 #: src/gui/MainWindow.cc:3716
 msgid "Render the design and print, or cancel."
-msgstr ""
+msgstr "Rendera designen och skriv ut, eller avbryt."
 
 #: src/gui/MainWindow.cc:3717
 msgid "Render the design and export, or cancel."
-msgstr ""
+msgstr "Rendera designen och exportera, eller avbryt."
 
 #: src/gui/MainWindow.cc:3722 src/gui/MainWindow.cc:3755
 #: src/gui/MainWindow.cc:3816
-#, fuzzy
 msgid "Render and Print"
-msgstr "&Uppdatera och förhandsvisa"
+msgstr "Rendera och skriv ut"
 
 #: src/gui/MainWindow.cc:3722 src/gui/MainWindow.cc:3755
 #: src/gui/MainWindow.cc:3816
 msgid "Render and Export"
-msgstr ""
+msgstr "Rendera och exportera"
 
 #: src/gui/MainWindow.cc:3740 src/gui/UnsavedChangesDialog.cc:105
 #: src/gui/UnsavedChangesDialog.cc:121
@@ -3564,87 +3490,84 @@ msgstr "Namnlös"
 
 #: src/gui/MainWindow.cc:3748
 msgid "The current render belongs to a different tab (%1)."
-msgstr ""
+msgstr "Den aktuella renderingen tillhör en annan flik (%1)."
 
 #: src/gui/MainWindow.cc:3749
 msgid "Use that tab's render, render this tab first, or cancel."
-msgstr ""
+msgstr "Använd den flikens rendering, rendera den här fliken först, eller avbryt."
 
 #: src/gui/MainWindow.cc:3750
 msgid "Export that tab's render, render this tab first, or cancel."
-msgstr ""
+msgstr "Exportera den flikens rendering, rendera den här fliken först, eller avbryt."
 
 #: src/gui/MainWindow.cc:3753
 msgid "Use Other Tab's Render"
-msgstr ""
+msgstr "Använd den andra flikens rendering"
 
 #: src/gui/MainWindow.cc:3753
 msgid "Export Other Tab's Render"
-msgstr ""
+msgstr "Exportera den andra flikens rendering"
 
 #: src/gui/MainWindow.cc:3783
 msgid "Nothing to export! Try rendering first (press F6)"
-msgstr ""
+msgstr "Inget att exportera! Försök rendera först (tryck F6)"
 
 #: src/gui/MainWindow.cc:3805
 msgid "The design has changed since it was last rendered (F6)."
-msgstr ""
+msgstr "Designen har ändrats sedan den senast renderades (F6)."
 
 #: src/gui/MainWindow.cc:3807
 msgid ""
 "Print the last rendered geometry, render the current design first, or cancel."
-msgstr ""
+msgstr "Skriv ut den senast renderade geometrin, rendera den aktuella designen först, eller avbryt."
 
 #: src/gui/MainWindow.cc:3808
 msgid ""
 "Export the last rendered geometry, render the current design first, or "
 "cancel."
-msgstr ""
+msgstr "Exportera den senast renderade geometrin, rendera den aktuella designen först, eller avbryt."
 
 #: src/gui/MainWindow.cc:3814
-#, fuzzy
 msgid "Use Previous"
-msgstr "Föregående"
+msgstr "Använd föregående"
 
 #: src/gui/MainWindow.cc:3814
-#, fuzzy
 msgid "Export Previous"
-msgstr "Föregående"
+msgstr "Exportera föregående"
 
 #: src/gui/MainWindow.cc:3837
 msgid "Current top level object is not a %1D object."
-msgstr ""
+msgstr "Det aktuella toppnivåobjektet är inte ett %1D-objekt."
 
 #: src/gui/MainWindow.cc:3843
 msgid "Current top level object is empty."
-msgstr ""
+msgstr "Det aktuella toppnivåobjektet är tomt."
 
 #: src/gui/MainWindow.cc:3936
 msgid "ASCII STL"
-msgstr ""
+msgstr "ASCII STL"
 
 #: src/gui/MainWindow.cc:3938
 msgid "Binary STL"
-msgstr ""
+msgstr "Binär STL"
 
 #: src/gui/MainWindow.cc:3985
 msgid "By Extension (*.*)"
-msgstr ""
+msgstr "Efter filändelse (*.*)"
 
 #: src/gui/MainWindow.cc:4071
-#, fuzzy
 msgid "E&xport to %1"
-msgstr "E&xportera"
+msgstr "E&xportera till %1"
 
 #: src/gui/MainWindow.cc:4157
 msgid "Nothing to export. Please try compiling first."
-msgstr ""
+msgstr "Inget att exportera. Försök kompilera först."
 
 #: src/gui/MainWindow.cc:4327 src/gui/MainWindow.cc:4342
 msgid ""
 "The given filename does not have any known file extension. Please enter a "
 "known file extension or select a file format from the file format list."
-msgstr ""
+msgstr "Det angivna filnamnet saknar en känd filändelse. Ange en känd filändelse eller välj ett filformat i listan över filformat."
 
 #: src/gui/MainWindow.cc:4355 src/gui/TabManager.cc:405
 msgid ""
@@ -3772,7 +3695,7 @@ msgstr "Lokal Ollama"
 
 #: src/gui/Preferences.cc:459
 msgid " seconds"
-msgstr ""
+msgstr " sekunder"
 
 #: src/gui/Preferences.cc:484 src/gui/Preferences.cc:489
 #: src/gui/Preferences.cc:1491 src/gui/Preferences.cc:1530
@@ -3865,30 +3788,27 @@ msgstr ""
 
 #: src/gui/ScintillaEditor.cc:202
 msgid "This Python design is not trusted. Execution is disabled."
-msgstr ""
+msgstr "Den här Python-designen är inte betrodd. Körning är inaktiverad."
 
 #: src/gui/ScintillaEditor.cc:206
-#, fuzzy
 msgid "Trust Design"
-msgstr "Betrodda filer"
+msgstr "Lita på designen"
 
 #: src/gui/TabManager.cc:372
 msgid "Python script (*.py)"
-msgstr ""
+msgstr "Python-skript (*.py)"
 
 #: src/gui/TabManager.cc:375 src/gui/TabManager.cc:380
-#, fuzzy
 msgid "OpenSCAD script (*.scad)"
-msgstr "OpenSCAD-ritningar (*.scad)"
+msgstr "OpenSCAD-skript (*.scad)"
 
 #: src/gui/TabManager.cc:383
-#, fuzzy
 msgid "All files (*)"
-msgstr "%1-filer (*%2)"
+msgstr "Alla filer (*)"
 
 #: src/gui/TabManager.cc:442
 msgid "Cannot open design file \"%1\": path is a directory."
-msgstr ""
+msgstr "Kan inte öppna designfilen \"%1\": sökvägen är en katalog."
 
 #: src/gui/TabManager.cc:483
 msgid ""
@@ -3898,21 +3818,18 @@ msgid ""
 "%2\n"
 "\n"
 "Session changes may be lost."
-msgstr ""
+msgstr "Det gick inte att skriva sessionsfilen:\n%1\n\n%2\n\nÄndringar i sessionen kan gå förlorade."
 
 #: src/gui/TabManager.cc:492
 msgid "Unable to create the session directory."
-msgstr ""
+msgstr "Det gick inte att skapa sessionskatalogen."
 
 #: src/gui/TabManager.cc:548
-#, fuzzy
 msgid ""
 "The file \"%1\" does not exist.\n"
 "\n"
 "Do you want to create it?"
-msgstr ""
-"%1 finns redan.\n"
-"Vill du ersätta den?"
+msgstr "Filen \"%1\" finns inte.\n\nVill du skapa den?"
 
 #: src/gui/TabManager.cc:1079
 msgid "Copy file name"
@@ -3935,30 +3852,28 @@ msgid "Close All But This Tab"
 msgstr "Stäng alla utom den här fliken"
 
 #: src/gui/TabManager.cc:1378
-#, fuzzy
 msgid "Do you want to save the changes you made to %1?"
-msgstr "Vill du spara dina ändringar?"
+msgstr "Vill du spara ändringarna du gjort i %1?"
 
 #: src/gui/TabManager.cc:1379
 msgid "Your changes will be lost if you don't save them."
-msgstr ""
+msgstr "Dina ändringar går förlorade om du inte sparar dem."
 
 #: src/gui/TabManager.cc:1384
-#, fuzzy
 msgid "Don't save"
-msgstr "Visa inte igen"
+msgstr "Spara inte"
 
 #: src/gui/TabManager.cc:1875 src/gui/TabManager.cc:1904
 #: src/gui/TabManager.cc:1911 src/gui/TabManager.cc:1939
 #: src/gui/TabManager.cc:2181
 msgid "Session Restore"
-msgstr ""
+msgstr "Återställ session"
 
 #: src/gui/TabManager.cc:1876
 msgid ""
 "The session file was created by a newer version of PythonSCAD (session "
 "version %1, but this build only supports up to version %2)."
-msgstr ""
+msgstr "Sessionsfilen skapades av en nyare version av PythonSCAD (sessionsversion %1, men den här versionen stöder endast upp till version %2)."
 
 #: src/gui/TabManager.cc:1881
 msgid ""
@@ -3967,16 +3882,15 @@ msgid ""
 "\n"
 "Session file:\n"
 "%1"
-msgstr ""
+msgstr "Avsluta för att behålla sessionsfilen för en nyare PythonSCAD-version, eller förkasta den för att börja om här.\n\nSessionsfil:\n%1"
 
 #: src/gui/TabManager.cc:1884
 msgid "Exit"
-msgstr ""
+msgstr "Avsluta"
 
 #: src/gui/TabManager.cc:1885
-#, fuzzy
 msgid "Discard session"
-msgstr "Förkasta"
+msgstr "Förkasta sessionen"
 
 #: src/gui/TabManager.cc:1905
 msgid ""
@@ -3986,7 +3900,7 @@ msgid ""
 "%2\n"
 "\n"
 "Starting with a fresh session."
-msgstr ""
+msgstr "Det gick inte att öppna sessionsfilen för läsning:\n%1\n\n%2\n\nStartar med en ny session."
 
 #: src/gui/TabManager.cc:1912
 msgid ""
@@ -3995,27 +3909,27 @@ msgid ""
 "\n"
 "The file has not been deleted — you may inspect it manually.\n"
 "Starting with a fresh session."
-msgstr ""
+msgstr "Sessionsfilen är skadad eller oläsbar:\n%1\n\nFilen har inte raderats — du kan granska den manuellt.\nStartar med en ny session."
 
 #: src/gui/TabManager.cc:1940
 msgid ""
 "The session file uses an old format (version %1) that cannot be migrated to "
 "the current format (version %2). Starting with a fresh session."
-msgstr ""
+msgstr "Sessionsfilen använder ett gammalt format (version %1) som inte kan migreras till det aktuella formatet (version %2). Startar med en ny session."
 
 #: src/gui/TabManager.cc:2182
 msgid "%1 file(s) could not be found on disk."
-msgstr ""
+msgstr "%1 fil(er) kunde inte hittas på disken."
 
 #: src/gui/TabManager.cc:2184
 msgid ""
 "The session contents were restored, but the file paths are stale.\n"
 "Use Save As to pick a new location."
-msgstr ""
+msgstr "Sessionens innehåll återställdes, men filsökvägarna är inaktuella.\nAnvänd Spara som för att välja en ny plats."
 
 #: src/gui/TabManager.cc:2187
 msgid "Dismiss"
-msgstr ""
+msgstr "Stäng"
 
 #: src/gui/TabManager.cc:2300 src/gui/TabManager.cc:2453
 msgid "Failed to open file for writing"
@@ -4030,13 +3944,12 @@ msgid "Save File"
 msgstr "Spara fil"
 
 #: src/gui/TabManager.cc:2430
-#, fuzzy
 msgid "Save A Copy"
 msgstr "Spara en kopia"
 
 #: src/gui/UIUtils.cc:388
 msgid "Report issue"
-msgstr ""
+msgstr "Rapportera problem"
 
 #: src/gui/UIUtils.cc:389
 msgid ""
@@ -4045,39 +3958,35 @@ msgid ""
 "Environment information was added to the form automatically.\n"
 "Library and graphics information was copied to your clipboard — paste it "
 "into the \"Library & Graphics card information\" field."
-msgstr ""
+msgstr "Din webbläsare har öppnats för att skapa en felrapport.\n\nMiljöinformation lades automatiskt till i formuläret.\nBiblioteks- och grafikinformation kopierades till urklipp — klistra in den i fältet \"Library & Graphics card information\"."
 
 #: src/gui/UnsavedChangesDialog.cc:26
 msgid "Unsaved Changes"
-msgstr ""
+msgstr "Osparade ändringar"
 
 #: src/gui/UnsavedChangesDialog.cc:42
 msgid "If you continue, these changes will be lost."
-msgstr ""
+msgstr "Om du fortsätter går dessa ändringar förlorade."
 
 #: src/gui/UnsavedChangesDialog.cc:46
 msgid "Press %1 to discard changes without saving."
-msgstr ""
+msgstr "Tryck %1 för att förkasta ändringarna utan att spara."
 
 #: src/gui/UnsavedChangesDialog.cc:64
-#, fuzzy
 msgid "Discard Changes"
-msgstr "Förkasta"
+msgstr "Förkasta ändringar"
 
 #: src/gui/UnsavedChangesDialog.cc:110
-#, fuzzy
 msgid "Save this file"
-msgstr "Spara fil"
+msgstr "Spara den här filen"
 
 #: src/gui/UnsavedChangesDialog.cc:131
-#, fuzzy
 msgid "There is 1 file with unsaved changes:"
-msgstr "Vissa flikar har osparade ändringar."
+msgstr "Det finns 1 fil med osparade ändringar:"
 
 #: src/gui/UnsavedChangesDialog.cc:133
-#, fuzzy
 msgid "There are %1 files with unsaved changes:"
-msgstr "Vissa flikar har osparade ändringar."
+msgstr "Det finns %1 filer med osparade ändringar:"
 
 #: src/gui/ViewportControl.cc:204 src/gui/ViewportControl.cc:207
 #: src/gui/ViewportControl.cc:220
@@ -4099,43 +4008,40 @@ msgid "\"%1$s\" write error. (Disk full?)"
 msgstr "Skrivfel för ”%1$s”. (Är disken full?)"
 
 #: src/openscad_gui.cc:193 src/openscad_gui.cc:833 src/openscad_gui.cc:863
-#, fuzzy
 msgid "PythonSCAD"
-msgstr "Om PythonSCAD"
+msgstr "PythonSCAD"
 
 #: src/openscad_gui.cc:194
 msgid "Recovered session data was found."
-msgstr ""
+msgstr "Återställda sessionsdata hittades."
 
 #: src/openscad_gui.cc:195
 msgid "Restore"
-msgstr ""
+msgstr "Återställ"
 
 #: src/openscad_gui.cc:197
 msgid "Discard recovery only"
-msgstr ""
+msgstr "Förkasta endast återställningsdata"
 
 #: src/openscad_gui.cc:198
-#, fuzzy
 msgid "Start fresh"
-msgstr "Början"
+msgstr "Börja om"
 
 #: src/openscad_gui.cc:199
-#, fuzzy
 msgid "Show File"
-msgstr "Visa skala"
+msgstr "Visa fil"
 
 #: src/openscad_gui.cc:729
 msgid ""
 "PythonSCAD is already running. The existing window was brought to the front; "
 "this process exits."
-msgstr ""
+msgstr "PythonSCAD körs redan. Det befintliga fönstret togs fram; den här processen avslutas."
 
 #: src/openscad_gui.cc:733
 msgid ""
 "PythonSCAD is already running. An open request for the requested design "
 "file(s) was sent to that instance; this process exits."
-msgstr ""
+msgstr "PythonSCAD körs redan. En begäran om att öppna de angivna designfilerna skickades till den instansen; den här processen avslutas."
 
 #: src/openscad_gui.cc:834
 msgid ""
@@ -4143,24 +4049,23 @@ msgid ""
 "session data and single-instance locking:\n"
 "\n"
 "%1"
-msgstr ""
+msgstr "Det gick inte att skapa programmets konfigurationskatalog som krävs för sessionsdata och låsning till en enda instans:\n\n%1"
 
 #: src/openscad_gui.cc:865
 msgid ""
 "PythonSCAD is already running but is not responding. The old PythonSCAD "
 "process must be closed to open a new window."
-msgstr ""
+msgstr "PythonSCAD körs redan men svarar inte. Den gamla PythonSCAD-processen måste stängas för att öppna ett nytt fönster."
 
 #: src/openscad_gui.cc:868
 msgid ""
 "Try again if the running instance may have recovered, or close it to start a "
 "new one."
-msgstr ""
+msgstr "Försök igen om den körande instansen kan ha återhämtat sig, eller stäng den för att starta en ny."
 
 #: src/openscad_gui.cc:870
-#, fuzzy
 msgid "Close PythonSCAD"
-msgstr "Välkommen till PythonSCAD"
+msgstr "Stäng PythonSCAD"
 
 #: examples
 msgid "Advanced"
@@ -4176,7 +4081,7 @@ msgstr "Gammal"
 
 #: examples
 msgid "GCode"
-msgstr ""
+msgstr "GCode"
 
 #: examples
 msgid "Functions"
@@ -4189,7 +4094,7 @@ msgstr "Parametrisk"
 #. (itstool) path: component/summary
 #: pythonscad.appdata.xml.in2:6
 msgid "Design 3D models with Python — script-based CAD with live preview"
-msgstr ""
+msgstr "Skapa 3D-modeller med Python — skriptbaserad CAD med direktförhandsvisning"
 
 #. (itstool) path: description/p
 #: pythonscad.appdata.xml.in2:20
@@ -4197,7 +4102,7 @@ msgid ""
 "PythonSCAD is a script-based 3D modeling application with a full GUI. Write "
 "parametric, engineering-oriented models in Python, preview them live, and "
 "export to STL, 3MF, and other formats for 3D printing and manufacturing."
-msgstr ""
+msgstr "PythonSCAD är ett skriptbaserat 3D-modelleringsprogram med ett fullständigt grafiskt gränssnitt. Skriv parametriska, teknikinriktade modeller i Python, förhandsvisa dem direkt och exportera till STL, 3MF och andra format för 3D-utskrift och tillverkning."
 
 #. (itstool) path: description/p
 #: pythonscad.appdata.xml.in2:21
@@ -4206,7 +4111,7 @@ msgid ""
 "precise, repeatable CAD workflows driven by code. Solids are first-class "
 "values: compose models with Python, use pip packages, and iterate quickly "
 "with instant visual feedback in the 3D preview."
-msgstr ""
+msgstr "Till skillnad från konstnärliga modelleringsverktyg som Blender fokuserar PythonSCAD på precisa, repeterbara CAD-arbetsflöden som styrs av kod. Solider är förstklassiga värden: bygg modeller med Python, använd pip-paket och iterera snabbt med omedelbar visuell återkoppling i 3D-förhandsvisningen."
 
 #. (itstool) path: description/p
 #: pythonscad.appdata.xml.in2:22
@@ -4214,7 +4119,7 @@ msgid ""
 "PythonSCAD is also a rewarding way to learn programming — a few lines of "
 "Python can produce a model you can hold in your hand after 3D printing. "
 "OpenSCAD scripts remain supported alongside native Python."
-msgstr ""
+msgstr "PythonSCAD är också ett givande sätt att lära sig programmering — några rader Python kan skapa en modell som du kan hålla i handen efter 3D-utskrift. OpenSCAD-skript stöds fortfarande tillsammans med inbyggt Python."
 
 #~ msgid "micron"
 #~ msgstr "mikrometer"

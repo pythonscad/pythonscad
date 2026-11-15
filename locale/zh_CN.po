@@ -368,7 +368,7 @@ msgstr "聊天选项"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:199
 msgid "☰"
-msgstr ""
+msgstr "☰"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:201
 #: src/gui/ai/ChatWidget.cc:140
@@ -1387,7 +1387,6 @@ msgid "Ctrl+Shift+Tab"
 msgstr "Ctrl+Shift+Tab"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1149
-#, fuzzy
 msgid "Copy Viewport Ima&ge"
 msgstr "复制三维视图图像(&G)"
 
@@ -1396,7 +1395,6 @@ msgid "Ctrl+Shift+C"
 msgstr "Ctrl+Shift+C"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1153
-#, fuzzy
 msgid "Copy Viewport Transl&ation"
 msgstr "复制三维视图平移状态(&A)"
 
@@ -1405,17 +1403,14 @@ msgid "Ctrl+T"
 msgstr "Ctrl+T"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1157
-#, fuzzy
 msgid "Cop&y Viewport Rotation"
 msgstr "复制三维视图旋转状态(&Y)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1158
-#, fuzzy
 msgid "Copy Vie&wport Distance"
 msgstr "复制三维视图距离状态(&W)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1159
-#, fuzzy
 msgid "Copy Vie&wport FOV"
 msgstr "复制三维视图视角(&w)"
 
@@ -1777,7 +1772,6 @@ msgid "Ctrl+E"
 msgstr "Ctrl+E"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
-#, fuzzy
 msgid "J&ump to Next Error"
 msgstr "跳转到下一个错误"
 
@@ -1806,7 +1800,6 @@ msgid "Export as &CSG..."
 msgstr "导出为 CSG(&C)..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1320
-#, fuzzy
 msgid "&Library Info"
 msgstr "扩展库信息(&L)"
 
@@ -1871,7 +1864,6 @@ msgid "Ctrl+F2"
 msgstr "Ctrl+F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1344
-#, fuzzy
 msgid "Jump to Next &Bookmark"
 msgstr "跳转到下一个书签"
 
@@ -1880,7 +1872,6 @@ msgid "F2"
 msgstr "F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
-#, fuzzy
 msgid "Jump to &Previous Bookmark"
 msgstr "跳转到上一个书签"
 
@@ -1897,7 +1888,6 @@ msgid "F11"
 msgstr "F11"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
-#, fuzzy
 msgid "&Hide Editor Toolbar"
 msgstr "隐藏编辑工具栏"
 
@@ -1922,7 +1912,6 @@ msgid "Export as PDF..."
 msgstr "导出为 PDF..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
-#, fuzzy
 msgid "Hide &3D View Toolbar"
 msgstr "隐藏 3D 视图工具栏"
 
@@ -3172,7 +3161,7 @@ msgstr "无法打开所选图像文件。"
 
 #: src/gui/ai/ChatWidget.cc:577
 msgid "[Img]"
-msgstr ""
+msgstr "[Img]"
 
 #: src/gui/ai/ChatWidget.cc:582
 msgid "Remove attachment"
