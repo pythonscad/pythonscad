@@ -54,6 +54,7 @@
 #include <vector>
 
 #include "core/customizer/ParameterObject.h"
+#include "gui/MainWindow.h"
 #include "gui/Preferences.h"
 #include "gui/parameter/GroupWidget.h"
 #include "gui/parameter/ParameterCheckBox.h"
@@ -191,12 +192,17 @@ ParameterWidget::ParameterWidget(QWidget *parent) : QWidget(parent)
 
 void ParameterWidget::resetForNewDocument()
 {
+  // Block re-entrant setParameters() while processEvents() drains deferred widget
+  // deletions — otherwise a concurrent parse refills parameters and the following
+  // readFile() assert fails (session restore).
+  resettingForNewDocument = true;
   pendingSessionState.clear();
   invalidJsonFile.clear();
   source.clear();
   parameterShape.clear();
   savedGroupStates.clear();
   savedScrollValue = 0;
+  jsonAutoReloadId.clear();
   setModified(false);
 
   if (comboBoxPreset->isEditable() && comboBoxPreset->lineEdit()) {
@@ -216,12 +222,17 @@ void ParameterWidget::resetForNewDocument()
   }
   QCoreApplication::processEvents();
 
+  // Belt-and-suspenders: discard anything that slipped past the guard.
+  oldParameters = std::move(this->parameters);
+  widgets.clear();
   sets.clear();
+  parameterShape.clear();
 
   comboBoxPreset->clear();
   comboBoxPreset->addItem(_("<design default>"));
   comboBoxPreset->setCurrentIndex(0);
   updateSetEditability();
+  resettingForNewDocument = false;
 }
 
 // Call after resetForNewDocument() if setParameters() may have run already; otherwise only before the
@@ -242,6 +253,7 @@ void ParameterWidget::readFile(const QString& scadFile)
   for (const auto& set : this->sets) {
     comboBoxPreset->addItem(QString::fromStdString(set.name()));
   }
+  primeJsonAutoReloadId(scadFile);
 }
 
 // Write the json file if the parameter sets are not empty.
@@ -267,6 +279,7 @@ void ParameterWidget::saveFile(const QString& scadFile)
 
   cleanSets();
   sets.writeFile(jsonFile.toStdString());
+  primeJsonAutoReloadId(scadFile);
 }
 
 void ParameterWidget::removeBackupFile(const QString& scadFile)
@@ -280,11 +293,147 @@ void ParameterWidget::saveBackupFile(const QString& scadFile)
     return;
   }
 
+  // Do not touch jsonAutoReloadId: backups use a temporary path and must not replace
+  // the fingerprint used to watch the design's real companion JSON.
   sets.writeFile(getJsonFile(scadFile).toStdString());
+}
+
+QString ParameterWidget::companionJsonPath(const QString& scadFile)
+{
+  std::filesystem::path p = scadFile.toStdString();
+  return QString::fromStdString(p.replace_extension(".json").string());
+}
+
+void ParameterWidget::primeJsonAutoReloadId(const QString& scadFile)
+{
+  jsonAutoReloadId = MainWindow::autoReloadIdentityForPath(getJsonFile(scadFile));
+}
+
+bool ParameterWidget::jsonFileChangedOnDisk(const QString& scadFile)
+{
+  if (scadFile.isEmpty()) {
+    return false;
+  }
+  const std::string newid = MainWindow::autoReloadIdentityForPath(getJsonFile(scadFile));
+  if (newid != jsonAutoReloadId) {
+    jsonAutoReloadId = newid;
+    return true;
+  }
+  return false;
+}
+
+void ParameterWidget::rebuildPresetCombo(const QString& selectedName)
+{
+  if (comboBoxPreset->isEditable() && comboBoxPreset->lineEdit()) {
+    QObject::disconnect(comboBoxPreset->lineEdit(), &QLineEdit::textEdited, this,
+                        &ParameterWidget::onSetNameChanged);
+  }
+  // Force non-editable before rebuild so updateSetEditability() reinstalls the
+  // rename handler when a named preset remains selected.
+  comboBoxPreset->setEditable(false);
+
+  comboBoxPreset->clear();
+  comboBoxPreset->addItem(_("<design default>"));
+  for (const auto& set : this->sets) {
+    comboBoxPreset->addItem(QString::fromStdString(set.name()));
+  }
+
+  int idx = 0;
+  if (!selectedName.isEmpty()) {
+    // Skip index 0 (<design default>); findText() would match the placeholder first if a
+    // user preset reused that label.
+    for (int i = 1; i < comboBoxPreset->count(); ++i) {
+      if (comboBoxPreset->itemText(i) == selectedName) {
+        idx = i;
+        break;
+      }
+    }
+  }
+  comboBoxPreset->setCurrentIndex(idx);
+  updateSetEditability();
+  loadSet(static_cast<size_t>(idx));
+}
+
+bool ParameterWidget::reloadSetsFromDisk(const QString& scadFile)
+{
+  // Prefer the live combo selection. If widgets are still at design default but a
+  // pending session snapshot holds a named preset (dirty untrusted Python tab),
+  // recover that name before discarding the snapshot.
+  QString selectedName = currentPresetName();
+  if (selectedName.isEmpty() && !pendingSessionState.isEmpty()) {
+    selectedName = selectedPresetNameFromSessionState(pendingSessionState);
+  }
+
+  const QString jsonFile = getJsonFile(scadFile);
+  ParameterSets newSets;
+  if (std::filesystem::exists(jsonFile.toStdString())) {
+    if (!newSets.readFile(jsonFile.toStdString())) {
+      // Keep prior presets; mark the sidecar unreadable for the next save prompt.
+      this->invalidJsonFile = jsonFile;
+      primeJsonAutoReloadId(scadFile);
+      return false;
+    }
+  }
+  // Missing companion → empty preset list (same as a successful empty read).
+
+  this->invalidJsonFile = QString();
+  this->sets = std::move(newSets);
+  pendingSessionState.clear();
+  rebuildPresetCombo(selectedName);
+  setModified(false);
+  primeJsonAutoReloadId(scadFile);
+  // Preview is scheduled by the caller when needed; GuiLocker may block autoPreview here.
+  return true;
+}
+
+void ParameterWidget::selectPresetByName(const QString& name)
+{
+  rebuildPresetCombo(name);
+}
+
+QString ParameterWidget::currentPresetName() const
+{
+  const int idx = comboBoxPreset->currentIndex();
+  if (idx <= 0) {
+    return {};
+  }
+  return comboBoxPreset->itemText(idx);
+}
+
+QString ParameterWidget::selectedPresetNameFromSessionState(const QByteArray& customizerState)
+{
+  if (customizerState.isEmpty()) {
+    return {};
+  }
+  const QJsonDocument doc = QJsonDocument::fromJson(customizerState);
+  if (!doc.isObject()) {
+    return {};
+  }
+  const QJsonObject root = doc.object();
+  const int currentIndex = root.value(QStringLiteral("currentIndex")).toInt(0);
+  if (currentIndex <= 0) {
+    return {};
+  }
+  const QByteArray setsUtf8 = root.value(QStringLiteral("setsJson")).toString().toUtf8();
+  if (setsUtf8.isEmpty()) {
+    return {};
+  }
+  ParameterSets pendingSets;
+  if (!pendingSets.readFromString(
+        std::string(reinterpret_cast<const char *>(setsUtf8.constData()), setsUtf8.size()))) {
+    return {};
+  }
+  if (static_cast<size_t>(currentIndex) > pendingSets.size()) {
+    return {};
+  }
+  return QString::fromStdString(pendingSets[static_cast<size_t>(currentIndex) - 1].name());
 }
 
 void ParameterWidget::setParameters(const SourceFile *sourceFile, const std::string& source)
 {
+  if (resettingForNewDocument) {
+    return;
+  }
   this->source = source;
 
   // Build the incoming set first so its shape can be compared with what is on screen. This
@@ -708,14 +857,19 @@ ParameterVirtualWidget *ParameterWidget::createParameterWidget(ParameterObject *
 
 QString ParameterWidget::getJsonFile(const QString& scadFile)
 {
-  std::filesystem::path p = scadFile.toStdString();
-  return QString::fromStdString(p.replace_extension(".json").string());
+  return companionJsonPath(scadFile);
 }
 
 // Remove set values that do not correspond to a parameter,
 // or that cannot be parsed as such.
 void ParameterWidget::cleanSets()
 {
+  // Before declarations are parsed (e.g. inactive restored tab), wiping unknown keys
+  // would erase every preset override and risk writing an empty companion JSON.
+  if (parameters.empty()) {
+    return;
+  }
+
   std::map<std::string, ParameterObject *> namedParameters;
   for (const auto& parameter : parameters) {
     namedParameters[parameter->name()] = parameter.get();

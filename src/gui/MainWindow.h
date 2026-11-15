@@ -222,8 +222,11 @@ public:
   /// Write window geometry to the active persistence store (session or QSettings).
   void persistWindowGeometry();
 
-  /// Mtime+size fingerprint for auto-reload (empty if path missing or stat fails).
+  /// Millisecond-mtime+size fingerprint for auto-reload (empty if path missing or stat fails).
   static std::string autoReloadIdentityForPath(const QString& filepath);
+  /// True when \a saved and \a current refer to the same on-disk revision, including legacy
+  /// second-precision session fingerprints compared against millisecond identities.
+  static bool autoReloadIdentityMatches(const std::string& saved, const std::string& current);
 
   bool fileChangedOnDisk();
 
@@ -254,6 +257,12 @@ private:
   void updateCompileResult();
   void compile(bool reload, bool forcedone = false);
   bool checkEditorModified();
+  /// Prompt when Customizer is dirty. \a userInitiatedReload selects File → Reload wording.
+  bool checkParameterSetsModified(bool userInitiatedReload = false);
+  /// Reload companion customizer JSON when its fingerprint changes (prompt if dirty).
+  /// When \a force is true (File → Reload), skip the fingerprint check and reload from disk.
+  /// Returns true when presets were reloaded so the caller can force a recompile.
+  bool maybeReloadCompanionJson(bool force = false);
   QString dumpCSGTree(const std::shared_ptr<AbstractNode>& root);
 
   // Opens an independent windows with a text area showing the text given in argument

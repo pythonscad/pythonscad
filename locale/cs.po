@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenSCAD 2013.02.24\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-27 07:10+0200\n"
+"POT-Creation-Date: 2026-11-15 00:54+0100\n"
 "PO-Revision-Date: 2015-03-06 10:27+0100\n"
 "Last-Translator: Miro Hrončok <miro@hroncok.cz>\n"
 "Language-Team: Czech <miro@hroncok.cz>\n"
@@ -102,7 +102,7 @@ msgstr "Ukládat obrázky"
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:852
 #: build/OpenSCADLibInternal_autogen/include/ui_ButtonConfigWidget.h:362
 #: build/OpenSCADLibInternal_autogen/include/ui_MouseConfigWidget.h:214
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2626
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2613
 msgid "Preferences"
 msgstr "Předvolby"
 
@@ -253,7 +253,7 @@ msgid "TextLabel"
 msgstr "TextLabel"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_AxisConfigWidget.h:901
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2617
 msgid "Update"
 msgstr "Aktualizace"
 
@@ -407,7 +407,9 @@ msgstr "Přiložit obrázek"
 msgid ""
 "Agentic mode: allow the AI to call tools in multiple automatic turns per "
 "request"
-msgstr "Agentní režim: povolit AI volat nástroje v několika automatických krocích na jeden požadavek"
+msgstr ""
+"Agentní režim: povolit AI volat nástroje v několika automatických krocích na "
+"jeden požadavek"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:216
 msgid "Agentic"
@@ -447,20 +449,20 @@ msgstr "Název barvy"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:418
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:309
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2688
-#: src/core/Settings.cc:161 src/core/Settings.cc:520
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2675
+#: src/core/Settings.cc:161 src/core/Settings.cc:519
 msgid "Fixed"
 msgstr "vždy stejný"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:419
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:310
-#: src/core/Settings.cc:521
+#: src/core/Settings.cc:520
 msgid "Wildcard"
 msgstr "Zástupný znak"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:420
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:311
-#: src/core/Settings.cc:522
+#: src/core/Settings.cc:521
 msgid "RegExp"
 msgstr "RegExp"
 
@@ -481,17 +483,17 @@ msgid "Alphabetically"
 msgstr "Abecedně"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:426
-#: src/core/Settings.cc:532
+#: src/core/Settings.cc:531
 msgid "By color"
 msgstr "Podle barvy"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:427
-#: src/core/Settings.cc:533
+#: src/core/Settings.cc:532
 msgid "By color warmth"
 msgstr "Podle teploty barvy"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ColorList.h:428
-#: src/core/Settings.cc:534
+#: src/core/Settings.cc:533
 msgid "By lightness"
 msgstr "Podle světlosti"
 
@@ -522,9 +524,9 @@ msgstr "Obnovit barvu pozadí"
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:217
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:220
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:177
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2764
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2829
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2758
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2816
 msgid "..."
 msgstr "..."
 
@@ -569,7 +571,7 @@ msgid "Clear console"
 msgstr "Vymazat konzoli"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Console.h:46
-#: src/gui/TabManager.cc:2120
+#: src/gui/TabManager.cc:2186
 msgid "Save As..."
 msgstr "Uložit &jako..."
 
@@ -650,7 +652,7 @@ msgid "Unit"
 msgstr "Jednotka"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:462
-#: src/core/Settings.cc:455
+#: src/core/Settings.cc:454
 msgid "Micron"
 msgstr "Mikrometr"
 
@@ -659,17 +661,17 @@ msgid "Millimeter (default)"
 msgstr "Milimetr (výchozí)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:464
-#: src/core/Settings.cc:457
+#: src/core/Settings.cc:456
 msgid "Centimeter"
 msgstr "Centimetr"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:465
-#: src/core/Settings.cc:458
+#: src/core/Settings.cc:457
 msgid "Meter"
 msgstr "Metr"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:466
-#: src/core/Settings.cc:459
+#: src/core/Settings.cc:458
 msgid "Inch"
 msgstr "Palec"
 
@@ -686,7 +688,7 @@ msgid "Use colors from model and color scheme"
 msgstr "Použít barvy z modelu a barevného schématu"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_Export3mfDialog.h:473
-#: src/core/Settings.cc:448
+#: src/core/Settings.cc:447
 msgid "No colors"
 msgstr "Bez barev"
 
@@ -785,8 +787,8 @@ msgstr "Vždy zobrazit dialog"
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:221
 #: build/OpenSCADLibInternal_autogen/include/ui_OctoPrintApiKeyDialog.h:109
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:185
-#: src/gui/MainWindow.cc:3562 src/gui/MainWindow.cc:3595
-#: src/gui/MainWindow.cc:3654 src/gui/UnsavedChangesDialog.cc:60
+#: src/gui/MainWindow.cc:3723 src/gui/MainWindow.cc:3756
+#: src/gui/MainWindow.cc:3817 src/gui/UnsavedChangesDialog.cc:60
 #: src/openscad_gui.cc:196 src/openscad_gui.cc:871
 msgid "Cancel"
 msgstr "Zrušit"
@@ -795,12 +797,12 @@ msgstr "Zrušit"
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportGcodeDialog.h:190
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:634
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportSvgDialog.h:222
-#: src/gui/MainWindow.cc:3553 src/gui/MainWindow.cc:3586
-#: src/gui/MainWindow.cc:3620 src/gui/MainWindow.cc:3641
-#: src/gui/MainWindow.cc:3673 src/gui/MainWindow.cc:3680
-#: src/gui/MainWindow.cc:3994 src/gui/MainWindow.cc:4135
-#: src/gui/MainWindow.cc:4139 src/gui/MainWindow.cc:4163
-#: src/gui/MainWindow.cc:4178 src/gui/MainWindow.cc:4193
+#: src/gui/MainWindow.cc:3714 src/gui/MainWindow.cc:3747
+#: src/gui/MainWindow.cc:3783 src/gui/MainWindow.cc:3804
+#: src/gui/MainWindow.cc:3836 src/gui/MainWindow.cc:3843
+#: src/gui/MainWindow.cc:4157 src/gui/MainWindow.cc:4298
+#: src/gui/MainWindow.cc:4302 src/gui/MainWindow.cc:4326
+#: src/gui/MainWindow.cc:4341 src/gui/MainWindow.cc:4356
 msgid "Export"
 msgstr "&Exportovat"
 
@@ -849,37 +851,37 @@ msgid "Page Size"
 msgstr "Velikost stránky"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:555
-#: src/core/Settings.cc:400
+#: src/core/Settings.cc:399
 msgid "A6 (105 x 148 mm)"
 msgstr "A6 (105 × 148 mm)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:556
-#: src/core/Settings.cc:401
+#: src/core/Settings.cc:400
 msgid "A5 (148 x 210 mm)"
 msgstr "A5 (148 × 210 mm)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:557
-#: src/core/Settings.cc:402
+#: src/core/Settings.cc:401
 msgid "A4 (210x297 mm)"
 msgstr "A4 (210 × 297 mm)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:558
-#: src/core/Settings.cc:403
+#: src/core/Settings.cc:402
 msgid "A3 (297x420 mm)"
 msgstr "A3 (297 × 420 mm)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:559
-#: src/core/Settings.cc:404
+#: src/core/Settings.cc:403
 msgid "Letter (8.5x11 in)"
 msgstr "Letter (8,5 × 11 palců)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:560
-#: src/core/Settings.cc:405
+#: src/core/Settings.cc:404
 msgid "Legal (8.5x14 in)"
 msgstr "Legal (8,5 × 14 palců)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:561
-#: src/core/Settings.cc:406
+#: src/core/Settings.cc:405
 msgid "Tabloid (11x17 in)"
 msgstr "Tabloid (11 × 17 palců)"
 
@@ -916,12 +918,12 @@ msgid "Page Orientation"
 msgstr "Orientace stránky"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:585
-#: src/core/Settings.cc:410
+#: src/core/Settings.cc:409
 msgid "Portrait (Vertical)"
 msgstr "Na výšku (vertikálně)"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:587
-#: src/core/Settings.cc:411
+#: src/core/Settings.cc:410
 msgid "Landscape (Horizontal)"
 msgstr "Na šířku (horizontálně)"
 
@@ -934,7 +936,7 @@ msgstr ""
 "geometrie.</p></body></html>"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ExportPdfDialog.h:591
-#: src/core/Settings.cc:412
+#: src/core/Settings.cc:411
 msgid "Auto"
 msgstr "Automaticky"
 
@@ -1137,7 +1139,7 @@ msgid "Font path"
 msgstr "Cesta k písmu"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_FontList.h:319
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2687
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2674
 msgid "Style"
 msgstr "Styl"
 
@@ -1228,7 +1230,7 @@ msgid "Select Design"
 msgstr "Vybrat design"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1065
-#: src/gui/MainWindow.cc:5246
+#: src/gui/MainWindow.cc:5432
 msgid "Welcome..."
 msgstr "Vítejte …"
 
@@ -1289,7 +1291,7 @@ msgid "Ctrl+R"
 msgstr "Ctrl+R"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1090
-#: src/gui/MainWindow.cc:5247
+#: src/gui/MainWindow.cc:5433
 msgid "Close &Window"
 msgstr "Zavřít &okno"
 
@@ -1406,7 +1408,8 @@ msgid "Ctrl+Shift+Tab"
 msgstr "Ctrl+Shift+Tab"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1149
-msgid "Copy viewport ima&ge"
+#, fuzzy
+msgid "Copy Viewport Ima&ge"
 msgstr "Kopírovat obrázek pohledu"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1151
@@ -1414,7 +1417,8 @@ msgid "Ctrl+Shift+C"
 msgstr "Ctrl+Shift+C"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1153
-msgid "Copy viewport transl&ation"
+#, fuzzy
+msgid "Copy Viewport Transl&ation"
 msgstr "Kopírovat aktuální &posun pohledu"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1155
@@ -1422,15 +1426,18 @@ msgid "Ctrl+T"
 msgstr "Ctrl+T"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1157
-msgid "Cop&y viewport rotation"
+#, fuzzy
+msgid "Cop&y Viewport Rotation"
 msgstr "Kopírovat aktuální rotaci pohledu"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1158
-msgid "Copy vie&wport distance"
+#, fuzzy
+msgid "Copy Vie&wport Distance"
 msgstr "Kopírovat aktuální vzdálenost pohledu"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1159
-msgid "Copy vie&wport fov"
+#, fuzzy
+msgid "Copy Vie&wport FOV"
 msgstr "Kopírovat zorné pole pohledu"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1160
@@ -1530,7 +1537,7 @@ msgid "Display CSG Pr&oducts"
 msgstr "Zobrazit CSG pr&odukty …"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1200
-#: src/gui/MainWindow.cc:3910
+#: src/gui/MainWindow.cc:4073
 msgid "&Export..."
 msgstr "&Exportovat..."
 
@@ -1791,7 +1798,8 @@ msgid "Ctrl+E"
 msgstr "Ctrl+E"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
-msgid "J&ump to next error"
+#, fuzzy
+msgid "J&ump to Next Error"
 msgstr "Přejít na další chybu"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1313
@@ -1819,7 +1827,8 @@ msgid "Export as &CSG..."
 msgstr "Exportovat jako &CSG..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1320
-msgid "&Library info"
+#, fuzzy
+msgid "&Library Info"
 msgstr "&Informace o knihovnách"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1321
@@ -1883,7 +1892,8 @@ msgid "Ctrl+F2"
 msgstr "Ctrl+F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1344
-msgid "Jump to next &bookmark"
+#, fuzzy
+msgid "Jump to Next &Bookmark"
 msgstr "Přejít na další záložku"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1346
@@ -1891,7 +1901,8 @@ msgid "F2"
 msgstr "F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
-msgid "Jump to &previous bookmark"
+#, fuzzy
+msgid "Jump to &Previous Bookmark"
 msgstr "Přejít na předchozí záložku"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1350
@@ -1907,7 +1918,8 @@ msgid "F11"
 msgstr "F11"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
-msgid "&Hide Editor toolbar"
+#, fuzzy
+msgid "&Hide Editor Toolbar"
 msgstr "Skrýt panel nástrojů editoru"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1357
@@ -1931,7 +1943,8 @@ msgid "Export as PDF..."
 msgstr "Exportovat jako PDF …"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
-msgid "Hide &3D View toolbar"
+#, fuzzy
+msgid "Hide &3D View Toolbar"
 msgstr "Skrýt panel nástrojů 3D pohledu"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1365
@@ -1988,7 +2001,7 @@ msgid "&Examples"
 msgstr "&Příklady"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1384
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2641
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2628
 #: src/gui/Editor.cc:206 src/gui/Editor.cc:211 examples
 msgid "Python"
 msgstr "Python"
@@ -2155,7 +2168,7 @@ msgid "Form"
 msgstr "Form"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterDescriptionWidget.h:99
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2765
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
 msgid "Parameter"
 msgstr "Parameter"
 
@@ -2180,8 +2193,9 @@ msgid "Description Only"
 msgstr "Pouze popis"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ParameterWidget.h:161
-#: src/gui/parameter/ParameterWidget.cc:212
-#: src/gui/parameter/ParameterWidget.cc:340
+#: src/gui/parameter/ParameterWidget.cc:232
+#: src/gui/parameter/ParameterWidget.cc:336
+#: src/gui/parameter/ParameterWidget.cc:504
 msgid "<design default>"
 msgstr "<výchozí design>"
 
@@ -2209,451 +2223,455 @@ msgstr "-"
 msgid "More actions"
 msgstr "Další akce"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2627
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2614
 msgid "3D View"
 msgstr "3D zobrazení"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2628
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2615
 msgctxt "preferences"
 msgid "Advanced"
 msgstr "Pokročilé"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2629
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2616
 msgid "Editor"
 msgstr "Editor"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2631
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2618
 msgid "Experimental"
 msgstr "Experimentální"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2633
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2620
 msgid "Enable/Disable experimental features"
 msgstr "Povolit/Zakázat experimentální funkce"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2635
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2622
 msgid "Axes"
 msgstr "Osy"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2637
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2624
 msgid "Input driver configuration and Axis mapping"
 msgstr "Konfigurace vstupního ovladače a mapování os"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2639
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2626
 msgid "Buttons"
 msgstr "Tlačítka"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2640
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2627
 msgid "Mouse"
 msgstr "Myš"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2643
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2630
 msgid "Python Settings"
 msgstr "Nastavení Pythonu"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2645
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2632
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:178
-#: src/gui/MainWindow.cc:3553 src/gui/MainWindow.cc:3586
-#: src/gui/MainWindow.cc:3641
+#: src/gui/MainWindow.cc:3714 src/gui/MainWindow.cc:3747
+#: src/gui/MainWindow.cc:3804
 msgid "3D Print"
 msgstr "3D tisk"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2647
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2634
 msgid "3D Printing Services"
 msgstr "Služby 3D tisku"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2649
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2636
 msgid "Dialogs"
 msgstr "Dialogy"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2650
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2637
 msgid "AI"
 msgstr "AI"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2652
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2639
 msgid "AI and LLM configurations"
 msgstr "Konfigurace AI a LLM"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2654
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2641
 msgid "Directory of the output file"
 msgstr "Adresář výstupního souboru"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2655
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2642
 msgid "Extension of the output file without leading dot"
 msgstr "Přípona výstupního souboru bez úvodní tečky"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2656
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2643
 msgid "Full path to the main source file"
 msgstr "Úplná cesta k hlavnímu zdrojovému souboru"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2657
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2644
 msgid "Directory of the main source file"
 msgstr "Adresář hlavního zdrojového souboru"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2658
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2645
 msgid "Full path to the output file"
 msgstr "Úplná cesta k výstupnímu souboru"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2646
 msgid "Color scheme:"
 msgstr "Barevné téma:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2647
 msgid "Show Warnings and Errors in 3D View"
 msgstr "Zobrazovat varování a chyby v 3D okně"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2648
 msgid "mouse centric zoom"
 msgstr "Přiblížení centrovat na myš"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2649
 msgid "Number Scroll"
 msgstr "Posun čísel"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2650
 #: src/core/Settings.cc:198
 msgid "Alt"
 msgstr "Alt"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2651
 #: src/core/Settings.cc:199
 msgid "Left Mouse Button"
 msgstr "Levé tlačítko myši"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2652
 #: src/core/Settings.cc:200
 msgid "Either"
 msgstr "Obojí"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2667
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2654
 msgid "Step Size"
 msgstr "Velikost kroku"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2655
 msgid "Number Scroll Via Mouse Wheel"
 msgstr "Posun čísel kolečkem myši"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2656
 msgid "Modifier For Wheel Scroll "
 msgstr "Modifikátor pro posun kolečkem "
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2657
 msgid "Autocomplete"
 msgstr "Automatické doplňování"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2671
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2658
 msgid " Include defined modules"
 msgstr " Zahrnout definované moduly"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2659
 msgid "Character Threshold"
 msgstr "Prahová hodnota znaků"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2673
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2660
 msgid " Include defined functions"
 msgstr " Zahrnout definované funkce"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2674
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2661
 msgid "Enable Autocompletion"
 msgstr "Povolit automatické doplňování"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2675
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2662
 msgid " Include defined variables"
 msgstr " Zahrnout definované proměnné"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2676
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2663
 msgid "Mode"
 msgstr "Režim"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2677
-#: src/core/Settings.cc:541
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2664
+#: src/core/Settings.cc:540
 msgid "Parsed File Mode"
 msgstr "Režim parsovaného souboru"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2678
-#: src/core/Settings.cc:542
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2665
+#: src/core/Settings.cc:541
 msgid "Regex Input Text Mode"
 msgstr "Režim regex vstupního textu"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2680
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2705
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2667
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2692
 msgid "Line wrap"
 msgstr "Zalamování řádek"
 
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2668
 #: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2681
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2694
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2700
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2687
 #: src/core/Settings.cc:45 src/core/Settings.cc:155 src/core/Settings.cc:166
 #: src/core/Settings.cc:172 src/gui/input/ButtonConfigWidget.cc:248
 msgid "None"
 msgstr "vypnout"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2682
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2669
 #: src/core/Settings.cc:156
 msgid "Wrap at character boundaries"
 msgstr "zalamovat na úrovni znaků"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2683
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2670
 #: src/core/Settings.cc:157
 msgid "Wrap at word boundaries"
 msgstr "zalamovat na úrovni slov"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2685
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2672
 msgid "Line wrap indentation"
 msgstr "Odsazení zalomených řádek"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2686
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2673
 msgid "Line wrap visualization"
 msgstr "Pozice symbolu zalomení"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2689
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2676
 #: src/core/Settings.cc:161
 msgid "Same"
 msgstr "jako počátek"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2690
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2677
 #: src/core/Settings.cc:161
 msgid "Indented"
 msgstr "odsazený"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2692
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2724
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2679
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2711
 #: src/core/Settings.cc:189
 msgid "Indent"
 msgstr "odsadí"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2693
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2680
 msgid "Start"
 msgstr "Začátek"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2682
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2688
 #: src/core/Settings.cc:167 src/core/Settings.cc:173
 msgid "Text"
 msgstr "za textem"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2696
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2702
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2683
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2689
 #: src/core/Settings.cc:168 src/core/Settings.cc:174
 msgid "Border"
 msgstr "konec řádky"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2703
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2684
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2690
 #: src/core/Settings.cc:169 src/core/Settings.cc:175
 msgid "Margin"
 msgstr "levý okraj"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2699
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2686
 msgid "End"
 msgstr "Konec"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2706
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2693
 msgid "Display"
 msgstr "Vzhled"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2707
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2694
 msgid "Highlight current line"
 msgstr "Zvýrazňovat aktuální řádek"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2708
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2695
 msgid "Display Line Numbers"
 msgstr "Zobrazit čísla řádků"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2696
 msgid "Enable brace matching"
 msgstr "Zvýrazňovat párové závorky"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2710
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2805
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2807
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2697
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2776
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
 msgid "Font"
 msgstr "Písmo"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2711
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2698
 msgid "Color syntax highlighting"
 msgstr "Barva zvýrazňování syntaxe"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2712
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2699
 msgid "Ctrl/Cmd-Mouse-wheel zooms text"
 msgstr "Ctrl/Cmd a kolečko myši mění velikost písma"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2713
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2700
 msgid "Use gvim as editor (requires restart)"
 msgstr "Použít gvim jako editor (vyžaduje restart)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2714
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2701
 msgid "Indentation"
 msgstr "Odsazování"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2715
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2702
 msgid "Auto Indent"
 msgstr "Automatické odsazování"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2716
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2703
 msgid "Backspace unindents"
 msgstr "Backspace snižuje odsazení"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2717
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2704
 msgid "Indent using"
 msgstr "Odsazovat pomocí"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2718
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2705
 #: src/core/Settings.cc:187
 msgid "Spaces"
 msgstr "mezer"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2719
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2706
 #: src/core/Settings.cc:187
 msgid "Tabs"
 msgstr "tabulátorů"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2721
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2708
 msgid "Indentation width"
 msgstr "Velikost odsazení"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2722
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2709
 msgid "Tab width"
 msgstr "Šířka tabulátoru"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2723
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2710
 msgid "Tab key function"
 msgstr "Funkce klávesy tabulátor"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2725
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2712
 #: src/core/Settings.cc:190
 msgid "Insert Tab"
 msgstr "vloží znak tabulátoru"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2727
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2714
 msgid "Show whitespace"
 msgstr "Zobrazovat mazery"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2728
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2715
 #: src/core/Settings.cc:178
 msgid "Never"
 msgstr "nikdy"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2729
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2716
 #: src/core/Settings.cc:179
 msgid "Always"
 msgstr "vždy"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2730
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2717
 msgid "Only after indentation"
 msgstr "pouze za odsazením"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2732
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2719
 msgid "Size"
 msgstr "Velikost"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2733
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2720
 msgid "Automatically check for updates"
 msgstr "Automaticky vyhledávat aktualizace"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2734
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2721
 msgid "Include development snapshots"
 msgstr "Včetně nestabilních verzí"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2735
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2722
 msgid "Check Now"
 msgstr "Zkontrolovat nyní"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2736
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2723
 msgid "Last checked: "
 msgstr "Poslední kontrola:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2724
 msgid "Experimental Features"
 msgstr "Experimentální funkce"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2725
 msgid ""
 "These features are experimental.  They may change or be removed entirely "
 "without notice. You may enable them and use them and comment on them, but "
 "you must assume that they may not be in their final form and may never "
 "appear in an OpenSCAD release in any form."
-msgstr "Tyto funkce jsou experimentální. Mohou se změnit nebo být bez upozornění zcela odstraněny. Můžete je zapnout, používat a komentovat, ale musíte počítat s tím, že ještě nemusí být ve finální podobě a nemusí se v žádné podobě objevit v žádném vydání OpenSCAD."
+msgstr ""
+"Tyto funkce jsou experimentální. Mohou se změnit nebo být bez upozornění "
+"zcela odstraněny. Můžete je zapnout, používat a komentovat, ale musíte "
+"počítat s tím, že ještě nemusí být ve finální podobě a nemusí se v žádné "
+"podobě objevit v žádném vydání OpenSCAD."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2726
 msgid "General"
 msgstr "Obecné"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2740
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2727
 msgid "Default Print Service"
 msgstr "Výchozí tisková služba"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2741
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2728
 msgid "Enable remote print services"
 msgstr "Povolit vzdálené tiskové služby"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2742
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2729
 #: build/OpenSCADLibInternal_autogen/include/ui_PrintInitDialog.h:181
-#: src/gui/Preferences.cc:652
+#: src/gui/Preferences.cc:655
 msgid "OctoPrint"
 msgstr "OctoPrint"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2743
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2730
 msgid "URL"
 msgstr "URL"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2744
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2849
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2731
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2835
 msgid "API Key"
 msgstr "API klíč"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2745
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2746
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2732
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2733
 msgid "Load"
 msgstr "Načíst"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2748
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2735
 msgid "Check"
 msgstr "Zkontrolovat"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2749
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2736
 msgid "Slicing Profile"
 msgstr "Profil slicování"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2750
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2737
 msgid "Slicing Engine"
 msgstr "Slicovací engine"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2751
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2757
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2738
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2744
 msgid "File Format"
 msgstr "Formát souboru"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2752
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2739
 msgid "Action"
 msgstr "Akce"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2753
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2740
 msgid "Request"
 msgstr "Požadavek"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2741
 msgid "Show"
 msgstr "Zobrazit"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2755
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2742
 msgid "Note: The API key is stored unencrypted in the application settings."
 msgstr "Poznámka: API klíč je uložen nešifrovaně v nastavení aplikace."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2756
-#: src/gui/Preferences.cc:653
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2743
+#: src/gui/Preferences.cc:656
 msgid "Local Application"
 msgstr "Lokální aplikace"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2758
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2745
 msgid "File"
 msgstr "Soubor"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2763
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2750
 msgid "Executable"
 msgstr "Spustitelný soubor"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2767
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2754
 msgid ""
 "Directory for storing the exported file, leave empty to use the default "
 "system location."
@@ -2661,274 +2679,270 @@ msgstr ""
 "Adresář pro uložení exportovaného souboru; ponechte prázdné pro výchozí "
 "systémové umístění."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2770
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2757
 msgid "Temp Dir"
 msgstr "Dočasný adresář"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2759
 msgid "3D Preview (OpenCSG)"
 msgstr "3D náhled (OpenCSG)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2760
 msgid "Show capability warning"
 msgstr "Zobrazovat varování o vlastnostech"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2761
 msgid "Turn off rendering at "
 msgstr "Vypnout renderování při"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2775
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2762
 msgid "elements"
 msgstr "prvcích"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2776
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2763
 msgid "Force Goldfeather"
 msgstr "Vynutit zobrazení Goldfeather"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2764
 msgid "3D Rendering"
 msgstr "3D vykreslování"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2778
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2765
 msgid "Backend"
 msgstr "Backend"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2779
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2766
 msgid "CGAL Cache size"
 msgstr "Velikost CGAL cache"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2780
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2767
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2769
 msgid "MB"
 msgstr "MB"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2781
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2768
 msgid "PolySet Cache size"
 msgstr "Velikost PolySet cache"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2770
 msgid "User Interface"
 msgstr "Uživatelské rozhraní"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2771
 msgid "GUI theme"
 msgstr "Motiv GUI"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2772
 msgid "Light"
 msgstr "Světlý"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2773
 msgid "Dark"
 msgstr "Tmavý"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2774
 msgid "Auto (follow system)"
 msgstr "Automaticky (podle systému)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2777
 msgid "Enable docking helper widgets in different places"
 msgstr "Povolit ukotvení pomocných widgetů na různá místa"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2778
 msgid "Enable undocking of helper widgets to separate windows"
 msgstr "Povolit odpojení pomocných widgetů do samostatných oken"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2792
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2779
 msgid "Enable user interface localization (requires restart of PythonSCAD)"
 msgstr "Povolit lokalizaci rozhraní PythonSCADu (vyžaduje restart aplikace)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2780
 msgid "Bring window to front after automatic reload"
 msgstr "Přesunout okno do popředí po automatickém načtení"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2794
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2781
 msgid "Play sound notification on render complete"
 msgstr "Přehrát zvuk po dokončení vykreslení"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2782
 msgid "Play sound when render completion time is at least"
 msgstr "Přehrát zvuk, když doba vykreslení je alespoň"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2783
 msgid "sec"
 msgstr "s"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
-#: src/gui/Preferences.cc:448
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2784
+#: src/gui/Preferences.cc:453
 msgid "When launching another instance with files:"
 msgstr "Při spuštění další instance se soubory:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
-#: src/gui/Preferences.cc:450
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2785
+#: src/gui/Preferences.cc:455
 msgid "Enable session management (save/restore tabs on quit, requires restart)"
 msgstr ""
 "Povolit správu relace (ukládání/obnovení karet při ukončení, vyžaduje "
 "restart)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
-#: src/gui/Preferences.cc:452
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2786
+#: src/gui/Preferences.cc:457
 msgid "Autosave session in background for crash recovery"
 msgstr "Automaticky ukládat relaci na pozadí pro obnovu po pádu"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
-#: src/gui/Preferences.cc:453
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2787
+#: src/gui/Preferences.cc:458
 msgid "Autosave interval:"
 msgstr "Interval automatického ukládání:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2788
 msgid "Console"
 msgstr "Konzole"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2789
 msgid "Clear console before Preview/Render"
 msgstr "Vymazat konzoli před náhledem/vykreslením"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2790
 msgid "Maximum lines for Console to keep:"
 msgstr "Maximální počet řádků v konzoli:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2804
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2791
 msgid "(0 for unlimited)"
 msgstr "(0 = neomezeně)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2806
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2793
 msgid "Customizer"
 msgstr "Customizer"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2808
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2795
 msgid "OpenSCAD Language Features"
 msgstr "Funkce jazyka OpenSCAD"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2809
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2796
 msgid "Warnings"
 msgstr "Varování"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2810
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2797
 msgid "Stop on the first warning"
 msgstr "Zastavit při prvním varování"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2811
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2798
 msgid "Check the parameter range for builtin modules"
 msgstr "Kontrolovat rozsah parametrů vestavěných modulů"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2812
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2799
 msgid "Warn when there is a parameter mismatch in user module calls"
 msgstr "Varovat při neshodě parametrů v uživatelských modulech"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2813
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2800
 msgid "Trace"
 msgstr "Trace"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2814
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2801
 msgid "Trace depth:"
 msgstr "Hloubka trace:"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2815
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2802
 msgid "(max. number or trace messages)"
 msgstr "(max. počet trace zpráv)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2816
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2803
 msgid "Show parameters of usermodule calls in trace"
 msgstr "Zobrazit parametry volání usermodule v trace"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2817
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2804
 msgid "Render Summary"
 msgstr "Souhrn vykreslení"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2818
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2805
 msgid "Camera"
 msgstr "Kamera"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2819
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2806
 msgid "Bounding Box"
 msgstr "Ohraničující box"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2820
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2807
 msgid "Measurements: Area"
 msgstr "Měření: plocha"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2821
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2808
 msgid "Measurements: Volume"
 msgstr "Měření: objem"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2822
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2809
 msgid "Export Features"
 msgstr "Funkce exportu"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2823
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2810
 msgid "Toolbar Export 3D"
 msgstr "Panel nástrojů export 3D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2824
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2811
 msgid "Toolbar Export 2D"
 msgstr "Panel nástrojů export 2D"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2825
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2812
 msgid "Debugging"
 msgstr "Ladění"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2826
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2813
 msgid "Enable tracing of HIDAPI events (requires restart of PythonSCAD)"
 msgstr "Povolit trasování událostí HIDAPI (vyžaduje restart PythonSCAD)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2827
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2814
 msgid "Network"
 msgstr "Síť"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2828
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2815
 msgid "Custom CA certificates (PEM)"
 msgstr "Vlastní certifikáty CA (PEM)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2830
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2817
 msgid "Skip TLS certificate verification (insecure)"
 msgstr "Přeskočit ověření TLS certifikátu (nezabezpečené)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2831
-msgid "Network Import List"
-msgstr "Seznam síťových importů"
-
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2832
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2818
 msgid "Globally trust Python designs"
 msgstr "Globálně důvěřovat Python designům"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2833
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2819
 msgid "Really (very dangerous)"
 msgstr "Opravdu (velmi nebezpečné)"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2834
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2820
 msgid "Dialog visibility"
 msgstr "Viditelnost dialogů"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2835
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2821
 msgid "Always show Welcome screen"
 msgstr "Zobrazovat uvítací obrazovku"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2836
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2822
 msgid "Always show PDF export dialog"
 msgstr "Vždy zobrazit dialog exportu PDF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2837
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2823
 msgid "Always show 3MF export dialog"
 msgstr "Vždy zobrazit dialog exportu 3MF"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2838
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2824
 msgid "Always show SVG export dialog"
 msgstr "Vždy zobrazit dialog exportu SVG"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2839
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2825
 msgid "Always show GCODE export dialog"
 msgstr "Vždy zobrazit dialog exportu GCODE"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2840
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2826
 msgid "Always show Print Service dialog"
 msgstr "Vždy zobrazit dialog tiskové služby"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2841
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2827
 msgid "AI Preferences"
 msgstr "Nastavení AI"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2842
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2828
 msgid ""
 "AI assistant integration is active. Configure your connection profiles and "
 "parameters below."
@@ -2936,47 +2950,47 @@ msgstr ""
 "Integrace AI asistenta je aktivní. Níže nakonfigurujte své připojovací "
 "profily a parametry."
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2843
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2829
 msgid "Profiles"
 msgstr "Profily"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2844
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2830
 msgid "Active Profile"
 msgstr "Aktivní profil"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2845
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2831
 msgid "New Profile"
 msgstr "Nový profil"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2846
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2832
 msgid "Delete"
 msgstr "Smazat"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2847
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2833
 msgid "API Configuration"
 msgstr "Konfigurace API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2848
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2834
 msgid "API Endpoint"
 msgstr "Koncový bod API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2850
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2836
 msgid "System Prompt / Instructions"
 msgstr "Systémový prompt / instrukce"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2851
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2837
 msgid "Default User Prompt"
 msgstr "Výchozí uživatelský prompt"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2852
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2838
 msgid "API Parameters"
 msgstr "Parametry API"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2853
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2839
 msgid "Add Parameter"
 msgstr "Přidat parametr"
 
-#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2854
+#: build/OpenSCADLibInternal_autogen/include/ui_Preferences.h:2840
 msgid "Remove Parameter"
 msgstr "Odebrat parametr"
 
@@ -3078,31 +3092,31 @@ msgstr "Nahrát, slicovat a vybrat k tisku"
 msgid "Upload, Slice & Start printing"
 msgstr "Nahrát, slicovat a spustit tisk"
 
-#: src/core/Settings.cc:447
+#: src/core/Settings.cc:446
 msgid "Use colors from model"
 msgstr "Použít barvy z modelu"
 
-#: src/core/Settings.cc:449
+#: src/core/Settings.cc:448
 msgid "Use selected color only"
 msgstr "Použít pouze vybranou barvu"
 
-#: src/core/Settings.cc:456
+#: src/core/Settings.cc:455
 msgid "Millimeter"
 msgstr "Milimetr"
 
-#: src/core/Settings.cc:460
+#: src/core/Settings.cc:459
 msgid "Feet"
 msgstr "Stopy"
 
-#: src/core/Settings.cc:468
+#: src/core/Settings.cc:467
 msgid "Color"
 msgstr "Barva"
 
-#: src/core/Settings.cc:469
+#: src/core/Settings.cc:468
 msgid "Base Material"
 msgstr "Základní materiál"
 
-#: src/core/Settings.cc:531
+#: src/core/Settings.cc:530
 msgid "Alphabetical"
 msgstr "Abecedně"
 
@@ -3353,22 +3367,22 @@ msgstr "Ovladač QGamepad je pro multiplatformní podporu gamepadů."
 msgid "Toggle Perspective"
 msgstr "Přepnout perspektivu"
 
-#: src/gui/MainWindow.cc:1296
+#: src/gui/MainWindow.cc:1259
 msgid "Compile error."
 msgstr "Chyba kompilace."
 
-#: src/gui/MainWindow.cc:1299
+#: src/gui/MainWindow.cc:1262
 msgid "Error while compiling '%1'."
 msgstr "Chyba při kompilaci '%1'."
 
-#: src/gui/MainWindow.cc:1304
+#: src/gui/MainWindow.cc:1267
 msgid "Compilation generated %1 warning."
 msgid_plural "Compilation generated %1 warnings."
 msgstr[0] "Kompilace vyvolala %1 varování."
 msgstr[1] "Kompilace vyvolala %1 varování."
 msgstr[2] "Kompilace vyvolala %1 varování."
 
-#: src/gui/MainWindow.cc:1317
+#: src/gui/MainWindow.cc:1280
 msgid ""
 " For details see the <a href=\"#errorlog\">error log</a> and <a "
 "href=\"#console\">console window</a>."
@@ -3376,15 +3390,15 @@ msgstr ""
 " Pro podrobnosti viz <a href=\"#errorlog\">protokol chyb</a> a <a "
 "href=\"#console\">okno konzole</a>."
 
-#: src/gui/MainWindow.cc:1678 src/gui/TabManager.cc:489
+#: src/gui/MainWindow.cc:1667 src/gui/TabManager.cc:482
 msgid "Session Save"
 msgstr "Uložení relace"
 
-#: src/gui/MainWindow.cc:1679
+#: src/gui/MainWindow.cc:1668
 msgid "Could not save the session."
 msgstr "Relaci se nepodařilo uložit."
 
-#: src/gui/MainWindow.cc:1680
+#: src/gui/MainWindow.cc:1669
 msgid ""
 "%1\n"
 "\n"
@@ -3394,23 +3408,23 @@ msgstr ""
 "\n"
 "%2"
 
-#: src/gui/MainWindow.cc:1681
+#: src/gui/MainWindow.cc:1670
 msgid "Try Again"
 msgstr "Zkusit znovu"
 
-#: src/gui/MainWindow.cc:1683
+#: src/gui/MainWindow.cc:1672
 msgid "Quit Without Saving"
 msgstr "Ukončit bez uložení"
 
-#: src/gui/MainWindow.cc:1684
+#: src/gui/MainWindow.cc:1673
 msgid "Keep Open"
 msgstr "Ponechat otevřené"
 
-#: src/gui/MainWindow.cc:1870
+#: src/gui/MainWindow.cc:1865
 msgid "Revoke All Trusted Designs"
 msgstr "Odvolat důvěru u všech designů"
 
-#: src/gui/MainWindow.cc:1871
+#: src/gui/MainWindow.cc:1866
 msgid ""
 "This will revoke trust for all Python designs.\n"
 "\n"
@@ -3420,26 +3434,26 @@ msgstr ""
 "\n"
 "Opravdu?"
 
-#: src/gui/MainWindow.cc:1913 src/gui/MainWindow.cc:1920
-#: src/gui/MainWindow.cc:1929 src/gui/MainWindow.cc:1942
-#: src/gui/MainWindow.cc:1947
+#: src/gui/MainWindow.cc:1908 src/gui/MainWindow.cc:1915
+#: src/gui/MainWindow.cc:1924 src/gui/MainWindow.cc:1984
+#: src/gui/MainWindow.cc:1989
 msgid "Create Virtual Environment"
 msgstr "Vytvořit virtuální prostředí"
 
-#: src/gui/MainWindow.cc:1927
+#: src/gui/MainWindow.cc:1922
 msgid "Creating Python virtual environment. Please wait..."
 msgstr "Vytváření virtuálního prostředí Pythonu. Čekejte prosím …"
 
-#: src/gui/MainWindow.cc:1964
+#: src/gui/MainWindow.cc:2007
 msgid "Select Virtual Environment"
 msgstr "Vybrat virtuální prostředí"
 
-#: src/gui/MainWindow.cc:2522 src/gui/TabManager.cc:440
-#: src/gui/TabManager.cc:554
+#: src/gui/MainWindow.cc:2611 src/gui/MainWindow.cc:2636
+#: src/gui/TabManager.cc:441 src/gui/TabManager.cc:547
 msgid "Application"
 msgstr "Aplikace"
 
-#: src/gui/MainWindow.cc:2523
+#: src/gui/MainWindow.cc:2612
 msgid ""
 "The file has changed on disk, but this tab has unsaved edits.\n"
 "Reloading will discard your changes.\n"
@@ -3451,79 +3465,104 @@ msgstr ""
 "\n"
 "Opravdu chcete soubor znovu načíst?"
 
-#: src/gui/MainWindow.cc:3182
+#: src/gui/MainWindow.cc:2630
+msgid ""
+"You have unsaved customizer preset edits.\n"
+"Reloading will discard your preset changes.\n"
+"\n"
+"Do you really want to reload the presets?"
+msgstr ""
+"Máte neuložené úpravy předvoleb customizeru.\n"
+"Načtením ztratíte své změny předvoleb.\n"
+"\n"
+"Opravdu chcete předvolby znovu načíst?"
+
+#: src/gui/MainWindow.cc:2633
+msgid ""
+"The customizer presets file has changed on disk, but this tab has unsaved "
+"preset edits.\n"
+"Reloading will discard your preset changes.\n"
+"\n"
+"Do you really want to reload the presets?"
+msgstr ""
+"Soubor předvoleb customizeru se na disku změnil, ale tato karta obsahuje neuložené úpravy předvoleb.\n"
+"Načtením ztratíte své změny předvoleb.\n"
+"\n"
+"Opravdu chcete předvolby znovu načíst?"
+
+#: src/gui/MainWindow.cc:3341
 msgid "Click to change language"
 msgstr "Klikněte pro změnu jazyka"
 
-#: src/gui/MainWindow.cc:3227
+#: src/gui/MainWindow.cc:3386
 msgid "Auto-detect from file extension"
 msgstr "Automaticky rozpoznat podle přípony souboru"
 
-#: src/gui/MainWindow.cc:3554
+#: src/gui/MainWindow.cc:3715
 msgid "The design has not been rendered yet (F6)."
 msgstr "Návrh ještě nebyl renderován (F6)."
 
-#: src/gui/MainWindow.cc:3555
+#: src/gui/MainWindow.cc:3716
 msgid "Render the design and print, or cancel."
 msgstr "Vyrenderovat návrh a tisknout, nebo zrušit."
 
-#: src/gui/MainWindow.cc:3556
+#: src/gui/MainWindow.cc:3717
 msgid "Render the design and export, or cancel."
 msgstr "Vyrenderovat návrh a exportovat, nebo zrušit."
 
-#: src/gui/MainWindow.cc:3561 src/gui/MainWindow.cc:3594
-#: src/gui/MainWindow.cc:3653
+#: src/gui/MainWindow.cc:3722 src/gui/MainWindow.cc:3755
+#: src/gui/MainWindow.cc:3816
 msgid "Render and Print"
 msgstr "Vyrenderovat a tisknout"
 
-#: src/gui/MainWindow.cc:3561 src/gui/MainWindow.cc:3594
-#: src/gui/MainWindow.cc:3653
+#: src/gui/MainWindow.cc:3722 src/gui/MainWindow.cc:3755
+#: src/gui/MainWindow.cc:3816
 msgid "Render and Export"
 msgstr "Vyrenderovat a exportovat"
 
-#: src/gui/MainWindow.cc:3579 src/gui/UnsavedChangesDialog.cc:105
+#: src/gui/MainWindow.cc:3740 src/gui/UnsavedChangesDialog.cc:105
 #: src/gui/UnsavedChangesDialog.cc:121
 msgid "Untitled"
 msgstr "Bezejmenný"
 
-#: src/gui/MainWindow.cc:3587
+#: src/gui/MainWindow.cc:3748
 msgid "The current render belongs to a different tab (%1)."
 msgstr "Aktuální render patří k jiné záložce (%1)."
 
-#: src/gui/MainWindow.cc:3588
+#: src/gui/MainWindow.cc:3749
 msgid "Use that tab's render, render this tab first, or cancel."
 msgstr ""
 "Použít render té záložky, nejdřív vyrenderovat tuto záložku, nebo zrušit."
 
-#: src/gui/MainWindow.cc:3589
+#: src/gui/MainWindow.cc:3750
 msgid "Export that tab's render, render this tab first, or cancel."
 msgstr ""
 "Exportovat render té záložky, nejdřív vyrenderovat tuto záložku, nebo zrušit."
 
-#: src/gui/MainWindow.cc:3592
+#: src/gui/MainWindow.cc:3753
 msgid "Use Other Tab's Render"
 msgstr "Použít render jiné záložky"
 
-#: src/gui/MainWindow.cc:3592
+#: src/gui/MainWindow.cc:3753
 msgid "Export Other Tab's Render"
 msgstr "Exportovat render jiné záložky"
 
-#: src/gui/MainWindow.cc:3620
+#: src/gui/MainWindow.cc:3783
 msgid "Nothing to export! Try rendering first (press F6)"
 msgstr "Není co exportovat! Nejdřív vyrenderujte (F6)"
 
-#: src/gui/MainWindow.cc:3642
+#: src/gui/MainWindow.cc:3805
 msgid "The design has changed since it was last rendered (F6)."
 msgstr "Návrh se od posledního renderu (F6) změnil."
 
-#: src/gui/MainWindow.cc:3644
+#: src/gui/MainWindow.cc:3807
 msgid ""
 "Print the last rendered geometry, render the current design first, or cancel."
 msgstr ""
 "Vytiskněte naposledy vyrenderovanou geometrii, nejdřív vyrenderujte aktuální "
 "návrh, nebo zrušte."
 
-#: src/gui/MainWindow.cc:3645
+#: src/gui/MainWindow.cc:3808
 msgid ""
 "Export the last rendered geometry, render the current design first, or "
 "cancel."
@@ -3531,43 +3570,43 @@ msgstr ""
 "Exportujte naposledy vyrenderovanou geometrii, nejdřív vyrenderujte aktuální "
 "návrh, nebo zrušte."
 
-#: src/gui/MainWindow.cc:3651
+#: src/gui/MainWindow.cc:3814
 msgid "Use Previous"
 msgstr "Použít předchozí"
 
-#: src/gui/MainWindow.cc:3651
+#: src/gui/MainWindow.cc:3814
 msgid "Export Previous"
 msgstr "Exportovat předchozí"
 
-#: src/gui/MainWindow.cc:3674
+#: src/gui/MainWindow.cc:3837
 msgid "Current top level object is not a %1D object."
 msgstr "Aktuální objekt nejvyšší úrovně není %1D objekt."
 
-#: src/gui/MainWindow.cc:3680
+#: src/gui/MainWindow.cc:3843
 msgid "Current top level object is empty."
 msgstr "Aktuální objekt nejvyšší úrovně je prázdný."
 
-#: src/gui/MainWindow.cc:3773
+#: src/gui/MainWindow.cc:3936
 msgid "ASCII STL"
 msgstr "ASCII STL"
 
-#: src/gui/MainWindow.cc:3775
+#: src/gui/MainWindow.cc:3938
 msgid "Binary STL"
 msgstr "Binární STL"
 
-#: src/gui/MainWindow.cc:3822
+#: src/gui/MainWindow.cc:3985
 msgid "By Extension (*.*)"
 msgstr "Podle přípony (*.*)"
 
-#: src/gui/MainWindow.cc:3908
+#: src/gui/MainWindow.cc:4071
 msgid "E&xport to %1"
 msgstr "E&xportovat do %1"
 
-#: src/gui/MainWindow.cc:3994
+#: src/gui/MainWindow.cc:4157
 msgid "Nothing to export. Please try compiling first."
 msgstr "Není co exportovat. Nejdřív zkompilujte."
 
-#: src/gui/MainWindow.cc:4164 src/gui/MainWindow.cc:4179
+#: src/gui/MainWindow.cc:4327 src/gui/MainWindow.cc:4342
 msgid ""
 "The given filename does not have any known file extension. Please enter a "
 "known file extension or select a file format from the file format list."
@@ -3575,7 +3614,7 @@ msgstr ""
 "Zadaný název souboru nemá žádnou známou příponu. Zadejte známou příponu nebo "
 "vyberte formát ze seznamu formátů souborů."
 
-#: src/gui/MainWindow.cc:4192 src/gui/TabManager.cc:404
+#: src/gui/MainWindow.cc:4355 src/gui/TabManager.cc:405
 msgid ""
 "%1 already exists.\n"
 "Do you want to replace it?"
@@ -3583,39 +3622,39 @@ msgstr ""
 "%1 již existuje.\n"
 "Chcete jej nahradit?"
 
-#: src/gui/MainWindow.cc:4681 src/gui/MainWindow.cc:5572
+#: src/gui/MainWindow.cc:4844 src/gui/MainWindow.cc:5769
 msgid "&AI Chat"
 msgstr "&AI chat"
 
-#: src/gui/MainWindow.cc:5564
+#: src/gui/MainWindow.cc:5761
 msgid "&Editor"
 msgstr "&Editor"
 
-#: src/gui/MainWindow.cc:5565
+#: src/gui/MainWindow.cc:5762
 msgid "&Console"
 msgstr "&Konzole"
 
-#: src/gui/MainWindow.cc:5566
+#: src/gui/MainWindow.cc:5763
 msgid "C&ustomizer"
 msgstr "C&ustomizer"
 
-#: src/gui/MainWindow.cc:5567
+#: src/gui/MainWindow.cc:5764
 msgid "Error &Log"
 msgstr "Protokol &chyb"
 
-#: src/gui/MainWindow.cc:5568
+#: src/gui/MainWindow.cc:5765
 msgid "&Animate"
 msgstr "&Animovat"
 
-#: src/gui/MainWindow.cc:5569
+#: src/gui/MainWindow.cc:5766
 msgid "&Font List"
 msgstr "Seznam &písem"
 
-#: src/gui/MainWindow.cc:5570
+#: src/gui/MainWindow.cc:5767
 msgid "C&olor List"
 msgstr "Se&znam barev"
 
-#: src/gui/MainWindow.cc:5571
+#: src/gui/MainWindow.cc:5768
 msgid "&Viewport Control"
 msgstr "&Ovládání pohledu"
 
@@ -3659,97 +3698,97 @@ msgstr ""
 "Fontconfig potřebuje aktualizovat cache.\n"
 "To může trvat až několik minut."
 
-#: src/gui/parameter/ParameterWidget.cc:168
+#: src/gui/parameter/ParameterWidget.cc:179
 msgid "Collapse All"
 msgstr "Sbalit vše"
 
-#: src/gui/parameter/ParameterWidget.cc:171
+#: src/gui/parameter/ParameterWidget.cc:182
 msgid "Expand All"
 msgstr "Rozbalit vše"
 
-#: src/gui/parameter/ParameterWidget.cc:248
+#: src/gui/parameter/ParameterWidget.cc:270
 msgid "Saving presets"
 msgstr "Ukládání předvoleb"
 
-#: src/gui/parameter/ParameterWidget.cc:249
+#: src/gui/parameter/ParameterWidget.cc:271
 msgid "%1 was found, but was unreadable. Do you want to overwrite %1?"
 msgstr "%1 bylo nalezeno, ale nešlo přečíst. Chcete %1 přepsat?"
 
-#: src/gui/parameter/ParameterWidget.cc:454
+#: src/gui/parameter/ParameterWidget.cc:618
 msgid "Create new set of parameter"
 msgstr "Vytvořit novou sadu parametrů"
 
-#: src/gui/parameter/ParameterWidget.cc:454
+#: src/gui/parameter/ParameterWidget.cc:618
 msgid "Enter name of the parameter set"
 msgstr "Zadejte název sady parametrů"
 
-#: src/gui/parameter/ParameterWidget.cc:510
+#: src/gui/parameter/ParameterWidget.cc:674
 msgid "New set "
 msgstr "Nová sada "
 
-#: src/gui/Preferences.cc:295
+#: src/gui/Preferences.cc:300
 msgid "Parameter Key"
 msgstr "Klíč parametru"
 
-#: src/gui/Preferences.cc:295
+#: src/gui/Preferences.cc:300
 msgid "Parameter Value"
 msgstr "Hodnota parametru"
 
-#: src/gui/Preferences.cc:311 src/gui/Preferences.cc:316
+#: src/gui/Preferences.cc:316 src/gui/Preferences.cc:321
 msgid "Ollama Local"
 msgstr "Ollama lokálně"
 
-#: src/gui/Preferences.cc:454
+#: src/gui/Preferences.cc:459
 msgid " seconds"
 msgstr " sekund"
 
-#: src/gui/Preferences.cc:481 src/gui/Preferences.cc:486
-#: src/gui/Preferences.cc:1495 src/gui/Preferences.cc:1534
+#: src/gui/Preferences.cc:484 src/gui/Preferences.cc:489
+#: src/gui/Preferences.cc:1491 src/gui/Preferences.cc:1530
 msgid "<Default>"
 msgstr "<Výchozí>"
 
-#: src/gui/Preferences.cc:651
+#: src/gui/Preferences.cc:654
 msgid "NONE"
 msgstr "ŽÁDNÉ"
 
-#: src/gui/Preferences.cc:1217
+#: src/gui/Preferences.cc:1220
 msgid "Select CA certificate"
 msgstr "Vybrat certifikát CA"
 
-#: src/gui/Preferences.cc:1218
+#: src/gui/Preferences.cc:1221
 msgid "Certificate files (*.pem *.crt *.cer);;All files (*)"
 msgstr "Soubory certifikátů (*.pem *.crt *.cer);;Všechny soubory (*)"
 
-#: src/gui/Preferences.cc:1478
+#: src/gui/Preferences.cc:1474
 msgid "Success: Server Version = %2, API Version = %1"
 msgstr "Úspěch: verze serveru = %2, verze API = %1"
 
-#: src/gui/Preferences.cc:1480 src/gui/Preferences.cc:1505
-#: src/gui/Preferences.cc:1544
+#: src/gui/Preferences.cc:1476 src/gui/Preferences.cc:1501
+#: src/gui/Preferences.cc:1540
 msgid "Error"
 msgstr "Chyba"
 
-#: src/gui/Preferences.cc:1621
+#: src/gui/Preferences.cc:1617
 msgid "New AI Profile"
 msgstr "Nový AI profil"
 
-#: src/gui/Preferences.cc:1621
+#: src/gui/Preferences.cc:1617
 msgid "Profile name:"
 msgstr "Název profilu:"
 
-#: src/gui/Preferences.cc:1626
+#: src/gui/Preferences.cc:1622
 msgid "Duplicate Profile"
 msgstr "Duplikovat profil"
 
-#: src/gui/Preferences.cc:1626
+#: src/gui/Preferences.cc:1622
 msgid "A profile with that name already exists."
 msgstr "Profil s tímto názvem již existuje."
 
-#: src/gui/Preferences.cc:1688
+#: src/gui/Preferences.cc:1684
 msgid "Delete AI Profile"
 msgstr "Smazat AI profil"
 
-#: src/gui/Preferences.cc:1689
+#: src/gui/Preferences.cc:1685
 msgid "Delete profile \"%1\"?"
 msgstr "Smazat profil „%1“?"
 
@@ -3791,31 +3830,31 @@ msgstr ""
 "%2 (%3)\n"
 "Verze OpenGL %4\n"
 
-#: src/gui/ScintillaEditor.cc:203
+#: src/gui/ScintillaEditor.cc:202
 msgid "This Python design is not trusted. Execution is disabled."
 msgstr "Tento Python design není důvěryhodný. Spuštění je zakázáno."
 
-#: src/gui/ScintillaEditor.cc:207
+#: src/gui/ScintillaEditor.cc:206
 msgid "Trust Design"
 msgstr "Důvěřovat designu"
 
-#: src/gui/TabManager.cc:371
+#: src/gui/TabManager.cc:372
 msgid "Python script (*.py)"
 msgstr "Python skript (*.py)"
 
-#: src/gui/TabManager.cc:374 src/gui/TabManager.cc:379
+#: src/gui/TabManager.cc:375 src/gui/TabManager.cc:380
 msgid "OpenSCAD script (*.scad)"
 msgstr "OpenSCAD skript (*.scad)"
 
-#: src/gui/TabManager.cc:382
+#: src/gui/TabManager.cc:383
 msgid "All files (*)"
 msgstr "Všechny soubory (*)"
 
-#: src/gui/TabManager.cc:441
+#: src/gui/TabManager.cc:442
 msgid "Cannot open design file \"%1\": path is a directory."
 msgstr "Nelze otevřít soubor designu „%1“: cesta je adresář."
 
-#: src/gui/TabManager.cc:490
+#: src/gui/TabManager.cc:483
 msgid ""
 "Could not write session file:\n"
 "%1\n"
@@ -3831,11 +3870,11 @@ msgstr ""
 "\n"
 "Změny relace mohou být ztraceny."
 
-#: src/gui/TabManager.cc:499
+#: src/gui/TabManager.cc:492
 msgid "Unable to create the session directory."
 msgstr "Nepodařilo se vytvořit adresář relace."
 
-#: src/gui/TabManager.cc:555
+#: src/gui/TabManager.cc:548
 msgid ""
 "The file \"%1\" does not exist.\n"
 "\n"
@@ -3845,45 +3884,45 @@ msgstr ""
 "\n"
 "Chcete ho vytvořit?"
 
-#: src/gui/TabManager.cc:1054
+#: src/gui/TabManager.cc:1079
 msgid "Copy file name"
 msgstr "Kopírovat název souboru"
 
-#: src/gui/TabManager.cc:1060
+#: src/gui/TabManager.cc:1085
 msgid "Copy full path"
 msgstr "Kopírovat úplnou cestu"
 
-#: src/gui/TabManager.cc:1066
+#: src/gui/TabManager.cc:1091
 msgid "Open Folder"
 msgstr "Otevřít složku"
 
-#: src/gui/TabManager.cc:1071
+#: src/gui/TabManager.cc:1096
 msgid "Close Tab"
 msgstr "Zavřít kartu"
 
-#: src/gui/TabManager.cc:1076
+#: src/gui/TabManager.cc:1101
 msgid "Close All But This Tab"
 msgstr "Zavřít všechny karty kromě této"
 
-#: src/gui/TabManager.cc:1372
+#: src/gui/TabManager.cc:1378
 msgid "Do you want to save the changes you made to %1?"
 msgstr "Chcete uložit změny provedené v %1?"
 
-#: src/gui/TabManager.cc:1373
+#: src/gui/TabManager.cc:1379
 msgid "Your changes will be lost if you don't save them."
 msgstr "Pokud je neuložíte, vaše změny budou ztraceny."
 
-#: src/gui/TabManager.cc:1378
+#: src/gui/TabManager.cc:1384
 msgid "Don't save"
 msgstr "Neukládat"
 
-#: src/gui/TabManager.cc:1860 src/gui/TabManager.cc:1889
-#: src/gui/TabManager.cc:1896 src/gui/TabManager.cc:1924
-#: src/gui/TabManager.cc:2115
+#: src/gui/TabManager.cc:1875 src/gui/TabManager.cc:1904
+#: src/gui/TabManager.cc:1911 src/gui/TabManager.cc:1939
+#: src/gui/TabManager.cc:2181
 msgid "Session Restore"
 msgstr "Obnovení relace"
 
-#: src/gui/TabManager.cc:1861
+#: src/gui/TabManager.cc:1876
 msgid ""
 "The session file was created by a newer version of PythonSCAD (session "
 "version %1, but this build only supports up to version %2)."
@@ -3891,7 +3930,7 @@ msgstr ""
 "Soubor relace byl vytvořen novější verzí PythonSCAD (verze relace %1, ale "
 "toto sestavení podporuje pouze do verze %2)."
 
-#: src/gui/TabManager.cc:1866
+#: src/gui/TabManager.cc:1881
 msgid ""
 "Exit to keep the session file for use with a newer PythonSCAD, or discard it "
 "to start fresh here.\n"
@@ -3905,15 +3944,15 @@ msgstr ""
 "Soubor relace:\n"
 "%1"
 
-#: src/gui/TabManager.cc:1869
+#: src/gui/TabManager.cc:1884
 msgid "Exit"
 msgstr "Ukončit"
 
-#: src/gui/TabManager.cc:1870
+#: src/gui/TabManager.cc:1885
 msgid "Discard session"
 msgstr "Zahodit relaci"
 
-#: src/gui/TabManager.cc:1890
+#: src/gui/TabManager.cc:1905
 msgid ""
 "Could not open the session file for reading:\n"
 "%1\n"
@@ -3929,7 +3968,7 @@ msgstr ""
 "\n"
 "Začíná se s novou relací."
 
-#: src/gui/TabManager.cc:1897
+#: src/gui/TabManager.cc:1912
 msgid ""
 "The session file is corrupt or unreadable:\n"
 "%1\n"
@@ -3943,7 +3982,7 @@ msgstr ""
 "Soubor nebyl smazán — můžete ho ručně zkontrolovat.\n"
 "Začíná se s novou relací."
 
-#: src/gui/TabManager.cc:1925
+#: src/gui/TabManager.cc:1940
 msgid ""
 "The session file uses an old format (version %1) that cannot be migrated to "
 "the current format (version %2). Starting with a fresh session."
@@ -3951,11 +3990,11 @@ msgstr ""
 "Soubor relace používá starý formát (verze %1), který nelze migrovat do "
 "aktuálního formátu (verze %2). Začíná se s novou relací."
 
-#: src/gui/TabManager.cc:2116
+#: src/gui/TabManager.cc:2182
 msgid "%1 file(s) could not be found on disk."
 msgstr "%1 soubor(ů) se na disku nepodařilo najít."
 
-#: src/gui/TabManager.cc:2118
+#: src/gui/TabManager.cc:2184
 msgid ""
 "The session contents were restored, but the file paths are stale.\n"
 "Use Save As to pick a new location."
@@ -3963,23 +4002,23 @@ msgstr ""
 "Obsah relace byl obnoven, ale cesty k souborům jsou zastaralé.\n"
 "Použijte Uložit jako pro výběr nového umístění."
 
-#: src/gui/TabManager.cc:2121
+#: src/gui/TabManager.cc:2187
 msgid "Dismiss"
 msgstr "Zavřít"
 
-#: src/gui/TabManager.cc:2234 src/gui/TabManager.cc:2386
+#: src/gui/TabManager.cc:2300 src/gui/TabManager.cc:2453
 msgid "Failed to open file for writing"
 msgstr "Nepodařilo se otevřít soubor pro zápis"
 
-#: src/gui/TabManager.cc:2274 src/gui/TabManager.cc:2400
+#: src/gui/TabManager.cc:2340 src/gui/TabManager.cc:2467
 msgid "Error saving design"
 msgstr "Chyba při ukládání designu"
 
-#: src/gui/TabManager.cc:2286
+#: src/gui/TabManager.cc:2352
 msgid "Save File"
 msgstr "Uložit soubor"
 
-#: src/gui/TabManager.cc:2363
+#: src/gui/TabManager.cc:2430
 msgid "Save A Copy"
 msgstr "Uložit kopii"
 
@@ -4038,12 +4077,12 @@ msgstr "extrémní hodnoty mohou vést k podivnému chování"
 msgid "negative distances are not supported"
 msgstr "záporné vzdálenosti nejsou podporovány"
 
-#: src/io/export.cc:298
+#: src/io/export.cc:304
 #, c-format
 msgid "Can't open file \"%1$s\" for export"
 msgstr "Nelze otevřít soubor „%1$s“ pro export"
 
-#: src/io/export.cc:314
+#: src/io/export.cc:320
 #, c-format
 msgid "\"%1$s\" write error. (Disk full?)"
 msgstr "Chyba zápisu „%1$s“. (Plný disk?)"
@@ -4183,6 +4222,9 @@ msgstr ""
 "PythonSCAD je také obohacující způsob, jak se učit programovat — pár řádků "
 "Pythonu může vytvořit model, který po 3D tisku držíte v ruce. OpenSCAD "
 "skripty zůstávají podporovány vedle nativního Pythonu."
+
+#~ msgid "Network Import List"
+#~ msgstr "Seznam síťových importů"
 
 #~ msgid "micron"
 #~ msgstr "mikrometr"

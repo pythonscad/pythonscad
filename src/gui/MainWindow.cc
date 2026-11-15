@@ -102,9 +102,11 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <cstdint>
 #include <memory>
 #include <iomanip>
 #include <locale>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -1152,6 +1154,12 @@ void MainWindow::compile(bool reload, bool forcedone)
           shouldcompiletoplevel = true;
         }
       }
+      // Companion customizer JSON is independent of the design text; refresh when it changes.
+      // Force a recompile so widget values from a JSON-only change reach the preview
+      // (autoPreview is blocked while GuiLocker is held on this path).
+      if (maybeReloadCompanionJson()) {
+        shouldcompiletoplevel = true;
+      }
     } else {
       shouldcompiletoplevel = true;
     }
@@ -2041,6 +2049,11 @@ void MainWindow::on_fileActionReload_triggered()
     fileChangedOnDisk();                  // force cached autoReloadId to update
     (void)tabManager->refreshDocument();  // ignore errors opening the file
   }
+  // Always re-read companion JSON on File → Reload (like refreshDocument for the design),
+  // even if an earlier auto-reload prompt was declined and the fingerprint already matches.
+  if (maybeReloadCompanionJson(/*force=*/true)) {
+    actionRenderPreview();
+  }
 }
 
 void MainWindow::on_editActionCopyVPT_triggered()
@@ -2309,11 +2322,52 @@ std::string MainWindow::autoReloadIdentityForPath(const QString& filepath)
   if (filepath.isEmpty()) return {};
   const QFileInfo fi(filepath);
   if (!fi.exists() || !fi.isFile()) return {};
-  const qint64 mtime = fi.lastModified().toSecsSinceEpoch();
+  // Millisecond mtime so same-second, same-length edits (e.g. "10" -> "20") still
+  // change the fingerprint for both design files and companion customizer JSON.
+  const qint64 mtime = fi.lastModified().toMSecsSinceEpoch();
   const qint64 size = fi.size();
   const QString identity = QString::number(static_cast<qulonglong>(mtime), 16) + "." +
                            QString::number(static_cast<qulonglong>(size), 16);
   return identity.toStdString();
+}
+
+bool MainWindow::autoReloadIdentityMatches(const std::string& saved, const std::string& current)
+{
+  if (saved.empty() || current.empty()) {
+    return false;
+  }
+  if (saved == current) {
+    return true;
+  }
+
+  const auto parse = [](const std::string& id) -> std::optional<std::pair<uint64_t, uint64_t>> {
+    const auto dot = id.find('.');
+    if (dot == std::string::npos || dot == 0 || dot + 1 >= id.size()) {
+      return std::nullopt;
+    }
+    try {
+      const uint64_t mtime = std::stoull(id.substr(0, dot), nullptr, 16);
+      const uint64_t size = std::stoull(id.substr(dot + 1), nullptr, 16);
+      return std::make_pair(mtime, size);
+    } catch (const std::exception&) {
+      return std::nullopt;
+    }
+  };
+
+  const auto savedParts = parse(saved);
+  const auto currentParts = parse(current);
+  if (!savedParts || !currentParts) {
+    return false;
+  }
+  if (savedParts->second != currentParts->second) {
+    return false;
+  }
+  if (savedParts->first == currentParts->first) {
+    return true;
+  }
+  // Legacy sessions stored whole-second mtimes; current fingerprints use milliseconds.
+  return savedParts->first == currentParts->first / 1000 ||
+         currentParts->first == savedParts->first / 1000;
 }
 
 bool MainWindow::fileChangedOnDisk()
@@ -2532,6 +2586,7 @@ void MainWindow::checkAutoReload()
       if (fileChangedOnDisk() && checkEditorModified()) {
         tabManager->refreshDocument();
       }
+      maybeReloadCompanionJson();
       return;
     }
 #endif
@@ -2563,6 +2618,64 @@ bool MainWindow::checkEditorModified()
     }
   }
   return true;
+}
+
+bool MainWindow::checkParameterSetsModified(bool userInitiatedReload)
+{
+  if (!activeEditor || !activeEditor->parameterWidget->isModified()) {
+    return true;
+  }
+  const QString message =
+    userInitiatedReload
+      ? _("You have unsaved customizer preset edits.\n"
+          "Reloading will discard your preset changes.\n\n"
+          "Do you really want to reload the presets?")
+      : _("The customizer presets file has changed on disk, but this tab has unsaved preset edits.\n"
+          "Reloading will discard your preset changes.\n\n"
+          "Do you really want to reload the presets?");
+  auto ret = QMessageBox::warning(this, _("Application"), message, QMessageBox::Yes | QMessageBox::No);
+  return ret == QMessageBox::Yes;
+}
+
+bool MainWindow::maybeReloadCompanionJson(bool force)
+{
+  // Nested event loops from the dirty-Customizer dialog must not re-enter (auto-reload
+  // timer → second conflict dialog), especially on the force path which has not advanced
+  // the fingerprint yet.
+  static bool reentering = false;
+  if (reentering) {
+    return false;
+  }
+
+  if (!activeEditor || activeEditor->filepath.isEmpty() || !activeEditor->diskBacked) {
+    return false;
+  }
+  auto *parameterWidget = activeEditor->parameterWidget;
+  // Auto-reload advances the fingerprint before prompting (same as fileChangedOnDisk for
+  // designs). Declining means "ignore this disk version until it changes again"; File →
+  // Reload uses force=true to bypass the fingerprint and offer disk presets again.
+  if (!force && !parameterWidget->jsonFileChangedOnDisk(activeEditor->filepath)) {
+    return false;
+  }
+
+  const bool timerWasActive = autoReloadTimer && autoReloadTimer->isActive();
+  if (autoReloadTimer) {
+    autoReloadTimer->stop();
+  }
+  reentering = true;
+  bool reloaded = false;
+  if (checkParameterSetsModified(force)) {
+    reloaded = parameterWidget->reloadSetsFromDisk(activeEditor->filepath);
+  } else if (force) {
+    // Declined File → Reload: adopt the current disk fingerprint so auto-reload does not
+    // immediately re-prompt for the same revision.
+    parameterWidget->primeJsonAutoReloadId(activeEditor->filepath);
+  }
+  reentering = false;
+  if (timerWasActive && designActionAutoReload->isChecked() && autoReloadTimer) {
+    autoReloadTimer->start();
+  }
+  return reloaded;
 }
 
 void MainWindow::on_designActionReloadAndPreview_triggered()
