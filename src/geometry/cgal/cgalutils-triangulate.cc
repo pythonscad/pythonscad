@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <list>
 #include <memory>
+#include <vector>
 
 #include "geometry/PolySetBuilder.h"
 #include "geometry/Polygon2d.h"
@@ -106,61 +107,59 @@ std::unique_ptr<PolySet> createTriangulatedPolySetFromPolygon2d(const Polygon2d&
   auto polyset = std::make_unique<PolySet>(2);
   polyset->setTriangular(true);
 
-  Polygon2DCGAL::CDT cdt;  // Uses a constrained Delaunay triangulator.
+  const auto& outlines = in3d ? polygon2d.untransformedOutlines() : polygon2d.outlines();
+  std::vector<Color4f> region_colors;
+  for (const auto& outline : outlines) {
+    if (std::find(region_colors.begin(), region_colors.end(), outline.color) == region_colors.end()) {
+      region_colors.push_back(outline.color);
+      polyset->colors.push_back(outline.color.unpaintedIfFullyTransparent());
+    }
+  }
 
-  try {
-    // Adds all vertices, and add all contours as constraints.
-    for (const auto& outline : in3d ? polygon2d.untransformedOutlines() : polygon2d.outlines()) {
-      Polygon2DCGAL::CDT::Vertex_handle prev;
-      for (size_t i = 0; i <= outline.vertices.size(); i++) {
-        const int idx = i % outline.vertices.size();
-        const auto& v = outline.vertices[idx];
-        auto curr = cdt.insert({v[0], v[1]});
-        // FIXME: We need be make sure that client relying on vertex indices being
-        // maintained also skips coincident vertices the same way.
-        if (curr != prev) {
-          // Don't add the first vertex twice
-          if (i < outline.vertices.size()) {
-            polyset->vertices.emplace_back(v[0], v[1], 0.0);
-            curr->info().id = polyset->vertices.size() - 1;
+  // Each color has its own contours and holes. Combining the constraints of
+  // adjacent colored regions would turn their shared boundary into a hole.
+  for (size_t color_index = 0; color_index < region_colors.size(); ++color_index) {
+    Polygon2DCGAL::CDT cdt;
+    size_t vertex_index = 0;
+    try {
+      for (const auto& outline : outlines) {
+        if (outline.vertices.empty()) continue;
+        Polygon2DCGAL::CDT::Vertex_handle prev;
+        for (size_t i = 0; i <= outline.vertices.size(); i++) {
+          const size_t idx = i % outline.vertices.size();
+          const auto& v = outline.vertices[idx];
+          auto curr = cdt.insert({v[0], v[1]});
+          if (curr != prev) {
+            if (i < outline.vertices.size()) {
+              // Keep the original vertex order for extrusion callers, including
+              // vertices belonging to other color regions.
+              if (color_index == 0) polyset->vertices.emplace_back(v[0], v[1], 0.0);
+              curr->info().id = vertex_index++;
+            }
+            if (prev != nullptr && outline.color == region_colors[color_index]) {
+              cdt.insert_constraint(prev, curr);
+            }
+            prev = curr;
           }
-          if (prev != nullptr) cdt.insert_constraint(prev, curr);
-          prev = curr;
         }
       }
+    } catch (const CGAL::Precondition_exception& e) {
+      LOG("CGAL error in Polygon2d::tesselate(): %1$s", e.what());
+      return nullptr;
     }
 
-  } catch (const CGAL::Precondition_exception& e) {
-    LOG("CGAL error in Polygon2d::tesselate(): %1$s", e.what());
-    return nullptr;
-  }
-
-  // To extract triangles which is part of our polygon, we need to filter away
-  // triangles inside holes.
-  mark_domains(cdt);
-  for (auto fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
-    if (fit->info().in_domain()) {
-      // If this assert hits, it means that the polygon2d somehow contains
-      // self-intersecting or intersecting constraints. This shouldn't happen
-      // since Clipper guarantees no overlaps, but could happen if we lose
-      // precision from converting from Clipper's coordinate space (int64) to Polygon2's (double).
-      // One possible workaround is to reduce Clipper's precision further,
-      // see https://github.com/openscad/openscad/issues/5253.
-      assert(fit->vertex(0)->info().id != -1);
-      assert(fit->vertex(1)->info().id != -1);
-      assert(fit->vertex(2)->info().id != -1);
-      polyset->indices.push_back(
-        {fit->vertex(0)->info().id, fit->vertex(1)->info().id, fit->vertex(2)->info().id});
+    mark_domains(cdt);
+    for (auto fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+      if (fit->info().in_domain()) {
+        // Intersecting constraints would add vertices without source indices.
+        assert(fit->vertex(0)->info().id != -1);
+        assert(fit->vertex(1)->info().id != -1);
+        assert(fit->vertex(2)->info().id != -1);
+        polyset->indices.push_back(
+          {fit->vertex(0)->info().id, fit->vertex(1)->info().id, fit->vertex(2)->info().id});
+        polyset->color_indices.push_back(color_index);
+      }
     }
-  }
-
-  // Leave unpainted faces unresolved. A uniform explicit outline color still
-  // belongs to the model, rather than to the active viewport theme.
-  const auto& outlines = in3d ? polygon2d.untransformedOutlines() : polygon2d.outlines();
-  if (!outlines.empty() && std::all_of(outlines.begin(), outlines.end(), [&](const auto& outline) {
-        return outline.color == outlines.front().color;
-      })) {
-    polyset->setColor(outlines.front().color.unpaintedIfFullyTransparent());
   }
   return polyset;
 }

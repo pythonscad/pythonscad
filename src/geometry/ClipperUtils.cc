@@ -438,7 +438,7 @@ std::unique_ptr<Polygon2d> apply(const std::vector<std::shared_ptr<const Polygon
 {
   const int scale_bits = scaleBitsFromPrecision();
 #ifdef ENABLE_MANIFOLD
-  // only create colored data for manifold, cgal tessellator cannot handle it later
+  // Use the colored-region union path for the Manifold backend.
 
   if (RenderSettings::inst()->backend3D == RenderBackend3D::ManifoldBackend) {
     if (clipType == Clipper2Lib::ClipType::Union) {

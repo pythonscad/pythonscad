@@ -205,16 +205,57 @@ void checkProjectedCutout(OffscreenView& view)
   for (const auto& outline : offset->outlines())
     require(outline.color.isDefaultCutout(), "Offset lost the projected cut-surface role");
 
+  // A colored ring plus a separate explicit island exercises per-color holes.
+  auto ring = std::make_shared<Polygon2d>();
+  Outline2d outer, hole, island;
+  outer.vertices = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
+  outer.color = Color4f::defaultCutout();
+  hole.vertices = {{-0.4, -0.4}, {-0.4, 0.4}, {0.4, 0.4}, {0.4, -0.4}};
+  hole.positive = false;
+  hole.color = Color4f::defaultCutout();
+  island.vertices = {{2, -0.5}, {3, -0.5}, {3, 0.5}, {2, 0.5}};
+  island.color = explicit_color;
+  ring->addOutline(outer);
+  ring->addOutline(hole);
+  ring->addOutline(island);
+#ifdef ENABLE_CGAL
+  auto triangulated = CGALUtils::createTriangulatedPolySetFromPolygon2d(*ring, false);
+  require(triangulated != nullptr, "CGAL did not tessellate colored regions");
+  size_t vertex = 0;
+  for (const auto& outline : ring->outlines()) {
+    for (const auto& point : outline.vertices) {
+      require(triangulated->vertices.at(vertex++).head<2>() == point,
+              "CGAL changed source vertex order");
+    }
+  }
+  require(vertex == triangulated->vertices.size(), "CGAL changed source vertex count");
+  double area = 0;
+  for (const auto& face : triangulated->indices) {
+    const auto ab = triangulated->vertices[face[1]] - triangulated->vertices[face[0]];
+    const auto ac = triangulated->vertices[face[2]] - triangulated->vertices[face[0]];
+    area += ab.cross(ac).norm() / 2;
+  }
+  require(std::abs(area - 4.36) < 1e-9, "CGAL changed colored-region area or filled a hole");
+  bool has_explicit = false;
+  for (const auto& color : triangulated->colors) has_explicit |= color == explicit_color;
+  require(has_explicit, "CGAL lost explicit RGBA while retaining symbolic colors");
+#endif
+
   RenderColorScheme cornfield;
   const auto material =
     ColorMap::getColor(cornfield.colorScheme(), RenderColor::OPENCSG_FACE_FRONT_COLOR);
   const auto cutout = ColorMap::getColor(cornfield.colorScheme(), RenderColor::OPENCSG_FACE_BACK_COLOR);
   const auto previous_backend = RenderSettings::inst()->backend3D;
   std::vector<RenderBackend3D> triangulators = {RenderBackend3D::ManifoldBackend};
+#ifdef ENABLE_CGAL
+  triangulators.push_back(RenderBackend3D::CGALBackend);
+#endif
   for (auto backend : triangulators) {
+    // Select CGAL explicitly even in builds using Manifold's triangulator by default.
     RenderSettings::inst()->backend3D = backend;
     checkPolygonSamples(view, polygon, material, cutout, "Projected cut surface");
     checkPolygonSamples(view, offset, cutout, cutout, "Offset projected cut surface");
+    checkPolygonSamples(view, ring, cutout, Color4f(0, 0, 0, 0), "Colored hole");
   }
   RenderSettings::inst()->backend3D = previous_backend;
 }
