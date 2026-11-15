@@ -1433,7 +1433,7 @@ msgstr "Copia &Distanza dell'Inquadratura"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1159
 msgid "Copy Vie&wport FOV"
-msgstr "Copia &Focale dell'Inquadratura"
+msgstr "Copia &Campo visivo dell'Inquadratura"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1160
 msgid "Increase Font &Size"
