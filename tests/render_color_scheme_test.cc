@@ -174,6 +174,35 @@ void checkPolygonRenderer(OffscreenView& view, Renderer& renderer, const std::st
 }
 
 #ifdef ENABLE_CGAL
+void checkNefScheme(OffscreenView& view)
+{
+  CubeNode cube(nullptr);
+  std::fill(std::begin(cube.center), std::end(cube.center), 0);
+  auto geometry = cube.createGeometry();
+  const auto& mesh = dynamic_cast<const PolySet&>(*geometry);
+  std::shared_ptr<const Geometry> nef = CGALUtils::createNefPolyhedronFromPolySet(mesh);
+  require(nef && !nef->isEmpty(), "Could not create Nef color test geometry");
+  CGALRenderer renderer(nef);
+  glPushAttrib(GL_LIGHTING_BIT);
+  const GLfloat ambient[] = {1, 1, 1, 1};
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
+  glDisable(GL_LIGHT0);
+  glDisable(GL_LIGHT1);
+  glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+  glEnable(GL_COLOR_MATERIAL);
+  auto scheme = ColorMap::instance().defaultColorScheme();
+  for (const auto color : {Color4f(210, 40, 80), Color4f(30, 180, 220), Color4f(210, 40, 80)}) {
+    // Preview, edge, and 2D colors deliberately stay unchanged.
+    scheme[RenderColor::CGAL_FACE_FRONT_COLOR] = color;
+    scheme[RenderColor::CGAL_FACE_BACK_COLOR] = color;
+    renderer.setColorScheme(scheme);
+    draw(view, renderer);
+    expectPixel(60, color, "Nef face-only scheme change");
+    checkUnchangedScheme(view, renderer, scheme);
+  }
+  glPopAttrib();
+}
+
 void checkCGALRegionVertices()
 {
   const Color4f red(255, 0, 0), blue(0, 0, 255);
@@ -512,6 +541,9 @@ int main(int argc, char **argv)
     checkExports(root);
     checkUnpaintedExports(root);
     OffscreenView view(size, size);
+#ifdef ENABLE_CGAL
+    checkNefScheme(view);
+#endif
 #ifdef ENABLE_MANIFOLD
     checkProjectedCutout(view);
 #endif

@@ -27,6 +27,7 @@ public:
 
 private:
   bool colors_dirty_ = false;
+  ColorScheme applied_colorscheme_;
   void addGeometry(const std::shared_ptr<const class Geometry>& geom);
 #ifdef ENABLE_CGAL
   const std::vector<std::shared_ptr<class VBOPolyhedron>>& getPolyhedrons() const
