@@ -113,7 +113,9 @@ static double color_to_parm(const boost::property_tree::ptree& pt, const Color4f
   int r, g, b, a;
   double parm;
 
-  color.getRgba(r, g, b, a);
+  if (!color.getRgba(r, g, b, a)) {
+    return pos == 0 ? options.laserpower : options.feedrate;
+  }
   unsigned int color_val;
   color_val = ((unsigned int)(r) << 24) | ((unsigned int)(g) << 16) | ((unsigned int)(b) << 8) |
               ((unsigned int)(a) & 0xFF);

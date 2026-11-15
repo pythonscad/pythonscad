@@ -67,18 +67,17 @@ void export_off(const std::shared_ptr<const Geometry>& geom, std::ostream& outpu
     for (size_t n = 0; n < nverts; ++n) output << " " << ps->indices[i][n];
     if (has_color) {
       auto color_index = ps->color_indices[i];
-      if (color_index >= 0) {
-        auto color =
-          ps->colors[color_index].resolved(exportInfo.defaultColor, exportInfo.defaultCutoutColor());
-        int r, g, b, a;
-        if (!color.getRgba(r, g, b, a)) {
-          LOG(message_group::Error, "Invalid color in OFF export");
-          return;
-        }
-        output << " " << r << " " << g << " " << b;
-        // Alpha channel is read by apps like MeshLab.
-        if (a != 255) output << " " << a;
+      auto color = color_index >= 0 ? ps->colors[color_index].resolved(exportInfo.defaultColor,
+                                                                       exportInfo.defaultCutoutColor())
+                                    : exportInfo.defaultColor;
+      int r, g, b, a;
+      if (!color.getRgba(r, g, b, a)) {
+        LOG(message_group::Error, "Invalid color in OFF export");
+        return;
       }
+      output << " " << r << " " << g << " " << b;
+      // Alpha channel is read by apps like MeshLab.
+      if (a != 255) output << " " << a;
     }
     output << "\n";
   }

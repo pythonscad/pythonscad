@@ -160,6 +160,42 @@ void checkExports(const std::string& root)
           "WRL export did not resolve cut-surface color");
 }
 
+void checkUnpaintedExports(const std::string& root)
+{
+  RenderColorScheme scheme(std::filesystem::path(root) / "color-schemes/render/tomorrow-night.json");
+  ExportInfo info{
+    .format = FileFormat::OFF,
+    .defaultColor = ColorMap::getColor(scheme.colorScheme(), RenderColor::CGAL_FACE_FRONT_COLOR),
+    .colorScheme = &scheme.colorScheme()};
+  auto ps = triangles();
+  std::ostringstream off;
+  export_off(ps, off, info);
+  require(off.str().find("3 0 1 2 129 162 190\n") != std::string::npos,
+          "OFF negative color index lost the export default");
+  std::ostringstream wrl;
+  export_wrl(ps, wrl, info);
+  require(wrl.str().find("0.505882 0.635294 0.745098, # default colour") != std::string::npos,
+          "WRL negative color index lost the export default");
+  ps->colors.clear();
+  ps->color_indices.clear();
+  std::ostringstream unpainted_wrl;
+  export_wrl(ps, unpainted_wrl, info);
+  require(unpainted_wrl.str().find("diffuseColor 0.505882 0.635294 0.745098") != std::string::npos,
+          "WRL empty palette lost the export default");
+
+  SquareNode square(nullptr);
+  auto polygon = std::shared_ptr<const Geometry>(square.createGeometry());
+  for (int mode : {0, 1}) {
+    info.optionsGcode = std::make_shared<const ExportGcodeOptions>(ExportGcodeOptions{
+      .feedrate = 4321, .laserpower = 123, .lasermode = mode, .initCode = "", .exitCode = ""});
+    std::ostringstream gcode;
+    export_gcode(polygon, gcode, info);
+    require(
+      gcode.str().find("F4321") != std::string::npos && gcode.str().find("S123") != std::string::npos,
+      "Unpainted G-code did not use configured power/feed");
+  }
+}
+
 void checkGeometry()
 {
   auto ps = triangles();
@@ -239,6 +275,7 @@ int main(int argc, char **argv)
     }
     checkGeometry();
     checkExports(root);
+    checkUnpaintedExports(root);
     OffscreenView view(size, size);
     auto ps = triangles();
     PolySetRenderer manifold_renderer(ps);
