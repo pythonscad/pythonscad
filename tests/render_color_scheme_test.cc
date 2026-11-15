@@ -27,7 +27,9 @@
 #include "glview/ColorMap.h"
 #include "glview/OffscreenView.h"
 #include "glview/PolySetRenderer.h"
+#ifndef USE_POLYSET_FOR_CGAL
 #include "glview/cgal/CGALRenderer.h"
+#endif
 #include "glview/preview/OpenCSGRenderer.h"
 #include "glview/preview/ThrownTogetherRenderer.h"
 #include "platform/PlatformUtils.h"
@@ -174,6 +176,8 @@ void checkPolygonRenderer(OffscreenView& view, Renderer& renderer, const std::st
 }
 
 #ifdef ENABLE_CGAL
+// Nef rendering is replaced by PolySetRenderer in this build configuration.
+#ifndef USE_POLYSET_FOR_CGAL
 void checkNefScheme(OffscreenView& view)
 {
   CubeNode cube(nullptr);
@@ -202,6 +206,8 @@ void checkNefScheme(OffscreenView& view)
   }
   glPopAttrib();
 }
+
+#endif
 
 void checkCGALRegionVertices()
 {
@@ -289,9 +295,12 @@ void checkPolygonSamples(OffscreenView& view, const std::shared_ptr<const Polygo
                          const Color4f& side, const Color4f& center, const std::string& context)
 {
   PolySetRenderer polyset_renderer(polygon);
+  std::vector<Renderer *> renderers{&polyset_renderer};
+#ifndef USE_POLYSET_FOR_CGAL
   CGALRenderer cgal_renderer(polygon);
-  for (Renderer *renderer :
-       {static_cast<Renderer *>(&polyset_renderer), static_cast<Renderer *>(&cgal_renderer)}) {
+  renderers.push_back(&cgal_renderer);
+#endif
+  for (Renderer *renderer : renderers) {
     RenderColorScheme cornfield;
     renderer->setColorScheme(cornfield.colorScheme());
     draw(view, *renderer);
@@ -541,7 +550,7 @@ int main(int argc, char **argv)
     checkExports(root);
     checkUnpaintedExports(root);
     OffscreenView view(size, size);
-#ifdef ENABLE_CGAL
+#if defined(ENABLE_CGAL) && !defined(USE_POLYSET_FOR_CGAL)
     checkNefScheme(view);
 #endif
 #ifdef ENABLE_MANIFOLD
@@ -567,10 +576,12 @@ int main(int argc, char **argv)
 #endif
     PolySetRenderer polygon_renderer(polygon);
     checkPolygonRenderer(view, polygon_renderer, root);
+#ifndef USE_POLYSET_FOR_CGAL
     CGALRenderer cgal_polygon_renderer(polygon);
     checkPolygonRenderer(view, cgal_polygon_renderer, root);
     CGALRenderer cgal_renderer(ps);
     checkRenderer(view, cgal_renderer, "CGAL PolySet", root);
+#endif
 #ifdef ENABLE_OPENCSG
     auto p = products(ps);
     OpenCSGRenderer preview(p, nullptr, nullptr);
