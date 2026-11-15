@@ -1803,7 +1803,8 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
           pt[2] = concat_round(pt[2]);
           builder.addVertex(pt);
         }
-        if (ps->color_indices.size() > i && ps->color_indices[i] >= 0)
+        if (ps->color_indices.size() > i && ps->color_indices[i] >= 0 &&
+            static_cast<size_t>(ps->color_indices[i]) < ps->colors.size())
           builder.endPolygon(ps->colors[ps->color_indices[i]]);
         else builder.endPolygon();
       }

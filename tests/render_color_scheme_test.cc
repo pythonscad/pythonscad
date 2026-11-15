@@ -3,6 +3,7 @@
 #include <cmath>
 #include <filesystem>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <sstream>
@@ -10,6 +11,9 @@
 
 #include "Feature.h"
 #include "core/CSGNode.h"
+#include "core/CsgOpNode.h"
+#include "core/Tree.h"
+#include "geometry/GeometryEvaluator.h"
 #include "core/primitives.h"
 #include "geometry/PolySet.h"
 #include "geometry/PolySetBuilder.h"
@@ -199,6 +203,29 @@ void checkUnpaintedExports(const std::string& root)
 void checkGeometry()
 {
   auto ps = triangles();
+  // Inconsistent palettes must not turn concat into an out-of-bounds read.
+  auto invalid = std::make_shared<PolyhedronNode>(std::make_shared<ModuleInstantiation>("polyhedron"));
+  invalid->points = ps->vertices;
+  invalid->faces = ps->indices;
+  invalid->colors = ps->colors;
+  invalid->color_indices = ps->color_indices;
+  invalid->color_indices[0] = std::numeric_limits<int32_t>::max();
+  auto valid = std::make_shared<PolyhedronNode>(std::make_shared<ModuleInstantiation>("polyhedron"));
+  valid->points = ps->vertices;
+  valid->faces = ps->indices;
+  valid->colors = ps->colors;
+  valid->color_indices = ps->color_indices;
+  auto concat = std::make_shared<CsgOpNode>(std::make_shared<ModuleInstantiation>("concat"),
+                                            OpenSCADOperator::CONCAT);
+  concat->children = {invalid, valid};
+  Tree tree(concat);
+  GeometryEvaluator evaluator(tree);
+  auto joined = std::dynamic_pointer_cast<const PolySet>(evaluator.evaluateGeometry(*concat, false));
+  require(joined && joined->indices.size() == 6, "Concat lost geometry with invalid palette index");
+  require(joined->color_indices.size() == 6 && joined->color_indices[0] == -1,
+          "Concat did not leave an invalid palette index unpainted");
+  require(joined->colors.at(joined->color_indices[1]) == explicit_color,
+          "Concat lost valid explicit colors alongside an invalid palette index");
   auto tessellated = PolySetUtils::tessellate_faces(*ps);
   require(tessellated->colors == ps->colors, "Tessellation lost symbolic colors");
   auto red = triangles();
@@ -280,6 +307,10 @@ int main(int argc, char **argv)
     auto ps = triangles();
     PolySetRenderer manifold_renderer(ps);
     checkRenderer(view, manifold_renderer, "PolySet", root);
+    auto invalid_palette = triangles();
+    invalid_palette->color_indices[0] = std::numeric_limits<int32_t>::max();
+    PolySetRenderer invalid_renderer(invalid_palette);
+    checkRenderer(view, invalid_renderer, "PolySet invalid palette", root);
     SquareNode square(nullptr);
     square.center = true;
     auto square_geometry = square.createGeometry();

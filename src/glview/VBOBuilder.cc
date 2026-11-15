@@ -452,10 +452,11 @@ void VBOBuilder::create_surface(const PolySet& ps, const Transform3d& m, const C
 
   for (size_t i = 0, n = ps.indices.size(); i < n; i++) {
     const auto& poly = ps.indices[i];
-    const size_t color_index = has_colors && i < ps.color_indices.size() ? ps.color_indices[i] : -1;
-    const auto color = !force_default_color && color_index < ps.colors.size()
-                         ? ps.colors[color_index].resolved(default_color, cutout_color)
-                         : default_color;
+    const auto color_index = has_colors && i < ps.color_indices.size() ? ps.color_indices[i] : -1;
+    const auto color =
+      !force_default_color && color_index >= 0 && static_cast<size_t>(color_index) < ps.colors.size()
+        ? ps.colors[color_index].resolved(default_color, cutout_color)
+        : default_color;
     if (poly.size() == 3) {
       const Vector3d p0 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(0)], m);
       const Vector3d p1 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(1)], m);
@@ -593,9 +594,10 @@ void VBOBuilder::create_polygons(const PolySet& ps, const Transform3d& m, const 
 
   for (int i = 0; i < ps.indices.size(); i++) {
     const auto& poly = ps.indices[i];
-    const size_t color_index = i < ps.color_indices.size() ? ps.color_indices[i] : -1;
-    const auto tcolor =
-      color_index < ps.colors.size() ? ps.colors[color_index].resolved(color, color) : color;
+    const auto color_index = i < ps.color_indices.size() ? ps.color_indices[i] : -1;
+    const auto tcolor = color_index >= 0 && static_cast<size_t>(color_index) < ps.colors.size()
+                          ? ps.colors[color_index].resolved(color, color)
+                          : color;
     if (poly.size() == 3) {
       const Vector3d p0 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(0)], m);
       const Vector3d p1 = uniqueMultiply(vert_mult_map, ps.vertices[poly.at(1)], m);
