@@ -111,6 +111,33 @@ void draw(OffscreenView& view, Renderer& renderer)
   glFinish();
 }
 
+// A marker in the existing VBO detects rebuilds even if the driver reuses buffer names.
+void checkUnchangedScheme(OffscreenView& view, Renderer& renderer, const ColorScheme& scheme)
+{
+  GLint buffer = 0;
+  glGetIntegerv(GL_VERTEX_ARRAY_BUFFER_BINDING, &buffer);
+  require(buffer != 0, "Renderer did not leave a vertex buffer to inspect");
+  glBindBuffer(GL_ARRAY_BUFFER, buffer);
+  float original = 0;
+  glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(original), &original);
+  const float marker = 12345.0f;
+  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(marker), &marker);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  // Also exercise an equivalent scheme stored at a different address.
+  const auto copy = scheme;
+  renderer.setColorScheme(copy);
+  renderer.prepare(view.edge_shader.get());
+  require(glIsBuffer(buffer), "Unchanged scheme deleted a cached vertex buffer");
+  glBindBuffer(GL_ARRAY_BUFFER, buffer);
+  float actual = 0;
+  glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(actual), &actual);
+  require(actual == marker, "Unchanged scheme rebuilt a cached vertex buffer");
+  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(original), &original);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  renderer.setColorScheme(scheme);
+}
+
 void checkRenderer(OffscreenView& view, Renderer& renderer, const std::string& name,
                    const std::string& root)
 {
@@ -122,6 +149,7 @@ void checkRenderer(OffscreenView& view, Renderer& renderer, const std::string& n
     auto& cs = scheme.colorScheme();
     renderer.setColorScheme(cs);
     draw(view, renderer);
+    checkUnchangedScheme(view, renderer, cs);
     expectPixel(20, ColorMap::getColor(cs, RenderColor::OPENCSG_FACE_FRONT_COLOR), name + " default");
     expectPixel(60, explicit_color, name + " explicit");
     expectPixel(100, ColorMap::getColor(cs, RenderColor::OPENCSG_FACE_BACK_COLOR), name + " cutout");
@@ -140,6 +168,7 @@ void checkPolygonRenderer(OffscreenView& view, Renderer& renderer, const std::st
     auto& cs = scheme.colorScheme();
     renderer.setColorScheme(cs);
     draw(view, renderer);
+    checkUnchangedScheme(view, renderer, cs);
     expectPixel(60, ColorMap::getColor(cs, RenderColor::OPENCSG_FACE_FRONT_COLOR), "2D default");
   }
 }

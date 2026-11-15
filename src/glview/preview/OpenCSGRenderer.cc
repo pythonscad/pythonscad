@@ -101,8 +101,9 @@ OpenCSGRenderer::OpenCSGRenderer(std::shared_ptr<CSGProducts> root_products,
 
 void OpenCSGRenderer::setColorScheme(const ColorScheme& cs)
 {
+  const auto previous_colors = colormap_;
   Renderer::setColorScheme(cs);
-  colors_dirty_ = true;
+  colors_dirty_ = colors_dirty_ || colormap_ != previous_colors;
 }
 
 void OpenCSGRenderer::prepare(const ShaderUtils::ShaderInfo *shaderinfo)

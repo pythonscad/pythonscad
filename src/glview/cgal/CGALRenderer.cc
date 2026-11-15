@@ -125,11 +125,12 @@ void CGALRenderer::createPolyhedrons()
 void CGALRenderer::setColorScheme(const ColorScheme& cs)
 {
   PRINTD("setColorScheme");
+  const auto previous_colors = colormap_;
   Renderer::setColorScheme(cs);
   colormap_[ColorMode::CGAL_FACE_2D_COLOR] = ColorMap::getColor(cs, RenderColor::CGAL_FACE_2D_COLOR);
   colormap_[ColorMode::CGAL_EDGE_2D_COLOR] = ColorMap::getColor(cs, RenderColor::CGAL_EDGE_2D_COLOR);
   PRINTD("setColorScheme done");
-  colors_dirty_ = true;
+  colors_dirty_ = colors_dirty_ || colormap_ != previous_colors;
 }
 
 void CGALRenderer::createPolySetStates()

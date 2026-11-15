@@ -88,8 +88,9 @@ ThrownTogetherRenderer::ThrownTogetherRenderer(std::shared_ptr<CSGProducts> root
 
 void ThrownTogetherRenderer::setColorScheme(const ColorScheme& cs)
 {
+  const auto previous_colors = colormap_;
   Renderer::setColorScheme(cs);
-  colors_dirty_ = true;
+  colors_dirty_ = colors_dirty_ || colormap_ != previous_colors;
 }
 
 void ThrownTogetherRenderer::prepare(const ShaderUtils::ShaderInfo *shaderinfo)
