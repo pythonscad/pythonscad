@@ -17,9 +17,9 @@
       <div>Create a rounded cube or box; set center=True to center it</div>
       <div><code>rounded_cube([30, 20, 10], r=2, center=True).show()</code></div>
 
-      <div class="func"><code><a href="../reference/primitives3d/#sphere">sphere</a>(r | d)</code></div>
-      <div>Create a sphere with radius r or diameter d</div>
-      <div><code>sphere(15).show()</code></div>
+      <div class="func"><code><a href="../reference/primitives3d/#sphere">sphere</a>(r | d, style=...)</code></div>
+      <div>Create a sphere; style="octa" uses octahedral tessellation</div>
+      <div><code>sphere(15, style="octa").show()</code></div>
 
       <div class="func"><code><a href="../reference/primitives3d/#cylinder">cylinder</a>(h, r|d, center)</code></div>
       <div>Create a cylinder or cone with height h and radii</div>

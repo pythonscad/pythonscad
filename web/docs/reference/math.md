@@ -183,12 +183,45 @@ Calculate the cross product of two 3D vectors.
 
 ## Vector functions
 
-There are many places, where PythonSCAD accepts vectors which are supplied as Python lists with 2 or 3 numbers.
-Alernatively, PythonSCAD also accepts PythonSCAD Vector objects with calculating capabilities
+There are many places where PythonSCAD accepts vectors supplied as Python
+lists with 2 or 3 numbers. Tuples and other sequences are accepted as well.
+Alternatively, PythonSCAD also accepts PythonSCAD Vector objects with
+calculating capabilities.
+
+### `Vector1` / `Vector2` / `Vector3` / `Matrix4x4`
+
+The `pythonscad` module exports fixed-size helper types for coordinates and
+transforms:
+
+| Type | Shape | Typical use |
+|------|-------|-------------|
+| `Vector1` | `[x]` | 1D sizes / scalars in vector slots |
+| `Vector2` | `[x, y]` | 2D points and sizes |
+| `Vector3` | `[x, y, z]` | 3D points, sizes, directions |
+| `Matrix4x4` | 4×4 | Transform matrices for `multmatrix` / `origin` |
+
+When NumPy is installed these classes are NumPy-backed (`ndarray` subclasses);
+without NumPy they fall back to plain list subclasses. Constructors accept
+lists, tuples, other vectors/matrices, or NumPy arrays. Check
+`pythonscad.HAS_NUMPY` if a script needs to branch on that.
+
+=== "Python"
+
+    ```python
+    from pythonscad import *
+
+    p = Vector3([10, 0, 5])
+    m = Matrix4x4([[1, 0, 0, 0],
+                   [0, 1, 0, 0],
+                   [0, 0, 1, 0],
+                   [0, 0, 0, 1]])
+    show(cube(1).translate(p))
+    ```
 
 ### NumPy support
 
-Anywhere PythonSCAD accepts a vector or a list of vectors, a NumPy array can be used instead of a Python list.
+Anywhere PythonSCAD accepts a vector or a list of vectors, a NumPy array or a
+tuple can be used instead of a Python list.
 
 - A 1D NumPy array of length 2, 3, or 4 is accepted wherever a single vector (e.g. a size, translation, or point) is expected.
 - A 2D NumPy array (shape `(n, 2)` or `(n, 3)`) is accepted wherever a list of vectors (e.g. a point list) is expected.
@@ -204,6 +237,9 @@ Supported dtypes are `float64`, `float32`, `int64`, and `int32`. NumPy is not a 
 
     # A cube sized from a 1D numpy array
     c = cube(np.array([1, 2, 3]))
+
+    # Tuples work the same way as lists
+    show(c.translate((10, 0, 0)))
 
     # Translate by a 2D numpy array of vectors (broadcasts a list of copies)
     show(c + np.array([[10, 0, 0], [0, 10, 0]]))
