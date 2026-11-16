@@ -37,6 +37,10 @@ Passing a list of solids implicitly creates a union.
     show([cube(5).right(5 * i) for i in range(5)])
     ```
 
+!!! warning "Deprecated: `output()`"
+    `output()` / `obj.output()` is a deprecated alias for `show()` /
+    `obj.show()`. Prefer `show()` in new code.
+
 ---
 
 ## export

@@ -59,6 +59,7 @@ Create a sphere centered at the origin.
     ```python
     sphere(r=1)
     sphere(d=2)
+    sphere(r=1, style="octa")
     sphere(func, fn=..., fa=..., fs=...)
     ```
 
@@ -68,6 +69,7 @@ Create a sphere centered at the origin.
 |-----------|------|---------|-------------|
 | `r` | number or function | `1` | Radius of the sphere, or a Python function `f(v) -> radius` |
 | `d` | number | — | Diameter (alternative to `r`; cannot specify both) |
+| `style` | string | `"orig"` | Tessellation style: `"orig"` (latitude rings) or `"octa"` (subdivided octahedron; poles and equator match `cylinder()` fragment count) |
 | `fn` | int | — | Number of segments for full circle |
 | `fa` | float | — | Minimum angle per segment |
 | `fs` | float | — | Minimum segment size |
@@ -100,6 +102,9 @@ The `r` parameter can be a Python function that receives a 3D direction vector a
     sphere(d=20).show()
 
     sphere(5, fn=100).show()
+
+    # Octahedral tessellation — fits axis-aligned cylinders without slivers
+    sphere(10, style="octa", fn=32).show()
     ```
 
 **OpenSCAD reference:** [sphere](https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Primitive_Solids#sphere)

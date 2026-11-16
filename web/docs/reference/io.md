@@ -123,6 +123,10 @@ analog of OpenSCAD's `use <file.scad>`, with two semantic differences:
 |-----------|------|-------------|
 | `file` | string | Path to the `.scad` file |
 
+Relative paths are resolved against the script directory first; if not found
+there, PythonSCAD falls back to the configured OpenSCAD library path (the same
+search used by OpenSCAD's `use` / `include`).
+
 **Returns:** an object exposing the imported library's contents:
 
 - **Modules** become methods that return geometry objects (e.g. `lib.gear(...)`).

@@ -15,7 +15,9 @@ Get the bounding box dimensions of an object.
     size(obj)
     ```
 
-**Returns:** A list `[width, height, depth]` for 3D objects or `[width, height]` for 2D objects.
+**Returns:** A vector `[width, height, depth]` for 3D objects or
+`[width, height]` for 2D objects. Both 2D and 3D results support vector
+arithmetic (e.g. `obj.size * 2`).
 
 **Examples:**
 
@@ -26,6 +28,10 @@ Get the bounding box dimensions of an object.
 
     c = cube([10, 20, 30])
     print(c.size)  # [10.0, 20.0, 30.0]
+
+    s = square([10, 20])
+    print(s.size)       # [10.0, 20.0]
+    print(s.size * 2)   # [20.0, 40.0]
     ```
 
 ---
@@ -43,7 +49,10 @@ Get the minimum corner coordinates of the bounding box.
     position(obj)
     ```
 
-**Returns:** A list `[x, y, z]` for 3D objects or `[x, y]` for 2D objects, representing the minimum corner of the bounding box.
+**Returns:** A vector `[x, y, z]` for 3D objects or `[x, y]` for 2D objects,
+representing the minimum corner of the bounding box. Both support vector
+arithmetic, so e.g. `obj.translate(obj.position * -1)` recenters 2D or 3D
+objects alike.
 
 **Examples:**
 
@@ -54,6 +63,10 @@ Get the minimum corner coordinates of the bounding box.
 
     c = cube(10).translate([5, 5, 5])
     print(c.position)  # [5.0, 5.0, 5.0]
+
+    s = square(10).translate([3, 4])
+    print(s.position)                  # [3.0, 4.0]
+    s.translate(s.position * -1).show()  # back to the origin
     ```
 
 ---
