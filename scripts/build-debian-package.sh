@@ -143,7 +143,7 @@ if [ "${USE_QT6:-ON}" = "OFF" ]; then
     sed -i 's/qt6-base-dev/qtbase5-dev/g' "${PROJECT_ROOT}/debian/control"
     sed -i 's/libqt6svg6-dev/libqt5svg5-dev/g' "${PROJECT_ROOT}/debian/control"
     sed -i 's/libqscintilla2-qt6-dev/libqscintilla2-qt5-dev/g' "${PROJECT_ROOT}/debian/control"
-    sed -i 's/libqt6core5compat6-dev/libqt5opengl5-dev/g' "${PROJECT_ROOT}/debian/control"
+    sed -i 's/libqt6core5compat6-dev | qt6-5compat-dev/libqt5opengl5-dev/g' "${PROJECT_ROOT}/debian/control"
     sed -i 's/qt6-multimedia-dev/qtmultimedia5-dev/g' "${PROJECT_ROOT}/debian/control"
     sed -i 's/qt6-tools-dev/qttools5-dev/g' "${PROJECT_ROOT}/debian/control"
     # Ubuntu 22.04 has no python3-pyqt6. The Qt5 package ships without it.

@@ -72,6 +72,23 @@ class DistributionTests(unittest.TestCase):
         self.assertNotIn(('fedora', '43'), {(x['distro'], x['version']) for x in rpm})
 
 
+    def test_ubuntu_2610_dependency_names(self):
+        def packages(version):
+            result = subprocess.run(
+                ['python3', str(ROOT / 'scripts/get-dependencies.py'), '--distro', 'ubuntu',
+                 '--version', version, '--profile', 'pythonscad-qt6', '--list'],
+                check=True, capture_output=True, text=True)
+            return set(result.stdout.splitlines()[3:])
+        current = packages('26.10')
+        self.assertIn('qt6-5compat-dev', current)
+        self.assertNotIn('libboost-system-dev', current)
+        self.assertNotIn('libqt6core5compat6-dev', current)
+        self.assertIn('libqt6core5compat6-dev', packages('24.04'))
+        self.assertIn('catch2', packages('24.04'))
+        self.assertIn('libqt6core5compat6-dev | qt6-5compat-dev',
+                      (ROOT / 'debian/control').read_text())
+
+
     def test_el_client_repository_matches_release(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
