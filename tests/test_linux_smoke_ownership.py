@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 
+@unittest.skipIf(os.name == "nt", "Linux container shell fixtures require Unix")
 class OutputOwnershipTests(unittest.TestCase):
     def test_ownership_restored_on_success_and_failure(self):
         root = Path(__file__).resolve().parents[1]
@@ -20,6 +21,7 @@ ensure_rpm_smoke_image() { echo fixture-image; }
 apt-get() { :; }
 dnf() { :; }
 xvfb-run() {
+  printf '%s\n' "${QT_QPA_PLATFORM:-}" > "$FIXTURE_OUTPUT/platform"
   mkdir -p "$FIXTURE_OUTPUT/nested"
   touch "$FIXTURE_OUTPUT/nested/result.stl"
   return "$FIXTURE_STATUS"
@@ -28,7 +30,14 @@ chown() {
   printf '%s\n' "$@" > "$FIXTURE_LOG"
   command chown "$@"
 }
-export -f apt-get dnf xvfb-run chown
+bash() {
+  if [[ "${QT_QPA_PLATFORM:-}" == offscreen ]]; then
+    xvfb-run
+  else
+    command bash "$@"
+  fi
+}
+export -f apt-get dnf xvfb-run chown bash
 docker() {
   local body="${@: -1}"
   while (($#)); do
@@ -54,6 +63,8 @@ SCRIPT_DIR=unused-fixture-directory
                         capture_output=True, text=True, timeout=10,
                     )
                     self.assertEqual(result.returncode, status, result.stderr)
+                    self.assertEqual((output / "platform").read_text().strip(),
+                                     "offscreen" if package_type == "rpm" else "xcb")
                     self.assertTrue(log.is_file(), "container did not restore output ownership")
                     self.assertEqual(log.read_text().splitlines(),
                                      ["-R", f"{os.getuid()}:{os.getgid()}", str(output)])

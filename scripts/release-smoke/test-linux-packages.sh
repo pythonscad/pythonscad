@@ -226,6 +226,8 @@ DOCKERFILE
   printf '%s\n' "$smoke_image"
 }
 
+# CLI checks export meshes and do not need an X server. EL10 no longer ships
+# Xvfb, so RPM smoke tests use Qt's offscreen platform.
 ensure_rpm_smoke_image() {
   local base_image=$1
   local smoke_image
@@ -244,10 +246,10 @@ RUN set -eux; \
       dnf install -y epel-release dnf-plugins-core || true; \
       dnf config-manager --set-enabled crb || true; \
     fi; \
-    dnf install -y mesa-dri-drivers python3-ipython xauth xorg-x11-server-Xvfb; \
+    dnf install -y mesa-dri-drivers python3-ipython; \
     dnf clean all; \
   else \
-    yum install -y mesa-dri-drivers python3-ipython xauth xorg-x11-server-Xvfb; \
+    yum install -y mesa-dri-drivers python3-ipython; \
     yum clean all; \
   fi
 DOCKERFILE
@@ -312,7 +314,7 @@ run_rpm_package_test() {
       else
         yum install -y --nogpgcheck /tmp/pythonscad-package.rpm
       fi
-      QT_QPA_PLATFORM=xcb xvfb-run -a bash -c '"'"'
+      QT_QPA_PLATFORM=offscreen bash -c '"'"'
         source /release-smoke/common-smoke.sh
         rs_smoke_binary /usr/bin/pythonscad "$PACKAGE_FILE" /tmp/pythonscad-smoke
       '"'"'
