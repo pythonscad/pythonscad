@@ -747,6 +747,22 @@ void TabManager::actionNew()
   createTab(QString());
 }
 
+void TabManager::setCurrentEditor(EditorInterface *edt)
+{
+  if (edt && editorList.contains(edt)) tabWidget->setCurrentWidget(edt);
+}
+
+EditorInterface *TabManager::findEditorForFile(const QString& filename) const
+{
+  const QString canonical = QFileInfo(filename).canonicalFilePath();
+  for (auto edt : editorList) {
+    if (edt->filepath.isEmpty()) continue;
+    if (edt->filepath == filename) return edt;
+    if (!canonical.isEmpty() && QFileInfo(edt->filepath).canonicalFilePath() == canonical) return edt;
+  }
+  return nullptr;
+}
+
 void TabManager::open(const QString& filename)
 {
   assert(!filename.isEmpty());
@@ -809,6 +825,8 @@ void TabManager::createTab(const QString& filename, bool initializeEmptyEditor)
 
   connect(scintillaEditor, &ScintillaEditor::uriDropped, parent, &MainWindow::handleFileDrop);
   connect(scintillaEditor, &ScintillaEditor::previewRequest, parent, &MainWindow::actionRenderPreview);
+  connect(scintillaEditor, &ScintillaEditor::previewObjectNavigationRequest, parent,
+          &MainWindow::navigatePreviewObject);
   connect(editor, &EditorInterface::showContextMenuEvent, this, &TabManager::showContextMenuEvent);
   connect(editor, &EditorInterface::focusIn, this, [this]() { parent->setLastFocus(editor); });
 

@@ -8,6 +8,14 @@ std::vector<int> mapping_level;
 
 std::vector<std::shared_ptr<AbstractNode>> shows;
 std::shared_ptr<AbstractNode> genlang_result_node = nullptr;
+
+GenlangLocationProvider genlang_location_provider = nullptr;
+
+Location genlang_current_location()
+{
+  return genlang_location_provider ? genlang_location_provider() : Location::NONE;
+}
+
 void show_final(void)
 {
   mapping_name.clear();

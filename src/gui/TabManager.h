@@ -53,6 +53,9 @@ public:
   bool saveAs(EditorInterface *edt, const QString& filepath);
   bool saveACopy(EditorInterface *edt);
   void open(const QString& filename);
+  void setCurrentEditor(EditorInterface *edt);
+  // Editor already showing `filename` (compared by canonical path), or nullptr.
+  EditorInterface *findEditorForFile(const QString& filename) const;
   /// True if \a path is a .scad/.py design path that does not exist on disk yet (CLI / open checks).
   static bool isMissingDesignDocumentPath(const QString& path);
   /// Ask whether to create a missing design file; shared by MainWindow (deferred CLI) and openTabFile.

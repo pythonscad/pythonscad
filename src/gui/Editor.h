@@ -74,6 +74,11 @@ public:
     if (col) *col = 0;
   }
   virtual void setCursorPosition(int /*line*/, int /*col*/) {}
+  // Select a range (0-based lines/columns) and scroll it into view. Text is not changed.
+  virtual void selectRange(int /*lineFrom*/, int /*colFrom*/, int /*lineTo*/, int /*colTo*/) {}
+  // Select the whole (0-based) line, without its line terminator.
+  virtual void selectLine(int /*line*/) {}
+  virtual void clearSelection() {}
   virtual int firstVisibleLine() const { return 0; }
   virtual void setFirstVisibleLine(int /*line*/) {}
   virtual void setFocus() = 0;

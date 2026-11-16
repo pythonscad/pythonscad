@@ -25,7 +25,13 @@ std::string editorGetCallArgs(int pos);
 void editorReplaceCallArgs(int pos, const char *newText);
 
 void initPython(const std::string& binDir, const std::string& scriptpath, const RenderVariables *r);
-std::string evaluatePython(const std::string& code, bool dry_run = false);
+// `filename` is used as the code object's file name: it shows up in tracebacks and in the
+// source location of every node the script creates. Keep "<string>" for synthetic snippets.
+std::string evaluatePython(const std::string& code, bool dry_run = false,
+                           const std::string& filename = "<string>");
+// Location of the Python call currently creating a node (innermost user frame), or
+// Location::NONE outside of Python code / for synthetic "<...>" sources.
+Location currentPythonLocation();
 void finishPython();
 void snapshotPythonInventory();
 bool python_call_named_bool(const std::string& name, const std::string& arg);
