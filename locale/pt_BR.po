@@ -368,7 +368,7 @@ msgstr "Opções do chat"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:199
 msgid "☰"
-msgstr ""
+msgstr "☰"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_ChatWidget.h:201
 #: src/gui/ai/ChatWidget.cc:140
@@ -1410,7 +1410,6 @@ msgid "Ctrl+Shift+Tab"
 msgstr "Ctrl+Shift+Tab"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1149
-#, fuzzy
 msgid "Copy Viewport Ima&ge"
 msgstr "Copiar ima&gem da viewport"
 
@@ -1419,7 +1418,6 @@ msgid "Ctrl+Shift+C"
 msgstr "Ctrl+Shift+C"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1153
-#, fuzzy
 msgid "Copy Viewport Transl&ation"
 msgstr "Copiar transl&ação da viewport"
 
@@ -1428,17 +1426,14 @@ msgid "Ctrl+T"
 msgstr "Ctrl+T"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1157
-#, fuzzy
 msgid "Cop&y Viewport Rotation"
 msgstr "Cop&iar rotação da viewport"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1158
-#, fuzzy
 msgid "Copy Vie&wport Distance"
 msgstr "Copiar distância da vie&wport"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1159
-#, fuzzy
 msgid "Copy Vie&wport FOV"
 msgstr "Copiar campo de visão da vie&wport"
 
@@ -1802,7 +1797,6 @@ msgid "Ctrl+E"
 msgstr "Ctrl+E"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
-#, fuzzy
 msgid "J&ump to Next Error"
 msgstr "Saltar para o próximo erro"
 
@@ -1831,7 +1825,6 @@ msgid "Export as &CSG..."
 msgstr "Exportar como &CSG..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1320
-#, fuzzy
 msgid "&Library Info"
 msgstr "Informações de Bib&liotecas"
 
@@ -1896,7 +1889,6 @@ msgid "Ctrl+F2"
 msgstr "Ctrl+F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1344
-#, fuzzy
 msgid "Jump to Next &Bookmark"
 msgstr "Saltar para o próximo marcador"
 
@@ -1905,7 +1897,6 @@ msgid "F2"
 msgstr "F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
-#, fuzzy
 msgid "Jump to &Previous Bookmark"
 msgstr "Saltar para o marcador anterior"
 
@@ -1922,7 +1913,6 @@ msgid "F11"
 msgstr "F11"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
-#, fuzzy
 msgid "&Hide Editor Toolbar"
 msgstr "Ocultar barra de ferramentas do Editor"
 
@@ -1947,7 +1937,6 @@ msgid "Export as PDF..."
 msgstr "Exportar como PDF..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
-#, fuzzy
 msgid "Hide &3D View Toolbar"
 msgstr "Ocultar barra de ferramentas da Vista 3D"
 
@@ -3214,7 +3203,7 @@ msgstr "Não foi possível abrir o arquivo de imagem selecionado."
 
 #: src/gui/ai/ChatWidget.cc:577
 msgid "[Img]"
-msgstr ""
+msgstr "[Img]"
 
 #: src/gui/ai/ChatWidget.cc:582
 msgid "Remove attachment"

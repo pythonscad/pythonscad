@@ -1408,7 +1408,6 @@ msgid "Ctrl+Shift+Tab"
 msgstr "Ctrl+Shift+Tab"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1149
-#, fuzzy
 msgid "Copy Viewport Ima&ge"
 msgstr "Görünüm alanı res&mini kopyala"
 
@@ -1417,28 +1416,24 @@ msgid "Ctrl+Shift+C"
 msgstr "Ctrl+Shift+C"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1153
-#, fuzzy
 msgid "Copy Viewport Transl&ation"
-msgstr "Görünüm alanı çevir&isini kopyala"
+msgstr "Görünüm alanı ö&telemesini kopyala"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1155
 msgid "Ctrl+T"
 msgstr "Ctrl+T"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1157
-#, fuzzy
 msgid "Cop&y Viewport Rotation"
 msgstr "Görünüm alanı döndürmeyi kopy&ala"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1158
-#, fuzzy
 msgid "Copy Vie&wport Distance"
 msgstr "Görün&üm alanı mesafesini kopyala"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1159
-#, fuzzy
 msgid "Copy Vie&wport FOV"
-msgstr "Gör&ünüm alanını kopyala"
+msgstr "Gör&ünüm alanının görüş açısını kopyala"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1160
 msgid "Increase Font &Size"
@@ -1798,7 +1793,6 @@ msgid "Ctrl+E"
 msgstr "Ctrl+E"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1311
-#, fuzzy
 msgid "J&ump to Next Error"
 msgstr "Sonraki &hataya atla"
 
@@ -1827,7 +1821,6 @@ msgid "Export as &CSG..."
 msgstr "&CSG olarak dışa aktar..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1320
-#, fuzzy
 msgid "&Library Info"
 msgstr "&Kütüphane bilgileri"
 
@@ -1892,7 +1885,6 @@ msgid "Ctrl+F2"
 msgstr "Ctrl+F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1344
-#, fuzzy
 msgid "Jump to Next &Bookmark"
 msgstr "Sonraki &yer işaretine atla"
 
@@ -1901,7 +1893,6 @@ msgid "F2"
 msgstr "F2"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1348
-#, fuzzy
 msgid "Jump to &Previous Bookmark"
 msgstr "Ö&nceki yer işaretine atla"
 
@@ -1918,7 +1909,6 @@ msgid "F11"
 msgstr "F11"
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1356
-#, fuzzy
 msgid "&Hide Editor Toolbar"
 msgstr "Düzenleyici araç çubuğunu &gizle"
 
@@ -1943,7 +1933,6 @@ msgid "Export as PDF..."
 msgstr "PDF olarak dışa aktar..."
 
 #: build/OpenSCADLibInternal_autogen/include/ui_MainWindow.h:1364
-#, fuzzy
 msgid "Hide &3D View Toolbar"
 msgstr "&3B Görünüm araç çubuğunu gizle"
 
@@ -3203,7 +3192,7 @@ msgstr "Seçilen görüntü dosyası açılamadı."
 
 #: src/gui/ai/ChatWidget.cc:577
 msgid "[Img]"
-msgstr "[Görüntü]"
+msgstr "[Img]"
 
 #: src/gui/ai/ChatWidget.cc:582
 msgid "Remove attachment"
