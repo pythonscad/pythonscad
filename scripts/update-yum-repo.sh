@@ -225,9 +225,17 @@ gpgcheck=1
 gpgkey=${REPO_BASE_URL}/yum/RPM-GPG-KEY-pythonscad
 metadata_expire=1d
 
-[pythonscad-el]
-name=PythonSCAD Enterprise Linux
-baseurl=${REPO_BASE_URL}/yum/packages/el/\$releasever/\$basearch
+[pythonscad-el9]
+name=PythonSCAD EL9
+baseurl=${REPO_BASE_URL}/yum/packages/el/9/\$basearch
+enabled=0
+gpgcheck=1
+gpgkey=${REPO_BASE_URL}/yum/RPM-GPG-KEY-pythonscad
+metadata_expire=1d
+
+[pythonscad-el10]
+name=PythonSCAD EL10
+baseurl=${REPO_BASE_URL}/yum/packages/el/10/\$basearch
 enabled=0
 gpgcheck=1
 gpgkey=${REPO_BASE_URL}/yum/RPM-GPG-KEY-pythonscad
@@ -320,8 +328,10 @@ sudo dnf install pythonscad</pre>
     <pre>sudo curl -L -o /etc/yum.repos.d/pythonscad.repo \\
   ${REPO_BASE_URL}/yum/pythonscad.repo
 sudo dnf config-manager --set-disabled pythonscad
-sudo dnf config-manager --set-enabled pythonscad-el
+sudo dnf config-manager --set-enabled pythonscad-el9
 sudo dnf install pythonscad</pre>
+    <p>On EL10, enable <code>pythonscad-el10</code> instead of <code>pythonscad-el9</code>.
+    These repositories use major-version paths even when the system is pinned to a minor release.</p>
 
     <h2>Supported Architectures</h2>
     <ul>

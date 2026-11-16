@@ -89,13 +89,16 @@ class DistributionTests(unittest.TestCase):
                            check=True, capture_output=True, text=True)
             config = configparser.ConfigParser(interpolation=None)
             config.read(repo / 'pythonscad.repo')
-            baseurl = config['pythonscad-el']['baseurl']
-            for version in ('9', '10'):
-                url = baseurl.replace('$releasever', version).replace('$basearch', 'x86_64')
+            for version in ('9', '9.4', '10', '10.2'):
+                major = version.split('.')[0]
+                baseurl = config[f'pythonscad-el{major}']['baseurl']
+                self.assertNotIn('$releasever', baseurl)
+                url = baseurl.replace('$basearch', 'x86_64')
                 self.assertTrue((repo / url.split('/yum/', 1)[1]).is_dir())
             instructions = (repo / 'index.html').read_text()
             self.assertIn('config-manager --set-disabled pythonscad', instructions)
-            self.assertIn('config-manager --set-enabled pythonscad-el\n', instructions)
+            self.assertIn('config-manager --set-enabled pythonscad-el9\n', instructions)
+            self.assertIn('<code>pythonscad-el10</code>', instructions)
 
 
 if __name__ == '__main__':
