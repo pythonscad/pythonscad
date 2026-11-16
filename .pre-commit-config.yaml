@@ -110,6 +110,12 @@ repos:
             exclude: ^(submodules|tests/data)/
     - repo: local
       hooks:
+          - id: supported-distributions
+            name: supported distribution matrix regression tests
+            entry: python tests/test_supported_distributions.py
+            language: python
+            files: ^(supported-distributions\.json|tests/test_supported_distributions\.py|\.github/workflows/build-(debian|rpm)-packages\.yml)$
+            pass_filenames: false
           # The AppStream <releases> block in pythonscad.appdata.xml.in is
           # generated from CHANGELOG.md by scripts/update-appdata-releases.py.
           # Fail if the committed file drifts from what the generator would

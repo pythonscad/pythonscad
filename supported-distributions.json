@@ -11,7 +11,7 @@
       "version": "22.04",
       "codename": "jammy",
       "lts": true,
-      "eol_date": "2027-06",
+      "eol_date": "2027-05",
       "runner": "ubuntu-22.04",
       "docker_image": "ubuntu@sha256:ce941a2a18bbb922e434d6d6d2b31e571a5c3826eaf6ada0a41dcc905bd2d906",
       "architectures": [
@@ -34,12 +34,12 @@
     {
       "family": "ubuntu",
       "name": "Ubuntu",
-      "version": "25.10",
-      "codename": "questing",
-      "lts": false,
-      "eol_date": "2026-07",
+      "version": "26.04",
+      "codename": "resolute",
+      "lts": true,
+      "eol_date": "2031-05",
       "runner": "ubuntu-24.04",
-      "docker_image": "ubuntu@sha256:91e7ac4c041dd191af1b9012fadbf489280894699c3f31e180969c4478781b7b",
+      "docker_image": "ubuntu@sha256:d31acef2a964b6df1f2b7e20a1525c4f2378024e087a4f8a8a9a4247e6a79573",
       "architectures": [
         "amd64"
       ]
@@ -47,12 +47,12 @@
     {
       "family": "ubuntu",
       "name": "Ubuntu",
-      "version": "26.04",
-      "codename": "resolute",
-      "lts": true,
-      "eol_date": "2031-05",
+      "version": "26.10",
+      "codename": "stonking",
+      "lts": false,
+      "eol_date": "2027-07",
       "runner": "ubuntu-24.04",
-      "docker_image": "ubuntu@sha256:d31acef2a964b6df1f2b7e20a1525c4f2378024e087a4f8a8a9a4247e6a79573",
+      "docker_image": "ubuntu@sha256:8f52618638aaad6b239d47d734112b15757a22fe1a8e76ace2c402e33ed672c8",
       "architectures": [
         "amd64"
       ]
@@ -89,7 +89,7 @@
       "version": "43",
       "codename": "43",
       "lts": false,
-      "eol_date": "2026-11",
+      "eol_date": "2026-12",
       "runner": "ubuntu-24.04",
       "docker_image": "fedora@sha256:815a0cf451f5741be990631adfb4a3afb0140ebb1f65d7698205b531ba2f0da4",
       "architectures": [
@@ -110,6 +110,19 @@
       ]
     },
     {
+      "family": "fedora",
+      "name": "Fedora",
+      "version": "45",
+      "codename": "45",
+      "lts": false,
+      "eol_date": "2027-12",
+      "runner": "ubuntu-24.04",
+      "docker_image": "fedora@sha256:53d138f25f6738257c78553d51369b662efc0e0eb1cd1556a2fe0ad5a115be88",
+      "architectures": [
+        "amd64"
+      ]
+    },
+    {
       "family": "el",
       "name": "Rocky Linux",
       "version": "9",
@@ -119,6 +132,20 @@
       "runner": "ubuntu-24.04",
       "docker_image":
         "rockylinux@sha256:d644d203142cd5b54ad2a83a203e1dee68af2229f8fe32f52a30c6e1d3c3a9e0",
+      "architectures": [
+        "amd64"
+      ]
+    },
+    {
+      "family": "el",
+      "name": "Rocky Linux",
+      "version": "10",
+      "codename": "10",
+      "lts": true,
+      "eol_date": "2035-05",
+      "runner": "ubuntu-24.04",
+      "docker_image":
+        "rockylinux/rockylinux@sha256:e372170ca8630f0f03e9b70fdd0bf4a3ce3426b0de7cdba615f06337389de176",
       "architectures": [
         "amd64"
       ]
