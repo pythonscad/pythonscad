@@ -64,6 +64,15 @@ class PyOpenSCAD:
     """4x4 transformation matrix representing the object's origin.
     Initialized as identity matrix."""
 
+    size: Optional[Union[Vector2, Vector3]]
+    """Bounding-box extents: ``[x, y, z]`` for 3D, ``[x, y]`` for 2D.
+    Returned as a vector supporting arithmetic (e.g. ``obj.size * 2``)."""
+
+    position: Optional[Union[Vector2, Vector3]]
+    """Minimum corner of the bounding box: ``[x, y, z]`` for 3D, ``[x, y]``
+    for 2D. Returned as a vector supporting arithmetic
+    (e.g. ``obj.translate(obj.position * -1)``)."""
+
     def __iter__(self) -> ChildIterator: ...
     def __len__(self) -> int: ...
 
@@ -245,7 +254,7 @@ class PyOpenSCAD:
         ...
 
     def output(self) -> None:
-        """sme as show"""
+        """Deprecated alias for :meth:`show`. Prefer ``obj.show()``."""
         ...
 
     def show(self) -> None:
@@ -846,8 +855,9 @@ def cylinder(
     ...
 
 def sphere(
-    r: Optional[float] = None,
+    r: Optional[Union[float, Callable[[Vector3], float]]] = None,
     d: Optional[float] = None,
+    style: Optional[str] = None,
     fn: Optional[float] = None,
     fa: Optional[float] = None,
     fs: Optional[float] = None,
@@ -855,8 +865,13 @@ def sphere(
     """Create a sphere primitive.
 
     Args:
-        r: Radius of the sphere. Must be positive. Cannot be used with d.
+        r: Radius of the sphere, or a Python function ``f(v) -> radius`` that
+            receives a unit direction vector. Must be positive when numeric.
+            Cannot be used with d.
         d: Diameter of the sphere. Must be positive. Cannot be used with r.
+        style: Tessellation style, ``"orig"`` (default, rings of latitude) or
+            ``"octa"`` (subdivided octahedron with vertices on the poles and
+            equators matching ``cylinder()``).
         fn: Number of fragments for sphere approximation.
         fa: Minimum angle for each fragment.
         fs: Minimum size for each fragment.
@@ -1296,7 +1311,7 @@ def render(obj: PyOpenSCADs, convexity: int = 2) -> PyOpenSCAD:
     ...
 
 def output(obj: PyOpenSCAD) -> None:
-    """same as show"""
+    """Deprecated alias for :func:`show`. Prefer ``show(obj)``."""
     ...
 def resize(
     obj: PyOpenSCADs,
@@ -1574,7 +1589,9 @@ def osuse(file: str) -> PyOpenSCAD:
     """Import an OpenSCAD library, exposing its modules and functions.
 
     Args:
-        file: Path to the OpenSCAD (.scad) file to import.
+        file: Path to the OpenSCAD (.scad) file to import. Relative paths are
+            resolved against the script directory first, then against the
+            configured OpenSCAD library path.
 
     Returns:
         An object with the library's modules and functions as attributes.
@@ -1588,6 +1605,17 @@ def osuse(file: str) -> PyOpenSCAD:
         >>> # Call a function to compute a value
         >>> width = lib.get_width()
         >>> area = lib.calculate_area(width=5, height=10)
+    """
+    ...
+
+def nimport(url: str) -> None:
+    """Deprecated. Download a remote ``.py`` file and star-import it.
+
+    Prefer publishing and installing a normal Python package instead.
+    See the Libraries documentation for the supported workflow.
+
+    Args:
+        url: HTTP(S) URL of a single ``.py`` file.
     """
     ...
 
