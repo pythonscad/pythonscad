@@ -114,7 +114,7 @@ repos:
             name: supported distribution matrix regression tests
             entry: python tests/test_supported_distributions.py
             language: python
-            files: ^(supported-distributions\.json|tests/test_supported_distributions\.py|\.github/workflows/build-(debian|rpm)-packages\.yml)$
+            files: ^(scripts/update-yum-repo\.sh|supported-distributions\.json|tests/test_supported_distributions\.py|\.github/workflows/build-(debian|rpm)-packages\.yml)$
             pass_filenames: false
           # The AppStream <releases> block in pythonscad.appdata.xml.in is
           # generated from CHANGELOG.md by scripts/update-appdata-releases.py.

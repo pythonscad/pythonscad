@@ -1,11 +1,13 @@
 """Exercise the package workflows against the November 2026 lifecycle audit."""
 
+import configparser
 import contextlib
 import io
 import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import tempfile
 import types
 import unittest
@@ -64,8 +66,36 @@ class DistributionTests(unittest.TestCase):
     def test_corrected_expiry_months(self):
         deb = self.matrix('build-debian-packages.yml', '2027-06')
         self.assertNotIn(('ubuntu', '22.04'), {(x['distro'], x['version']) for x in deb})
+        december = self.matrix('build-rpm-packages.yml', '2026-12')
+        self.assertIn(('fedora', '43'), {(x['distro'], x['version']) for x in december})
         rpm = self.matrix('build-rpm-packages.yml', '2027-01')
         self.assertNotIn(('fedora', '43'), {(x['distro'], x['version']) for x in rpm})
+
+
+    def test_el_client_repository_matches_release(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, repo, tools = (root / name for name in ('rpms', 'repo', 'bin'))
+            for path in (source, repo, tools):
+                path.mkdir()
+            for version in ('9', '10'):
+                (source / f'pythonscad-1.1.2-1.el{version}.x86_64.rpm').touch()
+            stub = tools / 'createrepo_c'
+            stub.write_text('#!/bin/sh\nexit 0\n')
+            stub.chmod(0o755)
+            subprocess.run(['bash', str(ROOT / 'scripts/update-yum-repo.sh'), str(source)],
+                           env={**os.environ, 'REPO_DIR': str(repo), 'GPG_KEY': '',
+                                'PATH': str(tools) + os.pathsep + os.environ['PATH']},
+                           check=True, capture_output=True, text=True)
+            config = configparser.ConfigParser(interpolation=None)
+            config.read(repo / 'pythonscad.repo')
+            baseurl = config['pythonscad-el']['baseurl']
+            for version in ('9', '10'):
+                url = baseurl.replace('$releasever', version).replace('$basearch', 'x86_64')
+                self.assertTrue((repo / url.split('/yum/', 1)[1]).is_dir())
+            instructions = (repo / 'index.html').read_text()
+            self.assertIn('config-manager --set-disabled pythonscad', instructions)
+            self.assertIn('config-manager --set-enabled pythonscad-el\n', instructions)
 
 
 if __name__ == '__main__':
