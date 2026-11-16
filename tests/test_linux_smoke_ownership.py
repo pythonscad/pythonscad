@@ -66,7 +66,7 @@ docker() {
     shift
   done
   body=${body//\/tmp\/pythonscad-smoke/$FIXTURE_OUTPUT}
-  bash -c "$body"
+  command bash -c "$body"
 }
 SCRIPT_DIR=unused-fixture-directory
 '''
@@ -80,7 +80,8 @@ SCRIPT_DIR=unused-fixture-directory
                         ["bash", "-c", fixtures + functions +
                          f'\nrun_{package_type}_package_test fixture.{package_type} fixture "$FIXTURE_OUTPUT"'],
                         env={**os.environ, "FIXTURE_OUTPUT": str(output),
-                             "FIXTURE_LOG": str(log), "FIXTURE_STATUS": str(status)},
+                             "FIXTURE_LOG": str(log), "FIXTURE_STATUS": str(status),
+                             "QT_QPA_PLATFORM": "offscreen"},
                         capture_output=True, text=True, timeout=10,
                     )
                     self.assertEqual(result.returncode, status, result.stderr)
