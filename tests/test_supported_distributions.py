@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 import types
 import unittest
@@ -75,7 +76,7 @@ class DistributionTests(unittest.TestCase):
     def test_ubuntu_2610_dependency_names(self):
         def packages(version):
             result = subprocess.run(
-                ['python3', str(ROOT / 'scripts/get-dependencies.py'), '--distro', 'ubuntu',
+                [sys.executable, str(ROOT / 'scripts/get-dependencies.py'), '--distro', 'ubuntu',
                  '--version', version, '--profile', 'pythonscad-qt6', '--list'],
                 check=True, capture_output=True, text=True)
             return set(result.stdout.splitlines()[3:])
@@ -89,6 +90,7 @@ class DistributionTests(unittest.TestCase):
                       (ROOT / 'debian/control').read_text())
 
 
+    @unittest.skipIf(os.name == "nt", "YUM repository generator requires Unix Bash")
     def test_el_client_repository_matches_release(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
