@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -17,13 +18,13 @@ source "$FIXTURE_COMMON"
 rs_write_common_test_inputs() { :; }
 rs_log() { :; }
 rs_run_logged() { printf '%s\n' "${@: -1}"; return 77; }
-rs_smoke_binary /bin/true fixture /tmp 0 "$FIXTURE_STARTUP"
+rs_smoke_binary "$FIXTURE_EXE" fixture /tmp 0 "$FIXTURE_STARTUP"
 '''
         for option in ("--info", "--version"):
             result = subprocess.run(
                 ["bash", "-c", fixture], capture_output=True, text=True,
                 env={**os.environ, "FIXTURE_COMMON": str(root / "scripts/release-smoke/common-smoke.sh"),
-                     "FIXTURE_STARTUP": option}, timeout=10)
+                     "FIXTURE_STARTUP": option, "FIXTURE_EXE": sys.executable}, timeout=10)
             self.assertEqual(result.returncode, 77, result.stderr)
             self.assertEqual(result.stdout.strip(), option)
 
