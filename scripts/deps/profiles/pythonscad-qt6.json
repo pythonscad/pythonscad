@@ -3,5 +3,25 @@
     "qt6",
     "pythonscad"
   ],
-  "distros": {}
+  "distros": {
+    "ubuntu": {
+      "version_overrides": {
+        "24": {
+          "add": [
+            "catch2"
+          ],
+          "remove": []
+        },
+        "26.10": {
+          "add": [
+            "qt6-5compat-dev"
+          ],
+          "remove": [
+            "libboost-system-dev",
+            "libqt6core5compat6-dev"
+          ]
+        }
+      }
+    }
+  }
 }

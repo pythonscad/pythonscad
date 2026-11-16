@@ -101,11 +101,9 @@ for rpm in "${RPM_SOURCE_DIR}"/*.rpm; do
     # Dynamically extract distribution and version from dist tag
     # Examples: .fc43. -> fedora/43, .el9. -> el/9, .el10. -> el/10
     if [[ "$filename" =~ \.fc([0-9]+)\. ]]; then
-        distro="fedora"
         version="${BASH_REMATCH[1]}"
         dest="${REPO_DIR}/packages/fedora/${version}/${arch}"
     elif [[ "$filename" =~ \.el([0-9]+)\. ]]; then
-        distro="el"
         version="${BASH_REMATCH[1]}"
         dest="${REPO_DIR}/packages/el/${version}/${arch}"
     else
@@ -234,6 +232,14 @@ enabled=0
 gpgcheck=1
 gpgkey=${REPO_BASE_URL}/yum/RPM-GPG-KEY-pythonscad
 metadata_expire=1d
+
+[pythonscad-el10]
+name=PythonSCAD EL10
+baseurl=${REPO_BASE_URL}/yum/packages/el/10/\$basearch
+enabled=0
+gpgcheck=1
+gpgkey=${REPO_BASE_URL}/yum/RPM-GPG-KEY-pythonscad
+metadata_expire=1d
 EOF
 
 # Create index.html
@@ -321,8 +327,11 @@ sudo dnf install pythonscad</pre>
     <h3>RHEL/Rocky/AlmaLinux</h3>
     <pre>sudo curl -L -o /etc/yum.repos.d/pythonscad.repo \\
   ${REPO_BASE_URL}/yum/pythonscad.repo
+sudo dnf config-manager --set-disabled pythonscad
 sudo dnf config-manager --set-enabled pythonscad-el9
 sudo dnf install pythonscad</pre>
+    <p>On EL10, enable <code>pythonscad-el10</code> instead of <code>pythonscad-el9</code>.
+    These repositories use major-version paths even when the system is pinned to a minor release.</p>
 
     <h2>Supported Architectures</h2>
     <ul>
