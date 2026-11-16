@@ -114,7 +114,7 @@ repos:
             name: Linux package smoke harness regression tests
             entry: python tests/test_linux_smoke_ownership.py
             language: python
-            files: ^(scripts/release-smoke/test-linux-packages\.sh|tests/test_linux_smoke_ownership\.py)$
+            files: ^(scripts/release-smoke/(test-linux-packages|common-smoke)\.sh|tests/test_linux_smoke_ownership\.py)$
             pass_filenames: false
           - id: supported-distributions
             name: supported distribution matrix regression tests

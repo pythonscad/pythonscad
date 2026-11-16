@@ -9,6 +9,24 @@ import unittest
 
 @unittest.skipIf(os.name == "nt", "Linux container shell fixtures require Unix")
 class OutputOwnershipTests(unittest.TestCase):
+    def test_startup_check_can_avoid_opengl(self):
+        root = Path(__file__).resolve().parents[1]
+        fixture = r'''
+set -e
+source "$FIXTURE_COMMON"
+rs_write_common_test_inputs() { :; }
+rs_log() { :; }
+rs_run_logged() { printf '%s\n' "${@: -1}"; return 77; }
+rs_smoke_binary /bin/true fixture /tmp 0 "$FIXTURE_STARTUP"
+'''
+        for option in ("--info", "--version"):
+            result = subprocess.run(
+                ["bash", "-c", fixture], capture_output=True, text=True,
+                env={**os.environ, "FIXTURE_COMMON": str(root / "scripts/release-smoke/common-smoke.sh"),
+                     "FIXTURE_STARTUP": option}, timeout=10)
+            self.assertEqual(result.returncode, 77, result.stderr)
+            self.assertEqual(result.stdout.strip(), option)
+
     def test_ownership_restored_on_success_and_failure(self):
         root = Path(__file__).resolve().parents[1]
         script = (root / "scripts/release-smoke/test-linux-packages.sh").read_text()
@@ -21,6 +39,9 @@ ensure_rpm_smoke_image() { echo fixture-image; }
 apt-get() { :; }
 dnf() { :; }
 xvfb-run() {
+  if [[ "${QT_QPA_PLATFORM:-}" == offscreen ]]; then
+    [[ "$*" == *"--version"* ]] || return 99
+  fi
   printf '%s\n' "${QT_QPA_PLATFORM:-}" > "$FIXTURE_OUTPUT/platform"
   mkdir -p "$FIXTURE_OUTPUT/nested"
   touch "$FIXTURE_OUTPUT/nested/result.stl"
@@ -32,7 +53,7 @@ chown() {
 }
 bash() {
   if [[ "${QT_QPA_PLATFORM:-}" == offscreen ]]; then
-    xvfb-run
+    xvfb-run "$@"
   else
     command bash "$@"
   fi

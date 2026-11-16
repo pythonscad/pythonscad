@@ -316,7 +316,7 @@ run_rpm_package_test() {
       fi
       QT_QPA_PLATFORM=offscreen bash -c '"'"'
         source /release-smoke/common-smoke.sh
-        rs_smoke_binary /usr/bin/pythonscad "$PACKAGE_FILE" /tmp/pythonscad-smoke
+        rs_smoke_binary /usr/bin/pythonscad "$PACKAGE_FILE" /tmp/pythonscad-smoke 0 --version
       '"'"'
     '
 }

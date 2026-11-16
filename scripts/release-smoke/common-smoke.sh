@@ -233,6 +233,7 @@ rs_smoke_binary() {
   local label=$2
   local workdir=$3
   local expect_pyqt6=${4:-0}
+  local startup_option=${5:---info}
 
   [[ -x "$exe" ]] || rs_die "executable is not runnable: $exe"
 
@@ -240,7 +241,7 @@ rs_smoke_binary() {
   rs_write_common_test_inputs "$testdir"
 
   rs_log "Smoke testing $label: startup"
-  rs_run_logged "$label: startup" "$testdir/info.log" "$exe" --info
+  rs_run_logged "$label: startup" "$testdir/info.log" "$exe" "$startup_option"
 
   rs_log "Smoke testing $label: OpenSCAD .scad export"
   rs_run_logged "$label: OpenSCAD .scad export" "$testdir/scad-export.log" \
