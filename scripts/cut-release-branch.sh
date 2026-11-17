@@ -145,11 +145,12 @@ if [ "$do_bootstrap" -eq 1 ]; then
   fi
   git checkout "${bootstrap_ref}" -- "${bootstrap_paths[@]}"
   # --only commits just these paths even if something else got staged.
-  git commit --only -- "${bootstrap_paths[@]}" -m "$(cat <<'EOF'
+  # Options must come before `--` / pathspecs.
+  git commit --only -m "$(cat <<'EOF'
 ci: bootstrap release maintenance-branch automation
 
 EOF
-)"
+)" -- "${bootstrap_paths[@]}"
 fi
 
 git push -u "${remote}" "${branch}"
