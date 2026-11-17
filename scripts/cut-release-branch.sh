@@ -31,6 +31,20 @@ needs_release_automation_bootstrap() {
   return 1
 }
 
+# Files copied from master onto older tags so Release Please, deploy guards,
+# and the PR helper test job all work on the new maintenance branch.
+bootstrap_paths=(
+  .github/workflows/release-please.yml
+  .release-please-config.json
+  .release-please-config.release.json
+  .github/scripts/is-latest-semver-tag.sh
+  .github/scripts/is-latest-semver-tag.test.py
+  .github/workflows/deploy-website.yml
+  .github/workflows/build-wasm.yml
+  scripts/cut-release-branch.sh
+  scripts/cut-release-branch.test.py
+)
+
 if [ $# -lt 1 ]; then
   usage
 fi
@@ -100,6 +114,23 @@ if needs_release_automation_bootstrap "${tag}"; then
   do_bootstrap=1
 fi
 
+if [ "$do_bootstrap" -eq 1 ]; then
+  # Untracked files at bootstrap paths survive branch switches and would be
+  # clobbered by `git checkout <ref> -- <path>`.
+  collisions=0
+  for path in "${bootstrap_paths[@]}"; do
+    if [ -e "$path" ] || [ -L "$path" ]; then
+      if ! git ls-files --error-unmatch -- "$path" >/dev/null 2>&1; then
+        echo "error: untracked file would be overwritten by bootstrap: ${path}" >&2
+        collisions=1
+      fi
+    fi
+  done
+  if [ "$collisions" -ne 0 ]; then
+    exit 1
+  fi
+fi
+
 echo "Creating ${branch} from ${tag}"
 if [ "$do_bootstrap" -eq 1 ]; then
   echo "Tag ${tag} predates maintenance-branch automation; will bootstrap from ${bootstrap_ref}"
@@ -121,16 +152,6 @@ git branch "${branch}" "${tag}"
 git checkout "${branch}"
 
 if [ "$do_bootstrap" -eq 1 ]; then
-  # Minimum set so Release Please runs on this line and patch tags cannot
-  # roll production website/playground deploys back to an older tree.
-  bootstrap_paths=(
-    .github/workflows/release-please.yml
-    .release-please-config.json
-    .release-please-config.release.json
-    .github/scripts/is-latest-semver-tag.sh
-    .github/workflows/deploy-website.yml
-    .github/workflows/build-wasm.yml
-  )
   missing=0
   for path in "${bootstrap_paths[@]}"; do
     if ! git cat-file -e "${bootstrap_ref}:${path}" 2>/dev/null; then

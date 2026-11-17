@@ -85,15 +85,19 @@ class CutReleaseBranchTest(unittest.TestCase):
             ".release-please-config.json",
             ".release-please-config.release.json",
             ".github/scripts/is-latest-semver-tag.sh",
+            ".github/scripts/is-latest-semver-tag.test.py",
             ".github/workflows/deploy-website.yml",
             ".github/workflows/build-wasm.yml",
+            "scripts/cut-release-branch.sh",
+            "scripts/cut-release-branch.test.py",
         ):
             src = self.repo_root / rel
             dst = self.work / rel
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
-        # Make the copied shell script executable in the fixture tree.
+        # Make the copied shell scripts executable in the fixture tree.
         (self.work / ".github/scripts/is-latest-semver-tag.sh").chmod(0o755)
+        (self.work / "scripts/cut-release-branch.sh").chmod(0o755)
         self._commit_all("ci: add maintenance-branch automation")
         _git(self.work, "push", "origin", "HEAD:master")
 
@@ -120,6 +124,22 @@ class CutReleaseBranchTest(unittest.TestCase):
         # Must not create the branch.
         self.assertFalse((self.work / ".git" / "refs" / "heads" / "release" / "1.1").exists())
 
+    def test_rejects_untracked_bootstrap_collision(self) -> None:
+        self._seed_old_tag()
+        self._seed_master_automation()
+        # Start from the old tag tree (bootstrap paths absent) with an
+        # untracked file that checkout-from-master would clobber.
+        _git(self.work, "checkout", "-B", "from-old", "v1.1.2")
+        collision = self.work / ".release-please-config.release.json"
+        self.assertFalse(collision.exists())
+        collision.write_text("{}\n", encoding="utf-8")
+        result = self._run_script("1.1.2", check=False)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("untracked file would be overwritten", result.stderr)
+        self.assertTrue(collision.exists())
+        self.assertEqual(collision.read_text(encoding="utf-8"), "{}\n")
+        self.assertFalse((self.work / ".git" / "refs" / "heads" / "release" / "1.1").exists())
+
     def test_bootstraps_older_tag_and_restores_checkout(self) -> None:
         self._seed_old_tag()
         self._seed_master_automation()
@@ -141,10 +161,17 @@ class CutReleaseBranchTest(unittest.TestCase):
 
         # Bootstrap commit brought in the release config and release/** trigger.
         tip = _git(self.work, "rev-parse", "release/1.1").stdout.strip()
-        self.assertTrue(
-            _git(self.work, "cat-file", "-e", f"{tip}:.release-please-config.release.json", check=False).returncode
-            == 0
-        )
+        for rel in (
+            ".release-please-config.release.json",
+            "scripts/cut-release-branch.sh",
+            "scripts/cut-release-branch.test.py",
+            ".github/scripts/is-latest-semver-tag.test.py",
+        ):
+            self.assertEqual(
+                _git(self.work, "cat-file", "-e", f"{tip}:{rel}", check=False).returncode,
+                0,
+                f"missing bootstrap path {rel}",
+            )
         workflow = _git(self.work, "show", f"{tip}:.github/workflows/release-please.yml").stdout
         self.assertIn("release/**", workflow)
         log = _git(self.work, "log", "-1", "--format=%s", tip).stdout.strip()
