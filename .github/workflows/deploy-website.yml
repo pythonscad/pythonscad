@@ -6,6 +6,11 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    paths:
+      - .github/scripts/is-latest-semver-tag.sh
+      - .github/scripts/is-latest-semver-tag.test.py
+      - .github/workflows/deploy-website.yml
   workflow_dispatch:
     inputs:
       target:
@@ -25,24 +30,52 @@ permissions:
   contents: read
 
 jobs:
+  test-latest-semver-helper:
+    name: Test is-latest-semver-tag helper
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Run helper unit tests
+        run: python3 .github/scripts/is-latest-semver-tag.test.py
+
   resolve-targets:
     name: Resolve deploy targets
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-26.04
     outputs:
       skip: ${{ steps.targets.outputs.skip }}
       targets: ${{ steps.targets.outputs.targets }}
     steps:
+      # Needed so release events can compare the new tag against all semver
+      # tags and skip production deploys for older maintenance-line patches.
+      - name: Checkout repository
+        if: github.event_name == 'release'
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
       - id: targets
         env:
           EVENT: ${{ github.event_name }}
           REF: ${{ github.ref }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
           INPUT_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || '' }}
         run: |
           set -euo pipefail
           targets=()
           case "$EVENT" in
             release)
-              targets+=("production" "test")
+              # Patch releases on older release/X.Y lines must not roll the
+              # production site back to that older tree.
+              if ./.github/scripts/is-latest-semver-tag.sh "$RELEASE_TAG"; then
+                targets+=("production" "test")
+              fi
               ;;
             push)
               if [ "$REF" = "refs/heads/master" ]; then
