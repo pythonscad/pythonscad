@@ -541,11 +541,14 @@ smoke testing, JavaScript API (`EmsInitPython` / `EmsEvaluatePython`), and known
 PythonSCAD uses automated semantic versioning via Release Please bot:
 
 - Version is determined from conventional commit messages
-- `feat:` commits bump patch version before 1.0, and minor version after 1.0
-- `fix:` commits bump patch version
-- `feat!:` or `BREAKING CHANGE:` bump minor version before 1.0, and major
-  version after 1.0
-- Release PR is auto-created when commits are merged to master
-- Merging Release PR creates git tag and GitHub release
+- On `master`: `feat:` bumps minor, `fix:` bumps patch, `feat!:` /
+  `BREAKING CHANGE:` bumps major
+- On `release/X.Y` maintenance branches: always bump patch
+  (`.release-please-config.release.json`)
+- Release PR is auto-created when releasable commits land on the target branch
+- Merging a Release PR creates a git tag and GitHub release
+- After each minor tag, cut `release/X.Y` with
+  `./scripts/cut-release-branch.sh X.Y.Z` so hotfixes can ship while
+  `master` continues toward the next minor
 
 See `VERSIONING.md` for complete details.
