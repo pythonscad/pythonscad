@@ -77,6 +77,14 @@ if git show-ref --verify --quiet "refs/heads/${branch}" \
   exit 1
 fi
 
+# Switching branches / committing bootstrap files must not drag along
+# unrelated local edits (staged or unstaged tracked changes).
+if ! git diff-index --quiet HEAD --; then
+  echo "error: working tree has uncommitted changes; commit or stash first" >&2
+  git diff-index --name-status HEAD -- >&2 || true
+  exit 1
+fi
+
 bootstrap_ref="${remote}/master"
 if ! git rev-parse -q --verify "refs/remotes/${bootstrap_ref}" >/dev/null \
   && ! git rev-parse -q --verify "refs/heads/master" >/dev/null; then
@@ -136,8 +144,8 @@ if [ "$do_bootstrap" -eq 1 ]; then
     exit 1
   fi
   git checkout "${bootstrap_ref}" -- "${bootstrap_paths[@]}"
-  git add -- "${bootstrap_paths[@]}"
-  git commit -m "$(cat <<'EOF'
+  # --only commits just these paths even if something else got staged.
+  git commit --only -- "${bootstrap_paths[@]}" -m "$(cat <<'EOF'
 ci: bootstrap release maintenance-branch automation
 
 EOF
