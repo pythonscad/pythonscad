@@ -160,15 +160,6 @@ def post_process_stlbin(filename):
 # why generic, partially length-changing text replacements are not
 # safe on binary STL bytes.
 #
-# AMF is intentionally *not* listed here: AMF mesh tessellation
-# (vertex order + triangle indexing) is not stable across the CI
-# matrix even with --enable=predictible-output, so byte-compare is not
-# viable yet. See PR #590 / issue #586 and the corresponding note in
-# ``tests/CMakeLists.txt``. If a future change makes AMF deterministic,
-# a ``post_process_amf`` helper that normalizes the
-# ``<metadata type="producer">PythonSCAD <version></metadata>`` line
-# (currently emitted from ``src/io/export_amf.cc``) will need to be
-# reintroduced alongside the fixture.
 _POST_PROCESSORS = {
     ".stl": tct.post_process_progname,
     ".stlbin": post_process_stlbin,
