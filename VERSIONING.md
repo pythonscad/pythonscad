@@ -88,8 +88,15 @@ After a minor release tag exists (for example `v1.2.0`):
 # or: git branch release/1.2 v1.2.0 && git push -u origin release/1.2
 ```
 
-The branch inherits the Release Please workflow and both config files from the
-tag. Pushes to `release/1.2` open patch Release PRs against that branch.
+Prefer the helper script. If the tag already contains the maintenance-branch
+Release Please workflow and `.release-please-config.release.json`, the new
+branch inherits them unchanged. If you cut from an **older** tag that predates
+that automation, `cut-release-branch.sh` commits those files (plus the
+website/playground “latest tag only” deploy guards) from `origin/master`
+onto the new branch before pushing, as a `ci:` commit that does not bump the
+version.
+
+Pushes to `release/1.2` then open patch Release PRs against that branch.
 
 Protect `release/*` the same way as `master` (required PR + required checks).
 

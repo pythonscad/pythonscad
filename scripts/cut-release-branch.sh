@@ -7,11 +7,28 @@
 #
 # Creates release/X.Y from tag vX.Y.Z so patch releases (X.Y.Z+1, ...) can
 # ship while master continues toward the next minor. See VERSIONING.md.
+#
+# If the tag predates the maintenance-branch Release Please / deploy guards,
+# the script commits those files from <remote>/master onto the new branch
+# before pushing (a no-version-bump `ci:` commit).
 set -euo pipefail
 
 usage() {
   echo "usage: $0 <version> [--dry-run] [--remote <name>]" >&2
   exit 1
+}
+
+# Return 0 when treeish is missing the release/** Release Please setup.
+needs_release_automation_bootstrap() {
+  local treeish="$1"
+  if ! git cat-file -e "${treeish}:.release-please-config.release.json" 2>/dev/null; then
+    return 0
+  fi
+  if ! git show "${treeish}:.github/workflows/release-please.yml" 2>/dev/null \
+    | grep -q 'release/\*\*'; then
+    return 0
+  fi
+  return 1
 }
 
 if [ $# -lt 1 ]; then
@@ -60,13 +77,73 @@ if git show-ref --verify --quiet "refs/heads/${branch}" \
   exit 1
 fi
 
+bootstrap_ref="${remote}/master"
+if ! git rev-parse -q --verify "refs/remotes/${bootstrap_ref}" >/dev/null \
+  && ! git rev-parse -q --verify "refs/heads/master" >/dev/null; then
+  echo "error: need ${remote}/master (or local master) to bootstrap older tags" >&2
+  exit 1
+fi
+if ! git rev-parse -q --verify "refs/remotes/${bootstrap_ref}" >/dev/null; then
+  bootstrap_ref="master"
+fi
+
+do_bootstrap=0
+if needs_release_automation_bootstrap "${tag}"; then
+  do_bootstrap=1
+fi
+
 echo "Creating ${branch} from ${tag}"
+if [ "$do_bootstrap" -eq 1 ]; then
+  echo "Tag ${tag} predates maintenance-branch automation; will bootstrap from ${bootstrap_ref}"
+fi
+
 if [ "$dry_run" -eq 1 ]; then
   echo "(dry-run) git branch ${branch} ${tag}"
+  if [ "$do_bootstrap" -eq 1 ]; then
+    echo "(dry-run) checkout release-please + deploy-guard files from ${bootstrap_ref}"
+    echo "(dry-run) git commit -m 'ci: bootstrap release maintenance-branch automation'"
+  fi
   echo "(dry-run) git push -u ${remote} ${branch}"
   exit 0
 fi
 
+start_ref="$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)"
+
 git branch "${branch}" "${tag}"
+git checkout "${branch}"
+
+if [ "$do_bootstrap" -eq 1 ]; then
+  # Minimum set so Release Please runs on this line and patch tags cannot
+  # roll production website/playground deploys back to an older tree.
+  bootstrap_paths=(
+    .github/workflows/release-please.yml
+    .release-please-config.json
+    .release-please-config.release.json
+    .github/scripts/is-latest-semver-tag.sh
+    .github/workflows/deploy-website.yml
+    .github/workflows/build-wasm.yml
+  )
+  missing=0
+  for path in "${bootstrap_paths[@]}"; do
+    if ! git cat-file -e "${bootstrap_ref}:${path}" 2>/dev/null; then
+      echo "error: ${bootstrap_ref} is missing ${path}; merge the maintenance-branch CI PR to master first" >&2
+      missing=1
+    fi
+  done
+  if [ "$missing" -ne 0 ]; then
+    git checkout "${start_ref}"
+    git branch -D "${branch}"
+    exit 1
+  fi
+  git checkout "${bootstrap_ref}" -- "${bootstrap_paths[@]}"
+  git add -- "${bootstrap_paths[@]}"
+  git commit -m "$(cat <<'EOF'
+ci: bootstrap release maintenance-branch automation
+
+EOF
+)"
+fi
+
 git push -u "${remote}" "${branch}"
+git checkout "${start_ref}"
 echo "Pushed ${branch}. Release Please will open patch release PRs against it."
