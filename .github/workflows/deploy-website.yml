@@ -10,7 +10,11 @@ on:
     paths:
       - .github/scripts/is-latest-semver-tag.sh
       - .github/scripts/is-latest-semver-tag.test.py
+      - scripts/cut-release-branch.sh
+      - scripts/cut-release-branch.test.py
       - .github/workflows/deploy-website.yml
+      - .github/workflows/release-please.yml
+      - .release-please-config.release.json
   workflow_dispatch:
     inputs:
       target:
@@ -30,8 +34,8 @@ permissions:
   contents: read
 
 jobs:
-  test-latest-semver-helper:
-    name: Test is-latest-semver-tag helper
+  test-release-helpers:
+    name: Test release helper scripts
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -40,8 +44,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run helper unit tests
+      - name: Run is-latest-semver-tag tests
         run: python3 .github/scripts/is-latest-semver-tag.test.py
+
+      - name: Run cut-release-branch tests
+        run: python3 scripts/cut-release-branch.test.py
 
   resolve-targets:
     name: Resolve deploy targets
