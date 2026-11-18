@@ -54,7 +54,8 @@ static std::string xml_attribute(const std::string& value)
   return result;
 }
 
-static void append_svg(const Polygon2d& poly, std::ostream& output, const ExportInfo& exportInfo)
+static void append_svg_sub(std::vector<Outline2d> outlines, std::ostream& output,
+                           const ExportInfo& exportInfo, bool closed)
 {
   // sort outlines by color
   while (outlines.size() > 0) {
@@ -64,16 +65,13 @@ static void append_svg(const Polygon2d& poly, std::ostream& output, const Export
     const ExportSvgOptions *options;
     const ExportSvgOptions defaultSvgOptions;
 
-  const std::string stroke = options->stroke ? xml_attribute(options->strokeColor) : "none";
-  const std::string fill = options->fill ? xml_attribute(options->fillColor) : "none";
-  const double strokeWidth = options->strokeWidth;
-  output << "<path d=\"\n";
-  for (const auto& o : poly.outlines()) {
-    if (o.vertices.empty()) {
-      continue;
+    if (exportInfo.optionsSvg) {
+      options = exportInfo.optionsSvg.get();
+    } else {
+      options = &defaultSvgOptions;
     }
 
-    const std::string fill = options->fill ? options->fillColor : "none";
+    const std::string fill = options->fill ? xml_attribute(options->fillColor) : "none";
     const double strokeWidth = options->strokeWidth;
     output << "<path d=\"\n";
     for (const auto& o : outlines) {
