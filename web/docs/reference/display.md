@@ -45,7 +45,7 @@ Passing a list of solids implicitly creates a union.
 
 ## export
 
-Export an object to a file. Supports STL, 3MF, OFF, AMF, and other formats based on the file extension.
+Export an object to a file. Supports STL, 3MF, OFF, and other formats based on the file extension.
 
 `export()` writes the file only when `preview` is false: F6 in the GUI,
 CLI `--render`, or a CLI mesh `-o` format such as STL/3MF. During F5
@@ -100,7 +100,7 @@ entry, all packed into the output file:
 * **3MF only.** For non-3MF extensions, dict values that aren't
   recognised as solids are filtered first; `TypeError: This Format
   can at most export one object` is raised only when more than one
-  recognised value remains. STL / OFF / AMF / etc. therefore still
+  recognised value remains. STL / OFF / etc. therefore still
   work for a dict that yields zero or one recognised value after
   filtering.
 * **`dict` only (including `dict` subclasses).** Mapping types that

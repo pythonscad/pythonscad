@@ -26,7 +26,7 @@ Export the given file to \fIoutputfile\fP instead of running the GUI. The file
 extension specifies the type. If this option is given, the GUI will not be started.
 May be used multiple times for different exports. Use '\-' for stdout.
 
-Known extensions: stl, off, wrl, amf, 3mf, csg, dxf, svg, pdf, png, echo, ast, term,
+Known extensions: stl, off, wrl, 3mf, csg, dxf, svg, pdf, png, echo, ast, term,
 nef3, nefdbg, param, pov.
 
 Additional formats, which are mainly used for debugging and testing (but can
