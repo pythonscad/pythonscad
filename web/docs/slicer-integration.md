@@ -18,9 +18,9 @@ it to the slicer. The same prompt applies to **Export…** (**F7**).
    slicer.
 
 The examples below configure [PrusaSlicer](https://www.prusa3d.com/page/prusaslicer_215/).
-Other slicers work the same way: point the executable at the slicer binary
-and pass the output file path as a parameter (use the **File** button to
-insert the placeholder).
+Other slicers work the same way: set the executable (on macOS the `.app`
+bundle; elsewhere the slicer binary) and pass the output file path as a
+parameter (use the **File** button to insert the placeholder).
 
 ## Linux (Flatpak)
 
@@ -55,10 +55,14 @@ the Preferences dialog instead of typing the path by hand.
 
 ## macOS
 
-Executable (inside the app bundle):
+On macOS, PythonSCAD launches the configured application with
+`open -a`, so the executable must be the **application bundle** (the
+`.app`), not the Mach-O binary inside `Contents/MacOS/`.
+
+Executable:
 
 ```text
-/Applications/PrusaSlicer.app/Contents/MacOS/PrusaSlicer
+/Applications/PrusaSlicer.app
 ```
 
 Parameters (one per line):
@@ -66,6 +70,6 @@ Parameters (one per line):
 - `--single-instance`
 - full path to the output file (use the **File** button)
 
-If PrusaSlicer lives under a different folder (for example
-`/Applications/Original Prusa Drivers/PrusaSlicer.app`), use that bundle's
-`Contents/MacOS/PrusaSlicer` path instead.
+If PrusaSlicer lives elsewhere (for example
+`/Applications/Original Prusa Drivers/PrusaSlicer.app`), point the
+executable at that `.app` bundle instead.
