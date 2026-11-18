@@ -173,6 +173,12 @@ See the new developer documentation on
 - **Export… / Export as…** (GIMP-style): remembers path, format and options per
   tab, replacing the per-format export submenu
   ([PR #1042](https://github.com/pythonscad/pythonscad/pull/1042)).
+- **Render-first prompts for Export (F7) and 3D Print (F8)**: if the design has
+  not been F6-rendered since the last change (or never rendered), a dialog now
+  offers **Render and Export** / **Render and Print** instead of failing. See
+  [Slicer integration](https://www.pythonscad.org/slicer-integration/) for
+  configuring a local slicer with F8
+  ([PR #1042](https://github.com/pythonscad/pythonscad/pull/1042)).
 - **Fullscreen mode** (F11) and unified window-geometry persistence
   ([PR #995](https://github.com/pythonscad/pythonscad/pull/995)).
 - Creating a

@@ -16,6 +16,9 @@ the `pythonscad` package includes its type information.
 To share or consume reusable geometry as versioned Python packages, see
 [Sharing and using libraries](libraries/index.md).
 
+To send designs to PrusaSlicer (or another slicer) with **F8**, see
+[Slicer integration](slicer-integration.md).
+
 [PyForge](https://pyforge.zima.digirent.nl) is a community platform for
 sharing PythonSCAD designs — similar to Thingiverse, but built
 specifically for PythonSCAD. Designs are shared including their source
