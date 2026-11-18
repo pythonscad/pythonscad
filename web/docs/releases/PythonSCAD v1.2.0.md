@@ -244,6 +244,10 @@ We kept merging upstream OpenSCAD regularly. Notable changes include:
   explicitly
 - [`sphere(style = "octa")`](https://www.pythonscad.org/reference/primitives3d/#sphere)
   octahedral tessellation (default remains `"orig"`)
+- `fragments(r|d)` returns how many sides a circle of that size would get under
+  the current [`fn` / `fa` / `fs`](https://www.pythonscad.org/reference/variables/)
+  settings (also available from Python)
+- `object()` and JSON `import()` are no longer experimental
 - AMF import/export removed; OFF import improvements and header fix
 - AI assistant: tool calling, chat export/import, viewport tools and agent modes
 - Nord color schemes
@@ -252,7 +256,8 @@ We kept merging upstream OpenSCAD regularly. Notable changes include:
 - SVG: entity handling fix and limited `<use>` expansion
 - Warnings when parameter limits are adjusted, NFC-normalised parameter set
   names
-- Updated German, French and Swedish translations
+- Open files with non-ASCII paths on Windows
+- Updated German, French, Swedish and Galician translations
 
 ## Packaging and platforms
 
