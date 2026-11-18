@@ -412,7 +412,8 @@ void checkUnpaintedExports(const std::string& root)
   auto ps = triangles();
   std::ostringstream off;
   export_off(ps, off, info);
-  require(off.str().find("3 0 1 2 129 162 190\n") != std::string::npos,
+  // OFF export always sorts vertices lexicographically, so the first triangle becomes 0 2 1.
+  require(off.str().find("3 0 2 1 129 162 190\n") != std::string::npos,
           "OFF negative color index lost the export default");
   std::ostringstream wrl;
   export_wrl(ps, wrl, info);
