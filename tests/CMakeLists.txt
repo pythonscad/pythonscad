@@ -1122,14 +1122,14 @@ add_cmdline_test(export-obj              EXPERIMENTAL OPENSCAD SUFFIX obj FILES 
 # The expected faces depend on how the caps are triangulated, which differs without Manifold.
 if (ENABLE_MANIFOLD_TESTS)
 file(GLOB LINEAR_EXTRUDE_SEGMENTS_FILES ${TEST_SCAD_DIR}/linear_extrude/linear_extrude-segments-*.scad)
-add_cmdline_test(linear_extrude-segments EXPERIMENTAL OPENSCAD SUFFIX obj FILES ${LINEAR_EXTRUDE_SEGMENTS_FILES} ARGS --enable=predictible-output)
+add_cmdline_test(linear_extrude-segments OPENSCAD SUFFIX obj FILES ${LINEAR_EXTRUDE_SEGMENTS_FILES})
 endif()
 add_cmdline_test(export-pov-as-is        EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --trust-python)
 
 if (ENABLE_LIB3MF_TESTS)
-add_cmdline_test(export-3mf              EXPERIMENTAL OPENSCAD SUFFIX 3mf FILES ${EXPORT_3MF_TEST_FILES} ARGS --enable=predictible-output)
-add_cmdline_test(export-3mf              EXPERIMENTAL OPENSCAD SUFFIX 3mf FILES ${EXPORT_3MF_LAZY_UNION_TEST_FILES} ARGS --enable=predictible-output --enable=lazy-union)
-add_cmdline_test(export-3mf-stdio        EXPERIMENTAL OPENSCAD SUFFIX 3mf FILES ${EXPORT_3MF_TEST_FILES} STDIO ARGS --enable=predictible-output --export-format 3mf)
+add_cmdline_test(export-3mf              OPENSCAD SUFFIX 3mf FILES ${EXPORT_3MF_TEST_FILES})
+add_cmdline_test(export-3mf              EXPERIMENTAL OPENSCAD SUFFIX 3mf FILES ${EXPORT_3MF_LAZY_UNION_TEST_FILES} ARGS --enable=lazy-union)
+add_cmdline_test(export-3mf-stdio        OPENSCAD SUFFIX 3mf FILES ${EXPORT_3MF_TEST_FILES} STDIO ARGS --export-format 3mf)
 endif()
 add_cmdline_test(export-pov-translate-1  EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=0,0,0,0,0,0,140 --trust-python)
 add_cmdline_test(export-pov-translate-2  EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=10,0,0,0,0,0,140 --trust-python)
@@ -1953,8 +1953,11 @@ disable_tests_safe(
 
   # When exported from CGAL, the file cannot be re-imported
   render-stl_bad-stl-wing
+  render-off-cgal_bad-stl-tardis
   render-off-cgal_bad-stl-wing
   render-obj_bad-stl-wing
+  render-3mf-cgal_bad-stl-tardis
+  render-3mf-cgal_bad-stl-wing
 
   # https://github.com/openscad/openscad/issues/2301
   render-cgal_issue2301
@@ -2039,8 +2042,6 @@ disable_tests_safe(
   preview-manifold_3mf-import-centered
   preview-manifold_import_3mf-tests
   render-off-manifold_issue5216
-  render-3mf-cgal_bad-stl-tardis
-  render-3mf-cgal_bad-stl-wing
   render-3mf-manifold_issue5216
 
   preview-cgal_import_3mf-tests

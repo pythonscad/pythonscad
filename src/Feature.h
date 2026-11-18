@@ -18,7 +18,6 @@ public:
   static const Feature ExperimentalLazyUnion;
   static const Feature ExperimentalPythonSeparateObjects;
   static const Feature ExperimentalVxORenderersIndexing;
-  static const Feature ExperimentalPredictibleOutput;
   static const Feature ExperimentalVectorSwizzle;
   static const Feature ExperimentalDiscretizationByError;
   static const Feature ExperimentalAiFeatures;
