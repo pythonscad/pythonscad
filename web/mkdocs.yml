@@ -60,6 +60,7 @@ nav:
       - PythonSCAD v0.16.0: releases/PythonSCAD v0.16.0.md
   - Playground: /playground/
   - Installation: installation.md
+  - Slicer integration: slicer-integration.md
   - Libraries:
       - Overview: libraries/index.md
       - Creating and publishing: libraries/creating.md
