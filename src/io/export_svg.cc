@@ -35,8 +35,26 @@
 #include "geometry/linalg.h"
 #include "io/export.h"
 
-static void append_svg_sub(std::vector<Outline2d> outlines, std::ostream& output,
-                           const ExportInfo& exportInfo, bool closed)
+// Escapes a value for use in a double-quoted XML attribute. The colors come
+// unchecked from the export options, e.g. -O export-svg/fill-color=...
+static std::string xml_attribute(const std::string& value)
+{
+  std::string result;
+  result.reserve(value.size());
+  for (const char c : value) {
+    switch (c) {
+    case '&':  result += "&amp;"; break;
+    case '<':  result += "&lt;"; break;
+    case '>':  result += "&gt;"; break;
+    case '"':  result += "&quot;"; break;
+    case '\'': result += "&apos;"; break;
+    default:   result += c;
+    }
+  }
+  return result;
+}
+
+static void append_svg(const Polygon2d& poly, std::ostream& output, const ExportInfo& exportInfo)
 {
   // sort outlines by color
   while (outlines.size() > 0) {
@@ -46,10 +64,13 @@ static void append_svg_sub(std::vector<Outline2d> outlines, std::ostream& output
     const ExportSvgOptions *options;
     const ExportSvgOptions defaultSvgOptions;
 
-    if (exportInfo.optionsSvg) {
-      options = exportInfo.optionsSvg.get();
-    } else {
-      options = &defaultSvgOptions;
+  const std::string stroke = options->stroke ? xml_attribute(options->strokeColor) : "none";
+  const std::string fill = options->fill ? xml_attribute(options->fillColor) : "none";
+  const double strokeWidth = options->strokeWidth;
+  output << "<path d=\"\n";
+  for (const auto& o : poly.outlines()) {
+    if (o.vertices.empty()) {
+      continue;
     }
 
     const std::string fill = options->fill ? options->fillColor : "none";
