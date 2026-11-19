@@ -85,6 +85,31 @@ def test_build_ext_uses_default_compile_without_private_compiler_hooks():
     assert compiler.compiled == sources
 
 
+def test_build_ext_skips_unix_parallel_path_on_windows():
+    """MSVC leaves base _compile as a no-op; never replace compile() on Windows."""
+    sources = ["source.cc"]
+    compiler = FakeCompiler()
+    command = BuildExtWithLexYacc(Distribution())
+    command.compiler = compiler
+    command.parallel = 3
+
+    def compile_extension(_command):
+        # Bound methods are recreated on each attribute access, so compare the
+        # underlying function: Windows must keep FakeCompiler.compile rather
+        # than installing compile_in_parallel (which would call no-op _compile).
+        assert command.compiler.compile.__func__ is FakeCompiler.compile
+        compiler.compiled.extend(sources)
+
+    with (
+        patch("setup.IS_WINDOWS", True),
+        patch.object(build_ext, "build_extensions", compile_extension),
+    ):
+        command.build_extensions()
+
+    assert compiler.compiled == sources
+    assert compiler.max_active == 0
+
+
 def test_link_libraries_omit_unavailable_boost_system():
     with (
         patch("setup.get_pkg_config_libraries", return_value=[]),
