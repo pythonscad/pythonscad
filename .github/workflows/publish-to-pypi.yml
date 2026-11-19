@@ -2,6 +2,10 @@
 # - Release-triggered runs publish to TestPyPI first, then PyPI.
 # - Manually dispatched runs on the release-please branch publish to TestPyPI
 #   using a unique PEP 440 dev version for iterative pre-release testing.
+# - Manually dispatched runs with publish_to_production=true build from the
+#   selected ref (typically master) using VERSION.txt and publish to TestPyPI
+#   then production PyPI. Use this to recover a release packaging failure
+#   without bumping the version (e.g. re-ship v1.2.0 wheels after a CI fix).
 #
 # Prerequisites (one-time setup):
 #   1. Create the "pythonscad" projects on PyPI and TestPyPI:
@@ -19,6 +23,14 @@ on:
   release:
     types: [released]
   workflow_dispatch:
+    inputs:
+      publish_to_production:
+        description: >-
+          Publish built wheels/sdist to production PyPI using VERSION.txt
+          (also publishes to TestPyPI with skip-existing first)
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -53,7 +65,8 @@ jobs:
       - name: Set dynamic version for manual TestPyPI runs
         if: >-
           github.event_name == 'workflow_dispatch' &&
-          github.ref == 'refs/heads/release-please--branches--master--components--pythonscad'
+          github.ref == 'refs/heads/release-please--branches--master--components--pythonscad' &&
+          !inputs.publish_to_production
         shell: bash
         run: |
           set -euo pipefail
@@ -185,7 +198,8 @@ jobs:
       - name: Set dynamic version for manual TestPyPI runs
         if: >-
           github.event_name == 'workflow_dispatch' &&
-          github.ref == 'refs/heads/release-please--branches--master--components--pythonscad'
+          github.ref == 'refs/heads/release-please--branches--master--components--pythonscad' &&
+          !inputs.publish_to_production
         shell: bash
         run: |
           set -euo pipefail
@@ -229,7 +243,8 @@ jobs:
     if: >
       github.event_name == 'release' ||
       (github.event_name == 'workflow_dispatch' &&
-      github.ref == 'refs/heads/release-please--branches--master--components--pythonscad')
+      (github.ref == 'refs/heads/release-please--branches--master--components--pythonscad' ||
+      inputs.publish_to_production))
     runs-on: ubuntu-latest
     environment: testpypi
     permissions:
@@ -251,9 +266,11 @@ jobs:
     name: Publish to PyPI
     needs: [build-wheels, build-sdist, publish-to-test-pypi]
     if: >
-      github.event_name == 'release' &&
+      (github.event_name == 'release' &&
       github.event.action == 'released' &&
-      !github.event.release.prerelease
+      !github.event.release.prerelease) ||
+      (github.event_name == 'workflow_dispatch' &&
+      inputs.publish_to_production)
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -268,3 +285,5 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
+        with:
+          skip-existing: true
