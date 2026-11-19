@@ -97,6 +97,9 @@ repair-wheel-command = "DYLD_LIBRARY_PATH=\"$(brew --prefix)/lib\" delocate-whee
 
 [tool.cibuildwheel.windows]
 # x64-windows-release is a vcpkg community triplet in the pinned vcpkg baseline.
-environment = { VCPKG_DEFAULT_TRIPLET = "x64-windows-release", PYTHONSCAD_BUILD_PARALLEL = "6" }
+# PYTHONSCAD_BUILD_PARALLEL is intentionally omitted: the custom parallel
+# compile path uses Unix _compile hooks that are no-ops on MSVC. Windows
+# parallelism comes from the /MP flag in setup.py instead.
+environment = { VCPKG_DEFAULT_TRIPLET = "x64-windows-release" }
 before-all = "pwsh scripts/cibuildwheel/install-deps-windows.ps1"
 repair-wheel-command = "pwsh scripts/cibuildwheel/repair-wheel-windows.ps1 -Wheel {wheel} -DestDir {dest_dir}"

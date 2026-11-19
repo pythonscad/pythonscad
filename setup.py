@@ -347,7 +347,10 @@ def get_extra_compile_args():
     if IS_WINDOWS:
         # Disable MSVC whole-program optimization; the wheel links the full
         # extension for every Python ABI and /GL exhausts linker heap on CI.
-        return ["/bigobj", "/EHsc", "/std:c++20", "/Zc:strictStrings-", "/Zc:char8_t-", "/GL-"]
+        # /MP provides multi-process compilation; the custom ThreadPoolExecutor
+        # parallel path in BuildExtWithLexYacc is Unix/_compile-only and must
+        # not run on MSVC (base _compile is a no-op).
+        return ["/bigobj", "/EHsc", "/std:c++20", "/Zc:strictStrings-", "/Zc:char8_t-", "/GL-", "/MP"]
     args = ["-std=c++17"]
     if IS_DARWIN:
         args.append("-stdlib=libc++")
@@ -596,9 +599,15 @@ class BuildExtWithLexYacc(build_ext):
         workers = self.parallel
         if workers is True:
             workers = os.cpu_count()
+        # MSVCCompiler implements compile() itself and leaves the base
+        # _compile() as a no-op. Calling the Unix-style parallel path on
+        # Windows therefore "succeeds" without producing any .obj files and
+        # the link step fails with LNK1181. Keep this path for Unix only;
+        # Windows uses /MP via get_extra_compile_args() instead.
         parallel_compile_methods = ("_setup_compile", "_get_cc_args", "_compile")
-        supports_parallel_compile = all(
-            hasattr(self.compiler, method) for method in parallel_compile_methods
+        supports_parallel_compile = (
+            not IS_WINDOWS
+            and all(hasattr(self.compiler, method) for method in parallel_compile_methods)
         )
         if workers and workers > 1 and supports_parallel_compile:
             def compile_in_parallel(
