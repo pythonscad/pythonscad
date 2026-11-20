@@ -749,7 +749,7 @@ static Outline2d python_getprofile_locked(void *v_cbfunc, int fn, double arg)
   PyObject *polygon = PyObject_CallObject(cbfunc, args);
   Py_XDECREF(args);
   if (polygon == nullptr) {  // TODO fix
-    PyErr_Clear();  // 1-arg call failed: retry as polar r(arg, angle)
+    PyErr_Clear();           // 1-arg call failed: retry as polar r(arg, angle)
     for (unsigned int i = 0; i < (unsigned int)fn; i++) {
       double ang = 360.0 * (i / (double)fn);
       PyObject *args1 = PyTuple_Pack(2, PyFloat_FromDouble(arg), PyFloat_FromDouble(ang));
