@@ -106,7 +106,7 @@ jobs:
 
   build-windows-wheel-smoke:
     name: cp312 win_amd64 wheel smoke
-    runs-on: windows-2022
+    runs-on: windows-2025
     env:
       CIBW_BUILD: cp312-win_amd64
     steps:
