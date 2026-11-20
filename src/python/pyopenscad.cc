@@ -729,7 +729,18 @@ static int PyOpenSCADInit(PyOpenSCADObject *self, PyObject *args, PyObject *kwds
   (void)kwds;
   return 0;
 }
-Outline2d python_getprofile(void *v_cbfunc, int fn, double arg)
+// Python callbacks (twist=, profile functions, ...) are invoked from the
+// geometry/CSG worker threads. Since #1024 python_lock() in those threads is a
+// no-op (lockDepth is thread_local), so these callbacks must acquire the GIL
+// themselves. PyGILState_Ensure() is cheap and reentrant if the GIL is held.
+static void python_report_callback_error(const char *what)
+{
+  std::string errorstr;
+  python_catch_error(errorstr);  // fetches and clears the pending exception
+  LOG(message_group::Error, "Python %1$s callback failed: %2$s", what, errorstr);
+}
+
+static Outline2d python_getprofile_locked(void *v_cbfunc, int fn, double arg)
 {
   PyObject *cbfunc = reinterpret_cast<PyObject *>(v_cbfunc);
   Outline2d result;
@@ -738,6 +749,7 @@ Outline2d python_getprofile(void *v_cbfunc, int fn, double arg)
   PyObject *polygon = PyObject_CallObject(cbfunc, args);
   Py_XDECREF(args);
   if (polygon == nullptr) {  // TODO fix
+    PyErr_Clear();  // 1-arg call failed: retry as polar r(arg, angle)
     for (unsigned int i = 0; i < (unsigned int)fn; i++) {
       double ang = 360.0 * (i / (double)fn);
       PyObject *args1 = PyTuple_Pack(2, PyFloat_FromDouble(arg), PyFloat_FromDouble(ang));
@@ -779,14 +791,33 @@ Outline2d python_getprofile(void *v_cbfunc, int fn, double arg)
   return result;
 }
 
+Outline2d python_getprofile(void *v_cbfunc, int fn, double arg)
+{
+  if (pythonInitDict == nullptr) initPython(PlatformUtils::applicationPath(), "", nullptr);
+  PyGILState_STATE gstate = PyGILState_Ensure();
+  Outline2d result = python_getprofile_locked(v_cbfunc, fn, arg);
+  if (PyErr_Occurred()) python_report_callback_error("profile");
+  PyGILState_Release(gstate);
+  return result;
+}
+
 double python_doublefunc(void *v_cbfunc, double arg)
 {
   PyObject *cbfunc = reinterpret_cast<PyObject *>(v_cbfunc);
+  PyGILState_STATE gstate = PyGILState_Ensure();
   double result = 0;
-  PyObject *args = PyTuple_Pack(1, PyFloat_FromDouble(arg));
-  PyObject *funcresult = PyObject_CallObject(cbfunc, args);
-  Py_XDECREF(args);
-  if (funcresult) result = PyFloat_AsDouble(funcresult);
+  PyObject *funcresult = PyObject_CallFunction(cbfunc, "d", arg);
+  if (funcresult == nullptr) {
+    python_report_callback_error("twist");
+  } else {
+    result = PyFloat_AsDouble(funcresult);
+    if (result == -1.0 && PyErr_Occurred()) {
+      python_report_callback_error("twist (must return a single number)");
+      result = 0;
+    }
+    Py_DECREF(funcresult);
+  }
+  PyGILState_Release(gstate);
   return result;
 }
 
