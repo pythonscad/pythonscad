@@ -2796,13 +2796,13 @@ static std::unique_ptr<Geometry> extrudePath(const PathExtrudeNode& node, const 
 
 #ifdef ENABLE_PYTHON
       if (node.twist_func != NULL) {
-        cur_twist = python_doublefunc(node.twist_func, length_os[i]);
+        cur_twist = python_doublefunc(node.twist_func, length_os[i % m]);
       } else
 #endif
-        cur_twist = node.twist * length_os[i];
+        cur_twist = node.twist * length_os[i % m];
 
-      double cur_scalex = 1.0 + (node.scale_x - 1.0) * length_os[i];
-      double cur_scaley = 1.0 + (node.scale_y - 1.0) * length_os[i];
+      double cur_scalex = 1.0 + (node.scale_x - 1.0) * length_os[i % m];
+      double cur_scaley = 1.0 + (node.scale_y - 1.0) * length_os[i % m];
       Outline2d profilemod;
 #ifdef ENABLE_PYTHON
       if (node.profile_func != NULL) {
