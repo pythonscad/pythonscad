@@ -2,4 +2,4 @@
 sip==6.17.2
 PyQt-builder==1.19.1
 PyQt6-sip==13.13.0
-packaging==26.3
+packaging==26.4
