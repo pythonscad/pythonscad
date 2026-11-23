@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - release/**
   workflow_dispatch:
 
 permissions:
@@ -14,12 +15,28 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - name: Select Release Please config
+        id: config
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$BRANCH" == release/* ]]; then
+            echo "config_file=.release-please-config.release.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "config_file=.release-please-config.json" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: googleapis/release-please-action@v5
         id: release
         with:
           # Use config files for all release-please configuration
-          config-file: .release-please-config.json
+          config-file: ${{ steps.config.outputs.config_file }}
           manifest-file: .release-please-manifest.json
+          # Version each push against the branch that triggered this run so
+          # maintenance lines (release/X.Y) can ship patches independently of
+          # master.
+          target-branch: ${{ github.ref_name }}
           # Use bot account PAT to allow release events to trigger other workflows
           token: ${{ secrets.RELEASE_TOKEN }}
 
