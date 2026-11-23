@@ -254,6 +254,10 @@ When your PR is merged to `master`:
 but the actual release happens separately when the Release
 PR is merged.
 
+Bugfix that must also ship on an already-released minor
+are cherry-picked onto the matching `release/X.Y`
+maintenance branch. See [VERSIONING.md](VERSIONING.md).
+
 ## Versioning and Releases
 
 ### Semantic Versioning
@@ -266,12 +270,12 @@ MAJOR.MINOR.PATCH
 ```
 
 - **MAJOR** (e.g., 1.0.0 → 2.0.0): Breaking changes
-- **MINOR** (e.g., 0.6.0 → 0.7.0): New features
+- **MINOR** (e.g., 1.2.0 → 1.3.0): New features
   (backward compatible)
-- **PATCH** (e.g., 0.6.1 → 0.6.2): Bug fixes
+- **PATCH** (e.g., 1.2.0 → 1.2.1): Bug fixes
 
 Version numbers are **automatically determined** from
-commit messages:
+commit messages on `master`:
 
 - `feat:` → Minor bump
 - `fix:` → Patch bump
@@ -287,18 +291,14 @@ Releases are managed by the Release Please GitHub Action:
    changelog and version
 3. **Review**: Maintainers review the release notes
 4. **Merge Release PR**: Creates git tag and GitHub release
-5. **Builds**: CI automatically builds binaries for all
+5. **Maintenance branch**: Cut `release/X.Y` from the new
+   tag so later patches can ship without waiting for the
+   next minor
+6. **Builds**: CI automatically builds binaries for all
    platforms
 
-### Pre-1.0.0 Versioning
-
-PythonSCAD is currently in pre-1.0.0 stage:
-
-- Breaking changes bump the **minor** version
-  (0.6.0 → 0.7.0)
-- Features bump the **patch** version (0.6.0 → 0.6.1)
-
-This will switch to standard SemVer after 1.0.0 is released.
+Full branching and backport details:
+[VERSIONING.md](VERSIONING.md).
 
 ## Code Style
 

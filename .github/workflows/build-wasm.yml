@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - release/**
   pull_request:
   release:
     types: [created]
@@ -252,10 +253,20 @@ jobs:
       skip: ${{ steps.targets.outputs.skip }}
       targets: ${{ steps.targets.outputs.targets }}
     steps:
+      # Needed so release events can compare the new tag against all semver
+      # tags and skip production deploys for older maintenance-line patches.
+      - name: Checkout repository
+        if: github.event_name == 'release'
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
       - id: targets
         env:
           EVENT: ${{ github.event_name }}
           REF: ${{ github.ref }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
           INPUT_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || '' }}
         run: |
           set -euo pipefail
@@ -268,7 +279,11 @@ jobs:
           targets=()
           case "$EVENT" in
             release)
-              targets+=("production" "test")
+              # Patch releases on older release/X.Y lines must not roll the
+              # production playground back to that older tree.
+              if ./.github/scripts/is-latest-semver-tag.sh "$RELEASE_TAG"; then
+                targets+=("production" "test")
+              fi
               ;;
             push)
               if [ "$REF" = "refs/heads/master" ]; then

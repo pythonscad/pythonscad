@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - release/**
     paths:
       - pythonscad.appdata.xml.in
       - .github/workflows/validate-appdata.yml
