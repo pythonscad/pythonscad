@@ -83,7 +83,6 @@ else() # !PROJECT_IS_TOP_LEVEL
   # Very commonly used cmake-provided paths
   set(CBD ${CMAKE_BINARY_DIR}) # build top level
   set(CSD ${CMAKE_SOURCE_DIR}) # project top level
-  set(LIBRARIES_DIR "${CSD}/libraries")
 
   if(APPLE)
     set(OPENSCAD_BINPATH "${CBD}/${EXECUTABLE_NAME}.app/Contents/MacOS/${EXECUTABLE_NAME}")
@@ -94,12 +93,6 @@ else() # !PROJECT_IS_TOP_LEVEL
   else()
     set(OPENSCAD_BINPATH "${CBD}/openscad${SUFFIX_WITH_DASH}")
   endif()
-
-  # MCAD
-  if(NOT EXISTS ${LIBRARIES_DIR}/MCAD/__init__.py)
-    message(FATAL_ERROR "MCAD not found. You can install from the OpenSCAD root as follows: \n  git submodule update --init --recursive")
-  endif()
-  list(APPEND CTEST_ENVIRONMENT "OPENSCADPATH=${LIBRARIES_DIR}")
 
   find_package(Lib3MF QUIET)
   # Disable LIB3MF tests if library was disabled in build
@@ -182,6 +175,7 @@ set(TEST_PYTHONSCAD_OVERLAY_DIR "${CCSD}/data/pythonscad-overlay")
 set(TEST_PYTHONSCAD_OVERLAY_ECHO_DIR "${CCSD}/data/pythonscad-overlay-echo")
 set(TEST_CUSTOMIZER_DIR "${CCSD}/data/scad/customizer")
 set(TEST_PYTHON_DIR     "${CCSD}/data/python")
+list(APPEND CTEST_ENVIRONMENT "OPENSCADPATH=${TEST_DATA_DIR}/libraries")
 # Test runner Python scripts
 set(STLEXPORTSANITYTEST_PY   "${CCSD}/stlexportsanitytest.py")
 set(EXPORT_IMPORT_PNGTEST_PY "${CCSD}/export_import_pngtest.py")
@@ -352,11 +346,13 @@ endif()
 
 file(GLOB SCAD_SVG_FILES      ${TEST_SCAD_DIR}/svg/svg-spec/*.scad
   ${TEST_SCAD_DIR}/svg/box-w-holes-2d.scad
+  ${TEST_SCAD_DIR}/svg/center-viewbox-offset.scad
   ${TEST_SCAD_DIR}/svg/display.scad
   ${TEST_SCAD_DIR}/svg/id-selection-test.scad
   ${TEST_SCAD_DIR}/svg/id-layer-selection-test.scad
   ${TEST_SCAD_DIR}/svg/line-cap-line-join.scad
   ${TEST_SCAD_DIR}/svg/simple-center-2d.scad
+  ${TEST_SCAD_DIR}/svg/tessellation-test.scad
   ${TEST_SCAD_DIR}/svg/use-transform.scad
   ${TEST_SCAD_DIR}/svg/fill-rule.scad
   ${TEST_SCAD_DIR}/svg/size-percent.scad
@@ -419,6 +415,7 @@ list(APPEND MISC_FILES
   ${TEST_SCAD_DIR}/misc/special-consts.scad
   ${TEST_SCAD_DIR}/misc/utf8-☠-3D.scad
   ${TEST_SCAD_DIR}/misc/variable-overwrite.scad
+  ${TEST_SCAD_DIR}/misc/linear_extrude-segments-parameter-tests.scad
 )
 
 list(APPEND FAILING_FILES
@@ -1111,27 +1108,37 @@ list(APPEND EXPORT_IMPORT_3D_DIFFERENT_MANIFOLD_FILES
 
 
 # Export tests (compare actually exported files)
-add_cmdline_test(export-stl              EXPERIMENTAL OPENSCAD SUFFIX stl FILES ${EXPORT_STL_TEST_FILES} ARGS --enable=predictible-output --render --trust-python)
-add_cmdline_test(export-stl-stdout       EXPERIMENTAL OPENSCAD SUFFIX stl FILES ${EXPORT_STL_TEST_FILES} STDIO EXPECTEDDIR export-stl ARGS --enable=predictible-output --render --export-format asciistl --trust-python)
+add_cmdline_test(export-stl              EXPERIMENTAL OPENSCAD SUFFIX stl FILES ${EXPORT_STL_TEST_FILES} ARGS  --render --trust-python)
+add_cmdline_test(export-stl-stdout       EXPERIMENTAL OPENSCAD SUFFIX stl FILES ${EXPORT_STL_TEST_FILES} STDIO EXPECTEDDIR export-stl ARGS --render --export-format asciistl --trust-python)
 if (ENABLE_MANIFOLD_TESTS)
-add_cmdline_test(export-stl-manifold     EXPERIMENTAL OPENSCAD SUFFIX stl FILES ${EXPORT_STL_TEST_FILES} EXPECTEDDIR export-stl ARGS --enable=predictible-output --backend=manifold --render --trust-python)
+add_cmdline_test(export-stl-manifold     EXPERIMENTAL OPENSCAD SUFFIX stl FILES ${EXPORT_STL_TEST_FILES} EXPECTEDDIR export-stl ARGS  --backend=manifold --render --trust-python)
 endif()
 
-add_cmdline_test(export-binstl           EXPERIMENTAL OPENSCAD SUFFIX stl FILES ${EXPORT_STL_TEST_FILES} ARGS --enable=predictible-output --render --export-format binstl --trust-python)
-add_cmdline_test(export-binstl-stdout    EXPERIMENTAL OPENSCAD SUFFIX stl FILES ${EXPORT_STL_TEST_FILES} STDIO EXPECTEDDIR export-binstl ARGS --enable=predictible-output --render --export-format binstl --trust-python)
+add_cmdline_test(export-binstl           EXPERIMENTAL OPENSCAD SUFFIX stl FILES ${EXPORT_STL_TEST_FILES} ARGS  --render --export-format binstl --trust-python)
+add_cmdline_test(export-binstl-stdout    EXPERIMENTAL OPENSCAD SUFFIX stl FILES ${EXPORT_STL_TEST_FILES} STDIO EXPECTEDDIR export-binstl ARGS --render --export-format binstl --trust-python)
 
-add_cmdline_test(export-obj              EXPERIMENTAL OPENSCAD SUFFIX obj FILES ${EXPORT_OBJ_TEST_FILES} ARGS --enable=predictible-output --trust-python)
-add_cmdline_test(export-pov-as-is        EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --trust-python)
-add_cmdline_test(export-pov-translate-1  EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=0,0,0,0,0,0,140 --trust-python)
-add_cmdline_test(export-pov-translate-2  EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=10,0,0,0,0,0,140 --trust-python)
-add_cmdline_test(export-pov-translate-3  EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=0,10,0,0,0,0,140 --trust-python)
-add_cmdline_test(export-pov-translate-4  EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=0,0,10,0,0,0,140 --trust-python)
-add_cmdline_test(export-pov-rotate-1     EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=0,0,0,90,0,0,140 --trust-python)
-add_cmdline_test(export-pov-rotate-2     EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=0,0,0,0,90,0,140 --trust-python)
-add_cmdline_test(export-pov-rotate-3     EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=0,0,0,0,0,90,140 --trust-python)
-add_cmdline_test(export-pov-distance-1   EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=0,0,0,0,0,0,100 --trust-python)
-add_cmdline_test(export-pov-all          EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --enable=predictible-output --backend=manifold --camera=1,2,3,4,5,6,7 --trust-python)
-add_cmdline_test(export-pov-invalid-color EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_INVALID_COLOR_FILES} ARGS --enable=predictible-output --backend=manifold --trust-python)
+add_cmdline_test(export-obj              EXPERIMENTAL OPENSCAD SUFFIX obj FILES ${EXPORT_OBJ_TEST_FILES} ARGS  --trust-python)
+# linear_extrude(segments=...): the exported vertices show how each outline is subdivided.
+# The expected faces depend on how the caps are triangulated, which differs without Manifold.
+if (ENABLE_MANIFOLD_TESTS)
+file(GLOB LINEAR_EXTRUDE_SEGMENTS_FILES ${TEST_SCAD_DIR}/linear_extrude/linear_extrude-segments-*.scad)
+add_cmdline_test(linear_extrude-segments OPENSCAD SUFFIX obj FILES ${LINEAR_EXTRUDE_SEGMENTS_FILES})
+endif()
+add_cmdline_test(export-pov-as-is        EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS --backend=manifold --trust-python)
+
+if (ENABLE_LIB3MF_TESTS)
+add_cmdline_test(export-3mf              EXPERIMENTAL OPENSCAD SUFFIX 3mf FILES ${EXPORT_3MF_LAZY_UNION_TEST_FILES} ARGS --enable=lazy-union)
+endif()
+add_cmdline_test(export-pov-translate-1  EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS  --backend=manifold --camera=0,0,0,0,0,0,140 --trust-python)
+add_cmdline_test(export-pov-translate-2  EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS  --backend=manifold --camera=10,0,0,0,0,0,140 --trust-python)
+add_cmdline_test(export-pov-translate-3  EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS  --backend=manifold --camera=0,10,0,0,0,0,140 --trust-python)
+add_cmdline_test(export-pov-translate-4  EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS  --backend=manifold --camera=0,0,10,0,0,0,140 --trust-python)
+add_cmdline_test(export-pov-rotate-1     EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS  --backend=manifold --camera=0,0,0,90,0,0,140 --trust-python)
+add_cmdline_test(export-pov-rotate-2     EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS  --backend=manifold --camera=0,0,0,0,90,0,140 --trust-python)
+add_cmdline_test(export-pov-rotate-3     EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS  --backend=manifold --camera=0,0,0,0,0,90,140 --trust-python)
+add_cmdline_test(export-pov-distance-1   EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS  --backend=manifold --camera=0,0,0,0,0,0,100 --trust-python)
+add_cmdline_test(export-pov-all          EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_TEST_FILES} ARGS  --backend=manifold --camera=1,2,3,4,5,6,7 --trust-python)
+add_cmdline_test(export-pov-invalid-color EXPERIMENTAL OPENSCAD SUFFIX pov FILES ${EXPORT_POV_INVALID_COLOR_FILES} ARGS --backend=manifold --trust-python)
 
 # Export parameters, observe exported files and console output
 add_cmdline_test(export-param            OPENSCAD SUFFIX json FILES ${EXPORT_PARAM_TEST_FILES} ARGS --export-format param)
@@ -1488,11 +1495,11 @@ endif()
 #
 # OpenSCAD DSL → 3MF export
 if (ENABLE_LIB3MF_TESTS)
-  add_cmdline_test(export-3d-scad OPENSCAD SUFFIX 3mf FILES ${SCAD_3D_EXPORT_FILES} ARGS --enable=predictible-output --render --trust-python)
+  add_cmdline_test(export-3d-scad OPENSCAD SUFFIX 3mf FILES ${SCAD_3D_EXPORT_FILES} ARGS  --render --trust-python)
 endif()
 # PythonSCAD → 3MF export
 if (ENABLE_LIB3MF_TESTS)
-  add_cmdline_test(export-3d-pythonscad EXPERIMENTAL OPENSCAD SUFFIX 3mf FILES ${PYTHONSCAD_3D_EXPORT_FILES} ARGS --enable=predictible-output --render --trust-python)
+  add_cmdline_test(export-3d-pythonscad EXPERIMENTAL OPENSCAD SUFFIX 3mf FILES ${PYTHONSCAD_3D_EXPORT_FILES} ARGS --render --trust-python)
 endif()
 
 #
@@ -1550,7 +1557,6 @@ if (ENABLE_LIB3MF_TESTS)
     add_export_files_test(pythonscad-export-3mf-degenerate
         EXPERIMENTAL
         FILES "${CCSD}/data/pythonscad-3mf-degenerate/degenerate-triangle.py"
-        ARGS --enable=predictible-output
     )
 endif()
 add_export_files_test(pythonscad-export-obj
@@ -1944,8 +1950,11 @@ disable_tests_safe(
 
   # When exported from CGAL, the file cannot be re-imported
   render-stl_bad-stl-wing
+  render-off-cgal_bad-stl-tardis
   render-off-cgal_bad-stl-wing
   render-obj_bad-stl-wing
+  render-3mf-cgal_bad-stl-tardis
+  render-3mf-cgal_bad-stl-wing
 
   # https://github.com/openscad/openscad/issues/2301
   render-cgal_issue2301
@@ -2030,8 +2039,6 @@ disable_tests_safe(
   preview-manifold_3mf-import-centered
   preview-manifold_import_3mf-tests
   render-off-manifold_issue5216
-  render-3mf-cgal_bad-stl-tardis
-  render-3mf-cgal_bad-stl-wing
   render-3mf-manifold_issue5216
 
   preview-cgal_import_3mf-tests
@@ -2039,6 +2046,16 @@ disable_tests_safe(
   render-csg-cgal_import_3mf-tests
   throwntogether-cgal_import_3mf-tests
   throwntogether-manifold_import_3mf-tests
+
+  # Requires MCAD which is no longer bundled (#6982)
+  dump-examples_example023
+  render-cgal_example023
+  render-manifold_example023
+  preview-cgal_example023
+  preview-manifold_example023
+  throwntogether-cgal_example023
+  throwntogether-manifold_example023
+  render-csg-cgal_example023
 )
 
 list(APPEND NEF3_BROKEN_TESTS

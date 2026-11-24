@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "core/node.h"
+#include "core/parsersettings.h"
 #include "platform/PlatformUtils.h"
 
 void touchFile(const QString& filename)
@@ -67,6 +68,7 @@ std::vector<std::string>& findNode(std::shared_ptr<AbstractNode> node, std::vect
 void TestModuleCache::testMCAD()
 {
   restoreWindowInitialState();
+  add_librarydir(fixturePath("libraries").toStdString());
 
   QString filename = fixturePath("modulecache-tests/use-mcad.scad");
   window->designActionAutoReload->setChecked(false);

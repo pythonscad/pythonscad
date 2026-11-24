@@ -36,10 +36,6 @@ const Feature Feature::ExperimentalPythonSeparateObjects(
   "unioning them, so 3MF export can write one object per part.");
 const Feature Feature::ExperimentalVxORenderersIndexing("vertex-object-renderers-indexing",
                                                         "Enable indexing in vertex object renderers");
-const Feature Feature::ExperimentalPredictibleOutput(
-  "predictible-output",
-  "Attempt to produce predictible, diffable outputs (e.g. sorting the STL, or remeshing in a determined "
-  "order)");
 const Feature Feature::ExperimentalVectorSwizzle(
   "vector-swizzle", "Enable vector swizzling (e.g. <code>vec4.zyx</code> to reverse a 3D vector).");
 const Feature Feature::ExperimentalDiscretizationByError(

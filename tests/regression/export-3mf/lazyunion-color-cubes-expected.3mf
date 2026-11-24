@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" unit="millimeter" xml:lang="en-US">
+<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" unit="millimeter" xml:lang="en-US" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02" xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" xmlns:b="http://schemas.microsoft.com/3dmanufacturing/beamlattice/2017/02" xmlns:s="http://schemas.microsoft.com/3dmanufacturing/slice/2015/07">
 	<metadata name="Title">lazyunion-color-cubes.scad</metadata>
 	<metadata name="Application">OpenSCAD (https://www.openscad.org/)</metadata>
 	<metadata name="CreationDate">XXXX-XX-XXTXXXXXXXXZ</metadata>
@@ -10,7 +10,7 @@
 			<base name="Color 2" displaycolor="#0000FFFF" />
 			<base name="Color 3" displaycolor="#008000FF" />
 		</basematerials>
-		<object id="2" name="OpenSCAD Model 1" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
+		<object id="2" name="Object 1" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
 			<mesh>
 				<vertices>
 					<vertex x="0" y="0" z="0" />
@@ -38,7 +38,7 @@
 				</triangles>
 			</mesh>
 		</object>
-		<object id="3" name="OpenSCAD Model 2" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
+		<object id="3" name="Object 2" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
 			<mesh>
 				<vertices>
 					<vertex x="12.000000" y="0" z="0" />
@@ -66,7 +66,7 @@
 				</triangles>
 			</mesh>
 		</object>
-		<object id="4" name="OpenSCAD Model 3" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
+		<object id="4" name="Object 3" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
 			<mesh>
 				<vertices>
 					<vertex x="24.000000" y="0" z="0" />
@@ -94,7 +94,7 @@
 				</triangles>
 			</mesh>
 		</object>
-		<object id="5" name="OpenSCAD Model 4" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
+		<object id="5" name="Object 4" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
 			<mesh>
 				<vertices>
 					<vertex x="36.000000" y="0" z="0" />
@@ -122,7 +122,7 @@
 				</triangles>
 			</mesh>
 		</object>
-		<object id="6" name="OpenSCAD Model 5" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
+		<object id="6" name="Object 5" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
 			<mesh>
 				<vertices>
 					<vertex x="48.000000" y="0" z="0" />
@@ -150,7 +150,7 @@
 				</triangles>
 			</mesh>
 		</object>
-		<object id="7" name="OpenSCAD Model 6" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
+		<object id="7" name="Object 6" type="model" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" pid="1" pindex="0">
 			<mesh>
 				<vertices>
 					<vertex x="60.000000" y="0" z="0" />
@@ -180,11 +180,11 @@
 		</object>
 	</resources>
 	<build p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX">
-		<item objectid="2" partnumber="Part 1" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
-		<item objectid="3" partnumber="Part 2" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
-		<item objectid="4" partnumber="Part 3" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
-		<item objectid="5" partnumber="Part 4" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
-		<item objectid="6" partnumber="Part 5" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
-		<item objectid="7" partnumber="Part 6" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
+		<item objectid="2" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
+		<item objectid="3" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
+		<item objectid="4" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
+		<item objectid="5" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
+		<item objectid="6" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
+		<item objectid="7" p:UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX" />
 	</build>
 </model>
