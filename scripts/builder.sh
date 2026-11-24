@@ -58,26 +58,26 @@ init_variables()
 	#solar day
 	LOOPSLEEP=86400
 	DATECODE=`date +"%Y.%m.%d"`
-	if [ "`echo $* | grep loop`" ]; then
+	if [ "`echo "$*" | grep loop`" ]; then
 		echo "----------------------------"
 		echo "loop mode activated! woopee!"
 		echo "----------------------------"
 		DOLOOP=1
 	fi
-	if [ "`echo $* | grep release`" ]; then
+	if [ "`echo "$*" | grep release`" ]; then
 		echo "this script cannot yet build releases, only snapshots"
 		DOSNAPSHOT=
 		exit 1
 	fi
-	if [ "`echo $* | grep uploadonly`" ]; then
+	if [ "`echo "$*" | grep uploadonly`" ]; then
 		DOUPLOAD=1
 		DOBUILD=
 	fi
-	if [ "`echo $* | grep buildonly`" ]; then
+	if [ "`echo "$*" | grep buildonly`" ]; then
 		DOUPLOAD=
 		DOBUILD=1
 	fi
-	if [ "`echo $* | grep dry`" ]; then
+	if [ "`echo "$*" | grep dry`" ]; then
 		DRYRUN=1
 	fi
 	export STARTPATH
@@ -95,7 +95,7 @@ init_variables()
 
 check_starting_path()
 {
-	cd $STARTPATH
+	cd "$STARTPATH" || exit
 	if [ -e openscad.appdata.xml.in ]; then
 		echo 'please start from a clean directory outside of openscad'
 		exit
@@ -133,7 +133,7 @@ check_zip()
 get_openscad_source_code()
 {
 	if [ -d openscad ]; then
-		cd openscad
+		cd openscad || exit
 		if [ $? -ne 0 ]; then
 			echo cd to 'openscad' directory failed
 			exit 1
@@ -170,7 +170,7 @@ get_openscad_source_code()
 			exit 1
 		fi
 	fi
-	cd openscad
+	cd openscad || exit
 	git checkout $BRANCH_TO_BUILD
 	if [ $? -ne 0 ]; then
 		echo git checkout $BRANCH_TO_BUILD failed
@@ -200,7 +200,6 @@ build_win64()
 
 upload_win_common()
 {
-	summary="$1"
 	username=$2
 	filename=$3
 	if [ -f $filename ]; then
@@ -289,12 +288,12 @@ read_password_from_user()
 
 update_win_www_download_links()
 {
-	cd $STARTPATH
+	cd $STARTPATH || exit
 	rm -rf ./openscad.github.com
 	git clone git@github.com:openscad/openscad.github.com.git
-	cd openscad.github.com
-	cd inc
-	echo `pwd`
+	cd openscad.github.com || exit
+	cd inc || exit
+	echo "`pwd`"
 	# BASEURL='https://openscad.googlecode.com/files/'
 	BASEURL='https://files.openscad.org/'
 	if [ $DOSNAPSHOT ]; then
@@ -315,14 +314,13 @@ update_win_www_download_links()
 
 	echo 'modified win_snapshot_links.js'
 
-	PAGER=cat git diff
 	if [ ! $DRYRUN ]; then
 		git commit -a -m 'builder.sh - updated snapshot links'
 		git push origin master
 	else
 		echo dry run, not updating www links
 	fi
-	cd $STARTPATH
+	cd "$STARTPATH" || exit
 }
 
 # FIXME: We might be running this locally and not need an ssh agent.
@@ -347,7 +345,7 @@ check_ssh_agent()
 
 main()
 {
-	init_variables $*
+	init_variables "$*"
 	if [ $DOUPLOAD ]; then
 		check_ssh_agent
 	fi
@@ -369,8 +367,8 @@ main()
 
 if [ $DOLOOP ]; then
 	while [ 1 ]; do
-		init_variables $*
-		main $*
+		init_variables "$*"
+		main "$*"
 		echo ---------------------------------------------------
 		echo main loop finished. repeating in $LOOPSLEEP seconds
 		echo ---------------------------------------------------
@@ -380,5 +378,5 @@ if [ $DOLOOP ]; then
 		#fi
 	done
 else
-	main $*
+	main "$*"
 fi
