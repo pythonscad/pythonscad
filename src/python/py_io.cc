@@ -276,8 +276,7 @@ PyObject *python_export_core(PyObject *obj, char *file)
   }
   std::string filename;
   if (python_scriptpath.string().size() > 0)
-    filename = lookup_file(file, python_scriptpath.parent_path().u8string(), ".",
-                           FileOperation::Export);  // TODO problem hbier
+    filename = lookup_file(file, python_scriptpath.parent_path().u8string());
   else filename = file;
   const auto path = fs::path(filename);
   std::string suffix = path.has_extension() ? path.extension().generic_string().substr(1) : "";
@@ -546,8 +545,7 @@ PyObject *do_import_python(PyObject *self, PyObject *args, PyObject *kwargs, Imp
     PyErr_SetString(PyExc_ValueError, "osimport(): filename must not be empty");
     return NULL;
   }
-  filename = lookup_file(v, python_scriptpath.parent_path().u8string(),
-                         instance->location().filePath().parent_path().string());
+  filename = lookup_file(v, python_scriptpath.parent_path().u8string());
   {
     const fs::path fpath = fs::u8path(filename);
     if (!fs::exists(fpath)) {
@@ -1120,7 +1118,7 @@ PyObject *python_osuse_include(int mode, PyObject *self, PyObject *args, PyObjec
     PyErr_SetString(PyExc_ValueError, "osuse(): filename must not be empty");
     return NULL;
   }
-  std::string includedfile = lookup_file(file, python_scriptpath.parent_path().u8string(), ".");
+  std::string includedfile = lookup_file(file, python_scriptpath.parent_path().u8string());
   const fs::path requested_path = fs::u8path(file);
   if (!requested_path.is_absolute() && !fs::exists(fs::u8path(includedfile))) {
     // Fall back to OpenSCAD's library paths when file not found.
