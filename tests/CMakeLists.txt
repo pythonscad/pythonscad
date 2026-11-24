@@ -1057,6 +1057,7 @@ list(APPEND EXPORT_POV_INVALID_COLOR_FILES ${TEST_SCAD_DIR}/pov/pov-export-inval
 list(APPEND EXPORT_PARAM_TEST_FILES
   ${TEST_SCAD_DIR}/issues/issue6597.scad
   ${TEST_SCAD_DIR}/issues/issue7013.scad
+  ${TEST_CUSTOMIZER_DIR}/crlf-line-endings.scad
 )
 
 list(APPEND EXPORT_IMPORT_3D_FILES
