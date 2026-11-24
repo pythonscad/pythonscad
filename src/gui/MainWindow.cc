@@ -1390,14 +1390,17 @@ void MainWindow::instantiateRoot()
 {
   // Go on and instantiate root_node, then call the continuation slot
 
-  // Invalidate renderers before we kill the CSG tree.
-  // While dragging, keep showing the old image until the new one is ready
-  // (the view holds a shared_ptr, so the old renderer stays valid) -> no flicker.
+  // Invalidate renderers before we kill the CSG tree. Renderers own vertex
+  // buffers and delete them from their destructors, so drop them with our own
+  // GL context current.
   if (!dragKeepView) this->qglview->setRenderer(nullptr);
+  this->qglview->withCurrentContext([this]() {
+    this->qglview->setRenderer(nullptr);
 #ifdef ENABLE_OPENCSG
-  this->previewRenderer = nullptr;
+    this->previewRenderer = nullptr;
 #endif
-  this->thrownTogetherRenderer = nullptr;
+    this->thrownTogetherRenderer = nullptr;
+  });
 
   // Remove previous CSG tree
   this->absoluteRootNode.reset();
@@ -2884,7 +2887,10 @@ void MainWindow::cgalRender()
   }
 
   if (!dragKeepView) this->qglview->setRenderer(nullptr);
-  this->geomRenderer = nullptr;
+  this->qglview->withCurrentContext([this]() {
+    this->qglview->setRenderer(nullptr);
+    this->geomRenderer = nullptr;
+  });
   rootGeom.reset();
   geometrySourceEditor_ = nullptr;
 
@@ -4978,12 +4984,15 @@ void MainWindow::onTabManagerAboutToCloseEditor(EditorInterface *closingEditor)
   if (closingEditor == renderedEditor) {
     renderedEditor = nullptr;
 
-    // Invalidate renderers before we kill the CSG tree
-    this->qglview->setRenderer(nullptr);
+    // Invalidate renderers before we kill the CSG tree, with our own GL
+    // context current so their buffers are deleted where they were created.
+    this->qglview->withCurrentContext([this]() {
+      this->qglview->setRenderer(nullptr);
 #ifdef ENABLE_OPENCSG
-    this->previewRenderer = nullptr;
+      this->previewRenderer = nullptr;
 #endif
-    this->thrownTogetherRenderer = nullptr;
+      this->thrownTogetherRenderer = nullptr;
+    });
 
     // Remove previous CSG tree
     this->absoluteRootNode.reset();
