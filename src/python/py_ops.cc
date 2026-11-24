@@ -341,7 +341,8 @@ PyObject *python_oversample_core(PyObject *obj, double size, const char *texture
 
   node->size = size;
 
-  auto filename = lookup_file(texture == NULL ? "" : texture, python_scriptpath.parent_path().u8string());
+  auto filename =
+    lookup_file(texture == NULL ? "" : texture, python_scriptpath.parent_path().u8string());
 
   node->texturefilename = filename;
   node->textureprojection = PROJECTION_NONE;

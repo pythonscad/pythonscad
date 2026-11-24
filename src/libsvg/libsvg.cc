@@ -306,14 +306,14 @@ int streamFile(const char *filename, void *context)
   in_defs = false;
   in_style = false;
   styleDefs.clear();
-//<<<<<<< HEAD
-//  reader = xmlNewTextReaderFilename(filename);
-//=======
+  //<<<<<<< HEAD
+  //  reader = xmlNewTextReaderFilename(filename);
+  //=======
   // Also freed when processNode() throws.
   const std::unique_ptr<xmlTextReader, decltype(&xmlFreeTextReader)> reader_ptr(
     xmlNewTextReaderFilename(filename), &xmlFreeTextReader);
   xmlTextReaderPtr reader = reader_ptr.get();
-//>>>>>>> 41bd49cca3c616e7f5b176c2a2113982f190eeba
+  //>>>>>>> 41bd49cca3c616e7f5b176c2a2113982f190eeba
   if (reader != nullptr) {
     // Disable expansion of XML entities and external loading.
     xmlTextReaderSetParserProp(reader, XML_PARSER_SUBST_ENTITIES, 0);
