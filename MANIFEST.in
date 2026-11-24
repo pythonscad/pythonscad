@@ -8,6 +8,11 @@ recursive-include libraries/python/pythonscad py.typed
 recursive-include libraries/python/stubs/_openscad-stubs *.pyi py.typed
 include ./src/*.h
 include ./src/platform/*.h
+# get_platform_sources() in setup.py picks one of PlatformUtils-{posix.cc,win.cc,mac.mm}
+# by host platform, so setuptools only auto-ships the one belonging to whichever machine
+# built the sdist. All three have to ship, or the sdist builds only on its birth platform.
+include ./src/platform/*.cc
+include ./src/platform/*.mm
 include ./src/python/*.h
 include ./src/io/*.h
 # All lib3mf API variants must ship in the sdist; detect_lib3mf() picks one at
@@ -25,9 +30,10 @@ include ./src/core/*.y
 include ./src/core/*.l
 include ./src/core/customizer/*.h
 include ./src/utils/*.h
+include ./src/utils/*.hpp
 include ./src/glview/*.h
 include ./src/genlang/*.h
 recursive-include ./src/ext/ *.h *.hpp
 recursive-include ./src/geometry/ *.h
 recursive-include ./src/gui/ *.h
-recursive-include ./submodules/ *.h *.hpp *.cpp
+recursive-include ./submodules/ *.h *.hpp *.cpp *.inl
