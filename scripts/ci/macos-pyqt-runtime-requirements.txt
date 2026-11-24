@@ -8,13 +8,13 @@ pyqt6==6.11.0 \
     --hash=sha256:bd11b459c54dca068e988a42cf838303334f0d441b9d16d92ae6719fcb5ac6ba \
     --hash=sha256:f7100bc7f72b12581ec479a733f4ad11b8002668e6786e8a445ab6f4d1c743d4
     # via -r scripts/ci/macos-pyqt-runtime-requirements.in
-pyqt6-qt6==6.11.2 \
-    --hash=sha256:2c38ee8b797c0d7f327afef4cfbb97c73676954ef2d1d503779d62c982bf5a66 \
-    --hash=sha256:4b424ed1babbef07133eb2a4174c56c848d518767bca8e759aca2c8c9c313636 \
-    --hash=sha256:4f21ff2ffaacfb8a8df6ab1d619d0da7aa4e808e86f41b6daa1a7bff9c0d6eab \
-    --hash=sha256:6a4372baa674ca91de5caf31f241b0660fd3da90fe27fefed9a7a459e630ea89 \
-    --hash=sha256:8c49432936681f325f2925f20ceef35b8fb7599e0c3e63e76d6e50397354ee1f \
-    --hash=sha256:da7d747ad917f044d841ff834f17d2c50a0cc5d0e3b16479d8662544207d0567
+PyQt6-Qt6==6.12.1 \
+    --hash=sha256:1ab5f90b863cbc074f8f097a9ddf8bfff7efa6a3048e4bb59bb94fc904a5ac91 \
+    --hash=sha256:2281045392c42924108d954b66f7dbd2b4f4c87f16c2dac5ee54c7be285d1a99 \
+    --hash=sha256:2a5fcffb71a07cb434485004fd7ad83e76766de08142cc30802f9fd386f00ecb \
+    --hash=sha256:33208952342131e0477a461e31c654b679fa71b2b32af96422587ed0ea3e47ca \
+    --hash=sha256:79ffa2afd4d196bd24ea91c798927b047f15a2cda24fdcab5b1b96df2c84d1ef \
+    --hash=sha256:d33dbe32aa5bd9d49dba3ca65b1b96875bf9888447ec3b291253725cad5b7cb2
     # via pyqt6
 pyqt6-sip==13.13.0 \
     --hash=sha256:0f4329bcf7c4bbfd1f34b51f9fe417f839b18ae5035b6e9de1c7718b821f45aa \
