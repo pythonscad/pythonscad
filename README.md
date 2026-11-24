@@ -242,7 +242,7 @@ git clone https://github.com/pythonscad/pythonscad.git
 This will download the latest sources into a directory named
 `pythonscad`.
 
-To pull the various submodules (incl. the [MCAD library](https://github.com/openscad/MCAD)), do the following:
+To pull the various submodules, do the following:
 
 ```shell
 cd pythonscad
