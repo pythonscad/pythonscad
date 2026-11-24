@@ -129,8 +129,10 @@ void OpenCSGRenderer::prepare(const ShaderUtils::ShaderInfo *shaderinfo)
 void OpenCSGRenderer::draw(bool showedges, const ShaderUtils::ShaderInfo *shaderinfo) const
 {
 #ifdef ENABLE_OPENCSG
-  bool enable_shader = shaderinfo && (shaderinfo->type == ShaderUtils::ShaderType::EDGE_RENDERING ||
-                                      shaderinfo->type == ShaderUtils::ShaderType::SELECT_RENDERING);
+  // Only use shader if select rendering or showedges
+  bool enable_shader =
+    shaderinfo && ((shaderinfo->type == ShaderUtils::ShaderType::EDGE_RENDERING && showedges) ||
+                   shaderinfo->type == ShaderUtils::ShaderType::SELECT_RENDERING);
 
   for (const auto& product : vertex_state_containers_) {
     if (product->primitives().size() > 1) {
