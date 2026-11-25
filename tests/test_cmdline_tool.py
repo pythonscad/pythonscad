@@ -33,6 +33,7 @@ import shutil
 import platform
 import string
 import difflib
+import math
 from pathlib import Path
 
 _debug_tcct = True
@@ -182,6 +183,51 @@ def compare_default(resultfilename):
             for line in differences: sys.stderr.write(line + '\n')
         return False
     return True
+
+# Floating point numbers in text output, e.g. "0.999999997", "-1e-05", "42".
+# Not part of identifiers like "x2" or "$fn".
+_NUMBER_RE = re.compile(r'(?<![\w$.])[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?(?![\w.])')
+
+# Platforms (compilers, libm, FMA contraction) can differ in the last digits.
+FLOAT_REL_TOL = 1e-7
+FLOAT_ABS_TOL = 1e-9
+
+def lines_match_numerically(expected, actual, rel_tol=FLOAT_REL_TOL, abs_tol=FLOAT_ABS_TOL):
+    """True if both lines are identical apart from numbers, and all numbers are
+    equal within the given tolerance."""
+    if expected == actual:
+        return True
+    if _NUMBER_RE.split(expected) != _NUMBER_RE.split(actual):
+        return False
+    expected_numbers = _NUMBER_RE.findall(expected)
+    actual_numbers = _NUMBER_RE.findall(actual)
+    if len(expected_numbers) != len(actual_numbers):
+        return False
+    return all(math.isclose(float(e), float(a), rel_tol=rel_tol, abs_tol=abs_tol)
+               for e, a in zip(expected_numbers, actual_numbers))
+
+def compare_with_tolerance(resultfilename):
+    """Like compare_default(), but tolerates floating point noise in numbers.
+    Used for .csg and .echo files, where platforms may differ in the last digits."""
+    print('text comparison with numeric tolerance (rel=%g abs=%g): ' % (FLOAT_REL_TOL, FLOAT_ABS_TOL), file=sys.stderr)
+    print(' expected textfile: ', expectedfilename, file=sys.stderr)
+    print(' actual textfile: ', resultfilename, file=sys.stderr)
+    expected_lines = get_normalized_lines(expectedfilename, True)
+    actual_lines   = get_normalized_lines(resultfilename)
+    if expected_lines == actual_lines:
+        return True
+    if len(expected_lines) == len(actual_lines) and all(
+            lines_match_numerically(e, a) for e, a in zip(expected_lines, actual_lines)):
+        print(' only floating point differences within tolerance', file=sys.stderr)
+        return True
+    if resultfilename:
+        differences = difflib.unified_diff(expected_lines, actual_lines)
+        for line in differences: sys.stderr.write(line + '\n')
+    return False
+
+# compare_with_expected() picks compare_<suffix>
+compare_csg = compare_with_tolerance
+compare_echo = compare_with_tolerance
 
 def get_json(filename):
     import json
