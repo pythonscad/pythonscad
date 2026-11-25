@@ -10,6 +10,8 @@ on:
     paths:
       - .github/scripts/is-latest-semver-tag.sh
       - .github/scripts/is-latest-semver-tag.test.py
+      - .github/scripts/find-pypi-build-run.py
+      - .github/scripts/find-pypi-build-run.test.py
       - scripts/cut-release-branch.sh
       - scripts/cut-release-branch.test.py
       - .github/workflows/deploy-website.yml
@@ -46,6 +48,9 @@ jobs:
 
       - name: Run is-latest-semver-tag tests
         run: python3 .github/scripts/is-latest-semver-tag.test.py
+
+      - name: Run find-pypi-build-run tests
+        run: python3 .github/scripts/find-pypi-build-run.test.py
 
       - name: Run cut-release-branch tests
         run: python3 scripts/cut-release-branch.test.py
