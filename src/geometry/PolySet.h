@@ -10,6 +10,7 @@
 
 #include "geometry/Geometry.h"
 #include "geometry/GeometryUtils.h"
+#include "geometry/Grid.h"
 #include "geometry/Polygon2d.h"
 #include "geometry/linalg.h"
 #include "geometry/Curve.h"
@@ -44,7 +45,7 @@ public:
   bool isEmpty() const override { return indices.empty() && polylines.empty(); }
   std::unique_ptr<Geometry> copy() const override;
 
-  void quantizeVertices(std::vector<Vector3d> *pPointsOut = nullptr);
+  size_t quantizeVertices(std::vector<Vector3d> *pPointsOut = nullptr, double resolution = GRID_FINE);
   size_t numFacets() const override { return indices.size(); }
   void transform(const Transform3d& mat) override;
   void resize(const Vector3d& newsize, const Eigen::Matrix<bool, 3, 1>& autosize) override;

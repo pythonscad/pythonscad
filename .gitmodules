@@ -1,7 +1,3 @@
-[submodule "libraries/MCAD"]
-	path = libraries/MCAD
-	url = https://github.com/openscad/MCAD.git
-	branch = master
 [submodule "mimalloc"]
 	path = submodules/mimalloc
 	url = https://github.com/microsoft/mimalloc.git

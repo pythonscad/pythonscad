@@ -32,6 +32,7 @@ These don't change the result, but stop rendering if warnings are made fatal (--
   * fontmetrics(), returns general size information about fonts  #3684
   * object(), creates a name-value data structure akin to JavaScript object, Python dicts #6012
   * import(file), imports file (currently only JSON) as data #3891
+  * fragments(), returns the number of fragments a circle with the given size would have #6890
 * text(), textmetrics(), fontmetrics()
   * Added em= to set the size of the em-square #6656
 * linear_extrude()
@@ -157,6 +158,7 @@ No longer supported. Most of these were deprecated in earlier releases:
 * The -s and -x cmd-line options #5733
 * The child() and assign() modules #6428
 * The triangles= parameter to polyhedron() #6825
+* The MCAD library is no longer bundled with OpenSCAD; it can be downloaded separately from https://github.com/openscad/MCAD/releases/tag/2026.11 #6982
 
 **Deprecations:**
 

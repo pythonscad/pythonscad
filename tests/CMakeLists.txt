@@ -983,9 +983,14 @@ add_cmdline_test(render-cgal      OPENSCAD FILES ${RENDER_DIFFERENT_EXPECTATIONS
 add_cmdline_test(render-force-cgal OPENSCAD SUFFIX png FILES ${RENDERFORCETEST_FILES} ${FILES_CGAL_CORNER_CASES} ARGS --render=force --backend=cgal --trust-python)
 add_cmdline_test(render-stdio-cgal OPENSCAD SUFFIX png FILES ${RENDERSTDIOTEST_FILES} STDIO EXPECTEDDIR render ARGS --export-format png --render --backend=cgal --trust-python)
 if (ENABLE_MANIFOLD_TESTS)
-add_cmdline_test(render-manifold OPENSCAD FILES ${RENDER_COMMON_FILES} EXPECTEDDIR render SUFFIX png ARGS --render --backend=manifold --trust-python)
-add_cmdline_test(render-manifold OPENSCAD FILES ${RENDER_DIFFERENT_EXPECTATIONS} SUFFIX png ARGS --render --backend=manifold --trust-python)
-add_cmdline_test(render-force-manifold      OPENSCAD SUFFIX png FILES ${RENDERFORCETEST_FILES} ${FILES_MANIFOLD_CORNER_CASES} EXPECTEDDIR render ARGS --render=force --backend=manifold --trust-python)
+add_cmdline_test(render-manifold OPENSCAD FILES ${RENDER_COMMON_FILES} EXPECTEDDIR render SUFFIX png ARGS --render --backend=manifold)
+add_cmdline_test(render-manifold OPENSCAD FILES ${RENDER_DIFFERENT_EXPECTATIONS} SUFFIX png ARGS --render --backend=manifold)
+add_cmdline_test(render-force-manifold      OPENSCAD SUFFIX png FILES ${RENDERFORCETEST_FILES} ${FILES_MANIFOLD_CORNER_CASES} EXPECTEDDIR render ARGS --render=force --backend=manifold)
+# An inside-out polyhedron must be subtracted like a normal one (#7201).
+add_cmdline_test(render-force-manifold      OPENSCAD SUFFIX png FILES ${TEST_SCAD_DIR}/3D/misc/polyhedron-inside-out.scad EXPECTEDDIR render ARGS --render=force --backend=manifold)
+# color(undef) must leave colors alone, like in preview (#5853).
+add_cmdline_test(render-force-manifold      OPENSCAD SUFFIX png FILES ${TEST_SCAD_DIR}/3D/misc/color-undef.scad EXPECTEDDIR render ARGS --render=force --backend=manifold)
+add_cmdline_test(render-force-manifold      OPENSCAD SUFFIX png FILES ${TEST_SCAD_DIR}/3D/misc/minkowski-unused-points.scad EXPECTEDDIR render ARGS --render=force --backend=manifold)
 # This tests that no warnings are issued when using Manifold for converting or processing geometry
 add_cmdline_test(render-force-manifold-hardwarnings OPENSCAD SUFFIX png FILES ${MANIFOLDHARDWARNING_FILES} EXPECTEDDIR render ARGS --render=force --backend=manifold --hardwarnings --trust-python)
 endif()
@@ -1053,6 +1058,7 @@ list(APPEND EXPORT_POV_INVALID_COLOR_FILES ${TEST_SCAD_DIR}/pov/pov-export-inval
 list(APPEND EXPORT_PARAM_TEST_FILES
   ${TEST_SCAD_DIR}/issues/issue6597.scad
   ${TEST_SCAD_DIR}/issues/issue7013.scad
+  ${TEST_CUSTOMIZER_DIR}/crlf-line-endings.scad
 )
 
 list(APPEND EXPORT_IMPORT_3D_FILES
@@ -1978,14 +1984,6 @@ disable_tests_safe(
   # OpenCSG z fighting
   preview-cgal_surface_image
   throwntogether-cgal_surface_image
-
-  # https://github.com/openscad/openscad/issues/5159
-  render-cgal_projection
-  render-csg-cgal_projection
-
-  # https://github.com/openscad/openscad/issues/5158
-  #render-cgal_example017
-  #throwntogether-cgal_example017
 
   # https://github.com/openscad/openscad/issues/4398
   render-csg-cgal_logo_and_text

@@ -39,8 +39,10 @@
 #include "core/Assignment.h"
 #include "parser.hxx"
 #include "core/SourceFile.h"
+#include "io/fileutils.h"
 #include "platform/PlatformUtils.h"
 #include <assert.h>
+#include <boost/cast.hpp>
 #include <boost/lexical_cast.hpp>
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -99,8 +101,20 @@ extern YYLTYPE parserlloc;
 #define YY_USER_ACTION parserlloc.last_column += yyleng;
 
 extern void parsererror(char const *s);
+
+// Whether d converts back to exactly ull. numeric_cast throws when d is out of range,
+// where a plain conversion would be undefined behavior.
+static bool converts_back_to(double d, unsigned long long ull)
+{
+  try {
+    return boost::numeric_cast<unsigned long long>(d) == ull;
+  } catch (const boost::bad_numeric_cast&) {
+    return false;
+  }
+}
 void to_utf8(const char *, char *);
 void includefile(const Location& loc);
+static void check_mcad_missing(const fs::path& localpath);
 static int unicode_identifier(const char *text, size_t length);
 std::shared_ptr<fs::path> sourcefile();
 std::shared_ptr<fs::path> parser_sourcefile;
@@ -188,9 +202,10 @@ use[ \t\r\n]*"<"        { BEGIN(cond_use); LOCATION_COUNT_LINES(parserlloc, yyte
                             fs::path fullpath = find_valid_path(sourcefile()->parent_path(), fs::path(filename), &openfilenames);
                             if (fullpath.empty()) {
                             LOG(message_group::Warning,LOCATION(parserlloc),"","Can't open library '%1$s'.",filename);
+                                check_mcad_missing(fs::path(filename));
                                 parserlval.text = strdup(filename.c_str());
                             } else {
-                                handle_dep(fullpath.generic_string());
+                                handle_dep(fs_generic_string(fullpath));
                                 parserlval.text = strdup(fullpath.string().c_str());
                             }
                             return TOK_USE;
@@ -316,7 +331,7 @@ use[ \t\r\n]*"<"        { BEGIN(cond_use); LOCATION_COUNT_LINES(parserlloc, yyte
                             if (errno != 0) {
                                 LOG(message_group::Warning, LOCATION(parserlloc), "",
                                     "Hexadecimal constant \"%1$s\" too large", yytext);
-                            } else if ((unsigned long long)parserlval.number != ull) {
+                            } else if (!converts_back_to(parserlval.number, ull)) {
                                 LOG(message_group::Warning, LOCATION(parserlloc), "",
                                     "Integer \"%1$s\" cannot be represented precisely",
                                     yytext);
@@ -335,7 +350,7 @@ use[ \t\r\n]*"<"        { BEGIN(cond_use); LOCATION_COUNT_LINES(parserlloc, yyte
                             errno = 0;  // strtoxxx have crummy error semantics
                             unsigned long long ull = strtoull(yytext, NULL, 10);
                             parserlval.number = ull;
-                            if (errno != 0 || (unsigned long long)parserlval.number != ull) {
+                            if (errno != 0 || !converts_back_to(parserlval.number, ull)) {
                                 LOG(message_group::Warning, LOCATION(parserlloc), "",
                                     "Integer \"%1$s\" cannot be represented precisely",
                                     yytext);
@@ -424,6 +439,19 @@ bool lexer_is_main_file()
   return loc_stack.empty();
 }
 
+static void check_mcad_missing(const fs::path& localpath)
+{
+  if (!localpath.empty() && *localpath.begin() == "MCAD") {
+    LOG(message_group::HtmlLink,
+        "The MCAD library is no longer bundled with OpenSCAD. Download "
+        "<a href=\"https://github.com/openscad/MCAD/releases/download/2026.11/MCAD.zip\">MCAD.zip</a> "
+        "from <a href=\"https://github.com/openscad/MCAD/releases/tag/2026.11\">"
+        "https://github.com/openscad/MCAD/releases/tag/2026.11</a> "
+        "and unzip it in your library folder '%1$s' (<b>File &rarr; Show Library Folder</b>).",
+        PlatformUtils::userLibraryPath());
+  }
+}
+
 /*
   Rules for include <path/file>
   1) include <sourcepath/path/file>
@@ -436,15 +464,16 @@ void includefile(const Location& loc)
   fs::path localpath = fs::path(filepath) / filename;
   fs::path fullpath = find_valid_path(sourcefile()->parent_path(), localpath, &openfilenames);
   if (!fullpath.empty()) {
-    rootfile->registerInclude(localpath.generic_string(), fullpath.generic_string(), lexer_is_main_file() ? loc : Location::NONE);
+    rootfile->registerInclude(localpath.generic_string(), fs_generic_string(fullpath), lexer_is_main_file() ? loc : Location::NONE);
   }
   else {
     rootfile->registerInclude(localpath.generic_string(), localpath.generic_string(), Location::NONE);
     LOG(message_group::Warning,LOCATION(parserlloc),"","Can't find include file '%1$s'.",localpath.generic_string());
+    check_mcad_missing(localpath);
     return;
   };
 
-  std::string fullname = fullpath.generic_string();
+  std::string fullname = fs_generic_string(fullpath);
 
   filepath.clear();
   filename_stack.push_back(std::make_shared<fs::path>(fullpath));

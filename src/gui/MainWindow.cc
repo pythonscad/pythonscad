@@ -575,7 +575,7 @@ void add_menuitem_trampoline(const char *menuname, const char *itemname, const c
 
 std::string MainWindow::loadInitFile(void)
 {
-  std::string path = lookup_file(".pythonscadrc", PlatformUtils::pythonUserConfigPath(), "");
+  std::string path = lookup_file(".pythonscadrc", PlatformUtils::pythonUserConfigPath());
   if (path.size() == 0) return "";
   std::ifstream fh(path);
 
@@ -1390,14 +1390,18 @@ void MainWindow::instantiateRoot()
 {
   // Go on and instantiate root_node, then call the continuation slot
 
-  // Invalidate renderers before we kill the CSG tree.
+  // Invalidate renderers before we kill the CSG tree. Renderers own vertex
+  // buffers and delete them from their destructors, so drop them with our own
+  // GL context current.
   // While dragging, keep showing the old image until the new one is ready
   // (the view holds a shared_ptr, so the old renderer stays valid) -> no flicker.
-  if (!dragKeepView) this->qglview->setRenderer(nullptr);
+  this->qglview->withCurrentContext([this]() {
+    if (!dragKeepView) this->qglview->setRenderer(nullptr);
 #ifdef ENABLE_OPENCSG
-  this->previewRenderer = nullptr;
+    this->previewRenderer = nullptr;
 #endif
-  this->thrownTogetherRenderer = nullptr;
+    this->thrownTogetherRenderer = nullptr;
+  });
 
   // Remove previous CSG tree
   this->absoluteRootNode.reset();
@@ -1421,7 +1425,8 @@ void MainWindow::instantiateRoot()
 
     AbstractNode::resetIndexCounter();
 
-    EvaluationSession session{doc.parent_path().string()};
+    auto p = doc.empty() ? fs::path{} : doc.parent_path();
+    EvaluationSession session{p.string()};
     ContextHandle<BuiltinContext> builtin_context{Context::create<BuiltinContext>(&session)};
     setRenderVariables(builtin_context);
 
@@ -2883,7 +2888,10 @@ void MainWindow::cgalRender()
   }
 
   if (!dragKeepView) this->qglview->setRenderer(nullptr);
-  this->geomRenderer = nullptr;
+  this->qglview->withCurrentContext([this]() {
+    if (!dragKeepView) this->qglview->setRenderer(nullptr);
+    this->geomRenderer = nullptr;
+  });
   rootGeom.reset();
   geometrySourceEditor_ = nullptr;
 
@@ -4977,12 +4985,15 @@ void MainWindow::onTabManagerAboutToCloseEditor(EditorInterface *closingEditor)
   if (closingEditor == renderedEditor) {
     renderedEditor = nullptr;
 
-    // Invalidate renderers before we kill the CSG tree
-    this->qglview->setRenderer(nullptr);
+    // Invalidate renderers before we kill the CSG tree, with our own GL
+    // context current so their buffers are deleted where they were created.
+    this->qglview->withCurrentContext([this]() {
+      this->qglview->setRenderer(nullptr);
 #ifdef ENABLE_OPENCSG
-    this->previewRenderer = nullptr;
+      this->previewRenderer = nullptr;
 #endif
-    this->thrownTogetherRenderer = nullptr;
+      this->thrownTogetherRenderer = nullptr;
+    });
 
     // Remove previous CSG tree
     this->absoluteRootNode.reset();

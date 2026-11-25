@@ -341,8 +341,8 @@ PyObject *python_oversample_core(PyObject *obj, double size, const char *texture
 
   node->size = size;
 
-  auto filename = lookup_file(texture == NULL ? "" : texture, python_scriptpath.parent_path().u8string(),
-                              instance->location().filePath().parent_path().string());
+  auto filename =
+    lookup_file(texture == NULL ? "" : texture, python_scriptpath.parent_path().u8string());
 
   node->texturefilename = filename;
   node->textureprojection = PROJECTION_NONE;
@@ -685,8 +685,7 @@ PyObject *python_surface_core(const char *file, PyObject *center, PyObject *inve
 
   std::string fileval = file == NULL ? "" : file;
 
-  std::string filename = lookup_file(fileval, python_scriptpath.parent_path().u8string(),
-                                     instance->location().filePath().parent_path().string());
+  std::string filename = lookup_file(fileval, python_scriptpath.parent_path().u8string());
   node->filename = filename;
   handle_dep(fs::path(filename).generic_string());
 
