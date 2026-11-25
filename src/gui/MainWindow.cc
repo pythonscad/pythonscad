@@ -1393,9 +1393,10 @@ void MainWindow::instantiateRoot()
   // Invalidate renderers before we kill the CSG tree. Renderers own vertex
   // buffers and delete them from their destructors, so drop them with our own
   // GL context current.
-  if (!dragKeepView) this->qglview->setRenderer(nullptr);
+  // While dragging, keep showing the old image until the new one is ready
+  // (the view holds a shared_ptr, so the old renderer stays valid) -> no flicker.
   this->qglview->withCurrentContext([this]() {
-    this->qglview->setRenderer(nullptr);
+    if (!dragKeepView) this->qglview->setRenderer(nullptr);
 #ifdef ENABLE_OPENCSG
     this->previewRenderer = nullptr;
 #endif
@@ -2888,7 +2889,7 @@ void MainWindow::cgalRender()
 
   if (!dragKeepView) this->qglview->setRenderer(nullptr);
   this->qglview->withCurrentContext([this]() {
-    this->qglview->setRenderer(nullptr);
+    if (!dragKeepView) this->qglview->setRenderer(nullptr);
     this->geomRenderer = nullptr;
   });
   rootGeom.reset();
