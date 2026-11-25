@@ -11,6 +11,14 @@ mkdir -p "$output_parent"
 output_parent="$(cd "$output_parent" && pwd)"
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+# The PyQt build generates MinGW makefiles that are driven with mingw32-make. Fail
+# now instead of after the (long) PyQt build step if it is not installed
+# (mingw-w64-ucrt-x86_64-make, i.e. "make:p" in the msys2 dependency profile).
+if ! command -v mingw32-make >/dev/null 2>&1; then
+  echo "ERROR: mingw32-make not found; install mingw-w64-ucrt-x86_64-make." >&2
+  exit 1
+fi
+
 PYTHON_VERSION=$(python --version | cut -d' ' -f2 | cut -d'.' -f1,2)
 import_lib="$root/python_mingw/ucrt64/lib/libpython${PYTHON_VERSION}.dll.a"
 if [[ ! -f "$import_lib" ]]; then
