@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.1](https://github.com/pythonscad/pythonscad/compare/v1.2.0...v1.2.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* **python:** acquire GIL in extrude callbacks and harden twist/profile calls ([#1265](https://github.com/pythonscad/pythonscad/issues/1265)) ([a4b9290](https://github.com/pythonscad/pythonscad/commit/a4b9290aea9d113cc80a09bcccac099e9ae2c2bb))
+
+
+### Documentation
+
+* **release:** add v1.2.1 release announcement ([#1275](https://github.com/pythonscad/pythonscad/issues/1275)) ([68a61e2](https://github.com/pythonscad/pythonscad/commit/68a61e247e98bcae74bf8fd6c4312a4b6fbb6b08)), closes [#1264](https://github.com/pythonscad/pythonscad/issues/1264)
+
 ## [1.2.0](https://github.com/pythonscad/pythonscad/compare/v1.1.2...v1.2.0) (2026-11-18)
 
 
