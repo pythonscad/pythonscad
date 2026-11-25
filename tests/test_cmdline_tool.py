@@ -36,6 +36,13 @@ import difflib
 import math
 from pathlib import Path
 
+# set locale to english
+lc_all = os.environ.pop("LC_ALL", None)
+if lc_all and "LC_CTYPE" not in os.environ:
+    os.environ["LC_CTYPE"] = lc_all
+os.environ["LC_MESSAGES"] = "C"
+os.environ["LANGUAGE"] = "en"
+
 _debug_tcct = True
 #_debug_tcct = False
 
