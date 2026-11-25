@@ -2,6 +2,14 @@
 # - Release-triggered runs publish to TestPyPI first, then PyPI.
 # - Manually dispatched runs on the release-please branch publish to TestPyPI
 #   using a unique PEP 440 dev version for iterative pre-release testing.
+# - Manually dispatched runs with publish_to_production=true build from the
+#   selected ref (typically master) using VERSION.txt and publish directly to
+#   production PyPI (TestPyPI is skipped: it rejects uploads for versions that
+#   already exist and are older than 14 days). Use this to recover a release
+#   packaging failure without bumping the version (e.g. re-ship v1.2.0 wheels
+#   after a CI fix).
+# - reuse_artifacts_from_run skips the expensive wheel/sdist builds and
+#   downloads pypi-* artifacts from a prior successful workflow run instead.
 #
 # Prerequisites (one-time setup):
 #   1. Create the "pythonscad" projects on PyPI and TestPyPI:
@@ -19,6 +27,21 @@ on:
   release:
     types: [released]
   workflow_dispatch:
+    inputs:
+      publish_to_production:
+        description: >-
+          Publish built wheels/sdist to production PyPI using VERSION.txt
+          (skips TestPyPI; use for release-packaging recovery)
+        type: boolean
+        required: false
+        default: false
+      reuse_artifacts_from_run:
+        description: >-
+          Skip builds; download pypi-* artifacts from this workflow run ID
+          (e.g. a prior run that already built all platforms)
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -26,6 +49,10 @@ permissions:
 jobs:
   build-wheels:
     name: Build wheels (${{ matrix.os }})
+    if: >-
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' &&
+      inputs.reuse_artifacts_from_run == '')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -53,7 +80,8 @@ jobs:
       - name: Set dynamic version for manual TestPyPI runs
         if: >-
           github.event_name == 'workflow_dispatch' &&
-          github.ref == 'refs/heads/release-please--branches--master--components--pythonscad'
+          github.ref == 'refs/heads/release-please--branches--master--components--pythonscad' &&
+          !inputs.publish_to_production
         shell: bash
         run: |
           set -euo pipefail
@@ -170,6 +198,10 @@ jobs:
 
   build-sdist:
     name: Build source distribution
+    if: >-
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' &&
+      inputs.reuse_artifacts_from_run == '')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -185,7 +217,8 @@ jobs:
       - name: Set dynamic version for manual TestPyPI runs
         if: >-
           github.event_name == 'workflow_dispatch' &&
-          github.ref == 'refs/heads/release-please--branches--master--components--pythonscad'
+          github.ref == 'refs/heads/release-please--branches--master--components--pythonscad' &&
+          !inputs.publish_to_production
         shell: bash
         run: |
           set -euo pipefail
@@ -226,45 +259,79 @@ jobs:
   publish-to-test-pypi:
     name: Publish to test PyPI
     needs: [build-wheels, build-sdist]
+    # Skip for production recovery: TestPyPI rejects re-uploads of versions
+    # that already exist and are older than 14 days.
     if: >
+      always() &&
+      (needs.build-wheels.result == 'success' || needs.build-wheels.result == 'skipped') &&
+      (needs.build-sdist.result == 'success' || needs.build-sdist.result == 'skipped') &&
+      (needs.build-wheels.result == 'success' ||
+      needs.build-sdist.result == 'success' ||
+      (github.event_name == 'workflow_dispatch' &&
+      inputs.reuse_artifacts_from_run != '')) &&
+      (
       github.event_name == 'release' ||
       (github.event_name == 'workflow_dispatch' &&
-      github.ref == 'refs/heads/release-please--branches--master--components--pythonscad')
+      github.ref == 'refs/heads/release-please--branches--master--components--pythonscad' &&
+      !inputs.publish_to_production)
+      )
     runs-on: ubuntu-latest
     environment: testpypi
     permissions:
       contents: read
       id-token: write
+      actions: read
     steps:
       - uses: actions/download-artifact@v8
         with:
           pattern: pypi-*
           merge-multiple: true
           path: dist/
+          run-id: ${{ inputs.reuse_artifacts_from_run || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Test PyPI
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
+
   publish-to-pypi:
     name: Publish to PyPI
     needs: [build-wheels, build-sdist, publish-to-test-pypi]
     if: >
-      github.event_name == 'release' &&
+      always() &&
+      (needs.build-wheels.result == 'success' || needs.build-wheels.result == 'skipped') &&
+      (needs.build-sdist.result == 'success' || needs.build-sdist.result == 'skipped') &&
+      (
+      (github.event_name == 'release' &&
+      needs.publish-to-test-pypi.result == 'success' &&
       github.event.action == 'released' &&
-      !github.event.release.prerelease
+      !github.event.release.prerelease) ||
+      (github.event_name == 'workflow_dispatch' &&
+      inputs.publish_to_production &&
+      (needs.publish-to-test-pypi.result == 'success' ||
+      needs.publish-to-test-pypi.result == 'skipped') &&
+      (needs.build-wheels.result == 'success' ||
+      needs.build-sdist.result == 'success' ||
+      inputs.reuse_artifacts_from_run != ''))
+      )
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
       contents: read
       id-token: write
+      actions: read
     steps:
       - uses: actions/download-artifact@v8
         with:
           pattern: pypi-*
           merge-multiple: true
           path: dist/
+          run-id: ${{ inputs.reuse_artifacts_from_run || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
+        with:
+          skip-existing: true

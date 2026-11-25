@@ -379,6 +379,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install APT repository tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends apt-utils
+
       - name: Download packages from GitHub Release
         run: |
           mkdir -p /tmp/debs

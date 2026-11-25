@@ -19,6 +19,7 @@ on:
       - "scripts/smoke-test-pip.py"
       - "scripts/deps/profiles/pythonscad-pip.json"
       - "tests/typing/**"
+      - "tests/test_setup_parallel.py"
       - "uv.lock"
       - ".github/workflows/build-pypi-wheels.yml"
   pull_request:
@@ -35,6 +36,7 @@ on:
       - "scripts/smoke-test-pip.py"
       - "scripts/deps/profiles/pythonscad-pip.json"
       - "tests/typing/**"
+      - "tests/test_setup_parallel.py"
       - "uv.lock"
       - ".github/workflows/build-pypi-wheels.yml"
   workflow_dispatch:
@@ -78,6 +80,13 @@ jobs:
       - name: Type-check the public Python API
         run: uv run --no-sync pyright --project tests/typing
 
+      - name: Run setup.py parallel-compile unit tests
+        # setuptools is a build-system requirement, not a project dep; pull it
+        # in with pytest so `from setuptools import Distribution` resolves.
+        # Use `python -m pytest` so the repo root stays on sys.path and
+        # `from setup import ...` resolves (bare `pytest` does not).
+        run: uv run --no-sync --with pytest --with setuptools python -m pytest -q tests/test_setup_parallel.py
+
       - name: Add build tools to PATH
         shell: bash
         run: |
@@ -93,4 +102,105 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: pypi-wheel-smoke
+          path: wheelhouse/*.whl
+
+  build-windows-wheel-smoke:
+    name: cp312 win_amd64 wheel smoke
+    runs-on: windows-2022
+    env:
+      CIBW_BUILD: cp312-win_amd64
+    steps:
+      - run: |
+          git config --global submodule.fetchJobs 8
+          git config --global core.longpaths true
+
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Fetch tags for version detection
+        run: |
+          git fetch --unshallow --tags || git fetch --tags
+          git describe --tags --always --dirty
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.15"
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: false
+
+      - name: Install build tooling
+        run: uv sync --frozen --only-group build --no-install-project
+
+      - name: Add build tools to PATH
+        shell: bash
+        run: echo "${GITHUB_WORKSPACE}/.venv/Scripts" >> "$GITHUB_PATH"
+
+      - name: Setup MSYS2 parser tools
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
+        with:
+          msystem: MSYS
+          update: false
+          install: >-
+            flex
+            bison
+
+      - name: Add MSYS2 parser tools to PATH
+        shell: bash
+        run: echo "C:/msys64/usr/bin" >> "$GITHUB_PATH"
+
+      - name: Restore Windows vcpkg cache
+        id: windows-vcpkg-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            .wheel-vcpkg
+            .wheel-vcpkg-cache
+            ~/AppData/Local/vcpkg/archives
+          key: pypi-windows-vcpkg-${{ hashFiles('scripts/cibuildwheel/vcpkg.json', 'scripts/cibuildwheel/install-deps-windows.ps1') }}
+          restore-keys: |
+            pypi-windows-vcpkg-
+
+      - name: Install Windows wheel dependencies
+        shell: pwsh
+        env:
+          VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/.wheel-vcpkg-cache,readwrite
+        run: ./scripts/cibuildwheel/install-deps-windows.ps1
+
+      - name: Prune Windows vcpkg cache
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          foreach ($path in @(
+            ".wheel-vcpkg\buildtrees",
+            ".wheel-vcpkg\downloads",
+            ".wheel-vcpkg\packages"
+          )) {
+            if (Test-Path $path) {
+              Remove-Item -Recurse -Force $path
+            }
+          }
+
+      - name: Save Windows vcpkg cache
+        if: steps.windows-vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            .wheel-vcpkg
+            .wheel-vcpkg-cache
+            ~/AppData/Local/vcpkg/archives
+          key: ${{ steps.windows-vcpkg-cache.outputs.cache-primary-key }}
+
+      - name: Build wheel
+        uses: pypa/cibuildwheel@f9b966cfadf4109556cadc5bb39ddb72d0ce664e # v4.3.5
+        env:
+          CIBW_BEFORE_ALL_WINDOWS: python -c "print('Windows wheel dependencies already installed by workflow')"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pypi-windows-wheel-smoke
           path: wheelhouse/*.whl
