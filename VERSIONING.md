@@ -142,16 +142,44 @@ independently (`1.3.x`, `1.4.x`, …).
    - Verify all features are ready for release
 
 6. **Release PR is merged**:
-   - Git tag is created (e.g., `v1.3.0`)
-   - GitHub Release is published
+   - Release Please creates the GitHub Release as a **draft** and creates the
+     git tag (e.g., `v1.3.0`; `force-tag-creation`)
+   - `release-please.yml` immediately publishes the draft as a
+     **pre-release that is not marked "latest"**
    - Changelog is finalized
 
 7. **Cut the maintenance branch** from the new tag:
    - `./scripts/cut-release-branch.sh 1.3.0`
 
-8. **CI builds release artifacts**:
+8. **CI builds release artifacts** (triggered by the release `published` event):
    - Binaries built for all platforms
-   - Attached to GitHub Release
+   - Attached to the pre-release
+   - Release notes / website are deployed; the Windows installers still need
+     signing
+
+9. **Sign and publish**: once all artifacts are attached and the Windows
+   installers are signed (`scripts/sign-windows-release.ps1`),
+   `publish-release.yml` removes the pre-release flag and marks the release as
+   "latest". Only then does the `released` event fire, which uploads to PyPI.
+
+### Release flow (pre-release until signed)
+
+```text
+Release PR merged
+  → Release Please creates a draft release + tag (no events sent for drafts)
+  → release-please.yml publishes it as a pre-release (not latest)
+      → `published` event: build workflows, website, notify-signing
+  → maintainer signs the Windows installers
+  → publish-release.yml: prerelease=false, latest
+      → `released` event: PyPI upload
+```
+
+The `prerelease` option in the Release Please config only applies to 0.x and
+pre-release versions, so it cannot be used for this; the draft step is what
+keeps new releases from being published as "latest" before their assets exist
+([#1281](https://github.com/pythonscad/pythonscad/issues/1281)). Workflows must
+therefore trigger on `published` (not `created`, which is not sent for draft
+releases).
 
 ### Patch releases from `release/X.Y`
 
@@ -164,6 +192,11 @@ independently (`1.3.x`, `1.4.x`, …).
 5. Website and playground production deploys only when the new tag is the
    highest semver tag in the repo, so an older-line patch cannot roll the
    site back.
+6. A `release/X.Y` branch is cut from the `vX.Y.0` tag, so it does **not**
+   contain CI, packaging or release-pipeline fixes that landed on `master`
+   afterwards. Backport those (`ci:`/`build:`/`fix(windows):` …) to the
+   maintenance branch **before** merging its patch Release PR; the release
+   workflows run with the workflow files from the tag.
 
 ### Batching releases
 
