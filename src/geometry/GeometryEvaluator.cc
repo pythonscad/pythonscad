@@ -1,4 +1,7 @@
 #include "geometry/GeometryEvaluator.h"
+#ifdef ENABLE_OCCT
+#include "geometry/brep/BRepGeometry.h"
+#endif
 
 #include <algorithm>
 #include <cassert>
@@ -119,7 +122,12 @@ std::shared_ptr<const Geometry> GeometryEvaluator::evaluateGeometry(const Abstra
         bool convex = bool(
           ps->convexValue());  // bool is true only if tribool is true, (not indeterminate and not false)
         if (!convex) {
+#ifdef ENABLE_OCCT
+          ps = BRepUtils::carryExact(
+            *ps, std::shared_ptr<const PolySet>(PolySetUtils::tessellate_faces(*ps)));
+#else
           ps = PolySetUtils::tessellate_faces(*ps);
+#endif
         }
       }
       return ps;
@@ -1834,12 +1842,23 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
         return ResultObject::mutableResult(geom_s);
         // csgResult = ManifoldUtils::createManifoldFromGeometry(geom_s);
       }
+#ifdef ENABLE_OCCT
+      if (auto exact = BRepUtils::attachBoolean(op, actualchildren, csgResult); exact != csgResult) {
+        return ResultObject::constResult(exact);
+      }
+#endif
       return ResultObject::mutableResult(csgResult);
     }
 #endif
 #ifdef ENABLE_CGAL
-    return ResultObject::constResult(std::shared_ptr<const Geometry>(
-      CGALUtils::applyUnion3D(*csgOpNode, actualchildren.begin(), actualchildren.end())));
+    std::shared_ptr<const Geometry> cgalResult(
+      CGALUtils::applyUnion3D(*csgOpNode, actualchildren.begin(), actualchildren.end()));
+#ifdef ENABLE_OCCT
+    if (csgOpNode == nullptr || csgOpNode->r == 0) {
+      cgalResult = BRepUtils::attachBoolean(op, actualchildren, cgalResult);
+    }
+#endif
+    return ResultObject::constResult(cgalResult);
 #else
     assert(false && "No boolean backend available");
 #endif
@@ -1890,12 +1909,23 @@ GeometryEvaluator::ResultObject GeometryEvaluator::applyToChildren3D(const Abstr
         //	csgResult = ManifoldUtils::createManifoldFromGeometry(geom_s);
         return ResultObject::mutableResult(geom_s);
       } while (0);
+#ifdef ENABLE_OCCT
+      if (auto exact = BRepUtils::attachBoolean(op, children, csgResult); exact != csgResult) {
+        return ResultObject::constResult(exact);
+      }
+#endif
       return ResultObject::mutableResult(csgResult);
     }
 #endif
 #ifdef ENABLE_CGAL
     const CsgOpNode *csgOpNode = dynamic_cast<const CsgOpNode *>(&node);
-    return ResultObject::constResult(CGALUtils::applyOperator3D(*csgOpNode, children, op));
+    std::shared_ptr<const Geometry> cgalResult = CGALUtils::applyOperator3D(*csgOpNode, children, op);
+#ifdef ENABLE_OCCT
+    if (csgOpNode == nullptr || csgOpNode->r == 0) {
+      cgalResult = BRepUtils::attachBoolean(op, children, cgalResult);
+    }
+#endif
+    return ResultObject::constResult(cgalResult);
 #else
     assert(false && "No boolean backend available");
 #endif
@@ -2185,7 +2215,11 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyToChildren2D(const AbstractNo
 
   if (children.size() == 1 && op != OpenSCADOperator::OFFSET) {
     if (children[0]) {
+#ifdef ENABLE_OCCT
+      return BRepUtils::carryExact2D(*children[0], std::make_unique<Polygon2d>(*children[0]));  // Copy
+#else
       return std::make_unique<Polygon2d>(*children[0]);  // Copy
+#endif
     } else {
       return nullptr;
     }
@@ -2220,7 +2254,11 @@ std::unique_ptr<Polygon2d> GeometryEvaluator::applyToChildren2D(const AbstractNo
   if (csgOpNode != nullptr && csgOpNode->r != 0 && pol) {
     return addFillets2D(std::move(pol), children, csgOpNode->r, csgOpNode->fn);
   }
+#ifdef ENABLE_OCCT
+  return BRepUtils::attachBoolean2D(op, children, std::move(pol));
+#else
   return pol;
+#endif
 }
 
 std::unique_ptr<Barcode1d> GeometryEvaluator::applyToChildren1D(const AbstractNode& node,
@@ -2458,7 +2496,11 @@ Response GeometryEvaluator::visit(State& state, const LeafNode& node)
       assert(geom);
       if (const auto polygon = std::dynamic_pointer_cast<const Polygon2d>(geom)) {
         if (!polygon->isSanitized()) {
+#ifdef ENABLE_OCCT
+          geom = BRepUtils::carryExact2D(*polygon, ClipperUtils::sanitize(*polygon));
+#else
           geom = ClipperUtils::sanitize(*polygon);
+#endif
         }
       } else if (const auto ps = std::dynamic_pointer_cast<const PolySet>(geom)) {
         //        assert(!ps->hasDegeneratePolygons());
@@ -2547,7 +2589,11 @@ Response GeometryEvaluator::visit(State& state, const TransformNode& node)
             assert(polygons);
 
             geom = polygons;
+#ifdef ENABLE_OCCT
+            BRepUtils::transform2d(*polygons, node.matrix);
+#else
             polygons->transform3d(node.matrix);
+#endif
           } break;
           case 3: {
             auto mutableGeom = res.asMutableGeometry();
@@ -2940,7 +2986,12 @@ Response GeometryEvaluator::visit(State& state, const LinearExtrudeNode& node)
         const auto polygons = std::dynamic_pointer_cast<const Polygon2d>(geometry);
         const auto barcode1d = std::dynamic_pointer_cast<const Barcode1d>(geometry);
 
+#ifdef ENABLE_OCCT
+        if (polygons != nullptr)
+          geom = BRepUtils::linearExtrude(node, *polygons, extrudePolygon(node, *polygons));
+#else
         if (polygons != nullptr) geom = extrudePolygon(node, *polygons);
+#endif
         if (barcode1d != nullptr) geom = extrudeBarcode(node, *barcode1d);
 
         if (geom == nullptr) geom = {};
@@ -2994,7 +3045,12 @@ Response GeometryEvaluator::visit(State& state, const RotateExtrudeNode& node)
       const auto polygons = std::dynamic_pointer_cast<const Polygon2d>(geometry);
       const auto barcode1d = std::dynamic_pointer_cast<const Barcode1d>(geometry);
 
+#ifdef ENABLE_OCCT
+      if (polygons != nullptr)
+        geom = BRepUtils::rotateExtrude(node, *polygons, rotatePolygon(node, *polygons));
+#else
       if (polygons != nullptr) geom = rotatePolygon(node, *polygons);
+#endif
       if (barcode1d != nullptr) geom = rotateBarcode(node, *barcode1d);
       if (geom == nullptr) geom = {};
     } else {

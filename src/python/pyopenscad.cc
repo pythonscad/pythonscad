@@ -669,10 +669,14 @@ CurveDiscretizer CreateCurveDiscretizer(PyObject *kwargs)
   return CurveDiscretizer([kwargs, mainModule](const char *key) -> std::optional<double> {
     double result;
     if (kwargs != nullptr && PyDict_Check(kwargs)) {  // kwargs can be nullptr
-      if (PyObject *value = PyDict_GetItemString(kwargs, key); value != nullptr) {
+      if (PyObject *borrowed = PyDict_GetItemString(kwargs, key); borrowed != nullptr) {
+        // The dict may hold the only reference: own one before deleting the entry,
+        // otherwise the value is freed before it is read.
+        Py_INCREF(borrowed);
+        PyObjectUniquePtr value(borrowed, &PyObjectDeleter);
         // PyArg_ParseTupleAndKeywords does not allow unspecified keyword args.
         PyDict_DelItemString(kwargs, key);
-        if (!(python_numberval(value, &result, nullptr, 0)))
+        if (!(python_numberval(value.get(), &result, nullptr, 0)))
           return result;  // value can be Integer, Number, ...
       }
     }

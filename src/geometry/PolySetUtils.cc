@@ -22,6 +22,10 @@
 #ifdef ENABLE_MANIFOLD
 #include "geometry/manifold/ManifoldGeometry.h"
 #endif
+#include "src/core/ColorUtil.h"
+#ifdef ENABLE_OCCT
+#include "geometry/brep/BRepGeometry.h"
+#endif
 
 namespace PolySetUtils {
 
@@ -69,8 +73,6 @@ std::unique_ptr<PolySet> tessellate_faces(const PolySet& polyset)
   auto result = std::make_unique<PolySet>(3, polyset.convexValue());
   result->setConvexity(polyset.getConvexity());
   result->setTriangular(true);
-  result->curves = polyset.curves;
-  result->surfaces = polyset.surfaces;
   result->setManifold(polyset.isManifold());
   result->polylines = polyset.polylines;
   // ideally this should not require a copy...
@@ -200,7 +202,12 @@ std::shared_ptr<const PolySet> getGeometryAsPolySet(const std::shared_ptr<const 
 #endif
 #ifdef ENABLE_MANIFOLD
   if (auto mani = std::dynamic_pointer_cast<const ManifoldGeometry>(geom)) {
+#ifdef ENABLE_OCCT
+    // Keep an exact solid (e.g. of a boolean result) attached through the conversion
+    return BRepUtils::carryExact(*mani, std::shared_ptr<const PolySet>(mani->toPolySet()));
+#else
     return mani->toPolySet();
+#endif
   }
 #endif
   return nullptr;
