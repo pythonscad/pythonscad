@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exact (B-Rep) STEP export, only registered with ENABLE_OCCT.
+"""Exact (B-Rep) STEP export, only registered with ENABLE_OCCT; runs with --enable=occt.
 
 Checks that primitives are written with analytic surfaces instead of a faceted
 mesh, that transforms and booleans keep them exact, and that models mixing
@@ -156,13 +156,15 @@ def stl_volume(text: str) -> tuple[float, int]:
     return volume, len(v) // 3
 
 
-def run(pythonscad: str, workdir: str, name: str, script_text: str, out: str) -> tuple[str | None, str]:
+def run(
+    pythonscad: str, workdir: str, name: str, script_text: str, out: str, occt: bool = True
+) -> tuple[str | None, str]:
     script = os.path.join(workdir, f"{name}.py")
     with open(script, "w", encoding="utf-8") as f:
         f.write(script_text)
     target = os.path.join(workdir, f"{name}-render.step")
     proc = subprocess.run(
-        [pythonscad, "--trust-python", "-o", target, script],
+        [pythonscad, "--trust-python", *(["--enable=occt"] if occt else []), "-o", target, script],
         capture_output=True,
         text=True,
         timeout=TIMEOUT_SECONDS,
@@ -223,6 +225,17 @@ def main() -> int:
                 print(f"FAIL {name}: volume {volume:.2f} vs {exact:.2f} ({error:.2%}), {triangles} triangles", file=sys.stderr)
             else:
                 print(f"ok   {name} (volume error {error:.2%}, {triangles} triangles)")
+
+        # Without the experimental feature "occt" everything must behave as without OpenCASCADE.
+        for name, body in (("flag-off-sphere", "show(sphere(10))"), ("flag-off-difference", "show(sphere(10) - cube(10))")):
+            out = os.path.join(workdir, f"{name}-render.step")
+            text, log = run(pythonscad, workdir, name, f"from pythonscad import *\n{body}\n", out, occt=False)
+            error = "export failed" if text is None else MESH(text)
+            if error:
+                failures += 1
+                print(f"FAIL {name}: {error}\n{log}", file=sys.stderr)
+            else:
+                print(f"ok   {name}")
 
         for name, script, out, check in jobs:
             text, log = run(pythonscad, workdir, name, script, out)
