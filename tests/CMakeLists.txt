@@ -1864,6 +1864,16 @@ if(Python3_EXECUTABLE)
   set_property(TEST get-dependencies-profile-merge PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 endif()
 
+# Host-side check that new releases are created as drafts and published as
+# prereleases, and that the release workflows trigger on `published` (#1281).
+if(Python3_EXECUTABLE)
+  add_test(NAME release-flow-config CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_release_flow_config.py
+  )
+  set_property(TEST release-flow-config PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+endif()
+
 # Host-side check for the platform-specific PythonSCAD startup-file location.
 if(Python3_EXECUTABLE)
   add_test(NAME pythonscadrc-config-path CONFIGURATIONS Default

@@ -2,7 +2,7 @@ name: Build Windows Native Package
 
 on:
   release:
-    types: [created]
+    types: [published]
   workflow_dispatch:
     inputs:
       upload_to_release:

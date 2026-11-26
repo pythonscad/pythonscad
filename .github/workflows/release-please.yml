@@ -105,3 +105,45 @@ jobs:
         run: echo "Release ${STEPS_RELEASE_OUTPUTS_TAG_NAME} created"
         env:
           STEPS_RELEASE_OUTPUTS_TAG_NAME: ${{ steps.release.outputs.tag_name }}
+
+      # Release Please is configured to create releases as drafts (see
+      # "draft" in .release-please-config*.json), so nothing is public and no
+      # `release` workflow has run yet. Publish the draft as a PRERELEASE that
+      # is not marked "latest": the build workflows (trigger: release
+      # `published`) then attach their artifacts to it, and the release only
+      # becomes public/latest after the Windows artifacts are signed and
+      # publish-release.yml removes the prerelease flag (#1281).
+      - name: Publish release as prerelease
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/github-script@v9
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+        with:
+          # Use bot account PAT so the resulting `release: published` event
+          # triggers the build workflows (GITHUB_TOKEN events do not).
+          github-token: ${{ secrets.RELEASE_TOKEN }}
+          script: |
+            const tag = process.env.RELEASE_TAG;
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 30,
+            });
+            const release = releases.find(r => r.tag_name === tag);
+            if (!release) {
+              core.setFailed(`No release found for tag ${tag}`);
+              return;
+            }
+            if (!release.draft) {
+              console.log(`Release ${tag} is already published (prerelease=${release.prerelease}); nothing to do.`);
+              return;
+            }
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.id,
+              draft: false,
+              prerelease: true,
+              make_latest: 'false',
+            });
+            console.log(`Published ${tag} as a prerelease (not latest).`);
