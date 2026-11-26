@@ -15,6 +15,6 @@ std::string FacingCheckNode::toString() const
 {
   std::ostringstream stream;
   stream << name() << "(d = " << distance << ", angle = " << min_angle << ", alpha = " << alpha
-         << ", occlusion = " << (occlusion ? "true" : "false") << ")";
+         << ", occlusion = " << (occlusion ? "true" : "false") << ", grow = " << grow << ")";
   return stream.str();
 }

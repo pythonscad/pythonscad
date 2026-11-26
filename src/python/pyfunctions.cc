@@ -915,9 +915,18 @@ PyMethodDef PyOpenSCADFunctions[] = {
    "Make a mesh watertight/manifold.\n"
    "repair(obj)\n"
    "repair(obj, color=\"red\")"},
+<<<<<<< HEAD
   {"check", (PyCFunction)python_check, METH_VARARGS | METH_KEYWORDS,
    "Generic Design Rule Check (internal implementation).\n"
    "Not meant to be called directly; use internal(), external(), slope(), overhang(), draft() instead."},
+=======
+  {"internal", (PyCFunction)python_internal, METH_VARARGS | METH_KEYWORDS,
+   "Min wall thickness check between facing surfaces, returns the violating material.\n"
+   "internal(obj, d, angle=120, alpha=90, occlusion=True, grow=None, report=False)"},
+  {"external", (PyCFunction)python_external, METH_VARARGS | METH_KEYWORDS,
+   "Min spacing check between facing surfaces, returns the violating air.\n"
+   "external(obj, d, other=None, angle=120, alpha=90, occlusion=True, grow=None, report=False)"},
+>>>>>>> a19549f71 (fix(chore): internal)
   {"fillet", (PyCFunction)python_fillet, METH_VARARGS | METH_KEYWORDS,
    "Round edges of a solid.\n"
    "fillet(obj, r=radius)\n"
