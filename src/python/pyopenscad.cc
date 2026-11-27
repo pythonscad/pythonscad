@@ -58,6 +58,7 @@
 #endif
 
 #include "pyopenscad.h"
+#include "pymodulecleanup.h"
 #include "pydata.h"
 #include "python_runtime.h"
 #include "core/CsgOpNode.h"
@@ -1198,52 +1199,10 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
             continue;
           }
           modulesMap = mm;
-          PyObject *modKeyList = PyDict_Keys(mm);
-          if (modKeyList == nullptr) {
-            continue;
-          }
-          const Py_ssize_t nMod = PyList_GET_SIZE(modKeyList);
-          for (Py_ssize_t k = 0; k < nMod; ++k) {
-            PyObject *k2 = PyList_GET_ITEM(modKeyList, k);
-            if (!PyUnicode_Check(k2)) {
-              continue;
-            }
-            std::string k2StrStr;
-            if (!python_pyobject_to_utf8(k2, k2StrStr, "initPython() sys.modules key")) {
-              PyErr_Clear();
-              continue;
-            }
-            const char *k2Str = k2StrStr.c_str();
-            PyObject *value2 = PyDict_GetItem(mm, k2);
-            if (value2 == nullptr || !PyModule_Check(value2)) {
-              continue;
-            }
-            PyObject *modrepr = PyObject_Repr(value2);
-            if (modrepr == nullptr) {
-              /* Same exception-hygiene treatment as the catcher /
-               * catch_error sites: PyObject_Repr() leaves a
-               * TypeError / MemoryError / etc. set on failure;
-               * clear it so we do not poison the next iteration's
-               * C-API calls. */
-              PyErr_Clear();
-              continue;
-            }
-            PyObjectUniquePtr modreprOwned(modrepr, &PyObjectDeleter);
-            std::string modReprStr;
-            if (!python_pyobject_to_utf8(modrepr, modReprStr, "initPython() repr(module)")) {
-              PyErr_Clear();
-              continue;
-            }
-            const char *modreprstr = modReprStr.c_str();
-            if (strstr(modreprstr, "(frozen)") != nullptr) continue;
-            if (strstr(modreprstr, "(built-in)") != nullptr) continue;
-            if (strstr(modreprstr, "/encodings/") != nullptr) continue;
-            if (strstr(modreprstr, "_frozen_") != nullptr) continue;
-            if (strstr(modreprstr, "site-packages") != nullptr) continue;
-            if (strstr(modreprstr, "usr/lib") != nullptr) continue;
-            moduleKeysToDelete.emplace_back(k2Str);
-          }
-          Py_DECREF(modKeyList);
+          // Judge whole top-level packages (stdlib, extensions, site-packages
+          // are kept; user code is dropped). See pymodulecleanup.h for why
+          // per-entry decisions broke `importlib.machinery` on Windows.
+          moduleKeysToDelete = python_collect_stale_modules(mm, {"openscad", "pythonscad"});
         }
         Py_DECREF(sysKeyList);
       }
@@ -1269,31 +1228,11 @@ void initPython(const std::string& binDir, const std::string& scriptpath, const 
         safe_del(maindict, s.c_str());
       }
       if (modulesMap != nullptr) {
-        // Defensive cleanup of the PythonSCAD module hierarchy:
-        //
-        //   _openscad  -> registered via PyImport_AppendInittab, repr contains
-        //                 "(built-in)" and is therefore filtered out above.
-        //                 We *intentionally* keep it cached because the C
-        //                 module is a singleton (its types, methods and
-        //                 internal state must not be torn down between scripts).
-        //
-        //   openscad   -> file-based pure-Python overlay
-        //                 (libraries/python/openscad/__init__.py). The filter
-        //                 above already enqueues it for deletion if it was
-        //                 imported, but we list it explicitly so the behaviour
-        //                 survives unrelated changes to the filter.  If the
-        //                 user script never imported it, safe_del's
-        //                 `PyMapping_HasKeyString` probe simply returns 0
-        //                 and the delete is skipped.
-        //
-        //   pythonscad -> file-based pure-Python overlay; same rationale.
-        const char *overlay_modules[] = {"openscad", "pythonscad"};
-        for (const char *mod_name : overlay_modules) {
-          if (std::find(moduleKeysToDelete.begin(), moduleKeysToDelete.end(), mod_name) ==
-              moduleKeysToDelete.end()) {
-            moduleKeysToDelete.emplace_back(mod_name);
-          }
-        }
+        // `_openscad` is registered via PyImport_AppendInittab ("(built-in)")
+        // and intentionally stays cached: the C module is a singleton. The
+        // pure-Python overlays `openscad` and `pythonscad` (and all their
+        // submodules) are always dropped via the forceDrop list above, even
+        // when installed into a site-packages directory.
         for (const auto& s : moduleKeysToDelete) {
           safe_del(modulesMap, s.c_str());
         }

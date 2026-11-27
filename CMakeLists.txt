@@ -764,6 +764,7 @@ endif()
 if(ENABLE_PYTHON)
   SET(PYTHON_SOURCES
     src/python/pyopenscad.cc
+    src/python/pymodulecleanup.cc
     src/python/pydata.cc
     src/python/pymod.cc
     src/python/pyfunctions.cc
