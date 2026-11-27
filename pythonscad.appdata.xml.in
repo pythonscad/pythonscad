@@ -36,6 +36,26 @@
   </screenshots>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.2.1" date="2026-11-27">
+      <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.2.1</url>
+      <description>
+        <p>Bug fixes:</p>
+        <ul>
+          <li>chore: allow ascii files to contain float rounding tolerances</li>
+          <li>chore: always test with english locale</li>
+          <li>chore: fixed pre commit errors</li>
+          <li>chore: fixed renderer which got corrupted during sync</li>
+          <li>chore: implement code review suggestions</li>
+          <li>chore: remove unused variable</li>
+          <li>chore: restore installation of openscad and pythonscad libs</li>
+          <li>chore: revert changed github workflow</li>
+          <li>packaging: ship the sources the sdist needs on every platform</li>
+          <li>python: acquire GIL in extrude callbacks and harden twist/profile calls</li>
+          <li>python: judge sys.modules cleanup per top-level package on re-init</li>
+          <li>windows: install mingw32-make for the PyQt6 bindings build</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.2.0" date="2026-11-18">
       <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.2.0</url>
       <description>
