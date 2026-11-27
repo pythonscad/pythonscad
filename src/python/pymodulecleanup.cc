@@ -39,6 +39,9 @@ bool starts_with_ci(const std::string& s, const std::string& prefix)
 {
   if (s.size() < prefix.size()) return false;
   return std::equal(prefix.begin(), prefix.end(), s.begin(), [](char a, char b) {
+#ifdef _WIN32
+    if ((a == '/' || a == '\\') && (b == '/' || b == '\\')) return true;
+#endif
     return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b));
   });
 }
