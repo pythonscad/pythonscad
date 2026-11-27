@@ -120,7 +120,10 @@ void GLView::setupShader()
   edge_shader = std::make_unique<ShaderUtils::ShaderInfo>(ShaderUtils::ShaderInfo{
     .resource = resource,
     .type = ShaderUtils::ShaderType::EDGE_RENDERING,
-    .uniforms = {},
+    .uniforms =
+      {
+        {"show_edges", glGetUniformLocation(resource.shader_program, "show_edges")},
+      },
     .attributes =
       {
         {"barycentric", glGetAttribLocation(resource.shader_program, "barycentric")},
@@ -640,6 +643,9 @@ void GLView::showScalemarkers(const Color4f& col)
 {
   // Add scale ticks on large axes
   auto l = cam.zoomValue();
+  // With a zero or negative distance, the tick width computed below would be zero, and
+  // the loop over the ticks would practically never end.
+  if (l <= 0 || !std::isfinite(l)) return;
   glLineWidth(this->getDPI());
   glColor3f(col.r(), col.g(), col.b());
 

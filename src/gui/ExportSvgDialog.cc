@@ -4,6 +4,11 @@
 #include <QPalette>
 #include <QPushButton>
 
+#include "core/Settings.h"
+#include "gui/SettingsWriter.h"
+
+using S = Settings::SettingsExportSvg;
+
 ExportSvgDialog::ExportSvgDialog()
 {
   setupUi(this);
@@ -33,7 +38,16 @@ ExportSvgDialog::ExportSvgDialog()
 
 int ExportSvgDialog::exec()
 {
-  return QDialog::exec();
+  const auto result = QDialog::exec();
+  if (result == QDialog::Accepted) {
+    S::exportSvgFill.setValue(isFillEnabled());
+    S::exportSvgFillColor.setValue(fillColor.name().toStdString());
+    S::exportSvgStroke.setValue(isStrokeEnabled());
+    S::exportSvgStrokeColor.setValue(strokeColor.name().toStdString());
+    S::exportSvgStrokeWidth.setValue(getStrokeWidth());
+    Settings::Settings::visit(SettingsWriter());
+  }
+  return result;
 }
 
 QColor ExportSvgDialog::getFillColor() const

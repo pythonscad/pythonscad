@@ -13,7 +13,7 @@ class PythonScadRcConfigPathTests(unittest.TestCase):
         lookup = source.split("std::string MainWindow::loadInitFile", 1)[1].split(
             "void MainWindow::customSetup", 1
         )[0]
-        self.assertIn('lookup_file(".pythonscadrc", PlatformUtils::pythonUserConfigPath(), "")', lookup)
+        self.assertIn('lookup_file(".pythonscadrc", PlatformUtils::pythonUserConfigPath())', lookup)
         self.assertNotIn("userConfigPath()", lookup)
 
     def test_each_platform_has_a_pythonscad_specific_directory(self):
