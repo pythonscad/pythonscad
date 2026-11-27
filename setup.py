@@ -727,6 +727,7 @@ def main():
               "src/python/pydata.cc",
               "src/python/pyopenscad.cc",
               "src/python/python_runtime.cc",
+              "src/python/pymodulecleanup.cc",
               "src/python/pymod.cc",
               "src/python/pip_fixer.cc"
             ]

@@ -1736,6 +1736,16 @@ if(ENABLE_PYTHON)
   )
   set_property(TEST python-sibling-import-cli PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 
+  # Re-using the interpreter (--animate calls initPython() per frame) must not
+  # drop stdlib/extension modules from sys.modules piecemeal: that broke
+  # `import pkgutil` (importlib.machinery) on Windows/macOS layouts.
+  add_test(NAME python-reinit-module-cleanup CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_python_reinit_module_cleanup.py
+      ${OPENSCAD_BINPATH}
+  )
+  set_property(TEST python-reinit-module-cleanup PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+
   # Layer-2: drive `pythonscad --ipython` through a real PTY (pexpect)
   # so we exercise the actual interactive prompt, not just the
   # non-interactive piped-stdin path covered by `ipython-smoke`. This
