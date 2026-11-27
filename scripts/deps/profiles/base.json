@@ -625,6 +625,7 @@
         "bison:",
         "flex:",
         "toolchain:p",
+        "make:p",
         "cmake:p",
         "ninja:p",
         "boost:p",
