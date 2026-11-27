@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.2.1](https://github.com/pythonscad/pythonscad/compare/v1.2.0...v1.2.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **chore:** allow ascii files to contain float rounding tolerances ([9d6f67d](https://github.com/pythonscad/pythonscad/commit/9d6f67da063b3c7680b58621cc9a96ab79e6fa5b))
+* **chore:** always test with english locale ([b617658](https://github.com/pythonscad/pythonscad/commit/b6176580dbe9ece91aaab4fe4a4242a894fabf9f))
+* **chore:** fixed pre commit errors ([29c02af](https://github.com/pythonscad/pythonscad/commit/29c02af2494e2c5cb1d424d02253d9cdf9dc2ac4))
+* **chore:** fixed renderer which got corrupted during sync ([eaaec39](https://github.com/pythonscad/pythonscad/commit/eaaec397ec6e38d00c81ae5a9540fc3de163a84b))
+* **chore:** implement code review suggestions ([1a4656b](https://github.com/pythonscad/pythonscad/commit/1a4656b486cc5c9970c752fc3873e11513628e73))
+* **chore:** remove unused variable ([8d9ccb8](https://github.com/pythonscad/pythonscad/commit/8d9ccb8658cfb873d290dc8f24ff0c8ad628b65a))
+* **chore:** restore installation of openscad and pythonscad libs ([1700e7f](https://github.com/pythonscad/pythonscad/commit/1700e7f4805de20a6574a7d421f07f03912bb7e3))
+* **chore:** revert changed github workflow ([0ba5c4f](https://github.com/pythonscad/pythonscad/commit/0ba5c4f57d50ee1b98366d5cdb1068379a6f74c1))
+* **packaging:** ship the sources the sdist needs on every platform ([5db97dd](https://github.com/pythonscad/pythonscad/commit/5db97dd4d6e4df9e94ede6bf62fcf61c8160042e))
+* **packaging:** ship the sources the sdist needs on every platform ([4ba0966](https://github.com/pythonscad/pythonscad/commit/4ba0966e0860039d9e8307c497bcc9f5db9199fd))
+* **python:** acquire GIL in extrude callbacks and harden twist/profile calls ([#1265](https://github.com/pythonscad/pythonscad/issues/1265)) ([f0809d8](https://github.com/pythonscad/pythonscad/commit/f0809d8e56d4458bca5936ba8e13bf97ec9a9237))
+* **python:** judge sys.modules cleanup per top-level package on re-init ([#1291](https://github.com/pythonscad/pythonscad/issues/1291)) ([02b7dd9](https://github.com/pythonscad/pythonscad/commit/02b7dd95334a4f9dad996a7d4426e559f6202f7c))
+* **windows:** install mingw32-make for the PyQt6 bindings build ([2fce5e0](https://github.com/pythonscad/pythonscad/commit/2fce5e0e793c5d7cbe1b9b885e87cf1078790e9b))
+
+
+### Documentation
+
+* **release:** add v1.2.2 release announcement ([#1290](https://github.com/pythonscad/pythonscad/issues/1290)) ([6bf365b](https://github.com/pythonscad/pythonscad/commit/6bf365b1ae0321c0f41c0e82fa2c03e789e3233d))
+
 ## [1.2.0](https://github.com/pythonscad/pythonscad/compare/v1.1.2...v1.2.0) (2026-11-18)
 
 
