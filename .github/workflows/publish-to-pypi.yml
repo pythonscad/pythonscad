@@ -1,5 +1,12 @@
 # Builds binary wheels and a source distribution.
-# - Release-triggered runs publish to TestPyPI first, then PyPI.
+# - Releases are built and uploaded in two steps, because an upload to PyPI
+#   cannot be undone while a packaging failure should show up early:
+#   1. `published` (the release is published as a pre-release): build the
+#      wheels and sdist and publish them to TestPyPI.
+#   2. `released` (publish-release.yml removed the pre-release flag, i.e. the
+#      Windows installers are signed): upload the artifacts that step 1 built
+#      for the same tag/commit to PyPI. If no usable build run exists (e.g. the
+#      artifacts expired) the wheels are rebuilt first.
 # - Manually dispatched runs on the release-please branch publish to TestPyPI
 #   using a unique PEP 440 dev version for iterative pre-release testing.
 # - Manually dispatched runs with publish_to_production=true build from the
@@ -25,7 +32,7 @@ name: Publish to PyPI
 
 on:
   release:
-    types: [released]
+    types: [published, released]
   workflow_dispatch:
     inputs:
       publish_to_production:
@@ -47,12 +54,51 @@ permissions:
   contents: read
 
 jobs:
+  # On `released`, look for the run that already built this tag's artifacts
+  # while the release was still a pre-release.
+  find-build-run:
+    name: Find existing build run
+    if: github.event_name == 'release' && github.event.action == 'released'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      run_id: ${{ steps.find.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Look up the build run for this tag
+        id: find
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          run_id="$(python3 .github/scripts/find-pypi-build-run.py --repo "$REPO" --tag "$TAG" --sha "$SHA")"
+          if [[ -n "$run_id" ]]; then
+            echo "Reusing artifacts from build run ${run_id} for ${TAG}"
+          else
+            echo "No usable earlier build run for ${TAG}; the wheels will be rebuilt"
+          fi
+          echo "run_id=${run_id}" >> "$GITHUB_OUTPUT"
+
   build-wheels:
     name: Build wheels (${{ matrix.os }})
+    needs: [find-build-run]
     if: >-
-      github.event_name == 'release' ||
+      !cancelled() &&
+      (
+      (github.event_name == 'release' &&
+      (github.event.action == 'published' ||
+      needs.find-build-run.outputs.run_id == '')) ||
       (github.event_name == 'workflow_dispatch' &&
       inputs.reuse_artifacts_from_run == '')
+      )
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -198,10 +244,16 @@ jobs:
 
   build-sdist:
     name: Build source distribution
+    needs: [find-build-run]
     if: >-
-      github.event_name == 'release' ||
+      !cancelled() &&
+      (
+      (github.event_name == 'release' &&
+      (github.event.action == 'published' ||
+      needs.find-build-run.outputs.run_id == '')) ||
       (github.event_name == 'workflow_dispatch' &&
       inputs.reuse_artifacts_from_run == '')
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -270,7 +322,8 @@ jobs:
       (github.event_name == 'workflow_dispatch' &&
       inputs.reuse_artifacts_from_run != '')) &&
       (
-      github.event_name == 'release' ||
+      (github.event_name == 'release' &&
+      github.event.action == 'published') ||
       (github.event_name == 'workflow_dispatch' &&
       github.ref == 'refs/heads/release-please--branches--master--components--pythonscad' &&
       !inputs.publish_to_production)
@@ -298,16 +351,18 @@ jobs:
 
   publish-to-pypi:
     name: Publish to PyPI
-    needs: [build-wheels, build-sdist, publish-to-test-pypi]
+    needs: [find-build-run, build-wheels, build-sdist, publish-to-test-pypi]
     if: >
       always() &&
       (needs.build-wheels.result == 'success' || needs.build-wheels.result == 'skipped') &&
       (needs.build-sdist.result == 'success' || needs.build-sdist.result == 'skipped') &&
       (
       (github.event_name == 'release' &&
-      needs.publish-to-test-pypi.result == 'success' &&
       github.event.action == 'released' &&
-      !github.event.release.prerelease) ||
+      !github.event.release.prerelease &&
+      (needs.find-build-run.outputs.run_id != '' ||
+      (needs.build-wheels.result == 'success' &&
+      needs.build-sdist.result == 'success'))) ||
       (github.event_name == 'workflow_dispatch' &&
       inputs.publish_to_production &&
       (needs.publish-to-test-pypi.result == 'success' ||
@@ -328,7 +383,7 @@ jobs:
           pattern: pypi-*
           merge-multiple: true
           path: dist/
-          run-id: ${{ inputs.reuse_artifacts_from_run || github.run_id }}
+          run-id: ${{ needs.find-build-run.outputs.run_id || inputs.reuse_artifacts_from_run || github.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to PyPI
