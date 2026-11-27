@@ -60,6 +60,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="pythonscad-reinit-") as tmp:
         root = Path(tmp)
         frames_log = root / "frames.txt"
+        diagnostics_log = root / "diagnostics.txt"
         imports_log = root / "imports.txt"
         shadow_log = root / "shadow.txt"
 
@@ -105,6 +106,8 @@ def main() -> int:
             "prev = getattr(sys, '_pythonscad_reinit_probe', None)\n"
             "stdlib_kept = prev is None or prev == id(json)\n"
             "sys._pythonscad_reinit_probe = id(json)\n"
+            f"with Path({str(diagnostics_log)!r}).open('a', encoding='utf-8') as f:\n"
+            "    f.write(f'json={json.__file__!r} prefix={sys.prefix!r} base_prefix={sys.base_prefix!r} stdlib_dir={getattr(sys, \"_stdlib_dir\", None)!r} path={sys.path!r}\\n')\n"
             f"with Path({str(frames_log)!r}).open('a', encoding='utf-8') as f:\n"
             "    f.write(f'consistent={consistent} stdlib_kept={stdlib_kept}\\n')\n"
             f"show(cube([{PKG}.sub.VALUE + {STDLIB_SHADOW}.VALUE] * 3))\n",
@@ -127,6 +130,7 @@ def main() -> int:
             timeout=TIMEOUT_SECONDS,
         )
         frames = frames_log.read_text(encoding="utf-8").splitlines() if frames_log.is_file() else []
+        diagnostics = diagnostics_log.read_text(encoding="utf-8") if diagnostics_log.is_file() else ""
         imports = imports_log.read_text(encoding="utf-8").splitlines() if imports_log.is_file() else []
         shadows = shadow_log.read_text(encoding="utf-8").splitlines() if shadow_log.is_file() else []
 
@@ -156,6 +160,7 @@ def main() -> int:
         )
 
     if failures:
+        print(f"Interpreter diagnostics:\n{diagnostics}", file=sys.stderr)
         for f in failures:
             print(f"FAIL: {f}", file=sys.stderr)
         return 1
