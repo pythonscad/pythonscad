@@ -35,6 +35,14 @@ bool ends_with_ci(const std::string& s, const char *suffix)
                     [](char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == b; });
 }
 
+bool starts_with_ci(const std::string& s, const std::string& prefix)
+{
+  if (s.size() < prefix.size()) return false;
+  return std::equal(prefix.begin(), prefix.end(), s.begin(), [](char a, char b) {
+    return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b));
+  });
+}
+
 bool is_stdlib_name(PyObject *stdlibNames, const std::string& top)
 {
   if (stdlibNames == nullptr) return false;  // Python < 3.10: fall back to the path heuristics
@@ -52,17 +60,47 @@ bool is_stdlib_name(PyObject *stdlibNames, const std::string& top)
   return found == 1;
 }
 
-bool is_extension_module(PyObject *mod)
+bool module_file_path(PyObject *mod, std::string& path)
 {
   PyObject *file = PyObject_GetAttrString(mod, "__file__");
   if (file == nullptr) {
     PyErr_Clear();
     return false;
   }
-  std::string path;
   const bool ok = to_utf8(file, path);
   Py_DECREF(file);
-  if (!ok) return false;
+  return ok;
+}
+
+bool path_under_sys_prefix(const std::string& path, const char *sysAttr)
+{
+  PyObject *prefixObj = PySys_GetObject(sysAttr);  // borrowed
+  std::string prefix;
+  if (prefixObj == nullptr || !to_utf8(prefixObj, prefix) || prefix.empty()) return false;
+  // Trim a trailing separator so "C:\\Python" and "C:\\Python\\" both match.
+  while (!prefix.empty() && (prefix.back() == '/' || prefix.back() == '\\')) prefix.pop_back();
+  if (!starts_with_ci(path, prefix)) return false;
+  if (path.size() == prefix.size()) return true;
+  const char next = path[prefix.size()];
+  return next == '/' || next == '\\';
+}
+
+// A name in sys.stdlib_module_names is not enough: a user file next to the
+// model (mailbox.py, profile.py, ...) shares that name but must still be
+// dropped so edits are picked up on re-run. Only protect the group when the
+// loaded module actually lives under the interpreter's install prefix.
+bool is_stdlib_module_by_origin(PyObject *mod, PyObject *stdlibNames, const std::string& top)
+{
+  if (!is_stdlib_name(stdlibNames, top)) return false;
+  std::string path;
+  if (!module_file_path(mod, path)) return false;
+  return path_under_sys_prefix(path, "base_prefix") || path_under_sys_prefix(path, "prefix");
+}
+
+bool is_extension_module(PyObject *mod)
+{
+  std::string path;
+  if (!module_file_path(mod, path)) return false;
   return ends_with_ci(path, ".pyd") || ends_with_ci(path, ".so") || ends_with_ci(path, ".dylib");
 }
 
@@ -116,7 +154,7 @@ std::vector<std::string> python_collect_stale_modules(PyObject *modules,
 
     bool& keep = keepGroup.emplace(top, false).first->second;
     if (keep) continue;
-    if (top == "__main__" || is_stdlib_name(stdlibNames, top)) {
+    if (top == "__main__") {
       keep = true;
       continue;
     }
@@ -124,7 +162,12 @@ std::vector<std::string> python_collect_stale_modules(PyObject *modules,
     // Non-module values (e.g. None placeholders) neither protect nor block
     // their group; they are dropped together with it.
     if (value == nullptr || !PyModule_Check(value)) continue;
-    if (is_extension_module(value) || repr_marks_protected(value)) keep = true;
+    // Do not protect on the stdlib name alone: a user module that shadows a
+    // stdlib name (mailbox.py, profile.py, ...) must still be reloadable.
+    if (is_extension_module(value) || repr_marks_protected(value) ||
+        is_stdlib_module_by_origin(value, stdlibNames, top)) {
+      keep = true;
+    }
   }
   Py_DECREF(keys);
 

@@ -20,11 +20,13 @@ frame, that
 
   * ``import pkgutil`` works and ``importlib.machinery`` is consistent,
   * stdlib modules survived the cleanup (same ``json`` module object),
-  * the user's own package next to the script *was* reloaded.
+  * the user's own package next to the script *was* reloaded,
+  * a user module that *shadows a stdlib name* (``mailbox.py``) is also
+    reloaded — protection must check the module's origin, not just the name.
 
 On Linux builds against a ``/usr/lib`` Python the old code happened to keep
 the stdlib, so the first two checks only bite on Windows/macOS layouts; the
-reload check guards against over-eager protection everywhere.
+reload checks guard against over-eager protection everywhere.
 
 Usage:
     test_python_reinit_module_cleanup.py <path-to-pythonscad>
@@ -41,6 +43,8 @@ from pathlib import Path
 TIMEOUT_SECONDS = 120
 FRAMES = 2
 PKG = "pythonscad_reinit_probe_pkg"
+# A top-level name that is also in sys.stdlib_module_names on Python >= 3.10.
+STDLIB_SHADOW = "mailbox"
 
 
 def main() -> int:
@@ -57,6 +61,7 @@ def main() -> int:
         root = Path(tmp)
         frames_log = root / "frames.txt"
         imports_log = root / "imports.txt"
+        shadow_log = root / "shadow.txt"
 
         pkg_dir = root / PKG
         pkg_dir.mkdir()
@@ -69,6 +74,16 @@ def main() -> int:
         )
         (pkg_dir / "sub.py").write_text("VALUE = 1\n", encoding="utf-8")
 
+        # User file that deliberately shares a stdlib top-level name. It must
+        # still be dropped on re-init so edits are picked up.
+        (root / f"{STDLIB_SHADOW}.py").write_text(
+            "from pathlib import Path\n"
+            f"with Path({str(shadow_log)!r}).open('a', encoding='utf-8') as _f:\n"
+            "    _f.write('shadow\\n')\n"
+            "VALUE = 1\n",
+            encoding="utf-8",
+        )
+
         main_py = root / "main.py"
         main_py.write_text(
             "import sys\n"
@@ -77,6 +92,7 @@ def main() -> int:
             "import importlib, importlib.machinery\n"
             "import json\n"
             f"import {PKG}\n"
+            f"import {STDLIB_SHADOW}\n"
             "from openscad import cube, show\n"
             "consistent = importlib.machinery is sys.modules['importlib.machinery']\n"
             "prev = getattr(sys, '_pythonscad_reinit_probe', None)\n"
@@ -84,7 +100,7 @@ def main() -> int:
             "sys._pythonscad_reinit_probe = id(json)\n"
             f"with Path({str(frames_log)!r}).open('a', encoding='utf-8') as f:\n"
             "    f.write(f'consistent={consistent} stdlib_kept={stdlib_kept}\\n')\n"
-            f"show(cube([{PKG}.sub.VALUE] * 3))\n",
+            f"show(cube([{PKG}.sub.VALUE + {STDLIB_SHADOW}.VALUE] * 3))\n",
             encoding="utf-8",
         )
 
@@ -105,6 +121,7 @@ def main() -> int:
         )
         frames = frames_log.read_text(encoding="utf-8").splitlines() if frames_log.is_file() else []
         imports = imports_log.read_text(encoding="utf-8").splitlines() if imports_log.is_file() else []
+        shadows = shadow_log.read_text(encoding="utf-8").splitlines() if shadow_log.is_file() else []
 
     print("===== stdout =====")
     print(proc.stdout)
@@ -123,6 +140,12 @@ def main() -> int:
         failures.append(
             f"user package imported {len(imports)} time(s), expected {FRAMES} "
             "(it must be reloaded on every re-init)"
+        )
+    if len(shadows) != FRAMES:
+        failures.append(
+            f"stdlib-shadowing user module ({STDLIB_SHADOW}.py) imported "
+            f"{len(shadows)} time(s), expected {FRAMES} "
+            "(protection must check origin, not just the name)"
         )
 
     if failures:
