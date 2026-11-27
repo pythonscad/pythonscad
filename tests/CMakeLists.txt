@@ -1876,6 +1876,16 @@ if(Python3_EXECUTABLE)
   set_property(TEST get-dependencies-profile-merge PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
 endif()
 
+# Host-side check that new releases are created as drafts and published as
+# prereleases, and that the release workflows trigger on `published` (#1281).
+if(Python3_EXECUTABLE)
+  add_test(NAME release-flow-config CONFIGURATIONS Default
+    COMMAND ${Python3_EXECUTABLE} -Xutf8=1
+      ${CMAKE_CURRENT_SOURCE_DIR}/test_release_flow_config.py
+  )
+  set_property(TEST release-flow-config PROPERTY ENVIRONMENT ${CTEST_ENVIRONMENT})
+endif()
+
 # Host-side check that the Windows PyQt6 build has mingw32-make available (the
 # v1.2.1 Windows release build failed with "mingw32-make: command not found").
 if(Python3_EXECUTABLE)
