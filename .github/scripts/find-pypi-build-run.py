@@ -23,6 +23,16 @@ from typing import Any, Callable
 
 WORKFLOW_FILE = "publish-to-pypi.yml"
 
+# Must match the build-wheels matrix in publish-to-pypi.yml. A reused run
+# skips the entire matrix, so every platform's artifact has to still be live.
+REQUIRED_WHEEL_ARTIFACTS = (
+    "pypi-wheels-ubuntu-24.04",
+    "pypi-wheels-ubuntu-24.04-arm",
+    "pypi-wheels-macos-15",
+    "pypi-wheels-windows-2022",
+)
+REQUIRED_ARTIFACTS = ("pypi-sdist",) + REQUIRED_WHEEL_ARTIFACTS
+
 
 def select_run(
     runs: list[dict[str, Any]],
@@ -33,8 +43,9 @@ def select_run(
     """Return the id of the newest usable build run for `tag`, or None.
 
     A run is usable when it is a completed, successful `release` run for the
-    same tag *and* the same commit, and it still has a non-expired sdist
-    artifact and at least one non-expired wheel artifact.
+    same tag *and* the same commit, and it still has every required non-expired
+    artifact (sdist plus one wheel per platform). Anything short of that means
+    we rebuild rather than upload an incomplete set.
     """
     candidates = [
         r
@@ -49,8 +60,8 @@ def select_run(
     candidates.sort(key=lambda r: r.get("created_at", ""), reverse=True)
 
     for run in candidates:
-        live = [a["name"] for a in artifacts_for(run["id"]) if not a.get("expired")]
-        if "pypi-sdist" in live and any(n.startswith("pypi-wheels-") for n in live):
+        live = {a["name"] for a in artifacts_for(run["id"]) if not a.get("expired")}
+        if all(name in live for name in REQUIRED_ARTIFACTS):
             return int(run["id"])
     return None
 

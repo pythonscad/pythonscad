@@ -19,6 +19,8 @@ SHA = "a" * 40
 GOOD_ARTIFACTS = [
     {"name": "pypi-sdist", "expired": False},
     {"name": "pypi-wheels-ubuntu-24.04", "expired": False},
+    {"name": "pypi-wheels-ubuntu-24.04-arm", "expired": False},
+    {"name": "pypi-wheels-macos-15", "expired": False},
     {"name": "pypi-wheels-windows-2022", "expired": False},
 ]
 
@@ -71,6 +73,11 @@ class SelectRunTest(unittest.TestCase):
         only_wheels = [{"name": "pypi-wheels-macos-15", "expired": False}]
         self.assertIsNone(self.select([run(1)], {1: only_sdist}))
         self.assertIsNone(self.select([run(1)], {1: only_wheels}))
+
+    def test_requires_every_platform_wheel(self) -> None:
+        # A missing platform must not reuse the run (would skip rebuilding it).
+        incomplete = [a for a in GOOD_ARTIFACTS if a["name"] != "pypi-wheels-windows-2022"]
+        self.assertIsNone(self.select([run(1)], {1: incomplete}))
 
     def test_no_runs(self) -> None:
         self.assertIsNone(self.select([], {}))
