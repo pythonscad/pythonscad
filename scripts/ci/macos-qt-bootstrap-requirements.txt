@@ -763,9 +763,9 @@ soupsieve==4.1.3 \
     --hash=sha256:13f70186c8f40bf8d0ff7bbab09a18fb149600b465269207b5e5b588f55fda08 \
     --hash=sha256:7a390d1a57d1ab7bb228531e9b8a750a5ebf87db774e0ef6faeeac057d22a5bf
     # via beautifulsoup4
-texttable==1.7.3 \
-    --hash=sha256:b8eaebd6d32565ce85b79b17e2aa52815889249b37bb6dd0894d3eca67c329f8 \
-    --hash=sha256:ff99aa7562c6cbcd0982cb6fae9145126b19878182496cdc46b8d6816721c5da
+texttable==1.7.4 \
+    --hash=sha256:3ec756f1e7ecec163cbe17ccae24de1f39f3078c0bef6d331b709f42b543e23a \
+    --hash=sha256:b5191c88819aa3a6ef1ffdc22cf80cec773692aee9368a8f44f3471902cab9a0
     # via
     #   aqtinstall
     #   py7zr
