@@ -36,6 +36,16 @@
   </screenshots>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.2.2" date="2026-11-28">
+      <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.2.2</url>
+      <description>
+        <p>Bug fixes:</p>
+        <ul>
+          <li>python: judge sys.modules cleanup per top-level package on re-init (backport to 1.2)</li>
+          <li>windows: install mingw32-make for the PyQt6 bindings build</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.2.1" date="2026-11-25">
       <url type="details">https://github.com/pythonscad/pythonscad/releases/tag/v1.2.1</url>
       <description>
