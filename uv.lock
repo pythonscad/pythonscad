@@ -268,14 +268,14 @@ wheels = [
 
 [[package]]
 name = "delvewheel"
-version = "1.13.2"
+version = "1.13.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pefile" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9e/9b/ace748c3166f6668b4b4eb6c6b57fafb6bea358f948f7a2762c2051be9b1/delvewheel-1.13.2.tar.gz", hash = "sha256:e04b40d8186d80d3ef74dc8571b5d15026b7a8858e89312692a2b09fbcc67b0e", size = 64916, upload-time = "2026-10-09T14:13:18.316Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f4/3e/c1d1fe81edbae175a136465faf0c09e42e8fd281b02c37bf72ebf3a9674f/delvewheel-1.13.3.tar.gz", hash = "sha256:1275627b9dc1c89791323c5374edb44eb69d84253f73c0e89b8ba3a242eecb95", size = 64931, upload-time = "2026-11-24T14:56:00.238Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e4/05/ed05a24fb628232b68c4a0c701865bf0c2b3eb79cfbd14b1cde11c55edea/delvewheel-1.13.2-py3-none-any.whl", hash = "sha256:acdb03e1d7040982db65e525065f08163e9dedad54eeb8c7038be61f76c08816", size = 60391, upload-time = "2026-10-09T14:13:16.998Z" },
+    { url = "https://files.pythonhosted.org/packages/80/50/42ece464fdd146c91a8e5542777854bb25a125da47f851a0e1bd77002258/delvewheel-1.13.3-py3-none-any.whl", hash = "sha256:9b17288b32ee359d07388d41a3c99bc945148fbbfa1ad65e35cbfdc4083f27b6", size = 60406, upload-time = "2026-11-24T14:55:58.974Z" },
 ]
 
 [[package]]
@@ -873,7 +873,7 @@ build = [
     { name = "build", marker = "python_full_version >= '3.11'", specifier = "==1.6.1" },
     { name = "cibuildwheel", marker = "python_full_version >= '3.11'", specifier = "==4.3.5" },
     { name = "delocate", marker = "python_full_version >= '3.11'", specifier = "==0.13.0" },
-    { name = "delvewheel", marker = "python_full_version >= '3.11'", specifier = "==1.13.2" },
+    { name = "delvewheel", marker = "python_full_version >= '3.11'", specifier = "==1.13.3" },
 ]
 bundle = [{ name = "ipython", marker = "python_full_version >= '3.11'", specifier = ">=9,<10" }]
 docs = [
