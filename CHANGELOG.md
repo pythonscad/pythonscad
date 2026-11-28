@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.2](https://github.com/pythonscad/pythonscad/compare/v1.2.1...v1.2.2) (2026-11-28)
+
+
+### Bug Fixes
+
+* **python:** judge sys.modules cleanup per top-level package on re-init (backport to 1.2) ([#1293](https://github.com/pythonscad/pythonscad/issues/1293)) ([c40b65e](https://github.com/pythonscad/pythonscad/commit/c40b65e94bc8e2bd8879472e1ddb8cfab96b7232))
+* **windows:** install mingw32-make for the PyQt6 bindings build ([#1294](https://github.com/pythonscad/pythonscad/issues/1294)) ([a27beca](https://github.com/pythonscad/pythonscad/commit/a27beca20d88d9ebd0d698265cbcd58e09b51338))
+
+
+### Documentation
+
+* **release:** announce v1.2.2 instead of v1.2.1 ([#1289](https://github.com/pythonscad/pythonscad/issues/1289)) ([457d4a8](https://github.com/pythonscad/pythonscad/commit/457d4a86ba433ea90de86020ec0a5b39b75ad50e))
+
 ## [1.2.1](https://github.com/pythonscad/pythonscad/compare/v1.2.0...v1.2.1) (2026-11-25)
 
 
